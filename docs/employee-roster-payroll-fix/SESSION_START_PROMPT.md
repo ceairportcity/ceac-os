@@ -18,6 +18,8 @@ Before any write:
 1. Fetch protected `main` HEAD.
 2. Read:
    - `AGENTS.md`
+   - `docs/continuity/CEAC_OS_CANONICAL_OWNER_CONTINUITY_2026-10-03.md`
+   - `docs/final-product/LEAVE_RULES_v1.md`
    - `docs/employee-roster-payroll-fix/START_HERE.md`
    - `docs/employee-roster-payroll-fix/IMPLEMENTATION_SEQUENCE.md`
    - `docs/employee-roster-payroll-fix/BUILD_STATE.md`
@@ -29,11 +31,11 @@ Before any write:
 
 ## Last verified canonical state
 
-Last verified protected main:
-`12bdad992adbb4f8a6e6fe4e1f2bd32d451f581f`
+Last verified protected main before the continuity-lock PR:
+`16ec9ca1263761c8c1631107184e5ad30ec1a856`
 
-Latest main commit at handoff:
-`ERC production closure reconciliation (#95)`
+Latest main commit at that handoff:
+`ERC: portable continuation handoff (#96)`
 
 Exact-head gates at that main:
 - CI — PASS
@@ -140,6 +142,23 @@ Last verified Payroll readiness:
 - identity-review employees: 1
 
 These are truthful missing-data states, not missing employees.
+
+## Leave rules that must persist
+
+The canonical Leave rules are now stored in `docs/final-product/LEAVE_RULES_v1.md`.
+
+Confirmed:
+- annual, sick, maternity where relevant, paternity where relevant, and study leave where used;
+- Employee request → Manager approval → Administration final approval;
+- leave request/cancel is not gated by starting a work session;
+- no session recorded does not equal absence;
+- leave/attendance cannot automatically create a Payroll deduction.
+
+Unresolved and not to be invented:
+- entitlement quantities;
+- accrual/start-year grant method;
+- carry-over;
+- unpaid-leave treatment and Payroll calculation.
 
 ## Current remaining ERC closure item
 
