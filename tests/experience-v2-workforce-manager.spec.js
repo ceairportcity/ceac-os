@@ -27,7 +27,8 @@ test("Stage 10 Family D3 preserves Manager Workforce authority while establishin
   expect(workforce).toContain('caps.includes("workforce.manage")');
   expect(workforce).toContain('caps.includes("attendance.correct")');
   expect(workforce).toContain('leaveAction(l.id,"manager_approved")');
-  expect(workforce).toContain('leaveAction(l.id,"escalated")');
+  expect(workforce).toContain('Manager approval → Administration final approval');
+  expect(workforce).not.toContain('onClick={()=>leaveAction(l.id,"escalated")}');
   expect(workforce).toContain("Manager role alone does not grant this authority.");
   expect(workforce).toContain("never converted into an automatic absence or performance judgement");
   expect(css).toContain(".ev2-workforce-manager");
