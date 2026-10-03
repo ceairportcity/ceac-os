@@ -1545,6 +1545,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     page.once("dialog", (prompt) => prompt.accept("Acceptance manager approval"));
     await leaveRow.getByRole("button", { name: "Approve", exact: true }).click();
     await expect(page.getByText("Leave decision recorded.", { exact: true })).toBeVisible();
+    await expect(page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "Escalated" }).first()).toBeVisible();
     await context.close();
   }
 
@@ -1552,6 +1553,13 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Workforce");
     await page.getByRole("tab", { name: "Leave", exact: true }).click();
+    const administrationRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "Escalated" }).first();
+    await expect(administrationRow).toBeVisible();
+    await expect(administrationRow.getByText(/Manager approved · Administration final decision required/i)).toBeVisible();
+    page.once("dialog", (prompt) => prompt.accept("Acceptance Administration final approval"));
+    await administrationRow.getByRole("button", { name: "Admin approve", exact: true }).click();
+    await expect(page.getByText("Leave decision recorded.", { exact: true })).toBeVisible();
+
     const approvedRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "Approved" }).first();
     await expect(approvedRow).toBeVisible();
     page.once("dialog", (prompt) => prompt.accept("Acceptance approval reversal"));

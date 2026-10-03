@@ -116,6 +116,9 @@ begin
     raise exception 'Choose a valid leave date range.';
   end if;
   if length(v_kind)<2 then raise exception 'Choose a leave kind.'; end if;
+  if v_kind not in ('annual','sick','maternity','paternity','study') then
+    raise exception 'That leave type is not confirmed for CEAC requests yet.';
+  end if;
 
   select r.approval_route into v_route
   from public.leave_policy_versions p
@@ -134,9 +137,10 @@ begin
     p.created_at desc
   limit 1;
 
-  if v_route is null then
-    raise exception 'That leave type is not configured for CEAC requests yet.';
-  end if;
+  -- The product owner has confirmed the route independently of unresolved
+  -- entitlement mathematics. This route therefore remains authoritative even
+  -- for a newly created organisation that does not yet have seeded draft rows.
+  v_route:='manager_then_admin';
 
   v_days:=(p_end_date-p_start_date)+1;
 
@@ -181,6 +185,7 @@ declare
   v_to text;
   v_allowed boolean:=false;
   v_route text;
+  v_owner_confirmed boolean:=false;
 begin
   if v_actor is null then raise exception 'Sign in to update leave.' using errcode='42501'; end if;
   if p_action not in ('manager_approved','escalated','admin_approved','declined','cancelled_by_employee','approval_reversed','decision_corrected') then
@@ -219,6 +224,11 @@ begin
     p.created_at desc
   limit 1;
 
+  v_owner_confirmed:=lower(btrim(coalesce(v_request.kind,''))) in ('annual','sick','maternity','paternity','study');
+  if v_owner_confirmed then
+    v_route:='manager_then_admin';
+  end if;
+
   v_from:=v_request.status;
 
   if p_action='cancelled_by_employee' then
@@ -231,21 +241,33 @@ begin
     end if;
 
     if p_action='manager_approved' then
-      v_allowed:=(
-        public.app_has_capability('workforce.manage',null)
-        or (v_record.unit_id is not null and v_record.unit_id in (select public.app_managed_units()))
-      )
-      and v_from='pending'
-      and v_route='manager';
-      v_to:='approved';
+      if v_route='manager_then_admin' then
+        -- Manager approval is the first decision, not the final leave approval.
+        v_allowed:=v_record.unit_id is not null
+          and v_record.unit_id in (select public.app_managed_units())
+          and v_from='pending';
+        v_to:='escalated';
+      else
+        -- Preserve legacy single-step manager routes for historical configured kinds.
+        v_allowed:=(
+          public.app_has_capability('workforce.manage',null)
+          or (v_record.unit_id is not null and v_record.unit_id in (select public.app_managed_units()))
+        )
+        and v_from='pending'
+        and v_route='manager';
+        v_to:='approved';
+      end if;
 
     elsif p_action='escalated' then
-      v_allowed:=(
-        public.app_has_capability('workforce.manage',null)
-        or (v_record.unit_id is not null and v_record.unit_id in (select public.app_managed_units()))
-      )
-      and v_from='pending'
-      and v_route='manager_then_admin';
+      -- Keep the historical manual-escalation action only for non-owner-confirmed
+      -- leave kinds. Confirmed CEAC kinds must record an actual Manager approval.
+      v_allowed:=not v_owner_confirmed
+        and (
+          public.app_has_capability('workforce.manage',null)
+          or (v_record.unit_id is not null and v_record.unit_id in (select public.app_managed_units()))
+        )
+        and v_from='pending'
+        and v_route='manager_then_admin';
       v_to:='escalated';
 
     elsif p_action='admin_approved' then
@@ -257,11 +279,24 @@ begin
       v_to:='approved';
 
     elsif p_action='declined' then
-      v_allowed:=(
-        public.app_has_capability('workforce.manage',null)
-        or (v_record.unit_id is not null and v_record.unit_id in (select public.app_managed_units()))
-      )
-      and v_from in ('pending','escalated');
+      if v_owner_confirmed then
+        -- Before Manager approval, only the authorised managed-unit Manager may
+        -- decline. After Manager approval, Administration owns the final decision.
+        v_allowed:=(
+          v_from='pending'
+          and v_record.unit_id is not null
+          and v_record.unit_id in (select public.app_managed_units())
+        ) or (
+          v_from='escalated'
+          and public.app_has_capability('workforce.manage',null)
+        );
+      else
+        v_allowed:=(
+          public.app_has_capability('workforce.manage',null)
+          or (v_record.unit_id is not null and v_record.unit_id in (select public.app_managed_units()))
+        )
+        and v_from in ('pending','escalated');
+      end if;
       v_to:='declined';
 
     elsif p_action='approval_reversed' then

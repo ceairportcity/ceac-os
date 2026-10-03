@@ -216,20 +216,20 @@ do $stage9_manager$
 declare
   v_leave uuid:=nullif(current_setting('ceac.stage9_leave_id',true),'')::uuid;
 begin
-  begin
-    perform public.workforce_leave_action(
-      v_leave,'manager_approved','Direct manager approval must not bypass Administration'
-    );
-    raise exception 'Stage 9 gate failure: manager bypassed Administration final approval.';
-  exception when insufficient_privilege then null;
-  end;
-
   perform public.workforce_leave_action(
-    v_leave,'escalated','Manager review complete; Administration final decision required'
+    v_leave,'manager_approved','Manager approved; Administration final decision required'
   );
 
   if not exists(select 1 from public.leave_requests where id=v_leave and status='escalated') then
-    raise exception 'Stage 9 gate failure: manager review did not escalate to Administration.';
+    raise exception 'Stage 9 gate failure: Manager approval did not move the request to Administration review.';
+  end if;
+
+  if not exists(
+    select 1 from public.leave_request_events
+    where leave_request_id=v_leave and action='manager_approved'
+      and from_status='pending' and to_status='escalated'
+  ) then
+    raise exception 'Stage 9 gate failure: Manager approval history is missing.';
   end if;
 
   begin
@@ -387,21 +387,21 @@ do $stage9_routed_manager$
 declare
   v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
 begin
-  begin
-    perform public.workforce_leave_action(
-      v_leave,'manager_approved','Direct manager approval should be blocked by confirmed route'
-    );
-    raise exception 'Stage 9 gate failure: manager bypassed manager-then-admin route.';
-  exception when insufficient_privilege then null;
-  end;
-
   perform public.workforce_leave_action(
-    v_leave,'escalated','Manager step complete; Administration decision required'
+    v_leave,'manager_approved','Manager approved; Administration decision required'
   );
 
   if not exists(select 1 from public.leave_requests where id=v_leave and status='escalated') then
-    raise exception 'Stage 9 gate failure: manager escalation did not persist.';
+    raise exception 'Stage 9 gate failure: Manager approval did not persist as Administration review.';
   end if;
+
+  begin
+    perform public.workforce_leave_action(
+      v_leave,'manager_approved','A second Manager approval must fail'
+    );
+    raise exception 'Stage 9 gate failure: repeated Manager approval was accepted.';
+  exception when insufficient_privilege then null;
+  end;
 end
 $stage9_routed_manager$;
 
@@ -415,7 +415,7 @@ declare
   v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
 begin
   perform public.workforce_leave_action(
-    v_leave,'admin_approved','Administration approved after manager escalation'
+    v_leave,'admin_approved','Administration approved after Manager approval'
   );
 
   if not exists(select 1 from public.leave_requests where id=v_leave and status='approved') then
