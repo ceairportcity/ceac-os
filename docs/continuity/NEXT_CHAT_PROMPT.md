@@ -23,6 +23,7 @@ Before answering substantively or writing anything:
    - `docs/employee-roster-payroll-fix/SESSION_START_PROMPT.md`
    - `docs/final-product/PRODUCT_OWNER_DECISIONS.md`
    - `docs/final-product/PAYROLL_RULES_v1.md`
+   - `docs/final-product/LEAVE_RULES_v1.md`
    - `docs/final-product/GO_LIVE_ORG_MAPPING.md`
 3. Inspect recent protected-main commits and open PRs.
 4. Inspect exact-head CI, Migration Replay, Account Security and Quality Gate.
