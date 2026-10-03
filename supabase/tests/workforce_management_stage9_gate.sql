@@ -107,7 +107,49 @@ $stage9_day_schedule$;
 
 reset role;
 
--- Staff can request leave without confirmed policy/balance and sees only own workforce history.
+-- Owner-confirmed routing can exist before entitlement mathematics is configured.
+-- Seed the confirmed annual route for the clean acceptance database. It remains
+-- draft/incomplete, so no entitlement amount, accrual or carry-over is implied.
+do $stage9_owner_routing$
+declare
+  v_policy uuid:=gen_random_uuid();
+begin
+  insert into public.leave_policy_versions(
+    id,org_id,policy_key,version,name,effective_from,state,
+    source_reference,reason,created_by
+  ) values (
+    v_policy,
+    '10000000-0000-4000-8000-000000000010',
+    gen_random_uuid(),
+    1,
+    'Owner-confirmed acceptance routing',
+    current_date,
+    'draft',
+    'STAGE9_OWNER_ROUTING_FIXTURE',
+    'Acceptance fixture for confirmed Manager-to-Administration routing without entitlement mathematics.',
+    '31000000-0000-4000-8000-000000000003'
+  );
+
+  insert into public.leave_policy_rules(
+    org_id,policy_version_id,leave_kind,employment_type,
+    entitlement_amount,entitlement_unit,accrual_method,accrual_rate,
+    carryover_method,carryover_limit,approval_route,opening_balance_required,
+    complete,routing_confirmed
+  ) values (
+    '10000000-0000-4000-8000-000000000010',
+    v_policy,
+    'annual',
+    null,
+    null,null,null,null,null,null,
+    'manager_then_admin',
+    false,
+    false,
+    true
+  );
+end
+$stage9_owner_routing$;
+
+-- Staff can request leave with confirmed routing while entitlement/balance remains unconfigured.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 
@@ -142,7 +184,7 @@ $stage9_staff_leave$;
 
 reset role;
 
--- Manager may decide own-unit leave, but may not correct attendance without explicit capability.
+-- Manager handles the first leave step and may not bypass Administration final approval.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
 
@@ -150,12 +192,20 @@ do $stage9_manager$
 declare
   v_leave uuid:=nullif(current_setting('ceac.stage9_leave_id',true),'')::uuid;
 begin
+  begin
+    perform public.workforce_leave_action(
+      v_leave,'manager_approved','Direct manager approval must not bypass Administration'
+    );
+    raise exception 'Stage 9 gate failure: manager bypassed Administration final approval.';
+  exception when insufficient_privilege then null;
+  end;
+
   perform public.workforce_leave_action(
-    v_leave,'manager_approved','Stage 9 manager approval'
+    v_leave,'escalated','Manager review complete; Administration final decision required'
   );
 
-  if not exists(select 1 from public.leave_requests where id=v_leave and status='approved') then
-    raise exception 'Stage 9 gate failure: manager approval did not persist.';
+  if not exists(select 1 from public.leave_requests where id=v_leave and status='escalated') then
+    raise exception 'Stage 9 gate failure: manager review did not escalate to Administration.';
   end if;
 
   begin
