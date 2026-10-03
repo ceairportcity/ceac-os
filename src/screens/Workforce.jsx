@@ -877,7 +877,7 @@ export default function Workforce({ me }) {
       >
         {l.status==="pending"&&route==="admin"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
         {l.status==="escalated"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
-        {canManage&&((route==="manager_then_admin"&&l.status==="escalated")||(route!=="manager_then_admin"&&["pending","escalated"].includes(l.status)))&&<Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>}}
+        {canManage&&((route==="manager_then_admin"&&l.status==="escalated")||(route!=="manager_then_admin"&&["pending","escalated"].includes(l.status)))&&<Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>}
       </WorkforceDecisionRow>;
     };
 
