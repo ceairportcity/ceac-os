@@ -2436,6 +2436,8 @@ test("FPG9 Manager Home and shell follow the locked original CEAC reference", as
     await expect(page.locator(".fpg9-waiting-card")).toBeVisible();
     await expect(page.locator(".fpg9-coming-card")).toBeVisible();
     await expect(page.locator(".fpg9-module-strip")).toBeVisible();
+    await expect(page.locator(".fpg9-workspace-previews")).toBeVisible();
+    await expect(page.locator(".managerv2-decisions")).toHaveCount(0);
     await page.screenshot({ path: "test-artifacts/fpg9-manager-home-shell-desktop.png", fullPage: true });
     await context.close();
   }
@@ -2445,9 +2447,16 @@ test("FPG9 Manager Home and shell follow the locked original CEAC reference", as
     await expect(page.locator(".ev2s-sidebar")).toBeHidden();
     await expect(page.locator(".fpg9-home-hero")).toBeVisible();
     await expect(page.locator(".fpg9-home-reference")).toBeVisible();
+    await expect(page.locator(".fpg9-mobile-shortcuts")).toBeVisible();
+    await expect(page.locator(".fpg9-calendar-card")).toBeHidden();
+    await expect(page.locator(".fpg9-module-strip")).toBeHidden();
     await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(1);
+    const geometry = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      height: document.documentElement.scrollHeight,
+    }));
+    expect(geometry.overflow).toBeLessThanOrEqual(1);
+    expect(geometry.height).toBeLessThanOrEqual(1300);
     await page.screenshot({ path: "test-artifacts/fpg9-manager-home-shell-mobile.png", fullPage: true });
     await context.close();
   }

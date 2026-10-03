@@ -92,41 +92,43 @@ export function SideNav({
         ) : null}
       </div>
 
-      <nav className="ev2s-sidebar-nav" aria-label="Primary navigation">
-        {groupDestinations(navigation).map((group) => (
-          <section key={group.key} className="ev2s-sidebar-group" aria-label={group.label}>
-            <div className="ev2s-sidebar-group-label">{group.label}</div>
-            <div className="ev2s-sidebar-group-items">
-              {group.items.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={tab === item.key ? "is-active" : ""}
-                  aria-current={tab === item.key ? "page" : undefined}
-                  onClick={() => setTab(item.key)}
-                >
-                  <CeacIcon name={item.icon} size="nav" decorative />
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        ))}
-      </nav>
+      <div className="ev2s-sidebar-main">
+        <nav className="ev2s-sidebar-nav" aria-label="Primary navigation">
+          {groupDestinations(navigation).map((group) => (
+            <section key={group.key} className="ev2s-sidebar-group" aria-label={group.label}>
+              <div className="ev2s-sidebar-group-label">{group.label}</div>
+              <div className="ev2s-sidebar-group-items">
+                {group.items.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={tab === item.key ? "is-active" : ""}
+                    aria-current={tab === item.key ? "page" : undefined}
+                    onClick={() => setTab(item.key)}
+                  >
+                    <CeacIcon name={item.icon} size="nav" decorative />
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
+        </nav>
 
-      {quickItems.length ? <div className="fpg9-sidebar-quick" aria-label="Quick create">
-        <span>Quick create</span>
-        <div>
-          {quickItems.map((item) => <button
-            key={item.id}
-            type="button"
-            onClick={item.onSelect}
-          >
-            <CeacIcon name={item.icon} size="row" decorative />
-            <span>{item.label}</span>
-          </button>)}
-        </div>
-      </div> : null}
+        {quickItems.length ? <div className="fpg9-sidebar-quick" aria-label="Quick create">
+          <span>Quick create</span>
+          <div>
+            {quickItems.map((item) => <button
+              key={item.id}
+              type="button"
+              onClick={item.onSelect}
+            >
+              <CeacIcon name={item.icon} size="row" decorative />
+              <span>{item.label}</span>
+            </button>)}
+          </div>
+        </div> : null}
+      </div>
 
       <button
         type="button"

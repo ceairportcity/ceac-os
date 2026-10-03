@@ -25,6 +25,7 @@ test("Stage 4B shell is isolated, tokenized and wired through App", async () => 
   expect(shell).toContain("Drawer");
   expect(shell).toContain("PopoverMenu");
   expect(shell).toContain("getShellQuickActions");
+  expect(shell).toContain("ev2s-sidebar-main");
   expect(shell).not.toContain("function createMenuItems");
   expect(shell).not.toContain("components/primitives/Icon");
   expect(shell).not.toContain("components/PremiumShell");

@@ -46,15 +46,9 @@ test("Stage 6 Manager Overview is isolated V2 presentation on preserved manager 
 
   expect(view).toContain('from "../components"');
   expect(view).toContain('from "../icons"');
-  expect(view).toContain("Needs your decision");
-  expect(view).toContain("Work you gave out");
   expect(view).toContain('onNavigate?.("attendance")');
   expect(view).not.toContain("leaveLimit");
-  expect(view).toContain("delegated.slice(0, 2)");
   expect(view).toContain("more open item");
-  expect(view).toContain("Team operating context");
-  expect(view).toContain("Availability is context, not a performance measure.");
-  expect(view).toContain("This is not a performance score.");
   expect(view).not.toContain("components/bits");
   expect(view).not.toContain("ReferenceDashboard");
 
@@ -66,6 +60,10 @@ test("Stage 6 Manager Overview is isolated V2 presentation on preserved manager 
   expect(view).toContain("fpg9-home-reference");
   expect(view).toContain("fpg9-calendar-card");
   expect(view).toContain("fpg9-module-strip");
+  expect(view).toContain("fpg9-workspace-previews");
+  expect(view).toContain("fpg9-mobile-shortcuts");
+  expect(view).not.toContain("fpg9-operational-divider");
+  expect(view).not.toContain("managerv2-command-grid");
   expect(css).toContain(".fpg9-home-reference");
   expect(css).toContain(".fpg9-calendar-card");
   expect(css).toContain(".fpg9-module-strip");
@@ -86,16 +84,23 @@ for (const viewport of [
     await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening), Manager/ })).toBeVisible();
     if (viewport.width >= 900) await expect(page.getByRole("button", { name: "New work", exact: true }).first()).toBeVisible();
     await expect(page.locator(".fpg9-home-reference")).toBeVisible();
-    await expect(page.locator(".fpg9-calendar-card")).toBeVisible();
-    await expect(page.locator(".fpg9-module-strip")).toBeVisible();
-    await expect(page.locator(".managerv2-decisions")).toBeVisible();
-    await expect(page.locator(".managerv2-delegated")).toBeVisible();
-    await expect(page.locator(".managerv2-team")).toBeVisible();
-    await expect(page.locator(".managerv2-delivery")).toBeVisible();
-    await expect(page.locator(".managerv2-schedule")).toBeVisible();
-    await expect(page.locator(".managerv2-finance")).toBeVisible();
+    await expect(page.locator(".managerv2-decisions")).toHaveCount(0);
+    await expect(page.locator(".managerv2-delegated")).toHaveCount(0);
     await expect(page.locator(".reference-module-strip")).toHaveCount(0);
     await expect(page.locator(".manager-command-surface")).toHaveCount(0);
+
+    if (viewport.width <= 599) {
+      await expect(page.locator(".fpg9-mobile-shortcuts")).toBeVisible();
+      await expect(page.locator(".fpg9-calendar-card")).toBeHidden();
+      await expect(page.locator(".fpg9-module-strip")).toBeHidden();
+      await expect(page.locator(".fpg9-waiting-card")).toBeHidden();
+      await expect(page.locator(".fpg9-coming-card")).toBeHidden();
+      await expect(page.locator(".fpg9-workspace-previews")).toBeHidden();
+    } else {
+      await expect(page.locator(".fpg9-calendar-card")).toBeVisible();
+      await expect(page.locator(".fpg9-module-strip")).toBeVisible();
+      await expect(page.locator(".fpg9-workspace-previews")).toBeVisible();
+    }
 
     const overflow = await page.evaluate(() =>
       document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -108,12 +113,8 @@ for (const viewport of [
       );
       for (const height of compactHeights) expect(height).toBeGreaterThanOrEqual(44);
 
-      const mobilePriority = await page.evaluate(() => {
-        const decisions = document.querySelector(".managerv2-decisions")?.getBoundingClientRect();
-        const delegated = document.querySelector(".managerv2-delegated")?.getBoundingClientRect();
-        return { decisionsTop: decisions?.top ?? 0, delegatedTop: delegated?.top ?? 0 };
-      });
-      expect(mobilePriority.decisionsTop).toBeLessThan(mobilePriority.delegatedTop);
+      const mobileHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+      expect(mobileHeight, "Manager Home should remain compact on phone").toBeLessThanOrEqual(1300);
     }
 
     await page.screenshot({

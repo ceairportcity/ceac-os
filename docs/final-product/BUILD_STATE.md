@@ -498,3 +498,32 @@ Production roster verification:
 Production Payroll readiness verifies all 18 active employees are represented. Compensation and payment details remain 0 recorded / 18 missing because authoritative values have not been supplied; the product now reports those states truthfully instead of omitting employees.
 
 FPG14 remains ACTIVE only for the final independent authenticated live-product smoke. The connected Vercel account currently has no authorized team/project access and returns 403 for the protected deployment, so an authenticated Staff/Manager/Administration/Executive smoke against the deployed Vercel artifact cannot be claimed from this session. This is now an access/evidence blocker, not a build-rate or application-code blocker.
+
+
+## Post-FPG literal-parity correction corridor — 3 October 2026
+
+The later independent screenshot audit supersedes earlier visual acceptance wherever the rendered product does not literally match the designated owner reference. Earlier functional/security acceptance remains valid.
+
+Correction lane:
+- branch: `chatgpt/final-literal-parity-2026-10-03`;
+- PR: #99;
+- baseline protected main: `5254d7a685825c6130f8963598f55a02e32e943a`;
+- exact HOME-A authority: `file_0000000062708210954e70d81423df9a` / repository HOME reference.
+
+Execution sequence:
+1. Home/shell + compact Mobile Home;
+2. Project/Task;
+3. Finance;
+4. People/Workforce;
+5. Work/BrandBook;
+6. final side-by-side literal acceptance.
+
+Home/shell correction intent:
+- preserve the accepted Manager data/RLS/authority contract;
+- stop duplicating the full operational console underneath Home;
+- use compact truthful workspace previews instead;
+- keep Leave decisions in authoritative Time & Leave;
+- place Quick Create directly beneath navigation;
+- make phone Home follow the compact Today → Next Up → Needs attention hierarchy rather than stacking desktop detail.
+
+No architecture change is authorized merely for styling.
