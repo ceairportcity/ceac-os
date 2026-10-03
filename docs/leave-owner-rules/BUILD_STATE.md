@@ -1,26 +1,36 @@
 # Leave Owner Rules — Build State
 
-Status: ACTIVE
-Branch: `chatgpt/leave-owner-rules-2026-10-03`
-Baseline main: `16ec9ca1263761c8c1631107184e5ad30ec1a856`
-Reconciled protected main: `a590998fefdf51742cc4693b7c4f7453efbd0ed3`
+Status: ACCEPTED / PRODUCTION ROUTING VERIFIED
+Canonical merged main: `5254d7a685825c6130f8963598f55a02e32e943a`
+Production project: `efjljhftsesssumtshvp`
+Production migration: `leave_owner_rules` (`20261003222056`)
 
-LOR0: COMPLETE
-LOR1: IMPLEMENTED / REGATE PENDING
-LOR2: IMPLEMENTED / REGATE PENDING
-LOR3: IMPLEMENTED / REGATE PENDING
-LOR4: PENDING
+LOR0: ACCEPTED
+LOR1: ACCEPTED
+LOR2: ACCEPTED
+LOR3: ACCEPTED
+LOR4: PRODUCTION VERIFIED
 
-Implementation now includes:
+Implemented and verified:
 - owner-confirmed leave categories: annual, sick, maternity, paternity, study;
-- routing confirmation decoupled from unresolved entitlement mathematics;
-- Manager-to-Administration approval enforced;
-- arbitrary unconfirmed leave kinds rejected;
-- My Hub request UI aligned to the confirmed category list.
+- Employee request → Manager approval → Administration final approval;
+- Manager approval records the first decision and moves the request to Administration review;
+- Administration alone performs final approval on the confirmed route;
+- leave request/cancellation is independent of work-session state;
+- no work session recorded is not an absence finding;
+- attendance/work-session data does not automatically create Payroll deductions;
+- owner-confirmed routing remains effective while entitlement/accrual/carry-over values are intentionally unconfigured;
+- arbitrary unconfirmed leave kinds are rejected;
+- My Hub exposes exactly the confirmed category set;
+- Manager Home no longer reads the legacy `manager_approval_limit` or acts as a second Leave approval engine; Leave attention routes to authoritative Time & Leave.
 
-No entitlement amount, accrual rate, carry-over formula, unpaid-leave rule or payroll consequence was invented.
+Production verification:
+- annual, sick, maternity, paternity and study rows exist;
+- each uses `manager_then_admin`;
+- `routing_confirmed = true`;
+- `complete = false`;
+- entitlement, accrual and carry-over values remain null/unconfigured.
 
-- canonical Manager approval now records the first decision and moves the request to Administration review;
-- Administration alone performs the final approval step on the confirmed route;
-- owner-confirmed routing remains effective even when entitlement/accrual/carry-over values are intentionally unconfigured;
-- the stale Stage 9 browser acceptance path has been aligned to Manager approval -> Administration final approval.
+No entitlement amount, accrual rate, carry-over formula, unpaid-leave rule or Payroll consequence was invented.
+
+Independent authenticated deployed-Vercel UI smoke is not claimed here because the connected Vercel account still lacks project/team authorization. That is an access/evidence limitation, not a Leave code or database defect.

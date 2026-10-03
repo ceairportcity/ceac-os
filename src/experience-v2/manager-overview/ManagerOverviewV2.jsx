@@ -188,7 +188,6 @@ export default function ManagerOverviewV2({
   decisionRows = [],
   reviewFollowupByWork,
   blockers = [],
-  leaveLimit,
   team,
   projects = [],
   incomingRequests = [],
@@ -212,7 +211,6 @@ export default function ManagerOverviewV2({
   onScheduleMeeting,
   onOpenPerson,
   onOpenReview,
-  onLeaveDecision,
   onBlockerDisagree,
   onBlockerAcknowledge,
   onResolveBlocker,
@@ -358,7 +356,10 @@ export default function ManagerOverviewV2({
               {attentionRows.length ? attentionRows.map((decision, index) => {
                 const row = decisionPreview(decision);
                 const itemId = decision.type === "submission" ? decision.item?.work_items?.id : decision.type === "blocker" ? decision.item?.work_item_id : null;
-                return <HomeReferenceRow key={decision.item?.id || index} icon={row.icon} title={row.title} meta={row.meta} tone="danger" onClick={itemId ? () => onOpenItem?.(itemId) : undefined} />;
+                const onClick = decision.type === "leave"
+                  ? () => onNavigate?.("attendance")
+                  : itemId ? () => onOpenItem?.(itemId) : undefined;
+                return <HomeReferenceRow key={decision.item?.id || index} icon={row.icon} title={row.title} meta={row.meta} tone="danger" onClick={onClick} />;
               }) : <p className="fpg9-home-empty">Nothing needs your authority right now.</p>}
             </article>
 
@@ -433,19 +434,15 @@ export default function ManagerOverviewV2({
               }
               if (decision.type === "leave") {
                 const request = decision.item;
-                const escalates = Number(request.days) > leaveLimit;
                 return <DecisionRow
                   key={`leave-${request.id}`}
                   icon="time"
                   title={`${request.profiles?.full_name || "Team member"} · ${request.days} day${Number(request.days) === 1 ? "" : "s"} ${request.kind} leave`}
                   meta={`${request.start_date} → ${request.end_date}`}
-                  note={request.reason || (escalates ? `Over ${leaveLimit} days — approval escalates to Administration.` : undefined)}
-                  status={escalates ? "Escalates" : "Decision"}
-                  statusTone={escalates ? "warning" : "action"}
-                  actions={<>
-                    <Button variant="secondary" size="compact" onClick={() => onLeaveDecision?.(request, "declined")}>Decline</Button>
-                    <Button size="compact" onClick={() => onLeaveDecision?.(request, "approved")}>{escalates ? "Escalate" : "Approve"}</Button>
-                  </>}
+                  note={request.reason || "Manager approval is the first step; Administration makes the final decision."}
+                  status="Manager review"
+                  statusTone="action"
+                  actions={<Button size="compact" onClick={() => onNavigate?.("attendance")}>Open Time & Leave</Button>}
                 />;
               }
               if (decision.type === "blocker") {
