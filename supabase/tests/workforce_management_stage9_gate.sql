@@ -135,17 +135,32 @@ begin
     entitlement_amount,entitlement_unit,accrual_method,accrual_rate,
     carryover_method,carryover_limit,approval_route,opening_balance_required,
     complete,routing_confirmed
-  ) values (
+  )
+  select
     '10000000-0000-4000-8000-000000000010',
     v_policy,
-    'annual',
+    k.leave_kind,
     null,
     null,null,null,null,null,null,
     'manager_then_admin',
     false,
     false,
     true
-  );
+  from (values
+    ('annual'::text),
+    ('sick'::text),
+    ('maternity'::text),
+    ('paternity'::text),
+    ('study'::text)
+  ) k(leave_kind);
+
+  if (
+    select count(*)
+    from public.leave_policy_rules
+    where policy_version_id=v_policy and routing_confirmed
+  )<>5 then
+    raise exception 'Stage 9 gate failure: owner-confirmed leave-category set is incomplete.';
+  end if;
 end
 $stage9_owner_routing$;
 
@@ -163,8 +178,17 @@ begin
   );
 
   if v_leave is null then
-    raise exception 'Stage 9 gate failure: staff leave request failed without confirmed policy.';
+    raise exception 'Stage 9 gate failure: staff leave request failed with confirmed routing.';
   end if;
+
+  begin
+    perform public.workforce_request_leave(
+      'other',current_date+30,current_date+30,'Unconfirmed leave type probe'
+    );
+    raise exception 'Stage 9 gate failure: an unconfirmed leave type was accepted.';
+  exception when others then
+    if sqlerrm like 'Stage 9 gate failure:%' then raise; end if;
+  end;
 
   if exists(select 1 from public.leave_policy_versions where org_id=public.app_org_id() and state='active') then
     raise exception 'Stage 9 gate failure: a leave policy was activated implicitly.';
