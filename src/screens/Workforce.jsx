@@ -18,6 +18,7 @@ import {
 
 const DAY_KEYS=["sun","mon","tue","wed","thu","fri","sat"];
 const DAY_LABELS={sun:"Sun",mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sat:"Sat"};
+const OWNER_CONFIRMED_LEAVE_KINDS=new Set(["annual","sick","maternity","paternity","study"]);
 
 function isoDay(value){ return new Date(value).toISOString().slice(0,10); }
 function niceDay(value){ return new Date(value+"T00:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}); }
@@ -333,6 +334,9 @@ export default function Workforce({ me }) {
   }
 
   function ruleForLeave(row){
+    if(OWNER_CONFIRMED_LEAVE_KINDS.has(row.kind)){
+      return {approval_route:"manager_then_admin",routing_confirmed:true,complete:false};
+    }
     if(!activePolicy) return null;
     const employmentType=peopleById[row.profile_id]?.employment_type;
     return activeRules.find((rule)=>rule.leave_kind===row.kind&&rule.employment_type===employmentType)
@@ -561,11 +565,12 @@ export default function Workforce({ me }) {
       const rule=ruleForLeave(l);
       const route=rule?.approval_route||null;
       const name=l.profiles?.full_name||peopleById[l.profile_id]?.profiles?.full_name||"Employee";
-      const canApprove=l.status==="pending"&&(route===null||route==="manager");
-      const canEscalate=l.status==="pending"&&(route===null||route==="manager_then_admin");
-      const routeNote=l.status==="pending"&&route==="admin"&&!canManage
-        ?"This confirmed route is Administration approval; no manager approval action is available."
-        :route?"Policy route: "+human(route):"No confirmed route for this leave kind";
+      const canApprove=l.status==="pending"&&(route==="manager"||route==="manager_then_admin");
+      const routeNote=route==="manager_then_admin"
+        ?"Manager approval → Administration final approval"
+        :l.status==="pending"&&route==="admin"
+          ?"This configured route is Administration approval; no manager approval action is available."
+          :route?"Policy route: "+human(route):"No confirmed route for this leave kind";
       return <WorkforceDecisionRow
         key={l.id}
         icon="calendar"
@@ -577,10 +582,7 @@ export default function Workforce({ me }) {
         statusTone={l.status==="escalated"?"amber":"blue"}
       >
         {canApprove&&<Button variant="secondary" busy={busy} onClick={()=>leaveAction(l.id,"manager_approved")}>Approve</Button>}
-        {canEscalate&&<Button variant="secondary" busy={busy} onClick={()=>leaveAction(l.id,"escalated")}>Escalate</Button>}
-        {l.status==="pending"&&canManage&&(route===null||route==="admin")&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
-        {l.status==="escalated"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
-        <Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>
+        {l.status==="pending"&&<Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>}
       </WorkforceDecisionRow>;
     };
 
@@ -867,15 +869,15 @@ export default function Workforce({ me }) {
         eyebrow={human(l.kind)+" leave"}
         title={name+" · "+l.days+" day"+(Number(l.days)===1?"":"s")}
         meta={niceDay(l.start_date)+" → "+niceDay(l.end_date)}
-        note={route?"Policy route: "+human(route):"No confirmed route for this leave kind"}
+        note={route==="manager_then_admin"
+          ?l.status==="pending"?"Waiting for Manager approval":"Manager approved · Administration final decision required"
+          :route?"Policy route: "+human(route):"No confirmed route for this leave kind"}
         statusLabel={human(l.status)}
         statusTone={l.status==="escalated"?"amber":"blue"}
       >
-        {l.status==="pending"&&(route===null||route==="manager")&&canManage&&<Button variant="secondary" busy={busy} onClick={()=>leaveAction(l.id,"manager_approved")}>Approve</Button>}
-        {l.status==="pending"&&(route===null||route==="manager_then_admin")&&canManage&&<Button variant="secondary" busy={busy} onClick={()=>leaveAction(l.id,"escalated")}>Escalate</Button>}
-        {l.status==="pending"&&(route===null||route==="admin")&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
+        {l.status==="pending"&&route==="admin"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
         {l.status==="escalated"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
-        {canManage&&<Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>}
+        {canManage&&((route==="manager_then_admin"&&l.status==="escalated")||(route!=="manager_then_admin"&&["pending","escalated"].includes(l.status)))&&<Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>}
       </WorkforceDecisionRow>;
     };
 
@@ -1300,15 +1302,18 @@ export default function Workforce({ me }) {
         const route=rule?.approval_route||null;
         return <div className="row" key={l.id}>
           <div className="row-t">{l.profiles?.full_name||peopleById[l.profile_id]?.profiles?.full_name||"Employee"} · {l.days} day{Number(l.days)===1?"":"s"} {human(l.kind)}</div>
-          <div className="row-m">{niceDay(l.start_date)} → {niceDay(l.end_date)} · {human(l.status)} · {route?"Policy route: "+human(route):"No confirmed route for this leave kind"}</div>
-          {(isManager||canManage)&&<div className="workforce-row-actions">
-            {l.status==="pending"&&(route===null||route==="manager")&&(isManager||canManage)&&<button className="btn btn-ghost btn-sm" onClick={()=>leaveAction(l.id,"manager_approved")}>Approve</button>}
-            {l.status==="pending"&&(route===null||route==="manager_then_admin")&&(isManager||canManage)&&<button className="btn btn-ghost btn-sm" onClick={()=>leaveAction(l.id,"escalated")}>Escalate</button>}
-            {l.status==="pending"&&canManage&&(route===null||route==="admin")&&<button className="btn btn-sm" onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</button>}
-            {l.status==="escalated"&&canManage&&<button className="btn btn-sm" onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</button>}
+          <div className="row-m">{niceDay(l.start_date)} → {niceDay(l.end_date)} · {human(l.status)} · {route==="manager_then_admin"?"Manager approval → Administration final approval":route?"Policy route: "+human(route):"No confirmed route for this leave kind"}</div>
+          {isManager&&!canManage&&l.status==="pending"&&(route==="manager"||route==="manager_then_admin")&&<div className="workforce-row-actions">
+            <button className="btn btn-ghost btn-sm" onClick={()=>leaveAction(l.id,"manager_approved")}>Approve</button>
             <button className="btn btn-ghost btn-sm" onClick={()=>leaveAction(l.id,"declined")}>Decline</button>
           </div>}
-          {l.status==="pending"&&route==="admin"&&isManager&&!canManage&&<div className="row-note">This confirmed route is Administration approval; the manager has no approval action here.</div>}
+          {canManage&&<div className="workforce-row-actions">
+            {l.status==="pending"&&route==="admin"&&<button className="btn btn-sm" onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</button>}
+            {l.status==="escalated"&&<button className="btn btn-sm" onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</button>}
+            {((route==="manager_then_admin"&&l.status==="escalated")||(route!=="manager_then_admin"&&["pending","escalated"].includes(l.status)))&&<button className="btn btn-ghost btn-sm" onClick={()=>leaveAction(l.id,"declined")}>Decline</button>}
+          </div>}
+          {l.status==="pending"&&route==="manager_then_admin"&&canManage&&<div className="row-note">Waiting for Manager approval before Administration can make the final decision.</div>}
+          {l.status==="pending"&&route==="admin"&&isManager&&!canManage&&<div className="row-note">This configured route is Administration approval; the manager has no approval action here.</div>}
         </div>;
       })}
       {!waitingLeave.length&&<EmptyState compact title="No leave requests are waiting">New requests will appear here with their recorded history.</EmptyState>}

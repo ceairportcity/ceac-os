@@ -107,7 +107,64 @@ $stage9_day_schedule$;
 
 reset role;
 
--- Staff can request leave without confirmed policy/balance and sees only own workforce history.
+-- Owner-confirmed routing can exist before entitlement mathematics is configured.
+-- Seed the confirmed annual route for the clean acceptance database. It remains
+-- draft/incomplete, so no entitlement amount, accrual or carry-over is implied.
+do $stage9_owner_routing$
+declare
+  v_policy uuid:=gen_random_uuid();
+begin
+  insert into public.leave_policy_versions(
+    id,org_id,policy_key,version,name,effective_from,state,
+    source_reference,reason,created_by
+  ) values (
+    v_policy,
+    '10000000-0000-4000-8000-000000000010',
+    gen_random_uuid(),
+    1,
+    'Owner-confirmed acceptance routing',
+    current_date,
+    'draft',
+    'STAGE9_OWNER_ROUTING_FIXTURE',
+    'Acceptance fixture for confirmed Manager-to-Administration routing without entitlement mathematics.',
+    '31000000-0000-4000-8000-000000000003'
+  );
+
+  insert into public.leave_policy_rules(
+    org_id,policy_version_id,leave_kind,employment_type,
+    entitlement_amount,entitlement_unit,accrual_method,accrual_rate,
+    carryover_method,carryover_limit,approval_route,opening_balance_required,
+    complete,routing_confirmed
+  )
+  select
+    '10000000-0000-4000-8000-000000000010',
+    v_policy,
+    k.leave_kind,
+    null,
+    null,null,null,null,null,null,
+    'manager_then_admin',
+    false,
+    false,
+    true
+  from (values
+    ('annual'::text),
+    ('sick'::text),
+    ('maternity'::text),
+    ('paternity'::text),
+    ('study'::text)
+  ) k(leave_kind);
+
+  if (
+    select count(*)
+    from public.leave_policy_rules
+    where policy_version_id=v_policy and routing_confirmed
+  )<>5 then
+    raise exception 'Stage 9 gate failure: owner-confirmed leave-category set is incomplete.';
+  end if;
+end
+$stage9_owner_routing$;
+
+-- Staff can request leave with confirmed routing while entitlement/balance remains unconfigured.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 
@@ -121,8 +178,17 @@ begin
   );
 
   if v_leave is null then
-    raise exception 'Stage 9 gate failure: staff leave request failed without confirmed policy.';
+    raise exception 'Stage 9 gate failure: staff leave request failed with confirmed routing.';
   end if;
+
+  begin
+    perform public.workforce_request_leave(
+      'other',current_date+30,current_date+30,'Unconfirmed leave type probe'
+    );
+    raise exception 'Stage 9 gate failure: an unconfirmed leave type was accepted.';
+  exception when others then
+    if sqlerrm like 'Stage 9 gate failure:%' then raise; end if;
+  end;
 
   if exists(select 1 from public.leave_policy_versions where org_id=public.app_org_id() and state='active') then
     raise exception 'Stage 9 gate failure: a leave policy was activated implicitly.';
@@ -142,7 +208,7 @@ $stage9_staff_leave$;
 
 reset role;
 
--- Manager may decide own-unit leave, but may not correct attendance without explicit capability.
+-- Manager handles the first leave step and may not bypass Administration final approval.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
 
@@ -151,11 +217,19 @@ declare
   v_leave uuid:=nullif(current_setting('ceac.stage9_leave_id',true),'')::uuid;
 begin
   perform public.workforce_leave_action(
-    v_leave,'manager_approved','Stage 9 manager approval'
+    v_leave,'manager_approved','Manager approved; Administration final decision required'
   );
 
-  if not exists(select 1 from public.leave_requests where id=v_leave and status='approved') then
-    raise exception 'Stage 9 gate failure: manager approval did not persist.';
+  if not exists(select 1 from public.leave_requests where id=v_leave and status='escalated') then
+    raise exception 'Stage 9 gate failure: Manager approval did not move the request to Administration review.';
+  end if;
+
+  if not exists(
+    select 1 from public.leave_request_events
+    where leave_request_id=v_leave and action='manager_approved'
+      and from_status='pending' and to_status='escalated'
+  ) then
+    raise exception 'Stage 9 gate failure: Manager approval history is missing.';
   end if;
 
   begin
@@ -313,21 +387,21 @@ do $stage9_routed_manager$
 declare
   v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
 begin
-  begin
-    perform public.workforce_leave_action(
-      v_leave,'manager_approved','Direct manager approval should be blocked by confirmed route'
-    );
-    raise exception 'Stage 9 gate failure: manager bypassed manager-then-admin route.';
-  exception when insufficient_privilege then null;
-  end;
-
   perform public.workforce_leave_action(
-    v_leave,'escalated','Manager step complete; Administration decision required'
+    v_leave,'manager_approved','Manager approved; Administration decision required'
   );
 
   if not exists(select 1 from public.leave_requests where id=v_leave and status='escalated') then
-    raise exception 'Stage 9 gate failure: manager escalation did not persist.';
+    raise exception 'Stage 9 gate failure: Manager approval did not persist as Administration review.';
   end if;
+
+  begin
+    perform public.workforce_leave_action(
+      v_leave,'manager_approved','A second Manager approval must fail'
+    );
+    raise exception 'Stage 9 gate failure: repeated Manager approval was accepted.';
+  exception when insufficient_privilege then null;
+  end;
 end
 $stage9_routed_manager$;
 
@@ -341,7 +415,7 @@ declare
   v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
 begin
   perform public.workforce_leave_action(
-    v_leave,'admin_approved','Administration approved after manager escalation'
+    v_leave,'admin_approved','Administration approved after Manager approval'
   );
 
   if not exists(select 1 from public.leave_requests where id=v_leave and status='approved') then

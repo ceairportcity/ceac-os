@@ -475,7 +475,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         <div className="ev2pf-form-section">
           <strong>Kind of leave</strong>
           <div className="ev2pf-inline-actions">
-            {[["annual","Annual"],["sick","Sick"],["bereavement","Bereavement"],["maternity","Maternity"],["other","Other"]].map(([key, label]) => (
+            {[["annual","Annual"],["sick","Sick"],["maternity","Maternity"],["paternity","Paternity"],["study","Study"]].map(([key, label]) => (
               <Button key={key} variant={kind === key ? "primary" : "secondary"} size="sm" onClick={() => setKind(key)}>{label}</Button>
             ))}
           </div>
