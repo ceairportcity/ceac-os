@@ -53,6 +53,13 @@ test("Stage 10 Family A1 uses one shared V2 Work presentation layer", async () =
   }
   expect(css).toContain(".ev2-work-page");
   expect(css).toContain(".ev2w-row");
+  expect(css).toContain(".fpg-brandbook-dashboard");
+  const staffWork = readFileSync("src/screens/Work.jsx", "utf8");
+  expect(staffWork).toContain('from("meeting_sessions")');
+  expect(staffWork).toContain('from("work_sessions")');
+  expect(staffWork).toContain('from("feedback_notes")');
+  expect(staffWork).toContain("This is not payroll or performance time.");
+  expect(staffWork).toContain("audio not recorded");
   expect(css).not.toContain("!important");
   expect(main).toContain('import "./experience-v2/work-family/work-family.css";');
 
@@ -74,6 +81,13 @@ for (const viewport of [
       await expect(page.getByRole("heading", { name: role.key === "staff" ? "My work" : "Work", exact: true })).toBeVisible();
       for (const label of role.tabs) {
         await expect(page.getByRole("tab", { name: new RegExp(label) }).first()).toBeVisible();
+      }
+
+      if (role.key === "staff") {
+        await expect(page.locator(".fpg-brandbook-dashboard")).toBeVisible();
+        await expect(page.locator(".fpg-brandbook-schedule")).toBeVisible();
+        await expect(page.locator(".fpg-brandbook-hours")).toBeVisible();
+        await expect(page.locator(".fpg-brandbook-note")).toBeVisible();
       }
 
       if (role.key === "manager" && viewport.width <= 320) {
@@ -135,6 +149,8 @@ test("Stage 10 Family A2 Work Detail follows the approved working hierarchy", as
   expect(css).toContain("/* Stage 10A2 — Work Detail */");
   expect(css).toContain(".ev2wd-header");
   expect(css).toContain(".ev2wd-section");
+  expect(source).toContain("fpg-brandbook-task-card");
+  expect(css).toContain(".fpg-brandbook-task-card");
   expect(css).not.toContain("!important");
 });
 

@@ -649,18 +649,23 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         </div>}
       </>}
 
-      {checks.length > 0 && (<>
-        <div className="sec"><span>Completion checklist</span><span>{done} of {checks.length}</span></div>
-        {!isManager && <div className="staff-check-progress" aria-label={`${done} of ${checks.length} checklist items complete`}>
+      {checks.length > 0 && <section className="fpg-brandbook-task-card" aria-label="Task checklist and progress">
+        <header>
+          <span><small>Task progress</small><strong>Completion checklist</strong></span>
+          <b>{Math.round((done / checks.length) * 100)}%</b>
+        </header>
+        <div className="staff-check-progress" aria-label={`${done} of ${checks.length} checklist items complete`}>
           <span style={{ width: `${Math.round((done / checks.length) * 100)}%` }} />
-        </div>}
+        </div>
         <div className="card checklist-card" style={{ padding: "2px 15px" }}>
           {checks.map((c) => (
             <button key={c.id} className={"ck " + (ticks[c.id] ? "done" : "")} onClick={() => toggle(c.id)} disabled={gated}>
               <span className={"box " + (ticks[c.id] ? "on" : "")} />
               <span className="ck-l">{c.label}</span>
             </button>))}
-        </div></>)}
+        </div>
+        <footer>{done} of {checks.length} recorded step{checks.length === 1 ? "" : "s"} complete</footer>
+      </section>}
 
       {isManager && item.status === "in_review" && latestSubmission && <WorkDetailSection
         title="Review submitted work"
