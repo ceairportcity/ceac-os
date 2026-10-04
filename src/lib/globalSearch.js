@@ -200,7 +200,7 @@ export async function searchCeacRecords({ query, me, isAdmin = false }) {
     title: row.filename,
     meta: row.mime_type || "File",
     file: row,
-    icon: "files",
+    icon: "file",
   }));
 
   return [
