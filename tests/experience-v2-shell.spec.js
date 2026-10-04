@@ -125,6 +125,33 @@ test("Stage 4B create menu exposes only role-authorised shortcuts", async ({ pag
   await expect(menu.getByRole("menuitem", { name: "Message room", exact: true })).toBeVisible();
 });
 
+test("OCR2 Executive Create exposes authorised leadership actions", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "exec@ceac.local.test");
+
+  const create = page.getByRole("button", { name: "Create", exact: true });
+  await create.click();
+  let menu = page.getByRole("menu");
+  await expect(menu.getByRole("menuitem", { name: "Give out work", exact: true })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Ministry objective", exact: true })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Announcement", exact: true })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Meeting", exact: true })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Message room", exact: true })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Project", exact: true })).toHaveCount(0);
+
+  await menu.getByRole("menuitem", { name: "Ministry objective", exact: true }).click();
+  let dialog = page.getByRole("dialog", { name: "New ministry objective" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel("Strategy parent direction")).toBeVisible();
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+
+  await create.click();
+  menu = page.getByRole("menu");
+  await menu.getByRole("menuitem", { name: "Announcement", exact: true }).click();
+  dialog = page.getByRole("dialog", { name: "New announcement" });
+  await expect(dialog).toBeVisible();
+});
+
 test("Stage 4B mobile shell keeps five controls and uses the shared More drawer", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, "staff@ceac.local.test");
