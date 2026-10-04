@@ -347,7 +347,9 @@ test("Staff personal details persist and private work stays out of another staff
 
 test("Assistive voice controls are real interaction affordances and proposals require review", async ({ browser }) => {
   const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 390, height: 844 });
-  await page.getByRole("button", { name: "Give out work" }).click();
+  await page.locator(".fpg9-mobile-shortcuts").getByRole("button", { name: "Work", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Work", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Give out work", exact: true }).click();
   const mic = page.getByRole("button", { name: "Speak your instruction" });
   await expect(mic).toBeVisible();
   await expect(page.getByText("Apply proposal", { exact: true })).toHaveCount(0);
