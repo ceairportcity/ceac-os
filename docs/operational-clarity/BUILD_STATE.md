@@ -170,11 +170,40 @@ Acceptance matrix:
 
 ## OCR5 — Cross-role workspace harmonisation
 
+Status: **ACCEPTED**
+
+Accepted exact head:
+`f4f9bc0233c075e8f3cedf9189003eb9fcc37d44`
+
+Acceptance evidence:
+- CI #2075: PASS.
+- Migration Replay #1678: PASS.
+- Account Security #1850: PASS.
+- Quality Gate #1876: PASS.
+- Level B SQL/authority contracts: PASS.
+- Browser shards 1/4–4/4: PASS.
+- Exact-head product evidence merge: PASS.
+- role-and-RLS closure: PASS.
+
+Implemented:
+- OCR5A Administration Overview — Needs Administration first, followed by truthful People/HR, Time & Leave, Payroll, Finance/reporting and organisation context.
+- OCR5B People — Directory / Organisation / Needs attention plus employee master-detail, photos/documents and protected-HR boundary.
+- OCR5C Time & Leave — daily workforce operation kept distinct from advanced configuration and pay inference.
+- OCR5D Payroll & Finance — separation of preparation, approval and recorded financial evidence preserved.
+- OCR5E Projects / Units / Calendar / Reports — shared record/ledger grammar and accepted route behaviour.
+- OCR5F Lifecycle / Checks / Authority / Policies — shared Queue/Record/Settings archetypes with compact Composer mutations.
+- OCR5G Messages — shared segmented/queue/data-panel grammar without unrestricted direct messages.
+- OCR5H Cross-role sweep — explicit route archetype matrix plus desktop/mobile route coverage.
+
+## OCR6 — Final closure
+
 Status: **ACTIVE**
 
-Current substage: **OCR5A — Administration Overview**
+Current objective:
+- OCR6A responsive acceptance;
+- OCR6B security/authority acceptance and final Executive Room entry-point correction;
+- OCR6C locked workflow acceptance;
+- OCR6D side-by-side acceptance against `docs/operational-clarity/reference/APPROVED_REFERENCE.html`;
+- OCR6E protected merge and post-merge verification.
 
-Next:
-- put Needs Administration first;
-- follow with People & HR, Time & Leave, Payroll readiness, Finance & reporting, Organisation setup/exceptions, then meetings/recent activity;
-- preserve truthful roster/auth separation, Payroll separation of duties, Leave authority and existing V2 performance budgets.
+Scope remains limited to the locked Operational Clarity programme. No unrelated redesign or backend expansion is authorised.
