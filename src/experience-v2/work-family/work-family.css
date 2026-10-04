@@ -801,11 +801,6 @@
 .ev2-work-assignment .main-col,
 .ev2-work-assignment .side-col {
   min-width: 0;
-  padding: var(--ev2-space-5);
-  border: 1px solid var(--ev2-line);
-  border-radius: var(--ev2-radius-feature);
-  background: var(--ev2-surface);
-  box-shadow: var(--ev2-shadow-1);
 }
 
 .ev2-work-assignment .main-col .sec:first-child {
@@ -845,57 +840,6 @@
   color: var(--ev2-text-secondary);
   font-size: var(--ev2-type-supporting);
   line-height: 1.45;
-}
-
-.ev2-work-assignment .assign-intent-grid {
-  gap: var(--ev2-space-2);
-  margin-top: var(--ev2-space-2);
-}
-
-.ev2-work-assignment .assign-intent {
-  min-height: 5.25rem;
-  display: grid;
-  gap: var(--ev2-space-1);
-  padding: var(--ev2-space-3) var(--ev2-space-4);
-  border: 1px solid var(--ev2-line);
-  border-radius: var(--ev2-radius-card);
-  background: var(--ev2-surface);
-  color: var(--ev2-text);
-  box-shadow: none;
-  cursor: pointer;
-}
-
-.ev2-work-assignment .assign-intent:hover {
-  border-color: var(--ev2-line-strong);
-  background: var(--ev2-surface-soft);
-}
-
-.ev2-work-assignment .assign-intent:focus-visible {
-  outline: 3px solid rgba(12, 93, 249, .20);
-  outline-offset: 2px;
-}
-
-.ev2-work-assignment .assign-intent strong {
-  color: var(--ev2-text);
-  font-size: var(--ev2-type-row-mobile);
-  line-height: 1.35;
-  font-weight: 680;
-}
-
-.ev2-work-assignment .assign-intent span {
-  color: var(--ev2-text-secondary);
-  font-size: var(--ev2-type-supporting);
-  line-height: 1.4;
-}
-
-.ev2-work-assignment .assign-intent.on {
-  border-color: color-mix(in srgb, var(--ev2-action) 34%, var(--ev2-line));
-  background: var(--ev2-action-soft);
-  box-shadow: inset 3px 0 var(--ev2-action);
-}
-
-.ev2-work-assignment .assign-intent.on strong {
-  color: var(--ev2-action);
 }
 
 .ev2-work-assignment .assign-system-type {
@@ -958,16 +902,6 @@
 }
 
 @media (min-width: 900px) {
-  .ev2-work-assignment > .split {
-    grid-template-columns: minmax(0, 1.25fr) minmax(19rem, .75fr);
-  }
-
-  .ev2-work-assignment .side-col {
-    position: sticky;
-    top: 5.5rem;
-  }
-
-  .ev2-work-assignment .assign-intent strong,
   .ev2-work-assignment .assign-voice strong {
     font-size: var(--ev2-type-row-desktop);
   }
