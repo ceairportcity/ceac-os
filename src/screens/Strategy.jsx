@@ -339,10 +339,7 @@ export default function Strategy({ me }) {
           <option value="closed">Closed</option>
         </select>
       </FieldGroup>
-      <details className="ocr-composer-disclosure">
-        <summary>Reason / context <span>required for audit history</span></summary>
-        <FieldGroup label="Why is this being created or changed?"><textarea className="field" aria-label="Strategy change reason" rows="3" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} /></FieldGroup>
-      </details>
+      <FieldGroup label="Reason / context" hint="Required so the revision history remains attributable and understandable."><textarea className="field" aria-label="Strategy change reason" rows="3" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} /></FieldGroup>
     </ComposerDrawer>}
 
     {linkForm && <Sheet onClose={() => { if (!busy) setLinkForm(null); }}>
