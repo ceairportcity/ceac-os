@@ -285,7 +285,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     <PersonalDestinationGrid>
       <PersonalDestinationCard title="Work history" description="Completed work, feedback and recorded activity by month." ariaLabel="My work history" onClick={() => openRecord?.()} />
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Development" description="Your review evidence, reflection, feedback and development plan." ariaLabel="Reviews & development" onClick={() => openPerformance?.()} /> : null}
-      {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Time & leave" description="Request leave, see your requests and open the wider Time & Leave workspace." ariaLabel="My time and leave" onClick={() => setArea("leave")} /> : null}
+      {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Time & leave" description="Request leave, see your requests and open the wider Time & Leave workspace." ariaLabel="My workforce context" onClick={() => setArea("leave")} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Learning" description="Assigned learning, resources and factual completion history." ariaLabel="Learning" onClick={() => openLearning?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Equipment" description="CEAC equipment currently in your custody and your recorded custody history." ariaLabel="My assets" onClick={() => openAssets?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Policies & requirements" description="Policies that apply to you, acknowledgements, evidence and exceptions." ariaLabel="My compliance" onClick={() => openCompliance?.()} /> : null}
