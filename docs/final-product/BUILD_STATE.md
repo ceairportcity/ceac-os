@@ -527,3 +527,17 @@ Home/shell correction intent:
 - make phone Home follow the compact Today → Next Up → Needs attention hierarchy rather than stacking desktop detail.
 
 No architecture change is authorized merely for styling.
+
+
+## Post-FPG literal-parity exact-head evidence capture
+
+Status: EVIDENCE CAPTURE REQUESTED / FINAL SIDE-BY-SIDE ACCEPTANCE PENDING
+
+Canonical PR: #99 on `chatgpt/final-literal-parity-2026-10-03`.
+
+Purpose of this checkpoint:
+- force the complete exact-head Level B browser/security/evidence path after the final Leave discoverability and BrandBook CSS-scoping corrections;
+- obtain fresh rendered evidence for literal side-by-side inspection against HOME-A, PROJECT-A/B/C, FINANCE-A and PEOPLE-A;
+- do not treat this checkpoint as visual acceptance by itself.
+
+Final corridor acceptance remains pending until the rendered evidence is directly compared with the designated references and all four required acceptance statements are supported.
