@@ -109,10 +109,10 @@ test.describe("Premium redesign R7 closure", () => {
     await context.close();
   });
 
-  test("Command K opens the navigation palette", async ({ browser }) => {
+  test("Command K opens Search CEAC", async ({ browser }) => {
     const { context, page } = await openRole(browser, "staff@ceac.local.test", ".staff-app", ".staffv2");
     await page.keyboard.press("Meta+K");
-    await expect(page.getByRole("dialog", { name: "Find a destination" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Search CEAC results" })).toBeVisible();
     await context.close();
   });
 

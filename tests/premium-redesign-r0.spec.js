@@ -26,7 +26,7 @@ test.describe("Premium redesign R0 shell", () => {
     for (const label of ["Today","Work","Team","Calendar","Messages","My Hub"]) {
       await expect(page.locator(".ev2s-sidebar").getByRole("button", { name:label, exact:true })).toBeVisible();
     }
-    await expect(page.locator(".ev2s-destination-search").getByPlaceholder("Find a destination…")).toBeVisible();
+    await expect(page.locator(".ev2s-destination-search").getByPlaceholder("Search CEAC…")).toBeVisible();
     await expect(page.getByRole("button", { name:"Create", exact:true })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
