@@ -1054,6 +1054,16 @@ button.ev2c-record-row {
   border-radius: var(--ev2-radius-panel) var(--ev2-radius-panel) 0 0;
 }
 
+.ev2c-composer-drawer {
+  width: min(32.5rem, 100%);
+}
+
+.ev2c-composer-footer {
+  position: sticky;
+  bottom: 0;
+}
+
+
 .ev2c-overlay-head {
   display: flex;
   align-items: flex-start;
@@ -1287,6 +1297,15 @@ button.ev2c-record-row {
 }
 
 @media (max-width: 599px) {
+  .ev2c-composer-drawer {
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
   .ev2c-overlay {
     align-items: flex-end;
     padding:
