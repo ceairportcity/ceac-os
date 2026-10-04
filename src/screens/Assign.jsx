@@ -5,7 +5,7 @@ import VoiceInput from "../components/VoiceInput";
 import { parseWorkInput } from "../lib/parseTask";
 import { humanError } from "../lib/productLanguage";
 import { FieldGroup } from "../components/bits";
-import { WorkBackButton, WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
+import { ComposerDrawer } from "../experience-v2/components";
 
 const WORK_KINDS = [
   ["task", "Task", "A specific action for someone to complete.", true],
@@ -231,6 +231,30 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     if (result.error) {
       setTraceWarning("The work was created, but CEAC could not attach the trace-back message in the Room.");
     }
+  }
+
+  function primaryActionLabel() {
+    if (kind === "deliverable") return "Give deliverable";
+    if (kind === "meeting_outcome") return "Record meeting outcome";
+    if (kind === "decision") return "Ask for decision";
+    if (kind === "request") return "Send request";
+    if (kind === "case") return "Open case";
+    if (kind === "routine") return "Create routine";
+    return "Give it out";
+  }
+
+  function primaryActionDisabled() {
+    if (busy) return true;
+    if (kind === "deliverable") return !title.trim() || !expectedOutcome.trim() || !assignee;
+    if (kind === "meeting_outcome") return !title.trim() || !meetingTitle.trim() || !meetingOn || !assignee;
+    if (kind === "decision") return !title.trim() || !decisionQuestion.trim() || !assignee;
+    if (kind === "request") return !title.trim() || (!requestResponsibleUnit && !assignee);
+    if (kind === "case") return !title.trim() || !assignee || !caseOpenedOn || Boolean(caseTargetOn && caseTargetOn < caseOpenedOn);
+    if (kind === "routine") return !title.trim() || !assignee
+      || (routineSchedule === "weekdays" && routineWeekdays.length === 0)
+      || (routineSchedule === "monthly" && !(Number(routineDayOfMonth) >= 1 && Number(routineDayOfMonth) <= 31))
+      || (routineRecordsValue && !routineValueLabel.trim());
+    return !title.trim() || !purpose.trim() || !assignee || !due;
   }
 
   async function create() {
@@ -465,27 +489,35 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
 
   if (done) {
     return (
-      <div className="body assign-screen assign-done ev2-work-assignment">
-        <WorkBackButton onClick={back} />
-        <div className="empty">
-          <h3>{done} is with them</h3>
-          <p>They will see what needs doing, why it matters and when it is due.</p>
-          {traceWarning && <div className="flag flag-amber" style={{ marginBottom: 12 }}>{traceWarning}</div>}
-          <button className="btn" onClick={() => setDone(null)}>Give out something else</button>
-          <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={back}>Back to home</button>
+      <ComposerDrawer
+        open
+        onClose={back}
+        title="Work sent"
+        description="The work record is saved and available to the authorised people involved."
+      >
+        <div className="assign-screen assign-done ev2-work-assignment ocr-work-composer">
+          <div className="empty">
+            <h3>{done} is with them</h3>
+            <p>They will see what needs doing, why it matters and when it is due.</p>
+            {traceWarning && <div className="flag flag-amber" style={{ marginBottom: 12 }}>{traceWarning}</div>}
+            <button className="btn" onClick={() => setDone(null)}>Give out something else</button>
+            <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={back}>Close</button>
+          </div>
         </div>
-      </div>);
+      </ComposerDrawer>
+    );
   }
 
   return (
-    <div className="body assign-screen ev2-work-assignment">
+    <ComposerDrawer
+      open
+      onClose={back}
+      title="Give out work"
+      description="Capture what matters, who owns it and when it is due. Add deeper context only when the work needs it."
+      footer={<button className="btn assign-primary-action" onClick={create} disabled={primaryActionDisabled()}>{busy ? "Saving…" : primaryActionLabel()}</button>}
+    >
+    <div className="assign-screen ev2-work-assignment ocr-work-composer">
       <section className="assign-intro ev2wa-intro">
-        <WorkBackButton onClick={back} />
-        <WorkPageHeader
-          eyebrow="Create work"
-          title="Give out work"
-          description="Choose the work intent, capture the minimum accountable contract, then add only the context that matters."
-        />
         <div className="assign-voice">
           <div><strong>Speak or type</strong><span>Voice can prefill the form. You remain in control.</span></div>
           <VoiceInput onResult={handleVoice} label="Speak your instruction" />
@@ -652,9 +684,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Due</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !expectedOutcome.trim() || !assignee}>
-            {busy ? "Saving..." : "Give deliverable"}</button>
+          
         </div>}
         {kind === "meeting_outcome" && <div className="side-col">
           <div className="sec"><span>Who owns the commitment</span></div>
@@ -676,9 +706,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Due</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !meetingTitle.trim() || !meetingOn || !assignee}>
-            {busy ? "Saving..." : "Record meeting outcome"}</button>
+          
         </div>}
         {kind === "decision" && <div className="side-col">
           <div className="sec"><span>Who decides</span></div>
@@ -700,9 +728,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Decision due</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !decisionQuestion.trim() || !assignee}>
-            {busy ? "Saving..." : "Ask for decision"}</button>
+          
         </div>}
         {kind === "request" && <div className="side-col">
           <div className="sec"><span>Who should respond</span></div>
@@ -726,9 +752,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Needed by</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || (!requestResponsibleUnit && !assignee)}>
-            {busy ? "Sending..." : "Send request"}</button>
+          
         </div>}
         {kind === "case" && <div className="side-col">
           <div className="sec"><span>Case owner</span></div>
@@ -752,9 +776,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Project phase (optional)</option>
             {phases.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>}
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !assignee || !caseOpenedOn || (caseTargetOn && caseTargetOn < caseOpenedOn)}>
-            {busy ? "Saving..." : "Open case"}</button>
+          
         </div>}
         {kind === "routine" && <div className="side-col">
           <div className="sec"><span>Who owns it</span></div>
@@ -778,12 +800,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Project phase (optional)</option>
             {phases.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>}
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !assignee
-              || (routineSchedule === "weekdays" && routineWeekdays.length === 0)
-              || (routineSchedule === "monthly" && !(Number(routineDayOfMonth) >= 1 && Number(routineDayOfMonth) <= 31))
-              || (routineRecordsValue && !routineValueLabel.trim())}>
-            {busy ? "Saving..." : "Create routine"}</button>
+          
           <div className="hint">Routine history is recorded occurrence by occurrence. Changing its schedule later does not rewrite earlier records.</div>
         </div>}
         {kind === "task" && <div className="side-col">
@@ -815,10 +832,10 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
               <h4>{warning.title}</h4>{warning.detail}
             </div>)}
           </div>}
-          <button className="btn assign-primary-action" style={{ marginTop: 20 }} onClick={create} disabled={busy || !title.trim() || !purpose.trim() || !assignee || !due}>
-            {busy ? "Sending..." : "Give it out"}</button>
+          
           <div className="hint">Required: what needs doing, why it matters, who owns it and when it is due. Method and checklist are optional.</div>
         </div>}
       </div>
-    </div>);
+    </div>
+    </ComposerDrawer>);
 }
