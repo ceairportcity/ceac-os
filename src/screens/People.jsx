@@ -5,6 +5,14 @@ import { dateOnly, dueLabel } from "../lib/time";
 import { statusPill, ProductNotice, LoadingState, FieldGroup, EmptyState, Avatar, ProgressMeter, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import {
+  OPERATIONAL_FILE_ACCEPT,
+  listOperationalFiles,
+  listOperationalFilesForContexts,
+  openOperationalFile,
+  signedOperationalFileUrl,
+  uploadOperationalFile,
+} from "../lib/operationalFiles";
+import {
   PeopleAdminPersonRow,
   PeopleBackButton,
   PeopleEmpty,
@@ -74,6 +82,8 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
   const [protectedHrLoading, setProtectedHrLoading] = useState(false);
   const [protectedEditor, setProtectedEditor] = useState(null);
   const [savingProtected, setSavingProtected] = useState(false);
+  const [employeeFiles, setEmployeeFiles] = useState({ photos: [], documents: [] });
+  const [employeeFileBusy, setEmployeeFileBusy] = useState(false);
   const [drill, setDrill] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -163,7 +173,23 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         phone: operational?.phone || null,
       };
     });
-    setRows(rosterRows);
+    let hydratedRows = rosterRows;
+    try {
+      const photoGroups = await listOperationalFilesForContexts("employee_photo", rosterRows.map((entry) => entry.id));
+      hydratedRows = await Promise.all(rosterRows.map(async (entry) => {
+        const files = photoGroups.get(entry.id) || [];
+        const latest = files[files.length - 1] || null;
+        if (!latest) return entry;
+        try {
+          return { ...entry, photo_url: await signedOperationalFileUrl(latest, 3600) };
+        } catch {
+          return entry;
+        }
+      }));
+    } catch {
+      hydratedRows = rosterRows;
+    }
+    setRows(hydratedRows);
     setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
     setUnits(unitsResult.data || []);
     setLoading(false);
@@ -194,12 +220,25 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
       : Promise.resolve([{ data: { work: [], sessions: [], leave: [] }, error: null }, { data: { current: null, history: [] }, error: null }]);
 
     setProtectedHrLoading(canManageProtectedHr);
-    const [linkedResults, protectedResponse] = await Promise.all([
-      linkedRequests,
-      canManageProtectedHr
-        ? supabase.rpc("hr_employee_protected_summary", { p_employee_id: summary.id })
-        : Promise.resolve({ data: null, error: null }),
-    ]);
+    let linkedResults;
+    let protectedResponse;
+    let photoFiles = [];
+    let documentFiles = [];
+    try {
+      [linkedResults, protectedResponse, photoFiles, documentFiles] = await Promise.all([
+        linkedRequests,
+        canManageProtectedHr
+          ? supabase.rpc("hr_employee_protected_summary", { p_employee_id: summary.id })
+          : Promise.resolve({ data: null, error: null }),
+        listOperationalFiles("employee_photo", summary.id),
+        listOperationalFiles("employee_document", summary.id),
+      ]);
+    } catch (fileError) {
+      setProtectedHrLoading(false);
+      setDetailLoading(false);
+      setError(humanError(fileError, "That employee's private files could not load."));
+      return;
+    }
 
     [detailResult, employmentResult] = linkedResults;
     protectedResult = protectedResponse;
@@ -212,6 +251,17 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     }
 
     setProtectedHr(protectedResult.data || null);
+    setEmployeeFiles({ photos: photoFiles, documents: documentFiles });
+
+    let photoUrl = summary.photo_url || null;
+    const latestPhoto = photoFiles[0] || null;
+    if (latestPhoto) {
+      try {
+        photoUrl = await signedOperationalFileUrl(latestPhoto, 3600);
+      } catch {
+        photoUrl = summary.photo_url || null;
+      }
+    }
 
     const data = detailResult.data;
     const work = Array.isArray(data?.work) ? data.work.map((item) => ({
@@ -236,6 +286,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
       roster_units: rosterUnits,
       email: rosterEmployee.account_email || summary.email || null,
       phone: rosterEmployee.account_phone || summary.phone || null,
+      photo_url: photoUrl,
       operational_data_available: Boolean(rosterDetail.operational_data_available),
       items: work,
       done,
@@ -252,6 +303,39 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         carryover_from_last_year: summary.carryover_from_last_year || 0,
       },
     });
+  }
+
+  async function refreshEmployeeFiles(employeeId) {
+    const [photos, documents] = await Promise.all([
+      listOperationalFiles("employee_photo", employeeId),
+      listOperationalFiles("employee_document", employeeId),
+    ]);
+    const latest = photos[0] || null;
+    const photoUrl = latest ? await signedOperationalFileUrl(latest, 3600) : null;
+    setEmployeeFiles({ photos, documents });
+    setRows((current) => current.map((entry) => entry.id === employeeId ? { ...entry, photo_url: photoUrl } : entry));
+    setPerson((current) => current?.id === employeeId ? { ...current, photo_url: photoUrl } : current);
+  }
+
+  async function uploadEmployeeFile(file, kind) {
+    if (!person?.id || !file) return;
+    setEmployeeFileBusy(true);
+    setError(null);
+    try {
+      await uploadOperationalFile({
+        file,
+        contextType: kind === "photo" ? "employee_photo" : "employee_document",
+        contextId: person.id,
+        relation: kind === "photo" ? "employee_photo" : "employee_document",
+      });
+      await refreshEmployeeFiles(person.id);
+    } catch (fileError) {
+      setError(humanError(fileError, kind === "photo"
+        ? "The employee photo could not be saved."
+        : "The employee document could not be saved."));
+    } finally {
+      setEmployeeFileBusy(false);
+    }
   }
 
   async function saveProtectedRecord(form) {
@@ -409,6 +493,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         <aside className="ev2p-admin-person-rail" aria-label="Employee context">
       <PeoplePersonHeader
         name={person.full_name}
+        src={person.photo_url}
         eyebrow={`${employmentCurrent?.unit_name || person.unit_name || "No unit"} · ${positionLabel}`}
         subtitle={employmentCurrent?.job_title || person.job_title || "No job title recorded"}
         context={[
@@ -418,6 +503,22 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
           `Employment ${employmentState}`,
         ].filter(Boolean).join(" · ")}
       />
+
+      <FieldGroup label="Employee photo">
+        <input
+          className="field"
+          aria-label="Employee photo"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          disabled={employeeFileBusy}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) uploadEmployeeFile(file, "photo");
+          }}
+        />
+      </FieldGroup>
+      <p className="screen-note">Stored privately in CEAC. Initials remain the fallback when no photo is recorded.</p>
 
       {error && <ProductNotice tone="error" title="Employee record">{error}</ProductNotice>}
       {person.on_leave_now && <ProductNotice tone="attention" title="On approved leave">This employee is currently away on approved leave.</ProductNotice>}
@@ -462,6 +563,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
             .map((entry) => <PeoplePersonRow
               key={entry.id}
               name={entry.full_name}
+              src={entry.photo_url}
               subtitle={entry.job_title || entry.source_position || "No job title recorded"}
               context={entry.unit_name || entry.source_department_text || "No unit recorded"}
               status={entry.id === person.id ? "Selected" : undefined}
@@ -623,7 +725,41 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         title="Documents"
         description="Ordinary employee files use CEAC's private operational file domain. Protected HR documents remain behind the protected-HR boundary."
       >
-        <PeopleEmpty title="No ordinary employee documents recorded" description="CEAC will not expose protected HR documents here or invent missing employee files." />
+        <FieldGroup label="Add employee document">
+          <input
+            className="field"
+            aria-label="Add employee document"
+            type="file"
+            accept={OPERATIONAL_FILE_ACCEPT}
+            disabled={employeeFileBusy}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) uploadEmployeeFile(file, "document");
+            }}
+          />
+        </FieldGroup>
+        {employeeFiles.documents.length ? <div className="ev2p-link-list">
+          {employeeFiles.documents.map((file) => <button
+            type="button"
+            className="ev2p-link-row"
+            key={file.id}
+            onClick={async () => {
+              try {
+                await openOperationalFile(file);
+              } catch (fileError) {
+                setError(humanError(fileError, "That employee document could not be opened."));
+              }
+            }}
+          >
+            <span className="ev2p-link-row-main">
+              <strong>{file.filename}</strong>
+              <span>{file.mime_type || "Private file"} · added {dateOnly(file.linked_at || file.created_at)}</span>
+            </span>
+            <span className="ev2p-link-row-tail">Open</span>
+          </button>)}
+        </div> : <PeopleEmpty title="No ordinary employee documents recorded" description="CEAC will not expose protected HR documents here or invent missing employee files." />}
+        <p className="screen-note">Protected HR contracts, identifiers, payment details and protected documents do not appear in this ordinary Documents tab.</p>
       </PeopleWorkspaceSection>}
 
       {personTab === "protected" && <>
@@ -875,7 +1011,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
       <div className="fpg-people-roster-list">
         {roster.map((p) => <button type="button" className="fpg-people-roster-row" key={p.id} onClick={() => openPerson(p)}>
           <span className="fpg-people-roster-person">
-            <Avatar name={p.full_name} size="md" />
+            <Avatar name={p.full_name} src={p.photo_url} size="md" />
             <span><strong>{p.full_name}</strong><small>{rankLabel(p)}{p.job_title ? ` · ${p.job_title}` : ""}</small></span>
           </span>
           <span className="fpg-people-roster-unit">{p.unit_name || "No unit assigned"}</span>
@@ -907,6 +1043,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         {group.people.map((entry) => <PeopleAdminPersonRow
           key={entry.id}
           name={entry.full_name}
+          src={entry.photo_url}
           subtitle={entry.job_title || entry.source_position || rankLabel(entry)}
           context={entry.identity_state === "roster_only" ? "Roster employee · no account required" : rankLabel(entry)}
           status={entry.identity_state === "needs_review" ? "Identity review" : entry.active ? "Active" : "Inactive"}
@@ -927,6 +1064,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         {attentionRoster.map((entry) => <PeopleAdminPersonRow
           key={entry.id}
           name={entry.full_name}
+          src={entry.photo_url}
           subtitle={entry.job_title || entry.source_position || "Job title not recorded"}
           context={entry.unit_name || entry.source_department_text || "No unit recorded"}
           status="Needs attention"

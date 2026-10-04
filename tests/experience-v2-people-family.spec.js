@@ -471,6 +471,12 @@ test("Stage 10 Family B5B Administration employee workspace preserves employment
   expect(screen).toContain("These records are not a productivity score, ranking, pay input or disciplinary conclusion.");
   expect(screen).toContain('rpc("hr_employee_protected_summary"');
   expect(screen).toContain('rpc("hr_employee_protected_record"');
+  expect(screen).toContain('listOperationalFilesForContexts("employee_photo"');
+  expect(screen).toContain('listOperationalFiles("employee_document"');
+  expect(screen).toContain('contextType: kind === "photo" ? "employee_photo" : "employee_document"');
+  expect(screen).toContain('aria-label="Employee photo"');
+  expect(screen).toContain('aria-label="Add employee document"');
+  expect(shared).toContain('src={src}');
   expect(screen).toContain("Missing data remains explicitly missing until Administration records an authoritative value.");
   expect(screen).toContain('employmentForm.changeType === "correction"');
   expect(screen).toContain('employmentForm.status === "exited"');
@@ -494,6 +500,7 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "Staff Fixture", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Identity & employment state", exact: true })).toBeVisible();
+    await expect(page.getByLabel("Employee photo", { exact: true })).toBeVisible();
     for (const tab of ["Overview","Employment","Work","Time & Leave","Documents","History","Protected HR"]) {
       await expect(page.getByRole("tab", { name: tab, exact: true })).toBeVisible();
     }
@@ -517,6 +524,7 @@ for (const viewport of [
 
     await page.getByRole("tab", { name: "Documents", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Documents", exact: true })).toBeVisible();
+    await expect(page.getByLabel("Add employee document", { exact: true })).toBeVisible();
 
     await page.getByRole("tab", { name: "Protected HR", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Protected HR", exact: true })).toBeVisible();

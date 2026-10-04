@@ -12,13 +12,14 @@ export function PeopleBackButton({ onClick, label = "Team", ariaLabel }) {
 
 export function PeoplePersonHeader({
   name,
+  src,
   eyebrow,
   subtitle,
   context,
 }) {
   return (
     <header className="ev2p-person-header">
-      <Avatar name={name} size="lg" />
+      <Avatar name={name} src={src} size="lg" />
       <div className="ev2p-person-header-copy">
         {eyebrow ? <span className="ev2p-eyebrow">{eyebrow}</span> : null}
         <h1>{name || "—"}</h1>
@@ -151,6 +152,7 @@ export function PeopleSection({
 
 export function PeoplePersonRow({
   name,
+  src,
   subtitle,
   context,
   status,
@@ -161,7 +163,7 @@ export function PeoplePersonRow({
   const Tag = onClick ? "button" : "div";
   return (
     <Tag type={onClick ? "button" : undefined} className={`ev2p-person-row ${onClick ? "is-action" : ""}`} onClick={onClick}>
-      <Avatar name={name} size="md" />
+      <Avatar name={name} src={src} size="md" />
       <span className="ev2p-person-copy">
         <strong>{name || "—"}</strong>
         {subtitle ? <span>{subtitle}</span> : null}
@@ -180,6 +182,7 @@ export function PeoplePersonRow({
 
 export function PeopleAdminPersonRow({
   name,
+  src,
   subtitle,
   context,
   status,
@@ -190,7 +193,7 @@ export function PeopleAdminPersonRow({
 }) {
   return (
     <button type="button" className="ev2p-admin-person-row" onClick={onClick}>
-      <Avatar name={name} size="md" />
+      <Avatar name={name} src={src} size="md" />
       <span className="ev2p-person-copy">
         <strong>{name || "—"}</strong>
         {subtitle ? <span>{subtitle}</span> : null}
