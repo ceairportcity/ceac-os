@@ -1969,12 +1969,18 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await page.getByRole("button", { name: /Staff Fixture/ }).click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
   const peopleMain = page.getByRole("main");
-  await expect(peopleMain.getByText("Protected HR", { exact: true })).toBeVisible();
+  await expect(peopleMain.getByRole("tab", { name: "Overview", exact: true })).toBeVisible();
+
+  await page.getByRole("tab", { name: "Time & Leave", exact: true }).click();
+  await expect(page.getByText(/entitlement not configured/i)).toBeVisible();
+
+  await page.getByRole("tab", { name: "Protected HR", exact: true }).click();
+  await expect(peopleMain.getByRole("heading", { name: "Protected HR", exact: true })).toBeVisible();
   await expect(peopleMain.getByRole("button", { name: "Record salary", exact: true })).toBeVisible();
   await expect(peopleMain.getByRole("button", { name: "Record payment details", exact: true })).toBeVisible();
-  await expect(page.getByText(/entitlement not configured/i)).toBeVisible();
-  await expect(page.getByText("Employment record", { exact: true })).toBeVisible();
-  await expect(page.getByText("Employment history", { exact: true })).toBeVisible();
+
+  await page.getByRole("tab", { name: "Employment", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Employment record", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Record change", exact: true }).click();
   const employmentDialog = page.getByRole("dialog");
@@ -1983,12 +1989,14 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await employmentDialog.getByLabel("Working pattern", { exact: true }).selectOption("flexible");
   await employmentDialog.getByLabel("Reason / context").fill("Acceptance employment history change");
   await employmentDialog.getByRole("button", { name: "Record employment change", exact: true }).click();
+  await page.getByRole("tab", { name: "History", exact: true }).click();
   await expect(page.getByText("Working pattern changed", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "← All people", exact: true }).click();
   await page.getByLabel("Find a person").fill("Staff Fixture");
   await page.getByRole("button", { name: /Staff Fixture/ }).click();
+  await page.getByRole("tab", { name: "History", exact: true }).click();
   await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
 
   await go(page, "Employee lifecycle");
