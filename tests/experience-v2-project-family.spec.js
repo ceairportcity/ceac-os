@@ -300,9 +300,16 @@ for (const viewport of [
     await expect(page.getByText(/does not generate a hidden project score/i)).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
-    const rows = page.locator(".ev2p-row:visible");
-    expect(await rows.count()).toBeGreaterThan(0);
+    const leadershipRows = page.locator(".ev2p-context-list:visible > .ev2p-context-row");
+    expect(await leadershipRows.count()).toBeGreaterThan(0);
 
+    const operations = page.getByRole("button", { name: "Open operational details", exact: true });
+    await expect(operations).toBeVisible();
+    const operationsBox = await operations.boundingBox();
+    expect(operationsBox?.height || 0).toBeGreaterThanOrEqual(44);
+    await expect(page.getByRole("button", { name: "New Programme / Portfolio", exact: true })).toHaveCount(0);
+
+    await operations.click();
     const createGroup = page.getByRole("button", { name: "New Programme / Portfolio", exact: true });
     await expect(createGroup).toBeVisible();
     const createBox = await createGroup.boundingBox();
@@ -395,6 +402,8 @@ test("VF6A cross-role Project surfaces share one factual workspace grammar", asy
 
     {
       const { context, page } = await openExecutivePortfolio(browser, { width: viewport.width, height: viewport.height });
+      await expect(page.locator(".ev2-project-delivery .ev2p-context-list")).toBeVisible();
+      await page.getByRole("button", { name: "Open operational details", exact: true }).click();
       const list = page.locator(".ev2-project-delivery .ev2p-list");
       await expect(list).toBeVisible();
       const rows = list.locator(":scope > .ev2p-row");
