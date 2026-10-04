@@ -105,6 +105,7 @@ export default function App() {
   const [roomContext, setRoomContext] = useState(initialRoute.roomContext);
   const [meetingId, setMeetingId] = useState(initialRoute.meetingId);
   const [meetingDraft, setMeetingDraft] = useState(null);
+  const [createIntent, setCreateIntent] = useState(null);
   const [session, setSession] = useState(null);
 
   useEffect(() => {
@@ -144,6 +145,7 @@ export default function App() {
     setAssigning(null);
     setPerson(null);
     setMeetingDraft(null);
+    setCreateIntent(null);
   }
 
   function navigate(route, { replace = false } = {}) {
@@ -256,6 +258,11 @@ export default function App() {
     setMeetingDraft(context);
   }
 
+  function startSurfaceCreate(tabKey, intent) {
+    navigate({ tab: tabKey });
+    setCreateIntent(intent);
+  }
+
   function pageForTab() {
     if (tab === "account") return <AccountActivity me={me} />;
     if (tab === "primitives" && isAdmin) return <DesignPrimitives me={me} />;
@@ -284,8 +291,17 @@ export default function App() {
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
     if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} />;
     if (tab === "record") return <Record me={me} openItem={openItem} />;
-    if (tab === "announcements") return <Announcements me={me} back={() => go("home")} />;
-    if (tab === "strategy") return <Strategy me={me} />;
+    if (tab === "announcements") return <Announcements
+      me={me}
+      back={() => go("home")}
+      createRequest={createIntent === "announcement"}
+      onCreateHandled={() => setCreateIntent(null)}
+    />;
+    if (tab === "strategy") return <Strategy
+      me={me}
+      createRequest={createIntent === "ministry_objective" ? "ministry_objective" : null}
+      onCreateHandled={() => setCreateIntent(null)}
+    />;
     if (tab === "delivery" && canUseDelivery) return <Delivery me={me} />;
     if (tab === "workload" && canUseWorkload) return <ResourceWorkload me={me} />;
     if (tab === "performance" && canUsePerformance) return <Performance me={me} />;
@@ -347,6 +363,8 @@ export default function App() {
         onMessages={() => go("messages")}
         onComposeMessage={() => me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
         onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
+        onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
+        onCreateAnnouncement={isExec ? () => startSurfaceCreate("announcements", "announcement") : undefined}
         onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
       />
       <div className="ev2s-workspace">
@@ -371,6 +389,8 @@ export default function App() {
           onMessages={() => go("messages")}
           onComposeMessage={() => me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
+          onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
+          onCreateAnnouncement={isExec ? () => startSurfaceCreate("announcements", "announcement") : undefined}
           onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
         />
         <main className="app-content ev2s-content">
