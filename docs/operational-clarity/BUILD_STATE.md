@@ -1,6 +1,6 @@
 # CEAC OS — Operational Clarity Build State
 
-Status: **OCR1 ACCEPTED / OCR2 ACTIVE**
+Status: **OCR4 ACCEPTED / OCR5 ACTIVE**
 
 Canonical implementation branch:
 `chatgpt/operational-clarity-implementation-2026-10-04`
@@ -146,6 +146,35 @@ Acceptance matrix:
 
 ## OCR4 — Global Search
 
+Status: **ACCEPTED**
+
+Accepted exact head: `ff9b8e5f28bfd55d271e0ddcc9a503ac5eba4102`.
+
+- CI: PASS.
+- Migration Replay: PASS.
+- Account Security: PASS.
+- Level B SQL/authority: PASS.
+- Browser shards 1/4–4/4: PASS.
+- Exact-head product evidence merge: PASS.
+- role-and-RLS closure: PASS.
+- Search CEAC is permission-aware across actions/destinations, work, projects, ministry, people, organisation, meetings, announcements, rooms and operational files.
+- Search remains inside locked bundle budgets through the split Search CEAC module; no performance budget was raised.
+
+Acceptance matrix:
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY / AUTHORITY PRESERVED OR EXPLICITLY AMENDED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+- PLAIN-LANGUAGE / CLARITY ACCEPTANCE: YES
+- ACCESSIBILITY BASICS: YES
+
+## OCR5 — Cross-role workspace harmonisation
+
 Status: **ACTIVE**
 
-Next: replace destination-only search with permission-aware grouped CEAC search across destinations/actions, work, projects, ministry, people, organisation, meetings, announcements, rooms and operational files.
+Current substage: **OCR5A — Administration Overview**
+
+Next:
+- put Needs Administration first;
+- follow with People & HR, Time & Leave, Payroll readiness, Finance & reporting, Organisation setup/exceptions, then meetings/recent activity;
+- preserve truthful roster/auth separation, Payroll separation of duties, Leave authority and existing V2 performance budgets.

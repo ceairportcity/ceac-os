@@ -35,6 +35,8 @@ test("Stage 7 Administration Overview is isolated V2 presentation on preserved A
   expect(home).toContain('inviteByEmail');
   expect(home).toContain('supabase.rpc("workforce_leave_action"');
   expect(home).toContain('required_capability');
+  expect(home).toContain('rpc("admin_employee_roster_summary")');
+  expect(home).toContain('rpc("payroll_readiness_summary")');
   expect(home).not.toContain("ReferenceFocusPanel");
   expect(home).not.toContain("DashboardCalendar");
   expect(home).not.toContain("ReferenceModuleStrip");
@@ -43,7 +45,12 @@ test("Stage 7 Administration Overview is isolated V2 presentation on preserved A
   expect(view).toContain('from "../components"');
   expect(view).toContain('from "../icons"');
   expect(view).toContain("Needs Administration");
-  expect(view).toContain("They do not measure output or performance.");
+  expect(view).toContain('title="Employee records"');
+  expect(view).toContain('title="Today and leave context"');
+  expect(view).toContain('title="Payroll readiness"');
+  expect(view).toContain('title="Finance & reporting"');
+  expect(view).toContain('title="Organisation configuration"');
+  expect(view).toContain("No work session is not an absence");
   expect(view).toContain("signals for review, not conclusions about performance");
   expect(view).not.toContain("ReferenceDashboard");
   expect(view).not.toContain("components/primitives");
@@ -72,10 +79,11 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
     await expect(page.locator(".adminv2-inbox")).toBeVisible();
-    await expect(page.locator(".adminv2-setup")).toBeVisible();
+    await expect(page.locator(".adminv2-people")).toBeVisible();
     await expect(page.locator(".adminv2-reporting")).toBeVisible();
     await expect(page.locator(".adminv2-pulse")).toBeVisible();
     await expect(page.locator(".adminv2-workforce")).toBeVisible();
+    await expect(page.locator(".adminv2-payroll")).toBeVisible();
     await expect(page.locator(".adminv2-delivery")).toBeVisible();
     await expect(page.locator(".admin-command-surface")).toHaveCount(0);
     await expect(page.locator(".reference-calendar-card")).toHaveCount(0);
@@ -97,9 +105,9 @@ for (const viewport of [
 
       const inboxBox = await page.locator(".adminv2-inbox").boundingBox();
       const shortcutsBox = await page.locator(".adminv2-mobile-actions").boundingBox();
-      const setupBox = await page.locator(".adminv2-setup").boundingBox();
+      const peopleBox = await page.locator(".adminv2-people").boundingBox();
       expect(inboxBox?.y || 0).toBeLessThan(shortcutsBox?.y || 0);
-      expect(shortcutsBox?.y || 0).toBeLessThan(setupBox?.y || 0);
+      expect(shortcutsBox?.y || 0).toBeLessThan(peopleBox?.y || 0);
 
       const contextGrids = page.locator(".adminv2-context-grid, .adminv2-support-grid");
       const mobileLayouts = await contextGrids.evaluateAll((nodes) => nodes.map((node) => ({
