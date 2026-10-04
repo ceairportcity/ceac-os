@@ -169,18 +169,58 @@ No protected record may appear to an unauthorised persona.
 
 ---
 
-## OCR5 — Cross-role friction sweep
+## OCR5 — Cross-role workspace harmonisation
 
-### OCR5A — Manager
-Inspect remaining create/edit forms for the locked long-form failure pattern.
+This stage is page-level refinement, not another system rewrite.
 
-### OCR5B — Administration
-Same targeted inspection.
+### OCR5A — Administration Overview
+Rebuild the information hierarchy around:
+1. Needs Administration
+2. People & HR
+3. Time & Leave
+4. Payroll readiness / approvals
+5. Finance & reporting
+6. Organisation setup / exceptions
+7. Meetings / recent activity
 
-### OCR5C — Executive
-Confirm no old long-form or hidden-primary-action path remains in the locked scope.
+### OCR5B — Administration People + Protected HR
+- keep the 18-person canonical roster;
+- use a clean employee Record workspace;
+- collapse history by default;
+- keep roster-only identity independent of auth;
+- move protected record creation/correction into the shared Composer;
+- preserve private HR storage and capability checks.
 
-Only fix genuine violations. No broad aesthetic rewrite.
+### OCR5C — Workforce + Payroll
+- separate ordinary daily workforce operation from advanced policy setup;
+- preserve Leave authority exactly;
+- harmonise Payroll list/detail and decision sheets without changing preparation/approval authority.
+
+### OCR5D — Administration system surfaces
+Refine Lifecycle, Checks/Workflows, Authority, Policies and Control Center into the shared Queue / Record / Settings archetypes.
+
+Remove long explanatory/arrow chains as the main interaction model.
+
+### OCR5E — Manager + Staff consistency pass
+Use the Manager family as the strongest current interaction reference, then correct genuine remaining inconsistencies in Manager and Staff.
+
+Do not make role content identical.
+
+### OCR5F — Full route-by-route visual sweep
+Inspect every reachable role page at desktop/laptop and mobile.
+
+For each route classify it as:
+- Overview;
+- Queue;
+- Record;
+- Ledger;
+- Composer;
+- Settings.
+
+Correct structural violations only. Do not reopen accepted product functionality.
+
+**Exit evidence:** route matrix + representative screenshots + no unresolved page-level inconsistency in the locked scope.
+
 
 ---
 

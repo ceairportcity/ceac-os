@@ -2,6 +2,7 @@
 
 Status: **LOCKED — NEXT PHASE / DO NOT IMPLEMENT YET**  
 Locked: 2026-10-04  
+Amended: 2026-10-04 — cross-role workspace harmonisation added after Administration/HR audit  
 Current protected-main baseline at lock time: `5254d7a685825c6130f8963598f55a02e32e943a`  
 Current active implementation PR at lock time: **#99 — Final literal parity closure**  
 Current PR #99 head at lock time: `89062b7d2baa7baa16ca1950c3b78ad9f1167bc5`
@@ -412,21 +413,152 @@ Search must never become a route around RLS, protected HR, Payroll or other auth
 
 ---
 
-# 6. Cross-role Form and Action Sweep
+# 6. Cross-role Workspace Harmonisation
 
-After the core composer exists, perform a **targeted** cross-role sweep across Manager, Administration and Executive.
+The same clarity problem is confirmed outside the Executive panel, especially in Administration & HR.
 
-Correct only genuine instances of:
+The shared shell itself is already role-aware and structurally consistent. The larger inconsistency is **inside the page bodies**: some newer Manager/Work/People families use clear grouped surfaces, while several Administration/HR and Executive pages still mix queues, record detail, long forms, settings, history and explanatory text in one long surface.
 
-- excessively long creation forms;
-- hidden primary actions;
-- repeated helper text that overwhelms the task;
-- unnecessary full-width controls;
-- duplicate navigation;
-- system/database language exposed to ordinary users;
-- excessive scrolling on mobile.
+This stage therefore covers **page-level information architecture and interaction consistency across all roles**, without reopening accepted backend functionality.
 
-This is **not** permission to redesign every screen again.
+## 6A. Shared page archetypes
+
+Every major CEAC page should primarily follow one of these archetypes:
+
+1. **Overview** — what needs attention, what changed, where to go next.
+2. **Queue** — a prioritised set of items requiring review/action.
+3. **Record** — one person/project/work item with grouped detail and drill-down.
+4. **Ledger** — dense financial/payroll/reporting records with clear totals and immutable history.
+5. **Composer** — compact create/edit drawer or full-screen mobile sheet.
+6. **Settings** — grouped configuration with collapsible advanced detail.
+
+A page should not casually mix several archetypes into one long scroll.
+
+## 6B. Administration & HR — confirmed refinement scope
+
+### Administration Overview
+
+The current Administration overview contains too many competing panels: operational inbox, setup/access, reporting, organisation pulse, workforce context, cross-unit attention, meetings, personal work and organisation structure.
+
+Refine the default hierarchy around:
+
+1. **Needs Administration**
+2. **People & HR**
+3. **Time & Leave**
+4. **Payroll readiness / approvals**
+5. **Finance & reporting**
+6. **Organisation setup / exceptions**
+7. **Upcoming meetings / recent activity**
+
+Technical explanation and system caveats become secondary support, not the first reading path.
+
+### People
+
+Keep the authoritative 18-person roster and protected HR rules.
+
+The employee workspace should become a clean Record surface with concise top identity/employment facts and grouped sections such as:
+
+- Overview
+- Employment
+- Work / responsibilities
+- Time & Leave
+- Protected HR, only where authorised
+- History
+
+Long history chains should be collapsed/timeline-based by default with explicit expansion.
+
+Roster-only employees must remain visible and must not be visually treated as incomplete auth accounts.
+
+### Workforce / Time & Leave
+
+Keep the operational daily view clear.
+
+Separate:
+- Today / attendance context;
+- Leave decisions;
+- Calendar / schedule;
+- policy configuration.
+
+Advanced policy configuration must not dominate the ordinary workforce screen. Use a dedicated compact settings/composer surface for policy editing.
+
+The confirmed Leave route remains:
+Employee request → Manager approval → Administration final approval.
+
+### Payroll
+
+Keep the existing preparation/approval separation and immutable approved runs.
+
+The current two-pane/list-detail direction is acceptable and should be harmonised rather than rebuilt.
+
+Refine:
+- header hierarchy;
+- readiness warnings;
+- run selection;
+- employee line review;
+- decision sheets;
+- correction history.
+
+Do not convert Payroll into generic cards or expose protected values outside existing authority.
+
+### Protected HR
+
+Replace the current pattern where record history and a long create/correct form compete on the same page.
+
+Use:
+- employee selector;
+- compact protected-record summary;
+- grouped protected record types;
+- history collapsed by default;
+- **Add / correct protected record** through the shared Composer.
+
+The existing private storage bucket and separate protected-HR authority remain unchanged.
+
+### Lifecycle, Checks / Workflows, Authority, Policies and Control Center
+
+These currently retain more legacy `card / row / sec` presentation and form-heavy interaction than the newer role surfaces.
+
+Refine them into consistent list-detail / queue / settings archetypes:
+
+- **Lifecycle:** case queue + selected case detail + compact start-case composer.
+- **Checks / Workflows:** decision queue + selected decision detail; no explanatory wall beside every queue item.
+- **Authority:** people list + selected person's current grants + collapsed history + grant/revoke composer.
+- **Policies:** policy list + selected current rule + collapsed version history + compact revision composer.
+- **Control Center:** grouped settings with collapsible categories; remove long chains of arrows such as “managed elsewhere ↑” as the primary navigation model.
+
+### Administration Work
+
+Administration Work already shares the newer Work-family pattern with Manager Work. Preserve that family and refine only genuine inconsistencies. Do not rebuild it simply because other Administration pages are being corrected.
+
+## 6C. Manager and Staff consistency
+
+The Manager experience is the strongest current reference for page-level clarity, but it is not automatically perfect.
+
+Use the same archetypes and design language across Manager and Staff where appropriate, while preserving role-specific actions and authority.
+
+Do not force every role to display identical content. Consistency means:
+- same interaction grammar;
+- same density rules;
+- same hierarchy patterns;
+- same drawer/composer language;
+- same empty/loading/error treatment;
+- role-appropriate information and actions.
+
+## 6D. Page-level consistency requirements
+
+Across all role panels and tabs:
+
+- primary action must be obvious;
+- first viewport must communicate page purpose;
+- long secondary/history sections collapse by default;
+- dense record data uses list/detail rather than stacked cards where appropriate;
+- advanced configuration does not sit in the ordinary operational path;
+- technical/database language is secondary;
+- repeated disclaimers are reduced to concise contextual help;
+- mobile gets purpose-built hierarchy rather than simple desktop stacking;
+- accepted RLS / authority / data truth is preserved.
+
+This is still a targeted refinement programme. It is **not** permission to rewrite every component or reopen accepted backend architecture.
+
 
 ---
 

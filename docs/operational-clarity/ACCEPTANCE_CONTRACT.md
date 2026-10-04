@@ -42,6 +42,9 @@ The final phase additionally requires:
 | Final contract | Result |
 |---|---|
 | EXECUTIVE CLARITY ACCEPTED | YES / NO |
+| ADMINISTRATION / HR CLARITY ACCEPTED | YES / NO |
+| CROSS-ROLE WORKSPACE CONSISTENCY ACCEPTED | YES / NO |
+| PAGE ARCHETYPE CONSISTENCY ACCEPTED | YES / NO |
 | GLOBAL SEARCH ACCEPTED | YES / NO |
 | ANNOUNCEMENT DISCOVERABILITY ACCEPTED | YES / NO |
 | FILES / MEDIA ACCESS CONTROL ACCEPTED | YES / NO |
@@ -101,6 +104,42 @@ A new user should be able to answer within seconds:
 System disclaimers must not dominate card titles or the first reading path.
 
 Portfolio and Organisation must operate at Executive altitude by default.
+
+---
+
+# Administration & HR acceptance
+
+Administration must no longer behave as a collection of unrelated legacy screens.
+
+Required outcomes:
+
+- Overview has a clear operational hierarchy rather than a wall of competing panels.
+- People uses a coherent employee Record workspace.
+- Workforce separates daily operations from advanced policy configuration.
+- Payroll retains its secure Ledger/list-detail model and authority separation.
+- Protected HR uses grouped record detail plus a compact add/correct Composer.
+- Lifecycle uses case queue + selected detail.
+- Checks/Workflows use decision queue + selected detail.
+- Authority uses person + current grants + collapsed history + compact grant/revoke actions.
+- Policies use current rule + collapsed version history + compact revision action.
+- Control Center uses grouped/collapsible settings rather than long arrow chains.
+- Administration Work may remain on the existing Work-family pattern where it already meets the shared interaction grammar.
+
+No Admin/HR acceptance may fabricate HR values, auth identities, Leave policy mathematics, Payroll values or authority.
+
+# Cross-role workspace acceptance
+
+Every reachable Staff, Manager, Administration and Executive route must be assigned a primary page archetype:
+Overview / Queue / Record / Ledger / Composer / Settings.
+
+A route fails if it:
+- mixes unrelated operational and configuration surfaces into one long page without progressive disclosure;
+- hides the primary action;
+- requires excessive scrolling for a common task where a compact drawer/list-detail interaction is appropriate;
+- relies on technical/database language as the main explanation;
+- uses a materially different interaction grammar without a product reason.
+
+Consistency is not identical content. Role-specific authority and responsibilities remain distinct.
 
 ---
 
