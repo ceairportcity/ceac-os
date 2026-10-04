@@ -55,7 +55,7 @@ function amountToMinor(value) {
   return Number.isFinite(number) ? Math.round(number * 100) : 0;
 }
 
-export default function People({ me, openItem }) {
+export default function People({ me, openItem, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
   const [searchText, setSearchText] = useState("");
@@ -77,6 +77,13 @@ export default function People({ me, openItem }) {
   const canManageProtectedHr = (me.capabilities || []).includes("hr_private.access");
 
   useEffect(() => { load(); }, [me.id]);
+  useEffect(() => {
+    if (!initialEmployeeId || !rows.length || person) return;
+    const match = rows.find((row) => row.id === initialEmployeeId || row.profile_id === initialEmployeeId);
+    if (!match) return;
+    openPerson(match);
+    onInitialHandled?.();
+  }, [initialEmployeeId, rows, person]);
 
   async function load() {
     setLoading(true);
