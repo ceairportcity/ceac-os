@@ -432,7 +432,7 @@ test("Recurring ministry numbers flow from a unit record to the Group Pastor ove
 
   {
     const { context, page } = await openAs(browser, "exec@ceac.local.test");
-    await expect(page.getByText("What CEAC recorded", { exact: true })).toBeVisible();
+    await expect(page.getByText("Recorded ministry activity", { exact: true })).toBeVisible();
     await expect(page.getByText(numberName, { exact: true })).toBeVisible();
     await expect(page.getByText(/17 People received/)).toBeVisible();
     await context.close();
