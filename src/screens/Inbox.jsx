@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { LoadingState, ProductNotice } from "../components/bits";
+import { Button, DataPanel, QueueRow, SegmentedControl, StatePanel, StatusBadge } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
 
 const MESSAGE_SELECT = "id,room_id,author_id,body,created_at,profiles!room_messages_author_id_fkey(full_name),room_message_refs(id,object_type,object_id,label),rooms(id,kind,unit_id,sub_team_id,project_id,units(name),sub_teams(name),projects(name))";
@@ -150,57 +151,69 @@ export default function Inbox({ me, openRoom, openAnnouncements }) {
         </p>
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <button className="btn btn-ghost btn-sm" type="button" onClick={openAnnouncements}>Announcements</button>
-        <span className="premium-count-badge">{unread} unread</span>
+        <Button variant="secondary" size="compact" onClick={openAnnouncements}>Announcements</Button>
+        <StatusBadge tone={unread?"warning":"neutral"} icon={false}>{unread} unread</StatusBadge>
       </div>
     </header>
 
-    <div className="premium-filter-row" role="tablist" aria-label="Message views">
-      {[["all", "All"], ["rooms", "Rooms"], ["mentions", "Mentions"], ["work", "Work"], ["announcements", "Announcements"]].map(([key, label]) =>
-        <button key={key} role="tab" aria-selected={view === key} className={view === key ? "on" : ""} onClick={() => setView(key)}>{label}</button>
-      )}
-    </div>
+    <SegmentedControl
+      ariaLabel="Message views"
+      value={view}
+      onChange={setView}
+      items={[
+        { value:"all", label:"All" },
+        { value:"rooms", label:"Rooms" },
+        { value:"mentions", label:"Mentions" },
+        { value:"work", label:"Work" },
+        { value:"announcements", label:"Announcements" },
+      ]}
+    />
 
     {error && <ProductNotice tone="error" title="Could not load Messages">{error}</ProductNotice>}
 
     {loading ? <LoadingState label="Loading Messages…" /> : <>
-      {me.is_exec && view === "rooms" && <section className="inbox-room-directory" aria-label="Organisation Room directory">
-        <div className="sec"><span>Organisation Rooms</span><span>{roomDirectory.length}</span></div>
-        <p className="screen-note">Leadership access is deliberate: enter a Unit or Sub-team Room when the work requires it. This directory does not create direct messages.</p>
-        <div className="inbox-list">
-          {roomDirectory.map((room) => <button key={room.id} className="inbox-row" onClick={() => openRoom?.(contextFor(room))}>
-            <span className="inbox-icon room">#</span>
-            <span className="inbox-copy">
-              <span className="inbox-meta"><strong>{room.kind === "unit" ? "Unit Room" : "Sub-team Room"}</strong></span>
-              <b>{roomName(room)}</b>
-              <small>{room.units?.name || "Unit"}</small>
-            </span>
-          </button>)}
-          {!roomDirectory.length && <div className="premium-empty inbox-empty"><strong>No organisational Rooms are available</strong><span>Only active Unit and Sub-team Rooms authorised by CEAC appear here.</span></div>}
-        </div>
-      </section>}
+      {me.is_exec && view === "rooms" && <DataPanel
+        eyebrow="Leadership directory"
+        title="Organisation Rooms"
+        supporting="Enter a Unit or Sub-team Room deliberately when the work requires it. This directory does not create direct messages."
+        action={<StatusBadge tone="neutral" icon={false}>{roomDirectory.length} rooms</StatusBadge>}
+      >
+        {roomDirectory.map((room) => <QueueRow
+          key={room.id}
+          icon="messages"
+          title={roomName(room)}
+          meta={`${room.kind === "unit" ? "Unit Room" : "Sub-team Room"} · ${room.units?.name || "Unit"}`}
+          onClick={() => openRoom?.(contextFor(room))}
+        />)}
+        {!roomDirectory.length && <StatePanel state="empty" title="No organisational Rooms are available" description="Only active Unit and Sub-team Rooms authorised by CEAC appear here." />}
+      </DataPanel>}
 
-      <section className="inbox-list">
+      <DataPanel
+        eyebrow="Communication queue"
+        title={view === "announcements" ? "Announcements" : view === "mentions" ? "Mentions" : view === "work" ? "Work-linked messages" : view === "rooms" ? "Room activity" : "Messages and announcements"}
+        supporting="Only authorised Room activity and announcements appear here. CEAC OS does not introduce unrestricted direct messages."
+      >
         {rows.length ? rows.map((row) => row.type === "announcement"
-          ? <button key={`announcement-${row.announcement.id}`} className={`inbox-row ${row.unread ? "unread" : ""}`} onClick={openAnnouncements}>
-              <span className="inbox-icon announcement">A</span>
-              <span className="inbox-copy">
-                <span className="inbox-meta"><strong>Announcement</strong><time>{new Date(row.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></span>
-                <b>{row.announcement.title}</b>
-                <small>{row.announcement.profiles?.full_name || "CEAC"}{row.announcement.requires_acknowledgement ? " · acknowledgement may be required" : ""}</small>
-              </span>
-            </button>
-          : <button key={row.message.id} className={`inbox-row ${row.unread ? "unread" : ""}`} onClick={() => openRoom?.(contextFor(row.message.rooms))}>
-              <span className={`inbox-icon ${row.mentioned ? "mention" : "room"}`}>{row.mentioned ? "@" : "#"}</span>
-              <span className="inbox-copy">
-                <span className="inbox-meta"><strong>{roomName(row.message.rooms)}</strong><time>{new Date(row.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></span>
-                <b>{row.message.profiles?.full_name || "CEAC member"}</b>
-                <small>{row.message.body}</small>
-                {row.work && <span className="inbox-context">Linked work</span>}
-              </span>
-            </button>
-        ) : <div className="premium-empty inbox-empty"><strong>Nothing is waiting in this view</strong><span>Rooms, mentions, linked work and announcements will appear here when they need your attention.</span></div>}
-      </section>
+          ? <QueueRow
+              key={`announcement-${row.announcement.id}`}
+              icon="messages"
+              title={row.announcement.title}
+              meta={`Announcement · ${row.announcement.profiles?.full_name || "CEAC"} · ${new Date(row.at).toLocaleString("en-GB", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}${row.announcement.requires_acknowledgement ? " · acknowledgement may be required" : ""}`}
+              status={row.unread ? "Unread" : "Read"}
+              statusTone={row.unread ? "warning" : "neutral"}
+              onClick={openAnnouncements}
+            />
+          : <QueueRow
+              key={row.message.id}
+              icon={row.mentioned ? "notification" : "messages"}
+              title={row.message.profiles?.full_name || "CEAC member"}
+              meta={`${roomName(row.message.rooms)} · ${row.message.body}`}
+              status={row.mentioned ? "Mention" : row.work ? "Linked work" : row.unread ? "Unread" : undefined}
+              statusTone={row.mentioned || row.unread ? "warning" : row.work ? "action" : "neutral"}
+              onClick={() => openRoom?.(contextFor(row.message.rooms))}
+            />
+        ) : <StatePanel state="empty" title="Nothing is waiting in this view" description="Rooms, mentions, linked work and announcements will appear here when they need your attention." />}
+      </DataPanel>
     </>}
   </div>;
 }
