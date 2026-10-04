@@ -355,7 +355,7 @@ export default function Delivery({ me }) {
               {label:"Open risks / issues",value:openRegister.length},
               {label:"High / critical",value:openRegister.filter((row)=>["high","critical"].includes(row.severity)).length},
             ]}
-            actions={[{label:"View project",onClick:()=>setSelectedProjectId(project.id)}]}
+            actions={[{label:"Operational details",onClick:()=>{setSelectedProjectId(project.id);setShowOperations(true);}}]}
           />;
         })}
       </div>:<ProjectEmpty title="No recorded project attention" description="No visible project currently has Watch, At risk, Blocked, or a high / critical open register item." />}
