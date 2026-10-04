@@ -77,8 +77,14 @@ for (const viewport of [
     await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening), Staff/ })).toBeVisible();
     await expect(page.locator(".staffv2-session")).toBeVisible();
     await expect(page.locator(".staffv2-focus-grid")).toBeVisible();
-    await expect(page.locator(".staffv2-schedule-panel")).toBeVisible();
     await expect(page.getByText("Next up", { exact: true }).first()).toBeVisible();
+    if (viewport.width <= 390) {
+      await expect(page.locator(".staffv2-schedule-panel")).toBeHidden();
+      await expect(page.locator(".staffv2-secondary-grid")).toBeHidden();
+    } else {
+      await expect(page.locator(".staffv2-schedule-panel")).toBeVisible();
+      await expect(page.locator(".staffv2-secondary-grid")).toBeVisible();
+    }
     await expect(page.locator(".reference-module-strip")).toHaveCount(0);
     await expect(page.locator(".staff-command-surface")).toHaveCount(0);
 
@@ -95,14 +101,25 @@ for (const viewport of [
     }
 
     if (viewport.width <= 390) {
-      const secondarySurface = page.locator(".staffv2-week.ev2c-surface");
-      await expect(secondarySurface).toBeVisible();
-      const surfaceFrame = await secondarySurface.evaluate((node) => ({
-        borderTopWidth: getComputedStyle(node).borderTopWidth,
-        backgroundColor: getComputedStyle(node).backgroundColor,
+      const sessionGeometry = await page.locator(".staffv2-session").evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        const actions = node.querySelector(".staffv2-session-actions");
+        return {
+          height: rect.height,
+          actionWidth: actions?.getBoundingClientRect().width || 0,
+          viewportWidth: window.innerWidth,
+        };
+      });
+      expect(sessionGeometry.height).toBeLessThanOrEqual(96);
+      expect(sessionGeometry.actionWidth).toBeLessThan(sessionGeometry.viewportWidth / 2);
+
+      const mainGrid = page.locator(".staffv2-main-grid");
+      const mainDisplay = await mainGrid.evaluate((node) => ({
+        display: getComputedStyle(node).display,
+        overflowX: getComputedStyle(node).overflowX,
       }));
-      expect(surfaceFrame.borderTopWidth).toBe("0px");
-      expect(surfaceFrame.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+      expect(mainDisplay.display).toBe("flex");
+      expect(["auto", "scroll"]).toContain(mainDisplay.overflowX);
     }
 
     const overflow = await page.evaluate(() =>
