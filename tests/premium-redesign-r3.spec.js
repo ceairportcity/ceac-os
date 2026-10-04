@@ -55,8 +55,10 @@ test.describe("Premium redesign R3 Administration",()=>{
     await page.locator(".ev2s-sidebar").getByRole("button",{name:"Control Center",exact:true}).click();
     await expect(page.getByRole("heading",{name:"Control Center",exact:true})).toBeVisible();
     await expect(page.getByText("Connected Apps",{exact:true})).toBeVisible();
-    await expect(page.getByText("Access & permissions",{exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Security & governance",exact:true})).toBeVisible();
     await expect(page.getByText("System events",{exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"People & access",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Time & Leave",exact:true})).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r3-admin-control-center.png",fullPage:true});
     await context.close();
   });
@@ -79,7 +81,7 @@ test.describe("Premium redesign R3 Administration",()=>{
     await context.close();
   });
 
-  test("VF4D Control Center is a governance ledger",async({browser})=>{
+  test("VF4D Control Center is a state-derived governance command centre",async({browser})=>{
     for(const viewport of [
       {name:"laptop",width:1366,height:768},
       {name:"phone",width:390,height:844},
@@ -87,31 +89,21 @@ test.describe("Premium redesign R3 Administration",()=>{
       const {context,page}=await openAdmin(browser,{width:viewport.width,height:viewport.height});
       await page.goto("/?tab=settings");
       await expect(page.getByRole("heading",{name:"Control Center",exact:true})).toBeVisible();
-      const grid=page.locator(".ev2-control-center .control-grid");
-      const cards=grid.locator(":scope > .control-card");
-      expect(await cards.count()).toBeGreaterThan(1);
-      const geometry=await cards.evaluateAll((nodes)=>nodes.slice(0,2).map((node)=>{
-        const rect=node.getBoundingClientRect();
-        const style=getComputedStyle(node);
-        return {
-          left:rect.left,
-          top:rect.top,
-          bottom:rect.bottom,
-          width:rect.width,
-          radius:style.borderRadius,
-          shadow:style.boxShadow,
-        };
-      }));
-      const gridGap=await grid.evaluate((node)=>Number.parseFloat(getComputedStyle(node).gap)||0);
-      expect(Math.abs(geometry[0].left-geometry[1].left)).toBeLessThanOrEqual(2);
-      expect(geometry[1].top).toBeGreaterThan(geometry[0].top);
-      expect(geometry[1].top-geometry[0].bottom).toBeLessThanOrEqual(2);
-      expect(Math.abs(geometry[0].width-geometry[1].width)).toBeLessThanOrEqual(2);
-      expect(gridGap).toBeLessThanOrEqual(1);
-      for(const row of geometry){
-        expect(row.radius).toBe("0px");
-        expect(row.shadow).toBe("none");
-      }
+      await expect(page.getByText("System health",{exact:true})).toBeVisible();
+      for(const label of [
+        "Organisation",
+        "People & access",
+        "Work & operations",
+        "Time & Leave",
+        "Payroll & Finance",
+        "Security & governance",
+        "Integrations",
+        "Audit & records",
+      ]) await expect(page.getByRole("heading",{name:label,exact:true})).toBeVisible();
+      await expect(page.getByText(/not a numeric health score/i)).toBeVisible();
+      const domainPanels=page.locator(".ev2-control-center .ev2c-data-panel");
+      expect(await domainPanels.count()).toBeGreaterThanOrEqual(9);
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({path:`test-artifacts/vf4d-admin-control-center-${viewport.name}.png`,fullPage:true});
       await context.close();
     }

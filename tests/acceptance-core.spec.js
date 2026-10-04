@@ -93,6 +93,7 @@ async function assignTask(page, title, step = null) {
   await page.getByRole("button", { name: "New work", exact: true }).first().click();
   await page.getByLabel("Work to complete").fill(title);
   await page.getByLabel("Why this matters").fill("Acceptance test purpose");
+  await page.getByText("Finished result", { exact: false }).filter({ hasText: "optional" }).first().click();
   await page.getByLabel("Finished result").fill("Acceptance test finished result");
   if (step) await page.getByPlaceholder("Step 1").fill(step);
   else await page.getByLabel(/No steps needed/).check();
@@ -357,6 +358,41 @@ test("Assistive voice controls are real interaction affordances and proposals re
   await context.close();
 });
 
+test("OCR6C work source attachment reaches the authorised Staff record", async ({ browser }) => {
+  const title = "OCR6 source-file assignment";
+  const filename = "ocr6-work-source.txt";
+
+  {
+    const { context, page } = await openAs(browser, "manager@ceac.local.test");
+    await page.getByRole("button", { name: "Give out work", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Give out work" })).toBeVisible();
+    await page.getByLabel("Work to complete").fill(title);
+    await page.getByLabel("Why this matters").fill("Prove private source-file assignment end to end.");
+    const assignee = page.locator("select.field").filter({ has: page.locator("option", { hasText: "Staff Fixture" }) });
+    await assignee.selectOption({ label: "Staff Fixture" });
+    await page.locator('input[type="datetime-local"]').last().fill(new Date(Date.now() + 2 * 86400000).toISOString().slice(0,16));
+    await page.locator('.operational-files-picker input[type="file"]').setInputFiles({
+      name: filename,
+      mimeType: "text/plain",
+      buffer: Buffer.from("OCR6 private work source file"),
+    });
+    await page.getByRole("button", { name: "Give it out", exact: true }).click();
+    await expect(page.getByText(/is with them/)).toBeVisible();
+    await context.close();
+  }
+
+  {
+    const { context, page } = await openAs(browser, "staff@ceac.local.test");
+    await go(page, "Work");
+    const row = page.locator(".ev2w-row").filter({ hasText: title }).first();
+    await expect(row).toBeVisible();
+    await row.click();
+    await expect(page.getByText("Source files", { exact: true })).toBeVisible();
+    await expect(page.getByText(filename, { exact: true })).toBeVisible();
+    await context.close();
+  }
+});
+
 test("Typed work can be created and reaches the Staff work surface", async ({ browser }) => {
   const created = [
     { kind: "Routine", intent: "Set repeating work", title: "Acceptance routine", button: "Create routine" },
@@ -371,7 +407,7 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   await page.getByRole("button", { name: "Give out work" }).click();
 
   for (const item of created) {
-    await page.getByRole("radio", { name: new RegExp(item.intent) }).click();
+    await page.getByLabel("Work type").selectOption({ label: item.intent });
 
     if (item.kind === "Routine") await page.getByLabel("Repeating responsibility").fill(item.title);
     if (item.kind === "Case") await page.getByLabel("Matter to track").fill(item.title);
@@ -431,7 +467,7 @@ test("Recurring ministry numbers flow from a unit record to the Group Pastor ove
 
   {
     const { context, page } = await openAs(browser, "exec@ceac.local.test");
-    await expect(page.getByText("What CEAC recorded", { exact: true })).toBeVisible();
+    await expect(page.getByText("Recorded ministry activity", { exact: true })).toBeVisible();
     await expect(page.getByText(numberName, { exact: true })).toBeVisible();
     await expect(page.getByText(/17 People received/)).toBeVisible();
     await context.close();
@@ -550,8 +586,10 @@ test("Staff PWA layout has no page-level horizontal overflow at supported phone 
 });
 
 
-test("Unit Rooms carry attributable communication between Manager and Staff", async ({ browser }) => {
+test("OCR6C Unit Rooms carry attributable communication and private media between Manager and Staff", async ({ browser }) => {
   const message = "Room acceptance — confirm Sunday setup";
+  const filename = "ocr6-room-media.png";
+  const media = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZlSIAAAAASUVORK5CYII=", "base64");
 
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 390, height: 844 });
@@ -561,9 +599,11 @@ test("Unit Rooms carry attributable communication between Manager and Staff", as
     await expect(page.getByRole("heading", { name: "Test Unit A" })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("heading", { name: "Test Unit A" })).toBeVisible();
+    await page.locator('.operational-files-picker input[type="file"]').setInputFiles({ name: filename, mimeType: "image/png", buffer: media });
     await page.getByPlaceholder("Message your unit").fill(message);
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(page.getByText(message, { exact: true })).toBeVisible();
+    await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
   }
 
@@ -572,6 +612,7 @@ test("Unit Rooms carry attributable communication between Manager and Staff", as
     await go(page, "Team");
     await page.getByRole("button", { name: /Unit Room/ }).click();
     await expect(page.getByText(message, { exact: true })).toBeVisible();
+    await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
   }
 });
@@ -723,7 +764,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     await dialog.getByLabel("Strategy name").fill("Acceptance ministry direction");
     await dialog.getByLabel("Strategy statement").fill("Build reliable ministry systems while reaching and serving people.");
     await dialog.getByLabel("Strategy change reason").fill("Acceptance Stage 4 direction");
-    await dialog.getByRole("button", { name: "Create strategy record", exact: true }).click();
+    await dialog.getByRole("button", { name: "Create ministry direction", exact: true }).click();
     await expect(page.getByText("Strategy record created.", { exact: true })).toBeVisible();
 
     const direction = page.locator("section.card").filter({ hasText: "Acceptance ministry direction" });
@@ -733,7 +774,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     await dialog.getByLabel("Strategy name").fill("Acceptance ministry objective");
     await dialog.getByLabel("Strategy statement").fill("Make weekly ministry delivery more reliable across participating units.");
     await dialog.getByLabel("Strategy change reason").fill("Acceptance Stage 4 ministry objective");
-    await dialog.getByRole("button", { name: "Create strategy record", exact: true }).click();
+    await dialog.getByRole("button", { name: "Create ministry objective", exact: true }).click();
 
     await page.getByRole("button", { name: "Add Unit Objective", exact: true }).click();
     dialog = page.getByRole("dialog");
@@ -746,7 +787,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     await dialog.getByLabel("Strategy target unit").fill("outcomes");
     await dialog.getByLabel("Strategy current value").fill("3");
     await dialog.getByLabel("Strategy change reason").fill("Acceptance Stage 4 unit objective");
-    await dialog.getByRole("button", { name: "Create strategy record", exact: true }).click();
+    await dialog.getByRole("button", { name: "Create unit objective", exact: true }).click();
 
     await expect(page.getByText(/current 3 outcomes · target 12 outcomes/)).toBeVisible();
     await page.reload();
@@ -888,8 +929,11 @@ test("Stage 5 Delivery manages programmes, milestones, dependencies and project 
     const { context, page } = await openAs(browser, "exec@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Delivery");
     await expect(page.getByRole("heading", { name: "Portfolio", exact: true })).toBeVisible();
-    await expect(page.locator(".row-t").filter({ hasText: /^Acceptance Unit A Programme$/ }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Major projects", exact: true })).toBeVisible();
+    await expect(page.getByText("Stage 4 Browser Project", { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/explicitly recorded health/i)).toBeVisible();
+    await page.getByRole("button", { name: "Open operational details", exact: true }).click();
+    await expect(page.locator(".row-t").filter({ hasText: /^Acceptance Unit A Programme$/ }).first()).toBeVisible();
     await context.close();
   }
 
@@ -1003,7 +1047,9 @@ test("Experience Stage 5 project register enforces payment, custody, slots and t
   {
     const { context, page } = await openAs(browser, "exec@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Delivery");
-    await page.getByRole("button", { name: new RegExp(projectName) }).first().click();
+    const leadershipProject = page.locator(".ev2p-context-row").filter({ hasText: projectName }).first();
+    await expect(leadershipProject).toBeVisible();
+    await leadershipProject.getByRole("button", { name: "Operational details", exact: true }).click();
     await expect(page.getByText(participantName, { exact: true })).toBeVisible();
     const reconciliation = page.locator("table").filter({ hasText: "Confirmed remitted" }).first();
     await expect(reconciliation).toContainText("GHS 100");
@@ -1095,7 +1141,7 @@ test("Experience Stage 7 keeps work capture simple, staff-owned and manager-conf
     await page.getByRole("button", { name: "Give it out", exact: true }).click();
     await expect(page.getByText(/is with them/)).toBeVisible();
 
-    await page.getByRole("button", { name: "Back to home", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).last().click();
     await go(page, "Team");
     await page.getByRole("button", { name: /Unit Room/ }).click();
     await expect(page.getByText(/Created .* from this message\./)).toBeVisible();
@@ -1942,7 +1988,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
   await expect(page.getByText("Needs Administration", { exact: true })).toBeVisible();
-  await expect(page.getByText("Reporting coverage", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Finance & reporting", exact: true })).toBeVisible();
   await expect(page.getByText("Delivery signals", { exact: true })).toBeVisible();
   await expect(page.getByText("Administration could not finish loading", { exact: true })).toHaveCount(0);
 
@@ -1963,12 +2009,18 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await page.getByRole("button", { name: /Staff Fixture/ }).click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
   const peopleMain = page.getByRole("main");
-  await expect(peopleMain.getByText("Protected HR", { exact: true })).toBeVisible();
+  await expect(peopleMain.getByRole("tab", { name: "Overview", exact: true })).toBeVisible();
+
+  await page.getByRole("tab", { name: "Time & Leave", exact: true }).click();
+  await expect(page.getByText(/entitlement not configured/i)).toBeVisible();
+
+  await page.getByRole("tab", { name: "Protected HR", exact: true }).click();
+  await expect(peopleMain.getByRole("heading", { name: "Protected HR", exact: true })).toBeVisible();
   await expect(peopleMain.getByRole("button", { name: "Record salary", exact: true })).toBeVisible();
   await expect(peopleMain.getByRole("button", { name: "Record payment details", exact: true })).toBeVisible();
-  await expect(page.getByText(/entitlement not configured/i)).toBeVisible();
-  await expect(page.getByText("Employment record", { exact: true })).toBeVisible();
-  await expect(page.getByText("Employment history", { exact: true })).toBeVisible();
+
+  await page.getByRole("tab", { name: "Employment", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Employment record", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Record change", exact: true }).click();
   const employmentDialog = page.getByRole("dialog");
@@ -1977,20 +2029,24 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await employmentDialog.getByLabel("Working pattern", { exact: true }).selectOption("flexible");
   await employmentDialog.getByLabel("Reason / context").fill("Acceptance employment history change");
   await employmentDialog.getByRole("button", { name: "Record employment change", exact: true }).click();
+  await page.getByRole("tab", { name: "History", exact: true }).click();
   await expect(page.getByText("Working pattern changed", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "← All people", exact: true }).click();
   await page.getByLabel("Find a person").fill("Staff Fixture");
   await page.getByRole("button", { name: /Staff Fixture/ }).click();
+  await page.getByRole("tab", { name: "History", exact: true }).click();
   await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
 
   await go(page, "Employee lifecycle");
   await expect(page.getByRole("heading", { name: "Employee lifecycle", exact: true })).toBeVisible();
-  await page.getByLabel("Lifecycle employee").selectOption("31000000-0000-4000-8000-000000000006");
-  await page.getByLabel("Lifecycle type").selectOption("onboarding");
-  await page.getByLabel("Lifecycle reason").fill("Acceptance onboarding lifecycle");
   await page.getByRole("button", { name: "Start lifecycle case", exact: true }).click();
+  const lifecycleDialog = page.getByRole("dialog", { name: "Start lifecycle case" });
+  await lifecycleDialog.getByLabel("Lifecycle employee").selectOption("31000000-0000-4000-8000-000000000006");
+  await lifecycleDialog.getByLabel("Lifecycle type").selectOption("onboarding");
+  await lifecycleDialog.getByLabel("Lifecycle reason").fill("Acceptance onboarding lifecycle");
+  await lifecycleDialog.getByRole("button", { name: "Start lifecycle case", exact: true }).click();
   await expect(page.getByText("Employee lifecycle case started.", { exact: true })).toBeVisible();
   for (let step = 1; step <= 4; step += 1) {
     await page.getByLabel("Lifecycle completion note").fill("Acceptance lifecycle step " + step);
@@ -2003,15 +2059,17 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Protected HR");
   await expect(page.getByRole("heading", { name: "Protected HR", exact: true })).toBeVisible();
-  await page.getByLabel("Protected HR employee").selectOption("31000000-0000-4000-8000-000000000001");
-  await page.getByLabel("Protected HR record type").selectOption("identifier");
-  await page.getByLabel("Identifier type").fill("Acceptance ID");
-  await page.getByLabel("Identifier value").fill("ACCEPTANCE-001");
-  await page.getByLabel("Protected HR reason").fill("Acceptance protected HR record");
-  await page.getByRole("button", { name: "Save protected record", exact: true }).click();
+  await page.getByLabel("Protected HR employee").selectOption({ label: "Staff Fixture · staff@ceac.local.test" });
+  await page.getByRole("button", { name: "Add protected record", exact: true }).click();
+  const protectedDialog = page.getByRole("dialog", { name: "Add protected HR record" });
+  await protectedDialog.getByLabel("Protected HR record type").selectOption("identifier");
+  await protectedDialog.getByLabel("Identifier type").fill("Acceptance ID");
+  await protectedDialog.getByLabel("Identifier value").fill("ACCEPTANCE-001");
+  await protectedDialog.getByLabel("Protected HR reason").fill("Acceptance protected HR record");
+  await protectedDialog.getByRole("button", { name: "Save protected record", exact: true }).click();
   await expect(page.getByText("Protected HR record saved.", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Acceptance ID · Active/).first()).toBeVisible();
-  await expect(page.getByText("ACCEPTANCE-001", { exact: true })).toBeVisible();
+  await expect(page.getByText("Acceptance ID", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/ACCEPTANCE-001/).first()).toBeVisible();
   await page.reload();
   await expect(page.getByText("ACCEPTANCE-001", { exact: true })).toBeVisible();
 
@@ -2028,24 +2086,31 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await go(page, "Authority");
   await expect(page.getByRole("heading", { name: "Authority", exact: true })).toBeVisible();
   await page.getByLabel("Authority person").selectOption({ label: "Staff Fixture · staff@ceac.local.test" });
-  await page.getByLabel("Capability", { exact: true }).selectOption("performance.admin");
-  await page.getByLabel("Grant reason").fill("Acceptance temporary performance authority");
   await page.getByRole("button", { name: "Grant capability", exact: true }).click();
+  const grantDialog = page.getByRole("dialog", { name: "Grant capability" });
+  await grantDialog.getByLabel("Capability", { exact: true }).selectOption("performance.admin");
+  await grantDialog.getByLabel("Grant reason").fill("Acceptance temporary performance authority");
+  await grantDialog.getByRole("button", { name: "Grant capability", exact: true }).click();
   await expect(page.getByText("Capability granted.", { exact: true })).toBeVisible();
-  await page.getByLabel("Revocation reason").fill("Acceptance authority cleanup");
   await page.getByRole("button", { name: "Revoke", exact: true }).click();
+  const revokeDialog = page.getByRole("dialog", { name: "Revoke capability" });
+  await revokeDialog.getByLabel("Revocation reason").fill("Acceptance authority cleanup");
+  await revokeDialog.getByRole("button", { name: "Revoke", exact: true }).click();
   await expect(page.getByText("Capability revoked.", { exact: true })).toBeVisible();
 
   await go(page, "System rules");
   await expect(page.getByRole("heading", { name: "Policies & rules", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Work quiet days/ }).click();
-  await page.getByLabel("Policy rule value").fill("6");
-  await page.getByLabel("Policy reason").fill("Acceptance policy rule version");
   await page.getByRole("button", { name: "Record new version", exact: true }).click();
+  const policyDialog = page.getByRole("dialog", { name: "Record new policy version" });
+  await policyDialog.getByLabel("Policy rule value").fill("6");
+  await policyDialog.getByLabel("Policy reason").fill("Acceptance policy rule version");
+  await policyDialog.getByRole("button", { name: "Record new version", exact: true }).click();
   await expect(page.getByText("Policy rule recorded.", { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: /Work quiet days/ }).click();
-  await expect(page.getByText("Acceptance policy rule version", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Show version history", exact: true }).click();
+  await expect(page.locator(".ev2c-queue-row").filter({ hasText: "Acceptance policy rule version" })).toBeVisible();
 
   await go(page, "Connected Apps");
   await expect(page.getByRole("heading", { name: "Connected Apps", exact: true })).toBeVisible();
@@ -2094,7 +2159,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
-  await page.getByText("Organisation", { exact: true }).click();
+  await page.getByRole("button", { name: "Office settings", exact: true }).click();
   await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
   await expect(page.getByText("Awaiting CEAC policy", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Configure policy in Workforce", exact: true })).toBeVisible();
@@ -2104,7 +2169,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByRole("button", { name: "Configure leave policy", exact: true })).toBeVisible();
 
   await go(page, "Settings");
-  await page.getByText("Organisation", { exact: true }).click();
+  await page.getByRole("button", { name: "Office settings", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Organisation settings", exact: true })).toBeVisible();
 
   const attentionRule = page.locator(".office-threshold-row").filter({ hasText: "active work has not moved for" });
@@ -2259,6 +2324,7 @@ test("Closure corridor preserves the Staff Fixture journey across CEAC OS", asyn
     await go(page, "People");
     await page.getByLabel("Find a person").fill("Staff Fixture");
     await page.getByRole("button", { name: /Staff Fixture/ }).click();
+    await page.getByRole("tab", { name: "History", exact: true }).click();
     await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
 
     await go(page, "Assets & devices");

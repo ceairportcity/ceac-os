@@ -1054,6 +1054,33 @@ button.ev2c-record-row {
   border-radius: var(--ev2-radius-panel) var(--ev2-radius-panel) 0 0;
 }
 
+.ev2c-composer-drawer {
+  width: min(32.5rem, 100%);
+}
+
+.ev2c-composer-footer {
+  position: sticky;
+  bottom: 0;
+}
+
+.ev2c-composer-body .ocr-composer-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ev2-space-3);
+}
+.ev2c-composer-body .ocr-composer-group {
+  margin-top: var(--ev2-space-3);
+  padding: var(--ev2-space-3);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface-soft);
+}
+.ev2c-composer-footer > .btn,
+.ev2c-composer-footer > .ev2-button {
+  min-width: 9rem;
+}
+
+
 .ev2c-overlay-head {
   display: flex;
   align-items: flex-start;
@@ -1287,6 +1314,19 @@ button.ev2c-record-row {
 }
 
 @media (max-width: 599px) {
+  .ev2c-composer-body .ocr-composer-two {
+    grid-template-columns: 1fr;
+  }
+
+  .ev2c-composer-drawer {
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
   .ev2c-overlay {
     align-items: flex-end;
     padding:

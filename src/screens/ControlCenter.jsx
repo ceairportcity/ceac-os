@@ -1,35 +1,355 @@
-import { useMemo } from "react";
-import { StatusBadge } from "../experience-v2/components";
-import { CeacIcon } from "../experience-v2/icons";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "../lib/supabase";
+import {
+  Button,
+  DataPanel,
+  QueueRow,
+  Skeleton,
+  StatePanel,
+  StatusBadge,
+  Surface,
+} from "../experience-v2/components";
+import { humanError } from "../lib/productLanguage";
 
-function ControlCard({title,description,action,label,state="Ready",tone="",icon}){
-  return <button className={"control-card ev2-control-card "+tone} onClick={action}>
-    <span className="control-card-icon" aria-hidden="true"><CeacIcon name={icon || "control"} size="nav" decorative /></span>
-    <span className="control-card-copy"><strong>{title}</strong><small>{description}</small></span>
-    <span className="control-card-side"><StatusBadge tone="neutral" icon={false}>{state}</StatusBadge><em>{label||"Open"} →</em></span>
-  </button>;
+const STATUSES = {
+  ready:"Ready",
+  attention:"Needs attention",
+  partial:"Partly configured",
+  missing:"Not configured",
+  policy:"Awaiting policy",
+};
+
+function statusTone(status){
+  if(status===STATUSES.ready) return "success";
+  if(status===STATUSES.attention) return "warning";
+  if(status===STATUSES.partial) return "action";
+  return "neutral";
+}
+
+function DomainCard({title,description,status,detail,actions=[]}){
+  return <DataPanel
+    title={title}
+    supporting={description}
+    action={<StatusBadge tone={statusTone(status)} icon={false}>{status}</StatusBadge>}
+    className="control-card ev2-control-card"
+  >
+    <p className="screen-note" style={{marginTop:0}}>{detail}</p>
+    {actions.length ? <div style={{display:"flex",gap:"var(--ev2-space-2)",flexWrap:"wrap"}}>
+      {actions.map((action)=><Button
+        key={action.label}
+        variant="quiet"
+        size="compact"
+        onClick={action.onClick}
+      >{action.label}</Button>)}
+    </div> : null}
+  </DataPanel>;
 }
 
 export default function ControlCenter({me,go}){
   const caps=useMemo(()=>new Set(me.capabilities||[]),[me.capabilities]);
-  const cards=[
-    {title:"Organisation",description:"Office location, leave policy and organisation-level configuration.",action:()=>go("office-settings"),icon:"organisation"},
-    ...(caps.has("authority.manage")?[{title:"Access & permissions",description:"Grant and revoke explicit capabilities with attributable reasons.",action:()=>go("authority"),icon:"control"}]:[]),
-    ...(caps.has("compliance.manage")?[{title:"Policies & compliance",description:"Publish policy versions, requirements, evidence rules and approved exceptions.",action:()=>go("compliance"),icon:"record"}]:[]),
-    ...(caps.has("audit.view")||caps.has("people.manage")?[{title:"Checks",description:"Review decisions and confirmations that are waiting for an authorised person.",action:()=>go("workflows"),icon:"control"}]:[]),
-    ...(caps.has("integration.manage")?[{title:"Connected Apps",description:"Manage external services and connection status. Technical delivery internals stay in Advanced.",action:()=>go("integrations"),icon:"add"}]:[]),
-    ...(caps.has("audit.view")?[{title:"Activity log",description:"Append-only history of consequential changes across the ordinary platform.",action:()=>go("audit"),icon:"record"}]:[]),
-  ];
-  const advanced=[
-    ...(caps.has("audit.view")?[{title:"System events",description:"Internal event stream for diagnostics, workflows and future intelligence.",action:()=>go("events")}]:[]),
-    ...(caps.has("authority.manage")?[{title:"Organisation rules",description:"Low-level versioned rules used by CEAC OS.",action:()=>go("policies")}]:[]),
-  ];
+  const canPayroll=caps.has("payroll.prepare")||caps.has("payroll.approve");
+  const canIntegrations=caps.has("integration.manage");
+  const canAudit=caps.has("audit.view");
+  const [snapshot,setSnapshot]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState(null);
+
+  useEffect(()=>{ load(); },[me.id]);
+
+  async function must(result,label){
+    const resolved=await result;
+    if(resolved.error) throw new Error(`${label}: ${resolved.error.message}`);
+    return resolved;
+  }
+
+  async function load(){
+    setLoading(true);
+    setError(null);
+    try{
+      const [
+        officeResult,
+        unitsResult,
+        headsResult,
+        rosterResult,
+        invitesResult,
+        checksResult,
+        leavePolicyResult,
+        payrollResult,
+        providersResult,
+        connectorsResult,
+        auditResult,
+      ]=await Promise.all([
+        must(supabase.from("office_locations").select("id,name").eq("is_primary",true).limit(1).maybeSingle(),"Office"),
+        must(supabase.from("units").select("id,name").eq("org_id",me.org_id).eq("active",true).order("name"),"Units"),
+        must(supabase.from("unit_memberships").select("unit_id,profile_id").eq("org_id",me.org_id).eq("role","manager"),"Unit Heads"),
+        must(supabase.rpc("admin_employee_roster_summary"),"Employee roster"),
+        must(supabase.from("pending_invitations").select("id,unit_id").is("resolved_at",null).gt("expires_at",new Date().toISOString()),"Pending invitations"),
+        must(supabase.from("workflow_run_steps").select("id,required_capability").eq("org_id",me.org_id).eq("state","ready").limit(100),"Waiting checks"),
+        must(supabase.from("leave_policy_versions")
+          .select("id,name,state,confirmed_at,leave_policy_rules(id,complete,approval_route,entitlement_amount,entitlement_unit,accrual_method,carryover_method)")
+          .eq("org_id",me.org_id).eq("state","active").order("confirmed_at",{ascending:false}).limit(1).maybeSingle(),"Leave policy"),
+        canPayroll
+          ? must(supabase.rpc("payroll_readiness_summary"),"Payroll readiness")
+          : Promise.resolve({data:null}),
+        canIntegrations
+          ? must(supabase.from("integration_provider_definitions").select("provider_key,display_name").eq("active",true),"Integration providers")
+          : Promise.resolve({data:[]}),
+        canIntegrations
+          ? must(supabase.from("integration_connectors").select("id,provider_key,connection_state,last_error_message").eq("org_id",me.org_id),"Integration connections")
+          : Promise.resolve({data:[]}),
+        canAudit
+          ? must(supabase.from("platform_audit_events").select("id,created_at").eq("org_id",me.org_id).order("created_at",{ascending:false}).limit(1),"Audit")
+          : Promise.resolve({data:[]}),
+      ]);
+
+      setSnapshot({
+        office:officeResult.data||null,
+        units:unitsResult.data||[],
+        heads:headsResult.data||[],
+        roster:Array.isArray(rosterResult.data)?rosterResult.data:[],
+        invitations:invitesResult.data||[],
+        checks:checksResult.data||[],
+        leavePolicy:leavePolicyResult.data||null,
+        payroll:payrollResult.data||null,
+        providers:providersResult.data||[],
+        connectors:connectorsResult.data||[],
+        audit:auditResult.data||[],
+      });
+    }catch(loadError){
+      setError(humanError(loadError,"Control Center could not finish loading."));
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  const domains=useMemo(()=>{
+    if(!snapshot) return [];
+
+    const headUnitIds=new Set(snapshot.heads.map((row)=>row.unit_id));
+    const headlessUnits=snapshot.units.filter((unit)=>!headUnitIds.has(unit.id));
+    const peopleGaps=snapshot.roster.filter((person)=>
+      person.identity_state==="needs_review"
+      || person.employment_type==="not_recorded"
+      || !(person.job_title||person.source_position)
+      || !(person.units||[]).length
+    );
+
+    const organisationStatus=!snapshot.office && headlessUnits.length
+      ? STATUSES.attention
+      : !snapshot.office || headlessUnits.length
+        ? STATUSES.partial
+        : STATUSES.ready;
+
+    const peopleStatus=peopleGaps.some((person)=>person.identity_state==="needs_review")
+      ? STATUSES.attention
+      : peopleGaps.length || snapshot.invitations.length
+        ? STATUSES.partial
+        : STATUSES.ready;
+
+    const workStatus=snapshot.checks.length ? STATUSES.attention : STATUSES.ready;
+
+    const rules=snapshot.leavePolicy?.leave_policy_rules||[];
+    const leaveStatus=!snapshot.leavePolicy
+      ? STATUSES.policy
+      : !rules.length || rules.some((rule)=>!rule.complete)
+        ? STATUSES.partial
+        : STATUSES.ready;
+
+    let payrollStatus=STATUSES.partial;
+    let payrollDetail="Payroll readiness cannot be reviewed from this account because no Payroll capability is assigned.";
+    if(snapshot.payroll){
+      const identity=Number(snapshot.payroll.identity_review_count||0);
+      const missingComp=Number(snapshot.payroll.compensation_missing_count||0);
+      const missingPay=Number(snapshot.payroll.payment_missing_count||0);
+      payrollStatus=identity ? STATUSES.attention : (missingComp||missingPay) ? STATUSES.partial : STATUSES.ready;
+      payrollDetail=identity
+        ? `${identity} employee record${identity===1?"":"s"} need identity review before Payroll is fully ready.`
+        : missingComp||missingPay
+          ? `${missingComp} compensation record${missingComp===1?"":"s"} and ${missingPay} payment detail${missingPay===1?"":"s"} are still not recorded.`
+          : "Protected compensation and payment readiness is recorded for the active employee roster. Finance remains separate by currency.";
+    }
+
+    const governanceCapabilities=["authority.manage","audit.view"];
+    const governancePresent=governanceCapabilities.filter((capability)=>caps.has(capability)).length;
+    const governanceStatus=governancePresent===governanceCapabilities.length
+      ? STATUSES.ready
+      : governancePresent
+        ? STATUSES.partial
+        : STATUSES.missing;
+
+    const connectorByProvider=new Map(snapshot.connectors.map((row)=>[row.provider_key,row]));
+    const broken=snapshot.connectors.filter((row)=>["needs_reconnect","error"].includes(row.connection_state));
+    const connected=snapshot.providers.filter((provider)=>connectorByProvider.get(provider.provider_key)?.connection_state==="connected");
+    const integrationsStatus=!canIntegrations || !snapshot.providers.length
+      ? STATUSES.missing
+      : broken.length
+        ? STATUSES.attention
+        : !connected.length
+          ? STATUSES.missing
+          : connected.length<snapshot.providers.length
+            ? STATUSES.partial
+            : STATUSES.ready;
+
+    const auditStatus=canAudit ? STATUSES.ready : STATUSES.partial;
+
+    return [
+      {
+        key:"organisation",
+        title:"Organisation",
+        description:"Office location and Unit Head configuration.",
+        status:organisationStatus,
+        detail:[
+          snapshot.office ? `Primary office: ${snapshot.office.name||"Recorded"}.` : "Primary office is not configured.",
+          headlessUnits.length ? `${headlessUnits.length} active unit${headlessUnits.length===1?"":"s"} have no recorded Unit Head.` : "Every active unit has a recorded Unit Head.",
+        ].join(" "),
+        actions:[
+          {label:"Office settings",onClick:()=>go("office-settings")},
+          {label:"Units",onClick:()=>go("units")},
+        ],
+      },
+      {
+        key:"people",
+        title:"People & access",
+        description:"Employee records, identity linking and protected access.",
+        status:peopleStatus,
+        detail:peopleGaps.length
+          ? `${peopleGaps.length} employee record${peopleGaps.length===1?"":"s"} have an authoritative data gap. Roster-only status alone is not treated as an error.`
+          : snapshot.invitations.length
+            ? `${snapshot.invitations.length} Staff invitation${snapshot.invitations.length===1?" is":"s are"} still pending activation.`
+            : "No employee data exception or pending Staff invitation is currently recorded.",
+        actions:[
+          {label:"People",onClick:()=>go("people")},
+          ...(caps.has("hr_private.access")?[{label:"Protected HR",onClick:()=>go("protected-hr")}]:[]),
+        ],
+      },
+      {
+        key:"work",
+        title:"Work & operations",
+        description:"Checks and operational workflow state.",
+        status:workStatus,
+        detail:snapshot.checks.length
+          ? `${snapshot.checks.length} authorised check${snapshot.checks.length===1?" is":"s are"} waiting for action.`
+          : "No ready workflow check is waiting right now.",
+        actions:[{label:"Checks & workflows",onClick:()=>go("workflows")}],
+      },
+      {
+        key:"leave",
+        title:"Time & Leave",
+        description:"Daily workforce context stays separate from advanced schedule and policy setup.",
+        status:leaveStatus,
+        detail:!snapshot.leavePolicy
+          ? "The owner-confirmed leave route is active, but entitlement, accrual and carry-over policy values remain unconfigured."
+          : rules.some((rule)=>!rule.complete)
+            ? "A confirmed Leave policy exists, but one or more rules remain incomplete."
+            : `Confirmed policy: ${snapshot.leavePolicy.name}. Manager approval → Administration final approval remains the route for owner-confirmed leave kinds.`,
+        actions:[{label:"Workforce",onClick:()=>go("attendance")}],
+      },
+      {
+        key:"payroll",
+        title:"Payroll & Finance",
+        description:"Protected Payroll readiness and separate financial records.",
+        status:payrollStatus,
+        detail:payrollDetail,
+        actions:[
+          ...(canPayroll?[{label:"Payroll",onClick:()=>go("payroll")}]:[]),
+          {label:"Finance",onClick:()=>go("finance")},
+        ],
+      },
+      {
+        key:"governance",
+        title:"Security & governance",
+        description:"Explicit authority, versioned rules and consequential checks.",
+        status:governanceStatus,
+        detail:governanceStatus===STATUSES.ready
+          ? "Authority management and audit review capabilities are available. Job titles do not grant permissions."
+          : "This account does not hold every governance capability; unavailable controls remain inaccessible.",
+        actions:[
+          ...(caps.has("authority.manage")?[{label:"Authority",onClick:()=>go("authority")},{label:"System rules",onClick:()=>go("policies")}]:[]),
+          ...(caps.has("audit.view")?[{label:"Checks",onClick:()=>go("workflows")}]:[]),
+        ],
+      },
+      {
+        key:"integrations",
+        title:"Integrations",
+        description:"Approved provider adapters and server-secured connection state.",
+        status:integrationsStatus,
+        detail:!canIntegrations
+          ? "Integration management is not assigned to this account."
+          : broken.length
+            ? `${broken.length} connection${broken.length===1?" needs":"s need"} attention or reconnection.`
+            : snapshot.providers.length
+              ? `${connected.length} of ${snapshot.providers.length} approved provider${snapshot.providers.length===1?" is":"s are"} connected.`
+              : "No active provider adapter is configured.",
+        actions:canIntegrations?[{label:"Connected Apps",onClick:()=>go("integrations")}]:[],
+      },
+      {
+        key:"audit",
+        title:"Audit & records",
+        description:"Append-only consequential history and internal event evidence.",
+        status:auditStatus,
+        detail:canAudit
+          ? snapshot.audit.length
+            ? `Audit is available. Latest ordinary-platform event: ${new Date(snapshot.audit[0].created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}.`
+            : "Audit is available; no ordinary-platform event is currently returned in the recent window."
+          : "Audit review is not assigned to this account.",
+        actions:canAudit?[
+          {label:"Audit",onClick:()=>go("audit")},
+          {label:"System events",onClick:()=>go("events")},
+        ]:[],
+      },
+    ];
+  },[snapshot,caps,canPayroll,canIntegrations,canAudit,go]);
+
+  const attention=domains.filter((domain)=>domain.status!==STATUSES.ready);
+
   return <div className="body control-center premium-admin-page ev2-control-center">
     <header className="admin-page-header ev2-control-center-header">
-      <div><span className="eyebrow">Administration</span><h1 className="h1">Control Center</h1><p className="screen-note">Configure how CEAC OS operates. Everyday employee and manager work stays outside this area.</p></div>
+      <div>
+        <span className="eyebrow">Administration</span>
+        <h1 className="h1">Control Center</h1>
+        <p className="screen-note">Configuration and governance status from CEAC's authoritative records. Advanced changes open only on their owning surface.</p>
+      </div>
       <StatusBadge tone="neutral" icon={false}>Governance workspace</StatusBadge>
     </header>
-    <section className="control-grid">{cards.map(c=><ControlCard key={c.title}{...c}/>)}</section>
-    {advanced.length>0&&<section className="control-advanced"><div><span className="eyebrow">Advanced</span><h2>Technical & governance tools</h2><p>Use these only when diagnosing or governing the underlying platform.</p></div><div>{advanced.map(c=><button key={c.title} onClick={c.action}><strong>{c.title}</strong><small>{c.description}</small><b>Open →</b></button>)}</div></section>}
+
+    {error ? <StatePanel
+      state="error"
+      title="Control Center could not finish loading"
+      description={error}
+      actionLabel="Try again"
+      onAction={load}
+    /> : null}
+
+    {loading ? <div style={{display:"grid",gap:"var(--ev2-space-3)"}} role="status" aria-label="Loading Control Center">
+      <Surface variant="plain" padding="standard"><Skeleton width="30%" /><Skeleton width="88%" /></Surface>
+      <Surface variant="plain" padding="standard"><Skeleton width="34%" /><Skeleton width="92%" /></Surface>
+    </div> : null}
+
+    {!loading&&!error ? <>
+      <DataPanel
+        eyebrow="System health"
+        title={attention.length ? "Needs attention" : "No configuration exception recorded"}
+        supporting={attention.length
+          ? "These domains are incomplete, waiting on policy, or have an actionable recorded exception. This is not a numeric health score."
+          : "Every domain visible to this account currently reports its required configuration as ready."}
+        action={<StatusBadge tone={attention.length?"warning":"success"} icon={false}>
+          {attention.length ? `${attention.length} domain${attention.length===1?"":"s"}` : "Ready"}
+        </StatusBadge>}
+      >
+        {attention.length ? attention.map((domain)=><QueueRow
+          key={domain.key}
+          icon="warning"
+          title={domain.title}
+          meta={domain.detail}
+          status={domain.status}
+          statusTone={statusTone(domain.status)}
+          onClick={domain.actions[0]?.onClick}
+        />) : <StatePanel state="success" title="No configuration exception is waiting" description="Use the domain cards below to review authoritative settings." />}
+      </DataPanel>
+
+      <section className="control-grid" aria-label="Control Center domains">
+        {domains.map((domain)=><DomainCard key={domain.key}{...domain}/>)}
+      </section>
+    </> : null}
   </div>;
 }

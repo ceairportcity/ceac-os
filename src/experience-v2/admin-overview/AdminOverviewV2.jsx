@@ -110,7 +110,11 @@ export default function AdminOverviewV2({
   reporting,
   watch = [],
   meetings = [],
+  employeeRoster = [],
+  payrollReadiness = null,
   canManagePeople,
+  canUsePayroll = false,
+  canAccessProtectedHR = false,
   onRetry,
   onOpenItem,
   onOpenMeeting,
@@ -119,7 +123,10 @@ export default function AdminOverviewV2({
   onOpenUnits,
   onOpenWorkflows,
   onOpenReports,
+  onOpenFinance,
   onOpenPeople,
+  onOpenProtectedHR,
+  onOpenPayroll,
   onOpenProjects,
   onOpenStrategy,
   onOpenAttendance,
@@ -130,8 +137,21 @@ export default function AdminOverviewV2({
   const headlessUnits = units.filter((unit) => !unit.head);
   const setupCount = (office ? 0 : 1) + headlessUnits.length;
   const deliveryAttention = watch.length + blockers.length;
-  const totalAttention = decisionCount + setupCount;
   const reportingGap = reporting?.missing?.length || 0;
+  const rosterOnlyCount = employeeRoster.filter((person) => person.identity_state === "roster_only").length;
+  const identityReviewCount = employeeRoster.filter((person) => person.identity_state === "needs_review").length;
+  const peopleAttention = employeeRoster.filter((person) =>
+    person.identity_state === "needs_review"
+    || person.employment_type === "not_recorded"
+    || !(person.job_title || person.source_position)
+    || !(person.units || []).length
+  ).length;
+  const payrollAttention = canUsePayroll && payrollReadiness
+    ? Number(payrollReadiness.compensation_missing_count || 0)
+      + Number(payrollReadiness.payment_missing_count || 0)
+      + Number(payrollReadiness.identity_review_count || 0)
+    : 0;
+  const totalAttention = decisionCount + setupCount + peopleAttention + payrollAttention;
   const objectiveTotal = Number(delivery?.objectives || 0);
   const objectiveItems = [
     ["Met", delivery?.met || 0],
@@ -229,10 +249,86 @@ export default function AdminOverviewV2({
           </div>
 
           <DataPanel
+            className="adminv2-panel adminv2-setup adminv2-people"
+            eyebrow="People & HR"
+            title="Employee records"
+            supporting="The employee roster is independent from login identity. Missing employment facts stay explicitly unrecorded until Administration confirms them."
+            action={<Count value={peopleAttention} tone={peopleAttention ? "attention" : "success"} />}
+          >
+            <div className="adminv2-stat-grid is-four">
+              <StatTile label="Employees" value={employeeRoster.length} supporting="Roster records" icon="people" tone="action" onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Roster-only" value={rosterOnlyCount} supporting="No fabricated login" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Identity review" value={identityReviewCount} supporting="Needs confirmation" icon="warning" tone={identityReviewCount ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Needs attention" value={peopleAttention} supporting="Recorded gaps" icon="notification" tone={peopleAttention ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
+            </div>
+            <div className="adminv2-panel-foot">
+              {canManagePeople ? <Button variant="quiet" size="compact" onClick={onOpenPeople}>Open People</Button> : null}
+              {canAccessProtectedHR ? <Button variant="quiet" size="compact" onClick={onOpenProtectedHR}>Protected HR</Button> : null}
+            </div>
+          </DataPanel>
+        </section>
+
+        <section className="adminv2-context-grid" aria-label="People operations">
+          <DataPanel
+            className="adminv2-panel adminv2-workforce"
+            eyebrow="Time & Leave"
+            title="Today and leave context"
+            supporting="Recorded sessions and confirmed leave are operational context only. No work session is not an absence and never creates a Payroll deduction."
+          >
+            <div className="adminv2-stat-grid is-four">
+              <StatTile label="Working now" value={today?.working || 0} supporting="Current sessions" icon="people" tone="success" onClick={onOpenAttendance} />
+              <StatTile label="Approved leave" value={today?.leave || 0} supporting="Today" icon="time" tone="action" onClick={onOpenAttendance} />
+              <StatTile label="No session" value={today?.notStarted || 0} supporting="Not absence" icon="pending" tone="neutral" onClick={onOpenAttendance} />
+              <StatTile label="People on record" value={today?.headcount || 0} supporting="Active people" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
+            </div>
+          </DataPanel>
+          <DataPanel
+            className="adminv2-panel adminv2-payroll"
+            eyebrow="Payroll"
+            title="Payroll readiness"
+            supporting="Administration prepares. Group Pastor / CEO approves. Missing salary, payment or identity values remain factual gaps and never become inferred values."
+            action={canUsePayroll ? <Count value={payrollAttention} tone={payrollAttention ? "attention" : "success"} /> : null}
+          >
+            {canUsePayroll && payrollReadiness ? <div className="adminv2-stat-grid is-four">
+              <StatTile label="Employees" value={payrollReadiness.employee_count || 0} supporting="Draft population" icon="people" tone="neutral" onClick={onOpenPayroll} />
+              <StatTile label="Salary record gaps" value={payrollReadiness.compensation_missing_count || 0} supporting="Not recorded" icon="finance" tone={payrollReadiness.compensation_missing_count ? "warning" : "neutral"} onClick={onOpenPayroll} />
+              <StatTile label="Payment detail gaps" value={payrollReadiness.payment_missing_count || 0} supporting="Not recorded" icon="record" tone={payrollReadiness.payment_missing_count ? "warning" : "neutral"} onClick={onOpenPayroll} />
+              <StatTile label="Identity review" value={payrollReadiness.identity_review_count || 0} supporting="Needs confirmation" icon="warning" tone={payrollReadiness.identity_review_count ? "warning" : "neutral"} onClick={onOpenPayroll} />
+            </div> : <Quiet icon="finance">{canUsePayroll ? "Payroll readiness is not available right now." : "Payroll readiness requires Payroll authority."}</Quiet>}
+            {canUsePayroll ? <div className="adminv2-panel-foot"><Button variant="quiet" size="compact" onClick={onOpenPayroll}>Open Payroll</Button></div> : null}
+          </DataPanel>
+        </section>
+
+        <section className="adminv2-context-grid">
+          <DataPanel
+            className="adminv2-panel adminv2-reporting"
+            eyebrow="Finance & reporting"
+            title="Finance & reporting"
+            supporting="Reporting shows submission presence only. Financial records remain in Finance and currencies stay separate."
+            action={<div className="adminv2-panel-actions"><Button variant="quiet" size="compact" onClick={onOpenReports}>Reports</Button><Button variant="quiet" size="compact" onClick={onOpenFinance}>Finance</Button></div>}
+          >
+            {!reporting ? <Quiet icon="reports">No reporting period is open right now.</Quiet> : <>
+              <div className="adminv2-reporting-head">
+                <div><span>Open period</span><strong>{reporting.label}</strong></div>
+                <StatusBadge tone={reportingGap ? "warning" : "success"}>{reporting.submitted}/{reporting.total} submitted</StatusBadge>
+              </div>
+              <ProgressDistribution items={[{
+                label: "Units submitted",
+                value: `${reporting.submitted}/${reporting.total}`,
+                percent: reporting.total ? (reporting.submitted / reporting.total) * 100 : 0,
+              }]} />
+              {reporting.missing.length ? <div className="adminv2-missing">
+                <span>Outstanding units</span>
+                <div>{reporting.missing.map((unit) => <span key={unit.id}>{unit.name}</span>)}</div>
+              </div> : <Quiet>Every unit is in for this period.</Quiet>}
+            </>}
+          </DataPanel>
+
+          <DataPanel
             className="adminv2-panel adminv2-setup"
-            eyebrow="Setup & access"
-            title="Configuration state"
-            supporting="Configuration gaps and pending access state. Invitations always begin as Staff."
+            eyebrow="Organisation setup"
+            title="Organisation configuration"
+            supporting="Recorded office and Unit Head configuration. Invitations always begin as Staff and job titles never grant authority."
             action={<Count value={setupCount} tone={setupCount ? "attention" : "success"} />}
           >
             {!office ? <SetupRow
@@ -272,30 +368,6 @@ export default function AdminOverviewV2({
 
         <section className="adminv2-context-grid">
           <DataPanel
-            className="adminv2-panel adminv2-reporting"
-            eyebrow="Reporting"
-            title="Reporting coverage"
-            supporting="Submission presence only. This does not measure report quality."
-            action={<Button variant="quiet" size="compact" onClick={onOpenReports}>Open Reports</Button>}
-          >
-            {!reporting ? <Quiet icon="reports">No reporting period is open right now.</Quiet> : <>
-              <div className="adminv2-reporting-head">
-                <div><span>Open period</span><strong>{reporting.label}</strong></div>
-                <StatusBadge tone={reportingGap ? "warning" : "success"}>{reporting.submitted}/{reporting.total} submitted</StatusBadge>
-              </div>
-              <ProgressDistribution items={[{
-                label: "Units submitted",
-                value: `${reporting.submitted}/${reporting.total}`,
-                percent: reporting.total ? (reporting.submitted / reporting.total) * 100 : 0,
-              }]} />
-              {reporting.missing.length ? <div className="adminv2-missing">
-                <span>Outstanding units</span>
-                <div>{reporting.missing.map((unit) => <span key={unit.id}>{unit.name}</span>)}</div>
-              </div> : <Quiet>Every unit is in for this period.</Quiet>}
-            </>}
-          </DataPanel>
-
-          <DataPanel
             className="adminv2-panel adminv2-pulse"
             eyebrow="Organisation pulse"
             title="Projects and objectives"
@@ -315,22 +387,6 @@ export default function AdminOverviewV2({
               <span className="adminv2-subhead">Objective status</span>
               <ProgressDistribution items={objectiveItems} />
             </div> : <Quiet icon="goal">No objective status records are available.</Quiet>}
-          </DataPanel>
-        </section>
-
-        <section className="adminv2-context-grid">
-          <DataPanel
-            className="adminv2-panel adminv2-workforce"
-            eyebrow="Today"
-            title="Workforce context"
-            supporting="Session and leave facts are operational context only. They do not measure output or performance."
-          >
-            <div className="adminv2-stat-grid is-four">
-              <StatTile label="Working now" value={today?.working || 0} supporting="Current sessions" icon="people" tone="success" onClick={onOpenAttendance} />
-              <StatTile label="Approved leave" value={today?.leave || 0} supporting="Today" icon="time" tone="action" onClick={onOpenAttendance} />
-              <StatTile label="No session" value={today?.notStarted || 0} supporting="Started today" icon="pending" tone="neutral" onClick={onOpenAttendance} />
-              <StatTile label="People on record" value={today?.headcount || 0} supporting="Active people" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
-            </div>
           </DataPanel>
 
           <DataPanel

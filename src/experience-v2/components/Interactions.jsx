@@ -219,6 +219,9 @@ function OverlayShell({
   placement = "right",
   footer,
   returnFocusRef,
+  panelClassName = "",
+  bodyClassName = "",
+  footerClassName = "",
 }) {
   const titleId = useId();
   const descriptionId = useId();
@@ -248,9 +251,9 @@ function OverlayShell({
             aria-labelledby={titleId}
             aria-describedby={description ? descriptionId : undefined}
             className={
-              kind === "drawer"
+              (kind === "drawer"
                 ? `ev2c-drawer ev2c-drawer-${placement}`
-                : "ev2c-modal"
+                : "ev2c-modal") + (panelClassName ? ` ${panelClassName}` : "")
             }
             initial={
               kind === "drawer"
@@ -279,9 +282,9 @@ function OverlayShell({
               <IconButton icon="close" label="Close" variant="quiet" onClick={onClose} />
             </header>
 
-            <div className="ev2c-overlay-body">{children}</div>
+            <div className={`ev2c-overlay-body${bodyClassName ? ` ${bodyClassName}` : ""}`}>{children}</div>
 
-            {footer ? <footer className="ev2c-overlay-footer">{footer}</footer> : null}
+            {footer ? <footer className={`ev2c-overlay-footer${footerClassName ? ` ${footerClassName}` : ""}`}>{footer}</footer> : null}
           </motion.section>
         </motion.div>
       ) : null}
@@ -299,6 +302,10 @@ export function Drawer({
   ...props
 }) {
   return <OverlayShell {...props} kind="drawer" placement={placement} />;
+}
+
+export function ComposerDrawer(props) {
+  return <Drawer {...props} placement="right" panelClassName={`ev2c-composer-drawer ${props.panelClassName || ""}`.trim()} bodyClassName={`ev2c-composer-body ${props.bodyClassName || ""}`.trim()} footerClassName={`ev2c-composer-footer ${props.footerClassName || ""}`.trim()} />;
 }
 
 export function ConfirmDialog({

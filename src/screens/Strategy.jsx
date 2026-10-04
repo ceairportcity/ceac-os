@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, ProductNotice, Sheet } from "../components/bits";
+import { ComposerDrawer } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
 
 const TYPE_LABELS = {
@@ -34,7 +35,7 @@ function blankForm(type, parentId = "", unitId = "") {
   };
 }
 
-export default function Strategy({ me }) {
+export default function Strategy({ me, createRequest = null, onCreateHandled }) {
   const [nodes, setNodes] = useState([]);
   const [links, setLinks] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -54,6 +55,14 @@ export default function Strategy({ me }) {
   );
 
   useEffect(() => { load(); }, [me.id]);
+  useEffect(() => {
+    if (createRequest === "ministry_objective" && canGlobal) {
+      setError(null);
+      setNotice(null);
+      setForm(blankForm("ministry_objective"));
+      onCreateHandled?.();
+    }
+  }, [createRequest, canGlobal]);
 
   async function load() {
     setLoading(true);
@@ -249,7 +258,10 @@ export default function Strategy({ me }) {
         <h1 className="h1">{executiveSurface ? "Ministry" : "Strategy"}</h1>
         <p className="screen-note">{executiveSurface ? "Direction, ministry objectives and the unit objectives carrying them forward. Results are shown only where they are explicitly recorded." : "Ministry Direction → Ministry Objective → Unit Objective. Descriptive goals stay descriptive; numeric goals always show the result beside its target."}</p>
       </div>
-      {canGlobal && executiveSurface && <button className="btn wide-auto" onClick={() => openCreate("ministry_direction")}>Add Ministry Direction</button>}
+      {canGlobal && executiveSurface && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button className="btn" onClick={() => openCreate("ministry_objective")}>New Ministry Objective</button>
+        <button className="btn btn-ghost" onClick={() => openCreate("ministry_direction")}>Add Ministry Direction</button>
+      </div>}
     </div>
 
     {error && <ProductNotice tone="error" title="Strategy">{error}</ProductNotice>}
@@ -296,11 +308,21 @@ export default function Strategy({ me }) {
       </div>)}
     </section>)}
 
-    {form && <Sheet onClose={() => { if (!busy) setForm(null); }}>
-      <div className="eyebrow">{form.id ? "Revise strategy" : "New strategy record"}</div>
-      <div className="h2">{TYPE_LABELS[form.nodeType]}</div>
-      <p className="screen-note">Every change keeps an attributable historical revision. Descriptive goals never receive generated progress percentages.</p>
-
+    {form && <ComposerDrawer
+      open
+      onClose={() => { if (!busy) setForm(null); }}
+      title={form.id ? `Revise ${TYPE_LABELS[form.nodeType].toLowerCase()}` : `New ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
+      description="Keep the objective clear and factual. Measurement detail appears only when CEAC is recording a numeric result."
+      footer={<button className="btn" disabled={busy || !form.name.trim() || !form.statement.trim() || !form.reason.trim() || (form.nodeType !== "ministry_direction" && !form.parentId) || (form.nodeType === "unit_objective" && !form.unitId) || (form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim()))} onClick={saveNode}>
+        {busy ? "Saving…" : form.id ? "Record revision" : `Create ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
+      </button>}
+    >
+      {form.nodeType === "ministry_objective" && <FieldGroup label="Ministry Direction">
+        <select className="field" aria-label="Strategy parent direction" value={form.parentId} onChange={(event) => setForm({ ...form, parentId: event.target.value })} disabled={Boolean(form.id)}>
+          <option value="">Choose Ministry Direction</option>
+          {directions.filter((direction) => direction.status !== "closed").map((direction) => <option key={direction.id} value={direction.id}>{direction.name}</option>)}
+        </select>
+      </FieldGroup>}
       {form.nodeType === "unit_objective" && <FieldGroup label="Unit">
         <select className="field" aria-label="Strategy unit" value={form.unitId} onChange={(event) => setForm({ ...form, unitId: event.target.value })} disabled={Boolean(form.id)}>
           <option value="">Choose unit</option>
@@ -308,22 +330,24 @@ export default function Strategy({ me }) {
         </select>
       </FieldGroup>}
 
-      <FieldGroup label="Name"><input className="field" aria-label="Strategy name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FieldGroup>
-      <FieldGroup label="Statement"><textarea className="field" aria-label="Strategy statement" rows="4" value={form.statement} onChange={(event) => setForm({ ...form, statement: event.target.value })} /></FieldGroup>
-      <FieldGroup label="Measurement">
+      <FieldGroup label="Objective name"><input className="field" aria-label="Strategy name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FieldGroup>
+      <FieldGroup label="What are we trying to achieve?"><textarea className="field" aria-label="Strategy statement" rows="4" value={form.statement} onChange={(event) => setForm({ ...form, statement: event.target.value })} /></FieldGroup>
+      <FieldGroup label="How will we know?">
         <select className="field" aria-label="Strategy measurement" value={form.measurementKind} onChange={(event) => setForm({ ...form, measurementKind: event.target.value, targetValue: "", targetUnit: "", currentValue: "" })}>
-          <option value="descriptive">Descriptive — no generated percentage</option>
-          <option value="numeric">Numeric — result and target</option>
+          <option value="descriptive">Describe the outcome — no generated percentage</option>
+          <option value="numeric">Record a numeric result and target</option>
         </select>
       </FieldGroup>
-      {form.measurementKind === "numeric" && <>
-        <FieldGroup label="Measure label"><input className="field" aria-label="Strategy measure label" value={form.measureLabel} onChange={(event) => setForm({ ...form, measureLabel: event.target.value })} /></FieldGroup>
-        <FieldGroup label="Target value"><input className="field" aria-label="Strategy target value" inputMode="decimal" value={form.targetValue} onChange={(event) => setForm({ ...form, targetValue: event.target.value.replace(/[^0-9.-]/g, "") })} /></FieldGroup>
-        <FieldGroup label="Target unit"><input className="field" aria-label="Strategy target unit" value={form.targetUnit} onChange={(event) => setForm({ ...form, targetUnit: event.target.value })} placeholder="people, outcomes, services…" /></FieldGroup>
+      {form.measurementKind === "numeric" && <div className="ocr-composer-group">
+        <FieldGroup label="What are we measuring?"><input className="field" aria-label="Strategy measure label" value={form.measureLabel} onChange={(event) => setForm({ ...form, measureLabel: event.target.value })} /></FieldGroup>
+        <FieldGroup label="Target"><input className="field" aria-label="Strategy target value" inputMode="decimal" value={form.targetValue} onChange={(event) => setForm({ ...form, targetValue: event.target.value.replace(/[^0-9.-]/g, "") })} /></FieldGroup>
+        <FieldGroup label="Unit"><input className="field" aria-label="Strategy target unit" value={form.targetUnit} onChange={(event) => setForm({ ...form, targetUnit: event.target.value })} placeholder="people, outcomes, services…" /></FieldGroup>
         <FieldGroup label="Current recorded result"><input className="field" aria-label="Strategy current value" inputMode="decimal" value={form.currentValue} onChange={(event) => setForm({ ...form, currentValue: event.target.value.replace(/[^0-9.-]/g, "") })} /></FieldGroup>
-      </>}
-      <FieldGroup label="Starts on"><input className="field" aria-label="Strategy start date" type="date" value={form.startsOn} onChange={(event) => setForm({ ...form, startsOn: event.target.value })} /></FieldGroup>
-      <FieldGroup label="Target date"><input className="field" aria-label="Strategy target date" type="date" value={form.targetOn} onChange={(event) => setForm({ ...form, targetOn: event.target.value })} /></FieldGroup>
+      </div>}
+      <div className="ocr-composer-two">
+        <FieldGroup label="Start date"><input className="field" aria-label="Strategy start date" type="date" value={form.startsOn} onChange={(event) => setForm({ ...form, startsOn: event.target.value })} /></FieldGroup>
+        <FieldGroup label="Target date"><input className="field" aria-label="Strategy target date" type="date" value={form.targetOn} onChange={(event) => setForm({ ...form, targetOn: event.target.value })} /></FieldGroup>
+      </div>
       <FieldGroup label="Status">
         <select className="field" aria-label="Strategy status" value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
           <option value="draft">Draft</option>
@@ -332,11 +356,8 @@ export default function Strategy({ me }) {
           <option value="closed">Closed</option>
         </select>
       </FieldGroup>
-      <FieldGroup label="Reason / context"><textarea className="field" aria-label="Strategy change reason" rows="3" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} /></FieldGroup>
-      <button className="btn" style={{ marginTop: 14 }} disabled={busy || !form.name.trim() || !form.statement.trim() || !form.reason.trim() || (form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim()))} onClick={saveNode}>
-        {busy ? "Saving…" : form.id ? "Record revision" : "Create strategy record"}
-      </button>
-    </Sheet>}
+      <FieldGroup label="Reason / context" hint="Required so the revision history remains attributable and understandable."><textarea className="field" aria-label="Strategy change reason" rows="3" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} /></FieldGroup>
+    </ComposerDrawer>}
 
     {linkForm && <Sheet onClose={() => { if (!busy) setLinkForm(null); }}>
       <div className="eyebrow">Strategy delivery</div>

@@ -100,7 +100,13 @@ end $$;
 -- and do not expose protected tables directly.
 -- ERC6 adds one reviewed Payroll readiness RPC. It returns configuration
 -- completeness only, exposes no salary/bank values, and is payroll-capability-gated.
--- Reducing this surface is allowed. Any growth beyond 116 requires another
+-- OCR3 adds six reviewed operational-file functions:
+-- app_can_read_operational_context, app_can_write_operational_context,
+-- app_can_access_operational_file, register_operational_file,
+-- link_operational_file and finalize_operational_file.
+-- They are authenticated-only, fixed-search-path, organisation/context-bound,
+-- and covered by operational_clarity_files_gate.sql plus the generic definer checks above.
+-- Reducing this surface is allowed. Any growth beyond 122 requires another
 -- explicit security-gate review in the same PR.
 do $$
 declare n integer;
@@ -111,8 +117,8 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n>116 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 116-function ceiling to %.',n;
+  if n>122 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 122-function ceiling to %.',n;
   end if;
 end $$;
 

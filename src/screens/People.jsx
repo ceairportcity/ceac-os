@@ -5,6 +5,15 @@ import { dateOnly, dueLabel } from "../lib/time";
 import { statusPill, ProductNotice, LoadingState, FieldGroup, EmptyState, Avatar, ProgressMeter, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import {
+  OPERATIONAL_FILE_ACCEPT,
+  listOperationalFiles,
+  listOperationalFilesForContexts,
+  openOperationalFile,
+  signedOperationalFileUrl,
+  uploadOperationalFile,
+} from "../lib/operationalFiles";
+import { Button, ComposerDrawer } from "../experience-v2/components";
+import {
   PeopleAdminPersonRow,
   PeopleBackButton,
   PeopleEmpty,
@@ -12,10 +21,13 @@ import {
   PeopleFactRow,
   PeoplePageHeader,
   PeoplePersonHeader,
+  PeoplePersonRow,
   PeopleSection,
   PeopleWorkspaceSection,
 } from "../experience-v2/people-family/PeopleFamilyV2";
 
+const PEOPLE_VIEWS = [["directory","Directory"],["organisation","Organisation"],["attention","Needs attention"]];
+const PERSON_TABS = [["overview","Overview"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["documents","Documents"],["history","History"]];
 const FILTERS = [["all","Everyone"],["active","Active"],["on_leave","On leave"],["quiet","No submissions in 14 days"],["no_unit","No unit"]];
 const EMPLOYMENT_CHANGES = [
   ["employment_details_changed","Employment details changed"],
@@ -55,9 +67,11 @@ function amountToMinor(value) {
   return Number.isFinite(number) ? Math.round(number * 100) : 0;
 }
 
-export default function People({ me, openItem }) {
+export default function People({ me, openItem, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("directory");
+  const [personTab, setPersonTab] = useState("overview");
   const [searchText, setSearchText] = useState("");
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [units, setUnits] = useState([]);
@@ -69,6 +83,8 @@ export default function People({ me, openItem }) {
   const [protectedHrLoading, setProtectedHrLoading] = useState(false);
   const [protectedEditor, setProtectedEditor] = useState(null);
   const [savingProtected, setSavingProtected] = useState(false);
+  const [employeeFiles, setEmployeeFiles] = useState({ photos: [], documents: [] });
+  const [employeeFileBusy, setEmployeeFileBusy] = useState(false);
   const [drill, setDrill] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -77,6 +93,13 @@ export default function People({ me, openItem }) {
   const canManageProtectedHr = (me.capabilities || []).includes("hr_private.access");
 
   useEffect(() => { load(); }, [me.id]);
+  useEffect(() => {
+    if (!initialEmployeeId || !rows.length || person) return;
+    const match = rows.find((row) => row.id === initialEmployeeId || row.profile_id === initialEmployeeId);
+    if (!match) return;
+    openPerson(match);
+    onInitialHandled?.();
+  }, [initialEmployeeId, rows, person]);
 
   async function load() {
     setLoading(true);
@@ -151,7 +174,23 @@ export default function People({ me, openItem }) {
         phone: operational?.phone || null,
       };
     });
-    setRows(rosterRows);
+    let hydratedRows = rosterRows;
+    try {
+      const photoGroups = await listOperationalFilesForContexts("employee_photo", rosterRows.map((entry) => entry.id));
+      hydratedRows = await Promise.all(rosterRows.map(async (entry) => {
+        const files = photoGroups.get(entry.id) || [];
+        const latest = files[files.length - 1] || null;
+        if (!latest) return entry;
+        try {
+          return { ...entry, photo_url: await signedOperationalFileUrl(latest, 3600) };
+        } catch {
+          return entry;
+        }
+      }));
+    } catch {
+      hydratedRows = rosterRows;
+    }
+    setRows(hydratedRows);
     setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
     setUnits(unitsResult.data || []);
     setLoading(false);
@@ -161,6 +200,7 @@ export default function People({ me, openItem }) {
     setDetailLoading(true);
     setError(null);
     setDrill(null);
+    setPersonTab("overview");
 
     const rosterDetailResult = await supabase.rpc("admin_employee_roster_detail", { p_employee_id: summary.id });
     if (rosterDetailResult.error) {
@@ -181,12 +221,25 @@ export default function People({ me, openItem }) {
       : Promise.resolve([{ data: { work: [], sessions: [], leave: [] }, error: null }, { data: { current: null, history: [] }, error: null }]);
 
     setProtectedHrLoading(canManageProtectedHr);
-    const [linkedResults, protectedResponse] = await Promise.all([
-      linkedRequests,
-      canManageProtectedHr
-        ? supabase.rpc("hr_employee_protected_summary", { p_employee_id: summary.id })
-        : Promise.resolve({ data: null, error: null }),
-    ]);
+    let linkedResults;
+    let protectedResponse;
+    let photoFiles = [];
+    let documentFiles = [];
+    try {
+      [linkedResults, protectedResponse, photoFiles, documentFiles] = await Promise.all([
+        linkedRequests,
+        canManageProtectedHr
+          ? supabase.rpc("hr_employee_protected_summary", { p_employee_id: summary.id })
+          : Promise.resolve({ data: null, error: null }),
+        listOperationalFiles("employee_photo", summary.id),
+        listOperationalFiles("employee_document", summary.id),
+      ]);
+    } catch (fileError) {
+      setProtectedHrLoading(false);
+      setDetailLoading(false);
+      setError(humanError(fileError, "That employee's private files could not load."));
+      return;
+    }
 
     [detailResult, employmentResult] = linkedResults;
     protectedResult = protectedResponse;
@@ -199,6 +252,17 @@ export default function People({ me, openItem }) {
     }
 
     setProtectedHr(protectedResult.data || null);
+    setEmployeeFiles({ photos: photoFiles, documents: documentFiles });
+
+    let photoUrl = summary.photo_url || null;
+    const latestPhoto = photoFiles[0] || null;
+    if (latestPhoto) {
+      try {
+        photoUrl = await signedOperationalFileUrl(latestPhoto, 3600);
+      } catch {
+        photoUrl = summary.photo_url || null;
+      }
+    }
 
     const data = detailResult.data;
     const work = Array.isArray(data?.work) ? data.work.map((item) => ({
@@ -223,6 +287,7 @@ export default function People({ me, openItem }) {
       roster_units: rosterUnits,
       email: rosterEmployee.account_email || summary.email || null,
       phone: rosterEmployee.account_phone || summary.phone || null,
+      photo_url: photoUrl,
       operational_data_available: Boolean(rosterDetail.operational_data_available),
       items: work,
       done,
@@ -241,6 +306,39 @@ export default function People({ me, openItem }) {
     });
   }
 
+  async function refreshEmployeeFiles(employeeId) {
+    const [photos, documents] = await Promise.all([
+      listOperationalFiles("employee_photo", employeeId),
+      listOperationalFiles("employee_document", employeeId),
+    ]);
+    const latest = photos[0] || null;
+    const photoUrl = latest ? await signedOperationalFileUrl(latest, 3600) : null;
+    setEmployeeFiles({ photos, documents });
+    setRows((current) => current.map((entry) => entry.id === employeeId ? { ...entry, photo_url: photoUrl } : entry));
+    setPerson((current) => current?.id === employeeId ? { ...current, photo_url: photoUrl } : current);
+  }
+
+  async function uploadEmployeeFile(file, kind) {
+    if (!person?.id || !file) return;
+    setEmployeeFileBusy(true);
+    setError(null);
+    try {
+      await uploadOperationalFile({
+        file,
+        contextType: kind === "photo" ? "employee_photo" : "employee_document",
+        contextId: person.id,
+        relation: kind === "photo" ? "employee_photo" : "employee_document",
+      });
+      await refreshEmployeeFiles(person.id);
+    } catch (fileError) {
+      setError(humanError(fileError, kind === "photo"
+        ? "The employee photo could not be saved."
+        : "The employee document could not be saved."));
+    } finally {
+      setEmployeeFileBusy(false);
+    }
+  }
+
   async function saveProtectedRecord(form) {
     if (!person?.employee_id) return;
     setSavingProtected(true);
@@ -249,7 +347,7 @@ export default function People({ me, openItem }) {
       p_employee_id: person.employee_id,
       p_record_type: form.recordType,
       p_payload: form.payload,
-      p_replaces_id: null,
+      p_replaces_id: form.replacesId || null,
       p_reason: form.reason,
     });
     if (saveError) {
@@ -396,6 +494,7 @@ export default function People({ me, openItem }) {
         <aside className="ev2p-admin-person-rail" aria-label="Employee context">
       <PeoplePersonHeader
         name={person.full_name}
+        src={person.photo_url}
         eyebrow={`${employmentCurrent?.unit_name || person.unit_name || "No unit"} · ${positionLabel}`}
         subtitle={employmentCurrent?.job_title || person.job_title || "No job title recorded"}
         context={[
@@ -405,6 +504,22 @@ export default function People({ me, openItem }) {
           `Employment ${employmentState}`,
         ].filter(Boolean).join(" · ")}
       />
+
+      <FieldGroup label="Employee photo">
+        <input
+          className="field"
+          aria-label="Employee photo"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          disabled={employeeFileBusy}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) uploadEmployeeFile(file, "photo");
+          }}
+        />
+      </FieldGroup>
+      <p className="screen-note">Stored privately in CEAC. Initials remain the fallback when no photo is recorded.</p>
 
       {error && <ProductNotice tone="error" title="Employee record">{error}</ProductNotice>}
       {person.on_leave_now && <ProductNotice tone="attention" title="On approved leave">This employee is currently away on approved leave.</ProductNotice>}
@@ -427,9 +542,65 @@ export default function People({ me, openItem }) {
           {person.birthday && <PeopleFactRow icon="calendar" title="Birthday" subtitle={new Date(person.birthday).toLocaleDateString("en-GB", { day: "numeric", month: "long" })} />}
         </div>
       </PeopleWorkspaceSection>
+
+      <div className="ev2p-admin-master-list" aria-label="Employee directory">
+        <FieldGroup label="Find employee">
+          <input
+            className="field"
+            type="search"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder="Name, title or unit"
+          />
+        </FieldGroup>
+        <div className="ev2p-link-list">
+          {rows
+            .filter((entry) => {
+              const query = searchText.trim().toLowerCase();
+              return !query || [entry.full_name, entry.job_title, entry.source_position, entry.unit_name]
+                .filter(Boolean).some((value) => String(value).toLowerCase().includes(query));
+            })
+            .slice(0, 18)
+            .map((entry) => <PeoplePersonRow
+              key={entry.id}
+              name={entry.full_name}
+              src={entry.photo_url}
+              subtitle={entry.job_title || entry.source_position || "No job title recorded"}
+              context={entry.unit_name || entry.source_department_text || "No unit recorded"}
+              status={entry.id === person.id ? "Selected" : undefined}
+              statusTone="action"
+              onClick={() => openPerson(entry)}
+            />)}
+        </div>
+      </div>
         </aside>
 
         <div className="ev2p-admin-person-detail">
+        <div className="ev2p-filter-tabs" role="tablist" aria-label="Employee record sections">
+          {[...PERSON_TABS, ...(canManageProtectedHr ? [["protected","Protected HR"]] : [])].map(([key, label]) => <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={personTab === key}
+            className={personTab === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
+            onClick={() => setPersonTab(key)}
+          >{label}</button>)}
+        </div>
+
+        {personTab === "overview" && <PeopleWorkspaceSection
+          title="Overview"
+          description="Current authorised employee context. Missing values remain missing until CEAC records them."
+        >
+          <div className="ev2p-admin-record-grid">
+            <PeopleFactRow icon="work" title="Current title" subtitle={employmentCurrent?.job_title || person.job_title || person.source_position || "Not recorded"} />
+            <PeopleFactRow icon="people" title="Primary unit" subtitle={employmentCurrent?.unit_name || person.unit_name || (rosterUnitNames.length ? rosterUnitNames.join(" · ") : "Not recorded")} />
+            <PeopleFactRow icon="people" title="Account" subtitle={person.email || identityLabel} />
+            <PeopleFactRow icon="info" title="Employment status" subtitle={employmentState} />
+            <PeopleFactRow icon="work" title="Open work" subtitle={hasLinkedProfile ? `${person.openWork.length} recorded` : "No linked operational account"} />
+            <PeopleFactRow icon="calendar" title="Leave records" subtitle={hasLinkedProfile ? `${person.leave.length} recorded` : "No linked operational account"} />
+          </div>
+        </PeopleWorkspaceSection>}
+      {personTab === "employment" && <>
       <PeopleWorkspaceSection
         title="Employment record"
         description="The current authorised employment record. Recording a change creates a new historical snapshot rather than overwriting the past."
@@ -447,7 +618,9 @@ export default function People({ me, openItem }) {
           {employmentCurrent?.exited_on && <PeopleFactRow icon="calendar" title="Exit date" subtitle={dateOnly(employmentCurrent.exited_on)} />}
         </div>
       </PeopleWorkspaceSection>
+      </>}
 
+      {personTab === "history" && <>
       <PeopleWorkspaceSection
         title="Employment history"
         description={hasLinkedProfile ? "Audited employment snapshots in effective-date order." : "A roster-only employee has no linked account employment history yet."}
@@ -470,12 +643,14 @@ export default function People({ me, openItem }) {
                 <span>{event.actor_name ? `Recorded by ${event.actor_name}` : "System baseline"}</span>
               </article>)}</div>}
       </PeopleWorkspaceSection>
+      </>}
 
+      {personTab === "work" && <>
       <PeopleWorkspaceSection
         title="Work & activity context"
         description={hasLinkedProfile
-          ? "Factual authorised work and session evidence only. These records are not a productivity score, ranking, pay input or disciplinary conclusion."
-          : "Operational work and session evidence appears only when this employee is linked to a real CEAC account."}
+          ? "Factual authorised work evidence only. These records are not a productivity score, ranking, pay input or disciplinary conclusion."
+          : "Operational work evidence appears only when this employee is linked to a real CEAC account."}
       >
         {!hasLinkedProfile && <PeopleEmpty title="No linked operational account" description="The employee is present in the roster, but CEAC will not invent work, attendance or submission records for someone without a linked account." />}
         {hasLinkedProfile && <>
@@ -502,6 +677,19 @@ export default function People({ me, openItem }) {
           <span className="ev2p-link-row-tail">›</span>
         </button>
 
+        </>}
+      </PeopleWorkspaceSection>
+      </>}
+
+      {personTab === "time" && <>
+      <PeopleWorkspaceSection
+        title="Time & Leave"
+        description={hasLinkedProfile
+          ? (leavePolicy ? "Recorded work-session and leave context against the currently configured leave policy. No work session is not an absence." : "Recorded work-session and leave context is shown, but entitlement is not calculated because Administration has not configured the policy. No work session is not an absence.")
+          : "Time and leave history appears only when this employee is linked to an operational CEAC account."}
+      >
+        {!hasLinkedProfile && <PeopleEmpty title="No linked time or leave record" description="The employee remains represented in the roster without fabricated leave or attendance data." />}
+        {hasLinkedProfile && <>
         <PeopleEvidenceSummary
           facts={[
             { value: person.days_this_month || 0, label: "days with a recorded session this month" },
@@ -516,17 +704,7 @@ export default function People({ me, openItem }) {
           </span>
           <span className="ev2p-link-row-tail">›</span>
         </button>
-        </>}
-      </PeopleWorkspaceSection>
 
-      <PeopleWorkspaceSection
-        title="Leave"
-        description={hasLinkedProfile
-          ? (leavePolicy ? "Recorded leave against the currently configured leave policy." : "Leave actually taken is shown, but entitlement is not calculated because Administration has not configured the policy.")
-          : "Leave history appears only when this employee is linked to an operational CEAC account."}
-      >
-        {!hasLinkedProfile && <PeopleEmpty title="No linked leave record" description="The employee remains represented in the roster without fabricated leave or attendance data." />}
-        {hasLinkedProfile && <>
         <div className="ev2p-admin-leave-card">
           {leavePolicy
             ? <ProgressMeter value={taken} max={entitlement} label="Annual leave used" detail={taken + " of " + entitlement + " configured days"} />
@@ -542,7 +720,50 @@ export default function People({ me, openItem }) {
         </button>
         </>}
       </PeopleWorkspaceSection>
+      </>}
 
+      {personTab === "documents" && <PeopleWorkspaceSection
+        title="Documents"
+        description="Ordinary employee files use CEAC's private operational file domain. Protected HR documents remain behind the protected-HR boundary."
+      >
+        <FieldGroup label="Add employee document">
+          <input
+            className="field"
+            aria-label="Add employee document"
+            type="file"
+            accept={OPERATIONAL_FILE_ACCEPT}
+            disabled={employeeFileBusy}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) uploadEmployeeFile(file, "document");
+            }}
+          />
+        </FieldGroup>
+        {employeeFiles.documents.length ? <div className="ev2p-link-list">
+          {employeeFiles.documents.map((file) => <button
+            type="button"
+            className="ev2p-link-row"
+            key={file.id}
+            onClick={async () => {
+              try {
+                await openOperationalFile(file);
+              } catch (fileError) {
+                setError(humanError(fileError, "That employee document could not be opened."));
+              }
+            }}
+          >
+            <span className="ev2p-link-row-main">
+              <strong>{file.filename}</strong>
+              <span>{file.mime_type || "Private file"} · added {dateOnly(file.linked_at || file.created_at)}</span>
+            </span>
+            <span className="ev2p-link-row-tail">Open</span>
+          </button>)}
+        </div> : <PeopleEmpty title="No ordinary employee documents recorded" description="CEAC will not expose protected HR documents here or invent missing employee files." />}
+        <p className="screen-note">Protected HR contracts, identifiers, payment details and protected documents do not appear in this ordinary Documents tab.</p>
+      </PeopleWorkspaceSection>}
+
+      {personTab === "protected" && <>
       <PeopleWorkspaceSection
         title="Protected HR"
         description="Salary, identifiers, payment details and documents stay behind the protected-HR capability boundary. Roster-only employees can hold these records without a login account."
@@ -560,17 +781,17 @@ export default function People({ me, openItem }) {
               <div>
                 <span>Salary & payroll</span>
                 <strong>{compensation ? `${protectedMoney(compensation.amount_minor, compensation.currency)} · ${compensation.basis_label}` : "Not recorded"}</strong>
-                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor("compensation")}>{compensation ? "Record change" : "Record salary"}</button>
+                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor({ type:"compensation", record:compensation })}>{compensation ? "Record change" : "Record salary"}</button>
               </div>
               <div>
                 <span>Payment details</span>
                 <strong>{payment ? `${payment.provider_name} · ${payment.account_name} · ${payment.account_reference}` : "Not recorded"}</strong>
-                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor("payment_detail")}>{payment ? "Record change" : "Record payment details"}</button>
+                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor({ type:"payment_detail", record:payment })}>{payment ? "Record change" : "Record payment details"}</button>
               </div>
               <div>
                 <span>Protected identifiers</span>
                 <strong>{identifiers.length ? `${identifiers.length} active record${identifiers.length === 1 ? "" : "s"}` : "Not recorded"}</strong>
-                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor("identifier")}>Record identifier</button>
+                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor({ type:"identifier", record:null })}>Record identifier</button>
               </div>
               <div>
                 <span>Contracts & documents</span>
@@ -587,11 +808,14 @@ export default function People({ me, openItem }) {
           </>;
         })()}
       </PeopleWorkspaceSection>
+      </>}
+
         </div>
       </div>
 
-      {protectedEditor && <ProtectedHrSheet
-        type={protectedEditor}
+      {protectedEditor && <ProtectedHrComposer
+        type={protectedEditor.type}
+        record={protectedEditor.record}
         employee={person}
         busy={savingProtected}
         onClose={() => { if (!savingProtected) setProtectedEditor(null); }}
@@ -713,6 +937,18 @@ export default function People({ me, openItem }) {
         || a.full_name.localeCompare(b.full_name)),
     }));
   const roster = groups.flatMap((group) => group.people);
+  const attentionReasons = (entry) => [
+    entry.identity_state === "needs_review" ? "Identity review required" : null,
+    entry.employment_type === "not_recorded" ? "Employment type not recorded" : null,
+    !(entry.job_title || entry.source_position) ? "Job title not recorded" : null,
+    !entry.unit_id && !(entry.roster_units || []).length ? "No unit recorded" : null,
+  ].filter(Boolean);
+  const attentionRoster = roster.filter((entry) => attentionReasons(entry).length);
+  const unitsWithoutHead = units.filter((unit) => !rows.some((entry) =>
+    entry.profile_id && entry.active && entry.role === "manager" && (
+      entry.unit_id === unit.id || (entry.roster_units || []).some((membership) => membership.unit_id === unit.id)
+    )
+  ));
 
   return <div className="body ev2-people-page ev2-people-admin">
     <PeoplePageHeader
@@ -727,7 +963,18 @@ export default function People({ me, openItem }) {
     {detailLoading && <LoadingState label="Opening employee record…" />}
     {!leavePolicy && <ProductNotice tone="attention" title="Leave policy not configured">People records show leave actually taken, but CEAC OS will not calculate entitlement or remaining leave until Administration confirms the policy.</ProductNotice>}
 
-    <div className="ev2p-admin-control-band">
+    <div className="ev2p-filter-tabs" role="tablist" aria-label="People views">
+      {PEOPLE_VIEWS.map(([key, label]) => <button
+        key={key}
+        type="button"
+        role="tab"
+        aria-selected={viewMode === key}
+        className={viewMode === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
+        onClick={() => setViewMode(key)}
+      >{label}</button>)}
+    </div>
+
+    {viewMode === "directory" && <div className="ev2p-admin-control-band">
     <div className="ev2p-admin-toolbar">
       <FieldGroup label="Find a person">
         <input
@@ -740,22 +987,22 @@ export default function People({ me, openItem }) {
       </FieldGroup>
     </div>
 
-    <div className="ev2p-admin-filters" role="tablist" aria-label="People filters">
+    <div className="ev2p-filter-tabs ev2p-admin-filters" role="tablist" aria-label="People filters">
       {FILTERS.map(([key, label]) => <button
         key={key}
         type="button"
         role="tab"
         aria-selected={filter === key}
-        className={filter === key ? "is-selected" : ""}
+        className={filter === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
         onClick={() => setFilter(key)}
       >{label}</button>)}
     </div>
     <p className="ev2p-admin-directory-note">
       Work and submission counts are factual operating context only. They are not a performance score, ranking or disciplinary conclusion.
     </p>
-    </div>
+    </div>}
 
-    {roster.length > 0 && <section className="fpg-people-roster" aria-label="Employee roster">
+    {viewMode === "directory" && roster.length > 0 && <section className="fpg-people-roster" aria-label="Employee roster">
       <header className="fpg-people-roster-head">
         <div><span>Employees</span><h2>Employee roster</h2></div>
         <div><b>{roster.length}</b><span>{filter === "all" ? "visible" : FILTERS.find(([key]) => key === filter)?.[1]}</span></div>
@@ -766,7 +1013,7 @@ export default function People({ me, openItem }) {
       <div className="fpg-people-roster-list">
         {roster.map((p) => <button type="button" className="fpg-people-roster-row" key={p.id} onClick={() => openPerson(p)}>
           <span className="fpg-people-roster-person">
-            <Avatar name={p.full_name} size="md" />
+            <Avatar name={p.full_name} src={p.photo_url} size="md" />
             <span><strong>{p.full_name}</strong><small>{rankLabel(p)}{p.job_title ? ` · ${p.job_title}` : ""}</small></span>
           </span>
           <span className="fpg-people-roster-unit">{p.unit_name || "No unit assigned"}</span>
@@ -784,26 +1031,79 @@ export default function People({ me, openItem }) {
       </div>
     </section>}
 
-    {shown.length === 0 && <div style={{ marginTop: "var(--ev2-space-5)" }}>
+    {viewMode === "directory" && shown.length === 0 && <div style={{ marginTop: "var(--ev2-space-5)" }}>
       <PeopleEmpty title="Nobody matches" description="Try a different filter or search term." />
+    </div>}
+
+    {viewMode === "organisation" && <div>
+      {groups.map((group) => <PeopleSection
+        key={group.name}
+        title={group.name}
+        meta={`${group.people.length} recorded`}
+        description="Recorded unit membership and role context only. Job titles never create authority."
+      >
+        {group.people.map((entry) => <PeopleAdminPersonRow
+          key={entry.id}
+          name={entry.full_name}
+          src={entry.photo_url}
+          subtitle={entry.job_title || entry.source_position || rankLabel(entry)}
+          context={entry.identity_state === "roster_only" ? "Roster employee · no account required" : rankLabel(entry)}
+          status={entry.identity_state === "needs_review" ? "Identity review" : entry.active ? "Active" : "Inactive"}
+          statusTone={entry.identity_state === "needs_review" ? "warning" : entry.active ? "success" : "neutral"}
+          primaryFact={entry.unit_name || entry.source_department_text || "No unit recorded"}
+          secondaryFact={entry.profile_id ? "Account linked" : "Roster only"}
+          onClick={() => openPerson(entry)}
+        />)}
+      </PeopleSection>)}
+    </div>}
+
+    {viewMode === "attention" && <div>
+      <PeopleSection
+        title="Employee records needing attention"
+        meta={`${attentionRoster.length} recorded`}
+        description="Only authoritative gaps are shown. Roster-only status by itself is not treated as a problem."
+      >
+        {attentionRoster.map((entry) => <PeopleAdminPersonRow
+          key={entry.id}
+          name={entry.full_name}
+          src={entry.photo_url}
+          subtitle={entry.job_title || entry.source_position || "Job title not recorded"}
+          context={entry.unit_name || entry.source_department_text || "No unit recorded"}
+          status="Needs attention"
+          statusTone="warning"
+          primaryFact={attentionReasons(entry)[0]}
+          secondaryFact={attentionReasons(entry).slice(1).join(" · ")}
+          onClick={() => openPerson(entry)}
+        />)}
+        {!attentionRoster.length && <PeopleEmpty title="No employee record gaps are waiting" description="Roster-only employees remain valid employee records and are not treated as errors." />}
+      </PeopleSection>
+
+      <PeopleSection
+        title="Organisation exceptions"
+        meta={`${unitsWithoutHead.length} recorded`}
+        description="Unit Head authority is based on recorded CEAC authority, not workbook titles."
+      >
+        {unitsWithoutHead.map((unit) => <PeopleFactRow key={unit.id} icon="people" title={unit.name} subtitle="No active recorded Unit Head" meta="Review Units" tone="warning" />)}
+        {!unitsWithoutHead.length && <PeopleEmpty title="No Unit Head gap recorded" description="Every active unit has a recorded Unit Head." />}
+      </PeopleSection>
     </div>}
   </div>;
 }
 
 
-function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
-  const [amount,setAmount]=useState("");
-  const [currency,setCurrency]=useState("GHS");
-  const [basisLabel,setBasisLabel]=useState("Monthly salary");
-  const [effectiveOn,setEffectiveOn]=useState(new Date().toISOString().slice(0,10));
-  const [providerName,setProviderName]=useState("");
-  const [accountName,setAccountName]=useState("");
-  const [accountReference,setAccountReference]=useState("");
-  const [branchReference,setBranchReference]=useState("");
-  const [identifierType,setIdentifierType]=useState("Ghana Card");
-  const [identifierValue,setIdentifierValue]=useState("");
-  const [issuedOn,setIssuedOn]=useState("");
-  const [expiresOn,setExpiresOn]=useState("");
+function ProtectedHrComposer({ type, record, employee, busy, onClose, onSave }) {
+  const [amount,setAmount]=useState(record?.amount_minor == null ? "" : String(Number(record.amount_minor) / 100));
+  const [currency,setCurrency]=useState(record?.currency || "GHS");
+  const [basisLabel,setBasisLabel]=useState(record?.basis_label || "Monthly salary");
+  const [effectiveOn,setEffectiveOn]=useState(record?.effective_on || new Date().toISOString().slice(0,10));
+  const [providerName,setProviderName]=useState(record?.provider_name || "");
+  const [accountName,setAccountName]=useState(record?.account_name || "");
+  const [accountReference,setAccountReference]=useState(record?.account_reference || "");
+  const [branchReference,setBranchReference]=useState(record?.branch_reference || "");
+  const [identifierType,setIdentifierType]=useState(record?.identifier_type || "Ghana Card");
+  const [identifierValue,setIdentifierValue]=useState(record?.identifier_value || "");
+  const [issuedOn,setIssuedOn]=useState(record?.issued_on || "");
+  const [expiresOn,setExpiresOn]=useState(record?.expires_on || "");
   const [reason,setReason]=useState("");
 
   const valid = reason.trim().length >= 3 && (
@@ -815,10 +1115,11 @@ function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
 
   function submit() {
     if (!valid) return;
+    const common={ replacesId:record?.id || null, reason:reason.trim() };
     if (type === "compensation") {
       onSave({
+        ...common,
         recordType:"compensation",
-        reason:reason.trim(),
         payload:{
           amount_minor:amountToMinor(amount),
           currency,
@@ -830,8 +1131,8 @@ function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
     }
     if (type === "payment_detail") {
       onSave({
+        ...common,
         recordType:"payment_detail",
-        reason:reason.trim(),
         payload:{
           payment_type:"bank",
           provider_name:providerName.trim(),
@@ -843,8 +1144,8 @@ function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
       return;
     }
     onSave({
+      ...common,
       recordType:"identifier",
-      reason:reason.trim(),
       payload:{
         identifier_type:identifierType.trim(),
         identifier_value:identifierValue.trim(),
@@ -854,33 +1155,46 @@ function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
     });
   }
 
-  return <Sheet onClose={onClose}>
-    <div className="eyebrow">Protected HR · {employee.full_name}</div>
-    <div className="h2">{type === "compensation" ? "Record salary / compensation" : type === "payment_detail" ? "Record payment details" : "Record protected identifier"}</div>
-    <p className="screen-note">This writes an attributable protected-HR record. Existing history is not silently overwritten.</p>
+  const title=record
+    ? "Correct protected HR record"
+    : type === "compensation"
+      ? "Record salary / compensation"
+      : type === "payment_detail"
+        ? "Record payment details"
+        : "Record protected identifier";
 
+  return <ComposerDrawer
+    open
+    onClose={onClose}
+    title={title}
+    description={`Protected HR · ${employee.full_name}. This creates an attributable record; corrections preserve the earlier version.`}
+    footer={<>
+      <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
+      <Button onClick={submit} busy={busy} disabled={!valid}>{record ? "Record correction" : "Record protected HR"}</Button>
+    </>}
+  >
     {type === "compensation" && <>
-      <FieldGroup label="Amount"><input className="field" inputMode="decimal" value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="0.00" /></FieldGroup>
-      <FieldGroup label="Currency"><select className="field" value={currency} onChange={(e)=>setCurrency(e.target.value)}>{["GHS","USD","GBP","EUR","NGN","ZAR","CAD"].map((value)=><option key={value}>{value}</option>)}</select></FieldGroup>
-      <FieldGroup label="Basis"><input className="field" value={basisLabel} onChange={(e)=>setBasisLabel(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Effective date"><input className="field" type="date" value={effectiveOn} onChange={(e)=>setEffectiveOn(e.target.value)} /></FieldGroup>
+      <FieldGroup label="Amount"><input className="field" inputMode="decimal" value={amount} onChange={(event)=>setAmount(event.target.value)} placeholder="0.00" /></FieldGroup>
+      <FieldGroup label="Currency"><select className="field" value={currency} onChange={(event)=>setCurrency(event.target.value)}>{["GHS","USD","GBP","EUR","NGN","ZAR","CAD"].map((value)=><option key={value}>{value}</option>)}</select></FieldGroup>
+      <FieldGroup label="Basis"><input className="field" value={basisLabel} onChange={(event)=>setBasisLabel(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Effective date"><input className="field" type="date" value={effectiveOn} onChange={(event)=>setEffectiveOn(event.target.value)} /></FieldGroup>
     </>}
 
     {type === "payment_detail" && <>
-      <FieldGroup label="Bank / provider"><input className="field" value={providerName} onChange={(e)=>setProviderName(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Account name"><input className="field" value={accountName} onChange={(e)=>setAccountName(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Account number / reference"><input className="field" value={accountReference} onChange={(e)=>setAccountReference(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Branch / routing reference" hint="Optional"><input className="field" value={branchReference} onChange={(e)=>setBranchReference(e.target.value)} /></FieldGroup>
+      <FieldGroup label="Bank / provider"><input className="field" value={providerName} onChange={(event)=>setProviderName(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Account name"><input className="field" value={accountName} onChange={(event)=>setAccountName(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Account number / reference"><input className="field" value={accountReference} onChange={(event)=>setAccountReference(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Branch / routing reference" hint="Optional"><input className="field" value={branchReference} onChange={(event)=>setBranchReference(event.target.value)} /></FieldGroup>
     </>}
 
     {type === "identifier" && <>
-      <FieldGroup label="Identifier type"><select className="field" value={identifierType} onChange={(e)=>setIdentifierType(e.target.value)}><option>Ghana Card</option><option>SSNIT</option><option>TIN</option><option>Other identifier</option></select></FieldGroup>
-      <FieldGroup label="Identifier value"><input className="field" value={identifierValue} onChange={(e)=>setIdentifierValue(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Issued on" hint="Optional"><input className="field" type="date" value={issuedOn} onChange={(e)=>setIssuedOn(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Expires on" hint="Optional"><input className="field" type="date" value={expiresOn} onChange={(e)=>setExpiresOn(e.target.value)} /></FieldGroup>
+      <FieldGroup label="Identifier type"><select className="field" value={identifierType} onChange={(event)=>setIdentifierType(event.target.value)}><option>Ghana Card</option><option>SSNIT</option><option>TIN</option><option>Other identifier</option></select></FieldGroup>
+      <FieldGroup label="Identifier value"><input className="field" value={identifierValue} onChange={(event)=>setIdentifierValue(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Issued on" hint="Optional"><input className="field" type="date" value={issuedOn} onChange={(event)=>setIssuedOn(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Expires on" hint="Optional"><input className="field" type="date" value={expiresOn} onChange={(event)=>setExpiresOn(event.target.value)} /></FieldGroup>
     </>}
 
-    <FieldGroup label="Reason / source"><textarea className="field" rows="3" value={reason} onChange={(e)=>setReason(e.target.value)} placeholder="Why this value is authoritative" /></FieldGroup>
-    <button className="btn" disabled={busy || !valid} onClick={submit}>{busy ? "Recording…" : "Record protected HR"}</button>
-  </Sheet>;
+    <FieldGroup label="Reason / source"><textarea className="field" rows="3" value={reason} onChange={(event)=>setReason(event.target.value)} placeholder="Why this value is authoritative" /></FieldGroup>
+    <p className="screen-note">Protected values are never inferred from role, attendance, work output or Payroll state.</p>
+  </ComposerDrawer>;
 }

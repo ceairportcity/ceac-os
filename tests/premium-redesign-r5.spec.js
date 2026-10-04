@@ -33,6 +33,8 @@ test.describe("Premium redesign R5 Communication", () => {
     for (const label of ["All", "Rooms", "Mentions", "Work", "Announcements"]) {
       await expect(page.getByRole("tab", { name: label, exact: true })).toBeVisible();
     }
+    await expect(page.getByText("Communication queue", { exact: true })).toBeVisible();
+    await expect(page.locator(".ev2c-data-panel").first()).toBeVisible();
     await page.screenshot({ path: "test-artifacts/redesign-r5-messages.png", fullPage: true });
     await context.close();
   });

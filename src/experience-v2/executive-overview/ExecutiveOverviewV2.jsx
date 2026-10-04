@@ -125,8 +125,8 @@ export default function ExecutiveOverviewV2({
           <div>
             <h1>Ministry overview</h1>
             <p>{attentionCount
-              ? `${attentionCount} recorded signal${attentionCount === 1 ? "" : "s"} may need senior drill-in.`
-              : "No recorded signal currently needs senior drill-in. Ministry movement remains available below."}</p>
+              ? `${attentionCount} item${attentionCount === 1 ? "" : "s"} need your attention.`
+              : "Nothing currently needs your decision. Ministry direction and delivery context are below."}</p>
           </div>
           <Button icon="meeting" onClick={onScheduleMeeting}>Schedule meeting</Button>
         </div>
@@ -147,12 +147,12 @@ export default function ExecutiveOverviewV2({
       </div> : null}
 
       {!loading && !error ? <main className="executivev2-main">
-        <section className="executivev2-command-grid" aria-label="Senior attention and ministry movement">
+        <section className="executivev2-command-grid" aria-label="Needs your attention">
           <DataPanel
             className="executivev2-panel executivev2-attention"
-            eyebrow="Attention first"
-            title="Senior attention"
-            supporting="Recorded signals for drill-in. They are evidence, not performance conclusions."
+            eyebrow="Executive decisions"
+            title="Needs your attention"
+            supporting="Items that need an Executive decision or drill-in. Open the source record before acting."
             action={<Count value={attentionCount} tone={attentionCount ? "attention" : "success"} />}
           >
             {!attentionCount ? <Quiet>No recorded signal currently needs Executive drill-in.</Quiet> : null}
@@ -179,12 +179,99 @@ export default function ExecutiveOverviewV2({
               onClick={onOpenReports}
             /> : null}
           </DataPanel>
+        </section>
 
+        <section className="executivev2-context-grid" aria-label="Ministry direction and delivery">
+          <DataPanel
+            className="executivev2-panel executivev2-direction"
+            eyebrow="Ministry direction"
+            title="Direction and objectives"
+            supporting="Current ministry objectives and linked delivery. Descriptive objectives stay descriptive."
+            action={<Button variant="quiet" size="compact" onClick={onOpenMinistry}>Open Ministry</Button>}
+          >
+            <div className="executivev2-direction-head">
+              <StatTile label="Objectives" value={summary.objectives} icon="goal" onClick={onOpenMinistry} />
+              <StatTile label="Active projects" value={summary.projects} icon="projects" onClick={onOpenPortfolio} />
+            </div>
+            {objectiveItems.length ? <ProgressDistribution items={objectiveItems} /> : <Quiet icon="info">No objective status is recorded yet.</Quiet>}
+          </DataPanel>
+          <DataPanel
+            className="executivev2-panel executivev2-delivery"
+            eyebrow="Delivery & exceptions"
+            title="Delivery and exceptions"
+            supporting="Completed work, unresolved blockers and items currently in authorised review."
+            action={<Button variant="quiet" size="compact" onClick={onOpenOrganisation}>Open Organisation</Button>}
+          >
+            <div className="executivev2-delivery-grid">
+              <StatTile label="Completed outputs" value={summary.doneWeek} supporting={outputSupporting} icon="work" onClick={onOpenWork} />
+              <StatTile label="Open blockers" value={summary.blocked} supporting="Unresolved recorded hold-ups" icon="warning" onClick={onOpenWork} />
+              <StatTile label="In manager review" value={summary.review} supporting="Remains with authorised managers unless escalated" icon="pending" onClick={onOpenWork} />
+            </div>
+          </DataPanel>
+        </section>
+
+        <section className="executivev2-support-grid" aria-label="Finance reporting and organisation">
+          <DataPanel
+            className="executivev2-panel executivev2-governance"
+            eyebrow="Finance & reporting"
+            title="Finance and reporting"
+            supporting="Reporting coverage and recorded financial context for Executive review."
+          >
+            {reporting ? <button type="button" className="executivev2-coverage" onClick={onOpenReports}>
+              <span><strong>{reporting.label}</strong><small>{reporting.filed} of {reporting.total} active units filed</small></span>
+              <StatusBadge tone={reportingGap ? "warning" : "success"}>{reportingGap ? `${reportingGap} outstanding` : "Coverage complete"}</StatusBadge>
+              <span className="executivev2-coverage-track" aria-hidden="true"><span style={{ width: `${reporting.total ? (reporting.filed / reporting.total) * 100 : 0}%` }} /></span>
+            </button> : <Quiet icon="info">No reporting period is open. Administration controls reporting periods.</Quiet>}
+            <QueueRow
+              icon="finance"
+              title="Financial oversight"
+              meta="Open recorded budgets, requests and actual spend. Currencies remain separate."
+              status="Authoritative record"
+              statusTone="action"
+              onClick={onOpenFinance}
+            />
+          </DataPanel>
+          <DataPanel
+            className="executivev2-panel executivev2-organisation"
+            eyebrow="Organisation"
+            title="Organisation"
+            supporting="Departments, recorded leaders and structural exceptions."
+            action={<Button variant="quiet" size="compact" onClick={onOpenOrganisation}>Open Organisation</Button>}
+          >
+            <QueueRow
+              icon="organisation"
+              title="Departments and leadership"
+              meta="Review recorded Unit Heads, headcount and any missing leadership context."
+              status="Leadership context"
+              statusTone="neutral"
+              onClick={onOpenOrganisation}
+            />
+          </DataPanel>
+        </section>
+
+        <section className="executivev2-support-grid" aria-label="Meetings and recent ministry activity">
+          <DataPanel
+            className="executivev2-panel executivev2-meetings"
+            eyebrow="Next 14 days"
+            title="Meetings"
+            supporting="Upcoming non-cancelled meetings visible to Executive."
+            action={<Button variant="quiet" size="compact" onClick={onScheduleMeeting}>Schedule</Button>}
+          >
+            {!meetings.length ? <Quiet icon="calendar">No upcoming meetings are visible in the current record.</Quiet> : meetings.slice(0, 4).map((meeting) => <QueueRow
+              key={meeting.id}
+              icon="meeting"
+              title={meeting.title}
+              meta={formatDate(meeting.starts_at, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
+              status="Upcoming"
+              statusTone="action"
+              onClick={() => onOpenMeeting?.(meeting.id)}
+            />)}
+          </DataPanel>
           <DataPanel
             className="executivev2-panel executivev2-movement"
-            eyebrow="Ministry movement"
-            title="What CEAC recorded"
-            supporting="Unit-entered ministry figures. These are records, not scores, and CEAC OS does not infer why a number moved."
+            eyebrow="Recent ministry activity"
+            title="Recorded ministry activity"
+            supporting="Recent unit-entered ministry figures. These are records, not scores."
             action={<Button variant="quiet" size="compact" onClick={onOpenMinistry}>Open Ministry</Button>}
           >
             {ministryOperations.length ? <div className="executivev2-stat-grid">
@@ -207,77 +294,6 @@ export default function ExecutiveOverviewV2({
                 series={[{ key: "value", label: operation.value_label || "Recorded value" }]}
               />;
             })}
-          </DataPanel>
-        </section>
-
-        <section className="executivev2-context-grid" aria-label="Ministry direction and reporting context">
-          <DataPanel
-            className="executivev2-panel executivev2-direction"
-            eyebrow="Direction & portfolio"
-            title="Recorded ministry direction"
-            supporting="Objective statuses are explicit records. Descriptive objectives are not converted into progress scores."
-            action={<Button variant="quiet" size="compact" onClick={onOpenMinistry}>Open Ministry</Button>}
-          >
-            <div className="executivev2-direction-head">
-              <StatTile label="Objectives" value={summary.objectives} icon="goal" onClick={onOpenMinistry} />
-              <StatTile label="Active projects" value={summary.projects} icon="projects" onClick={onOpenPortfolio} />
-            </div>
-            {objectiveItems.length ? <ProgressDistribution items={objectiveItems} /> : <Quiet icon="info">No objective status is recorded yet.</Quiet>}
-          </DataPanel>
-
-          <DataPanel
-            className="executivev2-panel executivev2-governance"
-            eyebrow="Reporting & finance"
-            title="Leadership context"
-            supporting="Reporting coverage and Finance remain separate authoritative records."
-          >
-            {reporting ? <button type="button" className="executivev2-coverage" onClick={onOpenReports}>
-              <span><strong>{reporting.label}</strong><small>{reporting.filed} of {reporting.total} active units filed</small></span>
-              <StatusBadge tone={reportingGap ? "warning" : "success"}>{reportingGap ? `${reportingGap} outstanding` : "Coverage complete"}</StatusBadge>
-              <span className="executivev2-coverage-track" aria-hidden="true"><span style={{ width: `${reporting.total ? (reporting.filed / reporting.total) * 100 : 0}%` }} /></span>
-            </button> : <Quiet icon="info">No reporting period is open. Administration controls reporting periods.</Quiet>}
-            <QueueRow
-              icon="finance"
-              title="Financial oversight"
-              meta="Open recorded budgets, requests and actual spend. Currencies remain separate."
-              status="Authoritative record"
-              statusTone="action"
-              onClick={onOpenFinance}
-            />
-          </DataPanel>
-        </section>
-
-        <section className="executivev2-support-grid" aria-label="Organisation movement and meetings">
-          <DataPanel
-            className="executivev2-panel executivev2-delivery"
-            eyebrow="Organisation movement"
-            title="Recorded delivery this week"
-            supporting="Completed output uses the canonical Task/Deliverable contract. Arithmetic movement is not a performance judgement."
-            action={<Button variant="quiet" size="compact" onClick={onOpenOrganisation}>Open Organisation</Button>}
-          >
-            <div className="executivev2-delivery-grid">
-              <StatTile label="Completed outputs" value={summary.doneWeek} supporting={outputSupporting} icon="work" onClick={onOpenWork} />
-              <StatTile label="Open blockers" value={summary.blocked} supporting="Unresolved recorded hold-ups" icon="warning" onClick={onOpenWork} />
-              <StatTile label="In manager review" value={summary.review} supporting="Remains with authorised managers unless escalated" icon="pending" onClick={onOpenWork} />
-            </div>
-          </DataPanel>
-
-          <DataPanel
-            className="executivev2-panel executivev2-meetings"
-            eyebrow="Next 14 days"
-            title="Meetings"
-            supporting="Upcoming non-cancelled meetings visible to Executive."
-            action={<Button variant="quiet" size="compact" onClick={onScheduleMeeting}>Schedule</Button>}
-          >
-            {!meetings.length ? <Quiet icon="calendar">No upcoming meetings are visible in the current record.</Quiet> : meetings.slice(0, 4).map((meeting) => <QueueRow
-              key={meeting.id}
-              icon="meeting"
-              title={meeting.title}
-              meta={formatDate(meeting.starts_at, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
-              status="Upcoming"
-              statusTone="action"
-              onClick={() => onOpenMeeting?.(meeting.id)}
-            />)}
           </DataPanel>
         </section>
 

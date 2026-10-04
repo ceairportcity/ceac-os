@@ -349,6 +349,9 @@ test("Stage 10 Family B5A Administration People directory preserves HR authority
   expect(screen).toContain("Protected HR remains behind a separate security boundary.");
   expect(screen).toContain("They are not a performance score, ranking or disciplinary conclusion.");
   expect(screen).toContain("No submissions in 14 days");
+  expect(screen).toContain("PEOPLE_VIEWS");
+  expect(screen).toContain('aria-label="People views"');
+  expect(screen).toContain("Roster-only status by itself is not treated as a problem.");
   expect(screen).toContain("Record employment change");
   expect(screen).toContain('rpc("admin_employee_roster_summary")');
   expect(screen).toContain('rpc("hr_employee_protected_summary"');
@@ -369,8 +372,18 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "People", exact: true })).toBeVisible();
     await expect(page.getByLabel("Find a person")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Directory", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Organisation", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Needs attention", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Everyone", exact: true })).toBeVisible();
     await expect(page.getByText(/not a performance score, ranking or disciplinary conclusion/i)).toBeVisible();
+
+    await page.getByRole("tab", { name: "Organisation", exact: true }).click();
+    await expect(page.getByText(/Job titles never create authority/i).first()).toBeVisible();
+    await page.getByRole("tab", { name: "Needs attention", exact: true }).click();
+    await expect(page.getByText("Employee records needing attention", { exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Directory", exact: true }).click();
+    await expect(page.locator(".fpg-people-roster")).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
@@ -443,22 +456,32 @@ test("Stage 10 Family B5B Administration employee workspace preserves employment
   expect(screen).toContain('rpc("admin_employment_detail"');
   expect(screen).toContain('rpc("admin_update_employment"');
 
-  const identity = screen.indexOf('title="Identity & employment state"');
-  const current = screen.indexOf('title="Employment record"');
-  const history = screen.indexOf('title="Employment history"');
-  const activity = screen.indexOf('title="Work & activity context"');
-  const leave = screen.indexOf('title="Leave"');
-  const protectedHr = screen.indexOf('title="Protected HR"');
-  expect(identity).toBeGreaterThan(-1);
-  expect(current).toBeGreaterThan(identity);
-  expect(history).toBeGreaterThan(current);
-  expect(activity).toBeGreaterThan(history);
-  expect(leave).toBeGreaterThan(activity);
-  expect(protectedHr).toBeGreaterThan(leave);
+  expect(screen).toContain("PERSON_TABS");
+  expect(screen).toContain('aria-label="Employee record sections"');
+  expect(screen).toContain('className="ev2p-admin-master-list"');
+  expect(screen).toContain('personTab === "overview"');
+  expect(screen).toContain('personTab === "employment"');
+  expect(screen).toContain('personTab === "work"');
+  expect(screen).toContain('personTab === "time"');
+  expect(screen).toContain('personTab === "documents"');
+  expect(screen).toContain('personTab === "history"');
+  expect(screen).toContain('personTab === "protected"');
+  expect(screen).toContain('title="Time & Leave"');
 
   expect(screen).toContain("These records are not a productivity score, ranking, pay input or disciplinary conclusion.");
   expect(screen).toContain('rpc("hr_employee_protected_summary"');
   expect(screen).toContain('rpc("hr_employee_protected_record"');
+  expect(screen).toContain("ProtectedHrComposer");
+  expect(screen).toContain("ComposerDrawer");
+  expect(screen).toContain("p_replaces_id: form.replacesId || null");
+  expect(screen).toContain('setProtectedEditor({ type:"compensation", record:compensation })');
+  expect(screen).not.toContain("function ProtectedHrSheet");
+  expect(screen).toContain('listOperationalFilesForContexts("employee_photo"');
+  expect(screen).toContain('listOperationalFiles("employee_document"');
+  expect(screen).toContain('contextType: kind === "photo" ? "employee_photo" : "employee_document"');
+  expect(screen).toContain('aria-label="Employee photo"');
+  expect(screen).toContain('aria-label="Add employee document"');
+  expect(shared).toContain('src={src}');
   expect(screen).toContain("Missing data remains explicitly missing until Administration records an authoritative value.");
   expect(screen).toContain('employmentForm.changeType === "correction"');
   expect(screen).toContain('employmentForm.status === "exited"');
@@ -482,23 +505,36 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "Staff Fixture", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Identity & employment state", exact: true })).toBeVisible();
+    await expect(page.getByLabel("Employee photo", { exact: true })).toBeVisible();
+    for (const tab of ["Overview","Employment","Work","Time & Leave","Documents","History","Protected HR"]) {
+      await expect(page.getByRole("tab", { name: tab, exact: true })).toBeVisible();
+    }
+    if (viewport.width > 760) await expect(page.locator(".ev2p-admin-master-list")).toBeVisible();
+    else await expect(page.locator(".ev2p-admin-master-list")).toBeHidden();
+
+    await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Employment", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Employment record", exact: true })).toBeVisible();
+
+    await page.getByRole("tab", { name: "History", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Employment history", exact: true })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Work", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Work & activity context", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Leave", exact: true })).toBeVisible();
+    await expect(page.getByText(/not a productivity score, ranking, pay input or disciplinary conclusion/i)).toBeVisible();
+
+    await page.getByRole("tab", { name: "Time & Leave", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Time & Leave", exact: true })).toBeVisible();
+    await expect(page.getByText(/No work session is not an absence/i)).toBeVisible();
+
+    await page.getByRole("tab", { name: "Documents", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Documents", exact: true })).toBeVisible();
+    await expect(page.getByLabel("Add employee document", { exact: true })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Protected HR", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Protected HR", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Record salary", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Record payment details", exact: true })).toBeVisible();
-    await expect(page.getByText(/not a productivity score, ranking, pay input or disciplinary conclusion/i)).toBeVisible();
-
-    const headings = await page.locator(".ev2p-workspace-section h2").evaluateAll((nodes) =>
-      nodes.map((node) => ({ text: node.textContent.trim(), y: node.getBoundingClientRect().top + window.scrollY }))
-    );
-    const positions = Object.fromEntries(headings.map((entry) => [entry.text, entry.y]));
-    expect(positions["Employment record"]).toBeLessThan(positions["Employment history"]);
-    expect(positions["Employment history"]).toBeLessThan(positions["Work & activity context"]);
-    expect(positions["Work & activity context"]).toBeLessThan(positions["Leave"]);
-    expect(positions["Leave"]).toBeLessThan(positions["Protected HR"]);
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
@@ -537,6 +573,7 @@ for (const viewport of [
 test("Stage 10 Family B5B employment change editor keeps the audited record contract", async ({ browser }) => {
   const { context, page } = await openAdminEmployee(browser, { width: 1366, height: 768 });
 
+  await page.getByRole("tab", { name: "Employment", exact: true }).click();
   await page.getByRole("button", { name: "Record change", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.locator(".h2").filter({ hasText: /^Record employment change$/ })).toBeVisible();
@@ -587,7 +624,10 @@ for (const viewport of [
     await expect(row).toBeVisible();
     await row.click();
     await expect(page.locator(".ev2-admin-person-workspace")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Employment", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Employment record", exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Protected HR", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Protected HR", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
@@ -610,6 +650,7 @@ test("Stage 10 Family B5C Administration People states stay factual and usable",
 
   await page.locator(".fpg-people-roster-row").filter({ hasText: "Staff Fixture" }).first().click();
   await expect(page.locator(".ev2-admin-person-workspace")).toBeVisible();
+  await page.getByRole("tab", { name: "Employment", exact: true }).click();
   await page.getByRole("button", { name: "Record change", exact: true }).click();
 
   const dialog = page.getByRole("dialog");

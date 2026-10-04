@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
+import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
+import { Button, ComposerDrawer, DataPanel, MotionDisclosure, QueueRow, RecordRow, StatePanel, StatusBadge } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
 
 const ORG_ONLY = new Set(["authority.manage","hr_private.access","payroll.prepare","payroll.approve","audit.view"]);
@@ -31,6 +32,9 @@ export default function AdminAuthority({ me, refreshMe }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [grantOpen, setGrantOpen] = useState(false);
+  const [revokeGrantId, setRevokeGrantId] = useState(null);
 
   useEffect(() => { load(); }, [me.id]);
 
@@ -84,6 +88,7 @@ export default function AdminAuthority({ me, refreshMe }) {
       return;
     }
     setReason("");
+    setGrantOpen(false);
     setNotice("Capability granted.");
     await load();
     if (selectedId === me.id) await refreshMe?.();
@@ -107,6 +112,7 @@ export default function AdminAuthority({ me, refreshMe }) {
       return;
     }
     setRevokeReason("");
+    setRevokeGrantId(null);
     setNotice("Capability revoked.");
     await load();
     if (selectedId === me.id) await refreshMe?.();
@@ -124,76 +130,60 @@ export default function AdminAuthority({ me, refreshMe }) {
     {error && <ProductNotice tone="error" title="Authority">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Authority updated">{notice}</ProductNotice>}
 
-    <div className="split" style={{ marginTop: 18 }}>
-      <div className="main-col">
-        <div className="sec"><span>Person</span></div>
-        <FieldGroup label="Choose person">
-          <select className="field" aria-label="Authority person" value={selectedId} onChange={(event) => { setSelectedId(event.target.value); setNotice(null); setError(null); }}>
-            {people.map((person) => <option key={person.id} value={person.id}>{person.full_name} · {person.email}</option>)}
-          </select>
-        </FieldGroup>
+    <DataPanel eyebrow="Person record" title="Person" supporting="Choose a person to inspect explicit authority grants." action={<Button size="compact" onClick={()=>setGrantOpen(true)}>Grant capability</Button>}>
+      <FieldGroup label="Choose person">
+        <select className="field" aria-label="Authority person" value={selectedId} onChange={(event) => { setSelectedId(event.target.value); setNotice(null); setError(null); }}>
+          {people.map((person) => <option key={person.id} value={person.id}>{person.full_name} · {person.email}</option>)}
+        </select>
+      </FieldGroup>
+      {selected && <RecordRow name={selected.full_name} title={selected.full_name} meta={`${selected.job_title || "No job title"} · ${selected.active ? "Active" : "Inactive"}`} status={selected.active?"Active":"Inactive"} statusTone={selected.active?"success":"neutral"} />}
+    </DataPanel>
 
-        {selected && <div className="card" style={{ padding: 15, marginTop: 12 }}>
-          <strong>{selected.full_name}</strong>
-          <div className="small" style={{ marginTop: 4 }}>{selected.job_title || "No job title"} · {selected.active ? "Active" : "Inactive"}</div>
-        </div>}
+    <DataPanel eyebrow="Current authority" title="Active capabilities" supporting="Only explicit capability grants are shown. Job titles do not grant authority." action={<StatusBadge tone="neutral" icon={false}>{activeGrants.length} active</StatusBadge>}>
+      {activeGrants.map((grant) => {
+        const def = definitions.find((item) => item.capability === grant.capability);
+        return <QueueRow key={grant.id} icon="shield" title={def?.label || grant.capability}
+          meta={`${grant.scope_unit_id ? unitsById[grant.scope_unit_id] || "Unit scope" : "Organisation-wide"} · granted ${stamp(grant.granted_at)}${grant.granted_by ? " by " + (peopleById[grant.granted_by]?.full_name || "authorised user") : " · baseline"} · ${grant.grant_reason || "No reason recorded"}`}
+          status="Active" statusTone="success"
+          trailing={<Button variant="quiet" size="compact" disabled={busy} onClick={()=>{setRevokeReason("");setRevokeGrantId(grant.id);}}>Revoke</Button>} />;
+      })}
+      {activeGrants.length === 0 && <StatePanel state="empty" title="No active capabilities" description="This person currently has no explicit sensitive capability grants." />}
+    </DataPanel>
 
-        <div className="sec"><span>Active capabilities</span><span>{activeGrants.length}</span></div>
-        {activeGrants.map((grant) => {
-          const def = definitions.find((item) => item.capability === grant.capability);
-          return <div className="row" key={grant.id}>
-            <div className="row-t">{def?.label || grant.capability}</div>
-            <div className="row-m">
-              {grant.scope_unit_id ? unitsById[grant.scope_unit_id] || "Unit scope" : "Organisation-wide"}
-              {" · granted " + stamp(grant.granted_at)}
-              {grant.granted_by ? " by " + (peopleById[grant.granted_by]?.full_name || "authorised user") : " · baseline"}
-            </div>
-            <div className="small" style={{ marginTop: 6 }}>{grant.grant_reason}</div>
-            <div style={{ marginTop: 10 }}>
-              <button className="btn btn-ghost btn-sm" disabled={busy || !revokeReason.trim()} onClick={() => revoke(grant.id)}>Revoke</button>
-            </div>
-          </div>;
-        })}
-        {activeGrants.length === 0 && <EmptyState title="No active capabilities">This person currently has no explicit sensitive capability grants.</EmptyState>}
+    <DataPanel eyebrow="History" title="Grant history" supporting="Revoked grants remain attributable and are collapsed until needed.">
+      <Button variant="quiet" size="compact" onClick={()=>setHistoryOpen((value)=>!value)}>{historyOpen?"Hide grant history":"Show grant history"}</Button>
+      <MotionDisclosure open={historyOpen} ariaLabel="Authority grant history">
+        {selectedGrants.filter((grant) => grant.revoked_at).map((grant) => <QueueRow key={grant.id} icon="history"
+          title={definitions.find((item) => item.capability === grant.capability)?.label || grant.capability}
+          meta={`Revoked ${stamp(grant.revoked_at)}${grant.revoked_by ? " by " + (peopleById[grant.revoked_by]?.full_name || "authorised user") : ""} · ${grant.revoke_reason || "No reason recorded"}`}
+          status="Revoked" statusTone="neutral" />)}
+        {!selectedGrants.some((grant)=>grant.revoked_at)&&<StatePanel state="empty" title="No revoked grants" description="No revoked authority history is recorded for this person." />}
+      </MotionDisclosure>
+    </DataPanel>
 
-        <div className="sec"><span>History</span><span>{selectedGrants.length}</span></div>
-        {selectedGrants.filter((grant) => grant.revoked_at).map((grant) => <div className="row" key={grant.id}>
-          <div className="row-t">{definitions.find((item) => item.capability === grant.capability)?.label || grant.capability}</div>
-          <div className="row-m">Revoked {stamp(grant.revoked_at)}{grant.revoked_by ? " by " + (peopleById[grant.revoked_by]?.full_name || "authorised user") : ""}</div>
-          <div className="small" style={{ marginTop: 6 }}>{grant.revoke_reason}</div>
-        </div>)}
-      </div>
+    <ComposerDrawer open={grantOpen} onClose={()=>!busy&&setGrantOpen(false)} title="Grant capability"
+      description="Grant only the authority that is required, with an attributable reason."
+      footer={<><Button variant="secondary" disabled={busy} onClick={()=>setGrantOpen(false)}>Cancel</Button><Button busy={busy} disabled={!selectedId||!reason.trim()} onClick={grant}>{busy?"Saving…":"Grant capability"}</Button></>}>
+      <FieldGroup label="Capability">
+        <select className="field" aria-label="Capability" value={capability} onChange={(event) => setCapability(event.target.value)}>
+          {definitions.map((item) => <option key={item.capability} value={item.capability}>{item.label}</option>)}
+        </select>
+      </FieldGroup>
+      {definition && <p className="small" style={{ lineHeight: 1.5 }}>{definition.description}</p>}
+      <FieldGroup label="Scope">
+        <select className="field" aria-label="Capability scope" value={scopeUnitId} disabled={ORG_ONLY.has(capability)} onChange={(event) => setScopeUnitId(event.target.value)}>
+          <option value="">Organisation-wide</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+        </select>
+      </FieldGroup>
+      {ORG_ONLY.has(capability) && <p className="small">This capability is organisation-scoped.</p>}
+      <FieldGroup label="Grant reason"><textarea className="field" aria-label="Grant reason" rows="3" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Why this authority is required" /></FieldGroup>
+    </ComposerDrawer>
 
-      <div className="side-col">
-        <div className="sec"><span>Grant capability</span></div>
-        <div className="card" style={{ padding: 15 }}>
-          <FieldGroup label="Capability">
-            <select className="field" aria-label="Capability" value={capability} onChange={(event) => setCapability(event.target.value)}>
-              {definitions.map((item) => <option key={item.capability} value={item.capability}>{item.label}</option>)}
-            </select>
-          </FieldGroup>
-          {definition && <p className="small" style={{ lineHeight: 1.5 }}>{definition.description}</p>}
-          <FieldGroup label="Scope">
-            <select className="field" aria-label="Capability scope" value={scopeUnitId} disabled={ORG_ONLY.has(capability)} onChange={(event) => setScopeUnitId(event.target.value)}>
-              <option value="">Organisation-wide</option>
-              {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
-            </select>
-          </FieldGroup>
-          {ORG_ONLY.has(capability) && <p className="small">This capability is organisation-scoped.</p>}
-          <FieldGroup label="Grant reason">
-            <textarea className="field" aria-label="Grant reason" rows="3" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Why this authority is required" />
-          </FieldGroup>
-          <button className="btn" disabled={busy || !selectedId || !reason.trim()} onClick={grant}>{busy ? "Saving…" : "Grant capability"}</button>
-        </div>
-
-        <div className="sec"><span>Revocation reason</span></div>
-        <div className="card" style={{ padding: 15 }}>
-          <FieldGroup label="Reason used for the next revocation">
-            <textarea className="field" aria-label="Revocation reason" rows="3" value={revokeReason} onChange={(event) => setRevokeReason(event.target.value)} placeholder="Why this authority is being removed" />
-          </FieldGroup>
-          <p className="small" style={{ lineHeight: 1.5 }}>Revocation preserves the original grant and creates attributable history. The final organisation authority manager cannot be removed through this flow.</p>
-        </div>
-      </div>
-    </div>
+    <ComposerDrawer open={Boolean(revokeGrantId)} onClose={()=>!busy&&setRevokeGrantId(null)} title="Revoke capability"
+      description="Revocation preserves the original grant and creates attributable history."
+      footer={<><Button variant="secondary" disabled={busy} onClick={()=>setRevokeGrantId(null)}>Cancel</Button><Button variant="danger" busy={busy} disabled={!revokeReason.trim()} onClick={()=>revoke(revokeGrantId)}>{busy?"Revoking…":"Revoke"}</Button></>}>
+      <FieldGroup label="Revocation reason"><textarea className="field" aria-label="Revocation reason" rows="3" value={revokeReason} onChange={(event) => setRevokeReason(event.target.value)} placeholder="Why this authority is being removed" /></FieldGroup>
+      <p className="small" style={{ lineHeight: 1.5 }}>The final organisation authority manager cannot be removed through this flow.</p>
+    </ComposerDrawer>
   </div>;
 }

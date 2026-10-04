@@ -17,6 +17,8 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [reporting, setReporting] = useState(null);
   const [watch, setWatch] = useState([]);
   const [meetings, setMeetings] = useState([]);
+  const [employeeRoster, setEmployeeRoster] = useState([]);
+  const [payrollReadiness, setPayrollReadiness] = useState(null);
   const [inviting, setInviting] = useState(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -43,7 +45,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
       const todayStr = new Date().toISOString().slice(0, 10);
 
-      const [us, mgrs, done7, openAlerts, pi, al, bl, lq, workflowSteps, my, o, staff, sessToday, sessWeek, away, projs, projectCloses, objs, period, subs, memberships, meetingRows] = await Promise.all([
+      const [us, mgrs, done7, openAlerts, pi, al, bl, lq, workflowSteps, my, o, staff, sessToday, sessWeek, away, projs, projectCloses, objs, period, subs, memberships, meetingRows, rosterRows] = await Promise.all([
         must(supabase.from("units").select("id,name").order("name"), "Units"),
         must(supabase.from("unit_memberships").select("unit_id,profile_id,profiles(id,full_name,email)").eq("role","manager"), "Unit heads"),
         must(supabase.from("completed_outputs").select("unit_id").gte("completed_at", weekAgo), "Completed outputs"),
@@ -86,6 +88,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
           .gte("starts_at",new Date().toISOString())
           .lte("starts_at",new Date(now + 14*864e5).toISOString())
           .neq("status","cancelled").order("starts_at").limit(6), "Upcoming meetings"),
+        must(supabase.rpc("admin_employee_roster_summary"), "Employee roster"),
       ]);
 
       const headByUnit = {};
@@ -111,6 +114,12 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setChecks((workflowSteps || []).filter((step) => !step.required_capability || myCapabilities.has(step.required_capability)));
       setMine(my || []);
       setOffice(o || null);
+      setEmployeeRoster(Array.isArray(rosterRows) ? rosterRows : []);
+      if (myCapabilities.has("payroll.prepare") || myCapabilities.has("payroll.approve")) {
+        setPayrollReadiness(await must(supabase.rpc("payroll_readiness_summary"), "Payroll readiness"));
+      } else {
+        setPayrollReadiness(null);
+      }
 
       const awayIds = new Set((away || []).map((row) => row.profile_id));
       const startedIds = new Set((sessToday || []).map((row) => row.profile_id));
@@ -225,6 +234,8 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     month: "long",
   });
   const canManagePeople = (me.capabilities || []).includes("people.manage");
+  const canUsePayroll = (me.capabilities || []).some((capability) => capability === "payroll.prepare" || capability === "payroll.approve");
+  const canAccessProtectedHR = (me.capabilities || []).includes("hr_private.access");
 
   return <>
     <AdminOverviewV2
@@ -246,7 +257,11 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       reporting={reporting}
       watch={watch}
       meetings={meetings}
+      employeeRoster={employeeRoster}
+      payrollReadiness={payrollReadiness}
       canManagePeople={canManagePeople}
+      canUsePayroll={canUsePayroll}
+      canAccessProtectedHR={canAccessProtectedHR}
       onRetry={load}
       onOpenItem={openItem}
       onOpenMeeting={openMeeting}
@@ -255,7 +270,10 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenUnits={openUnits}
       onOpenWorkflows={() => go?.("workflows")}
       onOpenReports={() => go?.("reporting")}
+      onOpenFinance={() => go?.("finance")}
       onOpenPeople={() => go?.("people")}
+      onOpenProtectedHR={() => go?.("protected-hr")}
+      onOpenPayroll={() => go?.("payroll")}
       onOpenProjects={() => go?.("admin-projects")}
       onOpenStrategy={() => go?.("strategy")}
       onOpenAttendance={() => go?.("attendance")}

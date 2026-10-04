@@ -27,6 +27,7 @@
 .executivev2-context-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ev2-space-4); align-items: start; }
 .executivev2-support-grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(20rem, .88fr); gap: var(--ev2-space-4); align-items: start; }
 .executivev2-panel { min-width: 0; box-shadow: none; }
+.executivev2-command-grid > .executivev2-attention { grid-column: 1 / -1; }
 .executivev2-panel .ev2c-data-panel-body { overflow: hidden; border: 1px solid var(--ev2-line); border-radius: var(--ev2-radius-control); background: var(--ev2-surface); }
 .executivev2-panel .ev2c-queue-row:last-child { border-bottom: 0; }
 
@@ -90,81 +91,23 @@
   .executivev2-coverage .ev2c-status { justify-self: start; }
   .executivev2-record-row { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
   .executivev2-record-value { grid-column: 2; justify-items: start; text-align: left; }
-}
 
-
-/* VF5A — Executive briefing hierarchy.
-   Executive stays exception-led: senior attention first, factual ministry movement second,
-   while supporting leadership context becomes lighter and deliberately recomposes on phone. */
-@media (max-width: 599px) {
-  .executivev2-command-grid {
-    gap: var(--ev2-space-3);
-  }
-
-  .executivev2-movement .executivev2-stat-grid {
-    display: flex;
+  .executivev2-movement .executivev2-stat-grid,
+  .executivev2-delivery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1px;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: none;
-    border: 1px solid var(--ev2-line);
-    border-radius: var(--ev2-radius-control);
-    background: var(--ev2-line);
+    overflow: visible;
   }
-
-  .executivev2-movement .executivev2-stat-grid::-webkit-scrollbar,
-  .executivev2-context-grid::-webkit-scrollbar,
-  .executivev2-support-grid::-webkit-scrollbar,
-  .executivev2-delivery-grid::-webkit-scrollbar {
-    display: none;
-  }
-
-  .executivev2-movement .executivev2-stat-grid .ev2c-stat {
-    flex: 0 0 7.75rem;
-    min-height: 5.25rem;
-    border: 0;
-    border-radius: 0;
-    background: var(--ev2-surface);
-  }
-
+  .executivev2-movement .executivev2-stat-grid .ev2c-stat { min-width: 0; min-height: 5.25rem; }
+  .executivev2-delivery-grid .ev2c-stat { min-width: 0; min-height: 6.25rem; }
   .executivev2-context-grid,
   .executivev2-support-grid {
     display: flex;
-    align-items: flex-start;
     gap: var(--ev2-space-3);
     overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scroll-snap-type: x proximity;
     scrollbar-width: none;
-    padding-bottom: var(--ev2-space-2);
   }
-
   .executivev2-context-grid > .executivev2-panel,
-  .executivev2-support-grid > .executivev2-panel {
-    flex: 0 0 calc(100% - 2rem);
-    scroll-snap-align: start;
-  }
-
-  .executivev2-delivery-grid {
-    display: flex;
-    gap: 1px;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: none;
-    border: 1px solid var(--ev2-line);
-    border-radius: var(--ev2-radius-control);
-    background: var(--ev2-line);
-  }
-
-  .executivev2-delivery-grid .ev2c-stat {
-    flex: 0 0 9rem;
-    min-height: 6.25rem;
-    border: 0;
-    border-radius: 0;
-    background: var(--ev2-surface);
-  }
-
-  .executivev2-records {
-    margin-top: var(--ev2-space-1);
-  }
+  .executivev2-support-grid > .executivev2-panel { flex: 0 0 calc(100% - 2rem); }
 }

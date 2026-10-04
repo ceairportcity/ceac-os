@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar, BrandMark, Drawer, PopoverMenu } from "../components";
 import { CeacIcon } from "../icons";
 import {
@@ -10,6 +10,13 @@ import {
   groupDestinations,
   hasMultipleUnits,
 } from "./navigation";
+
+const globalSearchModule = import("./GlobalSearch");
+const GlobalSearch = lazy(() => globalSearchModule);
+
+function GlobalSearchSurface(props) {
+  return <Suspense fallback={null}><GlobalSearch {...props} /></Suspense>;
+}
 
 const ACCRA_DATE = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
@@ -62,6 +69,9 @@ export function SideNav({
   isManager = false,
   onUnitChange,
   onCreateWork,
+  onCreateMinistryObjective,
+  onCreateProject,
+  onCreateAnnouncement,
   onCreateMeeting,
   onMessages,
   onComposeMessage,
@@ -71,6 +81,9 @@ export function SideNav({
   const role = getRoleName(context);
   const quickItems = getShellQuickActions(context, {
     onCreateWork,
+    onCreateMinistryObjective,
+    onCreateProject,
+    onCreateAnnouncement,
     onCreateMeeting,
     onMessages,
     onComposeMessage,
@@ -147,39 +160,6 @@ export function SideNav({
   );
 }
 
-function DestinationPalette({ query, navigation, onNavigate, onClose }) {
-  const normalized = query.trim().toLowerCase();
-  const matches = navigation.filter(
-    (item) => !normalized || item.label.toLowerCase().includes(normalized)
-  );
-
-  return (
-    <div className="ev2s-destination-palette" role="dialog" aria-label="Find a destination">
-      <div className="ev2s-destination-palette-label">
-        {normalized ? "Matching destinations" : "Destinations"}
-      </div>
-      {matches.length ? (
-        matches.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => {
-              onNavigate(item.key);
-              onClose();
-            }}
-          >
-            <CeacIcon name={item.icon} size="row" decorative />
-            <span>{item.label}</span>
-            <CeacIcon name="chevronRight" size="meta" decorative />
-          </button>
-        ))
-      ) : (
-        <p className="ev2s-destination-empty">No matching destination.</p>
-      )}
-    </div>
-  );
-}
-
 export function AppTopBar({
   me,
   roleLabel,
@@ -192,12 +172,18 @@ export function AppTopBar({
   onMessages,
   onComposeMessage,
   onCreateWork,
+  onCreateMinistryObjective,
+  onCreateProject,
+  onCreateAnnouncement,
   onCreateMeeting,
+  onOpenWork,
+  onOpenProject,
+  onOpenPerson,
+  onOpenMeeting,
+  onOpenRoom,
+  onOpenAnnouncement,
 }) {
-  const [query, setQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
   const [clock, setClock] = useState(() => new Date());
-  const rootRef = useRef(null);
 
   const context = useMemo(
     () => navigationContext({ me, isAdmin, isExec, isManager }),
@@ -207,6 +193,9 @@ export function AppTopBar({
   const current = navigation.find((item) => item.key === tab);
   const createItems = getShellQuickActions(context, {
     onCreateWork,
+    onCreateMinistryObjective,
+    onCreateProject,
+    onCreateAnnouncement,
     onCreateMeeting,
     onComposeMessage,
     onMessages,
@@ -217,55 +206,21 @@ export function AppTopBar({
     return () => window.clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    function handlePointerDown(event) {
-      if (rootRef.current && !rootRef.current.contains(event.target)) {
-        setSearchOpen(false);
-      }
-    }
-
-    function handleKeyDown(event) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setSearchOpen(true);
-        rootRef.current?.querySelector(".ev2s-destination-search input")?.focus();
-      }
-      if (event.key === "Escape") setSearchOpen(false);
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
   return (
-    <header className="ev2s-topbar" ref={rootRef}>
-      <div className="ev2s-destination-search">
-        <CeacIcon name="search" size="row" decorative />
-        <input
-          value={query}
-          onFocus={() => setSearchOpen(true)}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setSearchOpen(true);
-          }}
-          placeholder="Find a destination…"
-          aria-label="Find a destination"
-          aria-expanded={searchOpen}
-        />
-        <kbd>⌘ K</kbd>
-        {searchOpen ? (
-          <DestinationPalette
-            query={query}
-            navigation={navigation}
-            onNavigate={onNavigate}
-            onClose={() => setSearchOpen(false)}
-          />
-        ) : null}
-      </div>
+    <header className="ev2s-topbar">
+      <GlobalSearchSurface
+        me={me}
+        isAdmin={isAdmin}
+        navigation={navigation}
+        quickItems={createItems}
+        onNavigate={onNavigate}
+        onOpenWork={onOpenWork}
+        onOpenProject={onOpenProject}
+        onOpenPerson={onOpenPerson}
+        onOpenMeeting={onOpenMeeting}
+        onOpenRoom={onOpenRoom}
+        onOpenAnnouncement={onOpenAnnouncement}
+      />
 
       <div className="ev2s-topbar-context" aria-label="Current workspace">
         <span>{roleLabel}</span>
@@ -322,9 +277,33 @@ export function MobileTopBar({
   isManager = false,
   onProfile,
   onUnitChange,
+  onNavigate,
+  onMessages,
+  onComposeMessage,
+  onCreateWork,
+  onCreateMinistryObjective,
+  onCreateProject,
+  onCreateAnnouncement,
+  onCreateMeeting,
+  onOpenWork,
+  onOpenProject,
+  onOpenPerson,
+  onOpenMeeting,
+  onOpenRoom,
+  onOpenAnnouncement,
 }) {
   const context = navigationContext({ me, isAdmin, isExec, isManager });
   const canSwitchUnit = hasMultipleUnits(me, context);
+  const navigation = getShellNavigation(context);
+  const quickItems = getShellQuickActions(context, {
+    onCreateWork,
+    onCreateMinistryObjective,
+    onCreateProject,
+    onCreateAnnouncement,
+    onCreateMeeting,
+    onMessages,
+    onComposeMessage,
+  });
 
   return (
     <header className={canSwitchUnit ? "ev2s-mobile-topbar has-unit-switch" : "ev2s-mobile-topbar"}>
@@ -337,14 +316,30 @@ export function MobileTopBar({
           </span>
         </div>
 
-        <button
-          type="button"
-          className="ev2s-mobile-profile"
-          aria-label="Open profile"
-          onClick={onProfile}
-        >
-          <Avatar name={me?.full_name || "CEAC"} size="sm" />
-        </button>
+        <div className="ev2s-mobile-actions">
+          <GlobalSearchSurface
+            mobile
+            me={me}
+            isAdmin={isAdmin}
+            navigation={navigation}
+            quickItems={quickItems}
+            onNavigate={onNavigate}
+            onOpenWork={onOpenWork}
+            onOpenProject={onOpenProject}
+            onOpenPerson={onOpenPerson}
+            onOpenMeeting={onOpenMeeting}
+            onOpenRoom={onOpenRoom}
+            onOpenAnnouncement={onOpenAnnouncement}
+          />
+          <button
+            type="button"
+            className="ev2s-mobile-profile"
+            aria-label="Open profile"
+            onClick={onProfile}
+          >
+            <Avatar name={me?.full_name || "CEAC"} size="sm" />
+          </button>
+        </div>
       </div>
 
       {canSwitchUnit ? (

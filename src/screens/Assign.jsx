@@ -5,7 +5,9 @@ import VoiceInput from "../components/VoiceInput";
 import { parseWorkInput } from "../lib/parseTask";
 import { humanError } from "../lib/productLanguage";
 import { FieldGroup } from "../components/bits";
-import { WorkBackButton, WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
+import { ComposerDrawer } from "../experience-v2/components";
+import { PendingFilePicker } from "../components/OperationalFiles";
+import { uploadOperationalFiles } from "../lib/operationalFiles";
 
 const WORK_KINDS = [
   ["task", "Task", "A specific action for someone to complete.", true],
@@ -71,6 +73,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   const [recipeSteps, setRecipeSteps] = useState([]);
   const [recipeSource, setRecipeSource] = useState(null);
   const [traceWarning, setTraceWarning] = useState(null);
+  const [sourceFiles, setSourceFiles] = useState([]);
   const [err, setErr] = useState(null);
 
   useEffect(() => { load(); }, [me.unit_id]);
@@ -233,6 +236,45 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     }
   }
 
+  async function attachSourceFiles(workId) {
+    if (!workId || !sourceFiles.length) return;
+    try {
+      await uploadOperationalFiles({
+        files: sourceFiles,
+        contextType: "work_item",
+        contextId: workId,
+        relation: "assignment_source",
+      });
+      setSourceFiles([]);
+    } catch (error) {
+      setTraceWarning(`The work was created, but ${error.message || "one or more source files could not be attached."}`);
+    }
+  }
+
+  function primaryActionLabel() {
+    if (kind === "deliverable") return "Give deliverable";
+    if (kind === "meeting_outcome") return "Record meeting outcome";
+    if (kind === "decision") return "Ask for decision";
+    if (kind === "request") return "Send request";
+    if (kind === "case") return "Open case";
+    if (kind === "routine") return "Create routine";
+    return "Give it out";
+  }
+
+  function primaryActionDisabled() {
+    if (busy) return true;
+    if (kind === "deliverable") return !title.trim() || !expectedOutcome.trim() || !assignee;
+    if (kind === "meeting_outcome") return !title.trim() || !meetingTitle.trim() || !meetingOn || !assignee;
+    if (kind === "decision") return !title.trim() || !decisionQuestion.trim() || !assignee;
+    if (kind === "request") return !title.trim() || (!requestResponsibleUnit && !assignee);
+    if (kind === "case") return !title.trim() || !assignee || !caseOpenedOn || Boolean(caseTargetOn && caseTargetOn < caseOpenedOn);
+    if (kind === "routine") return !title.trim() || !assignee
+      || (routineSchedule === "weekdays" && routineWeekdays.length === 0)
+      || (routineSchedule === "monthly" && !(Number(routineDayOfMonth) >= 1 && Number(routineDayOfMonth) <= 31))
+      || (routineRecordsValue && !routineValueLabel.trim());
+    return !title.trim() || !purpose.trim() || !assignee || !due;
+  }
+
   async function create() {
     setBusy(true); setErr(null); setTraceWarning(null);
     try {
@@ -264,6 +306,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setDeliverableEvidenceRequired(true); setKind("task"); setVoiceHint(null);
@@ -296,6 +339,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setMeetingTitle(""); setMeetingOn(new Date().toISOString().slice(0, 10)); setMeetingNote("");
@@ -325,6 +369,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setDecisionQuestion(""); setKind("task"); setVoiceHint(null);
@@ -355,6 +400,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setRequestResponsibleUnit(""); setKind("task"); setVoiceHint(null);
@@ -386,6 +432,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setCaseOpenedOn(new Date().toISOString().slice(0, 10)); setCaseTargetOn("");
@@ -426,6 +473,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setInstructions(""); setExpectedOutcome("");
         setKind("task"); setAssignee(""); setDue(""); setSteps([""]); setNoStepsNeeded(false);
@@ -456,6 +504,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       if (taskError) throw taskError;
       await linkMeeting(created.id);
       await linkSourceMessage(created);
+      await attachSourceFiles(created.id);
       setDone(created.ref);
       setTitle(""); setPurpose(""); setInstructions(""); setExpectedOutcome("");
       setKind("task"); setDue(""); setSteps([""]); setNoStepsNeeded(false); setVoiceHint(null); setVoiceProposal(null);
@@ -465,27 +514,35 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
 
   if (done) {
     return (
-      <div className="body assign-screen assign-done ev2-work-assignment">
-        <WorkBackButton onClick={back} />
-        <div className="empty">
-          <h3>{done} is with them</h3>
-          <p>They will see what needs doing, why it matters and when it is due.</p>
-          {traceWarning && <div className="flag flag-amber" style={{ marginBottom: 12 }}>{traceWarning}</div>}
-          <button className="btn" onClick={() => setDone(null)}>Give out something else</button>
-          <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={back}>Back to home</button>
+      <ComposerDrawer
+        open
+        onClose={back}
+        title="Work sent"
+        description="The work record is saved and available to the authorised people involved."
+      >
+        <div className="assign-screen assign-done ev2-work-assignment ocr-work-composer">
+          <div className="empty">
+            <h3>{done} is with them</h3>
+            <p>They will see what needs doing, why it matters and when it is due.</p>
+            {traceWarning && <div className="flag flag-amber" style={{ marginBottom: 12 }}>{traceWarning}</div>}
+            <button className="btn" onClick={() => setDone(null)}>Give out something else</button>
+            <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={back}>Close</button>
+          </div>
         </div>
-      </div>);
+      </ComposerDrawer>
+    );
   }
 
   return (
-    <div className="body assign-screen ev2-work-assignment">
+    <ComposerDrawer
+      open
+      onClose={back}
+      title="Give out work"
+      description="Capture what matters, who owns it and when it is due. Add deeper context only when the work needs it."
+      footer={<button className="btn assign-primary-action" onClick={create} disabled={primaryActionDisabled()}>{busy ? "Saving…" : primaryActionLabel()}</button>}
+    >
+    <div className="assign-screen ev2-work-assignment ocr-work-composer">
       <section className="assign-intro ev2wa-intro">
-        <WorkBackButton onClick={back} />
-        <WorkPageHeader
-          eyebrow="Create work"
-          title="Give out work"
-          description="Choose the work intent, capture the minimum accountable contract, then add only the context that matters."
-        />
         <div className="assign-voice">
           <div><strong>Speak or type</strong><span>Voice can prefill the form. You remain in control.</span></div>
           <VoiceInput onResult={handleVoice} label="Speak your instruction" />
@@ -509,20 +566,16 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
 
       <div className="split" style={{ marginTop: 10 }}>
         <div className="main-col">
-          <div className="sec"><span>What are you trying to do?</span></div>
-          <div className="assign-intent-grid" role="radiogroup" aria-label="Work intention">
-            {WORK_INTENTS.map(([value, label, description]) => <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={kind === value}
-              className={`assign-intent ${kind === value ? "on" : ""}`}
-              onClick={() => setKind(value)}>
-              <strong>{label}</strong>
-              <span>{description}</span>
-            </button>)}
+          <FieldGroup label="Work type">
+            <select className="field" aria-label="Work type" value={kind} onChange={(event) => setKind(event.target.value)}>
+              {WORK_INTENTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </FieldGroup>
+          <div className="assign-system-type">
+            <strong>{WORK_INTENTS.find(([value]) => value === kind)?.[1]}</strong>
+            <span>{WORK_INTENTS.find(([value]) => value === kind)?.[2]}</span>
+            <small>CEAC records this as {WORK_KINDS.find(([value]) => value === kind)?.[1]}.</small>
           </div>
-          <div className="assign-system-type">CEAC will record this as <strong>{WORK_KINDS.find(([value]) => value === kind)?.[1]}</strong>.</div>
           {!WORK_KINDS.find(([value]) => value === kind)?.[3] && <div className="flag flag-amber" style={{ marginTop: 10 }}>
             <h4>{WORK_KINDS.find(([value]) => value === kind)?.[1]} is not connected yet</h4>
             Its approved behaviour is not connected to this screen yet. CEAC OS will not save it with Task behaviour.
@@ -605,10 +658,15 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           {kind === "task" && <>
           <FieldGroup label="Work to complete"><input className="field" placeholder="What needs doing" value={title} onChange={(e) => setTitle(e.target.value)} /></FieldGroup>
           <FieldGroup label="Why this matters" hint="Who it is for, or what is affected if it is late."><AssistiveTextarea className="field" rows={3} placeholder="Add useful context" value={purpose} onChange={(e) => setPurpose(e.target.value)} /></FieldGroup>
-          <FieldGroup label="Instructions" hint="Optional. Leave the method to the assignee when that is appropriate."><AssistiveTextarea className="field" rows={3} placeholder="How it is done here (optional)" value={instructions} onChange={(e) => setInstructions(e.target.value)} /></FieldGroup>
-          <div className="sec"><span>Optional detail</span></div>
-          <FieldGroup label="Finished result" hint="Optional. The four required assignment fields are what, why, who and when."><AssistiveTextarea className="field" rows={3} placeholder="Describe the finished result if useful" value={expectedOutcome}
-            onChange={(e) => setExpectedOutcome(e.target.value)} /></FieldGroup>
+          <details className="ocr-composer-disclosure">
+            <summary>Instructions <span>optional</span></summary>
+            <FieldGroup label="Instructions" hint="Leave the method to the assignee when that is appropriate."><AssistiveTextarea className="field" rows={3} placeholder="How it is done here" value={instructions} onChange={(e) => setInstructions(e.target.value)} /></FieldGroup>
+          </details>
+          <details className="ocr-composer-disclosure">
+            <summary>Finished result <span>optional</span></summary>
+            <FieldGroup label="Finished result" hint="The required assignment fields are what, why, who and when."><AssistiveTextarea className="field" rows={3} placeholder="Describe the finished result if useful" value={expectedOutcome}
+              onChange={(e) => setExpectedOutcome(e.target.value)} /></FieldGroup>
+          </details>
             {recipeSteps.length > 0 && <div className="card small" style={{ marginTop: 10 }}>
               <div className="row-t">Last time this unit did this</div>
               <div className="row-m">{recipeSource?.title} · {recipeSteps.length} recorded step{recipeSteps.length === 1 ? "" : "s"}</div>
@@ -652,9 +710,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Due</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !expectedOutcome.trim() || !assignee}>
-            {busy ? "Saving..." : "Give deliverable"}</button>
+
         </div>}
         {kind === "meeting_outcome" && <div className="side-col">
           <div className="sec"><span>Who owns the commitment</span></div>
@@ -676,9 +732,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Due</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !meetingTitle.trim() || !meetingOn || !assignee}>
-            {busy ? "Saving..." : "Record meeting outcome"}</button>
+
         </div>}
         {kind === "decision" && <div className="side-col">
           <div className="sec"><span>Who decides</span></div>
@@ -700,9 +754,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Decision due</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !decisionQuestion.trim() || !assignee}>
-            {busy ? "Saving..." : "Ask for decision"}</button>
+
         </div>}
         {kind === "request" && <div className="side-col">
           <div className="sec"><span>Who should respond</span></div>
@@ -726,9 +778,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Needed by</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || (!requestResponsibleUnit && !assignee)}>
-            {busy ? "Sending..." : "Send request"}</button>
+
         </div>}
         {kind === "case" && <div className="side-col">
           <div className="sec"><span>Case owner</span></div>
@@ -752,9 +802,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Project phase (optional)</option>
             {phases.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>}
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !assignee || !caseOpenedOn || (caseTargetOn && caseTargetOn < caseOpenedOn)}>
-            {busy ? "Saving..." : "Open case"}</button>
+
         </div>}
         {kind === "routine" && <div className="side-col">
           <div className="sec"><span>Who owns it</span></div>
@@ -778,12 +826,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Project phase (optional)</option>
             {phases.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>}
-          <button className="btn" style={{ marginTop: 20 }} onClick={create}
-            disabled={busy || !title.trim() || !assignee
-              || (routineSchedule === "weekdays" && routineWeekdays.length === 0)
-              || (routineSchedule === "monthly" && !(Number(routineDayOfMonth) >= 1 && Number(routineDayOfMonth) <= 31))
-              || (routineRecordsValue && !routineValueLabel.trim())}>
-            {busy ? "Saving..." : "Create routine"}</button>
+
           <div className="hint">Routine history is recorded occurrence by occurrence. Changing its schedule later does not rewrite earlier records.</div>
         </div>}
         {kind === "task" && <div className="side-col">
@@ -815,10 +858,16 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
               <h4>{warning.title}</h4>{warning.detail}
             </div>)}
           </div>}
-          <button className="btn assign-primary-action" style={{ marginTop: 20 }} onClick={create} disabled={busy || !title.trim() || !purpose.trim() || !assignee || !due}>
-            {busy ? "Sending..." : "Give it out"}</button>
+
           <div className="hint">Required: what needs doing, why it matters, who owns it and when it is due. Method and checklist are optional.</div>
         </div>}
       </div>
-    </div>);
+
+      <div style={{ marginTop: 14 }}>
+        <div className="sec"><span>Source files</span><span>optional</span></div>
+        <p className="screen-note">Files supplied with the assignment stay on the work record. They are separate from submission/evidence files returned by the assignee.</p>
+        <PendingFilePicker files={sourceFiles} onChange={setSourceFiles} label="Attach source files" disabled={busy} />
+      </div>
+    </div>
+    </ComposerDrawer>);
 }

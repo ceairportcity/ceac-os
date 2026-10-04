@@ -555,18 +555,61 @@ for (const viewport of [
 test("Stage 10 Family H1 keeps Control Center capability-filtered while aligning shared V2 primitives", async () => {
   const control = readFileSync("src/screens/ControlCenter.jsx", "utf8");
   expect(control).toContain('caps.has("authority.manage")');
-  expect(control).toContain('caps.has("compliance.manage")');
   expect(control).toContain('caps.has("audit.view")');
   expect(control).toContain('caps.has("integration.manage")');
-  expect(control).toContain('action:()=>go("office-settings")');
-  expect(control).toContain("Everyday employee and manager work stays outside this area.");
-  expect(control).toContain("CeacIcon");
-  expect(control).toContain('icon:"add"');
+  expect(control).toContain('caps.has("payroll.prepare")');
+  expect(control).toContain('caps.has("payroll.approve")');
+  expect(control).toContain('caps.has("hr_private.access")');
+  expect(control).toContain('supabase.rpc("admin_employee_roster_summary")');
+  expect(control).toContain('supabase.from("leave_policy_versions")');
+  expect(control).toContain('supabase.rpc("payroll_readiness_summary")');
+  expect(control).toContain('supabase.from("integration_connectors")');
+  expect(control).toContain('supabase.from("platform_audit_events")');
+  for (const label of [
+    "Organisation",
+    "People & access",
+    "Work & operations",
+    "Time & Leave",
+    "Payroll & Finance",
+    "Security & governance",
+    "Integrations",
+    "Audit & records",
+  ]) expect(control).toContain(`title:"${label}"`);
+  expect(control).toContain("This is not a numeric health score.");
+  expect(control).toContain("DataPanel");
+  expect(control).toContain("QueueRow");
   expect(control).toContain("StatusBadge");
   expect(control).not.toContain('../components/primitives/Icon');
   expect(control).toContain("ev2-control-center");
 });
 
+
+test("OCR5F Administration system surfaces use shared Queue Record Settings and Composer archetypes", async () => {
+  const lifecycle = readFileSync("src/screens/AdminLifecycle.jsx", "utf8");
+  const workflows = readFileSync("src/screens/AdminWorkflows.jsx", "utf8");
+  const authority = readFileSync("src/screens/AdminAuthority.jsx", "utf8");
+  const policies = readFileSync("src/screens/AdminPolicies.jsx", "utf8");
+
+  for (const source of [lifecycle, workflows, authority, policies]) expect(source).toContain("DataPanel");
+  expect(lifecycle).toContain("ComposerDrawer");
+  expect(lifecycle).toContain('title="Lifecycle cases"');
+  expect(lifecycle).toContain('title="Case detail"');
+
+  expect(workflows).toContain("SegmentedControl");
+  expect(workflows).toContain('title="Waiting for a decision"');
+  expect(workflows).toContain('title="Check"');
+  expect(workflows).not.toContain('import { QueueRow, byOldest } from "../components/primitives"');
+
+  expect(authority).toContain("RecordRow");
+  expect(authority).toContain("ComposerDrawer");
+  expect(authority).toContain("Show grant history");
+  expect(authority).toContain('title="Active capabilities"');
+
+  expect(policies).toContain("ComposerDrawer");
+  expect(policies).toContain("Show version history");
+  expect(policies).toContain('title="Rule catalogue"');
+  expect(policies).toContain('title="Record new policy version"');
+});
 
 test("Stage 10 Family H2 keeps Organisation settings factual and persistence-backed", async () => {
   const settings = readFileSync("src/screens/OfficeSettings.jsx", "utf8");
@@ -586,8 +629,9 @@ test("Stage 10 Family H3 keeps Executive Organisation read-only leadership conte
   const organisation = readFileSync("src/screens/ExecutiveOrganisation.jsx", "utf8");
   expect(organisation).toContain('supabase.from("units")');
   expect(organisation).toContain('supabase.from("unit_memberships")');
-  expect(organisation).toContain("Administration remains responsible for changing organisation records.");
-  expect(organisation).toContain("Read-only leadership context");
+  expect(organisation).toContain("Administration remains responsible for changes.");
+  expect(organisation).toContain("Needs attention");
+  expect(organisation).toContain("leadership gap");
   expect(organisation).not.toContain(".insert(");
   expect(organisation).not.toContain(".update(");
   expect(organisation).not.toContain(".delete(");
@@ -646,7 +690,8 @@ for (const viewport of [
     const { context, page } = await openHub(browser, roles[3], { width: viewport.width, height: viewport.height });
     await page.goto("/?tab=exec-organisation");
     await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toBeVisible();
-    await expect(page.getByText("Read-only leadership context", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Structural exceptions are shown first/i)).toBeVisible();
+    await expect(page.getByText(/Leadership recorded|leadership gap/i).first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Executive Organisation overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);
     await page.screenshot({ path: `test-artifacts/redesign-r7-stage10h-exec-org-${viewport.name}.png`, fullPage: true });
@@ -719,7 +764,7 @@ test("Stage 10 Family H Executive Organisation stays Executive-only", async ({ b
   for (const role of [roles[0], roles[1], roles[2]]) {
     const { context, page } = await openHub(browser, role, { width: 390, height: 844 });
     await page.goto("/?tab=exec-organisation");
-    await expect(page.getByText("Read-only leadership context", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toHaveCount(0);
     await context.close();
   }
 });

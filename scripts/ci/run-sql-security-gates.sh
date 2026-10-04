@@ -34,6 +34,7 @@ tests=(
   experience_stage8_interface_gate.sql
   fpg12_security_posture_gate.sql
   production_hardening_gate.sql
+  operational_clarity_files_gate.sql
 )
 
 for test_file in "${tests[@]}"; do

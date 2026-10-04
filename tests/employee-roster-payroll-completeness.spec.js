@@ -2,6 +2,8 @@ import fs from "node:fs";
 import { test, expect } from "@playwright/test";
 
 const people = fs.readFileSync(new URL("../src/screens/People.jsx", import.meta.url), "utf8");
+const workforce = fs.readFileSync(new URL("../src/screens/Workforce.jsx", import.meta.url), "utf8");
+const protectedHrScreen = fs.readFileSync(new URL("../src/screens/AdminProtectedHR.jsx", import.meta.url), "utf8");
 const payroll = fs.readFileSync(new URL("../src/screens/AdminPayroll.jsx", import.meta.url), "utf8");
 const roleFixtures = fs.readFileSync(new URL("../scripts/seed-role-fixtures.mjs", import.meta.url), "utf8");
 const rosterMigration = fs.readFileSync(new URL("../supabase/migrations/20261003120215_employee_roster_master.sql", import.meta.url), "utf8");
@@ -33,6 +35,13 @@ test("protected HR supports roster-only employee subjects", () => {
   expect(protectedHrMigration).toContain("hr_employee_protected_record");
   expect(people).toContain('supabase.rpc("hr_employee_protected_summary"');
   expect(people).toContain('supabase.rpc("hr_employee_protected_record"');
+  expect(protectedHrScreen).toContain('supabase.rpc("admin_employee_roster_summary")');
+  expect(protectedHrScreen).toContain('supabase.rpc("hr_employee_protected_summary"');
+  expect(protectedHrScreen).toContain('supabase.rpc("hr_employee_protected_record"');
+  expect(protectedHrScreen).toContain("ComposerDrawer");
+  expect(protectedHrScreen).toContain("Show version history");
+  expect(protectedHrScreen).toContain("Roster only · no account linked");
+  expect(protectedHrScreen).not.toContain('supabase.from("profiles")');
 });
 
 test("Payroll snapshots employees rather than auth profiles", () => {
@@ -57,4 +66,26 @@ test("browser acceptance fixtures explicitly model employees instead of treating
   expect(roleFixtures).toContain('service.from("employee_roster").insert');
   expect(roleFixtures).toContain('identity_state: "linked"');
   expect(roleFixtures).toContain('service.from("employee_unit_memberships").insert');
+});
+
+
+test("OCR5D keeps daily Workforce separate from advanced policy and preserves Leave authority", () => {
+  expect(workforce).toContain('["setup","Schedules & policy"]');
+  expect(workforce).toContain("Manager approval → Administration final approval");
+  expect(workforce).toContain("No session recorded");
+  expect(workforce).toContain("not an absence judgement");
+  expect(workforce).toContain('p_action:action');
+  expect(workforce).toContain('"admin_approved"');
+});
+
+test("OCR5D harmonises Payroll overlays without changing preparation or approval authority", () => {
+  expect(payroll).toContain("ComposerDrawer");
+  expect(payroll).toContain("Administration prepares");
+  expect(payroll).toContain("Group Pastor approves");
+  expect(payroll).toContain('capabilities.has("payroll.prepare")');
+  expect(payroll).toContain('capabilities.has("payroll.approve")');
+  expect(payroll).toContain('supabase.rpc("payroll_submit_run"');
+  expect(payroll).toContain('supabase.rpc("payroll_approve_run"');
+  expect(payroll).toContain("Approved payroll is immutable");
+  expect(payroll).not.toContain("<Sheet");
 });

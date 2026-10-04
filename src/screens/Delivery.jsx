@@ -23,7 +23,7 @@ function label(list, value) {
 function human(value = "") {
   return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase());
 }
-export default function Delivery({ me }) {
+export default function Delivery({ me, initialProjectId = null }) {
   const [projects,setProjects]=useState([]);
   const [groups,setGroups]=useState([]);
   const [groupLinks,setGroupLinks]=useState([]);
@@ -35,7 +35,10 @@ export default function Delivery({ me }) {
   const [work,setWork]=useState([]);
   const [units,setUnits]=useState([]);
   const [people,setPeople]=useState([]);
+  const [strategyLinks,setStrategyLinks]=useState([]);
+  const [strategyNodes,setStrategyNodes]=useState([]);
   const [selectedProjectId,setSelectedProjectId]=useState("");
+  const [showOperations,setShowOperations]=useState(false);
   const [sheet,setSheet]=useState(null);
   const [busy,setBusy]=useState(false);
   const [loading,setLoading]=useState(true);
@@ -55,6 +58,7 @@ export default function Delivery({ me }) {
   const [workDependencyReason,setWorkDependencyReason]=useState("");
 
   useEffect(()=>{ load(); },[me.id]);
+  useEffect(()=>{ if(initialProjectId) setSelectedProjectId(initialProjectId); },[initialProjectId]);
 
   async function load() {
     setLoading(true); setError(null);
@@ -70,12 +74,19 @@ export default function Delivery({ me }) {
       supabase.from("work_items").select("id,ref,title,project_id,status").eq("org_id",me.org_id).order("created_at",{ascending:false}).limit(500),
       supabase.from("units").select("id,name").eq("org_id",me.org_id).order("name"),
       supabase.from("profiles").select("id,full_name,email,active").eq("org_id",me.org_id).order("full_name"),
+      me.is_exec
+        ? supabase.from("strategy_delivery_links").select("strategy_node_id,project_id,status").eq("org_id",me.org_id).eq("status","active")
+        : Promise.resolve({data:[],error:null}),
+      me.is_exec
+        ? supabase.from("strategy_nodes").select("id,name,node_type,status").eq("org_id",me.org_id).in("node_type",["ministry_objective","unit_objective"])
+        : Promise.resolve({data:[],error:null}),
     ]);
     const failed=queries.find((row)=>row.error);
     if(failed){ setError(humanError(failed.error,"Delivery could not finish loading.")); setLoading(false); return; }
-    const [p,g,gl,m,pd,md,wd,ri,w,u,pe]=queries.map((row)=>row.data||[]);
+    const [p,g,gl,m,pd,md,wd,ri,w,u,pe,sl,sn]=queries.map((row)=>row.data||[]);
     setProjects(p); setGroups(g); setGroupLinks(gl); setMilestones(m); setProjectDeps(pd);
     setMilestoneDeps(md); setWorkDeps(wd); setRegisterItems(ri); setWork(w); setUnits(u); setPeople(pe);
+    setStrategyLinks(sl); setStrategyNodes(sn);
     const nextSelected = selectedProjectId && p.some((row)=>row.id===selectedProjectId) ? selectedProjectId : (p[0]?.id||"");
     setSelectedProjectId(nextSelected);
     const selected = p.find((row)=>row.id===nextSelected);
@@ -95,6 +106,7 @@ export default function Delivery({ me }) {
   const workById=useMemo(()=>Object.fromEntries(work.map((row)=>[row.id,row])),[work]);
   const peopleById=useMemo(()=>Object.fromEntries(people.map((row)=>[row.id,row])),[people]);
   const unitsById=useMemo(()=>Object.fromEntries(units.map((row)=>[row.id,row])),[units]);
+  const strategyNodesById=useMemo(()=>Object.fromEntries(strategyNodes.map((row)=>[row.id,row])),[strategyNodes]);
 
   const selectedProject=projectsById[selectedProjectId]||null;
   const selectedMilestones=milestones.filter((row)=>row.project_id===selectedProjectId);
@@ -344,12 +356,46 @@ export default function Delivery({ me }) {
               {label:"Open risks / issues",value:openRegister.length},
               {label:"High / critical",value:openRegister.filter((row)=>["high","critical"].includes(row.severity)).length},
             ]}
-            actions={[{label:"View project",onClick:()=>setSelectedProjectId(project.id)}]}
+            actions={[{label:"Operational details",onClick:()=>{setSelectedProjectId(project.id);setShowOperations(true);}}]}
           />;
         })}
       </div>:<ProjectEmpty title="No recorded project attention" description="No visible project currently has Watch, At risk, Blocked, or a high / critical open register item." />}
     </>}
 
+    {executiveSurface&&<>
+      <ProjectSectionHeader eyebrow="Portfolio view" title="Major projects" count={projects.length} />
+      {projects.length ? <div className="ev2p-context-list">
+        {projects.map((project)=>{
+          const linkedObjectives=strategyLinks
+            .filter((link)=>link.project_id===project.id)
+            .map((link)=>strategyNodesById[link.strategy_node_id]?.name)
+            .filter(Boolean);
+          const owner=peopleById[project.delivery_owner_id]?.full_name||"Not recorded";
+          const openMilestones=milestones.filter((row)=>row.project_id===project.id&&!["achieved","cancelled"].includes(row.status)).length;
+          const attentionItems=registerItems.filter((row)=>row.project_id===project.id&&row.state!=="resolved"&&["high","critical"].includes(row.severity)).length;
+          const needsDecision=["watch","at_risk","blocked"].includes(project.health)||attentionItems>0;
+          return <ProjectContextRow
+            key={project.id}
+            eyebrow={needsDecision?"Executive attention":"Major project"}
+            title={project.name}
+            meta={`${unitsById[project.lead_unit_id]?.name||"Lead unit not recorded"} · Owner: ${owner}`}
+            note={`Objective served: ${linkedObjectives.join(", ")||"Not recorded"} · ${project.purpose||"No purpose recorded."}`}
+            health={project.health}
+            facts={[
+              {label:"Health",value:label(HEALTH,project.health)},
+              {label:"Open milestones",value:openMilestones},
+              {label:"Decision",value:needsDecision?"Review":"None recorded"},
+            ]}
+            actions={[{label:"Operational details",onClick:()=>{setSelectedProjectId(project.id);setShowOperations(true);}}]}
+          />;
+        })}
+      </div> : <ProjectEmpty title="No projects recorded" description="Authorised project records will appear here." />}
+      <button className="btn btn-ghost" type="button" onClick={()=>setShowOperations((value)=>!value)}>
+        {showOperations?"Hide operational details":"Open operational details"}
+      </button>
+    </>}
+
+    {(!executiveSurface||showOperations)&&<>
     <ProjectSectionHeader
       eyebrow="Structure"
       title="Programmes & portfolios"
@@ -513,6 +559,8 @@ export default function Delivery({ me }) {
         </>}
       </div>
     </div>
+
+    </>}
 
     {sheet?.type==="group"&&<GroupSheet me={me} units={units} people={people} groups={groups} canManageOrg={canManageOrg} busy={busy} onClose={()=>setSheet(null)} onSave={createGroup}/>}
     {sheet?.type==="milestone"&&<MilestoneSheet people={people} busy={busy} onClose={()=>setSheet(null)} onSave={createMilestone}/>}

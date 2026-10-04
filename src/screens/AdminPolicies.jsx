@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
+import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
+import { Button, ComposerDrawer, DataPanel, MotionDisclosure, QueueRow, StatePanel, StatusBadge } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
 
 function formatValue(def, value) {
@@ -20,6 +21,8 @@ export default function AdminPolicies({ me }) {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState(null);
   const [notice,setNotice]=useState(null);
+  const [historyOpen,setHistoryOpen]=useState(false);
+  const [revisionOpen,setRevisionOpen]=useState(false);
 
   useEffect(()=>{ load(); },[me.id]);
 
@@ -54,7 +57,7 @@ export default function AdminPolicies({ me }) {
     });
     setBusy(false);
     if(insertError){setError(humanError(insertError,"The rule version could not be recorded.")); return;}
-    setReason(""); setValue(""); setNotice("Policy rule recorded."); await load();
+    setReason(""); setValue(""); setRevisionOpen(false); setNotice("Policy rule recorded."); await load();
   }
 
   if(loading) return <div className="body"><LoadingState label="Loading policies and rules…" /></div>;
@@ -67,42 +70,51 @@ export default function AdminPolicies({ me }) {
     </div>
     {error&&<ProductNotice tone="error" title="Policies & rules">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Policy updated">{notice}</ProductNotice>}
+
     <div className="split" style={{marginTop:18}}>
       <div className="main-col">
-        <div className="sec"><span>Rule catalogue</span><span>{defs.length}</span></div>
-        {defs.map((item)=>{
-          const rows=versions.filter((v)=>v.rule_key===item.rule_key);
-          const latest=rows[0]||null;
-          return <button key={item.rule_key} className={"row row-button"+(selected===item.rule_key?" on":"")} onClick={()=>setSelected(item.rule_key)}>
-            <div className="row-t">{item.label}</div>
-            <div className="row-m">{item.domain+" · "+formatValue(item,latest?.value)+(latest?" · effective "+latest.effective_on:"")}</div>
-            <div className="small" style={{marginTop:6}}>{item.description}</div>
-          </button>;
-        })}
-        {!defs.length&&<EmptyState title="No policy definitions">No policy definitions are active.</EmptyState>}
+        <DataPanel eyebrow="Settings" title="Rule catalogue" supporting="Select a rule to inspect its current recorded value and create a successor version." action={<StatusBadge tone="neutral" icon={false}>{defs.length} active</StatusBadge>}>
+          {defs.map((item)=>{
+            const rows=versions.filter((v)=>v.rule_key===item.rule_key);
+            const latest=rows[0]||null;
+            return <QueueRow key={item.rule_key} icon="settings" title={item.label}
+              meta={`${item.domain} · ${formatValue(item,latest?.value)}${latest?" · effective "+latest.effective_on:""} · ${item.description}`}
+              status={selected===item.rule_key?"Selected":undefined} statusTone="action"
+              onClick={()=>{setSelected(item.rule_key);setHistoryOpen(false);setRevisionOpen(false);}} />;
+          })}
+          {!defs.length&&<StatePanel state="empty" title="No policy definitions" description="No policy definitions are active." />}
+        </DataPanel>
       </div>
+
       <div className="side-col">
-        <div className="sec"><span>Record version</span></div>
-        {def&&<div className="card" style={{padding:15}}>
-          <strong>{def.label}</strong>
-          <p className="small" style={{lineHeight:1.5}}>{def.description}</p>
-          <div className="small">Current: {formatValue(def,current?.value)}</div>
-          <FieldGroup label="New value">
-            {def.value_type==="boolean"
-              ? <select className="field" aria-label="Policy rule value" value={value} onChange={(e)=>setValue(e.target.value)}><option value="">Choose</option><option value="true">Yes</option><option value="false">No</option></select>
-              : <input className="field" aria-label="Policy rule value" type={def.value_type==="text"?"text":"number"} value={value} min={def.min_numeric??undefined} max={def.max_numeric??undefined} onChange={(e)=>setValue(e.target.value)} />}
-          </FieldGroup>
-          <FieldGroup label="Effective date"><input className="field" aria-label="Policy effective date" type="date" value={effectiveOn} onChange={(e)=>setEffectiveOn(e.target.value)} /></FieldGroup>
-          <FieldGroup label="Reason"><textarea className="field" aria-label="Policy reason" rows="3" value={reason} onChange={(e)=>setReason(e.target.value)} /></FieldGroup>
-          <button className="btn" disabled={busy||value===""||!reason.trim()} onClick={save}>{busy?"Recording…":"Record new version"}</button>
-        </div>}
-        <div className="sec"><span>History</span><span>{history.length}</span></div>
-        {history.slice(0,10).map((item)=><div className="row" key={item.id}>
-          <div className="row-t">{formatValue(def,item.value)}</div>
-          <div className="row-m">Effective {item.effective_on}</div>
-          <div className="small" style={{marginTop:6}}>{item.reason}</div>
-        </div>)}
+        <DataPanel eyebrow="Selected rule" title={def?.label||"Rule settings"} supporting={def?.description||"Choose a rule from the catalogue."}
+          action={def?<Button size="compact" onClick={()=>setRevisionOpen(true)}>Record new version</Button>:null}>
+          {def?<><div className="small">Current: {formatValue(def,current?.value)}</div><div className="small">Effective: {current?.effective_on||"Not recorded"}</div><div className="small">Reason: {current?.reason||"Not recorded"}</div></>:<StatePanel state="info" title="Choose a rule" description="Select a rule to inspect its current version." />}
+        </DataPanel>
+
+        <DataPanel eyebrow="History" title="Version history" supporting="Older versions remain attributable and are collapsed until needed.">
+          <Button variant="quiet" size="compact" disabled={!def} onClick={()=>setHistoryOpen((open)=>!open)}>{historyOpen?"Hide version history":"Show version history"}</Button>
+          <MotionDisclosure open={historyOpen} ariaLabel="Policy version history">
+            {history.slice(0,10).map((item)=><QueueRow key={item.id} icon="history" title={formatValue(def,item.value)}
+              meta={`Effective ${item.effective_on} · ${item.reason}`} status={item.id===current?.id?"Current":"Previous"} statusTone={item.id===current?.id?"success":"neutral"} />)}
+            {!history.length&&<StatePanel state="empty" title="No version history" description="No version has been recorded for this rule yet." />}
+          </MotionDisclosure>
+        </DataPanel>
       </div>
     </div>
+
+    <ComposerDrawer open={revisionOpen} onClose={()=>!busy&&setRevisionOpen(false)} title="Record new policy version"
+      description={def ? "Create a successor version for " + def.label + ". Existing versions are preserved." : "Create a successor policy version."}
+      footer={<><Button variant="secondary" disabled={busy} onClick={()=>setRevisionOpen(false)}>Cancel</Button><Button busy={busy} disabled={!def||value===""||!reason.trim()} onClick={save}>{busy?"Recording…":"Record new version"}</Button></>}>
+      {def&&<>
+        <FieldGroup label="New value">
+          {def.value_type==="boolean"
+            ? <select className="field" aria-label="Policy rule value" value={value} onChange={(e)=>setValue(e.target.value)}><option value="">Choose</option><option value="true">Yes</option><option value="false">No</option></select>
+            : <input className="field" aria-label="Policy rule value" type={def.value_type==="text"?"text":"number"} value={value} min={def.min_numeric??undefined} max={def.max_numeric??undefined} onChange={(e)=>setValue(e.target.value)} />}
+        </FieldGroup>
+        <FieldGroup label="Effective date"><input className="field" aria-label="Policy effective date" type="date" value={effectiveOn} onChange={(e)=>setEffectiveOn(e.target.value)} /></FieldGroup>
+        <FieldGroup label="Reason"><textarea className="field" aria-label="Policy reason" rows="3" value={reason} onChange={(e)=>setReason(e.target.value)} /></FieldGroup>
+      </>}
+    </ComposerDrawer>
   </div>;
 }

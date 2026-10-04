@@ -3,6 +3,7 @@ import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
+import { OperationalFileList } from "../components/OperationalFiles";
 import {
   WorkDetailCopy,
   WorkDetailHeader,
@@ -535,6 +536,14 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
           resolving={busy}
           onResolve={resolveActiveBlocker}
         />)}
+
+      <OperationalFileList
+        contextType="work_item"
+        contextId={item.id}
+        relation="assignment_source"
+        title="Source files"
+        emptyText="No source files were supplied with this work."
+      />
 
       {item.purpose && <WorkDetailSection title="Why this matters">
         <WorkDetailCopy>{item.purpose}</WorkDetailCopy>

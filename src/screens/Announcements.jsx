@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Sheet } from "../components/bits";
+import { ComposerDrawer } from "../experience-v2/components";
 import VoiceInput from "../components/VoiceInput";
+import { OperationalFileList, PendingFilePicker } from "../components/OperationalFiles";
+import { uploadOperationalFiles } from "../lib/operationalFiles";
 
 const ROLE_OPTIONS = [
   ["staff", "Staff"], ["sub_team_lead", "Team leads"], ["manager", "Unit heads"],
@@ -13,10 +16,10 @@ function formatDate(value) {
 }
 
 function blankForm() {
-  return { id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [] };
+  return { id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [], files: [] };
 }
 
-export default function Announcements({ me, back }) {
+export default function Announcements({ me, back, createRequest = false, onCreateHandled, initialAnnouncementId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [units, setUnits] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -27,6 +30,19 @@ export default function Announcements({ me, back }) {
   const [error, setError] = useState(null);
 
   useEffect(() => { load(); }, [me.id]);
+  useEffect(() => {
+    if (!initialAnnouncementId || !rows.length || selected) return;
+    const match = rows.find((row) => row.id === initialAnnouncementId);
+    if (!match) return;
+    openAnnouncement(match);
+    onInitialHandled?.();
+  }, [initialAnnouncementId, rows, selected]);
+  useEffect(() => {
+    if (createRequest && canPublish) {
+      setForm(blankForm());
+      onCreateHandled?.();
+    }
+  }, [createRequest, canPublish]);
 
   async function load() {
     setLoading(true); setError(null);
@@ -95,6 +111,7 @@ export default function Announcements({ me, back }) {
       allOrg: audiences.some((audience) => audience.audience_type === "organisation"),
       unitIds: audiences.filter((audience) => audience.audience_type === "unit").map((audience) => audience.unit_id),
       roles: audiences.filter((audience) => audience.audience_type === "role").map((audience) => audience.audience_role),
+      files: [],
     });
   }
 
@@ -115,6 +132,21 @@ export default function Announcements({ me, back }) {
         ? await supabase.rpc("update_announcement", { p_announcement_id: form.id, ...args })
         : await supabase.rpc("create_announcement", args);
       if (result.error) throw result.error;
+      const announcementId = form.id || result.data;
+      if (form.files?.length && announcementId) {
+        try {
+          await uploadOperationalFiles({
+            files: form.files,
+            contextType: "announcement",
+            contextId: announcementId,
+            relation: "announcement_attachment",
+          });
+        } catch (fileError) {
+          if (!form.id) setForm((current) => ({ ...current, id: announcementId }));
+          await load();
+          throw new Error(`The announcement draft was saved, but ${fileError.message || "one or more attachments could not be uploaded."}`);
+        }
+      }
       setForm(null); await load();
     } catch (err) { setError(err.message || "The draft could not be saved."); }
     finally { setBusy(false); }
@@ -166,14 +198,26 @@ export default function Announcements({ me, back }) {
       <div className="h2" style={{ marginTop: 5 }}>{selected.title}</div>
       <div className="row-m">{selected.profiles?.full_name || "CEAC"} · {formatDate(selected.published_at || selected.created_at)}</div>
       <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, marginTop: 18 }}>{selected.body}</div>
+      <OperationalFileList
+        contextType="announcement"
+        contextId={selected.id}
+        relation="announcement_attachment"
+        title="Attachments"
+        emptyText="No announcement attachments."
+      />
       {selected.expires_at && <div className="hint">Available until {formatDate(selected.expires_at)}</div>}
       {selected.requires_acknowledgement && !receiptFor(selected)?.acknowledged_at && selected.status === "published" &&
         <button className="btn" style={{ marginTop: 18 }} onClick={acknowledge} disabled={busy}>{busy ? "Saving..." : "I acknowledge this message"}</button>}
       {receiptFor(selected)?.acknowledged_at && <div className="flag flag-green" style={{ marginTop: 18 }}><h4>Acknowledged</h4>{formatDate(receiptFor(selected).acknowledged_at)}</div>}
     </Sheet>}
 
-    {form && <Sheet onClose={() => !busy && setForm(null)}>
-      <div className="h2">{form.id ? "Edit draft" : "New announcement"}</div>
+    {form && <ComposerDrawer
+      open
+      onClose={() => !busy && setForm(null)}
+      title={form.id ? "Edit announcement draft" : "New announcement"}
+      description="Choose the audience, write the message and publish only after the draft is ready."
+      footer={<button className="btn" onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : "Save draft"}</button>}
+    >
       <label className="label" htmlFor="announcement-title">Title</label>
       <div className="assistive-field">
         <input id="announcement-title" className="field" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
@@ -184,6 +228,8 @@ export default function Announcements({ me, back }) {
         <textarea id="announcement-body" className="field" rows={7} value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} />
         <VoiceInput compact label="Speak announcement message" onResult={(text) => setForm((current) => ({ ...current, body: current.body ? current.body + " " + text : text }))} />
       </div>
+      <div className="sec"><span>Attachments</span><span>optional</span></div>
+      <PendingFilePicker files={form.files || []} onChange={(files) => setForm({ ...form, files })} label="Attach files" disabled={busy} />
       <label className="label" htmlFor="announcement-priority">Priority</label>
       <select id="announcement-priority" className="field" value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })}>
         <option value="normal">Normal</option><option value="important">Important</option><option value="urgent">Urgent</option>
@@ -200,7 +246,6 @@ export default function Announcements({ me, back }) {
         <div className="label">Roles</div>
         {ROLE_OPTIONS.map(([role, label]) => <label className="opt" key={role}><input type="checkbox" checked={form.roles.includes(role)} onChange={() => toggleList("roles", role)} /> {label}</label>)}
       </>}
-      <button className="btn" style={{ marginTop: 16 }} onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : "Save draft"}</button>
-    </Sheet>}
+    </ComposerDrawer>}
   </div>;
 }

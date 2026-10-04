@@ -5,6 +5,7 @@ import { dateOnly, dueLabel } from "../lib/time";
 import { Pill, Sheet, statusPill, ProductNotice, LoadingState } from "../components/bits";
 import ManagerProjectClose from "./ManagerProjectClose";
 import ProjectParticipantRegister from "../components/ProjectParticipantRegister";
+import { OperationalFileList } from "../components/OperationalFiles";
 import { humanError } from "../lib/productLanguage";
 import {
   ProjectAttentionCard,
@@ -340,6 +341,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           ["overview","Overview"],
           ["work","Work",detail.work.length],
           ["objectives","Objectives",detail.objectives.length],
+          ["files","Files"],
           ["register","Register"],
           ["collaboration","Collaboration"],
           ["close","Close & record"],
@@ -438,6 +440,19 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           </div>;
         })}
         {detail.objectives.length === 0 && <div className="card small">No objectives have been recorded for this project.</div>}
+      </section>}
+
+      {area === "files" && <section className="project-workspace-area">
+        <div className="project-area-head"><div><span className="eyebrow">Shared project material</span><h2>Files</h2></div></div>
+        <p className="screen-note">Private project files are available only to people who can see this project. Protected HR documents stay in their separate secure domain.</p>
+        <OperationalFileList
+          contextType="project"
+          contextId={detail.id}
+          relation="project_file"
+          canUpload={detail.canManageObjectives}
+          title="Project files"
+          emptyText="No project files have been recorded."
+        />
       </section>}
 
       {area === "register" && <section className="project-workspace-area">
