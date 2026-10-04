@@ -855,6 +855,21 @@
 }
 
 @media (max-width: 359px) {
+  .staffv2-session-label,
+  .staffv2-session-line .ev2c-status {
+    display: none;
+  }
+
+  .staffv2-session-line {
+    flex-wrap: nowrap;
+  }
+
+  .staffv2-session-line strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .staffv2-focus-card {
     padding: var(--ev2-space-4);
   }
