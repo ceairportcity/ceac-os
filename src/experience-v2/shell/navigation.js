@@ -68,16 +68,19 @@ const MOBILE_PRIMARY_KEYS = Object.freeze({
 
 const ROLE_QUICK_ACTIONS = Object.freeze({
   staff: Object.freeze([
+    { id: "announcement", label: "Announcement", icon: "messages", action: "announcement" },
     { id: "meeting", label: "Meeting", icon: "meeting", action: "meeting" },
     { id: "message", label: "Message room", icon: "messages", action: "message" },
   ]),
   manager: Object.freeze([
     { id: "work", label: "New work", icon: "work", action: "work" },
+    { id: "announcement", label: "Announcement", icon: "messages", action: "announcement" },
     { id: "meeting", label: "Meeting", icon: "meeting", action: "meeting" },
     { id: "message", label: "Message room", icon: "messages", action: "message" },
   ]),
   admin: Object.freeze([
     { id: "work", label: "New work", icon: "work", action: "work" },
+    { id: "announcement", label: "Announcement", icon: "messages", action: "announcement" },
     { id: "meeting", label: "Meeting", icon: "meeting", action: "meeting" },
     { id: "message", label: "Message room", icon: "messages", action: "message" },
   ]),
