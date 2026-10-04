@@ -1,105 +1,77 @@
-# Next Chat Prompt — Continue CEAC OS Exactly From Current State
+# CEAC OS — Next Chat Prompt
 
-Paste the block below into a new ChatGPT chat.
-
----
-
-Continue CEAC OS exactly from the LIVE canonical repository state.
+Continue CEAC OS from the LIVE canonical repository state.
 
 Repository:
 `thestandardinst-star/ceac-os`
 
-GitHub is canonical.
+GITHUB IS CANONICAL.
 
-THIS IS A CONTINUATION OF THE EXISTING BUILD AND PRODUCT-DECISION THREAD. DO NOT RESET THE PROJECT, RE-DISCOVER OLD DECISIONS, OR ASK ME TO REPEAT AGREED REQUIREMENTS THAT ARE ALREADY LOCKED IN THE REPOSITORY.
+The Operational Clarity & Collaboration Refinement programme is COMPLETE. Do not restart OCR1–OCR6 and do not ask me to repeat requirements already locked into the repository.
 
-Before answering substantively or writing anything:
+Last accepted product closure:
+- PR #103 — Operational Clarity & Collaboration Refinement — merged.
+- Accepted implementation head: `674efe5fd2ae92ebaa4689ebe39e59e33cb8f3ae`
+- Protected-main product merge: `bfb5aa9e5942d44dd0a8fcfa7a3be350cace129e`
+- Pre-merge Quality Gate #1878: PASS.
+- Post-merge CI #2078: PASS.
+- Post-merge Migration Replay #1681: PASS.
+- Post-merge Account Security #1853: PASS.
+- Post-merge Quality Gate #1879: PASS.
+- Post-merge Vercel commit status: SUCCESS.
 
-1. Fetch protected `main` HEAD.
-2. Read, in this order:
+Before answering substantively or making any write:
+
+1. Fetch protected `main` HEAD. The SHA above is a historical closure checkpoint only; reconcile forward if main has advanced.
+2. Read:
    - `AGENTS.md`
    - `docs/continuity/CEAC_OS_CANONICAL_OWNER_CONTINUITY_2026-10-03.md`
-   - `docs/employee-roster-payroll-fix/BUILD_STATE.md`
-   - `docs/employee-roster-payroll-fix/SESSION_START_PROMPT.md`
+   - `docs/operational-clarity/BUILD_STATE.md`
+   - `docs/operational-clarity/FINAL_CLOSURE_2026-10-04.md`
    - `docs/final-product/PRODUCT_OWNER_DECISIONS.md`
    - `docs/final-product/PAYROLL_RULES_v1.md`
    - `docs/final-product/LEAVE_RULES_v1.md`
    - `docs/final-product/GO_LIVE_ORG_MAPPING.md`
 3. Inspect recent protected-main commits and open PRs.
-4. Inspect exact-head CI, Migration Replay, Account Security and Quality Gate.
-5. Confirm one active writer before any implementation write.
-6. If main has advanced beyond the SHAs in the docs, reconcile forward. Never reset, force-push, revert or erase newer accepted work.
+4. Inspect exact-head CI, Migration Replay, Account Security, Quality Gate and deployment status where relevant.
+5. Confirm one active implementation writer before writing.
+6. Never reset, force-push, revert or erase newer accepted work. Reconcile forward.
 
-Treat the canonical continuity document as binding owner context.
-
-Key facts that must not be lost:
+Binding domain rules that remain unchanged:
 
 EMPLOYEE / HR
-- 18 supplied staff rows are represented by 18 employee roster records.
+- 18 supplied staff rows are represented by 18 employee records.
 - Employee identity is independent of auth/login identity.
 - 2 confirmed linked profiles, 15 roster-only employees, 1 needs-review employee, 0 unaccounted source rows.
 - Never fabricate emails or auth users.
 - Job title does not grant authority.
-- Administration People must include roster-only employees.
-- Protected HR supports roster-only employees.
-- Missing salary, bank, identifier or document values must remain truthful `Not recorded`.
+- Missing salary, bank, identifier or document values remain truthful `Not recorded`.
 
 PAYROLL
 - Payroll population uses employee IDs, not auth profiles.
-- Every active employee is included in a draft run.
-- Administration prepares.
-- Group Pastor approves.
+- Administration PREPARES.
+- Group Pastor/CEO APPROVES.
 - Automatic approval is prohibited.
 - Approved Payroll is immutable.
-- Corrections are attributable revisions.
-- Do not invent salary, PAYE, SSNIT, allowance, loan, reimbursement or bonus values.
+- Corrections use attributable successor revisions.
+- Never invent salary, PAYE, SSNIT, allowance, loan, reimbursement or bonus values.
 
 LEAVE
-- Leave categories confirmed by the owner: annual, sick, maternity where relevant, paternity where relevant, and study leave where CEAC uses it.
-- Approval flow: Employee request -> Manager approval -> Administration final approval.
-- Employees can request/cancel leave whether or not a work session has started.
+- Categories: Annual, Sick, Maternity, Paternity, Study.
+- Approval: Employee request → Manager approval → Administration FINAL approval.
+- Employees may request/cancel leave regardless of work-session state.
 - No work session recorded does NOT mean absent.
 - Leave/attendance must not automatically create Payroll deductions.
-- Exact entitlement quantities, accrual/grant method, carry-over and unpaid-leave Payroll treatment remain unresolved and MUST NOT be invented.
-- Preserve versioned policies/types, balances, approvals, escalation, exceptions, corrections and history.
+- Exact entitlement quantities, accrual/grant method, carry-over and unpaid-leave Payroll treatment remain unresolved and must not be invented.
 
-VISUAL PARITY
-The owner's screenshots/mockups are literal visible authorities, not inspiration.
-Known remaining correction areas from independent screenshot inspection:
-1. Home / shell.
-2. Project / Task, especially selected-task/detail drawer richness and density.
-3. Finance, which is still too sparse/generic compared with FINANCE-A.
-4. People / Workforce, including unused space, geometry and employee treatment.
-5. Work / BrandBook, the largest miss: weekly schedule, working-hours visualisation, notes/audio surface, task checklist and progress treatment.
-6. Mobile Home, which is too long/stacked versus the approved compact reference.
+DATA / SECURITY
+- Preserve RLS, capability authority, Work Engine, project authority, Finance authority, audit/history, secure integrations and protected HR.
+- Keep `currency + amount_minor`; never combine currencies without explicit policy.
+- Never invent KPIs, percentages, productivity scores, project health, priorities, financial values, ministry performance or people data.
 
-Do not accept "premium", "same feel" or "same design language" as reference parity.
+OPERATIONAL CLARITY
+- OCR0–OCR6 are accepted baseline.
+- Shared Composer, Executive clarity, Files/Media, Search CEAC, People/Control Center transformation and cross-role harmonisation must not be downgraded.
+- Use `docs/operational-clarity/reference/APPROVED_REFERENCE.html` and accepted visual contracts for any later work that touches these surfaces.
 
-Required visual acceptance wording:
-FUNCTIONAL CONTRACT PRESERVED: YES / NO
-SECURITY/AUTHORITY PRESERVED: YES / NO
-REFERENCE COMPONENT PARITY: YES / NO
-RESPONSIVE ACCEPTANCE: YES / NO
-
-CURRENT PRIORITY
-Unless I explicitly change priority:
-1. close any remaining authenticated ERC live-smoke evidence if still open;
-2. inspect the current Leave implementation against the binding owner rules and correct gaps without inventing unresolved policy values;
-3. execute the final literal visual-parity correction corridor screen-by-screen:
-   Home/shell -> Project/Task -> Finance -> People/Workforce -> Work/BrandBook -> Mobile Home;
-4. preserve all accepted RLS, security, capability, employee-roster, protected-HR, Payroll, Work, Finance, audit and integration foundations;
-5. run exact-head technical gates and explicit side-by-side visual acceptance before declaring completion.
-
-CONTINUOUS EXECUTION
-Do not stop merely because a commit was pushed, a gate started/passed, a screenshot was captured, or a substage completed. Continue to the next safe step.
-
-Valid stop conditions only:
-- active writer conflict;
-- genuine security ambiguity;
-- destructive owner decision;
-- indispensable missing credential/access;
-- required owner policy input blocks the current task and no safe independent work remains.
-
-Start by telling me the LIVE canonical HEAD, the exact current stage/state, and the next concrete action. Then continue the work rather than returning only a status report.
-
---- END PROMPT
+Start by reporting the LIVE protected-main HEAD, any open implementation PRs, the current requested programme/defect (if one exists), and the next safe action. If there is no new requested work, do not invent a new build phase.

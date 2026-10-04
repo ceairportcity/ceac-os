@@ -1,76 +1,65 @@
-# CEAC OS — Operational Clarity Next Phase Ready State
+# CEAC OS — Operational Clarity Final State
 
-Status: **LOCKED / START GATE SATISFIED / READY TO MERGE AND START OCR0**
+Status: **COMPLETE / MERGED / POST-MERGE VERIFIED**
 Date: 2026-10-04
-Promotion state: **PR #100 promoted from draft after canonical reconciliation; protected checks must pass on the ready head before merge.**
 
-## Canonical next-phase package
+The Operational Clarity & Collaboration Refinement programme is terminal.
 
-Draft PR: **#100 — Continuity: lock Operational Clarity & Collaboration Refinement**
-Documentation branch: `chatgpt/operational-clarity-lock-2026-10-04`
+## Canonical closure
 
-This PR is the canonical product/design handoff for the next CEAC OS implementation phase.
+- Implementation PR: **#103 — Operational Clarity & Collaboration Refinement**
+- Accepted implementation head: `674efe5fd2ae92ebaa4689ebe39e59e33cb8f3ae`
+- Protected-main squash merge: `bfb5aa9e5942d44dd0a8fcfa7a3be350cace129e`
+- OCR0–OCR6: **ACCEPTED**
+- Pre-merge Level B Quality Gate #1878: **PASS**
+- Post-merge Level B Quality Gate #1879: **PASS**
+- Post-merge CI #2078: **PASS**
+- Post-merge Migration Replay #1681: **PASS**
+- Post-merge Account Security #1853: **PASS**
+- Post-merge Vercel commit status: **SUCCESS**
 
-Reconciled live state:
-- PR #99: merged / terminal.
-- PR #101: merged / terminal; CI classifier corrected so broad squash merges run Level B.
-- Verified protected main before this documentation lock: `30370358b4a7420030b17496753f0fe571b9b407`.
-- Exact-head CI, Migration Replay, Account Security and full Level B Quality Gate: PASS.
-- Remaining Vercel limitation: external build-rate limit on the CI-only merge plus unavailable authenticated connector scope; this is recorded as an evidence/access blocker, not a runtime-code defect.
+## Delivered scope
 
-It includes the locked requirements for:
+The completed programme includes:
+- shared accessible Composer flows;
+- Work Composer with source attachments and progressive disclosure;
+- Executive decision-first hierarchy and authorised Create actions;
+- private operational Files and Media;
+- organisational Unit/Sub-team Rooms without unrestricted DMs;
+- permission-aware Search CEAC;
+- Administration Overview and People transformation;
+- employee master-detail, secure photos/documents and Protected HR boundaries;
+- daily Time & Leave and Payroll/Finance separation;
+- Control Center configuration/governance command centre;
+- Lifecycle, Checks, Authority and Policies harmonisation;
+- shared Messages queue grammar;
+- cross-role desktop/mobile route archetype sweep;
+- final responsive, security, workflow and side-by-side visual acceptance.
 
-- Shared CEAC Composer system.
-- Work Item Composer replacing the long Give out work form.
-- Executive panel transformation and information hierarchy.
-- Executive Create / Announcements / organisational Room access.
-- Secure unified CEAC Files & Media.
-- Permission-aware global Search CEAC.
-- Cross-role workspace harmonisation.
-- Administration & HR transformation.
-- People as the human system of record:
-  - Directory;
-  - Organisation;
-  - Needs attention;
-  - secure optional employee photos;
-  - master-detail employee workspace;
-  - grouped employee records;
-  - collapsed history.
-- Control Center as CEAC configuration/governance command centre:
-  - System health / Needs attention;
-  - truthful configuration states;
-  - focused category workspaces;
-  - direct links to authoritative controls;
-  - progressive disclosure.
-- Responsive, security and side-by-side visual acceptance.
+## Binding owner rules remain in force
 
-## Hard start gate
+Completion of OCR does not change:
+- employee identity being independent of auth/login;
+- the 18-row employee-roster accounting;
+- Administration prepares Payroll and Group Pastor/CEO approves;
+- approved Payroll immutability and attributable successor revisions;
+- Leave approval: Employee request → Manager approval → Administration final approval;
+- no work session does not mean absence;
+- Leave/attendance must not automatically create Payroll deductions;
+- unresolved Leave quantities/accrual/carry-over/unpaid-pay treatment must not be invented;
+- multi-currency values must remain separated unless an explicit conversion policy exists;
+- missing values and KPIs must remain truthful rather than fabricated;
+- protected HR, RLS, capability and audit boundaries remain authoritative.
 
-Do **not** start implementation while PR #99 or another implementation writer is active.
+## Future-work rule
 
-As soon as the current writer reaches an accepted terminal state:
+Do not restart or reinterpret OCR1–OCR6.
 
-1. Re-fetch protected `main`.
-2. Confirm PR #99 merged/closed terminal state.
-3. Reconcile PR #100 forward onto the resulting protected-main state without removing newer accepted work.
-4. Merge the documentation lock through protected-main rules.
-5. Create one implementation branch from the new protected `main`.
-6. Execute `OCR0 → OCR6` from `BUILD_SEQUENCE.md`.
-7. Use `ACCEPTANCE_CONTRACT.md` and `reference/APPROVED_REFERENCE.html` as binding acceptance authority.
+For any new request:
+1. fetch protected `main`;
+2. inspect recent main commits and open PRs;
+3. read the canonical owner/product/security documents;
+4. treat this completed OCR programme as accepted baseline;
+5. create a new programme or targeted defect fix only when the requested work is genuinely new.
 
-## No reinterpretation rule
-
-The next implementation writer must not downgrade:
-- People transformation into a simple card cleanup;
-- Control Center transformation into a collapsible-settings cleanup;
-- global search into destination filtering;
-- Work Composer into a shorter version of the old long form;
-- Executive refinement into text/copy changes only.
-
-If implementation constraints require a material departure, stop and surface the exact constraint before changing the locked product direction.
-
-## Single-writer rule
-
-Only one implementation writer may modify the implementation branch at a time.
-
-This documentation branch is not an implementation branch.
+The old instruction to “start OCR0” is retired.
