@@ -82,7 +82,10 @@ const ROLE_QUICK_ACTIONS = Object.freeze({
     { id: "message", label: "Message room", icon: "messages", action: "message" },
   ]),
   executive: Object.freeze([
-    { id: "work", label: "New work", icon: "work", action: "work" },
+    { id: "work", label: "Give out work", icon: "work", action: "work" },
+    { id: "ministry-objective", label: "Ministry objective", icon: "ministry", action: "ministry" },
+    { id: "project", label: "Project", icon: "projects", action: "project" },
+    { id: "announcement", label: "Announcement", icon: "messages", action: "announcement" },
     { id: "meeting", label: "Meeting", icon: "meeting", action: "meeting" },
     { id: "message", label: "Message room", icon: "messages", action: "message" },
   ]),
@@ -138,6 +141,9 @@ export function getShellQuickActions(context = {}, handlers = {}) {
   const role = getRoleKey(context);
   const actionHandlers = {
     work: handlers.onCreateWork,
+    ministry: handlers.onCreateMinistryObjective,
+    project: handlers.onCreateProject,
+    announcement: handlers.onCreateAnnouncement,
     meeting: handlers.onCreateMeeting,
     message: handlers.onComposeMessage || handlers.onMessages,
   };
