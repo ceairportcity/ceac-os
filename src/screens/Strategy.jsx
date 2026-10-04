@@ -35,7 +35,7 @@ function blankForm(type, parentId = "", unitId = "") {
   };
 }
 
-export default function Strategy({ me }) {
+export default function Strategy({ me, createRequest = null, onCreateHandled }) {
   const [nodes, setNodes] = useState([]);
   const [links, setLinks] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -55,6 +55,14 @@ export default function Strategy({ me }) {
   );
 
   useEffect(() => { load(); }, [me.id]);
+  useEffect(() => {
+    if (createRequest === "ministry_objective" && canGlobal) {
+      setError(null);
+      setNotice(null);
+      setForm(blankForm("ministry_objective"));
+      onCreateHandled?.();
+    }
+  }, [createRequest, canGlobal]);
 
   async function load() {
     setLoading(true);
@@ -250,7 +258,10 @@ export default function Strategy({ me }) {
         <h1 className="h1">{executiveSurface ? "Ministry" : "Strategy"}</h1>
         <p className="screen-note">{executiveSurface ? "Direction, ministry objectives and the unit objectives carrying them forward. Results are shown only where they are explicitly recorded." : "Ministry Direction → Ministry Objective → Unit Objective. Descriptive goals stay descriptive; numeric goals always show the result beside its target."}</p>
       </div>
-      {canGlobal && executiveSurface && <button className="btn wide-auto" onClick={() => openCreate("ministry_direction")}>Add Ministry Direction</button>}
+      {canGlobal && executiveSurface && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button className="btn" onClick={() => openCreate("ministry_objective")}>New Ministry Objective</button>
+        <button className="btn btn-ghost" onClick={() => openCreate("ministry_direction")}>Add Ministry Direction</button>
+      </div>}
     </div>
 
     {error && <ProductNotice tone="error" title="Strategy">{error}</ProductNotice>}
@@ -302,10 +313,16 @@ export default function Strategy({ me }) {
       onClose={() => { if (!busy) setForm(null); }}
       title={form.id ? `Revise ${TYPE_LABELS[form.nodeType].toLowerCase()}` : `New ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
       description="Keep the objective clear and factual. Measurement detail appears only when CEAC is recording a numeric result."
-      footer={<button className="btn" disabled={busy || !form.name.trim() || !form.statement.trim() || !form.reason.trim() || (form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim()))} onClick={saveNode}>
+      footer={<button className="btn" disabled={busy || !form.name.trim() || !form.statement.trim() || !form.reason.trim() || (form.nodeType !== "ministry_direction" && !form.parentId) || (form.nodeType === "unit_objective" && !form.unitId) || (form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim()))} onClick={saveNode}>
         {busy ? "Saving…" : form.id ? "Record revision" : `Create ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
       </button>}
     >
+      {form.nodeType === "ministry_objective" && <FieldGroup label="Ministry Direction">
+        <select className="field" aria-label="Strategy parent direction" value={form.parentId} onChange={(event) => setForm({ ...form, parentId: event.target.value })} disabled={Boolean(form.id)}>
+          <option value="">Choose Ministry Direction</option>
+          {directions.filter((direction) => direction.status !== "closed").map((direction) => <option key={direction.id} value={direction.id}>{direction.name}</option>)}
+        </select>
+      </FieldGroup>}
       {form.nodeType === "unit_objective" && <FieldGroup label="Unit">
         <select className="field" aria-label="Strategy unit" value={form.unitId} onChange={(event) => setForm({ ...form, unitId: event.target.value })} disabled={Boolean(form.id)}>
           <option value="">Choose unit</option>
