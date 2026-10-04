@@ -84,6 +84,36 @@ Acceptance matrix:
 
 ## OCR2 — Executive clarity and action hierarchy
 
+Status: **ACCEPTED**
+
+Accepted exact head: `f82481e67557d0e2caf0ef8bb11e86d6a8ec8e2e`.
+
+- CI: PASS.
+- Migration Replay: PASS.
+- Account Security: PASS.
+- Level B SQL/authority: PASS.
+- Browser shards 1/4–4/4: PASS.
+- Exact-head product evidence merge: PASS.
+- role-and-RLS closure: PASS.
+
+Implemented:
+- decision-first Executive Overview with Needs your attention first;
+- clearer Ministry hierarchy and objective actions;
+- leadership-altitude Portfolio with operational mechanics behind drill-down;
+- Organisation exception/read-only clarity;
+- authorised Executive Create routing without backend authority changes;
+- compact mobile Executive support rails with bounded nested controls.
+
+Acceptance matrix:
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY / AUTHORITY PRESERVED OR EXPLICITLY AMENDED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+- PLAIN-LANGUAGE / CLARITY ACCEPTANCE: YES
+- ACCESSIBILITY BASICS: YES
+
+## OCR3 — Files, media and communication
+
 Status: **ACTIVE**
 
-Next: recompose Executive Overview, Ministry, Portfolio, Organisation and Executive Create around the locked decision-first hierarchy without changing protected backend authority.
+Next: create the private operational file domain first, preserving `ceac-hr-private` isolation, then layer Work/Project/Room attachments, Executive organisational Room authority and announcement discoverability on the shared file model.
