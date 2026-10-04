@@ -349,6 +349,9 @@ test("Stage 10 Family B5A Administration People directory preserves HR authority
   expect(screen).toContain("Protected HR remains behind a separate security boundary.");
   expect(screen).toContain("They are not a performance score, ranking or disciplinary conclusion.");
   expect(screen).toContain("No submissions in 14 days");
+  expect(screen).toContain("PEOPLE_VIEWS");
+  expect(screen).toContain('aria-label="People views"');
+  expect(screen).toContain("Roster-only status by itself is not treated as a problem.");
   expect(screen).toContain("Record employment change");
   expect(screen).toContain('rpc("admin_employee_roster_summary")');
   expect(screen).toContain('rpc("hr_employee_protected_summary"');
@@ -369,8 +372,18 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "People", exact: true })).toBeVisible();
     await expect(page.getByLabel("Find a person")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Directory", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Organisation", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Needs attention", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Everyone", exact: true })).toBeVisible();
     await expect(page.getByText(/not a performance score, ranking or disciplinary conclusion/i)).toBeVisible();
+
+    await page.getByRole("tab", { name: "Organisation", exact: true }).click();
+    await expect(page.getByText(/Job titles never create authority/i).first()).toBeVisible();
+    await page.getByRole("tab", { name: "Needs attention", exact: true }).click();
+    await expect(page.getByText("Employee records needing attention", { exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Directory", exact: true }).click();
+    await expect(page.locator(".fpg-people-roster")).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 

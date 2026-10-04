@@ -16,6 +16,7 @@ import {
   PeopleWorkspaceSection,
 } from "../experience-v2/people-family/PeopleFamilyV2";
 
+const PEOPLE_VIEWS = [["directory","Directory"],["organisation","Organisation"],["attention","Needs attention"]];
 const FILTERS = [["all","Everyone"],["active","Active"],["on_leave","On leave"],["quiet","No submissions in 14 days"],["no_unit","No unit"]];
 const EMPLOYMENT_CHANGES = [
   ["employment_details_changed","Employment details changed"],
@@ -58,6 +59,7 @@ function amountToMinor(value) {
 export default function People({ me, openItem, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("directory");
   const [searchText, setSearchText] = useState("");
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [units, setUnits] = useState([]);
@@ -720,6 +722,18 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         || a.full_name.localeCompare(b.full_name)),
     }));
   const roster = groups.flatMap((group) => group.people);
+  const attentionReasons = (entry) => [
+    entry.identity_state === "needs_review" ? "Identity review required" : null,
+    entry.employment_type === "not_recorded" ? "Employment type not recorded" : null,
+    !(entry.job_title || entry.source_position) ? "Job title not recorded" : null,
+    !entry.unit_id && !(entry.roster_units || []).length ? "No unit recorded" : null,
+  ].filter(Boolean);
+  const attentionRoster = roster.filter((entry) => attentionReasons(entry).length);
+  const unitsWithoutHead = units.filter((unit) => !rows.some((entry) =>
+    entry.profile_id && entry.active && entry.role === "manager" && (
+      entry.unit_id === unit.id || (entry.roster_units || []).some((membership) => membership.unit_id === unit.id)
+    )
+  ));
 
   return <div className="body ev2-people-page ev2-people-admin">
     <PeoplePageHeader
@@ -734,7 +748,18 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     {detailLoading && <LoadingState label="Opening employee record…" />}
     {!leavePolicy && <ProductNotice tone="attention" title="Leave policy not configured">People records show leave actually taken, but CEAC OS will not calculate entitlement or remaining leave until Administration confirms the policy.</ProductNotice>}
 
-    <div className="ev2p-admin-control-band">
+    <div className="ev2p-filter-tabs" role="tablist" aria-label="People views">
+      {PEOPLE_VIEWS.map(([key, label]) => <button
+        key={key}
+        type="button"
+        role="tab"
+        aria-selected={viewMode === key}
+        className={viewMode === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
+        onClick={() => setViewMode(key)}
+      >{label}</button>)}
+    </div>
+
+    {viewMode === "directory" && <div className="ev2p-admin-control-band">
     <div className="ev2p-admin-toolbar">
       <FieldGroup label="Find a person">
         <input
@@ -760,9 +785,9 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     <p className="ev2p-admin-directory-note">
       Work and submission counts are factual operating context only. They are not a performance score, ranking or disciplinary conclusion.
     </p>
-    </div>
+    </div>}
 
-    {roster.length > 0 && <section className="fpg-people-roster" aria-label="Employee roster">
+    {viewMode === "directory" && roster.length > 0 && <section className="fpg-people-roster" aria-label="Employee roster">
       <header className="fpg-people-roster-head">
         <div><span>Employees</span><h2>Employee roster</h2></div>
         <div><b>{roster.length}</b><span>{filter === "all" ? "visible" : FILTERS.find(([key]) => key === filter)?.[1]}</span></div>
@@ -791,8 +816,59 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
       </div>
     </section>}
 
-    {shown.length === 0 && <div style={{ marginTop: "var(--ev2-space-5)" }}>
+    {viewMode === "directory" && shown.length === 0 && <div style={{ marginTop: "var(--ev2-space-5)" }}>
       <PeopleEmpty title="Nobody matches" description="Try a different filter or search term." />
+    </div>}
+
+    {viewMode === "organisation" && <div>
+      {groups.map((group) => <PeopleSection
+        key={group.name}
+        title={group.name}
+        meta={`${group.people.length} recorded`}
+        description="Recorded unit membership and role context only. Job titles never create authority."
+      >
+        {group.people.map((entry) => <PeopleAdminPersonRow
+          key={entry.id}
+          name={entry.full_name}
+          subtitle={entry.job_title || entry.source_position || rankLabel(entry)}
+          context={entry.identity_state === "roster_only" ? "Roster employee · no account required" : rankLabel(entry)}
+          status={entry.identity_state === "needs_review" ? "Identity review" : entry.active ? "Active" : "Inactive"}
+          statusTone={entry.identity_state === "needs_review" ? "warning" : entry.active ? "success" : "neutral"}
+          primaryFact={entry.unit_name || entry.source_department_text || "No unit recorded"}
+          secondaryFact={entry.profile_id ? "Account linked" : "Roster only"}
+          onClick={() => openPerson(entry)}
+        />)}
+      </PeopleSection>)}
+    </div>}
+
+    {viewMode === "attention" && <div>
+      <PeopleSection
+        title="Employee records needing attention"
+        meta={`${attentionRoster.length} recorded`}
+        description="Only authoritative gaps are shown. Roster-only status by itself is not treated as a problem."
+      >
+        {attentionRoster.map((entry) => <PeopleAdminPersonRow
+          key={entry.id}
+          name={entry.full_name}
+          subtitle={entry.job_title || entry.source_position || "Job title not recorded"}
+          context={entry.unit_name || entry.source_department_text || "No unit recorded"}
+          status="Needs attention"
+          statusTone="warning"
+          primaryFact={attentionReasons(entry)[0]}
+          secondaryFact={attentionReasons(entry).slice(1).join(" · ")}
+          onClick={() => openPerson(entry)}
+        />)}
+        {!attentionRoster.length && <PeopleEmpty title="No employee record gaps are waiting" description="Roster-only employees remain valid employee records and are not treated as errors." />}
+      </PeopleSection>
+
+      <PeopleSection
+        title="Organisation exceptions"
+        meta={`${unitsWithoutHead.length} recorded`}
+        description="Unit Head authority is based on recorded CEAC authority, not workbook titles."
+      >
+        {unitsWithoutHead.map((unit) => <PeopleFactRow key={unit.id} icon="people" title={unit.name} subtitle="No active recorded Unit Head" meta="Review Units" tone="warning" />)}
+        {!unitsWithoutHead.length && <PeopleEmpty title="No Unit Head gap recorded" description="Every active unit has a recorded Unit Head." />}
+      </PeopleSection>
     </div>}
   </div>;
 }
