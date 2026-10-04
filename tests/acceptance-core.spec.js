@@ -371,7 +371,7 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   await page.getByRole("button", { name: "Give out work" }).click();
 
   for (const item of created) {
-    await page.getByRole("radio", { name: new RegExp(item.intent) }).click();
+    await page.getByLabel("Work type").selectOption({ label: item.intent });
 
     if (item.kind === "Routine") await page.getByLabel("Repeating responsibility").fill(item.title);
     if (item.kind === "Case") await page.getByLabel("Matter to track").fill(item.title);
