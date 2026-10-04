@@ -1096,7 +1096,7 @@ test("Experience Stage 7 keeps work capture simple, staff-owned and manager-conf
     await page.getByRole("button", { name: "Give it out", exact: true }).click();
     await expect(page.getByText(/is with them/)).toBeVisible();
 
-    await page.getByRole("button", { name: "Back to home", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).last().click();
     await go(page, "Team");
     await page.getByRole("button", { name: /Unit Room/ }).click();
     await expect(page.getByText(/Created .* from this message\./)).toBeVisible();
