@@ -82,3 +82,29 @@ The next phase must include a route-by-route workspace harmonisation pass using 
 This is a presentation/information-architecture correction unless a separately locked feature requires backend work.
 
 It must preserve all canonical authority, HR, Payroll, Leave, Finance and Work Engine contracts.
+
+
+## 2026-10-04 Product-owner elevation: People + Control Center
+
+The earlier “refine People / grouped Control Center” recommendation is superseded by a stronger lock.
+
+### People
+People is elevated from a cleaner Record page to a complete Administration people workspace:
+- Directory;
+- Organisation;
+- Needs attention;
+- employee photos where securely uploaded;
+- master-detail employee browsing;
+- grouped employee record;
+- actionable Administration exceptions.
+
+### Control Center
+Control Center is elevated from collapsible settings to CEAC's configuration/governance command centre:
+- truthful system-state summary;
+- Needs attention first;
+- domain status;
+- focused category workspaces;
+- deep-links to authoritative configuration;
+- progressive disclosure for advanced forms.
+
+This still reuses the existing backend and authority contracts. The transformation is primarily information architecture, interaction design and presentation.

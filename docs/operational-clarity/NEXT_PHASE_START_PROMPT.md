@@ -41,6 +41,8 @@ Key locks:
 - Replace `Find a destination…` with genuine permission-aware `Search CEAC…` covering actions/destinations, work, projects, ministry objectives, people, units/sub-teams, meetings, announcements, rooms and files.
 - Do not add Algolia/Elasticsearch unless the existing Supabase/Postgres stack demonstrably cannot meet the locked requirement.
 - Do not fabricate Priority, Progress, business figures, HR data or other truth merely to mimic the reference.
+- Transform Administration People into a human system of record: Directory / Organisation / Needs attention, secure optional employee photos, master-detail employee workspace, grouped record tabs and collapsed history.
+- Transform Control Center into the CEAC configuration/governance command centre: System health / Needs attention first, truthful domain status, focused category workspaces and direct routing to authoritative controls.
 - Use the approved in-repo reference as visual acceptance authority for hierarchy/density/interaction.
 
 CONTINUOUS EXECUTION:

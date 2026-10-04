@@ -183,30 +183,48 @@ Rebuild the information hierarchy around:
 6. Organisation setup / exceptions
 7. Meetings / recent activity
 
-### OCR5B — Administration People + Protected HR
-- keep the 18-person canonical roster;
-- use a clean employee Record workspace;
+### OCR5B — People Experience transformation
+- preserve the canonical 18-person roster and employee/auth separation;
+- build Directory / Organisation / Needs attention views;
+- add optional secure employee-photo identity treatment with initials fallback;
+- use desktop master-detail where practical and mobile directory → record;
+- create a tabbed/grouped employee workspace: Overview / Employment / Work / Time & Leave / authorised Protected HR / Documents / History;
 - collapse history by default;
-- keep roster-only identity independent of auth;
-- move protected record creation/correction into the shared Composer;
-- preserve private HR storage and capability checks.
+- keep roster-only employees fully represented;
+- surface actionable people exceptions without inventing missing values.
 
-### OCR5C — Workforce + Payroll
+### OCR5C — Protected HR experience
+- preserve private HR storage and capability checks;
+- keep protected values out of ordinary People views;
+- use grouped protected-record detail;
+- move add/correct protected records into the shared Composer;
+- keep attributable version history collapsed by default.
+
+### OCR5D — Workforce + Payroll
 - separate ordinary daily workforce operation from advanced policy setup;
 - preserve Leave authority exactly;
 - harmonise Payroll list/detail and decision sheets without changing preparation/approval authority.
 
-### OCR5D — Administration system surfaces
-Refine Lifecycle, Checks/Workflows, Authority, Policies and Control Center into the shared Queue / Record / Settings archetypes.
+### OCR5E — Control Center transformation
+Build Control Center as the CEAC configuration/governance command centre:
+- System health / Needs attention first;
+- status by domain: Ready / Needs attention / Partly configured / Not configured / Awaiting policy;
+- focused categories for Organisation, People & access, Work & operations, Time & Leave, Payroll & Finance, Security & governance, Integrations and Audit & records;
+- direct deep-links to authoritative configuration surfaces;
+- no long “managed elsewhere ↑” arrow chains;
+- advanced forms only after explicit drill-in.
 
-Remove long explanatory/arrow chains as the main interaction model.
+Do not invent a numeric system-health score.
 
-### OCR5E — Manager + Staff consistency pass
+### OCR5F — Administration system surfaces
+Refine Lifecycle, Checks/Workflows, Authority and Policies into shared Queue / Record / Settings archetypes.
+
+### OCR5G — Manager + Staff consistency pass
 Use the Manager family as the strongest current interaction reference, then correct genuine remaining inconsistencies in Manager and Staff.
 
 Do not make role content identical.
 
-### OCR5F — Full route-by-route visual sweep
+### OCR5H — Full route-by-route visual sweep
 Inspect every reachable role page at desktop/laptop and mobile.
 
 For each route classify it as:

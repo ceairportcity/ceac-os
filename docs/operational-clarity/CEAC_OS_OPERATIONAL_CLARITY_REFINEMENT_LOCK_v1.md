@@ -2,7 +2,7 @@
 
 Status: **LOCKED — NEXT PHASE / DO NOT IMPLEMENT YET**  
 Locked: 2026-10-04  
-Amended: 2026-10-04 — cross-role workspace harmonisation added after Administration/HR audit  
+Amended: 2026-10-04 — cross-role workspace harmonisation added after Administration/HR audit; People + Control Center elevated to transformation scope  
 Current protected-main baseline at lock time: `5254d7a685825c6130f8963598f55a02e32e943a`  
 Current active implementation PR at lock time: **#99 — Final literal parity closure**  
 Current PR #99 head at lock time: `89062b7d2baa7baa16ca1950c3b78ad9f1167bc5`
@@ -452,22 +452,94 @@ Refine the default hierarchy around:
 
 Technical explanation and system caveats become secondary support, not the first reading path.
 
-### People
+### People — TRANSFORMATION LOCK
 
-Keep the authoritative 18-person roster and protected HR rules.
+People is not merely a roster screen. It becomes the **human system of record and Administration people workspace**.
 
-The employee workspace should become a clean Record surface with concise top identity/employment facts and grouped sections such as:
+#### Default People modes
 
+Provide three clear views:
+
+1. **Directory** — visual employee directory.
+2. **Organisation** — useful hierarchy / reporting structure.
+3. **Needs attention** — employees or structural records requiring Administration action.
+
+#### Directory
+
+The primary directory should support:
+- employee photo where an authorised uploaded photo exists;
+- initials avatar fallback;
+- full name;
+- job title;
+- unit / department;
+- employment status;
+- compact identity-state or Administration-attention indicator only where useful;
+- search;
+- department/status filters;
+- compact Grid and List views where practical.
+
+Do not make roster-only employees look broken merely because they do not have an auth account.
+
+#### Employee workspace
+
+Desktop should prefer a **master-detail** pattern where practical:
+- persistent searchable employee list;
+- selected employee workspace on the right.
+
+Mobile becomes directory → full employee record.
+
+The employee header should answer immediately:
+- who this person is;
+- what they do;
+- where they belong;
+- their current employment state.
+
+Use grouped/tabbed sections:
 - Overview
 - Employment
 - Work / responsibilities
 - Time & Leave
 - Protected HR, only where authorised
+- Documents, where supported
 - History
 
-Long history chains should be collapsed/timeline-based by default with explicit expansion.
+History is collapsed/timeline-based by default.
 
-Roster-only employees must remain visible and must not be visually treated as incomplete auth accounts.
+#### Organisation mode
+
+Show operational hierarchy rather than a decorative chart:
+- Group Pastor / CEO;
+- Units / departments;
+- recorded Unit Heads / managers;
+- employees;
+- sub-teams where authoritative.
+
+Highlight missing leadership, unmapped employees and structural exceptions without inventing reporting lines.
+
+#### Needs attention mode
+
+Aggregate actionable people issues such as:
+- identity review required;
+- missing authoritative employment values;
+- pending invitations;
+- missing recorded Unit Head;
+- Payroll-readiness gaps where the viewer has authority.
+
+Selecting a category filters to the affected employees/records.
+
+#### Employee photos
+
+Employee photos become an optional first-class identity feature.
+
+Rules:
+- never fabricate photos;
+- never scrape external photos;
+- store uploaded photos securely;
+- use initials when absent;
+- reuse the same approved photo identity treatment in People, assignee selectors, work records, Rooms and other authorised people contexts where useful.
+
+Protected HR values must never be exposed merely because the People interface becomes richer.
+
 
 ### Workforce / Time & Leave
 
@@ -523,7 +595,79 @@ Refine them into consistent list-detail / queue / settings archetypes:
 - **Checks / Workflows:** decision queue + selected decision detail; no explanatory wall beside every queue item.
 - **Authority:** people list + selected person's current grants + collapsed history + grant/revoke composer.
 - **Policies:** policy list + selected current rule + collapsed version history + compact revision composer.
-- **Control Center:** grouped settings with collapsible categories; remove long chains of arrows such as “managed elsewhere ↑” as the primary navigation model.
+- **Control Center:** transformed into the CEAC configuration/governance command centre, per the locked section below.
+
+### Control Center — TRANSFORMATION LOCK
+
+Control Center is not a long settings page.
+
+It becomes the **CEAC configuration and governance command centre**.
+
+Its default purpose is to answer:
+
+- Is CEAC configured correctly?
+- What needs Administration attention?
+- What is already operational?
+- Where is each authoritative control managed?
+
+#### Control Center home
+
+Lead with **System health / Needs attention**, not configuration forms.
+
+Show concise status for domains such as:
+- Organisation setup
+- People & access
+- Time & Leave
+- Payroll
+- Finance
+- Work & workflows
+- Security & authority
+- Policies / governance
+- Integrations
+- Audit / records
+
+Use explicit status language:
+- Configured / Ready
+- Needs attention
+- Partly configured
+- Not configured
+- Unavailable / awaiting confirmed policy
+
+Each status must be based on recorded system state, not an invented health score.
+
+#### Configuration categories
+
+Use focused category workspaces rather than one giant scrolling page.
+
+Recommended groups:
+- Organisation
+- People & access
+- Work & operations
+- Time & Leave
+- Payroll & Finance
+- Security & governance
+- Integrations
+- Audit & records
+
+A category may summarize a control that is authoritatively managed elsewhere and deep-link directly to that surface.
+
+Control Center is therefore a **control map**, not a duplicate implementation of every setting.
+
+Reject arrow-chain language such as:
+- “Managed in Workforce ↑”
+- long sequences of cards that require the user to infer navigation.
+
+Prefer:
+- Leave policy — Partly configured — Review policy →
+- People & access — 2 items need attention — Review →
+- Office location — Not configured — Configure →
+
+#### Progressive disclosure
+
+Administration should be able to understand system state without first opening advanced configuration fields.
+
+Only show detailed configuration forms after the user explicitly chooses to configure/revise that domain, using the shared Composer where appropriate.
+
 
 ### Administration Work
 
