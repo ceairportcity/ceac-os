@@ -221,6 +221,8 @@ export default function ManagerOverviewV2({
   const actionableBlockers = blockers
     .filter((blocker) => blocker.direction === "incoming" && blocker.state === "claimed")
     .map((item) => ({ type: "blocker", since: item.since, item }));
+  const acknowledgedIncoming = blockers
+    .filter((blocker) => blocker.direction === "incoming" && blocker.state === "acknowledged");
   const decisions = [...decisionRows, ...actionableBlockers]
     .sort((left, right) => new Date(left.since || 0) - new Date(right.since || 0));
   const decisionCount = decisions.length;
@@ -234,7 +236,10 @@ export default function ManagerOverviewV2({
     ...upcomingProjects.map((project) => homeDayKey(project.ends_on)),
   ].filter(Boolean));
   const nextWork = mine[0] || delegated[0] || null;
-  const waitingRows = deliveryBlockers.filter((blocker) => blocker.direction === "outgoing").slice(0, 3);
+  const waitingRows = [
+    ...acknowledgedIncoming,
+    ...deliveryBlockers.filter((blocker) => blocker.direction === "outgoing"),
+  ].slice(0, 3);
   const attentionRows = decisions.slice(0, 3);
   const comingRows = [
     ...upcomingMeetings.map((meeting) => ({
@@ -367,7 +372,21 @@ export default function ManagerOverviewV2({
               <header><h2>Needs your attention</h2><Count value={attentionRows.length} tone={attentionRows.length ? "attention" : "success"} /></header>
               {attentionRows.length ? attentionRows.map((decision, index) => {
                 const row = decisionPreview(decision);
-                const itemId = decision.type === "submission" ? decision.item?.work_items?.id : decision.type === "blocker" ? decision.item?.work_item_id : null;
+                if (decision.type === "blocker") {
+                  return <DecisionRow
+                    key={decision.item?.id || index}
+                    icon={row.icon}
+                    title={row.title}
+                    meta={row.meta}
+                    status="Needs response"
+                    statusTone="warning"
+                    actions={<>
+                      <Button variant="secondary" size="compact" busy={busy} onClick={() => onBlockerAcknowledge?.(decision.item)}>Acknowledge</Button>
+                      <Button variant="quiet" size="compact" busy={busy} onClick={() => onBlockerDisagree?.(decision.item)}>Disagree</Button>
+                    </>}
+                  />;
+                }
+                const itemId = decision.type === "submission" ? decision.item?.work_items?.id : null;
                 const onClick = decision.type === "leave"
                   ? () => onNavigate?.("attendance")
                   : itemId ? () => onOpenItem?.(itemId) : undefined;
@@ -377,14 +396,27 @@ export default function ManagerOverviewV2({
 
             <article className="fpg9-queue-card fpg9-waiting-card">
               <header><h2>Waiting on others</h2><Count value={waitingRows.length} /></header>
-              {waitingRows.length ? waitingRows.map((blocker) => <HomeReferenceRow
-                key={blocker.id}
-                icon="pending"
-                title={blocker.work_items?.title || "Dependency"}
-                meta={`Waiting on ${blocker.units?.name || blocker.party_text || "another unit"}`}
-                tone="action"
-                onClick={() => onOpenItem?.(blocker.work_item_id)}
-              />) : <p className="fpg9-home-empty">No recorded dependency is waiting on another unit.</p>}
+              {waitingRows.length ? waitingRows.map((blocker) => blocker.direction === "incoming" && blocker.state === "acknowledged"
+                ? <div className="managerv2-dependency-row" key={blocker.id}>
+                    <HomeReferenceRow
+                      icon="pending"
+                      title={blocker.work_items?.title || "Dependency"}
+                      meta={`Acknowledged · ${blocker.units?.name || blocker.party_text || "your unit"}`}
+                      tone="action"
+                      onClick={() => onOpenItem?.(blocker.work_item_id)}
+                    />
+                    <div className="managerv2-dependency-actions">
+                      <Button variant="quiet" size="compact" busy={busy} onClick={() => onResolveBlocker?.(blocker)}>Mark resolved</Button>
+                    </div>
+                  </div>
+                : <HomeReferenceRow
+                    key={blocker.id}
+                    icon="pending"
+                    title={blocker.work_items?.title || "Dependency"}
+                    meta={`Waiting on ${blocker.units?.name || blocker.party_text || "another unit"}`}
+                    tone="action"
+                    onClick={() => onOpenItem?.(blocker.work_item_id)}
+                  />) : <p className="fpg9-home-empty">No recorded dependency is waiting on another unit.</p>}
             </article>
 
             <article className="fpg9-queue-card fpg9-coming-card">

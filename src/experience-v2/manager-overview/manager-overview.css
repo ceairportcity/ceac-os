@@ -124,6 +124,9 @@ button.fpg9-home-row:hover{background:#f8fafb}
 .managerv2-decision-title,.managerv2-decision-meta,.managerv2-decision-note,.managerv2-project-main strong,.managerv2-project-main small,.managerv2-dependency-main strong,.managerv2-dependency-main small{}
 .managerv2-decision-meta,.managerv2-project-main small,.managerv2-dependency-main small{color:var(--ev2-text-secondary)}
 .managerv2-decision-actions{grid-column:2/-1;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.managerv2-dependency-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border-bottom:1px solid var(--ev2-line)}
+.managerv2-dependency-row .fpg9-home-row{border-bottom:0}
+.managerv2-dependency-actions{padding:6px 8px 6px 0}
 .managerv2-row-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:var(--ev2-surface-muted);color:var(--ev2-text-secondary)}
 .managerv2-pulse-fact{min-height:72px;display:grid;align-content:center;gap:3px;padding:10px;border:0;background:var(--ev2-surface);text-align:left}
 .managerv2-pulse-fact strong{font-size:20px}.managerv2-pulse-fact span,.managerv2-pulse-fact small{}
