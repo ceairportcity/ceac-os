@@ -153,6 +153,15 @@ begin
   if v_project_room is not null and public.app_can_access_room(v_project_room) then
     raise exception 'OCR3 Room gate: Executive received blanket Project Room access.';
   end if;
+
+  update public.projects
+  set sponsor_profile_id=auth.uid(),
+      delivery_change_reason='OCR3 security acceptance: explicit Executive project context'
+  where id='49000000-0000-4000-8000-000000000108'::uuid;
+
+  if v_project_room is null or not public.app_can_access_room(v_project_room) then
+    raise exception 'OCR3 Room gate: explicitly sponsored Executive cannot access contextual Project Room.';
+  end if;
 end
 $executive_rooms$;
 
