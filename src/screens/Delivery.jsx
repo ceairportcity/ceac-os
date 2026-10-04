@@ -73,8 +73,12 @@ export default function Delivery({ me }) {
       supabase.from("work_items").select("id,ref,title,project_id,status").eq("org_id",me.org_id).order("created_at",{ascending:false}).limit(500),
       supabase.from("units").select("id,name").eq("org_id",me.org_id).order("name"),
       supabase.from("profiles").select("id,full_name,email,active").eq("org_id",me.org_id).order("full_name"),
-      supabase.from("strategy_delivery_links").select("strategy_node_id,project_id,status").eq("org_id",me.org_id).eq("status","active"),
-      supabase.from("strategy_nodes").select("id,name,node_type,status").eq("org_id",me.org_id).in("node_type",["ministry_objective","unit_objective"]),
+      me.is_exec
+        ? supabase.from("strategy_delivery_links").select("strategy_node_id,project_id,status").eq("org_id",me.org_id).eq("status","active")
+        : Promise.resolve({data:[],error:null}),
+      me.is_exec
+        ? supabase.from("strategy_nodes").select("id,name,node_type,status").eq("org_id",me.org_id).in("node_type",["ministry_objective","unit_objective"])
+        : Promise.resolve({data:[],error:null}),
     ]);
     const failed=queries.find((row)=>row.error);
     if(failed){ setError(humanError(failed.error,"Delivery could not finish loading.")); setLoading(false); return; }
