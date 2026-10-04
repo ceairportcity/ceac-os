@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar, BrandMark, Drawer, PopoverMenu } from "../components";
 import { CeacIcon } from "../icons";
-import GlobalSearch from "./GlobalSearch";
 import {
   getMobilePrimaryNavigation,
   getRoleName,
@@ -11,6 +10,13 @@ import {
   groupDestinations,
   hasMultipleUnits,
 } from "./navigation";
+
+const globalSearchModule = import("./GlobalSearch");
+const GlobalSearch = lazy(() => globalSearchModule);
+
+function GlobalSearchSurface(props) {
+  return <Suspense fallback={null}><GlobalSearch {...props} /></Suspense>;
+}
 
 const ACCRA_DATE = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
@@ -202,7 +208,7 @@ export function AppTopBar({
 
   return (
     <header className="ev2s-topbar">
-      <GlobalSearch
+      <GlobalSearchSurface
         me={me}
         isAdmin={isAdmin}
         navigation={navigation}
@@ -311,7 +317,7 @@ export function MobileTopBar({
         </div>
 
         <div className="ev2s-mobile-actions">
-          <GlobalSearch
+          <GlobalSearchSurface
             mobile
             me={me}
             isAdmin={isAdmin}

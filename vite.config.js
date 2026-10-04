@@ -8,7 +8,6 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
-            { name: "search-shell", test: /src[\\/]experience-v2[\\/]shell[\\/]GlobalSearch\.jsx$/, priority: 45 },
             { name: "react-vendor", test: /node_modules[\\/](react|react-dom)[\\/]/, priority: 40 },
             { name: "supabase-vendor", test: /node_modules[\\/]@supabase[\\/]/, priority: 30 },
             { name: "motion-vendor", test: /node_modules[\\/]motion[\\/]/, priority: 20 },
