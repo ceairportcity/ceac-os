@@ -200,8 +200,8 @@ test("Stage 10 Family A3 preserves assignment review return and dependency autho
   const css = readFileSync("src/experience-v2/work-family/work-family.css", "utf8");
 
   expect(assign).toContain("ev2-work-assignment");
-  expect(assign).toContain("WorkBackButton");
-  expect(assign).toContain("WorkPageHeader");
+  expect(assign).toContain("ComposerDrawer");
+  expect(assign).toContain('aria-label="Work type"');
   for (const kind of ["task", "deliverable", "request", "routine", "decision", "case", "meeting_outcome"]) {
     expect(assign).toContain(`["${kind}"`);
   }
