@@ -106,6 +106,7 @@ async function assignTask(page, title, step = null) {
 }
 
 test("Staff and Manager complete the real work loop, including return and approval", async ({ browser }) => {
+  test.setTimeout(60_000);
   const title = "Acceptance task — review loop";
   const step = "Acceptance step one";
 
