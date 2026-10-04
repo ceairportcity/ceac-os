@@ -383,11 +383,11 @@ test("Stage 4C destination search stays keyboard-usable and truthful", async ({ 
   await signIn(page, roles[0]);
 
   await page.keyboard.press("Control+K");
-  const search = page.getByPlaceholder("Find a destination…");
+  const search = page.getByPlaceholder("Search CEAC…");
   await expect(search).toBeFocused();
 
   await search.fill("Messages");
-  const palette = page.getByRole("dialog", { name: "Find a destination" });
+  const palette = page.getByRole("dialog", { name: "Search CEAC results" });
   await expect(palette).toBeVisible();
   await expect(palette.getByRole("button", { name: "Messages", exact: true })).toBeVisible();
 
