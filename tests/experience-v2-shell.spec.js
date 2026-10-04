@@ -121,6 +121,7 @@ test("Stage 4B create menu exposes only role-authorised shortcuts", async ({ pag
   const menu = page.getByRole("menu");
   await expect(menu).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "New work", exact: true })).toHaveCount(0);
+  await expect(menu.getByRole("menuitem", { name: "Announcement", exact: true })).toHaveCount(0);
   await expect(menu.getByRole("menuitem", { name: "Meeting", exact: true })).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "Message room", exact: true })).toBeVisible();
 });
@@ -150,6 +151,36 @@ test("OCR2 Executive Create exposes authorised leadership actions", async ({ pag
   await menu.getByRole("menuitem", { name: "Announcement", exact: true }).click();
   dialog = page.getByRole("dialog", { name: "New announcement" });
   await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Attach files", { exact: true })).toBeVisible();
+});
+
+test("OCR3 authorised Administration Create exposes Announcement while Staff remains excluded", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "admin@ceac.local.test");
+  const create = page.getByRole("button", { name: "Create", exact: true });
+  await create.click();
+  await expect(page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true })).toBeVisible();
+});
+
+test("OCR3 Executive Messages uses intentional organisational Room discovery", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "exec@ceac.local.test");
+  await page.goto("/?tab=messages");
+  await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
+  await page.getByRole("tab", { name: "Rooms", exact: true }).click();
+  await expect(page.getByText("Organisation Rooms", { exact: true })).toBeVisible();
+  expect(await page.locator(".inbox-room-directory .inbox-row").count()).toBeGreaterThan(0);
+  await expect(page.getByText("This directory does not create direct messages.", { exact: false })).toBeVisible();
+});
+
+test("OCR3 Room Composer exposes private media attachment control", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "manager@ceac.local.test");
+  const create = page.getByRole("button", { name: "Create", exact: true });
+  await create.click();
+  await page.getByRole("menu").getByRole("menuitem", { name: "Message room", exact: true }).click();
+  await expect(page.locator(".room-screen")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("Attach media or file", { exact: true })).toBeVisible();
 });
 
 test("Stage 4B mobile shell keeps five controls and uses the shared More drawer", async ({ page }) => {
