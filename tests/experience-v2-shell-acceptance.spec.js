@@ -14,6 +14,7 @@ const roles = [
       ["home", "Today"],
       ["work", "Work"],
       ["team", "Team"],
+      ["attendance", "Time & Leave"],
       ["staff-calendar", "Calendar"],
       ["messages", "Messages"],
       ["me", "My Hub"],
@@ -26,6 +27,7 @@ const roles = [
       ["me", "My Hub"],
     ],
     secondary: [
+      ["attendance", "Time & Leave"],
       ["staff-calendar", "Calendar"],
       ["messages", "Messages"],
       ["account", "Your account"],
@@ -41,6 +43,7 @@ const roles = [
       ["work", "Work"],
       ["team", "Team"],
       ["projects", "Projects"],
+      ["attendance", "Time & Leave"],
       ["calendar", "Calendar"],
       ["manager-finance", "Finance"],
       ["manager-reports", "Reports"],
@@ -55,6 +58,7 @@ const roles = [
       ["projects", "Projects"],
     ],
     secondary: [
+      ["attendance", "Time & Leave"],
       ["calendar", "Calendar"],
       ["manager-finance", "Finance"],
       ["manager-reports", "Reports"],

@@ -498,3 +498,126 @@ Production roster verification:
 Production Payroll readiness verifies all 18 active employees are represented. Compensation and payment details remain 0 recorded / 18 missing because authoritative values have not been supplied; the product now reports those states truthfully instead of omitting employees.
 
 FPG14 remains ACTIVE only for the final independent authenticated live-product smoke. The connected Vercel account currently has no authorized team/project access and returns 403 for the protected deployment, so an authenticated Staff/Manager/Administration/Executive smoke against the deployed Vercel artifact cannot be claimed from this session. This is now an access/evidence blocker, not a build-rate or application-code blocker.
+
+
+## Post-FPG literal-parity correction corridor — 3 October 2026
+
+The later independent screenshot audit supersedes earlier visual acceptance wherever the rendered product does not literally match the designated owner reference. Earlier functional/security acceptance remains valid.
+
+Correction lane:
+- branch: `chatgpt/final-literal-parity-2026-10-03`;
+- PR: #99;
+- baseline protected main: `5254d7a685825c6130f8963598f55a02e32e943a`;
+- exact HOME-A authority: `file_0000000062708210954e70d81423df9a` / repository HOME reference.
+
+Execution sequence:
+1. Home/shell + compact Mobile Home;
+2. Project/Task;
+3. Finance;
+4. People/Workforce;
+5. Work/BrandBook;
+6. final side-by-side literal acceptance.
+
+Home/shell correction intent:
+- preserve the accepted Manager data/RLS/authority contract;
+- stop duplicating the full operational console underneath Home;
+- use compact truthful workspace previews instead;
+- keep Leave decisions in authoritative Time & Leave;
+- place Quick Create directly beneath navigation;
+- make phone Home follow the compact Today → Next Up → Needs attention hierarchy rather than stacking desktop detail.
+
+No architecture change is authorized merely for styling.
+
+
+## Post-FPG literal-parity exact-head evidence capture
+
+Status: EVIDENCE CAPTURE REQUESTED / FINAL SIDE-BY-SIDE ACCEPTANCE PENDING
+
+Canonical PR: #99 on `chatgpt/final-literal-parity-2026-10-03`.
+
+Purpose of this checkpoint:
+- force the complete exact-head Level B browser/security/evidence path after the final Leave discoverability and BrandBook CSS-scoping corrections;
+- obtain fresh rendered evidence for literal side-by-side inspection against HOME-A, PROJECT-A/B/C, FINANCE-A and PEOPLE-A;
+- do not treat this checkpoint as visual acceptance by itself.
+
+Final corridor acceptance remains pending until the rendered evidence is directly compared with the designated references and all four required acceptance statements are supported.
+
+
+## Post-FPG literal-parity final side-by-side acceptance
+
+Status: ACCEPTED ON PR #99 / PRE-MERGE EXACT-HEAD REVALIDATION REQUIRED
+
+Accepted rendered application SHA: `40a9d5379e47cec4dcba7fbeaaed277af06eeeec`.
+
+Evidence source:
+- Quality Gate run #37186711864 — PASS;
+- Level B SQL and authority contracts — PASS;
+- browser shards 1/4, 2/4, 3/4 and 4/4 — PASS;
+- exact-head product-evidence merge — PASS;
+- role-and-RLS closure — PASS;
+- rendered screenshots from that exact application SHA were inspected directly against the designated HOME-A, PROJECT-A/B/C, FINANCE-A and PEOPLE-A references.
+
+### Home / shell
+Rendered evidence includes the exact-head Manager Home and shell captures.
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY/AUTHORITY PRESERVED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+
+The current render preserves the dark persistent navigation, command/search layer, strong greeting hero, current/next work, schedule/calendar context, Needs attention, Waiting, Coming up, quick-create treatment and compact lower workspace previews without restoring duplicated operational-console content to Home.
+
+### Mobile Home
+Rendered evidence includes the exact-head compact Staff and Manager phone captures.
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY/AUTHORITY PRESERVED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+
+Mobile Home is purpose-built rather than a vertical desktop copy. The work-session control and primary next action remain first, secondary context is reduced, the bottom navigation is preserved, Calendar remains reachable through the approved mobile route, and the accepted touch-target/viewport contracts remain intact.
+
+### Project / Task
+Rendered evidence includes `fpg2-project-task-gold-desktop.png`, `fpg2-project-task-drawer-desktop.png` and the exact-head Project workspace responsive captures.
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY/AUTHORITY PRESERVED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+
+The workspace carries the designated dark project/stage rail, project header, factual metadata, view controls, dense work table and selected-record drawer with title/status/date/progress/assignee/evidence/subtask structure. Missing priority, dates, attachments and checklist data remain truthful instead of being fabricated.
+
+### Finance
+Rendered evidence includes `fpg3-finance-gold-desktop.png` and exact-head Manager/Admin/Executive Finance captures.
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY/AUTHORITY PRESERVED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+
+The accepted composition carries the FINANCE-A metric-card hierarchy, tabs, chart geometry, budget context, ledger/table treatment, controls and dashboard density. Where the fixture has no authoritative money records, the same structure displays truthful `Not recorded` states rather than fake financial values or trends. Multi-currency separation remains intact.
+
+### People / Workforce
+Rendered evidence includes `fpg7-people-roster-desktop.png`, `fpg7-workforce-absence-desktop.png` and the exact-head People/Workforce responsive captures.
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY/AUTHORITY PRESERVED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+
+People preserves compact factual employee treatment and Workforce reproduces the employee-by-date planned-absence grid, person rows, filters, leave-state legend and shared calendar context without inventing absence blocks or employee data.
+
+### Work / BrandBook
+Rendered evidence includes the exact-head Staff Work and Work Detail captures.
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY/AUTHORITY PRESERVED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+
+The rendered Work surface carries the reference weekly-schedule card, recorded-hours treatment, yellow note surface and task/progress grammar using CEAC records. Work Detail displays checklist/progress treatment only when actual checklist rows exist. Audio, productivity figures, progress and task evidence are not fabricated where the source data does not exist.
+
+### Final parity result
+All six correction families satisfy the required acceptance boundary for the rendered application SHA above:
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY/AUTHORITY PRESERVED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+
+This acceptance does not claim an authenticated protected-Vercel production smoke. The connected Vercel scope still does not provide independent authenticated access to the protected project, so that remains a separate production-evidence limitation rather than a literal-parity defect.
+
+Next action: run one final exact-head Level B revalidation of this documentation checkpoint. If the branch has not moved and all required checks remain green, promote PR #99 from draft and merge through protected-main rules, then verify the new protected-main exact head.

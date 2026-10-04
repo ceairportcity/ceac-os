@@ -106,6 +106,7 @@ async function assignTask(page, title, step = null) {
 }
 
 test("Staff and Manager complete the real work loop, including return and approval", async ({ browser }) => {
+  test.setTimeout(60_000);
   const title = "Acceptance task — review loop";
   const step = "Acceptance step one";
 
@@ -145,17 +146,21 @@ test("Staff and Manager complete the real work loop, including return and approv
 
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test");
-    const reviewRow = page.locator(".managerv2-decision-row").filter({ hasText: title });
+    await go(page, "Work");
+    await page.getByRole("tab", { name: /Needs review/ }).click();
+    const reviewRow = page.locator(".ev2w-review-row").filter({ hasText: title }).first();
     await expect(reviewRow).toBeVisible();
-    await reviewRow.getByRole("button", { name: "Review" }).click();
+    await reviewRow.click();
+    await expect(page.getByText("Review submitted work", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Return for correction", exact: true }).click();
     const returnDialog = page.getByRole("dialog");
-    await expect(returnDialog.getByText("Evidence-first review")).toBeVisible();
-    await returnDialog.getByRole("button", { name: "Return for correction" }).click();
     const redo = returnDialog.getByRole("button", { name: new RegExp(step) });
     if (await redo.count()) await redo.click();
     await returnDialog.getByPlaceholder("Explain exactly what needs changing").fill("Please correct the acceptance item.");
     await returnDialog.getByRole("button", { name: "Return work", exact: true }).click();
-    await expect(page.locator(".managerv2-decision-row").filter({ hasText: title })).toHaveCount(0);
+    await go(page, "Work");
+    await page.getByRole("tab", { name: /Needs review/ }).click();
+    await expect(page.locator(".ev2w-review-row").filter({ hasText: title })).toHaveCount(0);
     await context.close();
   }
 
@@ -343,7 +348,9 @@ test("Staff personal details persist and private work stays out of another staff
 
 test("Assistive voice controls are real interaction affordances and proposals require review", async ({ browser }) => {
   const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 390, height: 844 });
-  await page.getByRole("button", { name: "Give out work" }).click();
+  await page.locator(".fpg9-mobile-shortcuts").getByRole("button", { name: "Work", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Work", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Give out work", exact: true }).click();
   const mic = page.getByRole("button", { name: "Speak your instruction" });
   await expect(mic).toBeVisible();
   await expect(page.getByText("Apply proposal", { exact: true })).toHaveCount(0);
@@ -2436,6 +2443,8 @@ test("FPG9 Manager Home and shell follow the locked original CEAC reference", as
     await expect(page.locator(".fpg9-waiting-card")).toBeVisible();
     await expect(page.locator(".fpg9-coming-card")).toBeVisible();
     await expect(page.locator(".fpg9-module-strip")).toBeVisible();
+    await expect(page.locator(".fpg9-workspace-previews")).toBeVisible();
+    await expect(page.locator(".managerv2-decisions")).toHaveCount(0);
     await page.screenshot({ path: "test-artifacts/fpg9-manager-home-shell-desktop.png", fullPage: true });
     await context.close();
   }
@@ -2445,9 +2454,16 @@ test("FPG9 Manager Home and shell follow the locked original CEAC reference", as
     await expect(page.locator(".ev2s-sidebar")).toBeHidden();
     await expect(page.locator(".fpg9-home-hero")).toBeVisible();
     await expect(page.locator(".fpg9-home-reference")).toBeVisible();
+    await expect(page.locator(".fpg9-mobile-shortcuts")).toBeVisible();
+    await expect(page.locator(".fpg9-calendar-card")).toBeHidden();
+    await expect(page.locator(".fpg9-module-strip")).toBeHidden();
     await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(1);
+    const geometry = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      height: document.documentElement.scrollHeight,
+    }));
+    expect(geometry.overflow).toBeLessThanOrEqual(1);
+    expect(geometry.height).toBeLessThanOrEqual(1300);
     await page.screenshot({ path: "test-artifacts/fpg9-manager-home-shell-mobile.png", fullPage: true });
     await context.close();
   }

@@ -13,6 +13,12 @@ import {
 
 const MANAGER_SELF_CERTIFICATION_READY = true;
 
+const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space-6);overflow:hidden;border:1px solid var(--ev2-line);border-radius:14px;background:var(--ev2-surface);box-shadow:var(--ev2-shadow-1)}
+.fpg-brandbook-task-card>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px 10px}
+.fpg-brandbook-task-card>header span{display:grid;gap:2px}.fpg-brandbook-task-card>header small{color:var(--ev2-text-tertiary);font-size:12px}.fpg-brandbook-task-card>header strong{font-size:14px}.fpg-brandbook-task-card>header>b{font-size:22px;letter-spacing:-.04em}
+.fpg-brandbook-task-card>footer{padding:9px 15px;border-top:1px solid var(--ev2-line);color:var(--ev2-text-secondary);font-size:12px}
+.fpg-brandbook-task-card .staff-check-progress{margin:0 15px 8px;border-radius:999px}.fpg-brandbook-task-card .checklist-card{border:0;border-radius:0;box-shadow:none}`;
+
 export default function Item({ id, me, session, isManager = false, openRoom, back }) {
   const [item, setItem] = useState(null);
   const [checks, setChecks] = useState([]);
@@ -649,18 +655,23 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         </div>}
       </>}
 
-      {checks.length > 0 && (<>
-        <div className="sec"><span>Completion checklist</span><span>{done} of {checks.length}</span></div>
-        {!isManager && <div className="staff-check-progress" aria-label={`${done} of ${checks.length} checklist items complete`}>
+      {checks.length > 0 && <><style data-fpg-brandbook-task>{BRAND_BOOK_TASK_CSS}</style><section className="fpg-brandbook-task-card" aria-label="Task checklist and progress">
+        <header>
+          <span><small>Task progress</small><strong>Completion checklist</strong></span>
+          <b>{Math.round((done / checks.length) * 100)}%</b>
+        </header>
+        <div className="staff-check-progress" aria-label={`${done} of ${checks.length} checklist items complete`}>
           <span style={{ width: `${Math.round((done / checks.length) * 100)}%` }} />
-        </div>}
+        </div>
         <div className="card checklist-card" style={{ padding: "2px 15px" }}>
           {checks.map((c) => (
             <button key={c.id} className={"ck " + (ticks[c.id] ? "done" : "")} onClick={() => toggle(c.id)} disabled={gated}>
               <span className={"box " + (ticks[c.id] ? "on" : "")} />
               <span className="ck-l">{c.label}</span>
             </button>))}
-        </div></>)}
+        </div>
+        <footer>{done} of {checks.length} recorded step{checks.length === 1 ? "" : "s"} complete</footer>
+      </section></>}
 
       {isManager && item.status === "in_review" && latestSubmission && <WorkDetailSection
         title="Review submitted work"

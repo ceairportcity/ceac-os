@@ -30,6 +30,8 @@ test("Stage 10 Family C2 uses the shared V2 Project family without changing proj
     "ProjectListRow",
     "ProjectAttentionCard",
     "ProjectSectionHeader",
+    "ProjectIssueTable",
+    "ProjectWorkDrawer",
   ]) {
     expect(shared).toContain(`export function ${symbol}`);
   }
@@ -122,6 +124,18 @@ for (const viewport of [
       return Math.min(...values);
     });
     expect(smallest).toBeGreaterThanOrEqual(12);
+
+    await page.getByRole("tab", { name: /^Work/ }).click();
+    const workRows = page.locator(".fpg-work-table tbody tr").filter({ has: page.locator(".fpg-work-title") });
+    expect(await workRows.count()).toBeGreaterThan(0);
+    await workRows.first().click();
+    const drawer = page.locator(".fpg-work-drawer");
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByText("Priority", { exact: true })).toBeVisible();
+    await expect(drawer.getByText("Progress", { exact: true })).toBeVisible();
+    await expect(drawer.getByText("Assignees", { exact: true })).toBeVisible();
+    await expect(drawer.getByText("Attachments", { exact: true })).toBeVisible();
+    await expect(drawer.getByRole("button", { name: "Open full record ↗", exact: true })).toBeVisible();
 
     await page.screenshot({
       path: `test-artifacts/redesign-r7-stage10c2-manager-project-workspace-${viewport.name}.png`,

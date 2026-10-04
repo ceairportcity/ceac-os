@@ -26,6 +26,33 @@ const STATUS_FILTERS = [
   ["completed", "Completed"],
 ];
 
+const BRAND_BOOK_DASHBOARD_CSS = `.fpg-brandbook-dashboard{display:grid;grid-template-columns:1.05fr .9fr 1fr;gap:10px;margin:12px 0 18px}
+.fpg-brandbook-card{min-width:0;min-height:190px;padding:14px;border:1px solid var(--ev2-line);border-radius:14px;background:var(--ev2-surface);box-shadow:0 8px 24px rgba(29,42,64,.04)}
+.fpg-brandbook-card>header{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
+.fpg-brandbook-card>header span{font-size:14px;font-weight:720}.fpg-brandbook-card>header small{color:var(--ev2-text-tertiary);font-size:12px}
+.fpg-brandbook-schedule-list{display:grid;gap:7px}.fpg-brandbook-schedule-list>div{display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--ev2-line)}
+.fpg-brandbook-schedule-list>div:first-child{border-top:0}.fpg-brandbook-schedule-list b{display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ev2-line);border-radius:8px;font-size:12px}
+.fpg-brandbook-schedule-list span{display:grid;gap:1px;min-width:0}.fpg-brandbook-schedule-list strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.fpg-brandbook-schedule-list small,.fpg-brandbook-schedule-list p{color:var(--ev2-text-secondary);font-size:12px}
+.fpg-brandbook-hours>strong{display:block;margin:18px 0 10px;font-size:28px;letter-spacing:-.04em}.fpg-brandbook-hours-bars{height:76px;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;align-items:end}
+.fpg-brandbook-hours-bars>span{height:100%;display:grid;grid-template-rows:1fr 17px;align-items:end;gap:3px}.fpg-brandbook-hours-bars i{display:block;min-height:4px;border-radius:4px 4px 1px 1px;background:var(--ev2-action)}.fpg-brandbook-hours-bars small{text-align:center;color:var(--ev2-text-tertiary);font-size:12px}
+.fpg-brandbook-hours>p{margin:9px 0 0;color:var(--ev2-text-secondary);font-size:12px;line-height:1.4}.fpg-brandbook-note{background:#f7d765;border-color:#e8c54c}.fpg-brandbook-note>p{min-height:88px;margin:16px 0;color:#3e3520;font-size:14px;line-height:1.5}.fpg-brandbook-note>footer{color:#6d5a24;font-size:12px}
+.fpg-brandbook-context-warning{margin:-8px 0 14px;color:var(--ev2-text-tertiary);font-size:12px}
+@media(max-width:820px){.fpg-brandbook-dashboard{grid-template-columns:1fr 1fr}.fpg-brandbook-note{grid-column:1/-1}}
+@media(max-width:560px){.fpg-brandbook-dashboard{grid-template-columns:1fr}.fpg-brandbook-note{grid-column:auto}.fpg-brandbook-card{min-height:0}}`;
+
+function ghanaDayKey(value) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(value);
+}
+
+function minutesLabel(value) {
+  const minutes = Math.max(0, Math.round(Number(value) || 0));
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return hours ? `${hours}h ${rest}m` : `${rest}m`;
+}
+
 export default function Work({ me, isManager = false, openItem }) {
   const viewKey = `ceac-work-view:${me.id}`;
   let savedView = null;
@@ -54,9 +81,13 @@ export default function Work({ me, isManager = false, openItem }) {
   const [proposalPurpose, setProposalPurpose] = useState("");
   const [proposalStart, setProposalStart] = useState("");
   const [proposalEnd, setProposalEnd] = useState("");
+  const [brandbookContext, setBrandbookContext] = useState({ meetings: [], sessions: [], feedback: null });
+  const [brandbookLoading, setBrandbookLoading] = useState(true);
+  const [brandbookError, setBrandbookError] = useState(false);
 
   useEffect(() => { load(); }, [mode, statusFilter, me.id, isManager]);
   useEffect(() => { loadProjects(); loadProposals(); }, [me.id, me.unit_id]);
+  useEffect(() => { loadBrandbookContext(); }, [me.id]);
   useEffect(() => {
     sessionStorage.setItem(viewKey, JSON.stringify({ mode, statusFilter }));
   }, [viewKey, mode, statusFilter]);
@@ -86,6 +117,39 @@ export default function Work({ me, isManager = false, openItem }) {
     }
     setItems(data || []);
     setLoading(false);
+  }
+
+  async function loadBrandbookContext() {
+    setBrandbookLoading(true);
+    setBrandbookError(false);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const recentWeek = new Date(today);
+    recentWeek.setDate(recentWeek.getDate() - 6);
+
+    const [meetingResult, sessionResult, feedbackResult] = await Promise.all([
+      supabase.from("meeting_sessions")
+        .select("id,title,starts_at,ends_at,status")
+        .gte("starts_at", today.toISOString()).lt("starts_at", nextWeek.toISOString())
+        .neq("status", "cancelled").order("starts_at").limit(8),
+      supabase.from("work_sessions")
+        .select("id,started_at,ended_at")
+        .eq("profile_id", me.id).gte("started_at", recentWeek.toISOString())
+        .lt("started_at", nextWeek.toISOString()).order("started_at"),
+      supabase.from("feedback_notes")
+        .select("id,note,created_at,profiles!feedback_notes_author_id_fkey(full_name)")
+        .eq("profile_id", me.id).order("created_at", { ascending: false }).limit(1),
+    ]);
+
+    setBrandbookContext({
+      meetings: meetingResult.error ? [] : (meetingResult.data || []),
+      sessions: sessionResult.error ? [] : (sessionResult.data || []),
+      feedback: feedbackResult.error ? null : (feedbackResult.data?.[0] || null),
+    });
+    setBrandbookError(Boolean(meetingResult.error || sessionResult.error || feedbackResult.error));
+    setBrandbookLoading(false);
   }
 
   async function loadProjects() {
@@ -225,12 +289,68 @@ export default function Work({ me, isManager = false, openItem }) {
       ? "Work you already agreed to carry and recorded yourself."
       : "Personal work visible only to you. It is not counted in formal CEAC reports.";
 
+  const sessionDays = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (6 - index));
+    return { date, key: ghanaDayKey(date), minutes: 0 };
+  });
+  const sessionByDay = new Map(sessionDays.map((row) => [row.key, row]));
+  brandbookContext.sessions.forEach((row) => {
+    if (!row.started_at || !row.ended_at) return;
+    const start = new Date(row.started_at);
+    const end = new Date(row.ended_at);
+    const minutes = Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000));
+    const day = sessionByDay.get(ghanaDayKey(start));
+    if (day) day.minutes += minutes;
+  });
+  const totalSessionMinutes = sessionDays.reduce((sum, row) => sum + row.minutes, 0);
+  const maxSessionMinutes = Math.max(1, ...sessionDays.map((row) => row.minutes));
+  const feedback = brandbookContext.feedback;
+
   return <div className="body staff-work ev2-work-page ev2-work-staff">
+    <style data-fpg-brandbook-dashboard>{BRAND_BOOK_DASHBOARD_CSS}</style>
     <WorkPageHeader
       eyebrow={me.unit_name}
       title="My work"
       description="Everything you are carrying, organised by where it came from and what needs to happen next."
     />
+
+    <section className="fpg-brandbook-dashboard" aria-label="Recorded work context">
+      <article className="fpg-brandbook-card fpg-brandbook-schedule">
+        <header><span>Weekly schedule</span><small>Next 7 days</small></header>
+        <div className="fpg-brandbook-schedule-list">
+          {brandbookContext.meetings.slice(0,4).map((meeting) => {
+            const start = new Date(meeting.starts_at);
+            return <div key={meeting.id}>
+              <b>{start.toLocaleDateString("en-GB", { timeZone:"Africa/Accra", day:"2-digit" })}</b>
+              <span><strong>{meeting.title}</strong><small>{start.toLocaleDateString("en-GB", { timeZone:"Africa/Accra", weekday:"short", month:"short" })} · {start.toLocaleTimeString("en-GB", { timeZone:"Africa/Accra", hour:"2-digit", minute:"2-digit" })}</small></span>
+            </div>;
+          })}
+          {!brandbookLoading && !brandbookContext.meetings.length && <p>No meetings are recorded for the next 7 days.</p>}
+          {brandbookLoading && <p>Loading recorded schedule…</p>}
+        </div>
+      </article>
+
+      <article className="fpg-brandbook-card fpg-brandbook-hours">
+        <header><span>Recorded work sessions</span><small>Last 7 days</small></header>
+        <strong>{minutesLabel(totalSessionMinutes)}</strong>
+        <div className="fpg-brandbook-hours-bars" aria-label="Recorded work-session time by day">
+          {sessionDays.map((row) => <span key={row.key} title={minutesLabel(row.minutes)}>
+            <i style={{height: `${Math.max(5, Math.round(row.minutes / maxSessionMinutes * 100))}%`}} />
+            <small>{row.date.toLocaleDateString("en-GB", { weekday:"narrow" })}</small>
+          </span>)}
+        </div>
+        <p>Ended session records only. This is not payroll or performance time.</p>
+      </article>
+
+      <article className="fpg-brandbook-card fpg-brandbook-note">
+        <header><span>Latest feedback note</span><small>{feedback?.created_at ? new Date(feedback.created_at).toLocaleDateString("en-GB", { day:"numeric", month:"short" }) : "Text record"}</small></header>
+        <p>{feedback?.note || (brandbookLoading ? "Loading recorded note…" : "No feedback note is recorded yet.")}</p>
+        <footer>{feedback?.profiles?.full_name || "CEAC record"} · {feedback ? "text only · audio not recorded" : "no audio record"}</footer>
+      </article>
+    </section>
+    {brandbookError && <p className="fpg-brandbook-context-warning">Some recorded work context is unavailable. No missing value has been inferred.</p>}
 
     <WorkTabs
       items={MODES}

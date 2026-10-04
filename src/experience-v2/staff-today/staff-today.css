@@ -511,20 +511,6 @@
     gap: var(--ev2-space-1) var(--ev2-space-3);
   }
 
-  .staffv2-session {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: var(--ev2-space-3);
-  }
-
-  .staffv2-session-line {
-    align-items: flex-start;
-  }
-
-  .staffv2-session-actions {
-    grid-column: 1 / -1;
-  }
-
-  .staffv2-session-actions .ev2c-button,
   .staffv2-recovery-actions .ev2c-button {
     width: 100%;
   }
@@ -733,7 +719,7 @@
 @media (max-width: 599px) {
   .staffv2 {
     gap: 1.125rem;
-    padding-bottom: var(--ev2-space-8);
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
   }
 
   .staffv2-intro {
@@ -746,25 +732,32 @@
 
   .staffv2-session {
     gap: var(--ev2-space-2) var(--ev2-space-3);
-    padding: var(--ev2-space-3);
+    padding: .5rem .75rem;
     box-shadow: 0 1px 2px rgba(15, 23, 35, .035);
   }
 
   .staffv2-session-icon {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 
-  .staffv2-session:not(.is-active):not(.needs-review) .staffv2-session-copy > span {
+  .staffv2-session-copy > span {
     display: none;
   }
 
   .staffv2-session-actions {
-    margin-top: var(--ev2-space-1);
+    grid-column: auto;
+    margin-top: 0;
+  }
+
+  .staffv2-session-actions .ev2c-button {
+    width: auto;
+    min-width: 5.5rem;
+    min-height: var(--ev2-control-min);
   }
 
   .staffv2-focus-grid {
-    gap: var(--ev2-space-4);
+    display: block;
   }
 
   .staffv2-focus-card {
@@ -787,9 +780,6 @@
     min-height: var(--ev2-control-min);
   }
 
-  /* Secondary sections read as headings plus grouped rows instead of cards
-     nested inside cards. The list/body keeps the factual boundary. */
-  .staffv2-schedule-panel.ev2c-surface,
   .staffv2-panel.ev2c-surface {
     padding: 0;
     border: 0;
@@ -798,67 +788,71 @@
     box-shadow: none;
   }
 
-  .staffv2-schedule-panel .ev2c-data-panel-head,
   .staffv2-panel .ev2c-data-panel-head {
     padding: 0 .125rem;
     gap: var(--ev2-space-3);
   }
 
-  .staffv2-schedule-panel .ev2c-data-title,
   .staffv2-panel .ev2c-data-title {
     margin-top: .2rem;
     font-size: var(--ev2-type-card-mobile);
   }
 
-  .staffv2-schedule-panel .ev2c-data-supporting,
   .staffv2-panel .ev2c-data-supporting {
     margin-top: var(--ev2-space-1);
   }
 
-  .staffv2-schedule-panel .ev2c-data-panel-body,
   .staffv2-panel .ev2c-data-panel-body {
     border-radius: var(--ev2-radius-card);
     box-shadow: 0 1px 2px rgba(15, 23, 35, .025);
   }
 
-  .staffv2-main-grid,
+  .staffv2-schedule-panel,
   .staffv2-secondary-grid {
-    gap: 1.25rem;
+    display: none;
   }
 
-  .staffv2-week-stats {
-    gap: 0;
-    padding: 0;
+  .staffv2-main-grid {
+    display: flex;
+    gap: .75rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+    scrollbar-width: none;
+    padding: 0 .125rem .25rem;
   }
 
-  .staffv2-week-stats button {
-    min-height: 4.25rem;
-    padding: var(--ev2-space-3);
-    border: 0;
-    border-right: 1px solid var(--ev2-line);
-    border-radius: 0;
-    background: transparent;
+  .staffv2-main-grid::-webkit-scrollbar {
+    display: none;
   }
 
-  .staffv2-week-stats button:last-child {
-    border-right: 0;
+  .staffv2-main-grid > .staffv2-panel {
+    flex: 0 0 calc(100% - .75rem);
+    width: calc(100% - .75rem);
+    scroll-snap-align: start;
   }
 
-  .staffv2-week-stats button:hover,
-  .staffv2-week-stats button:focus-visible {
-    background: var(--ev2-surface-soft);
-  }
-
-  .staffv2-week-stats strong {
-    font-size: 1.125rem;
-  }
-
-  .staffv2-ministry-record {
-    margin-top: 0;
+  .staffv2-main-grid > .staffv2-attention {
+    flex-basis: calc(100% - .75rem);
   }
 }
 
 @media (max-width: 359px) {
+  .staffv2-session-label,
+  .staffv2-session-line .ev2c-status {
+    display: none;
+  }
+
+  .staffv2-session-line {
+    flex-wrap: nowrap;
+  }
+
+  .staffv2-session-line strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .staffv2-focus-card {
     padding: var(--ev2-space-4);
   }

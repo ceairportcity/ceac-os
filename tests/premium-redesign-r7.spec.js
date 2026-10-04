@@ -49,7 +49,8 @@ test.describe("Premium redesign R7 closure", () => {
         await expect(page.locator(".fpg9-calendar-card")).toBeVisible();
         await expect(page.locator(".fpg9-home-queues")).toBeVisible();
         await expect(page.locator(".fpg9-module-strip")).toBeVisible();
-        await expect(page.locator(".managerv2-decisions")).toBeVisible();
+        await expect(page.locator(".fpg9-workspace-previews")).toBeVisible();
+        await expect(page.locator(".managerv2-decisions")).toHaveCount(0);
       } else if (label === "Administration") {
         await expect(page.locator(".adminv2")).toBeVisible();
         await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });
@@ -92,10 +93,19 @@ test.describe("Premium redesign R7 closure", () => {
     await expect(page.locator(".staffv2")).toBeVisible();
     await expect(page.locator(".staffv2-session")).toBeVisible();
     await expect(page.locator(".staffv2-focus-grid")).toBeVisible();
-    await expect(page.locator(".staffv2-schedule-panel")).toBeVisible();
+    await expect(page.locator(".staffv2-schedule-panel")).toBeHidden();
+    await expect(page.locator(".staffv2-secondary-grid")).toBeHidden();
     await expect(page.locator(".reference-module-strip")).toHaveCount(0);
-    await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
+    const mobileNav = page.locator(".ev2s-mobile-nav");
+    await expect(mobileNav).toBeVisible();
     await page.screenshot({ path: "test-artifacts/redesign-r7-staff-mobile.png", fullPage: true });
+
+    await mobileNav.getByRole("button", { name: "More", exact: true }).click();
+    const more = page.getByRole("dialog", { name: "More" });
+    const calendar = more.getByRole("button", { name: "Calendar", exact: true });
+    await expect(calendar).toBeVisible();
+    await calendar.click();
+    expect(new URL(page.url()).searchParams.get("tab")).toBe("staff-calendar");
     await context.close();
   });
 

@@ -21,6 +21,7 @@ test("Stage 10 Family D4 preserves Administration Workforce authority and factua
   const family = readFileSync("src/experience-v2/workforce-family/WorkforceFamilyV2.jsx", "utf8");
   const css = readFileSync("src/experience-v2/workforce-family/workforce-family.css", "utf8");
   const workforce = readFileSync("src/screens/Workforce.jsx", "utf8");
+  const literalCss = readFileSync("src/final-product/fpg7-people-workforce.css", "utf8");
 
   expect(family).toContain('className = ""');
   expect(workforce).toContain("const isAdminView=Boolean(me.is_admin)");
@@ -35,6 +36,9 @@ test("Stage 10 Family D4 preserves Administration Workforce authority and factua
   expect(css).toContain(".ev2-workforce-admin .ev2wf-tabs");
   expect(css).toContain(".ev2-workforce-admin .ev2wf-row-state");
   expect(css).not.toContain("!important");
+  expect(literalCss).toContain(".fpg-people-roster-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))");
+  expect(literalCss).toContain(".fpg-absence-day.is-today");
+  expect(literalCss).not.toContain("!important");
 });
 
 for (const viewport of [
@@ -113,6 +117,7 @@ for (const viewport of [
       const calendarRail = page.locator(".fpg-absence-board");
       await expect(calendarRail).toBeVisible();
       await expect(calendarRail.locator(".fpg-absence-day")).toHaveCount(14);
+      await expect(calendarRail.locator(".fpg-absence-day.is-today")).toHaveCount(1);
       await expect(calendarRail.locator(".fpg-absence-person").first()).toBeVisible();
       const calendarGrid = calendarRail.locator(".fpg-absence-grid");
       const gridLayout = await calendarGrid.evaluate((node) => ({

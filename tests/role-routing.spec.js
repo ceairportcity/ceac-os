@@ -16,10 +16,10 @@ async function openAs(browser, email) {
 test("Staff navigation stays focused on the employee workspace", async ({ browser }) => {
   const { context, page } = await openAs(browser, "staff@ceac.local.test");
   const nav = page.locator(".ev2s-sidebar-nav");
-  for (const label of ["Today","Work","Team","Calendar","Messages","My Hub"]) {
+  for (const label of ["Today","Work","Team","Time & Leave","Calendar","Messages","My Hub"]) {
     await expect(nav.getByRole("button", { name:label, exact:true })).toBeVisible();
   }
-  for (const label of ["Units","People","Time & Leave","Finance","Reports","Control Center","Audit","Authority","Events","Workflows","Integrations","Employee lifecycle","Delivery","Workload","Performance & development","Compliance"]) {
+  for (const label of ["Units","People","Finance","Reports","Control Center","Audit","Authority","Events","Workflows","Integrations","Employee lifecycle","Delivery","Workload","Performance & development","Compliance"]) {
     await expect(nav.getByRole("button", { name:label, exact:true })).toHaveCount(0);
   }
   await context.close();
@@ -28,10 +28,10 @@ test("Staff navigation stays focused on the employee workspace", async ({ browse
 test("Manager gets a team command centre, not Administration authoring", async ({ browser }) => {
   const { context, page } = await openAs(browser, "manager@ceac.local.test");
   const nav = page.locator(".ev2s-sidebar-nav");
-  for (const label of ["Overview","Work","Team","Projects","Calendar","Finance","Reports","Messages","My Hub"]) {
+  for (const label of ["Overview","Work","Team","Projects","Time & Leave","Calendar","Finance","Reports","Messages","My Hub"]) {
     await expect(nav.getByRole("button", { name:label, exact:true })).toBeVisible();
   }
-  for (const label of ["People","Time & Leave","Control Center","Audit","Authority","Events","Workflows","Integrations","Employee lifecycle","Protected HR"]) {
+  for (const label of ["People","Control Center","Audit","Authority","Events","Workflows","Integrations","Employee lifecycle","Protected HR"]) {
     await expect(nav.getByRole("button", { name:label, exact:true })).toHaveCount(0);
   }
   await context.close();

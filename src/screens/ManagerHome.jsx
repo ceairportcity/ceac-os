@@ -59,7 +59,6 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
   const [serviceDayData, setServiceDayData] = useState([]);
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [followupAlerts, setFollowupAlerts] = useState([]);
-  const [leaveLimit, setLeaveLimit] = useState(5);
   const [sheet, setSheet] = useState(null);
   const [drill, setDrill] = useState(null);
   const [comment, setComment] = useState("");
@@ -85,7 +84,7 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
 
       const recentSince = new Date(today); recentSince.setDate(recentSince.getDate() - 7);
       const [memberResult, submissionResult, leaveResult, incomingBlockerResult, outgoingBlockerResult, mineResult, delegatedResult,
-        settingResult, sessionResult, weekResult, projectUnitResult, activeProjectResult,
+        sessionResult, weekResult, projectUnitResult, activeProjectResult,
         todayOutputResult, todaySubmissionResult, recentCompletedResult, recentSubmissionResult, followupAlertResult, meetingResult] = await Promise.all([
         supabase.from("unit_memberships")
           .select("profile_id, profiles!unit_memberships_profile_id_fkey(id, full_name)")
@@ -117,7 +116,6 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
           .not("status", "in", "(completed,self_certified,cancelled)")
           .order("due_at", { ascending: true, nullsFirst: false })
           .limit(6),
-        supabase.from("leave_settings").select("manager_approval_limit").eq("org_id", me.org_id).maybeSingle(),
         supabase.from("work_sessions").select("profile_id, started_at, ended_at")
           .gte("started_at", today.toISOString()).lt("started_at", tomorrow.toISOString()),
         supabase.from("work_items")
@@ -183,9 +181,6 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
         return dueToday || isOverdue(item.due_at) || item.status === "returned" || item.status === "waiting_on";
       }));
       setDelegated(requireResult(delegatedResult, "Work you gave out"));
-      if (settingResult.error) throw new Error(`Leave settings: ${settingResult.error.message}`);
-      if (settingResult.data) setLeaveLimit(settingResult.data.manager_approval_limit);
-
       const sessions = requireResult(sessionResult, "Presence");
       const presentIds = new Set(sessions.map((session) => session.profile_id));
       const workingIds = new Set(sessions.filter((session) => !session.ended_at).map((session) => session.profile_id));
@@ -355,22 +350,6 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
     finally { setBusy(false); }
   }
 
-  async function decideLeave(request, decision) {
-    setBusy(true); setError(null);
-    try {
-      const status = decision === "declined" ? "declined" : Number(request.days) > leaveLimit ? "escalated" : "approved";
-      const action = status === "escalated" ? "escalated" : status === "declined" ? "declined" : "manager_approved";
-      const { error: updateError } = await supabase.rpc("workforce_leave_action", {
-        p_leave_request_id: request.id,
-        p_action: action,
-        p_reason: comment.trim() || "Manager dashboard decision",
-      });
-      if (updateError) throw updateError;
-      setSheet(null); setComment(""); await load();
-    } catch (err) { setError(humanError(err, "The leave decision could not be saved.")); }
-    finally { setBusy(false); }
-  }
-
   async function answerBlocker(blocker, state) {
     setBusy(true); setError(null);
     try {
@@ -431,7 +410,6 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
       decisionRows={decisionRows}
       reviewFollowupByWork={reviewFollowupByWork}
       blockers={blockers}
-      leaveLimit={leaveLimit}
       team={team}
       projects={projects}
       incomingRequests={incomingRequests}
@@ -455,7 +433,6 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
       onScheduleMeeting={scheduleMeeting}
       onOpenPerson={openPerson}
       onOpenReview={openReview}
-      onLeaveDecision={(request, decision) => setSheet({ type: "leave", item: request, decision })}
       onBlockerDisagree={(blocker) => setSheet({ type: "blocker", item: blocker })}
       onBlockerAcknowledge={(blocker) => answerBlocker(blocker, "acknowledged")}
       onResolveBlocker={resolveBlocker}
@@ -501,11 +478,6 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
           <button className="btn" style={{ marginTop: 14 }} disabled={busy} onClick={() => decideWork(sheet.item, "completed")}>{busy ? "Saving..." : "Confirm approval"}</button>
         </>}
         {sheet.decision && <button className="text-action" style={{ marginTop: 12 }} onClick={() => { setComment(""); setSelectedReturnItems([]); setSheet((current) => ({ ...current, decision: null })); }}>Choose another decision</button>}
-      </Sheet>}
-      {sheet?.type === "leave" && <Sheet onClose={() => { setSheet(null); setComment(""); }}>
-        <div className="h2">{sheet.decision === "declined" ? "Decline leave" : Number(sheet.item.days) > leaveLimit ? "Escalate leave" : "Approve leave"}</div>
-        <AssistiveTextarea className="field" rows={3} placeholder="Decision note (optional)" value={comment} onChange={(event) => setComment(event.target.value)} />
-        <button className="btn" style={{ marginTop: 14 }} disabled={busy} onClick={() => decideLeave(sheet.item, sheet.decision)}>{busy ? "Saving..." : "Save decision"}</button>
       </Sheet>}
       {sheet?.type === "blocker" && <Sheet onClose={() => { setSheet(null); setComment(""); }}>
         <div className="h2">Why does your unit disagree?</div>

@@ -204,7 +204,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           .select("id, project_id, unit_id, phase_id, ref, name, statement, measure, status, target_value, target_unit, achieved_value, closed_note, units!objectives_unit_id_fkey(name)")
           .eq("project_id", projectId).order("ref"),
         supabase.from("work_items")
-          .select("id, ref, title, kind, status, due_at, purpose, instructions, expected_outcome, objective_id, phase_id, unit_id, assignee_id, profiles!work_items_assignee_id_fkey(full_name), checklist_items(id,label,position), submissions(id, submitted_at, note, submission_files(id, url))")
+          .select("id, ref, title, kind, status, created_at, due_at, purpose, instructions, expected_outcome, objective_id, phase_id, unit_id, assignee_id, profiles!work_items_assignee_id_fkey(full_name), checklist_items(id,label,position), submissions(id, submitted_at, note, submission_files(id, url))")
           .eq("project_id", projectId).neq("visibility", "private").order("due_at", { ascending: true, nullsFirst: false }),
         supabase.from("budgets").select("id, currency, amount_minor, year, note")
           .eq("project_id", projectId).eq("unit_id", me.unit_id),

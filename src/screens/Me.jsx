@@ -285,7 +285,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     <PersonalDestinationGrid>
       <PersonalDestinationCard title="Work history" description="Completed work, feedback and recorded activity by month." ariaLabel="My work history" onClick={() => openRecord?.()} />
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Development" description="Your review evidence, reflection, feedback and development plan." ariaLabel="Reviews & development" onClick={() => openPerformance?.()} /> : null}
-      {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Time & leave" description="Your schedule, recorded work-session context, leave and corrections." ariaLabel="My workforce context" onClick={() => openWorkforce?.()} /> : null}
+      {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Time & leave" description="Open your wider Time & Leave workspace. Leave requests and confirmed policy context remain visible in the Leave tab below." ariaLabel="My workforce context" onClick={() => openWorkforce?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Learning" description="Assigned learning, resources and factual completion history." ariaLabel="Learning" onClick={() => openLearning?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Equipment" description="CEAC equipment currently in your custody and your recorded custody history." ariaLabel="My assets" onClick={() => openAssets?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Policies & requirements" description="Policies that apply to you, acknowledgements, evidence and exceptions." ariaLabel="My compliance" onClick={() => openCompliance?.()} /> : null}
@@ -342,6 +342,10 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         <Button size="sm" onClick={() => setSheet("leave")} disabled={Boolean(datasetErrors.leaveRequests)}>Ask for leave</Button>
       </div>}
     >
+      <ProductNotice tone="info" title="Confirmed leave process">
+        Annual, Sick, Maternity, Paternity and Study leave are available. Every request goes to your Manager first, then Administration makes the final decision. Entitlement amounts, accrual and carry-over are not yet configured.
+      </ProductNotice>
+
       {datasetErrors.leavePolicy || datasetErrors.leaveRules ? <ProductNotice tone="attention" title="Leave policy unavailable">{datasetErrors.leavePolicy || datasetErrors.leaveRules}</ProductNotice>
         : !policyConfigured ? <ProductNotice tone="attention" title="Leave policy not configured">Your requests remain available, but CEAC OS will not invent leave entitlement or remaining-day figures.</ProductNotice>
         : (annualLeft === null || sickLeft === null) ? <ProductNotice tone="info" title="Some balances are unavailable">A confirmed policy exists, but CEAC OS only calculates a remaining balance when the relevant rule has explicit day entitlement, a supported accrual method, no carry-over, and no unresolved opening-balance requirement.</ProductNotice>

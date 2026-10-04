@@ -151,6 +151,7 @@ export default function Workforce({ me }) {
   const dayTypesById=Object.fromEntries(dayTypes.map((d)=>[d.id,d]));
   const activePolicy=policies.find((p)=>p.state==="active")||null;
   const activeRules=activePolicy?policyRules.filter((r)=>r.policy_version_id===activePolicy.id):[];
+  const confirmedLeaveSummary=<ProductNotice tone="info" title="Confirmed leave process">Annual, Sick, Maternity, Paternity and Study leave are available. Manager approval → Administration final approval. Entitlement amounts, accrual and carry-over remain not configured until CEAC confirms them.</ProductNotice>;
 
   function latestSchedule(profileId,date=today){
     const rows=schedules.filter((s)=>s.profile_id===profileId && s.effective_from<=date && (!s.effective_to || s.effective_to>=date));
@@ -402,6 +403,8 @@ export default function Workforce({ me }) {
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="My workforce sections"/>
 
+      {confirmedLeaveSummary}
+
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Your leave requests remain available. CEAC OS will not invent entitlement, accrual, carry-over or remaining-day figures from old seeded defaults.</ProductNotice>}
 
       {tab==="today"&&<>
@@ -599,6 +602,8 @@ export default function Workforce({ me }) {
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Manager workforce sections"/>
+
+      {confirmedLeaveSummary}
 
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Leave decisions remain available on the existing route. CEAC OS will not invent entitlement, accrual, carry-over or remaining balance from old seeded defaults.</ProductNotice>}
 
@@ -895,6 +900,8 @@ export default function Workforce({ me }) {
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Administration workforce sections"/>
 
+      {confirmedLeaveSummary}
+
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Leave requests remain available. CEAC OS will not calculate entitlement, accrual, carry-over or remaining balance from the old seeded defaults.</ProductNotice>}
 
       {tab==="today"&&<>
@@ -951,7 +958,7 @@ export default function Workforce({ me }) {
           <div className="fpg-absence-scroll">
             <div className="fpg-absence-grid" style={{"--fpg-days":absenceDays.length}}>
               <div className="fpg-absence-corner">Employee</div>
-              {absenceDays.map(({date,dateObject})=><div className="fpg-absence-day" key={"head-"+date}>
+              {absenceDays.map(({date,dateObject})=><div className={date===today?"fpg-absence-day is-today":"fpg-absence-day"} key={"head-"+date}>
                 <span>{dateObject.toLocaleDateString("en-GB",{weekday:"short"})}</span>
                 <b>{dateObject.getDate()}</b>
               </div>)}
@@ -962,12 +969,12 @@ export default function Workforce({ me }) {
                 </div>
                 {absenceDays.map(({date})=>{
                   const row=absenceFor(person.profile_id,date);
-                  if(!row) return <div className="fpg-absence-cell" key={person.profile_id+"-"+date} />;
+                  if(!row) return <div className={date===today?"fpg-absence-cell is-today":"fpg-absence-cell"} key={person.profile_id+"-"+date} />;
                   const isStart=row.start_date===date;
                   const isEnd=row.end_date===date;
                   return <div
                     key={person.profile_id+"-"+date}
-                    className={"fpg-absence-cell has-leave is-"+row.status+(isStart?" is-start":"")+(isEnd?" is-end":"")}
+                    className={"fpg-absence-cell has-leave is-"+row.status+(date===today?" is-today":"")+(isStart?" is-start":"")+(isEnd?" is-end":"")}
                     title={human(row.kind)+" leave · "+human(row.status)}
                   >
                     {isStart&&<span>{human(row.kind)} leave</span>}

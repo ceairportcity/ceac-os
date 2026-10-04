@@ -25,6 +25,7 @@ test("Stage 4B shell is isolated, tokenized and wired through App", async () => 
   expect(shell).toContain("Drawer");
   expect(shell).toContain("PopoverMenu");
   expect(shell).toContain("getShellQuickActions");
+  expect(shell).toContain("ev2s-sidebar-main");
   expect(shell).not.toContain("function createMenuItems");
   expect(shell).not.toContain("components/primitives/Icon");
   expect(shell).not.toContain("components/PremiumShell");
@@ -97,6 +98,18 @@ test("Stage 4B desktop shell exposes only authorised production destinations", a
   expect(["auto", "scroll"]).toContain(geometry.navOverflowY);
 });
 
+test("Manager shell exposes Time & Leave as a first-class destination", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "manager@ceac.local.test");
+
+  const sidebar = page.locator(".ev2s-sidebar");
+  const timeLeave = sidebar.getByRole("button", { name: "Time & Leave", exact: true });
+  await expect(timeLeave).toBeVisible();
+  await timeLeave.click();
+  await expect(page.locator(".ev2-workforce-manager")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("Manager approval → Administration final approval", { exact: false }).first()).toBeVisible();
+});
+
 test("Stage 4B create menu exposes only role-authorised shortcuts", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "staff@ceac.local.test");
@@ -125,6 +138,7 @@ test("Stage 4B mobile shell keeps five controls and uses the shared More drawer"
   const drawer = page.getByRole("dialog", { name: "More" });
   await expect(drawer).toBeVisible();
   await expect(drawer.getByRole("button", { name: "Calendar", exact: true })).toBeVisible();
+  await expect(drawer.getByRole("button", { name: "Time & Leave", exact: true })).toBeVisible();
   await expect(drawer.getByRole("button", { name: "Messages", exact: true })).toBeVisible();
   await expect(drawer.getByRole("button", { name: "Your account", exact: true })).toBeVisible();
 

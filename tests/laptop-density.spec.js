@@ -33,27 +33,28 @@ for (const width of [1024, 1180, 1366]) {
     const main = page.locator(".manager-app .managerv2-main");
     await expect(overview).toBeVisible();
     await expect(main).toBeVisible({ timeout: 15000 });
-    await expect(page.locator(".manager-app .managerv2-decisions")).toBeVisible();
+    await expect(page.locator(".manager-app .fpg9-home-reference")).toBeVisible();
+    await expect(page.locator(".manager-app .fpg9-workspace-previews")).toBeVisible();
+    await expect(page.locator(".manager-app .managerv2-decisions")).toHaveCount(0);
 
     const geometry = await page.evaluate(() => {
       const body = document.querySelector(".manager-app .app-content .body");
       const overview = document.querySelector(".manager-app .managerv2");
-      const command = document.querySelector(".manager-app .managerv2-command-grid");
-      const decisions = document.querySelector(".manager-app .managerv2-decisions");
-      const schedule = document.querySelector(".manager-app .managerv2-schedule");
+      const home = document.querySelector(".manager-app .fpg9-home-reference");
+      const previews = document.querySelector(".manager-app .fpg9-workspace-previews");
       return {
         bodyWidth: body?.getBoundingClientRect().width || 0,
         overviewWidth: overview?.getBoundingClientRect().width || 0,
-        commandColumns: command ? getComputedStyle(command).gridTemplateColumns.split(" ").filter(Boolean).length : 0,
-        decisionsTop: decisions?.getBoundingClientRect().top || 0,
-        scheduleTop: schedule?.getBoundingClientRect().top || 0,
+        homeColumns: home ? getComputedStyle(home).gridTemplateColumns.split(" ").filter(Boolean).length : 0,
+        homeTop: home?.getBoundingClientRect().top || 0,
+        previewsTop: previews?.getBoundingClientRect().top || 0,
       };
     });
 
     expect(geometry.bodyWidth).toBeLessThanOrEqual(1281);
     expect(geometry.overviewWidth).toBeLessThanOrEqual(1217);
-    expect(geometry.commandColumns).toBe(2);
-    expect(geometry.decisionsTop).toBeLessThanOrEqual(geometry.scheduleTop + 1);
+    expect(geometry.homeColumns).toBe(2);
+    expect(geometry.previewsTop).toBeGreaterThan(geometry.homeTop);
     await expect(page.locator(".manager-app .reference-rail")).toHaveCount(0);
     await expect(page.locator(".manager-app .reference-module-strip")).toHaveCount(0);
     await expectNoPageOverflow(page);
