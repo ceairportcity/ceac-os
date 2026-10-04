@@ -69,12 +69,45 @@ export async function listOperationalFiles(contextType, contextId) {
   return (result.data || []).map((row) => ({ ...row.file, link_id: row.id, relation: row.relation, linked_at: row.created_at }));
 }
 
-export async function openOperationalFile(file) {
+export async function listOperationalFilesForContexts(contextType, contextIds = []) {
+  const ids = [...new Set((contextIds || []).filter(Boolean))];
+  const grouped = new Map(ids.map((id) => [id, []]));
+  if (!contextType || !ids.length) return grouped;
+  const result = await supabase.from("operational_file_links")
+    .select("id,context_id,relation,created_at,file:operational_files!inner(id,filename,mime_type,size_bytes,storage_bucket,storage_path,state,created_at,uploaded_by)")
+    .eq("context_type", contextType)
+    .in("context_id", ids)
+    .order("created_at", { ascending: true });
+  if (result.error) throw result.error;
+  for (const row of result.data || []) {
+    if (!grouped.has(row.context_id)) grouped.set(row.context_id, []);
+    grouped.get(row.context_id).push({ ...row.file, link_id: row.id, relation: row.relation, linked_at: row.created_at });
+  }
+  return grouped;
+}
+
+export async function linkOperationalFile({ fileId, contextType, contextId, relation }) {
+  const result = await supabase.rpc("link_operational_file", {
+    p_file_id: fileId,
+    p_context_type: contextType,
+    p_context_id: contextId,
+    p_relation: relation,
+  });
+  if (result.error) throw result.error;
+  return result.data;
+}
+
+export async function signedOperationalFileUrl(file, expiresIn = 300) {
   const result = await supabase.storage.from(file.storage_bucket || "ceac-operational-private")
-    .createSignedUrl(file.storage_path, 300, { download: file.filename || true });
+    .createSignedUrl(file.storage_path, expiresIn, { download: false });
   if (result.error) throw result.error;
   if (!result.data?.signedUrl) throw new Error("CEAC could not open that private file.");
-  window.open(result.data.signedUrl, "_blank", "noopener,noreferrer");
+  return result.data.signedUrl;
+}
+
+export async function openOperationalFile(file) {
+  const signedUrl = await signedOperationalFileUrl(file, 300);
+  window.open(signedUrl, "_blank", "noopener,noreferrer");
 }
 
 export function formatOperationalFileSize(value) {
