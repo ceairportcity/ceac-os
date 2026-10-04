@@ -25,7 +25,7 @@ function mergeMessages(...groups) {
   return [...byId.values()].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }
 
-export default function Inbox({ me, openRoom, openAnnouncements }) {
+export default function Inbox({ me, openRoom, openAnnouncements, initialView = null, onInitialViewHandled }) {
   const [view, setView] = useState("all");
   const [messages, setMessages] = useState([]);
   const [mentions, setMentions] = useState(new Set());
@@ -36,6 +36,11 @@ export default function Inbox({ me, openRoom, openAnnouncements }) {
   const [error, setError] = useState(null);
 
   useEffect(() => { load(); }, [me.id, me.unit_id, me.is_exec]);
+  useEffect(() => {
+    if (!initialView) return;
+    setView(initialView);
+    onInitialViewHandled?.();
+  }, [initialView]);
 
   async function load() {
     setLoading(true);

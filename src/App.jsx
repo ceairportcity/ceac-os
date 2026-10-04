@@ -322,7 +322,13 @@ export default function App() {
       return <Work me={me} isManager={false} openItem={openItem} />;
     }
     if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} />;
-    if (tab === "messages") return <Inbox me={me} openRoom={openRoom} openAnnouncements={() => go("announcements")} />;
+    if (tab === "messages") return <Inbox
+      me={me}
+      openRoom={openRoom}
+      openAnnouncements={() => go("announcements")}
+      initialView={createIntent === "message_room" ? "rooms" : null}
+      onInitialViewHandled={() => setCreateIntent(null)}
+    />;
     if (tab === "projects" && isUnitManager) return <ManagerProjects me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
     if (tab === "calendar" && isUnitManager) return <ManagerCalendar me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
     if (tab === "manager-finance" && isUnitManager) return <ManagerFinance me={me} openProject={openProject} />;
@@ -408,7 +414,7 @@ export default function App() {
         isManager={isUnitManager}
         onUnitChange={switchUnit}
         onMessages={() => go("messages")}
-        onComposeMessage={() => me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
+        onComposeMessage={() => isExec ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
         onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
         onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
         onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
@@ -425,7 +431,7 @@ export default function App() {
           onUnitChange={switchUnit}
           onNavigate={go}
           onMessages={() => go("messages")}
-          onComposeMessage={() => me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
+          onComposeMessage={() => isExec ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
           onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
@@ -447,7 +453,7 @@ export default function App() {
           isExec={isExec}
           isManager={isUnitManager}
           onMessages={() => go("messages")}
-          onComposeMessage={() => me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
+          onComposeMessage={() => isExec ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
           onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}

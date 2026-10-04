@@ -168,12 +168,14 @@ test("OCR3 authorised Administration Create exposes Announcement while Staff rem
   await expect(page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true })).toBeVisible();
 });
 
-test("OCR3 Executive Messages uses intentional organisational Room discovery", async ({ page }) => {
+test("OCR6B Executive Create Message opens deliberate organisational Room discovery", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
-  await page.goto("/?tab=messages");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByRole("menu").getByRole("menuitem", { name: "Message room", exact: true }).click();
+  await expect(page).toHaveURL(/tab=messages/);
   await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
-  await page.getByRole("tab", { name: "Rooms", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "Rooms", exact: true })).toHaveAttribute("aria-selected", "true");
   const roomDirectory = page.locator(".ev2c-data-panel").filter({ hasText: "Organisation Rooms" }).first();
   await expect(roomDirectory).toBeVisible();
   expect(await roomDirectory.locator("button.ev2c-queue-row").count()).toBeGreaterThan(0);
