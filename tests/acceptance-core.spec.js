@@ -2120,7 +2120,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByRole("button", { name: "Configure leave policy", exact: true })).toBeVisible();
 
   await go(page, "Settings");
-  await page.getByText("Organisation", { exact: true }).click();
+  await page.getByRole("button", { name: "Office settings", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Organisation settings", exact: true })).toBeVisible();
 
   const attentionRule = page.locator(".office-threshold-row").filter({ hasText: "active work has not moved for" });
