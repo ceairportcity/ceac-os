@@ -128,6 +128,24 @@ end
 $authorised$;
 
 reset role;
+
+do $capture_project_room$
+declare v_project_room uuid;
+begin
+  select id into v_project_room
+  from public.rooms
+  where kind='project'
+    and project_id='49000000-0000-4000-8000-000000000108'::uuid
+  limit 1;
+
+  if v_project_room is null then
+    raise exception 'OCR3 Room gate: fixture Project Room was not created.';
+  end if;
+
+  perform set_config('ceac.ocr3_project_room_id',v_project_room::text,true);
+end
+$capture_project_room$;
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
 
@@ -135,14 +153,12 @@ do $executive_rooms$
 declare
   v_unit_room uuid;
   v_subteam_room uuid;
-  v_project_room uuid;
+  v_project_room uuid:=nullif(current_setting('ceac.ocr3_project_room_id',true),'')::uuid;
 begin
   select id into v_unit_room from public.rooms
     where kind='unit' and unit_id='20000000-0000-4000-8000-000000000011'::uuid limit 1;
   select id into v_subteam_room from public.rooms
     where kind='sub_team' and sub_team_id='22000000-0000-4000-8000-000000000011'::uuid limit 1;
-  select id into v_project_room from public.rooms
-    where kind='project' and project_id='49000000-0000-4000-8000-000000000108'::uuid limit 1;
 
   if v_unit_room is null or not public.app_can_access_room(v_unit_room) then
     raise exception 'OCR3 Room gate: Executive cannot access active Unit Room.';
