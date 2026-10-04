@@ -1008,6 +1008,64 @@
   }
 }
 
+/* OCR1 — compact shared Work Item Composer. */
+.ev2-work-assignment.ocr-work-composer > .split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ev2-space-4);
+}
+.ev2-work-assignment.ocr-work-composer .main-col,
+.ev2-work-assignment.ocr-work-composer .side-col {
+  position: static;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.ev2-work-assignment.ocr-work-composer .assign-intro {
+  padding-top: 0;
+}
+.ev2-work-assignment.ocr-work-composer .assign-system-type {
+  display: grid;
+  gap: var(--ev2-space-1);
+  margin: var(--ev2-space-2) 0 var(--ev2-space-4);
+  padding: var(--ev2-space-3);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-control);
+  background: var(--ev2-surface-soft);
+}
+.ev2-work-assignment.ocr-work-composer .assign-system-type strong {
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+}
+.ev2-work-assignment.ocr-work-composer .assign-system-type span,
+.ev2-work-assignment.ocr-work-composer .assign-system-type small {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.4;
+}
+.ocr-composer-disclosure {
+  margin-top: var(--ev2-space-3);
+  border-top: 1px solid var(--ev2-line);
+}
+.ocr-composer-disclosure summary {
+  min-height: var(--ev2-control-min);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ev2-space-3);
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+  font-weight: 650;
+  cursor: pointer;
+}
+.ocr-composer-disclosure summary span {
+  color: var(--ev2-text-tertiary);
+  font-size: var(--ev2-type-label);
+  font-weight: 500;
+}
+
 
 .ev2-work-detail .ev2wr-panel {
   overflow: hidden;
