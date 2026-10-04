@@ -52,12 +52,6 @@ const databaseOrSecurityChanged = files.some(
     /auth|security|session/i.test(file),
 );
 const levelBRequested = /\[level-b\]/i.test(subject);
-const levelB =
-  levelBRequested ||
-  (!documentationOnly &&
-    (eventName === "workflow_dispatch" ||
-      workflowOrHarnessChanged ||
-      databaseOrSecurityChanged));
 
 const scopeRules = [
   ["vf9b", /visual-fidelity-css-cascade-closure\.spec\.js$/i],
@@ -84,6 +78,15 @@ const scope =
     : workflowOrHarnessChanged || databaseOrSecurityChanged || matchedScopes.length !== 1
       ? "full"
       : matchedScopes[0];
+
+const broadProductChange = !documentationOnly && scope === "full";
+const levelB =
+  levelBRequested ||
+  (!documentationOnly &&
+    (eventName === "workflow_dispatch" ||
+      workflowOrHarnessChanged ||
+      databaseOrSecurityChanged ||
+      broadProductChange));
 
 const outputs = {
   documentation_only: String(documentationOnly),
