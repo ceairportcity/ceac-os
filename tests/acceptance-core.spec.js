@@ -2001,10 +2001,12 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Employee lifecycle");
   await expect(page.getByRole("heading", { name: "Employee lifecycle", exact: true })).toBeVisible();
-  await page.getByLabel("Lifecycle employee").selectOption("31000000-0000-4000-8000-000000000006");
-  await page.getByLabel("Lifecycle type").selectOption("onboarding");
-  await page.getByLabel("Lifecycle reason").fill("Acceptance onboarding lifecycle");
   await page.getByRole("button", { name: "Start lifecycle case", exact: true }).click();
+  const lifecycleDialog = page.getByRole("dialog", { name: "Start lifecycle case" });
+  await lifecycleDialog.getByLabel("Lifecycle employee").selectOption("31000000-0000-4000-8000-000000000006");
+  await lifecycleDialog.getByLabel("Lifecycle type").selectOption("onboarding");
+  await lifecycleDialog.getByLabel("Lifecycle reason").fill("Acceptance onboarding lifecycle");
+  await lifecycleDialog.getByRole("button", { name: "Start lifecycle case", exact: true }).click();
   await expect(page.getByText("Employee lifecycle case started.", { exact: true })).toBeVisible();
   for (let step = 1; step <= 4; step += 1) {
     await page.getByLabel("Lifecycle completion note").fill("Acceptance lifecycle step " + step);
@@ -2044,23 +2046,30 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await go(page, "Authority");
   await expect(page.getByRole("heading", { name: "Authority", exact: true })).toBeVisible();
   await page.getByLabel("Authority person").selectOption({ label: "Staff Fixture · staff@ceac.local.test" });
-  await page.getByLabel("Capability", { exact: true }).selectOption("performance.admin");
-  await page.getByLabel("Grant reason").fill("Acceptance temporary performance authority");
   await page.getByRole("button", { name: "Grant capability", exact: true }).click();
+  const grantDialog = page.getByRole("dialog", { name: "Grant capability" });
+  await grantDialog.getByLabel("Capability", { exact: true }).selectOption("performance.admin");
+  await grantDialog.getByLabel("Grant reason").fill("Acceptance temporary performance authority");
+  await grantDialog.getByRole("button", { name: "Grant capability", exact: true }).click();
   await expect(page.getByText("Capability granted.", { exact: true })).toBeVisible();
-  await page.getByLabel("Revocation reason").fill("Acceptance authority cleanup");
   await page.getByRole("button", { name: "Revoke", exact: true }).click();
+  const revokeDialog = page.getByRole("dialog", { name: "Revoke capability" });
+  await revokeDialog.getByLabel("Revocation reason").fill("Acceptance authority cleanup");
+  await revokeDialog.getByRole("button", { name: "Revoke", exact: true }).click();
   await expect(page.getByText("Capability revoked.", { exact: true })).toBeVisible();
 
   await go(page, "System rules");
   await expect(page.getByRole("heading", { name: "Policies & rules", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Work quiet days/ }).click();
-  await page.getByLabel("Policy rule value").fill("6");
-  await page.getByLabel("Policy reason").fill("Acceptance policy rule version");
   await page.getByRole("button", { name: "Record new version", exact: true }).click();
+  const policyDialog = page.getByRole("dialog", { name: "Record new policy version" });
+  await policyDialog.getByLabel("Policy rule value").fill("6");
+  await policyDialog.getByLabel("Policy reason").fill("Acceptance policy rule version");
+  await policyDialog.getByRole("button", { name: "Record new version", exact: true }).click();
   await expect(page.getByText("Policy rule recorded.", { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: /Work quiet days/ }).click();
+  await page.getByRole("button", { name: "Show version history", exact: true }).click();
   await expect(page.getByText("Acceptance policy rule version", { exact: true })).toBeVisible();
 
   await go(page, "Connected Apps");

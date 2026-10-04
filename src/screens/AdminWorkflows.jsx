@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
+import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
+import { Button, DataPanel, QueueRow, SegmentedControl, StatePanel, StatusBadge } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
-import { QueueRow, byOldest } from "../components/primitives";
+import { byOldest } from "../components/primitives";
 
 function stamp(value) {
   if (!value) return "—";
@@ -145,66 +146,68 @@ export default function AdminWorkflows({ me }) {
 
     <div className="split" style={{ marginTop: 18 }}>
       <div className="main-col">
-        <div className="sec"><span>Waiting for a decision</span><span>{shownSteps.length}</span></div>
-        <div className="seg" style={{ marginBottom: 12 }}>
-          {[["ready","Waiting"],["completed","Completed"],["all","All"]].map(([key,label]) =>
-            <button key={key} className={filter === key ? "on" : ""} onClick={() => setFilter(key)}>{label}</button>
-          )}
-        </div>
-
-        {shownSteps.map((step) => {
-          const run = runsById[step.workflow_run_id];
-          const definition = run ? definitionsById[run.workflow_definition_id] : null;
-          const subject = run?.subject_profile_id ? people[run.subject_profile_id] || "Person" : humanize(run?.aggregate_type || "record");
-          return <QueueRow
-            key={step.id}
-            since={step.created_at || run?.started_at}
-            title={step.label}
-            meta={`${definition?.label || "Check"} · ${subject}`}
-            openLabel={step.label}
-            onOpen={() => setSelectedStepId(step.id)}
-            actions={step.state === "ready"
-              ? <button className="btn btn-ghost btn-sm" onClick={() => setSelectedStepId(step.id)}>Review</button>
-              : <span className="pill p-grey">{step.outcome || "Completed"}</span>}
-          />;
-        })}
-        {shownSteps.length === 0 && <EmptyState title={filter === "ready" ? "No check is waiting" : "No checks match"}>New decisions will appear here when CEAC reaches a point that needs an authorised person.</EmptyState>}
+        <DataPanel
+          eyebrow="Decision queue"
+          title="Waiting for a decision"
+          supporting="Only recorded workflow checks appear here; completing a check preserves the attributable outcome."
+          action={<StatusBadge tone={filter==="ready"&&shownSteps.length?"warning":"neutral"} icon={false}>{shownSteps.length} shown</StatusBadge>}
+        >
+          <SegmentedControl
+            ariaLabel="Check state"
+            value={filter}
+            onChange={setFilter}
+            items={[
+              {value:"ready",label:"Waiting"},
+              {value:"completed",label:"Completed"},
+              {value:"all",label:"All"},
+            ]}
+          />
+          {shownSteps.map((step) => {
+            const run = runsById[step.workflow_run_id];
+            const definition = run ? definitionsById[run.workflow_definition_id] : null;
+            const subject = run?.subject_profile_id ? people[run.subject_profile_id] || "Person" : humanize(run?.aggregate_type || "record");
+            return <QueueRow
+              key={step.id}
+              icon={step.state==="ready"?"warning":"checkCircle"}
+              title={step.label}
+              meta={`${definition?.label || "Check"} · ${subject}`}
+              status={step.state==="ready"?"Waiting":step.outcome||"Completed"}
+              statusTone={step.state==="ready"?"warning":"success"}
+              onClick={() => setSelectedStepId(step.id)}
+            />;
+          })}
+          {shownSteps.length === 0 && <StatePanel
+            state="empty"
+            title={filter === "ready" ? "No check is waiting" : "No checks match"}
+            description="New decisions will appear here when CEAC reaches a point that needs an authorised person."
+          />}
+        </DataPanel>
       </div>
 
       <div className="side-col">
-        <div className="sec"><span>Check</span></div>
-        {!selectedStep && <div className="card" style={{ padding: 15 }}><p className="small" style={{ margin: 0 }}>Choose a check to inspect the decision and its context.</p></div>}
-        {selectedStep && <div className="card" style={{ padding: 15 }}>
-          <strong>{selectedDefinition?.label || "Check"}</strong>
-          <p className="small" style={{ lineHeight: 1.5 }}>
-            {selectedDefinition?.description || "Review what CEAC is asking you to decide."}
-          </p>
-          <div className="small">Decision: {selectedStep.label}</div>
-          <div className="small">Who can decide: {selectedStep.required_capability ? humanize(selectedStep.required_capability) : "Signed-in user"}</div>
-          <div className="small">State: {humanize(selectedStep.state)}</div>
-          {selectedStep.state === "ready" && <>
-            <FieldGroup label="Decision / result">
-              <input className="field" aria-label="Check outcome" value={outcome} onChange={(event) => setOutcome(event.target.value)} />
-            </FieldGroup>
-            <FieldGroup label="Reason / context">
-              <textarea className="field" aria-label="Check review note" rows="3" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional context for the record" />
-            </FieldGroup>
-            <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:12 }}>
-              <button className="btn" disabled={busy || !outcome.trim()} onClick={() => completeStep()}>{busy ? "Saving…" : "Complete check"}</button>
-              <button className="btn btn-ghost" disabled={busy} onClick={() => completeStep("not_approved")}>No — I did not approve this</button>
-            </div>
+        <DataPanel eyebrow="Record" title="Check" supporting="Inspect the decision and its recorded context before completing it.">
+          {!selectedStep && <StatePanel state="info" title="Choose a check" description="Select a queue item to inspect the decision and its context." />}
+          {selectedStep && <>
+            <strong>{selectedDefinition?.label || "Check"}</strong>
+            <p className="small" style={{ lineHeight: 1.5 }}>{selectedDefinition?.description || "Review what CEAC is asking you to decide."}</p>
+            <div className="small">Decision: {selectedStep.label}</div>
+            <div className="small">Who can decide: {selectedStep.required_capability ? humanize(selectedStep.required_capability) : "Signed-in user"}</div>
+            <div className="small">State: {humanize(selectedStep.state)}</div>
+            {selectedStep.state === "ready" && <>
+              <FieldGroup label="Decision / result"><input className="field" aria-label="Check outcome" value={outcome} onChange={(event) => setOutcome(event.target.value)} /></FieldGroup>
+              <FieldGroup label="Reason / context"><textarea className="field" aria-label="Check review note" rows="3" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional context for the record" /></FieldGroup>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:12 }}>
+                <Button busy={busy} disabled={!outcome.trim()} onClick={() => completeStep()}>{busy ? "Saving…" : "Complete check"}</Button>
+                <Button variant="secondary" disabled={busy} onClick={() => completeStep("not_approved")}>No — I did not approve this</Button>
+              </div>
+            </>}
+            {selectedStep.state === "completed" && <p className="small" style={{ lineHeight: 1.5 }}>Outcome: {selectedStep.outcome || "Completed"}{selectedStep.note ? " · " + selectedStep.note : ""}</p>}
           </>}
-          {selectedStep.state === "completed" && <p className="small" style={{ lineHeight: 1.5 }}>
-            Outcome: {selectedStep.outcome || "Completed"}{selectedStep.note ? " · " + selectedStep.note : ""}
-          </p>}
-        </div>}
+        </DataPanel>
 
-        <div className="sec"><span>How Checks work</span></div>
-        <div className="card" style={{ padding: 15 }}>
-          <p className="small" style={{ lineHeight: 1.6, margin: 0 }}>
-            CEAC opens a Check when a recorded change reaches a point that needs a human decision. Completing a Check can move the process forward. Choosing “No — I did not approve this” stops that run and keeps the decision in history.
-          </p>
-        </div>
+        <DataPanel eyebrow="Context" title="How Checks work" supporting="Checks are attributable human decisions, not automatic approval.">
+          <p className="small" style={{ lineHeight: 1.6, margin: 0 }}>CEAC opens a Check when a recorded change reaches a point that needs a human decision. Completing a Check can move the process forward. Choosing “No — I did not approve this” stops that run and keeps the decision in history.</p>
+        </DataPanel>
       </div>
     </div>
   </div>;

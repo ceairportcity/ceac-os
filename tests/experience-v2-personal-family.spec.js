@@ -584,6 +584,33 @@ test("Stage 10 Family H1 keeps Control Center capability-filtered while aligning
 });
 
 
+test("OCR5F Administration system surfaces use shared Queue Record Settings and Composer archetypes", async () => {
+  const lifecycle = readFileSync("src/screens/AdminLifecycle.jsx", "utf8");
+  const workflows = readFileSync("src/screens/AdminWorkflows.jsx", "utf8");
+  const authority = readFileSync("src/screens/AdminAuthority.jsx", "utf8");
+  const policies = readFileSync("src/screens/AdminPolicies.jsx", "utf8");
+
+  for (const source of [lifecycle, workflows, authority, policies]) expect(source).toContain("DataPanel");
+  expect(lifecycle).toContain("ComposerDrawer");
+  expect(lifecycle).toContain('title="Lifecycle cases"');
+  expect(lifecycle).toContain('title="Case detail"');
+
+  expect(workflows).toContain("SegmentedControl");
+  expect(workflows).toContain('title="Waiting for a decision"');
+  expect(workflows).toContain('title="Check"');
+  expect(workflows).not.toContain('import { QueueRow, byOldest } from "../components/primitives"');
+
+  expect(authority).toContain("RecordRow");
+  expect(authority).toContain("ComposerDrawer");
+  expect(authority).toContain("Show grant history");
+  expect(authority).toContain('title="Active capabilities"');
+
+  expect(policies).toContain("ComposerDrawer");
+  expect(policies).toContain("Show version history");
+  expect(policies).toContain('title="Rule catalogue"');
+  expect(policies).toContain('title="Record new policy version"');
+});
+
 test("Stage 10 Family H2 keeps Organisation settings factual and persistence-backed", async () => {
   const settings = readFileSync("src/screens/OfficeSettings.jsx", "utf8");
   expect(settings).toContain('supabase.from("office_locations")');
