@@ -2,6 +2,7 @@
 
 Status: **LOCKED / START GATE SATISFIED / READY TO MERGE AND START OCR0**
 Date: 2026-10-04
+Promotion state: **PR #100 promoted from draft after canonical reconciliation; protected checks must pass on the ready head before merge.**
 
 ## Canonical next-phase package
 
