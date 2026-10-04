@@ -2275,6 +2275,7 @@ test("Closure corridor preserves the Staff Fixture journey across CEAC OS", asyn
     await go(page, "People");
     await page.getByLabel("Find a person").fill("Staff Fixture");
     await page.getByRole("button", { name: /Staff Fixture/ }).click();
+    await page.getByRole("tab", { name: "History", exact: true }).click();
     await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
 
     await go(page, "Assets & devices");
