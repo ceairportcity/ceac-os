@@ -511,20 +511,6 @@
     gap: var(--ev2-space-1) var(--ev2-space-3);
   }
 
-  .staffv2-session {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: var(--ev2-space-3);
-  }
-
-  .staffv2-session-line {
-    align-items: flex-start;
-  }
-
-  .staffv2-session-actions {
-    grid-column: 1 / -1;
-  }
-
-  .staffv2-session-actions .ev2c-button,
   .staffv2-recovery-actions .ev2c-button {
     width: 100%;
   }
