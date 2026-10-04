@@ -26,6 +26,20 @@ const STATUS_FILTERS = [
   ["completed", "Completed"],
 ];
 
+const BRAND_BOOK_DASHBOARD_CSS = `.fpg-brandbook-dashboard{display:grid;grid-template-columns:1.05fr .9fr 1fr;gap:10px;margin:12px 0 18px}
+.fpg-brandbook-card{min-width:0;min-height:190px;padding:14px;border:1px solid var(--ev2-line);border-radius:14px;background:var(--ev2-surface);box-shadow:0 8px 24px rgba(29,42,64,.04)}
+.fpg-brandbook-card>header{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
+.fpg-brandbook-card>header span{font-size:14px;font-weight:720}.fpg-brandbook-card>header small{color:var(--ev2-text-tertiary);font-size:12px}
+.fpg-brandbook-schedule-list{display:grid;gap:7px}.fpg-brandbook-schedule-list>div{display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--ev2-line)}
+.fpg-brandbook-schedule-list>div:first-child{border-top:0}.fpg-brandbook-schedule-list b{display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--ev2-line);border-radius:8px;font-size:12px}
+.fpg-brandbook-schedule-list span{display:grid;gap:1px;min-width:0}.fpg-brandbook-schedule-list strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.fpg-brandbook-schedule-list small,.fpg-brandbook-schedule-list p{color:var(--ev2-text-secondary);font-size:12px}
+.fpg-brandbook-hours>strong{display:block;margin:18px 0 10px;font-size:28px;letter-spacing:-.04em}.fpg-brandbook-hours-bars{height:76px;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;align-items:end}
+.fpg-brandbook-hours-bars>span{height:100%;display:grid;grid-template-rows:1fr 17px;align-items:end;gap:3px}.fpg-brandbook-hours-bars i{display:block;min-height:4px;border-radius:4px 4px 1px 1px;background:var(--ev2-action)}.fpg-brandbook-hours-bars small{text-align:center;color:var(--ev2-text-tertiary);font-size:12px}
+.fpg-brandbook-hours>p{margin:9px 0 0;color:var(--ev2-text-secondary);font-size:12px;line-height:1.4}.fpg-brandbook-note{background:#f7d765;border-color:#e8c54c}.fpg-brandbook-note>p{min-height:88px;margin:16px 0;color:#3e3520;font-size:14px;line-height:1.5}.fpg-brandbook-note>footer{color:#6d5a24;font-size:12px}
+.fpg-brandbook-context-warning{margin:-8px 0 14px;color:var(--ev2-text-tertiary);font-size:12px}
+@media(max-width:820px){.fpg-brandbook-dashboard{grid-template-columns:1fr 1fr}.fpg-brandbook-note{grid-column:1/-1}}
+@media(max-width:560px){.fpg-brandbook-dashboard{grid-template-columns:1fr}.fpg-brandbook-note{grid-column:auto}.fpg-brandbook-card{min-height:0}}`;
+
 function ghanaDayKey(value) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit",
@@ -295,6 +309,7 @@ export default function Work({ me, isManager = false, openItem }) {
   const feedback = brandbookContext.feedback;
 
   return <div className="body staff-work ev2-work-page ev2-work-staff">
+    <style data-fpg-brandbook-dashboard>{BRAND_BOOK_DASHBOARD_CSS}</style>
     <WorkPageHeader
       eyebrow={me.unit_name}
       title="My work"
