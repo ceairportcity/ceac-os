@@ -62,6 +62,9 @@ export function SideNav({
   isManager = false,
   onUnitChange,
   onCreateWork,
+  onCreateMinistryObjective,
+  onCreateProject,
+  onCreateAnnouncement,
   onCreateMeeting,
   onMessages,
   onComposeMessage,
@@ -71,6 +74,9 @@ export function SideNav({
   const role = getRoleName(context);
   const quickItems = getShellQuickActions(context, {
     onCreateWork,
+    onCreateMinistryObjective,
+    onCreateProject,
+    onCreateAnnouncement,
     onCreateMeeting,
     onMessages,
     onComposeMessage,
@@ -192,6 +198,9 @@ export function AppTopBar({
   onMessages,
   onComposeMessage,
   onCreateWork,
+  onCreateMinistryObjective,
+  onCreateProject,
+  onCreateAnnouncement,
   onCreateMeeting,
 }) {
   const [query, setQuery] = useState("");
@@ -207,6 +216,9 @@ export function AppTopBar({
   const current = navigation.find((item) => item.key === tab);
   const createItems = getShellQuickActions(context, {
     onCreateWork,
+    onCreateMinistryObjective,
+    onCreateProject,
+    onCreateAnnouncement,
     onCreateMeeting,
     onComposeMessage,
     onMessages,
