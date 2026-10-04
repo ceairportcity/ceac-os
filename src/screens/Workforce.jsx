@@ -951,7 +951,7 @@ export default function Workforce({ me }) {
           <div className="fpg-absence-scroll">
             <div className="fpg-absence-grid" style={{"--fpg-days":absenceDays.length}}>
               <div className="fpg-absence-corner">Employee</div>
-              {absenceDays.map(({date,dateObject})=><div className="fpg-absence-day" key={"head-"+date}>
+              {absenceDays.map(({date,dateObject})=><div className={date===today?"fpg-absence-day is-today":"fpg-absence-day"} key={"head-"+date}>
                 <span>{dateObject.toLocaleDateString("en-GB",{weekday:"short"})}</span>
                 <b>{dateObject.getDate()}</b>
               </div>)}
@@ -962,12 +962,12 @@ export default function Workforce({ me }) {
                 </div>
                 {absenceDays.map(({date})=>{
                   const row=absenceFor(person.profile_id,date);
-                  if(!row) return <div className="fpg-absence-cell" key={person.profile_id+"-"+date} />;
+                  if(!row) return <div className={date===today?"fpg-absence-cell is-today":"fpg-absence-cell"} key={person.profile_id+"-"+date} />;
                   const isStart=row.start_date===date;
                   const isEnd=row.end_date===date;
                   return <div
                     key={person.profile_id+"-"+date}
-                    className={"fpg-absence-cell has-leave is-"+row.status+(isStart?" is-start":"")+(isEnd?" is-end":"")}
+                    className={"fpg-absence-cell has-leave is-"+row.status+(date===today?" is-today":"")+(isStart?" is-start":"")+(isEnd?" is-end":"")}
                     title={human(row.kind)+" leave · "+human(row.status)}
                   >
                     {isStart&&<span>{human(row.kind)} leave</span>}
