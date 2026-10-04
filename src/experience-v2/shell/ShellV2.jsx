@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar, BrandMark, Drawer, PopoverMenu } from "../components";
 import { CeacIcon } from "../icons";
-import { searchCeacRecords } from "../../lib/globalSearch";
-import { openOperationalFile } from "../../lib/operationalFiles";
 import {
   getMobilePrimaryNavigation,
   getRoleName,
@@ -232,6 +230,7 @@ function GlobalSearch({
     setError(null);
     const timer = window.setTimeout(async () => {
       try {
+        const { searchCeacRecords } = await import("../../lib/globalSearch");
         const groups = await searchCeacRecords({ query: cleaned, me, isAdmin });
         if (!cancelled) setRecordGroups(groups);
       } catch (searchError) {
@@ -282,7 +281,10 @@ function GlobalSearch({
       else if (item.kind === "announcement") onOpenAnnouncement?.(item.id);
       else if (item.kind === "ministry") onNavigate?.("strategy");
       else if (["unit", "sub_team", "room"].includes(item.kind)) onOpenRoom?.(item.context);
-      else if (item.kind === "file" && item.file) await openOperationalFile(item.file);
+      else if (item.kind === "file" && item.file) {
+        const { openOperationalFile } = await import("../../lib/operationalFiles");
+        await openOperationalFile(item.file);
+      }
       setOpen(false);
     } catch (openError) {
       setError(openError?.message || "That result could not be opened.");
