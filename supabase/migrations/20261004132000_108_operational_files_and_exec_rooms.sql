@@ -301,7 +301,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path=public
-as $
+as $$
 declare
   v_file public.operational_files;
   v_link uuid;
@@ -351,7 +351,7 @@ begin
 
   return v_link;
 end;
-$;
+$$;
 
 create or replace function public.finalize_operational_file(p_file_id uuid)
 returns uuid
