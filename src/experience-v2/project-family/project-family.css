@@ -1331,33 +1331,6 @@
 }
 
 
-.fpg-project-gold .fpg-project-tree-brand b,
-.fpg-project-gold .fpg-project-tree-list small,
-.fpg-project-gold .fpg-project-tree-stages>span,
-.fpg-project-gold .fpg-project-tree-stages button,
-.fpg-project-gold .fpg-project-tree-stages p,
-.fpg-project-gold .fpg-view-switch button,
-.fpg-project-gold .fpg-work-filters button,
-.fpg-project-gold .fpg-work-table th,
-.fpg-project-gold .fpg-work-table td,
-.fpg-project-gold .fpg-work-title small,
-.fpg-project-gold .fpg-assignee b,
-.fpg-project-gold .fpg-table-empty,
-.fpg-project-gold .fpg-drawer-open,
-.fpg-project-gold .fpg-drawer-title>span,
-.fpg-project-gold .fpg-drawer-meta dt,
-.fpg-project-gold .fpg-drawer-meta dd,
-.fpg-project-gold .fpg-drawer-section-head span,
-.fpg-project-gold .fpg-evidence-row strong,
-.fpg-project-gold .fpg-evidence-row small,
-.fpg-project-gold .fpg-evidence-row>b,
-.fpg-project-gold .fpg-drawer-tabs button,
-.fpg-project-gold .fpg-subtask-list>div,
-.fpg-project-gold .fpg-drawer-empty{
-  font-size:12px;
-}
-
-
 .fpg-project-facts{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,auto)) minmax(150px,1fr) auto;
