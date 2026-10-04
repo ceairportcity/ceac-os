@@ -197,13 +197,27 @@ Implemented:
 
 ## OCR6 — Final closure
 
-Status: **ACTIVE**
+Status: **FINAL ACCEPTANCE CANDIDATE**
 
-Current objective:
-- OCR6A responsive acceptance;
-- OCR6B security/authority acceptance and final Executive Room entry-point correction;
-- OCR6C locked workflow acceptance;
-- OCR6D side-by-side acceptance against `docs/operational-clarity/reference/APPROVED_REFERENCE.html`;
-- OCR6E protected merge and post-merge verification.
+The containing commit is the OCR6 exact-head merge candidate. OCR6 is complete only when this exact head passes the full protected Level B gate and is merged through protected-main rules.
 
-Scope remains limited to the locked Operational Clarity programme. No unrelated redesign or backend expansion is authorised.
+Implementation chain:
+- OCR6A `6ae479b93a59994a37670a69b23aa09b4bedd7ea` — locked final responsive/security/workflow/visual acceptance matrix.
+- OCR6B `173e172439677339346629b67056267dbb331202` — Executive Create → Message opens deliberate organisational Room selection instead of silently entering the Executive fixture's own Unit Room.
+- OCR6C `97146e49ce13154ae3be506427edd27657097e9d` — locked end-to-end workflow corridor for Work files, Project Files/Search, Room media, Executive Announcement/Message/Ministry Objective and record-opening Search.
+- OCR6D — this containing commit records the side-by-side visual acceptance against the approved Operational Clarity reference.
+
+Required exact-head acceptance before OCR6E:
+- CI: PASS.
+- Migration Replay: PASS.
+- Account Security: PASS.
+- Level B SQL/authority contracts: PASS.
+- browser shards 1/4–4/4: PASS.
+- exact-head product evidence merge: PASS.
+- role-and-RLS closure: PASS.
+
+OCR6E:
+- merge PR #103 only through protected-main rules;
+- re-fetch protected main;
+- confirm the final OCR6 chain is present;
+- verify protected-main required checks and report any external deployment/authentication limitation separately from application defects.
