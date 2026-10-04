@@ -114,6 +114,38 @@ Acceptance matrix:
 
 ## OCR3 — Files, media and communication
 
+Status: **ACCEPTED**
+
+Accepted exact head: `b0b5c6b4eb259cf461661a442bb19cc0ab3ad02b`.
+
+- CI: PASS.
+- Migration Replay: PASS.
+- Account Security: PASS.
+- Level B SQL/authority: PASS.
+- Browser shards 1/4–4/4: PASS.
+- Exact-head product evidence merge: PASS.
+- role-and-RLS closure: PASS.
+
+Implemented:
+- private operational file domain isolated from `ceac-hr-private`;
+- reusable signed/private operational file access;
+- Work source attachments kept distinct from submission evidence;
+- first-class Project Files surface;
+- Room media attachments and signed inline media rendering;
+- Executive organisation-wide Unit/Sub-team Room discovery/access without unrestricted private DMs;
+- Announcement attachments and discoverable Create / Messages routes;
+- operational file and Room authority security coverage.
+
+Acceptance matrix:
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY / AUTHORITY PRESERVED OR EXPLICITLY AMENDED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+- PLAIN-LANGUAGE / CLARITY ACCEPTANCE: YES
+- ACCESSIBILITY BASICS: YES
+
+## OCR4 — Global Search
+
 Status: **ACTIVE**
 
-Next: create the private operational file domain first, preserving `ceac-hr-private` isolation, then layer Work/Project/Room attachments, Executive organisational Room authority and announcement discoverability on the shared file model.
+Next: replace destination-only search with permission-aware grouped CEAC search across destinations/actions, work, projects, ministry, people, organisation, meetings, announcements, rooms and operational files.
