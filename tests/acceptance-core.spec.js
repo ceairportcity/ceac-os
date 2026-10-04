@@ -2070,7 +2070,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await page.reload();
   await page.getByRole("button", { name: /Work quiet days/ }).click();
   await page.getByRole("button", { name: "Show version history", exact: true }).click();
-  await expect(page.getByText("Acceptance policy rule version", { exact: true })).toBeVisible();
+  await expect(page.locator(".ev2c-queue-row").filter({ hasText: "Acceptance policy rule version" })).toBeVisible();
 
   await go(page, "Connected Apps");
   await expect(page.getByRole("heading", { name: "Connected Apps", exact: true })).toBeVisible();

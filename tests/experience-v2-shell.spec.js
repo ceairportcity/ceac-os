@@ -174,8 +174,9 @@ test("OCR3 Executive Messages uses intentional organisational Room discovery", a
   await page.goto("/?tab=messages");
   await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
   await page.getByRole("tab", { name: "Rooms", exact: true }).click();
-  await expect(page.getByText("Organisation Rooms", { exact: true })).toBeVisible();
-  expect(await page.locator(".inbox-room-directory .inbox-row").count()).toBeGreaterThan(0);
+  const roomDirectory = page.locator(".ev2c-data-panel").filter({ hasText: "Organisation Rooms" }).first();
+  await expect(roomDirectory).toBeVisible();
+  expect(await roomDirectory.locator("button.ev2c-queue-row").count()).toBeGreaterThan(0);
   await expect(page.getByText("This directory does not create direct messages.", { exact: false })).toBeVisible();
 });
 
