@@ -106,6 +106,8 @@ export default function App() {
   const [meetingId, setMeetingId] = useState(initialRoute.meetingId);
   const [meetingDraft, setMeetingDraft] = useState(null);
   const [createIntent, setCreateIntent] = useState(null);
+  const [peopleFocusId, setPeopleFocusId] = useState(null);
+  const [announcementFocusId, setAnnouncementFocusId] = useState(null);
   const [session, setSession] = useState(null);
 
   useEffect(() => {
@@ -146,6 +148,8 @@ export default function App() {
     setPerson(null);
     setMeetingDraft(null);
     setCreateIntent(null);
+    setPeopleFocusId(null);
+    setAnnouncementFocusId(null);
   }
 
   function navigate(route, { replace = false } = {}) {
@@ -186,6 +190,41 @@ export default function App() {
   function openItem(id) { navigate({ tab, itemId: id }); }
   function openProject(id) { navigate({ tab, projectId: id }); }
   function openMeeting(id) { navigate({ tab, meetingId: id }); }
+
+  function openSearchWork(id) {
+    navigate({ tab: "work", itemId: id });
+  }
+
+  function openSearchProject(id) {
+    if (isUnitManager) {
+      navigate({ tab: "projects", projectId: id });
+      return;
+    }
+    if (canUseDelivery) {
+      navigate({ tab: "delivery", projectId: id });
+      return;
+    }
+    navigate({ tab: "work" });
+  }
+
+  function openSearchPerson(result) {
+    if (isAdmin) {
+      navigate({ tab: "people" });
+      setPeopleFocusId(result.employeeId || result.id);
+      return;
+    }
+    if (isUnitManager && result.profileId) {
+      navigate({ tab: "team" });
+      setPerson({ id: result.profileId, focus: "current" });
+      return;
+    }
+    navigate({ tab: isExec ? "exec-organisation" : "team" });
+  }
+
+  function openSearchAnnouncement(id) {
+    navigate({ tab: "announcements" });
+    setAnnouncementFocusId(id);
+  }
 
   function openRoom(context) {
     navigate({ tab, roomContext: context });
@@ -248,7 +287,7 @@ export default function App() {
   const canUseAssets = !isExec && (isStaff || isUnitManager || hasOrgCapability("asset.manage"));
   const canUseCompliance = !isExec && (isStaff || isUnitManager || hasOrgCapability("compliance.manage"));
   const canPublishAnnouncement = isAdmin || isExec || hasCapability("post_announcement");
-  const overlay = itemId || assigning || goalId || person || projectId || roomContext || meetingId || meetingDraft;
+  const overlay = itemId || assigning || goalId || person || (projectId && isUnitManager) || roomContext || meetingId || meetingDraft;
 
   function startAssignment(context = {}) {
     if (context.projectId) setProjectId(context.projectId);
@@ -297,13 +336,15 @@ export default function App() {
       back={() => go("home")}
       createRequest={createIntent === "announcement"}
       onCreateHandled={() => setCreateIntent(null)}
+      initialAnnouncementId={announcementFocusId}
+      onInitialHandled={() => setAnnouncementFocusId(null)}
     />;
     if (tab === "strategy") return <Strategy
       me={me}
       createRequest={createIntent === "ministry_objective" ? "ministry_objective" : null}
       onCreateHandled={() => setCreateIntent(null)}
     />;
-    if (tab === "delivery" && canUseDelivery) return <Delivery me={me} />;
+    if (tab === "delivery" && canUseDelivery) return <Delivery me={me} initialProjectId={projectId} />;
     if (tab === "workload" && canUseWorkload) return <ResourceWorkload me={me} />;
     if (tab === "performance" && canUsePerformance) return <Performance me={me} />;
     if (tab === "learning" && canUseLearning) return <Learning me={me} />;
@@ -313,7 +354,12 @@ export default function App() {
     if (tab === "finance" && isAdmin) return <Finance me={me} openExpenses={() => go("cost")} />;
     if (tab === "reporting" && isAdmin) return <Reports me={me} />;
     if (tab === "attendance" && canUseWorkforce) return <Workforce me={me} />;
-    if (tab === "people" && canManagePeople) return <People me={me} openItem={openItem} />;
+    if (tab === "people" && canManagePeople) return <People
+      me={me}
+      openItem={openItem}
+      initialEmployeeId={peopleFocusId}
+      onInitialHandled={() => setPeopleFocusId(null)}
+    />;
     if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} />;
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR me={me} />;
     if (tab === "payroll" && canUsePayroll) return <AdminPayroll me={me} />;
@@ -377,6 +423,19 @@ export default function App() {
           isManager={isUnitManager}
           onProfile={() => go("me")}
           onUnitChange={switchUnit}
+          onNavigate={go}
+          onMessages={() => go("messages")}
+          onComposeMessage={() => me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
+          onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
+          onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
+          onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
+          onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
+          onOpenWork={openSearchWork}
+          onOpenProject={openSearchProject}
+          onOpenPerson={openSearchPerson}
+          onOpenMeeting={openMeeting}
+          onOpenRoom={openRoom}
+          onOpenAnnouncement={openSearchAnnouncement}
         />
         <AppTopBar
           me={me}
@@ -393,6 +452,12 @@ export default function App() {
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
           onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
           onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
+          onOpenWork={openSearchWork}
+          onOpenProject={openSearchProject}
+          onOpenPerson={openSearchPerson}
+          onOpenMeeting={openMeeting}
+          onOpenRoom={openRoom}
+          onOpenAnnouncement={openSearchAnnouncement}
         />
         <main className="app-content ev2s-content">
           <RouteTransition routeKey={routeTransitionKey}>
