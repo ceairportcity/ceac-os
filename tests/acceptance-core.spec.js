@@ -93,6 +93,7 @@ async function assignTask(page, title, step = null) {
   await page.getByRole("button", { name: "New work", exact: true }).first().click();
   await page.getByLabel("Work to complete").fill(title);
   await page.getByLabel("Why this matters").fill("Acceptance test purpose");
+  await page.getByText("Finished result", { exact: false }).filter({ hasText: "optional" }).first().click();
   await page.getByLabel("Finished result").fill("Acceptance test finished result");
   if (step) await page.getByPlaceholder("Step 1").fill(step);
   else await page.getByLabel(/No steps needed/).check();
