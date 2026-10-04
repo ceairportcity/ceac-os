@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { test, expect } from "@playwright/test";
 
 const people = fs.readFileSync(new URL("../src/screens/People.jsx", import.meta.url), "utf8");
+const protectedHrScreen = fs.readFileSync(new URL("../src/screens/AdminProtectedHR.jsx", import.meta.url), "utf8");
 const payroll = fs.readFileSync(new URL("../src/screens/AdminPayroll.jsx", import.meta.url), "utf8");
 const roleFixtures = fs.readFileSync(new URL("../scripts/seed-role-fixtures.mjs", import.meta.url), "utf8");
 const rosterMigration = fs.readFileSync(new URL("../supabase/migrations/20261003120215_employee_roster_master.sql", import.meta.url), "utf8");
@@ -33,6 +34,13 @@ test("protected HR supports roster-only employee subjects", () => {
   expect(protectedHrMigration).toContain("hr_employee_protected_record");
   expect(people).toContain('supabase.rpc("hr_employee_protected_summary"');
   expect(people).toContain('supabase.rpc("hr_employee_protected_record"');
+  expect(protectedHrScreen).toContain('supabase.rpc("admin_employee_roster_summary")');
+  expect(protectedHrScreen).toContain('supabase.rpc("hr_employee_protected_summary"');
+  expect(protectedHrScreen).toContain('supabase.rpc("hr_employee_protected_record"');
+  expect(protectedHrScreen).toContain("ComposerDrawer");
+  expect(protectedHrScreen).toContain("Show version history");
+  expect(protectedHrScreen).toContain("Roster only · no account linked");
+  expect(protectedHrScreen).not.toContain('supabase.from("profiles")');
 });
 
 test("Payroll snapshots employees rather than auth profiles", () => {

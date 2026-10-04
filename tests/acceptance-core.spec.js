@@ -2017,15 +2017,17 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Protected HR");
   await expect(page.getByRole("heading", { name: "Protected HR", exact: true })).toBeVisible();
-  await page.getByLabel("Protected HR employee").selectOption("31000000-0000-4000-8000-000000000001");
-  await page.getByLabel("Protected HR record type").selectOption("identifier");
-  await page.getByLabel("Identifier type").fill("Acceptance ID");
-  await page.getByLabel("Identifier value").fill("ACCEPTANCE-001");
-  await page.getByLabel("Protected HR reason").fill("Acceptance protected HR record");
-  await page.getByRole("button", { name: "Save protected record", exact: true }).click();
+  await page.getByLabel("Protected HR employee").selectOption({ label: "Staff Fixture · staff@ceac.local.test" });
+  await page.getByRole("button", { name: "Add protected record", exact: true }).click();
+  const protectedDialog = page.getByRole("dialog", { name: "Add protected HR record" });
+  await protectedDialog.getByLabel("Protected HR record type").selectOption("identifier");
+  await protectedDialog.getByLabel("Identifier type").fill("Acceptance ID");
+  await protectedDialog.getByLabel("Identifier value").fill("ACCEPTANCE-001");
+  await protectedDialog.getByLabel("Protected HR reason").fill("Acceptance protected HR record");
+  await protectedDialog.getByRole("button", { name: "Save protected record", exact: true }).click();
   await expect(page.getByText("Protected HR record saved.", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Acceptance ID · Active/).first()).toBeVisible();
-  await expect(page.getByText("ACCEPTANCE-001", { exact: true })).toBeVisible();
+  await expect(page.getByText("Acceptance ID", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/ACCEPTANCE-001/).first()).toBeVisible();
   await page.reload();
   await expect(page.getByText("ACCEPTANCE-001", { exact: true })).toBeVisible();
 
