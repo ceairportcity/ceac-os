@@ -4,6 +4,7 @@ import {
   formatOperationalFileSize,
   listOperationalFiles,
   openOperationalFile,
+  signedOperationalFileUrl,
   uploadOperationalFiles,
   validateOperationalFile,
 } from "../lib/operationalFiles";
@@ -103,4 +104,47 @@ export function OperationalFileList({
       <div className="row-note">Private CEAC file · open with a short-lived signed link</div>
     </button>)}
   </section>;
+}
+
+
+export function OperationalMediaList({ files = [] }) {
+  const [urls, setUrls] = useState({});
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadUrls() {
+      if (!files.length) { setUrls({}); return; }
+      try {
+        const pairs = await Promise.all(files.map(async (file) => [file.id, await signedOperationalFileUrl(file, 300)]));
+        if (!cancelled) { setUrls(Object.fromEntries(pairs)); setError(null); }
+      } catch (err) {
+        if (!cancelled) setError(err.message || "Private media could not be prepared.");
+      }
+    }
+    loadUrls();
+    return () => { cancelled = true; };
+  }, [files.map((file) => file.id).join("|")]);
+
+  if (!files.length) return null;
+  return <div className="operational-media-list">
+    {files.map((file) => {
+      const url = urls[file.id];
+      if (file.mime_type?.startsWith("image/") && url) return <figure className="operational-media-image" key={file.id}>
+        <img src={url} alt={file.filename} loading="lazy" />
+        <figcaption>{file.filename} · {formatOperationalFileSize(file.size_bytes)}</figcaption>
+      </figure>;
+      if (file.mime_type?.startsWith("audio/") && url) return <div className="operational-media-audio" key={file.id}>
+        <strong>{file.filename}</strong><audio controls preload="metadata" src={url} />
+      </div>;
+      if (file.mime_type?.startsWith("video/") && url) return <div className="operational-media-video" key={file.id}>
+        <video controls preload="metadata" src={url} aria-label={file.filename} />
+        <span>{file.filename}</span>
+      </div>;
+      return <button type="button" className="operational-media-file" key={file.id} onClick={() => openOperationalFile(file)}>
+        <strong>{file.filename}</strong><span>{formatOperationalFileSize(file.size_bytes)} · private CEAC file</span>
+      </button>;
+    })}
+    {error && <div className="hint" role="alert">{error}</div>}
+  </div>;
 }
