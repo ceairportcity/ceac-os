@@ -1,6 +1,6 @@
 # CEAC OS — Operational Clarity Build Sequence
 
-Status: **LOCKED NEXT-PHASE SEQUENCE**  
+Status: **LOCKED NEXT-PHASE SEQUENCE**
 Parent specification: `CEAC_OS_OPERATIONAL_CLARITY_REFINEMENT_LOCK_v1.md`
 
 The sequence is intentionally short and dependency-aware. Do not inflate this into another broad redesign programme.
