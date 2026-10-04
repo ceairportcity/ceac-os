@@ -16,7 +16,9 @@ test.describe("Premium redesign R2 Manager",()=>{
     const {context,page}=await openAs(browser);
     await expect(page.locator(".managerv2")).toBeVisible();
     await expect(page.locator(".managerv2-main")).toBeVisible({timeout:15000});
-    await expect(page.locator(".managerv2-decisions")).toBeVisible();
+    await expect(page.locator(".fpg9-home-reference")).toBeVisible();
+    await expect(page.locator(".fpg9-workspace-previews")).toBeVisible();
+    await expect(page.locator(".managerv2-decisions")).toHaveCount(0);
     await expect(page.getByRole("button",{name:"Give out work",exact:true})).toBeVisible();
     await expect(page.locator(".reference-module-strip")).toHaveCount(0);
     await page.screenshot({path:"test-artifacts/redesign-r2-manager-overview.png",fullPage:true});
@@ -50,10 +52,16 @@ test.describe("Premium redesign R2 Manager",()=>{
     const {context,page}=await openAs(browser,{width:390,height:844});
     await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
     await expect(page.locator(".managerv2-main")).toBeVisible({timeout:15000});
-    await expect(page.locator(".managerv2-decisions")).toBeVisible();
+    await expect(page.locator(".fpg9-mobile-shortcuts")).toBeVisible();
+    await expect(page.locator(".fpg9-attention-card")).toBeVisible();
+    await expect(page.locator(".managerv2-decisions")).toHaveCount(0);
     await expect(page.locator(".reference-module-strip")).toHaveCount(0);
-    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(1);
+    const geometry=await page.evaluate(()=>({
+      overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+      height:document.documentElement.scrollHeight,
+    }));
+    expect(geometry.overflow).toBeLessThanOrEqual(1);
+    expect(geometry.height).toBeLessThanOrEqual(1300);
     await page.screenshot({path:"test-artifacts/redesign-r2-manager-mobile.png",fullPage:true});
     await context.close();
   });
