@@ -115,12 +115,6 @@ button.fpg9-home-row:hover{background:#f8fafb}
 .fpg9-preview-card .fpg9-home-row{min-height:44px}
 
 /* Existing operating record: shared V2 primitives provide row/card styling. */
-.managerv2-command-grid,.managerv2-context-grid,.managerv2-operational-grid,.managerv2-secondary-grid{display:grid;gap:12px;align-items:start}
-.managerv2-command-grid{grid-template-columns:minmax(0,1.55fr) minmax(18rem,.72fr)}
-.managerv2-context-grid{grid-template-columns:minmax(20rem,.82fr) minmax(0,1.18fr)}
-.managerv2-operational-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))}
-.managerv2-secondary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-.managerv2-panel-actions{display:flex;align-items:center;gap:8px}
 .managerv2-count{min-width:28px;height:28px;display:inline-grid;place-items:center;padding:0 7px;border-radius:999px;background:var(--ev2-surface-muted);color:var(--ev2-text-secondary);font-weight:700}
 .managerv2-count.is-attention{background:var(--ev2-warning-soft);color:var(--ev2-warning)}
 .managerv2-count.is-success{background:var(--ev2-success-soft);color:var(--ev2-success)}
@@ -131,7 +125,6 @@ button.fpg9-home-row:hover{background:#f8fafb}
 .managerv2-decision-meta,.managerv2-project-main small,.managerv2-dependency-main small{color:var(--ev2-text-secondary)}
 .managerv2-decision-actions{grid-column:2/-1;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
 .managerv2-row-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:var(--ev2-surface-muted);color:var(--ev2-text-secondary)}
-.managerv2-pulse-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;overflow:hidden;border:1px solid var(--ev2-line);border-radius:10px;background:var(--ev2-line)}
 .managerv2-pulse-fact{min-height:72px;display:grid;align-content:center;gap:3px;padding:10px;border:0;background:var(--ev2-surface);text-align:left}
 .managerv2-pulse-fact strong{font-size:20px}.managerv2-pulse-fact span,.managerv2-pulse-fact small{}
 .managerv2-pulse-fact.is-action strong{color:var(--ev2-action)}.managerv2-pulse-fact.is-success strong{color:var(--ev2-success)}.managerv2-pulse-fact.is-warning strong{color:var(--ev2-warning)}

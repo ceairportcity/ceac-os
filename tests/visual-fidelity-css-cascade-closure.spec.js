@@ -95,21 +95,24 @@ test("VF9B accepted Manager composition wins the live cascade at 1366", async ({
   await signIn(page, { email: "manager@ceac.local.test", app: ".manager-app" });
 
   await expect(page.locator(".managerv2")).toBeVisible();
-  const panel = page.locator(".managerv2-panel").first();
-  await expect(panel).toBeVisible();
+  const reference = page.locator(".fpg9-home-reference");
+  const nextCard = page.locator(".fpg9-next-card");
+  await expect(reference).toBeVisible();
+  await expect(nextCard).toBeVisible();
 
   const geometry = await page.evaluate(() => {
-    const panel = document.querySelector(".managerv2-panel");
+    const reference = document.querySelector(".fpg9-home-reference");
+    const nextCard = document.querySelector(".fpg9-next-card");
     const body = document.querySelector(".app-content .body");
     const sidebar = document.querySelector(".ev2s-sidebar");
     const workspace = document.querySelector(".ev2s-workspace");
-    const panelStyle = panel ? getComputedStyle(panel) : null;
     const bodyRect = body?.getBoundingClientRect();
     const sidebarRect = sidebar?.getBoundingClientRect();
     const workspaceRect = workspace?.getBoundingClientRect();
     return {
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      panelShadow: panelStyle?.boxShadow || "",
+      referenceDisplay: reference ? getComputedStyle(reference).display : "",
+      nextCardDisplay: nextCard ? getComputedStyle(nextCard).display : "",
       bodyWidth: bodyRect?.width || 0,
       seam: Math.abs((sidebarRect?.right || 0) - (workspaceRect?.left || 0)),
       controlMin: getComputedStyle(document.documentElement).getPropertyValue("--ev2-control-min").trim(),
@@ -117,7 +120,8 @@ test("VF9B accepted Manager composition wins the live cascade at 1366", async ({
   });
 
   expect(geometry.overflow).toBeLessThanOrEqual(1);
-  expect(geometry.panelShadow).toBe("none");
+  expect(geometry.referenceDisplay).toBe("grid");
+  expect(geometry.nextCardDisplay).toBe("grid");
   expect(geometry.bodyWidth).toBeLessThanOrEqual(1281);
   expect(geometry.seam).toBeLessThanOrEqual(1);
   expect(geometry.controlMin).toBe("2.75rem");
