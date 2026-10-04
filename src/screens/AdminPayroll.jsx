@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { Avatar, EmptyState, FieldGroup, LoadingState, ProductNotice, Sheet } from "../components/bits";
+import { Avatar, EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
+import { Button, ComposerDrawer } from "../experience-v2/components";
 
 const LINE_TYPES = [
   ["transport_allowance","addition","Transport allowance"],
@@ -300,20 +301,32 @@ function CreateRunSheet({ busy, onClose, onSave }) {
   const [payDate,setPayDate]=useState("");
   const [currency,setCurrency]=useState("GHS");
   const [note,setNote]=useState("");
-  return <Sheet onClose={onClose}>
-    <div className="eyebrow">Administration preparation</div><div className="h2">Create Payroll run</div>
-    <FieldGroup label="Period label"><input className="field" value={label} onChange={(e)=>setLabel(e.target.value)} placeholder="October 2026 Payroll" /></FieldGroup>
+  const valid=Boolean(label.trim() && start && end && end>=start);
+
+  return <ComposerDrawer
+    open
+    onClose={onClose}
+    title="Create Payroll run"
+    description="Administration prepares the draft from protected employee records. Creating a run does not approve it."
+    footer={<>
+      <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
+      <Button onClick={()=>onSave({label,start,end,payDate,currency,note})} busy={busy} disabled={!valid}>
+        Create draft Payroll
+      </Button>
+    </>}
+  >
+    <FieldGroup label="Period label"><input className="field" value={label} onChange={(event)=>setLabel(event.target.value)} placeholder="October 2026 Payroll" /></FieldGroup>
     <div className="fpg-payroll-form-grid">
-      <FieldGroup label="Period start"><input className="field" type="date" value={start} onChange={(e)=>setStart(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Period end"><input className="field" type="date" value={end} onChange={(e)=>setEnd(e.target.value)} /></FieldGroup>
+      <FieldGroup label="Period start"><input className="field" type="date" value={start} onChange={(event)=>setStart(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Period end"><input className="field" type="date" value={end} onChange={(event)=>setEnd(event.target.value)} /></FieldGroup>
     </div>
     <div className="fpg-payroll-form-grid">
-      <FieldGroup label="Currency"><select className="field" value={currency} onChange={(e)=>setCurrency(e.target.value)}>{["GHS","USD","GBP","EUR","NGN","ZAR","CAD"].map((value)=><option key={value}>{value}</option>)}</select></FieldGroup>
-      <FieldGroup label="Pay date" hint="Optional until CEAC confirms its normal pay cycle."><input className="field" type="date" value={payDate} onChange={(e)=>setPayDate(e.target.value)} /></FieldGroup>
+      <FieldGroup label="Currency"><select className="field" value={currency} onChange={(event)=>setCurrency(event.target.value)}>{["GHS","USD","GBP","EUR","NGN","ZAR","CAD"].map((value)=><option key={value}>{value}</option>)}</select></FieldGroup>
+      <FieldGroup label="Pay date" hint="Optional until CEAC confirms its normal pay cycle."><input className="field" type="date" value={payDate} onChange={(event)=>setPayDate(event.target.value)} /></FieldGroup>
     </div>
-    <FieldGroup label="Preparation note"><textarea className="field" rows="3" value={note} onChange={(e)=>setNote(e.target.value)} placeholder="Context for this Payroll run" /></FieldGroup>
-    <button className="btn" disabled={busy || !label.trim() || !start || !end || end < start} onClick={()=>onSave({label,start,end,payDate,currency,note})}>{busy ? "Creating…" : "Create draft Payroll"}</button>
-  </Sheet>;
+    <FieldGroup label="Preparation note"><textarea className="field" rows="3" value={note} onChange={(event)=>setNote(event.target.value)} placeholder="Context for this Payroll run" /></FieldGroup>
+    <ProductNotice tone="info" title="Preparation is not approval">Administration prepares. The Group Pastor / CEO remains the approval authority.</ProductNotice>
+  </ComposerDrawer>;
 }
 
 function EntrySheet({ entry, busy, onClose, onSave, onRemove }) {
@@ -323,38 +336,88 @@ function EntrySheet({ entry, busy, onClose, onSave, onRemove }) {
   const [label,setLabel]=useState(initial?.[2] || "");
   const [amount,setAmount]=useState("");
   const [note,setNote]=useState("");
+
   function choose(value) {
     const row=LINE_TYPES.find(([key])=>key===value);
-    setCategory(value); setDirection(row?.[1] || "addition"); setLabel(row?.[2] || "");
+    setCategory(value);
+    setDirection(row?.[1] || "addition");
+    setLabel(row?.[2] || "");
   }
-  return <Sheet onClose={onClose}>
-    <div className="eyebrow">Draft Payroll · {entry.employee_name}</div><div className="h2">Employee adjustments</div>
-    <div className="fpg-payroll-entry-summary"><span>Additions <b>{money(entry.additions_minor,entry.currency)}</b></span><span>Deductions <b>{money(entry.deductions_minor,entry.currency)}</b></span><span>Net <b>{money(entry.net_minor,entry.currency)}</b></span></div>
-    {entry.lines?.length ? <div className="fpg-payroll-lines">{entry.lines.map((line)=><div key={line.id}><span><strong>{line.label}</strong><small>{line.category.replaceAll("_"," ")} · {line.source}</small></span><b>{line.direction==="deduction" ? "−" : "+"}{money(line.amount_minor,entry.currency)}</b>{line.category!=="base_salary"&&<button type="button" disabled={busy} onClick={()=>onRemove(entry,line)}>Remove</button>}</div>)}</div> : <EmptyState compact title="No payroll lines">Add an authoritative line below.</EmptyState>}
+
+  const valid=Boolean(label.trim() && amountToMinor(amount)>0);
+
+  return <ComposerDrawer
+    open
+    onClose={onClose}
+    title="Employee adjustments"
+    description={`Draft Payroll · ${entry.employee_name}. Add only an authoritative line; attendance and leave never create an automatic deduction.`}
+    footer={<>
+      <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
+      <Button
+        onClick={()=>onSave({employeeId:entry.employee_id || entry.profile_id,category,direction,label,amount,note})}
+        busy={busy}
+        disabled={!valid}
+      >
+        Add Payroll line
+      </Button>
+    </>}
+  >
+    <div className="fpg-payroll-entry-summary">
+      <span>Additions <b>{money(entry.additions_minor,entry.currency)}</b></span>
+      <span>Deductions <b>{money(entry.deductions_minor,entry.currency)}</b></span>
+      <span>Net <b>{money(entry.net_minor,entry.currency)}</b></span>
+    </div>
+    {entry.lines?.length ? <div className="fpg-payroll-lines">{entry.lines.map((line)=><div key={line.id}>
+      <span><strong>{line.label}</strong><small>{line.category.replaceAll("_"," ")} · {line.source}</small></span>
+      <b>{line.direction==="deduction" ? "−" : "+"}{money(line.amount_minor,entry.currency)}</b>
+      {line.category!=="base_salary"&&<button type="button" disabled={busy} onClick={()=>onRemove(entry,line)}>Remove</button>}
+    </div>)}</div> : <EmptyState compact title="No payroll lines">Add an authoritative line below.</EmptyState>}
     <div className="sec"><span>Add a line</span></div>
-    <FieldGroup label="Type"><select className="field" value={category} onChange={(e)=>choose(e.target.value)}>{LINE_TYPES.map(([key,,text])=><option key={key} value={key}>{text}</option>)}</select></FieldGroup>
-    {category==="correction"&&<FieldGroup label="Direction"><select className="field" value={direction} onChange={(e)=>setDirection(e.target.value)}><option value="addition">Addition</option><option value="deduction">Deduction</option></select></FieldGroup>}
-    <FieldGroup label="Label"><input className="field" value={label} onChange={(e)=>setLabel(e.target.value)} /></FieldGroup>
-    <FieldGroup label={"Amount ("+entry.currency+")"}><input className="field" inputMode="decimal" value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="0.00" /></FieldGroup>
-    <FieldGroup label="Reason / source note"><textarea className="field" rows="3" value={note} onChange={(e)=>setNote(e.target.value)} placeholder="Why this line is authoritative" /></FieldGroup>
-    <button className="btn" disabled={busy || !label.trim() || amountToMinor(amount)<=0} onClick={()=>onSave({employeeId:entry.employee_id || entry.profile_id,category,direction,label,amount,note})}>{busy ? "Saving…" : "Add Payroll line"}</button>
-  </Sheet>;
+    <FieldGroup label="Type"><select className="field" value={category} onChange={(event)=>choose(event.target.value)}>{LINE_TYPES.map(([key,,text])=><option key={key} value={key}>{text}</option>)}</select></FieldGroup>
+    {category==="correction"&&<FieldGroup label="Direction"><select className="field" value={direction} onChange={(event)=>setDirection(event.target.value)}><option value="addition">Addition</option><option value="deduction">Deduction</option></select></FieldGroup>}
+    <FieldGroup label="Label"><input className="field" value={label} onChange={(event)=>setLabel(event.target.value)} /></FieldGroup>
+    <FieldGroup label={`Amount (${entry.currency})`}><input className="field" inputMode="decimal" value={amount} onChange={(event)=>setAmount(event.target.value)} placeholder="0.00" /></FieldGroup>
+    <FieldGroup label="Reason / source note"><textarea className="field" rows="3" value={note} onChange={(event)=>setNote(event.target.value)} placeholder="Why this line is authoritative" /></FieldGroup>
+  </ComposerDrawer>;
 }
 
 function ViewEntrySheet({ entry, onClose }) {
-  return <Sheet onClose={onClose}>
-    <div className="eyebrow">Protected employee Payroll</div><div className="h2">{entry.employee_name}</div>
-    <div className="fpg-payroll-entry-summary"><span>Additions <b>{money(entry.additions_minor,entry.currency)}</b></span><span>Deductions <b>{money(entry.deductions_minor,entry.currency)}</b></span><span>Net <b>{money(entry.net_minor,entry.currency)}</b></span></div>
-    {entry.flags?.length ? <ProductNotice tone="attention" title="Needs review">{entry.flags.map((flag)=>flag.replaceAll("_"," ")).join(" · ")}</ProductNotice> : <ProductNotice tone="success" title="No blocking calculation flag">The recorded employee lines are internally consistent.</ProductNotice>}
-    <div className="fpg-payroll-lines">{(entry.lines||[]).map((line)=><div key={line.id}><span><strong>{line.label}</strong><small>{line.category.replaceAll("_"," ")} · {line.source}</small></span><b>{line.direction==="deduction" ? "−" : "+"}{money(line.amount_minor,entry.currency)}</b></div>)}</div>
-  </Sheet>;
+  return <ComposerDrawer
+    open
+    onClose={onClose}
+    title={entry.employee_name}
+    description="Protected employee Payroll review. This view does not grant preparation or approval authority."
+    footer={<Button variant="secondary" onClick={onClose}>Close</Button>}
+  >
+    <div className="fpg-payroll-entry-summary">
+      <span>Additions <b>{money(entry.additions_minor,entry.currency)}</b></span>
+      <span>Deductions <b>{money(entry.deductions_minor,entry.currency)}</b></span>
+      <span>Net <b>{money(entry.net_minor,entry.currency)}</b></span>
+    </div>
+    {entry.flags?.length
+      ? <ProductNotice tone="attention" title="Needs review">{entry.flags.map((flag)=>flag.replaceAll("_"," ")).join(" · ")}</ProductNotice>
+      : <ProductNotice tone="success" title="No blocking calculation flag">The recorded employee lines are internally consistent.</ProductNotice>}
+    <div className="fpg-payroll-lines">{(entry.lines||[]).map((line)=><div key={line.id}>
+      <span><strong>{line.label}</strong><small>{line.category.replaceAll("_"," ")} · {line.source}</small></span>
+      <b>{line.direction==="deduction" ? "−" : "+"}{money(line.amount_minor,entry.currency)}</b>
+    </div>)}</div>
+  </ComposerDrawer>;
 }
 
 function DecisionSheet({ title, action, busy, onClose, onSave }) {
   const [note,setNote]=useState("");
-  return <Sheet onClose={onClose}>
-    <div className="eyebrow">Attributable Payroll decision</div><div className="h2">{title}</div>
-    <FieldGroup label="Decision note"><textarea className="field" rows="4" value={note} onChange={(e)=>setNote(e.target.value)} placeholder="Record the reason and review context" /></FieldGroup>
-    <button className="btn" disabled={busy || note.trim().length<3} onClick={()=>onSave(note)}>{busy ? "Saving…" : action}</button>
-  </Sheet>;
+  const valid=note.trim().length>=3;
+  return <ComposerDrawer
+    open
+    onClose={onClose}
+    title={title}
+    description="Attributable Payroll decision. Existing preparation and approval authority remains unchanged."
+    footer={<>
+      <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
+      <Button onClick={()=>onSave(note)} busy={busy} disabled={!valid}>{action}</Button>
+    </>}
+  >
+    <FieldGroup label="Decision note"><textarea className="field" rows="4" value={note} onChange={(event)=>setNote(event.target.value)} placeholder="Record the reason and review context" /></FieldGroup>
+    <p className="screen-note">Approved Payroll is immutable. Corrections create a new attributable successor revision.</p>
+  </ComposerDrawer>;
 }
