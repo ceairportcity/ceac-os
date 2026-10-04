@@ -12,6 +12,7 @@ import {
   signedOperationalFileUrl,
   uploadOperationalFile,
 } from "../lib/operationalFiles";
+import { Button, ComposerDrawer } from "../experience-v2/components";
 import {
   PeopleAdminPersonRow,
   PeopleBackButton,
@@ -346,7 +347,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
       p_employee_id: person.employee_id,
       p_record_type: form.recordType,
       p_payload: form.payload,
-      p_replaces_id: null,
+      p_replaces_id: form.replacesId || null,
       p_reason: form.reason,
     });
     if (saveError) {
@@ -780,17 +781,17 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
               <div>
                 <span>Salary & payroll</span>
                 <strong>{compensation ? `${protectedMoney(compensation.amount_minor, compensation.currency)} · ${compensation.basis_label}` : "Not recorded"}</strong>
-                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor("compensation")}>{compensation ? "Record change" : "Record salary"}</button>
+                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor({ type:"compensation", record:compensation })}>{compensation ? "Record change" : "Record salary"}</button>
               </div>
               <div>
                 <span>Payment details</span>
                 <strong>{payment ? `${payment.provider_name} · ${payment.account_name} · ${payment.account_reference}` : "Not recorded"}</strong>
-                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor("payment_detail")}>{payment ? "Record change" : "Record payment details"}</button>
+                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor({ type:"payment_detail", record:payment })}>{payment ? "Record change" : "Record payment details"}</button>
               </div>
               <div>
                 <span>Protected identifiers</span>
                 <strong>{identifiers.length ? `${identifiers.length} active record${identifiers.length === 1 ? "" : "s"}` : "Not recorded"}</strong>
-                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor("identifier")}>Record identifier</button>
+                <button type="button" className="ev2p-admin-record-change" onClick={() => setProtectedEditor({ type:"identifier", record:null })}>Record identifier</button>
               </div>
               <div>
                 <span>Contracts & documents</span>
@@ -812,8 +813,9 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         </div>
       </div>
 
-      {protectedEditor && <ProtectedHrSheet
-        type={protectedEditor}
+      {protectedEditor && <ProtectedHrComposer
+        type={protectedEditor.type}
+        record={protectedEditor.record}
         employee={person}
         busy={savingProtected}
         onClose={() => { if (!savingProtected) setProtectedEditor(null); }}
@@ -1089,19 +1091,19 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
 }
 
 
-function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
-  const [amount,setAmount]=useState("");
-  const [currency,setCurrency]=useState("GHS");
-  const [basisLabel,setBasisLabel]=useState("Monthly salary");
-  const [effectiveOn,setEffectiveOn]=useState(new Date().toISOString().slice(0,10));
-  const [providerName,setProviderName]=useState("");
-  const [accountName,setAccountName]=useState("");
-  const [accountReference,setAccountReference]=useState("");
-  const [branchReference,setBranchReference]=useState("");
-  const [identifierType,setIdentifierType]=useState("Ghana Card");
-  const [identifierValue,setIdentifierValue]=useState("");
-  const [issuedOn,setIssuedOn]=useState("");
-  const [expiresOn,setExpiresOn]=useState("");
+function ProtectedHrComposer({ type, record, employee, busy, onClose, onSave }) {
+  const [amount,setAmount]=useState(record?.amount_minor == null ? "" : String(Number(record.amount_minor) / 100));
+  const [currency,setCurrency]=useState(record?.currency || "GHS");
+  const [basisLabel,setBasisLabel]=useState(record?.basis_label || "Monthly salary");
+  const [effectiveOn,setEffectiveOn]=useState(record?.effective_on || new Date().toISOString().slice(0,10));
+  const [providerName,setProviderName]=useState(record?.provider_name || "");
+  const [accountName,setAccountName]=useState(record?.account_name || "");
+  const [accountReference,setAccountReference]=useState(record?.account_reference || "");
+  const [branchReference,setBranchReference]=useState(record?.branch_reference || "");
+  const [identifierType,setIdentifierType]=useState(record?.identifier_type || "Ghana Card");
+  const [identifierValue,setIdentifierValue]=useState(record?.identifier_value || "");
+  const [issuedOn,setIssuedOn]=useState(record?.issued_on || "");
+  const [expiresOn,setExpiresOn]=useState(record?.expires_on || "");
   const [reason,setReason]=useState("");
 
   const valid = reason.trim().length >= 3 && (
@@ -1113,10 +1115,11 @@ function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
 
   function submit() {
     if (!valid) return;
+    const common={ replacesId:record?.id || null, reason:reason.trim() };
     if (type === "compensation") {
       onSave({
+        ...common,
         recordType:"compensation",
-        reason:reason.trim(),
         payload:{
           amount_minor:amountToMinor(amount),
           currency,
@@ -1128,8 +1131,8 @@ function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
     }
     if (type === "payment_detail") {
       onSave({
+        ...common,
         recordType:"payment_detail",
-        reason:reason.trim(),
         payload:{
           payment_type:"bank",
           provider_name:providerName.trim(),
@@ -1141,8 +1144,8 @@ function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
       return;
     }
     onSave({
+      ...common,
       recordType:"identifier",
-      reason:reason.trim(),
       payload:{
         identifier_type:identifierType.trim(),
         identifier_value:identifierValue.trim(),
@@ -1152,33 +1155,46 @@ function ProtectedHrSheet({ type, employee, busy, onClose, onSave }) {
     });
   }
 
-  return <Sheet onClose={onClose}>
-    <div className="eyebrow">Protected HR · {employee.full_name}</div>
-    <div className="h2">{type === "compensation" ? "Record salary / compensation" : type === "payment_detail" ? "Record payment details" : "Record protected identifier"}</div>
-    <p className="screen-note">This writes an attributable protected-HR record. Existing history is not silently overwritten.</p>
+  const title=record
+    ? "Correct protected HR record"
+    : type === "compensation"
+      ? "Record salary / compensation"
+      : type === "payment_detail"
+        ? "Record payment details"
+        : "Record protected identifier";
 
+  return <ComposerDrawer
+    open
+    onClose={onClose}
+    title={title}
+    description={`Protected HR · ${employee.full_name}. This creates an attributable record; corrections preserve the earlier version.`}
+    footer={<>
+      <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
+      <Button onClick={submit} busy={busy} disabled={!valid}>{record ? "Record correction" : "Record protected HR"}</Button>
+    </>}
+  >
     {type === "compensation" && <>
-      <FieldGroup label="Amount"><input className="field" inputMode="decimal" value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="0.00" /></FieldGroup>
-      <FieldGroup label="Currency"><select className="field" value={currency} onChange={(e)=>setCurrency(e.target.value)}>{["GHS","USD","GBP","EUR","NGN","ZAR","CAD"].map((value)=><option key={value}>{value}</option>)}</select></FieldGroup>
-      <FieldGroup label="Basis"><input className="field" value={basisLabel} onChange={(e)=>setBasisLabel(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Effective date"><input className="field" type="date" value={effectiveOn} onChange={(e)=>setEffectiveOn(e.target.value)} /></FieldGroup>
+      <FieldGroup label="Amount"><input className="field" inputMode="decimal" value={amount} onChange={(event)=>setAmount(event.target.value)} placeholder="0.00" /></FieldGroup>
+      <FieldGroup label="Currency"><select className="field" value={currency} onChange={(event)=>setCurrency(event.target.value)}>{["GHS","USD","GBP","EUR","NGN","ZAR","CAD"].map((value)=><option key={value}>{value}</option>)}</select></FieldGroup>
+      <FieldGroup label="Basis"><input className="field" value={basisLabel} onChange={(event)=>setBasisLabel(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Effective date"><input className="field" type="date" value={effectiveOn} onChange={(event)=>setEffectiveOn(event.target.value)} /></FieldGroup>
     </>}
 
     {type === "payment_detail" && <>
-      <FieldGroup label="Bank / provider"><input className="field" value={providerName} onChange={(e)=>setProviderName(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Account name"><input className="field" value={accountName} onChange={(e)=>setAccountName(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Account number / reference"><input className="field" value={accountReference} onChange={(e)=>setAccountReference(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Branch / routing reference" hint="Optional"><input className="field" value={branchReference} onChange={(e)=>setBranchReference(e.target.value)} /></FieldGroup>
+      <FieldGroup label="Bank / provider"><input className="field" value={providerName} onChange={(event)=>setProviderName(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Account name"><input className="field" value={accountName} onChange={(event)=>setAccountName(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Account number / reference"><input className="field" value={accountReference} onChange={(event)=>setAccountReference(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Branch / routing reference" hint="Optional"><input className="field" value={branchReference} onChange={(event)=>setBranchReference(event.target.value)} /></FieldGroup>
     </>}
 
     {type === "identifier" && <>
-      <FieldGroup label="Identifier type"><select className="field" value={identifierType} onChange={(e)=>setIdentifierType(e.target.value)}><option>Ghana Card</option><option>SSNIT</option><option>TIN</option><option>Other identifier</option></select></FieldGroup>
-      <FieldGroup label="Identifier value"><input className="field" value={identifierValue} onChange={(e)=>setIdentifierValue(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Issued on" hint="Optional"><input className="field" type="date" value={issuedOn} onChange={(e)=>setIssuedOn(e.target.value)} /></FieldGroup>
-      <FieldGroup label="Expires on" hint="Optional"><input className="field" type="date" value={expiresOn} onChange={(e)=>setExpiresOn(e.target.value)} /></FieldGroup>
+      <FieldGroup label="Identifier type"><select className="field" value={identifierType} onChange={(event)=>setIdentifierType(event.target.value)}><option>Ghana Card</option><option>SSNIT</option><option>TIN</option><option>Other identifier</option></select></FieldGroup>
+      <FieldGroup label="Identifier value"><input className="field" value={identifierValue} onChange={(event)=>setIdentifierValue(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Issued on" hint="Optional"><input className="field" type="date" value={issuedOn} onChange={(event)=>setIssuedOn(event.target.value)} /></FieldGroup>
+      <FieldGroup label="Expires on" hint="Optional"><input className="field" type="date" value={expiresOn} onChange={(event)=>setExpiresOn(event.target.value)} /></FieldGroup>
     </>}
 
-    <FieldGroup label="Reason / source"><textarea className="field" rows="3" value={reason} onChange={(e)=>setReason(e.target.value)} placeholder="Why this value is authoritative" /></FieldGroup>
-    <button className="btn" disabled={busy || !valid} onClick={submit}>{busy ? "Recording…" : "Record protected HR"}</button>
-  </Sheet>;
+    <FieldGroup label="Reason / source"><textarea className="field" rows="3" value={reason} onChange={(event)=>setReason(event.target.value)} placeholder="Why this value is authoritative" /></FieldGroup>
+    <p className="screen-note">Protected values are never inferred from role, attendance, work output or Payroll state.</p>
+  </ComposerDrawer>;
 }

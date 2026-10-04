@@ -50,7 +50,9 @@ function protectedMoney(minor, currency = "GHS") {
 }
 
 function amountToMinor(value) {
-  const number = Number(String(value || "").replace(/,/g,""));
+  const cleaned=String(value ?? "").replace(/,/g,"").trim();
+  if(!cleaned) return null;
+  const number=Number(cleaned);
   return Number.isFinite(number) ? Math.round(number * 100) : null;
 }
 

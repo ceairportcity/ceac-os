@@ -471,6 +471,11 @@ test("Stage 10 Family B5B Administration employee workspace preserves employment
   expect(screen).toContain("These records are not a productivity score, ranking, pay input or disciplinary conclusion.");
   expect(screen).toContain('rpc("hr_employee_protected_summary"');
   expect(screen).toContain('rpc("hr_employee_protected_record"');
+  expect(screen).toContain("ProtectedHrComposer");
+  expect(screen).toContain("ComposerDrawer");
+  expect(screen).toContain("p_replaces_id: form.replacesId || null");
+  expect(screen).toContain('setProtectedEditor({ type:"compensation", record:compensation })');
+  expect(screen).not.toContain("function ProtectedHrSheet");
   expect(screen).toContain('listOperationalFilesForContexts("employee_photo"');
   expect(screen).toContain('listOperationalFiles("employee_document"');
   expect(screen).toContain('contextType: kind === "photo" ? "employee_photo" : "employee_document"');
