@@ -40,7 +40,7 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
 
   expect(view).toContain('from "../components"');
   expect(view).toContain('from "../icons"');
-  expect(view).toContain("Senior attention");
+  expect(view).toContain("Needs your attention");
   expect(view).toContain("These are records, not scores");
   expect(view).toContain("Remains with authorised managers unless escalated");
   expect(view).not.toContain("ReferenceDashboard");
@@ -73,6 +73,11 @@ for (const viewport of [
     await expect(page.locator(".executivev2-direction")).toBeVisible();
     await expect(page.locator(".executivev2-governance")).toBeVisible();
     await expect(page.locator(".executivev2-delivery")).toBeVisible();
+    await expect(page.locator(".executivev2-organisation")).toBeVisible();
+    const order = await page.locator(".executivev2-main > *").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label") || node.className));
+    expect(order[0]).toContain("Needs your attention");
+    expect(order[1]).toContain("Ministry direction and delivery");
+    expect(order[2]).toContain("Finance reporting and organisation");
     await expect(page.locator(".executive-command-surface")).toHaveCount(0);
     await expect(page.locator(".reference-calendar-card")).toHaveCount(0);
     await expect(page.locator(".reference-module-strip")).toHaveCount(0);
