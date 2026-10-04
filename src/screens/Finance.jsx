@@ -6,6 +6,7 @@ import FinanceRequestQueue from "../components/FinanceRequestQueue";
 import { Table } from "../components/primitives";
 import { Button, Skeleton, StatePanel } from "../experience-v2/components";
 import { FinanceCurrencyCard, FinanceEmpty, FinanceFootnote, FinancePageHeader, FinanceRecordRow, FinanceSection, FinanceTabs } from "../experience-v2/finance-family/FinanceFamilyV2";
+import { CeacIcon } from "../experience-v2/icons";
 
 // Finance — the whole church in one place. In, out, and what is moving
 // between departments.
@@ -37,6 +38,7 @@ function showTotals(by) {
 
 const TABS = [["overview","Overview"],["in","Money in"],["out","Money out"],["moving","Between departments"]];
 const SOURCES = [["offering","Offering"],["partnership","Partnership"],["donation","Donation"],["event","Event"],["other","Other"]];
+const MONTHS = ["J","F","M","A","M","J","J","A","S","O","N","D"];
 
 export default function Finance({ me, openExpenses }) {
   const [tab, setTab] = useState("overview");
@@ -105,7 +107,7 @@ export default function Finance({ me, openExpenses }) {
   const unconfirmed = transfers.filter((t) => t.state === "sent");
   const disputed = transfers.filter((t) => t.state === "disputed");
   const financeCurrencies = [...new Set([...Object.keys(inBy), ...Object.keys(outBy), ...Object.keys(budBy)])].sort();
-  const focalCurrency = financeCurrencies[0] || "GHS";
+  const focalCurrency = financeCurrencies.includes("GHS") ? "GHS" : (financeCurrencies[0] || "GHS");
   const movement = Array.from({ length: 12 }, (_, month) => ({ month, received: 0, spent: 0 }));
   income.filter((row) => (row.currency || "GHS") === focalCurrency).forEach((row) => {
     const month = Number(String(row.received_on || "").slice(5, 7)) - 1;
@@ -115,7 +117,24 @@ export default function Finance({ me, openExpenses }) {
     const month = Number(String(row.spent_on || "").slice(5, 7)) - 1;
     if (month >= 0 && month < 12) movement[month].spent += row.reverses_id ? -Number(row.amount_minor || 0) : Number(row.amount_minor || 0);
   });
-  const movementMax = Math.max(1, ...movement.flatMap((row) => [Math.abs(row.received), Math.abs(row.spent)]));
+  const movementValues = movement.flatMap((row) => [row.received, row.spent, 0]);
+  const movementLow = Math.min(...movementValues);
+  const movementHigh = Math.max(...movementValues);
+  const movementSpan = Math.max(1, movementHigh - movementLow);
+  const chartY = (value) => 86 - ((Number(value || 0) - movementLow) / movementSpan) * 72;
+  const chartX = (month) => 4 + (month * 92 / 11);
+  const receivedPoints = movement.map((row) => chartX(row.month).toFixed(2)+","+chartY(row.received).toFixed(2)).join(" ");
+  const spentPoints = movement.map((row) => chartX(row.month).toFixed(2)+","+chartY(row.spent).toFixed(2)).join(" ");
+  const zeroY = chartY(0).toFixed(2);
+  const hasFocalReceived = Object.prototype.hasOwnProperty.call(inBy, focalCurrency);
+  const hasFocalSpent = Object.prototype.hasOwnProperty.call(outBy, focalCurrency);
+  const hasFocalBudget = Object.prototype.hasOwnProperty.call(budBy, focalCurrency);
+  const overviewMetrics = [
+    { label: "Recorded position", icon: "finance", value: (hasFocalReceived || hasFocalSpent) ? money(Number(inBy[focalCurrency] || 0) - Number(outBy[focalCurrency] || 0), focalCurrency) : "Not recorded", detail: "Recorded in minus recorded out" },
+    { label: "Money received", icon: "record", value: hasFocalReceived ? money(inBy[focalCurrency], focalCurrency) : "Not recorded", detail: String(year) },
+    { label: "Money spent", icon: "budget", value: hasFocalSpent ? money(outBy[focalCurrency], focalCurrency) : "Not recorded", detail: String(year) },
+    { label: "Recorded budget", icon: "chart", value: hasFocalBudget ? money(budBy[focalCurrency], focalCurrency) : "Not recorded", detail: String(year) },
+  ];
   const recentFinance = [
     ...income.map((row) => ({ id: "in-" + row.id, date: row.received_on, label: row.description, kind: "Received", amount: row.amount_minor, currency: row.currency || "GHS" })),
     ...spend.map((row) => ({ id: "out-" + row.id, date: row.spent_on, label: row.description, kind: row.reverses_id ? "Spend correction" : "Spent", amount: row.reverses_id ? -Number(row.amount_minor || 0) : row.amount_minor, currency: row.currency || "GHS" })),
@@ -217,31 +236,25 @@ export default function Finance({ me, openExpenses }) {
       {tab === "overview" && (<>
         <section className="fpg-finance-dashboard" aria-label="Recorded finance overview">
           <div className="fpg-finance-metrics">
-            {financeCurrencies.length ? financeCurrencies.map((currency) => {
-              const received = Number(inBy[currency] || 0);
-              const spent = Number(outBy[currency] || 0);
-              const budgeted = Number(budBy[currency] || 0);
-              return <article className="fpg-finance-metric" key={currency}>
-                <div><span>{currency}</span><small>{year}</small></div>
-                <strong>{money(received - spent, currency)}</strong>
-                <p>Recorded in minus recorded out</p>
-                <dl><div><dt>Received</dt><dd>{money(received,currency)}</dd></div><div><dt>Spent</dt><dd>{money(spent,currency)}</dd></div><div><dt>Budget</dt><dd>{budgeted ? money(budgeted,currency) : "Not recorded"}</dd></div></dl>
-              </article>;
-            }) : <article className="fpg-finance-metric is-empty"><span>No recorded finance position yet.</span></article>}
+            {overviewMetrics.map((metric) => <article className="fpg-finance-metric" key={metric.label}>
+              <div><span><CeacIcon name={metric.icon} size={14} decorative />{metric.label}</span><small>{focalCurrency}</small></div>
+              <strong>{metric.value}</strong>
+              <p>{metric.detail}</p>
+            </article>)}
           </div>
 
           <div className="fpg-finance-grid">
             <article className="fpg-finance-panel fpg-finance-trend">
               <header><div><span>Recorded movement</span><h2>{focalCurrency} monthly activity</h2></div><small>{year}</small></header>
               <div className="fpg-finance-legend"><span><i className="is-in" />Received</span><span><i className="is-out" />Spent</span></div>
-              <div className="fpg-finance-bars" role="img" aria-label={"Monthly recorded received and spent amounts in " + focalCurrency}>
-                {movement.map((row) => <div className="fpg-finance-month" key={row.month}>
-                  <div className="fpg-finance-bar-pair">
-                    <i className="is-in" style={{height: Math.max(2, Math.round(Math.abs(row.received) / movementMax * 100)) + "%"}} />
-                    <i className="is-out" style={{height: Math.max(2, Math.round(Math.abs(row.spent) / movementMax * 100)) + "%"}} />
-                  </div>
-                  <span>{["J","F","M","A","M","J","J","A","S","O","N","D"][row.month]}</span>
-                </div>)}
+              <div className="fpg-finance-chart" role="img" aria-label={"Monthly recorded received and spent movement in " + focalCurrency}>
+                <svg viewBox="0 0 100 92" preserveAspectRatio="none" aria-hidden="true">
+                  {[14,32,50,68,86].map((y) => <line key={y} x1="4" x2="96" y1={y} y2={y} vectorEffect="non-scaling-stroke" />)}
+                  <polygon className="is-in-area" points={"4,"+zeroY+" "+receivedPoints+" 96,"+zeroY} />
+                  <polyline className="is-in-line" points={receivedPoints} vectorEffect="non-scaling-stroke" />
+                  <polyline className="is-out-line" points={spentPoints} vectorEffect="non-scaling-stroke" />
+                </svg>
+                <div className="fpg-finance-months">{MONTHS.map((month, index) => <span key={index}>{month}</span>)}</div>
               </div>
               <p>Truthful recorded activity only. This is not a bank balance and currencies are never combined.</p>
             </article>
