@@ -1007,7 +1007,9 @@ test("Experience Stage 5 project register enforces payment, custody, slots and t
   {
     const { context, page } = await openAs(browser, "exec@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Delivery");
-    await page.getByRole("button", { name: new RegExp(projectName) }).first().click();
+    const leadershipProject = page.locator(".ev2p-context-row").filter({ hasText: projectName }).first();
+    await expect(leadershipProject).toBeVisible();
+    await leadershipProject.getByRole("button", { name: "Operational details", exact: true }).click();
     await expect(page.getByText(participantName, { exact: true })).toBeVisible();
     const reconciliation = page.locator("table").filter({ hasText: "Confirmed remitted" }).first();
     await expect(reconciliation).toContainText("GHS 100");
