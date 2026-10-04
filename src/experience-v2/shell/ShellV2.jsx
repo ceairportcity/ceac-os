@@ -294,7 +294,7 @@ function GlobalSearch({
 
   if (mobile) {
     return <>
-      <button ref={triggerRef} type="button" className="ev2s-mobile-search" aria-label="Search CEAC" onClick={() => setOpen(true)}>
+      <button ref={triggerRef} type="button" className="ev2s-mobile-profile ev2s-mobile-search" aria-label="Search CEAC" onClick={() => setOpen(true)}>
         <CeacIcon name="search" size="row" decorative />
       </button>
       <Drawer
@@ -305,7 +305,7 @@ function GlobalSearch({
         returnFocusRef={triggerRef}
         panelClassName="ev2s-mobile-search-drawer"
       >
-        <div className="ev2s-search-sheet-field">
+        <div className="ev2s-destination-search ev2s-search-sheet-field">
           <CeacIcon name="search" size="row" decorative />
           <input
             ref={inputRef}
