@@ -723,7 +723,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     await dialog.getByLabel("Strategy name").fill("Acceptance ministry direction");
     await dialog.getByLabel("Strategy statement").fill("Build reliable ministry systems while reaching and serving people.");
     await dialog.getByLabel("Strategy change reason").fill("Acceptance Stage 4 direction");
-    await dialog.getByRole("button", { name: "Create strategy record", exact: true }).click();
+    await dialog.getByRole("button", { name: "Create ministry direction", exact: true }).click();
     await expect(page.getByText("Strategy record created.", { exact: true })).toBeVisible();
 
     const direction = page.locator("section.card").filter({ hasText: "Acceptance ministry direction" });
@@ -733,7 +733,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     await dialog.getByLabel("Strategy name").fill("Acceptance ministry objective");
     await dialog.getByLabel("Strategy statement").fill("Make weekly ministry delivery more reliable across participating units.");
     await dialog.getByLabel("Strategy change reason").fill("Acceptance Stage 4 ministry objective");
-    await dialog.getByRole("button", { name: "Create strategy record", exact: true }).click();
+    await dialog.getByRole("button", { name: "Create ministry objective", exact: true }).click();
 
     await page.getByRole("button", { name: "Add Unit Objective", exact: true }).click();
     dialog = page.getByRole("dialog");
@@ -746,7 +746,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     await dialog.getByLabel("Strategy target unit").fill("outcomes");
     await dialog.getByLabel("Strategy current value").fill("3");
     await dialog.getByLabel("Strategy change reason").fill("Acceptance Stage 4 unit objective");
-    await dialog.getByRole("button", { name: "Create strategy record", exact: true }).click();
+    await dialog.getByRole("button", { name: "Create unit objective", exact: true }).click();
 
     await expect(page.getByText(/current 3 outcomes · target 12 outcomes/)).toBeVisible();
     await page.reload();
