@@ -1,10 +1,10 @@
 # CEAC OS — Operational Clarity & Collaboration Refinement Lock v1
 
-Status: **LOCKED — START GATE SATISFIED / READY FOR IMPLEMENTATION AFTER THIS DOCUMENTATION LOCK MERGES**  
-Locked: 2026-10-04  
-Amended: 2026-10-04 — cross-role workspace harmonisation added after Administration/HR audit; People + Control Center elevated to transformation scope  
-Current protected-main baseline at lock time: `5254d7a685825c6130f8963598f55a02e32e943a`  
-Current active implementation PR at lock time: **#99 — Final literal parity closure**  
+Status: **LOCKED — START GATE SATISFIED / READY FOR IMPLEMENTATION AFTER THIS DOCUMENTATION LOCK MERGES**
+Locked: 2026-10-04
+Amended: 2026-10-04 — cross-role workspace harmonisation added after Administration/HR audit; People + Control Center elevated to transformation scope
+Current protected-main baseline at lock time: `5254d7a685825c6130f8963598f55a02e32e943a`
+Current active implementation PR at lock time: **#99 — Final literal parity closure**
 Current PR #99 head at lock time: `89062b7d2baa7baa16ca1950c3b78ad9f1167bc5`
 
 ## Start condition
