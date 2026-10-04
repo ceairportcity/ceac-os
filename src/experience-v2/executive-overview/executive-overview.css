@@ -27,6 +27,7 @@
 .executivev2-context-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ev2-space-4); align-items: start; }
 .executivev2-support-grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(20rem, .88fr); gap: var(--ev2-space-4); align-items: start; }
 .executivev2-panel { min-width: 0; box-shadow: none; }
+.executivev2-command-grid > .executivev2-attention { grid-column: 1 / -1; }
 .executivev2-panel .ev2c-data-panel-body { overflow: hidden; border: 1px solid var(--ev2-line); border-radius: var(--ev2-radius-control); background: var(--ev2-surface); }
 .executivev2-panel .ev2c-queue-row:last-child { border-bottom: 0; }
 
