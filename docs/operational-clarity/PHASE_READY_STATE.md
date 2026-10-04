@@ -1,11 +1,11 @@
 # CEAC OS — Operational Clarity Next Phase Ready State
 
-Status: **LOCKED / START GATE SATISFIED / READY TO MERGE AND START OCR0**  
+Status: **LOCKED / START GATE SATISFIED / READY TO MERGE AND START OCR0**
 Date: 2026-10-04
 
 ## Canonical next-phase package
 
-Draft PR: **#100 — Continuity: lock Operational Clarity & Collaboration Refinement**  
+Draft PR: **#100 — Continuity: lock Operational Clarity & Collaboration Refinement**
 Documentation branch: `chatgpt/operational-clarity-lock-2026-10-04`
 
 This PR is the canonical product/design handoff for the next CEAC OS implementation phase.
