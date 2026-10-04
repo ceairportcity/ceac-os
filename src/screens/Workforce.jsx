@@ -151,6 +151,7 @@ export default function Workforce({ me }) {
   const dayTypesById=Object.fromEntries(dayTypes.map((d)=>[d.id,d]));
   const activePolicy=policies.find((p)=>p.state==="active")||null;
   const activeRules=activePolicy?policyRules.filter((r)=>r.policy_version_id===activePolicy.id):[];
+  const confirmedLeaveSummary=<ProductNotice tone="info" title="Confirmed leave process">Annual, Sick, Maternity, Paternity and Study leave are available. Manager approval → Administration final approval. Entitlement amounts, accrual and carry-over remain not configured until CEAC confirms them.</ProductNotice>;
 
   function latestSchedule(profileId,date=today){
     const rows=schedules.filter((s)=>s.profile_id===profileId && s.effective_from<=date && (!s.effective_to || s.effective_to>=date));
@@ -402,6 +403,8 @@ export default function Workforce({ me }) {
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="My workforce sections"/>
 
+      {confirmedLeaveSummary}
+
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Your leave requests remain available. CEAC OS will not invent entitlement, accrual, carry-over or remaining-day figures from old seeded defaults.</ProductNotice>}
 
       {tab==="today"&&<>
@@ -599,6 +602,8 @@ export default function Workforce({ me }) {
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Manager workforce sections"/>
+
+      {confirmedLeaveSummary}
 
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Leave decisions remain available on the existing route. CEAC OS will not invent entitlement, accrual, carry-over or remaining balance from old seeded defaults.</ProductNotice>}
 
@@ -894,6 +899,8 @@ export default function Workforce({ me }) {
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Administration workforce sections"/>
+
+      {confirmedLeaveSummary}
 
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Leave requests remain available. CEAC OS will not calculate entitlement, accrual, carry-over or remaining balance from the old seeded defaults.</ProductNotice>}
 
