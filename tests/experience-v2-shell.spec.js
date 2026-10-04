@@ -9,6 +9,7 @@ test("Stage 4B shell is isolated, tokenized and wired through App", async () => 
   for (const path of [
     "src/experience-v2/shell/navigation.js",
     "src/experience-v2/shell/ShellV2.jsx",
+    "src/experience-v2/shell/GlobalSearch.jsx",
     "src/experience-v2/shell/shell.css",
     "src/experience-v2/shell/index.js",
   ]) {
@@ -16,6 +17,7 @@ test("Stage 4B shell is isolated, tokenized and wired through App", async () => 
   }
 
   const shell = fs.readFileSync("src/experience-v2/shell/ShellV2.jsx", "utf8");
+  const globalSearch = fs.readFileSync("src/experience-v2/shell/GlobalSearch.jsx", "utf8");
   const navigation = fs.readFileSync("src/experience-v2/shell/navigation.js", "utf8");
   const css = fs.readFileSync("src/experience-v2/shell/shell.css", "utf8");
   const app = fs.readFileSync("src/App.jsx", "utf8");
@@ -25,9 +27,10 @@ test("Stage 4B shell is isolated, tokenized and wired through App", async () => 
   expect(shell).toContain("Drawer");
   expect(shell).toContain("PopoverMenu");
   expect(shell).toContain("getShellQuickActions");
-  expect(shell).toContain("searchCeacRecords");
-  expect(shell).toContain("Search CEAC…");
-  expect(shell).not.toContain("Find a destination…");
+  expect(shell).toContain('import("./GlobalSearch")');
+  expect(globalSearch).toContain("searchCeacRecords");
+  expect(globalSearch).toContain("Search CEAC…");
+  expect(globalSearch).not.toContain("Find a destination…");
   expect(shell).toContain("ev2s-sidebar-main");
   expect(shell).not.toContain("function createMenuItems");
   expect(shell).not.toContain("components/primitives/Icon");
