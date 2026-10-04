@@ -106,7 +106,9 @@ as $$
       where a.id=p_context_id
         and a.org_id=public.app_org_id()
         and (
-          public.app_can_publish_announcements()
+          public.app_is_admin()
+          or public.app_is_exec()
+          or a.author_id=auth.uid()
           or public.app_can_read_announcement(a.id)
         )
     )
@@ -130,7 +132,7 @@ as $$
       where w.id=p_context_id
         and w.org_id=public.app_org_id()
         and (
-          w.created_by=auth.uid()
+          w.assigned_by=auth.uid()
           or public.app_can_review_item(w.id)
           or public.app_is_admin()
           or public.app_is_exec()
@@ -196,6 +198,10 @@ on public.operational_file_links for select to authenticated
 using (
   org_id=public.app_org_id()
   and public.app_can_read_operational_context(context_type,context_id)
+  and exists(
+    select 1 from public.operational_files f
+    where f.id=file_id and f.org_id=public.app_org_id() and f.state='active'
+  )
 );
 
 revoke all on public.operational_files,public.operational_file_links
@@ -285,6 +291,68 @@ begin
 end;
 $$;
 
+create or replace function public.link_operational_file(
+  p_file_id uuid,
+  p_context_type text,
+  p_context_id uuid,
+  p_relation text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path=public
+as $
+declare
+  v_file public.operational_files;
+  v_link uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in to link a file.' using errcode='42501';
+  end if;
+
+  select * into v_file
+  from public.operational_files
+  where id=p_file_id
+    and org_id=public.app_org_id()
+    and state='active';
+
+  if v_file.id is null or not public.app_can_access_operational_file(v_file.id) then
+    raise exception 'That file is not available to you.' using errcode='42501';
+  end if;
+
+  if not public.app_can_write_operational_context(p_context_type,p_context_id) then
+    raise exception 'You cannot attach a file to that record.' using errcode='42501';
+  end if;
+
+  if p_context_type='work_item' and p_relation<>'assignment_source'
+     or p_context_type='project' and p_relation<>'project_file'
+     or p_context_type='room_message' and p_relation<>'room_media'
+     or p_context_type='announcement' and p_relation<>'announcement_attachment'
+     or p_context_type not in ('work_item','project','room_message','announcement') then
+    raise exception 'That file relation does not match its record.';
+  end if;
+
+  insert into public.operational_file_links(
+    org_id,file_id,context_type,context_id,relation,linked_by
+  ) values(
+    v_file.org_id,v_file.id,p_context_type,p_context_id,p_relation,auth.uid()
+  )
+  on conflict(file_id,context_type,context_id,relation) do nothing
+  returning id into v_link;
+
+  if v_link is null then
+    select l.id into v_link
+    from public.operational_file_links l
+    where l.file_id=v_file.id
+      and l.context_type=p_context_type
+      and l.context_id=p_context_id
+      and l.relation=p_relation;
+  end if;
+
+  return v_link;
+end;
+$;
+
 create or replace function public.finalize_operational_file(p_file_id uuid)
 returns uuid
 language plpgsql
@@ -331,12 +399,14 @@ revoke all on function public.app_can_write_operational_context(text,uuid) from 
 revoke all on function public.app_can_access_operational_file(uuid) from public,anon;
 revoke all on function public.register_operational_file(text,uuid,text,text,text,bigint) from public,anon;
 revoke all on function public.finalize_operational_file(uuid) from public,anon;
+revoke all on function public.link_operational_file(uuid,text,uuid,text) from public,anon;
 
 grant execute on function public.app_can_read_operational_context(text,uuid) to authenticated,service_role;
 grant execute on function public.app_can_write_operational_context(text,uuid) to authenticated,service_role;
 grant execute on function public.app_can_access_operational_file(uuid) to authenticated,service_role;
 grant execute on function public.register_operational_file(text,uuid,text,text,text,bigint) to authenticated,service_role;
 grant execute on function public.finalize_operational_file(uuid) to authenticated,service_role;
+grant execute on function public.link_operational_file(uuid,text,uuid,text) to authenticated,service_role;
 
 -- Storage rows are created only for a registered pending metadata record owned
 -- by the signed-in user. Reads inherit the linked CEAC context.
