@@ -733,7 +733,7 @@
 @media (max-width: 599px) {
   .staffv2 {
     gap: 1.125rem;
-    padding-bottom: var(--ev2-space-8);
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
   }
 
   .staffv2-intro {
@@ -745,133 +745,12 @@
   }
 
   .staffv2-session {
-    gap: var(--ev2-space-2) var(--ev2-space-3);
-    padding: var(--ev2-space-3);
-    box-shadow: 0 1px 2px rgba(15, 23, 35, .035);
-  }
-
-  .staffv2-session-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
-  .staffv2-session:not(.is-active):not(.needs-review) .staffv2-session-copy > span {
-    display: none;
-  }
-
-  .staffv2-session-actions {
-    margin-top: var(--ev2-space-1);
-  }
-
-  .staffv2-focus-grid {
-    gap: var(--ev2-space-4);
-  }
-
-  .staffv2-focus-card {
-    padding: var(--ev2-space-5);
-    border-radius: var(--ev2-radius-feature);
-    box-shadow: 0 8px 24px rgba(15, 23, 35, .055);
-  }
-
-  .staffv2-focus-card .ev2c-focus-main {
-    gap: var(--ev2-space-3);
-  }
-
-  .staffv2-focus-card .ev2c-focus-title {
-    font-size: var(--ev2-type-section-mobile);
-    line-height: 1.2;
-  }
-
-  .staffv2-focus-card .ev2c-focus-action .ev2c-button {
-    width: 100%;
-    min-height: var(--ev2-control-min);
-  }
-
-  /* Secondary sections read as headings plus grouped rows instead of cards
-     nested inside cards. The list/body keeps the factual boundary. */
-  .staffv2-schedule-panel.ev2c-surface,
-  .staffv2-panel.ev2c-surface {
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .staffv2-schedule-panel .ev2c-data-panel-head,
-  .staffv2-panel .ev2c-data-panel-head {
-    padding: 0 .125rem;
-    gap: var(--ev2-space-3);
-  }
-
-  .staffv2-schedule-panel .ev2c-data-title,
-  .staffv2-panel .ev2c-data-title {
-    margin-top: .2rem;
-    font-size: var(--ev2-type-card-mobile);
-  }
-
-  .staffv2-schedule-panel .ev2c-data-supporting,
-  .staffv2-panel .ev2c-data-supporting {
-    margin-top: var(--ev2-space-1);
-  }
-
-  .staffv2-schedule-panel .ev2c-data-panel-body,
-  .staffv2-panel .ev2c-data-panel-body {
-    border-radius: var(--ev2-radius-card);
-    box-shadow: 0 1px 2px rgba(15, 23, 35, .025);
-  }
-
-  .staffv2-main-grid,
-  .staffv2-secondary-grid {
-    gap: 1.25rem;
-  }
-
-  .staffv2-week-stats {
-    gap: 0;
-    padding: 0;
-  }
-
-  .staffv2-week-stats button {
-    min-height: 4.25rem;
-    padding: var(--ev2-space-3);
-    border: 0;
-    border-right: 1px solid var(--ev2-line);
-    border-radius: 0;
-    background: transparent;
-  }
-
-  .staffv2-week-stats button:last-child {
-    border-right: 0;
-  }
-
-  .staffv2-week-stats button:hover,
-  .staffv2-week-stats button:focus-visible {
-    background: var(--ev2-surface-soft);
-  }
-
-  .staffv2-week-stats strong {
-    font-size: 1.125rem;
-  }
-
-  .staffv2-ministry-record {
-    margin-top: 0;
-  }
-}
-
-@media (max-width: 599px) {
-  /* HOME-A mobile is deliberately not a vertical copy of desktop Home.
-     Keep the work-session control and primary next action in view, move
-     secondary context into a swipe rail, and leave Calendar/Record detail
-     to their first-class destinations. */
-  .staffv2 {
-    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
-  }
-
-  .staffv2-session {
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
+    gap: var(--ev2-space-2) var(--ev2-space-3);
     min-height: 4.75rem;
     padding: .65rem .75rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 35, .035);
   }
 
   .staffv2-session-icon {
@@ -896,6 +775,53 @@
 
   .staffv2-focus-grid {
     display: block;
+  }
+
+  .staffv2-focus-card {
+    padding: var(--ev2-space-5);
+    border-radius: var(--ev2-radius-feature);
+    box-shadow: 0 8px 24px rgba(15, 23, 35, .055);
+  }
+
+  .staffv2-focus-card .ev2c-focus-main {
+    gap: var(--ev2-space-3);
+  }
+
+  .staffv2-focus-card .ev2c-focus-title {
+    font-size: var(--ev2-type-section-mobile);
+    line-height: 1.2;
+  }
+
+  .staffv2-focus-card .ev2c-focus-action .ev2c-button {
+    width: 100%;
+    min-height: var(--ev2-control-min);
+  }
+
+  .staffv2-panel.ev2c-surface {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .staffv2-panel .ev2c-data-panel-head {
+    padding: 0 .125rem;
+    gap: var(--ev2-space-3);
+  }
+
+  .staffv2-panel .ev2c-data-title {
+    margin-top: .2rem;
+    font-size: var(--ev2-type-card-mobile);
+  }
+
+  .staffv2-panel .ev2c-data-supporting {
+    margin-top: var(--ev2-space-1);
+  }
+
+  .staffv2-panel .ev2c-data-panel-body {
+    border-radius: var(--ev2-radius-card);
+    box-shadow: 0 1px 2px rgba(15, 23, 35, .025);
   }
 
   .staffv2-schedule-panel,
