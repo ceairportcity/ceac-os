@@ -17,7 +17,7 @@ function blankForm() {
   return { id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [] };
 }
 
-export default function Announcements({ me, back }) {
+export default function Announcements({ me, back, createRequest = false, onCreateHandled }) {
   const [rows, setRows] = useState([]);
   const [units, setUnits] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -28,6 +28,12 @@ export default function Announcements({ me, back }) {
   const [error, setError] = useState(null);
 
   useEffect(() => { load(); }, [me.id]);
+  useEffect(() => {
+    if (createRequest && canPublish) {
+      setForm(blankForm());
+      onCreateHandled?.();
+    }
+  }, [createRequest, canPublish]);
 
   async function load() {
     setLoading(true); setError(null);
