@@ -1948,7 +1948,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
   await expect(page.getByText("Needs Administration", { exact: true })).toBeVisible();
-  await expect(page.getByText("Finance & reporting", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Finance & reporting", exact: true })).toBeVisible();
   await expect(page.getByText("Delivery signals", { exact: true })).toBeVisible();
   await expect(page.getByText("Administration could not finish loading", { exact: true })).toHaveCount(0);
 
