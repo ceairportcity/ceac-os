@@ -358,6 +358,41 @@ test("Assistive voice controls are real interaction affordances and proposals re
   await context.close();
 });
 
+test("OCR6C work source attachment reaches the authorised Staff record", async ({ browser }) => {
+  const title = "OCR6 source-file assignment";
+  const filename = "ocr6-work-source.txt";
+
+  {
+    const { context, page } = await openAs(browser, "manager@ceac.local.test");
+    await page.getByRole("button", { name: "Give out work", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Give out work" })).toBeVisible();
+    await page.getByLabel("Work to complete").fill(title);
+    await page.getByLabel("Why this matters").fill("Prove private source-file assignment end to end.");
+    const assignee = page.locator("select.field").filter({ has: page.locator("option", { hasText: "Staff Fixture" }) });
+    await assignee.selectOption({ label: "Staff Fixture" });
+    await page.locator('input[type="datetime-local"]').last().fill(new Date(Date.now() + 2 * 86400000).toISOString().slice(0,16));
+    await page.locator('.operational-files-picker input[type="file"]').setInputFiles({
+      name: filename,
+      mimeType: "text/plain",
+      buffer: Buffer.from("OCR6 private work source file"),
+    });
+    await page.getByRole("button", { name: "Give it out", exact: true }).click();
+    await expect(page.getByText(/is with them/)).toBeVisible();
+    await context.close();
+  }
+
+  {
+    const { context, page } = await openAs(browser, "staff@ceac.local.test");
+    await go(page, "Work");
+    const row = page.locator(".ev2w-row").filter({ hasText: title }).first();
+    await expect(row).toBeVisible();
+    await row.click();
+    await expect(page.getByText("Source files", { exact: true })).toBeVisible();
+    await expect(page.getByText(filename, { exact: true })).toBeVisible();
+    await context.close();
+  }
+});
+
 test("Typed work can be created and reaches the Staff work surface", async ({ browser }) => {
   const created = [
     { kind: "Routine", intent: "Set repeating work", title: "Acceptance routine", button: "Create routine" },
@@ -551,8 +586,10 @@ test("Staff PWA layout has no page-level horizontal overflow at supported phone 
 });
 
 
-test("Unit Rooms carry attributable communication between Manager and Staff", async ({ browser }) => {
+test("OCR6C Unit Rooms carry attributable communication and private media between Manager and Staff", async ({ browser }) => {
   const message = "Room acceptance — confirm Sunday setup";
+  const filename = "ocr6-room-media.png";
+  const media = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZlSIAAAAASUVORK5CYII=", "base64");
 
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 390, height: 844 });
@@ -562,9 +599,11 @@ test("Unit Rooms carry attributable communication between Manager and Staff", as
     await expect(page.getByRole("heading", { name: "Test Unit A" })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("heading", { name: "Test Unit A" })).toBeVisible();
+    await page.locator('.operational-files-picker input[type="file"]').setInputFiles({ name: filename, mimeType: "image/png", buffer: media });
     await page.getByPlaceholder("Message your unit").fill(message);
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(page.getByText(message, { exact: true })).toBeVisible();
+    await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
   }
 
@@ -573,6 +612,7 @@ test("Unit Rooms carry attributable communication between Manager and Staff", as
     await go(page, "Team");
     await page.getByRole("button", { name: /Unit Room/ }).click();
     await expect(page.getByText(message, { exact: true })).toBeVisible();
+    await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
   }
 });

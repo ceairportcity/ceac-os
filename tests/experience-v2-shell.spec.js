@@ -168,7 +168,7 @@ test("OCR3 authorised Administration Create exposes Announcement while Staff rem
   await expect(page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true })).toBeVisible();
 });
 
-test("OCR6B Executive Create Message opens deliberate organisational Room discovery", async ({ page }) => {
+test("OCR6C Executive Create Message chooses an authorised Sub-team before communicating", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
   await page.getByRole("button", { name: "Create", exact: true }).click();
@@ -178,8 +178,59 @@ test("OCR6B Executive Create Message opens deliberate organisational Room discov
   await expect(page.getByRole("tab", { name: "Rooms", exact: true })).toHaveAttribute("aria-selected", "true");
   const roomDirectory = page.locator(".ev2c-data-panel").filter({ hasText: "Organisation Rooms" }).first();
   await expect(roomDirectory).toBeVisible();
-  expect(await roomDirectory.locator("button.ev2c-queue-row").count()).toBeGreaterThan(0);
   await expect(page.getByText("This directory does not create direct messages.", { exact: false })).toBeVisible();
+
+  const subTeam = roomDirectory.locator("button.ev2c-queue-row").filter({ hasText: "Fixture Video Team" }).first();
+  await expect(subTeam).toBeVisible();
+  await subTeam.click();
+  await expect(page.getByText("Sub-team Room", { exact: true })).toBeVisible();
+  const message = "OCR6 executive sub-team message";
+  await page.getByPlaceholder("Message Fixture Video Team").fill(message);
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.getByText(message, { exact: true })).toBeVisible();
+});
+
+test("OCR6C Executive Create publishes an Announcement and records a Ministry Objective", async ({ page }) => {
+  test.setTimeout(120000);
+  const announcementTitle = "OCR6 operational clarity announcement";
+  const directionTitle = "OCR6 ministry direction";
+  const objectiveTitle = "OCR6 ministry objective";
+
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "exec@ceac.local.test");
+
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true }).click();
+  let dialog = page.getByRole("dialog", { name: "New announcement" });
+  await dialog.locator("#announcement-title").fill(announcementTitle);
+  await dialog.locator("#announcement-body").fill("Operational Clarity final workflow acceptance.");
+  await dialog.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  const announcementRow = page.locator(".row").filter({ hasText: announcementTitle }).first();
+  await expect(announcementRow).toBeVisible();
+  await announcementRow.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(announcementRow.getByText(/published/i)).toBeVisible();
+
+  await page.goto("/?tab=strategy");
+  await expect(page.getByRole("heading", { name: "Ministry", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Add Ministry Direction", exact: true }).click();
+  dialog = page.getByRole("dialog", { name: "New ministry direction" });
+  await dialog.getByLabel("Strategy name").fill(directionTitle);
+  await dialog.getByLabel("Strategy statement").fill("Provide an attributable parent direction for OCR6 acceptance.");
+  await dialog.getByLabel("Strategy change reason").fill("OCR6 final workflow acceptance.");
+  await dialog.getByRole("button", { name: "Create ministry direction", exact: true }).click();
+  await expect(page.getByText(directionTitle, { exact: true })).toBeVisible();
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByRole("menu").getByRole("menuitem", { name: "Ministry objective", exact: true }).click();
+  dialog = page.getByRole("dialog", { name: "New ministry objective" });
+  await dialog.getByLabel("Strategy parent direction").selectOption({ label: directionTitle });
+  await dialog.getByLabel("Strategy name").fill(objectiveTitle);
+  await dialog.getByLabel("Strategy statement").fill("Prove the compact Executive ministry objective Composer.");
+  await dialog.getByLabel("Strategy change reason").fill("OCR6 final workflow acceptance.");
+  await dialog.getByRole("button", { name: "Create ministry objective", exact: true }).click();
+  await expect(page.getByText(objectiveTitle, { exact: true })).toBeVisible();
 });
 
 test("OCR3 Room Composer exposes private media attachment control", async ({ page }) => {
@@ -216,15 +267,22 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
   await expect(page.locator(".ev2-work-detail")).toBeVisible({ timeout: 15000 });
 });
 
-test("OCR4 Global Search finds people, departments and announcement actions/records", async ({ page }) => {
+test("OCR6C Global Search opens authorised People and Announcement records", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "admin@ceac.local.test");
 
-  const search = page.getByPlaceholder("Search CEAC…");
+  let search = page.getByPlaceholder("Search CEAC…");
   await search.fill("Staff Fixture");
   let results = page.getByRole("dialog", { name: "Search CEAC results" });
-  await expect(results.locator('.ev2s-search-group[aria-label="People"]').getByRole("button", { name: /Staff Fixture/ })).toBeVisible();
+  const people = results.locator('.ev2s-search-group[aria-label="People"]');
+  await expect(people.getByRole("button", { name: /Staff Fixture/ })).toBeVisible();
+  await people.getByRole("button", { name: /Staff Fixture/ }).click();
+  await expect(page.getByRole("heading", { name: "Staff Fixture", exact: true })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole("tablist", { name: "Employee record sections" })).toBeVisible();
 
+  await page.goto("/?tab=home");
+  await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
+  search = page.getByPlaceholder("Search CEAC…");
   await search.fill("Test Unit A");
   results = page.getByRole("dialog", { name: "Search CEAC results" });
   await expect(results.locator('.ev2s-search-group[aria-label="Organisation"]').getByRole("button", { name: /Test Unit A/ })).toBeVisible();
@@ -237,32 +295,42 @@ test("OCR4 Global Search finds people, departments and announcement actions/reco
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "New announcement" });
-  await dialog.locator("#announcement-title").fill("OCR4 Search Announcement");
-  await dialog.locator("#announcement-body").fill("Search acceptance record");
+  await dialog.locator("#announcement-title").fill("OCR6 Search Announcement");
+  await dialog.locator("#announcement-body").fill("OCR6 searchable announcement record");
   await dialog.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(dialog).toBeHidden();
 
-  await page.getByPlaceholder("Search CEAC…").fill("OCR4 Search Announcement");
+  await page.getByPlaceholder("Search CEAC…").fill("OCR6 Search Announcement");
   results = page.getByRole("dialog", { name: "Search CEAC results" });
-  await expect(results.locator('.ev2s-search-group[aria-label="Announcements"]').getByRole("button", { name: /OCR4 Search Announcement/ })).toBeVisible();
+  const announcements = results.locator('.ev2s-search-group[aria-label="Announcements"]');
+  const announcement = announcements.getByRole("button", { name: /OCR6 Search Announcement/ });
+  await expect(announcement).toBeVisible();
+  await announcement.click();
+  await expect(page.getByText("OCR6 searchable announcement record", { exact: true })).toBeVisible({ timeout: 15000 });
 });
 
-test("OCR4 Global Search finds a private uploaded Project filename through RLS", async ({ page }) => {
+test("OCR6C Project Files upload is searchable and opens through a signed private URL", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "manager@ceac.local.test");
   await page.goto("/?tab=projects&project=25000000-0000-4000-8000-000000000011");
   await expect(page.locator(".ev2-project-workspace")).toBeVisible({ timeout: 15000 });
   await page.getByRole("tab", { name: /^Files/ }).click();
 
-  const filename = "ocr4-private-search.txt";
+  const filename = "ocr6-private-search.txt";
   const input = page.locator('.operational-files input[type="file"]');
-  await input.setInputFiles({ name: filename, mimeType: "text/plain", buffer: Buffer.from("OCR4 private search fixture") });
+  await input.setInputFiles({ name: filename, mimeType: "text/plain", buffer: Buffer.from("OCR6 private search fixture") });
   await expect(page.getByText(filename, { exact: true })).toBeVisible({ timeout: 15000 });
 
   await page.getByPlaceholder("Search CEAC…").fill(filename);
   const results = page.getByRole("dialog", { name: "Search CEAC results" });
   const files = results.locator('.ev2s-search-group[aria-label="Files"]');
-  await expect(files.getByRole("button", { name: new RegExp(filename.replace(".", "\\.")) })).toBeVisible({ timeout: 15000 });
+  const fileResult = files.getByRole("button", { name: new RegExp(filename.replace(".", "\\.")) });
+  await expect(fileResult).toBeVisible({ timeout: 15000 });
+  const popupPromise = page.waitForEvent("popup");
+  await fileResult.click();
+  const popup = await popupPromise;
+  await expect.poll(() => popup.url()).toContain("/storage/v1/object/sign/");
+  await popup.close();
 });
 
 test("OCR4 mobile Search CEAC opens as a full-screen search surface", async ({ page }) => {
