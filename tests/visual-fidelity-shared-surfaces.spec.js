@@ -64,14 +64,14 @@ test("VF6D keeps Messages and Connected Apps factual while closing shared-surfac
       const heights = await filters.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
       expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
 
-      const list = inboxPage.locator(".inbox-list");
-      await expect(list).toBeVisible();
-      const listStyle = await list.evaluate((node) => ({
+      const queuePanel = inboxPage.locator(".ev2c-data-panel").filter({ hasText: "Communication queue" }).first();
+      await expect(queuePanel).toBeVisible();
+      const queueStyle = await queuePanel.evaluate((node) => ({
         shadow: getComputedStyle(node).boxShadow,
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       }));
-      expect(listStyle.shadow).toBe("none");
-      expect(listStyle.overflow).toBeLessThanOrEqual(1);
+      expect(queueStyle.shadow).toBe("none");
+      expect(queueStyle.overflow).toBeLessThanOrEqual(1);
 
       const empty = inboxPage.locator(".inbox-empty");
       if (await empty.count()) {
