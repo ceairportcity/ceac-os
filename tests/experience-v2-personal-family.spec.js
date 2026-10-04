@@ -586,8 +586,9 @@ test("Stage 10 Family H3 keeps Executive Organisation read-only leadership conte
   const organisation = readFileSync("src/screens/ExecutiveOrganisation.jsx", "utf8");
   expect(organisation).toContain('supabase.from("units")');
   expect(organisation).toContain('supabase.from("unit_memberships")');
-  expect(organisation).toContain("Administration remains responsible for changing organisation records.");
-  expect(organisation).toContain("Read-only leadership context");
+  expect(organisation).toContain("Administration remains responsible for changes.");
+  expect(organisation).toContain("Needs attention");
+  expect(organisation).toContain("leadership gap");
   expect(organisation).not.toContain(".insert(");
   expect(organisation).not.toContain(".update(");
   expect(organisation).not.toContain(".delete(");
@@ -646,7 +647,8 @@ for (const viewport of [
     const { context, page } = await openHub(browser, roles[3], { width: viewport.width, height: viewport.height });
     await page.goto("/?tab=exec-organisation");
     await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toBeVisible();
-    await expect(page.getByText("Read-only leadership context", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Structural exceptions are shown first/i)).toBeVisible();
+    await expect(page.getByText(/Leadership recorded|leadership gap/i).first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Executive Organisation overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);
     await page.screenshot({ path: `test-artifacts/redesign-r7-stage10h-exec-org-${viewport.name}.png`, fullPage: true });
@@ -719,7 +721,7 @@ test("Stage 10 Family H Executive Organisation stays Executive-only", async ({ b
   for (const role of [roles[0], roles[1], roles[2]]) {
     const { context, page } = await openHub(browser, role, { width: 390, height: 844 });
     await page.goto("/?tab=exec-organisation");
-    await expect(page.getByText("Read-only leadership context", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toHaveCount(0);
     await context.close();
   }
 });
