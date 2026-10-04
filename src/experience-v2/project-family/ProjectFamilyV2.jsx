@@ -349,10 +349,14 @@ export function ProjectWorkDrawer({
   renderStatus,
 }) {
   if (!item) return null;
-  const evidenceCount = (item.submissions || []).reduce(
-    (sum, row) => sum + (row.submission_files?.length || 0),
-    0,
+  const attachments = (item.submissions || []).flatMap((submission) =>
+    (submission.submission_files || []).map((file) => ({
+      ...file,
+      submitted_at: submission.submitted_at,
+    })),
   );
+  const completed = ["completed", "self_certified"].includes(item.status);
+  const assignee = item.profiles?.full_name || "Unassigned";
   return (
     <div className="fpg-work-drawer-bg" role="presentation" onClick={onClose}>
       <aside
@@ -368,30 +372,33 @@ export function ProjectWorkDrawer({
         </div>
         <div className="fpg-drawer-title"><span>{item.ref}</span><h2>{item.title}</h2></div>
         <dl className="fpg-drawer-meta">
+          <div><dt>Priority</dt><dd>Not recorded</dd></div>
           <div><dt>Status</dt><dd>{renderStatus?.(item.status)}</dd></div>
-          <div><dt>Assignee</dt><dd>{item.profiles?.full_name || "Unassigned"}</dd></div>
-          <div><dt>Created context</dt><dd>{projectName}</dd></div>
-          <div><dt>Due date</dt><dd>{formatDue?.(item.due_at)}</dd></div>
+          <div><dt>Created date</dt><dd>{item.created_at ? formatDate?.(item.created_at) : "Not recorded"}</dd></div>
+          <div><dt>Due date</dt><dd>{item.due_at ? formatDue?.(item.due_at) : "Not recorded"}</dd></div>
+          <div><dt>Progress</dt><dd><span className="fpg-drawer-progress"><span aria-hidden="true"><i style={{ width: completed ? "100%" : "0%" }} /></span><b>{completed ? "Completed" : "Not recorded"}</b></span></dd></div>
+          <div><dt>Assignees</dt><dd><span className="fpg-assignee"><b>{assignee === "Unassigned" ? "—" : assignee.slice(0,1).toUpperCase()}</b><span>{assignee}</span></span></dd></div>
+          <div><dt>Project</dt><dd>{projectName || "Not recorded"}</dd></div>
           <div><dt>Type</dt><dd>{item.kind?.replaceAll("_", " ") || "Work"}</dd></div>
         </dl>
-        {description && <section className="fpg-drawer-description"><p>{description}</p></section>}
+        {description ? <section className="fpg-drawer-description"><p>{description}</p></section> : <section className="fpg-drawer-description"><p>No description has been recorded.</p></section>}
         <section className="fpg-drawer-section">
-          <div className="fpg-drawer-section-head"><h3>Evidence</h3><span>{evidenceCount}</span></div>
-          {(item.submissions || []).length
-            ? item.submissions.map((submission) => (
-              <div className="fpg-evidence-row" key={submission.id}>
+          <div className="fpg-drawer-section-head"><h3>Attachments</h3><span>{attachments.length}</span></div>
+          {attachments.length
+            ? attachments.map((file, index) => (
+              <div className="fpg-evidence-row" key={file.id || `${item.id}-evidence-${index}`}>
                 <span>
-                  <strong>Submission</strong>
-                  <small>{submission.submitted_at ? formatDate?.(submission.submitted_at) : "Date not recorded"}</small>
+                  <strong>Evidence file {index + 1}</strong>
+                  <small>{file.submitted_at ? `Submitted ${formatDate?.(file.submitted_at)}` : "Submission date not recorded"}</small>
                 </span>
-                <b>{submission.submission_files?.length || 0} file{(submission.submission_files?.length || 0) === 1 ? "" : "s"}</b>
+                <b>Recorded</b>
               </div>
             ))
-            : <p className="fpg-drawer-empty">No submission or evidence is recorded.</p>}
+            : <p className="fpg-drawer-empty">No attachment or evidence file is recorded.</p>}
         </section>
         <section className="fpg-drawer-section">
           <div className="fpg-drawer-tabs">
-            <button type="button" className="is-active">Subtasks</button>
+            <button type="button" className="is-active">Subtasks <span>{item.checklist_items?.length || 0}</span></button>
             <button type="button" disabled title="Project discussion remains in the Project Room">Comments</button>
             <button type="button" disabled title="Open the full record for authoritative activity history">Activity</button>
           </div>

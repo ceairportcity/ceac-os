@@ -1151,7 +1151,7 @@
   --fpg-accent:#f2d44f;
   position:relative;
   display:grid;
-  grid-template-columns:228px minmax(0,1fr);
+  grid-template-columns:240px minmax(0,1fr);
   gap:0;
   max-width:1440px;
   min-height:720px;
@@ -1164,7 +1164,7 @@
 }
 .fpg-project-tree{
   min-width:0;
-  padding:22px 14px;
+  padding:20px 12px;
   background:var(--fpg-rail);
   color:#fff;
 }
@@ -1201,7 +1201,7 @@
 }
 .fpg-project-tree-stages button i{width:5px;height:5px;border-radius:50%;background:#69717c}
 .fpg-project-tree-stages p{padding:7px 8px;color:#69717c;font-size:12px;line-height:1.45}
-.fpg-project-main{min-width:0;padding:24px 28px 36px;background:#fff}
+.fpg-project-main{min-width:0;padding:22px 24px 34px;background:#fff}
 .fpg-project-gold .ev2p-back{margin-bottom:14px}
 .fpg-project-gold .ev2p-workspace-header{margin-bottom:14px}
 .fpg-project-gold .ev2p-workspace-title-row h1{font-size:30px;letter-spacing:-.035em}
@@ -1240,16 +1240,13 @@
   color:#8a9099;font-size:12px;font-weight:650;text-align:left;text-transform:none
 }
 .fpg-work-table td{
-  height:54px;padding:8px 10px;border-bottom:1px solid #ededee;color:#4d535d;font-size:12px;vertical-align:middle
+  height:50px;padding:7px 10px;border-bottom:1px solid #ededee;color:#4d535d;font-size:12px;vertical-align:middle
 }
 .fpg-work-table tbody tr{cursor:pointer;transition:background .12s ease}
 .fpg-work-table tbody tr:hover,.fpg-work-table tbody tr.is-selected{background:#faf9f2}
 .fpg-work-table tbody tr.is-selected td:first-child{box-shadow:inset 3px 0 0 var(--fpg-accent)}
 .fpg-work-title{
   display:flex;align-items:center;gap:10px;width:100%;min-width:250px;text-align:left;color:inherit
-}
-.fpg-work-title>i{
-  width:15px;height:15px;flex:none;border:1.5px solid #c4c7cd;border-radius:4px;background:#fff
 }
 .fpg-work-title>span{display:grid;gap:2px;min-width:0}
 .fpg-work-title strong{
@@ -1267,9 +1264,9 @@
   position:fixed;z-index:120;inset:0;background:rgba(16,20,26,.18);backdrop-filter:blur(1px)
 }
 .fpg-work-drawer{
-  position:absolute;top:0;right:0;width:min(490px,92vw);height:100%;
+  position:absolute;top:0;right:0;width:min(535px,94vw);height:100%;
   overflow-y:auto;background:#fff;border-left:1px solid #e5e6e8;box-shadow:-24px 0 60px rgba(20,25,34,.14);
-  padding:18px 24px 36px;animation:fpg-drawer-in .18s ease-out
+  padding:16px 26px 34px;animation:fpg-drawer-in .18s ease-out
 }
 @keyframes fpg-drawer-in{from{transform:translateX(24px);opacity:.5}to{transform:none;opacity:1}}
 .fpg-drawer-top{display:flex;align-items:center;justify-content:space-between}
@@ -1279,32 +1276,33 @@
 .fpg-drawer-close:hover{background:#f3f4f5}
 .fpg-drawer-open{padding:7px 9px;color:#626872;font-size:12px;border-radius:7px}
 .fpg-drawer-open:hover{background:#f4f5f6;color:#171a20}
-.fpg-drawer-title{padding:28px 0 20px;border-bottom:1px solid var(--fpg-line)}
+.fpg-drawer-title{padding:24px 0 18px;border-bottom:1px solid var(--fpg-line)}
 .fpg-drawer-title>span{color:#a0a4ab;font-size:12px;font-weight:700}
-.fpg-drawer-title h2{margin:4px 0 0;color:#191c21;font-size:25px;letter-spacing:-.035em}
+.fpg-drawer-title h2{margin:4px 0 0;color:#191c21;font-size:26px;letter-spacing:-.04em}
 .fpg-drawer-meta{display:grid;gap:0;margin:0;padding:9px 0 13px;border-bottom:1px solid var(--fpg-line)}
-.fpg-drawer-meta>div{display:grid;grid-template-columns:112px minmax(0,1fr);align-items:center;min-height:36px}
+.fpg-drawer-meta>div{display:grid;grid-template-columns:118px minmax(0,1fr);align-items:center;min-height:34px}
 .fpg-drawer-meta dt{color:#9a9fa7;font-size:12px}
 .fpg-drawer-meta dd{margin:0;color:#383e47;font-size:12px;text-transform:capitalize}
-.fpg-drawer-section{padding:20px 0;border-bottom:1px solid var(--fpg-line)}
+.fpg-drawer-progress{display:flex;align-items:center;gap:8px}.fpg-drawer-progress>span{width:106px;height:6px;overflow:hidden;border-radius:999px;background:#e9ecef}.fpg-drawer-progress i{display:block;height:100%;background:#20a6c9}.fpg-drawer-progress b{font-size:12px;font-weight:650;color:#59616b}
+.fpg-drawer-section{padding:18px 0;border-bottom:1px solid var(--fpg-line)}
 .fpg-drawer-section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .fpg-drawer-section-head h3{font-size:12px}
 .fpg-drawer-section-head span{
   display:grid;place-items:center;min-width:22px;height:22px;border-radius:6px;background:#f1f2f3;color:#777d86;font-size:12px
 }
-.fpg-evidence-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border:1px solid #ececef;border-radius:8px}
+.fpg-evidence-row{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;border:1px solid #ececef;border-radius:8px}.fpg-evidence-row+.fpg-evidence-row{margin-top:8px}
 .fpg-evidence-row>span{display:grid;gap:2px}
 .fpg-evidence-row strong{font-size:12px}
 .fpg-evidence-row small{color:#9a9fa7;font-size:12px}
 .fpg-evidence-row>b{color:#727983;font-size:12px}
-.fpg-drawer-tabs{display:flex;gap:18px;border-bottom:1px solid var(--fpg-line);margin-bottom:12px}
+.fpg-drawer-tabs{display:flex;gap:20px;border-bottom:1px solid var(--fpg-line);margin-bottom:10px}
 .fpg-drawer-tabs button{
   padding:0 0 9px;border-bottom:2px solid transparent;color:#8b9098;font-size:12px
 }
-.fpg-drawer-tabs button.is-active{border-bottom-color:#1c2026;color:#1c2026}
+.fpg-drawer-tabs button.is-active{border-bottom-color:#1c2026;color:#1c2026}.fpg-drawer-tabs button span{margin-left:4px;color:#a0a4ab}
 .fpg-drawer-tabs button:disabled{opacity:.45;cursor:not-allowed}
 .fpg-subtask-list{display:grid}
-.fpg-subtask-list>div{display:flex;align-items:center;gap:9px;min-height:37px;border-bottom:1px solid #f0f1f2;color:#515761;font-size:12px}
+.fpg-subtask-list>div{display:flex;align-items:center;gap:10px;min-height:39px;border-bottom:1px solid #f0f1f2;color:#515761;font-size:12px}
 .fpg-subtask-list i{width:14px;height:14px;border:1.5px solid #c5c8ce;border-radius:4px}
 .fpg-drawer-empty{margin:0;color:#989da5;font-size:12px;line-height:1.55}
 
@@ -1337,7 +1335,6 @@
 }
 
 
-/* FPG2 acceptance correction — CEAC product contract requires >=12px visible text. */
 .fpg-project-gold .fpg-project-tree-brand b,
 .fpg-project-gold .fpg-project-tree-list small,
 .fpg-project-gold .fpg-project-tree-stages>span,
@@ -1365,7 +1362,6 @@
 }
 
 
-/* FPG2 reference-tightening: factual header metadata and issue-table anatomy. */
 .fpg-project-facts{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,auto)) minmax(150px,1fr) auto;
