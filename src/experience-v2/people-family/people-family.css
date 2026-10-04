@@ -1242,43 +1242,6 @@
   margin: 0;
 }
 
-.ev2-people-admin .ev2p-admin-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ev2-space-2);
-  margin-top: var(--ev2-space-3);
-}
-
-.ev2-people-admin .ev2p-admin-filters button {
-  min-height: var(--ev2-control-min);
-  padding: 0 var(--ev2-space-3);
-  border: 1px solid var(--ev2-line);
-  border-radius: var(--ev2-radius-pill);
-  background: var(--ev2-surface);
-  color: var(--ev2-text-secondary);
-  font: inherit;
-  font-size: var(--ev2-type-supporting);
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.ev2-people-admin .ev2p-admin-filters button:hover {
-  border-color: var(--ev2-line-strong);
-  background: var(--ev2-surface-soft);
-}
-
-.ev2-people-admin .ev2p-admin-filters button:focus-visible,
-.ev2p-admin-person-row:focus-visible {
-  outline: 3px solid rgba(12, 93, 249, .20);
-  outline-offset: 2px;
-}
-
-.ev2-people-admin .ev2p-admin-filters button.is-selected {
-  border-color: color-mix(in srgb, var(--ev2-action) 32%, var(--ev2-line));
-  background: var(--ev2-action-soft);
-  color: var(--ev2-action);
-}
-
 .ev2p-admin-person-row {
   width: 100%;
   min-height: 4.5rem;
@@ -1629,6 +1592,19 @@
   }
 }
 
+
+.ev2p-admin-master-list {
+  margin-top: var(--ev2-space-4);
+}
+
+.ev2p-admin-master-list .field-group {
+  margin-bottom: var(--ev2-space-3);
+}
+
+.ev2p-admin-master-list .ev2p-link-list {
+  max-height: min(50vh, 28rem);
+  overflow: auto;
+}
 
 /* VF2C — Staff Team fidelity
    Staff Team is context and directory, not a management dashboard. */
@@ -1990,6 +1966,10 @@
 }
 
 @media (max-width: 760px) {
+  .ev2p-admin-master-list {
+    display: none;
+  }
+
   .ev2-people-admin > .ev2p-section {
     margin-top: var(--ev2-space-3);
   }

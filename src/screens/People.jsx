@@ -12,11 +12,13 @@ import {
   PeopleFactRow,
   PeoplePageHeader,
   PeoplePersonHeader,
+  PeoplePersonRow,
   PeopleSection,
   PeopleWorkspaceSection,
 } from "../experience-v2/people-family/PeopleFamilyV2";
 
 const PEOPLE_VIEWS = [["directory","Directory"],["organisation","Organisation"],["attention","Needs attention"]];
+const PERSON_TABS = [["overview","Overview"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["documents","Documents"],["history","History"]];
 const FILTERS = [["all","Everyone"],["active","Active"],["on_leave","On leave"],["quiet","No submissions in 14 days"],["no_unit","No unit"]];
 const EMPLOYMENT_CHANGES = [
   ["employment_details_changed","Employment details changed"],
@@ -60,6 +62,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
+  const [personTab, setPersonTab] = useState("overview");
   const [searchText, setSearchText] = useState("");
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [units, setUnits] = useState([]);
@@ -170,6 +173,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     setDetailLoading(true);
     setError(null);
     setDrill(null);
+    setPersonTab("overview");
 
     const rosterDetailResult = await supabase.rpc("admin_employee_roster_detail", { p_employee_id: summary.id });
     if (rosterDetailResult.error) {
@@ -436,9 +440,64 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
           {person.birthday && <PeopleFactRow icon="calendar" title="Birthday" subtitle={new Date(person.birthday).toLocaleDateString("en-GB", { day: "numeric", month: "long" })} />}
         </div>
       </PeopleWorkspaceSection>
+
+      <div className="ev2p-admin-master-list" aria-label="Employee directory">
+        <FieldGroup label="Find employee">
+          <input
+            className="field"
+            type="search"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder="Name, title or unit"
+          />
+        </FieldGroup>
+        <div className="ev2p-link-list">
+          {rows
+            .filter((entry) => {
+              const query = searchText.trim().toLowerCase();
+              return !query || [entry.full_name, entry.job_title, entry.source_position, entry.unit_name]
+                .filter(Boolean).some((value) => String(value).toLowerCase().includes(query));
+            })
+            .slice(0, 18)
+            .map((entry) => <PeoplePersonRow
+              key={entry.id}
+              name={entry.full_name}
+              subtitle={entry.job_title || entry.source_position || "No job title recorded"}
+              context={entry.unit_name || entry.source_department_text || "No unit recorded"}
+              status={entry.id === person.id ? "Selected" : undefined}
+              statusTone="action"
+              onClick={() => openPerson(entry)}
+            />)}
+        </div>
+      </div>
         </aside>
 
         <div className="ev2p-admin-person-detail">
+        <div className="ev2p-filter-tabs" role="tablist" aria-label="Employee record sections">
+          {[...PERSON_TABS, ...(canManageProtectedHr ? [["protected","Protected HR"]] : [])].map(([key, label]) => <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={personTab === key}
+            className={personTab === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
+            onClick={() => setPersonTab(key)}
+          >{label}</button>)}
+        </div>
+
+        {personTab === "overview" && <PeopleWorkspaceSection
+          title="Overview"
+          description="Current authorised employee context. Missing values remain missing until CEAC records them."
+        >
+          <div className="ev2p-admin-record-grid">
+            <PeopleFactRow icon="work" title="Current title" subtitle={employmentCurrent?.job_title || person.job_title || person.source_position || "Not recorded"} />
+            <PeopleFactRow icon="people" title="Primary unit" subtitle={employmentCurrent?.unit_name || person.unit_name || (rosterUnitNames.length ? rosterUnitNames.join(" · ") : "Not recorded")} />
+            <PeopleFactRow icon="people" title="Account" subtitle={person.email || identityLabel} />
+            <PeopleFactRow icon="info" title="Employment status" subtitle={employmentState} />
+            <PeopleFactRow icon="work" title="Open work" subtitle={hasLinkedProfile ? `${person.openWork.length} recorded` : "No linked operational account"} />
+            <PeopleFactRow icon="calendar" title="Leave records" subtitle={hasLinkedProfile ? `${person.leave.length} recorded` : "No linked operational account"} />
+          </div>
+        </PeopleWorkspaceSection>}
+      {personTab === "employment" && <>
       <PeopleWorkspaceSection
         title="Employment record"
         description="The current authorised employment record. Recording a change creates a new historical snapshot rather than overwriting the past."
@@ -456,7 +515,9 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
           {employmentCurrent?.exited_on && <PeopleFactRow icon="calendar" title="Exit date" subtitle={dateOnly(employmentCurrent.exited_on)} />}
         </div>
       </PeopleWorkspaceSection>
+      </>}
 
+      {personTab === "history" && <>
       <PeopleWorkspaceSection
         title="Employment history"
         description={hasLinkedProfile ? "Audited employment snapshots in effective-date order." : "A roster-only employee has no linked account employment history yet."}
@@ -479,12 +540,14 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
                 <span>{event.actor_name ? `Recorded by ${event.actor_name}` : "System baseline"}</span>
               </article>)}</div>}
       </PeopleWorkspaceSection>
+      </>}
 
+      {personTab === "work" && <>
       <PeopleWorkspaceSection
         title="Work & activity context"
         description={hasLinkedProfile
-          ? "Factual authorised work and session evidence only. These records are not a productivity score, ranking, pay input or disciplinary conclusion."
-          : "Operational work and session evidence appears only when this employee is linked to a real CEAC account."}
+          ? "Factual authorised work evidence only. These records are not a productivity score, ranking, pay input or disciplinary conclusion."
+          : "Operational work evidence appears only when this employee is linked to a real CEAC account."}
       >
         {!hasLinkedProfile && <PeopleEmpty title="No linked operational account" description="The employee is present in the roster, but CEAC will not invent work, attendance or submission records for someone without a linked account." />}
         {hasLinkedProfile && <>
@@ -511,6 +574,19 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
           <span className="ev2p-link-row-tail">›</span>
         </button>
 
+        </>}
+      </PeopleWorkspaceSection>
+      </>}
+
+      {personTab === "time" && <>
+      <PeopleWorkspaceSection
+        title="Time & Leave"
+        description={hasLinkedProfile
+          ? (leavePolicy ? "Recorded work-session and leave context against the currently configured leave policy. No work session is not an absence." : "Recorded work-session and leave context is shown, but entitlement is not calculated because Administration has not configured the policy.")
+          : "Time and leave history appears only when this employee is linked to an operational CEAC account."}
+      >
+        {!hasLinkedProfile && <PeopleEmpty title="No linked time or leave record" description="The employee remains represented in the roster without fabricated leave or attendance data." />}
+        {hasLinkedProfile && <>
         <PeopleEvidenceSummary
           facts={[
             { value: person.days_this_month || 0, label: "days with a recorded session this month" },
@@ -525,17 +601,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
           </span>
           <span className="ev2p-link-row-tail">›</span>
         </button>
-        </>}
-      </PeopleWorkspaceSection>
 
-      <PeopleWorkspaceSection
-        title="Leave"
-        description={hasLinkedProfile
-          ? (leavePolicy ? "Recorded leave against the currently configured leave policy." : "Leave actually taken is shown, but entitlement is not calculated because Administration has not configured the policy.")
-          : "Leave history appears only when this employee is linked to an operational CEAC account."}
-      >
-        {!hasLinkedProfile && <PeopleEmpty title="No linked leave record" description="The employee remains represented in the roster without fabricated leave or attendance data." />}
-        {hasLinkedProfile && <>
         <div className="ev2p-admin-leave-card">
           {leavePolicy
             ? <ProgressMeter value={taken} max={entitlement} label="Annual leave used" detail={taken + " of " + entitlement + " configured days"} />
@@ -551,7 +617,16 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         </button>
         </>}
       </PeopleWorkspaceSection>
+      </>}
 
+      {personTab === "documents" && <PeopleWorkspaceSection
+        title="Documents"
+        description="Ordinary employee files use CEAC's private operational file domain. Protected HR documents remain behind the protected-HR boundary."
+      >
+        <PeopleEmpty title="No ordinary employee documents recorded" description="CEAC will not expose protected HR documents here or invent missing employee files." />
+      </PeopleWorkspaceSection>}
+
+      {personTab === "protected" && <>
       <PeopleWorkspaceSection
         title="Protected HR"
         description="Salary, identifiers, payment details and documents stay behind the protected-HR capability boundary. Roster-only employees can hold these records without a login account."
@@ -596,6 +671,8 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
           </>;
         })()}
       </PeopleWorkspaceSection>
+      </>}
+
         </div>
       </div>
 
@@ -772,13 +849,13 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
       </FieldGroup>
     </div>
 
-    <div className="ev2p-admin-filters" role="tablist" aria-label="People filters">
+    <div className="ev2p-filter-tabs ev2p-admin-filters" role="tablist" aria-label="People filters">
       {FILTERS.map(([key, label]) => <button
         key={key}
         type="button"
         role="tab"
         aria-selected={filter === key}
-        className={filter === key ? "is-selected" : ""}
+        className={filter === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
         onClick={() => setFilter(key)}
       >{label}</button>)}
     </div>
