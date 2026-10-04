@@ -10,7 +10,7 @@ const roleRoutes={
       ["home","home"],["work","work"],["team","team"],["staff-calendar","calendar"],
       ["messages","messages"],["me","my-hub"],["record","record"],["announcements","announcements"],
       ["performance","performance"],["learning","learning"],["attendance","workforce"],
-      ["assets","assets"],["compliance","compliance"]
+      ["assets","assets"],["compliance","compliance"],["account","account"]
     ]
   },
   manager:{
@@ -20,7 +20,8 @@ const roleRoutes={
       ["home","home"],["work","work"],["team","team"],["projects","projects"],["calendar","calendar"],
       ["manager-finance","budget"],["manager-reports","reports"],["record","record"],["announcements","announcements"],
       ["strategy","strategy"],["delivery","delivery"],["workload","workload"],["performance","performance"],
-      ["learning","learning"],["attendance","workforce"],["assets","assets"],["compliance","compliance"]
+      ["learning","learning"],["attendance","workforce"],["assets","assets"],["compliance","compliance"],
+      ["messages","messages"],["me","my-hub"],["account","account"]
     ]
   },
   administration:{
@@ -31,7 +32,8 @@ const roleRoutes={
       ["cost","expenses"],["reporting","reports"],["units","units"],["admin-projects","projects"],
       ["admin-calendar","calendar"],["lifecycle","lifecycle"],["protected-hr","protected-hr"],["audit","audit"],
       ["events","events"],["workflows","workflows"],["policies","policies"],["integrations","integrations"],
-      ["authority","authority"],["office-settings","organisation-settings"],["settings","control-center"]
+      ["authority","authority"],["office-settings","organisation-settings"],["settings","control-center"],
+      ["payroll","payroll"],["messages","messages"],["me","my-hub"],["account","account"],["record","record"],["announcements","announcements"]
     ]
   },
   executive:{
@@ -39,7 +41,8 @@ const roleRoutes={
     app:".executive-app",
     routes:[
       ["home","home"],["work","work"],["strategy","ministry"],["delivery","portfolio"],
-      ["exec-organisation","organisation"],["exec-finance","finance"],["exec-reports","reports"]
+      ["exec-organisation","organisation"],["exec-finance","finance"],["exec-reports","reports"],
+      ["payroll","payroll"],["messages","messages"],["me","my-hub"],["account","account"],["record","record"],["announcements","announcements"]
     ]
   }
 };
@@ -84,6 +87,28 @@ async function inspectRoutes(page,role,config,routes){
   return tinyText;
 }
 
+async function inspectMobileRoutes(page,role,config,routes){
+  for(const [tab,label] of routes){
+    const url=tab==="home"?"/":"/?tab="+encodeURIComponent(tab);
+    await page.goto(url);
+    await expect(page.locator(config.app)).toBeVisible({timeout:15000});
+    await expect(page.locator(".body").first()).toBeVisible({timeout:15000});
+    await page.evaluate(()=>document.fonts.ready);
+    const geometry=await page.evaluate(()=>{
+      const body=document.querySelector(".app-content .body");
+      const rect=body?.getBoundingClientRect();
+      return {
+        document:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+        bodyRight:rect ? rect.right-window.innerWidth : 0,
+        bodyLeft:rect ? -rect.left : 0,
+      };
+    });
+    expect(geometry.document, role+" / "+label+" mobile document overflow").toBeLessThanOrEqual(1);
+    expect(geometry.bodyRight, role+" / "+label+" mobile body overflow right").toBeLessThanOrEqual(1);
+    expect(geometry.bodyLeft, role+" / "+label+" mobile body overflow left").toBeLessThanOrEqual(1);
+  }
+}
+
 for(const [role,config] of Object.entries(roleRoutes)){
   const routeGroups=role==="administration"
     ? [config.routes.slice(0,10),config.routes.slice(10)]
@@ -96,6 +121,13 @@ for(const [role,config] of Object.entries(roleRoutes)){
       await signIn(page,config.email,config.app);
       const tinyText=await inspectRoutes(page,role,config,routes);
       expect(tinyText, "Visible text below the CEAC 12px operational floor").toEqual([]);
+    });
+
+    test(role+" mobile route sweep"+suffix,async({page})=>{
+      await page.setViewportSize({width:390,height:844});
+      await signIn(page,config.email,config.app);
+      await inspectMobileRoutes(page,role,config,routes);
+      await page.screenshot({path:"test-artifacts/ocr5h-"+role+"-mobile-"+(index+1)+".png",fullPage:true});
     });
 
   });
