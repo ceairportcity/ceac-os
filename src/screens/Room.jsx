@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { supabase } from "../lib/supabase";
 import VoiceInput from "../components/VoiceInput";
+import { OperationalMediaList, PendingFilePicker } from "../components/OperationalFiles";
+import { listOperationalFilesForContexts, uploadOperationalFiles } from "../lib/operationalFiles";
 import { humanError } from "../lib/productLanguage";
 
 function timeLabel(value) {
@@ -53,6 +55,7 @@ export default function Room({
   const [scopeRooms, setScopeRooms] = useState([]);
   const [messages, setMessages] = useState([]);
   const [body, setBody] = useState("");
+  const [pendingFiles, setPendingFiles] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [mentions, setMentions] = useState([]);
@@ -140,6 +143,7 @@ export default function Room({
   async function selectRoom(nextRoom, initial = false) {
     setRoom(nextRoom);
     setPanel(null);
+    setPendingFiles([]);
     setReplyTo(null);
     setMentions([]);
     setMentionQuery(null);
@@ -268,6 +272,11 @@ export default function Room({
 
   const messageSelect = "id,room_id,author_id,body,reply_to_id,created_at,profiles!room_messages_author_id_fkey(full_name),room_message_refs(id,object_type,object_id,label),room_mentions(profile_id,profiles!room_mentions_profile_id_fkey(full_name))";
 
+  async function hydrateMessageMedia(rows = []) {
+    const grouped = await listOperationalFilesForContexts("room_message", rows.map((row) => row.id));
+    return rows.map((row) => ({ ...row, operational_files: grouped.get(row.id) || [] }));
+  }
+
   async function loadMessages(roomId, showLoading = false) {
     if (!roomId) return;
     if (showLoading) setLoading(true);
@@ -278,7 +287,8 @@ export default function Room({
         .order("created_at", { ascending: false })
         .limit(PAGE_SIZE);
       if (result.error) throw result.error;
-      setMessages([...(result.data || [])].reverse());
+      const hydrated = await hydrateMessageMedia(result.data || []);
+      setMessages([...hydrated].reverse());
       setHasOlder((result.data || []).length === PAGE_SIZE);
     } catch (err) {
       setError(humanError(err, "Room messages could not be loaded."));
@@ -301,7 +311,8 @@ export default function Room({
         .order("created_at", { ascending: false })
         .limit(PAGE_SIZE);
       if (result.error) throw result.error;
-      const older = [...(result.data || [])].reverse();
+      const hydrated = await hydrateMessageMedia(result.data || []);
+      const older = [...hydrated].reverse();
       setMessages((current) => [...older, ...current]);
       setHasOlder((result.data || []).length === PAGE_SIZE);
       requestAnimationFrame(() => {
@@ -373,7 +384,20 @@ export default function Room({
         p_mention_ids: mentionIds,
       });
       if (result.error) throw result.error;
-      setBody(""); setReplyTo(null); setMentions([]); setMentionQuery(null); setSelectedRefs([]);
+      const messageId = Array.isArray(result.data) ? result.data[0] : result.data;
+      if (pendingFiles.length && messageId) {
+        try {
+          await uploadOperationalFiles({
+            files: pendingFiles,
+            contextType: "room_message",
+            contextId: messageId,
+            relation: "room_media",
+          });
+        } catch (fileError) {
+          setError(`Your message was sent, but ${fileError.message || "one or more files could not be attached."}`);
+        }
+      }
+      setBody(""); setPendingFiles([]); setReplyTo(null); setMentions([]); setMentionQuery(null); setSelectedRefs([]);
       await loadMessages(room.id, false);
     } catch (err) {
       setError(humanError(err, "Your message could not be sent."));
@@ -479,6 +503,7 @@ export default function Room({
               <span>{parent.body}</span>
             </div>}
             <p>{message.body}</p>
+            <OperationalMediaList files={message.operational_files || []} />
             {(message.room_mentions || []).length > 0 && <div className="room-message-mentions">
               {(message.room_mentions || []).map((mention) => <span key={mention.profile_id}>@{mention.profiles?.full_name || "CEAC member"}</span>)}
             </div>}
@@ -555,6 +580,13 @@ export default function Room({
           <span>{project.name}</span><b>+</b>
         </button>)}
       </div>}
+
+      <PendingFilePicker
+        files={pendingFiles}
+        onChange={setPendingFiles}
+        label="Attach media or file"
+        disabled={sending}
+      />
 
       <div className="room-composer-row room-composer-v2">
         <button className={"room-plus " + (panel ? "on" : "")} aria-label="Add context or action" onClick={() => setPanel((current) => current ? null : "actions")}>+</button>
