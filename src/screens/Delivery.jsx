@@ -23,7 +23,7 @@ function label(list, value) {
 function human(value = "") {
   return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase());
 }
-export default function Delivery({ me }) {
+export default function Delivery({ me, initialProjectId = null }) {
   const [projects,setProjects]=useState([]);
   const [groups,setGroups]=useState([]);
   const [groupLinks,setGroupLinks]=useState([]);
@@ -58,6 +58,7 @@ export default function Delivery({ me }) {
   const [workDependencyReason,setWorkDependencyReason]=useState("");
 
   useEffect(()=>{ load(); },[me.id]);
+  useEffect(()=>{ if(initialProjectId) setSelectedProjectId(initialProjectId); },[initialProjectId]);
 
   async function load() {
     setLoading(true); setError(null);
