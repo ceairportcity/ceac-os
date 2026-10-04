@@ -741,10 +741,6 @@
   overflow: visible;
 }
 
-.ev2-work-assignment .ev2wa-intro .ev2w-header {
-  padding-top: 0;
-}
-
 .ev2-work-assignment .assign-voice {
   min-height: 4.25rem;
   display: flex;
@@ -798,11 +794,6 @@
   margin-top: var(--ev2-space-4);
 }
 
-.ev2-work-assignment .main-col,
-.ev2-work-assignment .side-col {
-  min-width: 0;
-}
-
 .ev2-work-assignment .main-col .sec:first-child {
   margin-top: 0;
 }
@@ -840,10 +831,6 @@
   color: var(--ev2-text-secondary);
   font-size: var(--ev2-type-supporting);
   line-height: 1.45;
-}
-
-.ev2-work-assignment .assign-system-type {
-  margin: var(--ev2-space-2) var(--ev2-space-1) 0;
 }
 
 .ev2-work-assignment .voice-proposal {
@@ -917,12 +904,6 @@
     padding: var(--ev2-space-3) 0 var(--ev2-space-4);
   }
 
-  .ev2-work-assignment .main-col,
-  .ev2-work-assignment .side-col {
-    padding: var(--ev2-space-4);
-    border-radius: var(--ev2-radius-card);
-  }
-
   .ev2-work-assignment .assign-voice {
     align-items: stretch;
     flex-direction: column;
@@ -935,11 +916,7 @@
 }
 
 @media (max-width: 359px) {
-  .ev2-work-assignment .main-col,
-  .ev2-work-assignment .side-col,
-  .ev2-work-assignment .voice-proposal {
-    padding-inline: var(--ev2-space-3);
-  }
+  .ev2-work-assignment .voice-proposal { padding-inline: var(--ev2-space-3); }
 }
 
 /* OCR1 — compact shared Work Item Composer. */
