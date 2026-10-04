@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Sheet } from "../components/bits";
+import { ComposerDrawer } from "../experience-v2/components";
 import VoiceInput from "../components/VoiceInput";
 
 const ROLE_OPTIONS = [
@@ -172,8 +173,13 @@ export default function Announcements({ me, back }) {
       {receiptFor(selected)?.acknowledged_at && <div className="flag flag-green" style={{ marginTop: 18 }}><h4>Acknowledged</h4>{formatDate(receiptFor(selected).acknowledged_at)}</div>}
     </Sheet>}
 
-    {form && <Sheet onClose={() => !busy && setForm(null)}>
-      <div className="h2">{form.id ? "Edit draft" : "New announcement"}</div>
+    {form && <ComposerDrawer
+      open
+      onClose={() => !busy && setForm(null)}
+      title={form.id ? "Edit announcement draft" : "New announcement"}
+      description="Choose the audience, write the message and publish only after the draft is ready."
+      footer={<button className="btn" onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : "Save draft"}</button>}
+    >
       <label className="label" htmlFor="announcement-title">Title</label>
       <div className="assistive-field">
         <input id="announcement-title" className="field" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
@@ -200,7 +206,6 @@ export default function Announcements({ me, back }) {
         <div className="label">Roles</div>
         {ROLE_OPTIONS.map(([role, label]) => <label className="opt" key={role}><input type="checkbox" checked={form.roles.includes(role)} onChange={() => toggleList("roles", role)} /> {label}</label>)}
       </>}
-      <button className="btn" style={{ marginTop: 16 }} onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : "Save draft"}</button>
-    </Sheet>}
+    </ComposerDrawer>}
   </div>;
 }
