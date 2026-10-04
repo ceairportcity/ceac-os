@@ -555,13 +555,29 @@ for (const viewport of [
 test("Stage 10 Family H1 keeps Control Center capability-filtered while aligning shared V2 primitives", async () => {
   const control = readFileSync("src/screens/ControlCenter.jsx", "utf8");
   expect(control).toContain('caps.has("authority.manage")');
-  expect(control).toContain('caps.has("compliance.manage")');
   expect(control).toContain('caps.has("audit.view")');
   expect(control).toContain('caps.has("integration.manage")');
-  expect(control).toContain('action:()=>go("office-settings")');
-  expect(control).toContain("Everyday employee and manager work stays outside this area.");
-  expect(control).toContain("CeacIcon");
-  expect(control).toContain('icon:"add"');
+  expect(control).toContain('caps.has("payroll.prepare")');
+  expect(control).toContain('caps.has("payroll.approve")');
+  expect(control).toContain('caps.has("hr_private.access")');
+  expect(control).toContain('supabase.rpc("admin_employee_roster_summary")');
+  expect(control).toContain('supabase.from("leave_policy_versions")');
+  expect(control).toContain('supabase.rpc("payroll_readiness_summary")');
+  expect(control).toContain('supabase.from("integration_connectors")');
+  expect(control).toContain('supabase.from("platform_audit_events")');
+  for (const label of [
+    "Organisation",
+    "People & access",
+    "Work & operations",
+    "Time & Leave",
+    "Payroll & Finance",
+    "Security & governance",
+    "Integrations",
+    "Audit & records",
+  ]) expect(control).toContain(`title:"${label}"`);
+  expect(control).toContain("This is not a numeric health score.");
+  expect(control).toContain("DataPanel");
+  expect(control).toContain("QueueRow");
   expect(control).toContain("StatusBadge");
   expect(control).not.toContain('../components/primitives/Icon');
   expect(control).toContain("ev2-control-center");

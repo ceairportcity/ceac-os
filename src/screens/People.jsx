@@ -685,7 +685,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
       <PeopleWorkspaceSection
         title="Time & Leave"
         description={hasLinkedProfile
-          ? (leavePolicy ? "Recorded work-session and leave context against the currently configured leave policy. No work session is not an absence." : "Recorded work-session and leave context is shown, but entitlement is not calculated because Administration has not configured the policy.")
+          ? (leavePolicy ? "Recorded work-session and leave context against the currently configured leave policy. No work session is not an absence." : "Recorded work-session and leave context is shown, but entitlement is not calculated because Administration has not configured the policy. No work session is not an absence.")
           : "Time and leave history appears only when this employee is linked to an operational CEAC account."}
       >
         {!hasLinkedProfile && <PeopleEmpty title="No linked time or leave record" description="The employee remains represented in the roster without fabricated leave or attendance data." />}

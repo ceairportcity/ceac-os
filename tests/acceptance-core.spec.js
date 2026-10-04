@@ -2110,7 +2110,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
-  await page.getByText("Organisation", { exact: true }).click();
+  await page.getByRole("button", { name: "Office settings", exact: true }).click();
   await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
   await expect(page.getByText("Awaiting CEAC policy", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Configure policy in Workforce", exact: true })).toBeVisible();
