@@ -1,5 +1,3 @@
-/* FPG9 — Manager Home follows the literal CEAC HOME-A composition.
-   Existing operational panels remain functional below the reference-first viewport. */
 .managerv2{width:100%;max-width:80rem;margin:0 auto;display:grid;gap:16px;padding:0 0 40px;font-family:var(--ev2-font-sans);color:var(--ev2-text);font-size:12px}
 .managerv2 small,.managerv2 button{font-size:12px}
 .fpg9-home-hero{
@@ -114,7 +112,6 @@ button.fpg9-home-row:hover{background:#f8fafb}
 .fpg9-preview-card>div{border-top:1px solid #eef1f3;padding:0 8px 6px}
 .fpg9-preview-card .fpg9-home-row{min-height:44px}
 
-/* Existing operating record: shared V2 primitives provide row/card styling. */
 .managerv2-count{min-width:28px;height:28px;display:inline-grid;place-items:center;padding:0 7px;border-radius:999px;background:var(--ev2-surface-muted);color:var(--ev2-text-secondary);font-weight:700}
 .managerv2-count.is-attention{background:var(--ev2-warning-soft);color:var(--ev2-warning)}
 .managerv2-count.is-success{background:var(--ev2-success-soft);color:var(--ev2-success)}
