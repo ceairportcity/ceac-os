@@ -148,8 +148,10 @@ export function SideNav({
           <strong>{me?.full_name || "Account"}</strong>
           <small>{me?.unit_name || role}</small>
         </span>
-        <CeacIcon name="chevronRight" size="meta" decoratiults">{results}</div> : null}
-  </div>;
+        <CeacIcon name="chevronRight" size="meta" decorative />
+      </button>
+    </aside>
+  );
 }
 
 export function AppTopBar({
