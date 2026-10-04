@@ -620,4 +620,40 @@ All six correction families satisfy the required acceptance boundary for the ren
 
 This acceptance does not claim an authenticated protected-Vercel production smoke. The connected Vercel scope still does not provide independent authenticated access to the protected project, so that remains a separate production-evidence limitation rather than a literal-parity defect.
 
-Next action: run one final exact-head Level B revalidation of this documentation checkpoint. If the branch has not moved and all required checks remain green, promote PR #99 from draft and merge through protected-main rules, then verify the new protected-main exact head.
+## Post-FPG literal-parity canonical closure
+
+Status: ACCEPTED / MERGED / EXACT-MAIN TECHNICAL VERIFICATION COMPLETE / AUTHENTICATED LIVE SMOKE ACCESS-BLOCKED
+
+Canonical application closure:
+- PR #99 merged to protected `main` at `a7d09f92b1f6085f74e69e0f4f2b754f566e3592`.
+- The accepted PR #99 application tree and the squash-merged application tree are identical: `cbf99bcebb7633aa5d2e624e7cb0105ccdd1cb04`.
+- The PR #99 exact-head Level B acceptance passed CI, Migration Replay, Account Security, SQL/authority, all four browser shards, product-evidence merge and role/RLS closure.
+- The PR #99 Vercel deployment reported success before the post-merge CI-harness-only correction.
+
+Post-merge CI verification correction:
+- PR #101 fixed a harness-classification defect where broad squash merges could lose the `[level-b]` subject marker, classify as Level A and attempt the full browser suite unsharded under the 20-minute Level A timeout.
+- PR #101 changed only `scripts/ci/classify-verification.mjs`; no CEAC application runtime, data model, authority, visual design, Leave, Payroll, HR or Finance code changed.
+- PR #101 merged to protected `main` at `30370358b4a7420030b17496753f0fe571b9b407`.
+- Exact-main verification on `30370358b4a7420030b17496753f0fe571b9b407`:
+  - CI #1980 — PASS.
+  - Migration Replay #1583 — PASS.
+  - Account Security #1755 — PASS.
+  - Quality Gate #1781 — PASS.
+  - Level B SQL and authority contracts — PASS.
+  - browser shards 1/4, 2/4, 3/4 and 4/4 — PASS.
+  - exact-head product-evidence merge — PASS.
+  - role-and-RLS closure — PASS.
+
+Final corridor acceptance:
+- FUNCTIONAL CONTRACT PRESERVED: YES.
+- SECURITY/AUTHORITY PRESERVED: YES.
+- REFERENCE COMPONENT PARITY: YES.
+- RESPONSIVE ACCEPTANCE: YES.
+
+Deployment/evidence boundary:
+- the current CI-only main SHA is blocked from a fresh Vercel build by Vercel's external build-rate limit;
+- this is not an application-code failure because PR #101 contains no runtime application change and the preceding PR #99 application deployment succeeded;
+- the connected Vercel account still exposes no authorised team/project context, so an independent authenticated Staff / Manager / Administration / Executive production smoke cannot be claimed from this session;
+- that authenticated live-product smoke remains a separate access/evidence item and must not be misreported as completed.
+
+The post-FPG literal-parity correction corridor is closed. Do not reopen its accepted application changes without a new, evidence-backed defect or an explicit owner decision.
