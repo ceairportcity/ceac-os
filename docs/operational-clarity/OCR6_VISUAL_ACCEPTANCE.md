@@ -145,11 +145,11 @@ Truthful recorded data, RLS, role/capability authority, payroll separation of du
 
 ## OCR6D result
 
-**REFERENCE COMPONENT PARITY: YES**  
-**RESPONSIVE ACCEPTANCE: YES**  
-**PLAIN-LANGUAGE / CLARITY ACCEPTANCE: YES**  
-**ACCESSIBILITY BASICS: YES**  
-**FUNCTIONAL CONTRACT PRESERVED: YES**  
+**REFERENCE COMPONENT PARITY: YES**
+**RESPONSIVE ACCEPTANCE: YES**
+**PLAIN-LANGUAGE / CLARITY ACCEPTANCE: YES**
+**ACCESSIBILITY BASICS: YES**
+**FUNCTIONAL CONTRACT PRESERVED: YES**
 **SECURITY / AUTHORITY PRESERVED OR EXPLICITLY AMENDED: YES**
 
 No additional visual redesign is required for the locked Operational Clarity scope. The containing commit must still pass the full exact-head Level B gate before protected merge.
