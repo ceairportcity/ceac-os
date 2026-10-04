@@ -44,6 +44,12 @@ begin
     raise exception 'OCR3 file gate: Work source-file authority is not bound to assigned_by/review authority.';
   end if;
 
+  if v_def not ilike '%employee_photo%'
+     or v_def not ilike '%employee_document%'
+     or v_def not ilike '%app_is_admin%' then
+    raise exception 'OCR5B employee file gate: employee file write contexts are not Administration-bound.';
+  end if;
+
   select pg_get_constraintdef(c.oid) into v_constraint
   from pg_constraint c
   join pg_class t on t.oid=c.conrelid
@@ -126,6 +132,124 @@ begin
   end if;
 end
 $authorised$;
+
+reset role;
+
+do $employee_file_fixtures$
+declare
+  v_employee uuid;
+begin
+  select id into v_employee
+  from public.employee_roster
+  where profile_id='31000000-0000-4000-8000-000000000001'::uuid
+    and org_id='10000000-0000-4000-8000-000000000010'::uuid;
+
+  if v_employee is null then
+    raise exception 'OCR5B employee file gate: Staff Fixture employee record is missing.';
+  end if;
+
+  insert into public.operational_files(
+    id,org_id,filename,mime_type,size_bytes,storage_path,uploaded_by,state,finalised_at
+  ) values
+    (
+      '4f000000-0000-4000-8000-000000000110',
+      '10000000-0000-4000-8000-000000000010',
+      'staff-photo.webp','image/webp',1024,
+      '10000000-0000-4000-8000-000000000010/4f000000-0000-4000-8000-000000000110/staff-photo.webp',
+      '31000000-0000-4000-8000-000000000003','active',now()
+    ),
+    (
+      '4f000000-0000-4000-8000-000000000111',
+      '10000000-0000-4000-8000-000000000010',
+      'ordinary-employee-note.pdf','application/pdf',2048,
+      '10000000-0000-4000-8000-000000000010/4f000000-0000-4000-8000-000000000111/ordinary-employee-note.pdf',
+      '31000000-0000-4000-8000-000000000003','active',now()
+    );
+
+  insert into public.operational_file_links(
+    org_id,file_id,context_type,context_id,relation,linked_by
+  ) values
+    (
+      '10000000-0000-4000-8000-000000000010',
+      '4f000000-0000-4000-8000-000000000110',
+      'employee_photo',v_employee,'employee_photo',
+      '31000000-0000-4000-8000-000000000003'
+    ),
+    (
+      '10000000-0000-4000-8000-000000000010',
+      '4f000000-0000-4000-8000-000000000111',
+      'employee_document',v_employee,'employee_document',
+      '31000000-0000-4000-8000-000000000003'
+    );
+
+  perform set_config('ceac.ocr5b_employee_id',v_employee::text,true);
+end
+$employee_file_fixtures$;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000005',true);
+
+do $employee_file_staff$
+declare
+  v_employee uuid:=nullif(current_setting('ceac.ocr5b_employee_id',true),'')::uuid;
+  n integer;
+begin
+  select count(*) into n from public.operational_files
+  where id='4f000000-0000-4000-8000-000000000110'::uuid;
+  if n<>1 then
+    raise exception 'OCR5B employee file gate: authenticated org member cannot read employee photo.';
+  end if;
+
+  select count(*) into n from public.operational_files
+  where id='4f000000-0000-4000-8000-000000000111'::uuid;
+  if n<>0 then
+    raise exception 'OCR5B employee file gate: ordinary employee document leaked beyond Administration.';
+  end if;
+
+  if public.app_can_write_operational_context('employee_photo',v_employee)
+     or public.app_can_write_operational_context('employee_document',v_employee) then
+    raise exception 'OCR5B employee file gate: non-Administration employee file write authority leaked.';
+  end if;
+end
+$employee_file_staff$;
+
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+
+do $employee_file_admin$
+declare
+  v_employee uuid:=nullif(current_setting('ceac.ocr5b_employee_id',true),'')::uuid;
+  n integer;
+  rejected boolean:=false;
+begin
+  select count(*) into n from public.operational_files
+  where id in (
+    '4f000000-0000-4000-8000-000000000110'::uuid,
+    '4f000000-0000-4000-8000-000000000111'::uuid
+  );
+  if n<>2 then
+    raise exception 'OCR5B employee file gate: Administration cannot read employee photo/document records.';
+  end if;
+
+  if not public.app_can_write_operational_context('employee_photo',v_employee)
+     or not public.app_can_write_operational_context('employee_document',v_employee) then
+    raise exception 'OCR5B employee file gate: Administration employee file write authority is missing.';
+  end if;
+
+  begin
+    perform * from public.register_operational_file(
+      'employee_photo',v_employee,'employee_photo',
+      'not-a-photo.pdf','application/pdf',1024
+    );
+  exception when others then
+    rejected:=true;
+  end;
+  if not rejected then
+    raise exception 'OCR5B employee file gate: non-image employee photo registration was accepted.';
+  end if;
+end
+$employee_file_admin$;
 
 reset role;
 
