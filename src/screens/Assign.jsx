@@ -541,20 +541,16 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
 
       <div className="split" style={{ marginTop: 10 }}>
         <div className="main-col">
-          <div className="sec"><span>What are you trying to do?</span></div>
-          <div className="assign-intent-grid" role="radiogroup" aria-label="Work intention">
-            {WORK_INTENTS.map(([value, label, description]) => <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={kind === value}
-              className={`assign-intent ${kind === value ? "on" : ""}`}
-              onClick={() => setKind(value)}>
-              <strong>{label}</strong>
-              <span>{description}</span>
-            </button>)}
+          <FieldGroup label="Work type">
+            <select className="field" aria-label="Work type" value={kind} onChange={(event) => setKind(event.target.value)}>
+              {WORK_INTENTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </FieldGroup>
+          <div className="assign-system-type">
+            <strong>{WORK_INTENTS.find(([value]) => value === kind)?.[1]}</strong>
+            <span>{WORK_INTENTS.find(([value]) => value === kind)?.[2]}</span>
+            <small>CEAC records this as {WORK_KINDS.find(([value]) => value === kind)?.[1]}.</small>
           </div>
-          <div className="assign-system-type">CEAC will record this as <strong>{WORK_KINDS.find(([value]) => value === kind)?.[1]}</strong>.</div>
           {!WORK_KINDS.find(([value]) => value === kind)?.[3] && <div className="flag flag-amber" style={{ marginTop: 10 }}>
             <h4>{WORK_KINDS.find(([value]) => value === kind)?.[1]} is not connected yet</h4>
             Its approved behaviour is not connected to this screen yet. CEAC OS will not save it with Task behaviour.
@@ -637,10 +633,15 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           {kind === "task" && <>
           <FieldGroup label="Work to complete"><input className="field" placeholder="What needs doing" value={title} onChange={(e) => setTitle(e.target.value)} /></FieldGroup>
           <FieldGroup label="Why this matters" hint="Who it is for, or what is affected if it is late."><AssistiveTextarea className="field" rows={3} placeholder="Add useful context" value={purpose} onChange={(e) => setPurpose(e.target.value)} /></FieldGroup>
-          <FieldGroup label="Instructions" hint="Optional. Leave the method to the assignee when that is appropriate."><AssistiveTextarea className="field" rows={3} placeholder="How it is done here (optional)" value={instructions} onChange={(e) => setInstructions(e.target.value)} /></FieldGroup>
-          <div className="sec"><span>Optional detail</span></div>
-          <FieldGroup label="Finished result" hint="Optional. The four required assignment fields are what, why, who and when."><AssistiveTextarea className="field" rows={3} placeholder="Describe the finished result if useful" value={expectedOutcome}
-            onChange={(e) => setExpectedOutcome(e.target.value)} /></FieldGroup>
+          <details className="ocr-composer-disclosure">
+            <summary>Instructions <span>optional</span></summary>
+            <FieldGroup label="Instructions" hint="Leave the method to the assignee when that is appropriate."><AssistiveTextarea className="field" rows={3} placeholder="How it is done here" value={instructions} onChange={(e) => setInstructions(e.target.value)} /></FieldGroup>
+          </details>
+          <details className="ocr-composer-disclosure">
+            <summary>Finished result <span>optional</span></summary>
+            <FieldGroup label="Finished result" hint="The required assignment fields are what, why, who and when."><AssistiveTextarea className="field" rows={3} placeholder="Describe the finished result if useful" value={expectedOutcome}
+              onChange={(e) => setExpectedOutcome(e.target.value)} /></FieldGroup>
+          </details>
             {recipeSteps.length > 0 && <div className="card small" style={{ marginTop: 10 }}>
               <div className="row-t">Last time this unit did this</div>
               <div className="row-m">{recipeSource?.title} · {recipeSteps.length} recorded step{recipeSteps.length === 1 ? "" : "s"}</div>
