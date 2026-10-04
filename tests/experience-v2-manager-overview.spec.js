@@ -48,7 +48,7 @@ test("Stage 6 Manager Overview is isolated V2 presentation on preserved manager 
   expect(view).toContain('from "../icons"');
   expect(view).toContain('onNavigate?.("attendance")');
   expect(view).not.toContain("leaveLimit");
-  expect(view).toContain("more open item");
+  expect(view).toContain("All your recorded work, in one place.");
   expect(view).not.toContain("components/bits");
   expect(view).not.toContain("ReferenceDashboard");
 
