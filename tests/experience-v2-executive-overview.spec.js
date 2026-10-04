@@ -117,11 +117,16 @@ test("VF5A Executive briefing locks senior-attention-first mobile composition", 
   expect(movementMetrics.height).toBeLessThanOrEqual(120);
 
   for (const selector of [".executivev2-context-grid", ".executivev2-support-grid"]) {
-    const rail = await page.locator(selector).evaluate((node) => ({
-      scroll: node.scrollWidth,
-      client: node.clientWidth,
-    }));
-    expect(rail.scroll).toBeGreaterThan(rail.client);
+    const rails = page.locator(selector);
+    const count = await rails.count();
+    expect(count).toBeGreaterThan(0);
+    for (let index = 0; index < count; index += 1) {
+      const rail = await rails.nth(index).evaluate((node) => ({
+        scroll: node.scrollWidth,
+        client: node.clientWidth,
+      }));
+      expect(rail.scroll).toBeGreaterThan(rail.client);
+    }
   }
 
   const delivery = await page.locator(".executivev2-delivery-grid").evaluate((node) => ({
