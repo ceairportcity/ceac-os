@@ -190,4 +190,3 @@ export default function GlobalSearch({
     {open ? <div className="ev2s-destination-palette" role="dialog" aria-label="Search CEAC results">{results}</div> : null}
   </div>;
 }
-
