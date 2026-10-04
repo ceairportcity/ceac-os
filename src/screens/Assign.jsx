@@ -685,7 +685,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Due</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          
+
         </div>}
         {kind === "meeting_outcome" && <div className="side-col">
           <div className="sec"><span>Who owns the commitment</span></div>
@@ -707,7 +707,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Due</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          
+
         </div>}
         {kind === "decision" && <div className="side-col">
           <div className="sec"><span>Who decides</span></div>
@@ -729,7 +729,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Decision due</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          
+
         </div>}
         {kind === "request" && <div className="side-col">
           <div className="sec"><span>Who should respond</span></div>
@@ -753,7 +753,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           </select>}
           <div className="sec"><span>Needed by</span></div>
           <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-          
+
         </div>}
         {kind === "case" && <div className="side-col">
           <div className="sec"><span>Case owner</span></div>
@@ -777,7 +777,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Project phase (optional)</option>
             {phases.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>}
-          
+
         </div>}
         {kind === "routine" && <div className="side-col">
           <div className="sec"><span>Who owns it</span></div>
@@ -801,7 +801,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Project phase (optional)</option>
             {phases.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
           </select>}
-          
+
           <div className="hint">Routine history is recorded occurrence by occurrence. Changing its schedule later does not rewrite earlier records.</div>
         </div>}
         {kind === "task" && <div className="side-col">
@@ -833,7 +833,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
               <h4>{warning.title}</h4>{warning.detail}
             </div>)}
           </div>}
-          
+
           <div className="hint">Required: what needs doing, why it matters, who owns it and when it is due. Method and checklist are optional.</div>
         </div>}
       </div>
