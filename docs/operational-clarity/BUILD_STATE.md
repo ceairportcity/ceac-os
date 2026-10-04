@@ -1,6 +1,6 @@
 # CEAC OS — Operational Clarity Build State
 
-Status: **OCR1 IMPLEMENTED / EXACT-HEAD LEVEL B PENDING**
+Status: **OCR1 ACCEPTED / OCR2 ACTIVE**
 
 Canonical implementation branch:
 `chatgpt/operational-clarity-implementation-2026-10-04`
@@ -27,7 +27,7 @@ Evidence:
 ## OCR1 — Shared Composer foundation
 
 ### OCR1A — Composer primitive
-Status: **IMPLEMENTED / ACCEPTANCE PENDING**
+Status: **ACCEPTED**
 
 - Reuses the existing accessible V2 Drawer/focus-trap architecture.
 - Desktop right drawer width is capped at 32.5rem (within the locked 460–520px range).
@@ -36,7 +36,7 @@ Status: **IMPLEMENTED / ACCEPTANCE PENDING**
 - No backend/authority change.
 
 ### OCR1B — Give out work
-Status: **IMPLEMENTED / ACCEPTANCE PENDING**
+Status: **ACCEPTED**
 
 - Existing Work Engine RPCs and all seven work-kind semantics preserved.
 - Long page converted to shared Composer.
@@ -46,7 +46,7 @@ Status: **IMPLEMENTED / ACCEPTANCE PENDING**
 - Existing assignment warnings, voice assist, task checklist, typed-work behaviours and review authority remain unchanged.
 
 ### OCR1C — Ministry Objective / Direction
-Status: **IMPLEMENTED / ACCEPTANCE PENDING**
+Status: **ACCEPTED**
 
 - Strategy create/revise uses the shared Composer.
 - Plain-language objective/measurement labels.
@@ -56,12 +56,34 @@ Status: **IMPLEMENTED / ACCEPTANCE PENDING**
 - Strategy authority and historical revision semantics unchanged.
 
 ### OCR1D — Announcement Composer
-Status: **IMPLEMENTED / ACCEPTANCE PENDING**
+Status: **ACCEPTED**
 
 - Announcement draft create/edit uses the shared Composer.
 - Existing audience, acknowledgement, priority, expiry and publish authority preserved.
 - Secure attachments intentionally wait for OCR3 Files foundation rather than being fabricated.
 
-## Next action
+## OCR1 acceptance evidence
 
-Run the complete exact-head Level B gate for OCR1. If green, record OCR1 acceptance and proceed immediately to OCR2 Executive clarity.
+Accepted exact head: `2475b7b5a76c0658d7fa234bafa99f1a82cd6694`.
+
+- CI: PASS.
+- Migration Replay: PASS.
+- Account Security: PASS.
+- Level B SQL/authority: PASS.
+- Browser shards 1/4–4/4: PASS.
+- Exact-head product evidence merge: PASS.
+- role-and-RLS closure: PASS.
+
+Acceptance matrix:
+- FUNCTIONAL CONTRACT PRESERVED: YES
+- SECURITY / AUTHORITY PRESERVED OR EXPLICITLY AMENDED: YES
+- REFERENCE COMPONENT PARITY: YES
+- RESPONSIVE ACCEPTANCE: YES
+- PLAIN-LANGUAGE / CLARITY ACCEPTANCE: YES
+- ACCESSIBILITY BASICS: YES
+
+## OCR2 — Executive clarity and action hierarchy
+
+Status: **ACTIVE**
+
+Next: recompose Executive Overview, Ministry, Portfolio, Organisation and Executive Create around the locked decision-first hierarchy without changing protected backend authority.
