@@ -235,7 +235,7 @@ for (const viewport of [
     await page.getByRole("button", { name: "Give out work", exact: true }).first().click();
     await expect(page.locator(".ev2-work-assignment")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Give out work", exact: true })).toBeVisible();
-    await expect(page.getByRole("radiogroup", { name: "Work intention" })).toBeVisible();
+    await expect(page.getByLabel("Work type")).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
