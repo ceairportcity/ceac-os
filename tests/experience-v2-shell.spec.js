@@ -25,6 +25,9 @@ test("Stage 4B shell is isolated, tokenized and wired through App", async () => 
   expect(shell).toContain("Drawer");
   expect(shell).toContain("PopoverMenu");
   expect(shell).toContain("getShellQuickActions");
+  expect(shell).toContain("searchCeacRecords");
+  expect(shell).toContain("Search CEAC…");
+  expect(shell).not.toContain("Find a destination…");
   expect(shell).toContain("ev2s-sidebar-main");
   expect(shell).not.toContain("function createMenuItems");
   expect(shell).not.toContain("components/primitives/Icon");
@@ -82,7 +85,7 @@ test("Stage 4B desktop shell exposes only authorised production destinations", a
   await expect(sidebar.getByRole("button", { name: "Time & Leave", exact: true })).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Control Center", exact: true })).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Primitives", exact: true })).toHaveCount(0);
-  await expect(page.getByPlaceholder("Find a destination…")).toBeVisible();
+  await expect(page.getByPlaceholder("Search CEAC…")).toBeVisible();
 
   const geometry = await page.evaluate(() => {
     const nav = document.querySelector(".ev2s-sidebar-nav");
@@ -181,6 +184,92 @@ test("OCR3 Room Composer exposes private media attachment control", async ({ pag
   await page.getByRole("menu").getByRole("menuitem", { name: "Message room", exact: true }).click();
   await expect(page.locator(".room-screen")).toBeVisible({ timeout: 15000 });
   await expect(page.getByText("Attach media or file", { exact: true })).toBeVisible();
+});
+
+test("OCR4 Global Search returns grouped authorised records and opens Project and Work", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "manager@ceac.local.test");
+
+  const search = page.getByPlaceholder("Search CEAC…");
+  await search.fill("Stage 4 Browser Project");
+  const results = page.getByRole("dialog", { name: "Search CEAC results" });
+  await expect(results).toBeVisible();
+  const projects = results.locator('.ev2s-search-group[aria-label="Projects"]');
+  await expect(projects.getByRole("button", { name: /Stage 4 Browser Project/ })).toBeVisible();
+  await projects.getByRole("button", { name: /Stage 4 Browser Project/ }).click();
+  await expect(page).toHaveURL(/tab=projects.*project=25000000-0000-4000-8000-000000000011/);
+  await expect(page.locator(".ev2-project-workspace")).toBeVisible({ timeout: 15000 });
+
+  await page.goto("/?tab=home");
+  await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
+  const searchAgain = page.getByPlaceholder("Search CEAC…");
+  await searchAgain.fill("Stage 5 predecessor work");
+  const work = page.getByRole("dialog", { name: "Search CEAC results" }).locator('.ev2s-search-group[aria-label="Work"]');
+  await expect(work.getByRole("button", { name: /Stage 5 predecessor work/ })).toBeVisible();
+  await work.getByRole("button", { name: /Stage 5 predecessor work/ }).click();
+  await expect(page.locator(".ev2-work-detail")).toBeVisible({ timeout: 15000 });
+});
+
+test("OCR4 Global Search finds people, departments and announcement actions/records", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "admin@ceac.local.test");
+
+  const search = page.getByPlaceholder("Search CEAC…");
+  await search.fill("Staff Fixture");
+  let results = page.getByRole("dialog", { name: "Search CEAC results" });
+  await expect(results.locator('.ev2s-search-group[aria-label="People"]').getByRole("button", { name: /Staff Fixture/ })).toBeVisible();
+
+  await search.fill("Test Unit A");
+  results = page.getByRole("dialog", { name: "Search CEAC results" });
+  await expect(results.locator('.ev2s-search-group[aria-label="Organisation"]').getByRole("button", { name: /Test Unit A/ })).toBeVisible();
+
+  await search.fill("announcement");
+  results = page.getByRole("dialog", { name: "Search CEAC results" });
+  await expect(results.locator('.ev2s-search-group[aria-label="Actions"]').getByRole("button", { name: "Announcement", exact: true })).toBeVisible();
+  await expect(results.locator('.ev2s-search-group[aria-label="Destinations"]').getByRole("button", { name: "Announcements", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "New announcement" });
+  await dialog.locator("#announcement-title").fill("OCR4 Search Announcement");
+  await dialog.locator("#announcement-body").fill("Search acceptance record");
+  await dialog.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(dialog).toBeHidden();
+
+  await page.getByPlaceholder("Search CEAC…").fill("OCR4 Search Announcement");
+  results = page.getByRole("dialog", { name: "Search CEAC results" });
+  await expect(results.locator('.ev2s-search-group[aria-label="Announcements"]').getByRole("button", { name: /OCR4 Search Announcement/ })).toBeVisible();
+});
+
+test("OCR4 Global Search finds a private uploaded Project filename through RLS", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "manager@ceac.local.test");
+  await page.goto("/?tab=projects&project=25000000-0000-4000-8000-000000000011");
+  await expect(page.locator(".ev2-project-workspace")).toBeVisible({ timeout: 15000 });
+  await page.getByRole("tab", { name: /^Files/ }).click();
+
+  const filename = "ocr4-private-search.txt";
+  const input = page.locator('.operational-files input[type="file"]');
+  await input.setInputFiles({ name: filename, mimeType: "text/plain", buffer: Buffer.from("OCR4 private search fixture") });
+  await expect(page.getByText(filename, { exact: true })).toBeVisible({ timeout: 15000 });
+
+  await page.getByPlaceholder("Search CEAC…").fill(filename);
+  const results = page.getByRole("dialog", { name: "Search CEAC results" });
+  const files = results.locator('.ev2s-search-group[aria-label="Files"]');
+  await expect(files.getByRole("button", { name: new RegExp(filename.replace(".", "\\.")) })).toBeVisible({ timeout: 15000 });
+});
+
+test("OCR4 mobile Search CEAC opens as a full-screen search surface", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page, "staff@ceac.local.test");
+  await page.getByRole("button", { name: "Search CEAC", exact: true }).click();
+  const drawer = page.getByRole("dialog", { name: "Search CEAC" });
+  await expect(drawer).toBeVisible();
+  await drawer.getByPlaceholder("Search CEAC…").fill("Stage 5 predecessor work");
+  await expect(drawer.locator('.ev2s-search-group[aria-label="Work"]').getByRole("button", { name: /Stage 5 predecessor work/ })).toBeVisible({ timeout: 15000 });
+  const box = await drawer.boundingBox();
+  expect(box?.width || 0).toBeGreaterThanOrEqual(389);
+  expect(box?.height || 0).toBeGreaterThanOrEqual(840);
 });
 
 test("Stage 4B mobile shell keeps five controls and uses the shared More drawer", async ({ page }) => {
