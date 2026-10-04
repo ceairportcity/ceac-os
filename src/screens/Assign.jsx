@@ -6,6 +6,8 @@ import { parseWorkInput } from "../lib/parseTask";
 import { humanError } from "../lib/productLanguage";
 import { FieldGroup } from "../components/bits";
 import { ComposerDrawer } from "../experience-v2/components";
+import { PendingFilePicker } from "../components/OperationalFiles";
+import { uploadOperationalFiles } from "../lib/operationalFiles";
 
 const WORK_KINDS = [
   ["task", "Task", "A specific action for someone to complete.", true],
@@ -71,6 +73,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   const [recipeSteps, setRecipeSteps] = useState([]);
   const [recipeSource, setRecipeSource] = useState(null);
   const [traceWarning, setTraceWarning] = useState(null);
+  const [sourceFiles, setSourceFiles] = useState([]);
   const [err, setErr] = useState(null);
 
   useEffect(() => { load(); }, [me.unit_id]);
@@ -233,6 +236,21 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     }
   }
 
+  async function attachSourceFiles(workId) {
+    if (!workId || !sourceFiles.length) return;
+    try {
+      await uploadOperationalFiles({
+        files: sourceFiles,
+        contextType: "work_item",
+        contextId: workId,
+        relation: "assignment_source",
+      });
+      setSourceFiles([]);
+    } catch (error) {
+      setTraceWarning(`The work was created, but ${error.message || "one or more source files could not be attached."}`);
+    }
+  }
+
   function primaryActionLabel() {
     if (kind === "deliverable") return "Give deliverable";
     if (kind === "meeting_outcome") return "Record meeting outcome";
@@ -288,6 +306,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setDeliverableEvidenceRequired(true); setKind("task"); setVoiceHint(null);
@@ -320,6 +339,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setMeetingTitle(""); setMeetingOn(new Date().toISOString().slice(0, 10)); setMeetingNote("");
@@ -349,6 +369,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setDecisionQuestion(""); setKind("task"); setVoiceHint(null);
@@ -379,6 +400,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setRequestResponsibleUnit(""); setKind("task"); setVoiceHint(null);
@@ -410,6 +432,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setExpectedOutcome(""); setAssignee(""); setDue("");
         setCaseOpenedOn(new Date().toISOString().slice(0, 10)); setCaseTargetOn("");
@@ -450,6 +473,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
         if (createdResult.error) throw createdResult.error;
         await linkMeeting(workId);
+        await attachSourceFiles(workId);
         setDone(createdResult.data.ref);
         setTitle(""); setPurpose(""); setInstructions(""); setExpectedOutcome("");
         setKind("task"); setAssignee(""); setDue(""); setSteps([""]); setNoStepsNeeded(false);
@@ -480,6 +504,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       if (taskError) throw taskError;
       await linkMeeting(created.id);
       await linkSourceMessage(created);
+      await attachSourceFiles(created.id);
       setDone(created.ref);
       setTitle(""); setPurpose(""); setInstructions(""); setExpectedOutcome("");
       setKind("task"); setDue(""); setSteps([""]); setNoStepsNeeded(false); setVoiceHint(null); setVoiceProposal(null);
@@ -836,6 +861,12 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
 
           <div className="hint">Required: what needs doing, why it matters, who owns it and when it is due. Method and checklist are optional.</div>
         </div>}
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        <div className="sec"><span>Source files</span><span>optional</span></div>
+        <p className="screen-note">Files supplied with the assignment stay on the work record. They are separate from submission/evidence files returned by the assignee.</p>
+        <PendingFilePicker files={sourceFiles} onChange={setSourceFiles} label="Attach source files" disabled={busy} />
       </div>
     </div>
     </ComposerDrawer>);
