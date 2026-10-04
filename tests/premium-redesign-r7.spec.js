@@ -49,7 +49,8 @@ test.describe("Premium redesign R7 closure", () => {
         await expect(page.locator(".fpg9-calendar-card")).toBeVisible();
         await expect(page.locator(".fpg9-home-queues")).toBeVisible();
         await expect(page.locator(".fpg9-module-strip")).toBeVisible();
-        await expect(page.locator(".managerv2-decisions")).toBeVisible();
+        await expect(page.locator(".fpg9-workspace-previews")).toBeVisible();
+        await expect(page.locator(".managerv2-decisions")).toHaveCount(0);
       } else if (label === "Administration") {
         await expect(page.locator(".adminv2")).toBeVisible();
         await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });

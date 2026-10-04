@@ -119,7 +119,9 @@ for (const role of roles) {
     );
     expect(Math.min(...navHeights)).toBeGreaterThanOrEqual(44);
 
-    const primary = page.getByRole("button", { name: role.primary, exact: true }).first();
+    const primary = role.key === "manager"
+      ? page.locator(".fpg9-mobile-shortcuts").getByRole("button", { name: "Work", exact: true })
+      : page.getByRole("button", { name: role.primary, exact: true }).first();
     await expect(primary).toBeVisible();
     const primaryBox = await primary.boundingBox();
     expect(primaryBox?.height || 0, `${role.key} primary touch target`).toBeGreaterThanOrEqual(44);
