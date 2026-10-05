@@ -16,7 +16,7 @@ function formatDate(value) {
 }
 
 function blankForm() {
-  return { id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [], files: [] };
+  return { id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [], files: [], audienceMode: "everyone" };
 }
 
 export default function Announcements({ me, back, createRequest = false, onCreateHandled, initialAnnouncementId = null, onInitialHandled }) {
@@ -104,14 +104,15 @@ export default function Announcements({ me, back, createRequest = false, onCreat
 
   function editAnnouncement(announcement) {
     const audiences = announcement.announcement_audiences || [];
+    const allOrg = audiences.some((audience) => audience.audience_type === "organisation");
+    const unitIds = audiences.filter((audience) => audience.audience_type === "unit").map((audience) => audience.unit_id);
+    const roles = audiences.filter((audience) => audience.audience_type === "role").map((audience) => audience.audience_role);
     setForm({
       id: announcement.id, title: announcement.title, body: announcement.body, priority: announcement.priority,
       requiresAck: announcement.requires_acknowledgement,
       expiresAt: announcement.expires_at ? new Date(announcement.expires_at).toISOString().slice(0, 16) : "",
-      allOrg: audiences.some((audience) => audience.audience_type === "organisation"),
-      unitIds: audiences.filter((audience) => audience.audience_type === "unit").map((audience) => audience.unit_id),
-      roles: audiences.filter((audience) => audience.audience_type === "role").map((audience) => audience.audience_role),
-      files: [],
+      allOrg, unitIds, roles, files: [],
+      audienceMode: allOrg ? "everyone" : unitIds.length ? "departments" : "roles",
     });
   }
 
@@ -215,37 +216,63 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       open
       onClose={() => !busy && setForm(null)}
       title={form.id ? "Edit announcement draft" : "New announcement"}
-      description="Choose the audience, write the message and publish only after the draft is ready."
-      footer={<button className="btn" onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : "Save draft"}</button>}
+      description={null}
+      panelClassName="reference-composer reference-announcement-composer"
+      footer={<button className="btn" onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : form.id ? "Save changes" : "Save announcement draft"}</button>}
     >
-      <label className="label" htmlFor="announcement-title">Title</label>
-      <div className="assistive-field">
-        <input id="announcement-title" className="field" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+      <label className="label" htmlFor="announcement-title">Title *</label>
+      <div className="assistive-inline">
+        <input id="announcement-title" className="field" placeholder="e.g. Sunday Service Update" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
         <VoiceInput compact label="Speak announcement title" onResult={(text) => setForm((current) => ({ ...current, title: current.title ? current.title + " " + text : text }))} />
       </div>
-      <label className="label" htmlFor="announcement-body">Message</label>
-      <div className="assistive-field textarea">
-        <textarea id="announcement-body" className="field" rows={7} value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} />
+
+      <div className="reference-audience">
+        <span className="label">Audience *</span>
+        <div className="reference-audience-pills">
+          <button type="button" className={form.audienceMode === "everyone" ? "is-active" : ""} onClick={() => setForm({ ...form, audienceMode: "everyone", allOrg: true, unitIds: [], roles: [] })}>Everyone</button>
+          <button type="button" className={form.audienceMode === "departments" ? "is-active" : ""} onClick={() => setForm({ ...form, audienceMode: "departments", allOrg: false, roles: [] })}>Select departments</button>
+          <button type="button" className={form.audienceMode === "roles" ? "is-active" : ""} onClick={() => setForm({ ...form, audienceMode: "roles", allOrg: false, unitIds: [] })}>Select roles</button>
+        </div>
+        {form.audienceMode === "departments" && <div className="reference-audience-options">
+          {units.map((unit) => <label className="reference-chip-check" key={unit.id}><input type="checkbox" checked={form.unitIds.includes(unit.id)} onChange={() => toggleList("unitIds", unit.id)} /><span>{unit.name}</span></label>)}
+        </div>}
+        {form.audienceMode === "roles" && <div className="reference-audience-options">
+          {ROLE_OPTIONS.map(([role, label]) => <label className="reference-chip-check" key={role}><input type="checkbox" checked={form.roles.includes(role)} onChange={() => toggleList("roles", role)} /><span>{label}</span></label>)}
+        </div>}
+      </div>
+
+      <label className="label" htmlFor="announcement-body">Message *</label>
+      <div className="reference-message-box">
+        <textarea id="announcement-body" className="field" rows={7} placeholder="Write your announcement…" value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} />
+        <div className="reference-message-toolbar" aria-hidden="true"><strong>B</strong><em>I</em><span>☷</span><span>↗</span></div>
         <VoiceInput compact label="Speak announcement message" onResult={(text) => setForm((current) => ({ ...current, body: current.body ? current.body + " " + text : text }))} />
       </div>
-      <div className="sec"><span>Attachments</span><span>optional</span></div>
-      <PendingFilePicker files={form.files || []} onChange={(files) => setForm({ ...form, files })} label="Attach files" disabled={busy} />
-      <label className="label" htmlFor="announcement-priority">Priority</label>
-      <select id="announcement-priority" className="field" value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })}>
-        <option value="normal">Normal</option><option value="important">Important</option><option value="urgent">Urgent</option>
-      </select>
-      <label className="label" htmlFor="announcement-expiry">Expiry (optional)</label>
-      <input id="announcement-expiry" className="field" type="datetime-local" value={form.expiresAt} onChange={(event) => setForm({ ...form, expiresAt: event.target.value })} />
-      <label className="opt"><input type="checkbox" checked={form.requiresAck} onChange={(event) => setForm({ ...form, requiresAck: event.target.checked })} /> Require acknowledgement</label>
 
-      <div className="sec"><span>Audience</span></div>
-      <label className="opt"><input type="checkbox" checked={form.allOrg} onChange={(event) => setForm({ ...form, allOrg: event.target.checked })} /> Entire organisation</label>
-      {!form.allOrg && <>
-        <div className="label">Units</div>
-        {units.map((unit) => <label className="opt" key={unit.id}><input type="checkbox" checked={form.unitIds.includes(unit.id)} onChange={() => toggleList("unitIds", unit.id)} /> {unit.name}</label>)}
-        <div className="label">Roles</div>
-        {ROLE_OPTIONS.map(([role, label]) => <label className="opt" key={role}><input type="checkbox" checked={form.roles.includes(role)} onChange={() => toggleList("roles", role)} /> {label}</label>)}
-      </>}
+      <details className="reference-disclosure">
+        <summary><span>Attachments</span><span>+ Add file · {(form.files || []).length}</span></summary>
+        <div className="reference-disclosure-body">
+          <PendingFilePicker files={form.files || []} onChange={(files) => setForm({ ...form, files })} label="Attach files" disabled={busy} />
+        </div>
+      </details>
+
+      <FieldGroup label="Publish on">
+        <input id="announcement-expiry" className="field" type="datetime-local" value={form.expiresAt} onChange={(event) => setForm({ ...form, expiresAt: event.target.value })} />
+        <span className="field-hint">This keeps the existing draft-first workflow; the date remains the draft&apos;s availability limit until publication.</span>
+      </FieldGroup>
+
+      <details className="reference-disclosure">
+        <summary><span>More options</span><span>+</span></summary>
+        <div className="reference-disclosure-body">
+          <FieldGroup label="Priority">
+            <select id="announcement-priority" className="field" value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })}>
+              <option value="normal">Normal</option>
+              <option value="important">Important</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </FieldGroup>
+          <label className="reference-check"><input type="checkbox" checked={form.requiresAck} onChange={(event) => setForm({ ...form, requiresAck: event.target.checked })} /><span>Require acknowledgement</span></label>
+        </div>
+      </details>
     </ComposerDrawer>}
   </div>;
 }
