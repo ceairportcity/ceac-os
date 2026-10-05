@@ -1500,7 +1500,7 @@ button.ev2c-record-row {
 .reference-kind-row {
   min-height: 34px;
   display: grid;
-  grid-template-columns: 24px auto minmax(0, 1fr);
+  grid-template-columns: 24px auto minmax(0, 1fr) 30px;
   align-items: center;
   gap: 5px;
   padding: 5px 7px;
@@ -1794,4 +1794,9 @@ button.ev2c-record-row {
   .reference-audience-pills {
     grid-template-columns: 1fr;
   }
+}
+
+.reference-kind-row > .voice-input,
+.reference-kind-row > .voice-input-compact {
+  justify-self: end;
 }
