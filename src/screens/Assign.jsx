@@ -6,6 +6,7 @@ import { parseWorkInput } from "../lib/parseTask";
 import { humanError } from "../lib/productLanguage";
 import { FieldGroup } from "../components/bits";
 import { ComposerDrawer } from "../experience-v2/components";
+import { CeacIcon } from "../experience-v2/icons";
 import { PendingFilePicker } from "../components/OperationalFiles";
 import { uploadOperationalFiles } from "../lib/operationalFiles";
 
@@ -567,7 +568,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
 
       {kind === "task" && <div className="reference-task-form">
         <div className="reference-kind-row">
-          <span className="reference-kind-icon" aria-hidden="true">✓</span>
+          <span className="reference-kind-icon"><CeacIcon name="work" size="row" decorative /></span>
           <span className="reference-kind-prefix">Task ·</span>
           <select aria-label="Work type" value={kind} onChange={(event) => setKind(event.target.value)}>
             {WORK_INTENTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
