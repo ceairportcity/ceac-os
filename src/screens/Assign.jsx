@@ -538,16 +538,17 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       open
       onClose={back}
       title="Give out work"
-      description="Capture what matters, who owns it and when it is due. Add deeper context only when the work needs it."
+      description={kind === "task" ? null : "Capture what matters, who owns it and when it is due. Add deeper context only when the work needs it."}
+      panelClassName="reference-composer reference-work-composer"
       footer={<button className="btn assign-primary-action" onClick={create} disabled={primaryActionDisabled()}>{busy ? "Saving…" : primaryActionLabel()}</button>}
     >
-    <div className="assign-screen ev2-work-assignment ocr-work-composer">
-      <section className="assign-intro ev2wa-intro">
+    <div className={`assign-screen ev2-work-assignment ocr-work-composer is-${kind}`}>
+      {kind !== "task" && <section className="assign-intro ev2wa-intro">
         <div className="assign-voice">
           <div><strong>Speak or type</strong><span>Voice can prefill the form. You remain in control.</span></div>
           <VoiceInput onResult={handleVoice} label="Speak your instruction" />
         </div>
-      </section>
+      </section>}
       {voiceProposal && <div className="voice-proposal">
         <div className="voice-proposal-head"><span>CEAC heard</span><strong>{voiceProposal.transcript}</strong></div>
         <div className="voice-proposal-facts">
@@ -564,7 +565,108 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       {voiceHint && <div className="flag flag-green" style={{ marginTop: 10 }}>{voiceHint}</div>}
       {err && <div className="flag flag-brick" style={{ marginTop: 10 }}>{err}</div>}
 
-      <div className="split" style={{ marginTop: 10 }}>
+      {kind === "task" && <div className="reference-task-form">
+        <div className="reference-kind-row">
+          <span className="reference-kind-icon" aria-hidden="true">✓</span>
+          <span className="reference-kind-prefix">Task ·</span>
+          <select aria-label="Work type" value={kind} onChange={(event) => setKind(event.target.value)}>
+            {WORK_INTENTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </div>
+
+        <FieldGroup label="What needs doing *" className="reference-primary-field">
+          <input className="field" placeholder="e.g. Prepare the October service report" value={title} onChange={(e) => setTitle(e.target.value)} />
+        </FieldGroup>
+
+        <div className="reference-compact-fields">
+          <FieldGroup label="Assignee *">
+            <select className="field" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+              <option value="">Choose someone</option>
+              {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
+            </select>
+          </FieldGroup>
+          <FieldGroup label="Due date *">
+            <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
+          </FieldGroup>
+          <FieldGroup label="Project">
+            <select className="field" value={project} onChange={(e) => { setProject(e.target.value); setObjective(""); setPhase(""); }}>
+              <option value="">Not selected</option>
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}{!["planned","active"].includes(p.status) ? ` · ${p.status}` : ""}</option>)}
+            </select>
+          </FieldGroup>
+          <FieldGroup label="Team">
+            <select className="field" value={subTeam} onChange={(e) => setSubTeam(e.target.value)}>
+              <option value="">Not selected</option>
+              {subTeams.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </FieldGroup>
+        </div>
+
+        {project && <details className="reference-disclosure">
+          <summary><span>Project context</span><span>+</span></summary>
+          <div className="reference-disclosure-body">
+            <FieldGroup label="Project objective">
+              <select className="field" value={objective} onChange={(e) => setObjective(e.target.value)}>
+                <option value="">Not selected</option>
+                {objectives.map((row) => <option key={row.id} value={row.id}>{row.ref} · {row.name}</option>)}
+              </select>
+            </FieldGroup>
+            {phases.length > 0 && <FieldGroup label="Project phase">
+              <select className="field" value={phase} onChange={(e) => setPhase(e.target.value)}>
+                <option value="">Not selected</option>
+                {phases.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
+              </select>
+            </FieldGroup>}
+          </div>
+        </details>}
+
+        <FieldGroup label="Why this matters *" className="reference-why-field">
+          <AssistiveTextarea className="field" rows={3} placeholder="Explain the purpose or impact" value={purpose} onChange={(e) => setPurpose(e.target.value)} voiceLabel="Speak why this matters" />
+        </FieldGroup>
+
+        <details className="reference-disclosure">
+          <summary><span>Attachments</span><span>+ Add file · {sourceFiles.length}</span></summary>
+          <div className="reference-disclosure-body">
+            <PendingFilePicker files={sourceFiles} onChange={setSourceFiles} label="Attach source files" disabled={busy} />
+          </div>
+        </details>
+
+        <details className="reference-disclosure">
+          <summary><span>Subtasks</span><span>+ Add subtask · {noStepsNeeded ? 0 : steps.filter((step) => step.trim()).length}</span></summary>
+          <div className="reference-disclosure-body">
+            {recipeSteps.length > 0 && <div className="reference-recipe">
+              <span><strong>Last time this unit did this</strong><small>{recipeSource?.title} · {recipeSteps.length} recorded step{recipeSteps.length === 1 ? "" : "s"}</small></span>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSteps(recipeSteps); setNoStepsNeeded(false); }}>Use steps</button>
+            </div>}
+            {steps.map((s, i) => <input key={i} className="field" placeholder={"Subtask " + (i + 1)} value={s} disabled={noStepsNeeded}
+              onChange={(e) => setSteps((x) => x.map((v, j) => (j === i ? e.target.value : v)))} />)}
+            {!noStepsNeeded && <button type="button" className="btn btn-ghost btn-sm reference-add-row"
+              disabled={!steps[steps.length - 1]?.trim()}
+              onClick={() => setSteps((current) => [...current, ""])}>+ Add subtask</button>}
+            <label className="reference-check"><input type="checkbox" checked={noStepsNeeded} onChange={(event) => setNoStepsNeeded(event.target.checked)} /><span>No subtasks needed</span></label>
+          </div>
+        </details>
+
+        <details className="reference-disclosure">
+          <summary><span>Instructions <small>(optional)</small></span><span>+</span></summary>
+          <div className="reference-disclosure-body">
+            <AssistiveTextarea className="field" rows={3} placeholder="How it is done here" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
+          </div>
+        </details>
+
+        <details className="reference-disclosure">
+          <summary><span>Finished result <small>(optional)</small></span><span>+</span></summary>
+          <div className="reference-disclosure-body">
+            <AssistiveTextarea className="field" rows={3} placeholder="Describe the finished result if useful" value={expectedOutcome} onChange={(e) => setExpectedOutcome(e.target.value)} />
+          </div>
+        </details>
+
+        {assignmentWarnings.length > 0 && <div className="reference-warning-stack">
+          {assignmentWarnings.map((warning) => <div key={warning.key} className="flag flag-amber"><h4>{warning.title}</h4>{warning.detail}</div>)}
+        </div>}
+      </div>}
+
+      {kind !== "task" && <div className="split" style={{ marginTop: 10 }}>
         <div className="main-col">
           <FieldGroup label="Work type">
             <select className="field" aria-label="Work type" value={kind} onChange={(event) => setKind(event.target.value)}>
@@ -861,13 +963,13 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
 
           <div className="hint">Required: what needs doing, why it matters, who owns it and when it is due. Method and checklist are optional.</div>
         </div>}
-      </div>
+      </div>}
 
-      <div style={{ marginTop: 14 }}>
+      {kind !== "task" && <div style={{ marginTop: 14 }}>
         <div className="sec"><span>Source files</span><span>optional</span></div>
         <p className="screen-note">Files supplied with the assignment stay on the work record. They are separate from submission/evidence files returned by the assignee.</p>
         <PendingFilePicker files={sourceFiles} onChange={setSourceFiles} label="Attach source files" disabled={busy} />
-      </div>
+      </div>}
     </div>
     </ComposerDrawer>);
 }
