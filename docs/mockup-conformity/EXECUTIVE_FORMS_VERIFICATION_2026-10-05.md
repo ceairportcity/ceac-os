@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`6ffe20fc728aba06d653a9b313e94524e8a1dd90`
+`d47d785a89e5a4dcd11eec5e74499684d5ad1861`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -71,3 +71,8 @@ Final compatibility correction:
 - Ministry Direction and Unit Objective keep the required attributable history field visibly available;
 - the owner-approved New Ministry Objective form still keeps Reason / context subordinate through progressive disclosure;
 - no strategy authority, hierarchy or audit requirement was removed.
+
+
+Acceptance alignment:
+- the protected strategy acceptance test now exercises the owner-approved Reason / context disclosure before entering the still-required audit reason;
+- the assertion continues to require an attributable reason and creation succeeds only through the real Strategy workflow.
