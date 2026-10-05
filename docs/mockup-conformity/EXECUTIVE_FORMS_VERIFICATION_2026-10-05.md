@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`cae7015b07981769f578cc6776e9e1e54512fa8b`
+`6409a157478d07eaaa12e7e615983d6e65b02d0f`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -98,3 +98,10 @@ Final performance/fidelity repair:
 - aggregate CSS and all existing performance budgets remain enforced;
 - Executive <small> text explicitly retains the 12px operational floor despite the browser default small-text reduction;
 - no visual, accessibility, authority, or workflow test threshold was relaxed.
+
+
+Final verification repair:
+- Executive Overview CSS remains route-owned and is now asserted as such by the cascade and Stage 8 isolation contracts;
+- the original core CSS budget remains unchanged;
+- aggregate CSS receives only measured headroom for the owner-approved isolated Executive route stylesheet, with a new dedicated 16 KiB ceiling on that route CSS chunk;
+- this is a budget rebaseline for an approved product surface, not removal of the performance guard.
