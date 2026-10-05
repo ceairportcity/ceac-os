@@ -27,7 +27,6 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
   const home = fs.readFileSync("src/screens/ExecutiveHome.jsx", "utf8");
   const view = fs.readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
   const css = fs.readFileSync("src/experience-v2/executive-overview/executive-overview.css", "utf8");
-  const main = fs.readFileSync("src/main.jsx", "utf8");
 
   expect(home).toContain('from "../experience-v2/executive-overview/ExecutiveOverviewV2"');
   expect(home).toContain('supabase.from("recurring_operations")');
@@ -54,10 +53,10 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
   expect(css).not.toContain(".premium-");
   expect(css).not.toContain(".executive-command-surface");
 
-  const adminCss = main.indexOf('import "./experience-v2/admin-overview/admin-overview.css";');
-  const executiveCss = main.indexOf('import "./experience-v2/executive-overview/executive-overview.css";');
-  expect(adminCss).toBeGreaterThan(-1);
-  expect(executiveCss).toBeGreaterThan(adminCss);
+  expect(view).toContain('import "./executive-overview.css";');
+  const main = fs.readFileSync("src/main.jsx", "utf8");
+  expect(main).toContain('import "./experience-v2/admin-overview/admin-overview.css";');
+  expect(main).not.toContain('import "./experience-v2/executive-overview/executive-overview.css";');
 });
 
 for (const viewport of [
