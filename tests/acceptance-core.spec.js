@@ -775,6 +775,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     dialog = page.getByRole("dialog");
     await dialog.getByLabel("Strategy name").fill("Acceptance ministry objective");
     await dialog.getByLabel("Strategy statement").fill("Make weekly ministry delivery more reliable across participating units.");
+    await dialog.getByText(/Reason \/ context/).first().click();
     await dialog.getByLabel("Strategy change reason").fill("Acceptance Stage 4 ministry objective");
     await dialog.getByRole("button", { name: "Create ministry objective", exact: true }).click();
 
