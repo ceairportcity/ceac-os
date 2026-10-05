@@ -5,6 +5,7 @@ import {
 } from "../components";
 import { CeacIcon } from "../icons";
 import { DataVizChart } from "../data-viz/DataVizV2";
+import "./executive-overview.css";
 
 function formatDate(value, options = {}) {
   if (!value) return "Not recorded";
