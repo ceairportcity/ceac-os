@@ -9,7 +9,6 @@ const modernCss = [
   "src/experience-v2/shell/shell.css",
   "src/experience-v2/staff-today/staff-today.css",
   "src/experience-v2/admin-overview/admin-overview.css",
-  "src/experience-v2/executive-overview/executive-overview.css",
   "src/experience-v2/work-family/work-family.css",
   "src/experience-v2/executive-overview/executive-surfaces.css",
   "src/experience-v2/project-family/project-family.css",
@@ -24,6 +23,7 @@ const modernCss = [
 
 const routeLazyCss = [
   "src/experience-v2/manager-overview/manager-overview.css",
+  "src/experience-v2/executive-overview/executive-overview.css",
 ];
 
 const legacyCss = [
@@ -65,7 +65,9 @@ test("VF9B keeps legacy compatibility CSS before the low-specificity Experience 
   expect(modernFirst).toBeGreaterThan(legacyLast);
 
   const managerView = readFileSync("src/experience-v2/manager-overview/ManagerOverviewV2.jsx", "utf8");
+  const executiveView = readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
   expect(managerView).toContain('import "./manager-overview.css";');
+  expect(executiveView).toContain('import "./executive-overview.css";');
 
   for (const path of routeLazyCss) {
     const css = readFileSync(path, "utf8");
