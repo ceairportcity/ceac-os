@@ -218,7 +218,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       title={form.id ? "Edit announcement draft" : "New announcement"}
       description={null}
       panelClassName="reference-composer reference-announcement-composer"
-      footer={<button className="btn" onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : form.id ? "Save changes" : "Save announcement draft"}</button>}
+      footer={<button className="btn" onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : form.id ? "Save changes" : "Save draft"}</button>}
     >
       <label className="label" htmlFor="announcement-title">Title *</label>
       <div className="assistive-inline">
@@ -255,9 +255,9 @@ export default function Announcements({ me, back, createRequest = false, onCreat
         </div>
       </details>
 
-      <FieldGroup label="Publish on">
+      <FieldGroup label="Available until (optional)">
         <input id="announcement-expiry" className="field" type="datetime-local" value={form.expiresAt} onChange={(event) => setForm({ ...form, expiresAt: event.target.value })} />
-        <span className="field-hint">This keeps the existing draft-first workflow; the date remains the draft&apos;s availability limit until publication.</span>
+        <span className="field-hint">The announcement remains a draft until it is explicitly published.</span>
       </FieldGroup>
 
       <details className="reference-disclosure">
