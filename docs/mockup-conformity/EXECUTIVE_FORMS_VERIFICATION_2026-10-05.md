@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`726af790e42684463617fa3a9aa7f4ecc68f20a5`
+`00283068fa3f59ab3c95a04d69277e5be86e8647`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -48,3 +48,8 @@ Final verification trigger:
 - run the full Level B browser matrix against the current corrected Executive Overview and compact composers;
 - do not merge on a skipped browser matrix;
 - preserve all current accessibility, touch-target, RLS, Work Engine, strategy-history and draft/publish contracts.
+
+
+Final browser recheck:
+- resolved the remaining accessible-name collision on Finished result without changing visible copy;
+- rerun the complete Level B browser matrix on the application-equivalent candidate above.
