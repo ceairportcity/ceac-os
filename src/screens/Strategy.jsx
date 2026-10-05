@@ -366,7 +366,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
         </div>
       </details>}
 
-      <details className="reference-disclosure" open={Boolean(form.reason)}>
+      <details className="reference-disclosure" open={form.nodeType !== "ministry_objective" || Boolean(form.reason)}>
         <summary><span>Reason / context <small>(required for history)</small></span><span>{form.reason ? "Added" : "+"}</span></summary>
         <div className="reference-disclosure-body">
           <textarea className="field" aria-label="Strategy change reason" rows="3" placeholder="Why this objective is being created or revised" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} />
