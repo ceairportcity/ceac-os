@@ -87,7 +87,7 @@ function UnitRow({ unit, onInvite }) {
     <StatusBadge tone={missing ? "warning" : pending ? "action" : "success"}>
       {missing ? "No Unit Head" : pending ? "Invitation pending" : unit.alerts ? `${unit.alerts} open alert${unit.alerts === 1 ? "" : "s"}` : "Head assigned"}
     </StatusBadge>
-    {missing ? <Button variant="quiet" size="compact" onClick={() => onInvite?.(unit)}>Invite staff</Button> : null}
+    <Button variant="quiet" size="compact" onClick={() => onInvite?.(unit)}>Add staff</Button>
   </div>;
 }
 

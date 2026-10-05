@@ -206,7 +206,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     setBusy(true); setMsg(null);
     try {
       await inviteByEmail({ email, fullName:name, unitId:inviting.id });
-      setMsg("Invitation sent. New accounts begin as Staff. After they activate, open Units to assign the Unit Head role.");
+      setMsg(`Invitation sent. They will join ${inviting.name} as Staff after activation. Unit Head authority remains a separate action in Units.`);
       setName(""); setEmail("");
       await load();
     } catch (error) { setMsg(error.message); }

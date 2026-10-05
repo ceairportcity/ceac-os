@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase, inviteByEmail } from "../lib/supabase";
 import { dateOnly, dueLabel } from "../lib/time";
 import { statusPill, ProductNotice, LoadingState, EmptyState, SectionHeader, Sheet, FieldGroup, StatusDistribution, ProgressMeter, Avatar } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -29,6 +29,15 @@ export default function Units({ me, openItem }) {
   const [area, setArea] = useState("overview");
   const [headChoice, setHeadChoice] = useState({});
   const [savingHead, setSavingHead] = useState(null);
+  const [staffSheet, setStaffSheet] = useState(null);
+  const [staffMode, setStaffMode] = useState("invite");
+  const [staffName, setStaffName] = useState("");
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffProfileId, setStaffProfileId] = useState("");
+  const [staffCandidates, setStaffCandidates] = useState([]);
+  const [staffCandidatesLoading, setStaffCandidatesLoading] = useState(false);
+  const [staffBusy, setStaffBusy] = useState(false);
+  const [staffNotice, setStaffNotice] = useState(null);
   const [unitSheet, setUnitSheet] = useState(null);
   const [unitForm, setUnitForm] = useState({ name:"", code:"", parent_id:"", handles_finance:false, owns_calendar:false });
   const [savingUnit, setSavingUnit] = useState(false);
@@ -174,6 +183,99 @@ export default function Units({ me, openItem }) {
     }
   }
 
+  async function openStaffSheet(unit) {
+    setStaffSheet(unit);
+    setStaffMode("invite");
+    setStaffName("");
+    setStaffEmail("");
+    setStaffProfileId("");
+    setStaffCandidates([]);
+    setStaffNotice(null);
+    setStaffCandidatesLoading(true);
+    try {
+      const result = await supabase.rpc("admin_people_summary");
+      if (result.error) throw result.error;
+      const existingMemberIds = new Set((unit.people || []).map((member) => member.profile_id));
+      const candidates = (Array.isArray(result.data) ? result.data : [])
+        .filter((person) =>
+          person.active
+          && !person.is_admin
+          && !person.is_exec
+          && (!person.role || person.role === "staff")
+          && !existingMemberIds.has(person.id)
+        )
+        .sort((a, b) => String(a.full_name || "").localeCompare(String(b.full_name || "")));
+      setStaffCandidates(candidates);
+    } catch (e) {
+      setStaffNotice({ tone:"error", text:humanError(e, "Existing staff could not be loaded.") });
+    } finally {
+      setStaffCandidatesLoading(false);
+    }
+  }
+
+  async function inviteStaffToUnit() {
+    if (!staffSheet || !staffName.trim() || !staffEmail.trim()) return;
+    setStaffBusy(true);
+    setStaffNotice(null);
+    try {
+      await inviteByEmail({ email:staffEmail, fullName:staffName, unitId:staffSheet.id });
+      setStaffNotice({
+        tone:"success",
+        text:`Invitation sent. ${staffName.trim()} will join ${staffSheet.name} as Staff after activation.`,
+      });
+      setStaffName("");
+      setStaffEmail("");
+    } catch (e) {
+      setStaffNotice({ tone:"error", text:humanError(e, "The staff invitation could not be sent.") });
+    } finally {
+      setStaffBusy(false);
+    }
+  }
+
+  async function assignExistingStaff() {
+    if (!staffSheet || !staffProfileId) return;
+    const candidate = staffCandidates.find((person) => person.id === staffProfileId);
+    if (!candidate) return;
+    setStaffBusy(true);
+    setStaffNotice(null);
+    try {
+      const detail = await supabase.rpc("admin_employment_detail", { p_profile_id:staffProfileId });
+      if (detail.error) throw detail.error;
+      const current = detail.data?.current;
+      if (!current) throw new Error("That staff member does not have an employment record yet. Open People and confirm their employment record first.");
+      if (current.membership_role && current.membership_role !== "staff") {
+        throw new Error("Unit Heads and Team Leads must be changed through the employment or Unit Head authority flow.");
+      }
+
+      const result = await supabase.rpc("admin_update_employment", {
+        p_profile_id:staffProfileId,
+        p_employment_type:current.employment_type || "not_recorded",
+        p_job_title:current.job_title || null,
+        p_unit_id:staffSheet.id,
+        p_manager_profile_id:staffSheet.head?.profile_id || null,
+        p_membership_role:"staff",
+        p_working_pattern:current.working_pattern || { kind:"not_recorded" },
+        p_employment_status:current.employment_status || "active",
+        p_joined_on:current.joined_on || null,
+        p_exited_on:current.employment_status === "exited" ? (current.exited_on || null) : null,
+        p_change_type:current.unit_id && current.unit_id !== staffSheet.id ? "transferred" : "employment_details_changed",
+        p_effective_on:new Date().toISOString().slice(0,10),
+        p_reason:`Assigned to ${staffSheet.name} by Administration & HR.`,
+        p_correction_of:null,
+      });
+      if (result.error) throw result.error;
+
+      setStaffCandidates((people) => people.filter((person) => person.id !== staffProfileId));
+      setStaffProfileId("");
+      setStaffNotice({ tone:"success", text:`${candidate.full_name} is now assigned to ${staffSheet.name} as Staff.` });
+      await load();
+    } catch (e) {
+      setStaffNotice({ tone:"error", text:humanError(e, "The staff assignment could not be saved.") });
+    } finally {
+      setStaffBusy(false);
+    }
+  }
+
   const openUnit = units.find((unit) => unit.id === openUnitId) || null;
 
   useEffect(() => {
@@ -251,7 +353,11 @@ export default function Units({ me, openItem }) {
       </section>}
 
       {area === "people" && <section className="admin-workspace-area">
-        <SectionHeader eyebrow="Unit" title="People" count={openUnit.people.length} />
+        <div className="admin-unit-title-row">
+          <SectionHeader eyebrow="Unit" title="People" count={openUnit.people.length} />
+          <button className="btn btn-sm" onClick={() => openStaffSheet(openUnit)}>Add staff</button>
+        </div>
+        <p className="screen-note">Administration & HR can invite new staff or assign an existing Staff account to this department. Unit Head authority stays separate.</p>
         {openUnit.people.map((member) => <div key={member.profile_id} className="admin-unit-person-row">
           <Avatar name={member.profiles?.full_name || "—"} size="sm" />
           <div><strong>{member.profiles?.full_name || "—"}</strong><span>{member.role === "manager" ? "Unit Head" : member.role === "sub_team_lead" ? "Sub-team lead" : "Staff"}{member.profiles?.job_title ? ` · ${member.profiles.job_title}` : ""}</span></div>
@@ -320,6 +426,34 @@ export default function Units({ me, openItem }) {
           <div><strong>{currency}</strong><span>{money(spendTotals[currency] || 0,currency)} spent · {budgetTotals[currency] ? `${money(budgetTotals[currency],currency)} budget` : "no budget set"}</span></div>
         </div>)}
       </section>}
+      {staffSheet && <Sheet onClose={() => { if (!staffBusy) setStaffSheet(null); }}>
+        <div className="eyebrow">People & access</div>
+        <div className="h2">Add staff to {staffSheet.name}</div>
+        <p className="screen-note">Invite a new person into this department, or move an existing Staff account here. Unit Head and Team Lead authority are not assigned from this form.</p>
+
+        <div style={{ display:"flex", gap:8, margin:"12px 0" }} role="tablist" aria-label="Add staff method">
+          <button type="button" className={staffMode === "invite" ? "btn btn-sm" : "btn btn-ghost btn-sm"} role="tab" aria-selected={staffMode === "invite"} onClick={() => { setStaffMode("invite"); setStaffNotice(null); }}>Invite new</button>
+          <button type="button" className={staffMode === "assign" ? "btn btn-sm" : "btn btn-ghost btn-sm"} role="tab" aria-selected={staffMode === "assign"} onClick={() => { setStaffMode("assign"); setStaffNotice(null); }}>Assign existing</button>
+        </div>
+
+        {staffMode === "invite" ? <>
+          <FieldGroup label="Full name"><input className="field" value={staffName} onChange={(event) => setStaffName(event.target.value)} /></FieldGroup>
+          <FieldGroup label="Work email"><input className="field" type="email" autoCapitalize="none" value={staffEmail} onChange={(event) => setStaffEmail(event.target.value)} /></FieldGroup>
+          <p className="screen-note">The invitation opens CEAC activation so the staff member creates their own password. No shared password is issued by HR.</p>
+          <button className="btn" onClick={inviteStaffToUnit} disabled={staffBusy || !staffName.trim() || !staffEmail.trim()}>{staffBusy ? "Sending…" : "Send Staff invitation"}</button>
+        </> : <>
+          {staffCandidatesLoading ? <LoadingState label="Loading staff…" /> : staffCandidates.length ? <FieldGroup label="Existing staff">
+            <select className="field" aria-label="Existing staff" value={staffProfileId} onChange={(event) => setStaffProfileId(event.target.value)}>
+              <option value="">Choose staff member</option>
+              {staffCandidates.map((person) => <option key={person.id} value={person.id}>{person.full_name}{person.unit_name ? ` · ${person.unit_name}` : " · No department"}</option>)}
+            </select>
+          </FieldGroup> : <EmptyState compact title="No other Staff account is available">Everyone eligible is already in this department, or their authority must be changed through the separate employment flow.</EmptyState>}
+          <p className="screen-note">Assigning existing staff updates their primary department and records an employment-history change. Unit Heads and Team Leads are deliberately excluded from this shortcut.</p>
+          <button className="btn" onClick={assignExistingStaff} disabled={staffBusy || staffCandidatesLoading || !staffProfileId}>{staffBusy ? "Assigning…" : `Assign to ${staffSheet.name}`}</button>
+        </>}
+
+        {staffNotice && <ProductNotice tone={staffNotice.tone} title={staffNotice.tone === "success" ? "Staff updated" : "Staff could not be updated"}>{staffNotice.text}</ProductNotice>}
+      </Sheet>}
     </div>;
   }
 
