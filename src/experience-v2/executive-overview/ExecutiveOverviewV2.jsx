@@ -4,6 +4,7 @@ import {
   StatePanel,
 } from "../components";
 import { CeacIcon } from "../icons";
+import { DataVizChart } from "../data-viz/DataVizV2";
 
 function formatDate(value, options = {}) {
   if (!value) return "Not recorded";
@@ -14,6 +15,19 @@ function formatDate(value, options = {}) {
     month: "short",
     ...options,
   });
+}
+
+function ministryMovement(rows = []) {
+  const values = rows.map((row) => Number(row.value) || 0);
+  const first = values[0] || 0;
+  const latest = values[values.length - 1] || 0;
+  const delta = latest - first;
+  return {
+    latest,
+    note: delta === 0
+      ? "No arithmetic change across the recorded values."
+      : `${delta > 0 ? "+" : ""}${delta.toLocaleString("en-GH")} across ${rows.length} recorded values. CEAC OS does not infer why it moved.`,
+  };
 }
 
 function pct(value, total) {
@@ -75,6 +89,7 @@ export default function ExecutiveOverviewV2({
   objectiveMix,
   reporting,
   ministryLatestRows = [],
+  ministryCharts = [],
   meetings = [],
   onRetry,
   onOpenWork,
@@ -221,7 +236,7 @@ export default function ExecutiveOverviewV2({
         </section>
 
         <section className="executivev2-lower-grid">
-          <section className="executivev2-reference-panel executivev2-activity">
+          <section className="executivev2-reference-panel executivev2-activity executivev2-movement">
             <div className="executivev2-panel-head">
               <h2>Recent activity</h2>
               <button type="button" onClick={onOpenMinistry}>View ministry</button>
@@ -238,12 +253,32 @@ export default function ExecutiveOverviewV2({
                 <div className="executivev2-empty compact"><span><strong>No recent ministry values are recorded.</strong><small>This area only shows attributable CEAC records.</small></span></div>
               )}
             </div>
+            {ministryCharts.length ? <details className="executivev2-movement-details">
+              <summary>Recorded movement</summary>
+              <div className="executivev2-movement-charts">
+                {ministryCharts.slice(0, 2).map(({ operation, rows }) => {
+                  const movement = ministryMovement(rows);
+                  const label = `${operation.units?.name || "Unit"} · ${operation.name}`;
+                  return <DataVizChart
+                    key={operation.id}
+                    kind="line"
+                    compact
+                    title={label}
+                    note={movement.note}
+                    summary={`${movement.latest.toLocaleString("en-GH")} ${operation.value_label || "recorded"}`}
+                    ariaLabel={`${label} recorded ministry movement`}
+                    data={rows}
+                    series={[{ key: "value", label: operation.value_label || "Recorded value" }]}
+                  />;
+                })}
+              </div>
+            </details> : null}
           </section>
 
           <section className="executivev2-reference-panel executivev2-meetings">
             <div className="executivev2-panel-head">
               <h2>Upcoming meetings</h2>
-              <Button variant="quiet" size="compact" onClick={onScheduleMeeting}>Schedule</Button>
+              <Button variant="quiet" size="compact" onClick={onScheduleMeeting}>Schedule meeting</Button>
             </div>
             <div className="executivev2-panel-body">
               {meetings.length ? meetings.slice(0, 4).map((meeting) => <button type="button" className="executivev2-meeting-row" key={meeting.id} onClick={() => onOpenMeeting?.(meeting.id)}>
