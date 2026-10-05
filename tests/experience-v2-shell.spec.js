@@ -228,6 +228,7 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   await dialog.getByLabel("Strategy parent direction").selectOption({ label: directionTitle });
   await dialog.getByLabel("Strategy name").fill(objectiveTitle);
   await dialog.getByLabel("Strategy statement").fill("Prove the compact Executive ministry objective Composer.");
+  await dialog.getByText(/Reason \/ context/).first().click();
   await dialog.getByLabel("Strategy change reason").fill("OCR6 final workflow acceptance.");
   await dialog.getByRole("button", { name: "Create ministry objective", exact: true }).click();
   await expect(page.getByText(objectiveTitle, { exact: true })).toBeVisible();
