@@ -1528,7 +1528,7 @@ button.ev2c-record-row {
   border: 0;
   background: transparent;
   color: var(--ev2-action);
-  font: 700 10.5px/1 var(--ev2-font-sans);
+  font: 700 12px/1 var(--ev2-font-sans);
   outline: none;
 }
 .reference-task-form .field-group { margin-bottom: 0; }
@@ -1708,7 +1708,7 @@ button.ev2c-record-row {
   border-radius: 7px;
   background: var(--ev2-surface);
   color: var(--ev2-text-secondary);
-  font: 650 9.5px/1 var(--ev2-font-sans);
+  font: 650 12px/1 var(--ev2-font-sans);
   cursor: pointer;
 }
 .reference-audience-pills button.is-active {
