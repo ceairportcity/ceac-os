@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`00283068fa3f59ab3c95a04d69277e5be86e8647`
+`1592e604f9e8a4656f9751e4fae50a655118283a`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -53,3 +53,9 @@ Final verification trigger:
 Final browser recheck:
 - resolved the remaining accessible-name collision on Finished result without changing visible copy;
 - rerun the complete Level B browser matrix on the application-equivalent candidate above.
+
+
+Compatibility correction:
+- restored the existing visible “Recorded ministry activity” acceptance phrase as a compact factual context line inside the new Recent activity panel;
+- no mockup hierarchy, data semantics or test strength was reduced;
+- rerun the full Level B browser matrix on the application-equivalent candidate above.
