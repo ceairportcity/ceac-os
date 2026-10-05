@@ -1409,7 +1409,7 @@ button.ev2c-record-row {
 }
 .reference-composer .ev2c-overlay-description {
   margin-top: 3px;
-  font-size: 10.5px;
+  font-size: 12px;
   line-height: 1.35;
 }
 .reference-composer .ev2c-overlay-body {
@@ -1434,7 +1434,7 @@ button.ev2c-record-row {
 .reference-composer .field-label,
 .reference-composer .label {
   color: var(--ev2-text);
-  font-size: 10.5px;
+  font-size: 12px;
   line-height: 1.25;
   font-weight: 700;
 }
@@ -1442,7 +1442,7 @@ button.ev2c-record-row {
 .reference-composer .hint {
   margin-top: 1px;
   color: var(--ev2-text-secondary);
-  font-size: 9.5px;
+  font-size: 12px;
   line-height: 1.35;
 }
 .reference-composer .field {
@@ -1478,15 +1478,15 @@ button.ev2c-record-row {
 .reference-composer .sec {
   min-height: 30px;
   margin-top: 8px;
-  font-size: 10.5px;
+  font-size: 12px;
 }
 .reference-composer .opt {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.35;
 }
 .reference-composer .btn-sm {
   min-height: 32px;
-  font-size: 10.5px;
+  font-size: 12px;
 }
 
 /* Give out work — literal compact task composer pattern from the approved reference. */
@@ -1515,11 +1515,11 @@ button.ev2c-record-row {
   place-items: center;
   border-radius: 6px;
   background: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 .reference-kind-prefix {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 .reference-kind-row select {
@@ -1550,7 +1550,7 @@ button.ev2c-record-row {
 .reference-compact-fields .field-group:last-child { border-bottom: 0; }
 .reference-compact-fields .field-label {
   color: var(--ev2-text);
-  font-size: 10.5px;
+  font-size: 12px;
 }
 .reference-compact-fields .field {
   min-height: 32px;
@@ -1581,19 +1581,19 @@ button.ev2c-record-row {
   list-style: none;
   color: var(--ev2-text);
   cursor: pointer;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 .reference-disclosure summary::-webkit-details-marker { display: none; }
 .reference-disclosure summary > span:last-child {
   color: var(--ev2-action);
-  font-size: 9.5px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
 }
 .reference-disclosure summary small {
   color: var(--ev2-text-secondary);
-  font-size: 9.5px;
+  font-size: 12px;
   font-weight: 500;
 }
 .reference-disclosure[open] summary {
@@ -1620,16 +1620,15 @@ button.ev2c-record-row {
   display: grid;
   gap: 2px;
 }
-.reference-recipe strong { font-size: 10.5px; }
-.reference-recipe small { color: var(--ev2-text-secondary); font-size: 9px; }
-.reference-add-row { justify-self: start; }
+.reference-recipe strong { font-size: 12px; }
+.reference-recipe small { color: var(--ev2-text-secondary); font-size: 12px; }
 .reference-check {
   min-height: 28px;
   display: flex;
   align-items: center;
   gap: 7px;
   color: var(--ev2-text-secondary);
-  font-size: 10px;
+  font-size: 12px;
 }
 .reference-warning-stack {
   display: grid;
@@ -1745,7 +1744,7 @@ button.ev2c-record-row {
   border-radius: 999px;
   background: var(--ev2-surface);
   color: var(--ev2-text-secondary);
-  font-size: 9.5px;
+  font-size: 12px;
   cursor: pointer;
 }
 .reference-chip-check input:checked + span {
@@ -1770,24 +1769,11 @@ button.ev2c-record-row {
   border-radius: 0;
   box-shadow: none;
 }
-.reference-message-toolbar {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 0 9px;
-  border-top: 1px solid var(--ev2-line);
-  color: var(--ev2-text-secondary);
-  font-size: 11px;
-}
 .reference-message-box > .voice-input,
 .reference-message-box > .voice-input-compact {
   position: absolute;
   right: 6px;
   bottom: 4px;
-}
-.reference-announcement-composer .reference-disclosure {
-  margin-bottom: 10px;
 }
 
 @media (max-width: 390px) {
