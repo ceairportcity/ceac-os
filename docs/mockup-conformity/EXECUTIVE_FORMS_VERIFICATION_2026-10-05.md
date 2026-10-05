@@ -1,13 +1,13 @@
 # CEAC OS — Executive & Composer Mockup Conformity Verification
 
 Date: 5 October 2026
-Status: CANDIDATE — EXACT-HEAD LEVEL B / PRODUCT-FIDELITY VERIFICATION REQUESTED
+Status: CANDIDATE — CORRECTED EXACT-HEAD LEVEL B / PRODUCT-FIDELITY VERIFICATION REQUESTED
 
 Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`b47c58fe713c67b1a5d7514356e35e6bcc118df2`
+`6dcb1fabefffcfeb06ae5c5919ef94dcac6c39b4`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -27,3 +27,11 @@ Verification requirement:
 - complete Level B technical/security/browser gate on the application-equivalent candidate;
 - inspect actual rendered evidence for Executive Overview and all three composer surfaces against the owner-supplied reference;
 - merge only after required protected-main checks and product-fidelity evidence are green.
+
+
+Correction checkpoint:
+- prior full-gate attempt surfaced pre-merge contract failures;
+- work-assignment accessible naming was preserved without changing the mockup-visible label;
+- shared component CSS returned to the zero-`!important` contract;
+- Executive compact controls restored the mobile 44px touch floor;
+- no tests were weakened to obtain green.
