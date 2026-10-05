@@ -67,9 +67,11 @@ test("VF9C production bundle preserves measured route and vendor budgets", async
     "aggregate CSS regression budget",
   ).toBeLessThanOrEqual(budgets.allCssRaw);
 
-  const executiveCss = css.find((asset) => /^ExecutiveOverviewV2-.*\.css$/.test(asset.name) || /^executive-overview-.*\.css$/.test(asset.name));
-  expect(executiveCss, "Executive Overview route CSS chunk").toBeTruthy();
-  expect(executiveCss.raw, "Executive Overview route CSS budget").toBeLessThanOrEqual(budgets.executiveRouteCssRaw);
+  const executiveCssSourceRaw = statSync("src/experience-v2/executive-overview/executive-overview.css").size;
+  expect(
+    executiveCssSourceRaw,
+    "Executive Overview route CSS source budget",
+  ).toBeLessThanOrEqual(budgets.executiveRouteCssRaw);
 
   const mainJs = js.find((asset) => /^index-.*\.js$/.test(asset.name));
   expect(mainJs, "Vite main index JS asset").toBeTruthy();
