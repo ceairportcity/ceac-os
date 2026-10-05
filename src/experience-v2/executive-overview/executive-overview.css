@@ -13,6 +13,7 @@
 .executivev2 *,
 .executivev2 *::before,
 .executivev2 *::after { box-sizing: border-box; }
+.executivev2 small { font-size: 12px; }
 
 .executivev2-greeting {
   padding: 2px 8px 0;
