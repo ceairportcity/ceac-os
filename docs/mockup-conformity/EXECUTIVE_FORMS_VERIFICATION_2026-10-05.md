@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`34905cbef597d583721dc8b58424fcd22bf8c51f`
+`d71eb2954028513a128378536e08cbd1274dfaa4`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -85,3 +85,9 @@ Final Level B candidate corrections:
 - reduced added composer CSS enough to remain inside the protected bundle budget without weakening the budget;
 - updated protected workflow tests to open the new Attachments and Reason/context disclosures before exercising the same real capabilities;
 - re-baselined the Executive visual fingerprint to the rendered owner-approved mockup-conformity composition.
+
+
+Final gate repair:
+- Executive typography now inherits one 12px operational floor instead of repeating the same declaration across many descendants, preserving the visual result while reducing the production CSS footprint.
+- Compact work-type and announcement-audience controls now use the same 12px floor.
+- The correction does not relax any performance, accessibility, visual-regression, authority, or workflow threshold.
