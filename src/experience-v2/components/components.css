@@ -1532,7 +1532,7 @@ button.ev2c-record-row {
   outline: none;
 }
 .reference-task-form .field-group { margin-bottom: 0; }
-.reference-primary-field { margin-top: 1px !important; }
+.reference-primary-field { margin-top: 1px; }
 .reference-compact-fields {
   overflow: hidden;
   border: 1px solid var(--ev2-line);
@@ -1562,7 +1562,7 @@ button.ev2c-record-row {
   box-shadow: none;
 }
 .reference-why-field {
-  margin-top: 1px !important;
+  margin-top: 1px;
 }
 .reference-why-field textarea.field { min-height: 72px; }
 .reference-disclosure {
