@@ -157,7 +157,7 @@ test("OCR2 Executive Create exposes authorised leadership actions", async ({ pag
   await menu.getByRole("menuitem", { name: "Announcement", exact: true }).click();
   dialog = page.getByRole("dialog", { name: "New announcement" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText("Attach files", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Attachments", { exact: true })).toBeVisible();
 });
 
 test("OCR3 authorised Administration Create exposes Announcement while Staff remains excluded", async ({ page }) => {
