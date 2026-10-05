@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`d71eb2954028513a128378536e08cbd1274dfaa4`
+`cae7015b07981769f578cc6776e9e1e54512fa8b`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -91,3 +91,10 @@ Final gate repair:
 - Executive typography now inherits one 12px operational floor instead of repeating the same declaration across many descendants, preserving the visual result while reducing the production CSS footprint.
 - Compact work-type and announcement-audience controls now use the same 12px floor.
 - The correction does not relax any performance, accessibility, visual-regression, authority, or workflow threshold.
+
+
+Final performance/fidelity repair:
+- Executive Overview CSS now loads with the existing lazy Executive route instead of inflating the global core stylesheet;
+- aggregate CSS and all existing performance budgets remain enforced;
+- Executive <small> text explicitly retains the 12px operational floor despite the browser default small-text reduction;
+- no visual, accessibility, authority, or workflow test threshold was relaxed.
