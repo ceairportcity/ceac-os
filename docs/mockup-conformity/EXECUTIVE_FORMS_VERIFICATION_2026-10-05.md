@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`755888a0aaf53cd40f8b25e4c7087fa490993a54`
+`6ffe20fc728aba06d653a9b313e94524e8a1dd90`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -65,3 +65,9 @@ Metric readability correction:
 - recurring ministry value and unit now render as one readable text value in the Recent activity panel (for example, “17 People received”);
 - this preserves the existing accepted data contract while retaining the compact mockup composition;
 - rerun the complete Level B browser matrix on the application-equivalent candidate above.
+
+
+Final compatibility correction:
+- Ministry Direction and Unit Objective keep the required attributable history field visibly available;
+- the owner-approved New Ministry Objective form still keeps Reason / context subordinate through progressive disclosure;
+- no strategy authority, hierarchy or audit requirement was removed.
