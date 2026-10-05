@@ -62,8 +62,7 @@ function ActivityItem({ row }) {
       <small>{row.unit} · {formatDate(row.occurred_on)}</small>
     </span>
     <span className="executivev2-activity-value">
-      {row.value === null ? "—" : Number(row.value).toLocaleString("en-GH")}
-      {row.value_label ? <small>{row.value_label}</small> : null}
+      <strong>{row.value === null ? "—" : Number(row.value).toLocaleString("en-GH")}{row.value_label ? ` ${row.value_label}` : ""}</strong>
     </span>
   </div>;
 }
