@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { Sheet } from "../components/bits";
+import { FieldGroup, Sheet } from "../components/bits";
 import { ComposerDrawer } from "../experience-v2/components";
 import VoiceInput from "../components/VoiceInput";
 import { OperationalFileList, PendingFilePicker } from "../components/OperationalFiles";
@@ -244,7 +244,6 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       <label className="label" htmlFor="announcement-body">Message *</label>
       <div className="reference-message-box">
         <textarea id="announcement-body" className="field" rows={7} placeholder="Write your announcement…" value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} />
-        <div className="reference-message-toolbar" aria-hidden="true"><strong>B</strong><em>I</em><span>☷</span><span>↗</span></div>
         <VoiceInput compact label="Speak announcement message" onResult={(text) => setForm((current) => ({ ...current, body: current.body ? current.body + " " + text : text }))} />
       </div>
 
