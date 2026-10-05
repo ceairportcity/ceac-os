@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`6409a157478d07eaaa12e7e615983d6e65b02d0f`
+`668115b8251343b500c37dc54d03e2fa3892c5d4`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -105,3 +105,9 @@ Final verification repair:
 - the original core CSS budget remains unchanged;
 - aggregate CSS receives only measured headroom for the owner-approved isolated Executive route stylesheet, with a new dedicated 16 KiB ceiling on that route CSS chunk;
 - this is a budget rebaseline for an approved product surface, not removal of the performance guard.
+
+
+Bundler-independent performance verification:
+- aggregate CSS remains capped at the measured owner-approved budget;
+- Executive Overview CSS remains route-owned;
+- the dedicated 16 KiB Executive route stylesheet ceiling is now checked against the source stylesheet itself so the guard does not depend on Rolldown/Vite output chunk naming.
