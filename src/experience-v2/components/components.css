@@ -1652,6 +1652,13 @@ button.ev2c-record-row {
   }
   .reference-compact-fields .field-group {
     grid-template-columns: 5.5rem minmax(0, 1fr);
+    min-height: 48px;
+  }
+  .reference-composer .field,
+  .reference-kind-row,
+  .reference-disclosure summary,
+  .reference-audience-pills button {
+    min-height: 44px;
   }
 }
 
