@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`46072ac4dfc106ca07566da093b7aec0bf897247`
+`726af790e42684463617fa3a9aa7f4ecc68f20a5`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -41,3 +41,10 @@ Latest correction:
 - restored the unique accessible label contract for “Why this matters” without changing its visible mockup wording;
 - restored the existing Work-loop labels for Finished result, Step 1 and No steps needed inside the new compact composer;
 - this verification commit changes documentation only and is intended to force the full Level B gate against the application-equivalent parent SHA above.
+
+
+Final verification trigger:
+- application-equivalent candidate is the SHA above;
+- run the full Level B browser matrix against the current corrected Executive Overview and compact composers;
+- do not merge on a skipped browser matrix;
+- preserve all current accessibility, touch-target, RLS, Work Engine, strategy-history and draft/publish contracts.
