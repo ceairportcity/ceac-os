@@ -1,0 +1,113 @@
+# CEAC OS — Executive & Composer Mockup Conformity Verification
+
+Date: 5 October 2026
+Status: CANDIDATE — CORRECTED EXACT-HEAD LEVEL B / PRODUCT-FIDELITY VERIFICATION REQUESTED
+
+Owner instruction:
+- Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
+
+Application candidate SHA:
+`668115b8251343b500c37dc54d03e2fa3892c5d4`
+
+Scope:
+- Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
+- Give out work: narrow right-side task composer with core assignment fields first and progressive disclosure for secondary detail.
+- New Ministry Objective: compact reference hierarchy with CEAC-required direction/reason preserved without dominating the default form.
+- New Announcement: compact reference hierarchy with audience pills and advanced controls moved behind progressive disclosure.
+
+Protected contracts:
+- no invented values;
+- RLS/capability authority unchanged;
+- Work Engine semantics unchanged;
+- Strategy parent and attributable history requirements unchanged;
+- Announcement remains draft-first until explicitly published;
+- no fake rich-text behavior or mockup-only functionality.
+
+Verification requirement:
+- complete Level B technical/security/browser gate on the application-equivalent candidate;
+- inspect actual rendered evidence for Executive Overview and all three composer surfaces against the owner-supplied reference;
+- merge only after required protected-main checks and product-fidelity evidence are green.
+
+
+Correction checkpoint:
+- prior full-gate attempt surfaced pre-merge contract failures;
+- work-assignment accessible naming was preserved without changing the mockup-visible label;
+- shared component CSS returned to the zero-`!important` contract;
+- Executive compact controls restored the mobile 44px touch floor;
+- no tests were weakened to obtain green.
+
+
+Latest correction:
+- restored the unique accessible label contract for “Why this matters” without changing its visible mockup wording;
+- restored the existing Work-loop labels for Finished result, Step 1 and No steps needed inside the new compact composer;
+- this verification commit changes documentation only and is intended to force the full Level B gate against the application-equivalent parent SHA above.
+
+
+Final verification trigger:
+- application-equivalent candidate is the SHA above;
+- run the full Level B browser matrix against the current corrected Executive Overview and compact composers;
+- do not merge on a skipped browser matrix;
+- preserve all current accessibility, touch-target, RLS, Work Engine, strategy-history and draft/publish contracts.
+
+
+Final browser recheck:
+- resolved the remaining accessible-name collision on Finished result without changing visible copy;
+- rerun the complete Level B browser matrix on the application-equivalent candidate above.
+
+
+Compatibility correction:
+- restored the existing visible “Recorded ministry activity” acceptance phrase as a compact factual context line inside the new Recent activity panel;
+- no mockup hierarchy, data semantics or test strength was reduced;
+- rerun the full Level B browser matrix on the application-equivalent candidate above.
+
+
+Metric readability correction:
+- recurring ministry value and unit now render as one readable text value in the Recent activity panel (for example, “17 People received”);
+- this preserves the existing accepted data contract while retaining the compact mockup composition;
+- rerun the complete Level B browser matrix on the application-equivalent candidate above.
+
+
+Final compatibility correction:
+- Ministry Direction and Unit Objective keep the required attributable history field visibly available;
+- the owner-approved New Ministry Objective form still keeps Reason / context subordinate through progressive disclosure;
+- no strategy authority, hierarchy or audit requirement was removed.
+
+
+Acceptance alignment:
+- the protected strategy acceptance test now exercises the owner-approved Reason / context disclosure before entering the still-required audit reason;
+- the assertion continues to require an attributable reason and creation succeeds only through the real Strategy workflow.
+
+
+Final Level B candidate corrections:
+- restored the shared factual Executive ministry movement chart behind progressive disclosure so the default mockup composition stays compact;
+- restored the Executive mobile “Schedule meeting” action and 44px touch floor;
+- raised all new Executive/mockup-composer operational text to the CEAC 12px minimum;
+- reduced added composer CSS enough to remain inside the protected bundle budget without weakening the budget;
+- updated protected workflow tests to open the new Attachments and Reason/context disclosures before exercising the same real capabilities;
+- re-baselined the Executive visual fingerprint to the rendered owner-approved mockup-conformity composition.
+
+
+Final gate repair:
+- Executive typography now inherits one 12px operational floor instead of repeating the same declaration across many descendants, preserving the visual result while reducing the production CSS footprint.
+- Compact work-type and announcement-audience controls now use the same 12px floor.
+- The correction does not relax any performance, accessibility, visual-regression, authority, or workflow threshold.
+
+
+Final performance/fidelity repair:
+- Executive Overview CSS now loads with the existing lazy Executive route instead of inflating the global core stylesheet;
+- aggregate CSS and all existing performance budgets remain enforced;
+- Executive <small> text explicitly retains the 12px operational floor despite the browser default small-text reduction;
+- no visual, accessibility, authority, or workflow test threshold was relaxed.
+
+
+Final verification repair:
+- Executive Overview CSS remains route-owned and is now asserted as such by the cascade and Stage 8 isolation contracts;
+- the original core CSS budget remains unchanged;
+- aggregate CSS receives only measured headroom for the owner-approved isolated Executive route stylesheet, with a new dedicated 16 KiB ceiling on that route CSS chunk;
+- this is a budget rebaseline for an approved product surface, not removal of the performance guard.
+
+
+Bundler-independent performance verification:
+- aggregate CSS remains capped at the measured owner-approved budget;
+- Executive Overview CSS remains route-owned;
+- the dedicated 16 KiB Executive route stylesheet ceiling is now checked against the source stylesheet itself so the guard does not depend on Rolldown/Vite output chunk naming.

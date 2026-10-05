@@ -7,7 +7,7 @@ function dateKey(date) {
 }
 
 export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) {
-  const [x, setX] = useState({ doneWeek: 0, donePreviousWeek: 0, objectives: 0, objectiveAttention: 0, projects: 0, blocked: 0, review: 0 });
+  const [x, setX] = useState({ doneWeek: 0, donePreviousWeek: 0, objectives: 0, objectiveAttention: 0, projects: 0, blocked: 0, review: 0, activeUnits: 0 });
   const [loading, setLoading] = useState(true);
   const [meetings, setMeetings] = useState([]);
   const [objectiveMix, setObjectiveMix] = useState({ onTrack:0, met:0, atRisk:0, notMet:0, other:0 });
@@ -93,7 +93,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
         setReporting({label:openPeriod.label,filed,total:(unitRows.data||[]).length});
       }else setReporting(null);
 
-      setX({ doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review });
+      setX({ doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, activeUnits: (unitRows.data || []).length });
       setMeetings(meetingRows.data || []);
     } catch (loadError) {
       setError(loadError.message || "The ministry overview could not load.");
@@ -150,6 +150,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
   }, [ministryOperations,ministryOccurrences]);
 
   return <ExecutiveOverviewV2
+    executiveName={me.full_name || "Group Pastor"}
     executiveDate={executiveDate}
     loading={loading}
     error={error}

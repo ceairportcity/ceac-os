@@ -1,16 +1,11 @@
 import {
   Button,
-  DataPanel,
-  ProgressDistribution,
-  QueueRow,
   Skeleton,
   StatePanel,
-  StatTile,
-  StatusBadge,
-  Surface,
 } from "../components";
 import { CeacIcon } from "../icons";
 import { DataVizChart } from "../data-viz/DataVizV2";
+import "./executive-overview.css";
 
 function formatDate(value, options = {}) {
   if (!value) return "Not recorded";
@@ -21,29 +16,6 @@ function formatDate(value, options = {}) {
     month: "short",
     ...options,
   });
-}
-
-function Count({ value, tone = "neutral" }) {
-  return <span className={`executivev2-count is-${tone}`}>{value}</span>;
-}
-
-function Quiet({ icon = "checkCircle", children }) {
-  return <div className="executivev2-quiet">
-    <CeacIcon name={icon} size="row" decorative />
-    <span>{children}</span>
-  </div>;
-}
-
-function AttentionRow({ icon, title, meta, status, tone = "warning", onClick }) {
-  return <QueueRow
-    className="executivev2-attention-row"
-    icon={icon}
-    title={title}
-    meta={meta}
-    status={status}
-    statusTone={tone}
-    onClick={onClick}
-  />;
 }
 
 function ministryMovement(rows = []) {
@@ -59,32 +31,64 @@ function ministryMovement(rows = []) {
   };
 }
 
-function MinistryRecord({ row }) {
-  return <div className="executivev2-record-row">
-    <span className="executivev2-row-icon"><CeacIcon name="record" size="row" decorative /></span>
-    <span className="executivev2-record-copy">
-      <strong>{row.name}</strong>
-      <span>{row.unit} · {formatDate(row.occurred_on)}</span>
-      {row.note ? <small>{row.note}</small> : null}
+function pct(value, total) {
+  if (!total) return 0;
+  return Math.max(0, Math.min(100, (Number(value || 0) / Number(total)) * 100));
+}
+
+function ExecutiveStat({ icon, value, label, supporting, tone = "blue", onClick }) {
+  const Tag = onClick ? "button" : "div";
+  return <Tag type={onClick ? "button" : undefined} className={`executivev2-kpi is-${tone}`} onClick={onClick}>
+    <span className="executivev2-kpi-icon"><CeacIcon name={icon} size="row" decorative /></span>
+    <span className="executivev2-kpi-copy">
+      <strong>{value}</strong>
+      <span>{label}</span>
+      {supporting ? <small>{supporting}</small> : null}
     </span>
-    <span className="executivev2-record-value">
-      <strong>{row.value === null ? "—" : Number(row.value).toLocaleString("en-GH")}</strong>{" "}
-      <small>{row.value_label}</small>
+  </Tag>;
+}
+
+function AttentionItem({ icon, title, meta, status, tone = "neutral", onClick }) {
+  return <button type="button" className="executivev2-attention-item" onClick={onClick}>
+    <span className={`executivev2-attention-icon is-${tone}`}><CeacIcon name={icon} size="row" decorative /></span>
+    <span className="executivev2-attention-copy">
+      <strong>{title}</strong>
+      <small>{meta}</small>
+    </span>
+    <span className={`executivev2-pill is-${tone}`}>{status}</span>
+    <span className="executivev2-row-action" aria-hidden="true">›</span>
+  </button>;
+}
+
+function DirectionRow({ icon, label, value, progress, tone = "success" }) {
+  return <div className="executivev2-direction-row">
+    <span className={`executivev2-direction-icon is-${tone}`}><CeacIcon name={icon} size="row" decorative /></span>
+    <span><strong>{value}</strong> {label}</span>
+    <span className="executivev2-direction-track" aria-hidden="true"><span className={`is-${tone}`} style={{ width: `${progress}%` }} /></span>
+    <small>{Math.round(progress)}%</small>
+  </div>;
+}
+
+function ActivityItem({ row }) {
+  return <div className="executivev2-activity-item">
+    <span className="executivev2-activity-icon"><CeacIcon name="record" size="row" decorative /></span>
+    <span className="executivev2-activity-copy">
+      <strong>{row.name}</strong>
+      <small>{row.unit} · {formatDate(row.occurred_on)}</small>
+    </span>
+    <span className="executivev2-activity-value">
+      <strong>{row.value === null ? "—" : Number(row.value).toLocaleString("en-GH")}{row.value_label ? ` ${row.value_label}` : ""}</strong>
     </span>
   </div>;
 }
 
 export default function ExecutiveOverviewV2({
-  executiveDate,
+  executiveName,
   loading,
   error,
   summary,
   objectiveMix,
   reporting,
-  ministryOperations = [],
-  ministryOccurrences = [],
-  occurrencesThisWeek = [],
-  unitsThisWeek = 0,
   ministryLatestRows = [],
   ministryCharts = [],
   meetings = [],
@@ -93,7 +97,6 @@ export default function ExecutiveOverviewV2({
   onOpenMinistry,
   onOpenPortfolio,
   onOpenOrganisation,
-  onOpenFinance,
   onOpenReports,
   onOpenMeeting,
   onScheduleMeeting,
@@ -101,35 +104,41 @@ export default function ExecutiveOverviewV2({
   const reportingGap = reporting ? Math.max(0, Number(reporting.total) - Number(reporting.filed)) : 0;
   const attentionCount = Number(summary.objectiveAttention || 0) + Number(summary.blocked || 0) + reportingGap;
   const objectiveTotal = Number(summary.objectives || 0);
-  const objectiveItems = [
-    ["Met", objectiveMix.met],
-    ["On track", objectiveMix.onTrack],
-    ["At risk", objectiveMix.atRisk],
-    ["Not met", objectiveMix.notMet],
-    ["Other", objectiveMix.other],
-  ].filter(([, value]) => Number(value) > 0).map(([label, value]) => ({
-    label,
-    value,
-    percent: objectiveTotal ? (Number(value) / objectiveTotal) * 100 : 0,
-  }));
-  const outputChange = Number(summary.doneWeek || 0) - Number(summary.donePreviousWeek || 0);
-  const outputSupporting = outputChange === 0
-    ? "Same recorded count as last week"
-    : `${outputChange > 0 ? "+" : ""}${outputChange} compared with last week`;
+  const objectiveStable = Number(objectiveMix.onTrack || 0) + Number(objectiveMix.met || 0);
+  const objectiveRisk = Number(objectiveMix.atRisk || 0) + Number(objectiveMix.notMet || 0);
+  const objectiveOther = Number(objectiveMix.other || 0);
+  const attentionRows = [
+    Number(summary.objectiveAttention || 0) > 0 ? {
+      icon: "goal",
+      title: "Review ministry objective status",
+      meta: `${summary.objectiveAttention} objective${summary.objectiveAttention === 1 ? "" : "s"} recorded at risk or not met`,
+      status: "At risk",
+      tone: "risk",
+      onClick: onOpenMinistry,
+    } : null,
+    Number(summary.blocked || 0) > 0 ? {
+      icon: "warning",
+      title: "Resolve recorded delivery hold-ups",
+      meta: `${summary.blocked} unresolved blocker${summary.blocked === 1 ? "" : "s"} across visible work`,
+      status: "Follow up",
+      tone: "warning",
+      onClick: onOpenWork,
+    } : null,
+    reportingGap > 0 ? {
+      icon: "reports",
+      title: "Outstanding unit reporting",
+      meta: `${reportingGap} unit report${reportingGap === 1 ? "" : "s"} still outstanding for ${reporting.label}`,
+      status: "Reporting",
+      tone: "action",
+      onClick: onOpenReports,
+    } : null,
+  ].filter(Boolean);
 
   return <div className="body executive-home">
     <div className="executivev2">
-      <header className="executivev2-intro">
-        <div className="executivev2-context"><span>Group Pastor</span><time>{executiveDate}</time></div>
-        <div className="executivev2-intro-row">
-          <div>
-            <h1>Ministry overview</h1>
-            <p>{attentionCount
-              ? `${attentionCount} item${attentionCount === 1 ? "" : "s"} need your attention.`
-              : "Nothing currently needs your decision. Ministry direction and delivery context are below."}</p>
-          </div>
-          <Button icon="meeting" onClick={onScheduleMeeting}>Schedule meeting</Button>
-        </div>
+      <header className="executivev2-greeting">
+        <h1>Good morning, {executiveName || "Group Pastor"}</h1>
+        <p>Here&apos;s what matters across CEAC today.</p>
       </header>
 
       {error ? <StatePanel
@@ -141,171 +150,146 @@ export default function ExecutiveOverviewV2({
       /> : null}
 
       {loading ? <div className="executivev2-loading" role="status" aria-live="polite" aria-busy="true" aria-label="Loading Executive Overview">
-        <Surface variant="plain" padding="standard"><Skeleton width="32%" /><Skeleton width="92%" /><Skeleton width="76%" /></Surface>
-        <Surface variant="plain" padding="standard"><Skeleton width="28%" /><Skeleton width="100%" /><Skeleton width="82%" /></Surface>
-        <Surface variant="plain" padding="standard"><Skeleton width="38%" /><Skeleton width="95%" /><Skeleton width="70%" /></Surface>
+        <Skeleton width="100%" height="5rem" />
+        <Skeleton width="100%" height="16rem" />
+        <Skeleton width="100%" height="13rem" />
       </div> : null}
 
       {!loading && !error ? <main className="executivev2-main">
-        <section className="executivev2-command-grid" aria-label="Needs your attention">
-          <DataPanel
-            className="executivev2-panel executivev2-attention"
-            eyebrow="Executive decisions"
-            title="Needs your attention"
-            supporting="Items that need an Executive decision or drill-in. Open the source record before acting."
-            action={<Count value={attentionCount} tone={attentionCount ? "attention" : "success"} />}
-          >
-            {!attentionCount ? <Quiet>No recorded signal currently needs Executive drill-in.</Quiet> : null}
-            {summary.objectiveAttention ? <AttentionRow
-              icon="goal"
-              title={`${summary.objectiveAttention} objective${summary.objectiveAttention === 1 ? "" : "s"} recorded at risk or not met`}
-              meta="Open Ministry to review the recorded objective status and evidence."
-              status="Recorded status"
-              onClick={onOpenMinistry}
-            /> : null}
-            {summary.blocked ? <AttentionRow
-              icon="warning"
-              title={`${summary.blocked} unresolved delivery hold-up${summary.blocked === 1 ? "" : "s"}`}
-              meta="Open the underlying work before drawing a conclusion."
-              status="Unresolved"
-              tone="warning"
-              onClick={onOpenWork}
-            /> : null}
-            {reportingGap ? <AttentionRow
-              icon="reports"
-              title={`${reportingGap} unit report${reportingGap === 1 ? "" : "s"} outstanding`}
-              meta={`${reporting.label} · ${reporting.filed} of ${reporting.total} units filed`}
-              status="Coverage gap"
-              onClick={onOpenReports}
-            /> : null}
-          </DataPanel>
+        <section className="executivev2-kpis" aria-label="Executive summary">
+          <ExecutiveStat
+            icon="warning"
+            value={attentionCount}
+            label="Items need attention"
+            supporting="Objectives, blockers and reporting"
+            tone="red"
+            onClick={attentionCount ? onOpenWork : undefined}
+          />
+          <ExecutiveStat
+            icon="goal"
+            value={summary.objectives}
+            label="Ministry objectives"
+            supporting={objectiveRisk ? `${objectiveRisk} at risk or not met` : "No recorded objective risk"}
+            tone="blue"
+            onClick={onOpenMinistry}
+          />
+          <ExecutiveStat
+            icon="projects"
+            value={summary.projects}
+            label="Active projects"
+            supporting={summary.review ? `${summary.review} work item${summary.review === 1 ? "" : "s"} in review` : "Current active portfolio"}
+            tone="green"
+            onClick={onOpenPortfolio}
+          />
+          <ExecutiveStat
+            icon="organisation"
+            value={summary.activeUnits || 0}
+            label="Departments"
+            supporting="Active organisation units"
+            tone="purple"
+            onClick={onOpenOrganisation}
+          />
         </section>
 
-        <section className="executivev2-context-grid" aria-label="Ministry direction and delivery">
-          <DataPanel
-            className="executivev2-panel executivev2-direction"
-            eyebrow="Ministry direction"
-            title="Direction and objectives"
-            supporting="Current ministry objectives and linked delivery. Descriptive objectives stay descriptive."
-            action={<Button variant="quiet" size="compact" onClick={onOpenMinistry}>Open Ministry</Button>}
-          >
-            <div className="executivev2-direction-head">
-              <StatTile label="Objectives" value={summary.objectives} icon="goal" onClick={onOpenMinistry} />
-              <StatTile label="Active projects" value={summary.projects} icon="projects" onClick={onOpenPortfolio} />
+        <section className="executivev2-reference-grid">
+          <section className="executivev2-reference-panel executivev2-attention" aria-label="Needs your attention">
+            <div className="executivev2-panel-head">
+              <h2>Needs your attention</h2>
+              {attentionCount ? <button type="button" onClick={onOpenWork}>View all</button> : null}
             </div>
-            {objectiveItems.length ? <ProgressDistribution items={objectiveItems} /> : <Quiet icon="info">No objective status is recorded yet.</Quiet>}
-          </DataPanel>
-          <DataPanel
-            className="executivev2-panel executivev2-delivery"
-            eyebrow="Delivery & exceptions"
-            title="Delivery and exceptions"
-            supporting="Completed work, unresolved blockers and items currently in authorised review."
-            action={<Button variant="quiet" size="compact" onClick={onOpenOrganisation}>Open Organisation</Button>}
-          >
-            <div className="executivev2-delivery-grid">
-              <StatTile label="Completed outputs" value={summary.doneWeek} supporting={outputSupporting} icon="work" onClick={onOpenWork} />
-              <StatTile label="Open blockers" value={summary.blocked} supporting="Unresolved recorded hold-ups" icon="warning" onClick={onOpenWork} />
-              <StatTile label="In manager review" value={summary.review} supporting="Remains with authorised managers unless escalated" icon="pending" onClick={onOpenWork} />
+            <div className="executivev2-panel-body">
+              {attentionRows.length ? attentionRows.map((row) => <AttentionItem key={row.title} {...row} />) : (
+                <div className="executivev2-empty">
+                  <CeacIcon name="checkCircle" size="row" decorative />
+                  <span><strong>No recorded item needs your decision right now.</strong><small>New exceptions will appear here when the underlying record requires Executive attention.</small></span>
+                </div>
+              )}
             </div>
-          </DataPanel>
+          </section>
+
+          <div className="executivev2-side-stack">
+            <section className="executivev2-reference-panel executivev2-direction">
+              <div className="executivev2-panel-head">
+                <h2>Ministry direction</h2>
+                <button type="button" onClick={onOpenMinistry}>View all</button>
+              </div>
+              <div className="executivev2-panel-body">
+                {objectiveTotal ? <>
+                  <DirectionRow icon="checkCircle" label="on track or met" value={objectiveStable} progress={pct(objectiveStable, objectiveTotal)} tone="success" />
+                  <DirectionRow icon="warning" label="at risk or not met" value={objectiveRisk} progress={pct(objectiveRisk, objectiveTotal)} tone="risk" />
+                  <DirectionRow icon="info" label="other recorded status" value={objectiveOther} progress={pct(objectiveOther, objectiveTotal)} tone="warning" />
+                </> : <div className="executivev2-empty compact"><span><strong>No objective status recorded yet.</strong><small>Open Ministry to add or review objectives.</small></span></div>}
+              </div>
+            </section>
+
+            <section className="executivev2-reference-panel executivev2-organisation">
+              <div className="executivev2-panel-head">
+                <h2>Organisational overview</h2>
+                <button type="button" onClick={onOpenOrganisation}>View all</button>
+              </div>
+              <div className="executivev2-org-grid">
+                <button type="button" onClick={onOpenOrganisation}><CeacIcon name="organisation" size="row" decorative /><span><strong>{summary.activeUnits || 0}</strong><small>Departments</small></span></button>
+                <button type="button" onClick={onOpenPortfolio}><CeacIcon name="projects" size="row" decorative /><span><strong>{summary.projects || 0}</strong><small>Active projects</small></span></button>
+                <button type="button" onClick={onOpenReports}><CeacIcon name="reports" size="row" decorative /><span><strong>{reporting ? `${reporting.filed}/${reporting.total}` : "—"}</strong><small>Reports filed</small></span></button>
+              </div>
+            </section>
+          </div>
         </section>
 
-        <section className="executivev2-support-grid" aria-label="Finance reporting and organisation">
-          <DataPanel
-            className="executivev2-panel executivev2-governance"
-            eyebrow="Finance & reporting"
-            title="Finance and reporting"
-            supporting="Reporting coverage and recorded financial context for Executive review."
-          >
-            {reporting ? <button type="button" className="executivev2-coverage" onClick={onOpenReports}>
-              <span><strong>{reporting.label}</strong><small>{reporting.filed} of {reporting.total} active units filed</small></span>
-              <StatusBadge tone={reportingGap ? "warning" : "success"}>{reportingGap ? `${reportingGap} outstanding` : "Coverage complete"}</StatusBadge>
-              <span className="executivev2-coverage-track" aria-hidden="true"><span style={{ width: `${reporting.total ? (reporting.filed / reporting.total) * 100 : 0}%` }} /></span>
-            </button> : <Quiet icon="info">No reporting period is open. Administration controls reporting periods.</Quiet>}
-            <QueueRow
-              icon="finance"
-              title="Financial oversight"
-              meta="Open recorded budgets, requests and actual spend. Currencies remain separate."
-              status="Authoritative record"
-              statusTone="action"
-              onClick={onOpenFinance}
-            />
-          </DataPanel>
-          <DataPanel
-            className="executivev2-panel executivev2-organisation"
-            eyebrow="Organisation"
-            title="Organisation"
-            supporting="Departments, recorded leaders and structural exceptions."
-            action={<Button variant="quiet" size="compact" onClick={onOpenOrganisation}>Open Organisation</Button>}
-          >
-            <QueueRow
-              icon="organisation"
-              title="Departments and leadership"
-              meta="Review recorded Unit Heads, headcount and any missing leadership context."
-              status="Leadership context"
-              statusTone="neutral"
-              onClick={onOpenOrganisation}
-            />
-          </DataPanel>
-        </section>
+        <section className="executivev2-lower-grid">
+          <section className="executivev2-reference-panel executivev2-activity executivev2-movement">
+            <div className="executivev2-panel-head">
+              <h2>Recent activity</h2>
+              <button type="button" onClick={onOpenMinistry}>View ministry</button>
+            </div>
+            <div className="executivev2-activity-context">Recorded ministry activity</div>
+            <div className="executivev2-activity-tabs" aria-label="Activity filter">
+              <span className="is-active">All</span>
+              <span>Ministry</span>
+              <span>Work</span>
+              <span>Reports</span>
+            </div>
+            <div className="executivev2-activity-grid">
+              {ministryLatestRows.length ? ministryLatestRows.slice(0, 4).map((row) => <ActivityItem key={row.id} row={row} />) : (
+                <div className="executivev2-empty compact"><span><strong>No recent ministry values are recorded.</strong><small>This area only shows attributable CEAC records.</small></span></div>
+              )}
+            </div>
+            {ministryCharts.length ? <details className="executivev2-movement-details">
+              <summary>Recorded movement</summary>
+              <div className="executivev2-movement-charts">
+                {ministryCharts.slice(0, 2).map(({ operation, rows }) => {
+                  const movement = ministryMovement(rows);
+                  const label = `${operation.units?.name || "Unit"} · ${operation.name}`;
+                  return <DataVizChart
+                    key={operation.id}
+                    kind="line"
+                    compact
+                    title={label}
+                    note={movement.note}
+                    summary={`${movement.latest.toLocaleString("en-GH")} ${operation.value_label || "recorded"}`}
+                    ariaLabel={`${label} recorded ministry movement`}
+                    data={rows}
+                    series={[{ key: "value", label: operation.value_label || "Recorded value" }]}
+                  />;
+                })}
+              </div>
+            </details> : null}
+          </section>
 
-        <section className="executivev2-support-grid" aria-label="Meetings and recent ministry activity">
-          <DataPanel
-            className="executivev2-panel executivev2-meetings"
-            eyebrow="Next 14 days"
-            title="Meetings"
-            supporting="Upcoming non-cancelled meetings visible to Executive."
-            action={<Button variant="quiet" size="compact" onClick={onScheduleMeeting}>Schedule</Button>}
-          >
-            {!meetings.length ? <Quiet icon="calendar">No upcoming meetings are visible in the current record.</Quiet> : meetings.slice(0, 4).map((meeting) => <QueueRow
-              key={meeting.id}
-              icon="meeting"
-              title={meeting.title}
-              meta={formatDate(meeting.starts_at, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
-              status="Upcoming"
-              statusTone="action"
-              onClick={() => onOpenMeeting?.(meeting.id)}
-            />)}
-          </DataPanel>
-          <DataPanel
-            className="executivev2-panel executivev2-movement"
-            eyebrow="Recent ministry activity"
-            title="Recorded ministry activity"
-            supporting="Recent unit-entered ministry figures. These are records, not scores."
-            action={<Button variant="quiet" size="compact" onClick={onOpenMinistry}>Open Ministry</Button>}
-          >
-            {ministryOperations.length ? <div className="executivev2-stat-grid">
-              <StatTile label="Measures" value={ministryOperations.length} icon="ministry" />
-              <StatTile label="Records this week" value={occurrencesThisWeek.length} icon="record" />
-              <StatTile label="Units recording" value={unitsThisWeek} icon="organisation" />
-            </div> : <Quiet icon="info">No ministry numbers have been configured yet.</Quiet>}
-            {ministryCharts.slice(0, 2).map(({ operation, rows }) => {
-              const movement = ministryMovement(rows);
-              const label = `${operation.units?.name || "Unit"} · ${operation.name}`;
-              return <DataVizChart
-                key={operation.id}
-                kind="line"
-                compact
-                title={label}
-                note={movement.note}
-                summary={`${movement.latest.toLocaleString("en-GH")} ${operation.value_label || "recorded"}`}
-                ariaLabel={`${label} recorded ministry movement`}
-                data={rows}
-                series={[{ key: "value", label: operation.value_label || "Recorded value" }]}
-              />;
-            })}
-          </DataPanel>
+          <section className="executivev2-reference-panel executivev2-meetings">
+            <div className="executivev2-panel-head">
+              <h2>Upcoming meetings</h2>
+              <Button variant="quiet" size="compact" onClick={onScheduleMeeting}>Schedule meeting</Button>
+            </div>
+            <div className="executivev2-panel-body">
+              {meetings.length ? meetings.slice(0, 4).map((meeting) => <button type="button" className="executivev2-meeting-row" key={meeting.id} onClick={() => onOpenMeeting?.(meeting.id)}>
+                <span className="executivev2-meeting-icon"><CeacIcon name="meeting" size="row" decorative /></span>
+                <span><strong>{meeting.title}</strong><small>{formatDate(meeting.starts_at, { weekday: "short", hour: "2-digit", minute: "2-digit" })}</small></span>
+                <span className="executivev2-meeting-action">View</span>
+              </button>) : <div className="executivev2-empty compact"><span><strong>No upcoming meeting is visible.</strong><small>Schedule a meeting when one is needed.</small></span></div>}
+            </div>
+          </section>
         </section>
-
-        <DataPanel
-          className="executivev2-panel executivev2-records"
-          eyebrow="Supporting evidence"
-          title="Latest ministry records"
-          supporting={`${ministryOccurrences.length} occurrence${ministryOccurrences.length === 1 ? "" : "s"} visible in the current 90-day record.`}
-          action={<Button variant="quiet" size="compact" onClick={onOpenMinistry}>Open full record</Button>}
-        >
-          {!ministryLatestRows.length ? <Quiet icon="info">No ministry values have been recorded yet.</Quiet> : ministryLatestRows.slice(0, 6).map((row) => <MinistryRecord key={row.id} row={row} />)}
-        </DataPanel>
       </main> : null}
     </div>
   </div>;

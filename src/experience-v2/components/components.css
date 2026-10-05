@@ -1387,3 +1387,402 @@ button.ev2c-record-row {
     animation: none;
   }
 }
+
+
+/* 2026-10-05 owner-approved mockup conformity: compact right-side creation composers. */
+.reference-composer.ev2c-composer-drawer {
+  width: min(23.5rem, 100%);
+  background: var(--ev2-surface);
+}
+.reference-composer .ev2c-overlay-head {
+  min-height: 48px;
+  padding: 12px 14px;
+  align-items: center;
+}
+.reference-composer .ev2c-overlay-head > div { min-width: 0; }
+.reference-composer .ev2c-overlay-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 750;
+  letter-spacing: -.015em;
+}
+.reference-composer .ev2c-overlay-description {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.reference-composer .ev2c-overlay-body {
+  padding: 12px 14px 14px;
+}
+.reference-composer .ev2c-overlay-footer {
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--ev2-line);
+  background: var(--ev2-surface);
+}
+.reference-composer .ev2c-composer-footer > .btn,
+.reference-composer .ev2c-composer-footer > .ev2-button {
+  width: 100%;
+  min-height: 40px;
+  border-radius: 7px;
+}
+.reference-composer .field-group {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 10px;
+}
+.reference-composer .field-label,
+.reference-composer .label {
+  color: var(--ev2-text);
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+.reference-composer .field-hint,
+.reference-composer .hint {
+  margin-top: 1px;
+  color: var(--ev2-text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.reference-composer .field {
+  min-height: 39px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--ev2-line-strong);
+  border-radius: 7px;
+  background: var(--ev2-surface);
+  font-size: 12px;
+  line-height: 1.3;
+}
+.reference-composer textarea.field {
+  min-height: 76px;
+  resize: vertical;
+}
+.reference-composer .assistive-field.textarea {
+  position: relative;
+}
+.reference-composer .assistive-field.textarea .voice-input.compact,
+.reference-composer .assistive-field.textarea .voice-input-compact {
+  right: 7px;
+  bottom: 7px;
+}
+.reference-composer .ocr-composer-two {
+  gap: 8px;
+}
+.reference-composer .ocr-composer-group {
+  margin-top: 8px;
+  padding: 9px;
+  border-radius: 8px;
+}
+.reference-composer .sec {
+  min-height: 30px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.reference-composer .opt {
+  font-size: 12px;
+  line-height: 1.35;
+}
+.reference-composer .btn-sm {
+  min-height: 32px;
+  font-size: 12px;
+}
+
+/* Give out work — literal compact task composer pattern from the approved reference. */
+.reference-work-composer .ev2c-overlay-body {
+  padding-top: 10px;
+}
+.reference-task-form {
+  display: grid;
+  gap: 10px;
+}
+.reference-kind-row {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 24px auto minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  background: var(--ev2-action-soft);
+  color: var(--ev2-action);
+}
+.reference-kind-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.reference-kind-prefix {
+  font-size: 12px;
+  font-weight: 700;
+}
+.reference-kind-row select {
+  min-width: 0;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--ev2-action);
+  font: 700 12px/1 var(--ev2-font-sans);
+  outline: none;
+}
+.reference-task-form .field-group { margin-bottom: 0; }
+.reference-primary-field { margin-top: 1px; }
+.reference-compact-fields {
+  overflow: hidden;
+  border: 1px solid var(--ev2-line);
+  border-radius: 8px;
+  background: var(--ev2-surface);
+}
+.reference-compact-fields .field-group {
+  min-height: 43px;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--ev2-line-soft, var(--ev2-line));
+}
+.reference-compact-fields .field-group:last-child { border-bottom: 0; }
+.reference-compact-fields .field-label {
+  color: var(--ev2-text);
+  font-size: 12px;
+}
+.reference-compact-fields .field {
+  min-height: 32px;
+  padding: 5px 7px;
+  border: 0;
+  background: transparent;
+  color: var(--ev2-text-secondary);
+  text-align: right;
+  box-shadow: none;
+}
+.reference-why-field {
+  margin-top: 1px;
+}
+.reference-why-field textarea.field { min-height: 72px; }
+.reference-disclosure {
+  overflow: hidden;
+  border: 1px solid var(--ev2-line);
+  border-radius: 8px;
+  background: var(--ev2-surface);
+}
+.reference-disclosure summary {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  list-style: none;
+  color: var(--ev2-text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+.reference-disclosure summary::-webkit-details-marker { display: none; }
+.reference-disclosure summary > span:last-child {
+  color: var(--ev2-action);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.reference-disclosure summary small {
+  color: var(--ev2-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.reference-disclosure[open] summary {
+  border-bottom: 1px solid var(--ev2-line);
+  background: var(--ev2-surface-soft);
+}
+.reference-disclosure-body {
+  display: grid;
+  gap: 8px;
+  padding: 9px;
+}
+.reference-disclosure-body .field { width: 100%; }
+.reference-recipe {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 7px;
+  background: var(--ev2-surface-soft);
+}
+.reference-recipe > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.reference-recipe strong { font-size: 12px; }
+.reference-recipe small { color: var(--ev2-text-secondary); font-size: 12px; }
+.reference-check {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ev2-text-secondary);
+  font-size: 12px;
+}
+.reference-warning-stack {
+  display: grid;
+  gap: 6px;
+}
+.reference-warning-stack .flag { margin: 0; }
+
+@media (max-width: 599px) {
+  .reference-composer.ev2c-composer-drawer {
+    width: 100%;
+  }
+  .reference-composer .ev2c-overlay-head {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+  .reference-composer .ev2c-overlay-body {
+    padding-inline: 12px;
+  }
+  .reference-composer .ev2c-overlay-footer {
+    padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
+  }
+  .reference-compact-fields .field-group {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    min-height: 48px;
+  }
+  .reference-composer .field,
+  .reference-kind-row,
+  .reference-disclosure summary,
+  .reference-audience-pills button {
+    min-height: 44px;
+  }
+}
+
+
+/* Ministry Objective and Announcement mockup-specific composer details. */
+.reference-objective-composer .reference-measurement-group {
+  display: grid;
+  gap: 8px;
+  border-color: var(--ev2-line);
+  background: var(--ev2-surface-soft);
+}
+.reference-objective-composer .reference-disclosure + .reference-disclosure {
+  margin-top: 8px;
+}
+
+.reference-announcement-composer .label {
+  display: block;
+  margin: 0 0 5px;
+}
+.reference-announcement-composer .assistive-inline {
+  position: relative;
+  margin-bottom: 11px;
+}
+.reference-announcement-composer .assistive-inline .field {
+  width: 100%;
+  padding-right: 38px;
+}
+.reference-announcement-composer .assistive-inline > .voice-input,
+.reference-announcement-composer .assistive-inline > .voice-input-compact {
+  position: absolute;
+  right: 6px;
+  top: 4px;
+}
+.reference-audience {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 11px;
+}
+.reference-audience-pills {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  gap: 6px;
+}
+.reference-audience-pills button {
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid var(--ev2-line);
+  border-radius: 7px;
+  background: var(--ev2-surface);
+  color: var(--ev2-text-secondary);
+  font: 650 12px/1 var(--ev2-font-sans);
+  cursor: pointer;
+}
+.reference-audience-pills button.is-active {
+  border-color: var(--ev2-action);
+  background: var(--ev2-action-soft);
+  color: var(--ev2-action);
+}
+.reference-audience-options {
+  max-height: 8rem;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid var(--ev2-line);
+  border-radius: 7px;
+  background: var(--ev2-surface-soft);
+}
+.reference-chip-check {
+  position: relative;
+}
+.reference-chip-check input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.reference-chip-check span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid var(--ev2-line);
+  border-radius: 999px;
+  background: var(--ev2-surface);
+  color: var(--ev2-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.reference-chip-check input:checked + span {
+  border-color: var(--ev2-action);
+  background: var(--ev2-action-soft);
+  color: var(--ev2-action);
+  font-weight: 700;
+}
+.reference-message-box {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 11px;
+  border: 1px solid var(--ev2-line-strong);
+  border-radius: 7px;
+  background: var(--ev2-surface);
+}
+.reference-message-box textarea.field {
+  min-height: 112px;
+  width: 100%;
+  padding: 9px 10px 38px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.reference-message-box > .voice-input,
+.reference-message-box > .voice-input-compact {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+}
+
+@media (max-width: 390px) {
+  .reference-audience-pills {
+    grid-template-columns: 1fr;
+  }
+}
+
+.reference-kind-row > .voice-input,
+.reference-kind-row > .voice-input-compact {
+  justify-self: end;
+}

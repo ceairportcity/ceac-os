@@ -27,7 +27,6 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
   const home = fs.readFileSync("src/screens/ExecutiveHome.jsx", "utf8");
   const view = fs.readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
   const css = fs.readFileSync("src/experience-v2/executive-overview/executive-overview.css", "utf8");
-  const main = fs.readFileSync("src/main.jsx", "utf8");
 
   expect(home).toContain('from "../experience-v2/executive-overview/ExecutiveOverviewV2"');
   expect(home).toContain('supabase.from("recurring_operations")');
@@ -41,8 +40,10 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
   expect(view).toContain('from "../components"');
   expect(view).toContain('from "../icons"');
   expect(view).toContain("Needs your attention");
-  expect(view).toContain("These are records, not scores");
-  expect(view).toContain("Remains with authorised managers unless escalated");
+  expect(view).toContain("Good morning");
+  expect(view).toContain("Recent activity");
+  expect(view).toContain("Organisational overview");
+  expect(view).toContain("This area only shows attributable CEAC records.");
   expect(view).not.toContain("ReferenceDashboard");
   expect(view).not.toContain("components/primitives");
 
@@ -52,10 +53,10 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
   expect(css).not.toContain(".premium-");
   expect(css).not.toContain(".executive-command-surface");
 
-  const adminCss = main.indexOf('import "./experience-v2/admin-overview/admin-overview.css";');
-  const executiveCss = main.indexOf('import "./experience-v2/executive-overview/executive-overview.css";');
-  expect(adminCss).toBeGreaterThan(-1);
-  expect(executiveCss).toBeGreaterThan(adminCss);
+  expect(view).toContain('import "./executive-overview.css";');
+  const main = fs.readFileSync("src/main.jsx", "utf8");
+  expect(main).toContain('import "./experience-v2/admin-overview/admin-overview.css";');
+  expect(main).not.toContain('import "./experience-v2/executive-overview/executive-overview.css";');
 });
 
 for (const viewport of [
@@ -67,17 +68,17 @@ for (const viewport of [
   test(`Stage 8 Executive Overview composes cleanly at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openExecutive(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "Ministry overview", exact: true })).toBeVisible();
+    await expect(page.locator(".executivev2-greeting h1")).toContainText("Good morning");
+    await expect(page.locator(".executivev2-kpis")).toBeVisible();
     await expect(page.locator(".executivev2-attention")).toBeVisible();
-    await expect(page.locator(".executivev2-movement")).toBeVisible();
     await expect(page.locator(".executivev2-direction")).toBeVisible();
-    await expect(page.locator(".executivev2-governance")).toBeVisible();
-    await expect(page.locator(".executivev2-delivery")).toBeVisible();
     await expect(page.locator(".executivev2-organisation")).toBeVisible();
-    const order = await page.locator(".executivev2-main > *").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label") || node.className));
-    expect(order[0]).toContain("Needs your attention");
-    expect(order[1]).toContain("Ministry direction and delivery");
-    expect(order[2]).toContain("Finance reporting and organisation");
+    await expect(page.locator(".executivev2-activity")).toBeVisible();
+    await expect(page.locator(".executivev2-meetings")).toBeVisible();
+    const order = await page.locator(".executivev2-main > *").evaluateAll((nodes) => nodes.map((node) => node.className));
+    expect(order[0]).toContain("executivev2-kpis");
+    expect(order[1]).toContain("executivev2-reference-grid");
+    expect(order[2]).toContain("executivev2-lower-grid");
     await expect(page.locator(".executive-command-surface")).toHaveCount(0);
     await expect(page.locator(".reference-calendar-card")).toHaveCount(0);
     await expect(page.locator(".reference-module-strip")).toHaveCount(0);
@@ -101,40 +102,29 @@ for (const viewport of [
 }
 
 
-test("VF5A Executive briefing locks senior-attention-first mobile composition", async ({ browser }) => {
+test("VF5A Executive briefing keeps the approved compact mockup hierarchy on mobile", async ({ browser }) => {
   const { context, page } = await openExecutive(browser, { width: 390, height: 844 });
 
+  await expect(page.locator(".executivev2-greeting h1")).toContainText("Good morning");
+  const kpis = page.locator(".executivev2-kpis");
+  await expect(kpis).toBeVisible();
+  await expect(kpis.locator(".executivev2-kpi")).toHaveCount(4);
+
   const attention = page.locator(".executivev2-attention");
-  const movement = page.locator(".executivev2-movement");
-  const [attentionBox, movementBox] = await Promise.all([attention.boundingBox(), movement.boundingBox()]);
-  expect(attentionBox?.y || 0).toBeLessThan(movementBox?.y || Number.POSITIVE_INFINITY);
+  const activity = page.locator(".executivev2-activity");
+  const [attentionBox, activityBox] = await Promise.all([attention.boundingBox(), activity.boundingBox()]);
+  expect(attentionBox?.y || 0).toBeLessThan(activityBox?.y || Number.POSITIVE_INFINITY);
 
-  const movementMetrics = await page.locator(".executivev2-movement .executivev2-stat-grid").evaluate((node) => ({
-    scroll: node.scrollWidth,
-    client: node.clientWidth,
-    height: node.getBoundingClientRect().height,
-  }));
-  expect(movementMetrics.height).toBeLessThanOrEqual(120);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
 
-  for (const selector of [".executivev2-context-grid", ".executivev2-support-grid"]) {
-    const rails = page.locator(selector);
-    const count = await rails.count();
-    expect(count).toBeGreaterThan(0);
-    for (let index = 0; index < count; index += 1) {
-      const rail = await rails.nth(index).evaluate((node) => ({
-        scroll: node.scrollWidth,
-        client: node.clientWidth,
-      }));
-      expect(rail.scroll).toBeGreaterThan(rail.client);
-    }
-  }
+  const kpiColumns = await kpis.evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(" ").length);
+  expect(kpiColumns).toBe(2);
 
-  const delivery = await page.locator(".executivev2-delivery-grid").evaluate((node) => ({
-    scroll: node.scrollWidth,
-    client: node.clientWidth,
-  }));
-  expect(delivery.scroll).toBeGreaterThan(delivery.client);
-
+  await page.screenshot({
+    path: "test-artifacts/vf5a-executive-reference-mobile-390.png",
+    fullPage: true,
+  });
   await context.close();
 });
 

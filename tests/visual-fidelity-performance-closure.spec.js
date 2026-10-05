@@ -15,7 +15,10 @@ const KIB = 1024;
 const budgets = {
   coreCssRaw: 530 * KIB,
   coreCssGzip: 78 * KIB,
-  allCssRaw: 550 * KIB,
+  // 5 Oct 2026 owner-approved Executive mockup adds one isolated route stylesheet.
+  // Core CSS stays on the original VF9C ceiling; aggregate gets measured route headroom only.
+  allCssRaw: 565 * KIB,
+  executiveRouteCssRaw: 16 * KIB,
   mainJsRaw: 72 * KIB,
   routeJsRaw: 100 * KIB,
   vendors: {
@@ -63,6 +66,12 @@ test("VF9C production bundle preserves measured route and vendor budgets", async
     css.reduce((sum, asset) => sum + asset.raw, 0),
     "aggregate CSS regression budget",
   ).toBeLessThanOrEqual(budgets.allCssRaw);
+
+  const executiveCssSourceRaw = statSync("src/experience-v2/executive-overview/executive-overview.css").size;
+  expect(
+    executiveCssSourceRaw,
+    "Executive Overview route CSS source budget",
+  ).toBeLessThanOrEqual(budgets.executiveRouteCssRaw);
 
   const mainJs = js.find((asset) => /^index-.*\.js$/.test(asset.name));
   expect(mainJs, "Vite main index JS asset").toBeTruthy();

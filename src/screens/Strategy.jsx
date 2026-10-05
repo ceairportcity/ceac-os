@@ -312,40 +312,30 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
       open
       onClose={() => { if (!busy) setForm(null); }}
       title={form.id ? `Revise ${TYPE_LABELS[form.nodeType].toLowerCase()}` : `New ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
-      description="Keep the objective clear and factual. Measurement detail appears only when CEAC is recording a numeric result."
+      description={form.nodeType === "ministry_objective" ? null : "Keep the objective clear and factual. Measurement detail appears only when CEAC is recording a numeric result."}
+      panelClassName="reference-composer reference-objective-composer"
       footer={<button className="btn" disabled={busy || !form.name.trim() || !form.statement.trim() || !form.reason.trim() || (form.nodeType !== "ministry_direction" && !form.parentId) || (form.nodeType === "unit_objective" && !form.unitId) || (form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim()))} onClick={saveNode}>
         {busy ? "Saving…" : form.id ? "Record revision" : `Create ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
       </button>}
     >
-      {form.nodeType === "ministry_objective" && <FieldGroup label="Ministry Direction">
-        <select className="field" aria-label="Strategy parent direction" value={form.parentId} onChange={(event) => setForm({ ...form, parentId: event.target.value })} disabled={Boolean(form.id)}>
-          <option value="">Choose Ministry Direction</option>
-          {directions.filter((direction) => direction.status !== "closed").map((direction) => <option key={direction.id} value={direction.id}>{direction.name}</option>)}
-        </select>
-      </FieldGroup>}
-      {form.nodeType === "unit_objective" && <FieldGroup label="Unit">
-        <select className="field" aria-label="Strategy unit" value={form.unitId} onChange={(event) => setForm({ ...form, unitId: event.target.value })} disabled={Boolean(form.id)}>
-          <option value="">Choose unit</option>
-          {units.filter((unit) => canGlobal || managedUnitIds.includes(unit.id)).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
-        </select>
-      </FieldGroup>}
-
-      <FieldGroup label="Objective name"><input className="field" aria-label="Strategy name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FieldGroup>
-      <FieldGroup label="What are we trying to achieve?"><textarea className="field" aria-label="Strategy statement" rows="4" value={form.statement} onChange={(event) => setForm({ ...form, statement: event.target.value })} /></FieldGroup>
-      <FieldGroup label="How will we know?">
+      <FieldGroup label="Objective name *"><input className="field" aria-label="Strategy name" placeholder="e.g. Increase youth attendance" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FieldGroup>
+      <FieldGroup label="Statement *"><textarea className="field" aria-label="Strategy statement" rows="4" placeholder="What are we trying to achieve?" value={form.statement} onChange={(event) => setForm({ ...form, statement: event.target.value })} /></FieldGroup>
+      <FieldGroup label="Measurement *">
         <select className="field" aria-label="Strategy measurement" value={form.measurementKind} onChange={(event) => setForm({ ...form, measurementKind: event.target.value, targetValue: "", targetUnit: "", currentValue: "" })}>
-          <option value="descriptive">Describe the outcome — no generated percentage</option>
-          <option value="numeric">Record a numeric result and target</option>
+          <option value="descriptive">Descriptive (no percentage)</option>
+          <option value="numeric">Numeric result and target</option>
         </select>
       </FieldGroup>
-      {form.measurementKind === "numeric" && <div className="ocr-composer-group">
+      {form.measurementKind === "numeric" && <div className="ocr-composer-group reference-measurement-group">
         <FieldGroup label="What are we measuring?"><input className="field" aria-label="Strategy measure label" value={form.measureLabel} onChange={(event) => setForm({ ...form, measureLabel: event.target.value })} /></FieldGroup>
-        <FieldGroup label="Target"><input className="field" aria-label="Strategy target value" inputMode="decimal" value={form.targetValue} onChange={(event) => setForm({ ...form, targetValue: event.target.value.replace(/[^0-9.-]/g, "") })} /></FieldGroup>
-        <FieldGroup label="Unit"><input className="field" aria-label="Strategy target unit" value={form.targetUnit} onChange={(event) => setForm({ ...form, targetUnit: event.target.value })} placeholder="people, outcomes, services…" /></FieldGroup>
+        <div className="ocr-composer-two">
+          <FieldGroup label="Target"><input className="field" aria-label="Strategy target value" inputMode="decimal" value={form.targetValue} onChange={(event) => setForm({ ...form, targetValue: event.target.value.replace(/[^0-9.-]/g, "") })} /></FieldGroup>
+          <FieldGroup label="Unit"><input className="field" aria-label="Strategy target unit" value={form.targetUnit} onChange={(event) => setForm({ ...form, targetUnit: event.target.value })} placeholder="people, outcomes…" /></FieldGroup>
+        </div>
         <FieldGroup label="Current recorded result"><input className="field" aria-label="Strategy current value" inputMode="decimal" value={form.currentValue} onChange={(event) => setForm({ ...form, currentValue: event.target.value.replace(/[^0-9.-]/g, "") })} /></FieldGroup>
       </div>}
       <div className="ocr-composer-two">
-        <FieldGroup label="Start date"><input className="field" aria-label="Strategy start date" type="date" value={form.startsOn} onChange={(event) => setForm({ ...form, startsOn: event.target.value })} /></FieldGroup>
+        <FieldGroup label="Starts on"><input className="field" aria-label="Strategy start date" type="date" value={form.startsOn} onChange={(event) => setForm({ ...form, startsOn: event.target.value })} /></FieldGroup>
         <FieldGroup label="Target date"><input className="field" aria-label="Strategy target date" type="date" value={form.targetOn} onChange={(event) => setForm({ ...form, targetOn: event.target.value })} /></FieldGroup>
       </div>
       <FieldGroup label="Status">
@@ -356,7 +346,32 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
           <option value="closed">Closed</option>
         </select>
       </FieldGroup>
-      <FieldGroup label="Reason / context" hint="Required so the revision history remains attributable and understandable."><textarea className="field" aria-label="Strategy change reason" rows="3" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} /></FieldGroup>
+
+      {form.nodeType === "ministry_objective" && <details className="reference-disclosure" open={!form.parentId}>
+        <summary><span>Ministry direction <small>(required)</small></span><span>{form.parentId ? "Selected" : "+"}</span></summary>
+        <div className="reference-disclosure-body">
+          <select className="field" aria-label="Strategy parent direction" value={form.parentId} onChange={(event) => setForm({ ...form, parentId: event.target.value })} disabled={Boolean(form.id)}>
+            <option value="">Choose Ministry Direction</option>
+            {directions.filter((direction) => direction.status !== "closed").map((direction) => <option key={direction.id} value={direction.id}>{direction.name}</option>)}
+          </select>
+        </div>
+      </details>}
+      {form.nodeType === "unit_objective" && <details className="reference-disclosure" open={!form.unitId}>
+        <summary><span>Unit <small>(required)</small></span><span>{form.unitId ? "Selected" : "+"}</span></summary>
+        <div className="reference-disclosure-body">
+          <select className="field" aria-label="Strategy unit" value={form.unitId} onChange={(event) => setForm({ ...form, unitId: event.target.value })} disabled={Boolean(form.id)}>
+            <option value="">Choose unit</option>
+            {units.filter((unit) => canGlobal || managedUnitIds.includes(unit.id)).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+          </select>
+        </div>
+      </details>}
+
+      <details className="reference-disclosure" open={form.nodeType !== "ministry_objective" || Boolean(form.reason)}>
+        <summary><span>Reason / context <small>(required for history)</small></span><span>{form.reason ? "Added" : "+"}</span></summary>
+        <div className="reference-disclosure-body">
+          <textarea className="field" aria-label="Strategy change reason" rows="3" placeholder="Why this objective is being created or revised" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} />
+        </div>
+      </details>
     </ComposerDrawer>}
 
     {linkForm && <Sheet onClose={() => { if (!busy) setLinkForm(null); }}>
