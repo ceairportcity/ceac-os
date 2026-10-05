@@ -121,12 +121,15 @@ test("Stage 11B chart proof keeps chart and table equivalent and keyboard reacha
 test("Stage 11B Executive ministry movement uses the shared factual chart when comparable records exist", async ({ browser }) => {
   const { context, page } = await login(browser, "exec@ceac.local.test", ".executive-app", { width: 1366, height: 768 });
   await page.goto("/?tab=home");
-  await expect(page.getByRole("heading", { name: "Ministry overview", exact: true })).toBeVisible();
+  await expect(page.locator(".executivev2-greeting h1")).toContainText("Good morning");
 
   const movement = page.locator(".executivev2-movement");
   await expect(movement).toBeVisible();
-  const charts = movement.locator(".ev2dv-chart");
-  if (await charts.count()) {
+  const movementDetails = movement.locator(".executivev2-movement-details");
+  if (await movementDetails.count()) {
+    await movementDetails.locator("summary").click();
+    const charts = movementDetails.locator(".ev2dv-chart");
+    await expect(charts.first()).toBeVisible();
     await expect(charts.first().getByRole("button", { name: /Show .* as table/ })).toBeVisible();
   }
 
