@@ -7,7 +7,7 @@ Owner instruction:
 - Recreate the live Executive page and creation forms to reflect the supplied CEAC mockup design.
 
 Application candidate SHA:
-`d47d785a89e5a4dcd11eec5e74499684d5ad1861`
+`34905cbef597d583721dc8b58424fcd22bf8c51f`
 
 Scope:
 - Executive Overview: compact greeting, four summary metrics, attention queue, ministry direction, organisational overview, recent activity, upcoming meetings.
@@ -76,3 +76,12 @@ Final compatibility correction:
 Acceptance alignment:
 - the protected strategy acceptance test now exercises the owner-approved Reason / context disclosure before entering the still-required audit reason;
 - the assertion continues to require an attributable reason and creation succeeds only through the real Strategy workflow.
+
+
+Final Level B candidate corrections:
+- restored the shared factual Executive ministry movement chart behind progressive disclosure so the default mockup composition stays compact;
+- restored the Executive mobile “Schedule meeting” action and 44px touch floor;
+- raised all new Executive/mockup-composer operational text to the CEAC 12px minimum;
+- reduced added composer CSS enough to remain inside the protected bundle budget without weakening the budget;
+- updated protected workflow tests to open the new Attachments and Reason/context disclosures before exercising the same real capabilities;
+- re-baselined the Executive visual fingerprint to the rendered owner-approved mockup-conformity composition.
