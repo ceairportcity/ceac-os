@@ -95,6 +95,7 @@ async function assignTask(page, title, step = null) {
   await page.getByLabel("Why this matters").fill("Acceptance test purpose");
   await page.getByText("Finished result", { exact: false }).filter({ hasText: "optional" }).first().click();
   await page.getByLabel("Finished result").fill("Acceptance test finished result");
+  await page.getByText("Subtasks", { exact: true }).first().click();
   if (step) await page.getByPlaceholder("Step 1").fill(step);
   else await page.getByLabel(/No steps needed/).check();
   const assignee = page.locator("select.field").filter({ has: page.locator("option", { hasText: "Staff Fixture" }) });
@@ -371,6 +372,7 @@ test("OCR6C work source attachment reaches the authorised Staff record", async (
     const assignee = page.locator("select.field").filter({ has: page.locator("option", { hasText: "Staff Fixture" }) });
     await assignee.selectOption({ label: "Staff Fixture" });
     await page.locator('input[type="datetime-local"]').last().fill(new Date(Date.now() + 2 * 86400000).toISOString().slice(0,16));
+    await page.getByText("Attachments", { exact: true }).first().click();
     await page.locator('.operational-files-picker input[type="file"]').setInputFiles({
       name: filename,
       mimeType: "text/plain",
