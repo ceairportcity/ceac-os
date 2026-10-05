@@ -6,6 +6,7 @@
   gap: 14px;
   padding: 10px 0 36px;
   font-family: var(--ev2-font-sans);
+  font-size: 12px;
   color: var(--ev2-text);
 }
 
@@ -96,7 +97,6 @@ button.executivev2-kpi:focus-visible {
 }
 .executivev2-kpi-copy > span {
   min-width: 0;
-  font-size: 12px;
   line-height: 1.25;
   font-weight: 700;
 }
@@ -104,7 +104,6 @@ button.executivev2-kpi:focus-visible {
   grid-column: 1 / -1;
   margin-top: 4px;
   color: var(--ev2-text-secondary);
-  font-size: 12px;
   line-height: 1.25;
 }
 
@@ -156,7 +155,6 @@ button.executivev2-kpi:focus-visible {
   background: transparent;
   color: var(--ev2-action);
   font: inherit;
-  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -205,7 +203,6 @@ button.executivev2-kpi:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
   line-height: 1.25;
 }
 .executivev2-attention-copy small {
@@ -213,7 +210,6 @@ button.executivev2-kpi:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--ev2-text-secondary);
-  font-size: 12px;
 }
 .executivev2-pill {
   display: inline-flex;
@@ -223,7 +219,6 @@ button.executivev2-kpi:focus-visible {
   border-radius: 999px;
   background: var(--ev2-surface-muted);
   color: var(--ev2-text-secondary);
-  font-size: 12px;
   font-weight: 750;
   white-space: nowrap;
 }
@@ -241,8 +236,8 @@ button.executivev2-kpi:focus-visible {
   padding: 6px 11px;
 }
 .executivev2-direction-row + .executivev2-direction-row { border-top: 1px solid var(--ev2-line-soft, var(--ev2-line)); }
-.executivev2-direction-row > span:nth-child(2) { font-size: 12px; white-space: nowrap; }
-.executivev2-direction-row > span:nth-child(2) strong { font-size: 12px; }
+.executivev2-direction-row > span:nth-child(2) { white-space: nowrap; }
+.executivev2-direction-row > span:nth-child(2) strong { }
 .executivev2-direction-icon { width: 24px; height: 24px; }
 .executivev2-direction-icon.is-success { background: var(--ev2-success-soft); color: var(--ev2-success); }
 .executivev2-direction-icon.is-risk { background: var(--ev2-danger-soft); color: var(--ev2-danger); }
@@ -259,7 +254,6 @@ button.executivev2-kpi:focus-visible {
 .executivev2-direction-track > .is-warning { background: var(--ev2-warning); }
 .executivev2-direction-row > small {
   color: var(--ev2-text-secondary);
-  font-size: 12px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -288,12 +282,11 @@ button.executivev2-kpi:focus-visible {
 .executivev2-org-grid button > svg { color: var(--ev2-action); }
 .executivev2-org-grid button span { min-width: 0; display: grid; text-align: left; }
 .executivev2-org-grid strong { font-size: 14px; line-height: 1.1; }
-.executivev2-org-grid small { color: var(--ev2-text-secondary); font-size: 12px; white-space: nowrap; }
+.executivev2-org-grid small { color: var(--ev2-text-secondary); white-space: nowrap; }
 
 .executivev2-activity-context {
   padding: 7px 12px 0;
   color: var(--ev2-text-secondary);
-  font-size: 12px;
   line-height: 1.3;
   font-weight: 650;
 }
@@ -313,7 +306,6 @@ button.executivev2-kpi:focus-visible {
   padding: 0 8px;
   border-radius: 999px;
   color: var(--ev2-text-secondary);
-  font-size: 12px;
   font-weight: 650;
 }
 .executivev2-activity-tabs span.is-active { background: var(--ev2-action-soft); color: var(--ev2-action); }
@@ -338,18 +330,16 @@ button.executivev2-kpi:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
 }
-.executivev2-activity-copy small { color: var(--ev2-text-secondary); font-size: 12px; }
+.executivev2-activity-copy small { color: var(--ev2-text-secondary); }
 .executivev2-activity-value {
   display: grid;
   justify-items: end;
   gap: 1px;
-  font-size: 12px;
   font-weight: 750;
   font-variant-numeric: tabular-nums;
 }
-.executivev2-activity-value small { color: var(--ev2-text-secondary); font-size: 12px; font-weight: 500; }
+.executivev2-activity-value small { color: var(--ev2-text-secondary); font-weight: 500; }
 
 .executivev2-meeting-row {
   width: 100%;
@@ -370,8 +360,8 @@ button.executivev2-kpi:focus-visible {
 .executivev2-meeting-row:hover,
 .executivev2-meeting-row:focus-visible { background: var(--ev2-surface-soft); }
 .executivev2-meeting-row > span:nth-child(2) { min-width: 0; display: grid; gap: 2px; }
-.executivev2-meeting-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
-.executivev2-meeting-row small { color: var(--ev2-text-secondary); font-size: 12px; }
+.executivev2-meeting-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.executivev2-meeting-row small { color: var(--ev2-text-secondary); }
 .executivev2-meeting-icon { background: #f0eaff; color: #6d43cf; }
 .executivev2-meeting-action {
   min-height: 26px;
@@ -381,7 +371,6 @@ button.executivev2-kpi:focus-visible {
   border: 1px solid var(--ev2-action);
   border-radius: 8px;
   color: var(--ev2-action);
-  font-size: 12px;
   font-weight: 700;
 }
 
@@ -398,8 +387,8 @@ button.executivev2-kpi:focus-visible {
 .executivev2-empty.compact { min-height: 62px; justify-content: flex-start; padding: 10px 12px; }
 .executivev2-empty > svg { color: var(--ev2-success); }
 .executivev2-empty span { display: grid; gap: 3px; }
-.executivev2-empty strong { color: var(--ev2-text); font-size: 12px; }
-.executivev2-empty small { font-size: 12px; line-height: 1.35; }
+.executivev2-empty strong { color: var(--ev2-text); }
+.executivev2-empty small { line-height: 1.35; }
 
 @media (max-width: 1080px) {
   .executivev2-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -430,8 +419,8 @@ button.executivev2-kpi:focus-visible {
   .executivev2-kpi-icon { width: 30px; height: 30px; }
   .executivev2-kpi-copy { grid-template-columns: 1fr; gap: 2px; }
   .executivev2-kpi-copy > strong { font-size: 17px; }
-  .executivev2-kpi-copy > span { font-size: 12px; }
-  .executivev2-kpi-copy > small { font-size: 12px; margin-top: 1px; }
+  .executivev2-kpi-copy > span { }
+  .executivev2-kpi-copy > small { margin-top: 1px; }
   .executivev2-attention-item { grid-template-columns: 28px minmax(0, 1fr) auto; }
   .executivev2-attention-item .executivev2-row-action { display: none; }
   .executivev2-attention-copy small { white-space: normal; }
@@ -457,7 +446,6 @@ button.executivev2-kpi:focus-visible {
   padding: 8px 12px;
   color: var(--ev2-action);
   cursor: pointer;
-  font-size: 12px;
   font-weight: 700;
 }
 .executivev2-movement-charts {
