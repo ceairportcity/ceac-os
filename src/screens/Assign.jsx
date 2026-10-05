@@ -576,7 +576,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         </div>
 
         <FieldGroup label="What needs doing *" className="reference-primary-field">
-          <input className="field" placeholder="e.g. Prepare the October service report" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input className="field" aria-label="Work to complete" placeholder="e.g. Prepare the October service report" value={title} onChange={(e) => setTitle(e.target.value)} />
         </FieldGroup>
 
         <div className="reference-compact-fields">
