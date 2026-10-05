@@ -659,7 +659,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         <details className="reference-disclosure">
           <summary><span>Finished result <small>(optional)</small></span><span>+</span></summary>
           <div className="reference-disclosure-body">
-            <AssistiveTextarea className="field" aria-label="Finished result" rows={3} placeholder="Describe the finished result if useful" value={expectedOutcome} onChange={(e) => setExpectedOutcome(e.target.value)} voiceLabel="Dictate finished result" />
+            <AssistiveTextarea className="field" aria-label="Finished result" rows={3} placeholder="Describe the finished result if useful" value={expectedOutcome} onChange={(e) => setExpectedOutcome(e.target.value)} voiceLabel="Dictate outcome" />
           </div>
         </details>
 
