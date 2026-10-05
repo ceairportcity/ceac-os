@@ -1994,6 +1994,8 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByRole("heading", { name: "Finance & reporting", exact: true })).toBeVisible();
   await expect(page.getByText("Delivery signals", { exact: true })).toBeVisible();
   await expect(page.getByText("Administration could not finish loading", { exact: true })).toHaveCount(0);
+  const headedUnitRow = page.locator(".adminv2-unit-row").filter({ hasText: "Test Unit A" });
+  await expect(headedUnitRow.getByRole("button", { name: "Add staff", exact: true })).toBeVisible();
 
   await go(page, "Units");
   await expect(page.getByRole("heading", { name: "Units", exact: true })).toBeVisible();
@@ -2005,6 +2007,20 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(unitWorkspace.getByRole("button", { name: "Reporting", exact: true })).toBeVisible();
   await expect(unitWorkspace.getByRole("button", { name: "Attendance", exact: true })).toBeVisible();
   await expect(unitWorkspace.getByRole("button", { name: "Cost", exact: true })).toBeVisible();
+
+  await unitWorkspace.getByRole("button", { name: "People", exact: true }).click();
+  const addStaff = page.getByRole("button", { name: "Add staff", exact: true });
+  await expect(addStaff).toBeVisible();
+  await addStaff.click();
+  const staffDialog = page.getByRole("dialog");
+  await expect(staffDialog.locator(".h2").filter({ hasText: "Add staff to Test Unit A" })).toBeVisible();
+  await expect(staffDialog.getByRole("tab", { name: "Invite new", exact: true })).toBeVisible();
+  await expect(staffDialog.getByLabel("Full name")).toBeVisible();
+  await expect(staffDialog.getByLabel("Work email")).toBeVisible();
+  await staffDialog.getByRole("tab", { name: "Assign existing", exact: true }).click();
+  await expect(staffDialog.getByLabel("Existing staff")).toBeVisible();
+  await expect(staffDialog.getByRole("option", { name: /Other Unit Fixture/ })).toBeVisible();
+  await staffDialog.getByRole("button", { name: "Close dialog", exact: true }).click();
 
   await go(page, "People");
   await expect(page.getByRole("heading", { name: "People", exact: true })).toBeVisible();
