@@ -2018,8 +2018,10 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(staffDialog.getByLabel("Full name")).toBeVisible();
   await expect(staffDialog.getByLabel("Work email")).toBeVisible();
   await staffDialog.getByRole("tab", { name: "Assign existing", exact: true }).click();
-  await expect(staffDialog.getByLabel("Existing staff")).toBeVisible();
-  await expect(staffDialog.getByRole("option", { name: /Other Unit Fixture/ })).toBeVisible();
+  const existingStaffSelect = staffDialog.getByLabel("Existing staff");
+  await expect(existingStaffSelect).toBeVisible();
+  await existingStaffSelect.selectOption({ label: "Other Unit Fixture · Test Unit B" });
+  await expect(existingStaffSelect).toHaveValue("31000000-0000-4000-8000-000000000005");
   await staffDialog.getByRole("button", { name: "Close dialog", exact: true }).click();
 
   await go(page, "People");
