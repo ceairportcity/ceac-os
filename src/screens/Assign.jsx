@@ -573,6 +573,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           <select aria-label="Work type" value={kind} onChange={(event) => setKind(event.target.value)}>
             {WORK_INTENTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
+          <VoiceInput compact onResult={handleVoice} label="Speak your instruction" />
         </div>
 
         <FieldGroup label="What needs doing *" className="reference-primary-field">
