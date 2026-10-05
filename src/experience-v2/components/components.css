@@ -1654,3 +1654,137 @@ button.ev2c-record-row {
     grid-template-columns: 5.5rem minmax(0, 1fr);
   }
 }
+
+
+/* Ministry Objective and Announcement mockup-specific composer details. */
+.reference-objective-composer .reference-measurement-group {
+  display: grid;
+  gap: 8px;
+  border-color: var(--ev2-line);
+  background: var(--ev2-surface-soft);
+}
+.reference-objective-composer .reference-disclosure + .reference-disclosure {
+  margin-top: 8px;
+}
+
+.reference-announcement-composer .label {
+  display: block;
+  margin: 0 0 5px;
+}
+.reference-announcement-composer .assistive-inline {
+  position: relative;
+  margin-bottom: 11px;
+}
+.reference-announcement-composer .assistive-inline .field {
+  width: 100%;
+  padding-right: 38px;
+}
+.reference-announcement-composer .assistive-inline > .voice-input,
+.reference-announcement-composer .assistive-inline > .voice-input-compact {
+  position: absolute;
+  right: 6px;
+  top: 4px;
+}
+.reference-audience {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 11px;
+}
+.reference-audience-pills {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  gap: 6px;
+}
+.reference-audience-pills button {
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid var(--ev2-line);
+  border-radius: 7px;
+  background: var(--ev2-surface);
+  color: var(--ev2-text-secondary);
+  font: 650 9.5px/1 var(--ev2-font-sans);
+  cursor: pointer;
+}
+.reference-audience-pills button.is-active {
+  border-color: var(--ev2-action);
+  background: var(--ev2-action-soft);
+  color: var(--ev2-action);
+}
+.reference-audience-options {
+  max-height: 8rem;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid var(--ev2-line);
+  border-radius: 7px;
+  background: var(--ev2-surface-soft);
+}
+.reference-chip-check {
+  position: relative;
+}
+.reference-chip-check input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.reference-chip-check span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid var(--ev2-line);
+  border-radius: 999px;
+  background: var(--ev2-surface);
+  color: var(--ev2-text-secondary);
+  font-size: 9.5px;
+  cursor: pointer;
+}
+.reference-chip-check input:checked + span {
+  border-color: var(--ev2-action);
+  background: var(--ev2-action-soft);
+  color: var(--ev2-action);
+  font-weight: 700;
+}
+.reference-message-box {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 11px;
+  border: 1px solid var(--ev2-line-strong);
+  border-radius: 7px;
+  background: var(--ev2-surface);
+}
+.reference-message-box textarea.field {
+  min-height: 112px;
+  width: 100%;
+  padding: 9px 10px 38px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.reference-message-toolbar {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 0 9px;
+  border-top: 1px solid var(--ev2-line);
+  color: var(--ev2-text-secondary);
+  font-size: 11px;
+}
+.reference-message-box > .voice-input,
+.reference-message-box > .voice-input-compact {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+}
+.reference-announcement-composer .reference-disclosure {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 390px) {
+  .reference-audience-pills {
+    grid-template-columns: 1fr;
+  }
+}
