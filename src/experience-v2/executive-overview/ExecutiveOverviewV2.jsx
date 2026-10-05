@@ -227,6 +227,7 @@ export default function ExecutiveOverviewV2({
               <h2>Recent activity</h2>
               <button type="button" onClick={onOpenMinistry}>View ministry</button>
             </div>
+            <div className="executivev2-activity-context">Recorded ministry activity</div>
             <div className="executivev2-activity-tabs" aria-label="Activity filter">
               <span className="is-active">All</span>
               <span>Ministry</span>
