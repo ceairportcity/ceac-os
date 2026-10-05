@@ -79,7 +79,7 @@ button.executivev2-kpi:focus-visible {
   background: var(--ev2-action-soft);
   color: var(--ev2-action);
 }
-.executivev2-kpi.is-red .executivev2-kpi-icon { background: var(--ev2-risk-soft); color: var(--ev2-risk); }
+.executivev2-kpi.is-red .executivev2-kpi-icon { background: var(--ev2-danger-soft); color: var(--ev2-danger); }
 .executivev2-kpi.is-green .executivev2-kpi-icon { background: var(--ev2-success-soft); color: var(--ev2-success); }
 .executivev2-kpi.is-purple .executivev2-kpi-icon { background: #f0eaff; color: #6d43cf; }
 .executivev2-kpi-copy {
@@ -193,7 +193,7 @@ button.executivev2-kpi:focus-visible {
   background: var(--ev2-surface-muted);
   color: var(--ev2-text-secondary);
 }
-.executivev2-attention-icon.is-risk { background: var(--ev2-risk-soft); color: var(--ev2-risk); }
+.executivev2-attention-icon.is-risk { background: var(--ev2-danger-soft); color: var(--ev2-danger); }
 .executivev2-attention-icon.is-warning { background: var(--ev2-warning-soft); color: var(--ev2-warning); }
 .executivev2-attention-icon.is-action { background: var(--ev2-action-soft); color: var(--ev2-action); }
 .executivev2-attention-copy {
@@ -227,7 +227,7 @@ button.executivev2-kpi:focus-visible {
   font-weight: 750;
   white-space: nowrap;
 }
-.executivev2-pill.is-risk { background: var(--ev2-risk-soft); color: var(--ev2-risk); }
+.executivev2-pill.is-risk { background: var(--ev2-danger-soft); color: var(--ev2-danger); }
 .executivev2-pill.is-warning { background: var(--ev2-warning-soft); color: var(--ev2-warning); }
 .executivev2-pill.is-action { background: var(--ev2-action-soft); color: var(--ev2-action); }
 .executivev2-row-action { color: var(--ev2-text-secondary); font-size: 18px; }
@@ -245,7 +245,7 @@ button.executivev2-kpi:focus-visible {
 .executivev2-direction-row > span:nth-child(2) strong { font-size: 12px; }
 .executivev2-direction-icon { width: 24px; height: 24px; }
 .executivev2-direction-icon.is-success { background: var(--ev2-success-soft); color: var(--ev2-success); }
-.executivev2-direction-icon.is-risk { background: var(--ev2-risk-soft); color: var(--ev2-risk); }
+.executivev2-direction-icon.is-risk { background: var(--ev2-danger-soft); color: var(--ev2-danger); }
 .executivev2-direction-icon.is-warning { background: var(--ev2-warning-soft); color: var(--ev2-warning); }
 .executivev2-direction-track {
   height: 5px;
@@ -255,7 +255,7 @@ button.executivev2-kpi:focus-visible {
 }
 .executivev2-direction-track > span { display: block; height: 100%; border-radius: inherit; background: var(--ev2-action); }
 .executivev2-direction-track > .is-success { background: var(--ev2-success); }
-.executivev2-direction-track > .is-risk { background: var(--ev2-risk); }
+.executivev2-direction-track > .is-risk { background: var(--ev2-danger); }
 .executivev2-direction-track > .is-warning { background: var(--ev2-warning); }
 .executivev2-direction-row > small {
   color: var(--ev2-text-secondary);
