@@ -622,7 +622,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         </details>}
 
         <FieldGroup label="Why this matters *" className="reference-why-field">
-          <AssistiveTextarea className="field" rows={3} placeholder="Explain the purpose or impact" value={purpose} onChange={(e) => setPurpose(e.target.value)} voiceLabel="Speak why this matters" />
+          <AssistiveTextarea className="field" rows={3} placeholder="Explain the purpose or impact" value={purpose} onChange={(e) => setPurpose(e.target.value)} voiceLabel="Dictate purpose" />
         </FieldGroup>
 
         <details className="reference-disclosure">
@@ -639,12 +639,12 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
               <span><strong>Last time this unit did this</strong><small>{recipeSource?.title} · {recipeSteps.length} recorded step{recipeSteps.length === 1 ? "" : "s"}</small></span>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSteps(recipeSteps); setNoStepsNeeded(false); }}>Use steps</button>
             </div>}
-            {steps.map((s, i) => <input key={i} className="field" placeholder={"Subtask " + (i + 1)} value={s} disabled={noStepsNeeded}
+            {steps.map((s, i) => <input key={i} className="field" placeholder={"Step " + (i + 1)} value={s} disabled={noStepsNeeded}
               onChange={(e) => setSteps((x) => x.map((v, j) => (j === i ? e.target.value : v)))} />)}
             {!noStepsNeeded && <button type="button" className="btn btn-ghost btn-sm reference-add-row"
               disabled={!steps[steps.length - 1]?.trim()}
               onClick={() => setSteps((current) => [...current, ""])}>+ Add subtask</button>}
-            <label className="reference-check"><input type="checkbox" checked={noStepsNeeded} onChange={(event) => setNoStepsNeeded(event.target.checked)} /><span>No subtasks needed</span></label>
+            <label className="reference-check"><input type="checkbox" checked={noStepsNeeded} onChange={(event) => setNoStepsNeeded(event.target.checked)} /><span>No steps needed</span></label>
           </div>
         </details>
 
@@ -658,7 +658,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         <details className="reference-disclosure">
           <summary><span>Finished result <small>(optional)</small></span><span>+</span></summary>
           <div className="reference-disclosure-body">
-            <AssistiveTextarea className="field" rows={3} placeholder="Describe the finished result if useful" value={expectedOutcome} onChange={(e) => setExpectedOutcome(e.target.value)} />
+            <AssistiveTextarea className="field" aria-label="Finished result" rows={3} placeholder="Describe the finished result if useful" value={expectedOutcome} onChange={(e) => setExpectedOutcome(e.target.value)} voiceLabel="Dictate finished result" />
           </div>
         </details>
 
