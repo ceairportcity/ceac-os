@@ -2931,7 +2931,7 @@ textarea{width:100%}
 .office-inline-field{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .office-inline-field>span{font-size:11.5px;color:var(--ink-faint)}
 .office-settings-map{width:100%;height:260px;border:0;border-radius:10px;margin-top:12px}
-.office-setting-footnote{margin-top:8px;font-size:10.5px;color:var(--ink-faint)}
+.office-setting-footnote{margin-top:8px;font-size:12px;color:var(--ink-faint)}
 .office-policy-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 .office-config-status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .office-config-card{display:block;width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-quiet);text-align:left}
