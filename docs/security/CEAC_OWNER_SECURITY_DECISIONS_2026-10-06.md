@@ -29,7 +29,8 @@ Owner intent:
 - Many Technical Support members are volunteers.
 - Gabriel's current Media & Technical operating placement/account should not remain as a conflicting active role after the final Technical Support transition.
 - Historical attribution must be preserved; no account or work history may be deleted.
-- The exact data-model representation of Technical Support (independent unit vs nested service team with independent reporting/capability authority) requires architecture resolution before production mutation.
+- Owner-confirmed model: Technical Support remains organisationally associated with Media & Technical, but operates as an autonomous service team reporting directly to Administration & HR and the Group Pastor for its technical-support mandate. It is not a separate normal department like Finance or Welfare.
+- Technical Support must never become a hidden super-admin. Technical reach is capability-scoped and does not grant unrelated HR, payroll, compliance or executive authority.
 - Real HR/Admin invitation will be used to validate onboarding after that model is accepted.
 
 ## S4 — GitHub / supply chain
@@ -120,3 +121,16 @@ Technical Support should receive visible operational/security health for:
 - department-specific technical defects where attribution is safe and useful.
 
 Technical Support visibility must not become unrestricted access to HR/payroll/content. Default to metadata/health/status; content access remains governed separately.
+
+## Technical Support product-fit lock
+
+Owner direction:
+- Value and operational usefulness precede sophistication or aesthetics.
+- The Technical Support surface must be extremely plain-language and usable by a capable non-specialist.
+- Technical concepts may exist underneath, but the default interface must explain each issue as:
+  1. What happened?
+  2. Who/what is affected?
+  3. What should I do next?
+  4. Do I need approval from anyone?
+- Raw jargon such as RPC, RLS, migration drift, AAL2 or SECURITY DEFINER must not be required knowledge for ordinary Technical Support use. Deeper technical details may sit behind an optional "Technical details" disclosure.
+- Do not build a large enterprise ITSM clone. Build only the operating controls CEAC actually needs at its current scale.
