@@ -113,14 +113,16 @@ test("Staff sees independent work actions and unread updates without read-throug
 
   const { context, page } = await openAs(browser, "staff@ceac.local.test");
   await expect(page.getByText("Needs action", { exact: true })).toBeVisible();
-  await expect(page.getByText("P4-UI-NEW-411 · Phase 4 visible new assignment", { exact: true })).toBeVisible();
-  await expect(page.getByText("New assignment", { exact: true })).toBeVisible();
-  await expect(page.getByText("P4-UI-RETURN-412 · Phase 4 visible returned work", { exact: true })).toBeVisible();
-  await expect(page.getByText("Correction required", { exact: true })).toBeVisible();
+  const newAction = page.getByRole("button", { name: /P4-UI-NEW-411.*New assignment/ });
+  const returnedAction = page.getByRole("button", { name: /P4-UI-RETURN-412.*Correction required/ });
+  await expect(newAction.getByText("P4-UI-NEW-411 · Phase 4 visible new assignment", { exact: true })).toBeVisible();
+  await expect(newAction.getByText("New assignment", { exact: true })).toBeVisible();
+  await expect(returnedAction.getByText("P4-UI-RETURN-412 · Phase 4 visible returned work", { exact: true })).toBeVisible();
+  await expect(returnedAction.getByText("Correction required", { exact: true })).toBeVisible();
   await expect(page.getByText("Phase 4 policy update", { exact: true })).toBeVisible();
   await expect(page.getByText(/Unread means not opened.*independent of the Needs action queue/i)).toBeVisible();
 
-  await page.getByRole("button", { name: /P4-UI-NEW-411.*New assignment/ }).click();
+  await newAction.click();
   await expect(page.locator(".ev2-work-detail")).toBeVisible();
   const workAfter = await requireSuccess(service.from("work_items").select("status").eq("id", ids.newWork).single(), "Work after open");
   expect(workAfter.status).toBe("not_started");
