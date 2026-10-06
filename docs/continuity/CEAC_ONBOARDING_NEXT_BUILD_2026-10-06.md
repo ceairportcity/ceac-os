@@ -1,7 +1,7 @@
 # Onboarding, Access & Presence Foundation
 
 Date: 6 October 2026
-Status: IMPLEMENTED ON BRANCH / PROTECTED VERIFICATION PENDING
+Status: IMPLEMENTED / AUTOMATED VERIFICATION PASS / RELEASE BLOCKED ON AUTH CONFIGURATION
 Branch: `chatgpt/onboarding-access-presence-2026-10-06`
 Verified baseline protected main: `76cea2e457b7d624f54ca961ad14bb62ea359ebd`
 GitHub is canonical. One active writer; reconcile forward; never force-push/reset newer work.
@@ -40,10 +40,16 @@ Required acceptance: meaningful local build/tests; clean migration replay; Accou
 - Continuous background GPS tracking (prohibited direction).
 
 ## Completion record
-Not complete. No foundation implementation or protected verification is claimed by the continuity commit.
+Not complete. PR #111 is open; the foundation has not been merged or applied to production. The original prerequisite continuity commit preceded implementation.
 On completion record exact protected main, completed items, remaining deferred questions, discovered architectural issues, next recommended tranche and updated next-chat prompt. The wider onboarding/compliance programme remains open.
 
 ## Foundation implementation under review
 Migration 111 adds seven authenticated-only, fixed-search-path RPCs, preserves the existing primary-transfer flow, and guards office starts including stale-session recovery. End location is best effort and legacy ends explicitly remain unverified. No periodic tracking is introduced. People & Access composes existing employment, Unit Head and lifecycle pages. Existing capability grants remain independent of unit context.
 
-Local build and seven Node tests pass. Clean replay, cumulative SQL authority tests, responsive authenticated browser tests, protected merge, production migration and deployment are pending; this is not a completion claim. Auth redirect is pinned to the configured public app; dashboard allowlist inspection/email delivery is not yet verified.
+Verified implementation head: `7e8ce725eb049b3bc95c6b18b5d1fcdfff7a6d46`. Local build and seven Node tests pass. Exact-head CI #37400328793, Migration Replay #37400328792, Account Security #37400328846 and full Level B Quality Gate #37400328877 pass. The cumulative SQL suite and all 677 authenticated browser tests pass, including phone/laptop People & Access, two Manager headships under one profile, switching/reload persistence and unchanged organisation grants. Vercel commit status is success; this does not prove deployed production acceptance.
+
+Production remains at migration 110, with protected main `76cea2e457b7d624f54ca961ad14bb62ea359ebd` (reconciled again after verification). Do not apply migration 111 or merge while the activation release blocker remains. A harmless invalid-token Auth probe showed that both intended public `/activate` and `/reset-password` redirects fall back to the Vercel-protected deployment hostname. No email was sent and no account was created. Supabase dashboard sign-in is unfinished after an additional Google device-verification step. Browser credentials must be supplied through the secure authentication handoff.
+
+Next: finish dashboard authentication; set the public Site URL to `https://ceac-os-git.vercel.app` and preserve existing approved redirects while ensuring the exact `/activate` and `/reset-password` routes are accepted. Verify persisted settings and actual redirect routing. Then reconcile exact-head gates and live migrations, apply the reviewed migration, use a normal protected PR merge, verify exact-main gates/deployment and authenticated deployed roles, and record final completion. Actual email delivery and personal password setup remain unverified. Do not fabricate production invitations, people, work or presence to create evidence.
+
+The implementation also preserves the 12px office-evidence text floor, uses the factual heading “Today’s work location evidence”, and updates the affected source-map-js dependency to 1.2.2; the dependency audit passes. Wider deferred policy questions above remain open. After foundation acceptance, the next recommended tranche is to confirm attendance/short-absence and grace-policy decisions before implementing further Compliance workflows.

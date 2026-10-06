@@ -9,6 +9,10 @@ Active programme: Onboarding, Access & Presence Foundation. Read the three 6 Oct
 
 These preserve the wider discovery and deferred policy questions. Never infer that this foundation completes the broader Compliance programme. Reconcile the current protected-main and exact-head gates before continuing.
 
+Current foundation checkpoint: PR #111 is OPEN, with verified implementation head `7e8ce725eb049b3bc95c6b18b5d1fcdfff7a6d46`. CI, Migration Replay, Account Security, full SQL authority gates and all 677 browser tests pass on that code head. Subsequent documentation-only checkpoints do not change the verified implementation. Protected main remains `76cea2e457b7d624f54ca961ad14bb62ea359ebd`; production ends at migration 110.
+
+Release blocker: Supabase Auth rejects the intended public activation/recovery redirects and falls back to the Vercel-protected hostname. Dashboard authentication is unfinished after additional Google device verification. Resume secure sign-in, repair and verify the public Site URL/redirect settings, then apply migration 111, perform protected merge and exact-main/deployed-role acceptance. Do not claim completion or merge merely because automated checks are green. Read the next-build completion record for exact run IDs and remaining steps; never put credentials into chat, repository files or browser automation.
+
 Repository:
 `thestandardinst-star/ceac-os`
 
