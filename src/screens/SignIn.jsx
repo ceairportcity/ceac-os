@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import AuthFrame from "../components/AuthFrame";
+import { authRedirect } from "../lib/authRedirect";
 
 export default function SignIn() {
   const [mode, setMode] = useState("signin");
@@ -19,15 +20,14 @@ export default function SignIn() {
 
   async function recover() {
     setBusy(true); setMessage(null);
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setBusy(false);
-    if (error) {
-      setMessage(error.message || "The recovery email could not be sent.");
-      return;
-    }
-    setMessage("If that address belongs to a CEAC account, a password-recovery email is on its way.");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: authRedirect("/reset-password"),
+      });
+      if (error) throw error;
+      setMessage("If that address belongs to a CEAC account, a password-recovery email is on its way.");
+    } catch (error) { setMessage(error.message || "The recovery email could not be sent."); }
+    finally { setBusy(false); }
   }
 
   const isSignIn = mode === "signin";

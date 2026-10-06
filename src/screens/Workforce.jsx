@@ -46,6 +46,7 @@ export default function Workforce({ me }) {
   const [tab,setTab]=useState("today");
   const [people,setPeople]=useState([]);
   const [sessions,setSessions]=useState([]);
+  const [lastActivity,setLastActivity]=useState([]);
   const [leave,setLeave]=useState([]);
   const [leaveEvents,setLeaveEvents]=useState([]);
   const [dayTypes,setDayTypes]=useState([]);
@@ -108,7 +109,8 @@ export default function Workforce({ me }) {
     const since=new Date(Date.now()-31*86400000).toISOString();
     const datasets=[
       ["people", supabase.from("employment_records").select("profile_id,unit_id,manager_profile_id,employment_type,working_pattern,profiles!employment_records_profile_id_fkey(full_name,job_title,active),units(name)").eq("org_id",me.org_id).eq("employment_status","active")],
-      ["sessions", supabase.from("work_sessions").select("id,profile_id,started_at,ended_at,place,end_reason,flags,lat,lng,ip").gte("started_at",since).order("started_at",{ascending:false})],
+      ["sessions", supabase.from("work_sessions").select("id,profile_id,started_at,ended_at,place,end_reason,flags,lat,lng,ip,location_captured_at,location_accuracy_m,start_geofence,end_location_captured_at,end_location_status,end_location_failure").gte("started_at",since).order("started_at",{ascending:false})],
+      ["last CEAC activity", supabase.rpc("visible_last_ceac_activity")],
       ["leave", supabase.from("leave_requests").select("id,profile_id,kind,start_date,end_date,days,status,reason,requested_at,decided_by,decided_at,decision_note,profiles!leave_requests_profile_id_fkey(full_name)").order("start_date",{ascending:false})],
       ["leave history", supabase.from("leave_request_events").select("*").order("created_at",{ascending:false})],
       ["day types", supabase.from("workforce_day_types").select("*").eq("active",true).order("name")],
@@ -128,6 +130,7 @@ export default function Workforce({ me }) {
     }
 
     if(!byName.people.error) setPeople((byName.people.data||[]).filter((row)=>row.profiles?.active!==false));
+    if(!byName["last CEAC activity"].error) setLastActivity(byName["last CEAC activity"].data||[]);
     if(!byName.sessions.error) setSessions(byName.sessions.data||[]);
     if(!byName.leave.error) setLeave(byName.leave.data||[]);
     if(!byName["leave history"].error) setLeaveEvents(byName["leave history"].data||[]);
@@ -323,11 +326,12 @@ export default function Workforce({ me }) {
     const out=[];
     if(session.end_reason&&session.end_reason!=="manual") out.push("Ended by the system rather than a manual end");
     if(!session.ended_at&&isoDay(session.started_at)!==today) out.push("Session has no recorded end");
-    if(session.place==="office"&&office&&session.lat&&session.lng){
+    if(session.place==="office"&&office&&session.lat!=null&&session.lng!=null){
       const distance=metresBetween(Number(office.lat),Number(office.lng),Number(session.lat),Number(session.lng));
       if(distance>Number(office.radius_meters||100)) out.push("Marked as office; recorded "+distance+"m from the configured office point");
     }
-    if(session.place==="office"&&!session.lat) out.push("Marked as office; no location was recorded");
+    if(session.place==="office"&&(session.lat==null||session.lng==null)) out.push("Marked as office; no location was recorded");
+    if(session.end_location_status==="not_verified") out.push("End location not verified");
     if(session.flags&&typeof session.flags==="object"){
       Object.entries(session.flags).forEach(([key,value])=>{if(value) out.push(human(key));});
     }
@@ -370,6 +374,19 @@ export default function Workforce({ me }) {
   const adminTabs=[["today","Today"],["calendar","Calendar"],["sessions","Sessions"],["differences","Recorded differences"],["leave","Leave"],["corrections","Corrections"],...(canManage?[["setup","Schedules & policy"]]:[])];
   const tabs=isStaffView?staffTabs:isManagerView?managerTabs:adminTabs;
 
+  const locationPanel=<WorkforceSection title="Today’s verified work locations" description="These are discrete location records, not continuous live tracking. Last CEAC activity is the latest visible recorded action; neither fact proves productivity.">
+    {people.map((person)=>{
+      const row=sessionsOn(person.profile_id).slice().sort((a,b)=>new Date(b.started_at)-new Date(a.started_at))[0];
+      const verifiedAt=row?.end_location_captured_at||row?.location_captured_at;
+      const activity=lastActivity.find((entry)=>entry.profile_id===person.profile_id)?.last_activity_at;
+      return <WorkforceRecordRow key={person.profile_id} icon="person" title={person.profiles?.full_name||"Employee"}
+        meta={row?.start_geofence==="inside"?"Office start verified "+clock(row.location_captured_at):row?"Office start not verified":"No session recorded"}
+        note={"Last verified location: "+(verifiedAt?clock(verifiedAt):"Not recorded")+" · Last CEAC activity: "+(activity?new Date(activity).toLocaleString("en-GB",{timeZone:"Africa/Accra"}):"Not recorded")+(row?.end_location_status==="not_verified"?" · End location not verified":"")}
+      />;
+    })}
+    {!people.length&&<WorkforceEmpty compact title="No location records in scope" description="Only authorised session evidence appears here."/>}
+  </WorkforceSection>;
+
   if(loading) return <div className="body"><LoadingState label="Loading workforce…" /></div>;
 
   if(isStaffView){
@@ -408,6 +425,7 @@ export default function Workforce({ me }) {
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Your leave requests remain available. CEAC OS will not invent entitlement, accrual, carry-over or remaining-day figures from old seeded defaults.</ProductNotice>}
 
       {tab==="today"&&<>
+        {locationPanel}
         {person?<WorkforceTodayCard
           name={person.profiles?.full_name||"My workforce record"}
           meta={[person.units?.name,person.profiles?.job_title].filter(Boolean).join(" · ")||"Employment context"}
@@ -608,6 +626,7 @@ export default function Workforce({ me }) {
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Leave decisions remain available on the existing route. CEAC OS will not invent entitlement, accrual, carry-over or remaining balance from old seeded defaults.</ProductNotice>}
 
       {tab==="today"&&<>
+        {locationPanel}
         <WorkforceSection title="Leave decisions" description="Requests requiring a recorded manager or Administration step appear here according to the established leave route." meta={waitingLeave.length+" waiting"}>
           {waitingLeave.map(managerLeaveRow)}
           {!waitingLeave.length&&<WorkforceEmpty compact title="No leave requests are waiting" description="New requests will appear here with their recorded route and history."/>}
@@ -905,6 +924,7 @@ export default function Workforce({ me }) {
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Leave requests remain available. CEAC OS will not calculate entitlement, accrual, carry-over or remaining balance from the old seeded defaults.</ProductNotice>}
 
       {tab==="today"&&<>
+        {locationPanel}
         <WorkforceSection title="Administration actions" description="Leave items requiring a recorded decision are presented before organisation context. Existing policy routes and server authority remain decisive." meta={waitingLeave.length+" waiting"}>
           {waitingLeave.map(adminLeaveRow)}
           {!waitingLeave.length&&<WorkforceEmpty compact title="No leave requests are waiting" description="New requests will appear here with their recorded route and history."/>}
@@ -1198,6 +1218,7 @@ export default function Workforce({ me }) {
     {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Leave requests remain available. CEAC OS will not calculate entitlement, accrual, carry-over or remaining balance from the old seeded defaults.</ProductNotice>}
 
     {tab==="today"&&<>
+        {locationPanel}
       <div className="sec"><span>Today</span><span>{people.length} people in your visible workforce scope</span></div>
       <div className="workforce-grid">
         {people.map((row)=>{

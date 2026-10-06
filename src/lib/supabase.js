@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { authRedirect } from "./authRedirect";
 
 const fallbackSupabaseUrl = "https://efjljhftsesssumtshvp.supabase.co";
 const fallbackSupabasePublishableKey = "sb_publishable_CVq1sCY0Z4-o9Us4Y6RaUw_53FUHQj-";
@@ -16,10 +17,11 @@ export async function loadMe() {
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
   if (!auth?.user) return null;
   const { data: p, error: profileError } = await supabase.from("profiles")
-    .select("id, full_name, preferred_name, email, job_title, phone, is_admin, is_exec, org_id, joined_at, birthday, contract_type")
+    .select("id, full_name, preferred_name, email, job_title, phone, is_admin, is_exec, org_id, joined_at, birthday, contract_type, active")
     .eq("id", auth.user.id).single();
   if (profileError) throw profileError;
   if (!p) return null;
+  if (!p.active) throw new Error("Your CEAC access is inactive. Contact Administration.");
   const [{ data: memberships, error: membershipError }, { data: capabilityGrants, error: capabilityError }] = await Promise.all([
     supabase.from("unit_memberships")
       .select("role, unit_id, units(name)")
@@ -50,6 +52,7 @@ export async function loadMe() {
     capabilities: [...new Set((capabilityGrants || []).map((grant) => grant.capability))] };
 }
 export async function inviteByEmail({ email, fullName, unitId }) {
+  const redirect = authRedirect("/activate");
   const cleanEmail = email.trim().toLowerCase();
   const cleanName = fullName.trim();
   const { error: inviteError } = await supabase.rpc("create_pending_invitation", {
@@ -64,8 +67,17 @@ export async function inviteByEmail({ email, fullName, unitId }) {
     email: cleanEmail,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: `${window.location.origin}/activate`,
+      emailRedirectTo: redirect,
     },
   });
   if (authError) throw authError;
+}
+
+export async function resendStaffInvitation(id) {
+  const redirect = authRedirect("/activate");
+  const { data, error } = await supabase.rpc("prepare_staff_invitation_resend", { p_invitation_id: id });
+  if (error) throw error;
+  const result = await supabase.auth.signInWithOtp({ email: data.email,
+    options: { shouldCreateUser: !data.account_created, emailRedirectTo: redirect } });
+  if (result.error) throw result.error;
 }

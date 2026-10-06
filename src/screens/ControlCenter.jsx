@@ -9,6 +9,7 @@ import {
   StatusBadge,
   Surface,
 } from "../experience-v2/components";
+import PeopleAccess from "../components/PeopleAccess";
 import { humanError } from "../lib/productLanguage";
 
 const STATUSES = {
@@ -50,6 +51,7 @@ export default function ControlCenter({me,go}){
   const canPayroll=caps.has("payroll.prepare")||caps.has("payroll.approve");
   const canIntegrations=caps.has("integration.manage");
   const canAudit=caps.has("audit.view");
+  const [peopleAccess,setPeopleAccess]=useState(false);
   const [snapshot,setSnapshot]=useState(null);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
@@ -218,6 +220,7 @@ export default function ControlCenter({me,go}){
             ? `${snapshot.invitations.length} Staff invitation${snapshot.invitations.length===1?" is":"s are"} still pending activation.`
             : "No employee data exception or pending Staff invitation is currently recorded.",
         actions:[
+          {label:"Open People & Access",onClick:()=>setPeopleAccess(true)},
           {label:"People",onClick:()=>go("people")},
           ...(caps.has("hr_private.access")?[{label:"Protected HR",onClick:()=>go("protected-hr")}]:[]),
         ],
@@ -301,6 +304,8 @@ export default function ControlCenter({me,go}){
   },[snapshot,caps,canPayroll,canIntegrations,canAudit,go]);
 
   const attention=domains.filter((domain)=>domain.status!==STATUSES.ready);
+
+  if(peopleAccess) return <PeopleAccess me={me} go={go} onBack={()=>{setPeopleAccess(false);load();}} />;
 
   return <div className="body control-center premium-admin-page ev2-control-center">
     <header className="admin-page-header ev2-control-center-header">

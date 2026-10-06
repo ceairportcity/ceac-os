@@ -2,6 +2,13 @@
 
 Continue CEAC OS from the LIVE canonical repository state.
 
+Active programme: Onboarding, Access & Presence Foundation. Read the three 6 October continuity files before coding:
+- `docs/continuity/CEAC_ONBOARDING_COMPLIANCE_DISCOVERY_2026-10-06.md`
+- `docs/continuity/CEAC_ONBOARDING_DECISIONS_LOCKED_2026-10-06.md`
+- `docs/continuity/CEAC_ONBOARDING_NEXT_BUILD_2026-10-06.md`
+
+These preserve the wider discovery and deferred policy questions. Never infer that this foundation completes the broader Compliance programme. Reconcile the current protected-main and exact-head gates before continuing.
+
 Repository:
 `thestandardinst-star/ceac-os`
 
