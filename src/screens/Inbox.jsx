@@ -196,7 +196,7 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
       <DataPanel
         eyebrow="Communication queue"
         title={view === "announcements" ? "Announcements" : view === "mentions" ? "Mentions" : view === "work" ? "Work-linked messages" : view === "rooms" ? "Room activity" : "Messages and announcements"}
-        supporting="Only authorised Room activity and announcements appear here. CEAC OS does not introduce unrestricted direct messages."
+        supporting="Unread means not opened. Opening a message does not review or approve its linked work."
       >
         {rows.length ? rows.map((row) => row.type === "announcement"
           ? <QueueRow
@@ -212,8 +212,8 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
               key={row.message.id}
               icon={row.mentioned ? "notification" : "messages"}
               title={row.message.profiles?.full_name || "CEAC member"}
-              meta={`${roomName(row.message.rooms)} · ${row.message.body}`}
-              status={row.mentioned ? "Mention" : row.work ? "Linked work" : row.unread ? "Unread" : undefined}
+              meta={`${roomName(row.message.rooms)} · ${row.message.body} · ${new Date(row.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
+              status={row.unread ? (row.mentioned ? "Unread · Mention" : row.work ? "Unread · Linked work" : "Unread") : row.mentioned ? "Mention" : row.work ? "Linked work" : "Read"}
               statusTone={row.mentioned || row.unread ? "warning" : row.work ? "action" : "neutral"}
               onClick={() => openRoom?.(contextFor(row.message.rooms))}
             />

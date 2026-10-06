@@ -16,7 +16,7 @@ import {
 const COMPLETE = new Set(["completed", "self_certified", "cancelled"]);
 
 export default function ManagerWork({ me, openItem, goAssign }) {
-  const [view, setView] = useState("given");
+  const [view, setView] = useState("reviews");
   const [mine, setMine] = useState([]);
   const [given, setGiven] = useState([]);
   const [team, setTeam] = useState([]);
@@ -32,17 +32,17 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     try {
       const [mineResult, givenResult, teamResult, reviewResult] = await Promise.all([
         supabase.from("work_items")
-          .select("id,ref,title,kind,status,due_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+          .select("id,ref,title,kind,status,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
           .eq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items")
-          .select("id,ref,title,kind,status,due_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+          .select("id,ref,title,kind,status,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
           .eq("assigned_by", me.id).neq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items")
-          .select("id,ref,title,kind,status,due_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
-          .eq("unit_id", me.unit_id).neq("assignee_id", me.id).order("created_at", { ascending: false }),
+          .select("id,ref,title,kind,status,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+          .in("unit_id", me.memberships.filter((m) => m.role === "manager").map((m) => m.unit_id)).neq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("submissions")
           .select("id,submitted_at,note,profiles!submissions_profile_id_fkey(full_name),work_items!inner(id,ref,title,kind,status,due_at,unit_id,assignee_id,projects(name))")
-          .eq("work_items.unit_id", me.unit_id).eq("work_items.status", "in_review")
+          .in("work_items.unit_id", me.memberships.filter((m) => m.role === "manager").map((m) => m.unit_id)).neq("work_items.assignee_id", me.id).eq("work_items.status", "in_review")
           .order("submitted_at", { ascending: true }),
       ]);
       const err = [mineResult.error, givenResult.error, teamResult.error, reviewResult.error].find(Boolean);
@@ -57,7 +57,8 @@ export default function ManagerWork({ me, openItem, goAssign }) {
         const existing = latest.get(id);
         if (!existing || new Date(row.submitted_at) > new Date(existing.submitted_at)) latest.set(id, row);
       });
-      setReviews([...latest.values()]);
+      const authorized = await Promise.all([...latest.values()].map(async (row) => { const r = await supabase.rpc("app_can_review_item", { item_id: row.work_items.id }); if (r.error) throw r.error; return r.data ? row : null; }));
+      setReviews(authorized.filter(Boolean));
     } catch (err) {
       setError(humanError(err, "Manager work could not be loaded."));
     } finally {
@@ -99,7 +100,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
             title={row.work_items.title}
             person={row.profiles?.full_name || "Team member"}
             context={row.work_items.projects?.name}
-            submitted={`submitted ${new Date(row.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
+            submitted={`submitted ${new Date(row.submitted_at).toLocaleString("en-GB")}`}
             note={row.note}
             onClick={() => openItem(row.work_items.id)}
           />)}
@@ -119,6 +120,8 @@ export default function ManagerWork({ me, openItem, goAssign }) {
             owner={view !== "mine" ? (item.profiles?.full_name || "Unassigned") : null}
             due={dueLabel(item.due_at)}
             status={item.status}
+            recordedAt={item.created_at}
+            actionLabel={item.status === "not_started" ? "New assignment" : item.status === "returned" ? "Needs correction" : null}
             attention={isOverdue(item.due_at) && !COMPLETE.has(item.status)}
             onClick={() => openItem(item.id)}
           />)}

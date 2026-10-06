@@ -60,6 +60,9 @@ $definer_search_path$;
 -- Stage 0 semantic review identified six internal-only helpers that do not
 -- need direct authenticated execution. Migration 074 reduces the reviewed
 -- browser-callable SECURITY DEFINER surface from 73 to 67. Stage 1A adds two reviewed Administration-only employment RPCs, bringing the reviewed surface to 69. Stage 1B adds no browser-callable definer functions. Stage 1C adds the reviewed capability helper plus grant/revoke RPCs, bringing the surface to 72. Stage 1D adds only internal helpers. Stage 1E adds the reviewed workflow-step completion RPC, bringing the surface to 73. Stages 1F–2 add no browser-callable SECURITY DEFINER functions. Stage 3 adds two reviewed protected-HR RPCs, bringing the surface to 75. Stages 4–6 add no browser-callable SECURITY DEFINER functions. Stage 7 adds nine reviewed review/development RPCs with explicit actor/reviewer/self authority, bringing the surface to 84. Stage 8 adds two reviewed Learning RPCs (learner self-completion and capability-gated Administration correction), bringing the surface to 86. Stage 9 adds six reviewed workforce RPCs with explicit self/manager/capability authority, bringing the surface to 92. Stage 10 adds four reviewed asset RPCs gated by asset.manage, bringing the surface to 96. Stage 11 adds six reviewed compliance RPCs with self-bound submission/acknowledgement and compliance.manage decision authority, bringing the surface to 102. Migration 094 adds two reviewed self-service account RPCs, my_sessions() and my_account_activity(integer), bringing the reviewed surface to 104. Both are authenticated-only and bind their rows directly to auth.uid(). Migration 095 adds create_ministry_number(uuid,text,text) and record_ministry_number(uuid,date,numeric,text), bringing the reviewed surface to 106; both are authenticated-only, keep direct ministry-table writes closed, and separate scheduleless ministry-number authority from typed-work Routine authority. FPG5 Payroll brings the reviewed authenticated SECURITY DEFINER surface to 113. ERC4 adds two reviewed employee-subject protected-HR RPCs, bringing it to 115. ERC6 adds the reviewed Payroll readiness RPC, bringing it to 116. OCR3 adds six reviewed operational-file functions — app_can_read_operational_context, app_can_write_operational_context, app_can_access_operational_file, register_operational_file, link_operational_file and finalize_operational_file — bringing the exact reviewed authenticated surface to 122. These functions are authenticated-only, fixed-search-path, organisation/context-bound and covered by operational_clarity_files_gate.sql.
+-- Foundation 111 adds seven reviewed RPCs: responsibility, work-lane membership,
+-- invitation revoke/list/resend, and self-bound end-location and continuation evidence.
+-- onboarding_access_presence_gate.sql covers authority and evidence failures.
 do $definer_surface$
 declare n integer;
 begin
@@ -70,8 +73,8 @@ begin
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
 
-  if n<>122 then
-    raise exception 'Platform Kernel gate failure: expected 122 authenticated SECURITY DEFINER functions after reviewed OCR3 operational-file RPCs, found %.',n;
+  if n<>129 then
+    raise exception 'Platform Kernel gate failure: expected 129 authenticated SECURITY DEFINER functions after reviewed onboarding foundation RPCs, found %.',n;
   end if;
 
   if to_regprocedure('public.my_sessions()') is null

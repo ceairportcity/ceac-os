@@ -22,6 +22,7 @@ const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space
 
 export default function Item({ id, me, session, isManager = false, openRoom, back }) {
   const [item, setItem] = useState(null);
+  const [canReview, setCanReview] = useState(false);
   const [checks, setChecks] = useState([]);
   const [ticks, setTicks] = useState({});
   const [myStep, setMyStep] = useState("");
@@ -58,14 +59,18 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { load(); }, [id, me.id, me.unit_id]);
 
   async function load() {
     setErr(null);
+    setCanReview(false);
     const { data: w, error: workError } = await supabase.from("work_items")
       .select("*, projects(name), sub_teams(name)").eq("id", id).single();
     if (workError) { setErr(workError.message); return; }
     setItem(w);
+    const authority = await supabase.rpc("app_can_review_item", { item_id: id });
+    if (authority.error) { setErr(authority.error.message); return; }
+    setCanReview(Boolean(authority.data) && w.assignee_id !== me.id);
     if (w.kind === "deliverable") {
       const deliverableResult = await supabase.from("work_deliverables")
         .select("evidence_required,evidence_kind")
@@ -181,7 +186,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   const done = checks.filter((c) => ticks[c.id]).length;
   const allDone = checks.length > 0 && done === checks.length;
   const gated = !session;
-  const managerOwnWork = isManager && item && item.assignee_id === me.id;
+  const managerOwnWork = isManager && item && item.assignee_id === me.id && item.origin !== "assigned_by_exec" && (item.origin === "self_created" || item.assigned_by === me.id);
   const managerSubmissionBlocked = managerOwnWork && !MANAGER_SELF_CERTIFICATION_READY;
 
   async function addMyStep() {
@@ -290,7 +295,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   }
 
   async function decideManagerReview(decision) {
-    if (!isManager || !latestSubmission || item?.status !== "in_review") return;
+    if (!canReview || !latestSubmission || item?.status !== "in_review") return;
     setBusy(true);
     setErr(null);
     try {
@@ -682,7 +687,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         <footer>{done} of {checks.length} recorded step{checks.length === 1 ? "" : "s"} complete</footer>
       </section></>}
 
-      {isManager && item.status === "in_review" && latestSubmission && <WorkDetailSection
+      {canReview && item.status === "in_review" && latestSubmission && <WorkDetailSection
         title="Review submitted work"
         meta={`Submitted ${new Date(latestSubmission.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
       >
@@ -734,7 +739,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         </div>
       </>}
 
-      {!["routine", "case", "request", "decision"].includes(item.kind) && !(["in_review", "completed", "self_certified"].includes(item.status)) && (<>
+      {item.assignee_id === me.id && !["routine", "case", "request", "decision"].includes(item.kind) && !(["in_review", "completed", "self_certified"].includes(item.status)) && (<>
         <button className="btn work-primary-action" style={{ marginTop: 20 }} onClick={() => setSheet("submit")}
           disabled={managerSubmissionBlocked || (checks.length > 0 && !allDone)}>
           {item.kind === "deliverable"
@@ -748,8 +753,8 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
             I am waiting on someone</button>)}
       </>)}
 
-      {!isManager && item.status === "in_review" &&
-        <div className="flag flag-amber" style={{ marginTop: 20 }}><h4>Sent in</h4>Waiting on your manager to check it.</div>}
+      {!canReview && item.status === "in_review" &&
+        <div className="flag flag-amber" style={{ marginTop: 20 }}><h4>Sent in</h4>Waiting on the responsible reviewer to check it.</div>}
 
       {isManager && ["task", "meeting_outcome", "deliverable"].includes(item.kind) && ["completed", "self_certified"].includes(item.status) &&
         <button className="btn btn-ghost" style={{ marginTop: 20 }} onClick={() => { setNote(""); setSheet("reopen"); }}>
@@ -901,7 +906,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
             : managerOwnWork ? "Finish this work" : "Send for review"}</div>
           <p className="screen-note">{managerOwnWork
             ? "This records your submission as self-certified. It will not enter your review queue."
-            : "Your manager will be told."}</p>
+            : "The responsible reviewer will be told."}</p>
           {gated && <div className="flag flag-amber"><h4>No work session is open</h4>This submission will still be accepted and recorded as outside a session.</div>}
           <AssistiveTextarea className="field" rows={3} placeholder="Anything they should know (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
           <input className="field" placeholder={item.kind === "deliverable" && deliverableRecord?.evidence_required ? "Evidence link (required)" : "Paste a link to the file (optional)"} value={link} onChange={(e) => setLink(e.target.value)} />

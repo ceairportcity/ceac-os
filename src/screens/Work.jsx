@@ -98,10 +98,10 @@ export default function Work({ me, isManager = false, openItem }) {
     setItems([]);
 
     let query = supabase.from("work_items")
-      .select("id,ref,title,kind,status,due_at,visibility,origin,expected_outcome,projects(name)")
+      .select("id,ref,title,kind,status,due_at,visibility,origin,created_at,expected_outcome,projects(name)")
       .eq("assignee_id", me.id);
 
-    if (nextMode === "assigned") query = query.eq("visibility", "unit").eq("origin", "assigned");
+    if (nextMode === "assigned") query = query.eq("visibility", "unit").in("origin", ["assigned", "assigned_by_exec"]);
     if (nextMode === "agreed") query = query.eq("visibility", "unit").eq("origin", "self_created");
     if (nextMode === "private") query = query.eq("visibility", "private");
 
@@ -402,6 +402,8 @@ export default function Work({ me, isManager = false, openItem }) {
         kind={item.kind}
         due={dueLabel(item.due_at)}
         status={item.status}
+            recordedAt={item.created_at}
+            actionLabel={item.status === "not_started" ? "New assignment · Start work" : item.status === "returned" ? "Needs correction" : item.status === "in_review" ? "Waiting for reviewer" : null}
         note={item.expected_outcome}
         onClick={() => openItem(item.id)}
       />)}

@@ -152,7 +152,7 @@ function decisionPreview(decision) {
   if (decision.type === "submission") {
     return {
       title: decision.item?.work_items?.title || "Submission awaiting review",
-      meta: `${decision.item?.profiles?.full_name || "Team member"} · Review required`,
+      meta: `${decision.item?.profiles?.full_name || "Team member"} · Review required · ${formatDate(decision.item?.submitted_at, { hour: "2-digit", minute: "2-digit" })}`,
       icon: "work",
     };
   }
@@ -369,7 +369,8 @@ export default function ManagerOverviewV2({
 
           <div className="fpg9-home-queues">
             <article className="fpg9-queue-card fpg9-attention-card">
-              <header><h2>Needs your attention</h2><Count value={attentionRows.length} tone={attentionRows.length ? "attention" : "success"} /></header>
+              <header><h2>Needs your attention</h2><Count value={decisionCount} tone={attentionRows.length ? "attention" : "success"} /></header>
+              {awaitingReview > 0 && <Button variant="secondary" size="compact" onClick={() => onNavigate?.("work")}>Needs review · {awaitingReview}</Button>}
               {attentionRows.length ? attentionRows.map((decision, index) => {
                 const row = decisionPreview(decision);
                 if (decision.type === "blocker") {

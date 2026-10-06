@@ -106,7 +106,12 @@ end $$;
 -- link_operational_file and finalize_operational_file.
 -- They are authenticated-only, fixed-search-path, organisation/context-bound,
 -- and covered by operational_clarity_files_gate.sql plus the generic definer checks above.
--- Reducing this surface is allowed. Any growth beyond 122 requires another
+-- Foundation 111 reviews seven additional RPCs: additive unit responsibility,
+-- work-lane membership, invitation revoke/list/resend, self-bound end evidence
+-- and self-bound continuation evidence. Their role/evidence failures are tested
+-- by onboarding_access_presence_gate.sql; fixed search path and no anon grants
+-- remain mandatory. The exact inventory is also enforced by Platform Kernel.
+-- Reducing this surface is allowed. Any growth beyond 129 requires another
 -- explicit security-gate review in the same PR.
 do $$
 declare n integer;
@@ -117,8 +122,8 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n>122 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 122-function ceiling to %.',n;
+  if n>129 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 129-function ceiling to %.',n;
   end if;
 end $$;
 

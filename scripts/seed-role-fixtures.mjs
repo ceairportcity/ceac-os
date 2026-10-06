@@ -74,6 +74,14 @@ for (const user of users) {
   }
 }
 
+// An explicit test office makes browser GPS evidence meaningful, rather than
+// allowing the former null-location office start. This is isolated fixture data.
+const officeFixture = await service.from("office_locations").insert({
+  org_id: orgId, name: "Acceptance office", lat: 5.6037, lng: -0.1870,
+  radius_meters: 100, is_primary: true, set_by: users[2].id,
+});
+assert.equal(officeFixture.error, null, officeFixture.error?.message);
+
 // Employee-roster fixtures mirror production semantics: authentication is not
 // itself proof of employment, so test employees are explicitly represented in
 // the employee master and then linked to their known test accounts.

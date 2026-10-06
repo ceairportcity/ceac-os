@@ -2578,3 +2578,22 @@ test("FPG10 propagates the accepted Work, Finance and People reference grammar a
     await context.close();
   }
 });
+
+test("Foundation People & Access keeps new invitations distinct from existing responsibilities", async ({ browser }) => {
+  for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 900 }]) {
+    const {context,page}=await openAs(browser,"admin@ceac.local.test",viewport);
+    await go(page,"Control Center");
+    await page.getByRole("button",{name:"Open People & Access"}).click();
+    await expect(page.getByRole("heading",{name:"People & Access",exact:true})).toBeVisible();
+    await expect(page.getByRole("button",{name:"Send Staff invitation"})).toBeDisabled();
+    await page.screenshot({path:`test-artifacts/foundation-people-access-invite-${viewport.width}.png`,fullPage:true});
+    await page.getByRole("button",{name:"Add responsibility",exact:true}).click();
+    await expect(page.getByRole("combobox",{name:"Existing person",exact:true})).toBeVisible();
+    await page.getByRole("combobox",{name:"Existing person",exact:true}).selectOption("31000000-0000-4000-8000-000000000002");
+    await expect(page.getByRole("button",{name:"End membership"}).first()).toBeVisible();
+    await expect(page.getByRole("button",{name:"Record responsibility"})).toBeDisabled();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:`test-artifacts/foundation-people-access-responsibility-${viewport.width}.png`,fullPage:true});
+    await context.close();
+  }
+});

@@ -2,6 +2,17 @@
 
 Continue CEAC OS from the LIVE canonical repository state.
 
+Active programme: Onboarding, Access & Presence Foundation. Read the three 6 October continuity files before coding:
+- `docs/continuity/CEAC_ONBOARDING_COMPLIANCE_DISCOVERY_2026-10-06.md`
+- `docs/continuity/CEAC_ONBOARDING_DECISIONS_LOCKED_2026-10-06.md`
+- `docs/continuity/CEAC_ONBOARDING_NEXT_BUILD_2026-10-06.md`
+
+These preserve the wider discovery and deferred policy questions. Never infer that this foundation completes the broader Compliance programme. Reconcile the current protected-main and exact-head gates before continuing.
+
+Current foundation checkpoint: PR #111 is OPEN, with verified implementation head `7e8ce725eb049b3bc95c6b18b5d1fcdfff7a6d46`. CI, Migration Replay, Account Security, full SQL authority gates and all 677 browser tests pass on that code head. Subsequent documentation-only checkpoints do not change the verified implementation. Protected main remains `76cea2e457b7d624f54ca961ad14bb62ea359ebd`; production migration 111 is applied.
+
+Auth redirect blocker resolvedon 6 October 2026 after the owner saved public URL settings: fresh invalid-token probes reach the public CEAC `/activate` and `/reset-password` routes without Vercel authentication. Production migration 111 applied successfully. PR #111 remains open pending normal protected merge and exact-main/deployed-role acceptance. The canonical application tree passed all 677 browser tests and SQL/security gates. Actual email delivery and personal password creation remain unverified. Read the next-build completion record for exact SHAs/run IDs and remaining steps; never put credentials into chat, repository files or browser automation.
+
 Repository:
 `thestandardinst-star/ceac-os`
 

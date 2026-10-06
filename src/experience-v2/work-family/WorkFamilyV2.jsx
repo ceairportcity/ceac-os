@@ -125,6 +125,8 @@ export function WorkRow({
   due,
   status,
   note,
+  recordedAt,
+  actionLabel,
   attention = false,
   onClick,
   icon,
@@ -144,6 +146,8 @@ export function WorkRow({
           {[refCode, kind ? workKindLabel(kind) : null, context].filter(Boolean).join(" · ")}
         </span>
         {note ? <small>{note}</small> : null}
+        {actionLabel ? <small>{actionLabel}</small> : null}
+        {recordedAt ? <time dateTime={recordedAt}>{new Date(recordedAt).toLocaleString("en-GB")}</time> : null}
       </span>
       <span className="ev2w-row-context">
         {owner ? <span>{owner}</span> : null}
