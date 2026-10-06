@@ -1,3 +1,9 @@
+# POST-ONBOARDING OPERATIONAL REFINEMENT IS ACTIVE
+
+The product owner authorised the 6 October 2026 post-onboarding programme. Read `docs/continuity/CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md` and `docs/continuity/CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` before writes. Commit the full continuity lock before Phase 2 application implementation. Phase 2 Attendance, Working Patterns & Permissions is active; later phases remain sequenced/gated. Existing accepted domain, security, privacy, audit and visual contracts below remain binding. Draft office hours must not be silently applied to production. No final auto-close/grace, deductions, disciplinary engine, scoring, background surveillance or PFCC special workspace in Phase 2. GitHub is canonical; one writer; reconcile forward.
+
+---
+
 # FINAL PRODUCT PARITY & GO-LIVE IS THE ACTIVE PRODUCT PROGRAMME
 
 Programme: CEAC OS — Final Product Parity & Go-Live (FPG)
