@@ -56,6 +56,7 @@ do $$ begin
  if public.app_org_id() is not null or exists(select public.app_managed_units()) then raise exception 'Inactive identity retained authority'; end if;
 end $$;
 reset role;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
 update public.profiles set active=true where id='31000000-0000-4000-8000-000000000002';
 -- Staff cannot start an office session with missing or stale evidence.
 set local role authenticated;
