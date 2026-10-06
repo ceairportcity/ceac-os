@@ -13,7 +13,7 @@ The adjacent `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md` is
 |---|---|---|---|
 | 1 | Foundation: onboarding, People & Access, multiple units, scoped invitations, review/action visibility, start/end evidence, last activity | Preserve accepted PRs #106/#111/#112 and migration 111 | Implemented and technical/deployment checks pass; authenticated live role inspection and actual email/password setup remain unverified |
 | 2 | Attendance, Working Patterns & Permissions | Commit this lock first; reuse Stage 9 and Work Engine; secure privacy/authority boundaries | COMPLETE — PR #113, migration 112 and exact-main production evidence recorded below |
-| 3 | Compliance Operating Surface | Phase 2 accepted/merged/deployed; operational data and compliance visibility secure | NEXT — start from the sanitised attendance read and existing `compliance.manage`; do not reopen Phase 2 |
+| 3 | Compliance Operating Surface | Phase 2 accepted/merged/deployed; operational data and compliance visibility secure | ACTIVE — branch `chatgpt/compliance-operating-surface-2026-10-06`; contract `docs/architecture/CEAC_COMPLIANCE_PHASE3_CONTRACT_2026-10-06.md` |
 | 4 | Notification & Work-State Communication | Phase 3 acceptance; preserve independent unread and action states | NEXT |
 | 5 | Admin Product Redesign | Phase 4 acceptance; literal approved design/reference and functioning controls | NEXT |
 | 6 | Volunteer & Special Operating Models | Phase 5 acceptance; audit payroll/attendance/headcount/appraisal/HR/performance populations | NEXT; PFCC special workspace and anti-gaming options DEFERRED |
@@ -25,6 +25,14 @@ The adjacent `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md` is
 One active writer. Fetch canonical main/branch before writes; reconcile forward without reset/force-push/revert. Do not recreate accepted work or weaken tests. Commit implementation, replay migrations, run capability/RLS/SQL/security gates and authenticated browser/responsive/persistence acceptance, pass full Quality Gate, normal protected merge, exact-main verification and deployment evidence. Never fabricate production records or claim real email/password setup from fixtures. Document genuine blocked evidence distinctly from technical PASS.
 
 Use factual attendance context; no misconduct finding or automatic Payroll linkage. Manager first-line workflow uses existing explicit Work Engine authority; final disciplinary route remains a future discussion. Medical operational notices must not collect detailed medical information. Per-person schedule differences remain possible. Draft office hours are an opt-in configuration template, never silent production data.
+
+## Phase 3 entry lock
+
+Phase 3 was explicitly started by the product owner on 6 October 2026 from protected main `97d2b4a7a3220a7764f5eaa3e43c8d31672374b0`. The only active writer branch is `chatgpt/compliance-operating-surface-2026-10-06`.
+
+The phase must reuse the Stage 11 policy/version/applicability/requirement/acknowledgement/evidence/exception engine and the Phase 2 sanitised `attendance_day_evidence(date)` read. `compliance.manage` is organisation-wide compliance authority; it is not announcement authority, attendance decision authority, protected-HR access, disciplinary authority or executive authority. Office-wide policy instructions require the separate explicit `post_announcement` capability and must retain the real author.
+
+The accepted Phase 3 boundary is defined in `docs/architecture/CEAC_COMPLIANCE_PHASE3_CONTRACT_2026-10-06.md`. Items 24 and 28–32 remain outside this phase. Item 27 remains unresolved: “no session recorded” must never be relabelled “unexplained absence”.
 
 ## Phase 2 objective and exact authorised scope
 
