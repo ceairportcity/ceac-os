@@ -1,7 +1,7 @@
 # Onboarding, Access & Presence Foundation
 
 Date: 6 October 2026
-Status: IMPLEMENTED / AUTOMATED VERIFICATION PASS / AUTH REDIRECTS VERIFIED / RELEASE IN PROGRESS
+Status: IMPLEMENTED / AUTOMATED VERIFICATION PASS / AUTH REDIRECTS VERIFIED / MERGED / EXACT-MAIN TECHNICAL PASS / LIVE AUTHENTICATION UNVERIFIED
 Branch: `chatgpt/onboarding-access-presence-2026-10-06`
 Verified baseline protected main: `76cea2e457b7d624f54ca961ad14bb62ea359ebd`
 GitHub is canonical. One active writer; reconcile forward; never force-push/reset newer work.
@@ -40,7 +40,7 @@ Required acceptance: meaningful local build/tests; clean migration replay; Accou
 - Continuous background GPS tracking (prohibited direction).
 
 ## Completion record
-Not complete. PR #111 is open; migration 111 has been applied to production after the owner corrected Auth URL settings and both redirects were verified. The original prerequisite continuity commit preceded implementation.
+PR #111 merged by signed squash at `4ce12ee5d4bd29348b14d0795d5b59e338764d70`. Migration 111 is applied. The exact-main CI #37403093498, Migration Replay #37403093444, Account Security #37403093473 and full Quality Gate #37403093459 all pass. Exact-main production deployment `dpl_AXraHFjsrMFUMG6wMWLf3NYaeQj1` is READY and serves the public app. Live authenticated role acceptance and actual email/password setup remain unverified. The original prerequisite continuity commit preceded implementation.
 On completion record exact protected main, completed items, remaining deferred questions, discovered architectural issues, next recommended tranche and updated next-chat prompt. The wider onboarding/compliance programme remains open.
 
 ## Foundation implementation under review
@@ -52,5 +52,8 @@ The owner confirmed the public Auth URL settings were saved on 6 October 2026. F
 
 Canonical PR head `da7ccbb2e114cd90e5d041df91bb196228017c9b` passed CI #37402358929, Migration Replay #37402358931, Account Security #37402358958 and Quality Gate #37402358930 through the documentation-only path. The application tree is identical to the fully verified implementation head above. Production migration 111 was applied successfully through the Supabase connector; all three new guard triggers are installed. Protected main was still `76cea2e457b7d624f54ca961ad14bb62ea359ebd` before merge.
 
-Next: perform the normal protected PR merge, verify exact-main gates/deployment and authenticated deployed roles, and record final completion. Actual email delivery and personal password setup remain unverified. Do not fabricate production invitations, people, work or presence to create evidence.
+Next: complete live authenticated role acceptance and actual email/password setup evidence. Actual email delivery and personal password setup remain unverified. Do not fabricate production invitations, people, work or presence to create evidence.
 The implementation also preserves the 12px office-evidence text floor, uses the factual heading “Today’s work location evidence”, and updates the affected source-map-js dependency to 1.2.2; the dependency audit passes. Wider deferred policy questions above remain open. After foundation acceptance, the next recommended tranche is to confirm attendance/short-absence and grace-policy decisions before implementing further Compliance workflows.
+
+## Sign-in diagnostic correction
+The owner authorised live test-account sign-in, but secure-browser attempts returned the same visible mismatch message. Source inspection found that SignIn.jsx labels every returned Auth error as a password mismatch. The underlying rejection is therefore unconfirmed. Vercel has no project environment overrides, so the app uses the canonical Supabase fallback. Available logs did not establish the cause. A contained correction maps documented Auth codes/statuses to safe messages, catches thrown connection errors and restores the button with finally. No raw error bodies, credentials, account identifiers or tokens are logged or displayed. Tests cover service, network, rate-limit, verification and credential rejection. Do not change passwords, user verification, access grants or Auth policies to manufacture acceptance.
