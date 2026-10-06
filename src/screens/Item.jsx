@@ -23,6 +23,7 @@ const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space
 export default function Item({ id, me, session, isManager = false, openRoom, back }) {
   const [item, setItem] = useState(null);
   const [canReview, setCanReview] = useState(false);
+  const [responsibleReviewer, setResponsibleReviewer] = useState(null);
   const [checks, setChecks] = useState([]);
   const [ticks, setTicks] = useState({});
   const [myStep, setMyStep] = useState("");
@@ -64,6 +65,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   async function load() {
     setErr(null);
     setCanReview(false);
+    setResponsibleReviewer(null);
     const { data: w, error: workError } = await supabase.from("work_items")
       .select("*, projects(name), sub_teams(name)").eq("id", id).single();
     if (workError) { setErr(workError.message); return; }
@@ -71,6 +73,17 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
     const authority = await supabase.rpc("app_can_review_item", { item_id: id });
     if (authority.error) { setErr(authority.error.message); return; }
     setCanReview(Boolean(authority.data) && w.assignee_id !== me.id);
+    const reviewerRoute = await supabase.rpc("app_responsible_reviewer_id", { item_id: id });
+    if (reviewerRoute.error) { setErr(reviewerRoute.error.message); return; }
+    if (reviewerRoute.data) {
+      const reviewerProfile = await supabase.from("profiles")
+        .select("id,full_name")
+        .eq("id", reviewerRoute.data)
+        .maybeSingle();
+      setResponsibleReviewer(reviewerProfile.error
+        ? { id: reviewerRoute.data, full_name: null }
+        : reviewerProfile.data || { id: reviewerRoute.data, full_name: null });
+    }
     if (w.kind === "deliverable") {
       const deliverableResult = await supabase.from("work_deliverables")
         .select("evidence_required,evidence_kind")
@@ -754,7 +767,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
       </>)}
 
       {!canReview && item.status === "in_review" &&
-        <div className="flag flag-amber" style={{ marginTop: 20 }}><h4>Sent in</h4>Waiting on the responsible reviewer to check it.</div>}
+        <div className="flag flag-amber" style={{ marginTop: 20 }}><h4>Sent in</h4>Waiting on {responsibleReviewer?.full_name || "the responsible reviewer"} to check it.</div>}
 
       {isManager && ["task", "meeting_outcome", "deliverable"].includes(item.kind) && ["completed", "self_certified"].includes(item.status) &&
         <button className="btn btn-ghost" style={{ marginTop: 20 }} onClick={() => { setNote(""); setSheet("reopen"); }}>
@@ -906,7 +919,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
             : managerOwnWork ? "Finish this work" : "Send for review"}</div>
           <p className="screen-note">{managerOwnWork
             ? "This records your submission as self-certified. It will not enter your review queue."
-            : "The responsible reviewer will be told."}</p>
+            : `${responsibleReviewer?.full_name || "The responsible reviewer"} will receive this in their review queue.`}</p>
           {gated && <div className="flag flag-amber"><h4>No work session is open</h4>This submission will still be accepted and recorded as outside a session.</div>}
           <AssistiveTextarea className="field" rows={3} placeholder="Anything they should know (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
           <input className="field" placeholder={item.kind === "deliverable" && deliverableRecord?.evidence_required ? "Evidence link (required)" : "Paste a link to the file (optional)"} value={link} onChange={(e) => setLink(e.target.value)} />

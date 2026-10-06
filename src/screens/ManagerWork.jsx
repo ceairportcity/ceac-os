@@ -40,25 +40,16 @@ export default function ManagerWork({ me, openItem, goAssign }) {
         supabase.from("work_items")
           .select("id,ref,title,kind,status,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
           .in("unit_id", me.memberships.filter((m) => m.role === "manager").map((m) => m.unit_id)).neq("assignee_id", me.id).order("created_at", { ascending: false }),
-        supabase.from("submissions")
-          .select("id,submitted_at,note,profiles!submissions_profile_id_fkey(full_name),work_items!inner(id,ref,title,kind,status,due_at,unit_id,assignee_id,projects(name))")
-          .in("work_items.unit_id", me.memberships.filter((m) => m.role === "manager").map((m) => m.unit_id)).neq("work_items.assignee_id", me.id).eq("work_items.status", "in_review")
-          .order("submitted_at", { ascending: true }),
+        supabase.rpc("my_work_attention_queue"),
       ]);
       const err = [mineResult.error, givenResult.error, teamResult.error, reviewResult.error].find(Boolean);
       if (err) throw err;
       setMine(mineResult.data || []);
       setGiven(givenResult.data || []);
       setTeam(teamResult.data || []);
-      const latest = new Map();
-      (reviewResult.data || []).forEach((row) => {
-        const id = row.work_items?.id;
-        if (!id) return;
-        const existing = latest.get(id);
-        if (!existing || new Date(row.submitted_at) > new Date(existing.submitted_at)) latest.set(id, row);
-      });
-      const authorized = await Promise.all([...latest.values()].map(async (row) => { const r = await supabase.rpc("app_can_review_item", { item_id: row.work_items.id }); if (r.error) throw r.error; return r.data ? row : null; }));
-      setReviews(authorized.filter(Boolean));
+      setReviews((reviewResult.data || [])
+        .filter((row) => row.action_kind === "review_required")
+        .sort((left, right) => new Date(left.action_at) - new Date(right.action_at)));
     } catch (err) {
       setError(humanError(err, "Manager work could not be loaded."));
     } finally {
@@ -96,13 +87,13 @@ export default function ManagerWork({ me, openItem, goAssign }) {
       reviews.length ? (
         <WorkGroup title="Waiting for your review" count={reviews.length}>
           {reviews.map((row) => <WorkReviewRow
-            key={row.id}
-            title={row.work_items.title}
-            person={row.profiles?.full_name || "Team member"}
-            context={row.work_items.projects?.name}
-            submitted={`submitted ${new Date(row.submitted_at).toLocaleString("en-GB")}`}
-            note={row.note}
-            onClick={() => openItem(row.work_items.id)}
+            key={row.submission_id}
+            title={row.work_title}
+            person={row.assignee_name || "Team member"}
+            context={row.project_name || row.unit_name}
+            submitted={`submitted ${new Date(row.action_at).toLocaleString("en-GB")}`}
+            note="Review authority is assigned to you for this item."
+            onClick={() => openItem(row.work_item_id)}
           />)}
         </WorkGroup>
       ) : <WorkEmpty title="Nothing waiting for review" description="New submissions from your team will appear here." />

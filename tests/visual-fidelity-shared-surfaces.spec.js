@@ -24,7 +24,7 @@ test("VF6D keeps Messages and Connected Apps factual while closing shared-surfac
   const integrations = readFileSync("src/screens/AdminIntegrations.jsx", "utf8");
 
   expect(inbox).not.toContain('className="premium-surface inbox-list"');
-  expect(inbox).toContain("Rooms, mentions, linked work and announcements");
+  expect(inbox).toContain("Work actions, Rooms, mentions and announcements");
   expect(inbox).toContain("This directory does not create direct messages.");
   expect(staffCss).toContain("/* VF6D — Messages operational-inbox closure.");
   expect(staffCss).toContain(".inbox-page .premium-filter-row button");
@@ -64,7 +64,7 @@ test("VF6D keeps Messages and Connected Apps factual while closing shared-surfac
       const heights = await filters.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
       expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
 
-      const queuePanel = inboxPage.locator(".ev2c-data-panel").filter({ hasText: "Communication queue" }).first();
+      const queuePanel = inboxPage.locator(".ev2c-data-panel").filter({ hasText: "Updates" }).first();
       await expect(queuePanel).toBeVisible();
       const queueStyle = await queuePanel.evaluate((node) => ({
         shadow: getComputedStyle(node).boxShadow,

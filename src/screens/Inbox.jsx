@@ -25,8 +25,29 @@ function mergeMessages(...groups) {
   return [...byId.values()].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }
 
-export default function Inbox({ me, openRoom, openAnnouncements, initialView = null, onInitialViewHandled }) {
+function titleCase(value = "") {
+  return String(value).replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function actionPresentation(row) {
+  if (row.action_kind === "returned_work") {
+    return { icon: "warning", label: "Correction required", tone: "danger" };
+  }
+  if (row.action_kind === "review_required") {
+    return { icon: "notification", label: "Review required", tone: "warning" };
+  }
+  return { icon: "work", label: "New assignment", tone: "action" };
+}
+
+function formattedAt(value) {
+  return new Date(value).toLocaleString("en-GB", {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  });
+}
+
+export default function Inbox({ me, openRoom, openItem, openAnnouncements, initialView = null, onInitialViewHandled }) {
   const [view, setView] = useState("all");
+  const [actions, setActions] = useState([]);
   const [messages, setMessages] = useState([]);
   const [mentions, setMentions] = useState(new Set());
   const [reads, setReads] = useState(new Map());
@@ -46,7 +67,8 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
     setLoading(true);
     setError(null);
     try {
-      const [mentionResult, readResult, announcementResult, directoryResult] = await Promise.all([
+      const [actionResult, mentionResult, readResult, announcementResult, directoryResult] = await Promise.all([
+        supabase.rpc("my_work_attention_queue"),
         supabase.from("room_mentions").select("message_id").eq("profile_id", me.id).order("created_at", { ascending: false }).limit(120),
         supabase.from("room_reads").select("room_id,last_read_at").eq("profile_id", me.id),
         supabase.from("announcements")
@@ -59,7 +81,7 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
           : Promise.resolve({ data: [], error: null }),
       ]);
 
-      const first = [mentionResult.error, readResult.error, announcementResult.error, directoryResult.error].find(Boolean);
+      const first = [actionResult.error, mentionResult.error, readResult.error, announcementResult.error, directoryResult.error].find(Boolean);
       if (first) throw first;
 
       const mentionIds = [...new Set((mentionResult.data || []).map((row) => row.message_id).filter(Boolean))];
@@ -100,6 +122,7 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
         return roomName(a).localeCompare(roomName(b));
       });
 
+      setActions(actionResult.data || []);
       setMessages(loadedMessages);
       setMentions(new Set(mentionIds));
       setReads(new Map((readResult.data || []).map((row) => [row.room_id, row.last_read_at])));
@@ -107,6 +130,7 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
       setRoomDirectory(directory);
     } catch (err) {
       setError(humanError(err, "Messages could not be loaded."));
+      setActions([]);
       setMessages([]);
       setRoomDirectory([]);
     } finally {
@@ -114,7 +138,7 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
     }
   }
 
-  const rows = useMemo(() => {
+  const communicationRows = useMemo(() => {
     const messageRows = messages.map((message) => ({
       type: "message",
       at: message.created_at,
@@ -142,7 +166,15 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
     return combined.sort((a, b) => new Date(b.at) - new Date(a.at));
   }, [messages, announcements, mentions, reads, view, me.id]);
 
-  const unread = rows.filter((row) => row.unread).length;
+  const totalUnread = useMemo(() => {
+    const unreadMessages = messages.filter((message) => message.author_id !== me.id
+      && (!reads.get(message.room_id) || new Date(message.created_at) > new Date(reads.get(message.room_id)))).length;
+    const unreadAnnouncements = announcements.filter((announcement) =>
+      !(announcement.announcement_receipts || []).some((receipt) => receipt.profile_id === me.id && receipt.read_at)
+    ).length;
+    return unreadMessages + unreadAnnouncements;
+  }, [messages, announcements, reads, me.id]);
+  const showActions = view === "all" || view === "work";
 
   return <div className="body premium-page inbox-page">
     <header className="premium-page-head">
@@ -151,13 +183,14 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
         <h1 className="h1">Messages</h1>
         <p className="screen-note">
           {me.is_exec
-            ? "Your Room activity, mentions and announcements. Use the Room directory when you intentionally need to enter another Unit or Sub-team conversation."
-            : "Rooms, mentions, work context and announcements. CEAC OS does not provide unrestricted direct messages."}
+            ? "Your work actions, Room activity, mentions and announcements. Use the Room directory when you intentionally need to enter another Unit or Sub-team conversation."
+            : "Work actions, Rooms, mentions and announcements in one operational queue. CEAC OS does not provide unrestricted direct messages."}
         </p>
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
         <Button variant="secondary" size="compact" onClick={openAnnouncements}>Announcements</Button>
-        <StatusBadge tone={unread?"warning":"neutral"} icon={false}>{unread} unread</StatusBadge>
+        <StatusBadge tone={actions.length ? "warning" : "neutral"} icon={false}>{actions.length} need action</StatusBadge>
+        <StatusBadge tone={totalUnread ? "action" : "neutral"} icon={false}>{totalUnread} unread</StatusBadge>
       </div>
     </header>
 
@@ -177,6 +210,29 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
     {error && <ProductNotice tone="error" title="Could not load Messages">{error}</ProductNotice>}
 
     {loading ? <LoadingState label="Loading Messages…" /> : <>
+      {showActions && <DataPanel
+        eyebrow="Work state"
+        title="Needs action"
+        supporting="These labels come from current Work Engine state. Opening a row does not submit, approve, return or complete the work."
+        action={<StatusBadge tone={actions.length ? "warning" : "neutral"} icon={false}>{actions.length} open</StatusBadge>}
+      >
+        {actions.length ? actions.map((row) => {
+          const presentation = actionPresentation(row);
+          const context = row.action_kind === "review_required"
+            ? `${row.assignee_name || "Team member"} submitted · ${formattedAt(row.action_at)}`
+            : `${titleCase(row.work_kind)} · ${formattedAt(row.action_at)}${row.responsible_reviewer_name ? ` · Reviewer: ${row.responsible_reviewer_name}` : ""}`;
+          return <QueueRow
+            key={`${row.action_kind}-${row.work_item_id}`}
+            icon={presentation.icon}
+            title={`${row.work_ref} · ${row.work_title}`}
+            meta={context}
+            status={presentation.label}
+            statusTone={presentation.tone}
+            onClick={() => openItem?.(row.work_item_id)}
+          />;
+        }) : <StatePanel state="empty" title="No work action is waiting" description="New assignments, returned work and submissions you are authorised to review will appear here." />}
+      </DataPanel>}
+
       {me.is_exec && view === "rooms" && <DataPanel
         eyebrow="Leadership directory"
         title="Organisation Rooms"
@@ -194,16 +250,16 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
       </DataPanel>}
 
       <DataPanel
-        eyebrow="Communication queue"
+        eyebrow="Updates"
         title={view === "announcements" ? "Announcements" : view === "mentions" ? "Mentions" : view === "work" ? "Work-linked messages" : view === "rooms" ? "Room activity" : "Messages and announcements"}
-        supporting="Unread means not opened. Opening a message does not review or approve its linked work."
+        supporting="Unread means not opened. It is independent of the Needs action queue and never decides linked work."
       >
-        {rows.length ? rows.map((row) => row.type === "announcement"
+        {communicationRows.length ? communicationRows.map((row) => row.type === "announcement"
           ? <QueueRow
               key={`announcement-${row.announcement.id}`}
               icon="messages"
               title={row.announcement.title}
-              meta={`Announcement · ${row.announcement.profiles?.full_name || "CEAC"} · ${new Date(row.at).toLocaleString("en-GB", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}${row.announcement.requires_acknowledgement ? " · acknowledgement may be required" : ""}`}
+              meta={`Announcement · ${row.announcement.profiles?.full_name || "CEAC"} · ${formattedAt(row.at)}${row.announcement.requires_acknowledgement ? " · acknowledgement may be required" : ""}`}
               status={row.unread ? "Unread" : "Read"}
               statusTone={row.unread ? "warning" : "neutral"}
               onClick={openAnnouncements}
@@ -212,7 +268,7 @@ export default function Inbox({ me, openRoom, openAnnouncements, initialView = n
               key={row.message.id}
               icon={row.mentioned ? "notification" : "messages"}
               title={row.message.profiles?.full_name || "CEAC member"}
-              meta={`${roomName(row.message.rooms)} · ${row.message.body} · ${new Date(row.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
+              meta={`${roomName(row.message.rooms)} · ${row.message.body} · ${formattedAt(row.at)}`}
               status={row.unread ? (row.mentioned ? "Unread · Mention" : row.work ? "Unread · Linked work" : "Unread") : row.mentioned ? "Mention" : row.work ? "Linked work" : "Read"}
               statusTone={row.mentioned || row.unread ? "warning" : row.work ? "action" : "neutral"}
               onClick={() => openRoom?.(contextFor(row.message.rooms))}
