@@ -40,7 +40,7 @@ end $$;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 do $$ declare n uuid; med uuid; s public.work_sessions; c uuid; c2 uuid; body jsonb; begin
  n:=public.attendance_create_notice('temporary_permission',now()-interval '15 minutes',now()+interval '30 minutes','Private operational fixture reason','Private notice context');
- med:=public.attendance_create_notice('medical_absence',now(),null,null,null);
+ med:=public.attendance_create_notice('medical_absence',now()+interval '1 day',null,null,null);
  insert into phase2_ids values('notice',n),('medical',med);
  if not exists(select 1 from public.attendance_notices where work_item_id=n and profile_id=auth.uid() and created_by=auth.uid()) then raise exception 'Notice attribution missing'; end if;
  begin perform public.attendance_create_notice('medical_absence',now(),null,'Secret diagnosis',null); raise exception 'Medical narrative accepted'; exception when others then if sqlerrm not like 'Medical notices contain dates%' then raise; end if; end;

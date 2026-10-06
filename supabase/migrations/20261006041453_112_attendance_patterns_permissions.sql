@@ -228,7 +228,7 @@ begin
       'response_note',case when n.profile_id=auth.uid() or n.unit_id in(select public.app_managed_units()) or public.app_has_capability('workforce.manage',null) then r.response_note end,
       'responses',coalesce((select jsonb_agg(jsonb_build_object('actor_id',rr.actor_id,'outcome',rr.outcome,'created_at',rr.created_at) order by rr.created_at) from public.work_request_responses rr where rr.work_item_id=n.work_item_id),'[]'::jsonb)) order by n.created_at desc)
       from public.attendance_notices n join public.work_requests r on r.work_item_id=n.work_item_id left join public.attendance_returns ret on ret.work_item_id=n.work_item_id
-      where n.org_id=v_org and n.profile_id=e.profile_id and (n.starts_at at time zone 'Africa/Accra')::date<=p_date and coalesce((n.expected_return_at at time zone 'Africa/Accra')::date,(n.starts_at at time zone 'Africa/Accra')::date)>=p_date),'[]'::jsonb)
+      where n.org_id=v_org and n.profile_id=e.profile_id and coalesce((n.expected_return_at at time zone 'Africa/Accra')::date,(n.starts_at at time zone 'Africa/Accra')::date)>=p_date),'[]'::jsonb)
     ) order by coalesce(p.full_name,emp.full_name)),'[]'::jsonb) into v_result
   from public.employee_roster emp left join public.employment_records e on e.profile_id=emp.profile_id and e.org_id=emp.org_id
   left join public.profiles p on p.id=emp.profile_id
