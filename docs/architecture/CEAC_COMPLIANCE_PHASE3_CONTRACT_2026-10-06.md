@@ -1,8 +1,8 @@
 # CEAC Compliance Operating Surface — Phase 3 contract
 
-Date: 6 October 2026  
-State: ACTIVE  
-Branch: `chatgpt/compliance-operating-surface-2026-10-06`  
+Date: 6 October 2026
+State: ACTIVE
+Branch: `chatgpt/compliance-operating-surface-2026-10-06`
 Entry baseline: protected main `97d2b4a7a3220a7764f5eaa3e43c8d31672374b0`
 
 ## Purpose
