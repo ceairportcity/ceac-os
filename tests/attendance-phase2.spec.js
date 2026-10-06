@@ -55,7 +55,7 @@ test('Phase 2 medical notification has no medical-narrative controls and persist
  await expect(page.locator('summary').filter({hasText:'Medical absence notice'}).last()).toContainText('Upcoming · Waiting for response');await context.close();
 });
 
-test('Phase 2 foreground pre-close records unavailable permission without blocking an open session',async({browser})=>{
+test('Phase 2 foreground pre-close records unavailable permission without blocking an older open session',async({browser})=>{
  test.setTimeout(60000);
  const url=process.env.SUPABASE_URL;
  expect(url).toMatch(/^http:\/\/(127\.0\.0\.1|localhost):54321\/?$/);
@@ -65,7 +65,7 @@ test('Phase 2 foreground pre-close records unavailable permission without blocki
  const end=new Date(Math.min(Date.now()+1800000,Date.parse(today+'T23:59:59Z'))).toISOString().slice(11,19);
  const day=await admin.rpc('workforce_record_day_type',{p_id:null,p_name:'Phase 2 foreground fixture '+Date.now(),p_description:null,p_session_expected:true,p_leave_overlay_allowed:true,p_active:true});expect(day.error).toBeNull();
  const pattern=await admin.rpc('workforce_record_pattern',{p_profile_id:'31000000-0000-4000-8000-000000000006',p_unit_id:'20000000-0000-4000-8000-000000000011',p_effective_from:today,p_effective_to:today,p_day_map:{[key]:day.data},p_clock_map:{[key]:{start:'00:00:00',end}},p_reason:'Isolated foreground pre-close acceptance',p_supersedes_id:null});expect(pattern.error).toBeNull();
- const session=await staff.from('work_sessions').insert({org_id:'10000000-0000-4000-8000-000000000010',profile_id:'31000000-0000-4000-8000-000000000006',place:'elsewhere'}).select('id').single();expect(session.error).toBeNull();
+ const session=await staff.from('work_sessions').insert({org_id:'10000000-0000-4000-8000-000000000010',profile_id:'31000000-0000-4000-8000-000000000006',place:'elsewhere',started_at:new Date(Date.now()-86400000).toISOString()}).select('id').single();expect(session.error).toBeNull();
  const {context,page}=await open(browser,'sameunit@ceac.local.test');
  await expect.poll(async()=>{const r=await staff.from('work_session_checkpoints').select('id').eq('work_session_id',session.data.id).eq('checkpoint_type','pre_close');expect(r.error).toBeNull();return r.data.length;},{timeout:15000}).toBe(1);
  const evidence=await staff.from('work_session_checkpoints').select('*').eq('work_session_id',session.data.id).eq('checkpoint_type','pre_close').single();expect(evidence.error).toBeNull();

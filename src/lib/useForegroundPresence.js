@@ -18,7 +18,9 @@ export function useForegroundPresence(me, session) {
           const {data,error}=await supabase.rpc('attendance_day_evidence');
           if (error || stopped) return;
           row=(data||[]).find(r=>r.profile_id===me.id); loadedAt=Date.now();
-          if (!row?.sessions?.some(s=>s.id===session.id && !s.ended_at)) return;
+          // The open session may have started yesterday. The server validates
+          // that it remains yours and open; today's read supplies today's pattern.
+          if (!row) return;
         }
         const checkpoint=presenceCheckpoint(row,session);
         if (!checkpoint) return;
