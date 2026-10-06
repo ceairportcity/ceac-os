@@ -1,9 +1,9 @@
 # CEAC Operational Refinement sequence
 
 Date: 6 October 2026
-Programme is OPEN; only Phase 2 is authorised for implementation after this continuity lock.
-Canonical baseline: protected main `a88877379150c820bc74cce736dbf44bce09eeef`; production migration 111.
-Suggested active branch: `chatgpt/attendance-working-patterns-permissions-2026-10-06`.
+Programme is OPEN; Phase 2 is complete and later phases remain separately gated.
+Phase 2 application baseline: protected main `a482ab602bacb511c18436e256dd932526f14fdd`; production migration `20261006062907_112_attendance_patterns_permissions`.
+Accepted implementation branch/head: `chatgpt/attendance-working-patterns-permissions-2026-10-06` at `ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba`; protected squash PR #113.
 
 The adjacent `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md` is the complete 50-item checklist. This sequence supersedes older conflicting phase directions only for this authorised post-onboarding refinement. Accepted domain/security/design contracts remain protected.
 
@@ -12,8 +12,8 @@ The adjacent `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md` is
 | Phase | Scope | Dependency / entry gate | Current state |
 |---|---|---|---|
 | 1 | Foundation: onboarding, People & Access, multiple units, scoped invitations, review/action visibility, start/end evidence, last activity | Preserve accepted PRs #106/#111/#112 and migration 111 | Implemented and technical/deployment checks pass; authenticated live role inspection and actual email/password setup remain unverified |
-| 2 | Attendance, Working Patterns & Permissions | Commit this lock first; reuse Stage 9 and Work Engine; secure privacy/authority boundaries | NEXT — authorised A–L scope below |
-| 3 | Compliance Operating Surface | Phase 2 accepted/merged/deployed; operational data and compliance visibility secure | NEXT — no final dashboard in Phase 2 |
+| 2 | Attendance, Working Patterns & Permissions | Commit this lock first; reuse Stage 9 and Work Engine; secure privacy/authority boundaries | COMPLETE — PR #113, migration 112 and exact-main production evidence recorded below |
+| 3 | Compliance Operating Surface | Phase 2 accepted/merged/deployed; operational data and compliance visibility secure | NEXT — start from the sanitised attendance read and existing `compliance.manage`; do not reopen Phase 2 |
 | 4 | Notification & Work-State Communication | Phase 3 acceptance; preserve independent unread and action states | NEXT |
 | 5 | Admin Product Redesign | Phase 4 acceptance; literal approved design/reference and functioning controls | NEXT |
 | 6 | Volunteer & Special Operating Models | Phase 5 acceptance; audit payroll/attendance/headcount/appraisal/HR/performance populations | NEXT; PFCC special workspace and anti-gaming options DEFERRED |
@@ -47,9 +47,7 @@ COMPLIANCE REVIEW
 
 without scoring or automatic punishment.
 
-==================================================
-PHASE 2 — IMPLEMENTATION SCOPE
-==================================================
+## Phase 2 — implementation scope
 
 A. WORKING PATTERNS
 
@@ -273,9 +271,7 @@ Manager sees authorised managed-unit context.
 Compliance/Admin access only through approved capability boundaries.
 Protected HR remains protected.
 
-==================================================
-EXPLICIT PHASE 2 STOP BOUNDARY
-==================================================
+## Explicit Phase 2 stop boundary
 
 DO NOT IMPLEMENT YET:
 
@@ -299,8 +295,46 @@ document it and continue with unaffected Phase 2 work.
 
 ## Completion record
 
-Not complete. Record exact protected main, implemented A–L scope, migration versions, tests/gates/deployment, unresolved decisions, architectural findings and Phase 3 entry point only after verification. Mark only genuinely completed register items DONE. The overall programme remains OPEN.
+Phase 2 — Attendance, Working Patterns & Permissions is COMPLETE. The overall CEAC Operational Refinement programme remains OPEN.
 
-## Phase 2 implementation candidate
+### Accepted repository and deployment
 
-Continuity prerequisite committed at `7b2195625ed91cb77090fcf695d93bd7abf0bc41` before any Phase 2 application write. Additive architecture: `docs/architecture/CEAC_ATTENDANCE_PHASE2_CONTRACT_2026-10-06.md`. Candidate migration: `20261006041453_112_attendance_patterns_permissions.sql`. Implementation and local build/unit checks are prepared; complete SQL/RLS, migration replay, role browsers, exact-head gates and deployment remain pending. No production working patterns, notices, sessions or capability grants were invented. No completion claim is authorised by this candidate.
+- Continuity prerequisite: `7b2195625ed91cb77090fcf695d93bd7abf0bc41`, committed before application writes.
+- Accepted application head: `ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba`.
+- Protected merge: PR #113, protected main `a482ab602bacb511c18436e256dd932526f14fdd`.
+- Repository migration: `20261006041453_112_attendance_patterns_permissions.sql`; applied production migration: `20261006062907_112_attendance_patterns_permissions`.
+- Production deployment: Vercel `dpl_9BNxXkXRKVjwxiXhptxordRVV7DH`, READY from exact protected main at `https://ceac-os-git.vercel.app`.
+
+### Completed A–L scope
+
+- **A:** effective, attributable per-person daily clock patterns; legacy schedule interpretation preserved; draft office hours remain unapplied.
+- **B:** expected hours, first recorded start, verified office start and factual late/no-session states remain separate from authorised context.
+- **C–F:** late-arrival, temporary-permission, emergency and medical notices extend the existing Request engine; response/return history is attributable and immutable; medical narratives are rejected.
+- **G:** approved current/upcoming leave and notice context are visible through a sanitised authorised roster read.
+- **H–I:** discrete hourly foreground and pattern-derived pre-close attempts, including an older open session; unavailable location is recorded truthfully and never blocks work.
+- **J:** checkpoint schedule-version/expected-close context only; no automatic close, final grace rule or Payroll consequence.
+- **K:** roster-based factual evidence, a discrete latest-location plot, activity and unverified endpoints; no final Compliance dashboard.
+- **L:** self/managed-unit/explicit-capability boundaries, authenticated-only RPCs, append-only evidence and prior-state audit history; Protected HR remains protected.
+
+### Verification
+
+- Candidate CI, Migration Replay and Account Security: PASS at exact application head.
+- Candidate complete Level B Quality Gate `37416625509`: PASS. Six SQL/authority contracts plus every cumulative gate passed; 681 Playwright tests passed across four isolated shards (189 + 162 + 171 + 159), including phone/desktop persistence and foreground pre-close evidence.
+- Direct exact-head product inspection: Staff phone and Manager desktop evidence passed without horizontal overflow; notice, return and decision history remained readable in the accepted Workforce grammar.
+- Exact-main CI `37424038155`: PASS.
+- Exact-main Migration Replay `37424038356`: PASS.
+- Exact-main Account Security `37424038167`: PASS.
+- Exact-main Quality Gate `37424038201`: PASS, including all four browser shards, merged exact-head evidence and the `role-and-rls` coordinator.
+- Exact-main production deployment: READY; production migration verification found 18 employees and the prior 8 work sessions unchanged, with zero seeded schedule versions, notices, returns or checkpoints. All three new tables enforce RLS and reject direct signed-in mutation; all six RPCs reject anonymous execution and use fixed `search_path=public`.
+
+### Unresolved decisions and architectural findings
+
+- Actual invited-user email delivery, password activation and authenticated live role inspection remain unverified; fixture accounts are not proof of real-user activation.
+- Monday 12:00, Tuesday–Friday 10:00 and 17:00 close remain a policy draft. Production has no assigned working pattern and CEAC must record approved per-person/contract patterns before expected hours appear.
+- Final scheduled-close/grace behaviour, idle reconciliation, unexplained-absence definition, disciplinary routing, Payroll consequences, Pastor override, scoring/awards, volunteer/PFCC policy and any anti-gaming reserve remain deferred to their recorded gates.
+- Browser/PWA checks are foreground, best-effort discrete evidence. They are not background surveillance and cannot guarantee collection while suspended/offline or prevent device location spoofing.
+- Roster-only employees remain visible to authorised roles with unconfigured expectations; CEAC must link a real identity before recording a person pattern or self-service notice, rather than fabricating accounts.
+
+### Phase 3 entry point
+
+Begin the Compliance Operating Surface from existing `compliance.manage`, `attendance_day_evidence(date)` and Stage 11 policy/evidence contracts. Design a factual operating surface for sanitised attendance, requirements, acknowledgements, exceptions and escalation; preserve Manager decision authority, Protected HR, immutable evidence and the no-scoring/no-punishment boundary. Do not grant Compliance workforce configuration or notice-decision authority and do not add cases, Pastor override or consequences until their later policy gates are confirmed.

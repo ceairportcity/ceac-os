@@ -125,11 +125,11 @@ Sequence authority: `CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` in this
 
 ## 8. Periodic presence verification
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 2 records one server-deduplicated hourly attempt while an open session is visible and focused. Automatic collection never prompts for a new location grant, records unavailable/denied evidence factually, supports sessions carried into a new day and never blocks ordinary work. It does not use background or continuous location monitoring.
 
 - Start verification is not enough.
 - Add periodic verification while application is active and permission is available.
@@ -149,11 +149,11 @@ Sequence authority: `CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` in this
 
 ## 10. Pre-closing location verification
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 2 derives the final-hour window from the person's effective daily pattern and validates it on the server. The checkpoint is append-only and labelled `pre_close`; missing permission remains an explicit failed attempt. No generic 4 PM rule or close/grace consequence was added.
 
 - Attempt location approximately one hour before expected workday end where app is active.
 - This is intended to detect early departure loopholes.
@@ -172,11 +172,11 @@ Sequence authority: `CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` in this
 
 ## 12. Admin / Compliance location map
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Initial start/end evidence map exists; latest periodic/pre-close evidence needs Phase 2 extension.
+- Current evidence / partial implementation: The authorised Workforce evidence view shows the latest discrete recorded point, verified start, latest location, last CEAC activity and session state. Its north-up relative plot has no street provider and explicitly makes no live-movement claim. Compliance receives the sanitised organisation read only.
 
 - Show today’s verified work-location evidence.
 - Show:
@@ -188,11 +188,11 @@ Sequence authority: `CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` in this
 
 ## 13. Working hours / contractual working patterns
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Schedule versions exist but use one clock pair across mapped days. Extend day-specific expected clocks; the 12:00/10:00/17:00 pattern is a draft template, never an automatic production assignment.
+- Current evidence / partial implementation: Phase 2 adds day-specific clocks to immutable effective person schedule versions while preserving legacy common-clock interpretation. Production contains zero pattern assignments after deployment; the 12:00/10:00/17:00 discussion remains an unapplied policy draft.
 
 - Current office policy draft:
   - Monday 12:00 PM reporting;
@@ -230,11 +230,11 @@ Sequence authority: `CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` in this
 
 ## 16. Attendance evidence ≠ guilt
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 2 presents expected hours, first recorded start, verified office start, session state, leave/notices and verification failures as separate facts. No evidence state creates misconduct, an absence finding, a score, a deduction or a Payroll change.
 
 - No session.
 - Late start.
@@ -245,11 +245,11 @@ These are evidence states, not final misconduct decisions.
 
 ## 17. Short-duration workplace permissions
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 2 adds late-arrival, temporary-permission, emergency-absence and medical-absence notices on the existing Request/Decision engine. The notice, manager response and self-reported actual return preserve actor/time/history; self-approval and out-of-scope decisions are rejected.
 
 - Late arrival notice.
 - Temporary permission to leave.
@@ -259,11 +259,11 @@ These are evidence states, not final misconduct decisions.
 
 ## 18. Leave visibility
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Existing leave lifecycle reused; operational visibility must exclude reason/medical detail for Compliance.
+- Current evidence / partial implementation: Phase 2 exposes approved current and upcoming leave dates/status in the authorised roster evidence read. Compliance does not receive leave categories, reasons or protected medical detail, and the existing leave lifecycle remains unchanged.
 
 - Compliance sees approved/current/upcoming leave necessary for workforce monitoring.
 - Protected details remain appropriately restricted.
@@ -368,11 +368,11 @@ Final disciplinary case engine still requires design.
 
 ## 26. Lateness policy
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 2 compares the effective expected start with a server work-session start backed by inside-office start evidence. Prior notice, explanation and decision context remain visible and attributable. An unverified start is not labelled verified late, and no automatic punishment exists.
 
 - compare expected start with verified start;
 - preserve prior notice;
@@ -386,7 +386,7 @@ Final disciplinary case engine still requires design.
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 2 now distinguishes no session, approved leave and attributable emergency/medical notices without treating a missing session as absence. The final definition and decision route for an unexplained absence remain unresolved, so this item stays NEXT.
 
 - distinguish:
   - no session;
@@ -620,11 +620,11 @@ must not collapse into one generic action.
 
 ## 46. Medical privacy
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Collect operational medical absence state only; detailed medical notes/documents stay in protected HR.
+- Current evidence / partial implementation: Medical attendance notices accept dates and operational status only; UI and server reject reason/note narratives. Compliance sees sanitised status, raw notice tables remain closed through a Compliance grant alone, and detailed medical information stays in Protected HR.
 
 - Compliance may see medical absence state.
 - detailed medical information remains Protected HR.
@@ -635,7 +635,7 @@ must not collapse into one generic action.
 - Implementation phase: 2
 - Dependencies: Phase 1 accepted foundations; Phase 1 acceptance before later-phase implementation; explicit schedule/authority records; no inference from missing sessions.
 - Canonical architecture area: Stage 9 Workforce; schedule versions, sessions/events, leave and Request/Decision Work Engine.
-- Current evidence / partial implementation: Existing audit is retained; new Phase 2 operations require immutable attributable history.
+- Current evidence / partial implementation: Phase 2 pattern versions, notices, responses, returns and checkpoints preserve actors/timestamps and immutable or successor history; response audit records prior/new state. The broader item stays NEXT because later policy decisions, cases and future executive overrides are not yet built.
 
 Preserve actors/timestamps/history for:
 - reassignment;
