@@ -37,7 +37,7 @@ This document preserves the supplied operational findings, examples and policy d
 The source below is retained substantially as supplied. Mixed-status sections are governed by the classification index above and the explicit tranche boundary; a locked future direction is not permission to build a deferred engine now.
 
 DISCOVERY CONTEXT TO PRESERVE
-==================================================
+---
 
 The product owner has begun real staff onboarding and has now met with Managers, Staff, Administration and Compliance.
 
@@ -66,9 +66,9 @@ Prefer:
 
 Avoid creating parallel systems unnecessarily.
 
-==================================================
+---
 A. IDENTITY, INVITATIONS AND ONBOARDING
-==================================================
+---
 
 LOCKED:
 
@@ -172,9 +172,9 @@ The current AccountPassword flow requiring a strong password may be reused/refin
 
 The eventual long-term direction may be Google Workspace authentication, but do not implement this now unless already approved elsewhere.
 
-==================================================
+---
 B. EMPLOYEES AND VOLUNTEERS
-==================================================
+---
 
 LOCKED PRINCIPLE:
 
@@ -226,9 +226,9 @@ Volunteer + sub-team-lead authority
 
 is valid.
 
-==================================================
+---
 C. WORK SESSIONS, GPS AND PRESENCE EVIDENCE
-==================================================
+---
 
 The product owner has confirmed that employees consent to CEAC work-session location capture.
 
@@ -344,9 +344,9 @@ Presence, availability and output are separate facts.
 
 Do not turn work-session hours into productivity scores or Payroll automatically.
 
-==================================================
+---
 D. WORKING HOURS / SESSION ENDING
-==================================================
+---
 
 CURRENT CEAC OFFICE POLICY DRAFT:
 
@@ -386,9 +386,9 @@ The exact 5:00 / 5:30 behavior remains NEEDS CONFIRMATION.
 
 Do NOT fully implement this schedule-close engine in the first tranche.
 
-==================================================
+---
 E. COMPLIANCE AS A CEAC FUNCTION
-==================================================
+---
 
 IMPORTANT DISCOVERY:
 
@@ -456,9 +456,9 @@ Compliance may still retain ordinary Manager/team/project/work functionality und
 
 Do NOT build the final Compliance dashboard during the first tranche.
 
-==================================================
+---
 F. COMPLIANCE AUTHORITY BOUNDARIES
-==================================================
+---
 
 PROPOSED / STRONGLY RECOMMENDED:
 
@@ -477,9 +477,9 @@ Compliance should NOT silently:
 - delete historical events;
 - impose salary deductions automatically.
 
-==================================================
+---
 G. PASTOR / EXECUTIVE OVERRIDE
-==================================================
+---
 
 PRODUCT OWNER PRINCIPLE:
 
@@ -499,9 +499,9 @@ Preserve:
 
 Do not implement the final override engine in the first tranche.
 
-==================================================
+---
 H. DISCIPLINE / MONETARY DEDUCTIONS
-==================================================
+---
 
 LEGAL / POLICY REVIEW REQUIRED.
 
@@ -525,9 +525,9 @@ Preserve the policy discussion in Discovery.
 
 Any financial disciplinary consequence must remain outside automatic Payroll until CEAC confirms the lawful employment/policy basis.
 
-==================================================
+---
 I. STAFF COMPLIANCE POLICY — SOURCE DRAFT
-==================================================
+---
 
 Preserve the following source policy in the Discovery document as a PRODUCT-OWNER-SUPPLIED POLICY DRAFT.
 
@@ -593,9 +593,9 @@ Permission must not create automatic entitlement to future permission.
 
 Record the policy substantially as supplied by the product owner in the Discovery file so the exact source is not lost.
 
-==================================================
+---
 J. SHORT-DURATION WORKDAY PERMISSIONS
-==================================================
+---
 
 DISCOVERY:
 
@@ -629,9 +629,9 @@ Pastor = possible future executive override
 
 Do NOT fully implement this workflow in the first tranche.
 
-==================================================
+---
 K. NOTIFICATIONS / ACTION VISIBILITY
-==================================================
+---
 
 LOCKED PROBLEM:
 
@@ -688,9 +688,9 @@ Manager surfaces should clearly expose:
 
 Needs review · N
 
-==================================================
+---
 L. MANAGER REVIEW BUG / REVIEW AUTHORITY
-==================================================
+---
 
 LOCKED:
 
@@ -733,9 +733,9 @@ route to explicit review owner.
 
 Longer term, prefer an explicit review owner / review route where useful.
 
-==================================================
+---
 M. EXISTING WORK SEMANTICS TO PRESERVE
-==================================================
+---
 
 The product owner specifically approves:
 
@@ -749,9 +749,9 @@ The product owner specifically approves:
 
 Do not weaken these.
 
-==================================================
+---
 N. HEALING STREAMS / PFCC
-==================================================
+---
 
 DEFERRED.
 
@@ -765,9 +765,9 @@ Rebecca/PFCC may eventually require a somewhat specialised workspace.
 
 Do not implement this during the first tranche.
 
-==================================================
+---
 O. SCORING / AWARDS
-==================================================
+---
 
 DEFERRED.
 
@@ -792,7 +792,7 @@ Do not introduce:
 
 Compliance points remain a future policy discussion.
 
-==================================================
+---
 
 ## Canonical reconciliation
 
