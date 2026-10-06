@@ -270,11 +270,11 @@ These are evidence states, not final misconduct decisions.
 
 ## 19. Compliance as a CEAC department
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 3
 - Dependencies: Phase 1 accepted foundations; Phase 2 acceptance before later-phase implementation.
 - Canonical architecture area: Stage 11 Compliance policies, requirements, evidence and explicit compliance.manage.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 3 keeps each Compliance employee in the ordinary recorded organisation structure: recorded unit, recorded Manager, existing Work and existing team/project memberships. Organisation-wide `compliance.manage` is an independent grant and does not manufacture a Compliance unit, move a person, or bypass Work/Project RLS.
 
 - Own unit.
 - Own Manager.
@@ -293,11 +293,11 @@ These are evidence states, not final misconduct decisions.
 
 ## 21. Compliance-specific Overview
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 3
 - Dependencies: Phase 1 accepted foundations; Phase 2 acceptance before later-phase implementation.
 - Canonical architecture area: Stage 11 Compliance policies, requirements, evidence and explicit compliance.manage.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 3 adds the organisation-wide Compliance Overview from the sanitised `attendance_day_evidence(date)` read plus existing policy/evidence/exception data. It separates expected hours, recorded/verified starts, presence, factual lateness, approved leave, notices and policy attention. “No session recorded” remains a fact, not unexplained absence or misconduct. Work/project access stays behind ordinary RLS, and disciplinary escalation remains outside this phase.
 
 Future overview should include:
 - expected today;
@@ -314,11 +314,11 @@ Future overview should include:
 
 ## 22. Compliance policy management
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 3
 - Dependencies: Phase 1 accepted foundations; Phase 2 acceptance before later-phase implementation.
 - Canonical architecture area: Stage 11 Compliance policies, requirements, evidence and explicit compliance.manage.
-- Current evidence / partial implementation: Existing versioned policy/acknowledgement/evidence/exception engine exists; operating refinement belongs in Phase 3.
+- Current evidence / partial implementation: Phase 3 accepts and exposes the existing Stage 11 versioned policy, applicability, requirement, acknowledgement, evidence-review and exception-decision lifecycle as the operating surface. Successor versions preserve history; no silent overwrite or score was added.
 
 - policies;
 - applicability;
@@ -331,11 +331,11 @@ Reuse existing architecture where possible.
 
 ## 23. Compliance announcements
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 3
 - Dependencies: Phase 1 accepted foundations; Phase 2 acceptance before later-phase implementation.
 - Canonical architecture area: Stage 11 Compliance policies, requirements, evidence and explicit compliance.manage.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 3 adds the canonical sensitive `post_announcement` capability, migrates the two existing explicit legacy publisher assignments, and makes the policy-instruction action depend on an organisation-wide canonical grant. `compliance.manage` alone cannot publish. Existing announcement draft/publish/close/receipt lifecycle and the real `auth.uid()` author are preserved.
 
 - authorised office-wide compliance/policy instructions.
 - capability-based, not Admin impersonation.
@@ -356,11 +356,11 @@ Final disciplinary case engine still requires design.
 
 ## 25. Dress code / professional conduct
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 3
 - Dependencies: Phase 1 accepted foundations; Phase 2 acceptance before later-phase implementation.
 - Canonical architecture area: Stage 11 Compliance policies, requirements, evidence and explicit compliance.manage.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Current evidence / partial implementation: Phase 3 represents conduct requirements as ordinary versioned policies with optional manual evidence and reviewed exceptions. It adds no camera feed, automated dress detection, biometric classification, AI judgement or misconduct inference.
 
 - Preserve policy.
 - Manual evidence/reporting.
@@ -610,11 +610,11 @@ must not collapse into one generic action.
 
 ## 45. Policy acknowledgement
 
-- Status: **NEXT**
+- Status: **DONE**
 - Implementation phase: 3
 - Dependencies: Phase 1 accepted foundations; Phase 2 acceptance before later-phase implementation.
 - Canonical architecture area: Stage 11 Compliance policies, requirements, evidence and explicit compliance.manage.
-- Current evidence / partial implementation: Acknowledgements already exist; policy operating refinement is Phase 3.
+- Current evidence / partial implementation: Phase 3 accepts the existing self-bound, immutable acknowledgement of an applicable policy version and exposes outstanding acknowledgement attention without converting it into a score or automatic consequence.
 
 - important policy versions may require explicit acknowledgement.
 
