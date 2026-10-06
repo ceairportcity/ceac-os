@@ -36,6 +36,7 @@ tests=(
   production_hardening_gate.sql
   operational_clarity_files_gate.sql
   onboarding_access_presence_gate.sql
+  attendance_phase2_gate.sql
 )
 
 for test_file in "${tests[@]}"; do

@@ -111,7 +111,11 @@ end $$;
 -- and self-bound continuation evidence. Their role/evidence failures are tested
 -- by onboarding_access_presence_gate.sql; fixed search path and no anon grants
 -- remain mandatory. The exact inventory is also enforced by Platform Kernel.
--- Reducing this surface is allowed. Any growth beyond 129 requires another
+-- Phase 2 migration 112 adds six reviewed RPCs: capability-bound daily pattern
+-- versions, self-bound notices/returns/checkpoints, manager-bound responses and
+-- a sanitised evidence read. attendance_phase2_gate.sql tests their identities,
+-- tenant isolation, privacy, append-only history, concurrency and no anon access.
+-- Reducing this surface is allowed. Any growth beyond 135 requires another
 -- explicit security-gate review in the same PR.
 do $$
 declare n integer;
@@ -122,8 +126,8 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n>129 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 129-function ceiling to %.',n;
+  if n>135 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 135-function ceiling to %.',n;
   end if;
 end $$;
 

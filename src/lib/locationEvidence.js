@@ -17,3 +17,12 @@ export function getPositionOnce(geo = globalThis.navigator?.geolocation) {
     } catch { finish({ failure: "Location could not be obtained" }); }
   });
 }
+
+export async function getForegroundPosition(nav = globalThis.navigator, read = getPositionOnce) {
+  try {
+    const permission = await nav?.permissions?.query({ name: 'geolocation' });
+    if (permission?.state === 'granted') return await read(nav.geolocation);
+    if (permission?.state === 'denied') return { failure: 'Location permission was denied' };
+  } catch { /* Unsupported permission inspection must not trigger a prompt. */ }
+  return { failure: 'Location permission is unavailable for a foreground check' };
+}

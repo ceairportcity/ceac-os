@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
 import { openSession } from "./lib/session";
+import { useForegroundPresence } from "./lib/useForegroundPresence";
 import SignIn from "./screens/SignIn";
 import AccountPassword from "./screens/AccountPassword";
 import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
@@ -109,6 +110,7 @@ export default function App() {
   const [peopleFocusId, setPeopleFocusId] = useState(null);
   const [announcementFocusId, setAnnouncementFocusId] = useState(null);
   const [session, setSession] = useState(null);
+  useForegroundPresence(me, session);
 
   useEffect(() => {
     boot();
@@ -283,7 +285,7 @@ export default function App() {
   const canUseWorkload = isUnitManager || hasCapability("resource.manage");
   const canUsePerformance = !isExec && (isStaff || isUnitManager || hasOrgCapability("performance.admin"));
   const canUseLearning = !isExec && (isStaff || isUnitManager || hasOrgCapability("learning.manage"));
-  const canUseWorkforce = !isExec && (isStaff || isUnitManager || hasOrgCapability("workforce.manage") || hasOrgCapability("attendance.correct"));
+  const canUseWorkforce = !isExec && (isStaff || isUnitManager || hasOrgCapability("workforce.manage") || hasOrgCapability("attendance.correct") || hasOrgCapability("compliance.manage"));
   const canUseAssets = !isExec && (isStaff || isUnitManager || hasOrgCapability("asset.manage"));
   const canUseCompliance = !isExec && (isStaff || isUnitManager || hasOrgCapability("compliance.manage"));
   const canPublishAnnouncement = isAdmin || isExec || hasCapability("post_announcement");

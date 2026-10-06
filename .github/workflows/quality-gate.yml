@@ -175,6 +175,13 @@ jobs:
           path: test-artifacts/stage9-workforce-*.png
           if-no-files-found: ignore
 
+      - name: Upload Phase 2 attendance inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-attendance-inspection
+          path: test-artifacts/phase2-attendance-*.png
+          if-no-files-found: error
+
       - name: Upload Stage 10 product inspection
         uses: actions/upload-artifact@v4
         with:

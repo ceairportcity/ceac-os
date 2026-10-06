@@ -63,6 +63,10 @@ $definer_search_path$;
 -- Foundation 111 adds seven reviewed RPCs: responsibility, work-lane membership,
 -- invitation revoke/list/resend, and self-bound end-location and continuation evidence.
 -- onboarding_access_presence_gate.sql covers authority and evidence failures.
+-- Phase 2 migration 112 adds six reviewed RPCs: capability-bound daily pattern
+-- versions, self-bound notices/returns/checkpoints, manager-bound responses and
+-- a sanitised evidence read. attendance_phase2_gate.sql tests their identities,
+-- tenant isolation, privacy, append-only history, concurrency and no anon access.
 do $definer_surface$
 declare n integer;
 begin
@@ -73,8 +77,8 @@ begin
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
 
-  if n<>129 then
-    raise exception 'Platform Kernel gate failure: expected 129 authenticated SECURITY DEFINER functions after reviewed onboarding foundation RPCs, found %.',n;
+  if n<>135 then
+    raise exception 'Platform Kernel gate failure: expected 135 authenticated SECURITY DEFINER functions after reviewed onboarding foundation RPCs, found %.',n;
   end if;
 
   if to_regprocedure('public.my_sessions()') is null

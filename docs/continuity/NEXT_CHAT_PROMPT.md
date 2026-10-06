@@ -1,3 +1,7 @@
+# Active programme — CEAC Operational Refinement, Post-Onboarding
+
+Read `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md` and `CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` in this directory first. The owner authorised Phase 2 A–L after this continuity lock is committed. Do not start later phases or invent final grace, disciplinary, payroll or scoring policy. Reconcile live main/branch/checks and preserve accepted work. Draft Monday 12:00 / Tuesday–Friday 10:00 / close 17:00 hours are a configurable template, not automatic production assignments. Previous evidence context follows.
+
 # CEAC OS — Next Chat Prompt
 
 Continue CEAC OS from the LIVE canonical repository state.
