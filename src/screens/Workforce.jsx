@@ -1,7 +1,7 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, Suspense, lazy, useEffect, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
-import AttendanceEvidence from "../components/AttendanceEvidence";
+const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
 import { dailyClocks } from "../lib/attendance";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -384,7 +384,7 @@ export default function Workforce({ me }) {
   const adminTabs=[["today","Today"],["calendar","Calendar"],["sessions","Sessions"],["differences","Recorded differences"],["leave","Leave"],["corrections","Corrections"],...(canManage?[["setup","Schedules & policy"]]:[])];
   const tabs=isStaffView?staffTabs:isManagerView?managerTabs:adminTabs;
 
-  const locationPanel=<AttendanceEvidence me={me}/>;
+  const locationPanel=<Suspense fallback={<LoadingState label="Loading attendance evidence…"/>}><AttendanceEvidence me={me}/></Suspense>;
 
   if(loading) return <div className="body"><LoadingState label="Loading workforce…" /></div>;
 
