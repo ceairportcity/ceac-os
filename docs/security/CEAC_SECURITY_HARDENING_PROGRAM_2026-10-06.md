@@ -160,19 +160,95 @@ Those require later approved policy/legal rules.
 
 ## Technical Support operating surface
 
-Technical Support should be a service-operations/security role, not a hidden super-admin.
+Technical Support should be a service-operations/security role, not a hidden super-admin. The product must be value-first and plain-language. CEAC does not need an enterprise ITSM clone.
 
-Default dashboard domains:
-1. Service health — app, database, auth, jobs, integrations, deployment.
-2. Security operations — auth anomalies, privilege changes, rejected privileged calls, security advisories.
-3. Identity operations — invitations, activation failures, dormant/deactivated accounts, MFA readiness (status only).
-4. Access governance — capability changes, unit/manager assignments, delegation expiry, quarterly access review.
-5. Reliability — backup status, restore-test age, migration drift, job failures, storage/integration health.
-6. Incident management — incidents, severity, affected service/unit, owner, timeline, resolution/post-incident review.
-7. Change management — deployments, migrations, feature flags/config changes, failed changes, rollback evidence.
-8. Asset/service inventory — integrations, service accounts, environments, owners, expiry/rotation dates.
-9. Department support — open technical issues by unit, recurring problems, response/resolution times; no employee performance scoring.
-10. Knowledge/runbooks — known issues, recovery steps, handover docs, vendor/support contacts.
+### Minimum valuable Technical Support v1
+
+The panel answers six simple questions:
+
+1. **What needs me now?**
+   - urgent system problem;
+   - failed invite or sign-in;
+   - backup/recovery problem;
+   - security warning requiring action;
+   - unresolved support request.
+   This is the home queue and should be the first screen.
+
+2. **Is the system working?**
+   - CEAC app available;
+   - sign-in working;
+   - database/storage working;
+   - important scheduled jobs working;
+   - integrations working;
+   - current release healthy.
+   Use plain states: Working / Needs attention / Down. Technical details stay behind an optional disclosure.
+
+3. **Who can get in?**
+   - active users;
+   - invited but not activated;
+   - deactivated/leavers;
+   - privileged users;
+   - expiring temporary access;
+   - access changes awaiting approval.
+   Technical Support diagnoses and executes approved access operations but cannot grant itself HR, payroll or executive authority.
+
+4. **What is broken for people?**
+   - support requests by department/person;
+   - affected service;
+   - urgency;
+   - owner;
+   - status;
+   - resolution.
+   Show recurring technical problems by department without creating employee performance scores.
+
+5. **Are we protected and can we recover?**
+   - important security warnings;
+   - unusual sign-in/access failures;
+   - backup status;
+   - last successful restore test;
+   - unresolved high-risk issue;
+   - secrets/keys due for rotation where applicable.
+   Translate technical findings into plain language and a next action.
+
+6. **What changed?**
+   - latest app release;
+   - database change;
+   - access/permission change;
+   - configuration/integration change;
+   - failed change or rollback.
+   Every significant change should say who changed it, when, whether it succeeded and what it affected.
+
+### Explanation pattern
+
+Every alert/problem defaults to four lines:
+- **What happened**
+- **Who/what is affected**
+- **What to do next**
+- **Approval needed from** (only when applicable)
+
+Technical terms such as RLS, RPC, migration drift, AAL2 and SECURITY DEFINER belong under **Technical details**, not in the default operating view.
+
+### Useful but secondary
+
+Keep available, but do not let these dominate v1:
+- service/integration inventory and ownership;
+- runbooks / known fixes;
+- recovery procedures;
+- support contacts;
+- device/infrastructure inventory only when CEAC actually begins managing enough devices/services for it to add value;
+- trend reporting on recurring technical faults and response time.
+
+### Department view
+
+For each CEAC unit, Technical Support may see technical-operational context only:
+- open technical issues;
+- account/invitation failures;
+- system features/integrations failing for that unit;
+- affected users;
+- current incident/status;
+- resolved issue history.
+
+Do not expose that unit's confidential HR/payroll/content merely because Technical Support is troubleshooting it.
 
 Restricted by default:
 - salary figures/content;
