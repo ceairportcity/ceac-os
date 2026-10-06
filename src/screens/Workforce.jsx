@@ -374,7 +374,7 @@ export default function Workforce({ me }) {
   const adminTabs=[["today","Today"],["calendar","Calendar"],["sessions","Sessions"],["differences","Recorded differences"],["leave","Leave"],["corrections","Corrections"],...(canManage?[["setup","Schedules & policy"]]:[])];
   const tabs=isStaffView?staffTabs:isManagerView?managerTabs:adminTabs;
 
-  const locationPanel=<WorkforceSection title="Today’s verified work locations" description="These are discrete location records, not continuous live tracking. Last CEAC activity is the latest visible recorded action; neither fact proves productivity.">
+  const locationPanel=<WorkforceSection title="Today’s work location evidence" description="These are discrete location records, not continuous live tracking. Last CEAC activity is the latest visible recorded action; neither fact proves productivity.">
     {people.map((person)=>{
       const row=sessionsOn(person.profile_id).slice().sort((a,b)=>new Date(b.started_at)-new Date(a.started_at))[0];
       const verifiedAt=row?.end_location_captured_at||row?.location_captured_at;
