@@ -20,9 +20,13 @@ jobs:
       level_b: ${{ steps.classify.outputs.level_b }}
       scope: ${{ steps.classify.outputs.scope }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+        persist-credentials: false
           fetch-depth: 0
+
+      - name: Verify GitHub Actions supply-chain policy
+        run: node scripts/ci/check-github-actions-pinning.mjs
 
       - name: Verify visual fidelity source of truth
         run: node scripts/ci/check-visual-fidelity-contract.mjs
@@ -35,7 +39,7 @@ jobs:
           VERIFICATION_EVENT_NAME: ${{ github.event_name }}
         run: node scripts/ci/classify-verification.mjs
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         if: steps.classify.outputs.documentation_only != 'true'
         with:
           node-version: 22
@@ -78,9 +82,11 @@ jobs:
     env:
       ROLE_FIXTURE_PASSWORD: Local-role-fixture-2026!
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -90,7 +96,7 @@ jobs:
       - uses: ./.github/actions/setup-ceac-test-environment
 
       - name: Cache Playwright Chromium
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ runner.os }}-1.55.0
