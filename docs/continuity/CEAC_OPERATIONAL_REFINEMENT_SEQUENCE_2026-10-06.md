@@ -300,3 +300,7 @@ document it and continue with unaffected Phase 2 work.
 ## Completion record
 
 Not complete. Record exact protected main, implemented A–L scope, migration versions, tests/gates/deployment, unresolved decisions, architectural findings and Phase 3 entry point only after verification. Mark only genuinely completed register items DONE. The overall programme remains OPEN.
+
+## Phase 2 implementation candidate
+
+Continuity prerequisite committed at `7b2195625ed91cb77090fcf695d93bd7abf0bc41` before any Phase 2 application write. Additive architecture: `docs/architecture/CEAC_ATTENDANCE_PHASE2_CONTRACT_2026-10-06.md`. Candidate migration: `20261006041453_112_attendance_patterns_permissions.sql`. Implementation and local build/unit checks are prepared; complete SQL/RLS, migration replay, role browsers, exact-head gates and deployment remain pending. No production working patterns, notices, sessions or capability grants were invented. No completion claim is authorised by this candidate.

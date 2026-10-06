@@ -1,6 +1,8 @@
 import { Fragment, useEffect, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
+import AttendanceEvidence from "../components/AttendanceEvidence";
+import { dailyClocks } from "../lib/attendance";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button, SelectField } from "../experience-v2/components";
@@ -36,6 +38,12 @@ function metresBetween(aLat,aLng,bLat,bLng){
 }
 
 export default function Workforce({ me }) {
+  const complianceOnly=(me.capabilities||[]).includes("compliance.manage") && !(me.capabilities||[]).includes("workforce.manage") && !me.is_admin;
+  if(complianceOnly) return <div className="body ev2-workforce-page"><WorkforcePageHeader title="Attendance evidence" description="Authorised operational facts; decisions remain with the recorded authority."/><AttendanceEvidence me={me}/></div>;
+  return <WorkforceWorkspace me={me}/>;
+}
+
+function WorkforceWorkspace({ me }) {
   const caps=me.capabilities||[];
   const canManage=caps.includes("workforce.manage");
   const canCorrect=caps.includes("attendance.correct");
@@ -156,10 +164,16 @@ export default function Workforce({ me }) {
   const activeRules=activePolicy?policyRules.filter((r)=>r.policy_version_id===activePolicy.id):[];
   const confirmedLeaveSummary=<ProductNotice tone="info" title="Confirmed leave process">Annual, Sick, Maternity, Paternity and Study leave are available. Manager approval → Administration final approval. Entitlement amounts, accrual and carry-over remain not configured until CEAC confirms them.</ProductNotice>;
 
-  function latestSchedule(profileId,date=today){
+  function rawSchedule(profileId,date=today){
     const rows=schedules.filter((s)=>s.profile_id===profileId && s.effective_from<=date && (!s.effective_to || s.effective_to>=date));
     const superseded=new Set(rows.map((s)=>s.supersedes_id).filter(Boolean));
     return rows.find((s)=>!superseded.has(s.id))||rows[0]||null;
+  }
+  function latestSchedule(profileId,date=today){
+    const row=rawSchedule(profileId,date);
+    if(!row) return null;
+    const clocks=dailyClocks(row,date);
+    return {...row,expected_start:clocks.start,expected_end:clocks.end};
   }
   function sessionsOn(profileId,date=today){
     return sessions.filter((s)=>s.profile_id===profileId && s.started_at?.slice(0,10)===date);
@@ -208,12 +222,14 @@ export default function Workforce({ me }) {
   }
 
   async function recordSchedule(){
-    const prior=latestSchedule(schedulePerson,scheduleFrom);
-    const ok=await runRpc("workforce_record_schedule",{
+    const prior=rawSchedule(schedulePerson,scheduleFrom);
+    const previousClocks=Object.fromEntries(Object.keys(prior?.day_map||{}).map(key=>[key,prior?.clock_map?.[key]||{start:prior?.expected_start||null,end:prior?.expected_end||null}]));
+    // workforce_record_schedule remains the legacy compatibility contract.
+    const ok=await runRpc("workforce_record_pattern",{
       p_profile_id:schedulePerson,p_unit_id:peopleById[schedulePerson]?.unit_id||null,
-      p_effective_from:scheduleFrom,p_effective_to:scheduleTo||null,p_source:"person",
+      p_effective_from:scheduleFrom,p_effective_to:scheduleTo||null,
       p_day_map:{...(prior?.day_map||{}),[scheduleDay]:scheduleDayType},
-      p_expected_start:scheduleStart||prior?.expected_start||null,p_expected_end:scheduleEnd||prior?.expected_end||null,
+      p_clock_map:{...previousClocks,[scheduleDay]:{start:scheduleStart||null,end:scheduleEnd||null}},
       p_reason:scheduleReason.trim(),p_supersedes_id:prior?.id||null,
     },"Workforce schedule recorded.",["people","day types","schedules"]);
     if(ok){ setScheduleSheet(false); setScheduleReason(""); }
@@ -374,21 +390,7 @@ export default function Workforce({ me }) {
   const adminTabs=[["today","Today"],["calendar","Calendar"],["sessions","Sessions"],["differences","Recorded differences"],["leave","Leave"],["corrections","Corrections"],...(canManage?[["setup","Schedules & policy"]]:[])];
   const tabs=isStaffView?staffTabs:isManagerView?managerTabs:adminTabs;
 
-  const locationPanel=<WorkforceSection title="Today’s work location evidence" description="These are discrete location records, not continuous live tracking. Last CEAC activity is the latest visible recorded action; neither fact proves productivity.">
-    {people.map((person)=>{
-      const row=sessionsOn(person.profile_id).slice().sort((a,b)=>new Date(b.started_at)-new Date(a.started_at))[0];
-      const verifiedAt=row?.end_location_captured_at||row?.location_captured_at;
-      const lat=row?.end_location_captured_at?row.end_lat:row?.lat;
-      const lng=row?.end_location_captured_at?row.end_lng:row?.lng;
-      const accuracy=row?.end_location_captured_at?row.end_accuracy_m:row?.location_accuracy_m;
-      const activity=lastActivity.find((entry)=>entry.profile_id===person.profile_id)?.last_activity_at;
-      return <WorkforceRecordRow key={person.profile_id} icon="person" title={person.profiles?.full_name||"Employee"}
-        meta={row?.start_geofence==="inside"?"Office start verified "+clock(row.location_captured_at):row?.place==="elsewhere"?"Off-site session · "+(verifiedAt?"location recorded":"location not recorded"):row?"Office start not verified":"No session recorded"}
-        note={"Last verified location: "+(verifiedAt?clock(verifiedAt)+(lat!=null&&lng!=null?" · "+Number(lat).toFixed(5)+", "+Number(lng).toFixed(5)+(accuracy!=null?" · accuracy ±"+Math.round(accuracy)+" m":""):""):"Not recorded")+" · Last CEAC activity: "+(activity?new Date(activity).toLocaleString("en-GB",{timeZone:"Africa/Accra"}):"Not recorded")+(row?.end_location_status==="not_verified"?" · End location not verified":"")}
-      />;
-    })}
-    {!people.length&&<WorkforceEmpty compact title="No location records in scope" description="Only authorised session evidence appears here."/>}
-  </WorkforceSection>;
+  const locationPanel=<AttendanceEvidence me={me}/>;
 
   if(loading) return <div className="body"><LoadingState label="Loading workforce…" /></div>;
 
@@ -835,7 +837,7 @@ export default function Workforce({ me }) {
       </Sheet>}
 
       {scheduleSheet&&canManage&&<Sheet onClose={()=>!busy&&setScheduleSheet(false)}>
-        <div className="h2">Record workforce schedule</div>
+        <div className="h2">Record workforce schedule</div><p className="screen-note">Hours apply to the selected weekday only. Leave both clocks blank to record hours as unconfigured.</p>
         <FieldGroup label="Person"><select className="field" aria-label="Schedule person" value={schedulePerson} onChange={e=>setSchedulePerson(e.target.value)}>{people.map(p=><option key={p.profile_id} value={p.profile_id}>{p.profiles?.full_name}</option>)}</select></FieldGroup>
         <div className="form-grid two"><FieldGroup label="Day"><select className="field" aria-label="Schedule weekday" value={scheduleDay} onChange={e=>setScheduleDay(e.target.value)}>{DAY_KEYS.map(k=><option key={k} value={k}>{DAY_LABELS[k]}</option>)}</select></FieldGroup><FieldGroup label="Day type"><select className="field" aria-label="Schedule day type" value={scheduleDayType} onChange={e=>setScheduleDayType(e.target.value)}>{dayTypes.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></FieldGroup></div>
         <div className="form-grid two"><FieldGroup label="Effective from"><input className="field" type="date" value={scheduleFrom} onChange={e=>setScheduleFrom(e.target.value)}/></FieldGroup><FieldGroup label="Effective to"><input className="field" type="date" value={scheduleTo} onChange={e=>setScheduleTo(e.target.value)}/></FieldGroup></div>
@@ -1167,7 +1169,7 @@ export default function Workforce({ me }) {
       </Sheet>}
 
       {scheduleSheet&&canManage&&<Sheet onClose={()=>!busy&&setScheduleSheet(false)}>
-        <div className="h2">Record workforce schedule</div>
+        <div className="h2">Record workforce schedule</div><p className="screen-note">Hours apply to the selected weekday only. Leave both clocks blank to record hours as unconfigured.</p>
         <FieldGroup label="Person"><select className="field" aria-label="Schedule person" value={schedulePerson} onChange={e=>setSchedulePerson(e.target.value)}>{people.map(p=><option key={p.profile_id} value={p.profile_id}>{p.profiles?.full_name}</option>)}</select></FieldGroup>
         <div className="form-grid two"><FieldGroup label="Day"><select className="field" aria-label="Schedule weekday" value={scheduleDay} onChange={e=>setScheduleDay(e.target.value)}>{DAY_KEYS.map(k=><option key={k} value={k}>{DAY_LABELS[k]}</option>)}</select></FieldGroup><FieldGroup label="Day type"><select className="field" aria-label="Schedule day type" value={scheduleDayType} onChange={e=>setScheduleDayType(e.target.value)}>{dayTypes.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></FieldGroup></div>
         <div className="form-grid two"><FieldGroup label="Effective from"><input className="field" type="date" value={scheduleFrom} onChange={e=>setScheduleFrom(e.target.value)}/></FieldGroup><FieldGroup label="Effective to"><input className="field" type="date" value={scheduleTo} onChange={e=>setScheduleTo(e.target.value)}/></FieldGroup></div>
@@ -1398,7 +1400,7 @@ export default function Workforce({ me }) {
     </Sheet>}
 
     {scheduleSheet&&<Sheet onClose={()=>!busy&&setScheduleSheet(false)}>
-      <div className="h2">Record workforce schedule</div>
+      <div className="h2">Record workforce schedule</div><p className="screen-note">Hours apply to the selected weekday only. Leave both clocks blank to record hours as unconfigured.</p>
       <FieldGroup label="Person"><select className="field" aria-label="Schedule person" value={schedulePerson} onChange={e=>setSchedulePerson(e.target.value)}>{people.map(p=><option key={p.profile_id} value={p.profile_id}>{p.profiles?.full_name}</option>)}</select></FieldGroup>
       <div className="form-grid two"><FieldGroup label="Day"><select className="field" aria-label="Schedule weekday" value={scheduleDay} onChange={e=>setScheduleDay(e.target.value)}>{DAY_KEYS.map(k=><option key={k} value={k}>{DAY_LABELS[k]}</option>)}</select></FieldGroup><FieldGroup label="Day type"><select className="field" aria-label="Schedule day type" value={scheduleDayType} onChange={e=>setScheduleDayType(e.target.value)}>{dayTypes.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></FieldGroup></div>
       <div className="form-grid two"><FieldGroup label="Effective from"><input className="field" type="date" value={scheduleFrom} onChange={e=>setScheduleFrom(e.target.value)}/></FieldGroup><FieldGroup label="Effective to"><input className="field" type="date" value={scheduleTo} onChange={e=>setScheduleTo(e.target.value)}/></FieldGroup></div>
