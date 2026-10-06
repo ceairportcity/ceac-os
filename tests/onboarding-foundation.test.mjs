@@ -2,6 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {authRedirect} from '../src/lib/authRedirect.js';
 import {getPositionOnce} from '../src/lib/locationEvidence.js';
+import {signInErrorMessage} from '../src/lib/signInError.js';
+test('sign-in distinguishes credential rejection from rate, service, network and verification errors',()=>{
+  assert.match(signInErrorMessage({code:'invalid_credentials'}),/did not match/);
+  assert.match(signInErrorMessage({code:'email_not_confirmed'}),/verification/);
+  assert.match(signInErrorMessage({status:429}),/Too many/);
+  assert.match(signInErrorMessage({status:503,name:'AuthRetryableFetchError'}),/temporarily unavailable/);
+  assert.match(signInErrorMessage(new TypeError('secret request payload')),/connection/);
+  assert.match(signInErrorMessage({code:'email_provider_disabled'}),/Email sign-in is unavailable/);
+  assert.match(signInErrorMessage({code:'user_banned'}),/cannot sign in/);
+  assert.doesNotMatch(signInErrorMessage({message:'private server detail',code:'unknown'}),/private|did not match/);
+});
 test('activation redirects use the canonical application regardless of browser origin',()=>{
   assert.equal(authRedirect('/activate'), 'https://ceac-os-git.vercel.app/activate');
   assert.equal(authRedirect('/reset','https://ceac.example/'),'https://ceac.example/reset');

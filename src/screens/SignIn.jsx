@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import AuthFrame from "../components/AuthFrame";
 import { authRedirect } from "../lib/authRedirect";
+import { signInErrorMessage } from "../lib/signInError";
 
 export default function SignIn() {
   const [mode, setMode] = useState("signin");
@@ -12,10 +13,13 @@ export default function SignIn() {
   const [message, setMessage] = useState(null);
 
   async function signIn() {
+    if (busy || !email.trim() || !password) return;
     setBusy(true); setMessage(null);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-    if (error) setMessage("That email and password did not match. Please try again.");
-    setBusy(false);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      if (error) setMessage(signInErrorMessage(error));
+    } catch (error) { setMessage(signInErrorMessage(error)); }
+    finally { setBusy(false); }
   }
 
   async function recover() {
