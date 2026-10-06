@@ -306,6 +306,7 @@ create or replace function public.continue_work_session_with_location(p_session_
 returns public.work_sessions language plpgsql security definer set search_path=public as $$
 declare s public.work_sessions;
 begin
+  if auth.uid() is null or public.app_org_id() is null then raise exception 'An active CEAC account is required.' using errcode='42501'; end if;
   perform set_config('ceac.recovery_location',jsonb_build_object('lat',p_lat,'lng',p_lng,'accuracy',p_accuracy_m,'captured_at',p_captured_at)::text,true);
   s:=public.reconcile_work_session(p_session_id,'continue',null,null);
   perform set_config('ceac.recovery_location','',true);

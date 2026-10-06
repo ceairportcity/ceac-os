@@ -1,5 +1,22 @@
 \set ON_ERROR_STOP on
 begin;
+do $reviewed_surface$
+declare signature text; definition text;
+begin
+ foreach signature in array array[
+  'public.admin_record_unit_responsibility(uuid,uuid,text,text,text)',
+  'public.admin_set_work_lane_membership(uuid,uuid,boolean,text)',
+  'public.admin_revoke_staff_invitation(uuid,text)',
+  'public.admin_access_invitations()',
+  'public.prepare_staff_invitation_resend(uuid)',
+  'public.end_work_session_with_location(uuid,double precision,double precision,double precision,timestamptz,timestamptz,text)',
+  'public.continue_work_session_with_location(uuid,double precision,double precision,double precision,timestamptz)'
+ ] loop
+  if to_regprocedure(signature) is null or not has_function_privilege('authenticated',signature,'EXECUTE') or has_function_privilege('anon',signature,'EXECUTE') then raise exception 'Unreviewed foundation execution grants: %',signature; end if;
+  definition:=pg_get_functiondef(to_regprocedure(signature));
+  if definition not ilike '%auth.uid()%' or definition not ilike '%app_org_id()%' then raise exception 'Foundation RPC lacks actor and organisation binding: %',signature; end if;
+ end loop;
+end $reviewed_surface$;
 -- All mutations below are isolated and rolled back.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
