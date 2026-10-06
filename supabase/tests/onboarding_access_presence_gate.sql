@@ -27,7 +27,7 @@ do $$ begin
   begin
     perform public.admin_record_unit_responsibility('31000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000011','manager','remove','Primary removal test');
     raise exception 'Primary membership removal unexpectedly succeeded';
-  exception when others then if sqlerrm='Primary membership removal unexpectedly succeeded' then raise; end if; end;
+  exception when others then if sqlerrm not like 'Transfer the primary unit%' then raise; end if; end;
 end $$;
 select public.admin_record_unit_responsibility('31000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000111','manager','remove','End isolated responsibility');
 reset role;
@@ -47,11 +47,11 @@ do $$ declare s public.work_sessions; begin
  begin
   insert into public.work_sessions(org_id,profile_id,place) values(public.app_org_id(),auth.uid(),'office');
   raise exception 'Missing office location accepted';
- exception when others then if sqlerrm='Missing office location accepted' then raise; end if; end;
+ exception when others then if sqlerrm not like 'Allow location access%' then raise; end if; end;
  begin
   insert into public.work_sessions(org_id,profile_id,place,lat,lng,location_captured_at,device_time) values(public.app_org_id(),auth.uid(),'office',5.6037,-0.187,now()-interval '5 minutes',now());
   raise exception 'Stale office location accepted';
- exception when others then if sqlerrm='Stale office location accepted' then raise; end if; end;
+ exception when others then if sqlerrm not like 'A fresh location is required%' then raise; end if; end;
  insert into public.work_sessions(org_id,profile_id,place,lat,lng,location_captured_at,device_time) values(public.app_org_id(),auth.uid(),'office',5.6037,-0.187,now(),now()) returning * into s;
  if s.start_geofence<>'inside' or s.office_location_id is null then raise exception 'Fresh office evidence missing'; end if;
  s:=public.end_work_session_with_location(s.id,null,null,null,null,now(),'Permission denied');

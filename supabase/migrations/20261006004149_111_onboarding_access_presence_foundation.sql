@@ -171,7 +171,7 @@ $$;
 -- Existing role/event permissions remain decisive. This exposes timestamps, not private event bodies.
 create or replace function public.visible_last_ceac_activity()
 returns table(profile_id uuid,last_activity_at timestamptz) language sql stable security invoker set search_path=public as $$
-  select actor_id,max(created_at) from public.activity_events where org_id=public.app_org_id() group by actor_id;
+  select actor_id,max(occurred_at) from public.activity_events where org_id=public.app_org_id() group by actor_id;
 $$;
 
 revoke all on function public.admin_record_unit_responsibility(uuid,uuid,text,text,text),public.admin_set_work_lane_membership(uuid,uuid,boolean,text),public.admin_revoke_staff_invitation(uuid,text),public.admin_access_invitations(),public.prepare_staff_invitation_resend(uuid),public.end_work_session_with_location(uuid,double precision,double precision,double precision,timestamptz,timestamptz,text),public.visible_last_ceac_activity() from public,anon;
@@ -280,7 +280,7 @@ $$;
 create or replace function public.guard_executive_work_self_certification()
 returns trigger language plpgsql security definer set search_path=public as $$
 begin
-  if auth.uid() is not null and new.status='self_certified' and old.status is distinct from new.status and old.origin='assigned_by_exec' and old.visibility<>'private' then raise exception 'Work assigned by Executive authority must be submitted for review.'; end if;
+  if auth.uid() is not null and new.status='self_certified' and old.status is distinct from new.status and old.visibility<>'private' and (old.origin='assigned_by_exec' or (old.origin='assigned' and old.assigned_by is distinct from auth.uid())) then raise exception 'Work assigned by another authority must be submitted for review.'; end if;
   return new;
 end;
 $$;

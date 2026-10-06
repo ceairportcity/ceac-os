@@ -186,7 +186,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   const done = checks.filter((c) => ticks[c.id]).length;
   const allDone = checks.length > 0 && done === checks.length;
   const gated = !session;
-  const managerOwnWork = isManager && item && item.assignee_id === me.id && item.origin !== "assigned_by_exec";
+  const managerOwnWork = isManager && item && item.assignee_id === me.id && item.origin !== "assigned_by_exec" && (item.origin === "self_created" || item.assigned_by === me.id);
   const managerSubmissionBlocked = managerOwnWork && !MANAGER_SELF_CERTIFICATION_READY;
 
   async function addMyStep() {

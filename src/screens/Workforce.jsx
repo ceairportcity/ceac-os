@@ -378,10 +378,13 @@ export default function Workforce({ me }) {
     {people.map((person)=>{
       const row=sessionsOn(person.profile_id).slice().sort((a,b)=>new Date(b.started_at)-new Date(a.started_at))[0];
       const verifiedAt=row?.end_location_captured_at||row?.location_captured_at;
+      const lat=row?.end_location_captured_at?row.end_lat:row?.lat;
+      const lng=row?.end_location_captured_at?row.end_lng:row?.lng;
+      const accuracy=row?.end_location_captured_at?row.end_accuracy_m:row?.location_accuracy_m;
       const activity=lastActivity.find((entry)=>entry.profile_id===person.profile_id)?.last_activity_at;
       return <WorkforceRecordRow key={person.profile_id} icon="person" title={person.profiles?.full_name||"Employee"}
-        meta={row?.start_geofence==="inside"?"Office start verified "+clock(row.location_captured_at):row?"Office start not verified":"No session recorded"}
-        note={"Last verified location: "+(verifiedAt?clock(verifiedAt):"Not recorded")+" · Last CEAC activity: "+(activity?new Date(activity).toLocaleString("en-GB",{timeZone:"Africa/Accra"}):"Not recorded")+(row?.end_location_status==="not_verified"?" · End location not verified":"")}
+        meta={row?.start_geofence==="inside"?"Office start verified "+clock(row.location_captured_at):row?.place==="elsewhere"?"Off-site session · "+(verifiedAt?"location recorded":"location not recorded"):row?"Office start not verified":"No session recorded"}
+        note={"Last verified location: "+(verifiedAt?clock(verifiedAt)+(lat!=null&&lng!=null?" · "+Number(lat).toFixed(5)+", "+Number(lng).toFixed(5)+(accuracy!=null?" · accuracy ±"+Math.round(accuracy)+" m":""):""):"Not recorded")+" · Last CEAC activity: "+(activity?new Date(activity).toLocaleString("en-GB",{timeZone:"Africa/Accra"}):"Not recorded")+(row?.end_location_status==="not_verified"?" · End location not verified":"")}
       />;
     })}
     {!people.length&&<WorkforceEmpty compact title="No location records in scope" description="Only authorised session evidence appears here."/>}

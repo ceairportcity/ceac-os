@@ -498,7 +498,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         p_purpose: purpose.trim() || null,
         p_instructions: instructions.trim() || null,
         p_due_at: dueIso,
-        p_origin: "assigned",
+        p_origin: me.is_exec ? "assigned_by_exec" : "assigned",
         p_visibility: "unit",
         p_steps: clean,
       });
