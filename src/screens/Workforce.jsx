@@ -38,12 +38,6 @@ function metresBetween(aLat,aLng,bLat,bLng){
 }
 
 export default function Workforce({ me }) {
-  const complianceOnly=(me.capabilities||[]).includes("compliance.manage") && !(me.capabilities||[]).includes("workforce.manage") && !me.is_admin;
-  if(complianceOnly) return <div className="body ev2-workforce-page"><WorkforcePageHeader title="Attendance evidence" description="Authorised operational facts; decisions remain with the recorded authority."/><AttendanceEvidence me={me}/></div>;
-  return <WorkforceWorkspace me={me}/>;
-}
-
-function WorkforceWorkspace({ me }) {
   const caps=me.capabilities||[];
   const canManage=caps.includes("workforce.manage");
   const canCorrect=caps.includes("attendance.correct");

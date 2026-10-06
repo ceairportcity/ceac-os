@@ -146,6 +146,7 @@ declare n public.attendance_notices;
 begin
   select * into n from public.attendance_notices where work_item_id=new.work_item_id;
   if n.work_item_id is null then return new; end if;
+  if new.request_state not in ('fulfilled','declined','cancelled') then raise exception 'Attendance notices use acknowledge/approve, decline or cancel. Record a new notice for changed context.'; end if;
   if new.requester_id is distinct from old.requester_id or new.responsible_profile_id is distinct from old.responsible_profile_id or new.responsible_unit_id is distinct from old.responsible_unit_id then raise exception 'Attendance routing is preserved.' using errcode='42501'; end if;
   if auth.uid() is null or n.org_id is distinct from public.app_org_id() then raise exception 'An active attendance actor is required.' using errcode='42501'; end if;
   if new.request_state='cancelled' then

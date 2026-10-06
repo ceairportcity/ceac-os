@@ -16,8 +16,15 @@ do $$ declare signature text; begin
 end $$;
 create temporary table phase2_ids(name text primary key,id uuid);
 grant all on phase2_ids to authenticated;
+insert into public.employee_roster(id,org_id,full_name,identity_state,source_system,source_row_key)
+ values('41000000-0000-4000-8000-000000000112','10000000-0000-4000-8000-000000000010','Isolated roster-only employee','roster_only','phase2_gate','roster-only');
+insert into public.employee_unit_memberships(org_id,employee_id,unit_id,is_primary)
+ values('10000000-0000-4000-8000-000000000010','41000000-0000-4000-8000-000000000112','20000000-0000-4000-8000-000000000012',true);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+do $$ begin
+ if not exists(select 1 from jsonb_array_elements(public.attendance_day_evidence(current_date)) r where r->>'employee_id'='41000000-0000-4000-8000-000000000112' and r->>'profile_id' is null and jsonb_array_length(r->'sessions')=0 and r->>'expected_today' is null) then raise exception 'Roster-only employee was omitted or fabricated attendance added'; end if;
+end $$;
 do $$ declare day_id uuid; pattern_id uuid; next_id uuid; k text:=lower(to_char(current_date,'Dy')); begin
  day_id:=public.workforce_record_day_type(null,'Isolated phase2 workday',null,true,true,true);
  pattern_id:=public.workforce_record_pattern('31000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011',current_date,null,jsonb_build_object(k,day_id),jsonb_build_object(k,jsonb_build_object('start','00:00','end',(least(localtimestamp+interval '30 minutes',(current_date+1)::timestamp-interval '1 microsecond')::time)::text)),'Isolated per-day pattern',null);
@@ -55,6 +62,11 @@ do $$ declare n uuid; med uuid; s public.work_sessions; c uuid; c2 uuid; body js
  begin perform public.record_work_checkpoint(s.id,'periodic',0,0,12,now(),now(),null); raise exception 'Closed session accepted checkpoint'; exception when insufficient_privilege then null; end;
 end $$;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+do $$ declare own uuid; begin
+ own:=public.attendance_create_notice('late_arrival',now(),null,'Manager self-bound notice',null);
+ begin perform public.respond_work_request(own,'fulfilled','Generic self approval bypass'); raise exception 'Manager self-approved through generic Request'; exception when insufficient_privilege then null; end;
+ perform public.attendance_respond_notice(own,'cancelled','Requester cancelled notice');
+end $$;
 select public.attendance_respond_notice((select id from phase2_ids where name='notice'),'fulfilled','Approved operational fixture');
 select public.attendance_respond_notice((select id from phase2_ids where name='medical'),'fulfilled','Operational response recorded');
 do $$ begin
