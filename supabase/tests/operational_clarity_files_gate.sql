@@ -206,10 +206,14 @@ begin
     raise exception 'OCR5B employee file gate: ordinary employee document leaked beyond Administration.';
   end if;
 
-  if public.app_can_write_operational_context('employee_photo',v_employee)
-     or public.app_can_write_operational_context('employee_document',v_employee) then
+  begin
+    perform * from public.register_operational_file(
+      'employee_photo',v_employee,'employee_photo',
+      'staff-write-probe.jpg','image/jpeg',1024
+    );
     raise exception 'OCR5B employee file gate: non-Administration employee file write authority leaked.';
-  end if;
+  exception when insufficient_privilege then null;
+  end;
 end
 $employee_file_staff$;
 
@@ -232,10 +236,10 @@ begin
     raise exception 'OCR5B employee file gate: Administration cannot read employee photo/document records.';
   end if;
 
-  if not public.app_can_write_operational_context('employee_photo',v_employee)
-     or not public.app_can_write_operational_context('employee_document',v_employee) then
-    raise exception 'OCR5B employee file gate: Administration employee file write authority is missing.';
-  end if;
+  perform * from public.register_operational_file(
+    'employee_photo',v_employee,'employee_photo',
+    'admin-write-probe.jpg','image/jpeg',1024
+  );
 
   begin
     perform * from public.register_operational_file(

@@ -115,8 +115,9 @@ end $$;
 -- versions, self-bound notices/returns/checkpoints, manager-bound responses and
 -- a sanitised evidence read. attendance_phase2_gate.sql tests their identities,
 -- tenant isolation, privacy, append-only history, concurrency and no anon access.
--- Reducing this surface is allowed. Any growth beyond 135 requires another
--- explicit security-gate review in the same PR.
+-- S2 migration 114 reduces the reviewed authenticated surface to 132.
+-- Reducing this surface remains allowed. Any growth beyond 132 requires another
+-- explicit security-gate review and exact allowlist update in the same PR.
 do $$
 declare n integer;
 begin
@@ -126,8 +127,8 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n>135 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 135-function ceiling to %.',n;
+  if n>132 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 132-function ceiling to %.',n;
   end if;
 end $$;
 

@@ -6,6 +6,7 @@ tests=(
   rls_smoke.sql
   admin_hr_security_gate.sql
   platform_kernel_gate.sql
+  security_definer_surface_gate.sql
   meeting_authority_gate.sql
   employment_history_gate.sql
   platform_audit_gate.sql
