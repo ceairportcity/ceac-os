@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
+import { attendanceDate } from "../lib/attendance";
+import ComplianceOverview from "../components/ComplianceOverview";
 
 function human(value=""){ return String(value||"").replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase()); }
 function day(value){
@@ -25,10 +27,12 @@ function stateTone(state,expired=false){
   return "grey";
 }
 
-export default function Compliance({ me }) {
-  const canManage=(me.capabilities||[]).includes("compliance.manage");
+export default function Compliance({ me, openWork, openAnnouncements }) {
+  const hasOrgCapability=(capability)=>(me.capability_grants||[]).some((grant)=>grant.capability===capability&&!grant.scope_unit_id);
+  const canManage=hasOrgCapability("compliance.manage");
   const isManager=me.role==="manager";
-  const [tab,setTab]=useState("policies");
+  const canPublishInstruction=hasOrgCapability("post_announcement");
+  const [tab,setTab]=useState(canManage?"overview":"policies");
   const [policies,setPolicies]=useState([]);
   const [applicability,setApplicability]=useState([]);
   const [requirements,setRequirements]=useState([]);
@@ -37,6 +41,10 @@ export default function Compliance({ me }) {
   const [exceptions,setExceptions]=useState([]);
   const [people,setPeople]=useState([]);
   const [units,setUnits]=useState([]);
+  const [overviewDate,setOverviewDate]=useState(attendanceDate());
+  const [attendanceRows,setAttendanceRows]=useState([]);
+  const [overviewLoading,setOverviewLoading]=useState(canManage);
+  const [overviewError,setOverviewError]=useState(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState(null);
@@ -84,6 +92,15 @@ export default function Compliance({ me }) {
   const [decisionUntil,setDecisionUntil]=useState("");
 
   useEffect(()=>{load();},[me.id]);
+  useEffect(()=>{if(canManage)loadOverview(overviewDate);},[me.id,canManage,overviewDate]);
+
+  async function loadOverview(date=overviewDate){
+    setOverviewLoading(true);setOverviewError(null);
+    const {data,error:e}=await supabase.rpc("attendance_day_evidence",{p_date:date});
+    if(e){setAttendanceRows([]);setOverviewError(humanError(e,"Compliance attendance evidence could not load."));}
+    else setAttendanceRows(data||[]);
+    setOverviewLoading(false);
+  }
 
   async function load(){
     setLoading(true); setError(null);
@@ -241,7 +258,9 @@ export default function Compliance({ me }) {
     if(ok){setDecisionSheet(null);setDecisionNote("");setDecisionUntil("");}
   }
 
-  const tabs=canManage||isManager
+  const tabs=canManage
+    ? [["overview","Overview"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
+    : isManager
     ? [["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
     : [["policies","Policies"],["evidence","My evidence"],["exceptions","My exceptions"]];
 
@@ -265,6 +284,22 @@ export default function Compliance({ me }) {
     <div className="compliance-tabs" role="tablist" aria-label="Compliance sections">
       {tabs.map(([key,label])=><button key={key} role="tab" aria-selected={tab===key} className={tab===key?"on":""} onClick={()=>setTab(key)}>{label}</button>)}
     </div>
+
+    {tab==="overview"&&canManage&&<ComplianceOverview
+      date={overviewDate}
+      onDateChange={setOverviewDate}
+      onRefresh={()=>loadOverview(overviewDate)}
+      rows={attendanceRows}
+      loading={overviewLoading}
+      error={overviewError}
+      activePolicies={currentPolicies.filter((policy)=>policy.state==="active"&&policy.effective_on<=today&&(!policy.expires_on||policy.expires_on>=today))}
+      requirements={requirements}
+      acknowledgements={acknowledgements}
+      evidenceLatest={evidenceLatest}
+      exceptionLatest={exceptionLatest}
+      openWork={openWork}
+      openAnnouncements={canPublishInstruction?openAnnouncements:null}
+    />}
 
     {tab==="policies"&&<>
       <div className="sec"><span>{canManage?"Policy register":"Policies applicable in your scope"}</span>{canManage&&<button className="btn btn-sm" onClick={openNewPolicy}>Publish policy</button>}</div>

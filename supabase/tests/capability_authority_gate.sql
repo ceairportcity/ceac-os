@@ -17,8 +17,8 @@ begin
   end if;
 
   select count(*) into n from public.capability_definitions;
-  if n<>16 then
-    raise exception 'Capability authority gate failure: expected 16 canonical capabilities after Stage 11 compliance authority, found %.',n;
+  if n<>17 then
+    raise exception 'Capability authority gate failure: expected 17 canonical capabilities after Phase 3 announcement reconciliation, found %.',n;
   end if;
 
   if not exists(
@@ -47,6 +47,13 @@ begin
     where capability='compliance.manage'
   ) then
     raise exception 'Capability authority gate failure: Stage 11 compliance.manage capability is missing.';
+  end if;
+
+  if not exists(
+    select 1 from public.capability_definitions
+    where capability='post_announcement'
+  ) then
+    raise exception 'Capability authority gate failure: Phase 3 post_announcement capability is missing.';
   end if;
 end
 $authority_tables$;

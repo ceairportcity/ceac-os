@@ -24,7 +24,8 @@ export default function Announcements({ me, back, createRequest = false, onCreat
   const [units, setUnits] = useState([]);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(null);
-  const [canPublish, setCanPublish] = useState(Boolean(me.is_admin || me.is_exec));
+  const grantedCanPublish = Boolean(me.is_admin || me.is_exec || (me.capability_grants || []).some((grant) => grant.capability === "post_announcement" && !grant.scope_unit_id));
+  const [canPublish, setCanPublish] = useState(grantedCanPublish);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -47,20 +48,18 @@ export default function Announcements({ me, back, createRequest = false, onCreat
   async function load() {
     setLoading(true); setError(null);
     try {
-      const [announcementResult, capabilityResult, unitResult] = await Promise.all([
+      const [announcementResult, unitResult] = await Promise.all([
         supabase.from("announcements")
           .select("id,title,body,priority,status,requires_acknowledgement,published_at,expires_at,created_at,profiles!announcements_author_id_fkey(full_name),announcement_receipts(profile_id,read_at,acknowledged_at),announcement_audiences(id,audience_type,unit_id,audience_role,units(name))")
           .order("created_at", { ascending: false }),
-        supabase.from("capabilities").select("id").eq("profile_id", me.id).eq("capability", "post_announcement").maybeSingle(),
         supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("position"),
       ]);
       if (announcementResult.error) throw new Error(`Announcements: ${announcementResult.error.message}`);
-      if (capabilityResult.error) throw new Error(`Publishing permission: ${capabilityResult.error.message}`);
       if (unitResult.error) throw new Error(`Units: ${unitResult.error.message}`);
       const announcements = announcementResult.data || [];
-      setCanPublish(Boolean(me.is_admin || me.is_exec || capabilityResult.data));
+      setCanPublish(grantedCanPublish);
       setUnits(unitResult.data || []);
-      if (me.is_admin || me.is_exec || capabilityResult.data) {
+      if (grantedCanPublish) {
         const withCounts = await Promise.all(announcements.map(async (announcement) => {
           const { data, error: countError } = await supabase.rpc("announcement_audience_counts", { p_announcement_id: announcement.id });
           if (countError) throw new Error(`Announcement counts: ${countError.message}`);
