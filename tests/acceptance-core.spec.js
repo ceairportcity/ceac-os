@@ -1859,6 +1859,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
 
     await page.reload();
     await go(page, "Compliance");
+    await page.getByRole("tab", { name: "Policies", exact: true }).click();
     const policyCard = page.locator(".compliance-policy-card").filter({ hasText: policyTitle });
     await expect(policyCard).toBeVisible();
     await expect(policyCard).toContainText("Entire organisation");
