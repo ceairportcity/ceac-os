@@ -269,3 +269,55 @@ Technical Support sees whether a protected subsystem is healthy and whether acce
 6. Implement S7 recovery/governance documentation and technical checks.
 7. Carry S8 confirmed schedule facts; keep consequences disabled.
 8. Full cross-role/security regression and production acceptance.
+
+
+## Build sequencing decision — 6 October 2026
+
+Security hardening does **not** wait for the remaining product phases to finish.
+
+Treat security as a cross-cutting programme running beside the phase roadmap, with strict collision control.
+
+### Start now
+
+These can proceed immediately because they protect the existing system and are largely independent of Phase 4+ feature UI work:
+
+- S2 SECURITY DEFINER inventory, semantic review and exposure reduction;
+- S6 RLS/query/index hardening;
+- repository/supply-chain hardening that does not destabilise application dependencies;
+- account-lifecycle authority tests;
+- backup/recovery assessment and runbook work;
+- data classification/access-matrix work;
+- MFA/AAL2 technical readiness that does not force final human enrollment;
+- password/invitation/reset hardening tests;
+- Technical Support authority/data contract and backend health model;
+- security regression tests and advisor baselines.
+
+### Build carefully in parallel
+
+Technical Support backend contracts, support-case model, health/alert model and permission boundaries may be built now when they touch isolated files/migrations and pass the normal gates.
+
+Do not overwrite or compete with active phase work. Before every write, reconcile the live protected-main HEAD and any active canonical implementation PR.
+
+### Wait for the current product-phase surface before final UI integration
+
+The full Technical Support panel UI should be integrated only after the currently active phase work that touches shared shell/navigation/notification surfaces is accepted, or on a reconciled branch that incorporates that accepted work.
+
+Reason: Technical Support itself depends on notifications/work-state communication and shares navigation/auth/access primitives. Building its final UI against a stale shell would create avoidable conflicts and duplicate work.
+
+### Do not wait
+
+Do not delay security defects merely because later feature phases remain. A discovered authorization, data-exposure, backup, authentication or privilege problem takes precedence over ordinary feature expansion.
+
+### Merge discipline
+
+Prefer small security tranches:
+1. document/decision lock;
+2. security inventory/tests;
+3. low-risk database/RLS hardening;
+4. account/auth hardening;
+5. recovery/governance controls;
+6. Technical Support backend;
+7. Technical Support UI after shared product surfaces settle;
+8. final security acceptance.
+
+Each tranche must reconcile forward from live main and pass the protected-main gates before the next high-risk tranche.
