@@ -1,9 +1,9 @@
 # CEAC OS — Phase 4 Notification & Work-State Communication Build Contract
 
-**Date:** 6 October 2026  
-**Status:** ACTIVE IMPLEMENTATION CONTRACT  
-**Baseline protected main:** `3feb68e9fa46da9888a7dfa9cef942b1f6133f7c`  
-**Phase 3 application baseline:** `4179b71ed8757ece726c4282363edaacc8b158b6`  
+**Date:** 6 October 2026
+**Status:** ACTIVE IMPLEMENTATION CONTRACT
+**Baseline protected main:** `3feb68e9fa46da9888a7dfa9cef942b1f6133f7c`
+**Phase 3 application baseline:** `4179b71ed8757ece726c4282363edaacc8b158b6`
 **Branch:** `codex/phase4-notification-work-state`
 
 ## 1. Accepted boundary
