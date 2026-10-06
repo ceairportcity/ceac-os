@@ -147,7 +147,13 @@ begin
     new.office_location_id:=o.id; new.start_geofence:='inside';
     -- Poor accuracy is evidence, never a hidden assertion of precise/live presence.
     new.flags:=coalesce(new.flags,'{}'::jsonb)||jsonb_build_object('location_accuracy_exceeds_radius',coalesce(new.location_accuracy_m>o.radius_meters,false));
-  else new.office_location_id:=null; new.start_geofence:='not_applicable'; end if;
+  else
+    new.office_location_id:=null; new.start_geofence:='not_applicable';
+    if new.lat is null or new.location_captured_at is null or new.location_captured_at<now()-interval '2 minutes' or new.location_captured_at>now()+interval '30 seconds' then
+      new.lat:=null; new.lng:=null; new.location_captured_at:=null; new.location_accuracy_m:=null;
+      new.flags:=coalesce(new.flags,'{}'::jsonb)||jsonb_build_object('start_location_not_verified',true);
+    end if;
+  end if;
   return new;
 end;
 $$;
