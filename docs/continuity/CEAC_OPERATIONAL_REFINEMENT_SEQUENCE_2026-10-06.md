@@ -1,9 +1,10 @@
 # CEAC Operational Refinement sequence
 
 Date: 6 October 2026
-Programme is OPEN; Phase 2 is complete and later phases remain separately gated.
+Programme is OPEN; Phase 3 is complete and later phases remain separately gated.
 Phase 2 application baseline: protected main `a482ab602bacb511c18436e256dd932526f14fdd`; production migration `20261006062907_112_attendance_patterns_permissions`.
 Accepted implementation branch/head: `chatgpt/attendance-working-patterns-permissions-2026-10-06` at `ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba`; protected squash PR #113.
+Phase 3 application baseline: protected main `4179b71ed8757ece726c4282363edaacc8b158b6`; production migration `20261006121001_113_compliance_operating_surface`; protected squash PR #115.
 
 The adjacent `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md` is the complete 50-item checklist. This sequence supersedes older conflicting phase directions only for this authorised post-onboarding refinement. Accepted domain/security/design contracts remain protected.
 
@@ -13,7 +14,7 @@ The adjacent `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md` is
 |---|---|---|---|
 | 1 | Foundation: onboarding, People & Access, multiple units, scoped invitations, review/action visibility, start/end evidence, last activity | Preserve accepted PRs #106/#111/#112 and migration 111 | Implemented and technical/deployment checks pass; authenticated live role inspection and actual email/password setup remain unverified |
 | 2 | Attendance, Working Patterns & Permissions | Commit this lock first; reuse Stage 9 and Work Engine; secure privacy/authority boundaries | COMPLETE — PR #113, migration 112 and exact-main production evidence recorded below |
-| 3 | Compliance Operating Surface | Phase 2 accepted/merged/deployed; operational data and compliance visibility secure | ACTIVE — branch `chatgpt/compliance-operating-surface-2026-10-06`; contract `docs/architecture/CEAC_COMPLIANCE_PHASE3_CONTRACT_2026-10-06.md` |
+| 3 | Compliance Operating Surface | Phase 2 accepted/merged/deployed; operational data and compliance visibility secure | COMPLETE — PR #115, migration 113, exact-main gates and production evidence recorded below |
 | 4 | Notification & Work-State Communication | Phase 3 acceptance; preserve independent unread and action states | NEXT |
 | 5 | Admin Product Redesign | Phase 4 acceptance; literal approved design/reference and functioning controls | NEXT |
 | 6 | Volunteer & Special Operating Models | Phase 5 acceptance; audit payroll/attendance/headcount/appraisal/HR/performance populations | NEXT; PFCC special workspace and anti-gaming options DEFERRED |
@@ -346,3 +347,38 @@ Phase 2 — Attendance, Working Patterns & Permissions is COMPLETE. The overall 
 ### Phase 3 entry point
 
 Begin the Compliance Operating Surface from existing `compliance.manage`, `attendance_day_evidence(date)` and Stage 11 policy/evidence contracts. Design a factual operating surface for sanitised attendance, requirements, acknowledgements, exceptions and escalation; preserve Manager decision authority, Protected HR, immutable evidence and the no-scoring/no-punishment boundary. Do not grant Compliance workforce configuration or notice-decision authority and do not add cases, Pastor override or consequences until their later policy gates are confirmed.
+
+## Phase 3 completion record
+
+Phase 3 — Compliance Operating Surface is COMPLETE. The overall CEAC Operational Refinement programme remains OPEN.
+
+### Accepted repository, database and deployment
+
+- Accepted candidate head: `328941116432099dd47984049f7c3f331cbed61c`.
+- Protected merge: PR #115, protected main `4179b71ed8757ece726c4282363edaacc8b158b6`.
+- Repository migration: `20261006070840_113_compliance_operating_surface.sql`; applied production migration: `20261006121001_113_compliance_operating_surface`.
+- Exact-main Production deployment: GitHub deployment `6883512877`, successful; public application `https://ceac-os-git.vercel.app` returned HTTP 200.
+
+### Completed scope
+
+- Organisation-wide `compliance.manage` receives a factual Overview from the existing sanitised attendance RPC and Stage 11 Compliance records.
+- Expected hours, recorded and verified starts, presence, lateness, approved leave, notices and policy attention remain separate facts. Missing evidence remains “No session recorded”.
+- Existing policy, applicability, requirement, acknowledgement, evidence and exception histories remain the decision system; Phase 3 adds no duplicate store or score.
+- Policy instructions use a separate canonical organisation-wide `post_announcement` grant and preserve the real announcement author and lifecycle.
+- Conduct and dress requirements remain ordinary versioned policies with manual evidence only; no camera or automated judgement was added.
+- Compliance employees retain their recorded unit, Manager, work and project memberships. The phase adds no Compliance-specific Work bypass.
+
+### Verification
+
+- Candidate CI `37459882464`, Migration Replay `37459882456` and Account Security `37459882462`: PASS.
+- Candidate Level B Quality Gate `37459882570`: PASS. The complete SQL/authority suite and 682 Playwright tests passed across four isolated shards (190 + 162 + 171 + 159), followed by the role/RLS coordinator and merged exact-head evidence.
+- Exact-main CI `37461255542`, Migration Replay `37461255582`, Account Security `37461255588` and Level B Quality Gate `37461255543`: PASS. Exact-main repeated all 682 browser tests and the complete SQL/authority suite.
+- Production remained factual: 18 employee-roster rows and 8 work sessions were unchanged; existing Compliance data was 2 policy versions, 2 applicability rows, 0 requirements, 3 acknowledgements, 0 evidence versions and 0 exception versions; existing announcements remained 4.
+- The two explicit legacy announcement publishers became two active canonical organisation-wide grants. The new sensitive capability definition exists once. The authority helper uses `post_announcement`, never `compliance.manage`, and is not executable by `anon` or `authenticated`.
+- No production policy, acknowledgement, evidence, exception, attendance, work-session or announcement record was created for acceptance.
+
+### Deferred boundary and Phase 4 entry point
+
+Actual invited-user email/password activation and authenticated live-role inspection remain unverified; isolated authenticated fixtures are not proof of a real account. Unexplained absence, Compliance reports/cases, disciplinary routing, Pastor override, Payroll consequences, scoring, automated monitoring and background location remain deferred exactly as recorded.
+
+Phase 4 is Notification & Work-State Communication. Begin only from protected main after reading the acceptance record. Preserve independent unread/information state and actionable work/review state; do not make “read” mean “done” and do not reopen Phase 3 authority.

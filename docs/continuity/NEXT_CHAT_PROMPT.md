@@ -1,92 +1,35 @@
 # Active programme — CEAC Operational Refinement, Post-Onboarding
 
-Read `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md`, `CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` and `../architecture/CEAC_COMPLIANCE_PHASE3_CONTRACT_2026-10-06.md` first. Phase 2 — Attendance, Working Patterns & Permissions is accepted at application main `a482ab602bacb511c18436e256dd932526f14fdd`, PR #113 and production migration `20261006062907_112_attendance_patterns_permissions`; its final documentation closure is protected main `97d2b4a7a3220a7764f5eaa3e43c8d31672374b0`. Do not reopen or recreate it. The product owner explicitly started Phase 3 — Compliance Operating Surface on branch `chatgpt/compliance-operating-surface-2026-10-06`. Continue only within its locked authority and stop boundaries. Preserve the Phase 2 factual/no-punishment, medical privacy, foreground-only location and capability boundaries. `compliance.manage` does not imply announcement publishing, attendance decisions, protected-HR access, disciplinary authority or executive authority; policy instructions require explicit `post_announcement`. Draft Monday 12:00 / Tuesday–Friday 10:00 / close 17:00 hours remain unapplied policy, never production defaults. Actual invited-user email/password activation and authenticated live role inspection remain unverified. Reconcile live protected main, gates and deployment before any new write. Previous evidence context follows.
+Continue CEAC OS from the live canonical repository state. GitHub is canonical; use one writer, fetch protected `main` before any write, reconcile forward, and never reset, force-push, revert or overwrite newer work.
 
-# CEAC OS — Next Chat Prompt
+Read first:
 
-Continue CEAC OS from the LIVE canonical repository state.
+- `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md`
+- `CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md`
+- `CEAC_COMPLIANCE_PHASE3_ACCEPTANCE_2026-10-06.md`
+- `../architecture/CEAC_COMPLIANCE_PHASE3_CONTRACT_2026-10-06.md`
+- repository `AGENTS.md`
 
-Active programme: Onboarding, Access & Presence Foundation. Read the three 6 October continuity files before coding:
-- `docs/continuity/CEAC_ONBOARDING_COMPLIANCE_DISCOVERY_2026-10-06.md`
-- `docs/continuity/CEAC_ONBOARDING_DECISIONS_LOCKED_2026-10-06.md`
-- `docs/continuity/CEAC_ONBOARDING_NEXT_BUILD_2026-10-06.md`
+## Accepted baseline
 
-These preserve the wider discovery and deferred policy questions. Never infer that this foundation completes the broader Compliance programme. Reconcile the current protected-main and exact-head gates before continuing.
+Phase 2 — Attendance, Working Patterns & Permissions is complete at protected main `a482ab602bacb511c18436e256dd932526f14fdd`, PR #113 and production migration `20261006062907_112_attendance_patterns_permissions`. Its documentation closure is protected main `97d2b4a7a3220a7764f5eaa3e43c8d31672374b0`.
 
-Current foundation checkpoint: PR #111 is merged at protected main `4ce12ee5d4bd29348b14d0795d5b59e338764d70`. Production migration 111 is applied; both public Auth redirects were verified and the exact-main production deployment is READY. Exact-main CI, Migration Replay, Account Security and full Level B Quality Gate #37403093459 all pass. Live authenticated role inspection and actual email delivery/password creation remain unverified.
+Phase 3 — Compliance Operating Surface is complete at application main `4179b71ed8757ece726c4282363edaacc8b158b6`, PR #115 and production migration `20261006121001_113_compliance_operating_surface`. Candidate CI `37459882464`, Migration Replay `37459882456`, Account Security `37459882462` and Quality Gate `37459882570` pass. Exact-main CI `37461255542`, Migration Replay `37461255582`, Account Security `37461255588` and Quality Gate `37461255543` pass, including the complete SQL/authority suite and 682 browser tests. Production deployment `6883512877` succeeded and the public app returned HTTP 200.
 
-Sign-in investigation: owner-authorised secure attempts displayed a credential mismatch, but source inspection confirmed the app displays that message for every Auth error. The true rejection cause is unconfirmed. A contained error-classification correction is under review on `chatgpt/sign-in-error-diagnostics-2026-10-06`; reconcile its live PR and checks. No credentials are persisted or logged. Do not ask for passwords in chat or change account/security settings to manufacture evidence.
+Production inspection remained factual: 18 employee-roster rows, 8 work sessions, 2 Compliance policy versions, 2 applicability rows, 0 requirements, 3 acknowledgements, 0 evidence versions, 0 exception versions and 4 announcements. Two existing explicit legacy announcement publishers became two canonical organisation-wide `post_announcement` grants. No policy, acknowledgement, evidence, exception, attendance, work-session or announcement fixture was created.
 
-Repository:
-`thestandardinst-star/ceac-os`
+Do not reopen Phase 3. `compliance.manage` is not announcement, attendance-decision, protected-HR, disciplinary, Payroll or executive authority. Office-wide policy instructions require separate organisation-wide `post_announcement`. Missing attendance remains “No session recorded”, not unexplained absence or misconduct. No scoring, consequences, automated dress monitoring or background surveillance exists.
 
-GITHUB IS CANONICAL.
+## Next authorised sequence position
 
-The Operational Clarity & Collaboration Refinement programme is COMPLETE. Do not restart OCR1–OCR6 and do not ask me to repeat requirements already locked into the repository.
+Phase 4 — Notification & Work-State Communication is NEXT but not started. Before implementing it, audit the existing notification, announcement-receipt, Work Engine action/review and attention-state contracts and commit a bounded Phase 4 contract. Preserve independent unread/information state and actionable work/review state: reading a notice must not complete, approve, submit or resolve the underlying work.
 
-Last accepted product closure:
-- PR #103 — Operational Clarity & Collaboration Refinement — merged.
-- Accepted implementation head: `674efe5fd2ae92ebaa4689ebe39e59e33cb8f3ae`
-- Protected-main product merge: `bfb5aa9e5942d44dd0a8fcfa7a3be350cace129e`
-- Pre-merge Quality Gate #1878: PASS.
-- Post-merge CI #2078: PASS.
-- Post-merge Migration Replay #1681: PASS.
-- Post-merge Account Security #1853: PASS.
-- Post-merge Quality Gate #1879: PASS.
-- Post-merge Vercel commit status: SUCCESS.
+Use the same completion protocol: explicit contract, contained implementation, local build/tests, clean migration replay if SQL changes, cumulative security/authority gates, authenticated phone/desktop browser acceptance, candidate full Quality Gate, protected PR merge, production migration only when required, exact-main gates, deployment evidence, truthful production inspection and a documentation-only closure. Do not create production fixtures.
 
-Before answering substantively or making any write:
+## Still unresolved
 
-1. Fetch protected `main` HEAD. The SHA above is a historical closure checkpoint only; reconcile forward if main has advanced.
-2. Read:
-   - `AGENTS.md`
-   - `docs/continuity/CEAC_OS_CANONICAL_OWNER_CONTINUITY_2026-10-03.md`
-   - `docs/operational-clarity/BUILD_STATE.md`
-   - `docs/operational-clarity/FINAL_CLOSURE_2026-10-04.md`
-   - `docs/final-product/PRODUCT_OWNER_DECISIONS.md`
-   - `docs/final-product/PAYROLL_RULES_v1.md`
-   - `docs/final-product/LEAVE_RULES_v1.md`
-   - `docs/final-product/GO_LIVE_ORG_MAPPING.md`
-3. Inspect recent protected-main commits and open PRs.
-4. Inspect exact-head CI, Migration Replay, Account Security, Quality Gate and deployment status where relevant.
-5. Confirm one active implementation writer before writing.
-6. Never reset, force-push, revert or erase newer accepted work. Reconcile forward.
+- Actual invited-user email delivery, password activation and authenticated deployed-role inspection remain unverified. Fixture accounts are not real-user evidence.
+- Monday 12:00, Tuesday–Friday 10:00 and 17:00 close remain unapplied policy drafts.
+- Final close/grace behavior, idle reconciliation, unexplained-absence definition, Compliance reports/cases, disciplinary routing, Pastor override, Payroll consequences, scoring/awards, volunteer/PFCC policy and anti-gaming options remain at their recorded later gates.
 
-Binding domain rules that remain unchanged:
-
-EMPLOYEE / HR
-- 18 supplied staff rows are represented by 18 employee records.
-- Employee identity is independent of auth/login identity.
-- 2 confirmed linked profiles, 15 roster-only employees, 1 needs-review employee, 0 unaccounted source rows.
-- Never fabricate emails or auth users.
-- Job title does not grant authority.
-- Missing salary, bank, identifier or document values remain truthful `Not recorded`.
-
-PAYROLL
-- Payroll population uses employee IDs, not auth profiles.
-- Administration PREPARES.
-- Group Pastor/CEO APPROVES.
-- Automatic approval is prohibited.
-- Approved Payroll is immutable.
-- Corrections use attributable successor revisions.
-- Never invent salary, PAYE, SSNIT, allowance, loan, reimbursement or bonus values.
-
-LEAVE
-- Categories: Annual, Sick, Maternity, Paternity, Study.
-- Approval: Employee request → Manager approval → Administration FINAL approval.
-- Employees may request/cancel leave regardless of work-session state.
-- No work session recorded does NOT mean absent.
-- Leave/attendance must not automatically create Payroll deductions.
-- Exact entitlement quantities, accrual/grant method, carry-over and unpaid-leave Payroll treatment remain unresolved and must not be invented.
-
-DATA / SECURITY
-- Preserve RLS, capability authority, Work Engine, project authority, Finance authority, audit/history, secure integrations and protected HR.
-- Keep `currency + amount_minor`; never combine currencies without explicit policy.
-- Never invent KPIs, percentages, productivity scores, project health, priorities, financial values, ministry performance or people data.
-
-OPERATIONAL CLARITY
-- OCR0–OCR6 are accepted baseline.
-- Shared Composer, Executive clarity, Files/Media, Search CEAC, People/Control Center transformation and cross-role harmonisation must not be downgraded.
-- Use `docs/operational-clarity/reference/APPROVED_REFERENCE.html` and accepted visual contracts for any later work that touches these surfaces.
-
-Start by reporting the LIVE protected-main HEAD, any open implementation PRs, the current requested programme/defect (if one exists), and the next safe action. If there is no new requested work, do not invent a new build phase.
+The overall Operational Refinement programme remains OPEN.
