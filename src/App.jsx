@@ -288,7 +288,7 @@ export default function App() {
   const canUseWorkforce = !isExec && (isStaff || isUnitManager || hasOrgCapability("workforce.manage") || hasOrgCapability("attendance.correct") || hasOrgCapability("compliance.manage"));
   const canUseAssets = !isExec && (isStaff || isUnitManager || hasOrgCapability("asset.manage"));
   const canUseCompliance = !isExec && (isStaff || isUnitManager || hasOrgCapability("compliance.manage"));
-  const canPublishAnnouncement = isAdmin || isExec || hasCapability("post_announcement");
+  const canPublishAnnouncement = isAdmin || isExec || hasOrgCapability("post_announcement");
   const overlay = itemId || assigning || goalId || person || (projectId && isUnitManager) || roomContext || meetingId || meetingDraft;
 
   function startAssignment(context = {}) {
@@ -357,7 +357,11 @@ export default function App() {
     if (tab === "performance" && canUsePerformance) return <Performance me={me} />;
     if (tab === "learning" && canUseLearning) return <Learning me={me} />;
     if (tab === "assets" && canUseAssets) return <Assets me={me} />;
-    if (tab === "compliance" && canUseCompliance) return <Compliance me={me} />;
+    if (tab === "compliance" && canUseCompliance) return <Compliance
+      me={me}
+      openWork={() => go("work")}
+      openAnnouncements={hasOrgCapability("post_announcement") ? () => startSurfaceCreate("announcements", "announcement") : null}
+    />;
     if (tab === "cost" && isAdmin) return <Cost me={me} />;
     if (tab === "finance" && isAdmin) return <Finance me={me} openExpenses={() => go("cost")} />;
     if (tab === "reporting" && isAdmin) return <Reports me={me} />;

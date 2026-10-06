@@ -1832,6 +1832,9 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
     await go(page, "Compliance");
     await expect(page.getByRole("heading", { name: "Compliance", exact: true })).toBeVisible();
     await expect(page.getByText(/does not calculate an employee compliance score/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Operational picture", exact: true })).toBeVisible();
+    await expect(page.getByText(/is not an absence or misconduct finding/i)).toBeVisible();
+    await page.getByRole("tab", { name: "Policies", exact: true }).click();
 
     await page.getByRole("button", { name: "Publish policy", exact: true }).click();
     const dialog = page.getByRole("dialog");
