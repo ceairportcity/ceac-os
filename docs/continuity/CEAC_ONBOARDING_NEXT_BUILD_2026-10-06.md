@@ -1,7 +1,7 @@
 # Onboarding, Access & Presence Foundation
 
 Date: 6 October 2026
-Status: IMPLEMENTED / AUTOMATED VERIFICATION PASS / RELEASE BLOCKED ON AUTH CONFIGURATION
+Status: IMPLEMENTED / AUTOMATED VERIFICATION PASS / AUTH REDIRECTS VERIFIED / RELEASE IN PROGRESS
 Branch: `chatgpt/onboarding-access-presence-2026-10-06`
 Verified baseline protected main: `76cea2e457b7d624f54ca961ad14bb62ea359ebd`
 GitHub is canonical. One active writer; reconcile forward; never force-push/reset newer work.
@@ -40,7 +40,7 @@ Required acceptance: meaningful local build/tests; clean migration replay; Accou
 - Continuous background GPS tracking (prohibited direction).
 
 ## Completion record
-Not complete. PR #111 is open; the foundation has not been merged or applied to production. The original prerequisite continuity commit preceded implementation.
+Not complete. PR #111 is open; migration 111 has been applied to production after the owner corrected Auth URL settings and both redirects were verified. The original prerequisite continuity commit preceded implementation.
 On completion record exact protected main, completed items, remaining deferred questions, discovered architectural issues, next recommended tranche and updated next-chat prompt. The wider onboarding/compliance programme remains open.
 
 ## Foundation implementation under review
@@ -48,8 +48,9 @@ Migration 111 adds seven authenticated-only, fixed-search-path RPCs, preserves t
 
 Verified implementation head: `7e8ce725eb049b3bc95c6b18b5d1fcdfff7a6d46`. Local build and seven Node tests pass. Exact-head CI #37400328793, Migration Replay #37400328792, Account Security #37400328846 and full Level B Quality Gate #37400328877 pass. The cumulative SQL suite and all 677 authenticated browser tests pass, including phone/laptop People & Access, two Manager headships under one profile, switching/reload persistence and unchanged organisation grants. Vercel commit status is success; this does not prove deployed production acceptance.
 
-Production remains at migration 110, with protected main `76cea2e457b7d624f54ca961ad14bb62ea359ebd` (reconciled again after verification). Do not apply migration 111 or merge while the activation release blocker remains. A harmless invalid-token Auth probe showed that both intended public `/activate` and `/reset-password` redirects fall back to the Vercel-protected deployment hostname. No email was sent and no account was created. Supabase dashboard sign-in remains unverified; the secure credential request was declined. Respect that choice and resume authentication only when the owner asks. Browser credentials must be supplied through the secure authentication handoff.
+The owner confirmed the public Auth URL settings were saved on 6 October 2026. Fresh harmless invalid-token probes now route invitation verification to `https://ceac-os-git.vercel.app/activate` and recovery verification to `https://ceac-os-git.vercel.app/reset-password`, both rendering CEAC without Vercel authentication. The expired-token message is expected for these deliberately invalid probes. No email was sent and no account was created. This resolves the previous redirect release blocker; actual email delivery and personal password setup remain unverified.
 
-Next: finish dashboard authentication; set the public Site URL to `https://ceac-os-git.vercel.app` and preserve existing approved redirects while ensuring the exact `/activate` and `/reset-password` routes are accepted. Verify persisted settings and actual redirect routing. Then reconcile exact-head gates and live migrations, apply the reviewed migration, use a normal protected PR merge, verify exact-main gates/deployment and authenticated deployed roles, and record final completion. Actual email delivery and personal password setup remain unverified. Do not fabricate production invitations, people, work or presence to create evidence.
+Canonical PR head `da7ccbb2e114cd90e5d041df91bb196228017c9b` passed CI #37402358929, Migration Replay #37402358931, Account Security #37402358958 and Quality Gate #37402358930 through the documentation-only path. The application tree is identical to the fully verified implementation head above. Production migration 111 was applied successfully through the Supabase connector; all three new guard triggers are installed. Protected main was still `76cea2e457b7d624f54ca961ad14bb62ea359ebd` before merge.
 
+Next: perform the normal protected PR merge, verify exact-main gates/deployment and authenticated deployed roles, and record final completion. Actual email delivery and personal password setup remain unverified. Do not fabricate production invitations, people, work or presence to create evidence.
 The implementation also preserves the 12px office-evidence text floor, uses the factual heading “Today’s work location evidence”, and updates the affected source-map-js dependency to 1.2.2; the dependency audit passes. Wider deferred policy questions above remain open. After foundation acceptance, the next recommended tranche is to confirm attendance/short-absence and grace-policy decisions before implementing further Compliance workflows.
