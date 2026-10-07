@@ -92,8 +92,7 @@ for (const viewport of [
       const actionHeights = await page.locator(".executivev2 button:visible").evaluateAll((buttons) =>
         buttons.map((button) => button.getBoundingClientRect().height)
       );
-      for (const height of actionHeights) expect(height).toBeGreaterThanOrEqual(30);
-      await expect(page.getByRole("button", { name: "Schedule meeting", exact: true })).toHaveJSProperty("offsetHeight", 44);
+      for (const height of actionHeights) expect(height).toBeGreaterThanOrEqual(44);
     }
 
     await page.screenshot({
