@@ -782,3 +782,99 @@ grant execute on function public.create_pending_invitation(text,text,uuid,text)
 comment on function public.create_pending_invitation(text,text,uuid,text) is
   'Creates or refreshes invite-only Staff onboarding. A cancelled invitation can be reopened only by people.manage authority; Unit Managers cannot undo an Administration cancellation.';
 
+create or replace function public.prepare_staff_invitation_resend(p_invitation_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  i public.pending_invitations;
+  v_user uuid;
+  v_org uuid:=public.app_org_id();
+begin
+  if auth.uid() is null or v_org is null then
+    raise exception 'You cannot resend this invitation.' using errcode='42501';
+  end if;
+
+  select *
+  into i
+  from public.pending_invitations
+  where id=p_invitation_id
+    and org_id=v_org
+  for update;
+
+  if i.id is null
+     or not (
+       public.app_has_capability('people.manage',null)
+       or i.unit_id in (select public.app_managed_units())
+     ) then
+    raise exception 'You cannot resend this invitation.' using errcode='42501';
+  end if;
+
+  if not exists (
+    select 1
+    from public.units
+    where id=i.unit_id
+      and org_id=v_org
+      and active
+  ) then
+    raise exception 'The invitation unit is inactive.';
+  end if;
+
+  if i.revoked_at is not null then
+    raise exception 'That invitation was cancelled. Manage the account with Administration.';
+  end if;
+
+  select id
+  into v_user
+  from auth.users
+  where lower(email)=lower(i.email);
+
+  if exists (
+    select 1
+    from auth.users
+    where id=v_user
+      and email_confirmed_at is not null
+  ) then
+    raise exception 'That account is verified. Use password recovery instead.';
+  end if;
+
+  if v_user is not null and not exists (
+    select 1
+    from public.profiles
+    where id=v_user
+      and org_id=v_org
+      and active
+  ) then
+    raise exception 'The account is inactive. Administration must review it first.';
+  end if;
+
+  update public.pending_invitations
+  set expires_at=now()+interval '7 days',
+      invited_at=now(),
+      invited_by=auth.uid()
+  where id=i.id
+    and org_id=v_org;
+
+  insert into public.activity_events(
+    org_id,actor_id,verb,object_type,object_id,meta
+  ) values (
+    v_org,auth.uid(),'invitation_resend_requested','pending_invitation',i.id,'{}'::jsonb
+  );
+
+  return jsonb_build_object(
+    'email',i.email,
+    'account_created',v_user is not null
+  );
+end;
+$$;
+
+revoke all on function public.prepare_staff_invitation_resend(uuid)
+  from public,anon;
+grant execute on function public.prepare_staff_invitation_resend(uuid)
+  to authenticated,service_role;
+
+comment on function public.prepare_staff_invitation_resend(uuid) is
+  'Renews an existing invitation only after resolving the caller organisation and selecting the invitation inside that organisation; cross-organisation rows are never locked for browser resend attempts.';
+
