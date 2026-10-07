@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { isPrivilegedIdentity, requiresMfaChallenge, resolveMfaGate } from "../src/lib/mfaGate.js";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 
@@ -13,6 +14,40 @@ async function signIn(page, email, appClass) {
   await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole("heading", { name: "Two-step verification", exact: true })).toBeVisible({ timeout: 15000 });
 }
+
+test("S1 browser gate distinguishes enrolled challenge, enforced missing-factor block and ordinary access", async () => {
+  expect(isPrivilegedIdentity({ is_admin: true, capability_grants: [] })).toBe(true);
+  expect(isPrivilegedIdentity({ is_exec: true, capability_grants: [] })).toBe(true);
+  expect(isPrivilegedIdentity({ is_admin: false, is_exec: false, capability_grants: [{ capability: "people.manage" }] })).toBe(true);
+  expect(isPrivilegedIdentity({ is_admin: false, is_exec: false, capability_grants: [] })).toBe(false);
+
+  expect(requiresMfaChallenge({ currentLevel: "aal1", nextLevel: "aal2" })).toBe(true);
+  expect(requiresMfaChallenge({ currentLevel: "aal2", nextLevel: "aal2" })).toBe(false);
+
+  expect(resolveMfaGate({
+    assurance: { currentLevel: "aal1", nextLevel: "aal2" },
+    me: { is_admin: false, is_exec: false, capability_grants: [] },
+    privilegedMfaEnforced: false,
+  })).toBe("challenge");
+
+  expect(resolveMfaGate({
+    assurance: { currentLevel: "aal1", nextLevel: "aal1" },
+    me: { is_admin: true, is_exec: false, capability_grants: [] },
+    privilegedMfaEnforced: true,
+  })).toBe("blocked");
+
+  expect(resolveMfaGate({
+    assurance: { currentLevel: "aal1", nextLevel: "aal1" },
+    me: { is_admin: false, is_exec: false, capability_grants: [] },
+    privilegedMfaEnforced: true,
+  })).toBe("allow");
+
+  expect(resolveMfaGate({
+    assurance: { currentLevel: "aal2", nextLevel: "aal2" },
+    me: { is_admin: true, is_exec: false, capability_grants: [] },
+    privilegedMfaEnforced: true,
+  })).toBe("allow");
+});
 
 test("S1 two-step verification implementation keeps enrollment, challenge and factor removal inside Supabase Auth", async () => {
   const settings = readFileSync("src/components/MfaSettings.jsx", "utf8");
