@@ -950,3 +950,67 @@
 
 
 /* VF2C Level B closure checkpoint — no visual or behavioural change. */
+
+
+/* Phase 6A — volunteer self-service */
+
+.phase6-volunteer-self-notices {
+  display: grid;
+  gap: var(--ev2-space-2);
+  margin-top: var(--ev2-space-4);
+}
+
+.phase6-volunteer-self-notices article {
+  min-height: 4.75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ev2-space-3);
+  align-items: center;
+  padding: var(--ev2-space-3) var(--ev2-space-4);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface);
+}
+
+.phase6-volunteer-self-notices article > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--ev2-space-1);
+}
+
+.phase6-volunteer-self-notices strong {
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+  line-height: 1.35;
+}
+
+.phase6-volunteer-self-notices span,
+.phase6-volunteer-self-notices small {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.phase6-volunteer-self-notices .phase6-notice-ack {
+  color: var(--ev2-success);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .phase6-volunteer-self-notices article {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .phase6-volunteer-self-notices .ev2c-button {
+    width: 100%;
+  }
+}
+
+@media (min-width: 900px) {
+  .phase6-volunteer-self-notices strong {
+    font-size: var(--ev2-type-row-desktop);
+  }
+}
