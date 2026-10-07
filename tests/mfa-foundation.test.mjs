@@ -18,10 +18,25 @@ test("aal2 session is allowed without another challenge", () => {
   assert.equal(decideMfaAccess({
     currentLevel: "aal2",
     nextLevel: "aal2",
+    currentAuthenticationMethods: [{ method: "totp" }],
     factors: { totp: [{ id: "t1", status: "verified" }] },
     privileged: true,
     enforcementEnabled: true,
   }).state, "allow");
+});
+
+test("privileged non-TOTP aal2 session is challenged for TOTP", () => {
+  const decision = decideMfaAccess({
+    currentLevel: "aal2",
+    nextLevel: "aal2",
+    currentAuthenticationMethods: [{ method: "otp" }],
+    factors: { totp: [{ id: "t1", status: "verified" }] },
+    privileged: true,
+    enforcementEnabled: true,
+  });
+  assert.equal(decision.state, "challenge");
+  assert.equal(decision.reason, "privileged_totp_session_required");
+  assert.equal(decision.factor.id, "t1");
 });
 
 test("verified TOTP on aal1 requires challenge even before organisation enforcement", () => {
@@ -133,7 +148,7 @@ test("privileged identity is based on authority, not job title", () => {
 
 test("browser gate delegates to the canonical authority-based MFA policy", () => {
   const managerDecision = resolveMfaGate({
-    assurance: { currentLevel: "aal1", nextLevel: "aal1" },
+    assurance: { currentLevel: "aal1", nextLevel: "aal1", currentAuthenticationMethods: [{ method: "password" }] },
     factors: {},
     me: { memberships: [{ role: "manager" }], capability_grants: [] },
     privilegedMfaEnforced: true,
@@ -141,7 +156,7 @@ test("browser gate delegates to the canonical authority-based MFA policy", () =>
   assert.equal(managerDecision.state, "enroll");
 
   const leadDecision = resolveMfaGate({
-    assurance: { currentLevel: "aal1", nextLevel: "aal2" },
+    assurance: { currentLevel: "aal1", nextLevel: "aal2", currentAuthenticationMethods: [{ method: "password" }] },
     factors: { totp: [{ id: "t1", status: "verified" }] },
     me: { led_sub_team_ids: ["lane-1"], capability_grants: [] },
     privilegedMfaEnforced: false,
