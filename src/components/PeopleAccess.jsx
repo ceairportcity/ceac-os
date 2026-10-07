@@ -16,7 +16,7 @@ function invitationTone(state, revokedAt) {
   return "action";
 }
 
-export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, onLifecycle, initialProfileId = null }) {
+export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, onLifecycle, initialProfileId = null, initialUnitId = null, initialMode = null }) {
   const [snapshot, setSnapshot] = useState(null);
   const [mode, setMode] = useState("invite");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
@@ -29,10 +29,16 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
 
   useEffect(() => { if (canManage) load(); }, [me.id, canManage]);
   useEffect(() => {
-    if (!initialProfileId) return;
-    setForm((current) => ({ ...current, person: initialProfileId }));
-    setMode("responsibility");
-  }, [initialProfileId]);
+    if (!initialProfileId && !initialUnitId && !initialMode) return;
+    setForm((current) => ({
+      ...current,
+      person: initialProfileId || current.person,
+      unit: initialUnitId || current.unit,
+      ...(initialUnitId ? { lane: "" } : {}),
+    }));
+    if (initialMode === "invite" || initialMode === "responsibility" || initialMode === "invitations") setMode(initialMode);
+    else if (initialProfileId) setMode("responsibility");
+  }, [initialProfileId, initialUnitId, initialMode]);
 
   async function load() {
     setError(null);

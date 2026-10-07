@@ -2,6 +2,8 @@ import fs from "node:fs";
 import { test, expect } from "@playwright/test";
 
 const control = fs.readFileSync(new URL("../src/screens/ControlCenter.jsx", import.meta.url), "utf8");
+const units = fs.readFileSync(new URL("../src/screens/Units.jsx", import.meta.url), "utf8");
+const app = fs.readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 
 test("OCR5E Control Center is state-derived and never invents a numeric health score", () => {
   for (const status of ["Ready","Needs attention","Partly configured","Not configured","Awaiting policy"]) {
@@ -41,4 +43,15 @@ test("OCR5E Control Center deep-links to authoritative configuration surfaces", 
   ]) {
     expect(control).toContain(`go("${route}")`);
   }
+});
+
+
+test("Phase 5D centralises employee invitation and transfer work in People & Access", () => {
+  expect(units).toContain("Manage people & access");
+  expect(units).toContain("one authoritative people workflow");
+  expect(units).not.toContain("inviteByEmail");
+  expect(units).not.toContain("admin_update_employment");
+  expect(units).not.toContain("openStaffSheet");
+  expect(app).toContain("function openPeopleAccess(intent = {})");
+  expect(app).toContain("openPeopleAccess={openPeopleAccess}");
 });

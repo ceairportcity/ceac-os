@@ -108,6 +108,7 @@ export default function App() {
   const [meetingDraft, setMeetingDraft] = useState(null);
   const [createIntent, setCreateIntent] = useState(null);
   const [peopleFocusId, setPeopleFocusId] = useState(null);
+  const [peopleAccessIntent, setPeopleAccessIntent] = useState(null);
   const [lifecycleIntent, setLifecycleIntent] = useState(null);
   const [announcementFocusId, setAnnouncementFocusId] = useState(null);
   const [session, setSession] = useState(null);
@@ -152,6 +153,7 @@ export default function App() {
     setMeetingDraft(null);
     setCreateIntent(null);
     setPeopleFocusId(null);
+    setPeopleAccessIntent(null);
     setAnnouncementFocusId(null);
   }
 
@@ -193,6 +195,10 @@ export default function App() {
   function openLifecycle(profileId = null, type = "offboarding") {
     navigate({ tab: "lifecycle" });
     setLifecycleIntent(profileId ? { profileId, type } : null);
+  }
+  function openPeopleAccess(intent = {}) {
+    navigate({ tab: "people" });
+    setPeopleAccessIntent(intent);
   }
   function openItem(id) { navigate({ tab, itemId: id }); }
   function openProject(id) { navigate({ tab, projectId: id }); }
@@ -377,13 +383,15 @@ export default function App() {
       openItem={openItem}
       go={go}
       openLifecycle={openLifecycle}
+      accessIntent={peopleAccessIntent}
+      onAccessIntentHandled={() => setPeopleAccessIntent(null)}
       initialEmployeeId={peopleFocusId}
       onInitialHandled={() => setPeopleFocusId(null)}
     />;
     if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} initialProfileId={lifecycleIntent?.profileId || null} initialType={lifecycleIntent?.type || null} onInitialHandled={() => setLifecycleIntent(null)} />;
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR me={me} />;
     if (tab === "payroll" && canUsePayroll) return <AdminPayroll me={me} />;
-    if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} />;
+    if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} />;
     if (tab === "admin-projects" && isAdmin) return <AdminProjects me={me} scheduleMeeting={startMeeting} />;
     if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openMeeting={openMeeting} scheduleMeeting={startMeeting} />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;

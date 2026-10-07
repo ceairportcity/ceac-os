@@ -68,13 +68,15 @@ function amountToMinor(value) {
   return Number.isFinite(number) ? Math.round(number * 100) : 0;
 }
 
-export default function People({ me, openItem, go, openLifecycle, initialEmployeeId = null, onInitialHandled }) {
+export default function People({ me, openItem, go, openLifecycle, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
   const [personTab, setPersonTab] = useState("overview");
   const [searchText, setSearchText] = useState("");
   const [accessFocusProfileId, setAccessFocusProfileId] = useState(null);
+  const [accessFocusUnitId, setAccessFocusUnitId] = useState(null);
+  const [accessFocusMode, setAccessFocusMode] = useState(null);
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [units, setUnits] = useState([]);
   const [person, setPerson] = useState(null);
@@ -102,6 +104,14 @@ export default function People({ me, openItem, go, openLifecycle, initialEmploye
     openPerson(match);
     onInitialHandled?.();
   }, [initialEmployeeId, rows, person]);
+  useEffect(() => {
+    if (!accessIntent) return;
+    setAccessFocusProfileId(accessIntent.profileId || null);
+    setAccessFocusUnitId(accessIntent.unitId || null);
+    setAccessFocusMode(accessIntent.mode || null);
+    setViewMode("access");
+    onAccessIntentHandled?.();
+  }, [accessIntent]);
 
   async function load({ silent = false } = {}) {
     if (!silent) setLoading(true);
@@ -316,6 +326,8 @@ export default function People({ me, openItem, go, openLifecycle, initialEmploye
 
   function openAccessAdministration(profileId = null) {
     setAccessFocusProfileId(profileId);
+    setAccessFocusUnitId(null);
+    setAccessFocusMode(profileId ? "responsibility" : "invite");
     setPerson(null);
     setDrill(null);
     setViewMode("access");
@@ -1041,7 +1053,7 @@ export default function People({ me, openItem, go, openLifecycle, initialEmploye
         role="tab"
         aria-selected={viewMode === key}
         className={viewMode === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
-        onClick={() => { setViewMode(key); if (key !== "access") setAccessFocusProfileId(null); }}
+        onClick={() => { if (key !== "access") { setAccessFocusProfileId(null); setAccessFocusUnitId(null); setAccessFocusMode(null); } setViewMode(key); }}
       >{label}</button>)}
     </div>
 
@@ -1050,6 +1062,8 @@ export default function People({ me, openItem, go, openLifecycle, initialEmploye
       go={go}
       embedded
       initialProfileId={accessFocusProfileId}
+      initialUnitId={accessFocusUnitId}
+      initialMode={accessFocusMode}
       onChanged={() => load({ silent: true })}
       onLifecycle={(profileId, type) => openLifecycle?.(profileId, type)}
       onOpenPerson={(profileId) => {
