@@ -69,6 +69,7 @@ test("S1 MFA implementation keeps TOTP management self-only and AAL2-protected",
   const challenge = readFileSync("src/screens/MfaChallenge.jsx", "utf8");
   const required = readFileSync("src/screens/MfaRequired.jsx", "utf8");
   const account = readFileSync("src/screens/AccountActivity.jsx", "utf8");
+  const bootstrap = readFileSync("src/lib/supabase.js", "utf8");
 
   expect(account).toContain('import MfaSettings from "../components/MfaSettings";');
   expect(account).toContain("<MfaSettings me={me} />");
@@ -82,7 +83,13 @@ test("S1 MFA implementation keeps TOTP management self-only and AAL2-protected",
   expect(settings).toContain("Supabase requires an AAL2 session before a verified MFA method can be removed.");
   expect(settings).toContain("privileged_mfa_required");
   expect(settings).not.toContain("privileged_mfa_enforced");
+  expect(settings).not.toContain("Other signed-in sessions were revoked");
   expect(settings).toContain("Add and verify a replacement before removing the only verification method on this privileged account.");
+
+  expect(bootstrap).toContain('supabase.from("sub_teams")');
+  expect(bootstrap).toContain('.eq("lead_id", auth.user.id)');
+  expect(bootstrap).toContain('.eq("active", true)');
+  expect(bootstrap).toContain("led_sub_team_ids:");
 
   expect(challenge).toContain("CEAC will not silently bypass the second step.");
   expect(challenge).toContain('factor.factor_type === "totp"');
