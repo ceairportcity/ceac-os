@@ -70,3 +70,7 @@ The S3 SQL gate proves:
 - a temporary authority manager cannot replace the last permanent authority manager;
 - already-expired grants cannot be created;
 - all prior capability authority/security gates continue to run.
+
+## Gate recovery note
+
+During forward reconciliation after S1 migration parity, the SQL security-gate script briefly lost its executable file mode. The script content was unchanged. The executable mode was restored before acceptance, and S3 must pass a fresh exact-head Level B Quality Gate before merge.
