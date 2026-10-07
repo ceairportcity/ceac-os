@@ -108,6 +108,7 @@ export default function App() {
   const [meetingDraft, setMeetingDraft] = useState(null);
   const [createIntent, setCreateIntent] = useState(null);
   const [peopleFocusId, setPeopleFocusId] = useState(null);
+  const [lifecycleIntent, setLifecycleIntent] = useState(null);
   const [announcementFocusId, setAnnouncementFocusId] = useState(null);
   const [session, setSession] = useState(null);
   useForegroundPresence(me, session);
@@ -189,6 +190,10 @@ export default function App() {
   }
 
   function go(t) { navigate({ tab: t }); }
+  function openLifecycle(profileId = null, type = "offboarding") {
+    navigate({ tab: "lifecycle" });
+    setLifecycleIntent(profileId ? { profileId, type } : null);
+  }
   function openItem(id) { navigate({ tab, itemId: id }); }
   function openProject(id) { navigate({ tab, projectId: id }); }
   function openMeeting(id) { navigate({ tab, meetingId: id }); }
@@ -371,10 +376,11 @@ export default function App() {
       me={me}
       openItem={openItem}
       go={go}
+      openLifecycle={openLifecycle}
       initialEmployeeId={peopleFocusId}
       onInitialHandled={() => setPeopleFocusId(null)}
     />;
-    if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} />;
+    if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} initialProfileId={lifecycleIntent?.profileId || null} initialType={lifecycleIntent?.type || null} onInitialHandled={() => setLifecycleIntent(null)} />;
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR me={me} />;
     if (tab === "payroll" && canUsePayroll) return <AdminPayroll me={me} />;
     if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} />;

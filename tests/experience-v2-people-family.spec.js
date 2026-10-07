@@ -471,6 +471,7 @@ test("Stage 10 Family B5B Administration employee workspace preserves employment
   expect(screen).toContain('rpc("admin_access_invitations")');
   expect(screen).toContain('title="Access & responsibilities"');
   expect(screen).toContain("Job title never grants application authority.");
+  expect(screen).toContain("Offboard / deactivate access");
 
   expect(screen).toContain("These records are not a productivity score, ranking, pay input or disciplinary conclusion.");
   expect(screen).toContain('rpc("hr_employee_protected_summary"');
@@ -729,4 +730,17 @@ test("VF4B Administration People and employee workspace lock operations-console 
   expect(css).toContain("grid-template-columns: minmax(15.5rem, 18rem) minmax(0, 1fr)");
   expect(css).toContain(".ev2-people-admin > .ev2p-section");
   expect(css).not.toContain("!important");
+});
+
+
+test("Phase 5C person access hands off to the controlled lifecycle instead of directly mutating access", () => {
+  const app = readFileSync("src/App.jsx", "utf8");
+  const lifecycle = readFileSync("src/screens/AdminLifecycle.jsx", "utf8");
+  const access = readFileSync("src/components/PeopleAccess.jsx", "utf8");
+
+  expect(app).toContain("function openLifecycle(profileId = null");
+  expect(app).toContain("initialProfileId={lifecycleIntent?.profileId || null}");
+  expect(lifecycle).toContain("Completing offboarding is the authoritative path that deactivates operational access.");
+  expect(lifecycle).toContain("setCreateOpen(true)");
+  expect(access).toContain('onLifecycle(form.person, "offboarding")');
 });

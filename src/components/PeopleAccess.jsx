@@ -16,7 +16,7 @@ function invitationTone(state, revokedAt) {
   return "action";
 }
 
-export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, initialProfileId = null }) {
+export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, onLifecycle, initialProfileId = null }) {
   const [snapshot, setSnapshot] = useState(null);
   const [mode, setMode] = useState("invite");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
@@ -138,7 +138,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
         <p className="screen-note">Invite Staff, manage unit and team responsibilities, and review account activation without creating duplicate identities.</p>
       </div>
       <div className="phase5-access-header-actions">
-        <Button variant="quiet" size="compact" onClick={() => go?.("lifecycle")}>Lifecycle &amp; offboarding</Button>
+        <Button variant="quiet" size="compact" onClick={() => {
+          if (form.person && onLifecycle) onLifecycle(form.person, "offboarding");
+          else go?.("lifecycle");
+        }}>Lifecycle &amp; offboarding</Button>
         <Button variant="quiet" size="compact" onClick={() => go?.("units")}>Units</Button>
       </div>
     </header>

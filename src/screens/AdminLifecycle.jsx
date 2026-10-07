@@ -20,7 +20,7 @@ function humanize(value = "") {
   return String(value).replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-export default function AdminLifecycle({ me }) {
+export default function AdminLifecycle({ me, initialProfileId = null, initialType = null, onInitialHandled }) {
   const [people,setPeople]=useState([]);
   const [cases,setCases]=useState([]);
   const [steps,setSteps]=useState([]);
@@ -37,6 +37,13 @@ export default function AdminLifecycle({ me }) {
   const [createOpen,setCreateOpen]=useState(false);
 
   useEffect(()=>{ load(); },[me.id]);
+  useEffect(()=>{
+    if(!initialProfileId) return;
+    setProfileId(initialProfileId);
+    if(initialType==="onboarding"||initialType==="offboarding") setType(initialType);
+    setCreateOpen(true);
+    onInitialHandled?.();
+  },[initialProfileId,initialType]);
 
   async function load(){
     setLoading(true); setError(null);
@@ -101,7 +108,7 @@ export default function AdminLifecycle({ me }) {
     <div style={{paddingTop:26}}>
       <div className="eyebrow">People operations</div>
       <h1 className="h1">Employee lifecycle</h1>
-      <p className="screen-note">Controlled onboarding and offboarding with ordered steps, employment history, events and audit.</p>
+      <p className="screen-note">Controlled onboarding and offboarding with ordered steps, employment history, events and audit. Completing offboarding is the authoritative path that deactivates operational access.</p>
     </div>
 
     {error&&<ProductNotice tone="error" title="Employee lifecycle">{error}</ProductNotice>}

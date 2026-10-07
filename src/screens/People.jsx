@@ -68,7 +68,7 @@ function amountToMinor(value) {
   return Number.isFinite(number) ? Math.round(number * 100) : 0;
 }
 
-export default function People({ me, openItem, go, initialEmployeeId = null, onInitialHandled }) {
+export default function People({ me, openItem, go, openLifecycle, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
@@ -641,7 +641,12 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
             size="compact"
             onClick={() => openAccessAdministration(person.profile_id || null)}
           >Manage responsibilities</Button>
-          <Button variant="quiet" size="compact" onClick={() => go?.("lifecycle")}>Lifecycle & offboarding</Button>
+          <Button
+            variant="quiet"
+            size="compact"
+            disabled={!person.profile_id}
+            onClick={() => openLifecycle?.(person.profile_id, "offboarding")}
+          >Offboard / deactivate access</Button>
         </div>}
       >
         <div className="ev2p-admin-record-grid">
@@ -1046,6 +1051,7 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
       embedded
       initialProfileId={accessFocusProfileId}
       onChanged={() => load({ silent: true })}
+      onLifecycle={(profileId, type) => openLifecycle?.(profileId, type)}
       onOpenPerson={(profileId) => {
         const match = rows.find((entry) => entry.profile_id === profileId);
         if (match) openPerson(match);
