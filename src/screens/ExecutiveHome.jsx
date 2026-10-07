@@ -7,7 +7,7 @@ function dateKey(date) {
 }
 
 export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) {
-  const [x, setX] = useState({ doneWeek: 0, donePreviousWeek: 0, objectives: 0, objectiveAttention: 0, projects: 0, blocked: 0, review: 0, activeUnits: 0 });
+  const [x, setX] = useState({ doneWeek: 0, donePreviousWeek: 0, objectives: 0, objectiveAttention: 0, projects: 0, blocked: 0, review: 0, activeUnits: 0, activeTeams: null, activeVolunteers: null, activeStaff: null });
   const [loading, setLoading] = useState(true);
   const [meetings, setMeetings] = useState([]);
   const [objectiveMix, setObjectiveMix] = useState({ onTrack:0, met:0, atRisk:0, notMet:0, other:0 });
@@ -36,7 +36,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
       const previousMonday = new Date(monday); previousMonday.setUTCDate(previousMonday.getUTCDate() - 7);
       const ministryStart = new Date(now); ministryStart.setDate(ministryStart.getDate() - 90);
 
-      const [doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, meetingRows, objectiveRows, periodRows, unitRows, operationRows] = await Promise.all([
+      const [doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, meetingRows, objectiveRows, periodRows, unitRows, operationRows, volunteerRows, staffRows, teamRows] = await Promise.all([
         count("work_items", (query) => query.in("kind", ["task", "deliverable"]).in("status", ["completed", "self_certified"]).gte("completed_at", monday.toISOString())),
         count("work_items", (query) => query.in("kind", ["task", "deliverable"]).in("status", ["completed", "self_certified"]).gte("completed_at", previousMonday.toISOString()).lt("completed_at", monday.toISOString())),
         count("objectives"),
@@ -56,6 +56,9 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
           .select("id,name,value_label,unit_id,units(name)")
           .eq("org_id",me.org_id).eq("active",true).eq("records_value",true)
           .order("name"),
+        supabase.from("employment_records").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").eq("employment_type", "volunteer"),
+        supabase.from("employment_records").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").neq("employment_type", "volunteer"),
+        supabase.from("sub_teams").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("active", true),
       ]);
 
       const firstError = [meetingRows.error, objectiveRows.error, periodRows.error, unitRows.error, operationRows.error].find(Boolean);
@@ -93,7 +96,19 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
         setReporting({label:openPeriod.label,filed,total:(unitRows.data||[]).length});
       }else setReporting(null);
 
-      setX({ doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, activeUnits: (unitRows.data || []).length });
+      setX({
+        doneWeek,
+        donePreviousWeek,
+        objectives,
+        objectiveAttention,
+        projects,
+        blocked,
+        review,
+        activeUnits: (unitRows.data || []).length,
+        activeTeams: teamRows.error ? null : (teamRows.count ?? 0),
+        activeVolunteers: volunteerRows.error ? null : (volunteerRows.count ?? 0),
+        activeStaff: staffRows.error ? null : (staffRows.count ?? 0),
+      });
       setMeetings(meetingRows.data || []);
     } catch (loadError) {
       setError(loadError.message || "The ministry overview could not load.");
