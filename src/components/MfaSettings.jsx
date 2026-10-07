@@ -38,7 +38,9 @@ export default function MfaSettings({ me }) {
   const [error, setError] = useState(null);
 
   const privileged = Boolean(me?.is_admin || me?.is_exec || (me?.capability_grants || []).length);
+  const enforcementEnabled = Boolean(me?.privileged_mfa_enforced);
   const currentIsVerified = level?.currentLevel === "aal2";
+  const lastFactorLocked = privileged && enforcementEnabled && factors.length <= 1;
 
   useEffect(() => { load(); }, [me?.id]);
 
@@ -144,8 +146,8 @@ export default function MfaSettings({ me }) {
 
   async function removeFactor(factor) {
     if (busy) return;
-    if (privileged && factors.length <= 1) {
-      setError("Add and verify a replacement before removing the only verification method on a privileged account.");
+    if (lastFactorLocked) {
+      setError("Add and verify a replacement before removing the only verification method on this privileged account.");
       return;
     }
     if (!confirm(`Remove ${factorName(factor, 0)} from your account?`)) return;
@@ -175,8 +177,10 @@ export default function MfaSettings({ me }) {
     title="Two-step verification"
     description="Use an authenticator app so a password alone is not enough to open your CEAC account."
   >
-    {privileged ? <PersonalBoundary title="Required before privileged go-live">
-      This account has privileged CEAC authority. Two-step verification will be required before final production onboarding. It is not being forced during the active test phase.
+    {privileged ? <PersonalBoundary title={enforcementEnabled ? "Privileged account protection is active" : "Required before privileged go-live"}>
+      {enforcementEnabled
+        ? "This account is under privileged two-step enforcement. Keep at least one verified verification method on the account."
+        : "This account has privileged CEAC authority. Two-step verification will be required before final production onboarding. It is not being forced during the active test phase."}
     </PersonalBoundary> : null}
 
     {error ? <div className="flag flag-brick ev2pf-partial-error"><h4>Security change was not completed</h4>{error}</div> : null}
@@ -208,7 +212,7 @@ export default function MfaSettings({ me }) {
       title={factorName(factor, index)}
       meta="Verified"
       detail={factor.factor_type === "phone" ? "Phone verification" : "Authenticator app"}
-      action={<button type="button" className="btn btn-ghost btn-sm" disabled={busy || (privileged && factors.length <= 1)} onClick={() => removeFactor(factor)}>
+      action={<button type="button" className="btn btn-ghost btn-sm" disabled={busy || lastFactorLocked} onClick={() => removeFactor(factor)}>
         Remove
       </button>}
     />)}
