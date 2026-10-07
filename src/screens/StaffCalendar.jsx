@@ -36,7 +36,7 @@ export default function StaffCalendar({me,openItem,openMeeting}){
   const [events,setEvents]=useState([]);
   const [personalTasks,setPersonalTasks]=useState([]);
   const [dayNotes,setDayNotes]=useState([]);
-  const [dayTab,setDayTab]=useState("tasks");
+  const [dayTab,setDayTab]=useState("schedule");
   const [taskTitle,setTaskTitle]=useState("");
   const [taskTime,setTaskTime]=useState("");
   const [noteDraft,setNoteDraft]=useState("");
@@ -225,7 +225,7 @@ export default function StaffCalendar({me,openItem,openMeeting}){
         <div className="phase6-calendar-month">
           <CalendarMonthGrid
             days={days} currentMonth={cursor.getMonth()} selectedDateKey={selectedDate}
-            onSelectDate={(key)=>{setSelectedDate(key);setDayTab("tasks");}}
+            onSelectDate={(key)=>{setSelectedDate(key);setDayTab("schedule");}}
             getEvents={(key)=>visible.filter(event=>event.date===key).map(event=>displayEvent(event))}
             ariaLabel="Personal month calendar"
           />
@@ -238,11 +238,12 @@ export default function StaffCalendar({me,openItem,openMeeting}){
           </header>
 
           <div className="phase6-day-tabs" role="tablist" aria-label="Day workspace views">
+            <button type="button" role="tab" aria-selected={dayTab==="schedule"} className={dayTab==="schedule"?"is-selected":""} onClick={()=>setDayTab("schedule")}>Schedule</button>
             <button type="button" role="tab" aria-selected={dayTab==="tasks"} className={dayTab==="tasks"?"is-selected":""} onClick={()=>setDayTab("tasks")}>Tasks</button>
             <button type="button" role="tab" aria-selected={dayTab==="notes"} className={dayTab==="notes"?"is-selected":""} onClick={()=>setDayTab("notes")}>Notes</button>
           </div>
 
-          {dayTab==="tasks"?<div className="phase6-day-task-view">
+          {dayTab==="schedule"?<div className="phase6-day-task-view phase6-day-schedule-view">
             <section className="phase6-day-block">
               <div className="phase6-day-block-head"><h3>Schedule</h3><span>{selectedSchedule.length}</span></div>
               {selectedSchedule.length?selectedSchedule.map(event=><button key={event.id} type="button" className="phase6-day-shared-row" onClick={()=>open(event)} disabled={!event.itemId&&!event.meetingId}>
@@ -250,7 +251,7 @@ export default function StaffCalendar({me,openItem,openMeeting}){
                 <span><strong>{event.title}</strong><small>{event.meta||"Recorded CEAC commitment"}</small></span>
               </button>):<p className="phase6-day-empty">No shared or private schedule item is recorded for this day.</p>}
             </section>
-
+          </div>:dayTab==="tasks"?<div className="phase6-day-task-view">
             <section className="phase6-day-block">
               <div className="phase6-day-block-head"><h3>Today's tasks</h3><span>{selectedPrivate.length+selectedWork.length}</span></div>
               {selectedWork.map(event=><button key={event.id} type="button" className="phase6-day-shared-row" onClick={()=>open(event)}>

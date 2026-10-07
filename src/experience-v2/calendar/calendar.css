@@ -824,7 +824,7 @@ button.ev2cal-event:hover {
 
 .phase6-day-tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: var(--ev2-space-2);
   border-bottom: 1px solid var(--ev2-line);
   background: var(--ev2-surface-soft);
