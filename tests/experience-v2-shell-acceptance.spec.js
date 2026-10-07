@@ -117,6 +117,7 @@ const roles = [
       ["strategy", "Ministry"],
       ["delivery", "Portfolio"],
       ["exec-organisation", "Organisation"],
+      ["exec-calendar", "Calendar"],
       ["exec-finance", "Finance"],
       ["payroll", "Payroll"],
       ["exec-reports", "Reports"],
@@ -128,10 +129,11 @@ const roles = [
       ["home", "Overview"],
       ["work", "Work"],
       ["strategy", "Ministry"],
-      ["delivery", "Portfolio"],
     ],
     secondary: [
+      ["delivery", "Portfolio"],
       ["exec-organisation", "Organisation"],
+      ["exec-calendar", "Calendar"],
       ["exec-finance", "Finance"],
       ["payroll", "Payroll"],
       ["exec-reports", "Reports"],
@@ -232,7 +234,7 @@ test("Stage 4D mobile primary and More destinations remain reachable and role-sp
 
     const mobileNav = page.locator(".ev2s-mobile-nav");
     await expect(mobileNav).toBeVisible();
-    await expect(mobileNav.getByRole("button")).toHaveCount(5);
+    await expect(mobileNav.getByRole("button")).toHaveCount(role.key === "executive" ? 4 : 5);
 
     const visiblePrimary = await mobileNav.locator("button span").allTextContents();
     expect(visiblePrimary.map((label) => label.trim()), role.key).toEqual([
