@@ -17,7 +17,15 @@ as $$
   select coalesce((
     select
       not o.privileged_mfa_required
-      or coalesce(auth.jwt()->>'aal','aal1')='aal2'
+      or (
+        coalesce(auth.jwt()->>'aal','aal1')='aal2'
+        and exists (
+          select 1
+          from auth.mfa_factors mf
+          where mf.user_id=auth.uid()
+            and mf.status='verified'::auth.factor_status
+        )
+      )
     from public.profiles p
     join public.organisations o on o.id=p.org_id
     where p.id=auth.uid()
