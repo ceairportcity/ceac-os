@@ -15,6 +15,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
   const [reporting, setReporting] = useState(null);
   const [ministryOperations, setMinistryOperations] = useState([]);
   const [ministryOccurrences, setMinistryOccurrences] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => { load(); }, [me.org_id]);
@@ -37,7 +38,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
       const previousMonday = new Date(monday); previousMonday.setUTCDate(previousMonday.getUTCDate() - 7);
       const ministryStart = new Date(now); ministryStart.setDate(ministryStart.getDate() - 90);
 
-      const [doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, meetingRows, objectiveRows, strategyRows, periodRows, unitRows, operationRows, volunteerRows, staffRows, teamRows] = await Promise.all([
+      const [doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, meetingRows, objectiveRows, strategyRows, periodRows, unitRows, operationRows, volunteerRows, staffRows, teamRows, activityResult] = await Promise.all([
         count("work_items", (query) => query.in("kind", ["task", "deliverable"]).in("status", ["completed", "self_certified"]).gte("completed_at", monday.toISOString())),
         count("work_items", (query) => query.in("kind", ["task", "deliverable"]).in("status", ["completed", "self_certified"]).gte("completed_at", previousMonday.toISOString()).lt("completed_at", monday.toISOString())),
         count("objectives"),
@@ -66,6 +67,11 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
         supabase.from("employment_records").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").eq("employment_type", "volunteer"),
         supabase.from("employment_records").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").neq("employment_type", "volunteer"),
         supabase.from("sub_teams").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("active", true),
+        supabase.from("activity_events")
+          .select("id,actor_id,verb,object_type,object_id,at")
+          .eq("org_id", me.org_id)
+          .order("at", { ascending: false })
+          .limit(12),
       ]);
 
       const firstError = [meetingRows.error, objectiveRows.error, strategyRows.error, periodRows.error, unitRows.error, operationRows.error].find(Boolean);
@@ -85,6 +91,15 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
       }
       setMinistryOperations(operations);
       setMinistryOccurrences(occurrenceRows);
+
+      const visibleActivity = activityResult.error ? [] : (activityResult.data || []);
+      const actorIds = [...new Set(visibleActivity.map((row) => row.actor_id).filter(Boolean))];
+      let actorNames = {};
+      if (actorIds.length) {
+        const actorResult = await supabase.from("profiles").select("id,full_name").in("id", actorIds);
+        if (!actorResult.error) actorNames = Object.fromEntries((actorResult.data || []).map((row) => [row.id, row.full_name]));
+      }
+      setRecentActivity(visibleActivity.map((row) => ({ ...row, actor_name: actorNames[row.actor_id] || null })));
 
       setMinistryStrategyRows(strategyRows.data || []);
 
@@ -189,6 +204,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
     unitsThisWeek={unitsThisWeek}
     ministryLatestRows={ministryLatestRows}
     ministryCharts={ministryCharts}
+    recentActivity={recentActivity}
     meetings={meetings}
     onRetry={load}
     onOpenWork={() => go?.("work")}
