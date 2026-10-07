@@ -11,6 +11,7 @@ export function resolveMfaGate({
   return decideMfaAccess({
     currentLevel: assurance?.currentLevel,
     nextLevel: assurance?.nextLevel,
+    currentAuthenticationMethods: assurance?.currentAuthenticationMethods,
     factors,
     privileged: isPrivilegedIdentity(me),
     enforcementEnabled: privilegedMfaEnforced,
