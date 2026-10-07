@@ -77,6 +77,36 @@ begin
 end
 $contract$;
 
+-- Rolled-back test-only factors prove both the signed AAL2 claim and current
+-- verified-factor state. No production factor is changed.
+insert into auth.mfa_factors(
+  id,user_id,friendly_name,factor_type,status,created_at,updated_at,secret
+) values
+  (
+    '51000000-0000-4000-8000-000000000002',
+    '31000000-0000-4000-8000-000000000002',
+    'S1 Manager gate fixture',
+    'totp'::auth.factor_type,
+    'verified'::auth.factor_status,
+    now(),now(),'local-gate-not-used'
+  ),
+  (
+    '51000000-0000-4000-8000-000000000003',
+    '31000000-0000-4000-8000-000000000003',
+    'S1 Admin gate fixture',
+    'totp'::auth.factor_type,
+    'verified'::auth.factor_status,
+    now(),now(),'local-gate-not-used'
+  ),
+  (
+    '51000000-0000-4000-8000-000000000004',
+    '31000000-0000-4000-8000-000000000004',
+    'S1 Executive gate fixture',
+    'totp'::auth.factor_type,
+    'verified'::auth.factor_status,
+    now(),now(),'local-gate-not-used'
+  );
+
 -- Test-phase compatibility: switch defaults off.
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
@@ -161,6 +191,34 @@ begin
   end if;
 end
 $admin_aal2$;
+
+-- A stale AAL2 JWT must not preserve privilege after its verified factor is removed.
+reset role;
+update auth.mfa_factors
+set status='unverified'::auth.factor_status,updated_at=now()
+where id='51000000-0000-4000-8000-000000000003';
+
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
+do $admin_stale_aal2$
+begin
+  if public.app_org_id() is null then
+    raise exception 'S1 MFA gate failure: stale-AAL2 Administration lost ordinary organisation bootstrap.';
+  end if;
+  if public.app_is_admin()
+     or public.app_has_capability('people.manage',null)
+     or public.app_has_capability('authority.manage',null) then
+    raise exception 'S1 MFA gate failure: stale AAL2 retained privilege without a verified factor.';
+  end if;
+end
+$admin_stale_aal2$;
+
+reset role;
+update auth.mfa_factors
+set status='verified'::auth.factor_status,updated_at=now()
+where id='51000000-0000-4000-8000-000000000003';
+
+set local role authenticated;
 
 -- Executive follows the same boundary.
 select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal1"}',true);
