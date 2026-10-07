@@ -29,6 +29,62 @@ Read-only production inspection on 7 October 2026 found:
 
 Because there are no current private Storage objects, this can be hardened before data migration/backfill is required.
 
+## Live profile/directory minimisation finding
+
+Read-only production inspection also found a separate S7 privacy issue in the ordinary `profiles` table.
+
+Current state:
+
+- RLS is enabled;
+- ordinary profile visibility is self + same-unit/co-visible people, with organisation-wide visibility for Admin/Executive;
+- `authenticated` has direct SELECT privilege on the whole table;
+- therefore every column on an RLS-visible profile row is selectable, not only the fields used by a particular UI;
+- selectable columns include `email`, `phone`, `birthday`, `contract_type`, `is_admin`, `is_exec` and ordinary work identity fields;
+- `anon` also still has broad table privileges, although current RLS/auth helpers appear to return no profile rows to an anonymous session.
+
+Live aggregate evidence at inspection:
+
+- active profiles: **8**;
+- active profiles with email populated: **8**;
+- active profiles with contract type populated: **8**;
+- active profiles with phone populated: **0**;
+- active profiles with birthday populated: **0**;
+- profiles participating in unit-based coworker visibility: **7**;
+- maximum same-unit coworker visibility from one profile relationship: **2**.
+
+No personal values were read for this audit.
+
+The current `guard_profile_self_update()` trigger prevents ordinary users from turning the broad table UPDATE grant into an Admin/employment/access escalation. Direct self changes are rejected unless they pass through the audited personal-details action, and that path is limited to `preferred_name`, `phone` and `birthday`.
+
+The remaining problem is therefore **column minimisation/read exposure**, not a demonstrated role-escalation path.
+
+### Required directory/profile redesign
+
+Do not rely on UI column selection as the privacy boundary.
+
+The final backend should expose explicit purpose-based projections, for example:
+
+- organisational directory projection: only approved C1 work-identity fields;
+- self profile projection: the person's own approved personal/contact fields;
+- Manager projection: only fields approved for managed-team operations;
+- Administration/HR projection: administrative fields through existing reviewed authority;
+- Technical Support projection: only account/access metadata needed for support.
+
+Work email must not become organisation/same-unit directory data until CEAC explicitly accepts that purpose. Phone, birthday and contract/employment detail must not be broadly exposed merely because the profile row is visible.
+
+A safe migration/deployment sequence is:
+
+1. add server-side directory/self/manager projections or narrow RPCs without removing current compatibility;
+2. move application queries to those projections in the Phase/product lane;
+3. prove Staff/Manager/Admin behavior with role fixtures;
+4. only then revoke broad authenticated SELECT on `profiles` and grant the exact remaining access path;
+5. revoke unnecessary anonymous privileges on `profiles`;
+6. keep RLS as a row boundary in addition to, not instead of, the new field boundary.
+
+Do not revoke the current table read before the application has migrated to the safe projections; doing so out of sequence would break active product surfaces.
+
+Required privacy gates must prove that an ordinary same-unit user cannot retrieve another person's phone, birthday or contract type, and cannot retrieve work email unless the approved directory policy explicitly permits it.
+
 ## Existing boundaries to preserve
 
 Do not weaken:
