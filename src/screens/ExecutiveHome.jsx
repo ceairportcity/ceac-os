@@ -186,6 +186,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
     onOpenOrganisation={() => go?.("exec-organisation")}
     onOpenFinance={() => go?.("exec-finance")}
     onOpenReports={() => go?.("exec-reports")}
+    onOpenCalendar={() => go?.("exec-calendar")}
     onOpenMeeting={openMeeting}
     onScheduleMeeting={() => scheduleMeeting?.({ scope:"organisation", organisation:true })}
   />;
