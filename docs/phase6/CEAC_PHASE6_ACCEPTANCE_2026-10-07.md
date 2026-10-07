@@ -83,3 +83,24 @@ These screenshots are acceptance evidence only. They do not replace the canonica
 ## Deliberate preview deployment checkpoint
 
 A `[vercel]` documentation-only checkpoint is used to request a deliberate Phase 6 preview deployment from the repository's existing Git→Vercel integration. This changes no product behavior, authority, schema, security boundary, or acceptance criteria.
+
+
+## Temporary GitHub continuity verification
+
+Protected `main` remains frozen at `827fbe7391467dd13d6e411527416402a252993c`. Phase 6 was reconciled forward with the current Phase 5 head `e1f80ecc51d24db79e9d85a987871db0f4e59155` through two-parent merge commit `f0ba65783b8f7427c25991f36a8b01914d24f078`. The resulting Phase 6 history is ahead of Phase 5 with no Phase 5 commits left behind; no reset, rebase or force-push was used.
+
+Continuity verification on the reconciled tree confirms:
+
+- the superseded migration `20261007015815_117_privileged_mfa_aal2_enforcement.sql` is absent and the canonical `20261007075418_privileged_mfa_aal2_enforcement.sql` remains present;
+- Volunteer remains an engagement classification rather than a fifth application role/panel;
+- private personal planning tables and checklist/event extensions remain owner-only under RLS;
+- ordinary salary Payroll excludes volunteers by default;
+- Phase 6 attendance corroboration writes evidence/audit state only and contains no automatic absence, misconduct, discipline, salary deduction or Payroll consequence path;
+- migration 124 removes the earlier redundant attendance draft tables/functions before retaining the approved Phase 6 corroboration model;
+- the browser suite contains all nine binding Phase 6 reference screenshot hooks plus the dedicated Phase 6C mobile evidence capture;
+- the Phase 6 SQL gate is registered in the repository gate runner;
+- high-risk Phase 6 application files and the Phase 6 test harness resolve their repository-local source targets.
+
+Phase 5 product code had already reached a fully green four-workflow checkpoint at `9a635216a90c759a3edaeeb457189630a939b883`. No Phase 5 `src/` application file changed between that checkpoint and the current Phase 5 head; subsequent Phase 5 changes are repository reconciliation, migration-filename parity, acceptance metadata and a baseline test assertion.
+
+This is IMPLEMENTED / CONTINUITY-VERIFIED state, not protected-main acceptance. Exact-head GitHub Actions, generated Phase 6 browser artifacts, protected-main merge and exact-main verification remain pending while GitHub Actions are unavailable for the flagged owner account. Preview deployment is also not recorded as successful: Vercel reported the project deployment-rate limit and this session has no authorised access to the owning Vercel team.
