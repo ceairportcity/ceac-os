@@ -65,6 +65,7 @@ const Room = lazy(() => import("./screens/Room"));
 const Meeting = lazy(() => import("./screens/Meeting"));
 const DesignPrimitives = lazy(() => import("./screens/DesignPrimitives"));
 const AccountActivity = lazy(() => import("./screens/AccountActivity"));
+const Guide = lazy(() => import("./screens/Guide"));
 const MeetingScheduler = lazy(() => import("./components/MeetingScheduler"));
 
 
@@ -108,6 +109,7 @@ export default function App() {
   const [meetingId, setMeetingId] = useState(initialRoute.meetingId);
   const [meetingDraft, setMeetingDraft] = useState(null);
   const [createIntent, setCreateIntent] = useState(null);
+  const [guideContextTab, setGuideContextTab] = useState(null);
   const [peopleFocusId, setPeopleFocusId] = useState(null);
   const [peopleAccessIntent, setPeopleAccessIntent] = useState(null);
   const [lifecycleIntent, setLifecycleIntent] = useState(null);
@@ -192,7 +194,15 @@ export default function App() {
     else navigate({ tab }, { replace: true });
   }
 
-  function go(t) { navigate({ tab: t }); }
+  function go(t) {
+    if (t !== "guide") setGuideContextTab(null);
+    navigate({ tab: t });
+  }
+
+  function openGuide(contextual = false) {
+    setGuideContextTab(contextual && tab !== "guide" ? tab : null);
+    navigate({ tab: "guide" });
+  }
   function openLifecycle(profileId = null, type = "offboarding") {
     navigate({ tab: "lifecycle" });
     setLifecycleIntent(profileId ? { profileId, type } : null);
@@ -318,6 +328,7 @@ export default function App() {
   }
 
   function pageForTab() {
+    if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
     if (tab === "primitives" && isAdmin) return <DesignPrimitives me={me} />;
     if (tab === "home") {
@@ -444,6 +455,7 @@ export default function App() {
         onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
         onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
         onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
+        onGuide={() => openGuide(false)}
       />
       <div className="ev2s-workspace">
         <MobileTopBar
@@ -467,6 +479,7 @@ export default function App() {
           onOpenMeeting={openMeeting}
           onOpenRoom={openRoom}
           onOpenAnnouncement={openSearchAnnouncement}
+          onGuide={() => openGuide(true)}
         />
         <AppTopBar
           me={me}
@@ -489,6 +502,7 @@ export default function App() {
           onOpenMeeting={openMeeting}
           onOpenRoom={openRoom}
           onOpenAnnouncement={openSearchAnnouncement}
+          onGuide={() => openGuide(true)}
         />
         <main className="app-content ev2s-content">
           <RouteTransition routeKey={routeTransitionKey}>
@@ -518,7 +532,7 @@ export default function App() {
           </Suspense>
           </RouteTransition>
         </main>
-        {!overlay && <Tabs tab={tab} setTab={go} isManager={isUnitManager} isExec={isExec} isAdmin={isAdmin} me={me} />}
+        {!overlay && <Tabs tab={tab} setTab={go} isManager={isUnitManager} isExec={isExec} isAdmin={isAdmin} me={me} onGuide={() => openGuide(false)} />}
       </div>
     </div>);
 }
