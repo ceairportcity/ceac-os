@@ -7,6 +7,7 @@ tests=(
   admin_hr_security_gate.sql
   platform_kernel_gate.sql
   security_definer_surface_gate.sql
+  privileged_mfa_aal2_gate.sql
   s6_hot_path_security_performance_gate.sql
   meeting_authority_gate.sql
   employment_history_gate.sql
