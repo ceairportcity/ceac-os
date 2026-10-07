@@ -59,7 +59,7 @@ select set_config(
 );
 
 select (public.grant_capability(
-  '31000000-0000-4000-8000-000000000006',
+  '31000000-0000-4000-8000-000000000002',
   'performance.admin',
   '20000000-0000-4000-8000-000000000011',
   'S3 JML offboarding authority probe',
@@ -79,7 +79,7 @@ begin
     org_id,profile_id,lifecycle_type,planned_effective_on,reason,state,created_by
   ) values (
     '10000000-0000-4000-8000-000000000010',
-    '31000000-0000-4000-8000-000000000006',
+    '31000000-0000-4000-8000-000000000002',
     'offboarding',
     current_date,
     'S3 JML authority closure gate',
@@ -111,7 +111,7 @@ begin
   if exists (
     select 1
     from public.profiles
-    where id='31000000-0000-4000-8000-000000000006'
+    where id='31000000-0000-4000-8000-000000000002'
       and active
   ) then
     raise exception 'S3 JML gate failure: offboarded profile remained active.';
@@ -131,20 +131,38 @@ begin
     select 1
     from public.unit_memberships
     where org_id='10000000-0000-4000-8000-000000000010'
-      and profile_id='31000000-0000-4000-8000-000000000006'
+      and profile_id='31000000-0000-4000-8000-000000000002'
   ) then
     raise exception 'S3 JML gate failure: offboarding retained a current unit membership.';
+  end if;
+
+  if exists (
+    select 1
+    from public.sub_teams
+    where id='22000000-0000-4000-8000-000000000011'
+      and lead_id='31000000-0000-4000-8000-000000000002'
+  ) then
+    raise exception 'S3 JML gate failure: offboarding retained the live Sub-team lead assignment.';
+  end if;
+
+  if not exists (
+    select 1
+    from public.platform_audit_events
+    where resource_type='sub_team'
+      and resource_id='22000000-0000-4000-8000-000000000011'
+      and actor_id='31000000-0000-4000-8000-000000000003'
+      and 'lead_id'=any(changed_fields)
+  ) then
+    raise exception 'S3 JML gate failure: Sub-team lead removal was not audited.';
   end if;
 end
 $offboarding_closed_authority$;
 
--- Simulate a stale historical lane-lead attribution after a unit transfer.
--- The lead_id can remain for attribution, but without current unit membership
--- it must confer no lane authority.
-delete from public.unit_memberships
-where org_id='10000000-0000-4000-8000-000000000010'
-  and profile_id='31000000-0000-4000-8000-000000000002'
-  and unit_id='20000000-0000-4000-8000-000000000011';
+-- Independently prove stale lane attribution cannot confer authority when
+-- current unit membership is absent. Restore only the stale lead pointer.
+update public.sub_teams
+set lead_id='31000000-0000-4000-8000-000000000002'
+where id='22000000-0000-4000-8000-000000000011';
 
 set local role authenticated;
 select set_config(
@@ -160,7 +178,7 @@ begin
     from public.app_led_sub_teams() led(id)
     where led.id='22000000-0000-4000-8000-000000000011'
   ) then
-    raise exception 'S3 JML gate failure: stale lane-lead attribution retained authority after membership ended.';
+    raise exception 'S3 JML gate failure: stale lane-lead attribution retained authority without current membership.';
   end if;
 end
 $stale_lane_lead_denied$;
