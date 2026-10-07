@@ -49,6 +49,7 @@ const databaseOrSecurityChanged = files.some(
     file.startsWith("supabase/") ||
     file === "src/lib/supabase.js" ||
     file === "scripts/test-account-security.mjs" ||
+    file === "scripts/test-real-invitation-rpc.mjs" ||
     /auth|security|session/i.test(file),
 );
 const levelBRequested = /\[level-b\]/i.test(subject);
@@ -98,6 +99,7 @@ const outputs = {
       files.some(
         (file) =>
           file === "scripts/test-account-security.mjs" ||
+          file === "scripts/test-real-invitation-rpc.mjs" ||
           /auth|security|session/i.test(file),
       ),
   ),
