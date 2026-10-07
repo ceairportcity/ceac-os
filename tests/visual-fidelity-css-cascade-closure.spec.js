@@ -24,6 +24,7 @@ const modernCss = [
 const routeLazyCss = [
   "src/experience-v2/manager-overview/manager-overview.css",
   "src/experience-v2/executive-overview/executive-overview.css",
+  "src/experience-v2/executive-overview/executive-redesign.css",
 ];
 
 const legacyCss = [
