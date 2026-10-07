@@ -5,27 +5,19 @@ alter table public.organisations
   add column if not exists privileged_mfa_required boolean not null default false;
 
 comment on column public.organisations.privileged_mfa_required is
-  'When true, elevated CEAC authority requires an aal2 session backed by a currently verified MFA factor. Keep false until go-live enrollment is complete.';
+  'When true, elevated CEAC authority requires a signed Supabase aal2 session. Keep false until go-live enrollment is complete.';
 
 create or replace function public.app_privileged_aal_allowed()
 returns boolean
 language sql
 stable
 security definer
-set search_path=public,auth
-as $$
+set search_path=public
+as $
   select coalesce((
     select
       not o.privileged_mfa_required
-      or (
-        coalesce(auth.jwt()->>'aal','aal1')='aal2'
-        and exists (
-          select 1
-          from auth.mfa_factors f
-          where f.user_id=p.id
-            and f.status='verified'
-        )
-      )
+      or coalesce(auth.jwt()->>'aal','aal1')='aal2'
     from public.profiles p
     join public.organisations o on o.id=p.org_id
     where p.id=auth.uid()

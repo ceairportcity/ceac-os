@@ -17,14 +17,13 @@ It is read through the existing own-organisation RLS boundary. No browser setter
 
 ## Privileged session rule
 
-When enforcement is enabled, elevated authority requires both:
+When enforcement is enabled, elevated authority requires the signed Supabase JWT authenticator-assurance claim to be `aal2`.
 
-1. JWT authenticator assurance `aal2`; and
-2. at least one currently verified Supabase Auth MFA factor for the signed-in user.
+Supabase issues AAL2 only after a verified MFA challenge. The database therefore uses the supported signed-session contract rather than granting application functions direct read access to the protected Auth factor table.
 
-The second check closes the short stale-token window after a factor is removed.
+The internal helper `app_privileged_aal_allowed()` is SECURITY DEFINER with a fixed search path, but EXECUTE remains revoked from `anon` and `authenticated`. It is not a browser API and does not increase the authenticated SECURITY DEFINER ceiling.
 
-The internal helper `app_privileged_aal_allowed()` is SECURITY DEFINER with a fixed search path because it must read Supabase Auth MFA-factor state. EXECUTE remains revoked from `anon` and `authenticated`, so it is not a browser API and does not increase the authenticated SECURITY DEFINER ceiling.
+As with global sign-out, an already-issued access JWT can remain valid until its short expiry. Final go-live acceptance must therefore combine MFA enrollment, session/recovery controls and the AAL2 database gate rather than claiming instant token revocation.
 
 ## Authority paths covered
 
@@ -61,12 +60,11 @@ The dedicated SQL gate proves:
 - Staff AAL1 keeps ordinary organisation/unit context;
 - Manager/work-lane/review authority is absent at AAL1 and restored at AAL2;
 - Administration capability/People authority is absent at AAL1 and restored at AAL2;
-- stale AAL2 loses privilege when the verified factor is removed;
 - Executive/payroll approval authority is absent at AAL1 and restored at AAL2;
 - raw Manager calendar-policy bypass is removed;
 - callable SECURITY DEFINER ceilings remain unchanged.
 
-All Auth-factor mutations exist only inside a rolled-back local CI transaction. This migration does not create, modify or enroll production MFA factors.
+This migration does not read, create, modify or enroll MFA factors. Final human enrollment remains a separate go-live action.
 
 ## Remaining S1 work
 
