@@ -45,7 +45,7 @@ export default function MfaSettings({ me }) {
       supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
       me?.org_id
         ? supabase.from("organisations")
-          .select("privileged_mfa_enforced")
+          .select("privileged_mfa_required")
           .eq("id", me.org_id)
           .single()
         : Promise.resolve({ data: null, error: null }),
@@ -70,7 +70,7 @@ export default function MfaSettings({ me }) {
 
     if (!assurance.error) setLevel(assurance.data || null);
     if (!organisation.error) {
-      setEnforcementEnabled(Boolean(organisation.data?.privileged_mfa_enforced));
+      setEnforcementEnabled(Boolean(organisation.data?.privileged_mfa_required));
     }
 
     setLoading(false);
