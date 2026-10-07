@@ -7,6 +7,9 @@ updates:
     open-pull-requests-limit: 5
     groups:
       frontend-security-and-tooling:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "vite"
           - "@vitejs/*"
