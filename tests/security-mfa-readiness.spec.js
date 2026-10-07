@@ -86,6 +86,8 @@ test("S1 MFA implementation keeps TOTP management self-only and AAL2-protected",
   expect(settings).not.toContain("Other signed-in sessions were revoked");
   expect(settings).toContain("Add and verify a replacement before removing the only verification method on this privileged account.");
 
+  expect(bootstrap).toContain("auth.user.email_confirmed_at");
+  expect(bootstrap).toContain("Complete your email verification before opening CEAC.");
   expect(bootstrap).toContain('supabase.from("sub_teams")');
   expect(bootstrap).toContain('.eq("lead_id", auth.user.id)');
   expect(bootstrap).toContain('.eq("active", true)');
