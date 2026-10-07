@@ -2580,7 +2580,7 @@ test("Foundation People & Access keeps new invitations distinct from existing re
     await expect(page.locator(".phase5-people-access")).toBeVisible();
     await expect(page.getByRole("button",{name:"Send Staff invitation"})).toBeDisabled();
     await page.screenshot({path:`test-artifacts/foundation-people-access-invite-${viewport.width}.png`,fullPage:true});
-    await page.getByRole("button",{name:"Add responsibility",exact:true}).click();
+    await page.locator(".phase5-people-access").getByRole("tab",{name:"Responsibilities",exact:true}).click();
     await expect(page.getByRole("combobox",{name:"Existing person",exact:true})).toBeVisible();
     await page.getByRole("combobox",{name:"Existing person",exact:true}).selectOption("31000000-0000-4000-8000-000000000002");
     await expect(page.getByRole("button",{name:"End membership"}).first()).toBeVisible();
