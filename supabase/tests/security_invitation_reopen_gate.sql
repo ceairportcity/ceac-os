@@ -103,16 +103,14 @@ select (public.create_pending_invitation(
 )).id as reopened_id
 \gset
 
+select set_config('ceac.test.reopened_id', :'reopened_id', true);
+
 do $admin_reopened$
 begin
-  if current_setting('ceac.test.reopened_id',true) is not null then
-    null;
-  end if;
-
   if not exists (
     select 1
     from public.pending_invitations
-    where id=:'reopened_id'::uuid
+    where id=current_setting('ceac.test.reopened_id')::uuid
       and revoked_at is null
       and revoked_by is null
       and revocation_reason is null
