@@ -1267,3 +1267,51 @@ button.ev2cal-event:hover {
     width: 100%;
   }
 }
+
+
+/* Phase 6B — cross-role calendar scope */
+
+.phase6-calendar-scope {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(8.5rem, auto);
+  gap: var(--ev2-space-1);
+  margin: 0 0 var(--ev2-space-4);
+  padding: var(--ev2-space-1);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-control);
+  background: var(--ev2-surface-soft);
+}
+
+.phase6-calendar-scope button {
+  min-height: var(--ev2-control-min);
+  padding: 0 var(--ev2-space-3);
+  border: 0;
+  border-radius: calc(var(--ev2-radius-control) - 2px);
+  background: transparent;
+  color: var(--ev2-text-secondary);
+  font: inherit;
+  font-size: var(--ev2-type-supporting);
+  font-weight: 720;
+  cursor: pointer;
+}
+
+.phase6-calendar-scope button.is-selected {
+  background: var(--ev2-surface);
+  color: var(--ev2-action);
+  box-shadow: var(--ev2-shadow-control);
+}
+
+@media (max-width: 599px) {
+  .phase6-calendar-scope {
+    width: 100%;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .phase6-calendar-scope button {
+    min-width: 0;
+    padding-inline: var(--ev2-space-2);
+  }
+}

@@ -29,7 +29,7 @@ const FILTER_ITEMS = [
   { value:"leave", label:"Leave", icon:"time" },
 ];
 
-export default function StaffCalendar({me,openItem,openMeeting}){
+export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staff / Volunteer",scopeControl=null}){
   const today=new Date();
   const [cursor,setCursor]=useState(today);
   const [selectedDate,setSelectedDate]=useState(dayKey(today));
@@ -209,11 +209,12 @@ export default function StaffCalendar({me,openItem,openMeeting}){
       eyebrow="My workspace"
       title="Calendar"
       description="Shared CEAC commitments and your private planning in one calendar. Private events, tasks and notes stay visible only to you."
-      status="Staff / Volunteer"
+      status={statusLabel}
       statusTone="action"
       action={<Button onClick={()=>openComposer("event")}>+ Add</Button>}
     />
 
+    {scopeControl}
     <CalendarFilters value={filter} onChange={setFilter} items={FILTER_ITEMS} ariaLabel="Calendar filters" />
     {error&&<ProductNotice tone="error" title="Could not load Calendar">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Calendar">{notice}</ProductNotice>}
