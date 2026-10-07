@@ -13,7 +13,7 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $$
   select coalesce((
     select
       not o.privileged_mfa_required
