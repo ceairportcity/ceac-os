@@ -1,19 +1,17 @@
 // Use documented Auth codes, never raw server messages or credential values.
 export function authErrorMessage(error, context = "signin") {
   const code = error?.code;
-  const rateLimited = error?.status === 429
-    || code === "over_request_rate_limit"
-    || code === "over_email_send_rate_limit"
-    || code === "email_rate_limit_exceeded";
-  const network = error?.name === "AuthRetryableFetchError"
-    || error?.name === "TypeError"
-    || code === "request_timeout";
+  const rateLimited = error?.status === 429 || code?.includes("rate_limit");
+  const network = ["AuthRetryableFetchError", "TypeError"].includes(error?.name) || code === "request_timeout";
 
   if (context === "signin") {
-    if (code === "invalid_credentials") return "That email and password did not match. Please try again.";
-    if (code === "email_not_confirmed") return "Your email still needs verification. Open the newest CEAC activation email or contact Administration.";
-    if (code === "user_banned") return "This account cannot sign in. Contact CEAC Administration.";
-    if (code === "email_provider_disabled") return "Email sign-in is unavailable. Contact CEAC Administration.";
+    const known = {
+      invalid_credentials: "That email and password did not match. Please try again.",
+      email_not_confirmed: "Your email still needs verification. Open the newest CEAC activation email or contact Administration.",
+      user_banned: "This account cannot sign in. Contact CEAC Administration.",
+      email_provider_disabled: "Email sign-in is unavailable. Contact CEAC Administration.",
+    };
+    if (known[code]) return known[code];
   }
   if (context === "password" && code === "weak_password") return "Choose a stronger password and try again.";
   if (context === "password" && code === "same_password") return "Choose a new password that is different from your current password.";
