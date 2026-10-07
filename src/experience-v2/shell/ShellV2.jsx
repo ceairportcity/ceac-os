@@ -243,8 +243,13 @@ export function AppTopBar({
           />
         ) : null}
 
-        {onMessages ? <button type="button" className="fpg9-topbar-message" onClick={onMessages} aria-label="Open messages">
-          <CeacIcon name="messages" size="row" decorative />
+        {onMessages ? <button
+          type="button"
+          className={isExec ? "fpg9-topbar-message exec-redesign-notification" : "fpg9-topbar-message"}
+          onClick={onMessages}
+          aria-label={isExec ? "Open updates" : "Open messages"}
+        >
+          <CeacIcon name={isExec ? "notification" : "messages"} size="row" decorative />
         </button> : null}
 
         <div className="ev2s-accra-time" aria-label="Current date and time in Accra">
@@ -331,6 +336,14 @@ export function MobileTopBar({
             onOpenRoom={onOpenRoom}
             onOpenAnnouncement={onOpenAnnouncement}
           />
+          {isExec && onMessages ? <button
+            type="button"
+            className="ev2s-mobile-profile exec-redesign-mobile-notification"
+            aria-label="Open updates"
+            onClick={onMessages}
+          >
+            <CeacIcon name="notification" size="row" decorative />
+          </button> : null}
           <button
             type="button"
             className="ev2s-mobile-profile"

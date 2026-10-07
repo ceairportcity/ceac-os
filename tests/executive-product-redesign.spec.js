@@ -24,6 +24,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   const lock = fs.readFileSync(contract, "utf8");
   const css = fs.readFileSync("src/experience-v2/executive-overview/executive-redesign.css", "utf8");
   const overview = fs.readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
+  const shell = fs.readFileSync("src/experience-v2/shell/ShellV2.jsx", "utf8");
   const legacy = fs.readFileSync("src/premium-executive.css", "utf8");
 
   expect(lock).toContain("literal implementation authority");
@@ -35,6 +36,9 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(overview).toContain("Upcoming Meetings");
   expect(overview).toContain("Reports / Actions");
   expect(css).toContain(".executive-app .ev2s-sidebar");
+  expect(shell).toContain('aria-label={isExec ? "Open updates" : "Open messages"}');
+  expect(shell).toContain('name={isExec ? "notification" : "messages"}');
+  expect(shell).toContain('className="ev2s-mobile-profile exec-redesign-mobile-notification"');
   expect(css).toContain(".executive-app .ev2-project-delivery.is-executive");
   expect(css).toContain(".executive-app .ev2cal-admin-page");
   expect(css).toContain(".executive-app .fpg-payroll");
@@ -79,6 +83,7 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
   const columns = await page.locator(".executivev2-kpis").evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(" ").length);
   expect(columns).toBe(2);
   await expect(page.locator(".executivev2-attention")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open updates", exact: true })).toBeVisible();
   await expect(page.locator(".executivev2-direction")).toBeHidden();
   await expect(page.locator(".executivev2-organisation")).toBeHidden();
   await expect(page.locator(".executivev2-activity")).toBeHidden();

@@ -316,6 +316,25 @@
   background: #f8f9fc;
 }
 
+.executive-app .exec-redesign-notification {
+  color: #273144;
+  border-color: #e3e6ed;
+  background: #fff;
+  border-radius: 8px;
+}
+.executive-app .exec-redesign-notification:hover {
+  color: var(--exec-purple);
+  border-color: #d8d0fa;
+  background: var(--exec-purple-soft);
+}
+.executive-app .exec-redesign-mobile-notification {
+  color: #273144;
+}
+.executive-app .exec-redesign-mobile-notification:hover {
+  color: var(--exec-purple);
+  background: var(--exec-purple-soft);
+}
+
 /* Executive Portfolio */
 .executive-app .ev2-project-delivery.is-executive {
   width: 100%;
