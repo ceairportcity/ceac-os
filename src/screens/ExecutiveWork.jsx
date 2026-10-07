@@ -57,7 +57,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
   ];
   const rows = view === "given" ? activeGiven : activeMine;
 
-  return <div className="body executive-work premium-exec-page ev2-work-page ev2-work-executive">
+  return <div className="body executive-work ev2-work-page ev2-work-executive">
     <WorkPageHeader
       eyebrow="Executive workspace"
       title="Work"
