@@ -28,7 +28,7 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $$
   select exists (
     select 1
     from public.profiles p
@@ -37,7 +37,7 @@ as $
       and p.active
       and u.email_confirmed_at is not null
   );
-$;
+$$;
 
 revoke all on function public.app_identity_confirmed()
   from public,anon,authenticated;
@@ -48,14 +48,14 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $$
   select p.org_id
   from public.profiles p
   join auth.users u on u.id=p.id
   where p.id=auth.uid()
     and p.active
     and u.email_confirmed_at is not null;
-$;
+$$;
 
 create or replace function public.app_privileged_aal_allowed()
 returns boolean
@@ -63,7 +63,7 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $$
   select coalesce((
     select
       not o.privileged_mfa_required
@@ -83,7 +83,7 @@ as $
       and p.active
       and u.email_confirmed_at is not null
   ),false);
-$;
+$$;
 
 create or replace function public.app_is_admin()
 returns boolean
@@ -91,7 +91,7 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $$
   select coalesce((
     select p.is_admin
     from public.profiles p
@@ -100,7 +100,7 @@ as $
       and public.app_identity_confirmed()
       and public.app_privileged_aal_allowed()
   ),false);
-$;
+$$;
 
 create or replace function public.app_is_exec()
 returns boolean
@@ -108,7 +108,7 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $$
   select coalesce((
     select p.is_exec
     from public.profiles p
@@ -117,7 +117,7 @@ as $
       and public.app_identity_confirmed()
       and public.app_privileged_aal_allowed()
   ),false);
-$;
+$$;
 
 create or replace function public.app_my_units()
 returns setof uuid
@@ -125,14 +125,14 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $$
   select m.unit_id
   from public.unit_memberships m
   join public.profiles p on p.id=m.profile_id
   where p.id=auth.uid()
     and p.active
     and public.app_identity_confirmed();
-$;
+$$;
 
 create or replace function public.app_managed_units()
 returns setof uuid
@@ -140,7 +140,7 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $$
   select m.unit_id
   from public.unit_memberships m
   join public.profiles p on p.id=m.profile_id
@@ -149,7 +149,7 @@ as $
     and m.role='manager'
     and public.app_identity_confirmed()
     and public.app_privileged_aal_allowed();
-$;
+$$;
 
 create or replace function public.app_has_capability(
   p_capability text,
@@ -178,7 +178,7 @@ as $$
           or (p_unit_id is not null and cg.scope_unit_id=p_unit_id)
         )
     );
-$;
+$$;
 
 create or replace function public.app_led_sub_teams()
 returns setof uuid
@@ -186,7 +186,7 @@ language sql
 stable
 security definer
 set search_path=public
-as $
+as $$
   select s.id
   from public.sub_teams s
   join public.profiles p
@@ -201,7 +201,7 @@ as $
     and s.active
     and public.app_identity_confirmed()
     and public.app_privileged_aal_allowed();
-$;
+$$;
 
 revoke all on function public.app_led_sub_teams() from public,anon;
 grant execute on function public.app_led_sub_teams() to authenticated,service_role;
@@ -499,7 +499,7 @@ create or replace function public.guard_sub_team_hr_fields()
 returns trigger
 language plpgsql
 set search_path=public
-as $
+as $$
 begin
   if current_setting('ceac.security_deactivation',true)='close'
      and tg_op='UPDATE'
@@ -530,7 +530,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists audit_sub_teams on public.sub_teams;
 create trigger audit_sub_teams
