@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { test, expect } from "@playwright/test";
-import { getMobilePrimaryNavigation } from "../src/experience-v2/shell/navigation.js";
+import { getMobilePrimaryNavigation, getShellNavigation } from "../src/experience-v2/shell/navigation.js";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 const reference = "docs/design/executive-redesign/CEAC_EXECUTIVE_PANEL_APPROVED_REFERENCE.webp";
@@ -84,11 +84,40 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
     me: { capabilities: ["payroll.approve"] },
   });
   expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Ministry"]);
+
+  const desktop = getShellNavigation({
+    isExec: true,
+    isAdmin: false,
+    isManager: false,
+    me: { capabilities: ["payroll.approve"] },
+  });
+  expect(desktop.map((item) => item.label)).toEqual([
+    "Overview",
+    "Work",
+    "Ministry",
+    "Portfolio",
+    "Organisation",
+    "Calendar",
+    "Finance",
+    "Payroll",
+    "Reports",
+    "Messages",
+    "My Hub",
+    "Account",
+  ]);
+  expect(css).toContain("/* Executive phone Payroll cards */");
+  expect(css).toContain(".executive-app .fpg-payroll-table thead");
+  expect(css).toContain('content: "Additions"');
+  expect(css).toContain(".executive-app .fpg-payroll-row-action");
 });
 
 test("Executive Overview reproduces the locked desktop composition", async ({ page }) => {
   await signIn(page);
   await expect(page.getByText("Executive Dashboard", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Search across CEAC OS")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open updates", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Quick create")).toBeHidden();
+  await expect(page.getByLabel("Current date and time in Accra")).toBeHidden();
   await expect(page.locator(".executivev2-hero h2")).toContainText("Good morning");
   await expect(page.locator(".executivev2-kpi")).toHaveCount(4);
   await expect(page.locator(".executivev2-reference-grid > .executivev2-reference-panel")).toHaveCount(3);
