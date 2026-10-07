@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "resilience:verify": "node scripts/resilience/verify-resilience.mjs",
+    "recovery:release": "node scripts/resilience/create-recovery-release.mjs",
+    "standby:prepare": "node scripts/resilience/prepare-standby-package.mjs",
+    "standby:serve": "node scripts/resilience/serve-prebuilt.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

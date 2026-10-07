@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import ExperienceV2MotionProvider from "./experience-v2/ExperienceV2MotionProvider";
@@ -24,11 +24,23 @@ import "./experience-v2/personal-family/personal-family.css";
 import "./experience-v2/calendar/calendar.css";
 import "./experience-v2/data-viz/data-viz.css";
 import "./experience-v2/integrations/integrations.css";
+import "./resilience/pwa-status.css";
+
+const PwaStatus = lazy(() => import("./resilience/PwaStatus"));
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ExperienceV2MotionProvider>
       <App />
+      <Suspense fallback={null}>
+        <PwaStatus />
+      </Suspense>
     </ExperienceV2MotionProvider>
   </React.StrictMode>
 );
+
+if (import.meta.env.PROD) {
+  import("./resilience/registerServiceWorker").then(({ registerCeacServiceWorker }) => {
+    registerCeacServiceWorker();
+  });
+}

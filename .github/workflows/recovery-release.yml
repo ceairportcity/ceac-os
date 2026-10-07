@@ -1,0 +1,38 @@
+name: CEAC Recovery Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      accepted_sha:
+        description: Exact protected-main SHA already accepted for production
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.accepted_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Confirm exact checkout
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ inputs.accepted_sha }}"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run resilience:verify
+      - run: npm run recovery:release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ceac-recovery-${{ inputs.accepted_sha }}
+          path: recovery-output/*.tar.gz
+          if-no-files-found: error
+          retention-days: 30
