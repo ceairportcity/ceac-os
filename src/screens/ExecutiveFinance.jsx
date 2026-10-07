@@ -114,9 +114,9 @@ export default function ExecutiveFinance({ me }) {
   return (
     <div className="body ev2-finance-page ev2-finance-executive">
       <FinancePageHeader
-        eyebrow="Leadership finance"
+        eyebrow="Executive insight"
         title="Finance"
-        description="Leadership context from recorded budgets, requests and actual spend. Currencies stay separate. Requests that specifically require Group Pastor authority appear below."
+        description="View financial overview and key recorded information. Currencies stay separate, and requests requiring Group Pastor authority remain explicit."
         statusLabel={statusLabel}
         statusTone={error ? "danger" : "neutral"}
       />
