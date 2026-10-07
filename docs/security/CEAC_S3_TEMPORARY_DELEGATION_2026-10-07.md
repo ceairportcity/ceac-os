@@ -53,6 +53,27 @@ Temporary `authority.manage` may supplement authority, but CEAC must retain at l
 
 A temporary authority holder therefore cannot become the only future authority holder merely because the permanent grant is revoked or converted to expiring.
 
+## Invitation cancellation authority
+
+A cancelled invitation is an Administration decision, not an ordinary resend state.
+
+S3 hardens `create_pending_invitation()` so:
+
+- Unit Managers can still invite Staff into units they manage;
+- Unit Managers can refresh ordinary expired/unresolved invitations within their authority;
+- a Unit Manager cannot reopen an invitation after People Administration has cancelled it;
+- only current `people.manage` authority can make the explicit decision to reopen a cancelled invitation;
+- reopening remains auditable through the normal invitation activity event.
+
+This closes a lower-authority overwrite path in the previous conflict-update behavior, which cleared cancellation fields whenever the same email was invited again.
+
+A dedicated rollback gate proves:
+
+1. Unit Manager creates an invitation in their managed unit;
+2. People Administration cancels it;
+3. the Unit Manager is denied when attempting to reopen it;
+4. People Administration can explicitly reopen it.
+
 ## Confirmed-account joiner boundary
 
 Invitation creation alone must not be enough to open CEAC authority.
@@ -154,6 +175,7 @@ The S3 SQL gates prove:
 - an unconfirmed Auth identity receives no organisation, Admin, Executive, capability, Manager, unit or lane-lead authority;
 - the browser bootstrap refuses to open CEAC before email confirmation;
 - removing or moving a unit membership closes live Sub-team lead authority in the old unit and audits the change;
+- Unit Managers cannot undo a People Administration invitation cancellation;
 - privileged database authority accepts only a verified TOTP factor, matching the CEAC v1 browser MFA experience;
 - all prior capability authority/security gates continue to run.
 
