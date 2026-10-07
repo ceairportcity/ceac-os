@@ -70,6 +70,9 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(organisation).toContain("View departments, teams and people across the recorded CEAC structure.");
   expect(calendar).toContain("Your meetings, ministry events and key recorded dates in one Executive calendar.");
   expect(finance).toContain("View financial overview and key recorded information.");
+  expect(finance).toContain('supabase.from("income_lines")');
+  expect(finance).toContain('label: "Received"');
+  expect(finance).toContain("Reversal-aware recorded income");
   expect(css).toContain(".executive-app {");
   expect(css).toContain("/* Literal semantic summary accents */");
   expect(css).toContain(".fpg-payroll-metrics article:nth-child(1)");
