@@ -53,6 +53,8 @@ test("Phase 6C corroboration remains additive evidence with no automatic consequ
   expect(evidence).toContain("attendance_verify_office_code");
   expect(evidence).toContain("attendance_corroboration_for_day");
   expect(evidence).toContain("do not prove presence or create attendance, pay or disciplinary conclusions");
+  expect(evidence).toContain("No attendance obligation");
+  expect(evidence).toContain("Not required");
 });
 
 test("Phase 6C invalid code does not close work and a valid code appears as corroborating evidence", async ({ browser }) => {
