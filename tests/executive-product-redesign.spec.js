@@ -39,6 +39,9 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(overview).toContain("Upcoming Meetings");
   expect(overview).toContain("Reports / Actions");
   expect(home).toContain('supabase.from("strategy_nodes")');
+  expect(home).toContain('supabase.from("activity_events")');
+  expect(overview).toContain("recentActivity");
+  expect(overview).toContain("Recent attributable CEAC activity");
   expect(overview).toContain("ministryStrategyRows");
   expect(overview).not.toContain("On track or met");
   expect(css).toContain(".executive-app .ev2s-sidebar");
