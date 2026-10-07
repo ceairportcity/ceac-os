@@ -43,6 +43,13 @@ begin
     raise exception 'S1 MFA gate failure: privileged server authority is not pinned to verified TOTP.';
   end if;
 
+  if pg_get_functiondef('public.app_privileged_aal_allowed()'::regprocedure)
+       not ilike '%amr%'
+     or pg_get_functiondef('public.app_privileged_aal_allowed()'::regprocedure)
+       not ilike '%method == "totp"%' then
+    raise exception 'S1 MFA gate failure: privileged server authority does not require TOTP in the current session AMR.';
+  end if;
+
   select count(*) into callable_count
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.prosecdef
@@ -160,7 +167,7 @@ begin
 end
 $manager_aal1$;
 
-select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2","amr":[{"method":"totp","timestamp":1700000000}]}',true);
 do $manager_aal2$
 begin
   if not exists(select 1 from public.app_managed_units() as u(unit_id) where u.unit_id='20000000-0000-4000-8000-000000000011'::uuid)
@@ -186,7 +193,7 @@ begin
 end
 $admin_aal1$;
 
-select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
+select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2","amr":[{"method":"totp","timestamp":1700000000}]}',true);
 do $admin_aal2$
 begin
   if not public.app_is_admin()
@@ -215,7 +222,7 @@ insert into auth.mfa_factors(
 );
 
 set local role authenticated;
-select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
+select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2","amr":[{"method":"totp","timestamp":1700000000}]}',true);
 do $admin_stale_aal2$
 begin
   if public.app_org_id() is null then
@@ -236,6 +243,23 @@ where id='51000000-0000-4000-8000-000000000003';
 
 set local role authenticated;
 
+-- A verified TOTP on the account is not enough by itself. The current AAL2
+-- session must show that TOTP was actually one of its authentication methods.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2","amr":[{"method":"otp","timestamp":1700000000}]}',
+  true
+);
+do $admin_non_totp_aal2$
+begin
+  if public.app_is_admin()
+     or public.app_has_capability('people.manage',null)
+     or public.app_has_capability('authority.manage',null) then
+    raise exception 'S1 MFA gate failure: non-TOTP AAL2 session retained privileged authority.';
+  end if;
+end
+$admin_non_totp_aal2$;
+
 -- Executive follows the same boundary.
 select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal1"}',true);
 do $exec_aal1$
@@ -246,7 +270,7 @@ begin
 end
 $exec_aal1$;
 
-select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',true);
+select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2","amr":[{"method":"totp","timestamp":1700000000}]}',true);
 do $exec_aal2$
 begin
   if not public.app_is_exec() or not public.app_has_capability('payroll.approve',null) then
