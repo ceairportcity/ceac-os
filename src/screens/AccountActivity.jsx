@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import MfaSettings from "../components/MfaSettings";
 import {
   PersonalBoundary,
   PersonalEmpty,
@@ -94,6 +95,8 @@ export default function AccountActivity({ me }) {
       />
 
       {actionError && <div className="flag flag-brick ev2pf-partial-error"><h4>Account action was not completed</h4>{actionError}</div>}
+
+      <MfaSettings me={me} />
 
       <PersonalSection
         eyebrow="Sessions"
