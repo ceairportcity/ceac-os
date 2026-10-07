@@ -42,7 +42,6 @@ export default function MfaSettings({ me }) {
   const [pendingFactors, setPendingFactors] = useState([]);
   const [otherVerified, setOtherVerified] = useState([]);
   const [level, setLevel] = useState(null);
-  const [leadStatus, setLeadStatus] = useState("checking");
   const [setup, setSetup] = useState(null);
   const [setupCode, setSetupCode] = useState("");
   const [sessionCode, setSessionCode] = useState("");
@@ -52,11 +51,12 @@ export default function MfaSettings({ me }) {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
-  const basePrivileged = isPrivilegedIdentity(me);
-  const privileged = basePrivileged || leadStatus === "yes";
-  const removalSafetyPrivileged = basePrivileged || leadStatus !== "no";
+  const privileged = isPrivilegedIdentity(me);
   const currentIsVerified = level?.currentLevel === "aal2";
-  const lastFactorLocked = removalSafetyPrivileged && factors.length <= 1;
+  // Keep replacement-before-removal as a universal account-safety rule. This
+  // avoids relying on browser-visible organisational data to decide whether a
+  // person is privileged, while server-side authority remains canonical.
+  const lastFactorLocked = factors.length <= 1;
 
   useEffect(() => {
     load();
@@ -66,29 +66,10 @@ export default function MfaSettings({ me }) {
     setLoading(true);
     setError(null);
 
-    const leadPromise = basePrivileged
-      ? Promise.resolve({ data: [], error: null, skipped: true })
-      : supabase.from("sub_teams")
-        .select("id")
-        .eq("lead_id", me.id)
-        .eq("active", true)
-        .limit(1);
-
-    const [listed, assurance, lead] = await Promise.all([
+    const [listed, assurance] = await Promise.all([
       supabase.auth.mfa.listFactors(),
       supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
-      leadPromise,
     ]);
-
-    if (lead?.skipped) {
-      setLeadStatus("no");
-    } else if (lead?.error) {
-      // Fail closed for destructive factor removal when leadership visibility
-      // cannot be confirmed. Server-side privilege enforcement remains canonical.
-      setLeadStatus("unknown");
-    } else {
-      setLeadStatus((lead?.data || []).length > 0 ? "yes" : "no");
-    }
 
     if (listed.error) {
       setError(humanError(listed.error, "Two-step verification status could not be loaded."));
@@ -252,7 +233,7 @@ export default function MfaSettings({ me }) {
       return;
     }
     if (lastFactorLocked) {
-      setError("Add and verify a replacement before removing the only authenticator on this privileged account.");
+      setError("Add and verify a replacement before removing the only authenticator on this account.");
       return;
     }
     if (!confirm(`Remove ${factorName(factor, 0)} from your account?`)) return;
@@ -286,10 +267,6 @@ export default function MfaSettings({ me }) {
   >
     {privileged ? <PersonalBoundary title="Privileged account protection">
       This account carries elevated CEAC authority. Final go-live enforcement is controlled separately, but once an authenticator is added CEAC keeps at least one verified authenticator on this privileged account.
-    </PersonalBoundary> : null}
-
-    {leadStatus === "unknown" && !basePrivileged ? <PersonalBoundary title="Removal temporarily locked">
-      CEAC could not safely confirm whether this account leads a work lane. Adding and verifying an authenticator is still available, but removing the last verified authenticator is locked until that check succeeds.
     </PersonalBoundary> : null}
 
     {error ? <div className="flag flag-brick ev2pf-partial-error"><h4>Security change was not completed</h4>{error}</div> : null}
@@ -364,7 +341,7 @@ export default function MfaSettings({ me }) {
     />)}
 
     {lastFactorLocked && factors.length === 1 && currentIsVerified ? <PersonalBoundary title="Keep one verified authenticator">
-      Add and verify a replacement before removing the only authenticator on this privileged account.
+      Add and verify a replacement before removing the only authenticator on this account.
     </PersonalBoundary> : null}
 
     {!setup && pendingFactors.length > 0 ? <PersonalBoundary title="Finish or remove the unfinished setup">
