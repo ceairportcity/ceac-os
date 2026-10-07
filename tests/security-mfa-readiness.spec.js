@@ -80,7 +80,8 @@ test("S1 MFA implementation keeps TOTP management self-only and AAL2-protected",
   expect(settings).toContain("supabase.auth.mfa.verify");
   expect(settings).toContain("supabase.auth.mfa.unenroll");
   expect(settings).toContain("Supabase requires an AAL2 session before a verified MFA method can be removed.");
-  expect(settings).toContain("privileged_mfa_enforced");
+  expect(settings).toContain("privileged_mfa_required");
+  expect(settings).not.toContain("privileged_mfa_enforced");
   expect(settings).toContain("Add and verify a replacement before removing the only verification method on this privileged account.");
 
   expect(challenge).toContain("CEAC will not silently bypass the second step.");
