@@ -122,7 +122,8 @@ Requirements:
 - factor secrets are shown only during the setup ceremony;
 - interrupted/unverified setup is surfaced and removable before another setup starts;
 - verification uses a fresh challenge;
-- a privileged user cannot remove their only verified factor from the CEAC UI;
+- while enforcement is off, privileged test accounts can remove a verified factor after an AAL2 session so testing remains reversible;
+- once privileged enforcement is on, the CEAC UI blocks removal of the account's final verified factor;
 - safe product-language errors are used instead of raw Auth/database detail.
 
 ## Required SQL acceptance test
