@@ -39,16 +39,25 @@ test("Phase 6B private day-planning contract is owner-only and does not create a
   expect(migration).toContain("personal_day_tasks_owner_all");
   expect(migration).toContain("profile_id=auth.uid()");
   expect(migration).toContain("personal_day_notes_owner_all");
+  const extensionMigration = readFileSync("supabase/migrations/20261007094500_121_phase6_personal_planning_extensions.sql", "utf8");
   const eventMigration = readFileSync("supabase/migrations/20261007095500_122_phase6_personal_event_note_primitives.sql", "utf8");
+  expect(extensionMigration).toContain("personal_day_task_checklist_owner_all");
+  expect(extensionMigration).toContain("linked_work_item_id");
+  expect(extensionMigration).toContain("linked_project_id");
+  expect(extensionMigration).toContain("reminder_at");
   expect(eventMigration).toContain("personal_calendar_events_owner_all");
   expect(eventMigration).toContain("profile_id=auth.uid()");
   expect(migration).not.toContain("app_managed_units()");
   expect(migration).not.toContain("app_is_admin()");
   expect(calendar).toContain("Private planning protected");
+  expect(calendar).toContain('role="tab" aria-selected={dayTab==="schedule"}');
   expect(calendar).toContain('role="tab" aria-selected={dayTab==="tasks"}');
   expect(calendar).toContain('role="tab" aria-selected={dayTab==="notes"}');
   expect(calendar).toContain('from("personal_day_tasks")');
   expect(calendar).toContain('from("personal_day_notes")');
+  expect(calendar).toContain('from("personal_day_task_checklist")');
+  expect(calendar).toContain('from("meeting_private_notes")');
+  expect(calendar).toContain("phase6-schedule-rail");
 });
 
 test("Phase 6B one Staff account cannot read or mutate another account's personal day plan", async () => {
@@ -98,11 +107,24 @@ test("Phase 6B one Staff account cannot read or mutate another account's persona
   expect(otherEvent.error).toBeNull();
   expect(otherEvent.data).toEqual([]);
 
-  const staffRead = await staff.from("personal_day_tasks").select("title").eq("id", task.id).single();
+  const { data: checklist, error: checklistInsertError } = await staff.from("personal_day_task_checklist").insert({
+    org_id: "10000000-0000-4000-8000-000000000010",
+    profile_id: "31000000-0000-4000-8000-000000000001",
+    task_id: task.id,
+    title: "Private checklist row",
+  }).select("id").single();
+  expect(checklistInsertError).toBeNull();
+
+  const otherChecklist = await other.from("personal_day_task_checklist").select("id,title").eq("id", checklist.id);
+  expect(otherChecklist.error).toBeNull();
+  expect(otherChecklist.data).toEqual([]);
+
+    const staffRead = await staff.from("personal_day_tasks").select("title").eq("id", task.id).single();
   expect(staffRead.error).toBeNull();
   expect(staffRead.data.title).toBe(title);
 
   await staff.from("personal_calendar_events").delete().eq("id", personalEvent.id);
+  await staff.from("personal_day_task_checklist").delete().eq("id", checklist.id);
   await staff.from("personal_day_tasks").delete().eq("id", task.id);
   await staff.from("personal_day_notes").delete().eq("id", note.id);
   await staff.auth.signOut();
@@ -118,11 +140,12 @@ for (const fixture of [
 
     await expect(page.getByRole("heading", { name: "Calendar", exact: true })).toBeVisible();
     await expect(page.getByText("Day workspace", { exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Schedule", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Tasks", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Notes", exact: true })).toBeVisible();
     await expect(page.getByText("Private planning protected", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "+ Add", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Unscheduled tasks", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Schedule", exact: true })).toHaveAttribute("aria-selected", "true");
 
     await page.getByRole("button", { name: "+ Add", exact: true }).click();
     await expect(page.getByRole("tab", { name: "Event", exact: true })).toBeVisible();
@@ -132,9 +155,10 @@ for (const fixture of [
 
     await page.getByRole("tab", { name: "Notes", exact: true }).click();
     await expect(page.getByLabel("Private day notes")).toBeVisible();
-    await expect(page.getByText(/Only you can read this day note/i)).toBeVisible();
+    await expect(page.getByText("Daily journal", { exact: true })).toBeVisible();
 
     await page.getByRole("tab", { name: "Tasks", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Unscheduled tasks", exact: true })).toBeVisible();
     await expect(page.getByLabel("New private task")).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
@@ -142,3 +166,22 @@ for (const fixture of [
     await context.close();
   });
 }
+
+
+test("Phase 6B role calendars keep private and authorised scopes explicit", () => {
+  const manager = readFileSync("src/screens/ManagerCalendar.jsx", "utf8");
+  const admin = readFileSync("src/screens/AdminCalendar.jsx", "utf8");
+  const navigation = readFileSync("src/experience-v2/shell/navigation.js", "utf8");
+  const app = readFileSync("src/App.jsx", "utf8");
+
+  expect(manager).toContain('>My calendar</button>');
+  expect(manager).toContain('>Unit calendar</button>');
+  expect(manager).toContain('import StaffCalendar from "./StaffCalendar"');
+  expect(admin).toContain('>My calendar</button>');
+  expect(admin).toContain('"Organisation calendar"');
+  expect(admin).toContain('roleMode==="executive"');
+  expect(navigation).toContain('{ key: "admin-calendar", label: "Calendar"');
+  expect(navigation).toContain('{ key: "exec-calendar", label: "Calendar"');
+  expect(app).toContain('tab === "exec-calendar"');
+  expect(app).toContain('roleMode="executive"');
+});
