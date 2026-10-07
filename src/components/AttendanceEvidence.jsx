@@ -27,15 +27,26 @@ function LocationPlot({rows}) {
 }
 
 export default function AttendanceEvidence({me}) {
-  const [date,setDate]=useState(attendanceDate()),[rows,setRows]=useState([]),[corroboration,setCorroboration]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(null),[notice,setNotice]=useState(null),[busy,setBusy]=useState(false);
+  const [date,setDate]=useState(attendanceDate()),[rows,setRows]=useState([]),[corroboration,setCorroboration]=useState([]),[integrity,setIntegrity]=useState(null),[ownOpenSession,setOwnOpenSession]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(null),[notice,setNotice]=useState(null),[busy,setBusy]=useState(false);
   const [sheet,setSheet]=useState(false),[kind,setKind]=useState('late_arrival'),[starts,setStarts]=useState(''),[returns,setReturns]=useState(''),[reason,setReason]=useState(''),[note,setNote]=useState('');
   const [decision,setDecision]=useState(null),[decisionNote,setDecisionNote]=useState('');
   const [codeSheet,setCodeSheet]=useState(false),[officeCode,setOfficeCode]=useState('');
-  useEffect(()=>{let live=true;setLoading(true);Promise.all([
-    supabase.rpc('attendance_day_evidence',{p_date:date}),
-    supabase.rpc('attendance_corroboration_for_day',{p_date:date}),
-  ]).then(([evidenceResult,corroborationResult])=>{if(!live)return;const e=evidenceResult.error||corroborationResult.error;setRows(evidenceResult.data||[]);setCorroboration(corroborationResult.data||[]);setError(e?humanError(e,'Attendance evidence could not load.'):null);setLoading(false);});return()=>{live=false;};},[me.id,date]);
-  async function reload(){const [evidenceResult,corroborationResult]=await Promise.all([supabase.rpc('attendance_day_evidence',{p_date:date}),supabase.rpc('attendance_corroboration_for_day',{p_date:date})]);const e=evidenceResult.error||corroborationResult.error;if(e)throw e;setRows(evidenceResult.data||[]);setCorroboration(corroborationResult.data||[]);}
+  useEffect(()=>{let live=true;setLoading(true);loadEvidence().then(()=>{if(live)setLoading(false);}).catch(e=>{if(live){setError(humanError(e,'Attendance evidence could not load.'));setLoading(false);}});return()=>{live=false;};},[me.id,date]);
+  async function loadEvidence(){
+    const [evidenceResult,corroborationResult,integrityResult,sessionResult]=await Promise.all([
+      supabase.rpc('attendance_day_evidence',{p_date:date}),
+      supabase.rpc('attendance_corroboration_for_day',{p_date:date}),
+      supabase.rpc('attendance_integrity_status'),
+      supabase.from('work_sessions').select('id,place,started_at,ended_at').eq('profile_id',me.id).is('ended_at',null).order('started_at',{ascending:false}).limit(1).maybeSingle(),
+    ]);
+    const e=evidenceResult.error||corroborationResult.error||integrityResult.error||sessionResult.error;
+    if(e)throw e;
+    setRows(evidenceResult.data||[]);
+    setCorroboration(corroborationResult.data||[]);
+    setIntegrity(integrityResult.data||null);
+    setOwnOpenSession(sessionResult.data||null);
+  }
+  async function reload(){await loadEvidence();}
   async function mutate(name,args,message){
     setBusy(true);setError(null);setNotice(null);
     try {
@@ -46,8 +57,8 @@ export default function AttendanceEvidence({me}) {
     finally {setBusy(false);}
   }
   async function verifyOfficeCode(){
-    const openSession=mine?.sessions?.find(s=>!s.ended_at);
-    if(!openSession)return;
+    const openSession=ownOpenSession;
+    if(!openSession||openSession.place!=='office'||!integrity?.front_desk_code_enabled)return;
     setBusy(true);setError(null);setNotice(null);
     try {
       const {data,error:e}=await supabase.rpc('attendance_verify_office_code',{p_code:officeCode.trim(),p_session_id:openSession.id});
@@ -64,13 +75,13 @@ export default function AttendanceEvidence({me}) {
   }
     function submit(){mutate('attendance_create_notice',{p_kind:kind,p_starts_at:starts?`${starts}:00Z`:null,p_expected_return_at:returns?`${returns}:00Z`:null,p_reason:kind==='medical_absence'?null:reason.trim(),p_note:kind==='medical_absence'?null:note.trim()},'Attendance notice recorded. Its response history is preserved.');}
   const mine=rows.find(r=>r.profile_id===me.id);
-  const mineOpenSession=mine?.sessions?.find(s=>!s.ended_at)||null;
+  const canVerifyOffice=Boolean(integrity?.front_desk_code_enabled&&ownOpenSession?.place==='office');
   return <WorkforceSection title="Today’s work location evidence" description="Expected hours, presence and authorised context are separate facts. Location checks happen only while CEAC is open in the foreground; they do not prove productivity.">
     <div className="workforce-setup-actions">
       <FieldGroup label="Evidence date"><input aria-label="Attendance evidence date" className="field" type="date" value={date} onChange={e=>setDate(e.target.value)}/></FieldGroup>
       <button className="btn btn-ghost btn-sm" disabled={busy} onClick={()=>reload().catch(e=>setError(humanError(e,'Evidence could not refresh.')))}>Refresh evidence</button>
       {mine&&<button className="btn btn-sm" onClick={()=>{setKind('late_arrival');setStarts(attendanceDate()+'T'+new Date().toISOString().slice(11,16));setReturns('');setReason('');setNote('');setSheet(true);}}>Record attendance notice</button>}
-      {mineOpenSession&&<button className="btn btn-ghost btn-sm" onClick={()=>{setOfficeCode('');setCodeSheet(true);}}>Verify office presence</button>}
+      {canVerifyOffice&&<button className="btn btn-ghost btn-sm" onClick={()=>{setOfficeCode('');setCodeSheet(true);}}>Verify office presence</button>}
     </div>
     {error&&<ProductNotice tone="error" title="Attendance evidence unavailable">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Attendance updated">{notice}</ProductNotice>}
