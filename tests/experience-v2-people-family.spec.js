@@ -467,6 +467,10 @@ test("Stage 10 Family B5B Administration employee workspace preserves employment
   expect(screen).toContain('personTab === "history"');
   expect(screen).toContain('personTab === "protected"');
   expect(screen).toContain('title="Time & Leave"');
+  expect(screen).toContain('["access","Access"]');
+  expect(screen).toContain('rpc("admin_access_invitations")');
+  expect(screen).toContain('title="Access & responsibilities"');
+  expect(screen).toContain("Job title never grants application authority.");
 
   expect(screen).toContain("These records are not a productivity score, ranking, pay input or disciplinary conclusion.");
   expect(screen).toContain('rpc("hr_employee_protected_summary"');
@@ -506,13 +510,20 @@ for (const viewport of [
     await expect(page.getByRole("heading", { name: "Staff Fixture", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Identity & employment state", exact: true })).toBeVisible();
     await expect(page.getByLabel("Employee photo", { exact: true })).toBeVisible();
-    for (const tab of ["Overview","Employment","Work","Time & Leave","Documents","History","Protected HR"]) {
+    for (const tab of ["Overview","Access","Employment","Work","Time & Leave","Documents","History","Protected HR"]) {
       await expect(page.getByRole("tab", { name: tab, exact: true })).toBeVisible();
     }
     if (viewport.width > 760) await expect(page.locator(".ev2p-admin-master-list")).toBeVisible();
     else await expect(page.locator(".ev2p-admin-master-list")).toBeHidden();
 
     await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Access", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Access & responsibilities", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Manage responsibilities", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Lifecycle & offboarding", exact: true })).toBeVisible();
+    await expect(page.getByText(/Job title never grants application authority/i)).toBeVisible();
+
     await page.getByRole("tab", { name: "Employment", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Employment record", exact: true })).toBeVisible();
 

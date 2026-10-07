@@ -16,7 +16,7 @@ function invitationTone(state, revokedAt) {
   return "action";
 }
 
-export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged }) {
+export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, initialProfileId = null }) {
   const [snapshot, setSnapshot] = useState(null);
   const [mode, setMode] = useState("invite");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
@@ -28,6 +28,11 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const canManage = (me.capability_grants || []).some((grant) => grant.capability === "people.manage" && !grant.scope_unit_id);
 
   useEffect(() => { if (canManage) load(); }, [me.id, canManage]);
+  useEffect(() => {
+    if (!initialProfileId) return;
+    setForm((current) => ({ ...current, person: initialProfileId }));
+    setMode("responsibility");
+  }, [initialProfileId]);
 
   async function load() {
     setError(null);

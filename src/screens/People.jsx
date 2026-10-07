@@ -28,7 +28,7 @@ import {
 } from "../experience-v2/people-family/PeopleFamilyV2";
 
 const PEOPLE_VIEWS = [["directory","Directory"],["access","Access"],["organisation","Organisation"],["attention","Needs attention"]];
-const PERSON_TABS = [["overview","Overview"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["documents","Documents"],["history","History"]];
+const PERSON_TABS = [["overview","Overview"],["access","Access"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["documents","Documents"],["history","History"]];
 const FILTERS = [["all","Everyone"],["active","Active"],["on_leave","On leave"],["quiet","No submissions in 14 days"],["no_unit","No unit"]];
 const EMPLOYMENT_CHANGES = [
   ["employment_details_changed","Employment details changed"],
@@ -74,6 +74,7 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
   const [viewMode, setViewMode] = useState("directory");
   const [personTab, setPersonTab] = useState("overview");
   const [searchText, setSearchText] = useState("");
+  const [accessFocusProfileId, setAccessFocusProfileId] = useState(null);
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [units, setUnits] = useState([]);
   const [person, setPerson] = useState(null);
@@ -224,16 +225,18 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
     setProtectedHrLoading(canManageProtectedHr);
     let linkedResults;
     let protectedResponse;
+    let invitationResponse = { data: [], error: null };
     let photoFiles = [];
     let documentFiles = [];
     try {
-      [linkedResults, protectedResponse, photoFiles, documentFiles] = await Promise.all([
+      [linkedResults, protectedResponse, photoFiles, documentFiles, invitationResponse] = await Promise.all([
         linkedRequests,
         canManageProtectedHr
           ? supabase.rpc("hr_employee_protected_summary", { p_employee_id: summary.id })
           : Promise.resolve({ data: null, error: null }),
         listOperationalFiles("employee_photo", summary.id),
         listOperationalFiles("employee_document", summary.id),
+        supabase.rpc("admin_access_invitations"),
       ]);
     } catch (fileError) {
       setProtectedHrLoading(false);
@@ -247,8 +250,8 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
     setProtectedHrLoading(false);
     setDetailLoading(false);
 
-    if (detailResult.error || employmentResult.error || protectedResult.error) {
-      setError(humanError(detailResult.error || employmentResult.error || protectedResult.error, "That employee record could not load."));
+    if (detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error) {
+      setError(humanError(detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error, "That employee record could not load."));
       return;
     }
 
@@ -276,6 +279,9 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
     const rosterDetail = rosterDetailResult.data || {};
     const rosterEmployee = rosterDetail.employee || {};
     const rosterUnits = Array.isArray(rosterDetail.units) ? rosterDetail.units : summary.roster_units || [];
+    const employeeEmail = String(rosterEmployee.account_email || summary.email || "").trim().toLowerCase();
+    const accessInvitation = (Array.isArray(invitationResponse.data) ? invitationResponse.data : [])
+      .find((invitation) => String(invitation.email || "").trim().toLowerCase() === employeeEmail) || null;
 
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setProtectedEditor(null);
@@ -299,12 +305,21 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
       sessions,
       leave,
       employment: employmentResult.data || { current: null, history: [] },
+      access_invitation: accessInvitation,
       balance: {
         annual_taken: summary.annual_taken || 0,
         sick_taken: summary.sick_taken || 0,
         carryover_from_last_year: summary.carryover_from_last_year || 0,
       },
     });
+  }
+
+  function openAccessAdministration(profileId = null) {
+    setAccessFocusProfileId(profileId);
+    setPerson(null);
+    setDrill(null);
+    setViewMode("access");
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 
   async function refreshEmployeeFiles(employeeId) {
@@ -487,6 +502,22 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
     const identityLabel = person.identity_state === "needs_review"
       ? "Identity review required"
       : hasLinkedProfile ? "Account linked" : "Roster only · no account linked";
+    const accessInvitation = person.access_invitation || null;
+    const accessState = !hasLinkedProfile
+      ? "No login identity linked"
+      : person.active ? "Active operational access" : "Operational access inactive";
+    const invitationState = accessInvitation
+      ? accessInvitation.revoked_at
+        ? "Invitation cancelled"
+        : accessInvitation.activation_state === "verified"
+          ? "Email verified"
+          : accessInvitation.activation_state === "expired"
+            ? "Invitation expired"
+            : "Awaiting email verification"
+      : hasLinkedProfile ? "No pending invitation" : "No invitation recorded";
+    const responsibilitySummary = rosterUnitNames.length
+      ? rosterUnitNames.join(" · ")
+      : "No organisational responsibility recorded";
 
     return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
       <PeopleBackButton onClick={() => { setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
@@ -601,6 +632,40 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
             <PeopleFactRow icon="calendar" title="Leave records" subtitle={hasLinkedProfile ? `${person.leave.length} recorded` : "No linked operational account"} />
           </div>
         </PeopleWorkspaceSection>}
+      {personTab === "access" && <PeopleWorkspaceSection
+        title="Access & responsibilities"
+        description="Account access, organisational placement and authority remain separate from job title and employment facts."
+        meta={<div className="phase5-person-access-actions">
+          <Button
+            variant="secondary"
+            size="compact"
+            onClick={() => openAccessAdministration(person.profile_id || null)}
+          >Manage responsibilities</Button>
+          <Button variant="quiet" size="compact" onClick={() => go?.("lifecycle")}>Lifecycle & offboarding</Button>
+        </div>}
+      >
+        <div className="ev2p-admin-record-grid">
+          <PeopleFactRow icon="people" title="Login identity" subtitle={identityLabel} />
+          <PeopleFactRow icon="info" title="Access state" subtitle={accessState} />
+          <PeopleFactRow icon="notification" title="Invitation" subtitle={invitationState} />
+          <PeopleFactRow icon="people" title="Primary unit" subtitle={employmentCurrent?.unit_name || person.unit_name || "Not recorded"} />
+          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : "Not recorded · no authority inferred"} />
+          <PeopleFactRow icon="people" title="Application role" subtitle={hasLinkedProfile ? (employmentCurrent?.membership_role || person.role || "staff").replaceAll("_", " ") : "Not inferred from job title"} />
+          <PeopleFactRow icon="organisation" title="Recorded responsibilities" subtitle={responsibilitySummary} />
+          <PeopleFactRow icon="info" title="Employee status" subtitle={employmentState} />
+        </div>
+        {accessInvitation ? <div className="phase5-person-invitation">
+          <div>
+            <strong>{accessInvitation.email}</strong>
+            <span>Invited {new Date(accessInvitation.invited_at).toLocaleString("en-GB")} · {invitationState}</span>
+          </div>
+          <Button variant="quiet" size="compact" onClick={() => openAccessAdministration(person.profile_id || null)}>Review invitation</Button>
+        </div> : null}
+        <p className="phase5-person-access-note">
+          Job title never grants application authority. Additional unit or team responsibility is recorded against the existing identity; access deactivation and offboarding use the controlled lifecycle workflow.
+        </p>
+      </PeopleWorkspaceSection>}
+
       {personTab === "employment" && <>
       <PeopleWorkspaceSection
         title="Employment record"
@@ -971,7 +1036,7 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
         role="tab"
         aria-selected={viewMode === key}
         className={viewMode === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
-        onClick={() => setViewMode(key)}
+        onClick={() => { setViewMode(key); if (key !== "access") setAccessFocusProfileId(null); }}
       >{label}</button>)}
     </div>
 
@@ -979,6 +1044,7 @@ export default function People({ me, openItem, go, initialEmployeeId = null, onI
       me={me}
       go={go}
       embedded
+      initialProfileId={accessFocusProfileId}
       onChanged={() => load({ silent: true })}
       onOpenPerson={(profileId) => {
         const match = rows.find((entry) => entry.profile_id === profileId);

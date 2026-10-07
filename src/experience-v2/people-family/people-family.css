@@ -2309,3 +2309,76 @@
     border-radius: var(--ev2-radius-panel) var(--ev2-radius-panel) 0 0;
   }
 }
+
+
+/* Phase 5C — selected employee access and responsibility workspace. */
+.phase5-person-access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ev2-space-2);
+}
+
+.phase5-person-invitation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ev2-space-3);
+  align-items: center;
+  margin-top: var(--ev2-space-3);
+  padding: var(--ev2-space-3) 0;
+  border-top: 1px solid var(--ev2-line-subtle);
+  border-bottom: 1px solid var(--ev2-line-subtle);
+}
+
+.phase5-person-invitation > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phase5-person-invitation strong {
+  color: var(--ev2-text-primary);
+  font-size: var(--ev2-type-row-mobile);
+  overflow-wrap: anywhere;
+}
+
+.phase5-person-invitation span,
+.phase5-person-access-note {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting-mobile);
+  line-height: 1.45;
+}
+
+.phase5-person-access-note {
+  margin: var(--ev2-space-3) 0 0;
+}
+
+@media (min-width: 900px) {
+  .phase5-person-invitation strong {
+    font-size: var(--ev2-type-row-desktop);
+  }
+
+  .phase5-person-invitation span,
+  .phase5-person-access-note {
+    font-size: var(--ev2-type-supporting-desktop);
+  }
+}
+
+@media (max-width: 599px) {
+  .phase5-person-access-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .phase5-person-access-actions > * {
+    flex: 1 1 100%;
+  }
+
+  .phase5-person-invitation {
+    grid-template-columns: 1fr;
+  }
+
+  .phase5-person-invitation .ev2c-button {
+    width: 100%;
+  }
+}
