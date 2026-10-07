@@ -76,6 +76,21 @@ A live production inspection before this hardening found:
 
 The live finding therefore did not show current privileged authority, but the server boundary is hardened so later role or capability changes cannot accidentally turn an unconfirmed identity into an authorised CEAC actor.
 
+## Mover / unit-transfer boundary
+
+Live work-lane authority now ends with the unit relationship that justified it.
+
+When a `unit_memberships` row is deleted, or its unit changes:
+
+- any Sub-team in the old unit that still names that person as lead has `lead_id` cleared;
+- the lead removal is attributable to the signed-in actor;
+- the Sub-team audit trail records the changed `lead_id`;
+- the internal cleanup function is not browser executable.
+
+This prevents a stale work-lane lead pointer from becoming live authority again simply because a person is later added back to the old unit.
+
+The existing `app_led_sub_teams()` defense remains in place as a second boundary: even if stale historical data somehow exists, active lane authority requires an active Sub-team and a current membership in that Sub-team's unit.
+
 ## Joiner / mover / leaver authority safety
 
 S3 now also closes a lifecycle gap that existed outside temporary expiry.
@@ -138,6 +153,8 @@ The S3 SQL gates prove:
 - stale lane-lead attribution without current unit membership confers no authority;
 - an unconfirmed Auth identity receives no organisation, Admin, Executive, capability, Manager, unit or lane-lead authority;
 - the browser bootstrap refuses to open CEAC before email confirmation;
+- removing or moving a unit membership closes live Sub-team lead authority in the old unit and audits the change;
+- privileged database authority accepts only a verified TOTP factor, matching the CEAC v1 browser MFA experience;
 - all prior capability authority/security gates continue to run.
 
 ## Gate recovery note
