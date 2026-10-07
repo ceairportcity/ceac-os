@@ -16,6 +16,7 @@ import "./experience-v2/staff-today/staff-today.css";
 import "./experience-v2/admin-overview/admin-overview.css";
 import "./experience-v2/work-family/work-family.css";
 import "./experience-v2/executive-overview/executive-surfaces.css";
+import "./experience-v2/executive-overview/executive-redesign.css";
 import "./experience-v2/project-family/project-family.css";
 import "./experience-v2/people-family/people-family.css";
 import "./experience-v2/workforce-family/workforce-family.css";
