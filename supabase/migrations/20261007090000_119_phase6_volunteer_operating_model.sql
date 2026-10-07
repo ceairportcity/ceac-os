@@ -4,6 +4,12 @@
 -- Administration retains formal employment/protected-HR authority.
 -- Volunteers are excluded from ordinary salary Payroll by default.
 
+alter table public.employment_records
+  drop constraint if exists employment_records_volunteer_unit_manager_check;
+alter table public.employment_records
+  add constraint employment_records_volunteer_unit_manager_check
+  check (employment_type<>'volunteer' or membership_role<>'manager');
+
 alter table public.pending_invitations
   add column if not exists engagement_type text not null default 'staff',
   add column if not exists engagement_working_pattern jsonb not null default '{"kind":"not_recorded"}'::jsonb;
