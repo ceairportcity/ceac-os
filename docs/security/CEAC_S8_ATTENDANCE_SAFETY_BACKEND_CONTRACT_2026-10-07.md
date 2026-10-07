@@ -71,6 +71,8 @@ Existing `attendance_corrections` is append-oriented and should be extended for 
 
 Existing `attendance_day_evidence(date)` already combines schedule, session, leave and attendance-notice evidence. S8 should evolve that factual evidence path rather than create a parallel scoring engine.
 
+Phase 6 PR #140 also introduces append-oriented attendance corroboration for short-lived front-desk codes and trusted network signals. Those rows remain evidence only: they must never become authoritative absence, misconduct, discipline, salary or Payroll conclusions. S8 should consume or reference that corroboration where useful rather than create a second office-presence evidence subsystem.
+
 ## Required schedule-schema extension
 
 The current `workforce_schedule_versions.profile_id` is mandatory, so it cannot represent an organisation default.
@@ -301,4 +303,4 @@ Current required S3 predecessor:
 
 This S8 tranche is backend-only.
 
-Do not modify Phase 5-owned App/Admin/navigation/People visual surfaces while PR #136 remains active.
+Do not modify Phase 5-owned App/Admin/navigation/People visual surfaces while the active reconciled Phase 5 PR #145 remains open. Phase 6 PR #140 also owns attendance/calendar UI and corroboration primitives; S8 must reconcile forward with those surfaces rather than duplicate them.
