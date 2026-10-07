@@ -7,6 +7,12 @@
 -- If the required schedule is missing, the system returns an unavailable balance
 -- rather than guessing Monday-Friday or a legacy default.
 
+-- Privileged implementations live outside the exposed public API surface.
+-- Public RPCs below are SECURITY INVOKER wrappers with deliberately narrow grants.
+create schema if not exists private;
+revoke all on schema private from public,anon;
+grant usage on schema private to authenticated,service_role;
+
 alter table public.leave_policy_rules
   drop constraint if exists leave_policy_rules_accrual_method_check;
 
@@ -126,7 +132,7 @@ where r.policy_version_id=p.id
   and r.routing_confirmed
   and p.source_reference='CEAC_OWNER_LEAVE_ROUTING_2026-10-02';
 
-create or replace function public.workforce_count_scheduled_working_days(
+create or replace function private.workforce_count_scheduled_working_days(
   p_profile_id uuid,
   p_start_date date,
   p_end_date date
@@ -135,7 +141,7 @@ returns numeric
 language plpgsql
 stable
 security definer
-set search_path=public
+set search_path=''
 as $$
 declare
   v_org uuid;
@@ -209,12 +215,12 @@ begin
 end;
 $$;
 
-revoke all on function public.workforce_count_scheduled_working_days(uuid,date,date)
+revoke all on function private.workforce_count_scheduled_working_days(uuid,date,date)
   from public,anon,authenticated;
-grant execute on function public.workforce_count_scheduled_working_days(uuid,date,date)
+grant execute on function private.workforce_count_scheduled_working_days(uuid,date,date)
   to service_role;
 
-create or replace function public.workforce_record_annual_leave_adjustment(
+create or replace function private.workforce_record_annual_leave_adjustment_impl(
   p_profile_id uuid,
   p_leave_year integer,
   p_days numeric,
@@ -226,12 +232,12 @@ create or replace function public.workforce_record_annual_leave_adjustment(
 returns uuid
 language plpgsql
 security definer
-set search_path=public
+set search_path=''
 as $$
 declare
   v_org uuid:=public.app_org_id();
   v_actor uuid:=auth.uid();
-  v_prior public.leave_balance_adjustments;
+  v_prior public.leave_balance_adjustments%rowtype;
   v_id uuid;
 begin
   if v_actor is null or not public.app_has_capability('workforce.manage',null) then
@@ -285,12 +291,36 @@ begin
 end;
 $$;
 
+revoke all on function private.workforce_record_annual_leave_adjustment_impl(uuid,integer,numeric,text,text,text,uuid)
+  from public,anon;
+grant execute on function private.workforce_record_annual_leave_adjustment_impl(uuid,integer,numeric,text,text,text,uuid)
+  to authenticated,service_role;
+
+create or replace function public.workforce_record_annual_leave_adjustment(
+  p_profile_id uuid,
+  p_leave_year integer,
+  p_days numeric,
+  p_adjustment_type text,
+  p_reason text,
+  p_source_reference text default null,
+  p_reverses_id uuid default null
+)
+returns uuid
+language sql
+security invoker
+set search_path=''
+as $$
+  select private.workforce_record_annual_leave_adjustment_impl(
+    p_profile_id,p_leave_year,p_days,p_adjustment_type,p_reason,p_source_reference,p_reverses_id
+  )
+$$;
+
 revoke all on function public.workforce_record_annual_leave_adjustment(uuid,integer,numeric,text,text,text,uuid)
   from public,anon;
 grant execute on function public.workforce_record_annual_leave_adjustment(uuid,integer,numeric,text,text,text,uuid)
   to authenticated,service_role;
 
-create or replace function public.workforce_annual_leave_summary(
+create or replace function private.workforce_annual_leave_summary_impl(
   p_profile_id uuid default null,
   p_as_of date default current_date
 )
@@ -298,7 +328,7 @@ returns jsonb
 language plpgsql
 stable
 security definer
-set search_path=public
+set search_path=''
 as $$
 declare
   v_org uuid:=public.app_org_id();
@@ -318,12 +348,11 @@ declare
   v_adjustments numeric:=0;
   v_approved numeric:=0;
   v_available numeric;
-  v_total_working numeric;
-  v_served_working numeric;
   v_segment_working numeric;
+  v_quarter_days numeric;
+  v_served_days numeric;
   v_schedule_complete boolean:=true;
   v_proration_applied boolean:=false;
-  v_proration_unavailable boolean:=false;
   v_leave record;
 begin
   if v_actor is null or v_org is null or v_profile is null then
@@ -409,16 +438,13 @@ begin
       if v_service_start<=v_q_start then
         v_accrued:=v_accrued+v_rate;
       else
+        -- "portion of the quarter served" is implemented literally as the
+        -- calendar-day fraction from the join date through quarter end.
+        -- The credited result remains working-day entitlement.
         v_proration_applied:=true;
-        v_total_working:=public.workforce_count_scheduled_working_days(v_profile,v_q_start,v_q_end);
-        v_served_working:=public.workforce_count_scheduled_working_days(v_profile,v_service_start,v_q_end);
-
-        if v_total_working is null or v_served_working is null or v_total_working<=0 then
-          v_schedule_complete:=false;
-          v_proration_unavailable:=true;
-        else
-          v_accrued:=v_accrued+round(v_rate*(v_served_working/v_total_working),2);
-        end if;
+        v_quarter_days:=(v_q_end-v_q_start)+1;
+        v_served_days:=(v_q_end-v_service_start)+1;
+        v_accrued:=v_accrued+round(v_rate*(v_served_days/v_quarter_days),2);
       end if;
     end if;
   end loop;
@@ -433,7 +459,7 @@ begin
       and lr.end_date>=v_year_start
       and lr.start_date<=v_year_end
   loop
-    v_segment_working:=public.workforce_count_scheduled_working_days(
+    v_segment_working:=private.workforce_count_scheduled_working_days(
       v_profile,
       greatest(v_leave.start_date,v_year_start),
       least(v_leave.end_date,v_year_end)
@@ -470,20 +496,38 @@ begin
     'available_days',case when v_schedule_complete then round(v_available,2) else null end,
     'balance_available',v_schedule_complete,
     'joiner_proration_applied',v_proration_applied,
-    'joiner_proration_unavailable',v_proration_unavailable,
-    'proration_basis','recorded scheduled working days in the completed join quarter',
+    'proration_basis','calendar-day portion of the completed join quarter',
     'year_end_expiry',true
   );
 end;
 $$;
 
+revoke all on function private.workforce_annual_leave_summary_impl(uuid,date)
+  from public,anon;
+grant execute on function private.workforce_annual_leave_summary_impl(uuid,date)
+  to authenticated,service_role;
+
+create or replace function public.workforce_annual_leave_summary(
+  p_profile_id uuid default null,
+  p_as_of date default current_date
+)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path=''
+as $$
+  select private.workforce_annual_leave_summary_impl(p_profile_id,p_as_of)
+$$;
+
 revoke all on function public.workforce_annual_leave_summary(uuid,date) from public,anon;
-grant execute on function public.workforce_annual_leave_summary(uuid,date) to authenticated,service_role;
+grant execute on function public.workforce_annual_leave_summary(uuid,date)
+  to authenticated,service_role;
 
 -- Recreate the request RPC so new annual requests retain the legacy date-span
 -- field for compatibility and additionally record a schedule-based working-day
 -- total when CEAC has enough schedule evidence.
-create or replace function public.workforce_request_leave(
+create or replace function private.workforce_request_leave_impl(
   p_kind text,
   p_start_date date,
   p_end_date date,
@@ -492,7 +536,7 @@ create or replace function public.workforce_request_leave(
 returns uuid
 language plpgsql
 security definer
-set search_path=public
+set search_path=''
 as $$
 declare
   v_org uuid:=public.app_org_id();
@@ -535,7 +579,7 @@ begin
 
   v_days:=(p_end_date-p_start_date)+1;
   if v_kind='annual' then
-    v_working_days:=public.workforce_count_scheduled_working_days(v_actor,p_start_date,p_end_date);
+    v_working_days:=private.workforce_count_scheduled_working_days(v_actor,p_start_date,p_end_date);
   end if;
 
   insert into public.leave_requests(
@@ -558,18 +602,37 @@ begin
 end;
 $$;
 
+revoke all on function private.workforce_request_leave_impl(text,date,date,text)
+  from public,anon;
+grant execute on function private.workforce_request_leave_impl(text,date,date,text)
+  to authenticated,service_role;
+
+create or replace function public.workforce_request_leave(
+  p_kind text,
+  p_start_date date,
+  p_end_date date,
+  p_reason text default null
+)
+returns uuid
+language sql
+security invoker
+set search_path=''
+as $$
+  select private.workforce_request_leave_impl(p_kind,p_start_date,p_end_date,p_reason)
+$$;
+
 revoke all on function public.workforce_request_leave(text,date,date,text) from public,anon;
 grant execute on function public.workforce_request_leave(text,date,date,text)
-to authenticated,service_role;
+  to authenticated,service_role;
 
 -- Best-effort historical annual-leave enrichment. Rows with incomplete schedule
 -- evidence remain null and are surfaced as unavailable rather than guessed.
 update public.leave_requests lr
-set working_days=public.workforce_count_scheduled_working_days(lr.profile_id,lr.start_date,lr.end_date),
+set working_days=private.workforce_count_scheduled_working_days(lr.profile_id,lr.start_date,lr.end_date),
     working_days_basis='recorded_workforce_schedule'
 where lower(lr.kind)='annual'
   and lr.working_days is null
-  and public.workforce_count_scheduled_working_days(lr.profile_id,lr.start_date,lr.end_date) is not null;
+  and private.workforce_count_scheduled_working_days(lr.profile_id,lr.start_date,lr.end_date) is not null;
 
 comment on column public.leave_requests.working_days is
   'Annual-leave working-day count derived from the attributable recorded workforce schedule; null means CEAC lacks sufficient schedule evidence.';
