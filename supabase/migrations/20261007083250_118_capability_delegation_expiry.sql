@@ -69,6 +69,10 @@ as $$
       not o.privileged_mfa_required
       or (
         coalesce(auth.jwt()->>'aal','aal1')='aal2'
+        and jsonb_path_exists(
+          coalesce(auth.jwt()->'amr','[]'::jsonb),
+          '$[*] ? (@.method == "totp")'
+        )
         and exists (
           select 1
           from auth.mfa_factors mf
