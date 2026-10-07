@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import AuthFrame from "../components/AuthFrame";
 import { authRedirect } from "../lib/authRedirect";
-import { signInErrorMessage } from "../lib/signInError";
+import { recoveryErrorMessage, signInErrorMessage } from "../lib/signInError";
 
 export default function SignIn() {
   const [mode, setMode] = useState("signin");
@@ -30,7 +30,7 @@ export default function SignIn() {
       });
       if (error) throw error;
       setMessage("If that address belongs to a CEAC account, a password-recovery email is on its way.");
-    } catch (error) { setMessage(error.message || "The recovery email could not be sent."); }
+    } catch (error) { setMessage(recoveryErrorMessage(error)); }
     finally { setBusy(false); }
   }
 
