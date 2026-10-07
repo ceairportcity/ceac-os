@@ -74,19 +74,14 @@ export default function ExecutiveFinance({ me }) {
     }))),
     [spend],
   );
-  const approvedTotals = useMemo(
-    () => totals(requests.filter((row) => ["approved", "fulfilled"].includes(row.state))),
-    [requests],
-  );
   const currencies = useMemo(
     () => Array.from(new Set([
       ...Object.keys(incomeTotals),
       ...Object.keys(budgetTotals),
       ...Object.keys(spendTotals),
-      ...Object.keys(approvedTotals),
-      ...requests.map((row) => row.currency || "GHS"),
+      ...requests.filter((row) => row.state === "submitted").map((row) => row.currency || "GHS"),
     ])).sort(),
-    [incomeTotals, budgetTotals, spendTotals, approvedTotals, requests],
+    [incomeTotals, budgetTotals, spendTotals, requests],
   );
   const submittedByCurrency = useMemo(() => {
     const out = {};
