@@ -169,7 +169,6 @@ export function SideNav({
           </span>
           <CeacIcon name="chevronRight" size="meta" decorative />
         </button>
-    </aside>
       </div>
     </aside>
   );
