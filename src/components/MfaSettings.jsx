@@ -8,7 +8,7 @@ import {
   PersonalSection,
 } from "../experience-v2/personal-family/PersonalFamilyV2";
 
-function factorList(data) {
+function allFactors(data) {
   const source = Array.isArray(data?.all)
     ? data.all
     : [...(data?.totp || []), ...(data?.phone || [])];
@@ -16,7 +16,7 @@ function factorList(data) {
   return source.filter((factor) => {
     if (!factor?.id || seen.has(factor.id)) return false;
     seen.add(factor.id);
-    return factor.status === "verified";
+    return true;
   });
 }
 
@@ -28,6 +28,7 @@ function factorName(factor, index) {
 
 export default function MfaSettings({ me }) {
   const [factors, setFactors] = useState([]);
+  const [pendingFactors, setPendingFactors] = useState([]);
   const [level, setLevel] = useState(null);
   const [setup, setSetup] = useState(null);
   const [code, setCode] = useState("");
@@ -48,14 +49,19 @@ export default function MfaSettings({ me }) {
       supabase.auth.mfa.listFactors(),
       supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
     ]);
-    if (listed.error) setError(humanError(listed.error, "Two-step verification status could not be loaded."));
-    else setFactors(factorList(listed.data));
+    if (listed.error) {
+      setError(humanError(listed.error, "Two-step verification status could not be loaded."));
+    } else {
+      const all = allFactors(listed.data);
+      setFactors(all.filter((factor) => factor.status === "verified"));
+      setPendingFactors(all.filter((factor) => factor.status !== "verified"));
+    }
     if (!assurance.error) setLevel(assurance.data || null);
     setLoading(false);
   }
 
   async function beginSetup() {
-    if (busy || setup) return;
+    if (busy || setup || pendingFactors.length) return;
     setBusy(true);
     setMessage(null);
     setError(null);
@@ -119,6 +125,23 @@ export default function MfaSettings({ me }) {
     }
   }
 
+  async function removePendingFactor(factor) {
+    if (busy) return;
+    setBusy(true);
+    setMessage(null);
+    setError(null);
+    try {
+      const removed = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+      if (removed.error) throw removed.error;
+      setMessage("Unfinished verification setup removed.");
+      await load();
+    } catch (e) {
+      setError(humanError(e, "That unfinished verification setup could not be removed."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function removeFactor(factor) {
     if (busy) return;
     if (privileged && factors.length <= 1) {
@@ -170,6 +193,16 @@ export default function MfaSettings({ me }) {
       description="Add an authenticator app now, or complete it before privileged production onboarding if this account has elevated access."
     /> : null}
 
+    {pendingFactors.map((factor, index) => <PersonalRecordRow
+      key={factor.id}
+      title={factorName(factor, index)}
+      meta="Setup not finished"
+      detail="This method has not been verified and does not protect sign-in yet."
+      action={<button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => removePendingFactor(factor)}>
+        Remove unfinished setup
+      </button>}
+    />)}
+
     {factors.map((factor, index) => <PersonalRecordRow
       key={factor.id}
       title={factorName(factor, index)}
@@ -179,6 +212,10 @@ export default function MfaSettings({ me }) {
         Remove
       </button>}
     />)}
+
+    {!setup && pendingFactors.length > 0 ? <PersonalBoundary title="Finish or remove the unfinished setup">
+      Remove the unfinished method above before starting another authenticator setup. This prevents abandoned verification methods from accumulating on your account.
+    </PersonalBoundary> : null}
 
     {setup ? <div className="flag ev2pf-account-warning">
       <h4>Finish authenticator setup</h4>
@@ -203,7 +240,7 @@ export default function MfaSettings({ me }) {
         </button>
         <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={cancelSetup}>Cancel</button>
       </div>
-    </div> : <button type="button" className="btn wide-auto" disabled={busy || loading} onClick={beginSetup}>
+    </div> : <button type="button" className="btn wide-auto" disabled={busy || loading || pendingFactors.length > 0} onClick={beginSetup}>
       Add authenticator app
     </button>}
   </PersonalSection>;
