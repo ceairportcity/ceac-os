@@ -53,6 +53,29 @@ Temporary `authority.manage` may supplement authority, but CEAC must retain at l
 
 A temporary authority holder therefore cannot become the only future authority holder merely because the permanent grant is revoked or converted to expiring.
 
+## Confirmed-account joiner boundary
+
+Invitation creation alone must not be enough to open CEAC authority.
+
+S3 now requires the signed-in Auth identity to have a confirmed email before core CEAC authority resolves:
+
+- `app_org_id()` returns no organisation for an unconfirmed identity;
+- Admin and Executive authority fail closed;
+- capability authority fails closed;
+- unit membership, Unit Manager and Sub-team lead authority fail closed;
+- the browser `loadMe()` bootstrap refuses to open CEAC before confirmation.
+
+This is defense in depth around the existing invite-only creation flow. The existing invitation trigger still requires a valid, unresolved and unexpired CEAC invitation before a profile is created.
+
+A live production inspection before this hardening found:
+
+- **1** active profile linked to an unconfirmed Auth identity;
+- **0** Manager memberships on that identity;
+- **0** active Sub-team lead assignments on that identity;
+- **0** unrevoked capability grants on that identity.
+
+The live finding therefore did not show current privileged authority, but the server boundary is hardened so later role or capability changes cannot accidentally turn an unconfirmed identity into an authorised CEAC actor.
+
 ## Joiner / mover / leaver authority safety
 
 S3 now also closes a lifecycle gap that existed outside temporary expiry.
@@ -113,6 +136,8 @@ The S3 SQL gates prove:
 - offboarding removes current unit membership and live Sub-team lead authority;
 - Sub-team lead removal is auditable;
 - stale lane-lead attribution without current unit membership confers no authority;
+- an unconfirmed Auth identity receives no organisation, Admin, Executive, capability, Manager, unit or lane-lead authority;
+- the browser bootstrap refuses to open CEAC before email confirmation;
 - all prior capability authority/security gates continue to run.
 
 ## Gate recovery note
