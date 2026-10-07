@@ -52,7 +52,9 @@ Conceptual rule:
 
 - no signed-in active organisation -> false;
 - enforcement off for the person's organisation -> true;
-- enforcement on -> current JWT must contain `aal = aal2`.
+- enforcement on -> current JWT must contain `aal = aal2` **and** `auth.mfa_factors` must still contain at least one currently verified factor for the signed-in user.
+
+The verified-factor check prevents a stale AAL2 access token from retaining privileged authority after the user's factor is disabled or removed.
 
 The helper is not a browser API:
 
