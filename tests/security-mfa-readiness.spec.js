@@ -52,6 +52,7 @@ test("S1 browser gate distinguishes enrolled challenge, enforced missing-factor 
 test("S1 two-step verification implementation keeps enrollment, challenge and factor removal inside Supabase Auth", async () => {
   const settings = readFileSync("src/components/MfaSettings.jsx", "utf8");
   const challenge = readFileSync("src/screens/MfaChallenge.jsx", "utf8");
+  const required = readFileSync("src/screens/MfaRequired.jsx", "utf8");
 
   expect(settings).toContain("supabase.auth.mfa.listFactors()");
   expect(settings).toContain("supabase.auth.mfa.getAuthenticatorAssuranceLevel()");
@@ -68,7 +69,12 @@ test("S1 two-step verification implementation keeps enrollment, challenge and fa
   expect(challenge).toContain("supabase.auth.mfa.verify");
   expect(challenge).toContain('scope: "local"');
 
-  for (const source of [settings, challenge]) {
+  expect(required).toContain("Two-step verification is required");
+  expect(required).toContain("Your workspace is locked until account protection is restored.");
+  expect(required).toContain("Your privileged access has not been downgraded or bypassed.");
+  expect(required).toContain('scope: "local"');
+
+  for (const source of [settings, challenge, required]) {
     expect(source).not.toContain("service_role");
     expect(source).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
   }
