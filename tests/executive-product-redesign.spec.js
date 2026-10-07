@@ -24,6 +24,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   const lock = fs.readFileSync(contract, "utf8");
   const css = fs.readFileSync("src/experience-v2/executive-overview/executive-redesign.css", "utf8");
   const overview = fs.readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
+  const home = fs.readFileSync("src/screens/ExecutiveHome.jsx", "utf8");
   const shell = fs.readFileSync("src/experience-v2/shell/ShellV2.jsx", "utf8");
   const legacy = fs.readFileSync("src/premium-executive.css", "utf8");
 
@@ -35,6 +36,9 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(overview).toContain("Ministry Objectives");
   expect(overview).toContain("Upcoming Meetings");
   expect(overview).toContain("Reports / Actions");
+  expect(home).toContain('supabase.from("strategy_nodes")');
+  expect(overview).toContain("ministryStrategyRows");
+  expect(overview).not.toContain("On track or met");
   expect(css).toContain(".executive-app .ev2s-sidebar");
   expect(shell).toContain('aria-label={isExec ? "Open updates" : "Open messages"}');
   expect(shell).toContain('name={isExec ? "notification" : "messages"}');
