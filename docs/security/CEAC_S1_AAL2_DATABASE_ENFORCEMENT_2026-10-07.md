@@ -24,7 +24,7 @@ When enforcement is enabled, elevated authority requires both:
 
 The second check closes the short stale-token window after a factor is removed.
 
-The internal helper `app_privileged_aal_allowed()` is SECURITY INVOKER, fixed-search-path, and not directly executable by `anon` or `authenticated`.
+The internal helper `app_privileged_aal_allowed()` is SECURITY DEFINER with a fixed search path because it must read Supabase Auth MFA-factor state. EXECUTE remains revoked from `anon` and `authenticated`, so it is not a browser API and does not increase the authenticated SECURITY DEFINER ceiling.
 
 ## Authority paths covered
 
