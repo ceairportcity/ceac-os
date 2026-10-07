@@ -1,9 +1,9 @@
 # CEAC Phase 6 — Volunteer, Calendar & Personal Planning Visual/Product Lock
 
-**Date:** 7 October 2026  
-**Status:** OWNER-APPROVED, BINDING NEXT-PHASE CONTRACT  
-**Entry dependency:** Phase 5 Admin Product Redesign acceptance  
-**Canonical visual reference:** `docs/design/phase6/CEAC_PHASE6_APPROVED_NINE_SURFACE_REFERENCE.webp`  
+**Date:** 7 October 2026
+**Status:** OWNER-APPROVED, BINDING NEXT-PHASE CONTRACT
+**Entry dependency:** Phase 5 Admin Product Redesign acceptance
+**Canonical visual reference:** `docs/design/phase6/CEAC_PHASE6_APPROVED_NINE_SURFACE_REFERENCE.webp`
 **Reference SHA-256:** `4ebebd2cc72bd4a95eeb077fa1610ecfd65dac04038683b582b3330989bbcf9c`
 
 This contract records the product owner's explicit instruction that the nine-surface visual board is a literal implementation authority, not inspiration.
