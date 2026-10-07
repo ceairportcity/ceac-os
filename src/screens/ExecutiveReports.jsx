@@ -99,9 +99,9 @@ export default function ExecutiveReports({ me }) {
   return (
     <div className="body ev2-reporting-page ev2-reporting-executive">
       <ReportingPageHeader
-        eyebrow="Leadership reporting"
+        eyebrow="Executive insight"
         title="Reports"
-        description="Read-only reporting context for the latest recorded period. Administration controls periods and report configuration; coverage is filing status, not a performance score."
+        description="View submissions, reporting coverage and key recorded reports. Administration controls periods and configuration; coverage is not a performance score."
         statusLabel={statusLabel}
         statusTone={error ? "danger" : "neutral"}
       />
