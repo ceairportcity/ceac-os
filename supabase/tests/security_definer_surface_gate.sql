@@ -73,7 +73,7 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.follow_up_blocker(p_blocker_id uuid)'),
   ('public.follow_up_work_review(p_work_item_id uuid)'),
   ('public.fulfil_finance_request(p_request_id uuid, p_spent_on date, p_source_note text)'),
-  ('public.grant_capability(p_profile_id uuid, p_capability text, p_scope_unit_id uuid, p_reason text)'),
+  ('public.grant_capability(p_profile_id uuid, p_capability text, p_scope_unit_id uuid, p_reason text, p_expires_at timestamp with time zone)'),
   ('public.hr_employee_protected_record(p_employee_id uuid, p_record_type text, p_payload jsonb, p_replaces_id uuid, p_reason text)'),
   ('public.hr_employee_protected_summary(p_employee_id uuid)'),
   ('public.hr_protected_record(p_profile_id uuid, p_record_type text, p_payload jsonb, p_replaces_id uuid, p_reason text)'),

@@ -1,0 +1,328 @@
+-- 118 — Security S3: temporary capability delegation expiry.
+-- Expiry ends authority automatically while retaining the grant row for audit history.
+
+alter table public.capability_grants
+  add column if not exists expires_at timestamp with time zone;
+
+do $constraint$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid='public.capability_grants'::regclass
+      and conname='capability_grants_expiry_after_grant'
+  ) then
+    alter table public.capability_grants
+      add constraint capability_grants_expiry_after_grant
+      check (expires_at is null or expires_at > granted_at);
+  end if;
+end
+$constraint$;
+
+comment on column public.capability_grants.expires_at is
+  'Optional end of delegated authority. Expired grants remain as historical audit records but confer no capability.';
+
+create or replace function public.app_has_capability(
+  p_capability text,
+  p_unit_id uuid default null
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path=public
+as $$
+  select public.app_privileged_aal_allowed()
+    and exists (
+      select 1
+      from public.profiles p
+      join public.capability_grants cg
+        on cg.profile_id=p.id
+       and cg.org_id=p.org_id
+      where p.id=auth.uid()
+        and p.active
+        and cg.revoked_at is null
+        and (cg.expires_at is null or cg.expires_at > now())
+        and cg.capability=p_capability
+        and (
+          cg.scope_unit_id is null
+          or (p_unit_id is not null and cg.scope_unit_id=p_unit_id)
+        )
+    );
+$$;
+
+drop function if exists public.grant_capability(uuid,text,uuid,text);
+
+create function public.grant_capability(
+  p_profile_id uuid,
+  p_capability text,
+  p_scope_unit_id uuid default null,
+  p_reason text default null,
+  p_expires_at timestamp with time zone default null
+)
+returns public.capability_grants
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  v_org uuid:=public.app_org_id();
+  v_actor uuid:=auth.uid();
+  v_grant public.capability_grants;
+  v_opposite text;
+begin
+  if v_actor is null or not public.app_has_capability('authority.manage',null) then
+    raise exception 'You do not have authority to manage capabilities.' using errcode='42501';
+  end if;
+
+  if nullif(btrim(coalesce(p_reason,'')),'') is null or length(btrim(p_reason))<3 then
+    raise exception 'A reason is required for capability changes.';
+  end if;
+
+  if p_expires_at is not null and p_expires_at<=now() then
+    raise exception 'Temporary capability expiry must be in the future.';
+  end if;
+
+  if not exists (
+    select 1 from public.profiles p
+    where p.id=p_profile_id and p.org_id=v_org and p.active
+  ) then
+    raise exception 'Choose an active person in your organisation.' using errcode='42501';
+  end if;
+
+  if not exists (
+    select 1 from public.capability_definitions d where d.capability=p_capability
+  ) then
+    raise exception 'That capability is not part of the approved catalogue.';
+  end if;
+
+  if p_scope_unit_id is not null and not exists (
+    select 1 from public.units u
+    where u.id=p_scope_unit_id and u.org_id=v_org and u.active
+  ) then
+    raise exception 'Choose an active unit in your organisation.' using errcode='42501';
+  end if;
+
+  if p_capability in ('authority.manage','hr_private.access','payroll.prepare','payroll.approve','audit.view')
+     and p_scope_unit_id is not null then
+    raise exception 'That capability is organisation-scoped.';
+  end if;
+
+  -- Close an already-expired same-scope grant before replacement. Authority
+  -- ended at expires_at; this update only closes the historical row explicitly.
+  update public.capability_grants
+  set revoked_by=v_actor,
+      revoked_at=now(),
+      revoke_reason=coalesce(revoke_reason,'Expired temporary grant closed before replacement')
+  where org_id=v_org
+    and profile_id=p_profile_id
+    and capability=p_capability
+    and scope_unit_id is not distinct from p_scope_unit_id
+    and revoked_at is null
+    and expires_at is not null
+    and expires_at<=now();
+
+  if exists (
+    select 1 from public.capability_grants cg
+    where cg.org_id=v_org
+      and cg.profile_id=p_profile_id
+      and cg.capability=p_capability
+      and cg.scope_unit_id is not distinct from p_scope_unit_id
+      and cg.revoked_at is null
+      and (cg.expires_at is null or cg.expires_at>now())
+  ) then
+    raise exception 'That capability is already active for this scope.';
+  end if;
+
+  -- Preserve the existing anti-lockout invariant across automatic expiry:
+  -- temporary authority.manage may supplement but never replace the last
+  -- permanent authority manager.
+  if p_capability='authority.manage' and p_scope_unit_id is null and p_expires_at is not null
+     and not exists (
+       select 1 from public.capability_grants cg
+       where cg.org_id=v_org
+         and cg.capability='authority.manage'
+         and cg.scope_unit_id is null
+         and cg.revoked_at is null
+         and cg.expires_at is null
+     ) then
+    raise exception 'The organisation must retain at least one permanent authority manager.'
+      using errcode='42501';
+  end if;
+
+  v_opposite:=case
+    when p_capability='payroll.prepare' then 'payroll.approve'
+    when p_capability='payroll.approve' then 'payroll.prepare'
+    else null
+  end;
+
+  if v_opposite is not null and exists (
+    select 1 from public.capability_grants cg
+    where cg.org_id=v_org
+      and cg.profile_id=p_profile_id
+      and cg.capability=v_opposite
+      and cg.revoked_at is null
+      and (cg.expires_at is null or cg.expires_at>now())
+      and (
+        cg.scope_unit_id is null
+        or p_scope_unit_id is null
+        or cg.scope_unit_id=p_scope_unit_id
+      )
+  ) then
+    raise exception 'Payroll preparation and approval must remain separated.'
+      using errcode='42501';
+  end if;
+
+  insert into public.capability_grants(
+    org_id,profile_id,capability,scope_unit_id,granted_by,grant_reason,expires_at
+  ) values (
+    v_org,p_profile_id,p_capability,p_scope_unit_id,v_actor,btrim(p_reason),p_expires_at
+  )
+  returning * into v_grant;
+
+  return v_grant;
+end;
+$$;
+
+revoke all on function public.grant_capability(uuid,text,uuid,text,timestamp with time zone)
+  from public,anon;
+grant execute on function public.grant_capability(uuid,text,uuid,text,timestamp with time zone)
+  to authenticated,service_role;
+
+create or replace function public.revoke_capability(p_grant_id uuid,p_reason text)
+returns void
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  v_org uuid:=public.app_org_id();
+  v_actor uuid:=auth.uid();
+  v_grant public.capability_grants;
+  v_remaining integer;
+begin
+  if v_actor is null or not public.app_has_capability('authority.manage',null) then
+    raise exception 'You do not have authority to manage capabilities.' using errcode='42501';
+  end if;
+
+  if nullif(btrim(coalesce(p_reason,'')),'') is null or length(btrim(p_reason))<3 then
+    raise exception 'A reason is required for capability changes.';
+  end if;
+
+  select * into v_grant
+  from public.capability_grants
+  where id=p_grant_id and org_id=v_org and revoked_at is null
+  for update;
+
+  if v_grant.id is null then
+    raise exception 'That capability grant was not found.' using errcode='42501';
+  end if;
+
+  if v_grant.capability='authority.manage'
+     and v_grant.scope_unit_id is null
+     and v_grant.expires_at is null then
+    select count(*) into v_remaining
+    from public.capability_grants cg
+    where cg.org_id=v_org
+      and cg.capability='authority.manage'
+      and cg.scope_unit_id is null
+      and cg.revoked_at is null
+      and cg.expires_at is null
+      and cg.id<>v_grant.id;
+
+    if v_remaining=0 then
+      raise exception 'The organisation must retain at least one permanent authority manager.'
+        using errcode='42501';
+    end if;
+  end if;
+
+  update public.capability_grants
+  set revoked_by=v_actor,
+      revoked_at=now(),
+      revoke_reason=btrim(p_reason)
+  where id=v_grant.id;
+end;
+$$;
+
+create or replace function public.guard_last_authority()
+returns trigger
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare v_left int;
+begin
+  if old.capability='authority.manage'
+     and old.scope_unit_id is null
+     and old.revoked_at is null
+     and old.expires_at is null
+     and (new.revoked_at is not null or new.expires_at is not null) then
+    select count(*) into v_left
+    from public.capability_grants
+    where org_id=old.org_id
+      and capability='authority.manage'
+      and scope_unit_id is null
+      and revoked_at is null
+      and expires_at is null
+      and id<>old.id;
+
+    if v_left=0 then
+      raise exception 'This is the last permanent authority manager. Grant permanent authority to someone else before ending it.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.guard_payroll_capability_grant()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+  v_admin boolean;
+  v_exec boolean;
+  v_opposite text;
+begin
+  if new.revoked_at is not null
+     or (new.expires_at is not null and new.expires_at<=now())
+     or new.capability not in ('payroll.prepare','payroll.approve') then
+    return new;
+  end if;
+
+  select p.is_admin,p.is_exec into v_admin,v_exec
+  from public.profiles p
+  where p.id=new.profile_id and p.org_id=new.org_id and p.active;
+
+  if not found then
+    raise exception 'Payroll authority requires an active organisation member.' using errcode='42501';
+  end if;
+
+  if new.capability='payroll.prepare' and (not coalesce(v_admin,false) or coalesce(v_exec,false)) then
+    raise exception 'Payroll preparation is reserved for Administration and cannot be held by the Group Pastor/CEO.'
+      using errcode='42501';
+  end if;
+
+  if new.capability='payroll.approve' and not coalesce(v_exec,false) then
+    raise exception 'Payroll approval is reserved for the Group Pastor/CEO.'
+      using errcode='42501';
+  end if;
+
+  v_opposite:=case when new.capability='payroll.prepare' then 'payroll.approve' else 'payroll.prepare' end;
+  if exists (
+    select 1 from public.capability_grants cg
+    where cg.org_id=new.org_id
+      and cg.profile_id=new.profile_id
+      and cg.capability=v_opposite
+      and cg.revoked_at is null
+      and (cg.expires_at is null or cg.expires_at>now())
+      and cg.id is distinct from new.id
+  ) then
+    raise exception 'Payroll preparation and approval must remain separated.'
+      using errcode='42501';
+  end if;
+
+  return new;
+end;
+$$;
