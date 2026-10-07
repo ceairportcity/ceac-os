@@ -22,7 +22,11 @@ export async function loadMe() {
   if (profileError) throw profileError;
   if (!p) return null;
   if (!p.active) throw new Error("Your CEAC access is inactive. Contact Administration.");
-  const [{ data: memberships, error: membershipError }, { data: capabilityGrants, error: capabilityError }] = await Promise.all([
+  const [
+    { data: memberships, error: membershipError },
+    { data: capabilityGrants, error: capabilityError },
+    { data: ledSubTeams, error: leadError },
+  ] = await Promise.all([
     supabase.from("unit_memberships")
       .select("role, unit_id, units(name)")
       .eq("profile_id", auth.user.id),
@@ -30,9 +34,14 @@ export async function loadMe() {
       .select("id,capability,scope_unit_id,granted_at,expires_at")
       .eq("profile_id", auth.user.id)
       .is("revoked_at", null),
+    supabase.from("sub_teams")
+      .select("id")
+      .eq("lead_id", auth.user.id)
+      .eq("active", true),
   ]);
   if (membershipError) throw membershipError;
   if (capabilityError) throw capabilityError;
+  if (leadError) throw leadError;
   const activeCapabilityGrants = (capabilityGrants || []).filter(
     (grant) => !grant.expires_at || Date.parse(grant.expires_at) > Date.now()
   );
@@ -51,6 +60,7 @@ export async function loadMe() {
     unit_name: selected ? selected.unit_name : null,
     role: selected ? selected.role : null,
     memberships: options,
+    led_sub_team_ids: (ledSubTeams || []).map((subTeam) => subTeam.id),
     capability_grants: activeCapabilityGrants,
     capabilities: [...new Set(activeCapabilityGrants.map((grant) => grant.capability))] };
 }
