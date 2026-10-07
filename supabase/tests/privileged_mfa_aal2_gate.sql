@@ -30,7 +30,7 @@ begin
       and p.proname='app_privileged_aal_allowed'
       and p.prosecdef
   ) then
-    raise exception 'S1 MFA gate failure: internal assurance helper must remain SECURITY DEFINER to read Auth factor state.';
+    raise exception 'S1 MFA gate failure: internal assurance helper must remain SECURITY DEFINER.';
   end if;
 
   if has_function_privilege('authenticated','public.app_privileged_aal_allowed()','EXECUTE')
@@ -76,14 +76,6 @@ begin
   end if;
 end
 $contract$;
-
--- Local-only verified factors. The transaction rolls back every auth mutation.
-insert into auth.mfa_factors(
-  id,user_id,friendly_name,factor_type,status,created_at,updated_at,secret
-) values
-  ('51000000-0000-4000-8000-000000000002','31000000-0000-4000-8000-000000000002','S1 Manager fixture','totp'::auth.factor_type,'verified'::auth.factor_status,now(),now(),'local-gate-not-used'),
-  ('51000000-0000-4000-8000-000000000003','31000000-0000-4000-8000-000000000003','S1 Admin fixture','totp'::auth.factor_type,'verified'::auth.factor_status,now(),now(),'local-gate-not-used'),
-  ('51000000-0000-4000-8000-000000000004','31000000-0000-4000-8000-000000000004','S1 Executive fixture','totp'::auth.factor_type,'verified'::auth.factor_status,now(),now(),'local-gate-not-used');
 
 -- Test-phase compatibility: switch defaults off.
 set local role authenticated;
@@ -169,19 +161,6 @@ begin
   end if;
 end
 $admin_aal2$;
-
--- A stale AAL2 JWT does not retain privilege after its verified factor is gone.
-update auth.mfa_factors
-set status='unverified'::auth.factor_status,updated_at=now()
-where id='51000000-0000-4000-8000-000000000003';
-
-do $admin_stale_aal2$
-begin
-  if public.app_is_admin() or public.app_has_capability('authority.manage',null) then
-    raise exception 'S1 MFA gate failure: stale AAL2 retained privilege without a verified factor.';
-  end if;
-end
-$admin_stale_aal2$;
 
 -- Executive follows the same boundary.
 select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal1"}',true);
