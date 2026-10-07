@@ -73,6 +73,21 @@ Existing `attendance_day_evidence(date)` already combines schedule, session, lea
 
 Phase 6 PR #140 also introduces append-oriented attendance corroboration for short-lived front-desk codes and trusted network signals. Those rows remain evidence only: they must never become authoritative absence, misconduct, discipline, salary or Payroll conclusions. S8 should consume or reference that corroboration where useful rather than create a second office-presence evidence subsystem.
 
+## Verified current schedule/policy population
+
+Read-only production inspection on 7 October 2026 found:
+
+- `workforce_schedule_versions` rows: **0**;
+- profiles with existing schedule history: **0**;
+- organisation/default schedule rows: **0**;
+- `profile_id` remains `NOT NULL` in the current schema;
+- `attendance.grace_minutes` exists in the rule catalogue but has **no effective value row**;
+- `attendance.late_after_minutes` exists in the rule catalogue but has **no effective value row**.
+
+Therefore no existing production schedule or threshold value conflicts with the locked Monday 12:00–17:00 / Tuesday–Friday 10:00–17:00 and 30/45-minute policy.
+
+The eventual migration should still contain a safe backfill path for any person schedule rows that might exist by deployment time, because GitHub/live state must be re-read immediately before execution.
+
 ## Required schedule-schema extension
 
 The current `workforce_schedule_versions.profile_id` is mandatory, so it cannot represent an organisation default.
