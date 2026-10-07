@@ -49,7 +49,32 @@ as $$
           or (p_unit_id is not null and cg.scope_unit_id=p_unit_id)
         )
     );
-$$;
+$;
+
+create or replace function public.app_led_sub_teams()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path=public
+as $
+  select s.id
+  from public.sub_teams s
+  join public.profiles p
+    on p.id=s.lead_id
+   and p.org_id=s.org_id
+  join public.unit_memberships m
+    on m.profile_id=p.id
+   and m.org_id=s.org_id
+   and m.unit_id=s.unit_id
+  where p.id=auth.uid()
+    and p.active
+    and s.active
+    and public.app_privileged_aal_allowed();
+$;
+
+revoke all on function public.app_led_sub_teams() from public,anon;
+grant execute on function public.app_led_sub_teams() to authenticated,service_role;
 
 drop function if exists public.grant_capability(uuid,text,uuid,text);
 
@@ -139,7 +164,12 @@ begin
   -- permanent authority manager.
   if p_capability='authority.manage' and p_scope_unit_id is null and p_expires_at is not null
      and not exists (
-       select 1 from public.capability_grants cg
+       select 1
+       from public.capability_grants cg
+       join public.profiles ap
+         on ap.id=cg.profile_id
+        and ap.org_id=cg.org_id
+        and ap.active
        where cg.org_id=v_org
          and cg.capability='authority.manage'
          and cg.scope_unit_id is null
@@ -223,6 +253,10 @@ begin
      and v_grant.expires_at is null then
     select count(*) into v_remaining
     from public.capability_grants cg
+    join public.profiles ap
+      on ap.id=cg.profile_id
+     and ap.org_id=cg.org_id
+     and ap.active
     where cg.org_id=v_org
       and cg.capability='authority.manage'
       and cg.scope_unit_id is null
@@ -258,13 +292,17 @@ begin
      and old.expires_at is null
      and (new.revoked_at is not null or new.expires_at is not null) then
     select count(*) into v_left
-    from public.capability_grants
-    where org_id=old.org_id
-      and capability='authority.manage'
-      and scope_unit_id is null
-      and revoked_at is null
-      and expires_at is null
-      and id<>old.id;
+    from public.capability_grants cg
+    join public.profiles ap
+      on ap.id=cg.profile_id
+     and ap.org_id=cg.org_id
+     and ap.active
+    where cg.org_id=old.org_id
+      and cg.capability='authority.manage'
+      and cg.scope_unit_id is null
+      and cg.revoked_at is null
+      and cg.expires_at is null
+      and cg.id<>old.id;
 
     if v_left=0 then
       raise exception 'This is the last permanent authority manager. Grant permanent authority to someone else before ending it.';
@@ -326,3 +364,50 @@ begin
   return new;
 end;
 $$;
+
+create or replace function public.close_profile_authority_on_deactivation()
+returns trigger
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  v_actor uuid:=auth.uid();
+begin
+  if old.active and not new.active then
+    if v_actor is null then
+      raise exception 'Profile deactivation requires an attributable signed-in actor.'
+        using errcode='42501';
+    end if;
+
+    update public.capability_grants
+    set revoked_by=v_actor,
+        revoked_at=now(),
+        revoke_reason='Profile deactivated; operational authority closed'
+    where org_id=old.org_id
+      and profile_id=old.id
+      and revoked_at is null;
+
+    delete from public.unit_memberships
+    where org_id=old.org_id
+      and profile_id=old.id;
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.close_profile_authority_on_deactivation()
+  from public,anon,authenticated;
+
+drop trigger if exists profiles_close_authority_on_deactivation
+  on public.profiles;
+create trigger profiles_close_authority_on_deactivation
+after update of active on public.profiles
+for each row
+when (old.active is true and new.active is false)
+execute function public.close_profile_authority_on_deactivation();
+
+comment on function public.close_profile_authority_on_deactivation() is
+  'Closes current capability grants and unit membership when a profile is deactivated. Historical capability rows are revoked, not deleted; Sub-team lead attribution remains but confers no authority without an active current unit membership.';
+
