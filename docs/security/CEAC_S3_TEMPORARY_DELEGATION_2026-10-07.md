@@ -86,3 +86,4 @@ The S3 SQL gate proves:
 ## Gate recovery note
 
 During forward reconciliation after S1 migration parity, the SQL security-gate script briefly lost its executable file mode. The script content was unchanged. The executable mode was restored before acceptance, and S3 must pass fresh exact-head CI, Migration Replay, Account Security and Level B Quality Gate checks before merge.
+Protected-main merge requires the exact PR head to pass build, role-and-rls, replay, and invited-account-flow.
