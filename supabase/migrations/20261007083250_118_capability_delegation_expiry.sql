@@ -653,3 +653,128 @@ for each row execute function public.close_lane_authority_on_membership_end();
 comment on function public.close_lane_authority_on_membership_end() is
   'Ends live Sub-team lead authority in the old unit when that unit membership is removed or moved. The lead change is captured by the Sub-team audit trigger.';
 
+create or replace function public.create_pending_invitation(
+  p_email text,
+  p_full_name text,
+  p_unit_id uuid,
+  p_role text default 'staff'
+)
+returns public.pending_invitations
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  v_org uuid;
+  v_invite public.pending_invitations;
+  v_existing public.pending_invitations;
+  v_email text:=lower(btrim(coalesce(p_email,'')));
+  v_name text:=nullif(btrim(coalesce(p_full_name,'')),'');
+  v_people_admin boolean;
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in to invite someone.' using errcode='42501';
+  end if;
+
+  v_org:=public.app_org_id();
+  if v_org is null then
+    raise exception 'Your organisation could not be identified.' using errcode='42501';
+  end if;
+
+  v_people_admin:=public.app_has_capability('people.manage',null);
+
+  if v_email='' or position('@' in v_email)<2 then
+    raise exception 'Enter a valid email address.';
+  end if;
+  if v_name is null then
+    raise exception 'Enter the person''s name.';
+  end if;
+  if p_unit_id is null then
+    raise exception 'Choose a unit.';
+  end if;
+  if coalesce(p_role,'staff')<>'staff' then
+    raise exception 'New accounts are invited as Staff. Administration can assign official authority after onboarding.'
+      using errcode='42501';
+  end if;
+
+  if not exists (
+    select 1 from public.units u
+    where u.id=p_unit_id and u.org_id=v_org and u.active
+  ) then
+    raise exception 'That unit is not an active unit in your organisation.' using errcode='42501';
+  end if;
+
+  if not v_people_admin
+     and p_unit_id not in (select public.app_managed_units()) then
+    raise exception 'You can only invite Staff into a unit you manage.' using errcode='42501';
+  end if;
+
+  if exists (
+    select 1 from public.profiles p
+    where lower(p.email)=v_email and p.org_id=v_org
+  ) then
+    raise exception 'That email already has a CEAC account.';
+  end if;
+
+  select *
+  into v_existing
+  from public.pending_invitations
+  where org_id=v_org
+    and lower(email)=v_email
+  for update;
+
+  if v_existing.id is not null
+     and v_existing.revoked_at is not null
+     and not v_people_admin then
+    raise exception 'A cancelled invitation requires People Administration review before it can be reopened.'
+      using errcode='42501';
+  end if;
+
+  if not v_people_admin
+     and v_existing.id is not null
+     and v_existing.unit_id not in (select public.app_managed_units()) then
+    raise exception 'Administration must review this existing invitation.'
+      using errcode='42501';
+  end if;
+
+  insert into public.pending_invitations(
+    org_id,email,full_name,unit_id,role,invited_by,invited_at,resolved_at,expires_at
+  )
+  values(
+    v_org,v_email,v_name,p_unit_id,'staff',auth.uid(),now(),null,now()+interval '7 days'
+  )
+  on conflict (org_id,lower(email)) do update
+  set full_name=excluded.full_name,
+      unit_id=excluded.unit_id,
+      role='staff',
+      invited_by=auth.uid(),
+      invited_at=now(),
+      resolved_at=null,
+      revoked_at=null,
+      revoked_by=null,
+      revocation_reason=null,
+      expires_at=now()+interval '7 days'
+  returning * into v_invite;
+
+  insert into public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
+  values(
+    v_org,auth.uid(),'staff_invited','pending_invitation',v_invite.id,
+    jsonb_build_object(
+      'unit_id',p_unit_id,
+      'reopened_cancelled_invitation',
+      v_existing.id is not null and v_existing.revoked_at is not null
+    )
+  );
+
+  return v_invite;
+end;
+$$;
+
+revoke all on function public.create_pending_invitation(text,text,uuid,text)
+  from public,anon;
+grant execute on function public.create_pending_invitation(text,text,uuid,text)
+  to authenticated,service_role;
+
+comment on function public.create_pending_invitation(text,text,uuid,text) is
+  'Creates or refreshes invite-only Staff onboarding. A cancelled invitation can be reopened only by people.manage authority; Unit Managers cannot undo an Administration cancellation.';
+
