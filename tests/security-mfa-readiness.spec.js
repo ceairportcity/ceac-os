@@ -51,8 +51,12 @@ test("S1 browser gate distinguishes enrolled challenge, enforced missing-factor 
 
 test("S1 two-step verification implementation keeps enrollment, challenge and factor removal inside Supabase Auth", async () => {
   const settings = readFileSync("src/components/MfaSettings.jsx", "utf8");
+  const supabaseSource = readFileSync("src/lib/supabase.js", "utf8");
   const challenge = readFileSync("src/screens/MfaChallenge.jsx", "utf8");
   const required = readFileSync("src/screens/MfaRequired.jsx", "utf8");
+
+  expect(supabaseSource).toContain('.select("privileged_mfa_enforced")');
+  expect(supabaseSource).toContain("privileged_mfa_enforced: Boolean(organisationSecurity?.privileged_mfa_enforced)");
 
   expect(settings).toContain("supabase.auth.mfa.listFactors()");
   expect(settings).toContain("supabase.auth.mfa.getAuthenticatorAssuranceLevel()");
