@@ -313,11 +313,19 @@
 }
 
 .office-app .ev2-control-center .phase5-control-ledger .control-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ev2-space-2);
+  align-items: stretch;
   margin: 0;
+  padding: var(--ev2-space-4);
   border: 0;
   border-bottom: 1px solid var(--ev2-line);
   border-radius: 0;
+  background: var(--ev2-surface);
   box-shadow: none;
+  cursor: default;
+  transform: none;
 }
 
 .office-app .ev2-control-center .phase5-control-ledger .control-card:last-child {
