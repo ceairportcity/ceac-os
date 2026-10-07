@@ -15,11 +15,13 @@ Baseline when started: protected main `b2a7bfebef58e97f7633a8cc172fac412b78aaad`
 
 Read-only production inspection on 7 October 2026 found:
 
-- privileged active accounts: **2**;
-- privileged accounts with a verified MFA factor: **0**;
-- privileged accounts without a verified MFA factor: **2**.
+- active identities with elevated operational authority: **5**;
+- organisation-privileged subset (Admin / Executive / active organisation capability): **2**;
+- Unit Managers: **3**;
+- active work-lane / Sub-team leads: **2**;
+- elevated-authority identities with a verified MFA factor: **0**.
 
-For this programme, a privileged identity means an active profile with Admin/Executive authority or at least one active `capability_grants` row. Legacy capability rows are not authoritative.
+The final privileged MFA boundary is based on actual authority, not titles: Admin, Executive, Unit Manager, active work-lane/Sub-team lead, or an active capability grant. These categories overlap; the union is 5 active identities. Legacy capability rows are not authoritative.
 
 Final human enrollment therefore remains a real go-live blocker.
 
@@ -44,7 +46,7 @@ The Account Security UI now states this accurately: other sessions are stopped f
 
 When the active Phase 4 migration/App lane clears:
 
-1. define privileged identity centrally from Admin/Executive authority plus active capability grants;
+1. define privileged identity centrally from Admin/Executive authority, Unit Manager/work-lane lead authority and active capability grants;
 2. add a default-off organisation setting for privileged MFA enforcement;
 3. add a central AAL2 helper using the authenticated JWT `aal` claim;
 4. require AAL2 for privileged authority when the switch is enabled;
@@ -53,7 +55,7 @@ When the active Phase 4 migration/App lane clears:
 7. add TOTP enrollment/management in the self-only Account Security surface;
 8. keep production enforcement off until real privileged users are enrolled and the go-live checklist is accepted.
 
-The design is capability-based, not job-title based.
+The design is authority-based, not job-title based. Capability grants are one authority source, not the only one.
 
 ## S5 lifecycle test expansion
 
@@ -84,7 +86,7 @@ The following remain upgrade/go-live items:
 - [x] current production MFA readiness counted without exposing factor secrets;
 - [x] password recovery lifecycle already tested;
 - [x] user-facing global sign-out semantics corrected;
-- [ ] expanded invitation expiry/revocation and session-refresh tests green;
+- [x] expanded invitation expiry/revocation and session-refresh tests green;
 - [ ] MFA challenge/enrollment UI wired into authenticated routing;
 - [ ] default-off central AAL2 database enforcement and negative tests;
 - [ ] exact-head gates green after enforcement wiring;
