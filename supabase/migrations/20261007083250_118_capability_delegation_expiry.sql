@@ -591,3 +591,63 @@ execute function public.close_profile_authority_on_deactivation();
 comment on function public.close_profile_authority_on_deactivation() is
   'Closes current capability grants, Sub-team lead assignments and unit membership when a profile is deactivated. Historical capability rows are revoked rather than deleted, and Sub-team lead changes are captured in the platform audit trail.';
 
+create or replace function public.close_lane_authority_on_membership_end()
+returns trigger
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  v_actor uuid:=auth.uid();
+  v_has_lane boolean;
+begin
+  if tg_op='UPDATE' and new.unit_id is not distinct from old.unit_id then
+    return new;
+  end if;
+
+  select exists (
+    select 1
+    from public.sub_teams s
+    where s.org_id=old.org_id
+      and s.unit_id=old.unit_id
+      and s.lead_id=old.profile_id
+  ) into v_has_lane;
+
+  if v_has_lane then
+    if v_actor is null then
+      raise exception 'Ending a unit membership that carries work-lane authority requires an attributable signed-in actor.'
+        using errcode='42501';
+    end if;
+
+    perform set_config('ceac.security_deactivation','close',true);
+    update public.sub_teams
+    set lead_id=null
+    where org_id=old.org_id
+      and unit_id=old.unit_id
+      and lead_id=old.profile_id;
+    perform set_config('ceac.security_deactivation','',true);
+  end if;
+
+  if tg_op='DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.close_lane_authority_on_membership_end()
+  from public,anon,authenticated;
+
+drop trigger if exists unit_memberships_close_lane_on_delete
+  on public.unit_memberships;
+create trigger unit_memberships_close_lane_on_delete
+after delete on public.unit_memberships
+for each row execute function public.close_lane_authority_on_membership_end();
+
+drop trigger if exists unit_memberships_close_lane_on_unit_change
+  on public.unit_memberships;
+create trigger unit_memberships_close_lane_on_unit_change
+after update of unit_id on public.unit_memberships
+for each row execute function public.close_lane_authority_on_membership_end();
+
+comment on function public.close_lane_authority_on_membership_end() is
+  'Ends live Sub-team lead authority in the old unit when that unit membership is removed or moved. The lead change is captured by the Sub-team audit trigger.';
+
