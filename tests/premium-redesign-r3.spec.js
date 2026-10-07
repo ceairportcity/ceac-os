@@ -104,7 +104,7 @@ test.describe("Premium redesign R3 Administration",()=>{
         "Security & governance",
         "Integrations",
         "Audit & records",
-      ]) await expect(page.getByText(label,{exact:true}).first()).toBeVisible();
+      ]) await expect(page.locator(".ev2-control-center .ev2-control-card").getByText(label,{exact:true}).first()).toBeVisible();
       await expect(page.getByText(/not a numeric health score/i)).toBeVisible();
       await expect(page.locator(".ev2-control-center .phase5-control-group")).toHaveCount(3);
       await expect(page.locator(".ev2-control-center .ev2-control-card")).toHaveCount(8);
