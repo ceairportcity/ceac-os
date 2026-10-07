@@ -16,6 +16,9 @@ export async function loadMe() {
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
   if (!auth?.user) return null;
+  if (!auth.user.email_confirmed_at) {
+    throw new Error("Complete your email verification before opening CEAC.");
+  }
   const { data: p, error: profileError } = await supabase.from("profiles")
     .select("id, full_name, preferred_name, email, job_title, phone, is_admin, is_exec, org_id, joined_at, birthday, contract_type, active")
     .eq("id", auth.user.id).single();
