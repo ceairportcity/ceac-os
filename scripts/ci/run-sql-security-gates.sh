@@ -16,6 +16,7 @@ tests=(
   capability_delegation_expiry_gate.sql
   security_jml_authority_gate.sql
   security_joiner_authority_gate.sql
+  security_mover_authority_gate.sql
   event_framework_gate.sql
   workflow_engine_gate.sql
   policy_rules_gate.sql
