@@ -101,3 +101,8 @@ Production deployment verification remains a separate required acceptance item. 
 ## Protected-main reconciliation
 
 The accepted Phase 5 tree was reconciled forward with protected main at `827fbe7391467dd13d6e411527416402a252993c` before final merge. The imported change is the canonical signed Security S1 migration; Phase 5 does not modify its security ownership or enforcement contract.
+
+
+## Final protected-check wrapper
+
+Final protected-check PR: #145. It supersedes PR #136 only as the merge/check wrapper for this same reconciled Phase 5 branch and does not replace or recreate accepted implementation work.
