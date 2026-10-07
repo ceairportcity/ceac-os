@@ -55,8 +55,8 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
     const first=p.error||c.error||s.error;
     if(first){ setError(humanError(first,"Employee lifecycle could not load.")); setLoading(false); return; }
     setPeople(p.data||[]); setCases(c.data||[]); setSteps(s.data||[]);
-    if(!profileId&&p.data?.length) setProfileId(p.data[0].id);
-    if(!selectedCaseId&&c.data?.length) setSelectedCaseId(c.data[0].id);
+    setProfileId((current)=>current || p.data?.[0]?.id || "");
+    setSelectedCaseId((current)=>current || c.data?.[0]?.id || null);
     setLoading(false);
   }
 
