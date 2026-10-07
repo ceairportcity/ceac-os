@@ -360,8 +360,7 @@
   margin: 0 auto;
   padding: 18px 20px 42px;
 }
-.executive-app .ev2cal-admin-page .phase6-calendar-head,
-.executive-app .ev2cal-admin-page .ev2cal-header {
+.executive-app .ev2cal-admin-page .ev2cal-page-head {
   padding-top: 2px;
 }
 .executive-app .ev2cal-admin-page .phase6-calendar-scope {
@@ -379,7 +378,7 @@
   color: #33226f;
   box-shadow: 0 2px 8px rgba(25,34,53,.08);
 }
-.executive-app .ev2cal-admin-page .phase6-calendar-page,
+.executive-app .ev2cal-admin-page .ev2cal-timeline,
 .executive-app .ev2cal-admin-page .phase6-day-workspace {
   border-color: #e4e7ee;
   box-shadow: 0 3px 12px rgba(26,36,57,.045);
