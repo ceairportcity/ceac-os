@@ -59,6 +59,7 @@ Required fields:
 - `added_by`
 - `ended_by`
 - `reason`
+- `associated_unit_id` — the Media & Technical association used for organisational context only; it does not create Unit Manager or ordinary unit authority
 - timestamps
 
 Rules:
@@ -69,6 +70,46 @@ Rules:
 - historical membership is never deleted;
 - ending membership preserves completed support-case attribution;
 - the intended lead transition must preserve previous Media & Technical attribution before current placement is deactivated.
+
+## Lead / member transition foundation
+
+Technical Support transition must change **current operating authority**, not identity history.
+
+The transition must never:
+
+- create a second CEAC profile or Auth identity for the same person;
+- delete the existing profile;
+- delete historical Media & Technical work, employment history, unit history or attribution;
+- use `profiles.active=false` merely to end the old operating placement.
+
+`profiles.active=false` is a leaver/account-deactivation control. Under S3 it closes capability grants, current unit authority and lane leadership. A person who is moving into active Technical Support must therefore remain an active profile unless they are actually leaving CEAC.
+
+The safe transition sequence is:
+
+1. confirm the existing CEAC identity is active and email-confirmed;
+2. identify the current employment/unit/manager/lane state and preserve the existing employment-history snapshot;
+3. create the dedicated Technical Support membership for that same profile, initially without implying any business capability;
+4. grant each approved support capability separately through canonical `capability_grants`, with actor, reason, scope and optional S3 expiry;
+5. verify any privileged Technical Support authority satisfies the current MFA/TOTP boundary before production activation;
+6. end only the conflicting current operating responsibility through the existing audited employment/unit responsibility path;
+7. let the S3 mover controls clear any old-unit lane-lead authority automatically;
+8. confirm the previous Media & Technical record remains available as historical attribution;
+9. confirm no broad Admin, HR, Payroll, Compliance or Executive capability was introduced by the transition.
+
+The membership's `associated_unit_id` records the locked organisational association with Media & Technical. It is context only. It must not be inserted into `unit_memberships` automatically and must not satisfy `app_managed_units()`, `app_led_sub_teams()` or any business-authority helper.
+
+### Separation of membership and power
+
+Technical Support membership and Technical Support capability are deliberately separate.
+
+- People Administration may add/end Technical Support membership.
+- Membership alone grants no support queue, system inspection or access-execution power.
+- Support capabilities are granted/revoked through the canonical authority path.
+- A Technical Support Lead cannot self-grant support capabilities merely because they are the Lead.
+- Ending a Technical Support membership does not delete case history; it must also trigger reviewed closure/revocation of any support-specific capability that should no longer remain active.
+- A volunteer can hold Technical Support membership and explicitly granted support capabilities without being converted into an employee or payroll participant.
+
+A future migration should prefer an attributable server transaction/RPC for membership activation/end so membership state and capability-cleanup requirements cannot drift apart. It must not bypass the existing `authority.manage` approval boundary to perform grants.
 
 ## Support cases
 
@@ -245,6 +286,11 @@ A support function must not weaken RLS to make itself work.
 The migration is not accepted until tests prove:
 
 - Technical Support membership grants no broad business capability;
+- Technical Support membership does not create a normal unit membership or Manager authority;
+- the Media & Technical association field is contextual only and cannot satisfy business-authority helpers;
+- a transition preserves the existing profile and historical employment/work attribution;
+- ending the old operating placement does not deactivate the CEAC profile unless the person is actually leaving;
+- Technical Support Lead membership cannot self-grant support capabilities;
 - self-grant of support or business authority is denied;
 - a support member without `support.case.manage` cannot inspect the queue;
 - a support case reporter can read only their own safe case projection;
