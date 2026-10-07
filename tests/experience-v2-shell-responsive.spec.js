@@ -38,7 +38,7 @@ test("Stage 4C capability and multi-unit policies remain explicit", async () => 
   const limitedAdmin = getShellNavigation(roleContext("admin", { capabilities: [] }));
   const limitedAdminLabels = limitedAdmin.map((item) => item.label);
 
-  expect(limitedAdminLabels).not.toContain("People");
+  expect(limitedAdminLabels).not.toContain("People & Access");
   for (const label of [
     "Overview",
     "Work",
@@ -56,7 +56,7 @@ test("Stage 4C capability and multi-unit policies remain explicit", async () => 
   const authorisedAdmin = getShellNavigation(
     roleContext("admin", { capabilities: ["people.manage"] })
   );
-  expect(authorisedAdmin.map((item) => item.label)).toContain("People");
+  expect(authorisedAdmin.map((item) => item.label)).toContain("People & Access");
 
   const limitedAdminPrimary = getMobilePrimaryNavigation(
     roleContext("admin", { capabilities: [] })

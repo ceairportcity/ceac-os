@@ -1037,7 +1037,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     <PeoplePageHeader
       eyebrow="Employee records"
       title="People & Access"
-      description="One administrative workspace for employee records, account access, organisational placement, employment, work and leave context. Protected HR remains behind its separate security boundary."
+      description="One administrative workspace for employee records, account access, organisational placement, employment, work and leave context. Protected HR remains behind a separate security boundary."
       count={rows.length}
       countLabel={rows.length === 1 ? "person" : "people"}
     />

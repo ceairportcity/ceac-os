@@ -179,7 +179,7 @@ export default function AdminOverviewV2({
               : "No recorded Administration decision, onboarding action or operational exception is waiting right now."}</p>
           </div>
           <div className="adminv2-intro-actions">
-            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People</Button> : null}
+            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People &amp; Access</Button> : null}
             <Button icon="control" onClick={onOpenSettings}>Control Center</Button>
           </div>
         </div>
@@ -254,7 +254,7 @@ export default function AdminOverviewV2({
           </DataPanel>
 
           <div className="adminv2-mobile-actions" aria-label="Administration shortcuts">
-            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People</Button> : null}
+            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People &amp; Access</Button> : null}
             <Button icon="control" onClick={onOpenSettings}>Control Center</Button>
           </div>
 
@@ -272,7 +272,7 @@ export default function AdminOverviewV2({
               <StatTile label="Needs attention" value={peopleAttention} supporting="Recorded gaps" icon="notification" tone={peopleAttention ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
             </div>
             <div className="adminv2-panel-foot">
-              {canManagePeople ? <Button variant="quiet" size="compact" onClick={onOpenPeople}>Open People</Button> : null}
+              {canManagePeople ? <Button variant="quiet" size="compact" onClick={onOpenPeople}>Open People &amp; Access</Button> : null}
               {canAccessProtectedHR ? <Button variant="quiet" size="compact" onClick={onOpenProtectedHR}>Protected HR</Button> : null}
             </div>
           </DataPanel>

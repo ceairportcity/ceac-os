@@ -84,7 +84,7 @@ test("Stage 4B desktop shell exposes only authorised production destinations", a
   const sidebar = page.locator(".ev2s-sidebar");
   await expect(sidebar).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Overview", exact: true })).toBeVisible();
-  await expect(sidebar.getByRole("button", { name: "People", exact: true })).toBeVisible();
+  await expect(sidebar.getByRole("button", { name: "People & Access", exact: true })).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Time & Leave", exact: true })).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Control Center", exact: true })).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Primitives", exact: true })).toHaveCount(0);

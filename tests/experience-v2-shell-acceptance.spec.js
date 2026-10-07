@@ -79,7 +79,7 @@ const roles = [
     },
     destinations: [
       ["home", "Overview"],
-      ["people", "People"],
+      ["people", "People & Access"],
       ["work", "Work"],
       ["attendance", "Time & Leave"],
       ["finance", "Finance"],
@@ -92,7 +92,7 @@ const roles = [
     ],
     primary: [
       ["home", "Overview"],
-      ["people", "People"],
+      ["people", "People & Access"],
       ["attendance", "Time & Leave"],
       ["finance", "Finance"],
     ],

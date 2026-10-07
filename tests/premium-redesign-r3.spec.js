@@ -32,10 +32,10 @@ test.describe("Premium redesign R3 Administration",()=>{
     await page.screenshot({path:"test-artifacts/redesign-r3-admin-work.png",fullPage:true});
     await context.close();
   });
-  test("People remains the flagship employee workspace",async({browser})=>{
+  test("People & Access remains the flagship employee workspace",async({browser})=>{
     const {context,page}=await openAdmin(browser);
-    await page.locator(".ev2s-sidebar").getByRole("button",{name:"People",exact:true}).click();
-    await expect(page.getByRole("heading",{name:"People",exact:true})).toBeVisible();
+    await page.locator(".ev2s-sidebar").getByRole("button",{name:"People & Access",exact:true}).click();
+    await expect(page.getByRole("heading",{name:"People & Access",exact:true})).toBeVisible();
     await expect(page.getByPlaceholder("Name, email, job title or unit")).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r3-admin-people.png",fullPage:true});
     await context.close();
@@ -55,10 +55,10 @@ test.describe("Premium redesign R3 Administration",()=>{
     await page.locator(".ev2s-sidebar").getByRole("button",{name:"Control Center",exact:true}).click();
     await expect(page.getByRole("heading",{name:"Control Center",exact:true})).toBeVisible();
     await expect(page.getByText("Connected Apps",{exact:true})).toBeVisible();
-    await expect(page.getByRole("heading",{name:"Security & governance",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Security, integrations & records",exact:true})).toBeVisible();
     await expect(page.getByText("System events",{exact:true})).toBeVisible();
-    await expect(page.getByRole("heading",{name:"People & access",exact:true})).toBeVisible();
-    await expect(page.getByRole("heading",{name:"Time & Leave",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Organisation & people",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Operational configuration",exact:true})).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r3-admin-control-center.png",fullPage:true});
     await context.close();
   });
@@ -91,6 +91,11 @@ test.describe("Premium redesign R3 Administration",()=>{
       await expect(page.getByRole("heading",{name:"Control Center",exact:true})).toBeVisible();
       await expect(page.getByText("System health",{exact:true})).toBeVisible();
       for(const label of [
+        "Organisation & people",
+        "Operational configuration",
+        "Security, integrations & records",
+      ]) await expect(page.getByRole("heading",{name:label,exact:true})).toBeVisible();
+      for(const label of [
         "Organisation",
         "People & access",
         "Work & operations",
@@ -99,10 +104,10 @@ test.describe("Premium redesign R3 Administration",()=>{
         "Security & governance",
         "Integrations",
         "Audit & records",
-      ]) await expect(page.getByRole("heading",{name:label,exact:true})).toBeVisible();
+      ]) await expect(page.getByText(label,{exact:true}).first()).toBeVisible();
       await expect(page.getByText(/not a numeric health score/i)).toBeVisible();
-      const domainPanels=page.locator(".ev2-control-center .ev2c-data-panel");
-      expect(await domainPanels.count()).toBeGreaterThanOrEqual(9);
+      await expect(page.locator(".ev2-control-center .phase5-control-group")).toHaveCount(3);
+      await expect(page.locator(".ev2-control-center .ev2-control-card")).toHaveCount(8);
       expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({path:`test-artifacts/vf4d-admin-control-center-${viewport.name}.png`,fullPage:true});
       await context.close();
