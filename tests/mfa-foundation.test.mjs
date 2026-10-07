@@ -87,4 +87,22 @@ test("privileged identity is based on authority, not job title", () => {
     is_exec: false,
     capability_grants: [{ capability: "people.manage" }],
   }), true);
+  assert.equal(isPrivilegedIdentity({
+    is_admin: false,
+    is_exec: false,
+    memberships: [{ role: "manager" }],
+    capability_grants: [],
+  }), true);
+  assert.equal(isPrivilegedIdentity({
+    is_admin: false,
+    is_exec: false,
+    role: "sub_team_lead",
+    capability_grants: [],
+  }), true);
+  assert.equal(isPrivilegedIdentity({
+    is_admin: false,
+    is_exec: false,
+    led_sub_team_ids: ["sub-team-1"],
+    capability_grants: [],
+  }), true);
 });
