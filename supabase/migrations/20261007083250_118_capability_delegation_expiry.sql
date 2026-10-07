@@ -601,8 +601,10 @@ declare
   v_actor uuid:=auth.uid();
   v_has_lane boolean;
 begin
-  if tg_op='UPDATE' and new.unit_id is not distinct from old.unit_id then
-    return new;
+  if tg_op='UPDATE' then
+    if new.unit_id is not distinct from old.unit_id then
+      return new;
+    end if;
   end if;
 
   select exists (
