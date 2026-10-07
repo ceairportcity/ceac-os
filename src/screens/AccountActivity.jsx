@@ -66,7 +66,8 @@ export default function AccountActivity({ me }) {
     }
   }
 
-  // Ends every session everywhere, including this one.
+  // Revokes refresh sessions everywhere, including this one. Already-issued
+  // short-lived access tokens on another device can remain valid until expiry.
   async function signOutEverywhere() {
     if (!confirm("Sign out on every device, including this one? You will need to sign in again.")) return;
     setBusy(true);
@@ -126,6 +127,9 @@ export default function AccountActivity({ me }) {
             Sign out on every device
           </button>
         </div>
+        <p className="screen-note">
+          Signing out everywhere stops those sessions from renewing. A device that already has a short-lived access token may take a short time to lose access.
+        </p>
       </PersonalSection>
 
       <PersonalSection
