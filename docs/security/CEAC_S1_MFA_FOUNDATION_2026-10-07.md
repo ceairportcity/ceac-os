@@ -25,11 +25,13 @@ Privileged identity is derived from actual authority:
 
 - Administration;
 - Executive;
+- Unit Manager authority;
+- work-lane / Sub-team lead authority;
 - any active capability grant.
 
 Job title alone does not make a person privileged.
 
-This matches the locked owner decision and existing capability architecture.
+This matches the locked owner decision and the actual server authority paths. Read-only live inspection found 5 active identities with one or more of these authority paths and 0 verified MFA factors. The earlier organisation-capability-only subset was 2 and was too narrow for the final privileged MFA boundary.
 
 ## Test-phase behavior
 
