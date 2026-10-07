@@ -1,11 +1,25 @@
-// Use documented Auth codes, never raw server messages or credential values.
-export function signInErrorMessage(error) {
-  if (error?.code === "invalid_credentials") return "That email and password did not match. Please try again.";
-  if (error?.code === "email_not_confirmed") return "Your email still needs verification. Open the newest CEAC activation email or contact Administration.";
-  if (error?.code === "user_banned") return "This account cannot sign in. Contact CEAC Administration.";
-  if (error?.status === 429 || error?.code === "over_request_rate_limit") return "Too many sign-in attempts. Wait a few minutes before trying again.";
-  if (error?.code === "email_provider_disabled") return "Email sign-in is unavailable. Contact CEAC Administration.";
-  if (error?.status >= 500) return "The sign-in service is temporarily unavailable. Please try again later.";
-  if (error?.name === "AuthRetryableFetchError" || error?.name === "TypeError" || error?.code === "request_timeout") return "CEAC could not reach the sign-in service. Check your connection and try again.";
-  return "CEAC could not complete sign-in. Please try again, or contact Administration if this continues.";
+// Use documented Auth codes, never raw provider messages.
+export function authErrorMessage(error, context = "signin") {
+  const code = error?.code;
+  const rateLimited = error?.status === 429 || code?.includes("rate_limit");
+  const network = ["AuthRetryableFetchError", "TypeError"].includes(error?.name) || code === "request_timeout";
+
+  if (context === "signin") {
+    const known = {
+      invalid_credentials: "Email and password did not match. Try again.",
+      email_not_confirmed: "Email verification is required. Open the newest CEAC activation email.",
+      user_banned: "This account cannot sign in. Contact Administration.",
+      email_provider_disabled: "Email sign-in is unavailable. Contact Administration.",
+    };
+    if (known[code]) return known[code];
+  }
+  if (context === "password" && code === "weak_password") return "Choose a stronger password.";
+  if (context === "password" && code === "same_password") return "Choose a different password.";
+  if (rateLimited) return "Too many attempts. Wait a minute.";
+  if (error?.status >= 500) return "The secure account service is temporarily unavailable.";
+  if (network) return "Check your connection and try again.";
+  if (context === "link") return "This secure link could not be verified. Open the newest CEAC email.";
+  if (context === "password") return "Your password could not be saved. Try again.";
+  if (context === "recovery") return "The recovery email could not be sent. Try again.";
+  return "CEAC could not complete sign-in. Try again.";
 }

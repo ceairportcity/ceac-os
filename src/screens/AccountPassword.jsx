@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AuthFrame from "../components/AuthFrame";
+import { authErrorMessage } from "../lib/signInError";
 
 export default function AccountPassword({ mode, onDone }) {
   const [ready, setReady] = useState(false);
@@ -16,7 +17,7 @@ export default function AccountPassword({ mode, onDone }) {
       const { data, error } = await supabase.auth.getSession();
       if (!mounted) return;
       if (error) {
-        setMessage(error.message || "This secure link could not be verified.");
+        setMessage(authErrorMessage(error, "link"));
         setHasSession(false);
         setReady(true);
         return;
@@ -50,7 +51,7 @@ export default function AccountPassword({ mode, onDone }) {
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error) {
-      setMessage(error.message || "Your password could not be saved.");
+      setMessage(authErrorMessage(error, "password"));
       return;
     }
     setMessage(mode === "activate" ? "Your CEAC account is ready." : "Your password has been changed.");
