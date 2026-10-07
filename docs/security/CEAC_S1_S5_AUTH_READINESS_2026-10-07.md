@@ -71,7 +71,9 @@ Browser work continues separately from the database enforcement:
 - privilege evaluation reuses the authority-based model, including Managers and work-lane leads;
 - final authenticated-workspace routing is deferred only where it collides with the active shared App/shell writer;
 - browser bootstrap now refuses to open CEAC for an unconfirmed Auth identity;
-- the S3 forward security tranche pins privileged server authority to verified TOTP specifically, matching the CEAC v1 browser challenge rather than accepting an unsupported factor type.
+- the S3 forward security tranche pins privileged server authority to verified TOTP specifically, matching the CEAC v1 browser challenge rather than accepting an unsupported factor type;
+- the browser gate now consumes Supabase `currentAuthenticationMethods`: generic/non-TOTP AAL2 is not treated as sufficient for privileged CEAC access, while TOTP-backed AAL2 is allowed;
+- the forward S3 server gate mirrors that rule with the JWT `amr` claim, so a different MFA method cannot satisfy privileged CEAC access merely because a verified TOTP also exists on the account.
 
 ## S5 lifecycle evidence
 
@@ -82,6 +84,7 @@ The dedicated Account Security integration coverage includes:
 - invitation → activation → password sign-in;
 - password recovery → changed password → password sign-in;
 - global sign-out prevents another device session from refreshing.
+- the forward S3 Account Security workflow also exercises the real `create_pending_invitation()` RPC through activation and verifies Staff/unit bootstrap, instead of relying only on service-role fixture insertion.
 
 The local integration suite is the authoritative test environment for these flows.
 
@@ -121,6 +124,7 @@ Before switching production privileged enforcement on:
 - [ ] test AAL1 → AAL2 challenge for each privileged role class;
 - [ ] test an AAL1 privileged request is rejected server-side;
 - [ ] test an AAL2 privileged request succeeds only within existing capability/unit scope;
+- [ ] test a generic/non-TOTP AAL2 session is still denied privileged CEAC authority until TOTP appears in the session authentication methods;
 - [ ] verify account recovery does not disclose MFA secrets;
 - [ ] confirm Administration has a documented lost-factor recovery/escalation procedure;
 - [ ] capture exact-main and live-Supabase migration parity;
@@ -135,6 +139,7 @@ Before switching production privileged enforcement on:
 - [x] expanded invitation expiry/revocation and session-refresh tests green;
 - [x] default-off central AAL2 database enforcement and negative tests merged;
 - [x] live/repository S1 migration parity reconciled;
+- [x] browser decision layer distinguishes TOTP-backed AAL2 from generic/non-TOTP AAL2;
 - [ ] browser MFA challenge/enrollment foundation accepted on exact-head gates;
 - [ ] MFA challenge wired into final authenticated privileged workspace routing after the specific Phase 5 collision clears;
 - [ ] final human MFA enrollment for privileged production accounts;
