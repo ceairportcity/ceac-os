@@ -365,6 +365,48 @@ begin
 end;
 $$;
 
+create or replace function public.guard_sub_team_hr_fields()
+returns trigger
+language plpgsql
+set search_path=public
+as $
+begin
+  if current_setting('ceac.security_deactivation',true)='close'
+     and tg_op='UPDATE'
+     and old.lead_id is not null
+     and new.lead_id is null
+     and new.org_id is not distinct from old.org_id
+     and new.unit_id is not distinct from old.unit_id
+     and new.name is not distinct from old.name
+     and new.code is not distinct from old.code
+     and new.position is not distinct from old.position
+     and new.active is not distinct from old.active then
+    return new;
+  end if;
+
+  if auth.uid() is null or public.app_is_admin() then
+    return new;
+  end if;
+
+  if tg_op='INSERT' and new.lead_id is not null then
+    raise exception 'Only Administration & HR can assign a sub-team lead.'
+      using errcode='42501';
+  end if;
+
+  if tg_op='UPDATE' and new.lead_id is distinct from old.lead_id then
+    raise exception 'Only Administration & HR can change a sub-team lead.'
+      using errcode='42501';
+  end if;
+
+  return new;
+end;
+$;
+
+drop trigger if exists audit_sub_teams on public.sub_teams;
+create trigger audit_sub_teams
+after insert or update or delete on public.sub_teams
+for each row execute function public.platform_audit_capture('sub_team','id','');
+
 create or replace function public.close_profile_authority_on_deactivation()
 returns trigger
 language plpgsql
@@ -388,6 +430,13 @@ begin
       and profile_id=old.id
       and revoked_at is null;
 
+    perform set_config('ceac.security_deactivation','close',true);
+    update public.sub_teams
+    set lead_id=null
+    where org_id=old.org_id
+      and lead_id=old.id;
+    perform set_config('ceac.security_deactivation','',true);
+
     delete from public.unit_memberships
     where org_id=old.org_id
       and profile_id=old.id;
@@ -409,5 +458,5 @@ when (old.active is true and new.active is false)
 execute function public.close_profile_authority_on_deactivation();
 
 comment on function public.close_profile_authority_on_deactivation() is
-  'Closes current capability grants and unit membership when a profile is deactivated. Historical capability rows are revoked, not deleted; Sub-team lead attribution remains but confers no authority without an active current unit membership.';
+  'Closes current capability grants, Sub-team lead assignments and unit membership when a profile is deactivated. Historical capability rows are revoked rather than deleted, and Sub-team lead changes are captured in the platform audit trail.';
 
