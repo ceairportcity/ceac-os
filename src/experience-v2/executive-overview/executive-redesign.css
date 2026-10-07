@@ -727,3 +727,41 @@
   border-radius: 9px;
   background: #fff;
 }
+
+
+/* Executive literal shell finishing */
+.executive-app .ev2s-brand-copy > span {
+  display: none;
+}
+.executive-app .ev2s-topbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.executive-app .ev2s-destination-search {
+  width: min(100%, 17.5rem);
+  justify-self: end;
+  min-height: 2.4rem;
+}
+.executive-app .ev2s-destination-search kbd {
+  display: none;
+}
+.executive-app .ev2s-profile-button {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  max-width: 2.5rem;
+  min-height: 2.5rem;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 0;
+  border-color: #e3e6ed;
+  background: #fff;
+  border-radius: 50%;
+}
+.executive-app .ev2s-profile-button > span:last-child {
+  display: none;
+}
+.executive-app .ev2s-topbar-actions {
+  gap: 10px;
+}
+.executive-app .ev2s-sidebar-profile {
+  margin-top: auto;
+}
