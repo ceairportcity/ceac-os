@@ -10,12 +10,15 @@ export function verifiedMfaFactors(data = {}) {
 export function decideMfaAccess({
   currentLevel,
   nextLevel,
+  currentAuthenticationMethods = [],
   factors,
   privileged = false,
   enforcementEnabled = false,
 } = {}) {
   const verified = verifiedMfaFactors(factors);
   const totp = verified.find((factor) => factor.factor_type === "totp");
+  const sessionUsedTotp = (Array.isArray(currentAuthenticationMethods) ? currentAuthenticationMethods : [])
+    .some((entry) => entry === "totp" || entry?.method === "totp");
 
   if (privileged && enforcementEnabled) {
     if (!totp) {
@@ -25,11 +28,17 @@ export function decideMfaAccess({
       return { state: "enroll", reason: "privileged_mfa_required", factor: null };
     }
 
-    if (currentLevel === "aal2") {
-      return { state: "allow", reason: "session_already_aal2", factor: totp };
+    if (currentLevel === "aal2" && sessionUsedTotp) {
+      return { state: "allow", reason: "session_totp_aal2", factor: totp };
     }
 
-    return { state: "challenge", reason: "privileged_factor_requires_step_up", factor: totp };
+    return {
+      state: "challenge",
+      reason: currentLevel === "aal2"
+        ? "privileged_totp_session_required"
+        : "privileged_factor_requires_step_up",
+      factor: totp,
+    };
   }
 
   if (currentLevel === "aal2") {
