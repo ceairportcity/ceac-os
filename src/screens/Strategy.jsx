@@ -251,7 +251,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
   if (loading) return <div className="body"><LoadingState label="Loading strategy…" /></div>;
 
   const executiveSurface=Boolean(me.is_exec);
-  return <div className={executiveSurface ? "body premium-exec-page ev2-executive-ministry" : "body"}>
+  return <div className={executiveSurface ? "body ev2-executive-ministry" : "body"}>
     <div className={executiveSurface ? "ev2ex-ministry-head" : ""} style={executiveSurface ? undefined : { paddingTop: 26 }}>
       <div className={executiveSurface ? "ev2ex-ministry-head-copy" : ""}>
         <div className="eyebrow">{executiveSurface ? "Executive ministry" : "Goals & strategy"}</div>
