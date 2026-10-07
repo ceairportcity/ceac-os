@@ -1315,3 +1315,215 @@ button.ev2cal-event:hover {
     padding-inline: var(--ev2-space-2);
   }
 }
+
+
+/* Phase 6B — rich day workspace details */
+
+.phase6-day-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ev2-space-2);
+}
+
+.phase6-day-metrics span {
+  min-width: 0;
+  padding: var(--ev2-space-2);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-control);
+  background: var(--ev2-surface-soft);
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-label);
+}
+
+.phase6-day-metrics b {
+  display: block;
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+  line-height: 1.2;
+}
+
+.phase6-schedule-rail {
+  display: grid;
+}
+
+.phase6-schedule-row {
+  min-height: 4.5rem;
+  display: grid;
+  grid-template-columns: 4.4rem 1rem minmax(0, 1fr);
+  gap: var(--ev2-space-2);
+  align-items: stretch;
+}
+
+.phase6-schedule-row > time {
+  padding-top: var(--ev2-space-3);
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  font-weight: 700;
+  text-align: right;
+}
+
+.phase6-schedule-line {
+  position: relative;
+}
+
+.phase6-schedule-line::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--ev2-line);
+}
+
+.phase6-schedule-line::after {
+  content: "";
+  position: absolute;
+  top: 1.05rem;
+  left: 50%;
+  width: .55rem;
+  height: .55rem;
+  border: 2px solid var(--ev2-action);
+  border-radius: 50%;
+  background: var(--ev2-surface);
+  transform: translateX(-50%);
+}
+
+.phase6-schedule-row > button {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ev2-space-3);
+  align-items: center;
+  margin-bottom: var(--ev2-space-2);
+  padding: var(--ev2-space-2) var(--ev2-space-3);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-control);
+  background: var(--ev2-surface);
+  color: var(--ev2-text);
+  font: inherit;
+  text-align: left;
+}
+
+.phase6-schedule-row > button:not(:disabled) {
+  cursor: pointer;
+}
+
+.phase6-schedule-row > button > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: var(--ev2-space-1);
+}
+
+.phase6-schedule-row strong {
+  font-size: var(--ev2-type-supporting);
+}
+
+.phase6-schedule-row small {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+}
+
+.phase6-private-task-card {
+  border-bottom: 1px solid var(--ev2-line);
+}
+
+.phase6-private-task-card .phase6-private-task {
+  border-bottom: 0;
+}
+
+.phase6-task-checklist {
+  display: grid;
+  gap: var(--ev2-space-1);
+  padding: 0 0 var(--ev2-space-3) 2.75rem;
+}
+
+.phase6-task-checklist label {
+  display: flex;
+  gap: var(--ev2-space-2);
+  align-items: center;
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+}
+
+.phase6-note-card {
+  width: 100%;
+  display: grid;
+  gap: var(--ev2-space-3);
+  padding: var(--ev2-space-3);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface);
+  color: var(--ev2-text);
+  font: inherit;
+  text-align: left;
+}
+
+button.phase6-note-card {
+  cursor: pointer;
+}
+
+.phase6-note-card.is-journal {
+  background: var(--ev2-surface-soft);
+}
+
+.phase6-note-card.is-meeting {
+  border-color: color-mix(in srgb, var(--ev2-action) 24%, var(--ev2-line));
+}
+
+.phase6-note-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ev2-space-3);
+  align-items: center;
+}
+
+.phase6-note-card-head > span {
+  min-width: 4.5rem;
+  min-height: 1.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--ev2-space-2);
+  border-radius: var(--ev2-radius-pill);
+  background: var(--ev2-action-soft);
+  color: var(--ev2-action);
+  font-size: var(--ev2-type-label);
+  font-weight: 760;
+}
+
+.phase6-note-card-head > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--ev2-space-1);
+}
+
+.phase6-note-card-head strong {
+  font-size: var(--ev2-type-supporting);
+}
+
+.phase6-note-card-head small,
+.phase6-note-card p {
+  margin: 0;
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.45;
+}
+
+@media (max-width: 599px) {
+  .phase6-schedule-row {
+    grid-template-columns: 3.75rem .75rem minmax(0, 1fr);
+  }
+
+  .phase6-schedule-row > button {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .phase6-schedule-row .phase6-day-kind {
+    width: fit-content;
+  }
+
+  .phase6-task-checklist {
+    padding-left: 2.25rem;
+  }
+}
