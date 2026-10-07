@@ -59,6 +59,18 @@ Expired grants do not count as active opposite payroll authority.
 
 Unexpired temporary payroll grants remain subject to all existing role and separation-of-duties rules.
 
+## Migration parity
+
+The reconciled S3 migration is:
+
+`20261007083250_118_capability_delegation_expiry.sql`
+
+It is intentionally later than the canonical live S1 migration:
+
+`20261007075418_privileged_mfa_aal2_enforcement`
+
+Production Supabase must not receive S3 under a connector-generated replacement version. Merge and deployment are accepted only when GitHub and live migration history preserve the same S3 version and SQL semantics.
+
 ## Acceptance
 
 The S3 SQL gate proves:
@@ -73,4 +85,4 @@ The S3 SQL gate proves:
 
 ## Gate recovery note
 
-During forward reconciliation after S1 migration parity, the SQL security-gate script briefly lost its executable file mode. The script content was unchanged. The executable mode was restored before acceptance, and S3 must pass a fresh exact-head Level B Quality Gate before merge.
+During forward reconciliation after S1 migration parity, the SQL security-gate script briefly lost its executable file mode. The script content was unchanged. The executable mode was restored before acceptance, and S3 must pass fresh exact-head CI, Migration Replay, Account Security and Level B Quality Gate checks before merge.
