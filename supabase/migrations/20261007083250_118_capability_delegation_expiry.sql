@@ -74,6 +74,7 @@ as $$
           from auth.mfa_factors mf
           where mf.user_id=auth.uid()
             and mf.status='verified'::auth.factor_status
+            and mf.factor_type='totp'::auth.factor_type
         )
       )
     from public.profiles p
