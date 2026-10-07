@@ -88,6 +88,47 @@ end
 $staff_boundary$;
 
 reset role;
+set local role service_role;
+
+insert into public.attendance_network_sources(
+  org_id,label,source_key,active
+) values(
+  '10000000-0000-4000-8000-000000000010',
+  'Phase 6 trusted office network',
+  'phase6-integrity-source',
+  true
+);
+
+select public.attendance_record_network_corroboration(
+  'phase6-integrity-source',
+  '31000000-0000-4000-8000-000000000001',
+  (select value::uuid from phase6_integrity_fixture where name='session'),
+  true,
+  'opaque-network-reference'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+
+do $network_self_read$
+declare body jsonb;
+begin
+  body:=public.attendance_corroboration_for_day(current_date);
+  if not exists(
+    select 1 from jsonb_array_elements(body) e
+    where e->>'evidence_type'='office_network'
+      and e->>'result'='verified'
+      and e->>'source_label'='Phase 6 trusted office network'
+  ) then
+    raise exception 'Phase 6C gate failure: trusted-network corroboration was not readable by its subject.';
+  end if;
+  if body::text like '%opaque-network-reference%' then
+    raise exception 'Phase 6C gate failure: opaque trusted-network reference leaked through ordinary evidence read.';
+  end if;
+end
+$network_self_read$;
+
+reset role;
 
 update public.employment_records
 set employment_type='volunteer',working_pattern='{"kind":"no_attendance"}'::jsonb
@@ -95,6 +136,26 @@ where profile_id='31000000-0000-4000-8000-000000000006';
 update public.employee_roster
 set employment_type='volunteer'
 where profile_id='31000000-0000-4000-8000-000000000006';
+
+set local role service_role;
+
+insert into public.work_sessions(org_id,profile_id,place)
+values(
+  '10000000-0000-4000-8000-000000000010',
+  '31000000-0000-4000-8000-000000000006',
+  'office'
+)
+returning id::text into temporary table phase6_volunteer_session;
+
+select public.attendance_record_network_corroboration(
+  'phase6-integrity-source',
+  '31000000-0000-4000-8000-000000000006',
+  (select id::uuid from phase6_volunteer_session),
+  true,
+  'volunteer-network-reference'
+);
+
+reset role;
 
 insert into public.capability_grants(org_id,profile_id,capability,grant_reason)
 values(
@@ -117,6 +178,14 @@ begin
     where e->>'profile_id'='31000000-0000-4000-8000-000000000006'
   ) then
     raise exception 'Phase 6C gate failure: no-attendance volunteer entered ordinary Compliance attendance monitoring.';
+  end if;
+
+  body:=public.attendance_corroboration_for_day(current_date);
+  if exists(
+    select 1 from jsonb_array_elements(body) e
+    where e->>'profile_id'='31000000-0000-4000-8000-000000000006'
+  ) then
+    raise exception 'Phase 6C gate failure: no-attendance volunteer corroboration leaked to ordinary Compliance monitoring.';
   end if;
 end
 $volunteer_compliance_boundary$;
