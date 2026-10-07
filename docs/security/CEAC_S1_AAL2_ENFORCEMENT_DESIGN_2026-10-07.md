@@ -46,7 +46,7 @@ No browser setter RPC is required. The go-live switch is an attributable operati
 
 ### Internal assurance helper
 
-Add one internal-only helper with fixed `search_path`.
+Add one internal-only `SECURITY INVOKER` helper with fixed `search_path`. It is called from the existing authority definers and does not create another privileged routine.
 
 Conceptual rule:
 
@@ -56,6 +56,7 @@ Conceptual rule:
 
 The helper is not a browser API:
 
+- keep it `SECURITY INVOKER`, not `SECURITY DEFINER`;
 - revoke `PUBLIC`;
 - revoke `anon`;
 - revoke direct `authenticated` execution.
@@ -72,7 +73,7 @@ Apply the assurance helper inside:
 
 This means existing RLS policies and reviewed privileged RPCs inherit the AAL2 requirement through the same authority helpers they already use.
 
-No new browser-callable SECURITY DEFINER function is required. The S2 exact authenticated-callable ceiling should therefore remain **132**.
+No new SECURITY DEFINER function is required. The S2 exact authenticated-callable ceiling therefore remains **132**, and S1 does not expand the privileged-function footprint.
 
 ## Why this is central enough
 
