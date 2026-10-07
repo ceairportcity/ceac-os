@@ -59,3 +59,22 @@ Phase 6 is not complete until all of the following are verified on the exact can
 - no horizontal overflow on required phone surfaces;
 - Phase 5 is cleanly merged to protected `main`;
 - Phase 6 is reconciled to that accepted `main`, merged through protected-main rules, and exact-main verification passes.
+
+
+## Nine-surface rendered evidence
+
+The Level-B browser suite now captures the binding reference states individually under `test-artifacts/`:
+
+1. `phase6-reference-01-calendar-day-*.png` — Staff / Volunteer Calendar desktop/day workspace.
+2. `phase6-reference-02-day-tasks-*.png` — Day Workspace Tasks.
+3. `phase6-reference-03-day-notes-*.png` — Day Workspace Notes.
+4. `phase6-reference-04-add-item-composer-*.png` — compact Event / Task / Note composer.
+5. `phase6-reference-05-people-volunteers-*.png` — Manager People & Volunteers.
+6. `phase6-reference-06-add-volunteer-*.png` — Manager Add Volunteer.
+7. `phase6-reference-07-working-pattern-*.png` — Volunteer Working Pattern.
+8. `phase6-reference-08-volunteer-profile-*.png` — Manager Volunteer Profile.
+9. `phase6-reference-09-mobile-calendar-day.png` — Mobile Calendar Day.
+
+Phase 6C also captures `phase6c-attendance-integrity-staff-mobile.png` for the corroborating-evidence flow.
+
+These screenshots are acceptance evidence only. They do not replace the canonical owner reference; final acceptance still requires the rendered states to preserve the composition and behaviour locked in `CEAC_PHASE6_APPROVED_NINE_SURFACE_REFERENCE.webp`.
