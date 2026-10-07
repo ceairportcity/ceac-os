@@ -17,13 +17,11 @@ It is read through the existing own-organisation RLS boundary. No browser setter
 
 ## Privileged session rule
 
-When enforcement is enabled, elevated authority requires the signed Supabase JWT authenticator-assurance claim to be `aal2`.
+When enforcement is enabled, elevated authority requires both the signed Supabase JWT authenticator-assurance claim to be `aal2` and at least one currently verified MFA factor for the signed-in user.
 
-Supabase issues AAL2 only after a verified MFA challenge. The database therefore uses the supported signed-session contract rather than granting application functions direct read access to the protected Auth factor table.
+Supabase issues AAL2 only after a verified MFA challenge. Because JWT claims can remain valid until refresh or expiry, the internal database helper also checks the current protected Auth factor state. Removing the last verified factor therefore removes elevated CEAC authority immediately even if an older access token still carries `aal2`.
 
-The internal helper `app_privileged_aal_allowed()` is SECURITY DEFINER with a fixed search path, but EXECUTE remains revoked from `anon` and `authenticated`. It is not a browser API and does not increase the authenticated SECURITY DEFINER ceiling.
-
-As with global sign-out, an already-issued access JWT can remain valid until its short expiry. Final go-live acceptance must therefore combine MFA enrollment, session/recovery controls and the AAL2 database gate rather than claiming instant token revocation.
+The internal helper `app_privileged_aal_allowed()` is SECURITY DEFINER with a fixed search path because the browser role cannot read `auth.mfa_factors`. EXECUTE remains revoked from `anon` and `authenticated`; it is not a browser API and does not increase the authenticated SECURITY DEFINER ceiling.
 
 ## Authority paths covered
 
@@ -61,10 +59,11 @@ The dedicated SQL gate proves:
 - Manager/work-lane/review authority is absent at AAL1 and restored at AAL2;
 - Administration capability/People authority is absent at AAL1 and restored at AAL2;
 - Executive/payroll approval authority is absent at AAL1 and restored at AAL2;
+- a stale AAL2 token loses elevated authority when its verified factor is removed;
 - raw Manager calendar-policy bypass is removed;
 - callable SECURITY DEFINER ceilings remain unchanged.
 
-This migration does not read, create, modify or enroll MFA factors. Final human enrollment remains a separate go-live action.
+The migration reads current MFA factor status only inside the non-browser-callable authority helper. It does not create, modify or enroll factors. Test factors exist only inside a rolled-back local acceptance transaction. Final human enrollment remains a separate go-live action.
 
 ## Remaining S1 work
 
