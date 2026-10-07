@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CeacIcon } from "../experience-v2/icons";
 import { getRoleKey, getRoleName } from "../experience-v2/shell/navigation";
 import {
+  CEAC_GUIDE_GETTING_STARTED,
   CEAC_GUIDE_ROUTE_LABELS,
   CEAC_GUIDE_VERSION,
   guideArticlesForContext,
@@ -9,6 +10,61 @@ import {
   searchGuideArticles,
 } from "../guide/guideContent";
 import "../guide/guide.css";
+
+
+const GUIDE_PROGRESS_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+
+function guideProgressKey(me) {
+  return me?.id ? `ceac-guide-progress:${me.id}` : null;
+}
+
+function emptyGuideProgress() {
+  return { version: CEAC_GUIDE_VERSION, completed: [], dismissed: false, expiresAt: Date.now() + GUIDE_PROGRESS_TTL_MS };
+}
+
+function readGuideProgress(me, role) {
+  const key = guideProgressKey(me);
+  if (!key) return emptyGuideProgress();
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return emptyGuideProgress();
+    const parsed = JSON.parse(raw);
+    if (
+      parsed?.version !== CEAC_GUIDE_VERSION
+      || parsed?.role !== role
+      || !Array.isArray(parsed?.completed)
+      || Number(parsed?.expiresAt || 0) <= Date.now()
+    ) {
+      window.localStorage.removeItem(key);
+      return emptyGuideProgress();
+    }
+    return {
+      version: CEAC_GUIDE_VERSION,
+      completed: parsed.completed.filter((item) => typeof item === "string"),
+      dismissed: Boolean(parsed.dismissed),
+      expiresAt: Number(parsed.expiresAt),
+    };
+  } catch {
+    return emptyGuideProgress();
+  }
+}
+
+function writeGuideProgress(me, role, progress) {
+  const key = guideProgressKey(me);
+  if (!key) return;
+  const next = {
+    version: CEAC_GUIDE_VERSION,
+    role,
+    completed: progress.completed,
+    dismissed: progress.dismissed,
+    expiresAt: Date.now() + GUIDE_PROGRESS_TTL_MS,
+  };
+  try {
+    window.localStorage.setItem(key, JSON.stringify(next));
+  } catch {
+    // Guide progress is optional local UI state; the product remains usable if storage is unavailable.
+  }
+}
 
 function contextFor(me) {
   const isAdmin = Boolean(me?.is_admin);
@@ -28,11 +84,41 @@ export default function Guide({ me, contextTab = null, go }) {
   const defaultId = contextArticles[0]?.id || "getting-started";
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(defaultId);
+  const checklist = CEAC_GUIDE_GETTING_STARTED[role] || [];
+  const [progress, setProgress] = useState(() => readGuideProgress(me, role));
 
   useEffect(() => {
     setSelectedId(contextArticles[0]?.id || "getting-started");
     setQuery("");
   }, [contextTab, role]);
+
+  useEffect(() => {
+    setProgress(readGuideProgress(me, role));
+  }, [me?.id, role]);
+
+  function saveProgress(next) {
+    setProgress(next);
+    writeGuideProgress(me, role, next);
+  }
+
+  function toggleChecklistItem(id) {
+    const complete = new Set(progress.completed);
+    if (complete.has(id)) complete.delete(id);
+    else complete.add(id);
+    saveProgress({ ...progress, completed: [...complete] });
+  }
+
+  function dismissChecklist() {
+    saveProgress({ ...progress, dismissed: true });
+  }
+
+  function showChecklist() {
+    saveProgress({ ...progress, dismissed: false });
+  }
+
+  function resetChecklist() {
+    saveProgress({ ...emptyGuideProgress(), dismissed: false });
+  }
 
   const results = useMemo(() => {
     const searched = searchGuideArticles(role, query);
@@ -68,6 +154,42 @@ export default function Guide({ me, contextTab = null, go }) {
     {contextLabel ? <div className="ceac-guide-context" role="status">
       <strong>Help for {contextLabel}.</strong> The most relevant guidance for the page you came from is shown first.
     </div> : null}
+
+    {!contextTab && !query.trim() ? (progress.dismissed
+      ? <div className="ceac-guide-checklist-collapsed">
+          <span>Getting Started is hidden.</span>
+          <button type="button" onClick={showChecklist}>Show checklist</button>
+        </div>
+      : <section className="ceac-guide-checklist" aria-label="Getting Started checklist">
+          <div className="ceac-guide-checklist-head">
+            <div>
+              <span>Getting Started</span>
+              <strong>{progress.completed.length} of {checklist.length} complete</strong>
+            </div>
+            <div>
+              <button type="button" onClick={resetChecklist}>Reset</button>
+              <button type="button" onClick={dismissChecklist}>Dismiss</button>
+            </div>
+          </div>
+          <div className="ceac-guide-checklist-items">
+            {checklist.map((item) => {
+              const done = progress.completed.includes(item.id);
+              return <div key={item.id} className={done ? "is-done" : ""}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={done}
+                    onChange={() => toggleChecklistItem(item.id)}
+                  />
+                  <span>{item.label}</span>
+                </label>
+                <button type="button" onClick={() => go?.(item.route)}>Open</button>
+              </div>;
+            })}
+          </div>
+          <small>Only checklist step IDs, dismissal state, role, Guide version and a 90-day expiry are stored locally. No CEAC business records are cached.</small>
+        </section>)
+      : null}
 
     <label className="ceac-guide-search">
       <CeacIcon name="search" size="row" decorative />
