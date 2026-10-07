@@ -122,7 +122,7 @@ Before switching production privileged enforcement on:
 - [ ] verify account recovery does not disclose MFA secrets;
 - [ ] confirm Administration has a documented lost-factor recovery/escalation procedure;
 - [ ] capture exact-main and live-Supabase migration parity;
-- [ ] only then enable `privileged_mfa_enforced`.
+- [ ] only then enable `privileged_mfa_required`.
 
 ## Remaining S1/S5 exit evidence
 
