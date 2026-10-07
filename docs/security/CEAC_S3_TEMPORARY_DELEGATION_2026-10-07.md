@@ -53,6 +53,35 @@ Temporary `authority.manage` may supplement authority, but CEAC must retain at l
 
 A temporary authority holder therefore cannot become the only future authority holder merely because the permanent grant is revoked or converted to expiring.
 
+## Real invitation acceptance coverage
+
+The Account Security workflow now exercises the accepted CEAC joiner path with the actual browser-facing invitation RPC instead of relying only on a service-role row insert.
+
+The dedicated integration test:
+
+1. establishes a real signed-in CEAC authority session;
+2. calls `create_pending_invitation()`;
+3. creates the invited Auth account;
+4. completes the magic-link activation;
+5. verifies the confirmed account receives the expected organisation and Staff unit membership.
+
+This sits alongside the existing expiry, cancellation, stale-link, password, recovery and global-session-revocation checks.
+
+## Invitation resend tenant boundary
+
+`prepare_staff_invitation_resend()` previously selected and locked an invitation by ID before confirming that the invitation belonged to the caller's CEAC organisation.
+
+The request was denied after that check, but a browser actor should not be able to take a row lock on another organisation's invitation in the first place.
+
+S3 now:
+
+- resolves `app_org_id()` before invitation lookup;
+- selects the invitation with both `id` and `org_id`;
+- takes `FOR UPDATE` only after that tenant predicate is applied;
+- preserves People Administration / Unit Manager resend rules for authorised same-organisation invitations.
+
+A dedicated SQL gate locks this ordering into the security contract and verifies same-organisation resend still works.
+
 ## Invitation cancellation authority
 
 A cancelled invitation is an Administration decision, not an ordinary resend state.
@@ -139,6 +168,20 @@ The anti-lockout checks now count only **active** permanent authority managers. 
 
 A live production inspection before this change found **0** inactive profiles carrying unrevoked capability grants, so no unattributable historical backfill is required.
 
+## TOTP-backed privileged session boundary
+
+CEAC v1 privileged MFA is intentionally TOTP-only.
+
+A verified TOTP enrolled on the account is not by itself sufficient. When privileged MFA enforcement is active, the database now requires all three conditions:
+
+- JWT assurance level is `aal2`;
+- the current JWT `amr` includes a `totp` authentication method;
+- the account still has a verified TOTP factor in `auth.mfa_factors`.
+
+This prevents a different MFA method from producing generic AAL2 and silently satisfying CEAC's TOTP-specific privileged rule merely because a TOTP also exists on the account.
+
+The browser MFA policy is being kept aligned with the same rule by using Supabase's `currentAuthenticationMethods`.
+
 ## Payroll separation
 
 Expired grants do not count as active opposite payroll authority.
@@ -176,7 +219,10 @@ The S3 SQL gates prove:
 - the browser bootstrap refuses to open CEAC before email confirmation;
 - removing or moving a unit membership closes live Sub-team lead authority in the old unit and audits the change;
 - Unit Managers cannot undo a People Administration invitation cancellation;
-- privileged database authority accepts only a verified TOTP factor, matching the CEAC v1 browser MFA experience;
+- privileged database authority accepts only a verified TOTP factor and requires TOTP in the current session AMR;
+- the browser gate distinguishes TOTP-backed AAL2 from generic/non-TOTP AAL2;
+- real CEAC invitation RPC acceptance is exercised through Account Security;
+- invitation resend resolves tenant scope before taking a row lock;
 - all prior capability authority/security gates continue to run.
 
 ## Gate recovery note
