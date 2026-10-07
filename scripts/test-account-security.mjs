@@ -11,6 +11,8 @@ const orgId = "10000000-0000-4000-8000-000000000001";
 const unitId = "20000000-0000-4000-8000-000000000001";
 const bootstrapEmail = "manager@ceac.local.test";
 const employeeEmail = "new.employee@ceac.local.test";
+const expiredInviteEmail = "expired.invite@ceac.local.test";
+const revokedInviteEmail = "revoked.invite@ceac.local.test";
 const initialPassword = "CEAC-local-test-2026!";
 const recoveredPassword = "CEAC-local-recovered-2026!";
 
@@ -59,6 +61,83 @@ const adminPromote = await service.from("profiles").update({ is_admin: true }).e
 assert.equal(adminPromote.error, null, adminPromote.error?.message);
 const managerPromote = await service.from("unit_memberships").update({ role: "manager" }).eq("id", membership.data.id);
 assert.equal(managerPromote.error, null, managerPromote.error?.message);
+
+const peopleGrant = await service.from("capability_grants").insert({
+  org_id: orgId,
+  profile_id: bootstrapUser.id,
+  capability: "people.manage",
+  granted_by: bootstrapUser.id,
+  grant_reason: "Account security integration fixture",
+});
+assert.equal(peopleGrant.error, null, peopleGrant.error?.message);
+
+// Expired invitation: Auth creation must be rejected by the invite-only trigger.
+const expiredInvite = await service.from("pending_invitations").insert({
+  org_id: orgId,
+  email: expiredInviteEmail,
+  full_name: "Expired Invite",
+  unit_id: unitId,
+  role: "staff",
+  invited_by: bootstrapUser.id,
+  expires_at: new Date(Date.now() - 60000).toISOString(),
+});
+assert.equal(expiredInvite.error, null, expiredInvite.error?.message);
+
+const expiredCreate = await service.auth.admin.createUser({
+  email: expiredInviteEmail,
+  email_confirm: false,
+});
+assert.ok(expiredCreate.error, "Expired invitation unexpectedly created an Auth user.");
+const expiredProfile = await service.from("profiles").select("id").eq("email", expiredInviteEmail).maybeSingle();
+assert.equal(expiredProfile.error, null, expiredProfile.error?.message);
+assert.equal(expiredProfile.data, null, "Expired invitation unexpectedly created a CEAC profile.");
+
+// Revocation after an unconfirmed account exists must remove application authority,
+// even if an activation link was generated before revocation.
+const revokedInvite = await service.from("pending_invitations").insert({
+  org_id: orgId,
+  email: revokedInviteEmail,
+  full_name: "Revoked Invite",
+  unit_id: unitId,
+  role: "staff",
+  invited_by: bootstrapUser.id,
+  expires_at: new Date(Date.now() + 86400000).toISOString(),
+}).select("id").single();
+assert.equal(revokedInvite.error, null, revokedInvite.error?.message);
+
+const unconfirmed = await service.auth.admin.createUser({
+  email: revokedInviteEmail,
+  email_confirm: false,
+});
+assert.equal(unconfirmed.error, null, unconfirmed.error?.message);
+assert.ok(unconfirmed.data.user, "Unconfirmed invitation account was not created.");
+
+const preRevocationLink = await service.auth.admin.generateLink({ type: "magiclink", email: revokedInviteEmail });
+assert.equal(preRevocationLink.error, null, preRevocationLink.error?.message);
+assert.ok(preRevocationLink.data?.properties?.hashed_token, "Activation token was not generated.");
+
+const revokeInvite = await anon.rpc("admin_revoke_staff_invitation", {
+  p_invitation_id: revokedInvite.data.id,
+  p_reason: "Account security integration test",
+});
+assert.equal(revokeInvite.error, null, revokeInvite.error?.message);
+
+const revokedProfile = await service.from("profiles").select("active").eq("id", unconfirmed.data.user.id).single();
+assert.equal(revokedProfile.error, null, revokedProfile.error?.message);
+assert.equal(revokedProfile.data.active, false, "Revoked unconfirmed profile remained active.");
+
+const revokedClient = client(anonKey);
+const activationAfterRevocation = await revokedClient.auth.verifyOtp({
+  token_hash: preRevocationLink.data.properties.hashed_token,
+  type: "magiclink",
+});
+if (!activationAfterRevocation.error) {
+  assert.ok(activationAfterRevocation.data.session, "Activation returned neither an error nor a session.");
+  const revokedAuthority = await revokedClient.rpc("app_org_id");
+  assert.equal(revokedAuthority.error, null, revokedAuthority.error?.message);
+  assert.equal(revokedAuthority.data, null, "Revoked account recovered CEAC organisation authority.");
+  await revokedClient.auth.signOut({ scope: "local" });
+}
 
 await anon.auth.signOut();
 
@@ -125,4 +204,17 @@ const recoveredLogin = await anon.auth.signInWithPassword({ email: employeeEmail
 assert.equal(recoveredLogin.error, null, recoveredLogin.error?.message);
 assert.ok(recoveredLogin.data.session, "Sign-in with recovered password failed.");
 
-console.log("Account security flow passed: invitation -> activation -> password -> recovery -> password.");
+// Global sign-out revokes the affected refresh sessions. An already-issued access
+// token can remain valid until expiry, so the durable assertion is refresh denial.
+const otherDevice = client(anonKey);
+const otherLogin = await otherDevice.auth.signInWithPassword({ email: employeeEmail, password: recoveredPassword });
+assert.equal(otherLogin.error, null, otherLogin.error?.message);
+assert.ok(otherLogin.data.session, "Second-device sign-in failed.");
+
+const globalSignOut = await anon.auth.signOut({ scope: "global" });
+assert.equal(globalSignOut.error, null, globalSignOut.error?.message);
+
+const otherRefresh = await otherDevice.auth.refreshSession();
+assert.ok(otherRefresh.error || !otherRefresh.data.session, "Globally signed-out session unexpectedly refreshed.");
+
+console.log("Account security flow passed: invitation expiry/revocation -> activation -> password -> recovery -> password -> global refresh-session revocation.");
