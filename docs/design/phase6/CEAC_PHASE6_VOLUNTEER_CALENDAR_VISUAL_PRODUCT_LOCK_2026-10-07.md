@@ -4,7 +4,7 @@
 **Status:** OWNER-APPROVED, BINDING NEXT-PHASE CONTRACT  
 **Entry dependency:** Phase 5 Admin Product Redesign acceptance  
 **Canonical visual reference:** `docs/design/phase6/CEAC_PHASE6_APPROVED_NINE_SURFACE_REFERENCE.webp`  
-**Reference SHA-256:** `d4c4b95095e49753cc01c71bb0e7e9f9c201a44cddb5b6e0fc429d8ed0f455f9`
+**Reference SHA-256:** `13a7c9ec438a6a47f17e76efa205c9c04904bfca3454cbfeb8bf7221ca9c661e`
 
 This contract records the product owner's explicit instruction that the nine-surface visual board is a literal implementation authority, not inspiration.
 
