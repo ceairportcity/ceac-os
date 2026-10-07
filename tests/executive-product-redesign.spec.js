@@ -26,6 +26,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   const overview = fs.readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
   const home = fs.readFileSync("src/screens/ExecutiveHome.jsx", "utf8");
   const shell = fs.readFileSync("src/experience-v2/shell/ShellV2.jsx", "utf8");
+  const search = fs.readFileSync("src/experience-v2/shell/GlobalSearch.jsx", "utf8");
   const legacy = fs.readFileSync("src/premium-executive.css", "utf8");
 
   expect(lock).toContain("literal implementation authority");
@@ -43,6 +44,9 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(shell).toContain('aria-label={isExec ? "Open updates" : "Open messages"}');
   expect(shell).toContain('name={isExec ? "notification" : "messages"}');
   expect(shell).toContain('className="ev2s-mobile-profile exec-redesign-mobile-notification"');
+  expect(search).toContain('Search across CEAC OS...');
+  expect(css).toContain("/* Executive literal shell finishing */");
+  expect(css).toContain(".executive-app .ev2s-profile-button > span:last-child");
   expect(css).toContain(".executive-app .ev2-project-delivery.is-executive");
   expect(css).toContain(".executive-app .ev2cal-admin-page");
   expect(css).toContain(".executive-app .fpg-payroll");
@@ -124,7 +128,7 @@ const destinations = [
   ["exec-reports", ".ev2-reporting-executive", "Reports"],
   ["messages", ".inbox-page", "Messages"],
   ["me", ".ev2-personal-hub", "My Hub"],
-  ["account", ".ev2-personal-account", "Your account"],
+  ["account", ".ev2-personal-account", "Account"],
 ];
 
 for (const [tab, selector, label] of destinations) {
