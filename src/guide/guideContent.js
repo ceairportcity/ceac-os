@@ -33,6 +33,42 @@ export const CEAC_GUIDE_ROUTE_LABELS = Object.freeze({
 
 const ALL = Object.freeze(["staff", "manager", "admin", "executive"]);
 
+
+export const CEAC_GUIDE_GETTING_STARTED = Object.freeze({
+  staff: Object.freeze([
+    { id: "home", label: "Open Today and identify what needs attention", route: "home" },
+    { id: "work", label: "Open Work and review an assignment or request", route: "work" },
+    { id: "leave", label: "Review Time & Leave and your annual-leave context", route: "attendance" },
+    { id: "calendar", label: "Open Calendar and check your working week", route: "staff-calendar" },
+    { id: "messages", label: "Open Messages and understand your operational rooms", route: "messages" },
+    { id: "me", label: "Open My Hub and review your personal CEAC information", route: "me" },
+  ]),
+  manager: Object.freeze([
+    { id: "overview", label: "Open Overview and review what needs Manager action", route: "home" },
+    { id: "team", label: "Open Team and confirm your authorised people scope", route: "team" },
+    { id: "work", label: "Open Work and review an item that needs Manager attention", route: "work" },
+    { id: "projects", label: "Open Projects and inspect delivery context", route: "projects" },
+    { id: "leave", label: "Review Time & Leave and the Manager-first approval boundary", route: "attendance" },
+    { id: "messages", label: "Open Messages and review your operational rooms", route: "messages" },
+  ]),
+  admin: Object.freeze([
+    { id: "overview", label: "Open Overview and identify Administration priorities", route: "home" },
+    { id: "people", label: "Open People & Access and understand invite/assignment boundaries", route: "people" },
+    { id: "leave", label: "Review Time & Leave and Administration final-approval responsibility", route: "attendance" },
+    { id: "finance", label: "Open Finance and distinguish operational finance from protected Payroll", route: "finance" },
+    { id: "settings", label: "Open Control Center and review administrative configuration entry points", route: "settings" },
+    { id: "account", label: "Open Your account and review account activity/security guidance", route: "account" },
+  ]),
+  executive: Object.freeze([
+    { id: "overview", label: "Open Overview and review leadership attention", route: "home" },
+    { id: "ministry", label: "Open Ministry and inspect strategic direction", route: "strategy" },
+    { id: "portfolio", label: "Open Portfolio and inspect delivery across projects", route: "delivery" },
+    { id: "organisation", label: "Open Organisation and review operating context", route: "exec-organisation" },
+    { id: "finance", label: "Open Finance and review executive financial context", route: "exec-finance" },
+    { id: "reports", label: "Open Reports and trace a summary back to its underlying evidence", route: "exec-reports" },
+  ]),
+});
+
 export const CEAC_GUIDE_ARTICLES = Object.freeze([
   {
     id: "getting-started",
@@ -398,6 +434,80 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
         title: "Handle sensitive information carefully",
         body: [
           "Do not place medical, Payroll, identity or protected HR documents in ordinary rooms, support messages or work records unless that feature is specifically approved for that data class.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "documents-and-files",
+    title: "Documents and files",
+    summary: "Place files in the correct operational or protected surface so access and history remain attributable.",
+    roles: ALL,
+    routes: ["work", "projects", "people"],
+    keywords: ["documents", "files", "attachments", "upload", "download", "protected hr", "evidence"],
+    sections: [
+      {
+        title: "What files mean in CEAC",
+        body: [
+          "A file should stay attached to the operational record it supports—such as Work, a Project, or an approved protected-HR surface—rather than becoming an unrelated shared-drive link.",
+          "Operational files and protected HR/Payroll documents have different access boundaries.",
+        ],
+      },
+      {
+        title: "Who can act",
+        body: [
+          "You may upload or open a file only where your recorded CEAC authority permits it. Technical Support does not automatically gain access to protected content simply because a file or subsystem has a technical problem.",
+        ],
+      },
+      {
+        title: "How to use files safely",
+        steps: [
+          "Open the record the file belongs to.",
+          "Use that record's file or attachment control.",
+          "Check the visible audience or protected context before uploading.",
+          "Do not place medical, salary, identity or protected HR documents in ordinary rooms or general Work evidence.",
+        ],
+      },
+      {
+        title: "If a file will not open",
+        body: [
+          "Keep the file name, the feature you opened it from and the visible error. Do not move protected content into a less secure feature just to bypass an access or storage problem.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "notifications-and-updates",
+    title: "Notifications and updates",
+    summary: "Understand new, changed, urgent, waiting, review and completed states without confusing a notification with the authoritative record.",
+    roles: ALL,
+    routes: ["home", "messages"],
+    keywords: ["notification", "notifications", "updates", "new", "changed", "urgent", "waiting", "review", "completed"],
+    sections: [
+      {
+        title: "What a notification means",
+        body: [
+          "A notification or attention marker tells you that something changed or may require action. The underlying Work, Leave, Message, People, Finance or other record remains authoritative.",
+        ],
+      },
+      {
+        title: "What to do",
+        steps: [
+          "Open the underlying record.",
+          "Read the current status and attributable history.",
+          "Complete the action in that record rather than treating the notification itself as approval, completion or evidence.",
+        ],
+      },
+      {
+        title: "Who can act",
+        body: [
+          "The ability to see an update does not automatically grant authority to approve or change the underlying record. CEAC still applies the relevant role/capability boundary.",
+        ],
+      },
+      {
+        title: "If an update looks stale",
+        body: [
+          "Refresh the relevant record first. If the underlying state is correct but the attention marker is not, report the feature and visible state without recreating or deleting the authoritative record.",
         ],
       },
     ],
