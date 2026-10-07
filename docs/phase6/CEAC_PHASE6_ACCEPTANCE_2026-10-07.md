@@ -78,3 +78,8 @@ The Level-B browser suite now captures the binding reference states individually
 Phase 6C also captures `phase6c-attendance-integrity-staff-mobile.png` for the corroborating-evidence flow.
 
 These screenshots are acceptance evidence only. They do not replace the canonical owner reference; final acceptance still requires the rendered states to preserve the composition and behaviour locked in `CEAC_PHASE6_APPROVED_NINE_SURFACE_REFERENCE.webp`.
+
+
+## Deliberate preview deployment checkpoint
+
+A `[vercel]` documentation-only checkpoint is used to request a deliberate Phase 6 preview deployment from the repository's existing Git→Vercel integration. This changes no product behavior, authority, schema, security boundary, or acceptance criteria.
