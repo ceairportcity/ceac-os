@@ -58,6 +58,30 @@ The current `guard_profile_self_update()` trigger prevents ordinary users from t
 
 The remaining problem is therefore **column minimisation/read exposure**, not a demonstrated role-escalation path.
 
+### Interim profile-minimisation CI freeze
+
+Until the safe directory/self/manager/Admin projections are implemented, CEAC now has a static source guard:
+
+`scripts/ci/check-profile-data-minimization.mjs`
+
+It runs in both **CI** and **Quality Gate** before change classification.
+
+The guard:
+
+- rejects direct `profiles(*)`;
+- rejects embedded `profiles(*)`;
+- rejects new cross-profile `phone`, `birthday` or `contract_type` reads;
+- permits those fields only in the two self-only profile readers:
+  - `src/lib/supabase.js`
+  - `src/screens/Me.jsx`
+- temporarily permits the two already-existing ordinary-user birthday surfaces:
+  - `src/screens/Home.jsx`
+  - `src/screens/StaffTeam.jsx`
+
+Those two birthday exceptions are **legacy exposure freezes**, not approval to keep the feature permanently. Product/privacy work should remove them when the owner-approved birthday policy is implemented. The allowlist must not expand.
+
+This interim guard does not solve the underlying database field-boundary problem. It prevents new exposure from being added while the backend projections and product query migration are still pending.
+
 ### Required directory/profile redesign
 
 Do not rely on UI column selection as the privacy boundary.
