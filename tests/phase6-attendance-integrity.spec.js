@@ -52,6 +52,9 @@ test("Phase 6C corroboration remains additive evidence with no automatic consequ
   expect(settings).toContain("corroborating evidence only");
   expect(evidence).toContain("attendance_verify_office_code");
   expect(evidence).toContain("attendance_corroboration_for_day");
+  expect(evidence).toContain("attendance_integrity_status");
+  expect(evidence).toContain("ownOpenSession?.place==='office'");
+  expect(evidence).toContain("integrity?.front_desk_code_enabled");
   expect(evidence).toContain("do not prove presence or create attendance, pay or disciplinary conclusions");
   expect(evidence).toContain("No attendance obligation");
   expect(evidence).toContain("Not required");
