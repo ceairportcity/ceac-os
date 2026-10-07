@@ -49,7 +49,7 @@ begin
 end
 $contract$;
 
--- Give the Same Unit fixture explicit authority, then prove controlled
+-- Give the Manager fixture explicit authority, then prove controlled
 -- offboarding closes that authority and its current unit membership.
 set local role authenticated;
 select set_config(
@@ -159,7 +159,14 @@ end
 $offboarding_closed_authority$;
 
 -- Independently prove stale lane attribution cannot confer authority when
--- current unit membership is absent. Restore only the stale lead pointer.
+-- current unit membership is absent. Reactivate the profile inside this
+-- rollback-only transaction, but do not restore any unit membership. Then
+-- restore only the stale lead pointer so the denial is attributable to the
+-- missing current membership rather than profile inactivity.
+update public.profiles
+set active=true
+where id='31000000-0000-4000-8000-000000000002';
+
 update public.sub_teams
 set lead_id='31000000-0000-4000-8000-000000000002'
 where id='22000000-0000-4000-8000-000000000011';
