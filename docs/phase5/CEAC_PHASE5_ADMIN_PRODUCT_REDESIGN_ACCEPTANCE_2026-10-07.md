@@ -96,3 +96,8 @@ Do not change this record to **ACCEPTED / MERGED** until all of the following ar
 - exact-main verification passes after merge.
 
 Production deployment verification remains a separate required acceptance item. At this checkpoint GitHub reports the external Vercel build-rate-limit status, and the connected Vercel account exposes no authorised team/project context. That condition must not be misreported as an application failure or as successful production verification.
+
+
+## Protected-main reconciliation
+
+The accepted Phase 5 tree was reconciled forward with protected main at `827fbe7391467dd13d6e411527416402a252993c` before final merge. The imported change is the canonical signed Security S1 migration; Phase 5 does not modify its security ownership or enforcement contract.
