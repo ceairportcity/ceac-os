@@ -62,7 +62,9 @@ test("S1 two-step verification implementation keeps enrollment, challenge and fa
   expect(settings).toContain("supabase.auth.mfa.unenroll");
   expect(settings).toContain("pendingFactors");
   expect(settings).toContain("Remove unfinished setup");
-  expect(settings).toContain("Add and verify a replacement before removing the only verification method on a privileged account.");
+  expect(settings).toContain("lastFactorLocked");
+  expect(settings).toContain("privileged_mfa_enforced");
+  expect(settings).toContain("Add and verify a replacement before removing the only verification method on this privileged account.");
 
   expect(challenge).toContain("supabase.auth.mfa.listFactors()");
   expect(challenge).toContain("supabase.auth.mfa.challenge");
