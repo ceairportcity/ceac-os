@@ -708,3 +708,22 @@
   background: var(--exec-red-soft);
   color: var(--exec-red);
 }
+
+
+/* Executive literal top frame */
+.executive-app .fpg9-sidebar-quick {
+  display: none;
+}
+.executive-app .ev2s-topbar-actions > .ev2c-popover,
+.executive-app .ev2s-accra-time {
+  display: none;
+}
+.executive-app .ev2s-topbar {
+  grid-template-columns: minmax(20rem, 1fr) auto;
+}
+.executive-app .ev2s-destination-search {
+  width: min(100%, 38rem);
+  border-color: #e2e5ec;
+  border-radius: 9px;
+  background: #fff;
+}
