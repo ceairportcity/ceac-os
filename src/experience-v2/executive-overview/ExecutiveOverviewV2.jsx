@@ -52,13 +52,34 @@ function AttentionItem({ icon, title, meta, tone = "neutral", onClick }) {
   </button>;
 }
 
-function DirectionRow({ icon, label, detail, progress, tone = "success" }) {
+function DirectionRow({ icon, label, detail, progress = null, tone = "success" }) {
+  const hasProgress = Number.isFinite(progress);
   return <div className="executivev2-direction-row">
     <span className={`executivev2-direction-icon is-${tone}`}><CeacIcon name={icon} size="row" decorative /></span>
     <span className="executivev2-direction-copy"><strong>{label}</strong><small>{detail}</small></span>
-    <span className="executivev2-direction-track" aria-hidden="true"><span className={`is-${tone}`} style={{ width: `${progress}%` }} /></span>
-    <small>{Math.round(progress)}%</small>
+    {hasProgress ? <>
+      <span className="executivev2-direction-track" aria-hidden="true"><span className={`is-${tone}`} style={{ width: `${progress}%` }} /></span>
+      <small>{Math.round(progress)}%</small>
+    </> : <small className="executivev2-direction-state">Recorded</small>}
   </div>;
+}
+
+function strategyProgress(row) {
+  if (row?.measurement_kind !== "numeric") return null;
+  const target = Number(row?.target_value);
+  const current = Number(row?.current_value);
+  if (!Number.isFinite(target) || target <= 0 || !Number.isFinite(current)) return null;
+  return Math.max(0, Math.min(100, (current / target) * 100));
+}
+
+function strategyStatusLabel(row) {
+  const status = String(row?.status || "recorded").replaceAll("_", " ");
+  if (row?.measurement_kind !== "numeric") return status;
+  const current = row?.current_value;
+  const target = row?.target_value;
+  const unit = row?.target_unit ? ` ${row.target_unit}` : "";
+  if (current === null || current === undefined || target === null || target === undefined) return status;
+  return `${Number(current).toLocaleString("en-GH")} of ${Number(target).toLocaleString("en-GH")}${unit} · ${status}`;
 }
 
 function OrganisationRow({ icon, label, value, tone = "purple", onClick }) {
@@ -89,6 +110,7 @@ export default function ExecutiveOverviewV2({
   error,
   summary,
   objectiveMix,
+  ministryStrategyRows = [],
   reporting,
   ministryLatestRows = [],
   meetings = [],
@@ -104,10 +126,9 @@ export default function ExecutiveOverviewV2({
 }) {
   const reportingGap = reporting ? Math.max(0, Number(reporting.total) - Number(reporting.filed)) : 0;
   const attentionCount = Number(summary.objectiveAttention || 0) + Number(summary.blocked || 0) + reportingGap;
-  const objectiveTotal = Number(summary.objectives || 0);
-  const objectiveStable = Number(objectiveMix.onTrack || 0) + Number(objectiveMix.met || 0);
   const objectiveRisk = Number(objectiveMix.atRisk || 0) + Number(objectiveMix.notMet || 0);
-  const objectiveOther = Number(objectiveMix.other || 0);
+  const ministryDirectionRows = ministryStrategyRows.filter((row) => row.node_type === "ministry_objective").slice(0, 3);
+  const directionFallbackRows = ministryDirectionRows.length ? ministryDirectionRows : ministryStrategyRows.filter((row) => row.node_type === "ministry_direction").slice(0, 3);
   const todayKey = accraDateKey();
   const meetingsToday = meetings.filter((meeting) => accraDateKey(meeting.starts_at) === todayKey).length;
 
@@ -183,7 +204,7 @@ export default function ExecutiveOverviewV2({
           />
           <ExecutiveStat
             icon="goal"
-            value={displayCount(summary.objectives)}
+            value={displayCount(summary.ministryObjectives ?? summary.objectives)}
             label="Ministry Objectives"
             supporting={objectiveRisk ? `${objectiveRisk} need attention` : "Recorded direction"}
             tone="green"
@@ -229,11 +250,18 @@ export default function ExecutiveOverviewV2({
               <button type="button" onClick={onOpenMinistry}>View all</button>
             </div>
             <div className="executivev2-panel-body">
-              {objectiveTotal ? <>
-                <DirectionRow icon="checkCircle" label="On track or met" detail={`${objectiveStable} recorded objective${objectiveStable === 1 ? "" : "s"}`} progress={pct(objectiveStable, objectiveTotal)} tone="success" />
-                <DirectionRow icon="warning" label="At risk or not met" detail={`${objectiveRisk} recorded objective${objectiveRisk === 1 ? "" : "s"}`} progress={pct(objectiveRisk, objectiveTotal)} tone="warning" />
-                <DirectionRow icon="info" label="Other recorded status" detail={`${objectiveOther} recorded objective${objectiveOther === 1 ? "" : "s"}`} progress={pct(objectiveOther, objectiveTotal)} tone="blue" />
-              </> : <div className="executivev2-empty compact"><span><strong>No objective status recorded yet.</strong><small>Open Ministry to add or review objectives.</small></span></div>}
+              {directionFallbackRows.length ? directionFallbackRows.map((row, index) => {
+                const progress = strategyProgress(row);
+                const tone = row.status === "met" ? "success" : row.status === "draft" ? "blue" : index === 1 ? "warning" : "success";
+                return <DirectionRow
+                  key={row.id}
+                  icon={row.node_type === "ministry_direction" ? "ministry" : "goal"}
+                  label={row.name}
+                  detail={strategyStatusLabel(row)}
+                  progress={progress}
+                  tone={tone}
+                />;
+              }) : <div className="executivev2-empty compact"><span><strong>No ministry objective is recorded yet.</strong><small>Open Ministry to add or review the recorded direction.</small></span></div>}
             </div>
           </section>
 
