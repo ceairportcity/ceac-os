@@ -13,7 +13,7 @@ It adds:
 - current-session AAL2 step-up before verified-factor changes;
 - reusable TOTP challenge and MFA-required screens;
 - browser-policy tests that retain the corrected privileged population: Admin, Executive, Unit Manager, work-lane/Sub-team lead, and active capability holder;
-- fail-closed last-factor removal when work-lane leadership cannot be safely resolved in the browser.
+- replacement-before-removal for the last verified authenticator on every account, avoiding browser-side privilege guesses for destructive factor removal.
 
 The implementation uses Supabase Auth MFA APIs only. No service-role credential, MFA secret persistence, organisation-table RLS bypass, or new SECURITY DEFINER function is introduced.
 
@@ -30,7 +30,7 @@ Therefore this branch does not guess the switch, does not weaken organisation RL
 After S3 migration ordering is resolved and Phase 5 releases the shared App surface:
 
 1. add or reconcile a narrow self-security-status contract without increasing privileged exposure casually;
-2. resolve active work-lane leadership in the same canonical security context;
+2. resolve active work-lane leadership in the same canonical security context for the privileged workspace gate;
 3. wire `decideMfaAccess()` before privileged workspace rendering;
 4. use the reusable challenge / required screens here;
 5. keep `privileged_mfa_required` OFF until real privileged enrollment and go-live acceptance are complete;
