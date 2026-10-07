@@ -59,6 +59,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   const calendar = fs.readFileSync("src/screens/AdminCalendar.jsx", "utf8");
   const finance = fs.readFileSync("src/screens/ExecutiveFinance.jsx", "utf8");
   const reports = fs.readFileSync("src/screens/ExecutiveReports.jsx", "utf8");
+  const inbox = fs.readFileSync("src/screens/Inbox.jsx", "utf8");
   expect(work).toContain("Give out work, track progress and support your teams.");
   expect(ministry).toContain("Set direction, track objectives and keep ministry priorities connected to recorded delivery.");
   expect(ministry).toContain('executiveSurface ? "Objectives" : "Strategic hierarchy"');
@@ -70,6 +71,9 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(css).toContain("/* Literal semantic summary accents */");
   expect(css).toContain(".fpg-payroll-metrics article:nth-child(1)");
   expect(css).toContain(".executive-app .inbox-page");
+  expect(inbox).toContain('me.is_exec ? "body inbox-page exec-redesign-shared"');
+  expect(inbox).toContain('me.is_exec ? "exec-redesign-shared-head"');
+  expect(css).toContain(".exec-redesign-shared-head");
   expect(css).toContain(".executive-app .ev2-personal-page");
   expect(reports).toContain('aria-label="Report filters"');
   expect(reports).toContain('["submitted", "Submitted"');
