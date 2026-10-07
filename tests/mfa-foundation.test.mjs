@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { decideMfaAccess, isPrivilegedIdentity, verifiedMfaFactors } from "../src/lib/mfaPolicy.js";
+import { resolveMfaGate } from "../src/lib/mfaGate.js";
 
 test("verified factor extraction ignores unverified factors", () => {
   const factors = verifiedMfaFactors({
@@ -105,4 +106,30 @@ test("privileged identity is based on authority, not job title", () => {
     led_sub_team_ids: ["sub-team-1"],
     capability_grants: [],
   }), true);
+});
+
+test("browser gate delegates to the canonical authority-based MFA policy", () => {
+  const managerDecision = resolveMfaGate({
+    assurance: { currentLevel: "aal1", nextLevel: "aal1" },
+    factors: {},
+    me: { memberships: [{ role: "manager" }], capability_grants: [] },
+    privilegedMfaEnforced: true,
+  });
+  assert.equal(managerDecision.state, "enroll");
+
+  const leadDecision = resolveMfaGate({
+    assurance: { currentLevel: "aal1", nextLevel: "aal2" },
+    factors: { totp: [{ id: "t1", status: "verified" }] },
+    me: { led_sub_team_ids: ["lane-1"], capability_grants: [] },
+    privilegedMfaEnforced: false,
+  });
+  assert.equal(leadDecision.state, "challenge");
+
+  const staffDecision = resolveMfaGate({
+    assurance: { currentLevel: "aal1", nextLevel: "aal1" },
+    factors: {},
+    me: { role: "staff", memberships: [{ role: "staff" }], capability_grants: [] },
+    privilegedMfaEnforced: true,
+  });
+  assert.equal(staffDecision.state, "allow");
 });
