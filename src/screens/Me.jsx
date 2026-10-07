@@ -40,6 +40,8 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
   const [myRequests, setMyRequests] = useState([]);
   const [goals, setGoals] = useState([]);
   const [reminders, setReminders] = useState([]);
+  const [engagement, setEngagement] = useState(null);
+  const [volunteerNotices, setVolunteerNotices] = useState([]);
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [profileForm, setProfileForm] = useState({ preferred_name: "", phone: "", birthday: "", emergency_contact_name: "", emergency_contact_phone: "", emergency_contact_relationship: "", address_text: "", instagram: "", linkedin: "" });
   const [area, setArea] = useState("goals");
@@ -62,7 +64,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
   async function load() {
     setLoading(true);
 
-    const [requestsResult, policyResult, goalsResult, remindersResult, detailsResult, profileResult] = await Promise.all([
+    const [requestsResult, policyResult, goalsResult, remindersResult, detailsResult, profileResult, engagementResult, volunteerNoticeResult] = await Promise.all([
       supabase.from("leave_requests")
         .select("id, kind, start_date, end_date, days, status, requested_at")
         .eq("profile_id", me.id).order("requested_at", { ascending: false }).limit(100),
@@ -81,6 +83,12 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       supabase.from("profiles")
         .select("full_name, preferred_name, email, phone, birthday, job_title, joined_at, contract_type")
         .eq("id", me.id).single(),
+      supabase.from("employment_records")
+        .select("employment_type,employment_status,working_pattern,unit_id,manager_profile_id")
+        .eq("profile_id", me.id).maybeSingle(),
+      supabase.from("volunteer_engagement_notices")
+        .select("id,notice_kind,title,summary,effective_on,agreement_reference,requires_acknowledgement,created_at,acknowledged_at")
+        .eq("profile_id", me.id).order("created_at", { ascending: false }),
     ]);
 
     const errors = {};
@@ -101,6 +109,12 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
 
     if (profileResult.error) errors.profile = humanError(profileResult.error, "Your ordinary profile could not load.");
     else if (profileResult.data) setProfile((value) => ({ ...value, ...profileResult.data }));
+
+    if (engagementResult.error) errors.engagement = humanError(engagementResult.error, "Your engagement record could not load.");
+    else setEngagement(engagementResult.data || null);
+
+    if (volunteerNoticeResult.error) errors.volunteerNotices = humanError(volunteerNoticeResult.error, "Your volunteer change notices could not load.");
+    else setVolunteerNotices(volunteerNoticeResult.data || []);
 
     const policy = policyResult.error ? null : policyResult.data;
     if (policy) {
@@ -262,13 +276,29 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     finally { setBusy(false); }
   }
 
+  async function acknowledgeVolunteerNotice(id) {
+    setBusy(true); setMessage(null);
+    const acknowledgedAt = new Date().toISOString();
+    const { error } = await supabase.from("volunteer_engagement_notices")
+      .update({ acknowledged_at: acknowledgedAt })
+      .eq("id", id)
+      .eq("profile_id", me.id);
+    setBusy(false);
+    if (error) {
+      setMessage(humanError(error, "The volunteer notice could not be acknowledged."));
+      return;
+    }
+    setVolunteerNotices((rows) => rows.map((row) => row.id === id ? { ...row, acknowledged_at: acknowledgedAt } : row));
+    setMessage("Saved. Your acknowledgement is recorded.");
+  }
+
   const profileItems = [
     profile.preferred_name ? { label: "Preferred name", value: profile.preferred_name } : null,
     { label: "Official name", value: profile.full_name },
     { label: "Email", value: profile.email },
     { label: "Phone", value: profile.phone || "Not added" },
     { label: "Unit", value: me.unit_name || "Not recorded" },
-    { label: "Position", value: me.is_exec ? "Group Pastor" : me.is_admin ? "Administration & HR" : me.role === "manager" ? "Unit head" : "Staff" },
+    { label: "Position", value: engagement?.employment_type === "volunteer" ? "Volunteer" : me.is_exec ? "Group Pastor" : me.is_admin ? "Administration & HR" : me.role === "manager" ? "Unit head" : "Staff" },
     profile.joined_at ? { label: "Joined", value: dateOnly(profile.joined_at) } : null,
     profile.birthday ? { label: "Birthday", value: new Date(profile.birthday + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long" }) } : null,
   ];
@@ -281,6 +311,30 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     />
 
     {message && !sheet ? <ProductNotice tone={message.startsWith("Saved") ? "success" : "error"} title={message.startsWith("Saved") ? "Saved" : "Could not complete that"}>{message}</ProductNotice> : null}
+
+    {!loading && (engagement?.employment_type === "volunteer" || volunteerNotices.length > 0) ? <PersonalSection
+      eyebrow="Your CEAC engagement"
+      title="Volunteer engagement"
+      description="Volunteer is your engagement type; your application experience remains Staff unless explicit authority is separately granted."
+    >
+      {datasetErrors.engagement ? <ProductNotice tone="attention" title="Engagement record unavailable">{datasetErrors.engagement}</ProductNotice> : <div className="ev2pf-facts">
+        <PersonalFact value="Volunteer" label="engagement type" />
+        <PersonalFact value={String(engagement?.working_pattern?.kind || "not_recorded").replaceAll("_"," ")} label="working arrangement" />
+        <PersonalFact value={engagement?.employment_status || "active"} label="engagement status" />
+      </div>}
+      {datasetErrors.volunteerNotices ? <ProductNotice tone="attention" title="Change notices unavailable">{datasetErrors.volunteerNotices}</ProductNotice>
+        : volunteerNotices.length ? <div className="phase6-volunteer-self-notices">{volunteerNotices.map((notice) => <article key={notice.id}>
+            <div>
+              <strong>{notice.title}</strong>
+              <span>Effective {dateOnly(notice.effective_on)} · {notice.summary}</span>
+              <small>{notice.agreement_reference ? `Agreement: ${notice.agreement_reference}` : "No agreement document is attached to this notice."}</small>
+            </div>
+            {notice.acknowledged_at ? <span className="phase6-notice-ack">Acknowledged {dateOnly(notice.acknowledged_at)}</span>
+              : notice.requires_acknowledgement ? <Button size="sm" disabled={busy} onClick={() => acknowledgeVolunteerNotice(notice.id)}>Acknowledge</Button>
+              : <span className="phase6-notice-ack">Acknowledgement not required</span>}
+          </article>)}</div>
+        : <PersonalEmpty title="No volunteer change notices" description="Formal engagement or working-arrangement changes will appear here when recorded." />}
+    </PersonalSection> : null}
 
     <PersonalDestinationGrid>
       <PersonalDestinationCard title="Work history" description="Completed work, feedback and recorded activity by month." ariaLabel="My work history" onClick={() => openRecord?.()} />
