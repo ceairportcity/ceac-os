@@ -273,6 +273,9 @@ Required minimum captures:
 - Calendar desktop + phone;
 - Finance desktop + phone;
 - Reports desktop + phone.
+- Messages desktop + phone.
+- My Hub desktop + phone.
+- Account desktop + phone.
 
 Each capture must be directly reviewed against `CEAC_EXECUTIVE_PANEL_APPROVED_REFERENCE.webp`.
 
@@ -291,3 +294,22 @@ The implementation is not accepted because it is “clean”, “modern”, or �
 It is accepted only when the rendered Executive panel visibly matches this approved reference composition and visual language across the applicable destinations while using truthful CEAC data.
 
 **No compromise: the owner must see this design, not an interpretation of it.**
+
+
+## Current implementation matrix
+
+The canonical Executive redesign branch currently implements the approved visual family across:
+
+- Overview — literal hero, 4 semantic summary cards, 3-card middle grid, 2-card lower grid, desktop/mobile shell.
+- Work — Executive header, Give out / Needs review / Mine state tabs, compact factual rows and matching empty states.
+- Ministry — Executive header, objective hierarchy in compact Executive cards, existing hierarchy/audit semantics preserved.
+- Portfolio — Executive header, semantic summary cards, attention and major-project views, existing delivery authority preserved.
+- Organisation — Departments / Teams / People segmented views with semantic icon rows and factual counts.
+- Calendar — Phase 6 Calendar/Day Workspace under the Executive shell with My calendar / Church calendar separation.
+- Finance — Executive insight hierarchy with currency-separated factual budget/spend/request context.
+- Payroll — existing Group Pastor approval flow retained under the Executive card and metric system.
+- Reports — Executive filters, compact reporting evidence and factual filing rows without performance inference.
+- Messages — Executive header, segmented communication views and compact data panels.
+- My Hub / Account — shared personal/account functionality under Executive-scoped layout, card and mobile treatment.
+
+This matrix is implementation state only. Final visual acceptance still requires rendered comparison against the approved reference and does not become protected-main acceptance while GitHub Actions are unavailable.
