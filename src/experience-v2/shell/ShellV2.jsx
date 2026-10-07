@@ -211,6 +211,7 @@ export function AppTopBar({
       <GlobalSearchSurface
         me={me}
         isAdmin={isAdmin}
+        isExec={isExec}
         navigation={navigation}
         quickItems={createItems}
         onNavigate={onNavigate}
@@ -326,6 +327,7 @@ export function MobileTopBar({
             mobile
             me={me}
             isAdmin={isAdmin}
+            isExec={isExec}
             navigation={navigation}
             quickItems={quickItems}
             onNavigate={onNavigate}
