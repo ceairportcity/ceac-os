@@ -69,7 +69,9 @@ Browser work continues separately from the database enforcement:
 - verified-factor challenge behavior;
 - no silent bypass when a verified factor exists;
 - privilege evaluation reuses the authority-based model, including Managers and work-lane leads;
-- final authenticated-workspace routing is deferred only where it collides with the active Phase 5 shared App/shell writer.
+- final authenticated-workspace routing is deferred only where it collides with the active shared App/shell writer;
+- browser bootstrap now refuses to open CEAC for an unconfirmed Auth identity;
+- the S3 forward security tranche pins privileged server authority to verified TOTP specifically, matching the CEAC v1 browser challenge rather than accepting an unsupported factor type.
 
 ## S5 lifecycle evidence
 
