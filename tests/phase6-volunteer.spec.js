@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
@@ -45,6 +45,7 @@ for (const viewport of [
 ]) {
   test(`Phase 6A Manager People and Volunteer Profile compose at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openManager(browser, viewport);
+    mkdirSync("test-artifacts", { recursive: true });
 
     await expect(page.getByRole("heading", { name: "People & volunteers", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "+ Add volunteer", exact: true })).toBeVisible();
@@ -52,12 +53,16 @@ for (const viewport of [
 
     await page.getByRole("tab", { name: /Volunteers/ }).click();
     await expect(page.getByText("Same Unit Fixture", { exact: true }).first()).toBeVisible();
+    await page.screenshot({ path: `test-artifacts/phase6-reference-05-people-volunteers-${viewport.name}.png`, fullPage: true });
 
     await page.getByRole("button", { name: "+ Add volunteer", exact: true }).click();
     await expect(page.getByText("Add volunteer", { exact: true }).first()).toBeVisible();
     for (const label of ["No attendance tracking","Event-based","Specific days","Custom schedule"]) {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
     }
+    await page.screenshot({ path: `test-artifacts/phase6-reference-06-add-volunteer-${viewport.name}.png`, fullPage: true });
+    await page.getByText("Specific days", { exact: true }).first().click();
+    await page.screenshot({ path: `test-artifacts/phase6-reference-07-working-pattern-${viewport.name}.png`, fullPage: true });
     await page.getByRole("button", { name: "Cancel", exact: true }).click();
 
     const volunteer = page.locator(".ev2p-evidence-person").filter({ hasText: "Same Unit Fixture" }).first();
@@ -69,6 +74,7 @@ for (const viewport of [
     await expect(page.getByRole("heading", { name: "Recommend formal change", exact: true })).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: `test-artifacts/phase6-reference-08-volunteer-profile-${viewport.name}.png`, fullPage: true });
     await page.screenshot({ path: `test-artifacts/phase6a-volunteer-profile-${viewport.name}.png`, fullPage: true });
     await context.close();
   });

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
 
@@ -137,6 +137,8 @@ for (const fixture of [
 ]) {
   test(`Phase 6B ${fixture.label} calendar composes as the approved day workspace`, async ({ browser }) => {
     const { context, page } = await openCalendar(browser, fixture.email, { width: fixture.width, height: fixture.height });
+    mkdirSync("test-artifacts", { recursive: true });
+    const evidenceSuffix = fixture.email.startsWith("sameunit") ? "volunteer-desktop" : "staff-mobile";
 
     await expect(page.getByRole("heading", { name: "Calendar", exact: true })).toBeVisible();
     await expect(page.getByText("Day workspace", { exact: true })).toBeVisible();
@@ -146,20 +148,27 @@ for (const fixture of [
     await expect(page.getByText("Private planning protected", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "+ Add", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Schedule", exact: true })).toHaveAttribute("aria-selected", "true");
+    await page.screenshot({ path: `test-artifacts/phase6-reference-01-calendar-day-${evidenceSuffix}.png`, fullPage: true });
+    if (fixture.width < 600) {
+      await page.screenshot({ path: "test-artifacts/phase6-reference-09-mobile-calendar-day.png", fullPage: true });
+    }
 
     await page.getByRole("button", { name: "+ Add", exact: true }).click();
     await expect(page.getByRole("tab", { name: "Event", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Task", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Note", exact: true })).toBeVisible();
+    await page.screenshot({ path: `test-artifacts/phase6-reference-04-add-item-composer-${evidenceSuffix}.png`, fullPage: true });
     await page.getByRole("button", { name: "Cancel", exact: true }).click();
 
     await page.getByRole("tab", { name: "Notes", exact: true }).click();
     await expect(page.getByLabel("Private day notes")).toBeVisible();
     await expect(page.getByText("Daily journal", { exact: true })).toBeVisible();
+    await page.screenshot({ path: `test-artifacts/phase6-reference-03-day-notes-${evidenceSuffix}.png`, fullPage: true });
 
     await page.getByRole("tab", { name: "Tasks", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Unscheduled tasks", exact: true })).toBeVisible();
     await expect(page.getByLabel("New private task")).toBeVisible();
+    await page.screenshot({ path: `test-artifacts/phase6-reference-02-day-tasks-${evidenceSuffix}.png`, fullPage: true });
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await page.screenshot({ path: `test-artifacts/phase6b-calendar-${fixture.email.startsWith("sameunit") ? "volunteer-desktop" : "staff-mobile"}.png`, fullPage: true });

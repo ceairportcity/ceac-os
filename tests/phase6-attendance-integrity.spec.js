@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
 
@@ -91,6 +91,7 @@ test("Phase 6C invalid code does not close work and a valid code appears as corr
   expect(stillOpen.data.ended_at).toBeNull();
 
   const { context, page } = await openAttendance(browser, "staff@ceac.local.test");
+  mkdirSync("test-artifacts", { recursive: true });
   await expect(page.getByRole("button", { name: "Verify office presence", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Verify office presence", exact: true }).click();
@@ -107,6 +108,7 @@ test("Phase 6C invalid code does not close work and a valid code appears as corr
   await history.locator("summary").click();
   await expect(history).toContainText("support review only");
   await expect(history).toContainText("corroborated");
+  await page.screenshot({ path: "test-artifacts/phase6c-attendance-integrity-staff-mobile.png", fullPage: true });
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
