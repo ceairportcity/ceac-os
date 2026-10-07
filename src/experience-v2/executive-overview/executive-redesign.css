@@ -1,5 +1,18 @@
 /* Executive Product Redesign — literal owner-approved reference family */
 
+.executive-app {
+  --exec-purple: #7148e8;
+  --exec-purple-soft: #f1edff;
+  --exec-green: #25a86b;
+  --exec-green-soft: #e7f8ef;
+  --exec-amber: #e79024;
+  --exec-amber-soft: #fff2dd;
+  --exec-blue: #2e86e6;
+  --exec-blue-soft: #e9f3ff;
+  --exec-red: #e85252;
+  --exec-red-soft: #feecec;
+}
+
 .exec-redesign-page,
 .ev2-work-executive,
 .ev2-finance-executive,
@@ -478,5 +491,68 @@
   .executive-app .ev2cal-admin-page,
   .executive-app .fpg-payroll {
     padding: 14px 14px calc(82px + env(safe-area-inset-bottom));
+  }
+}
+
+
+/* Literal semantic summary accents */
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > * {
+  border-top: 3px solid #d9dfea;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > *:nth-child(1) {
+  border-top-color: var(--exec-purple);
+  background: linear-gradient(180deg, var(--exec-purple-soft) 0%, #fff 42%);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > *:nth-child(2) {
+  border-top-color: var(--exec-red);
+  background: linear-gradient(180deg, var(--exec-red-soft) 0%, #fff 42%);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > *:nth-child(3) {
+  border-top-color: var(--exec-amber);
+  background: linear-gradient(180deg, var(--exec-amber-soft) 0%, #fff 42%);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > *:nth-child(4) {
+  border-top-color: var(--exec-blue);
+  background: linear-gradient(180deg, var(--exec-blue-soft) 0%, #fff 42%);
+}
+
+.executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(1) { border-top: 2px solid var(--exec-purple); }
+.executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(2) { border-top: 2px solid var(--exec-green); }
+.executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(3) { border-top: 2px solid var(--exec-blue); }
+.executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(4) { border-top: 2px solid var(--exec-amber); }
+
+.executive-app .fpg-payroll-metrics article:nth-child(1) {
+  border-top: 3px solid var(--exec-green);
+  background: linear-gradient(180deg, var(--exec-green-soft) 0%, #fff 46%);
+}
+.executive-app .fpg-payroll-metrics article:nth-child(2) {
+  border-top: 3px solid var(--exec-amber);
+  background: linear-gradient(180deg, var(--exec-amber-soft) 0%, #fff 46%);
+}
+.executive-app .fpg-payroll-metrics article:nth-child(3) {
+  border-top: 3px solid var(--exec-purple);
+  background: linear-gradient(180deg, var(--exec-purple-soft) 0%, #fff 46%);
+}
+.executive-app .fpg-payroll-metrics article:nth-child(4) {
+  border-top: 3px solid var(--exec-red);
+  background: linear-gradient(180deg, var(--exec-red-soft) 0%, #fff 46%);
+}
+.executive-app .fpg-payroll-metrics article:not(.has-flags):nth-child(4) {
+  border-top-color: var(--exec-blue);
+  background: linear-gradient(180deg, var(--exec-blue-soft) 0%, #fff 46%);
+}
+
+.executive-app .ev2cal-admin-page .ev2cal-page-head .ev2c-button-primary,
+.executive-app .ev2cal-admin-page .ev2cal-page-head .btn {
+  background: var(--exec-purple);
+  border-color: var(--exec-purple);
+}
+
+@media (max-width: 599px) {
+  .executive-app .ev2-project-delivery.is-executive .ev2p-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .executive-app .fpg-payroll-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
