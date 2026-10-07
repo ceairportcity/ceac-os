@@ -1,7 +1,7 @@
 # CEAC OS — S3 Temporary Capability Delegation & Expiry
 
 Date: 7 October 2026
-Status: IMPLEMENTED ON STACKED SECURITY BRANCH
+Status: IMPLEMENTED ON RECONCILED SECURITY BRANCH; ACCEPTANCE PENDING
 
 ## Problem closed
 
