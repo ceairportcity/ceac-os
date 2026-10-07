@@ -18,6 +18,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [watch, setWatch] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [employeeRoster, setEmployeeRoster] = useState([]);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
   const [payrollReadiness, setPayrollReadiness] = useState(null);
   const [inviting, setInviting] = useState(null);
   const [name, setName] = useState("");
@@ -115,6 +116,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setMine(my || []);
       setOffice(o || null);
       setEmployeeRoster(Array.isArray(rosterRows) ? rosterRows : []);
+      setPendingInvitations(pi || []);
       if (myCapabilities.has("payroll.prepare") || myCapabilities.has("payroll.approve")) {
         setPayrollReadiness(await must(supabase.rpc("payroll_readiness_summary"), "Payroll readiness"));
       } else {
@@ -243,7 +245,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       dateLabel={adminDate}
       loading={loading}
       loadFailed={loadError}
-      message={msg && !inviting ? msg : null}
+      message={msg}
       busy={busy}
       units={units}
       alerts={alerts}
@@ -258,6 +260,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       watch={watch}
       meetings={meetings}
       employeeRoster={employeeRoster}
+      pendingInvitations={pendingInvitations}
       payrollReadiness={payrollReadiness}
       canManagePeople={canManagePeople}
       canUsePayroll={canUsePayroll}
@@ -277,7 +280,6 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenProjects={() => go?.("admin-projects")}
       onOpenStrategy={() => go?.("strategy")}
       onOpenAttendance={() => go?.("attendance")}
-      onInviteUnit={(unit) => { setInviting(unit); setMsg(null); }}
       onLeaveDecision={decideLeave}
     />
 

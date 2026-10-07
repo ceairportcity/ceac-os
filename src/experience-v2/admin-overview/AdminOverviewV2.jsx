@@ -111,6 +111,7 @@ export default function AdminOverviewV2({
   watch = [],
   meetings = [],
   employeeRoster = [],
+  pendingInvitations = [],
   payrollReadiness = null,
   canManagePeople,
   canUsePayroll = false,
@@ -130,7 +131,6 @@ export default function AdminOverviewV2({
   onOpenProjects,
   onOpenStrategy,
   onOpenAttendance,
-  onInviteUnit,
   onLeaveDecision,
 }) {
   const decisionCount = alerts.length + leaveQueue.length + checks.length;
@@ -138,7 +138,6 @@ export default function AdminOverviewV2({
   const setupCount = (office ? 0 : 1) + headlessUnits.length;
   const deliveryAttention = watch.length + blockers.length;
   const reportingGap = reporting?.missing?.length || 0;
-  const rosterOnlyCount = employeeRoster.filter((person) => person.identity_state === "roster_only").length;
   const identityReviewCount = employeeRoster.filter((person) => person.identity_state === "needs_review").length;
   const peopleAttention = employeeRoster.filter((person) =>
     person.identity_state === "needs_review"
@@ -151,7 +150,9 @@ export default function AdminOverviewV2({
       + Number(payrollReadiness.payment_missing_count || 0)
       + Number(payrollReadiness.identity_review_count || 0)
     : 0;
-  const totalAttention = decisionCount + setupCount + peopleAttention + payrollAttention;
+  const onboardingAttention = pendingInvitations.length;
+  const reportingAttention = reportingGap;
+  const totalAttention = decisionCount + onboardingAttention + peopleAttention + payrollAttention + deliveryAttention + reportingAttention;
   const objectiveTotal = Number(delivery?.objectives || 0);
   const objectiveItems = [
     ["Met", delivery?.met || 0],
@@ -174,8 +175,8 @@ export default function AdminOverviewV2({
           <div>
             <h1>Administration</h1>
             <p>{totalAttention
-              ? `${totalAttention} recorded item${totalAttention === 1 ? "" : "s"} need Administration attention or configuration.`
-              : "No Administration decision or configuration gap is waiting right now."}</p>
+              ? `${totalAttention} recorded operational item${totalAttention === 1 ? "" : "s"} need Administration attention now.`
+              : "No recorded Administration decision, onboarding action or operational exception is waiting right now."}</p>
           </div>
           <div className="adminv2-intro-actions">
             {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People</Button> : null}
@@ -206,7 +207,7 @@ export default function AdminOverviewV2({
             className="adminv2-panel adminv2-inbox"
             eyebrow="Operational inbox"
             title="Needs Administration"
-            supporting="Decisions and checks that require Administration authority. Unit-level daily management stays with managers."
+            supporting="Decisions, onboarding follow-up and checks that require Administration authority. Unit-level daily management stays with managers."
             action={<Count value={decisionCount} tone={decisionCount ? "attention" : "success"} />}
           >
             {decisionCount === 0 ? <Quiet>Nothing currently requires an Administration decision.</Quiet> : null}
@@ -218,6 +219,15 @@ export default function AdminOverviewV2({
               status="Open checks"
               statusTone="warning"
               onClick={onOpenWorkflows}
+            /> : null}
+
+            {pendingInvitations.length ? <AdminActionRow
+              icon="people"
+              title={`Pending Staff invitations · ${pendingInvitations.length}`}
+              meta="Activation is still outstanding. Existing identities must be reconciled rather than invited again."
+              status="Onboarding"
+              statusTone="action"
+              onClick={onOpenPeople}
             /> : null}
 
             {leaveQueue.map((request) => <AdminActionRow
@@ -257,7 +267,7 @@ export default function AdminOverviewV2({
           >
             <div className="adminv2-stat-grid is-four">
               <StatTile label="Employees" value={employeeRoster.length} supporting="Roster records" icon="people" tone="action" onClick={canManagePeople ? onOpenPeople : undefined} />
-              <StatTile label="Roster-only" value={rosterOnlyCount} supporting="No fabricated login" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Pending invitations" value={pendingInvitations.length} supporting="Awaiting activation" icon="notification" tone={pendingInvitations.length ? "action" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
               <StatTile label="Identity review" value={identityReviewCount} supporting="Needs confirmation" icon="warning" tone={identityReviewCount ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
               <StatTile label="Needs attention" value={peopleAttention} supporting="Recorded gaps" icon="notification" tone={peopleAttention ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
             </div>
@@ -325,44 +335,23 @@ export default function AdminOverviewV2({
           </DataPanel>
 
           <DataPanel
-            className="adminv2-panel adminv2-setup"
-            eyebrow="Organisation setup"
-            title="Organisation configuration"
-            supporting="Recorded office and Unit Head configuration. Invitations always begin as Staff and job titles never grant authority."
+            className="adminv2-panel adminv2-config-bridge"
+            eyebrow="Durable configuration"
+            title="Control Center"
+            supporting="Organisation structure, office configuration, authority and system settings live in one deliberate configuration workspace — not on the operational Overview."
             action={<Count value={setupCount} tone={setupCount ? "attention" : "success"} />}
           >
-            {!office ? <SetupRow
-              icon="location"
-              title="Set the office location"
-              meta="Attendance cannot distinguish the office from another work location until this is configured."
-              status="Not configured"
-              statusTone="warning"
-              actionLabel="Open Settings"
-              onAction={onOpenSettings}
-            /> : null}
-
-            {headlessUnits.map((unit) => unit.pending ? <SetupRow
-              key={unit.id}
-              icon="people"
-              title={unit.name}
-              meta={`Invitation sent to ${unit.pending.email}. Unit Head authority is assigned only after activation.`}
-              status="Invitation pending"
-              statusTone="action"
-              actionLabel="Open Units"
-              onAction={onOpenUnits}
-            /> : <SetupRow
-              key={unit.id}
-              icon="people"
-              title={unit.name}
-              meta="No Unit Head is recorded. Invite a Staff account or assign an active unit member from Units."
-              status="No Unit Head"
-              statusTone="warning"
-              actionLabel="Invite staff"
-              onAction={() => onInviteUnit?.(unit)}
-            />)}
-
-            {setupCount === 0 ? <Quiet icon="settings">Primary office and Unit Head configuration are recorded.</Quiet> : null}
-            <div className="adminv2-panel-foot"><Button variant="quiet" size="compact" onClick={onOpenUnits}>Open all units</Button></div>
+            <div className="adminv2-config-summary">
+              <CeacIcon name={setupCount ? "warning" : "checkCircle"} size="feature" decorative />
+              <div>
+                <strong>{setupCount ? `${setupCount} organisation configuration item${setupCount === 1 ? "" : "s"} need review` : "Core organisation configuration is recorded"}</strong>
+                <span>{setupCount ? "Review the authoritative settings in Control Center." : "Use Control Center when a durable organisation setting needs to change."}</span>
+              </div>
+            </div>
+            <div className="adminv2-panel-foot">
+              <Button variant="quiet" size="compact" onClick={onOpenSettings}>Open Control Center</Button>
+              <Button variant="quiet" size="compact" onClick={onOpenUnits}>Units</Button>
+            </div>
           </DataPanel>
         </section>
 
@@ -452,15 +441,6 @@ export default function AdminOverviewV2({
             />)}
           </DataPanel> : null}
 
-          <DataPanel
-            className="adminv2-panel adminv2-units"
-            eyebrow="Organisation"
-            title="Units"
-            supporting="Alphabetical factual context. Outputs and alerts are not a ranking."
-            action={<Button variant="quiet" size="compact" onClick={onOpenUnits}>Open all units</Button>}
-          >
-            {units.length ? units.map((unit) => <UnitRow key={unit.id} unit={unit} onInvite={onInviteUnit} />) : <Quiet icon="organisation">No units are recorded.</Quiet>}
-          </DataPanel>
         </section>
       </main> : null}
     </div>
