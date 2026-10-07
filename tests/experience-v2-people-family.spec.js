@@ -370,7 +370,7 @@ for (const viewport of [
   test(`Stage 10 Family B5A Administration People directory composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openAdminPeople(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "People", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "People & Access", exact: true })).toBeVisible();
     await expect(page.getByLabel("Find a person")).toBeVisible();
     await expect(page.getByRole("tab", { name: "Directory", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Organisation", exact: true })).toBeVisible();
@@ -629,7 +629,7 @@ for (const viewport of [
   test(`Stage 10 Family B5C Administration People acceptance matrix at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openAdminPeople(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "People", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "People & Access", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
     const row = page.locator(".fpg-people-roster-row").filter({ hasText: "Staff Fixture" }).first();
