@@ -20,6 +20,7 @@ test("Phase 5 keeps Administration monitoring, People & Access and configuration
   const access = readFileSync("src/components/PeopleAccess.jsx", "utf8");
   const control = readFileSync("src/screens/ControlCenter.jsx", "utf8");
   const units = readFileSync("src/screens/Units.jsx", "utf8");
+  const signedSecurityBaseline = readFileSync("supabase/migrations/20261007075418_privileged_mfa_aal2_enforcement.sql", "utf8");
 
   expect(overview).toContain("Needs Administration");
   expect(overview).toContain("Pending Staff invitations");
@@ -34,6 +35,8 @@ test("Phase 5 keeps Administration monitoring, People & Access and configuration
   expect(control).toContain("Organisation & people");
   expect(units).not.toContain("inviteByEmail");
   expect(units).not.toContain("admin_update_employment");
+  expect(signedSecurityBaseline).toContain("privileged_mfa_required");
+  expect(signedSecurityBaseline).toContain("app_privileged_aal_allowed");
 });
 
 for (const viewport of [
