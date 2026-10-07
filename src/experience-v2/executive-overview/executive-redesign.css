@@ -666,3 +666,25 @@
     min-height: 66px;
   }
 }
+
+
+/* Work semantic state accents */
+.executive-app .ev2-work-executive .ev2w-row[data-status="in_progress"] .ev2w-row-icon,
+.executive-app .ev2-work-executive .ev2w-row[data-status="in_review"] .ev2w-row-icon {
+  background: var(--exec-blue-soft);
+  color: var(--exec-blue);
+}
+.executive-app .ev2-work-executive .ev2w-row[data-status="waiting_on"] .ev2w-row-icon,
+.executive-app .ev2-work-executive .ev2w-row[data-status="returned"] .ev2w-row-icon {
+  background: var(--exec-amber-soft);
+  color: var(--exec-amber);
+}
+.executive-app .ev2-work-executive .ev2w-row[data-status="completed"] .ev2w-row-icon,
+.executive-app .ev2-work-executive .ev2w-row[data-status="self_certified"] .ev2w-row-icon {
+  background: var(--exec-green-soft);
+  color: var(--exec-green);
+}
+.executive-app .ev2-work-executive .ev2w-row.is-attention .ev2w-row-icon {
+  background: var(--exec-red-soft);
+  color: var(--exec-red);
+}
