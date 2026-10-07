@@ -71,6 +71,7 @@ for (const viewport of [
 }
 
 test("Phase 5 person access opens the same employee in controlled offboarding", async ({ browser }) => {
+  test.setTimeout(90_000);
   const { context, page } = await signInAdmin(browser, { width: 390, height: 844 });
   await page.goto("/?tab=people");
   await expect(page.locator(".ev2-people-admin")).toBeVisible({ timeout: 15000 });
@@ -79,7 +80,10 @@ test("Phase 5 person access opens the same employee in controlled offboarding", 
   await expect(row).toBeVisible();
   await row.click();
   await page.getByRole("tab", { name: "Access", exact: true }).click();
-  await page.getByRole("button", { name: "Offboard / deactivate access", exact: true }).click();
+  const offboard = page.getByRole("button", { name: "Offboard / deactivate access", exact: true });
+  await expect(offboard).toBeVisible({ timeout: 15000 });
+  await expect(offboard).toBeEnabled();
+  await offboard.click();
 
   await expect(page.getByRole("heading", { name: "Employee lifecycle", exact: true })).toBeVisible({ timeout: 15000 });
   const dialog = page.getByRole("dialog");

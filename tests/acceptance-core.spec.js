@@ -2575,6 +2575,8 @@ test("Foundation People & Access keeps new invitations distinct from existing re
     const {context,page}=await openAs(browser,"admin@ceac.local.test",viewport);
     await go(page,"People & Access");
     await expect(page.getByRole("heading",{name:"People & Access",exact:true})).toBeVisible();
+    await page.getByRole("tab",{name:"Access",exact:true}).click();
+    await expect(page.locator(".phase5-people-access")).toBeVisible();
     await expect(page.getByRole("button",{name:"Send Staff invitation"})).toBeDisabled();
     await page.screenshot({path:`test-artifacts/foundation-people-access-invite-${viewport.width}.png`,fullPage:true});
     await page.getByRole("button",{name:"Add responsibility",exact:true}).click();
