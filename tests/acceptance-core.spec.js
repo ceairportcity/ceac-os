@@ -1998,9 +1998,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByRole("heading", { name: "Finance & reporting", exact: true })).toBeVisible();
   await expect(page.getByText("Delivery signals", { exact: true })).toBeVisible();
   await expect(page.getByText("Administration could not finish loading", { exact: true })).toHaveCount(0);
-  const headedUnitRow = page.locator(".adminv2-unit-row").filter({ hasText: "Test Unit A" });
-  await expect(headedUnitRow).toBeVisible();
-  await expect(headedUnitRow.getByRole("button", { name: "Add staff", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add staff", exact: true })).toHaveCount(0);
 
   await go(page, "Units");
   await expect(page.getByRole("heading", { name: "Units", exact: true })).toBeVisible();

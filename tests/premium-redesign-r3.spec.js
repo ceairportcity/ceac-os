@@ -89,7 +89,7 @@ test.describe("Premium redesign R3 Administration",()=>{
       const {context,page}=await openAdmin(browser,{width:viewport.width,height:viewport.height});
       await page.goto("/?tab=settings");
       await expect(page.getByRole("heading",{name:"Control Center",exact:true})).toBeVisible();
-      await expect(page.getByText("System health",{exact:true})).toBeVisible();
+      await expect(page.getByText("Configuration attention",{exact:true})).toBeVisible();
       for(const label of [
         "Organisation & people",
         "Operational configuration",
