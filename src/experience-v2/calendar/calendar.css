@@ -1117,3 +1117,153 @@ button.ev2cal-event:hover {
     font-size: var(--ev2-type-row-desktop);
   }
 }
+
+
+/* Phase 6B — private composer and unscheduled queue */
+
+.phase6-private-task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ev2-space-2);
+}
+
+.phase6-unscheduled-block {
+  padding-bottom: var(--ev2-space-1);
+}
+
+.phase6-unscheduled-task {
+  min-height: 3.75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ev2-space-3);
+  align-items: center;
+  padding: var(--ev2-space-2) 0;
+  border-bottom: 1px solid var(--ev2-line);
+}
+
+.phase6-unscheduled-task:last-of-type {
+  border-bottom: 0;
+}
+
+.phase6-unscheduled-task > span {
+  min-width: 0;
+  display: grid;
+  gap: var(--ev2-space-1);
+}
+
+.phase6-unscheduled-task strong {
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.35;
+}
+
+.phase6-unscheduled-task small {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.4;
+}
+
+.phase6-planning-composer {
+  display: grid;
+  gap: var(--ev2-space-4);
+}
+
+.phase6-composer-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ev2-space-1);
+  padding: var(--ev2-space-1);
+  border-radius: var(--ev2-radius-control);
+  background: var(--ev2-surface-soft);
+}
+
+.phase6-composer-tabs button {
+  min-height: var(--ev2-control-min);
+  border: 0;
+  border-radius: var(--ev2-radius-control);
+  background: transparent;
+  color: var(--ev2-text-secondary);
+  font: inherit;
+  font-size: var(--ev2-type-supporting);
+  font-weight: 720;
+  cursor: pointer;
+}
+
+.phase6-composer-tabs button.is-selected {
+  background: var(--ev2-surface);
+  color: var(--ev2-action);
+  box-shadow: var(--ev2-shadow-control);
+}
+
+.phase6-composer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ev2-space-3);
+}
+
+.phase6-composer-grid .field-group:last-child {
+  grid-column: 1 / -1;
+}
+
+.phase6-unscheduled-toggle {
+  min-height: var(--ev2-control-min);
+  display: flex;
+  align-items: center;
+  gap: var(--ev2-space-2);
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  font-weight: 650;
+}
+
+.phase6-unscheduled-toggle input {
+  width: 1rem;
+  height: 1rem;
+}
+
+.phase6-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ev2-space-2);
+  padding-top: var(--ev2-space-2);
+  border-top: 1px solid var(--ev2-line);
+}
+
+.phase6-day-kind.is-personal {
+  background: var(--ev2-action-soft);
+  color: var(--ev2-action);
+}
+
+@media (max-width: 599px) {
+  .phase6-private-task-actions {
+    grid-column: 1 / -1;
+  }
+
+  .phase6-private-task-actions .ev2c-button {
+    flex: 1 1 9rem;
+  }
+
+  .phase6-unscheduled-task {
+    grid-template-columns: 1fr;
+  }
+
+  .phase6-unscheduled-task .ev2c-button {
+    width: 100%;
+  }
+
+  .phase6-composer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phase6-composer-grid .field-group:last-child {
+    grid-column: auto;
+  }
+
+  .phase6-composer-actions {
+    flex-direction: column-reverse;
+  }
+
+  .phase6-composer-actions .ev2c-button {
+    width: 100%;
+  }
+}

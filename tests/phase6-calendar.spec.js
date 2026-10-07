@@ -39,6 +39,9 @@ test("Phase 6B private day-planning contract is owner-only and does not create a
   expect(migration).toContain("personal_day_tasks_owner_all");
   expect(migration).toContain("profile_id=auth.uid()");
   expect(migration).toContain("personal_day_notes_owner_all");
+  const eventMigration = readFileSync("supabase/migrations/20261007095500_122_phase6_personal_event_note_primitives.sql", "utf8");
+  expect(eventMigration).toContain("personal_calendar_events_owner_all");
+  expect(eventMigration).toContain("profile_id=auth.uid()");
   expect(migration).not.toContain("app_managed_units()");
   expect(migration).not.toContain("app_is_admin()");
   expect(calendar).toContain("Private planning protected");
@@ -82,10 +85,24 @@ test("Phase 6B one Staff account cannot read or mutate another account's persona
   expect(otherUpdate.error).toBeNull();
   expect(otherUpdate.data).toEqual([]);
 
+  const { data: personalEvent, error: eventInsertError } = await staff.from("personal_calendar_events").insert({
+    org_id: "10000000-0000-4000-8000-000000000010",
+    profile_id: "31000000-0000-4000-8000-000000000001",
+    title: "Private calendar event",
+    starts_at: "2026-10-07T10:00:00Z",
+    ends_at: "2026-10-07T11:00:00Z",
+  }).select("id").single();
+  expect(eventInsertError).toBeNull();
+
+  const otherEvent = await other.from("personal_calendar_events").select("id,title").eq("id", personalEvent.id);
+  expect(otherEvent.error).toBeNull();
+  expect(otherEvent.data).toEqual([]);
+
   const staffRead = await staff.from("personal_day_tasks").select("title").eq("id", task.id).single();
   expect(staffRead.error).toBeNull();
   expect(staffRead.data.title).toBe(title);
 
+  await staff.from("personal_calendar_events").delete().eq("id", personalEvent.id);
   await staff.from("personal_day_tasks").delete().eq("id", task.id);
   await staff.from("personal_day_notes").delete().eq("id", note.id);
   await staff.auth.signOut();
@@ -104,6 +121,14 @@ for (const fixture of [
     await expect(page.getByRole("tab", { name: "Tasks", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Notes", exact: true })).toBeVisible();
     await expect(page.getByText("Private planning protected", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "+ Add", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Unscheduled tasks", exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "+ Add", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "Event", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Task", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Note", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel", exact: true }).click();
 
     await page.getByRole("tab", { name: "Notes", exact: true }).click();
     await expect(page.getByLabel("Private day notes")).toBeVisible();
