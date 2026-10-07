@@ -28,6 +28,7 @@ function totals(rows) {
 
 export default function ExecutiveFinance({ me }) {
   const [requests, setRequests] = useState([]);
+  const [income, setIncome] = useState([]);
   const [spend, setSpend] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,14 +40,16 @@ export default function ExecutiveFinance({ me }) {
     setLoading(true);
     setError(null);
     try {
-      const [requestResult, spendResult, budgetResult] = await Promise.all([
+      const [requestResult, incomeResult, spendResult, budgetResult] = await Promise.all([
         supabase.from("finance_requests").select("id,amount_minor,currency,state,unit_id,units(name)").eq("org_id", me.org_id).order("created_at", { ascending: false }).limit(250),
+        supabase.from("income_lines").select("id,amount_minor,currency,received_on,reverses_id").eq("org_id", me.org_id).order("received_on", { ascending: false }).limit(400),
         supabase.from("spend_lines").select("id,amount_minor,currency,unit_id,units(name),spent_on,reverses_id").eq("org_id", me.org_id).order("spent_on", { ascending: false }).limit(400),
         supabase.from("budgets").select("id,amount_minor,currency,unit_id,project_id,units(name)").eq("org_id", me.org_id),
       ]);
-      const firstError = [requestResult.error, spendResult.error, budgetResult.error].find(Boolean);
+      const firstError = [requestResult.error, incomeResult.error, spendResult.error, budgetResult.error].find(Boolean);
       if (firstError) throw firstError;
       setRequests(requestResult.data || []);
+      setIncome(incomeResult.data || []);
       setSpend(spendResult.data || []);
       setBudgets(budgetResult.data || []);
     } catch (loadError) {
@@ -56,6 +59,13 @@ export default function ExecutiveFinance({ me }) {
     }
   }
 
+  const incomeTotals = useMemo(
+    () => totals(income.map((row) => ({
+      ...row,
+      amount_minor: row.reverses_id ? -Number(row.amount_minor || 0) : Number(row.amount_minor || 0),
+    }))),
+    [income],
+  );
   const budgetTotals = useMemo(() => totals(budgets), [budgets]);
   const spendTotals = useMemo(
     () => totals(spend.map((row) => ({
@@ -70,12 +80,13 @@ export default function ExecutiveFinance({ me }) {
   );
   const currencies = useMemo(
     () => Array.from(new Set([
+      ...Object.keys(incomeTotals),
       ...Object.keys(budgetTotals),
       ...Object.keys(spendTotals),
       ...Object.keys(approvedTotals),
       ...requests.map((row) => row.currency || "GHS"),
     ])).sort(),
-    [budgetTotals, spendTotals, approvedTotals, requests],
+    [incomeTotals, budgetTotals, spendTotals, approvedTotals, requests],
   );
   const submittedByCurrency = useMemo(() => {
     const out = {};
@@ -147,7 +158,7 @@ export default function ExecutiveFinance({ me }) {
             <FinanceSection
               eyebrow="Recorded context"
               title="Financial context by currency"
-              description="Recorded budget, actual spend and request context remain separate by currency. Approved requests are commitments, not actual spend."
+              description="Recorded income, budget, actual spend and request context remain separate by currency. No currency conversion is performed."
             >
               <div className="ev2fin-card-grid">
                 {currencies.length === 0 ? (
@@ -164,13 +175,13 @@ export default function ExecutiveFinance({ me }) {
                       currency={currency}
                       contextLabel="No currency conversion"
                       facts={[
+                        { label: "Received", value: money(incomeTotals[currency] || 0, currency), detail: "Reversal-aware recorded income" },
+                        { label: "Actual spend", value: money(spendTotals[currency] || 0, currency) },
                         {
                           label: "Budget recorded",
                           value: hasBudget ? money(budgetTotals[currency] || 0, currency) : "Not recorded",
                           detail: hasBudget ? null : "No budget recorded for this currency",
                         },
-                        { label: "Actual spend", value: money(spendTotals[currency] || 0, currency) },
-                        { label: "Approved requests", value: money(approvedTotals[currency] || 0, currency), detail: "Commitment, not actual spend" },
                         { label: "Submitted requests", value: String(submittedByCurrency[currency] || 0), detail: "Organisation requests still submitted" },
                       ]}
                     />
@@ -210,7 +221,7 @@ export default function ExecutiveFinance({ me }) {
           </FinanceSection>
 
           <FinanceFootnote>
-            Recorded spend is not a bank balance. CEAC OS does not convert currencies or infer opening balances or unrecorded activity. Approved requests remain distinct from actual spend.
+            Recorded income minus recorded spend is not a bank balance. CEAC OS does not convert currencies or infer opening balances or unrecorded activity. Requests remain distinct from actual spend.
           </FinanceFootnote>
         </>
       ) : null}
