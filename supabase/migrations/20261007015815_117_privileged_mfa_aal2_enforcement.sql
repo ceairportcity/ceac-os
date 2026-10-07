@@ -11,7 +11,7 @@ create or replace function public.app_privileged_aal_allowed()
 returns boolean
 language sql
 stable
-security invoker
+security definer
 set search_path=public,auth
 as $$
   select coalesce((
