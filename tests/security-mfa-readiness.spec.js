@@ -57,7 +57,22 @@ test("S1 browser gate never silently bypasses a verified factor", async () => {
   }).state).toBe("enroll");
 
   expect(resolveMfaGate({
-    assurance: { currentLevel: "aal2", nextLevel: "aal2" },
+    assurance: {
+      currentLevel: "aal2",
+      nextLevel: "aal2",
+      currentAuthenticationMethods: [{ method: "otp" }],
+    },
+    factors: { totp: [{ id: "factor-1", status: "verified", factor_type: "totp" }] },
+    me: { role: "manager" },
+    privilegedMfaEnforced: true,
+  }).state).toBe("challenge");
+
+  expect(resolveMfaGate({
+    assurance: {
+      currentLevel: "aal2",
+      nextLevel: "aal2",
+      currentAuthenticationMethods: [{ method: "totp" }],
+    },
     factors: { totp: [{ id: "factor-1", status: "verified", factor_type: "totp" }] },
     me: { role: "manager" },
     privilegedMfaEnforced: true,
@@ -70,6 +85,8 @@ test("S1 MFA implementation keeps TOTP management self-only and AAL2-protected",
   const required = readFileSync("src/screens/MfaRequired.jsx", "utf8");
   const account = readFileSync("src/screens/AccountActivity.jsx", "utf8");
   const bootstrap = readFileSync("src/lib/supabase.js", "utf8");
+  const gate = readFileSync("src/lib/mfaGate.js", "utf8");
+  const policy = readFileSync("src/lib/mfaPolicy.js", "utf8");
 
   expect(account).toContain('import MfaSettings from "../components/MfaSettings";');
   expect(account).toContain("<MfaSettings me={me} />");
@@ -92,6 +109,11 @@ test("S1 MFA implementation keeps TOTP management self-only and AAL2-protected",
   expect(bootstrap).toContain('.eq("lead_id", auth.user.id)');
   expect(bootstrap).toContain('.eq("active", true)');
   expect(bootstrap).toContain("led_sub_team_ids:");
+
+  expect(gate).toContain("assurance?.currentAuthenticationMethods");
+  expect(policy).toContain("currentAuthenticationMethods");
+  expect(policy).toContain('entry?.method === "totp"');
+  expect(policy).toContain("privileged_totp_session_required");
 
   expect(challenge).toContain("CEAC will not silently bypass the second step.");
   expect(challenge).toContain('factor.factor_type === "totp"');
