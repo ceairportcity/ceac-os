@@ -12,6 +12,14 @@ Status: IMPLEMENTED AND SOURCE-VERIFIED / NOT PROTECTED-MAIN ACCEPTED / NOT LIVE
 - R3 recovery release: implemented; exact-SHA manifest, Git bundle, checksums, secret exclusions and deterministic archive metadata verified locally.
 - R4 provider-neutral standby: implemented in source; isolated external deployment not yet authorised/created.
 
+## Canonical implementation
+
+- Programme commit: `2058e70cb6a492f14c42673a108f96807a95cb67`.
+- Pull request: `#149`, stacked on the Executive redesign branch.
+- GitHub returned no workflow runs or commit statuses for the programme commit while the account restriction remains active.
+- Vercel project `ceac-os` was resolved read-only, but deployment inspection returned `403 forbidden` for the owning team scope. No authenticated Vercel CLI fallback is available in the execution environment. An isolated standby preview therefore remains pending external Vercel authorization; no new project, production deployment, domain or DNS change was attempted.
+- Independent offsite backup placement remains pending selection/authorization of approved encrypted storage. The history-preserving mirror/bundle tool and restore test procedure are implemented.
+
 ## Source verification
 
 - `npm ci`: passed (verification workspace used Node 24; the repository and recovery metadata require Node 22 for acceptance/reproduction).
