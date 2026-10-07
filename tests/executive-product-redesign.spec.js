@@ -29,6 +29,9 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   const search = fs.readFileSync("src/experience-v2/shell/GlobalSearch.jsx", "utf8");
   const navigation = fs.readFileSync("src/experience-v2/shell/navigation.js", "utf8");
   const legacy = fs.readFileSync("src/premium-executive.css", "utf8");
+  const main = fs.readFileSync("src/main.jsx", "utf8");
+  const app = fs.readFileSync("src/App.jsx", "utf8");
+  const styleLoader = fs.readFileSync("src/experience-v2/executive-overview/ExecutiveRedesignStyles.jsx", "utf8");
 
   expect(lock).toContain("literal implementation authority");
   expect(lock).toContain("No compromise");
