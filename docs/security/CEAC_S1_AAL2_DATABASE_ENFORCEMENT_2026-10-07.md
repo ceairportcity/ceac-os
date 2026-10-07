@@ -1,6 +1,6 @@
 # CEAC OS — S1 Privileged MFA/AAL2 Database Enforcement
 
-Date: 7 October 2026  
+Date: 7 October 2026
 Status: IMPLEMENTED ON SECURITY BRANCH / ENFORCEMENT DEFAULT OFF
 
 ## Owner rule preserved

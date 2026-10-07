@@ -80,31 +80,40 @@ Sequence authority: `CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` in this
 
 ## 5. Volunteers
 
-- Status: **NEXT**
+- Status: **NEXT — OWNER DECISIONS LOCKED**
 - Implementation phase: 6
-- Dependencies: Phase 1 accepted foundations; Phase 5 acceptance before later-phase implementation.
-- Canonical architecture area: Employee roster/engagement, Staff/sub-team authority and population contracts.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Dependencies: Phase 1 accepted foundations; Phase 5 acceptance before implementation.
+- Canonical architecture area: Employee roster/engagement, Staff/sub-team authority and population contracts; Phase 6 visual/product lock.
+- Current evidence / partial implementation: Product-owner operating model and mandatory visual reference locked 7 October 2026 in `docs/design/phase6/CEAC_PHASE6_VOLUNTEER_CALENDAR_VISUAL_PRODUCT_LOCK_2026-10-07.md`.
 
-- No fifth Volunteer panel.
-- Volunteers use Staff experience.
-- Volunteers may hold sub-team/team-lead authority.
-- Do not automatically make volunteers Unit Managers.
-- Volunteer work remains attributable.
-- Audit Payroll, Attendance, headcount, Appraisal, HR and Performance population rules before final volunteer rollout.
+- No fifth Volunteer panel. Volunteers use the Staff experience.
+- Managers normally add/invite volunteers within their authorised organisational scope.
+- Volunteer work remains operationally owned through the Manager relationship: Work, projects, meetings, follow-ups, feedback and outcomes.
+- Volunteers may hold explicit team/sub-team-lead authority but do not automatically become Unit Managers, HR, Compliance, Admin or Executive users.
+- HR/Admin maintains formal people/protected-HR records and controls compensation/engagement-status changes.
+- Volunteers are excluded from ordinary salary payroll by default.
+- A Manager may recommend a compensation/status change; HR/Admin performs the attributable effective-dated change.
+- The volunteer must be notified of a formal status/compensation change, see the changed state and receive/acknowledge the applicable agreement or contract.
+- Stipend/support does not silently convert a volunteer into a salaried employee.
+- Volunteer working patterns may be: no attendance tracking, event-based, specific days or custom schedule.
+- No configured attendance obligation means no employee-style absence/late inference.
+- Volunteer HR requirements remain proportionate; do not fabricate employee-only statutory/payroll data.
+- Manager feedback and attributable outcomes remain visible; do not silently place volunteers into a future composite employee scoring model.
+- Audit Payroll, Attendance, headcount, Appraisal, HR and Performance populations before rollout.
+- The approved visual treatment for Manager People & Volunteers, Add Volunteer, Working Pattern and Volunteer Profile is mandatory.
 
 ## 6. Healing Streams / PFCC
 
-- Status: **DEFERRED**
-- Implementation phase: 6
-- Dependencies: Phase 1 accepted foundations; Phase 5 acceptance before later-phase implementation.
-- Canonical architecture area: Employee roster/engagement, Staff/sub-team authority and population contracts.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Status: **NEXT — MOVED TO PHASE 7**
+- Implementation phase: 7
+- Dependencies: Phase 1 accepted foundations; Phase 6 acceptance before specialised-workspace implementation.
+- Canonical architecture area: Programme/ministry operating model, employee roster/engagement and existing organisational authority.
+- Current evidence / partial implementation: Product owner moved the specialised Healing Streams / PFCC workspace from Phase 6 to Phase 7 on 7 October 2026.
 
 - Healing Streams does not automatically become a new department.
-- It remains associated with PFCC / Pastor Rebecca for now.
-- Specialised PFCC workspace may be required later.
-- DEFERRED.
+- It remains a programme/campaign associated with PFCC / the recorded responsible leadership context for now.
+- Phase 7 may implement the specialised PFCC / Healing Streams workspace.
+- The specialised workspace must not manufacture department, job-title or system authority.
 
 ## 7. Start Work location enforcement
 
@@ -659,19 +668,24 @@ Preserve actors/timestamps/history for:
 - do not claim background GPS reliability a browser/PWA cannot guarantee.
 - represent only verified evidence.
 
-## 49. Anti-gaming reserve options
+## 49. Attendance-integrity / anti-gaming options
 
-- Status: **DEFERRED**
+- Status: **NEXT — PHASE 6**
 - Implementation phase: 6
-- Dependencies: Phase 1 accepted foundations; Phase 5 acceptance before later-phase implementation.
-- Canonical architecture area: Employee roster/engagement, Staff/sub-team authority and population contracts.
-- Current evidence / partial implementation: Required refinement is not accepted as complete; inspect and extend existing contracts before building.
+- Dependencies: Phase 1/2 factual attendance foundations; Phase 5 acceptance; preserve no-punishment/no-automatic-Payroll boundary.
+- Canonical architecture area: Workforce presence evidence, working-pattern applicability and Phase 6 visual/product lock.
+- Current evidence / partial implementation: Existing discrete GPS/geofence/start/end/foreground evidence is accepted. Product owner moved attendance-integrity discussion into Phase 6 on 7 October 2026.
 
-Only if actual abuse appears:
-- static office network/IP;
-- rotating front-desk code;
-- NFC.
-Do not add now.
+Phase 6 direction:
+- preserve existing factual GPS/geofence evidence;
+- allow approved office-network/IP corroboration as an additional signal where technically reliable;
+- allow an optional short-lived rotating office/front-desk code for stronger presence confirmation where required;
+- keep NFC reserve-only unless real operational need is demonstrated;
+- do not treat one IP/network observation as authoritative proof of presence;
+- do not create continuous background surveillance;
+- no integrity signal automatically creates misconduct, deduction or Payroll consequence.
+
+Exact trigger/frequency details for network/code use may be finalised during Phase 6 implementation without weakening these boundaries.
 
 ## 50. Overall product communication agency
 

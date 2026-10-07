@@ -15,10 +15,10 @@ The adjacent `CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md` is
 | 1 | Foundation: onboarding, People & Access, multiple units, scoped invitations, review/action visibility, start/end evidence, last activity | Preserve accepted PRs #106/#111/#112 and migration 111 | Implemented and technical/deployment checks pass; authenticated live role inspection and actual email/password setup remain unverified |
 | 2 | Attendance, Working Patterns & Permissions | Commit this lock first; reuse Stage 9 and Work Engine; secure privacy/authority boundaries | COMPLETE — PR #113, migration 112 and exact-main production evidence recorded below |
 | 3 | Compliance Operating Surface | Phase 2 accepted/merged/deployed; operational data and compliance visibility secure | COMPLETE — PR #115, migration 113, exact-main gates and production evidence recorded below |
-| 4 | Notification & Work-State Communication | Phase 3 acceptance; preserve independent unread and action states | NEXT |
-| 5 | Admin Product Redesign | Phase 4 acceptance; literal approved design/reference and functioning controls | NEXT |
-| 6 | Volunteer & Special Operating Models | Phase 5 acceptance; audit payroll/attendance/headcount/appraisal/HR/performance populations | NEXT; PFCC special workspace and anti-gaming options DEFERRED |
-| 7 | Compliance Cases, Pastor Override & Disciplinary Governance | Phase 6 acceptance; final authority/lifecycle/history confirmed; legal policy review for consequences | DISCUSS BEFORE BUILD; financial consequences LEGAL / POLICY REVIEW |
+| 4 | Notification & Work-State Communication | Phase 3 acceptance; preserve independent unread and action states | COMPLETE — PR #121 merged; later migration-history reconciliation merged in #133 |
+| 5 | Admin Product Redesign | Phase 4 acceptance; literal approved design/reference and functioning controls | STARTED / OWNER-AUTHORISED — reconcile live implementation state before writes |
+| 6 | Volunteer Operating Model + Shared Personal Planning + Attendance Integrity | Phase 5 acceptance; preserve Staff experience, Manager/HR authority split, private personal planning and factual attendance boundaries | NEXT — owner decisions and mandatory nine-surface visual reference locked 7 Oct 2026 |
+| 7 | Healing Streams/PFCC Special Workspace + Compliance Cases, Pastor Override & Disciplinary Governance | Phase 6 acceptance; preserve programme classification; final authority/lifecycle/history confirmed; legal policy review for consequences | PFCC/Healing Streams moved here; governance items remain DISCUSS BEFORE BUILD; financial consequences LEGAL / POLICY REVIEW |
 | 8 | Scoring / Awards / Compliance Points | Phase 7 acceptance and explicitly approved transparent policy; no composite score inferred | DISCUSS BEFORE BUILD |
 
 ## Verification and continuation
@@ -382,3 +382,23 @@ Phase 3 — Compliance Operating Surface is COMPLETE. The overall CEAC Operation
 Actual invited-user email/password activation and authenticated live-role inspection remain unverified; isolated authenticated fixtures are not proof of a real account. Unexplained absence, Compliance reports/cases, disciplinary routing, Pastor override, Payroll consequences, scoring, automated monitoring and background location remain deferred exactly as recorded.
 
 Phase 4 is Notification & Work-State Communication. Begin only from protected main after reading the acceptance record. Preserve independent unread/information state and actionable work/review state; do not make “read” mean “done” and do not reopen Phase 3 authority.
+
+
+## Phase 5 / Phase 6 continuity lock — 7 October 2026
+
+The product owner has declared Phase 5 Admin Product Redesign started. At the time this lock was written, no dedicated Phase 5 implementation branch was visible on GitHub, so this documentation branch does not claim ownership of Phase 5 application files and must be reconciled forward by the active Phase 5 writer.
+
+Immediately after accepted Phase 5 closure, Phase 6 continues with the decisions in:
+
+- `docs/design/phase6/CEAC_PHASE6_VOLUNTEER_CALENDAR_VISUAL_PRODUCT_LOCK_2026-10-07.md`
+- canonical visual reference `docs/design/phase6/CEAC_PHASE6_APPROVED_NINE_SURFACE_REFERENCE.webp`
+
+Phase 6 is now:
+
+- **6A Volunteer Operating Model**
+- **6B Shared Personal Planning / Calendar Day Workspace**
+- **6C Attendance Integrity / Anti-gaming**
+
+The specialised Healing Streams / PFCC workspace is moved to Phase 7. NFC remains reserve-only; network corroboration and optional rotating-code verification belong to Phase 6 subject to the locked factual/no-automatic-consequence boundary.
+
+The nine-surface visual reference is a literal acceptance authority. Green automated tests do not waive visual non-conformity.
