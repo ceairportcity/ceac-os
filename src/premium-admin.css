@@ -265,3 +265,95 @@
 .office-app .fpg-finance-empty{margin:12px 0;color:#9da3ab;font-size:12px}
 @media(max-width:900px){.office-app .fpg-finance-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.office-app .fpg-finance-grid{grid-template-columns:1fr}.office-app .fpg-finance-recent{grid-column:auto}}
 @media(max-width:620px){.office-app .fpg-finance-metric{min-height:112px;padding:12px}.office-app .fpg-finance-metric>strong{margin-top:16px}.office-app .fpg-finance-chart{height:150px}.office-app .fpg-recent-head,.office-app .fpg-recent-row{grid-template-columns:72px minmax(0,1fr) 92px}.office-app .fpg-recent-head span:nth-child(3),.office-app .fpg-recent-row span:nth-child(3){display:none}}
+
+
+/* Phase 5E — Control Center is a configuration workspace, not an Overview clone. */
+.office-app .ev2-control-center .phase5-control-groups {
+  display: grid;
+  gap: var(--ev2-space-6);
+  margin-top: var(--ev2-space-6);
+}
+
+.office-app .ev2-control-center .phase5-control-group {
+  display: grid;
+  grid-template-columns: minmax(13rem, .34fr) minmax(0, 1fr);
+  gap: var(--ev2-space-5);
+  align-items: start;
+}
+
+.office-app .ev2-control-center .phase5-control-group-head {
+  position: sticky;
+  top: calc(var(--ev2-space-6) + 3.5rem);
+  display: grid;
+  gap: var(--ev2-space-1);
+  min-width: 0;
+}
+
+.office-app .ev2-control-center .phase5-control-group-head h2 {
+  margin: 0;
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-section-desktop);
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+
+.office-app .ev2-control-center .phase5-control-group-head p {
+  margin: 0;
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.5;
+}
+
+.office-app .ev2-control-center .phase5-control-ledger {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface);
+}
+
+.office-app .ev2-control-center .phase5-control-ledger .control-card {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--ev2-line);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.office-app .ev2-control-center .phase5-control-ledger .control-card:last-child {
+  border-bottom: 0;
+}
+
+.office-app .ev2-control-center .phase5-control-ledger .ev2c-data-panel-head {
+  padding-bottom: var(--ev2-space-2);
+}
+
+.office-app .ev2-control-center .phase5-control-ledger .ev2c-data-panel-body {
+  padding-top: 0;
+}
+
+@media (max-width: 820px) {
+  .office-app .ev2-control-center .phase5-control-group {
+    grid-template-columns: 1fr;
+    gap: var(--ev2-space-3);
+  }
+
+  .office-app .ev2-control-center .phase5-control-group-head {
+    position: static;
+  }
+
+  .office-app .ev2-control-center .phase5-control-group-head h2 {
+    font-size: var(--ev2-type-section-mobile);
+  }
+}
+
+@media (max-width: 599px) {
+  .office-app .ev2-control-center .phase5-control-groups {
+    gap: var(--ev2-space-5);
+    margin-top: var(--ev2-space-5);
+  }
+
+  .office-app .ev2-control-center .phase5-control-ledger {
+    border-radius: var(--ev2-radius-control);
+  }
+}
