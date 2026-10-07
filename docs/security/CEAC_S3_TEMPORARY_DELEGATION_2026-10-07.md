@@ -53,6 +53,33 @@ Temporary `authority.manage` may supplement authority, but CEAC must retain at l
 
 A temporary authority holder therefore cannot become the only future authority holder merely because the permanent grant is revoked or converted to expiring.
 
+## Joiner / mover / leaver authority safety
+
+S3 now also closes a lifecycle gap that existed outside temporary expiry.
+
+When an active profile is deactivated through the controlled employment/lifecycle path:
+
+- every still-unrevoked capability grant for that profile is revoked with the signed-in actor recorded;
+- current unit-membership rows are removed rather than left dormant;
+- any live Sub-team lead assignment is cleared;
+- the Sub-team lead change is written to the platform audit trail;
+- capability grant history remains in place as revoked history rather than being deleted.
+
+This prevents an offboarded person from regaining old capability, manager or work-lane authority merely because their profile is later reactivated.
+
+`app_led_sub_teams()` now also requires:
+
+- an active profile;
+- an active Sub-team;
+- a current membership in the Sub-team's unit;
+- the existing privileged AAL boundary.
+
+A stale historical `lead_id` therefore cannot confer work-lane authority after a unit transfer or membership removal.
+
+The anti-lockout checks now count only **active** permanent authority managers. An inactive profile carrying a historical permanent grant cannot be used to justify removing the last active permanent authority manager.
+
+A live production inspection before this change found **0** inactive profiles carrying unrevoked capability grants, so no unattributable historical backfill is required.
+
 ## Payroll separation
 
 Expired grants do not count as active opposite payroll authority.
@@ -73,14 +100,19 @@ Production Supabase must not receive S3 under a connector-generated replacement 
 
 ## Acceptance
 
-The S3 SQL gate proves:
+The S3 SQL gates prove:
 
 - expiry schema and RPC privilege contract;
 - unexpired temporary authority works;
 - expired authority is denied server-side;
 - expired history is preserved and safely replaceable;
-- a temporary authority manager cannot replace the last permanent authority manager;
+- a temporary authority manager cannot replace the last active permanent authority manager;
+- inactive permanent authority holders do not satisfy anti-lockout;
 - already-expired grants cannot be created;
+- offboarding revokes active capability grants;
+- offboarding removes current unit membership and live Sub-team lead authority;
+- Sub-team lead removal is auditable;
+- stale lane-lead attribution without current unit membership confers no authority;
 - all prior capability authority/security gates continue to run.
 
 ## Gate recovery note
