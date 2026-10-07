@@ -18,6 +18,7 @@ export default function ExecutiveReports({ me }) {
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [view, setView] = useState("all");
 
   useEffect(() => { load(); }, [me.org_id]);
 
@@ -74,6 +75,18 @@ export default function ExecutiveReports({ me }) {
     () => units.filter((unit) => !reports.some((report) => report.unit_id === unit.id && report.status !== "draft")),
     [units, reports],
   );
+  const unitStatusRows = useMemo(
+    () => units.map((unit) => {
+      const report = reports.find((row) => row.unit_id === unit.id);
+      const state = report && report.status !== "draft" ? "submitted" : report?.status === "draft" ? "draft" : "waiting";
+      return { unit, report, state };
+    }),
+    [units, reports],
+  );
+  const visibleUnitRows = useMemo(
+    () => unitStatusRows.filter((row) => view === "all" || row.state === view),
+    [unitStatusRows, view],
+  );
 
   const statusLabel = loading
     ? "Loading records"
@@ -129,6 +142,21 @@ export default function ExecutiveReports({ me }) {
         </div>
       ) : (
         <>
+          <div className="exec-redesign-tabs ev2rep-status-tabs" role="tablist" aria-label="Report filters">
+            {[
+              ["all", "All", units.length],
+              ["submitted", "Submitted", filed.length],
+              ["draft", "Drafts", drafting.length],
+              ["waiting", "Waiting", waiting.length],
+            ].map(([key, label, count]) => <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={view === key}
+              className={view === key ? "is-active" : ""}
+              onClick={() => setView(key)}
+            >{label}<span>{count}</span></button>)}
+          </div>
           <div className="ev2rep-executive-brief">
             <ReportingSection
               eyebrow="Latest period"
@@ -162,17 +190,16 @@ export default function ExecutiveReports({ me }) {
               title="Who has filed"
               description="Named filing status remains visible for leadership context. It is not a ranking of units or people."
             >
-              {units.length === 0 ? (
+              {visibleUnitRows.length === 0 ? (
                 <ReportingEmpty
-                  title="No active units are visible"
-                  description="Unit reporting status will appear when active organisation units are available."
+                  title={units.length ? "No reports in this view" : "No active units are visible"}
+                  description={units.length ? "Choose another factual filing-state filter to see recorded units." : "Unit reporting status will appear when active organisation units are available."}
                 />
               ) : (
                 <div className="ev2rep-list">
-                  {units.map((unit) => {
-                    const report = reports.find((row) => row.unit_id === unit.id);
-                    const isFiled = report && report.status !== "draft";
-                    const isDraft = report?.status === "draft";
+                  {visibleUnitRows.map(({ unit, report, state }) => {
+                    const isFiled = state === "submitted";
+                    const isDraft = state === "draft";
                     return (
                       <ReportingRecordRow
                         key={unit.id}

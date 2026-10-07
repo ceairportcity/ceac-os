@@ -38,6 +38,11 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(css).toContain(".executive-app .ev2-project-delivery.is-executive");
   expect(css).toContain(".executive-app .ev2cal-admin-page");
   expect(css).toContain(".executive-app .fpg-payroll");
+  const reports = fs.readFileSync("src/screens/ExecutiveReports.jsx", "utf8");
+  expect(reports).toContain('aria-label="Report filters"');
+  expect(reports).toContain('["submitted", "Submitted"');
+  expect(reports).toContain('["draft", "Drafts"');
+  expect(reports).toContain('["waiting", "Waiting"');
   expect((legacy.match(/!important\b/g) || []).length).toBe(0);
 
   const primary = getMobilePrimaryNavigation({
