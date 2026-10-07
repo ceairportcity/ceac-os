@@ -23,7 +23,9 @@ test("CEAC Guide is static, versioned and does not create a data client", async 
   expect(screen).not.toContain("supabase");
   expect(content).not.toContain("supabase.from");
   expect(content).not.toContain("localStorage");
-  expect(content).not.toContain("sessionStorage");
+  expect(screen).toContain("ceac-guide-progress:");
+  expect(screen).toContain("GUIDE_PROGRESS_TTL_MS");
+  expect(screen).not.toContain("sessionStorage");
 });
 
 test("desktop Guide sits above the profile and supports role-aware search", async ({ page }) => {
@@ -96,4 +98,33 @@ test("mobile Guide is available under More without widening the viewport", async
   }));
   expect(overflow.document).toBeLessThanOrEqual(1);
   expect(overflow.body).toBeLessThanOrEqual(1);
+});
+
+test("Getting Started progress resumes and can be dismissed without storing business data", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "staff@ceac.local.test");
+
+  await page.getByRole("button", { name: "CEAC Guide", exact: true }).click();
+  const checklist = page.getByRole("region", { name: "Getting Started checklist" });
+  await expect(checklist).toBeVisible();
+
+  const first = checklist.locator('input[type="checkbox"]').first();
+  await first.check();
+  await expect(checklist.getByText("1 of 6 complete", { exact: true })).toBeVisible();
+
+  const stored = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find((item) => item.startsWith("ceac-guide-progress:"));
+    return key ? JSON.parse(localStorage.getItem(key)) : null;
+  });
+  expect(stored?.completed?.length).toBe(1);
+  expect(stored?.version).toBe("2026.10.07");
+  expect(stored?.expiresAt).toBeGreaterThan(Date.now());
+  expect(Object.keys(stored || {}).sort()).toEqual(["completed","dismissed","expiresAt","role","version"].sort());
+
+  await checklist.getByRole("button", { name: "Dismiss", exact: true }).click();
+  await expect(page.getByText("Getting Started is hidden.", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Getting Started is hidden.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Show checklist", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Getting Started checklist" })).toBeVisible();
 });
