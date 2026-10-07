@@ -765,3 +765,80 @@
 .executive-app .ev2s-sidebar-profile {
   margin-top: auto;
 }
+
+
+/* Executive phone Payroll cards */
+@media (max-width: 599px) {
+  .executive-app .fpg-payroll-table-wrap {
+    overflow: visible;
+  }
+  .executive-app .fpg-payroll-table {
+    min-width: 0;
+    width: 100%;
+    display: block;
+  }
+  .executive-app .fpg-payroll-table thead {
+    display: none;
+  }
+  .executive-app .fpg-payroll-table tbody {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+  }
+  .executive-app .fpg-payroll-table tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 11px 12px;
+    border: 1px solid #e6e8ee;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 3px 10px rgba(26,36,57,.04);
+  }
+  .executive-app .fpg-payroll-table td {
+    min-width: 0;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    border: 0;
+  }
+  .executive-app .fpg-payroll-table td + td {
+    border-top: 1px solid #f0f1f4;
+  }
+  .executive-app .fpg-payroll-table td:first-child {
+    display: block;
+    padding-top: 0;
+    padding-bottom: 10px;
+  }
+  .executive-app .fpg-payroll-table td:nth-child(2)::before { content: "Additions"; }
+  .executive-app .fpg-payroll-table td:nth-child(3)::before { content: "Deductions"; }
+  .executive-app .fpg-payroll-table td:nth-child(4)::before { content: "Net"; }
+  .executive-app .fpg-payroll-table td:nth-child(5)::before { content: "Review"; }
+  .executive-app .fpg-payroll-table td:nth-child(n+2):nth-child(-n+5)::before {
+    color: #7d8794;
+    font-size: 11px;
+    font-weight: 650;
+  }
+  .executive-app .fpg-payroll-table td:last-child {
+    justify-content: flex-start;
+    padding-bottom: 0;
+  }
+  .executive-app .fpg-payroll-person {
+    min-width: 0;
+  }
+  .executive-app .fpg-payroll-person > span:last-child {
+    min-width: 0;
+  }
+  .executive-app .fpg-payroll-person strong,
+  .executive-app .fpg-payroll-person small {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .executive-app .fpg-payroll-row-action {
+    min-height: 44px;
+    padding-inline: 13px;
+  }
+}
