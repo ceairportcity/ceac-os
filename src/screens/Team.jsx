@@ -38,7 +38,7 @@ function PersonRow({ person, openPerson, laneNames = [] }) {
       : null;
   return <PeopleEvidencePerson
     name={name}
-    subtitle={person.profiles?.job_title || person.role}
+    subtitle={person.employment_type === "volunteer" ? "Volunteer" : (person.profiles?.job_title || person.role)}
     context={currentSummary}
     status={person.presence}
     statusTone={person.presence === "Present" ? "success" : person.presence === "On leave" ? "warning" : "neutral"}

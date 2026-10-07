@@ -2624,3 +2624,130 @@
     font-size: var(--ev2-type-row-desktop);
   }
 }
+
+
+/* Phase 6A — Volunteer Profile */
+
+.phase6-volunteer-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface);
+}
+
+.phase6-volunteer-profile-grid > div {
+  min-width: 0;
+  padding: var(--ev2-space-4);
+  border-right: 1px solid var(--ev2-line);
+}
+
+.phase6-volunteer-profile-grid > div:last-child {
+  border-right: 0;
+}
+
+.phase6-volunteer-profile-grid span,
+.phase6-volunteer-profile-grid strong {
+  display: block;
+}
+
+.phase6-volunteer-profile-grid span {
+  color: var(--ev2-text-tertiary);
+  font-size: var(--ev2-type-label);
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.phase6-volunteer-profile-grid strong {
+  margin-top: var(--ev2-space-1);
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.phase6-volunteer-profile-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ev2-space-4);
+  margin-top: var(--ev2-space-4);
+}
+
+.phase6-volunteer-pattern-editor,
+.phase6-volunteer-recommendation {
+  min-width: 0;
+  display: grid;
+  gap: var(--ev2-space-3);
+  align-content: start;
+  padding: var(--ev2-space-4);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface-soft);
+}
+
+.phase6-volunteer-pattern-editor h3,
+.phase6-volunteer-recommendation h3 {
+  margin: 0;
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+  line-height: 1.35;
+}
+
+.phase6-volunteer-pattern-editor p,
+.phase6-volunteer-recommendation p {
+  margin: 0;
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.45;
+}
+
+.phase6-volunteer-recommendation-history {
+  display: grid;
+  gap: var(--ev2-space-2);
+  margin-top: var(--ev2-space-1);
+}
+
+.phase6-volunteer-recommendation-history > div {
+  display: grid;
+  gap: var(--ev2-space-1);
+  padding-top: var(--ev2-space-2);
+  border-top: 1px solid var(--ev2-line);
+}
+
+.phase6-volunteer-recommendation-history strong {
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-supporting);
+}
+
+.phase6-volunteer-recommendation-history span,
+.phase6-volunteer-recommendation-history small {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .phase6-volunteer-profile-grid,
+  .phase6-volunteer-profile-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .phase6-volunteer-profile-grid > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--ev2-line);
+  }
+
+  .phase6-volunteer-profile-grid > div:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (min-width: 900px) {
+  .phase6-volunteer-profile-grid strong,
+  .phase6-volunteer-pattern-editor h3,
+  .phase6-volunteer-recommendation h3 {
+    font-size: var(--ev2-type-row-desktop);
+  }
+}
