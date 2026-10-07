@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {authRedirect} from '../src/lib/authRedirect.js';
 import {getPositionOnce} from '../src/lib/locationEvidence.js';
-import {signInErrorMessage} from '../src/lib/signInError.js';
+import {passwordUpdateErrorMessage,recoveryErrorMessage,secureLinkErrorMessage,signInErrorMessage} from '../src/lib/signInError.js';
 test('sign-in distinguishes credential rejection from rate, service, network and verification errors',()=>{
   assert.match(signInErrorMessage({code:'invalid_credentials'}),/did not match/);
   assert.match(signInErrorMessage({code:'email_not_confirmed'}),/verification/);
@@ -29,4 +29,18 @@ test('fresh zero coordinates are valid; stale or out-of-range evidence is reject
   assert.equal(valid.lat,0); assert.equal(valid.lng,0); assert.equal(valid.accuracy,12); assert.ok(valid.capturedAt);
   assert.ok((await getPositionOnce(position(5,-.1,121000))).failure);
   assert.ok((await getPositionOnce(position(91,0))).failure);
+});
+
+test('recovery and password flows never surface raw auth errors',()=>{
+  assert.match(recoveryErrorMessage({status:429,message:'private'}),/Too many recovery/);
+  assert.match(recoveryErrorMessage(new TypeError('secret transport detail')),/connection/);
+  assert.doesNotMatch(recoveryErrorMessage({code:'unknown',message:'private recovery detail'}),/private/);
+
+  assert.match(secureLinkErrorMessage({status:503,message:'database detail'}),/temporarily unavailable/);
+  assert.doesNotMatch(secureLinkErrorMessage({code:'unknown',message:'private link detail'}),/private/);
+
+  assert.match(passwordUpdateErrorMessage({code:'weak_password'}),/stronger password/);
+  assert.match(passwordUpdateErrorMessage({code:'same_password'}),/different/);
+  assert.match(passwordUpdateErrorMessage({status:429}),/Too many password-change/);
+  assert.doesNotMatch(passwordUpdateErrorMessage({code:'unknown',message:'private password detail'}),/private/);
 });
