@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import MfaSettings from "../components/MfaSettings";
 import {
   PersonalBoundary,
   PersonalEmpty,
@@ -131,6 +132,8 @@ export default function AccountActivity({ me }) {
           Signing out everywhere stops those sessions from renewing. A device that already has a short-lived access token may take a short time to lose access.
         </p>
       </PersonalSection>
+
+      <MfaSettings me={me} />
 
       <PersonalSection
         eyebrow="Audit trail"
