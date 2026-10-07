@@ -259,6 +259,34 @@ All consequential mutations record:
 
 No direct authenticated table writes should be introduced.
 
+## Verified current no-consequence baseline
+
+Read-only production inspection on 7 October 2026 verified the current attendance/work-session implementation before S8 policy expansion.
+
+Across all current attendance/work-session server functions and their table triggers:
+
+- direct Payroll writes/calls detected: **0**;
+- protected compensation/payment writes detected: **0**;
+- Compliance outcome writes detected: **0**;
+- disciplinary consequence logic detected: **0**;
+- salary consequence logic detected: **0**.
+
+The event/rules layer was also inspected:
+
+- active attendance/work-session-triggered workflows: **0**;
+- active attendance/work-session integration subscriptions: **0**;
+- attendance policy-rule catalogue currently contains threshold configuration only (`attendance.grace_minutes` and `attendance.late_after_minutes`), not Payroll or discipline rules.
+
+Medical attendance notices remain date/status-only at both RPC and table-constraint level.
+
+This baseline is now executable in:
+
+`supabase/tests/attendance_safety_no_consequence_gate.sql`
+
+The gate is part of the complete SQL/RLS/security suite. It fails if attendance/session code begins calling or writing Payroll, compensation, discipline or Compliance consequences; if protected leave/medical narrative enters the organisation attendance evidence projection; or if an automatic attendance-triggered workflow/integration is introduced without explicit S8 security review.
+
+A future notification-only attendance integration is not permanently forbidden. It must be reviewed and the gate deliberately amended rather than silently bypassed.
+
 ## Required SQL gates
 
 The S8 migration is not accepted until tests prove:
@@ -290,10 +318,12 @@ Do not invent a migration filename.
 
 Generate the S8 migration only after:
 
-1. S3 temporary-delegation migration is merged;
-2. live Supabase records the exact canonical S3 version;
-3. GitHub/live migration parity is re-verified;
-4. the migration-generation workflow is available.
+1. historical migration parity PR #148 passes protected checks and merges;
+2. protected main/live Supabase history is re-verified at exact parity;
+3. S3 temporary-delegation migration is merged;
+4. live Supabase records the exact canonical S3 version;
+5. GitHub/live migration parity is re-verified again;
+6. the migration-generation workflow is available.
 
 Current required S3 predecessor:
 
