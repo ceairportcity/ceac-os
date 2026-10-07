@@ -567,6 +567,7 @@
   padding: 18px 20px 42px;
 }
 .executive-app .inbox-page .premium-page-head,
+.executive-app .inbox-page .exec-redesign-shared-head,
 .executive-app .ev2-personal-page .ev2pf-header {
   display: flex;
   align-items: flex-start;
@@ -576,6 +577,7 @@
   border-bottom: 0;
 }
 .executive-app .inbox-page .premium-page-head h1,
+.executive-app .inbox-page .exec-redesign-shared-head h1,
 .executive-app .ev2-personal-page .ev2pf-header h1 {
   margin: 0;
   color: #171c28;
@@ -584,6 +586,7 @@
   letter-spacing: -.03em;
 }
 .executive-app .inbox-page .premium-page-head .eyebrow,
+.executive-app .inbox-page .exec-redesign-shared-head .eyebrow,
 .executive-app .ev2-personal-page .ev2pf-header .ev2pf-eyebrow {
   color: #687386;
   font-size: 11px;
@@ -592,6 +595,7 @@
   text-transform: none;
 }
 .executive-app .inbox-page .premium-page-head .screen-note,
+.executive-app .inbox-page .exec-redesign-shared-head .screen-note,
 .executive-app .ev2-personal-page .ev2pf-header p {
   margin-top: 5px;
   color: #687386;
@@ -652,6 +656,7 @@
 }
 @media (max-width: 599px) {
   .executive-app .inbox-page .premium-page-head,
+  .executive-app .inbox-page .exec-redesign-shared-head,
   .executive-app .ev2-personal-page .ev2pf-header {
     display: grid;
     gap: 10px;
