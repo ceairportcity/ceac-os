@@ -2444,7 +2444,7 @@ test("FPG6 Payroll gives Administration preparation and Executive protected revi
     await dialog.getByLabel("Preparation note").fill("FPG6 visual acceptance fixture");
     await dialog.getByRole("button", { name: "Create draft Payroll", exact: true }).click();
 
-    await expect(page.getByText("Draft payroll run created from protected employee records.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: payrollLabel, exact: true })).toBeVisible();
     await expect(page.locator(".fpg-payroll-table")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/fpg6-payroll-admin-desktop.png", fullPage: true });
