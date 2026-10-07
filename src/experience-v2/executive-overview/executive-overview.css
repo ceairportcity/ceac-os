@@ -295,6 +295,10 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
 }
 .executivev2-activity-item:first-child { border-top: 0; }
 .executivev2-activity-icon { width: 28px; height: 28px; background: var(--exec-blue-soft); color: var(--exec-blue); }
+.executivev2-activity-icon.is-purple { background: var(--exec-purple-soft); color: var(--exec-purple); }
+.executivev2-activity-icon.is-green { background: var(--exec-green-soft); color: var(--exec-green); }
+.executivev2-activity-icon.is-amber { background: var(--exec-amber-soft); color: var(--exec-amber); }
+.executivev2-activity-icon.is-blue { background: var(--exec-blue-soft); color: var(--exec-blue); }
 .executivev2-activity-copy { min-width: 0; display: grid; gap: 2px; }
 .executivev2-activity-copy strong,
 .executivev2-activity-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
