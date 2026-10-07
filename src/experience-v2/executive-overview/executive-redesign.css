@@ -688,3 +688,23 @@
   background: var(--exec-red-soft);
   color: var(--exec-red);
 }
+
+
+/* Portfolio semantic health accents */
+.executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="on_track"] .ev2p-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="on_track"] .ev2p-context-row-icon {
+  background: var(--exec-green-soft);
+  color: var(--exec-green);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="watch"] .ev2p-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="at_risk"] .ev2p-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="watch"] .ev2p-context-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="at_risk"] .ev2p-context-row-icon {
+  background: var(--exec-amber-soft);
+  color: var(--exec-amber);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="blocked"] .ev2p-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="blocked"] .ev2p-context-row-icon {
+  background: var(--exec-red-soft);
+  color: var(--exec-red);
+}
