@@ -39,7 +39,7 @@ begin
   end if;
 
   if pg_get_functiondef('public.app_privileged_aal_allowed()'::regprocedure)
-       not ilike '%factor_type=''totp''%' then
+       not ilike '%factor_type%totp%' then
     raise exception 'S1 MFA gate failure: privileged server authority is not pinned to verified TOTP.';
   end if;
 
