@@ -57,7 +57,7 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "exec-reports", label: "Reports", icon: "reports", group: "insight" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
     { key: "me", label: "My Hub", icon: "account", group: "account" },
-    { key: "account", label: "Your account", icon: "account", group: "account" },
+    { key: "account", label: "Account", icon: "account", group: "account" },
   ]),
 });
 
