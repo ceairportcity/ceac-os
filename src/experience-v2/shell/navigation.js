@@ -33,7 +33,7 @@ const ROLE_DESTINATIONS = Object.freeze({
   ]),
   admin: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
-    { key: "people", label: "People", icon: "people", group: "workspace", capability: "people.manage" },
+    { key: "people", label: "People & Access", icon: "people", group: "workspace", capability: "people.manage" },
     { key: "work", label: "Work", icon: "work", group: "workspace" },
     { key: "attendance", label: "Time & Leave", icon: "time", group: "planning" },
     { key: "finance", label: "Finance", icon: "finance", group: "insight" },

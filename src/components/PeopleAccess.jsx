@@ -1,16 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase, inviteByEmail, resendStaffInvitation } from "../lib/supabase";
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
+import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
 
-export default function PeopleAccess({ me, go, onBack }) {
+const ACCESS_MODES = [
+  ["invite", "Invite"],
+  ["responsibility", "Responsibilities"],
+  ["invitations", "Invitations"],
+];
+
+function invitationTone(state, revokedAt) {
+  if (revokedAt) return "neutral";
+  if (state === "verified") return "success";
+  if (state === "expired") return "warning";
+  return "action";
+}
+
+export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged }) {
   const [snapshot, setSnapshot] = useState(null);
   const [mode, setMode] = useState("invite");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
   const [error, setError] = useState(null);
-  const canManage = (me.capability_grants || []).some((g) => g.capability === "people.manage" && !g.scope_unit_id);
+  const [revokeTarget, setRevokeTarget] = useState(null);
+  const [revokeReason, setRevokeReason] = useState("");
+  const canManage = (me.capability_grants || []).some((grant) => grant.capability === "people.manage" && !grant.scope_unit_id);
+
   useEffect(() => { if (canManage) load(); }, [me.id, canManage]);
+
   async function load() {
     setError(null);
     const results = await Promise.all([
@@ -20,75 +38,285 @@ export default function PeopleAccess({ me, go, onBack }) {
       supabase.from("sub_teams").select("id,name,unit_id").eq("org_id", me.org_id).eq("active", true),
       supabase.rpc("admin_access_invitations"),
     ]);
-    const failure = results.find((r) => r.error);
-    if (failure) { setError(failure.error.message); return; }
-    setSnapshot({ people: results[0].data || [], units: results[1].data || [], memberships: results[2].data || [], lanes: results[3].data || [], invitations: results[4].data || [] });
+    const failure = results.find((result) => result.error);
+    if (failure) {
+      setError(failure.error.message);
+      return;
+    }
+    setSnapshot({
+      people: results[0].data || [],
+      units: results[1].data || [],
+      memberships: results[2].data || [],
+      lanes: results[3].data || [],
+      invitations: results[4].data || [],
+    });
   }
+
   async function action(work, success) {
-    setBusy(true); setError(null); setNotice(null);
-    try { await work(); setNotice(success); await load(); }
-    catch (e) { setError(e.message || "This change could not be recorded."); }
-    finally { setBusy(false); }
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await work();
+      setNotice(success);
+      await load();
+      if (onChanged) await onChanged();
+    } catch (actionError) {
+      setError(actionError.message || "This change could not be recorded.");
+    } finally {
+      setBusy(false);
+    }
   }
+
   async function saveResponsibility(operation = "add", membership = null) {
     const { error: failure } = await supabase.rpc("admin_record_unit_responsibility", {
-      p_profile_id: form.person, p_unit_id: membership?.unit_id || form.unit,
-      p_role: membership?.role || form.role, p_action: operation, p_reason: form.reason,
+      p_profile_id: form.person,
+      p_unit_id: membership?.unit_id || form.unit,
+      p_role: membership?.role || form.role,
+      p_action: operation,
+      p_reason: form.reason,
     });
     if (failure) throw failure;
   }
-  const set = (key) => (event) => setForm((f) => ({ ...f, [key]: event.target.value, ...(key === "unit" ? { lane: "" } : {}) }));
+
+  async function saveLane(member) {
+    const result = await supabase.rpc("admin_set_work_lane_membership", {
+      p_profile_id: form.person,
+      p_sub_team_id: form.lane,
+      p_member: member,
+      p_reason: form.reason,
+    });
+    if (result.error) throw result.error;
+  }
+
+  async function revokeInvitation() {
+    if (!revokeTarget || !revokeReason.trim()) return;
+    const target = revokeTarget;
+    await action(async () => {
+      const result = await supabase.rpc("admin_revoke_staff_invitation", {
+        p_invitation_id: target.id,
+        p_reason: revokeReason.trim(),
+      });
+      if (result.error) throw result.error;
+    }, "Invitation cancelled; operational access cannot activate through it.");
+    setRevokeTarget(null);
+    setRevokeReason("");
+  }
+
+  const set = (key) => (event) => setForm((current) => ({
+    ...current,
+    [key]: event.target.value,
+    ...(key === "unit" ? { lane: "" } : {}),
+  }));
+
+  const selectedPerson = useMemo(
+    () => snapshot?.people.find((person) => person.id === form.person) || null,
+    [snapshot, form.person]
+  );
+  const selectedMemberships = useMemo(
+    () => snapshot?.memberships.filter((membership) => membership.profile_id === form.person) || [],
+    [snapshot, form.person]
+  );
+  const pendingInvitationCount = snapshot?.invitations.filter((invitation) =>
+    !invitation.revoked_at && invitation.activation_state !== "verified"
+  ).length || 0;
+
   if (!canManage) return <ProductNotice tone="attention" title="People administration required">This account does not hold organisation-wide People access.</ProductNotice>;
-  return <section className="body ev2-people-page">
-    <button type="button" className="back" onClick={onBack}>← Control Center</button>
-    <h1 className="h1">People &amp; Access</h1>
-    <p className="screen-note">Invite a new person or manage responsibilities under their existing CEAC account.</p>
+
+  return <section className={"phase5-people-access" + (embedded ? " is-embedded" : "")}>
+    {!embedded && onBack ? <button type="button" className="back" onClick={onBack}>← Control Center</button> : null}
+
+    <header className="phase5-access-header">
+      <div>
+        <span className="eyebrow">People &amp; access</span>
+        <h2 className="h2">{embedded ? "Access administration" : "People & Access"}</h2>
+        <p className="screen-note">Invite Staff, manage unit and team responsibilities, and review account activation without creating duplicate identities.</p>
+      </div>
+      <div className="phase5-access-header-actions">
+        <Button variant="quiet" size="compact" onClick={() => go?.("lifecycle")}>Lifecycle &amp; offboarding</Button>
+        <Button variant="quiet" size="compact" onClick={() => go?.("units")}>Units</Button>
+      </div>
+    </header>
+
     {error && <ProductNotice tone="error" title="People & Access">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
-    {!snapshot ? error ? <button className="btn" onClick={load}>Try again</button> : <LoadingState label="Loading People & Access…" /> : <>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button className="btn" onClick={() => setMode("invite")}>Add new person</button>
-        <button className="btn btn-ghost" onClick={() => setMode("responsibility")}>Add responsibility</button>
-        <button className="btn btn-ghost" onClick={() => go("people")}>Employment / Manager / access status</button>
-        <button className="btn btn-ghost" onClick={() => go("units")}>Unit Head assignment</button>
-        <button className="btn btn-ghost" onClick={() => go("lifecycle")}>Onboarding / offboarding</button>
-      </div>
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2 className="h2">{mode === "invite" ? "Add new person" : "Existing person’s responsibilities"}</h2>
-        {mode === "invite" ? <>
-          <FieldGroup label="Full name"><input className="field" aria-label="Full name" value={form.name} onChange={set("name")} /></FieldGroup>
-          <FieldGroup label="Email"><input className="field" type="email" aria-label="Invitation email" value={form.email} onChange={set("email")} /></FieldGroup>
-          <p className="screen-note">New accounts start as Staff. They verify their email and create their own password. Existing people receive additional responsibilities without another invitation.</p>
-        </> : <FieldGroup label="Existing person"><select className="field" aria-label="Existing person" value={form.person} onChange={set("person")}>
-          <option value="">Choose a person</option>{snapshot.people.filter((p) => p.active).map((p) => <option key={p.id} value={p.id}>{p.full_name} · {p.email}</option>)}
-        </select></FieldGroup>}
-        <FieldGroup label="Unit"><select className="field" aria-label="Responsibility unit" value={form.unit} onChange={set("unit")}>
-          <option value="">Choose a unit</option>{snapshot.units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-        </select></FieldGroup>
-        {mode === "invite" ? <button className="btn" disabled={busy || !form.name.trim() || !form.email.trim() || !form.unit} onClick={() => action(() => inviteByEmail({ email: form.email, fullName: form.name, unitId: form.unit }), "Invitation sent. Email verification and personal password setup are required.")}>{busy ? "Sending…" : "Send Staff invitation"}</button> : <>
-          <FieldGroup label="Responsibility"><select className="field" aria-label="Responsibility role" value={form.role} onChange={set("role")}><option value="staff">Staff</option><option value="sub_team_lead">Team lead</option><option value="manager">Unit Head</option></select></FieldGroup>
-          <FieldGroup label="Reason"><textarea className="field" aria-label="Responsibility reason" value={form.reason} onChange={set("reason")} /></FieldGroup>
-          <button className="btn" disabled={busy || !form.person || !form.unit || !form.reason.trim()} onClick={() => action(() => saveResponsibility(), "Responsibility recorded. Other unit memberships are preserved.")}>Record responsibility</button>
-          <p className="screen-note">Additional unit membership does not transfer the primary unit or grant organisation capabilities.</p>
-          {snapshot.memberships.filter((m) => m.profile_id === form.person).map((m) => <div className="row" key={m.id}>
-            <strong>{snapshot.units.find((u) => u.id === m.unit_id)?.name || "Unit"} · {m.role.replaceAll("_", " ")}</strong>
-            <button className="btn btn-ghost btn-sm" disabled={busy || !form.reason.trim()} onClick={() => action(() => saveResponsibility("remove", m), "Membership ended with its audit history preserved.")}>End membership</button>
-          </div>)}
-          <FieldGroup label="Team / sub-team"><select className="field" aria-label="Work lane" value={form.lane} onChange={set("lane")}><option value="">Choose a work lane</option>{snapshot.lanes.filter((l) => l.unit_id === form.unit).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select></FieldGroup>
-          {[true, false].map((member) => <button key={String(member)} className="btn btn-ghost" disabled={busy || !form.person || !form.lane || !form.reason.trim()} onClick={() => action(async () => { const r = await supabase.rpc("admin_set_work_lane_membership", { p_profile_id: form.person, p_sub_team_id: form.lane, p_member: member, p_reason: form.reason }); if (r.error) throw r.error; }, "Work-lane membership recorded.")}>{member ? "Add to work lane" : "Remove from work lane"}</button>)}
-        </>}
-      </div>
-      <h2 className="h2" style={{ marginTop: 24 }}>Invitations</h2>
-      <p className="screen-note">Email verification and invitation status are recorded separately from employment. A verified account can use password recovery.</p>
-      {!snapshot.invitations.length && <p>No invitations recorded.</p>}
-      {snapshot.invitations.map((i) => <div className="row" key={i.id}>
-        <strong>{i.full_name}</strong><div className="row-m">{i.email} · {snapshot.units.find((u) => u.id === i.unit_id)?.name || "Unit"} · {i.activation_state.replaceAll("_", " ")}</div>
-        <time dateTime={i.invited_at}>{new Date(i.invited_at).toLocaleString("en-GB")}</time>
-        {!i.revoked_at && i.activation_state !== "verified" && <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => action(() => resendStaffInvitation(i.id), "Activation email requested. Check the newest email link.")}>Resend invitation</button>
-          <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => { const reason = window.prompt("Why is this invitation being cancelled?"); if (reason?.trim()) action(async () => { const r = await supabase.rpc("admin_revoke_staff_invitation", { p_invitation_id: i.id, p_reason: reason }); if (r.error) throw r.error; }, "Invitation cancelled; operational access cannot activate through it."); }}>Cancel invitation</button>
+
+    {!snapshot ? error
+      ? <Button onClick={load}>Try again</Button>
+      : <LoadingState label="Loading People & Access…" />
+      : <>
+        <div className="phase5-access-tabs" role="tablist" aria-label="People and access actions">
+          {ACCESS_MODES.map(([key, label]) => <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={mode === key}
+            className={mode === key ? "is-selected" : ""}
+            onClick={() => setMode(key)}
+          >
+            <span>{label}</span>
+            {key === "invitations" && pendingInvitationCount ? <b>{pendingInvitationCount}</b> : null}
+          </button>)}
+        </div>
+
+        {mode === "invite" && <DataPanel
+          eyebrow="New account"
+          title="Invite a Staff member"
+          supporting="New accounts always begin as Staff. Authority is assigned separately after activation; job title never grants application authority."
+          className="phase5-access-panel"
+        >
+          <div className="phase5-access-form-grid">
+            <FieldGroup label="Full name"><input className="field" aria-label="Full name" value={form.name} onChange={set("name")} /></FieldGroup>
+            <FieldGroup label="Work email"><input className="field" type="email" autoCapitalize="none" aria-label="Invitation email" value={form.email} onChange={set("email")} /></FieldGroup>
+            <FieldGroup label="Primary unit">
+              <select className="field" aria-label="Invitation unit" value={form.unit} onChange={set("unit")}>
+                <option value="">Choose a unit</option>
+                {snapshot.units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+              </select>
+            </FieldGroup>
+          </div>
+          <div className="phase5-access-callout">
+            <strong>Existing identity?</strong>
+            <span>Do not invite again. Use Responsibilities below so the existing CEAC identity keeps one account and gains the authorised organisational responsibility.</span>
+          </div>
+          <div className="phase5-access-actions">
+            <Button
+              busy={busy}
+              disabled={busy || !form.name.trim() || !form.email.trim() || !form.unit}
+              onClick={() => action(
+                () => inviteByEmail({ email: form.email, fullName: form.name, unitId: form.unit }),
+                "Invitation sent. Email verification and personal password setup are required."
+              )}
+            >Send Staff invitation</Button>
+          </div>
+        </DataPanel>}
+
+        {mode === "responsibility" && <div className="phase5-access-responsibility-grid">
+          <DataPanel
+            eyebrow="Existing identity"
+            title="Organisational responsibility"
+            supporting="Add or end a unit responsibility without replacing the person’s identity or silently removing other memberships."
+            className="phase5-access-panel"
+          >
+            <div className="phase5-access-form-grid">
+              <FieldGroup label="Person">
+                <select className="field" aria-label="Existing person" value={form.person} onChange={set("person")}>
+                  <option value="">Choose a person</option>
+                  {snapshot.people.filter((person) => person.active).map((person) => <option key={person.id} value={person.id}>{person.full_name} · {person.email}</option>)}
+                </select>
+              </FieldGroup>
+              <FieldGroup label="Unit">
+                <select className="field" aria-label="Responsibility unit" value={form.unit} onChange={set("unit")}>
+                  <option value="">Choose a unit</option>
+                  {snapshot.units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+                </select>
+              </FieldGroup>
+              <FieldGroup label="Responsibility">
+                <select className="field" aria-label="Responsibility role" value={form.role} onChange={set("role")}>
+                  <option value="staff">Staff</option>
+                  <option value="sub_team_lead">Team lead</option>
+                  <option value="manager">Unit Head</option>
+                </select>
+              </FieldGroup>
+              <FieldGroup label="Reason">
+                <textarea className="field" rows="3" aria-label="Responsibility reason" value={form.reason} onChange={set("reason")} placeholder="Why this responsibility is being recorded" />
+              </FieldGroup>
+            </div>
+            <div className="phase5-access-actions">
+              <Button
+                busy={busy}
+                disabled={busy || !form.person || !form.unit || !form.reason.trim()}
+                onClick={() => action(() => saveResponsibility(), "Responsibility recorded. Other unit memberships are preserved.")}
+              >Record responsibility</Button>
+              {selectedPerson && onOpenPerson ? <Button variant="secondary" onClick={() => onOpenPerson(selectedPerson.id)}>Open employee record</Button> : null}
+            </div>
+            <p className="screen-note">Use the employee record for primary-unit transfer, Manager/reporting-line changes and employment status. Those changes preserve employment history.</p>
+          </DataPanel>
+
+          <DataPanel
+            eyebrow="Current placement"
+            title={selectedPerson ? selectedPerson.full_name : "Choose a person"}
+            supporting={selectedPerson ? selectedPerson.email : "Current unit responsibilities and team placement will appear here."}
+            className="phase5-access-panel phase5-access-current"
+            action={selectedPerson ? <StatusBadge tone={selectedPerson.active ? "success" : "neutral"}>{selectedPerson.active ? "Active" : "Inactive"}</StatusBadge> : null}
+          >
+            {!selectedPerson ? <div className="phase5-access-empty">Select an active person to review current responsibilities.</div> : <>
+              <div className="phase5-access-memberships">
+                {selectedMemberships.map((membership) => {
+                  const unit = snapshot.units.find((entry) => entry.id === membership.unit_id);
+                  return <div className="phase5-access-membership" key={membership.id}>
+                    <div>
+                      <strong>{unit?.name || "Unit"}</strong>
+                      <span>{membership.role.replaceAll("_", " ")}</span>
+                    </div>
+                    <Button
+                      variant="quiet"
+                      size="compact"
+                      disabled={busy || !form.reason.trim()}
+                      onClick={() => action(() => saveResponsibility("remove", membership), "Membership ended with its audit history preserved.")}
+                    >End membership</Button>
+                  </div>;
+                })}
+                {!selectedMemberships.length ? <div className="phase5-access-empty">No active unit responsibility is returned for this person.</div> : null}
+              </div>
+
+              <div className="phase5-access-lane">
+                <FieldGroup label="Team / sub-team">
+                  <select className="field" aria-label="Work lane" value={form.lane} onChange={set("lane")}>
+                    <option value="">Choose a team / sub-team</option>
+                    {snapshot.lanes.filter((lane) => lane.unit_id === form.unit).map((lane) => <option key={lane.id} value={lane.id}>{lane.name}</option>)}
+                  </select>
+                </FieldGroup>
+                <div className="phase5-access-actions">
+                  <Button variant="secondary" size="compact" disabled={busy || !form.person || !form.lane || !form.reason.trim()} onClick={() => action(() => saveLane(true), "Team / sub-team membership recorded.")}>Add to team</Button>
+                  <Button variant="quiet" size="compact" disabled={busy || !form.person || !form.lane || !form.reason.trim()} onClick={() => action(() => saveLane(false), "Team / sub-team membership ended.")}>Remove from team</Button>
+                </div>
+              </div>
+            </>}
+          </DataPanel>
         </div>}
-      </div>)}
-    </>}
+
+        {mode === "invitations" && <DataPanel
+          eyebrow="Account activation"
+          title="Invitations"
+          supporting="Invitation status is separate from employment. Resending requests a new activation email; cancelling prevents activation through that invitation."
+          className="phase5-access-panel"
+          action={<StatusBadge tone={pendingInvitationCount ? "action" : "success"}>{pendingInvitationCount ? String(pendingInvitationCount) + " pending" : "No pending"}</StatusBadge>}
+        >
+          {!snapshot.invitations.length ? <div className="phase5-access-empty">No invitations are recorded.</div> : <div className="phase5-invitation-list">
+            {snapshot.invitations.map((invitation) => {
+              const unit = snapshot.units.find((entry) => entry.id === invitation.unit_id);
+              const cancellable = !invitation.revoked_at && invitation.activation_state !== "verified";
+              return <article className="phase5-invitation-row" key={invitation.id}>
+                <div className="phase5-invitation-main">
+                  <strong>{invitation.full_name}</strong>
+                  <span>{invitation.email}</span>
+                  <small>{unit?.name || "Unit not returned"} · Invited {new Date(invitation.invited_at).toLocaleString("en-GB")}</small>
+                </div>
+                <StatusBadge tone={invitationTone(invitation.activation_state, invitation.revoked_at)} icon={false}>
+                  {invitation.revoked_at ? "Cancelled" : invitation.activation_state.replaceAll("_", " ")}
+                </StatusBadge>
+                {cancellable ? <div className="phase5-invitation-actions">
+                  <Button variant="quiet" size="compact" disabled={busy} onClick={() => action(() => resendStaffInvitation(invitation.id), "Activation email requested. Check the newest email link.")}>Resend</Button>
+                  <Button variant="quiet" size="compact" disabled={busy} onClick={() => { setRevokeTarget(invitation); setRevokeReason(""); }}>Cancel</Button>
+                </div> : null}
+              </article>;
+            })}
+          </div>}
+        </DataPanel>}
+
+        {revokeTarget ? <div className="phase5-access-revoke" role="dialog" aria-modal="true" aria-labelledby="phase5-revoke-title">
+          <div className="phase5-access-revoke-card">
+            <span className="eyebrow">Invitation control</span>
+            <h3 className="h2" id="phase5-revoke-title">Cancel invitation</h3>
+            <p className="screen-note">Cancel the invitation for {revokeTarget.full_name}. This does not delete an existing employee record or active identity.</p>
+            <FieldGroup label="Reason"><textarea className="field" rows="3" autoFocus value={revokeReason} onChange={(event) => setRevokeReason(event.target.value)} /></FieldGroup>
+            <div className="phase5-access-actions">
+              <Button variant="secondary" onClick={() => { setRevokeTarget(null); setRevokeReason(""); }} disabled={busy}>Keep invitation</Button>
+              <Button onClick={revokeInvitation} busy={busy} disabled={!revokeReason.trim()}>Cancel invitation</Button>
+            </div>
+          </div>
+        </div> : null}
+      </>}
   </section>;
 }

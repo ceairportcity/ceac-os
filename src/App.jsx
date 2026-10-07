@@ -370,6 +370,7 @@ export default function App() {
     if (tab === "people" && canManagePeople) return <People
       me={me}
       openItem={openItem}
+      go={go}
       initialEmployeeId={peopleFocusId}
       onInitialHandled={() => setPeopleFocusId(null)}
     />;

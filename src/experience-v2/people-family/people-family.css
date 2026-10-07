@@ -1983,3 +1983,329 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Phase 5 — Administration People & Access workspace */
+.phase5-people-access {
+  display: grid;
+  gap: var(--ev2-space-4);
+  min-width: 0;
+}
+
+.phase5-people-access.is-embedded {
+  margin-top: var(--ev2-space-1);
+}
+
+.phase5-access-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ev2-space-4);
+  padding: var(--ev2-space-4) 0 var(--ev2-space-2);
+  border-bottom: 1px solid var(--ev2-line-subtle);
+}
+
+.phase5-access-header > div:first-child {
+  min-width: 0;
+  max-width: 46rem;
+}
+
+.phase5-access-header .h2 {
+  margin: var(--ev2-space-1) 0 var(--ev2-space-1);
+}
+
+.phase5-access-header .screen-note {
+  margin: 0;
+}
+
+.phase5-access-header-actions,
+.phase5-access-actions,
+.phase5-invitation-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ev2-space-2);
+  flex-wrap: wrap;
+}
+
+.phase5-access-tabs {
+  display: flex;
+  gap: var(--ev2-space-1);
+  padding: 4px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--ev2-line-subtle);
+  border-radius: var(--ev2-radius-control);
+  background: var(--ev2-surface-soft);
+}
+
+.phase5-access-tabs button {
+  min-height: var(--ev2-control-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ev2-space-2);
+  padding: 0 var(--ev2-space-3);
+  border: 0;
+  border-radius: var(--ev2-radius-sm);
+  background: transparent;
+  color: var(--ev2-text-secondary);
+  font: inherit;
+  font-size: var(--ev2-type-supporting-mobile);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.phase5-access-tabs button.is-selected {
+  background: var(--ev2-surface-primary);
+  color: var(--ev2-text-primary);
+  box-shadow: var(--ev2-shadow-1);
+}
+
+.phase5-access-tabs button:focus-visible {
+  outline: 2px solid var(--ev2-action-blue);
+  outline-offset: 2px;
+}
+
+.phase5-access-tabs b {
+  min-width: 1.35rem;
+  min-height: 1.35rem;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--ev2-radius-pill);
+  background: var(--ev2-action-blue-soft);
+  color: var(--ev2-action-blue);
+  font-size: var(--ev2-type-label-mobile);
+}
+
+.phase5-access-panel {
+  min-width: 0;
+}
+
+.phase5-access-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ev2-space-3) var(--ev2-space-4);
+}
+
+.phase5-access-form-grid .field-group {
+  min-width: 0;
+  margin: 0;
+}
+
+.phase5-access-form-grid .field-group:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.phase5-access-callout {
+  display: grid;
+  gap: var(--ev2-space-1);
+  margin-top: var(--ev2-space-4);
+  padding: var(--ev2-space-3);
+  border-left: 3px solid var(--ev2-identity-teal);
+  background: var(--ev2-identity-teal-soft);
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting-mobile);
+}
+
+.phase5-access-callout strong {
+  color: var(--ev2-text-primary);
+}
+
+.phase5-access-actions {
+  margin-top: var(--ev2-space-4);
+}
+
+.phase5-access-responsibility-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, .85fr);
+  gap: var(--ev2-space-4);
+  align-items: start;
+}
+
+.phase5-access-current {
+  position: sticky;
+  top: var(--ev2-space-4);
+}
+
+.phase5-access-memberships {
+  display: grid;
+  border-top: 1px solid var(--ev2-line-subtle);
+}
+
+.phase5-access-membership {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ev2-space-3);
+  align-items: center;
+  min-height: 4rem;
+  padding: var(--ev2-space-3) 0;
+  border-bottom: 1px solid var(--ev2-line-subtle);
+}
+
+.phase5-access-membership > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phase5-access-membership strong {
+  color: var(--ev2-text-primary);
+  font-size: var(--ev2-type-row-mobile);
+}
+
+.phase5-access-membership span {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting-mobile);
+  text-transform: capitalize;
+}
+
+.phase5-access-lane {
+  margin-top: var(--ev2-space-4);
+  padding-top: var(--ev2-space-4);
+  border-top: 1px solid var(--ev2-line-subtle);
+}
+
+.phase5-access-empty {
+  padding: var(--ev2-space-4) 0;
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-body-mobile);
+}
+
+.phase5-invitation-list {
+  display: grid;
+  border-top: 1px solid var(--ev2-line-subtle);
+}
+
+.phase5-invitation-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--ev2-space-3);
+  align-items: center;
+  padding: var(--ev2-space-3) 0;
+  border-bottom: 1px solid var(--ev2-line-subtle);
+}
+
+.phase5-invitation-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phase5-invitation-main strong,
+.phase5-invitation-main span,
+.phase5-invitation-main small {
+  overflow-wrap: anywhere;
+}
+
+.phase5-invitation-main strong {
+  color: var(--ev2-text-primary);
+  font-size: var(--ev2-type-row-mobile);
+}
+
+.phase5-invitation-main span,
+.phase5-invitation-main small {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting-mobile);
+}
+
+.phase5-access-revoke {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: var(--ev2-space-4);
+  background: rgba(15, 23, 35, .44);
+}
+
+.phase5-access-revoke-card {
+  width: min(32rem, 100%);
+  max-height: calc(100vh - 2 * var(--ev2-space-4));
+  overflow: auto;
+  padding: var(--ev2-space-5);
+  border: 1px solid var(--ev2-line-subtle);
+  border-radius: var(--ev2-radius-panel);
+  background: var(--ev2-surface-primary);
+  box-shadow: var(--ev2-shadow-3);
+}
+
+@media (min-width: 900px) {
+  .phase5-access-tabs button,
+  .phase5-access-callout,
+  .phase5-access-membership span,
+  .phase5-invitation-main span,
+  .phase5-invitation-main small {
+    font-size: var(--ev2-type-supporting-desktop);
+  }
+
+  .phase5-access-membership strong,
+  .phase5-invitation-main strong {
+    font-size: var(--ev2-type-row-desktop);
+  }
+}
+
+@media (max-width: 899px) {
+  .phase5-access-responsibility-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phase5-access-current {
+    position: static;
+  }
+}
+
+@media (max-width: 599px) {
+  .phase5-access-header {
+    display: grid;
+  }
+
+  .phase5-access-header-actions {
+    width: 100%;
+  }
+
+  .phase5-access-header-actions > * {
+    flex: 1 1 auto;
+  }
+
+  .phase5-access-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .phase5-access-tabs button {
+    min-width: 0;
+    padding-inline: var(--ev2-space-2);
+  }
+
+  .phase5-access-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phase5-access-form-grid .field-group:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .phase5-invitation-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .phase5-invitation-actions {
+    grid-column: 1 / -1;
+  }
+
+  .phase5-invitation-actions > * {
+    flex: 1 1 auto;
+  }
+
+  .phase5-access-revoke {
+    align-items: end;
+    padding: 0;
+  }
+
+  .phase5-access-revoke-card {
+    width: 100%;
+    max-height: min(82vh, 42rem);
+    border-radius: var(--ev2-radius-panel) var(--ev2-radius-panel) 0 0;
+  }
+}

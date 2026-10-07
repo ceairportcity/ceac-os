@@ -13,6 +13,7 @@ import {
   uploadOperationalFile,
 } from "../lib/operationalFiles";
 import { Button, ComposerDrawer } from "../experience-v2/components";
+import PeopleAccess from "../components/PeopleAccess";
 import {
   PeopleAdminPersonRow,
   PeopleBackButton,
@@ -26,7 +27,7 @@ import {
   PeopleWorkspaceSection,
 } from "../experience-v2/people-family/PeopleFamilyV2";
 
-const PEOPLE_VIEWS = [["directory","Directory"],["organisation","Organisation"],["attention","Needs attention"]];
+const PEOPLE_VIEWS = [["directory","Directory"],["access","Access"],["organisation","Organisation"],["attention","Needs attention"]];
 const PERSON_TABS = [["overview","Overview"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["documents","Documents"],["history","History"]];
 const FILTERS = [["all","Everyone"],["active","Active"],["on_leave","On leave"],["quiet","No submissions in 14 days"],["no_unit","No unit"]];
 const EMPLOYMENT_CHANGES = [
@@ -67,7 +68,7 @@ function amountToMinor(value) {
   return Number.isFinite(number) ? Math.round(number * 100) : 0;
 }
 
-export default function People({ me, openItem, initialEmployeeId = null, onInitialHandled }) {
+export default function People({ me, openItem, go, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
@@ -101,8 +102,8 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     onInitialHandled?.();
   }, [initialEmployeeId, rows, person]);
 
-  async function load() {
-    setLoading(true);
+  async function load({ silent = false } = {}) {
+    if (!silent) setLoading(true);
     setError(null);
     const [rosterResult, peopleResult, leaveResult, unitsResult] = await Promise.all([
       supabase.rpc("admin_employee_roster_summary"),
@@ -954,7 +955,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     <PeoplePageHeader
       eyebrow="Employee records"
       title="People"
-      description="Authorised employee records for identity, employment, work, leave and factual activity context. Protected HR remains behind a separate security boundary."
+      description="One administrative workspace for employee records, account access, organisational placement, employment, work and leave context. Protected HR remains behind its separate security boundary."
       count={rows.length}
       countLabel={rows.length === 1 ? "person" : "people"}
     />
@@ -973,6 +974,17 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         onClick={() => setViewMode(key)}
       >{label}</button>)}
     </div>
+
+    {viewMode === "access" && <PeopleAccess
+      me={me}
+      go={go}
+      embedded
+      onChanged={() => load({ silent: true })}
+      onOpenPerson={(profileId) => {
+        const match = rows.find((entry) => entry.profile_id === profileId);
+        if (match) openPerson(match);
+      }}
+    />}
 
     {viewMode === "directory" && <div className="ev2p-admin-control-band">
     <div className="ev2p-admin-toolbar">
