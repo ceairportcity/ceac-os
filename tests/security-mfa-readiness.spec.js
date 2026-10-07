@@ -47,6 +47,12 @@ test("S1 browser gate distinguishes enrolled challenge, enforced missing-factor 
     me: { is_admin: true, is_exec: false, capability_grants: [] },
     privilegedMfaEnforced: true,
   })).toBe("allow");
+
+  expect(resolveMfaGate({
+    assurance: { currentLevel: "aal2", nextLevel: "aal1" },
+    me: { is_admin: true, is_exec: false, capability_grants: [] },
+    privilegedMfaEnforced: true,
+  })).toBe("blocked");
 });
 
 test("S1 two-step verification implementation keeps enrollment, challenge and factor removal inside Supabase Auth", async () => {
