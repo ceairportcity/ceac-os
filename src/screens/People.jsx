@@ -83,6 +83,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   const [employmentEditor, setEmploymentEditor] = useState(false);
   const [employmentForm, setEmploymentForm] = useState(null);
   const [savingEmployment, setSavingEmployment] = useState(false);
+  const [volunteerRecommendations, setVolunteerRecommendations] = useState([]);
+  const [volunteerDecisionBusy, setVolunteerDecisionBusy] = useState(false);
   const [protectedHr, setProtectedHr] = useState(null);
   const [protectedHrLoading, setProtectedHrLoading] = useState(false);
   const [protectedEditor, setProtectedEditor] = useState(null);
@@ -236,10 +238,11 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     let linkedResults;
     let protectedResponse;
     let invitationResponse = { data: [], error: null };
+    let recommendationResponse = { data: [], error: null };
     let photoFiles = [];
     let documentFiles = [];
     try {
-      [linkedResults, protectedResponse, photoFiles, documentFiles, invitationResponse] = await Promise.all([
+      [linkedResults, protectedResponse, photoFiles, documentFiles, invitationResponse, recommendationResponse] = await Promise.all([
         linkedRequests,
         canManageProtectedHr
           ? supabase.rpc("hr_employee_protected_summary", { p_employee_id: summary.id })
@@ -247,6 +250,12 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         listOperationalFiles("employee_photo", summary.id),
         listOperationalFiles("employee_document", summary.id),
         supabase.rpc("admin_access_invitations"),
+        summary.profile_id
+          ? supabase.from("volunteer_change_recommendations")
+              .select("id,recommendation_kind,requested_summary,reason,status,requested_at,requested_by,decided_at,decision_note,profiles!volunteer_change_recommendations_requested_by_fkey(full_name)")
+              .eq("profile_id", summary.profile_id)
+              .order("requested_at", { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
       ]);
     } catch (fileError) {
       setProtectedHrLoading(false);
@@ -260,12 +269,13 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     setProtectedHrLoading(false);
     setDetailLoading(false);
 
-    if (detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error) {
-      setError(humanError(detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error, "That employee record could not load."));
+    if (detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error || recommendationResponse.error) {
+      setError(humanError(detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error || recommendationResponse.error, "That employee record could not load."));
       return;
     }
 
     setProtectedHr(protectedResult.data || null);
+    setVolunteerRecommendations(Array.isArray(recommendationResponse.data) ? recommendationResponse.data : []);
     setEmployeeFiles({ photos: photoFiles, documents: documentFiles });
 
     let photoUrl = summary.photo_url || null;
@@ -415,6 +425,27 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       correctionOf: "",
     });
     setEmploymentEditor(true);
+  }
+
+  async function decideVolunteerRecommendation(row, status) {
+    if (!row?.id || !["accepted","declined"].includes(status)) return;
+    setVolunteerDecisionBusy(true);
+    setError(null);
+    const note = status === "accepted"
+      ? "Recommendation accepted for formal Administration follow-up. No employment or compensation value was changed automatically."
+      : "Recommendation declined by Administration.";
+    const { error: decisionError } = await supabase.from("volunteer_change_recommendations")
+      .update({ status, decided_by: me.id, decided_at: new Date().toISOString(), decision_note: note })
+      .eq("id", row.id)
+      .eq("status", "pending");
+    setVolunteerDecisionBusy(false);
+    if (decisionError) {
+      setError(humanError(decisionError, "The volunteer recommendation could not be decided."));
+      return;
+    }
+    setVolunteerRecommendations((rows) => rows.map((entry) => entry.id === row.id
+      ? { ...entry, status, decided_at: new Date().toISOString(), decision_note: note }
+      : entry));
   }
 
   async function saveEmployment() {
@@ -701,6 +732,30 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           {employmentCurrent?.exited_on && <PeopleFactRow icon="calendar" title="Exit date" subtitle={dateOnly(employmentCurrent.exited_on)} />}
         </div>
       </PeopleWorkspaceSection>
+
+      {(employmentCurrent?.employment_type === "volunteer" || person.employment_type === "volunteer") && <PeopleWorkspaceSection
+        title="Manager recommendations"
+        description="Managers may recommend a formal volunteer status, engagement or compensation change. Acceptance here does not perform the formal change; Administration must use the employment or protected-HR record."
+        meta={`${volunteerRecommendations.filter((row) => row.status === "pending").length} pending`}
+      >
+        {volunteerRecommendations.length ? <div className="phase6-admin-volunteer-recommendations">
+          {volunteerRecommendations.map((row) => <article key={row.id}>
+            <div>
+              <strong>{row.requested_summary}</strong>
+              <span>{String(row.recommendation_kind || "").replaceAll("_"," ")} · {row.profiles?.full_name || "Manager"} · {dateOnly(row.requested_at)}</span>
+              <p>{row.reason}</p>
+              {row.decision_note ? <small>{row.decision_note}</small> : null}
+            </div>
+            <div className="phase6-admin-volunteer-decision">
+              <span className={`phase6-recommendation-status is-${row.status}`}>{row.status}</span>
+              {row.status === "pending" && <>
+                <Button variant="secondary" size="compact" disabled={volunteerDecisionBusy} onClick={() => decideVolunteerRecommendation(row,"declined")}>Decline</Button>
+                <Button size="compact" disabled={volunteerDecisionBusy} onClick={() => decideVolunteerRecommendation(row,"accepted")}>Accept for formal follow-up</Button>
+              </>}
+            </div>
+          </article>)}
+        </div> : <PeopleEmpty title="No Manager recommendations" description="Formal volunteer changes remain with Administration. Manager recommendations will appear here when recorded." />}
+      </PeopleWorkspaceSection>}
       </>}
 
       {personTab === "history" && <>
@@ -922,7 +977,15 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           </select>
         </FieldGroup>}
         <FieldGroup label="Effective date"><input className="field" aria-label="Effective date" type="date" value={employmentForm.effectiveOn} onChange={(event) => setEmploymentForm({ ...employmentForm, effectiveOn: event.target.value })} /></FieldGroup>
-        <FieldGroup label="Employment type"><input className="field" aria-label="Employment type" value={employmentForm.employmentType} onChange={(event) => setEmploymentForm({ ...employmentForm, employmentType: event.target.value })} placeholder="Permanent, contract, volunteer…" /></FieldGroup>
+        <FieldGroup label="Employment type">
+          <select className="field" aria-label="Employment type" value={employmentForm.employmentType} onChange={(event) => setEmploymentForm({ ...employmentForm, employmentType: event.target.value, role: event.target.value === "volunteer" && employmentForm.role === "manager" ? "staff" : employmentForm.role, workingPattern: event.target.value === "volunteer" ? "no_attendance" : employmentForm.workingPattern })}>
+            {!["not_recorded","permanent","fixed_term","volunteer"].includes(employmentForm.employmentType) && <option value={employmentForm.employmentType}>{employmentForm.employmentType}</option>}
+            <option value="not_recorded">Not recorded</option>
+            <option value="permanent">Permanent employee</option>
+            <option value="fixed_term">Fixed-term employee</option>
+            <option value="volunteer">Volunteer</option>
+          </select>
+        </FieldGroup>
         <FieldGroup label="Job title"><input className="field" aria-label="Job title" value={employmentForm.jobTitle} onChange={(event) => setEmploymentForm({ ...employmentForm, jobTitle: event.target.value })} /></FieldGroup>
         <FieldGroup label="Primary unit">
           <select className="field" aria-label="Primary unit" value={employmentForm.unitId} onChange={(event) => setEmploymentForm({ ...employmentForm, unitId: event.target.value, managerId: "" })}>
@@ -934,7 +997,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           <select className="field" aria-label="Role" value={employmentForm.role} onChange={(event) => setEmploymentForm({ ...employmentForm, role: event.target.value })}>
             <option value="staff">Staff</option>
             <option value="sub_team_lead">Team lead</option>
-            <option value="manager">Unit head</option>
+            {employmentForm.employmentType !== "volunteer" && <option value="manager">Unit head</option>}
           </select>
         </FieldGroup>
         <FieldGroup label="Manager">
@@ -947,9 +1010,16 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         <FieldGroup label="Working pattern">
           <select className="field" aria-label="Working pattern" value={employmentForm.workingPattern} onChange={(event) => setEmploymentForm({ ...employmentForm, workingPattern: event.target.value })}>
             <option value="not_recorded">Not recorded</option>
-            <option value="full_time">Full time</option>
-            <option value="part_time">Part time</option>
-            <option value="flexible">Flexible</option>
+            {employmentForm.employmentType === "volunteer" ? <>
+              <option value="no_attendance">No attendance tracking</option>
+              <option value="event_based">Event-based</option>
+              <option value="specific_days">Specific days</option>
+              <option value="custom">Custom schedule</option>
+            </> : <>
+              <option value="full_time">Full time</option>
+              <option value="part_time">Part time</option>
+              <option value="flexible">Flexible</option>
+            </>}
           </select>
         </FieldGroup>
         <FieldGroup label="Employment status">
