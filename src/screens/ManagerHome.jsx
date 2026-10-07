@@ -89,11 +89,7 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
         supabase.from("unit_memberships")
           .select("profile_id, profiles!unit_memberships_profile_id_fkey(id, full_name)")
           .eq("unit_id", me.unit_id),
-        supabase.from("submissions")
-          .select("id, note, submitted_at, profiles!submissions_profile_id_fkey(full_name), work_items!inner(id, ref, title, kind, purpose, expected_outcome, unit_id, status, due_at), submission_files(url)")
-          .eq("work_items.unit_id", me.unit_id).eq("work_items.status", "in_review")
-          .neq("profile_id", me.id)
-          .order("submitted_at", { ascending: true }),
+        supabase.rpc("my_work_attention_queue"),
         supabase.from("leave_requests")
           .select("id, profile_id, kind, start_date, end_date, days, status, reason, requested_at, profiles!leave_requests_profile_id_fkey(full_name)")
           .eq("status", "pending").order("requested_at", { ascending: true }),
@@ -153,18 +149,25 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
 
       const members = requireResult(memberResult, "Team").filter((member) => member.profile_id !== me.id);
       const memberIds = new Set(members.map((member) => member.profile_id));
-      const submissionRows = requireResult(submissionResult, "Submissions");
-      const latestSubmissionByWork = new Map();
-      submissionRows.forEach((submission) => {
-        const workId = submission.work_items?.id;
-        if (!workId) return;
-        const existing = latestSubmissionByWork.get(workId);
-        if (!existing || new Date(submission.submitted_at) > new Date(existing.submitted_at)) {
-          latestSubmissionByWork.set(workId, submission);
-        }
-      });
-      setSubmissions([...latestSubmissionByWork.values()]
-        .sort((left, right) => new Date(left.submitted_at) - new Date(right.submitted_at)));
+      const submissionRows = requireResult(submissionResult, "Submissions")
+        .filter((row) => row.action_kind === "review_required")
+        .map((row) => ({
+          id: row.submission_id,
+          submitted_at: row.action_at,
+          note: null,
+          submission_files: [],
+          profiles: { full_name: row.assignee_name },
+          work_items: {
+            id: row.work_item_id,
+            ref: row.work_ref,
+            title: row.work_title,
+            kind: row.work_kind,
+            status: row.work_status,
+            purpose: null,
+            expected_outcome: null,
+          },
+        }));
+      setSubmissions(submissionRows.sort((left, right) => new Date(left.submitted_at) - new Date(right.submitted_at)));
       setFollowupAlerts(requireResult(followupAlertResult, "Follow-ups"));
       setUpcomingMeetings(requireResult(meetingResult, "Upcoming meetings"));
       setLeave(requireResult(leaveResult, "Leave requests").filter((request) => memberIds.has(request.profile_id)));

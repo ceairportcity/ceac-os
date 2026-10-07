@@ -35,25 +35,14 @@ export default function AdminWork({ me, openItem, goAssign }) {
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assigned_by", me.id).neq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).order("last_movement_at", { ascending: false }).limit(250),
-        supabase.from("submissions")
-          .select("id,submitted_at,note,profiles!submissions_profile_id_fkey(full_name),work_items!inner(id,ref,title,status,due_at,org_id,units(name))")
-          .eq("work_items.org_id", me.org_id)
-          .eq("work_items.status", "in_review")
-          .order("submitted_at", { ascending: false })
-          .limit(120),
+        supabase.rpc("my_work_attention_queue"),
       ]);
       const err = [mineR.error, givenR.error, orgR.error, reviewR.error].find(Boolean);
       if (err) throw err;
       setMine(mineR.data || []);
       setGiven(givenR.data || []);
       setOrg(orgR.data || []);
-      const latest = new Map();
-      (reviewR.data || []).forEach((row) => {
-        const id = row.work_items?.id;
-        if (!id) return;
-        if (!latest.has(id)) latest.set(id, row);
-      });
-      setReviews([...latest.values()]);
+      setReviews((reviewR.data || []).filter((row) => row.action_kind === "review_required"));
     } catch (err) {
       setError(humanError(err, "Administration work could not be loaded."));
     } finally {
@@ -92,13 +81,13 @@ export default function AdminWork({ me, openItem, goAssign }) {
       reviews.length ? (
         <WorkGroup title="Submissions visible to Administration" count={reviews.length}>
           {reviews.map((row) => <WorkReviewRow
-            key={row.id}
-            title={row.work_items.title}
-            person={row.profiles?.full_name || "Team member"}
-            context={row.work_items.units?.name || "Unit"}
-            submitted={row.submitted_at ? new Date(row.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : null}
-            note={row.note}
-            onClick={() => openItem(row.work_items.id)}
+            key={row.submission_id}
+            title={row.work_title}
+            person={row.assignee_name || "Team member"}
+            context={row.unit_name || "Unit"}
+            submitted={row.action_at ? new Date(row.action_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : null}
+            note={row.responsible_reviewer_name && row.responsible_reviewer_id !== me.id ? `Responsible reviewer: ${row.responsible_reviewer_name}` : "Review authority is available to Administration."}
+            onClick={() => openItem(row.work_item_id)}
           />)}
         </WorkGroup>
       ) : <WorkEmpty title="Nothing waiting for review" description="Organisation submissions visible to Administration will appear here." />
