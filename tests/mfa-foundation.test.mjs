@@ -54,6 +54,29 @@ test("privileged aal1 user without a factor must enroll only when enforcement is
   }).state, "allow");
 });
 
+test("privileged aal2 session cannot bypass a missing required TOTP", () => {
+  assert.equal(decideMfaAccess({
+    currentLevel: "aal2",
+    nextLevel: "aal2",
+    factors: { totp: [] },
+    privileged: true,
+    enforcementEnabled: true,
+  }).state, "enroll");
+});
+
+test("privileged enforcement does not accept a non-TOTP factor as the required method", () => {
+  const decision = decideMfaAccess({
+    currentLevel: "aal2",
+    nextLevel: "aal2",
+    factors: { phone: [{ id: "p1", status: "verified", factor_type: "phone" }] },
+    privileged: true,
+    enforcementEnabled: true,
+  });
+  assert.equal(decision.state, "unsupported-factor");
+  assert.equal(decision.reason, "privileged_totp_required");
+});
+
+
 test("ordinary user is not forced to enroll by privileged-only enforcement", () => {
   assert.equal(decideMfaAccess({
     currentLevel: "aal1",
