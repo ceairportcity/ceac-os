@@ -24,6 +24,17 @@ begin
     raise exception 'S1 MFA gate failure: internal assurance helper is missing.';
   end if;
 
+  if exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public'
+      and p.proname='app_privileged_aal_allowed'
+      and p.prosecdef
+  ) then
+    raise exception 'S1 MFA gate failure: assurance helper unnecessarily became SECURITY DEFINER.';
+  end if;
+
   if has_function_privilege('authenticated','public.app_privileged_aal_allowed()','EXECUTE')
      or has_function_privilege('anon','public.app_privileged_aal_allowed()','EXECUTE') then
     raise exception 'S1 MFA gate failure: internal assurance helper is directly browser-callable.';
