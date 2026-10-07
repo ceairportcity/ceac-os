@@ -38,6 +38,11 @@ begin
     raise exception 'S1 MFA gate failure: internal SECURITY DEFINER assurance helper is directly browser-callable.';
   end if;
 
+  if pg_get_functiondef('public.app_privileged_aal_allowed()'::regprocedure)
+       not ilike '%factor_type=''totp''%' then
+    raise exception 'S1 MFA gate failure: privileged server authority is not pinned to verified TOTP.';
+  end if;
+
   select count(*) into callable_count
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.prosecdef
@@ -198,6 +203,17 @@ update auth.mfa_factors
 set status='unverified'::auth.factor_status,updated_at=now()
 where id='51000000-0000-4000-8000-000000000003';
 
+insert into auth.mfa_factors(
+  id,user_id,friendly_name,factor_type,status,created_at,updated_at,phone
+) values (
+  '51000000-0000-4000-8000-000000000013',
+  '31000000-0000-4000-8000-000000000003',
+  'S1 non-TOTP denial fixture',
+  'phone'::auth.factor_type,
+  'verified'::auth.factor_status,
+  now(),now(),'+233000000000'
+);
+
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
 do $admin_stale_aal2$
@@ -208,7 +224,7 @@ begin
   if public.app_is_admin()
      or public.app_has_capability('people.manage',null)
      or public.app_has_capability('authority.manage',null) then
-    raise exception 'S1 MFA gate failure: stale AAL2 retained privilege without a verified factor.';
+    raise exception 'S1 MFA gate failure: stale AAL2 retained privilege without a verified TOTP factor.';
   end if;
 end
 $admin_stale_aal2$;
