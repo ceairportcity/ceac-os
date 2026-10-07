@@ -2,8 +2,8 @@
 
 **Date:** 7 October 2026
 **Phase:** 5 — Admin Product Redesign
-**Status:** CANDIDATE / FULL LEVEL-B ACCEPTANCE REQUESTED
-**PR:** #136
+**Status:** IMPLEMENTED / PRODUCT TREE VERIFIED / PROTECTED-MAIN ACCEPTANCE PENDING
+**PR:** #145
 **Implementation branch:** `chatgpt/phase5-admin-product-redesign-2026-10-07`
 **Protected-main entry SHA:** `052ba656e0e888f99e98fe858b2ced4f27528918`
 
@@ -111,3 +111,14 @@ Final protected-check PR: #145. It supersedes PR #136 only as the merge/check wr
 ## Protected-check synchronization
 
 This documentation-only checkpoint was written through GitHub's normal contents path to emit the standard PR synchronization event for final protected checks. It changes no Phase 5 product behavior, authority, security, data model, or accepted visual contract.
+
+
+## Temporary GitHub continuity verification
+
+The last Phase 5 product-code checkpoint with all four repository workflows green is `9a635216a90c759a3edaeeb457189630a939b883`: CI PASS, Migration Replay PASS, Account Security PASS and Quality Gate PASS.
+
+From that checkpoint through the pre-continuity head `e1f80ecc51d24db79e9d85a987871db0f4e59155`, no `src/` application file changed. The later branch delta is limited to protected-main reconciliation, the canonical S1 migration filename, a baseline assertion that follows that canonical filename, and acceptance/continuity metadata. The Phase 5 redesign itself therefore remains the same product tree that passed the complete gate.
+
+Protected `main` remains frozen at `827fbe7391467dd13d6e411527416402a252993c`. PR #145 is the live Phase 5 wrapper; closed/unmerged PR #136 must not be revived.
+
+This record does not declare protected-main acceptance. Exact-head checks, protected-main merge, exact-main verification and successful production deployment evidence remain required when GitHub Actions and deployment capacity are available.
