@@ -19,7 +19,10 @@ export function resolveMfaGate({ assurance, me, privilegedMfaEnforced = false })
   if (
     privilegedMfaEnforced
     && isPrivilegedIdentity(me)
-    && assurance?.currentLevel !== "aal2"
+    && !(
+      assurance?.currentLevel === "aal2"
+      && assurance?.nextLevel === "aal2"
+    )
   ) {
     return "blocked";
   }
