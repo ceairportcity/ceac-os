@@ -58,9 +58,9 @@ export default function ExecutiveOrganisation({ me }) {
   return <div className="body ev2-exec-organisation exec-redesign-page">
     <header className="exec-redesign-head">
       <div>
-        <span>Leadership view</span>
+        <span>Executive structure</span>
         <h1>Organisation</h1>
-        <p>Departments, teams and people in the recorded CEAC structure. Administration remains responsible for structural changes.</p>
+        <p>View departments, teams and people across the recorded CEAC structure. Administration remains responsible for structural changes.</p>
       </div>
       <StatusBadge tone={missingLeaders.length ? "warning" : "success"} icon={false}>
         {missingLeaders.length ? `${missingLeaders.length} leadership gap${missingLeaders.length === 1 ? "" : "s"}` : "Leadership recorded"}
