@@ -45,9 +45,11 @@ select (public.grant_capability(
 )).id as temp_grant_id
 \gset
 
+select set_config('ceac.test.temp_grant_id', :'temp_grant_id', true);
+
 do $temporary_created$
 begin
-  if :'temp_grant_id' is null then
+  if nullif(current_setting('ceac.test.temp_grant_id',true),'') is null then
     raise exception 'S3 delegation gate failure: temporary grant was not created.';
   end if;
 end
@@ -73,7 +75,7 @@ reset role;
 update public.capability_grants
 set granted_at=now()-interval '2 days',
     expires_at=now()-interval '1 day'
-where id=:'temp_grant_id'::uuid;
+where id=current_setting('ceac.test.temp_grant_id')::uuid;
 
 set local role authenticated;
 select set_config(
@@ -107,11 +109,13 @@ select (public.grant_capability(
 )).id as replacement_grant_id
 \gset
 
+select set_config('ceac.test.replacement_grant_id', :'replacement_grant_id', true);
+
 do $replacement_history$
 begin
   if not exists (
     select 1 from public.capability_grants
-    where id=:'temp_grant_id'::uuid
+    where id=current_setting('ceac.test.temp_grant_id')::uuid
       and revoked_at is not null
       and expires_at is not null
   ) then
@@ -120,7 +124,7 @@ begin
 
   if not exists (
     select 1 from public.capability_grants
-    where id=:'replacement_grant_id'::uuid
+    where id=current_setting('ceac.test.replacement_grant_id')::uuid
       and revoked_at is null
       and expires_at is null
   ) then
