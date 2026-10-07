@@ -59,6 +59,8 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(css).toContain(".executive-app {");
   expect(css).toContain("/* Literal semantic summary accents */");
   expect(css).toContain(".fpg-payroll-metrics article:nth-child(1)");
+  expect(css).toContain(".executive-app .inbox-page");
+  expect(css).toContain(".executive-app .ev2-personal-page");
   expect(reports).toContain('aria-label="Report filters"');
   expect(reports).toContain('["submitted", "Submitted"');
   expect(reports).toContain('["draft", "Drafts"');
@@ -116,6 +118,9 @@ const destinations = [
   ["exec-finance", ".ev2-finance-executive", "Finance"],
   ["payroll", ".fpg-payroll", "Payroll"],
   ["exec-reports", ".ev2-reporting-executive", "Reports"],
+  ["messages", ".inbox-page", "Messages"],
+  ["me", ".ev2-personal-hub", "My Hub"],
+  ["account", ".ev2-personal-account", "Your account"],
 ];
 
 for (const [tab, selector, label] of destinations) {
