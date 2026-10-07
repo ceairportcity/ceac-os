@@ -36,6 +36,10 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const [events,setEvents]=useState([]);
   const [personalTasks,setPersonalTasks]=useState([]);
   const [dayNotes,setDayNotes]=useState([]);
+  const [checklistRows,setChecklistRows]=useState([]);
+  const [meetingNotes,setMeetingNotes]=useState([]);
+  const [workOptions,setWorkOptions]=useState([]);
+  const [projectOptions,setProjectOptions]=useState([]);
   const [dayTab,setDayTab]=useState("schedule");
   const [taskTitle,setTaskTitle]=useState("");
   const [taskTime,setTaskTime]=useState("");
@@ -49,6 +53,11 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const [composeEnd,setComposeEnd]=useState("10:00");
   const [composeLocation,setComposeLocation]=useState("");
   const [composeUnscheduled,setComposeUnscheduled]=useState(false);
+  const [composeReminder,setComposeReminder]=useState("");
+  const [composeWorkId,setComposeWorkId]=useState("");
+  const [composeProjectId,setComposeProjectId]=useState("");
+  const [composeChecklist,setComposeChecklist]=useState("");
+  const [composeNoteKind,setComposeNoteKind]=useState("daily");
   const [busy,setBusy]=useState(false);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
@@ -71,28 +80,45 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       const fromDay=dayKey(rangeStart);
       const toDay=dayKey(rangeEnd);
       const [work,meetings,ministry,leave,tasks,unscheduledTasks,notes,privateEvents]=await Promise.all([
-        supabase.from("work_items").select("id,ref,title,status,due_at,projects(name)").eq("assignee_id",me.id).not("due_at","is",null).neq("visibility","private"),
+        supabase.from("work_items").select("id,ref,title,status,due_at,project_id,projects(id,name)").eq("assignee_id",me.id).neq("visibility","private"),
         supabase.from("meeting_sessions").select("id,title,scope,unit_id,project_id,starts_at,ends_at,status,provider,projects(name),units(name)").gte("starts_at",from).lt("starts_at",to).order("starts_at"),
         supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,cancelled").gte("starts_at",from).lt("starts_at",to).order("starts_at"),
         supabase.from("leave_requests").select("id,kind,start_date,end_date,status").eq("profile_id",me.id).eq("status","approved").order("start_date"),
-        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,completed_at,created_at").eq("profile_id",me.id).gte("plan_date",fromDay).lt("plan_date",toDay).order("plan_date").order("planned_time",{ascending:true,nullsFirst:false}),
-        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,completed_at,created_at").eq("profile_id",me.id).is("plan_date",null).is("completed_at",null).order("created_at",{ascending:false}).limit(30),
+        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at").eq("profile_id",me.id).gte("plan_date",fromDay).lt("plan_date",toDay).order("plan_date").order("planned_time",{ascending:true,nullsFirst:false}),
+        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at").eq("profile_id",me.id).is("plan_date",null).is("completed_at",null).order("created_at",{ascending:false}).limit(30),
         supabase.from("personal_day_notes").select("id,note_date,note_kind,title,body,reminder_at,updated_at").eq("profile_id",me.id).or(`note_date.is.null,and(note_date.gte.${fromDay},note_date.lt.${toDay})`).order("updated_at",{ascending:false}),
         supabase.from("personal_calendar_events").select("id,title,details,starts_at,ends_at,location,reminder_at").eq("profile_id",me.id).gte("starts_at",from).lt("starts_at",to).order("starts_at"),
       ]);
       const first=[work.error,meetings.error,ministry.error,leave.error,tasks.error,unscheduledTasks.error,notes.error,privateEvents.error].find(Boolean);if(first)throw first;
-      const rows=[];
-      (work.data||[]).forEach(item=>rows.push({id:`work-${item.id}`,kind:"work",date:accraDay(item.due_at),title:item.title,meta:`${item.ref}${item.projects?.name?` · ${item.projects.name}`:""}`,itemId:item.id}));
-      (meetings.data||[]).filter(row=>row.status!=="cancelled").forEach(row=>rows.push({id:`meeting-${row.id}`,kind:"meeting",date:accraDay(row.starts_at),title:row.title,meta:new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"}),meetingId:row.id}));
-      (ministry.data||[]).filter(row=>row.scope==="church"||row.unit_id===me.unit_id).forEach(row=>rows.push({id:`ministry-${row.id}`,kind:"ministry",date:accraDay(row.starts_at),title:`${row.cancelled?"Cancelled · ":""}${row.title}`,meta:row.location||"Ministry activity"}));
-      (leave.data||[]).forEach(row=>{let d=new Date(`${row.start_date}T00:00:00`),end=new Date(`${row.end_date}T00:00:00`);while(d<=end){rows.push({id:`leave-${row.id}-${dayKey(d)}`,kind:"leave",date:dayKey(d),title:`${row.kind} leave`,meta:"Approved"});d=addDays(d,1);}});
       const privateTasks=[...(tasks.data||[]),...(unscheduledTasks.data||[])];
+      const meetingRows=(meetings.data||[]).filter(row=>row.status!=="cancelled");
+      const [checklists,privateMeetingNotes]=await Promise.all([
+        privateTasks.length
+          ? supabase.from("personal_day_task_checklist").select("id,task_id,title,position,completed_at").in("task_id",privateTasks.map(row=>row.id)).order("position")
+          : Promise.resolve({data:[],error:null}),
+        meetingRows.length
+          ? supabase.from("meeting_private_notes").select("id,meeting_id,body,updated_at").eq("author_id",me.id).in("meeting_id",meetingRows.map(row=>row.id))
+          : Promise.resolve({data:[],error:null}),
+      ]);
+      if(checklists.error||privateMeetingNotes.error)throw checklists.error||privateMeetingNotes.error;
+
+      const rows=[];
+      (work.data||[]).filter(item=>item.due_at).forEach(item=>rows.push({id:`work-${item.id}`,kind:"work",date:accraDay(item.due_at),title:item.title,meta:`${item.ref}${item.projects?.name?` · ${item.projects.name}`:""}`,itemId:item.id,sortAt:item.due_at,time:new Date(item.due_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
+      meetingRows.forEach(row=>rows.push({id:`meeting-${row.id}`,kind:"meeting",date:accraDay(row.starts_at),title:row.title,meta:`${new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.ends_at?`–${new Date(row.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}`,meetingId:row.id,sortAt:row.starts_at,time:new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
+      (ministry.data||[]).filter(row=>row.scope==="church"||row.unit_id===me.unit_id).forEach(row=>rows.push({id:`ministry-${row.id}`,kind:"ministry",date:accraDay(row.starts_at),title:`${row.cancelled?"Cancelled · ":""}${row.title}`,meta:`${row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.location?` · ${row.location}`:""}`,sortAt:row.starts_at,time:row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
+      (leave.data||[]).forEach(row=>{let d=new Date(`${row.start_date}T00:00:00`),end=new Date(`${row.end_date}T00:00:00`);while(d<=end){rows.push({id:`leave-${row.id}-${dayKey(d)}`,kind:"leave",date:dayKey(d),title:`${row.kind} leave`,meta:"All day · Approved",sortAt:`${dayKey(d)}T00:00:00Z`,time:"All day"});d=addDays(d,1);}});
       privateTasks.filter(task=>task.plan_date).forEach(task=>rows.push({id:`personal-task-${task.id}`,kind:"personal",personalType:"task",date:task.plan_date,title:task.title,meta:task.planned_time?timeLabel(task.planned_time):"Private task",taskId:task.id,completed:Boolean(task.completed_at)}));
-      (privateEvents.data||[]).forEach(event=>rows.push({id:`personal-event-${event.id}`,kind:"personal",personalType:"event",date:accraDay(event.starts_at),title:event.title,meta:`${new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${event.location?` · ${event.location}`:""}`,privateEventId:event.id}));
+      (privateEvents.data||[]).forEach(event=>rows.push({id:`personal-event-${event.id}`,kind:"personal",personalType:"event",date:accraDay(event.starts_at),title:event.title,meta:`${new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${event.ends_at?`–${new Date(event.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}${event.location?` · ${event.location}`:""}`,privateEventId:event.id,sortAt:event.starts_at,time:new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
+      const projects=new Map();
+      (work.data||[]).forEach(item=>{if(item.projects?.id)projects.set(item.projects.id,item.projects.name);});
+      setWorkOptions(work.data||[]);
+      setProjectOptions([...projects.entries()].map(([id,name])=>({id,name})));
+      setChecklistRows(checklists.data||[]);
+      setMeetingNotes((privateMeetingNotes.data||[]).map(note=>({...note,meeting:meetingRows.find(row=>row.id===note.meeting_id)||null})));
       setPersonalTasks(privateTasks);
       setDayNotes(notes.data||[]);
       setEvents(rows);
-    }catch(err){setError(humanError(err,"Your calendar could not be loaded."));setEvents([]);setPersonalTasks([]);setDayNotes([]);}
+    }catch(err){setError(humanError(err,"Your calendar could not be loaded."));setEvents([]);setPersonalTasks([]);setDayNotes([]);setChecklistRows([]);setMeetingNotes([]);setWorkOptions([]);setProjectOptions([]);}
     finally{setLoading(false);}
   }
 
@@ -105,6 +131,11 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     setComposeEnd("10:00");
     setComposeLocation("");
     setComposeUnscheduled(false);
+    setComposeReminder("");
+    setComposeWorkId("");
+    setComposeProjectId("");
+    setComposeChecklist("");
+    setComposeNoteKind("daily");
     setComposer(true);
   }
 
@@ -117,19 +148,28 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         const {error:e}=await supabase.from("personal_calendar_events").insert({
           org_id:me.org_id,profile_id:me.id,title:composeTitle.trim(),details:composeDetails.trim()||null,
           starts_at:startsAt,ends_at:endsAt,location:composeLocation.trim()||null,
+          reminder_at:composeReminder?new Date(composeReminder).toISOString():null,
         }); if(e)throw e;
         setNotice("Private calendar event added.");
       }else if(composerType==="task"){
-        const {error:e}=await supabase.from("personal_day_tasks").insert({
+        const {data:task,error:e}=await supabase.from("personal_day_tasks").insert({
           org_id:me.org_id,profile_id:me.id,plan_date:composeUnscheduled?null:composeDate,
           title:composeTitle.trim(),details:composeDetails.trim()||null,planned_time:composeUnscheduled?null:(composeStart||null),
-        }); if(e)throw e;
+          reminder_at:composeReminder?new Date(composeReminder).toISOString():null,
+          linked_work_item_id:composeWorkId||null,linked_project_id:composeProjectId||null,
+        }).select("id").single(); if(e)throw e;
+        const checklist=composeChecklist.split("\n").map(value=>value.trim()).filter(Boolean);
+        if(checklist.length){
+          const {error:checkError}=await supabase.from("personal_day_task_checklist").insert(checklist.map((title,index)=>({org_id:me.org_id,profile_id:me.id,task_id:task.id,title,position:index})));
+          if(checkError)throw checkError;
+        }
         setNotice(composeUnscheduled?"Private task kept unscheduled.":"Private task added.");
       }else{
-        const isDaily=Boolean(composeDate);
+        const isDaily=composeNoteKind==="daily";
         const payload={
-          org_id:me.org_id,profile_id:me.id,note_kind:isDaily?"daily":"general",
-          note_date:isDaily?composeDate:null,title:composeTitle.trim()||null,body:composeDetails,
+          org_id:me.org_id,profile_id:me.id,note_kind:composeNoteKind,
+          note_date:isDaily?composeDate:null,title:isDaily?null:(composeTitle.trim()||null),body:composeDetails,
+          reminder_at:composeReminder?new Date(composeReminder).toISOString():null,
         };
         const query=isDaily
           ? supabase.from("personal_day_notes").upsert(payload,{onConflict:"profile_id,note_date"})
@@ -158,6 +198,14 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     const {error:updateError}=await supabase.from("personal_day_tasks").update({completed_at:task.completed_at?null:new Date().toISOString()}).eq("id",task.id).eq("profile_id",me.id);
     setBusy(false);
     if(updateError){setError(humanError(updateError,"Your private task could not be updated."));return;}
+    await load();
+  }
+
+  async function toggleChecklist(row){
+    setBusy(true);setError(null);
+    const {error:updateError}=await supabase.from("personal_day_task_checklist").update({completed_at:row.completed_at?null:new Date().toISOString()}).eq("id",row.id).eq("profile_id",me.id);
+    setBusy(false);
+    if(updateError){setError(humanError(updateError,"That checklist item could not be updated."));return;}
     await load();
   }
 
@@ -198,7 +246,12 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const selectedPrivate=personalTasks.filter(task=>task.plan_date===selectedDate);
   const unscheduledPrivate=personalTasks.filter(task=>task.plan_date==null&&!task.completed_at);
   const selectedWork=selectedShared.filter(event=>event.kind==="work");
-  const selectedSchedule=[...selectedShared.filter(event=>event.kind!=="work"),...selectedPrivateEvents];
+  const selectedSchedule=[...selectedShared.filter(event=>event.kind!=="work"),...selectedPrivateEvents].sort((a,b)=>String(a.sortAt||a.date).localeCompare(String(b.sortAt||b.date)));
+  const selectedMeetingNotes=meetingNotes.filter(note=>note.meeting&&accraDay(note.meeting.starts_at)===selectedDate&&note.body?.trim());
+  const generalNotes=dayNotes.filter(note=>note.note_kind!=="daily");
+  const checklistFor=(taskId)=>checklistRows.filter(row=>row.task_id===taskId);
+  const noteCount=(noteDraft.trim()?1:0)+selectedMeetingNotes.length+generalNotes.length;
+  const taskCount=selectedPrivate.length+selectedWork.length;
   const upcoming=[...visible].filter(event=>event.date>=dayKey(new Date())&&event.kind!=="personal").sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8).map(event=>displayEvent(event,true));
 
   const moveMonth=(amount)=>{const next=new Date(cursor.getFullYear(),cursor.getMonth()+amount,1);setCursor(next);setSelectedDate(dayKey(next));};
@@ -236,6 +289,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
           <header className="phase6-day-workspace-head">
             <div><span>Day workspace</span><h2>{labelDay(selectedDate)}</h2><p>Shared records stay authoritative. Personal events, tasks and notes are private to you.</p></div>
             <span className="phase6-private-pill">Private planning protected</span>
+            <div className="phase6-day-metrics" aria-label="Selected day summary"><span><b>{selectedSchedule.length}</b> scheduled</span><span><b>{taskCount}</b> tasks</span><span><b>{noteCount}</b> notes</span></div>
           </header>
 
           <div className="phase6-day-tabs" role="tablist" aria-label="Day workspace views">
@@ -247,10 +301,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
           {dayTab==="schedule"?<div className="phase6-day-task-view phase6-day-schedule-view">
             <section className="phase6-day-block">
               <div className="phase6-day-block-head"><h3>Schedule</h3><span>{selectedSchedule.length}</span></div>
-              {selectedSchedule.length?selectedSchedule.map(event=><button key={event.id} type="button" className="phase6-day-shared-row" onClick={()=>open(event)} disabled={!event.itemId&&!event.meetingId}>
-                <span className={`phase6-day-kind is-${event.kind}`}>{event.personalType==="event"?"private event":event.kind}</span>
-                <span><strong>{event.title}</strong><small>{event.meta||"Recorded CEAC commitment"}</small></span>
-              </button>):<p className="phase6-day-empty">No shared or private schedule item is recorded for this day.</p>}
+              {selectedSchedule.length?<div className="phase6-schedule-rail">{selectedSchedule.map(event=><div key={event.id} className={`phase6-schedule-row is-${event.kind}`}><time>{event.time||"—"}</time><span className="phase6-schedule-line" aria-hidden="true"/><button type="button" onClick={()=>open(event)} disabled={!event.itemId&&!event.meetingId}><span className={`phase6-day-kind is-${event.kind}`}>{event.personalType==="event"?"private event":event.kind}</span><span><strong>{event.title}</strong><small>{event.meta||"Recorded CEAC commitment"}</small></span></button></div>)}</div>:<p className="phase6-day-empty">No shared or private schedule item is recorded for this day.</p>}
             </section>
           </div>:dayTab==="tasks"?<div className="phase6-day-task-view">
             <section className="phase6-day-block">
@@ -258,10 +309,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
               {selectedWork.map(event=><button key={event.id} type="button" className="phase6-day-shared-row" onClick={()=>open(event)}>
                 <span className="phase6-day-kind is-work">work</span><span><strong>{event.title}</strong><small>{event.meta}</small></span>
               </button>)}
-              {selectedPrivate.map(task=><label key={task.id} className={task.completed_at?"phase6-private-task is-complete":"phase6-private-task"}>
-                <input type="checkbox" checked={Boolean(task.completed_at)} disabled={busy} onChange={()=>togglePersonalTask(task)}/>
-                <span><strong>{task.title}</strong><small>{task.planned_time?timeLabel(task.planned_time):"Private personal task"}</small></span><em>Private</em>
-              </label>)}
+              {selectedPrivate.map(task=><div key={task.id} className="phase6-private-task-card"><label className={task.completed_at?"phase6-private-task is-complete":"phase6-private-task"}><input type="checkbox" checked={Boolean(task.completed_at)} disabled={busy} onChange={()=>togglePersonalTask(task)}/><span><strong>{task.title}</strong><small>{[task.planned_time?timeLabel(task.planned_time):"Private personal task",task.reminder_at?"reminder set":null,task.linked_work_item_id?"linked CEAC Work":task.linked_project_id?"linked Project":null].filter(Boolean).join(" · ")}</small></span><em>Private</em></label>{checklistFor(task.id).length>0&&<div className="phase6-task-checklist">{checklistFor(task.id).map(row=><label key={row.id}><input type="checkbox" checked={Boolean(row.completed_at)} disabled={busy} onChange={()=>toggleChecklist(row)}/><span>{row.title}</span></label>)}</div>}</div>)}
               {!selectedPrivate.length&&!selectedWork.length?<p className="phase6-day-empty">No task is planned or due on this day.</p>:null}
               <div className="phase6-private-task-compose">
                 <input className="field" aria-label="New private task" placeholder="Add a private task" value={taskTitle} onChange={event=>setTaskTitle(event.target.value)} />
@@ -281,9 +329,9 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
               </div>):<p className="phase6-day-empty">No private tasks are waiting for a date.</p>}
             </section>
           </div>:<div className="phase6-day-note-view">
-            <div className="phase6-note-boundary"><strong>Private notes for {shortDate(selectedDate)}</strong><span>Only you can read this day note. Meeting decisions and shared notes remain in their meeting records.</span></div>
-            <textarea className="field phase6-day-note-editor" aria-label="Private day notes" rows={12} value={noteDraft} onChange={event=>setNoteDraft(event.target.value)} placeholder="Write private planning notes for this day…" />
-            <div className="phase6-day-note-actions"><span>{noteDraft.length.toLocaleString()} / 12,000</span><Button disabled={busy||noteDraft.length>12000} onClick={saveDayNote}>{busy?"Saving…":"Save private note"}</Button></div>
+            <article className="phase6-note-card is-journal"><div className="phase6-note-card-head"><span>Journal</span><div><strong>Daily journal</strong><small>Private · {shortDate(selectedDate)}</small></div></div><textarea className="field phase6-day-note-editor" aria-label="Private day notes" rows={8} value={noteDraft} onChange={event=>setNoteDraft(event.target.value)} placeholder="Write private planning notes for this day…" /><div className="phase6-day-note-actions"><span>{noteDraft.length.toLocaleString()} / 12,000</span><Button disabled={busy||noteDraft.length>12000} onClick={saveDayNote}>{busy?"Saving…":"Save journal"}</Button></div></article>
+            {selectedMeetingNotes.map(note=><button key={note.id} type="button" className="phase6-note-card is-meeting" onClick={()=>openMeeting?.(note.meeting_id)}><div className="phase6-note-card-head"><span>Meeting</span><div><strong>{note.meeting?.title||"Meeting note"}</strong><small>Linked meeting note · authoritative in Meeting</small></div></div><p>{note.body}</p></button>)}
+            {generalNotes.map(note=><article key={note.id} className={`phase6-note-card is-${note.note_kind}`}><div className="phase6-note-card-head"><span>{note.note_kind==="personal"?"Personal":"General"}</span><div><strong>{note.title||(note.note_kind==="personal"?"Personal note":"General note")}</strong><small>Private note{note.reminder_at?" · reminder set":""}</small></div></div><p>{note.body||"No note text recorded."}</p></article>)}
           </div>}
         </aside>
       </div>
@@ -306,7 +354,10 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
           <FieldGroup label="Location"><input className="field" aria-label="Event location" value={composeLocation} onChange={event=>setComposeLocation(event.target.value)} placeholder="Optional" /></FieldGroup>
         </div>}
         {composerType==="task"&&!composeUnscheduled&&<FieldGroup label="Time (optional)"><input className="field" aria-label="Task time" type="time" value={composeStart} onChange={event=>setComposeStart(event.target.value)} /></FieldGroup>}
+        {composerType==="note"&&<FieldGroup label="Note type"><select className="field" aria-label="Note type" value={composeNoteKind} onChange={event=>setComposeNoteKind(event.target.value)}><option value="daily">Daily journal</option><option value="general">General note</option><option value="personal">Personal note</option></select></FieldGroup>}
         <FieldGroup label={composerType==="note"?"Note":"Details (optional)"}><textarea className="field" aria-label="Planning details" rows={composerType==="note"?8:4} value={composeDetails} maxLength={composerType==="note"?12000:4000} onChange={event=>setComposeDetails(event.target.value)} /></FieldGroup>
+        {composerType==="task"&&<><FieldGroup label="Checklist" hint="One private checklist item per line."><textarea className="field" aria-label="Task checklist" rows={3} value={composeChecklist} onChange={event=>setComposeChecklist(event.target.value)} /></FieldGroup><div className="phase6-composer-grid"><FieldGroup label="Link CEAC Work"><select className="field" aria-label="Link CEAC Work" value={composeWorkId} onChange={event=>setComposeWorkId(event.target.value)}><option value="">No Work link</option>{workOptions.map(item=><option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}</select></FieldGroup><FieldGroup label="Link Project"><select className="field" aria-label="Link Project" value={composeProjectId} onChange={event=>setComposeProjectId(event.target.value)}><option value="">No Project link</option>{projectOptions.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select></FieldGroup></div></>}
+        <FieldGroup label="Reminder (optional)"><input className="field" aria-label="Planning reminder" type="datetime-local" value={composeReminder} onChange={event=>setComposeReminder(event.target.value)} /></FieldGroup>
         {error&&<ProductNotice tone="error" title="Could not save private planning">{error}</ProductNotice>}
         <div className="phase6-composer-actions"><Button variant="secondary" disabled={busy} onClick={()=>setComposer(null)}>Cancel</Button><Button disabled={busy||(composerType!=="note"&&!composeTitle.trim())||(composerType==="note"&&!composeDetails.trim())||(composerType==="event"&&(!composeDate||!composeStart||!composeEnd||composeEnd<composeStart))} onClick={saveComposer}>{busy?"Saving…":`Save ${composerType}`}</Button></div>
       </div>
