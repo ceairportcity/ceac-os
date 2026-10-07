@@ -248,6 +248,7 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
 .executivev2-direction-copy small { color: var(--ev2-text-secondary); }
 .executivev2-direction-track {
   grid-column: 2 / 4;
+  grid-row: 2;
   height: 6px;
   margin-top: -3px;
   overflow: hidden;
@@ -258,7 +259,8 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
 .executivev2-direction-track .is-success { background: var(--exec-green); }
 .executivev2-direction-track .is-warning { background: var(--exec-amber); }
 .executivev2-direction-track .is-blue { background: var(--exec-blue); }
-.executivev2-direction-row > small { color: var(--ev2-text-secondary); text-align: right; }
+.executivev2-direction-row > small { grid-column: 3; grid-row: 1; color: var(--ev2-text-secondary); text-align: right; }
+.executivev2-direction-state { font-weight: 650; color: #657083; }
 
 .executivev2-org-row {
   min-height: 56px;
