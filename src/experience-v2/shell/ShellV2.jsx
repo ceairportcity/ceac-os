@@ -147,7 +147,7 @@ export function SideNav({
       <div className="ev2s-sidebar-footer">
         {onGuide ? <button
           type="button"
-          className="ev2s-sidebar-guide"
+          className={tab === "guide" ? "ev2s-sidebar-guide is-active" : "ev2s-sidebar-guide"}
           onClick={onGuide}
           aria-label="CEAC Guide"
         >
