@@ -271,3 +271,194 @@
   .ev2-work-executive .ev2w-header-action,
   .ev2-executive-ministry .ev2ex-ministry-head .btn { min-height: 44px; }
 }
+
+
+/* Executive shell */
+.executive-app .ev2s-sidebar {
+  background: linear-gradient(180deg, #111f34 0%, #0d1a2c 100%);
+  border-right-color: rgba(255,255,255,.06);
+}
+.executive-app .ev2s-brand-copy strong,
+.executive-app .ev2s-sidebar-profile-copy strong { color: #f7f9fd; }
+.executive-app .ev2s-brand-copy span,
+.executive-app .ev2s-sidebar-profile-copy small { color: #95a6ba; }
+.executive-app .ev2s-sidebar-nav button {
+  min-height: 40px;
+  border-radius: 7px;
+  color: #c7d2df;
+}
+.executive-app .ev2s-sidebar-nav button:hover {
+  background: rgba(255,255,255,.055);
+  color: #fff;
+}
+.executive-app .ev2s-sidebar-nav button.is-active {
+  background: linear-gradient(90deg, #6f52e5 0%, #5f47d5 100%);
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(72,52,170,.24);
+}
+.executive-app .ev2s-sidebar-profile {
+  border-top-color: rgba(255,255,255,.08);
+  color: #f7f9fd;
+}
+.executive-app .fpg9-sidebar-quick {
+  border-color: rgba(255,255,255,.07);
+  background: rgba(255,255,255,.025);
+}
+.executive-app .fpg9-sidebar-quick button { border-color: rgba(255,255,255,.07); }
+.executive-app .ev2s-topbar {
+  background: rgba(255,255,255,.94);
+  border-bottom-color: #e7e9ef;
+  backdrop-filter: blur(18px);
+}
+.executive-app .fpg9-topbar-message:hover,
+.executive-app .ev2s-profile-button:hover {
+  border-color: #e3e6ed;
+  background: #f8f9fc;
+}
+
+/* Executive Portfolio */
+.executive-app .ev2-project-delivery.is-executive {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+  padding: 18px 20px 42px;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-header {
+  padding: 2px 0 17px;
+  border-bottom: 0;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-header h1 {
+  font-size: clamp(1.55rem, 2vw, 1.9rem);
+  letter-spacing: -.03em;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary {
+  gap: 10px;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > * ,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-list,
+.executive-app .ev2-project-delivery.is-executive .ev2p-attention-list,
+.executive-app .ev2-project-delivery.is-executive .ev2p-portfolio-card {
+  border-color: #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row {
+  border-color: #eff1f5;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-row-icon {
+  border-radius: 8px;
+  background: var(--exec-purple-soft);
+  color: var(--exec-purple);
+}
+
+/* Executive Calendar — shared Phase 6 engine, Executive presentation */
+.executive-app .ev2cal-admin-page {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+  padding: 18px 20px 42px;
+}
+.executive-app .ev2cal-admin-page .phase6-calendar-head,
+.executive-app .ev2cal-admin-page .ev2cal-header {
+  padding-top: 2px;
+}
+.executive-app .ev2cal-admin-page .phase6-calendar-scope {
+  padding: 4px;
+  border: 1px solid #e6e8ee;
+  border-radius: 9px;
+  background: #f6f7fa;
+}
+.executive-app .ev2cal-admin-page .phase6-calendar-scope button {
+  min-height: 34px;
+  border-radius: 7px;
+}
+.executive-app .ev2cal-admin-page .phase6-calendar-scope button.is-selected {
+  background: #fff;
+  color: #33226f;
+  box-shadow: 0 2px 8px rgba(25,34,53,.08);
+}
+.executive-app .ev2cal-admin-page .phase6-calendar-page,
+.executive-app .ev2cal-admin-page .phase6-day-workspace {
+  border-color: #e4e7ee;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+
+/* Executive Payroll — preserve approval semantics, unify visible family */
+.executive-app .fpg-payroll {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+  padding: 18px 20px 42px;
+}
+.executive-app .fpg-payroll-head {
+  padding: 2px 0 17px;
+  border-bottom: 0;
+}
+.executive-app .fpg-payroll-head h1 {
+  font-size: clamp(1.55rem, 2vw, 1.9rem);
+  letter-spacing: -.03em;
+}
+.executive-app .fpg-payroll-authority {
+  border-radius: 999px;
+  background: var(--exec-purple-soft);
+  color: #5a3db6;
+}
+.executive-app .fpg-payroll-table-card,
+.executive-app .fpg-payroll-runs,
+.executive-app .fpg-payroll-main,
+.executive-app .fpg-payroll-metrics article {
+  border-color: #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+.executive-app .fpg-payroll-runs button.is-selected {
+  border-color: #d8d0fa;
+  background: var(--exec-purple-soft);
+}
+
+/* Shared personal/account destinations keep the Executive shell continuity. */
+.executive-app .ev2-personal-page {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+}
+.executive-app .ev2-personal-page .ev2pf-header,
+.executive-app .ev2-personal-page .ev2pf-section {
+  border-color: #e4e7ee;
+}
+
+/* Mobile Executive reference */
+@media (max-width: 899px) {
+  .executive-app .ev2s-mobile-topbar {
+    border-bottom: 1px solid #e8eaf0;
+    background: rgba(255,255,255,.98);
+    color: #171c28;
+  }
+  .executive-app .ev2s-mobile-identity strong { color: #171c28; }
+  .executive-app .ev2s-mobile-identity small { color: #737d8c; }
+  .executive-app .ev2s-mobile-topbar .ev2c-avatar {
+    border-color: #dedaf4;
+    background: var(--exec-purple-soft);
+    color: var(--exec-purple);
+  }
+  .executive-app .ev2s-mobile-profile:hover { background: #f5f6fa; }
+  .executive-app .ev2s-mobile-nav {
+    border-top-color: #e5e7ee;
+    background: rgba(255,255,255,.98);
+  }
+  .executive-app .ev2s-mobile-nav button.is-active {
+    background: transparent;
+    color: var(--exec-purple);
+  }
+  .executive-app .ev2s-mobile-nav button.is-active svg {
+    filter: drop-shadow(0 2px 4px rgba(113,72,232,.16));
+  }
+  .executive-app .ev2-project-delivery.is-executive,
+  .executive-app .ev2cal-admin-page,
+  .executive-app .fpg-payroll {
+    padding: 14px 14px calc(82px + env(safe-area-inset-bottom));
+  }
+}
