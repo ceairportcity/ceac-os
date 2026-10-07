@@ -2573,8 +2573,7 @@ test("FPG10 propagates the accepted Work, Finance and People reference grammar a
 test("Foundation People & Access keeps new invitations distinct from existing responsibilities", async ({ browser }) => {
   for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 900 }]) {
     const {context,page}=await openAs(browser,"admin@ceac.local.test",viewport);
-    await go(page,"Control Center");
-    await page.getByRole("button",{name:"Open People & Access"}).click();
+    await go(page,"People & Access");
     await expect(page.getByRole("heading",{name:"People & Access",exact:true})).toBeVisible();
     await expect(page.getByRole("button",{name:"Send Staff invitation"})).toBeDisabled();
     await page.screenshot({path:`test-artifacts/foundation-people-access-invite-${viewport.width}.png`,fullPage:true});
