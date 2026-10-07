@@ -11,6 +11,16 @@ Permitted: versioned JavaScript/CSS, icons, manifest, generic fonts/images, `ind
 
 Potentially eligible only after a named feature review: personal planning text or task/calendar drafts that have not become authoritative records. A feature must define user scoping, expiry, clear unsent status, deletion, reconciliation and conflict behaviour before storing a draft. No generic draft queue is enabled by this programme.
 
+
+Approved low-risk exception — CEAC Guide checklist preference:
+- the static Guide itself is Class O0 application content bundled with versioned shell assets;
+- Getting Started progress may use a profile-scoped local preference key;
+- the stored value is limited to Guide version, role, completed checklist step IDs, dismissal state and an expiry timestamp;
+- maximum retained lifetime is 90 days, after which the client discards it;
+- a Guide version or role mismatch resets it;
+- Reset/Dismiss/Show controls are user-visible;
+- it contains no Work, People, Leave, Finance, HR, Payroll, attendance, security or communication record and is never treated as authoritative organisation data.
+
 ## Class O2 — online-only ordinary business data
 
 Work, projects, meetings, rooms, attendance, leave, finance, people and organisational records remain online-only even if a user could normally view them. Do not store API responses in Cache Storage, IndexedDB or localStorage for offline browsing.
