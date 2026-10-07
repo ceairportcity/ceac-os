@@ -44,6 +44,10 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.assign_performance_reviewer(p_appraisal_id uuid, p_reviewer_id uuid, p_reason text)'),
   ('public.assign_unit_head(p_unit_id uuid, p_profile_id uuid)'),
   ('public.attendance_create_notice(p_kind text, p_starts_at timestamp with time zone, p_expected_return_at timestamp with time zone, p_reason text, p_note text)'),
+  ('public.attendance_corroboration_for_day(p_date date)'),
+  ('public.attendance_integrity_status()'),
+  ('public.attendance_set_office_code(p_enabled boolean, p_ttl_minutes integer)'),
+  ('public.attendance_verify_office_code(p_code text, p_session_id uuid)'),
   ('public.attendance_day_evidence(p_date date)'),
   ('public.attendance_record_return(p_work_item_id uuid)'),
   ('public.attendance_respond_notice(p_work_item_id uuid, p_outcome text, p_note text)'),
@@ -191,7 +195,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>132 or v_expected<>132 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>136 or v_expected<>136 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
