@@ -54,6 +54,21 @@ Canonical cross-session detail:
 - Where the person under review is the Manager, escalation must not depend on that Manager approving their own case; the Group Pastor/CEO remains the final authority.
 - CEAC may calculate a proposed deduction only after an authorised human decision establishes that a deduction applies. Attendance evidence itself must never post a Payroll deduction automatically.
 
+### In-product CEAC Guide and adoption
+- CEAC must include a permanent in-product Guide that is broader than a generic FAQ and reduces staff dependence on the product owner for ordinary system use.
+- Desktop placement is in the left rail immediately above the signed-in user/profile block.
+- Mobile exposes the Guide under More; contextual page help may also open the relevant Guide topic.
+- Guide content is searchable, role-aware and context-aware. A user must not be taught features or authorities outside the role/capability experience they are meant to use.
+- The Guide explains what a feature means, how to use it, who can act, what happens next and how to recover when something does not work.
+- Core coverage includes Getting Started, Work/Tasks, Projects, Calendar/Planning, Attendance/Leave, Messages, My Hub/Account, Documents/Files and Notifications/Updates, plus role-specific Manager, Administration and Executive guidance.
+- Getting Started is a restrained role-specific checklist with progress, resume, reset and dismiss/show behavior. It is guidance only and never becomes an authoritative work/performance record.
+- Guide content is versioned with the product.
+- Static Guide content may be part of the non-sensitive offline application shell. No business/API record may be cached merely to make Guide help work offline.
+- Minimal local Getting Started preference state may be retained only under the reviewed low-risk offline classification; it must contain no CEAC business record and must expire/reset according to the product contract.
+
+Canonical Guide contract:
+`docs/guide/CEAC_GUIDE_PRODUCT_LOCK_2026-10-07.md`
+
 ### Data ownership and handover
 - CEAC controls its organisational and staff data.
 - The Standard Institute / Standard Solution is the implementation technology provider during build, testing and handover; hosting data in the builder's current Supabase project does not transfer ownership/control of CEAC staff data to the builder.
