@@ -144,30 +144,33 @@ export function SideNav({
         </div> : null}
       </div>
 
-      {onGuide ? <button
-        type="button"
-        className="ev2s-sidebar-guide"
-        onClick={onGuide}
-        aria-label="CEAC Guide"
-      >
-        <CeacIcon name="help" size="nav" decorative />
-        <span>CEAC Guide</span>
-        <CeacIcon name="chevronRight" size="meta" decorative />
-      </button> : null}
+      <div className="ev2s-sidebar-footer">
+        {onGuide ? <button
+          type="button"
+          className="ev2s-sidebar-guide"
+          onClick={onGuide}
+          aria-label="CEAC Guide"
+        >
+          <CeacIcon name="help" size="nav" decorative />
+          <span>CEAC Guide</span>
+          <CeacIcon name="chevronRight" size="meta" decorative />
+        </button> : null}
 
-      <button
-        type="button"
-        className="ev2s-sidebar-profile"
-        onClick={() => setTab("me")}
-        aria-label="Open My Hub"
-      >
-        <Avatar name={me?.full_name || "CEAC"} size="md" />
-        <span className="ev2s-sidebar-profile-copy">
-          <strong>{me?.full_name || "Account"}</strong>
-          <small>{me?.unit_name || role}</small>
-        </span>
-        <CeacIcon name="chevronRight" size="meta" decorative />
-      </button>
+        <button
+          type="button"
+          className="ev2s-sidebar-profile"
+          onClick={() => setTab("me")}
+          aria-label="Open My Hub"
+        >
+          <Avatar name={me?.full_name || "CEAC"} size="md" />
+          <span className="ev2s-sidebar-profile-copy">
+            <strong>{me?.full_name || "Account"}</strong>
+            <small>{me?.unit_name || role}</small>
+          </span>
+          <CeacIcon name="chevronRight" size="meta" decorative />
+        </button>
+    </aside>
+      </div>
     </aside>
   );
 }
