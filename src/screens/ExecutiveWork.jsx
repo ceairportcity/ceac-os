@@ -33,19 +33,13 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
       const [mineResult, givenResult, reviewResult] = await Promise.all([
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assignee_id", me.id).order("due_at", { ascending: true, nullsFirst: false }),
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assigned_by", me.id).neq("assignee_id", me.id).order("due_at", { ascending: true, nullsFirst: false }),
-        supabase.from("submissions")
-          .select("id,submitted_at,note,work_items!inner(id,ref,title,status,due_at,org_id,units(name)),profiles!submissions_profile_id_fkey(full_name)")
-          .eq("work_items.org_id", me.org_id)
-          .eq("work_items.status", "in_review")
-          .order("submitted_at", { ascending: false })
-          .limit(80),
+        supabase.rpc("my_work_attention_queue"),
       ]);
       const first = [mineResult.error, givenResult.error, reviewResult.error].find(Boolean);
       if (first) throw first;
       setMine(mineResult.data || []);
       setGiven(givenResult.data || []);
-      const seen = new Set();
-      setReviews((reviewResult.data || []).filter((row) => row.work_items && !seen.has(row.work_items.id) && (seen.add(row.work_items.id), true)));
+      setReviews((reviewResult.data || []).filter((row) => row.action_kind === "review_required"));
     } catch (err) {
       setError(humanError(err, "Executive work could not be loaded."));
     } finally {
@@ -81,13 +75,13 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
       reviews.length ? (
         <WorkGroup title="Submitted work requiring leadership context" count={reviews.length}>
           {reviews.map((row) => <WorkReviewRow
-            key={row.id}
-            title={row.work_items.title}
-            person={row.profiles?.full_name || "Team member"}
-            context={row.work_items.units?.name || "Unit"}
-            submitted={row.submitted_at ? new Date(row.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : null}
-            note={row.note}
-            onClick={() => openItem(row.work_items.id)}
+            key={row.submission_id}
+            title={row.work_title}
+            person={row.assignee_name || "Team member"}
+            context={row.unit_name || "Unit"}
+            submitted={row.action_at ? new Date(row.action_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : null}
+            note="Review authority follows this leadership assignment."
+            onClick={() => openItem(row.work_item_id)}
           />)}
         </WorkGroup>
       ) : <WorkEmpty title="Nothing is waiting for review" description="Leadership-visible submissions that require context will appear here." />

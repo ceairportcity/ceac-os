@@ -135,7 +135,7 @@ test("VF5B Executive Work and Ministry keep leadership records factual and role-
   const main = fs.readFileSync("src/main.jsx", "utf8");
 
   expect(work).toContain('eq("assigned_by", me.id)');
-  expect(work).toContain('eq("work_items.status", "in_review")');
+  expect(work).toContain('rpc("my_work_attention_queue")');
   expect(work).toContain('className="body executive-work premium-exec-page ev2-work-page ev2-work-executive"');
   expect(strategy).toContain('supabase.from("strategy_nodes")');
   expect(strategy).toContain('supabase.from("strategy_delivery_links")');

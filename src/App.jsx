@@ -327,6 +327,7 @@ export default function App() {
     if (tab === "messages") return <Inbox
       me={me}
       openRoom={openRoom}
+      openItem={(id) => navigate({ tab: "work", itemId: id })}
       openAnnouncements={() => go("announcements")}
       initialView={createIntent === "message_room" ? "rooms" : null}
       onInitialViewHandled={() => setCreateIntent(null)}
