@@ -107,7 +107,7 @@ export default function AdminPayroll({ me }) {
     setBusy(false);
     if (createError) { setError(createError.message || "Payroll run could not be created."); return; }
     setSheet(null);
-    setNotice("Draft payroll run created from protected employee records.");
+    setNotice("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.");
     await loadRuns(data);
   }
 
@@ -209,17 +209,20 @@ export default function AdminPayroll({ me }) {
 
     {readiness && <section className="fpg-payroll-table-card">
       <div className="fpg-payroll-table-head">
-        <div><span>Payroll readiness</span><h3>{readiness.employee_count || 0} active employee{readiness.employee_count === 1 ? "" : "s"} in the roster</h3></div>
+        <div><span>Payroll readiness</span><h3>{readiness.employee_count || 0} salary-eligible employee{readiness.employee_count === 1 ? "" : "s"}</h3></div>
         <small>{readiness.linked_count || 0} linked account{readiness.linked_count === 1 ? "" : "s"} · {readiness.roster_only_count || 0} roster only</small>
       </div>
       <section className="fpg-payroll-metrics">
-        <article><span>Employees</span><strong>{readiness.employee_count || 0}</strong><small>Complete active roster population</small></article>
+        <article><span>Salary-eligible</span><strong>{readiness.employee_count || 0}</strong><small>Active non-volunteer payroll population</small></article>
         <article className={readiness.compensation_missing_count ? "has-flags" : ""}><span>Compensation recorded</span><strong>{readiness.compensation_recorded_count || 0}</strong><small>{readiness.compensation_missing_count || 0} still missing</small></article>
         <article className={readiness.payment_missing_count ? "has-flags" : ""}><span>Payment details recorded</span><strong>{readiness.payment_recorded_count || 0}</strong><small>{readiness.payment_missing_count || 0} still missing</small></article>
-        <article className={readiness.identity_review_count ? "has-flags" : ""}><span>Identity review</span><strong>{readiness.identity_review_count || 0}</strong><small>Employees awaiting account-link confirmation</small></article>
+        <article><span>Volunteers excluded</span><strong>{readiness.volunteer_count || 0}</strong><small>Active volunteers remain outside ordinary salary payroll</small></article>
       </section>
       {(readiness.compensation_missing_count > 0 || readiness.payment_missing_count > 0) && <ProductNotice tone="attention" title="Payroll setup is incomplete">
-        Every active employee is represented. Missing salary or payment information is shown as missing and is not invented. A draft run will include the complete roster and flag incomplete employee records for review.
+        Every salary-eligible employee is represented. Missing salary or payment information is shown as missing and is not invented. Active volunteers are excluded from ordinary salary payroll unless Administration formally changes their engagement.
+      </ProductNotice>}
+      {(readiness.volunteer_count || 0) > 0 && <ProductNotice tone="info" title="Volunteer payroll boundary">
+        {readiness.volunteer_count} active volunteer{readiness.volunteer_count === 1 ? "" : "s"} excluded from this ordinary salary-payroll population. Stipend or support does not silently convert a volunteer into a salaried employee.
       </ProductNotice>}
     </section>}
 
@@ -231,11 +234,11 @@ export default function AdminPayroll({ me }) {
           <span className={"fpg-payroll-status " + statusTone(row.status)}>{statusLabel(row.status)}</span>
           <b>{money(row.total_net_minor, row.currency)}</b>
         </button>)}
-        {!runs.length && <EmptyState compact title="No payroll runs">The employee roster is available. Administration can create the first protected payroll run when ready.</EmptyState>}
+        {!runs.length && <EmptyState compact title="No payroll runs">The salary-eligible roster is available. Administration can create the first protected payroll run when ready.</EmptyState>}
       </aside>
 
       <main className="fpg-payroll-main">
-        {!selectedId && <EmptyState title="No payroll run selected">Create or select a payroll period. The first draft will include every active employee in the roster, including employees without login accounts.</EmptyState>}
+        {!selectedId && <EmptyState title="No payroll run selected">Create or select a payroll period. A draft includes every active salary-eligible employee, including roster-only employees without login accounts, and excludes volunteers by default.</EmptyState>}
         {selectedId && detailLoading && <LoadingState label="Opening Payroll run…" />}
         {run && !detailLoading && <>
           <section className="fpg-payroll-run-head">
@@ -307,7 +310,7 @@ function CreateRunSheet({ busy, onClose, onSave }) {
     open
     onClose={onClose}
     title="Create Payroll run"
-    description="Administration prepares the draft from protected employee records. Creating a run does not approve it."
+    description="Administration prepares the draft from protected salary-eligible employee records. Active volunteers are excluded by default. Creating a run does not approve it."
     footer={<>
       <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
       <Button onClick={()=>onSave({label,start,end,payDate,currency,note})} busy={busy} disabled={!valid}>
