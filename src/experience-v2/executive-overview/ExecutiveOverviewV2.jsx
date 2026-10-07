@@ -90,6 +90,38 @@ function OrganisationRow({ icon, label, value, tone = "purple", onClick }) {
   </button>;
 }
 
+function humanActivity(value = "") {
+  return String(value || "activity")
+    .replaceAll(".", " ")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function activityPresentation(objectType = "") {
+  const key = String(objectType || "").toLowerCase();
+  if (key === "profile") return { icon: "people", tone: "purple" };
+  if (key === "work_item") return { icon: "work", tone: "blue" };
+  if (key === "project") return { icon: "projects", tone: "blue" };
+  if (key === "objective" || key === "strategy_node") return { icon: "goal", tone: "green" };
+  if (key === "meeting" || key === "meeting_session") return { icon: "calendar", tone: "amber" };
+  if (key === "report") return { icon: "reports", tone: "amber" };
+  if (key === "unit" || key === "sub_team") return { icon: "organisation", tone: "purple" };
+  if (key === "announcement") return { icon: "messages", tone: "blue" };
+  return { icon: "record", tone: "blue" };
+}
+
+function RecentActivityItem({ row }) {
+  const presentation = activityPresentation(row.object_type);
+  return <div className="executivev2-activity-item">
+    <span className={`executivev2-activity-icon is-${presentation.tone}`}><CeacIcon name={presentation.icon} size="row" decorative /></span>
+    <span className="executivev2-activity-copy">
+      <strong>{humanActivity(row.verb)}</strong>
+      <small>{[row.actor_name || "CEAC", humanActivity(row.object_type), formatDate(row.at, { hour: "2-digit", minute: "2-digit" })].filter(Boolean).join(" · ")}</small>
+    </span>
+    <span className="executivev2-activity-value">{formatDate(row.at, { weekday: "short" })}</span>
+  </div>;
+}
+
 function ActivityItem({ row }) {
   return <div className="executivev2-activity-item">
     <span className="executivev2-activity-icon"><CeacIcon name="record" size="row" decorative /></span>
@@ -113,6 +145,7 @@ export default function ExecutiveOverviewV2({
   ministryStrategyRows = [],
   reporting,
   ministryLatestRows = [],
+  recentActivity = [],
   meetings = [],
   onRetry,
   onOpenWork,
@@ -285,11 +318,11 @@ export default function ExecutiveOverviewV2({
               <h2><CeacIcon name="record" size="row" decorative />Recent activity</h2>
               <button type="button" onClick={onOpenMinistry}>View all</button>
             </div>
-            <div className="executivev2-activity-context">Recorded ministry activity</div>
+            <div className="executivev2-activity-context">{recentActivity.length ? "Recent attributable CEAC activity" : "Recorded ministry activity"}</div>
             <div className="executivev2-activity-grid">
-              {ministryLatestRows.length ? ministryLatestRows.slice(0, 4).map((row) => <ActivityItem key={row.id} row={row} />) : (
-                <div className="executivev2-empty compact"><span><strong>No recent ministry values are recorded.</strong><small>This area only shows attributable CEAC records.</small></span></div>
-              )}
+              {recentActivity.length ? recentActivity.slice(0, 4).map((row) => <RecentActivityItem key={row.id} row={row} />)
+                : ministryLatestRows.length ? ministryLatestRows.slice(0, 4).map((row) => <ActivityItem key={row.id} row={row} />)
+                : <div className="executivev2-empty compact"><span><strong>No recent attributable activity is visible.</strong><small>This area only shows CEAC records your account is authorised to see.</small></span></div>}
             </div>
           </section>
 
