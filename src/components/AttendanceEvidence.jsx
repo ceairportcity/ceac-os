@@ -76,16 +76,16 @@ export default function AttendanceEvidence({me}) {
     {notice&&<ProductNotice tone="success" title="Attendance updated">{notice}</ProductNotice>}
     {loading?<LoadingState label="Loading attendance evidence…"/>:<>
       <LocationPlot rows={rows}/>
-      {rows.map(row=>{const start=startEvidence(row,date),location=row.latest_location,currentLeave=row.approved_leave?.filter(l=>l.state==='current')||[],upcoming=row.approved_leave?.filter(l=>l.state==='upcoming')||[];
+      {rows.map(row=>{const noAttendanceVolunteer=row.employment_type==='volunteer'&&['no_attendance','not_recorded'].includes(row.working_pattern?.kind||'not_recorded'),start=noAttendanceVolunteer?{label:'No attendance obligation',verified:null}:startEvidence(row,date),location=row.latest_location,currentLeave=row.approved_leave?.filter(l=>l.state==='current')||[],upcoming=row.approved_leave?.filter(l=>l.state==='upcoming')||[];
         const rowCorroboration=corroboration.filter(item=>item.profile_id===row.profile_id);
         const latestCorroboration=rowCorroboration[0]||null;
         return <div key={row.employee_id||row.profile_id}>
           <WorkforceRecordRow icon="person" title={row.name} meta={start.label} note={'Last verified location: '+(location?stamp(location.captured_at)+' · '+(location.geofence==='inside'?'inside office area':location.geofence==='outside'?'outside office area':'location recorded')+(location.accuracy_m!=null?' · accuracy ±'+Math.round(location.accuracy_m)+' m':''):'Not recorded')+' · Last CEAC activity: '+stamp(row.last_activity_at)+(row.sessions?.some(s=>s.end_location_status==='not_verified')?' · End location not verified':'')}/>
           <WorkforceFactGrid items={[
-            {label:'Expected today',value:row.expected_today===true?'Session expected':row.expected_today===false?(row.day_type||'No session expected'):'Schedule not configured'},
-            {label:'Expected hours',value:row.expected_start&&row.expected_end?row.expected_start.slice(0,5)+'–'+row.expected_end.slice(0,5):'Not recorded'},
+            {label:'Expected today',value:noAttendanceVolunteer?'No attendance obligation':row.expected_today===true?'Session expected':row.expected_today===false?(row.day_type||'No session expected'):'Schedule not configured'},
+            {label:'Expected hours',value:noAttendanceVolunteer?'Not applicable':row.expected_start&&row.expected_end?row.expected_start.slice(0,5)+'–'+row.expected_end.slice(0,5):'Not recorded'},
             {label:'First recorded start',value:time(row.sessions?.[0]?.started_at)},
-            {label:'Verified office start',value:time(start.verified)},
+            {label:'Verified office start',value:noAttendanceVolunteer?'Not required':time(start.verified)},
             {label:'Session state',value:row.sessions?.some(s=>!s.ended_at)?'Open':row.sessions?.length?'Ended':'No session recorded'},
             {label:'Corroboration',value:latestCorroboration?(latestCorroboration.result==='verified'?'Recorded · '+latestCorroboration.source_label:'Not verified · '+latestCorroboration.source_label):'No additional signal recorded'},
           ]}/>
