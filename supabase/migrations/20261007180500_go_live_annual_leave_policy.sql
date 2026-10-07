@@ -194,6 +194,7 @@ begin
     select
       s.work_date,
       s.schedule_id,
+      dt.id as day_type_id,
       dt.session_expected,
       dt.leave_overlay_allowed
     from schedule_by_day s
@@ -202,7 +203,7 @@ begin
       and dt.org_id=v_org
   )
   select
-    count(*) filter(where schedule_id is null),
+    count(*) filter(where schedule_id is null or day_type_id is null),
     count(*) filter(where coalesce(session_expected,false) and coalesce(leave_overlay_allowed,false))
   into v_missing,v_days
   from facts;
