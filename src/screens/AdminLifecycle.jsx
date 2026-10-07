@@ -64,6 +64,7 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
   const selectedCase=cases.find(c=>c.id===selectedCaseId)||null;
   const caseSteps=steps.filter(s=>s.lifecycle_case_id===selectedCaseId).sort((a,b)=>a.position-b.position);
   const readyStep=caseSteps.find(s=>s.state==="ready")||null;
+  const activeCaseCount=cases.filter((item)=>item.state==="active").length;
 
   async function startCase(){
     if(!profileId||!reason.trim()||!effectiveOn) return;
@@ -102,25 +103,28 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
     await load();
   }
 
-  if(loading) return <div className="body"><LoadingState label="Loading employee lifecycle…" /></div>;
+  if(loading) return <div className="body phase5-lifecycle"><LoadingState label="Loading employee lifecycle…" /></div>;
 
-  return <div className="body">
-    <div style={{paddingTop:26}}>
-      <div className="eyebrow">People operations</div>
-      <h1 className="h1">Employee lifecycle</h1>
-      <p className="screen-note">Controlled onboarding and offboarding with ordered steps, employment history, events and audit. Completing offboarding is the authoritative path that deactivates operational access.</p>
-    </div>
+  return <div className="body phase5-lifecycle">
+    <header className="phase5-lifecycle-header">
+      <div>
+        <div className="eyebrow">People operations</div>
+        <h1 className="h1">Employee lifecycle</h1>
+        <p className="screen-note">Controlled onboarding and offboarding with ordered steps, employment history, events and audit. Completing offboarding is the authoritative path that deactivates operational access.</p>
+      </div>
+      <Button onClick={()=>setCreateOpen(true)}>Start lifecycle case</Button>
+    </header>
 
     {error&&<ProductNotice tone="error" title="Employee lifecycle">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Employee lifecycle">{notice}</ProductNotice>}
 
-    <div className="split" style={{marginTop:18}}>
-      <div className="main-col">
+    <div className="phase5-lifecycle-layout">
+      <div className="phase5-lifecycle-queue">
         <DataPanel
           eyebrow="Queue"
           title="Lifecycle cases"
           supporting="Open and completed onboarding or offboarding records. Select a case to inspect its ordered steps."
-          action={<Button size="compact" onClick={()=>setCreateOpen(true)}>Start lifecycle case</Button>}
+          action={<StatusBadge tone={activeCaseCount?"action":"neutral"} icon={false}>{activeCaseCount ? `${activeCaseCount} active` : "No active cases"}</StatusBadge>}
         >
           {cases.map((item)=>{
             const person=peopleById[item.profile_id];
@@ -140,7 +144,7 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
         </DataPanel>
       </div>
 
-      <div className="side-col">
+      <div className="phase5-lifecycle-detail">
         <DataPanel
           eyebrow="Record"
           title="Case detail"

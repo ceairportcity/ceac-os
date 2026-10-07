@@ -522,7 +522,7 @@ for (const viewport of [
     await page.getByRole("tab", { name: "Access", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Access & responsibilities", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Manage responsibilities", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Lifecycle & offboarding", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Offboard / deactivate access", exact: true })).toBeVisible();
     await expect(page.getByText(/Job title never grants application authority/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Employment", exact: true }).click();

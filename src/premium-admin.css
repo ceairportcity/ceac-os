@@ -357,3 +357,80 @@
     border-radius: var(--ev2-radius-control);
   }
 }
+
+
+/* Phase 5F — employee lifecycle / access closure. */
+.office-app .phase5-lifecycle {
+  width: min(100%, 78rem);
+  margin-inline: auto;
+  display: grid;
+  gap: var(--ev2-space-4);
+}
+
+.office-app .phase5-lifecycle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--ev2-space-5);
+  padding: var(--ev2-space-3) 0 var(--ev2-space-2);
+  border-bottom: 1px solid var(--ev2-line);
+}
+
+.office-app .phase5-lifecycle-header > div {
+  min-width: 0;
+}
+
+.office-app .phase5-lifecycle-header .screen-note {
+  margin-bottom: 0;
+}
+
+.office-app .phase5-lifecycle-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(20rem, .9fr);
+  gap: var(--ev2-space-4);
+  align-items: start;
+}
+
+.office-app .phase5-lifecycle-queue,
+.office-app .phase5-lifecycle-detail {
+  min-width: 0;
+}
+
+.office-app .phase5-lifecycle-detail {
+  position: sticky;
+  top: calc(4.5rem + var(--ev2-space-4));
+}
+
+.office-app .phase5-lifecycle .ev2c-queue-row {
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .office-app .phase5-lifecycle-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .office-app .phase5-lifecycle-detail {
+    position: static;
+  }
+}
+
+@media (max-width: 599px) {
+  .office-app .phase5-lifecycle {
+    gap: var(--ev2-space-3);
+  }
+
+  .office-app .phase5-lifecycle-header {
+    display: grid;
+    align-items: start;
+    gap: var(--ev2-space-3);
+  }
+
+  .office-app .phase5-lifecycle-header > .ev2c-button {
+    width: 100%;
+  }
+
+  .office-app .phase5-lifecycle-layout {
+    gap: var(--ev2-space-3);
+  }
+}
