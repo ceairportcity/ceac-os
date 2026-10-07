@@ -20,11 +20,6 @@ function accraDateKey(value = new Date()) {
   return new Date(value).toLocaleDateString("en-CA", { timeZone: "Africa/Accra" });
 }
 
-function pct(value, total) {
-  if (!total) return 0;
-  return Math.max(0, Math.min(100, (Number(value || 0) / Number(total)) * 100));
-}
-
 function displayCount(value) {
   return value === null || value === undefined ? "—" : Number(value).toLocaleString("en-GH");
 }
