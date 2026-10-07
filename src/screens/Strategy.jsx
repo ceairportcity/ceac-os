@@ -254,9 +254,9 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
   return <div className={executiveSurface ? "body premium-exec-page ev2-executive-ministry" : "body"}>
     <div className={executiveSurface ? "ev2ex-ministry-head" : ""} style={executiveSurface ? undefined : { paddingTop: 26 }}>
       <div className={executiveSurface ? "ev2ex-ministry-head-copy" : ""}>
-        <div className="eyebrow">{executiveSurface ? "Ministry direction" : "Goals & strategy"}</div>
+        <div className="eyebrow">{executiveSurface ? "Executive ministry" : "Goals & strategy"}</div>
         <h1 className="h1">{executiveSurface ? "Ministry" : "Strategy"}</h1>
-        <p className="screen-note">{executiveSurface ? "Direction, ministry objectives and the unit objectives carrying them forward. Results are shown only where they are explicitly recorded." : "Ministry Direction → Ministry Objective → Unit Objective. Descriptive goals stay descriptive; numeric goals always show the result beside its target."}</p>
+        <p className="screen-note">{executiveSurface ? "Set direction, track objectives and keep ministry priorities connected to recorded delivery." : "Ministry Direction → Ministry Objective → Unit Objective. Descriptive goals stay descriptive; numeric goals always show the result beside its target."}</p>
       </div>
       {canGlobal && executiveSurface && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button className="btn" onClick={() => openCreate("ministry_objective")}>New Ministry Objective</button>
@@ -271,7 +271,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
       <button className="btn wide-auto" onClick={() => openCreate("ministry_direction")}>Add Ministry Direction</button>
     </div>}
 
-    <div className={executiveSurface ? "sec ev2ex-ministry-section-title" : "sec"}><span>Strategic hierarchy</span><span>{nodes.length}</span></div>
+    <div className={executiveSurface ? "sec ev2ex-ministry-section-title" : "sec"}><span>{executiveSurface ? "Objectives" : "Strategic hierarchy"}</span><span>{nodes.length}</span></div>
     {directions.length === 0 && <EmptyState title="No Ministry Direction recorded">An authorised strategy owner can record the first Ministry Direction without inventing a numeric score.</EmptyState>}
 
     {directions.map((direction) => <section className={executiveSurface ? "card ev2ex-ministry-direction" : "card"} key={direction.id} style={executiveSurface ? undefined : { padding: 18, marginBottom: 14 }}>
