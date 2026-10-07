@@ -38,6 +38,8 @@ PR #150 head used as the parent for the work in this handoff:
 Prepared branch:
 `chatgpt/pre-restoration-go-live-ready-2026-10-07`
 
+Prepared draft PR: `#151` — **Go-live prep: Annual Leave policy and CEAC Guide**
+
 Do not flatten, reset or force-push this stack. When normal GitHub flow returns, reconcile each successor forward after its predecessor is accepted.
 
 ## Prepared work A — Annual Leave go-live implementation
@@ -123,11 +125,22 @@ At the latest reconciliation these remained open against main and are NOT silent
 - #146 — Security S7 private Storage hardening
 - #148 — historical migration parity
 
-These must be reconciled by actual diff/authority overlap after GitHub restoration. In particular, re-check:
-- `supabase/tests/security_definer_surface_gate.sql`;
-- migration numbering/history;
-- authentication/shell overlap;
-- Workforce/attendance authority overlap.
+These must be reconciled by actual diff/authority overlap after GitHub restoration.
+
+Known direct file collisions with PR #151:
+- PR #138 overlaps `scripts/ci/run-sql-security-gates.sh` and `supabase/tests/security_definer_surface_gate.sql`.
+- PR #144 overlaps `scripts/ci/run-sql-security-gates.sh`.
+- PR #142 has no current direct PR-file collision with #151, but it changes auth/account surfaces and must still be verified against the accepted shell.
+- PR #143 is documentation-only in its current open form and has no current direct collision.
+- PR #146 changes CI/Quality Gate workflows rather than #151 files; acceptance behavior must be re-read after it lands.
+- PR #148 has no current direct file collision with #151, but it reconciles migration history including the historical Leave migration and therefore must be included in migration-history review.
+
+Re-check in particular:
+- the exact authenticated SECURITY DEFINER allowlist after #138 or any later RPC work;
+- cumulative SQL runner contents after #138/#144;
+- migration numbering/history after #148 and the stacked Phase 6 migrations;
+- authentication/shell behavior after #142/#146;
+- Workforce/attendance authority overlap after #144.
 
 Do not resolve conflicts by weakening tests, RLS, MFA, audit or authority checks.
 
