@@ -73,8 +73,8 @@ test("S1 isolated MFA implementation stays self-only and uses Supabase Auth APIs
   expect(settings).toContain("supabase.auth.mfa.challenge");
   expect(settings).toContain("supabase.auth.mfa.verify");
   expect(settings).toContain("supabase.auth.mfa.unenroll");
-  expect(settings).toContain('.from("sub_teams")');
   expect(settings).not.toContain('.from("organisations")');
+  expect(settings).toContain("const lastFactorLocked = factors.length <= 1");
   expect(settings).not.toContain("privileged_mfa_required");
 
   expect(challenge).toContain("supabase.auth.mfa.listFactors()");
