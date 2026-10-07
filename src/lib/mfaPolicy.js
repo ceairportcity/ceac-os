@@ -38,6 +38,15 @@ export function decideMfaAccess({
 export function isPrivilegedIdentity(me) {
   if (!me) return false;
   if (me.is_admin || me.is_exec) return true;
+
+  const memberships = Array.isArray(me.memberships) ? me.memberships : [];
+  if (me.role === "manager" || me.role === "sub_team_lead") return true;
+  if (memberships.some((membership) =>
+    membership?.role === "manager" || membership?.role === "sub_team_lead"
+  )) return true;
+
+  if (Array.isArray(me.led_sub_team_ids) && me.led_sub_team_ids.length > 0) return true;
+
   return Array.isArray(me.capability_grants)
     && me.capability_grants.some((grant) => grant && !grant.revoked_at && grant.capability);
 }
