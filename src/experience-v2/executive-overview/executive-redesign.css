@@ -556,3 +556,113 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* Executive shared destinations — Messages / My Hub / Account */
+.executive-app .inbox-page,
+.executive-app .ev2-personal-page {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+  padding: 18px 20px 42px;
+}
+.executive-app .inbox-page .premium-page-head,
+.executive-app .ev2-personal-page .ev2pf-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 2px 0 17px;
+  border-bottom: 0;
+}
+.executive-app .inbox-page .premium-page-head h1,
+.executive-app .ev2-personal-page .ev2pf-header h1 {
+  margin: 0;
+  color: #171c28;
+  font-size: clamp(1.55rem, 2vw, 1.9rem);
+  line-height: 1.08;
+  letter-spacing: -.03em;
+}
+.executive-app .inbox-page .premium-page-head .eyebrow,
+.executive-app .ev2-personal-page .ev2pf-header .ev2pf-eyebrow {
+  color: #687386;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .04em;
+  text-transform: none;
+}
+.executive-app .inbox-page .premium-page-head .screen-note,
+.executive-app .ev2-personal-page .ev2pf-header p {
+  margin-top: 5px;
+  color: #687386;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.executive-app .inbox-page > .ev2c-segmented {
+  width: fit-content;
+  max-width: 100%;
+  margin: 4px 0 14px;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid #e6e8ee;
+  border-radius: 9px;
+  background: #f6f7fa;
+}
+.executive-app .inbox-page > .ev2c-segmented .ev2c-segmented-item {
+  min-height: 34px;
+  border-radius: 7px;
+}
+.executive-app .inbox-page > .ev2c-segmented .ev2c-segmented-item.is-selected {
+  color: #33226f;
+}
+.executive-app .inbox-page .ev2c-data-panel,
+.executive-app .ev2-personal-page .ev2pf-section,
+.executive-app .ev2-personal-page .ev2pf-destination-card,
+.executive-app .ev2-personal-page .ev2pf-record-row {
+  border-color: #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+.executive-app .inbox-page .ev2c-data-panel { margin-top: 12px; }
+.executive-app .inbox-page .ev2c-row-icon {
+  border-radius: 8px;
+  background: var(--exec-purple-soft);
+  color: var(--exec-purple);
+}
+.executive-app .inbox-page .ev2c-data-panel:nth-of-type(2) .ev2c-row-icon {
+  background: var(--exec-blue-soft);
+  color: var(--exec-blue);
+}
+.executive-app .ev2-personal-page .ev2pf-destination-card:hover {
+  border-color: #d8d0fa;
+  background: #fbfaff;
+}
+.executive-app .ev2-personal-page .ev2pf-inline-actions .ev2c-button-primary,
+.executive-app .ev2-personal-page .ev2pf-inline-actions .btn:not(.btn-ghost) {
+  background: var(--exec-purple);
+  border-color: var(--exec-purple);
+}
+
+@media (max-width: 899px) {
+  .executive-app .inbox-page,
+  .executive-app .ev2-personal-page {
+    padding: 14px 14px calc(82px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 599px) {
+  .executive-app .inbox-page .premium-page-head,
+  .executive-app .ev2-personal-page .ev2pf-header {
+    display: grid;
+    gap: 10px;
+  }
+  .executive-app .inbox-page > .ev2c-segmented {
+    width: 100%;
+  }
+  .executive-app .inbox-page > .ev2c-segmented .ev2c-segmented-item {
+    min-height: 44px;
+  }
+  .executive-app .inbox-page .ev2c-queue-row {
+    min-height: 66px;
+  }
+}
