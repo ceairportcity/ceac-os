@@ -115,6 +115,51 @@ with check (
 revoke all on public.volunteer_working_pattern_versions from public,anon;
 grant select,insert on public.volunteer_working_pattern_versions to authenticated;
 
+create or replace function public.phase6_sync_volunteer_working_pattern()
+returns trigger
+language plpgsql
+security definer
+set search_path=public
+as $
+declare
+  v_pattern jsonb;
+begin
+  v_pattern:=jsonb_build_object('kind',new.pattern_kind) || coalesce(new.configuration,'{}'::jsonb);
+
+  update public.employment_records
+  set working_pattern=v_pattern,
+      updated_at=now(),
+      updated_by=new.created_by
+  where profile_id=new.profile_id
+    and org_id=new.org_id
+    and unit_id=new.unit_id
+    and employment_type='volunteer'
+    and employment_status='active';
+
+  if found then
+    perform public.employment_append_snapshot(
+      new.profile_id,
+      'working_pattern_changed',
+      new.effective_from,
+      coalesce(nullif(btrim(new.reason),''),'Volunteer working arrangement updated.'),
+      new.created_by,
+      null
+    );
+  end if;
+
+  return new;
+end;
+$;
+
+revoke all on function public.phase6_sync_volunteer_working_pattern()
+  from public,anon,authenticated;
+
+drop trigger if exists volunteer_pattern_sync_employment
+  on public.volunteer_working_pattern_versions;
+create trigger volunteer_pattern_sync_employment
+after insert on public.volunteer_working_pattern_versions
+for each row execute function public.phase6_sync_volunteer_working_pattern();
+
 create table if not exists public.volunteer_change_recommendations(
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organisations(id) on delete restrict,
