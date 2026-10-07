@@ -58,7 +58,7 @@ const routeByLabel = {
   "Assets & devices":"assets", Assets:"assets", Compliance:"compliance",
   "Performance & development":"performance", Learning:"learning",
   Workforce:"attendance", "Time & Leave":"attendance",
-  People:"people", "Employee lifecycle":"lifecycle", "Protected HR":"protected-hr",
+  People:"people", "People & Access":"people", "Employee lifecycle":"lifecycle", "Protected HR":"protected-hr",
   Units:"units", Projects:"admin-projects", Calendar:"admin-calendar",
   Reports:"reporting", Cost:"cost", Finance:"finance", Payroll:"payroll",
   Audit:"audit", Events:"events", Workflows:"workflows", Checks:"workflows", Authority:"authority",
