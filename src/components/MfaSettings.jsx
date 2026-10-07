@@ -132,7 +132,7 @@ export default function MfaSettings({ me }) {
       if (verified.error) throw verified.error;
       setSetup(null);
       setSetupCode("");
-      setMessage("Two-step verification is on. Other signed-in sessions were revoked and may take a short time to lose access.");
+      setMessage("Two-step verification is on for this account, and this session is now verified at the higher assurance level.");
       await load();
     } catch (e) {
       setError(humanError(e, "That verification code could not be accepted. Check the code and try again."));
