@@ -22,7 +22,11 @@ export async function loadMe() {
   if (profileError) throw profileError;
   if (!p) return null;
   if (!p.active) throw new Error("Your CEAC access is inactive. Contact Administration.");
-  const [{ data: memberships, error: membershipError }, { data: capabilityGrants, error: capabilityError }] = await Promise.all([
+  const [
+    { data: memberships, error: membershipError },
+    { data: capabilityGrants, error: capabilityError },
+    { data: organisationSecurity, error: organisationSecurityError },
+  ] = await Promise.all([
     supabase.from("unit_memberships")
       .select("role, unit_id, units(name)")
       .eq("profile_id", auth.user.id),
@@ -30,9 +34,14 @@ export async function loadMe() {
       .select("id,capability,scope_unit_id,granted_at")
       .eq("profile_id", auth.user.id)
       .is("revoked_at", null),
+    supabase.from("organisations")
+      .select("privileged_mfa_enforced")
+      .eq("id", p.org_id)
+      .single(),
   ]);
   if (membershipError) throw membershipError;
   if (capabilityError) throw capabilityError;
+  if (organisationSecurityError) throw organisationSecurityError;
   const options = (memberships || []).map((m) => ({
     unit_id: m.unit_id,
     unit_name: m.units ? m.units.name : null,
@@ -49,7 +58,8 @@ export async function loadMe() {
     role: selected ? selected.role : null,
     memberships: options,
     capability_grants: capabilityGrants || [],
-    capabilities: [...new Set((capabilityGrants || []).map((grant) => grant.capability))] };
+    capabilities: [...new Set((capabilityGrants || []).map((grant) => grant.capability))],
+    privileged_mfa_enforced: Boolean(organisationSecurity?.privileged_mfa_enforced) };
 }
 export async function inviteByEmail({ email, fullName, unitId }) {
   const redirect = authRedirect("/activate");
