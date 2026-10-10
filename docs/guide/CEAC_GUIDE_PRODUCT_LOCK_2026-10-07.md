@@ -1,6 +1,6 @@
 # CEAC Guide — Product & Adoption Lock
 
-Date: 7 October 2026  
+Date: 7 October 2026
 Status: OWNER-LOCKED / PRE-RESTORATION IMPLEMENTED / ACCEPTANCE PENDING
 
 ## Purpose
