@@ -85,3 +85,8 @@ Canonical Guide contract:
 - New announcement authority: compact narrow composer with Title → audience pills → Message → Attachments → availability/advanced options → one full-width primary action.
 - Existing RLS, capability authority, draft/publish workflow, strategy parent requirement, audit history, truthful data, Work Engine semantics and all protected security/domain rules remain binding. Visual conformity may not fabricate values or weaken workflow truth.
 - Mockup-only sample values, rich-text controls or actions that do not exist in CEAC OS must not be faked merely for visual similarity.
+
+
+## Private repository handover and final release lock — 10 October 2026
+
+The accepted owner decisions and role-specific visual mockups remain authoritative. Read `../continuity/CEAC_GO_LIVE_PRIVATE_HANDOVER_LOCK_2026-10-10.md` before any final merge, deployment or Technical Support transfer. The new `ceairportcity/ceac-os` source remains **private**. GitHub Free private-main protection limitations require independent review and explicit owner acceptance, not a protection bypass. A final application test pass alone is not evidence that real privileged MFA, employee data protection, production backup/restore, the ten migrations, owner Level C visual acceptance, Vercel integration, or production rollback are complete. Preserve the old deployment and data until every release gate is met.
