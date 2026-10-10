@@ -308,7 +308,8 @@ canonical — never derive a code from the initials of a unit name.
 ## Blocked, awaiting answers from CEAC — do not guess
 
 - **Payroll**: which allowances and deductions beyond SSNIT and PAYE.
-- **Leave entitlement by contract type**: one org-wide figure today.
+
+Annual-leave entitlement/accrual is no longer blocked: the 7 October 2026 owner lock confirms 24 working days per leave year, accruing quarterly at 6 working days per completed quarter with joiner pro-rating and the year-end rules in `docs/final-product/LEAVE_RULES_v1.md`.
 
 ## Continuing without Claude
 
