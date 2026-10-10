@@ -47,8 +47,8 @@ begin
   -- security_definer_surface_gate.sql and attendance_phase6_integrity_gate.sql.
   -- Keep this MFA gate strict on the reviewed final count; neither AAL2 nor
   -- verified-factor authority checks below are relaxed.
-  if callable_count<>136 then
-    raise exception 'S1 MFA gate failure: authenticated SECURITY DEFINER count differs from the reviewed Phase 6C total of 136; found %.',callable_count;
+  if callable_count<>135 then
+    raise exception 'S1 MFA gate failure: authenticated SECURITY DEFINER count differs from the reviewed go-live total of 135; found %.',callable_count;
   end if;
 
   select count(*) into anon_count
