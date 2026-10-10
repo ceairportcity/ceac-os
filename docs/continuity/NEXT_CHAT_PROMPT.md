@@ -1,3 +1,9 @@
+# Latest release-safety precedence — 10 October 2026
+
+The active combined *draft* release candidate is `chatgpt/combined-private-release-candidate-2026-10-10` in private `ceairportcity/ceac-os`. Before implementation, re-fetch the live head/main and consult `CEAC_GO_LIVE_PRIVATE_HANDOVER_LOCK_2026-10-10.md`, `CEAC_DB_MIGRATION_RELEASE_GATE_2026-10-10.md` and `CEAC_TEN_PENDING_MIGRATIONS_RISK_MATRIX_2026-10-10.md`. They supersede conflicting stale phase-only milestones below. No unapproved merge, production write, Vercel Git reconnection or production deploy. Continue the remaining exact-head tests and owner/security/recovery gates.
+
+---
+
 # Active programme — CEAC Operational Refinement, Post-Onboarding
 
 Continue CEAC OS from the live canonical repository state. GitHub is canonical; use one writer, fetch protected `main` before any write, reconcile forward, and never reset, force-push, revert or overwrite newer work.
