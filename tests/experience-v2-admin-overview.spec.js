@@ -32,7 +32,7 @@ test("Stage 7 Administration Overview is isolated V2 presentation on preserved A
   const main = fs.readFileSync("src/main.jsx", "utf8");
 
   expect(home).toContain('from "../experience-v2/admin-overview/AdminOverviewV2"');
-  expect(home).toContain('inviteByEmail');
+  expect(home).not.toContain('inviteByEmail');
   expect(home).toContain('supabase.rpc("workforce_leave_action"');
   expect(home).toContain('required_capability');
   expect(home).toContain('rpc("admin_employee_roster_summary")');
@@ -49,7 +49,9 @@ test("Stage 7 Administration Overview is isolated V2 presentation on preserved A
   expect(view).toContain('title="Today and leave context"');
   expect(view).toContain('title="Payroll readiness"');
   expect(view).toContain('title="Finance & reporting"');
-  expect(view).toContain('title="Organisation configuration"');
+  expect(view).toContain('title="Control Center"');
+  expect(view).toContain("Pending Staff invitations");
+  expect(view).not.toContain("onInviteUnit");
   expect(view).toContain("No work session is not an absence");
   expect(view).toContain("signals for review, not conclusions about performance");
   expect(view).not.toContain("ReferenceDashboard");

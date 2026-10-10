@@ -68,12 +68,14 @@ for (const viewport of [
   test(`Stage 8 Executive Overview composes cleanly at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openExecutive(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.locator(".executivev2-greeting h1")).toContainText("Good morning");
+    await expect(page.locator(".executivev2-hero h2")).toContainText("Good morning");
     await expect(page.locator(".executivev2-kpis")).toBeVisible();
     await expect(page.locator(".executivev2-attention")).toBeVisible();
-    await expect(page.locator(".executivev2-direction")).toBeVisible();
-    await expect(page.locator(".executivev2-organisation")).toBeVisible();
-    await expect(page.locator(".executivev2-activity")).toBeVisible();
+    if (viewport.width > 720) {
+      await expect(page.locator(".executivev2-direction")).toBeVisible();
+      await expect(page.locator(".executivev2-organisation")).toBeVisible();
+      await expect(page.locator(".executivev2-activity")).toBeVisible();
+    }
     await expect(page.locator(".executivev2-meetings")).toBeVisible();
     const order = await page.locator(".executivev2-main > *").evaluateAll((nodes) => nodes.map((node) => node.className));
     expect(order[0]).toContain("executivev2-kpis");
@@ -87,10 +89,10 @@ for (const viewport of [
     expect(overflow).toBeLessThanOrEqual(1);
 
     if (viewport.width <= 599) {
-      const compactHeights = await page.locator(".executivev2 .ev2c-button-compact:visible").evaluateAll((buttons) =>
+      const actionHeights = await page.locator(".executivev2 button:visible").evaluateAll((buttons) =>
         buttons.map((button) => button.getBoundingClientRect().height)
       );
-      for (const height of compactHeights) expect(height).toBeGreaterThanOrEqual(44);
+      for (const height of actionHeights) expect(height).toBeGreaterThanOrEqual(44);
     }
 
     await page.screenshot({
@@ -105,15 +107,16 @@ for (const viewport of [
 test("VF5A Executive briefing keeps the approved compact mockup hierarchy on mobile", async ({ browser }) => {
   const { context, page } = await openExecutive(browser, { width: 390, height: 844 });
 
-  await expect(page.locator(".executivev2-greeting h1")).toContainText("Good morning");
+  await expect(page.locator(".executivev2-hero h2")).toContainText("Good morning");
   const kpis = page.locator(".executivev2-kpis");
   await expect(kpis).toBeVisible();
   await expect(kpis.locator(".executivev2-kpi")).toHaveCount(4);
 
   const attention = page.locator(".executivev2-attention");
-  const activity = page.locator(".executivev2-activity");
-  const [attentionBox, activityBox] = await Promise.all([attention.boundingBox(), activity.boundingBox()]);
-  expect(attentionBox?.y || 0).toBeLessThan(activityBox?.y || Number.POSITIVE_INFINITY);
+  await expect(attention).toBeVisible();
+  await expect(page.locator(".executivev2-direction")).toBeHidden();
+  await expect(page.locator(".executivev2-organisation")).toBeHidden();
+  await expect(page.locator(".executivev2-activity")).toBeHidden();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
@@ -136,7 +139,7 @@ test("VF5B Executive Work and Ministry keep leadership records factual and role-
 
   expect(work).toContain('eq("assigned_by", me.id)');
   expect(work).toContain('rpc("my_work_attention_queue")');
-  expect(work).toContain('className="body executive-work premium-exec-page ev2-work-page ev2-work-executive"');
+  expect(work).toContain("ev2-work-executive");
   expect(strategy).toContain('supabase.from("strategy_nodes")');
   expect(strategy).toContain('supabase.from("strategy_delivery_links")');
   expect(strategy).toContain("Descriptive objective — no percentage is generated.");

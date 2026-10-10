@@ -79,9 +79,10 @@ const roles = [
     },
     destinations: [
       ["home", "Overview"],
-      ["people", "People"],
+      ["people", "People & Access"],
       ["work", "Work"],
       ["attendance", "Time & Leave"],
+      ["admin-calendar", "Calendar"],
       ["finance", "Finance"],
       ["payroll", "Payroll"],
       ["reporting", "Reports"],
@@ -92,12 +93,13 @@ const roles = [
     ],
     primary: [
       ["home", "Overview"],
-      ["people", "People"],
+      ["people", "People & Access"],
       ["attendance", "Time & Leave"],
       ["finance", "Finance"],
     ],
     secondary: [
       ["work", "Work"],
+      ["admin-calendar", "Calendar"],
       ["payroll", "Payroll"],
       ["reporting", "Reports"],
       ["settings", "Control Center"],
@@ -117,6 +119,7 @@ const roles = [
       ["strategy", "Ministry"],
       ["delivery", "Portfolio"],
       ["exec-organisation", "Organisation"],
+      ["exec-calendar", "Calendar"],
       ["exec-finance", "Finance"],
       ["payroll", "Payroll"],
       ["exec-reports", "Reports"],
@@ -132,6 +135,7 @@ const roles = [
     ],
     secondary: [
       ["exec-organisation", "Organisation"],
+      ["exec-calendar", "Calendar"],
       ["exec-finance", "Finance"],
       ["payroll", "Payroll"],
       ["exec-reports", "Reports"],

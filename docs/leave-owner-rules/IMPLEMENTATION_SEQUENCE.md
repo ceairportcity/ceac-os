@@ -14,3 +14,19 @@ Prove five confirmed categories, no arbitrary "Other" request, Manager escalatio
 
 ## LOR4 — Production closure
 Merge through protected main, apply the migration, verify categories/routing in production, and confirm numeric leave policy remains explicitly unconfigured until owner values are supplied.
+
+
+## LOR5 — 7 October Annual policy implementation — PRE-RESTORATION
+Implement the newly confirmed Annual policy without changing secondary leave quantities:
+- 24 working days per leave year;
+- quarterly 6-day credit;
+- joiner pro-rating;
+- ordinary year-end expiry;
+- explicit protected/contractual exception and reversal records;
+- working-day usage derived from attributable workforce schedules;
+- truthful unavailable state when required schedule evidence is incomplete;
+- no automatic Payroll consequence.
+
+The public browser RPC surface remains narrow. New privileged annual-leave implementations live outside the exposed public schema and are reached through SECURITY INVOKER public wrappers.
+
+Acceptance is source-prepared while GitHub Actions are unavailable. Protected-main acceptance, Migration Replay, browser evidence and production application remain pending required GitHub checks.

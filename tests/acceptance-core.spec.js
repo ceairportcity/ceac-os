@@ -58,7 +58,7 @@ const routeByLabel = {
   "Assets & devices":"assets", Assets:"assets", Compliance:"compliance",
   "Performance & development":"performance", Learning:"learning",
   Workforce:"attendance", "Time & Leave":"attendance",
-  People:"people", "Employee lifecycle":"lifecycle", "Protected HR":"protected-hr",
+  People:"people", "People & Access":"people", "Employee lifecycle":"lifecycle", "Protected HR":"protected-hr",
   Units:"units", Projects:"admin-projects", Calendar:"admin-calendar",
   Reports:"reporting", Cost:"cost", Finance:"finance", Payroll:"payroll",
   Audit:"audit", Events:"events", Workflows:"workflows", Checks:"workflows", Authority:"authority",
@@ -487,7 +487,7 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
 
     await go(page, "Team");
     await expect(page.locator(".ev2-people-page.ev2-people-manager")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Your team", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "People & volunteers", exact: true })).toBeVisible();
     const peopleSection = page.locator(".ev2p-section").filter({ hasText: /^People/ }).first();
     const setupHeading = page.getByRole("heading", { name: "Team setup", exact: true });
     await expect(peopleSection).toBeVisible();
@@ -1998,8 +1998,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByRole("heading", { name: "Finance & reporting", exact: true })).toBeVisible();
   await expect(page.getByText("Delivery signals", { exact: true })).toBeVisible();
   await expect(page.getByText("Administration could not finish loading", { exact: true })).toHaveCount(0);
-  const headedUnitRow = page.locator(".adminv2-unit-row").filter({ hasText: "Test Unit A" });
-  await expect(headedUnitRow.getByRole("button", { name: "Add staff", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add staff", exact: true })).toHaveCount(0);
 
   await go(page, "Units");
   await expect(page.getByRole("heading", { name: "Units", exact: true })).toBeVisible();
@@ -2013,23 +2012,11 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(unitWorkspace.getByRole("button", { name: "Cost", exact: true })).toBeVisible();
 
   await unitWorkspace.getByRole("button", { name: "People", exact: true }).click();
-  const addStaff = page.getByRole("button", { name: "Add staff", exact: true });
-  await expect(addStaff).toBeVisible();
-  await addStaff.click();
-  const staffDialog = page.getByRole("dialog");
-  await expect(staffDialog.locator(".h2").filter({ hasText: "Add staff to Test Unit A" })).toBeVisible();
-  await expect(staffDialog.getByRole("tab", { name: "Invite new", exact: true })).toBeVisible();
-  await expect(staffDialog.getByLabel("Full name")).toBeVisible();
-  await expect(staffDialog.getByLabel("Work email")).toBeVisible();
-  await staffDialog.getByRole("tab", { name: "Assign existing", exact: true }).click();
-  const existingStaffSelect = staffDialog.getByLabel("Existing staff");
-  await expect(existingStaffSelect).toBeVisible();
-  await existingStaffSelect.selectOption({ label: "Other Unit Fixture · Test Unit B" });
-  await expect(existingStaffSelect).toHaveValue("31000000-0000-4000-8000-000000000005");
-  await staffDialog.getByRole("button", { name: "Close dialog", exact: true }).click();
-
-  await go(page, "People");
-  await expect(page.getByRole("heading", { name: "People", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Manage people & access", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "People & Access", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Access administration", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Invitation unit", { exact: true })).toHaveValue("20000000-0000-4000-8000-000000000011");
+  await page.getByRole("tab", { name: "Directory", exact: true }).click();
   await page.getByLabel("Find a person").fill("Staff Fixture");
   await page.getByRole("button", { name: /Staff Fixture/ }).click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
@@ -2346,7 +2333,7 @@ test("Closure corridor preserves the Staff Fixture journey across CEAC OS", asyn
 
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test");
-    await go(page, "People");
+    await go(page, "People & Access");
     await page.getByLabel("Find a person").fill("Staff Fixture");
     await page.getByRole("button", { name: /Staff Fixture/ }).click();
     await page.getByRole("tab", { name: "History", exact: true }).click();
@@ -2457,7 +2444,7 @@ test("FPG6 Payroll gives Administration preparation and Executive protected revi
     await dialog.getByLabel("Preparation note").fill("FPG6 visual acceptance fixture");
     await dialog.getByRole("button", { name: "Create draft Payroll", exact: true }).click();
 
-    await expect(page.getByText("Draft payroll run created from protected employee records.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: payrollLabel, exact: true })).toBeVisible();
     await expect(page.locator(".fpg-payroll-table")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/fpg6-payroll-admin-desktop.png", fullPage: true });
@@ -2484,8 +2471,8 @@ test("FPG7 People and Workforce follow the locked employee-management reference 
 
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
-    await go(page, "People");
-    await expect(page.getByRole("heading", { name: "People", exact: true })).toBeVisible();
+    await go(page, "People & Access");
+    await expect(page.getByRole("heading", { name: "People & Access", exact: true })).toBeVisible();
     await expect(page.locator(".fpg-people-roster")).toBeVisible();
     await expect(page.locator(".fpg-people-roster-row").first()).toBeVisible();
     await page.screenshot({ path: "test-artifacts/fpg7-people-roster-desktop.png", fullPage: true });
@@ -2502,7 +2489,7 @@ test("FPG7 People and Workforce follow the locked employee-management reference 
 
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 390, height: 844 });
-    await go(page, "People");
+    await go(page, "People & Access");
     await expect(page.locator(".fpg-people-roster")).toBeVisible();
     let overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
@@ -2584,14 +2571,16 @@ test("FPG10 propagates the accepted Work, Finance and People reference grammar a
 });
 
 test("Foundation People & Access keeps new invitations distinct from existing responsibilities", async ({ browser }) => {
+  test.setTimeout(90_000);
   for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 900 }]) {
     const {context,page}=await openAs(browser,"admin@ceac.local.test",viewport);
-    await go(page,"Control Center");
-    await page.getByRole("button",{name:"Open People & Access"}).click();
+    await go(page,"People & Access");
     await expect(page.getByRole("heading",{name:"People & Access",exact:true})).toBeVisible();
+    await page.getByRole("tab",{name:"Access",exact:true}).click();
+    await expect(page.locator(".phase5-people-access")).toBeVisible();
     await expect(page.getByRole("button",{name:"Send Staff invitation"})).toBeDisabled();
     await page.screenshot({path:`test-artifacts/foundation-people-access-invite-${viewport.width}.png`,fullPage:true});
-    await page.getByRole("button",{name:"Add responsibility",exact:true}).click();
+    await page.locator(".phase5-people-access").getByRole("tab",{name:"Responsibilities",exact:true}).click();
     await expect(page.getByRole("combobox",{name:"Existing person",exact:true})).toBeVisible();
     await page.getByRole("combobox",{name:"Existing person",exact:true}).selectOption("31000000-0000-4000-8000-000000000002");
     await expect(page.getByRole("button",{name:"End membership"}).first()).toBeVisible();

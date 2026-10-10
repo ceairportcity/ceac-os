@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase, inviteByEmail } from "../lib/supabase";
+import { authRedirect } from "../lib/authRedirect";
 import { isOverdue } from "../lib/time";
 import { LoadingState, ProductNotice, Sheet } from "../components/bits";
 import {
@@ -37,7 +38,7 @@ function PersonRow({ person, openPerson, laneNames = [] }) {
       : null;
   return <PeopleEvidencePerson
     name={name}
-    subtitle={person.profiles?.job_title || person.role}
+    subtitle={person.employment_type === "volunteer" ? "Volunteer" : (person.profiles?.job_title || person.role)}
     context={currentSummary}
     status={person.presence}
     statusTone={person.presence === "Present" ? "success" : person.presence === "On leave" ? "warning" : "neutral"}
@@ -64,6 +65,11 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
   const [code, setCode] = useState("");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [peopleView, setPeopleView] = useState("all");
+  const [volunteerPattern, setVolunteerPattern] = useState("no_attendance");
+  const [volunteerDays, setVolunteerDays] = useState(["sat"]);
+  const [volunteerStart, setVolunteerStart] = useState("");
+  const [volunteerEnd, setVolunteerEnd] = useState("");
   const [editName, setEditName] = useState("");
   const [moveWorkTo, setMoveWorkTo] = useState("");
   const [removeWorkCount, setRemoveWorkCount] = useState(0);
@@ -91,11 +97,14 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
     try {
       const start = weekStart();
       const today = dayKey();
-      const [membershipResult, subTeamResult, workResult, sessionResult,
+      const [membershipResult, employmentResult, subTeamResult, workResult, sessionResult,
         submissionResult, leaveResult, pendingResult, resourceResult] = await Promise.all([
         supabase.from("unit_memberships")
           .select("id, role, profile_id, profiles!unit_memberships_profile_id_fkey(id, full_name, email, job_title)")
           .eq("unit_id", me.unit_id),
+        supabase.from("employment_records")
+          .select("profile_id,employment_type,working_pattern,manager_profile_id")
+          .eq("unit_id", me.unit_id).eq("employment_status", "active"),
         supabase.from("sub_teams")
           .select("id, name, code, position, lead_id, profiles!sub_teams_lead_fk(full_name)")
           .eq("unit_id", me.unit_id).eq("active", true).order("position"),
@@ -108,13 +117,15 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
           .eq("work_items.unit_id", me.unit_id).gte("submitted_at", start.toISOString()),
         supabase.from("leave_requests").select("profile_id, start_date, end_date, status")
           .eq("status", "approved").lte("start_date", today).gte("end_date", today),
-        supabase.from("pending_invitations").select("email, full_name, invited_at")
+        supabase.from("pending_invitations").select("email, full_name, invited_at, engagement_type, engagement_working_pattern")
           .eq("unit_id", me.unit_id).is("resolved_at", null),
         supabase.from("unit_resources").select("*").eq("unit_id", me.unit_id)
           .order("active", { ascending: false }).order("pinned", { ascending: false }).order("sort_order").order("title"),
       ]);
 
       const memberships = requireResult(membershipResult, "Team members");
+      const employment = requireResult(employmentResult, "Engagement records");
+      const employmentByProfile = new Map(employment.map((row) => [row.profile_id, row]));
       const staff = memberships.filter((membership) => membership.profile_id !== me.id);
       const staffIds = new Set(staff.map((membership) => membership.profile_id));
       const work = requireResult(workResult, "Team work").filter((item) => staffIds.has(item.assignee_id));
@@ -128,9 +139,21 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
         const presenceDays = new Set(personSessions.map((session) => dayKey(new Date(session.started_at)))).size;
         const submitted = submissions.filter((submission) => submission.profile_id === membership.profile_id).length;
         const current = personWork.filter((item) => !["completed", "self_certified", "cancelled"].includes(item.status));
+        const engagement = employmentByProfile.get(membership.profile_id) || {};
+        const patternKind = engagement.working_pattern?.kind || "not_recorded";
+        const volunteerContext = engagement.employment_type === "volunteer"
+          ? patternKind === "no_attendance"
+            ? "No attendance tracking"
+            : patternKind === "event_based"
+              ? "Event-based"
+              : null
+          : null;
         return {
           ...membership,
-          presence: leaveIds.has(membership.profile_id) ? "On leave" : personSessions.some((session) => dayKey(new Date(session.started_at)) === today) ? "Present" : "Not started",
+          employment_type: engagement.employment_type || "not_recorded",
+          working_pattern: engagement.working_pattern || { kind: "not_recorded" },
+          manager_profile_id: engagement.manager_profile_id || null,
+          presence: volunteerContext || (leaveIds.has(membership.profile_id) ? "On leave" : personSessions.some((session) => dayKey(new Date(session.started_at)) === today) ? "Present" : "Not started"),
           presenceDays,
           submitted,
           completed: personWork.filter((item) => ["task", "deliverable"].includes(item.kind) && ["completed", "self_certified"].includes(item.status) && item.completed_at && new Date(item.completed_at) >= start).length,
@@ -224,9 +247,53 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
     setBusy(true); setMsg(null);
     try {
       await inviteByEmail({ orgId: me.org_id, invitedBy: me.id, email, fullName, unitId: me.unit_id, role: "staff" });
-      setMsg("Sent. They appear here once they sign in.");
+      setMsg("Staff invitation sent. They appear here once they activate.");
       setEmail(""); setFullName(""); await load();
     } catch (err) { setMsg(err.message || "The invitation could not be sent."); }
+    finally { setBusy(false); }
+  }
+
+  async function inviteVolunteer() {
+    setBusy(true); setMsg(null);
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanName = fullName.trim();
+      const pattern = {
+        kind: volunteerPattern,
+        ...(volunteerPattern === "specific_days" || volunteerPattern === "custom"
+          ? { days: volunteerDays, start: volunteerStart || null, end: volunteerEnd || null }
+          : {}),
+      };
+
+      const { error: inviteError } = await supabase.rpc("create_pending_invitation", {
+        p_email: cleanEmail,
+        p_full_name: cleanName,
+        p_unit_id: me.unit_id,
+        p_role: "staff",
+      });
+      if (inviteError) throw inviteError;
+
+      const { data: classified, error: classifyError } = await supabase.from("pending_invitations")
+        .update({ engagement_type: "volunteer", engagement_working_pattern: pattern })
+        .eq("org_id", me.org_id)
+        .eq("unit_id", me.unit_id)
+        .eq("email", cleanEmail)
+        .is("resolved_at", null)
+        .select("id")
+        .single();
+      if (classifyError || !classified?.id) throw classifyError || new Error("Volunteer engagement could not be recorded.");
+
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: { shouldCreateUser: true, emailRedirectTo: authRedirect("/activate") },
+      });
+      if (authError) throw authError;
+
+      setMsg("Volunteer invitation sent. Their account will still activate as Staff; volunteer is their engagement type.");
+      setEmail(""); setFullName(""); setVolunteerPattern("no_attendance"); setVolunteerDays(["sat"]);
+      setVolunteerStart(""); setVolunteerEnd("");
+      await load();
+    } catch (err) { setMsg(err.message || "The volunteer invitation could not be sent."); }
     finally { setBusy(false); }
   }
 
@@ -262,6 +329,12 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
     await load();
   }
 
+  const visiblePeople = people.filter((person) =>
+    peopleView === "all" ? true : peopleView === "volunteers" ? person.employment_type === "volunteer" : person.employment_type !== "volunteer"
+  );
+  const volunteerCount = people.filter((person) => person.employment_type === "volunteer").length;
+  const staffCount = people.length - volunteerCount;
+
   const groupedPeople = subTeams.map((team) => ({
     ...team,
     people: people.filter((person) => (members[person.profile_id] || []).includes(team.id)),
@@ -272,8 +345,8 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
     <div className="body manager-team ev2-people-page ev2-people-manager">
       <PeoplePageHeader
         eyebrow={me.unit_name || "Your unit"}
-        title="Your team"
-        description="Presence and work are shown as factual operating context. They are not a score or judgement about a person."
+        title="People & volunteers"
+        description="One team workspace for Staff and volunteers. Volunteer is an engagement type, not a new CEAC role or authority level."
         count={people.length + 1}
         countLabel={people.length ? "people including you" : "person"}
       />
@@ -283,6 +356,26 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
         description="Coordinate with the unit without leaving CEAC OS."
         onClick={openRoom}
       />}
+
+      <section className="phase6-manager-people-toolbar" aria-label="People and volunteer controls">
+        <div className="phase6-manager-people-tabs" role="tablist" aria-label="People type">
+          {[
+            ["all", `All ${people.length}`],
+            ["staff", `Staff ${staffCount}`],
+            ["volunteers", `Volunteers ${volunteerCount}`],
+          ].map(([value,label]) => <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={peopleView === value}
+            className={peopleView === value ? "is-selected" : ""}
+            onClick={() => setPeopleView(value)}
+          >{label}</button>)}
+        </div>
+        <button className="btn phase6-add-volunteer" onClick={() => { setSheet("volunteer"); setMsg(null); }}>
+          + Add volunteer
+        </button>
+      </section>
 
       {error && <ProductNotice tone="error" title="Could not complete that">{error}</ProductNotice>}
       {loading && <LoadingState label="Loading your team…" />}
@@ -295,8 +388,8 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
       {!loading && me.unit_id && <>
         <div className="ev2p-stack">
           <PeopleSection
-            title="People"
-            meta={`${people.length + 1} in ${me.unit_name || "this unit"}`}
+            title="People & volunteers"
+            meta={`${visiblePeople.length + (peopleView === "volunteers" ? 0 : 1)} shown`}
             description="Open a person for unit-scoped work, activity and visible feedback context."
           >
             <PeoplePersonRow
@@ -306,7 +399,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
               status="You"
               statusTone="neutral"
             />
-            {people.map((person) => {
+            {visiblePeople.map((person) => {
               const laneNames = subTeams
                 .filter((team) => (members[person.profile_id] || []).includes(team.id))
                 .map((team) => team.name);
@@ -317,8 +410,8 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
                 laneNames={laneNames}
               />;
             })}
-            {people.length === 0 && <PeopleEmpty
-              title="No other staff members yet"
+            {visiblePeople.length === 0 && <PeopleEmpty
+              title={peopleView === "volunteers" ? "No volunteers in this unit yet" : peopleView === "staff" ? "No other Staff in this unit yet" : "No other people yet"}
               description="Invited or authorised unit members will appear here. Your own work remains under My work."
             />}
           </PeopleSection>
@@ -362,23 +455,24 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
 
           {showSetup && <>
             <div className="ev2p-manager-setup-grid">
-              <PeopleSection title="Staff and invitations" meta={String(people.length + pending.length)}>
+              <PeopleSection title="People and invitations" meta={String(people.length + pending.length)}>
                 {people.map((person) => {
                   const laneNames = subTeams
                     .filter((team) => (members[person.profile_id] || []).includes(team.id))
                     .map((team) => team.name);
                   return <div key={person.id} className="ev2p-manager-resource-row">
                     <strong>{person.profiles?.full_name || "—"}</strong>
-                    <span>{person.role === "manager" ? "Unit head" : person.role === "sub_team_lead" ? "Team lead" : "Staff"}</span>
+                    <span>{person.employment_type === "volunteer" ? "Volunteer" : person.role === "manager" ? "Unit head" : person.role === "sub_team_lead" ? "Team lead" : "Staff"}</span>
                     <small>{laneNames.length ? laneNames.join(" · ") : "Not assigned to a part yet"}</small>
                   </div>;
                 })}
                 {pending.map((person) => <div key={person.email} className="ev2p-manager-resource-row">
                   <strong>{person.full_name || person.email}</strong>
-                  <span>Invitation sent — waiting for sign-in</span>
+                  <span>{person.engagement_type === "volunteer" ? "Volunteer invitation" : "Staff invitation"} — waiting for activation</span>
                 </div>)}
                 <div className="ev2p-manager-setup-actions">
-                  <button className="btn btn-ghost wide-auto" onClick={() => { setSheet("invite"); setMsg(null); }}>Add someone</button>
+                  <button className="btn btn-ghost wide-auto" onClick={() => { setSheet("invite"); setMsg(null); }}>Add Staff</button>
+                  <button className="btn btn-ghost wide-auto" onClick={() => { setSheet("volunteer"); setMsg(null); }}>Add volunteer</button>
                 </div>
               </PeopleSection>
 
@@ -449,11 +543,73 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
         <button className="btn" style={{ marginTop: 14 }} disabled={busy} onClick={() => removeSubTeam(sheet.team)}>{busy ? "Moving work..." : "Move work and remove part"}</button>
       </Sheet>}
       {sheet === "invite" && <Sheet onClose={() => { setSheet(null); setMsg(null); }}>
-        <div className="h2">Add someone to the team</div>
+        <div className="h2">Add Staff</div>
+        <p className="screen-note">This creates a Staff invitation for the current unit. Formal authority remains separate.</p>
         <input className="field" placeholder="Their full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
         <input className="field" placeholder="Their work email" type="email" autoCapitalize="none" value={email} onChange={(event) => setEmail(event.target.value)} />
         {msg && <div className="flag flag-amber" style={{ marginTop: 12 }}>{msg}</div>}
-        <button className="btn" style={{ marginTop: 14 }} onClick={invite} disabled={busy || !email.trim() || !fullName.trim()}>{busy ? "Sending..." : "Send invitation"}</button>
+        <button className="btn" style={{ marginTop: 14 }} onClick={invite} disabled={busy || !email.trim() || !fullName.trim()}>{busy ? "Sending..." : "Send Staff invitation"}</button>
+      </Sheet>}
+      {sheet === "volunteer" && <Sheet onClose={() => { if (!busy) { setSheet(null); setMsg(null); } }}>
+        <div className="phase6-volunteer-sheet">
+          <div>
+            <span className="eyebrow">People & volunteers</span>
+            <div className="h2">Add volunteer</div>
+            <p className="screen-note">Volunteers use the Staff experience. This invitation does not grant Unit Head, HR, Compliance, Administration or Executive authority.</p>
+          </div>
+
+          <div className="phase6-volunteer-identity-grid">
+            <label>
+              <span>Full name</span>
+              <input className="field" aria-label="Volunteer full name" placeholder="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
+            </label>
+            <label>
+              <span>Email</span>
+              <input className="field" aria-label="Volunteer email" placeholder="name@example.com" type="email" autoCapitalize="none" value={email} onChange={(event) => setEmail(event.target.value)} />
+            </label>
+            <label>
+              <span>Team / Unit</span>
+              <input className="field" aria-label="Volunteer unit" value={me.unit_name || "Current unit"} disabled />
+            </label>
+          </div>
+
+          <fieldset className="phase6-working-pattern">
+            <legend>Working pattern</legend>
+            <p>Choose what attendance expectation actually applies. No configured obligation means CEAC will not infer employee-style absence or lateness.</p>
+            {[
+              ["no_attendance","No attendance tracking","Use work, meetings and outcomes without attendance expectations."],
+              ["event_based","Event-based","Attendance applies only to explicitly assigned events or ministry activities."],
+              ["specific_days","Specific days","Use selected recurring days with optional start/end times."],
+              ["custom","Custom schedule","Use a custom recurring arrangement for this volunteer."],
+            ].map(([value,title,description]) => <label key={value} className={volunteerPattern === value ? "phase6-pattern-choice is-selected" : "phase6-pattern-choice"}>
+              <input type="radio" name="volunteer-pattern" value={value} checked={volunteerPattern === value} onChange={() => setVolunteerPattern(value)} />
+              <span><strong>{title}</strong><small>{description}</small></span>
+            </label>)}
+          </fieldset>
+
+          {(volunteerPattern === "specific_days" || volunteerPattern === "custom") && <div className="phase6-pattern-detail">
+            <span className="field-label">Days</span>
+            <div className="phase6-day-pills">
+              {[["mon","Mon"],["tue","Tue"],["wed","Wed"],["thu","Thu"],["fri","Fri"],["sat","Sat"],["sun","Sun"]].map(([key,label]) => <label key={key}>
+                <input type="checkbox" checked={volunteerDays.includes(key)} onChange={(event) => setVolunteerDays((days) => event.target.checked ? [...new Set([...days,key])] : days.filter((day) => day !== key))} />
+                <span>{label}</span>
+              </label>)}
+            </div>
+            <div className="phase6-time-grid">
+              <label><span>Start</span><input className="field" type="time" aria-label="Volunteer start time" value={volunteerStart} onChange={(event) => setVolunteerStart(event.target.value)} /></label>
+              <label><span>End</span><input className="field" type="time" aria-label="Volunteer end time" value={volunteerEnd} onChange={(event) => setVolunteerEnd(event.target.value)} /></label>
+            </div>
+          </div>}
+
+          {msg && <div className="flag flag-amber">{msg}</div>}
+          <div className="phase6-volunteer-actions">
+            <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => setSheet(null)}>Cancel</button>
+            <button className="btn" type="button" onClick={inviteVolunteer}
+              disabled={busy || !email.trim() || !fullName.trim() || ((volunteerPattern === "specific_days" || volunteerPattern === "custom") && volunteerDays.length === 0)}>
+              {busy ? "Sending…" : "Send volunteer invitation"}
+            </button>
+          </div>
+        </div>
       </Sheet>}
       {sheet === "resource" && <Sheet onClose={() => !busy && setSheet(null)}>
         <div className="h2">{resourceForm.id ? "Edit unit resource" : "Add unit resource"}</div>

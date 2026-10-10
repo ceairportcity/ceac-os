@@ -1,10 +1,8 @@
 import {
-  Button,
   Skeleton,
   StatePanel,
 } from "../components";
 import { CeacIcon } from "../icons";
-import { DataVizChart } from "../data-viz/DataVizV2";
 import "./executive-overview.css";
 
 function formatDate(value, options = {}) {
@@ -18,54 +16,104 @@ function formatDate(value, options = {}) {
   });
 }
 
-function ministryMovement(rows = []) {
-  const values = rows.map((row) => Number(row.value) || 0);
-  const first = values[0] || 0;
-  const latest = values[values.length - 1] || 0;
-  const delta = latest - first;
-  return {
-    latest,
-    note: delta === 0
-      ? "No arithmetic change across the recorded values."
-      : `${delta > 0 ? "+" : ""}${delta.toLocaleString("en-GH")} across ${rows.length} recorded values. CEAC OS does not infer why it moved.`,
-  };
+function accraDateKey(value = new Date()) {
+  return new Date(value).toLocaleDateString("en-CA", { timeZone: "Africa/Accra" });
 }
 
-function pct(value, total) {
-  if (!total) return 0;
-  return Math.max(0, Math.min(100, (Number(value || 0) / Number(total)) * 100));
+function displayCount(value) {
+  return value === null || value === undefined ? "—" : Number(value).toLocaleString("en-GH");
 }
 
-function ExecutiveStat({ icon, value, label, supporting, tone = "blue", onClick }) {
+function ExecutiveStat({ icon, value, label, supporting, tone = "purple", onClick }) {
   const Tag = onClick ? "button" : "div";
   return <Tag type={onClick ? "button" : undefined} className={`executivev2-kpi is-${tone}`} onClick={onClick}>
     <span className="executivev2-kpi-icon"><CeacIcon name={icon} size="row" decorative /></span>
     <span className="executivev2-kpi-copy">
-      <strong>{value}</strong>
       <span>{label}</span>
+      <strong>{value}</strong>
       {supporting ? <small>{supporting}</small> : null}
     </span>
   </Tag>;
 }
 
-function AttentionItem({ icon, title, meta, status, tone = "neutral", onClick }) {
+function AttentionItem({ icon, title, meta, tone = "neutral", onClick }) {
   return <button type="button" className="executivev2-attention-item" onClick={onClick}>
     <span className={`executivev2-attention-icon is-${tone}`}><CeacIcon name={icon} size="row" decorative /></span>
     <span className="executivev2-attention-copy">
       <strong>{title}</strong>
       <small>{meta}</small>
     </span>
-    <span className={`executivev2-pill is-${tone}`}>{status}</span>
     <span className="executivev2-row-action" aria-hidden="true">›</span>
   </button>;
 }
 
-function DirectionRow({ icon, label, value, progress, tone = "success" }) {
+function DirectionRow({ icon, label, detail, progress = null, tone = "success" }) {
+  const hasProgress = Number.isFinite(progress);
   return <div className="executivev2-direction-row">
     <span className={`executivev2-direction-icon is-${tone}`}><CeacIcon name={icon} size="row" decorative /></span>
-    <span><strong>{value}</strong> {label}</span>
-    <span className="executivev2-direction-track" aria-hidden="true"><span className={`is-${tone}`} style={{ width: `${progress}%` }} /></span>
-    <small>{Math.round(progress)}%</small>
+    <span className="executivev2-direction-copy"><strong>{label}</strong><small>{detail}</small></span>
+    {hasProgress ? <>
+      <span className="executivev2-direction-track" aria-hidden="true"><span className={`is-${tone}`} style={{ width: `${progress}%` }} /></span>
+      <small>{Math.round(progress)}%</small>
+    </> : <small className="executivev2-direction-state">Recorded</small>}
+  </div>;
+}
+
+function strategyProgress(row) {
+  if (row?.measurement_kind !== "numeric") return null;
+  const target = Number(row?.target_value);
+  const current = Number(row?.current_value);
+  if (!Number.isFinite(target) || target <= 0 || !Number.isFinite(current)) return null;
+  return Math.max(0, Math.min(100, (current / target) * 100));
+}
+
+function strategyStatusLabel(row) {
+  const status = String(row?.status || "recorded").replaceAll("_", " ");
+  if (row?.measurement_kind !== "numeric") return status;
+  const current = row?.current_value;
+  const target = row?.target_value;
+  const unit = row?.target_unit ? ` ${row.target_unit}` : "";
+  if (current === null || current === undefined || target === null || target === undefined) return status;
+  return `${Number(current).toLocaleString("en-GH")} of ${Number(target).toLocaleString("en-GH")}${unit} · ${status}`;
+}
+
+function OrganisationRow({ icon, label, value, tone = "purple", onClick }) {
+  return <button type="button" className="executivev2-org-row" onClick={onClick}>
+    <span className={`executivev2-org-icon is-${tone}`}><CeacIcon name={icon} size="row" decorative /></span>
+    <span><strong>{label}</strong><small>{displayCount(value)}</small></span>
+    <span aria-hidden="true">›</span>
+  </button>;
+}
+
+function humanActivity(value = "") {
+  return String(value || "activity")
+    .replaceAll(".", " ")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function activityPresentation(objectType = "") {
+  const key = String(objectType || "").toLowerCase();
+  if (key === "profile") return { icon: "people", tone: "purple" };
+  if (key === "work_item") return { icon: "work", tone: "blue" };
+  if (key === "project") return { icon: "projects", tone: "blue" };
+  if (key === "objective" || key === "strategy_node") return { icon: "goal", tone: "green" };
+  if (key === "meeting" || key === "meeting_session") return { icon: "calendar", tone: "amber" };
+  if (key === "report") return { icon: "reports", tone: "amber" };
+  if (key === "unit" || key === "sub_team") return { icon: "organisation", tone: "purple" };
+  if (key === "announcement") return { icon: "messages", tone: "blue" };
+  return { icon: "record", tone: "blue" };
+}
+
+function RecentActivityItem({ row }) {
+  const presentation = activityPresentation(row.object_type);
+  return <div className="executivev2-activity-item">
+    <span className={`executivev2-activity-icon is-${presentation.tone}`}><CeacIcon name={presentation.icon} size="row" decorative /></span>
+    <span className="executivev2-activity-copy">
+      <strong>{humanActivity(row.verb)}</strong>
+      <small>{[row.actor_name || "CEAC", humanActivity(row.object_type), formatDate(row.at, { hour: "2-digit", minute: "2-digit" })].filter(Boolean).join(" · ")}</small>
+    </span>
+    <span className="executivev2-activity-value">{formatDate(row.at, { weekday: "short" })}</span>
   </div>;
 }
 
@@ -84,13 +132,15 @@ function ActivityItem({ row }) {
 
 export default function ExecutiveOverviewV2({
   executiveName,
+  executiveDate,
   loading,
   error,
   summary,
   objectiveMix,
+  ministryStrategyRows = [],
   reporting,
   ministryLatestRows = [],
-  ministryCharts = [],
+  recentActivity = [],
   meetings = [],
   onRetry,
   onOpenWork,
@@ -98,47 +148,62 @@ export default function ExecutiveOverviewV2({
   onOpenPortfolio,
   onOpenOrganisation,
   onOpenReports,
+  onOpenCalendar,
   onOpenMeeting,
   onScheduleMeeting,
 }) {
   const reportingGap = reporting ? Math.max(0, Number(reporting.total) - Number(reporting.filed)) : 0;
   const attentionCount = Number(summary.objectiveAttention || 0) + Number(summary.blocked || 0) + reportingGap;
-  const objectiveTotal = Number(summary.objectives || 0);
-  const objectiveStable = Number(objectiveMix.onTrack || 0) + Number(objectiveMix.met || 0);
   const objectiveRisk = Number(objectiveMix.atRisk || 0) + Number(objectiveMix.notMet || 0);
-  const objectiveOther = Number(objectiveMix.other || 0);
+  const ministryDirectionRows = ministryStrategyRows.filter((row) => row.node_type === "ministry_objective").slice(0, 3);
+  const directionFallbackRows = ministryDirectionRows.length ? ministryDirectionRows : ministryStrategyRows.filter((row) => row.node_type === "ministry_direction").slice(0, 3);
+  const todayKey = accraDateKey();
+  const meetingsToday = meetings.filter((meeting) => accraDateKey(meeting.starts_at) === todayKey).length;
+
   const attentionRows = [
+    reportingGap > 0 ? {
+      icon: "reports",
+      title: "Reporting requires attention",
+      meta: `${reportingGap} unit report${reportingGap === 1 ? "" : "s"} still outstanding for ${reporting.label}`,
+      tone: "risk",
+      onClick: onOpenReports,
+    } : null,
     Number(summary.objectiveAttention || 0) > 0 ? {
       icon: "goal",
-      title: "Review ministry objective status",
+      title: "Ministry objective update due",
       meta: `${summary.objectiveAttention} objective${summary.objectiveAttention === 1 ? "" : "s"} recorded at risk or not met`,
-      status: "At risk",
-      tone: "risk",
+      tone: "warning",
       onClick: onOpenMinistry,
     } : null,
     Number(summary.blocked || 0) > 0 ? {
-      icon: "warning",
-      title: "Resolve recorded delivery hold-ups",
+      icon: "work",
+      title: "Delivery follow-up required",
       meta: `${summary.blocked} unresolved blocker${summary.blocked === 1 ? "" : "s"} across visible work`,
-      status: "Follow up",
-      tone: "warning",
+      tone: "action",
       onClick: onOpenWork,
     } : null,
-    reportingGap > 0 ? {
-      icon: "reports",
-      title: "Outstanding unit reporting",
-      meta: `${reportingGap} unit report${reportingGap === 1 ? "" : "s"} still outstanding for ${reporting.label}`,
-      status: "Reporting",
-      tone: "action",
-      onClick: onOpenReports,
+    Number(summary.review || 0) > 0 ? {
+      icon: "people",
+      title: "Work is waiting for review",
+      meta: `${summary.review} submitted item${summary.review === 1 ? "" : "s"} currently in review`,
+      tone: "purple",
+      onClick: onOpenWork,
     } : null,
   ].filter(Boolean);
 
   return <div className="body executive-home">
     <div className="executivev2">
-      <header className="executivev2-greeting">
-        <h1>Good morning, {executiveName || "Group Pastor"}</h1>
-        <p>Here&apos;s what matters across CEAC today.</p>
+      <div className="executivev2-page-heading">
+        <h1>Overview</h1>
+        <p>Executive Dashboard</p>
+      </div>
+
+      <header className="executivev2-hero">
+        <div className="executivev2-hero-copy">
+          <h2>Good morning, {executiveName || "Executive"}</h2>
+          <p>Here&apos;s what matters today across your ministry, people and operations.</p>
+        </div>
+        <time>{executiveDate}</time>
       </header>
 
       {error ? <StatePanel
@@ -150,144 +215,125 @@ export default function ExecutiveOverviewV2({
       /> : null}
 
       {loading ? <div className="executivev2-loading" role="status" aria-live="polite" aria-busy="true" aria-label="Loading Executive Overview">
-        <Skeleton width="100%" height="5rem" />
-        <Skeleton width="100%" height="16rem" />
+        <Skeleton width="100%" height="7.5rem" />
         <Skeleton width="100%" height="13rem" />
+        <Skeleton width="100%" height="12rem" />
       </div> : null}
 
       {!loading && !error ? <main className="executivev2-main">
         <section className="executivev2-kpis" aria-label="Executive summary">
           <ExecutiveStat
-            icon="warning"
-            value={attentionCount}
-            label="Items need attention"
-            supporting="Objectives, blockers and reporting"
-            tone="red"
-            onClick={attentionCount ? onOpenWork : undefined}
+            icon="people"
+            value={displayCount(summary.activeVolunteers)}
+            label="Volunteers"
+            supporting={summary.activeVolunteers === null ? "Visible when authorised" : "Active engagement"}
+            tone="purple"
+            onClick={onOpenOrganisation}
           />
           <ExecutiveStat
             icon="goal"
-            value={summary.objectives}
-            label="Ministry objectives"
-            supporting={objectiveRisk ? `${objectiveRisk} at risk or not met` : "No recorded objective risk"}
-            tone="blue"
+            value={displayCount(summary.ministryObjectives ?? summary.objectives)}
+            label="Ministry Objectives"
+            supporting={objectiveRisk ? `${objectiveRisk} need attention` : "Recorded direction"}
+            tone="green"
             onClick={onOpenMinistry}
           />
           <ExecutiveStat
-            icon="projects"
-            value={summary.projects}
-            label="Active projects"
-            supporting={summary.review ? `${summary.review} work item${summary.review === 1 ? "" : "s"} in review` : "Current active portfolio"}
-            tone="green"
-            onClick={onOpenPortfolio}
+            icon="calendar"
+            value={displayCount(meetingsToday)}
+            label="Upcoming Meetings"
+            supporting={meetingsToday ? "Today" : meetings.length ? "Next 14 days" : "None recorded today"}
+            tone="amber"
+            onClick={onOpenCalendar}
           />
           <ExecutiveStat
-            icon="organisation"
-            value={summary.activeUnits || 0}
-            label="Departments"
-            supporting="Active organisation units"
-            tone="purple"
-            onClick={onOpenOrganisation}
+            icon="reports"
+            value={displayCount(attentionCount)}
+            label="Reports / Actions"
+            supporting={attentionCount ? `${attentionCount} need your attention` : "No recorded urgent action"}
+            tone="blue"
+            onClick={onOpenReports}
           />
         </section>
 
         <section className="executivev2-reference-grid">
           <section className="executivev2-reference-panel executivev2-attention" aria-label="Needs your attention">
             <div className="executivev2-panel-head">
-              <h2>Needs your attention</h2>
-              {attentionCount ? <button type="button" onClick={onOpenWork}>View all</button> : null}
+              <h2><CeacIcon name="warning" size="row" decorative />Needs your attention</h2>
+              <button type="button" onClick={onOpenWork}>View all</button>
             </div>
             <div className="executivev2-panel-body">
-              {attentionRows.length ? attentionRows.map((row) => <AttentionItem key={row.title} {...row} />) : (
+              {attentionRows.length ? attentionRows.slice(0, 4).map((row) => <AttentionItem key={row.title} {...row} />) : (
                 <div className="executivev2-empty">
                   <CeacIcon name="checkCircle" size="row" decorative />
-                  <span><strong>No recorded item needs your decision right now.</strong><small>New exceptions will appear here when the underlying record requires Executive attention.</small></span>
+                  <span><strong>No recorded item needs your decision right now.</strong><small>New exceptions will appear here when an underlying CEAC record requires Executive attention.</small></span>
                 </div>
               )}
             </div>
           </section>
 
-          <div className="executivev2-side-stack">
-            <section className="executivev2-reference-panel executivev2-direction">
-              <div className="executivev2-panel-head">
-                <h2>Ministry direction</h2>
-                <button type="button" onClick={onOpenMinistry}>View all</button>
-              </div>
-              <div className="executivev2-panel-body">
-                {objectiveTotal ? <>
-                  <DirectionRow icon="checkCircle" label="on track or met" value={objectiveStable} progress={pct(objectiveStable, objectiveTotal)} tone="success" />
-                  <DirectionRow icon="warning" label="at risk or not met" value={objectiveRisk} progress={pct(objectiveRisk, objectiveTotal)} tone="risk" />
-                  <DirectionRow icon="info" label="other recorded status" value={objectiveOther} progress={pct(objectiveOther, objectiveTotal)} tone="warning" />
-                </> : <div className="executivev2-empty compact"><span><strong>No objective status recorded yet.</strong><small>Open Ministry to add or review objectives.</small></span></div>}
-              </div>
-            </section>
+          <section className="executivev2-reference-panel executivev2-direction">
+            <div className="executivev2-panel-head">
+              <h2><CeacIcon name="goal" size="row" decorative />Ministry direction</h2>
+              <button type="button" onClick={onOpenMinistry}>View all</button>
+            </div>
+            <div className="executivev2-panel-body">
+              {directionFallbackRows.length ? directionFallbackRows.map((row, index) => {
+                const progress = strategyProgress(row);
+                const tone = row.status === "met" ? "success" : row.status === "draft" ? "blue" : index === 1 ? "warning" : "success";
+                return <DirectionRow
+                  key={row.id}
+                  icon={row.node_type === "ministry_direction" ? "ministry" : "goal"}
+                  label={row.name}
+                  detail={strategyStatusLabel(row)}
+                  progress={progress}
+                  tone={tone}
+                />;
+              }) : <div className="executivev2-empty compact"><span><strong>No ministry objective is recorded yet.</strong><small>Open Ministry to add or review the recorded direction.</small></span></div>}
+            </div>
+          </section>
 
-            <section className="executivev2-reference-panel executivev2-organisation">
-              <div className="executivev2-panel-head">
-                <h2>Organisational overview</h2>
-                <button type="button" onClick={onOpenOrganisation}>View all</button>
-              </div>
-              <div className="executivev2-org-grid">
-                <button type="button" onClick={onOpenOrganisation}><CeacIcon name="organisation" size="row" decorative /><span><strong>{summary.activeUnits || 0}</strong><small>Departments</small></span></button>
-                <button type="button" onClick={onOpenPortfolio}><CeacIcon name="projects" size="row" decorative /><span><strong>{summary.projects || 0}</strong><small>Active projects</small></span></button>
-                <button type="button" onClick={onOpenReports}><CeacIcon name="reports" size="row" decorative /><span><strong>{reporting ? `${reporting.filed}/${reporting.total}` : "—"}</strong><small>Reports filed</small></span></button>
-              </div>
-            </section>
-          </div>
+          <section className="executivev2-reference-panel executivev2-organisation">
+            <div className="executivev2-panel-head">
+              <h2><CeacIcon name="organisation" size="row" decorative />Organisational overview</h2>
+              <button type="button" onClick={onOpenOrganisation}>View all</button>
+            </div>
+            <div className="executivev2-panel-body">
+              <OrganisationRow icon="organisation" label="Departments" value={summary.activeUnits} tone="purple" onClick={onOpenOrganisation} />
+              <OrganisationRow icon="team" label="Teams" value={summary.activeTeams} tone="blue" onClick={onOpenOrganisation} />
+              <OrganisationRow icon="people" label="Active Volunteers" value={summary.activeVolunteers} tone="amber" onClick={onOpenOrganisation} />
+              <OrganisationRow icon="account" label="Active Staff" value={summary.activeStaff} tone="green" onClick={onOpenOrganisation} />
+            </div>
+          </section>
         </section>
 
         <section className="executivev2-lower-grid">
-          <section className="executivev2-reference-panel executivev2-activity executivev2-movement">
+          <section className="executivev2-reference-panel executivev2-activity">
             <div className="executivev2-panel-head">
-              <h2>Recent activity</h2>
-              <button type="button" onClick={onOpenMinistry}>View ministry</button>
+              <h2><CeacIcon name="record" size="row" decorative />Recent activity</h2>
+              <button type="button" onClick={onOpenMinistry}>View all</button>
             </div>
-            <div className="executivev2-activity-context">Recorded ministry activity</div>
-            <div className="executivev2-activity-tabs" aria-label="Activity filter">
-              <span className="is-active">All</span>
-              <span>Ministry</span>
-              <span>Work</span>
-              <span>Reports</span>
-            </div>
+            <div className="executivev2-activity-context">{recentActivity.length ? "Recent attributable CEAC activity" : "Recorded ministry activity"}</div>
             <div className="executivev2-activity-grid">
-              {ministryLatestRows.length ? ministryLatestRows.slice(0, 4).map((row) => <ActivityItem key={row.id} row={row} />) : (
-                <div className="executivev2-empty compact"><span><strong>No recent ministry values are recorded.</strong><small>This area only shows attributable CEAC records.</small></span></div>
-              )}
+              {recentActivity.length ? recentActivity.slice(0, 4).map((row) => <RecentActivityItem key={row.id} row={row} />)
+                : ministryLatestRows.length ? ministryLatestRows.slice(0, 4).map((row) => <ActivityItem key={row.id} row={row} />)
+                : <div className="executivev2-empty compact"><span><strong>No recent attributable activity is visible.</strong><small>This area only shows CEAC records your account is authorised to see.</small></span></div>}
             </div>
-            {ministryCharts.length ? <details className="executivev2-movement-details">
-              <summary>Recorded movement</summary>
-              <div className="executivev2-movement-charts">
-                {ministryCharts.slice(0, 2).map(({ operation, rows }) => {
-                  const movement = ministryMovement(rows);
-                  const label = `${operation.units?.name || "Unit"} · ${operation.name}`;
-                  return <DataVizChart
-                    key={operation.id}
-                    kind="line"
-                    compact
-                    title={label}
-                    note={movement.note}
-                    summary={`${movement.latest.toLocaleString("en-GH")} ${operation.value_label || "recorded"}`}
-                    ariaLabel={`${label} recorded ministry movement`}
-                    data={rows}
-                    series={[{ key: "value", label: operation.value_label || "Recorded value" }]}
-                  />;
-                })}
-              </div>
-            </details> : null}
           </section>
 
           <section className="executivev2-reference-panel executivev2-meetings">
             <div className="executivev2-panel-head">
-              <h2>Upcoming meetings</h2>
-              <Button variant="quiet" size="compact" onClick={onScheduleMeeting}>Schedule meeting</Button>
+              <h2><CeacIcon name="calendar" size="row" decorative />Upcoming meetings</h2>
+              <button type="button" onClick={onOpenCalendar}>View calendar</button>
             </div>
             <div className="executivev2-panel-body">
               {meetings.length ? meetings.slice(0, 4).map((meeting) => <button type="button" className="executivev2-meeting-row" key={meeting.id} onClick={() => onOpenMeeting?.(meeting.id)}>
-                <span className="executivev2-meeting-icon"><CeacIcon name="meeting" size="row" decorative /></span>
-                <span><strong>{meeting.title}</strong><small>{formatDate(meeting.starts_at, { weekday: "short", hour: "2-digit", minute: "2-digit" })}</small></span>
-                <span className="executivev2-meeting-action">View</span>
-              </button>) : <div className="executivev2-empty compact"><span><strong>No upcoming meeting is visible.</strong><small>Schedule a meeting when one is needed.</small></span></div>}
+                <time>{formatDate(meeting.starts_at, { hour: "2-digit", minute: "2-digit" })}</time>
+                <span><strong>{meeting.title}</strong><small>{meeting.provider || "Meeting"} · {formatDate(meeting.starts_at, { weekday: "short" })}</small></span>
+                <span className="executivev2-row-action" aria-hidden="true">›</span>
+              </button>) : <div className="executivev2-empty compact"><span><strong>No upcoming meeting is visible.</strong><small>Meetings appear here when they are recorded in CEAC.</small></span></div>}
             </div>
+            <button type="button" className="executivev2-schedule-link" onClick={onScheduleMeeting}>Schedule meeting</button>
           </section>
         </section>
       </main> : null}

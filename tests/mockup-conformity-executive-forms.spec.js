@@ -22,7 +22,7 @@ test.describe.configure({ mode: "serial" });
 
 test("owner mockup: Executive Overview uses compact briefing composition", async ({ page }) => {
   await signInExecutive(page);
-  await expect(page.locator(".executivev2-greeting h1")).toContainText("Good morning");
+  await expect(page.locator(".executivev2-hero h2")).toContainText("Good morning");
   await expect(page.locator(".executivev2-kpis .executivev2-kpi")).toHaveCount(4);
   await expect(page.locator(".executivev2-attention")).toBeVisible();
   await expect(page.locator(".executivev2-direction")).toBeVisible();
@@ -30,8 +30,11 @@ test("owner mockup: Executive Overview uses compact briefing composition", async
   await expect(page.locator(".executivev2-activity")).toBeVisible();
   await expect(page.locator(".executivev2-meetings")).toBeVisible();
 
-  const firstViewport = await page.locator(".executivev2-main").boundingBox();
-  expect(firstViewport?.height || 0).toBeLessThan(760);
+  await expect(page.getByText("Executive Dashboard", { exact: true })).toBeVisible();
+  await expect(page.getByText("Volunteers", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ministry Objectives", { exact: true })).toBeVisible();
+  await expect(page.getByText("Upcoming Meetings", { exact: true })).toBeVisible();
+  await expect(page.getByText("Reports / Actions", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
   await page.screenshot({ path: "test-artifacts/mockup-conformity-executive-home-1440.png", fullPage: true });

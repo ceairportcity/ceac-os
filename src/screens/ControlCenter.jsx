@@ -9,7 +9,6 @@ import {
   StatusBadge,
   Surface,
 } from "../experience-v2/components";
-import PeopleAccess from "../components/PeopleAccess";
 import { humanError } from "../lib/productLanguage";
 
 const STATUSES = {
@@ -51,7 +50,6 @@ export default function ControlCenter({me,go}){
   const canPayroll=caps.has("payroll.prepare")||caps.has("payroll.approve");
   const canIntegrations=caps.has("integration.manage");
   const canAudit=caps.has("audit.view");
-  const [peopleAccess,setPeopleAccess]=useState(false);
   const [snapshot,setSnapshot]=useState(null);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
@@ -220,8 +218,7 @@ export default function ControlCenter({me,go}){
             ? `${snapshot.invitations.length} Staff invitation${snapshot.invitations.length===1?" is":"s are"} still pending activation.`
             : "No employee data exception or pending Staff invitation is currently recorded.",
         actions:[
-          {label:"Open People & Access",onClick:()=>setPeopleAccess(true)},
-          {label:"People",onClick:()=>go("people")},
+          {label:"People & Access",onClick:()=>go("people")},
           ...(caps.has("hr_private.access")?[{label:"Protected HR",onClick:()=>go("protected-hr")}]:[]),
         ],
       },
@@ -305,14 +302,36 @@ export default function ControlCenter({me,go}){
 
   const attention=domains.filter((domain)=>domain.status!==STATUSES.ready);
 
-  if(peopleAccess) return <PeopleAccess me={me} go={go} onBack={()=>{setPeopleAccess(false);load();}} />;
+  const domainGroups=[
+    {
+      key:"organisation",
+      eyebrow:"Organisation",
+      title:"Organisation & people",
+      description:"Durable structure, employee identity and access configuration.",
+      domainKeys:["organisation","people"],
+    },
+    {
+      key:"operations",
+      eyebrow:"Operations",
+      title:"Operational configuration",
+      description:"Workflow, Time & Leave and Payroll / Finance readiness.",
+      domainKeys:["work","leave","payroll"],
+    },
+    {
+      key:"governance",
+      eyebrow:"Governance",
+      title:"Security, integrations & records",
+      description:"Authority, connected systems and append-only evidence.",
+      domainKeys:["governance","integrations","audit"],
+    },
+  ];
 
   return <div className="body control-center premium-admin-page ev2-control-center">
     <header className="admin-page-header ev2-control-center-header">
       <div>
         <span className="eyebrow">Administration</span>
         <h1 className="h1">Control Center</h1>
-        <p className="screen-note">Configuration and governance status from CEAC's authoritative records. Advanced changes open only on their owning surface.</p>
+        <p className="screen-note">Durable organisation configuration, people access, policy readiness and governance from CEAC’s authoritative records. Operational monitoring stays on Overview.</p>
       </div>
       <StatusBadge tone="neutral" icon={false}>Governance workspace</StatusBadge>
     </header>
@@ -332,11 +351,11 @@ export default function ControlCenter({me,go}){
 
     {!loading&&!error ? <>
       <DataPanel
-        eyebrow="System health"
+        eyebrow="Configuration attention"
         title={attention.length ? "Needs attention" : "No configuration exception recorded"}
         supporting={attention.length
-          ? "These domains are incomplete, waiting on policy, or have an actionable recorded exception. This is not a numeric health score."
-          : "Every domain visible to this account currently reports its required configuration as ready."}
+          ? "These configuration domains are incomplete, awaiting policy, or have an actionable recorded exception. This is not a numeric health score."
+          : "Every configuration domain visible to this account currently reports its required state as ready."}
         action={<StatusBadge tone={attention.length?"warning":"success"} icon={false}>
           {attention.length ? `${attention.length} domain${attention.length===1?"":"s"}` : "Ready"}
         </StatusBadge>}
@@ -352,9 +371,21 @@ export default function ControlCenter({me,go}){
         />) : <StatePanel state="success" title="No configuration exception is waiting" description="Use the domain cards below to review authoritative settings." />}
       </DataPanel>
 
-      <section className="control-grid" aria-label="Control Center domains">
-        {domains.map((domain)=><DomainCard key={domain.key}{...domain}/>)}
-      </section>
+      <div className="phase5-control-groups">
+        {domainGroups.map((group)=><section className="phase5-control-group" key={group.key} aria-labelledby={`phase5-control-${group.key}`}>
+          <header className="phase5-control-group-head">
+            <span className="eyebrow">{group.eyebrow}</span>
+            <h2 id={`phase5-control-${group.key}`}>{group.title}</h2>
+            <p>{group.description}</p>
+          </header>
+          <div className="phase5-control-ledger">
+            {group.domainKeys
+              .map((key)=>domains.find((domain)=>domain.key===key))
+              .filter(Boolean)
+              .map((domain)=><DomainCard key={domain.key}{...domain}/>)}
+          </div>
+        </section>)}
+      </div>
     </> : null}
   </div>;
 }

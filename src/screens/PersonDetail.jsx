@@ -38,6 +38,17 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
   const [objectiveTasks, setObjectiveTasks] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [subTeams, setSubTeams] = useState([]);
+  const [employment, setEmployment] = useState(null);
+  const [volunteerPatterns, setVolunteerPatterns] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [patternKind, setPatternKind] = useState("no_attendance");
+  const [patternDays, setPatternDays] = useState(["sat"]);
+  const [patternStart, setPatternStart] = useState("");
+  const [patternEnd, setPatternEnd] = useState("");
+  const [patternReason, setPatternReason] = useState("");
+  const [recommendationKind, setRecommendationKind] = useState("status_change");
+  const [recommendationSummary, setRecommendationSummary] = useState("");
+  const [recommendationReason, setRecommendationReason] = useState("");
   const [periodDays, setPeriodDays] = useState(30);
   const [currentFilter, setCurrentFilter] = useState(focus === "overdue" ? "overdue" : focus === "review" ? "in_review" : "active");
   const [showCompleted, setShowCompleted] = useState(false);
@@ -70,7 +81,7 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
       setPerson(membershipResult.data);
 
       const since = new Date(); since.setDate(since.getDate() - periodDays);
-      const [workResult, sessionResult, submissionResult, feedbackResult, subTeamResult] = await Promise.all([
+      const [workResult, sessionResult, submissionResult, feedbackResult, subTeamResult, employmentResult, patternResult, recommendationResult] = await Promise.all([
         supabase.from("work_items")
           .select("id, ref, title, kind, status, due_at, original_due_at, completed_at, first_time_approved, objective_id, visibility")
           .eq("unit_id", me.unit_id).eq("assignee_id", profileId).neq("visibility", "private")
@@ -87,6 +98,15 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
           .eq("profile_id", profileId).order("created_at", { ascending: false }),
         supabase.from("sub_team_members").select("sub_team_id, sub_teams!inner(name, unit_id)")
           .eq("profile_id", profileId).eq("sub_teams.unit_id", me.unit_id),
+        supabase.from("employment_records")
+          .select("profile_id,employment_type,employment_status,working_pattern,manager_profile_id,unit_id")
+          .eq("profile_id", profileId).eq("unit_id", me.unit_id).maybeSingle(),
+        supabase.from("volunteer_working_pattern_versions")
+          .select("id,pattern_kind,configuration,effective_from,effective_to,reason,created_at,created_by")
+          .eq("profile_id", profileId).eq("unit_id", me.unit_id).order("created_at", { ascending: false }),
+        supabase.from("volunteer_change_recommendations")
+          .select("id,recommendation_kind,requested_summary,reason,status,requested_at,decision_note")
+          .eq("profile_id", profileId).eq("unit_id", me.unit_id).order("requested_at", { ascending: false }),
       ]);
       const work = requireResult(workResult, "Work");
       setItems(work);
@@ -94,6 +114,21 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
       setSubmissions(requireResult(submissionResult, "Submissions"));
       setFeedback(requireResult(feedbackResult, "Feedback"));
       setSubTeams(requireResult(subTeamResult, "Parts of the team").map((row) => row.sub_teams?.name).filter(Boolean));
+      if (employmentResult.error) throw new Error(`Engagement record: ${employmentResult.error.message}`);
+      if (patternResult.error) throw new Error(`Volunteer working pattern: ${patternResult.error.message}`);
+      if (recommendationResult.error) throw new Error(`Volunteer recommendations: ${recommendationResult.error.message}`);
+      setEmployment(employmentResult.data || null);
+      const patternRows = patternResult.data || [];
+      setVolunteerPatterns(patternRows);
+      setRecommendations(recommendationResult.data || []);
+      const activePattern = patternRows[0];
+      const fallbackPattern = employmentResult.data?.working_pattern || {};
+      const nextKind = activePattern?.pattern_kind || fallbackPattern.kind || "no_attendance";
+      const nextConfig = activePattern?.configuration || fallbackPattern || {};
+      setPatternKind(nextKind === "not_recorded" ? "no_attendance" : nextKind);
+      setPatternDays(Array.isArray(nextConfig.days) && nextConfig.days.length ? nextConfig.days : ["sat"]);
+      setPatternStart(nextConfig.start || "");
+      setPatternEnd(nextConfig.end || "");
 
       const objectiveIds = [...new Set(work.map((item) => item.objective_id).filter(Boolean))];
       if (objectiveIds.length) {
@@ -131,6 +166,52 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
     finally { setBusy(false); }
   }
 
+  async function recordVolunteerPattern() {
+    if (!employment || employment.employment_type !== "volunteer") return;
+    setBusy(true); setError(null);
+    try {
+      const configuration = (patternKind === "specific_days" || patternKind === "custom")
+        ? { days: patternDays, start: patternStart || null, end: patternEnd || null }
+        : {};
+      const { error: patternError } = await supabase.from("volunteer_working_pattern_versions").insert({
+        org_id: me.org_id,
+        profile_id: profileId,
+        unit_id: me.unit_id,
+        pattern_kind: patternKind,
+        configuration,
+        effective_from: new Date().toISOString().slice(0, 10),
+        supersedes_id: volunteerPatterns[0]?.id || null,
+        reason: patternReason.trim() || "Manager updated volunteer working arrangement.",
+        created_by: me.id,
+      });
+      if (patternError) throw patternError;
+      setPatternReason("");
+      await load();
+    } catch (err) { setError(humanError(err, "The volunteer working arrangement could not be recorded.")); }
+    finally { setBusy(false); }
+  }
+
+  async function submitVolunteerRecommendation() {
+    if (!employment || employment.employment_type !== "volunteer") return;
+    setBusy(true); setError(null);
+    try {
+      const { error: recommendationError } = await supabase.from("volunteer_change_recommendations").insert({
+        org_id: me.org_id,
+        profile_id: profileId,
+        unit_id: me.unit_id,
+        recommendation_kind: recommendationKind,
+        requested_summary: recommendationSummary.trim(),
+        reason: recommendationReason.trim(),
+        requested_by: me.id,
+      });
+      if (recommendationError) throw recommendationError;
+      setRecommendationSummary("");
+      setRecommendationReason("");
+      await load();
+    } catch (err) { setError(humanError(err, "The recommendation could not be recorded.")); }
+    finally { setBusy(false); }
+  }
+
   if (!person) return <div className="body manager-person-detail ev2-people-page ev2-person-workspace">
     <PeopleBackButton onClick={back} label="Team" />
     {error ? <ProductNotice tone="error" title="Could not open person detail">{error}</ProductNotice> : <LoadingState label="Loading person…" />}
@@ -157,8 +238,17 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
   const filters = [["active", "Active"], ["waiting_on", "Waiting"], ["returned", "Returned"], ["overdue", "Overdue"], ["in_review", "Awaiting review"]];
 
   const personName = person.profiles?.full_name || "—";
-  const personRole = person.profiles?.job_title || person.role;
-  const personContext = subTeams.length ? subTeams.join(", ") : null;
+  const isVolunteer = employment?.employment_type === "volunteer";
+  const activeVolunteerPattern = volunteerPatterns[0] || null;
+  const patternLabel = ({
+    no_attendance: "No attendance tracking",
+    event_based: "Event-based",
+    specific_days: "Specific days",
+    custom: "Custom schedule",
+    not_recorded: "Not recorded",
+  })[activeVolunteerPattern?.pattern_kind || employment?.working_pattern?.kind || "not_recorded"] || "Not recorded";
+  const personRole = isVolunteer ? "Volunteer" : (person.profiles?.job_title || person.role);
+  const personContext = [subTeams.length ? subTeams.join(", ") : null, isVolunteer ? patternLabel : null].filter(Boolean).join(" · ") || null;
   const outcomeTone = (status) => status === "at_risk" || status === "partly_met"
     ? "warning"
     : status === "met" || status === "on_track"
@@ -200,6 +290,72 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
       </aside>
 
       <div className="ev2p-person-detail-stack">
+        {isVolunteer && <PeopleWorkspaceSection
+          id="volunteer-profile"
+          title="Volunteer profile"
+          description="Operational volunteer engagement in this unit. Formal engagement, compensation and protected HR remain with Administration."
+          meta={<StatusBadge tone="action" icon={false}>Volunteer · {employment?.employment_status || "active"}</StatusBadge>}
+        >
+          <div className="phase6-volunteer-profile-grid">
+            <div><span>Unit</span><strong>{me.unit_name || "Current unit"}</strong></div>
+            <div><span>Working pattern</span><strong>{patternLabel}</strong></div>
+            <div><span>Role authority</span><strong>{person.role === "sub_team_lead" ? "Team lead" : "Staff"}</strong></div>
+            <div><span>Work lanes</span><strong>{subTeams.length ? subTeams.join(", ") : "General unit work"}</strong></div>
+          </div>
+
+          <div className="phase6-volunteer-profile-actions">
+            <div className="phase6-volunteer-pattern-editor">
+              <h3>Working arrangement</h3>
+              <p>Managers can change day-to-day volunteer arrangements in their own unit. This does not change employment status or compensation.</p>
+              <select className="field" aria-label="Volunteer working pattern" value={patternKind} onChange={(event) => setPatternKind(event.target.value)}>
+                <option value="no_attendance">No attendance tracking</option>
+                <option value="event_based">Event-based</option>
+                <option value="specific_days">Specific days</option>
+                <option value="custom">Custom schedule</option>
+              </select>
+              {(patternKind === "specific_days" || patternKind === "custom") && <>
+                <div className="phase6-day-pills">
+                  {[["mon","Mon"],["tue","Tue"],["wed","Wed"],["thu","Thu"],["fri","Fri"],["sat","Sat"],["sun","Sun"]].map(([key,label]) => <label key={key}>
+                    <input type="checkbox" checked={patternDays.includes(key)} onChange={(event) => setPatternDays((days) => event.target.checked ? [...new Set([...days,key])] : days.filter((day) => day !== key))} />
+                    <span>{label}</span>
+                  </label>)}
+                </div>
+                <div className="phase6-time-grid">
+                  <label><span>Start</span><input className="field" type="time" value={patternStart} onChange={(event) => setPatternStart(event.target.value)} /></label>
+                  <label><span>End</span><input className="field" type="time" value={patternEnd} onChange={(event) => setPatternEnd(event.target.value)} /></label>
+                </div>
+              </>}
+              <textarea className="field" rows={2} aria-label="Volunteer working pattern reason" placeholder="Reason / context" value={patternReason} onChange={(event) => setPatternReason(event.target.value)} />
+              <Button variant="secondary" onClick={recordVolunteerPattern}
+                disabled={busy || ((patternKind === "specific_days" || patternKind === "custom") && patternDays.length === 0)}>
+                {busy ? "Recording…" : "Update working arrangement"}
+              </Button>
+            </div>
+
+            <div className="phase6-volunteer-recommendation">
+              <h3>Recommend formal change</h3>
+              <p>Use this for a status, engagement or compensation recommendation. Administration must review and perform any formal change.</p>
+              <select className="field" aria-label="Volunteer recommendation type" value={recommendationKind} onChange={(event) => setRecommendationKind(event.target.value)}>
+                <option value="status_change">Status change</option>
+                <option value="engagement_change">Engagement change</option>
+                <option value="compensation_change">Compensation / support change</option>
+              </select>
+              <input className="field" aria-label="Volunteer recommendation" placeholder="What change are you recommending?" value={recommendationSummary} onChange={(event) => setRecommendationSummary(event.target.value)} />
+              <textarea className="field" rows={2} aria-label="Volunteer recommendation reason" placeholder="Why?" value={recommendationReason} onChange={(event) => setRecommendationReason(event.target.value)} />
+              <Button onClick={submitVolunteerRecommendation} disabled={busy || recommendationSummary.trim().length < 3 || recommendationReason.trim().length < 3}>
+                {busy ? "Sending…" : "Send recommendation to Administration"}
+              </Button>
+              {recommendations.length > 0 && <div className="phase6-volunteer-recommendation-history">
+                {recommendations.slice(0,4).map((row) => <div key={row.id}>
+                  <strong>{row.requested_summary}</strong>
+                  <span>{row.status} · {dateOnly(row.requested_at)}</span>
+                  {row.decision_note ? <small>{row.decision_note}</small> : null}
+                </div>)}
+              </div>}
+            </div>
+          </div>
+        </PeopleWorkspaceSection>}
+
         <PeopleWorkspaceSection
       id="current-work"
       title="Current responsibilities"

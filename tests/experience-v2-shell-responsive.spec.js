@@ -38,7 +38,7 @@ test("Stage 4C capability and multi-unit policies remain explicit", async () => 
   const limitedAdmin = getShellNavigation(roleContext("admin", { capabilities: [] }));
   const limitedAdminLabels = limitedAdmin.map((item) => item.label);
 
-  expect(limitedAdminLabels).not.toContain("People");
+  expect(limitedAdminLabels).not.toContain("People & Access");
   for (const label of [
     "Overview",
     "Work",
@@ -56,7 +56,7 @@ test("Stage 4C capability and multi-unit policies remain explicit", async () => 
   const authorisedAdmin = getShellNavigation(
     roleContext("admin", { capabilities: ["people.manage"] })
   );
-  expect(authorisedAdmin.map((item) => item.label)).toContain("People");
+  expect(authorisedAdmin.map((item) => item.label)).toContain("People & Access");
 
   const limitedAdminPrimary = getMobilePrimaryNavigation(
     roleContext("admin", { capabilities: [] })
@@ -211,7 +211,7 @@ test("Stage 4C all four mobile role shells stay within the 390px viewport", asyn
 
     const mobileNav = page.locator(".ev2s-mobile-nav");
     await expect(mobileNav).toBeVisible();
-    await expect(mobileNav.getByRole("button")).toHaveCount(5);
+    await expect(mobileNav.getByRole("button")).toHaveCount(role.key === "executive" ? 4 : 5);
 
     const overflow = await page.evaluate(() => ({
       document: document.documentElement.scrollWidth - document.documentElement.clientWidth,

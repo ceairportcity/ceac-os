@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { Sheet, ProductNotice, LoadingState } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button, Surface } from "../experience-v2/components";
+import StaffCalendar from "./StaffCalendar";
 import {
   CalendarAgenda,
   CalendarFilters,
@@ -48,6 +49,7 @@ function googleCalendarUrl(event) {
 
 export default function ManagerCalendar({ me, openItem, openProject, openMeeting, scheduleMeeting, openPerson }) {
   const now=new Date();
+  const [calendarScope,setCalendarScope]=useState("unit");
   const [view,setView]=useState("month");
   const [filter,setFilter]=useState("all");
   const [cursor,setCursor]=useState(now);
@@ -208,6 +210,19 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
     setSelectedDate(dateKey(cursor));
   };
 
+  const scopeControl=<div className="phase6-calendar-scope" role="tablist" aria-label="Manager calendar scope">
+    <button type="button" role="tab" aria-selected={calendarScope==="my"} className={calendarScope==="my"?"is-selected":""} onClick={()=>setCalendarScope("my")}>My calendar</button>
+    <button type="button" role="tab" aria-selected={calendarScope==="unit"} className={calendarScope==="unit"?"is-selected":""} onClick={()=>setCalendarScope("unit")}>Unit calendar</button>
+  </div>;
+
+  if(calendarScope==="my") return <StaffCalendar
+    me={me}
+    openItem={openItem}
+    openMeeting={openMeeting}
+    statusLabel="Manager · My calendar"
+    scopeControl={scopeControl}
+  />;
+
   return <div className="body ev2cal-role-page ev2cal-manager-page">
     <CalendarPageHeader
       eyebrow={me.unit_name}
@@ -218,7 +233,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
       action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({ scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}>Schedule meeting</Button>}
     />
 
-
+    {scopeControl}
 
     {error&&<ProductNotice tone="error" title="Could not load the calendar">{error}</ProductNotice>}
 

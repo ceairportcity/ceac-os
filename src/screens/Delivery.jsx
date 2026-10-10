@@ -323,9 +323,9 @@ export default function Delivery({ me, initialProjectId = null }) {
 
   return <div className={"body ev2-project-page ev2-project-delivery"+(executiveSurface?" is-executive":"")}>
     <ProjectPageHeader
-      eyebrow={executiveSurface ? "Major initiatives" : "Work Management 2.0"}
+      eyebrow={executiveSurface ? "Strategic portfolio" : "Work Management 2.0"}
       title={executiveSurface ? "Portfolio" : "Delivery"}
-      description={executiveSurface ? "Major programmes and projects, their milestones, dependencies, risks and explicitly recorded health. CEAC OS does not generate a hidden project score." : "Programmes, portfolios, milestones, dependencies, risks and issues. Health is an explicit management state; CEAC OS does not generate a hidden project score."}
+      description={executiveSurface ? "View ministry programmes and strategic initiatives. Health appears only when it is explicitly recorded." : "Programmes, portfolios, milestones, dependencies, risks and issues. Health is an explicit management state; CEAC OS does not generate a hidden project score."}
     />
 
     {error&&<ProductNotice tone="error" title="Delivery">{error}</ProductNotice>}

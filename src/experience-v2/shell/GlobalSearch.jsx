@@ -46,6 +46,7 @@ export default function GlobalSearch({
   mobile = false,
   me,
   isAdmin = false,
+  isExec = false,
   navigation = [],
   quickItems = [],
   onNavigate,
@@ -163,8 +164,8 @@ export default function GlobalSearch({
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search CEAC…"
-            aria-label="Search CEAC"
+            placeholder={isExec ? "Search across CEAC OS..." : "Search CEAC…"}
+            aria-label={isExec ? "Search across CEAC OS" : "Search CEAC"}
           />
         </div>
         {results}
@@ -182,8 +183,8 @@ export default function GlobalSearch({
         setQuery(event.target.value);
         setOpen(true);
       }}
-      placeholder="Search CEAC…"
-      aria-label="Search CEAC"
+      placeholder={isExec ? "Search across CEAC OS..." : "Search CEAC…"}
+      aria-label={isExec ? "Search across CEAC OS" : "Search CEAC"}
       aria-expanded={open}
     />
     <kbd>⌘ K</kbd>

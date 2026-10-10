@@ -313,14 +313,17 @@ jobs:
           BROWSER_RESULT: ${{ needs.browser-shard.result }}
           EVIDENCE_RESULT: ${{ needs.evidence.result }}
         run: |
-          if [[ "$DOCUMENTATION_ONLY" == "true" ]]; then
-            [[ "$DOCUMENTATION_RESULT" == "success" ]]
-            echo "Documentation-only integrity gate passed."
-          elif [[ "$LEVEL_B" == "true" ]]; then
+          # Explicit Level B acceptance must never be superseded by a
+          # documentation-only diff classification. Fail closed when its
+          # SQL, browser, or inspection-evidence jobs have not passed.
+          if [[ "$LEVEL_B" == "true" ]]; then
             [[ "$SECURITY_RESULT" == "success" ]]
             [[ "$BROWSER_RESULT" == "success" ]]
             [[ "$EVIDENCE_RESULT" == "success" ]]
             echo "Level B complete acceptance gate passed."
+          elif [[ "$DOCUMENTATION_ONLY" == "true" ]]; then
+            [[ "$DOCUMENTATION_RESULT" == "success" ]]
+            echo "Documentation-only integrity gate passed."
           else
             echo "Level B was not requested for this implementation commit; CI Level A is authoritative."
           fi
