@@ -7,6 +7,9 @@ export default defineConfig({
   timeout: 30000,
   fullyParallel: false,
   retries: 0,
+  // Remote 2-vCPU verification hosts need bounded allowance for local GoTrue/RLS and Vite hydration.
+  // Never retry failed tests or weaken any assertion.
+  expect: { timeout: 15000 },
   reporter: "line",
   use: {
     baseURL: "http://127.0.0.1:5173",
