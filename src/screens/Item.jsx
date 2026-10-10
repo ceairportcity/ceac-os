@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { dueLabel } from "../lib/time";
@@ -26,6 +26,8 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   const [responsibleReviewer, setResponsibleReviewer] = useState(null);
   const [checks, setChecks] = useState([]);
   const [ticks, setTicks] = useState({});
+  // Discard checklist reads that started before a newer local tick mutation.
+  const tickMutationVersion = useRef(0);
   const [myStep, setMyStep] = useState("");
   const [recipeSteps, setRecipeSteps] = useState([]);
   const [recipeSource, setRecipeSource] = useState(null);
@@ -63,6 +65,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   useEffect(() => { load(); }, [id, me.id, me.unit_id]);
 
   async function load() {
+    const tickReadVersion = tickMutationVersion.current;
     setErr(null);
     setCanReview(false);
     setResponsibleReviewer(null);
@@ -148,14 +151,14 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
       .select("id,label,position").eq("work_item_id", id).order("position");
     if (checklistError) { setErr(checklistError.message); return; }
     setChecks(c || []);
-    setTicks({});
+    if (tickReadVersion === tickMutationVersion.current) setTicks({});
     if (c && c.length) {
       const { data: t, error: tickError } = await supabase.from("checklist_ticks")
         .select("checklist_item_id, undone_at").in("checklist_item_id", c.map((x) => x.id));
       if (tickError) { setErr(tickError.message); return; }
       const map = {};
       (t || []).forEach((x) => { if (!x.undone_at) map[x.checklist_item_id] = true; });
-      setTicks(map);
+      if (tickReadVersion === tickMutationVersion.current) setTicks(map);
     }
 
     setRecipeSteps([]);
@@ -248,16 +251,19 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
 
   async function toggle(cid) {
     if (gated) return;
+    ++tickMutationVersion.current;
     setErr(null);
     if (ticks[cid]) {
       const { error } = await supabase.from("checklist_ticks").update({ undone_at: new Date().toISOString() })
         .eq("checklist_item_id", cid).eq("profile_id", me.id).is("undone_at", null);
       if (error) { setErr(error.message); return; }
+      ++tickMutationVersion.current;
       setTicks((t) => ({ ...t, [cid]: false }));
     } else {
       const { error } = await supabase.from("checklist_ticks")
         .insert({ checklist_item_id: cid, profile_id: me.id, session_id: session ? session.id : null });
       if (error) { setErr(error.message); return; }
+      ++tickMutationVersion.current;
       setTicks((t) => ({ ...t, [cid]: true }));
       if (item.status === "not_started") {
         const { error: statusError } = await supabase.from("work_items").update({ status: "in_progress", last_movement_at: new Date().toISOString() }).eq("id", id);
