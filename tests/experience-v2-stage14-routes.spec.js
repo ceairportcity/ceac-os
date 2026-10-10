@@ -52,7 +52,7 @@ const ROLES = [
     app:".office-app",
     routes:[
       { key:"home", label:"Overview", mobileLabel:"Home" },
-      { key:"people", label:"People" },
+      { key:"people", label:"People & Access" },
       { key:"work", label:"Work" },
       { key:"attendance", label:"Time & Leave" },
       { key:"finance", label:"Finance" },

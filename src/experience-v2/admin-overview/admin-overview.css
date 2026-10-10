@@ -509,3 +509,37 @@ button.adminv2-action-main {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Phase 5A — Administration Overview is operational; durable configuration stays in Control Center. */
+.adminv2-config-bridge .ev2c-data-panel-body {
+  background: var(--ev2-surface-soft);
+}
+
+.adminv2-config-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ev2-space-3);
+  align-items: start;
+  padding: var(--ev2-space-2) 0;
+}
+
+.adminv2-config-summary > .ceac-icon {
+  color: var(--ev2-identity-strong);
+}
+
+.adminv2-config-summary > div {
+  display: grid;
+  gap: var(--ev2-space-1);
+}
+
+.adminv2-config-summary strong {
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row);
+}
+
+.adminv2-config-summary span {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.45;
+}

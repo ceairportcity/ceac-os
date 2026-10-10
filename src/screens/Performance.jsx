@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -90,6 +90,12 @@ export default function Performance({ me }) {
   const [feedbackResponses, setFeedbackResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [caseLoading, setCaseLoading] = useState(false);
+  // Selected-review queries can overlap when a person changes before an earlier fetch finishes.
+  // Only the newest request may update this review or its loading/error state.
+  const caseRequestSerial = useRef(0);
+  const baseRequestSerial = useRef(0);
+  const selectedCaseRef = useRef("");
+  const selectedCycleRef = useRef("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -130,11 +136,14 @@ export default function Performance({ me }) {
   useEffect(() => {
     if (selectedCaseId) loadCase(selectedCaseId);
     else {
+      caseRequestSerial.current += 1;
+      setCaseLoading(false);
       setEvidence([]); setEntries([]); setPlans([]); setFeedback([]); setFeedbackResponses([]);
     }
   }, [selectedCaseId]);
 
   async function loadBase() {
+    const baseSerial = ++baseRequestSerial.current;
     setLoading(true); setError(null);
     try {
       const requests = [
@@ -148,6 +157,7 @@ export default function Performance({ me }) {
         );
       }
       const results = await Promise.all(requests);
+      if (baseSerial !== baseRequestSerial.current) return;
       const failed = results.find((row) => row.error);
       if (failed) throw failed.error;
       const cycleRows = results[0].data || [];
@@ -158,24 +168,36 @@ export default function Performance({ me }) {
         setProfiles(results[2].data || []);
         setMemberships(results[3].data || []);
       }
-      const cycleId = selectedCycleId && cycleRows.some((row) => row.id === selectedCycleId)
-        ? selectedCycleId
+      // An in-flight refresh must not undo an employee/cycle selected after it started.
+      const requestedCycle = selectedCycleRef.current;
+      const cycleId = requestedCycle && cycleRows.some((row) => row.id === requestedCycle)
+        ? requestedCycle
         : cycleRows[0]?.id || "";
+      selectedCycleRef.current = cycleId;
       setSelectedCycleId(cycleId);
       const filtered = cycleId ? caseRows.filter((row) => row.cycle_id === cycleId) : caseRows;
-      const caseId = selectedCaseId && filtered.some((row) => row.id === selectedCaseId)
-        ? selectedCaseId
+      const requestedCase = selectedCaseRef.current;
+      const caseId = requestedCase && filtered.some((row) => row.id === requestedCase)
+        ? requestedCase
         : filtered[0]?.id || caseRows[0]?.id || "";
+      selectedCaseRef.current = caseId;
       setSelectedCaseId(caseId);
     } catch (err) {
-      setError(humanError(err, "Reviews & development could not finish loading."));
-    } finally { setLoading(false); }
+      if (baseSerial === baseRequestSerial.current)
+        setError(humanError(err, "Reviews & development could not finish loading."));
+    } finally {
+      if (baseSerial === baseRequestSerial.current) setLoading(false);
+    }
   }
 
   async function loadCase(caseId) {
+    const requestSerial = ++caseRequestSerial.current;
     setCaseLoading(true); setError(null);
     const selected = cases.find((row) => row.id === caseId);
-    if (!selected) { setCaseLoading(false); return; }
+    if (!selected) {
+      if (requestSerial === caseRequestSerial.current) setCaseLoading(false);
+      return;
+    }
     try {
       const [e, en, p, f, fr] = await Promise.all([
         supabase.from("appraisal_evidence_items").select("*").eq("appraisal_id", caseId).order("occurred_on", { ascending:false, nullsFirst:false }),
@@ -184,6 +206,8 @@ export default function Performance({ me }) {
         supabase.from("feedback_notes").select("id,profile_id,author_id,note,kind,occurred_on,created_at,author:profiles!feedback_notes_author_id_fkey(full_name)").eq("profile_id", selected.profile_id).order("created_at", { ascending:false }),
         supabase.from("feedback_responses").select("*").eq("profile_id", selected.profile_id).order("created_at", { ascending:true }),
       ]);
+      // A previous employee/cycle may finish after this request. Ignore its stale results.
+      if (requestSerial !== caseRequestSerial.current) return;
       const failed = [e,en,p,f,fr].find((row) => row.error);
       if (failed) throw failed.error;
       setEvidence(e.data || []);
@@ -206,8 +230,11 @@ export default function Performance({ me }) {
       setPlanState(plan?.state || "active");
       setReviewerId(selected.manager_id || "");
     } catch (err) {
-      setError(humanError(err, "This review could not finish loading."));
-    } finally { setCaseLoading(false); }
+      if (requestSerial === caseRequestSerial.current)
+        setError(humanError(err, "This review could not finish loading."));
+    } finally {
+      if (requestSerial === caseRequestSerial.current) setCaseLoading(false);
+    }
   }
 
   const selectedCycle = cycles.find((row) => row.id === selectedCycleId) || null;
@@ -239,7 +266,7 @@ export default function Performance({ me }) {
     if (rpcError) { setError(humanError(rpcError, "That change could not be recorded.")); return false; }
     setNotice(success);
     await loadBase();
-    if (selectedCaseId) await loadCase(selectedCaseId);
+    if (selectedCaseRef.current) await loadCase(selectedCaseRef.current);
     return true;
   }
 
@@ -371,8 +398,10 @@ export default function Performance({ me }) {
 
     {cycles.length > 0 && <div className="performance-cycle-strip" aria-label="Review periods">
       {cycles.map((cycle) => <button key={cycle.id} className={selectedCycleId === cycle.id ? "on" : ""} onClick={() => {
+        selectedCycleRef.current = cycle.id;
         setSelectedCycleId(cycle.id);
         const first = cases.find((row) => row.cycle_id === cycle.id);
+        selectedCaseRef.current = first?.id || "";
         setSelectedCaseId(first?.id || "");
       }}>
         <strong>{cycle.name}</strong>
@@ -386,7 +415,7 @@ export default function Performance({ me }) {
     {selectedCycle && <div className="performance-layout">
       <aside className="performance-case-list">
         <div className="sec"><span>People in this period</span><span>{cycleCases.length}</span></div>
-        {cycleCases.map((review) => <button key={review.id} className={"performance-case-row"+(selectedCaseId === review.id ? " on" : "")} onClick={() => setSelectedCaseId(review.id)}>
+        {cycleCases.map((review) => <button key={review.id} className={"performance-case-row"+(selectedCaseId === review.id ? " on" : "")} onClick={() => { selectedCaseRef.current = review.id; setSelectedCaseId(review.id); }}>
           <Avatar name={review.profiles?.full_name} size="sm" />
           <span><strong>{review.profiles?.full_name || "Employee"}</strong><small>{review.units?.name || "Unit not recorded"} · {review.reviewer?.full_name ? "Reviewer: " + review.reviewer.full_name : "Reviewer not assigned"}</small></span>
           <CaseState status={review.status} />

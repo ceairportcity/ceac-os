@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
 import { FieldGroup, ProductNotice, SectionHeader } from "../components/bits";
@@ -19,17 +19,23 @@ export default function OfficeSettings({ me, openWorkforce }) {
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [leaveRules, setLeaveRules] = useState([]);
   const [thresholds, setThresholds] = useState([]);
+  // A late settings refresh must not replace unsaved local attention-rule edits.
+  const thresholdDraftsRef = useRef(new Map());
   const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [integrity, setIntegrity] = useState(null);
+  const [integrityMinutes, setIntegrityMinutes] = useState(10);
+  const [integrityBusy, setIntegrityBusy] = useState(false);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
     setMessage(null);
-    const [officeResult, leaveResult, thresholdResult, inviteResult] = await Promise.all([
+    const [officeResult, leaveResult, thresholdResult, inviteResult, integrityResult] = await Promise.all([
       supabase.from("office_locations").select("*").eq("is_primary", true).limit(1).maybeSingle(),
       supabase.from("leave_policy_versions").select("id,name,state,confirmed_at,source_reference,reason,leave_policy_rules(id,leave_kind,employment_type,entitlement_amount,entitlement_unit,accrual_method,accrual_rate,carryover_method,carryover_limit,approval_route,opening_balance_required,complete)").eq("org_id", me.org_id).eq("state","active").order("confirmed_at",{ascending:false}).limit(1).maybeSingle(),
-      supabase.from("thresholds").select("name,label,value,unit_label").neq("name","pay_change_pct").order("label"),
+      supabase.from("thresholds").select("name,label,value,unit_label").eq("org_id",me.org_id).neq("name","pay_change_pct").order("label"),
       supabase.from("pending_invitations").select("id,email,full_name,unit_id,invited_at,expires_at,units(name)").is("resolved_at",null).gt("expires_at",new Date().toISOString()).order("invited_at",{ascending:false}),
+      supabase.rpc("attendance_integrity_status"),
     ]);
 
     if (officeResult.error) {
@@ -48,6 +54,10 @@ export default function OfficeSettings({ me, openWorkforce }) {
       setMessage({ tone: "error", title: "People & access status could not load", body: humanError(inviteResult.error) });
       return;
     }
+    if (integrityResult.error) {
+      setMessage({ tone: "error", title: "Attendance integrity status could not load", body: humanError(integrityResult.error) });
+      return;
+    }
 
     const o = officeResult.data;
     if (o) {
@@ -58,8 +68,13 @@ export default function OfficeSettings({ me, openWorkforce }) {
       setRadius(o.radius_meters);
     }
 
-    setThresholds((thresholdResult.data || []).map((row) => ({ ...row, value: String(row.value ?? "") })));
+    setThresholds((thresholdResult.data || []).map((row) => ({
+      ...row,
+      value: thresholdDraftsRef.current.get(row.name) ?? String(row.value ?? ""),
+    })));
     setPendingInvitations(inviteResult.data || []);
+    setIntegrity(integrityResult.data || null);
+    if (integrityResult.data?.front_desk_code_ttl_minutes) setIntegrityMinutes(integrityResult.data.front_desk_code_ttl_minutes);
 
     const policy = leaveResult.data || null;
     setLeavePolicy(policy);
@@ -122,11 +137,42 @@ export default function OfficeSettings({ me, openWorkforce }) {
     }
   }
 
-  async function saveThreshold(row) {
+  async function rotatePresenceCode(enabled = true) {
+    setIntegrityBusy(true);
+    setMessage(null);
+    try {
+      const { data, error } = await supabase.rpc("attendance_set_office_code", {
+        p_enabled: enabled,
+        p_ttl_minutes: Math.max(5, Math.min(30, Number(integrityMinutes) || 10)),
+      });
+      if (error) throw error;
+      const status = await supabase.rpc("attendance_integrity_status");
+      if (status.error) throw status.error;
+      setIntegrity({
+        ...(status.data || {}),
+        front_desk_code: data?.code || status.data?.front_desk_code || null,
+        front_desk_code_valid_until: data?.valid_until || status.data?.front_desk_code_valid_until || null,
+      });
+      setMessage({
+        tone: "success",
+        title: enabled ? "Office presence code rotated" : "Office presence code disabled",
+        body: enabled
+          ? "The short-lived code is corroborating evidence only. It does not create attendance, pay or disciplinary conclusions."
+          : "Front-desk code corroboration is disabled. Existing evidence history remains preserved.",
+      });
+    } catch (error) {
+      setMessage({ tone: "error", title: "Office presence code was not changed", body: humanError(error) });
+    } finally {
+      setIntegrityBusy(false);
+    }
+  }
+
+    async function saveThreshold(row) {
     setSaving(true);
     setMessage(null);
     try {
-      const value = Number(row.value);
+      const draft = thresholdDraftsRef.current.get(row.name) ?? row.value;
+      const value = Number(draft);
       if (!Number.isFinite(value) || value < 0) throw new Error("Enter a valid non-negative number.");
       const result = await supabase.from("thresholds")
         .update({ value, updated_by: me.id, updated_at: new Date().toISOString() })
@@ -136,6 +182,8 @@ export default function OfficeSettings({ me, openWorkforce }) {
         .single();
       if (result.error) throw result.error;
       if (!result.data || Number(result.data.value) !== value) throw new Error("The attention rule was not persisted.");
+      // Clear only the draft actually saved; an edit made during Save remains intact.
+      if (thresholdDraftsRef.current.get(row.name) === draft) thresholdDraftsRef.current.delete(row.name);
       await load();
       setMessage({ tone: "success", title: "Attention rule updated", body: `${row.label} ${value} ${row.unit_label}.` });
     } catch (error) {
@@ -179,6 +227,25 @@ export default function OfficeSettings({ me, openWorkforce }) {
         {office && <div className="office-setting-footnote">Last confirmed {dateOnly(office.set_at)}.</div>}
       </section>
 
+      <section id="attendance-integrity-settings" className="office-settings-card">
+        <SectionHeader eyebrow="Attendance integrity" title="Office presence code" />
+        <p className="screen-note">This short-lived front-desk code adds a second corroborating signal to GPS/geofence evidence. A matching code is not proof by itself and never creates an automatic absence, deduction or disciplinary state.</p>
+        <FieldGroup label="Code lifetime" hint="Short-lived rotation only; allowed range is 5–30 minutes.">
+          <div className="office-inline-field"><input className="field" aria-label="Office presence code lifetime" type="number" min="5" max="30" value={integrityMinutes} onChange={(event) => setIntegrityMinutes(event.target.value)} /><span>minutes</span></div>
+        </FieldGroup>
+        {integrity?.front_desk_code_active && <div className="office-presence-code">
+          <span>Current code</span>
+          <strong>{integrity.front_desk_code || "Active · visible to Workforce Administration"}</strong>
+          <small>Valid until {integrity.front_desk_code_valid_until ? new Date(integrity.front_desk_code_valid_until).toLocaleTimeString("en-GB", { timeZone:"Africa/Accra", hour:"2-digit", minute:"2-digit" }) : "expiry not available"}</small>
+        </div>}
+        <div className="workforce-setup-actions">
+          <button className="btn" disabled={integrityBusy || !office} onClick={() => rotatePresenceCode(true)}>{integrityBusy ? "Rotating…" : integrity?.front_desk_code_active ? "Rotate code" : "Enable and issue code"}</button>
+          {integrity?.front_desk_code_active && <button className="btn btn-ghost" disabled={integrityBusy} onClick={() => rotatePresenceCode(false)}>Disable code</button>}
+        </div>
+        {!office && <p className="screen-note">Configure the primary office location before using office-presence corroboration.</p>}
+        <p className="screen-note">{integrity?.network_note || "Trusted office-network corroboration remains optional and is accepted only from configured server-side infrastructure."}</p>
+      </section>
+
       <section id="leave-policy-settings" className="office-settings-card">
         <SectionHeader eyebrow="Policy" title="Leave rules" />
         {!leaveConfigured && <ProductNotice tone="attention" title="Leave policy not configured">
@@ -208,7 +275,7 @@ export default function OfficeSettings({ me, openWorkforce }) {
         <div className="office-threshold-list">
           {thresholds.map((row) => <div key={row.name} className="office-threshold-row">
             <div><strong>{row.label}</strong><span>{row.unit_label}</span></div>
-            <input aria-label={row.label} className="field" type="number" min="0" step={row.unit_label === "%" ? "1" : "1"} value={row.value} onChange={(event) => setThresholds((current) => current.map((item) => item.name === row.name ? { ...item, value:event.target.value } : item))} />
+            <input aria-label={row.label} className="field" type="number" min="0" step={row.unit_label === "%" ? "1" : "1"} value={row.value} onChange={(event) => { const draft = event.target.value; thresholdDraftsRef.current.set(row.name, draft); setThresholds((current) => current.map((item) => item.name === row.name ? { ...item, value:draft } : item)); }} />
             <button className="btn btn-ghost btn-sm" disabled={saving} onClick={() => saveThreshold(row)}>Save</button>
           </div>)}
         </div>

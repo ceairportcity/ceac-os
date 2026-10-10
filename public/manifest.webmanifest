@@ -1,8 +1,13 @@
 {
   "name": "CEAC OS",
   "short_name": "CEAC",
-  "start_url": "/",
+  "id": "/",
+  "description": "CEAC's secure staff operating system.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#18232D",
   "theme_color": "#18232D",
   "icons": [
@@ -10,7 +15,7 @@
       "src": "/ceac-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/ceac-icon-512.png",
@@ -18,5 +23,6 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["business", "productivity"]
 }

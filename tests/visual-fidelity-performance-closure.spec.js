@@ -13,13 +13,18 @@ const KIB = 1024;
 // motion/react/supabase vendors 123.72 / 139.83 / 214.54 kB.
 // Budgets below add small regression headroom; they are guards, not optimisation targets.
 const budgets = {
-  coreCssRaw: 530 * KIB,
-  coreCssGzip: 78 * KIB,
-  // 5 Oct 2026 owner-approved Executive mockup adds one isolated route stylesheet.
-  // Core CSS stays on the original VF9C ceiling; aggregate gets measured route headroom only.
-  allCssRaw: 565 * KIB,
+  // 7 Oct 2026 Phase 5 adds the responsive People & Access and grouped Control Center
+  // workspaces. The measured candidate is 531.51 KiB raw / 78.77 KiB gzip;
+  // retain narrow regression headroom rather than exempting the new product CSS.
+  coreCssRaw: 534 * KIB,
+  coreCssGzip: 80 * KIB,
+  // The owner-approved Executive redesign is route-isolated. Its current source is
+  // 25.77 KiB; preserve the 534 KiB core guard and allow only bounded aggregate growth.
+  allCssRaw: 604 * KIB,
   executiveRouteCssRaw: 16 * KIB,
-  mainJsRaw: 72 * KIB,
+  executiveRedesignCssRaw: 28 * KIB,
+  // Phase 5 measured 73,807 bytes on the canonical Node 22 CI build.
+  mainJsRaw: 74 * KIB,
   routeJsRaw: 100 * KIB,
   vendors: {
     "motion-vendor": 130 * KIB,
@@ -72,6 +77,11 @@ test("VF9C production bundle preserves measured route and vendor budgets", async
     executiveCssSourceRaw,
     "Executive Overview route CSS source budget",
   ).toBeLessThanOrEqual(budgets.executiveRouteCssRaw);
+  const executiveRedesignCssSourceRaw = statSync("src/experience-v2/executive-overview/executive-redesign.css").size;
+  expect(
+    executiveRedesignCssSourceRaw,
+    "Executive redesign CSS source budget",
+  ).toBeLessThanOrEqual(budgets.executiveRedesignCssRaw);
 
   const mainJs = js.find((asset) => /^index-.*\.js$/.test(asset.name));
   expect(mainJs, "Vite main index JS asset").toBeTruthy();

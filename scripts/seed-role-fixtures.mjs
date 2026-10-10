@@ -34,7 +34,7 @@ const users = [
   { id: "31000000-0000-4000-8000-000000000003", email: "admin@ceac.local.test", name: "Admin Fixture", unit: unitA, role: "staff", isAdmin: true },
   { id: "31000000-0000-4000-8000-000000000004", email: "exec@ceac.local.test", name: "Executive Fixture", unit: unitA, role: "staff", isExec: true },
   { id: "31000000-0000-4000-8000-000000000005", email: "other@ceac.local.test", name: "Other Unit Fixture", unit: unitB, role: "staff" },
-  { id: "31000000-0000-4000-8000-000000000006", email: "sameunit@ceac.local.test", name: "Same Unit Fixture", unit: unitA, role: "staff" },
+  { id: "31000000-0000-4000-8000-000000000006", email: "sameunit@ceac.local.test", name: "Same Unit Fixture", unit: unitA, role: "staff", employmentType: "volunteer" },
   { id: "31000000-0000-4000-8000-000000000007", email: "managerb@ceac.local.test", name: "Manager B Fixture", unit: unitB, role: "manager" },
 ];
 
@@ -95,7 +95,7 @@ for (const user of users) {
     source_department_text: user.unit === unitA ? "Test Unit A" : "Test Unit B",
     source_position: user.role === "manager" ? "Manager" : user.isAdmin ? "Administration" : user.isExec ? "Executive" : "Staff",
     job_title: user.role === "manager" ? "Manager" : user.isAdmin ? "Administration" : user.isExec ? "Executive" : "Staff",
-    employment_type: "not_recorded",
+    employment_type: user.employmentType || "not_recorded",
     employment_status: "active",
     identity_state: "linked",
     source_system: "role_fixture",
@@ -118,13 +118,13 @@ const employmentFixtures = [
   { id: users[0].id, manager: users[1].id, role: "staff" },
   { id: users[1].id, manager: users[2].id, role: "manager" },
   { id: users[4].id, manager: users[6].id, role: "staff" },
-  { id: users[5].id, manager: users[1].id, role: "staff" },
+  { id: users[5].id, manager: users[1].id, role: "staff", employmentType: "volunteer", workingPattern: { kind: "no_attendance" } },
   { id: users[6].id, manager: users[2].id, role: "manager" },
 ];
 
 for (const row of employmentFixtures) {
   const employment = await service.from("employment_records")
-    .update({ manager_profile_id: row.manager, membership_role: row.role, updated_by: users[2].id })
+    .update({ manager_profile_id: row.manager, membership_role: row.role, employment_type: row.employmentType || "not_recorded", working_pattern: row.workingPattern || { kind: "not_recorded" }, updated_by: users[2].id })
     .eq("profile_id", row.id);
   assert.equal(employment.error, null, employment.error?.message);
 }

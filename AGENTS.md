@@ -1,3 +1,9 @@
+# CEAC OS private-release handover precedence (10 October 2026)
+
+Before any merge, production migration, deployment, or Technical Support handover, follow `docs/continuity/CEAC_GO_LIVE_PRIVATE_HANDOVER_LOCK_2026-10-10.md`, `docs/continuity/CEAC_DB_MIGRATION_RELEASE_GATE_2026-10-10.md`, and `docs/continuity/CEAC_TEN_PENDING_MIGRATIONS_RISK_MATRIX_2026-10-10.md`. These newer release-safety instructions take precedence over conflicting older implementation-stage wording below. Keep the new canonical repository PRIVATE; one active writer; do not bypass owner Level C acceptance, independent second reviewer, actual encrypted production backup and restoration, privileged MFA verification, or explicit cutover authorisation. Never reset or force-push `main`.
+
+---
+
 # POST-ONBOARDING OPERATIONAL REFINEMENT IS ACTIVE
 
 The product owner authorised the 6 October 2026 post-onboarding programme. Read `docs/continuity/CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md`, `docs/continuity/CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` and the current phase acceptance/contract before writes. Phase 2 Attendance, Working Patterns & Permissions is complete at protected main `a482ab602bacb511c18436e256dd932526f14fdd`; its final documentation closure is `97d2b4a7a3220a7764f5eaa3e43c8d31672374b0`. Phase 3 Compliance Operating Surface is complete at protected main `4179b71ed8757ece726c4282363edaacc8b158b6`, production migration `20261006121001_113_compliance_operating_surface`, under `docs/continuity/CEAC_COMPLIANCE_PHASE3_ACCEPTANCE_2026-10-06.md`. Phase 4 Notification & Work-State Communication is NEXT and has not started. Do not reopen accepted Phase 2/3 work or silently broaden Compliance authority. Existing accepted domain, security, privacy, audit and visual contracts below remain binding. Unexplained absence, disciplinary cases, Pastor override, financial consequences, employee scoring, automated dress monitoring and background surveillance remain outside accepted scope. GitHub is canonical; one writer; reconcile forward.
@@ -308,7 +314,8 @@ canonical — never derive a code from the initials of a unit name.
 ## Blocked, awaiting answers from CEAC — do not guess
 
 - **Payroll**: which allowances and deductions beyond SSNIT and PAYE.
-- **Leave entitlement by contract type**: one org-wide figure today.
+
+Annual-leave entitlement/accrual is no longer blocked: the 7 October 2026 owner lock confirms 24 working days per leave year, accruing quarterly at 6 working days per completed quarter with joiner pro-rating and the year-end rules in `docs/final-product/LEAVE_RULES_v1.md`.
 
 ## Continuing without Claude
 

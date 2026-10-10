@@ -97,6 +97,12 @@ from public.profiles p
 where p.org_id='10000000-0000-4000-8000-000000000010'
 on conflict(profile_id) do nothing;
 
+-- Phase 6A acceptance fixture: one active volunteer remains a Staff account but
+-- is outside ordinary salary Payroll unless Administration formally changes engagement.
+update public.employee_roster
+set employment_type='volunteer'
+where profile_id='31000000-0000-4000-8000-000000000006';
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 
@@ -137,9 +143,20 @@ begin
   v_readiness:=public.payroll_readiness_summary();
   if (v_readiness->>'employee_count')::int<>(
     select count(*) from public.employee_roster
-    where org_id=public.app_org_id() and employment_status='active'
+    where org_id=public.app_org_id()
+      and employment_status='active'
+      and employment_type<>'volunteer'
   ) then
-    raise exception 'Payroll gate failure: readiness summary does not match the active employee roster.';
+    raise exception 'Payroll gate failure: readiness summary does not match the active salary-eligible roster.';
+  end if;
+
+  if (v_readiness->>'volunteer_count')::int<>(
+    select count(*) from public.employee_roster
+    where org_id=public.app_org_id()
+      and employment_status='active'
+      and employment_type='volunteer'
+  ) then
+    raise exception 'Payroll gate failure: readiness does not report excluded active volunteers.';
   end if;
 
   v_run:=public.payroll_create_run(
@@ -156,9 +173,20 @@ begin
 
   if jsonb_array_length(v_detail->'entries')<>(
     select count(*) from public.employee_roster
-    where org_id=public.app_org_id() and employment_status='active'
+    where org_id=public.app_org_id()
+      and employment_status='active'
+      and employment_type<>'volunteer'
   ) then
-    raise exception 'Payroll gate failure: draft run did not include the complete active employee roster.';
+    raise exception 'Payroll gate failure: draft run did not include the complete salary-eligible roster.';
+  end if;
+
+  if exists(
+    select 1
+    from jsonb_array_elements(v_detail->'entries') entry
+    join public.employee_roster er on er.id=(entry->>'employee_id')::uuid
+    where er.employment_type='volunteer'
+  ) then
+    raise exception 'Payroll gate failure: an active volunteer entered ordinary salary Payroll.';
   end if;
 
   for v_entry in select value from jsonb_array_elements(v_detail->'entries')

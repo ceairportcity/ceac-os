@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase, inviteByEmail } from "../lib/supabase";
-import { Sheet, FieldGroup, ProductNotice } from "../components/bits";
+import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
 
@@ -18,10 +17,8 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [watch, setWatch] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [employeeRoster, setEmployeeRoster] = useState([]);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
   const [payrollReadiness, setPayrollReadiness] = useState(null);
-  const [inviting, setInviting] = useState(null);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -115,6 +112,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setMine(my || []);
       setOffice(o || null);
       setEmployeeRoster(Array.isArray(rosterRows) ? rosterRows : []);
+      setPendingInvitations(pi || []);
       if (myCapabilities.has("payroll.prepare") || myCapabilities.has("payroll.approve")) {
         setPayrollReadiness(await must(supabase.rpc("payroll_readiness_summary"), "Payroll readiness"));
       } else {
@@ -201,18 +199,6 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     }
   }
 
-  async function sendInvite() {
-    if (!inviting) return;
-    setBusy(true); setMsg(null);
-    try {
-      await inviteByEmail({ email, fullName:name, unitId:inviting.id });
-      setMsg(`Invitation sent. They will join ${inviting.name} as Staff after activation. Unit Head authority remains a separate action in Units.`);
-      setName(""); setEmail("");
-      await load();
-    } catch (error) { setMsg(error.message); }
-    finally { setBusy(false); }
-  }
-
   async function decideLeave(request, decision) {
     setBusy(true); setMsg(null);
     try {
@@ -243,7 +229,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       dateLabel={adminDate}
       loading={loading}
       loadFailed={loadError}
-      message={msg && !inviting ? msg : null}
+      message={msg}
       busy={busy}
       units={units}
       alerts={alerts}
@@ -258,6 +244,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       watch={watch}
       meetings={meetings}
       employeeRoster={employeeRoster}
+      pendingInvitations={pendingInvitations}
       payrollReadiness={payrollReadiness}
       canManagePeople={canManagePeople}
       canUsePayroll={canUsePayroll}
@@ -277,18 +264,8 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenProjects={() => go?.("admin-projects")}
       onOpenStrategy={() => go?.("strategy")}
       onOpenAttendance={() => go?.("attendance")}
-      onInviteUnit={(unit) => { setInviting(unit); setMsg(null); }}
       onLeaveDecision={decideLeave}
     />
 
-    {inviting && <Sheet onClose={() => { setInviting(null); setMsg(null); }}>
-      <div className="eyebrow">People & access</div>
-      <div className="h2">Invite someone to {inviting.name}</div>
-      <p className="screen-note">Every invited account begins as Staff. After activation, Administration may explicitly assign Unit Head authority from Units.</p>
-      <FieldGroup label="Full name"><input className="field" value={name} onChange={(event) => setName(event.target.value)} /></FieldGroup>
-      <FieldGroup label="Work email"><input className="field" type="email" autoCapitalize="none" value={email} onChange={(event) => setEmail(event.target.value)} /></FieldGroup>
-      {msg && <ProductNotice tone="attention" title="Invitation">{msg}</ProductNotice>}
-      <button className="btn" style={{ marginTop:14 }} onClick={sendInvite} disabled={busy || !name.trim() || !email.trim()}>{busy ? "Sending…" : "Send Staff invitation"}</button>
-    </Sheet>}
   </>;
 }

@@ -28,6 +28,7 @@ tests=(
   performance_development_stage7_gate.sql
   learning_stage8_gate.sql
   workforce_management_stage9_gate.sql
+  go_live_annual_leave_policy_gate.sql
   assets_devices_stage10_gate.sql
   compliance_policy_stage11_gate.sql
   integrations_stage12_gate.sql
@@ -40,6 +41,7 @@ tests=(
   operational_clarity_files_gate.sql
   onboarding_access_presence_gate.sql
   attendance_phase2_gate.sql
+  attendance_phase6_integrity_gate.sql
   compliance_phase3_gate.sql
   notification_work_state_gate.sql
 )

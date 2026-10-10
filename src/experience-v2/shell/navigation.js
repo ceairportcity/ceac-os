@@ -33,9 +33,10 @@ const ROLE_DESTINATIONS = Object.freeze({
   ]),
   admin: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
-    { key: "people", label: "People", icon: "people", group: "workspace", capability: "people.manage" },
+    { key: "people", label: "People & Access", icon: "people", group: "workspace", capability: "people.manage" },
     { key: "work", label: "Work", icon: "work", group: "workspace" },
     { key: "attendance", label: "Time & Leave", icon: "time", group: "planning" },
+    { key: "admin-calendar", label: "Calendar", icon: "calendar", group: "planning" },
     { key: "finance", label: "Finance", icon: "finance", group: "insight" },
     { key: "payroll", label: "Payroll", icon: "finance", group: "insight", capability: "payroll.prepare" },
     { key: "reporting", label: "Reports", icon: "reports", group: "insight" },
@@ -50,12 +51,13 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "strategy", label: "Ministry", icon: "ministry", group: "workspace" },
     { key: "delivery", label: "Portfolio", icon: "portfolio", group: "workspace" },
     { key: "exec-organisation", label: "Organisation", icon: "organisation", group: "workspace" },
+    { key: "exec-calendar", label: "Calendar", icon: "calendar", group: "planning" },
     { key: "exec-finance", label: "Finance", icon: "finance", group: "insight" },
     { key: "payroll", label: "Payroll", icon: "finance", group: "insight", capability: "payroll.approve" },
     { key: "exec-reports", label: "Reports", icon: "reports", group: "insight" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
     { key: "me", label: "My Hub", icon: "account", group: "account" },
-    { key: "account", label: "Your account", icon: "account", group: "account" },
+    { key: "account", label: "Account", icon: "account", group: "account" },
   ]),
 });
 
@@ -63,7 +65,7 @@ const MOBILE_PRIMARY_KEYS = Object.freeze({
   staff: Object.freeze(["home", "work", "team", "me"]),
   manager: Object.freeze(["home", "work", "team", "projects"]),
   admin: Object.freeze(["home", "people", "attendance", "finance"]),
-  executive: Object.freeze(["home", "work", "strategy", "delivery"]),
+  executive: Object.freeze(["home", "work", "strategy", "exec-calendar"]),
 });
 
 const ROLE_QUICK_ACTIONS = Object.freeze({

@@ -176,8 +176,8 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
   }, [messages, announcements, reads, me.id]);
   const showActions = view === "all" || view === "work";
 
-  return <div className="body premium-page inbox-page">
-    <header className="premium-page-head">
+  return <div className={me.is_exec ? "body inbox-page exec-redesign-shared" : "body premium-page inbox-page"}>
+    <header className={me.is_exec ? "exec-redesign-shared-head" : "premium-page-head"}>
       <div>
         <span className="eyebrow">Communication</span>
         <h1 className="h1">Messages</h1>

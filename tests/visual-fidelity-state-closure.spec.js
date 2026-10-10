@@ -63,6 +63,7 @@ test("VF9D shared product states stay explicit, truthful and recoverable", async
   const administration = readFileSync("src/experience-v2/admin-overview/AdminOverviewV2.jsx", "utf8");
   const executive = readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
   const integrations = readFileSync("src/screens/AdminIntegrations.jsx", "utf8");
+  const controlCenter = readFileSync("src/screens/ControlCenter.jsx", "utf8");
 
   expect(app).toContain("function RouteFallback()");
   expect(app).toContain('role="status"');
@@ -96,7 +97,7 @@ test("VF9D shared product states stay explicit, truthful and recoverable", async
     expect(source).toContain('actionLabel="Try again"');
   }
 
-  expect(administration).toContain('status="Not configured"');
+  expect(controlCenter).toContain('missing:"Not configured"');
   expect(integrations).toContain('state="configuration"');
   expect(integrations).toContain('title="No provider adapters are enabled"');
   expect(integrations).toContain('state="empty" title="No connection history yet"');

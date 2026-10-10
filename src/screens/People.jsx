@@ -13,6 +13,7 @@ import {
   uploadOperationalFile,
 } from "../lib/operationalFiles";
 import { Button, ComposerDrawer } from "../experience-v2/components";
+import PeopleAccess from "../components/PeopleAccess";
 import {
   PeopleAdminPersonRow,
   PeopleBackButton,
@@ -26,8 +27,8 @@ import {
   PeopleWorkspaceSection,
 } from "../experience-v2/people-family/PeopleFamilyV2";
 
-const PEOPLE_VIEWS = [["directory","Directory"],["organisation","Organisation"],["attention","Needs attention"]];
-const PERSON_TABS = [["overview","Overview"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["documents","Documents"],["history","History"]];
+const PEOPLE_VIEWS = [["directory","Directory"],["access","Access"],["organisation","Organisation"],["attention","Needs attention"]];
+const PERSON_TABS = [["overview","Overview"],["access","Access"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["documents","Documents"],["history","History"]];
 const FILTERS = [["all","Everyone"],["active","Active"],["on_leave","On leave"],["quiet","No submissions in 14 days"],["no_unit","No unit"]];
 const EMPLOYMENT_CHANGES = [
   ["employment_details_changed","Employment details changed"],
@@ -67,18 +68,23 @@ function amountToMinor(value) {
   return Number.isFinite(number) ? Math.round(number * 100) : 0;
 }
 
-export default function People({ me, openItem, initialEmployeeId = null, onInitialHandled }) {
+export default function People({ me, openItem, go, openLifecycle, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
   const [personTab, setPersonTab] = useState("overview");
   const [searchText, setSearchText] = useState("");
+  const [accessFocusProfileId, setAccessFocusProfileId] = useState(null);
+  const [accessFocusUnitId, setAccessFocusUnitId] = useState(null);
+  const [accessFocusMode, setAccessFocusMode] = useState(null);
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [units, setUnits] = useState([]);
   const [person, setPerson] = useState(null);
   const [employmentEditor, setEmploymentEditor] = useState(false);
   const [employmentForm, setEmploymentForm] = useState(null);
   const [savingEmployment, setSavingEmployment] = useState(false);
+  const [volunteerRecommendations, setVolunteerRecommendations] = useState([]);
+  const [volunteerDecisionBusy, setVolunteerDecisionBusy] = useState(false);
   const [protectedHr, setProtectedHr] = useState(null);
   const [protectedHrLoading, setProtectedHrLoading] = useState(false);
   const [protectedEditor, setProtectedEditor] = useState(null);
@@ -100,9 +106,17 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     openPerson(match);
     onInitialHandled?.();
   }, [initialEmployeeId, rows, person]);
+  useEffect(() => {
+    if (!accessIntent) return;
+    setAccessFocusProfileId(accessIntent.profileId || null);
+    setAccessFocusUnitId(accessIntent.unitId || null);
+    setAccessFocusMode(accessIntent.mode || null);
+    setViewMode("access");
+    onAccessIntentHandled?.();
+  }, [accessIntent]);
 
-  async function load() {
-    setLoading(true);
+  async function load({ silent = false } = {}) {
+    if (!silent) setLoading(true);
     setError(null);
     const [rosterResult, peopleResult, leaveResult, unitsResult] = await Promise.all([
       supabase.rpc("admin_employee_roster_summary"),
@@ -223,16 +237,25 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     setProtectedHrLoading(canManageProtectedHr);
     let linkedResults;
     let protectedResponse;
+    let invitationResponse = { data: [], error: null };
+    let recommendationResponse = { data: [], error: null };
     let photoFiles = [];
     let documentFiles = [];
     try {
-      [linkedResults, protectedResponse, photoFiles, documentFiles] = await Promise.all([
+      [linkedResults, protectedResponse, photoFiles, documentFiles, invitationResponse, recommendationResponse] = await Promise.all([
         linkedRequests,
         canManageProtectedHr
           ? supabase.rpc("hr_employee_protected_summary", { p_employee_id: summary.id })
           : Promise.resolve({ data: null, error: null }),
         listOperationalFiles("employee_photo", summary.id),
         listOperationalFiles("employee_document", summary.id),
+        supabase.rpc("admin_access_invitations"),
+        summary.profile_id
+          ? supabase.from("volunteer_change_recommendations")
+              .select("id,recommendation_kind,requested_summary,reason,status,requested_at,requested_by,decided_at,decision_note,profiles!volunteer_change_recommendations_requested_by_fkey(full_name)")
+              .eq("profile_id", summary.profile_id)
+              .order("requested_at", { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
       ]);
     } catch (fileError) {
       setProtectedHrLoading(false);
@@ -246,12 +269,13 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     setProtectedHrLoading(false);
     setDetailLoading(false);
 
-    if (detailResult.error || employmentResult.error || protectedResult.error) {
-      setError(humanError(detailResult.error || employmentResult.error || protectedResult.error, "That employee record could not load."));
+    if (detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error || recommendationResponse.error) {
+      setError(humanError(detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error || recommendationResponse.error, "That employee record could not load."));
       return;
     }
 
     setProtectedHr(protectedResult.data || null);
+    setVolunteerRecommendations(Array.isArray(recommendationResponse.data) ? recommendationResponse.data : []);
     setEmployeeFiles({ photos: photoFiles, documents: documentFiles });
 
     let photoUrl = summary.photo_url || null;
@@ -275,6 +299,9 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     const rosterDetail = rosterDetailResult.data || {};
     const rosterEmployee = rosterDetail.employee || {};
     const rosterUnits = Array.isArray(rosterDetail.units) ? rosterDetail.units : summary.roster_units || [];
+    const employeeEmail = String(rosterEmployee.account_email || summary.email || "").trim().toLowerCase();
+    const accessInvitation = (Array.isArray(invitationResponse.data) ? invitationResponse.data : [])
+      .find((invitation) => String(invitation.email || "").trim().toLowerCase() === employeeEmail) || null;
 
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setProtectedEditor(null);
@@ -298,12 +325,23 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
       sessions,
       leave,
       employment: employmentResult.data || { current: null, history: [] },
+      access_invitation: accessInvitation,
       balance: {
         annual_taken: summary.annual_taken || 0,
         sick_taken: summary.sick_taken || 0,
         carryover_from_last_year: summary.carryover_from_last_year || 0,
       },
     });
+  }
+
+  function openAccessAdministration(profileId = null) {
+    setAccessFocusProfileId(profileId);
+    setAccessFocusUnitId(null);
+    setAccessFocusMode(profileId ? "responsibility" : "invite");
+    setPerson(null);
+    setDrill(null);
+    setViewMode("access");
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 
   async function refreshEmployeeFiles(employeeId) {
@@ -387,6 +425,27 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
       correctionOf: "",
     });
     setEmploymentEditor(true);
+  }
+
+  async function decideVolunteerRecommendation(row, status) {
+    if (!row?.id || !["accepted","declined"].includes(status)) return;
+    setVolunteerDecisionBusy(true);
+    setError(null);
+    const note = status === "accepted"
+      ? "Recommendation accepted for formal Administration follow-up. No employment or compensation value was changed automatically."
+      : "Recommendation declined by Administration.";
+    const { error: decisionError } = await supabase.from("volunteer_change_recommendations")
+      .update({ status, decided_by: me.id, decided_at: new Date().toISOString(), decision_note: note })
+      .eq("id", row.id)
+      .eq("status", "pending");
+    setVolunteerDecisionBusy(false);
+    if (decisionError) {
+      setError(humanError(decisionError, "The volunteer recommendation could not be decided."));
+      return;
+    }
+    setVolunteerRecommendations((rows) => rows.map((entry) => entry.id === row.id
+      ? { ...entry, status, decided_at: new Date().toISOString(), decision_note: note }
+      : entry));
   }
 
   async function saveEmployment() {
@@ -486,6 +545,22 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
     const identityLabel = person.identity_state === "needs_review"
       ? "Identity review required"
       : hasLinkedProfile ? "Account linked" : "Roster only · no account linked";
+    const accessInvitation = person.access_invitation || null;
+    const accessState = !hasLinkedProfile
+      ? "No login identity linked"
+      : person.active ? "Active operational access" : "Operational access inactive";
+    const invitationState = accessInvitation
+      ? accessInvitation.revoked_at
+        ? "Invitation cancelled"
+        : accessInvitation.activation_state === "verified"
+          ? "Email verified"
+          : accessInvitation.activation_state === "expired"
+            ? "Invitation expired"
+            : "Awaiting email verification"
+      : hasLinkedProfile ? "No pending invitation" : "No invitation recorded";
+    const responsibilitySummary = rosterUnitNames.length
+      ? rosterUnitNames.join(" · ")
+      : "No organisational responsibility recorded";
 
     return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
       <PeopleBackButton onClick={() => { setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
@@ -600,6 +675,45 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
             <PeopleFactRow icon="calendar" title="Leave records" subtitle={hasLinkedProfile ? `${person.leave.length} recorded` : "No linked operational account"} />
           </div>
         </PeopleWorkspaceSection>}
+      {personTab === "access" && <PeopleWorkspaceSection
+        title="Access & responsibilities"
+        description="Account access, organisational placement and authority remain separate from job title and employment facts."
+        meta={<div className="phase5-person-access-actions">
+          <Button
+            variant="secondary"
+            size="compact"
+            onClick={() => openAccessAdministration(person.profile_id || null)}
+          >Manage responsibilities</Button>
+          <Button
+            variant="quiet"
+            size="compact"
+            disabled={!person.profile_id}
+            onClick={() => openLifecycle?.(person.profile_id, "offboarding")}
+          >Offboard / deactivate access</Button>
+        </div>}
+      >
+        <div className="ev2p-admin-record-grid">
+          <PeopleFactRow icon="people" title="Login identity" subtitle={identityLabel} />
+          <PeopleFactRow icon="info" title="Access state" subtitle={accessState} />
+          <PeopleFactRow icon="notification" title="Invitation" subtitle={invitationState} />
+          <PeopleFactRow icon="people" title="Primary unit" subtitle={employmentCurrent?.unit_name || person.unit_name || "Not recorded"} />
+          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : "Not recorded · no authority inferred"} />
+          <PeopleFactRow icon="people" title="Application role" subtitle={hasLinkedProfile ? (employmentCurrent?.membership_role || person.role || "staff").replaceAll("_", " ") : "Not inferred from job title"} />
+          <PeopleFactRow icon="organisation" title="Recorded responsibilities" subtitle={responsibilitySummary} />
+          <PeopleFactRow icon="info" title="Employee status" subtitle={employmentState} />
+        </div>
+        {accessInvitation ? <div className="phase5-person-invitation">
+          <div>
+            <strong>{accessInvitation.email}</strong>
+            <span>Invited {new Date(accessInvitation.invited_at).toLocaleString("en-GB")} · {invitationState}</span>
+          </div>
+          <Button variant="quiet" size="compact" onClick={() => openAccessAdministration(person.profile_id || null)}>Review invitation</Button>
+        </div> : null}
+        <p className="phase5-person-access-note">
+          Job title never grants application authority. Additional unit or team responsibility is recorded against the existing identity; access deactivation and offboarding use the controlled lifecycle workflow.
+        </p>
+      </PeopleWorkspaceSection>}
+
       {personTab === "employment" && <>
       <PeopleWorkspaceSection
         title="Employment record"
@@ -618,6 +732,30 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
           {employmentCurrent?.exited_on && <PeopleFactRow icon="calendar" title="Exit date" subtitle={dateOnly(employmentCurrent.exited_on)} />}
         </div>
       </PeopleWorkspaceSection>
+
+      {(employmentCurrent?.employment_type === "volunteer" || person.employment_type === "volunteer") && <PeopleWorkspaceSection
+        title="Manager recommendations"
+        description="Managers may recommend a formal volunteer status, engagement or compensation change. Acceptance here does not perform the formal change; Administration must use the employment or protected-HR record."
+        meta={`${volunteerRecommendations.filter((row) => row.status === "pending").length} pending`}
+      >
+        {volunteerRecommendations.length ? <div className="phase6-admin-volunteer-recommendations">
+          {volunteerRecommendations.map((row) => <article key={row.id}>
+            <div>
+              <strong>{row.requested_summary}</strong>
+              <span>{String(row.recommendation_kind || "").replaceAll("_"," ")} · {row.profiles?.full_name || "Manager"} · {dateOnly(row.requested_at)}</span>
+              <p>{row.reason}</p>
+              {row.decision_note ? <small>{row.decision_note}</small> : null}
+            </div>
+            <div className="phase6-admin-volunteer-decision">
+              <span className={`phase6-recommendation-status is-${row.status}`}>{row.status}</span>
+              {row.status === "pending" && <>
+                <Button variant="secondary" size="compact" disabled={volunteerDecisionBusy} onClick={() => decideVolunteerRecommendation(row,"declined")}>Decline</Button>
+                <Button size="compact" disabled={volunteerDecisionBusy} onClick={() => decideVolunteerRecommendation(row,"accepted")}>Accept for formal follow-up</Button>
+              </>}
+            </div>
+          </article>)}
+        </div> : <PeopleEmpty title="No Manager recommendations" description="Formal volunteer changes remain with Administration. Manager recommendations will appear here when recorded." />}
+      </PeopleWorkspaceSection>}
       </>}
 
       {personTab === "history" && <>
@@ -839,7 +977,15 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
           </select>
         </FieldGroup>}
         <FieldGroup label="Effective date"><input className="field" aria-label="Effective date" type="date" value={employmentForm.effectiveOn} onChange={(event) => setEmploymentForm({ ...employmentForm, effectiveOn: event.target.value })} /></FieldGroup>
-        <FieldGroup label="Employment type"><input className="field" aria-label="Employment type" value={employmentForm.employmentType} onChange={(event) => setEmploymentForm({ ...employmentForm, employmentType: event.target.value })} placeholder="Permanent, contract, volunteer…" /></FieldGroup>
+        <FieldGroup label="Employment type">
+          <select className="field" aria-label="Employment type" value={employmentForm.employmentType} onChange={(event) => setEmploymentForm({ ...employmentForm, employmentType: event.target.value, role: event.target.value === "volunteer" && employmentForm.role === "manager" ? "staff" : employmentForm.role, workingPattern: event.target.value === "volunteer" ? "no_attendance" : employmentForm.workingPattern })}>
+            {!["not_recorded","permanent","fixed_term","volunteer"].includes(employmentForm.employmentType) && <option value={employmentForm.employmentType}>{employmentForm.employmentType}</option>}
+            <option value="not_recorded">Not recorded</option>
+            <option value="permanent">Permanent employee</option>
+            <option value="fixed_term">Fixed-term employee</option>
+            <option value="volunteer">Volunteer</option>
+          </select>
+        </FieldGroup>
         <FieldGroup label="Job title"><input className="field" aria-label="Job title" value={employmentForm.jobTitle} onChange={(event) => setEmploymentForm({ ...employmentForm, jobTitle: event.target.value })} /></FieldGroup>
         <FieldGroup label="Primary unit">
           <select className="field" aria-label="Primary unit" value={employmentForm.unitId} onChange={(event) => setEmploymentForm({ ...employmentForm, unitId: event.target.value, managerId: "" })}>
@@ -851,7 +997,7 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
           <select className="field" aria-label="Role" value={employmentForm.role} onChange={(event) => setEmploymentForm({ ...employmentForm, role: event.target.value })}>
             <option value="staff">Staff</option>
             <option value="sub_team_lead">Team lead</option>
-            <option value="manager">Unit head</option>
+            {employmentForm.employmentType !== "volunteer" && <option value="manager">Unit head</option>}
           </select>
         </FieldGroup>
         <FieldGroup label="Manager">
@@ -864,9 +1010,16 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         <FieldGroup label="Working pattern">
           <select className="field" aria-label="Working pattern" value={employmentForm.workingPattern} onChange={(event) => setEmploymentForm({ ...employmentForm, workingPattern: event.target.value })}>
             <option value="not_recorded">Not recorded</option>
-            <option value="full_time">Full time</option>
-            <option value="part_time">Part time</option>
-            <option value="flexible">Flexible</option>
+            {employmentForm.employmentType === "volunteer" ? <>
+              <option value="no_attendance">No attendance tracking</option>
+              <option value="event_based">Event-based</option>
+              <option value="specific_days">Specific days</option>
+              <option value="custom">Custom schedule</option>
+            </> : <>
+              <option value="full_time">Full time</option>
+              <option value="part_time">Part time</option>
+              <option value="flexible">Flexible</option>
+            </>}
           </select>
         </FieldGroup>
         <FieldGroup label="Employment status">
@@ -953,8 +1106,8 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
   return <div className="body ev2-people-page ev2-people-admin">
     <PeoplePageHeader
       eyebrow="Employee records"
-      title="People"
-      description="Authorised employee records for identity, employment, work, leave and factual activity context. Protected HR remains behind a separate security boundary."
+      title="People & Access"
+      description="One administrative workspace for employee records, account access, organisational placement, employment, work and leave context. Protected HR remains behind a separate security boundary."
       count={rows.length}
       countLabel={rows.length === 1 ? "person" : "people"}
     />
@@ -970,9 +1123,24 @@ export default function People({ me, openItem, initialEmployeeId = null, onIniti
         role="tab"
         aria-selected={viewMode === key}
         className={viewMode === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
-        onClick={() => setViewMode(key)}
+        onClick={() => { if (key !== "access") { setAccessFocusProfileId(null); setAccessFocusUnitId(null); setAccessFocusMode(null); } setViewMode(key); }}
       >{label}</button>)}
     </div>
+
+    {viewMode === "access" && <PeopleAccess
+      me={me}
+      go={go}
+      embedded
+      initialProfileId={accessFocusProfileId}
+      initialUnitId={accessFocusUnitId}
+      initialMode={accessFocusMode}
+      onChanged={() => load({ silent: true })}
+      onLifecycle={(profileId, type) => openLifecycle?.(profileId, type)}
+      onOpenPerson={(profileId) => {
+        const match = rows.find((entry) => entry.profile_id === profileId);
+        if (match) openPerson(match);
+      }}
+    />}
 
     {viewMode === "directory" && <div className="ev2p-admin-control-band">
     <div className="ev2p-admin-toolbar">

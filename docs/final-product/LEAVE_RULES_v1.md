@@ -1,6 +1,6 @@
 # CEAC Leave Rules v1
 
-Status: PARTIALLY CONFIRMED / POLICY VALUES STILL OPEN
+Status: GO-LIVE ANNUAL-LEAVE POLICY CONFIRMED / SECONDARY LEAVE POLICIES PARTIALLY OPEN
 
 This file contains binding owner decisions for CEAC leave management. Unresolved quantities and formulas must remain configurable/unset rather than invented.
 
@@ -16,19 +16,35 @@ Employee request → Manager approval → Administration final approval.
 
 Manager approval is not final approval. Administration owns the final leave decision.
 
+## Confirmed annual-leave entitlement and accrual
+- Annual-leave entitlement is 24 working days per leave year for eligible CEAC staff under the confirmed organisation-wide rule.
+- Annual leave accrues quarterly at 6 working days per completed quarter.
+- A person joining during a quarter receives a pro-rated entitlement appropriate to the portion of the quarter served; CEAC must not award a full completed-quarter credit to a person who did not serve the full quarter.
+- Accrued unused days remain available during the same leave year.
+- Ordinary unused annual leave expires at the end of the applicable leave year. There is no routine automatic carry-forward.
+- Expiry must preserve any legally or contractually protected exception and must not destroy an approved leave period merely because that approved period crosses a year boundary.
+- Sick leave is separate from annual leave.
+
 ## Confirmed workflow behavior
 - An employee may request or cancel leave whether or not a work session has started.
 - No work session recorded does not automatically mean the employee is absent.
 - Leave and attendance are related operational evidence but remain separate authority domains.
 - Attendance/work-session data must not automatically create a Payroll deduction.
-- Payroll effects from unpaid leave must remain disabled/manual-authoritative until CEAC confirms the calculation rule.
+- Approved unpaid leave and unauthorised absence are distinct states.
+
+## Unauthorised absence and consequence review
+- Missing Start Work, End Work or other attendance evidence may create a factual review flag; it does not automatically establish misconduct, unpaid leave, discipline or a salary deduction.
+- The eventual finding must consider the person's effective schedule, approved leave, notices/exceptions, corrections and relevant evidence.
+- For a staff member, the relevant Manager is kept in the review loop; Compliance and Administration/HR review; the Group Pastor/CEO is final authority for disciplinary or salary-deduction consequences.
+- If the person under review is the Manager, the process must not require that Manager to approve their own case; escalation proceeds to the appropriate higher authority, with Group Pastor/CEO final authority.
+- If an authorised human decision establishes that a salary deduction applies, CEAC may calculate the proposed consequence for Payroll review. Attendance evidence itself must never post or approve a Payroll deduction automatically.
 
 ## Required leave-domain capabilities
-The data model and UI must be able to preserve:
+The data model and UI must preserve:
 - versioned leave types and policies;
-- entitlement quantities once confirmed;
-- grant/accrual method once confirmed;
-- carry-over rules once confirmed;
+- the confirmed 24-day annual entitlement;
+- quarterly 6-day accrual and joiner pro-rating;
+- year-end expiry and exception handling;
 - balances;
 - request history;
 - Manager approval;
@@ -40,28 +56,23 @@ The data model and UI must be able to preserve:
 - attributable decision history.
 
 ## Still unresolved — do not invent
-- annual-leave entitlement quantity;
-- sick-leave entitlement quantity;
+- sick-leave entitlement quantity/rules beyond confirmed separation from annual leave;
 - maternity/paternity entitlement quantities and detailed eligibility;
 - study-leave quantity/rules;
-- start-of-year grant versus monthly accrual;
-- carry-over quantity, expiry and treatment;
-- unpaid-leave classification rules;
-- unpaid-leave Payroll formula;
+- any organisation-wide formula for approved unpaid-leave salary treatment that has not passed the required human decision;
 - any automatic Payroll consequence of absence, attendance or leave.
 
 ## Truthful UI rule
-Until CEAC confirms an unresolved value:
-- do not display an assumed entitlement;
-- do not silently reuse an old placeholder such as a fixed annual-day count;
-- show the policy/value as not configured or not yet confirmed;
-- preserve request/approval functionality where the unresolved value does not block the workflow.
+- Display the confirmed annual entitlement/accrual only where the employee is covered by the confirmed CEAC policy.
+- Do not silently invent secondary leave quantities.
+- Show unresolved secondary policy values as not configured/not yet confirmed where they are required.
+- Preserve request/approval functionality where an unresolved secondary value does not block the workflow.
 
 ## Payroll boundary
 This file must be read together with:
 `docs/final-product/PAYROLL_RULES_v1.md`
 
-Leave or attendance must never modify salary automatically without a future explicit owner decision.
+Leave or attendance must never modify salary automatically. A salary consequence requires an attributable authorised human decision before Payroll calculation/review.
 
 ## Cross-session continuity
 Also read:

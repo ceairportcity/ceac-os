@@ -7,13 +7,15 @@ function dateKey(date) {
 }
 
 export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) {
-  const [x, setX] = useState({ doneWeek: 0, donePreviousWeek: 0, objectives: 0, objectiveAttention: 0, projects: 0, blocked: 0, review: 0, activeUnits: 0 });
+  const [x, setX] = useState({ doneWeek: 0, donePreviousWeek: 0, objectives: 0, objectiveAttention: 0, projects: 0, blocked: 0, review: 0, activeUnits: 0, activeTeams: null, activeVolunteers: null, activeStaff: null });
   const [loading, setLoading] = useState(true);
   const [meetings, setMeetings] = useState([]);
   const [objectiveMix, setObjectiveMix] = useState({ onTrack:0, met:0, atRisk:0, notMet:0, other:0 });
+  const [ministryStrategyRows, setMinistryStrategyRows] = useState([]);
   const [reporting, setReporting] = useState(null);
   const [ministryOperations, setMinistryOperations] = useState([]);
   const [ministryOccurrences, setMinistryOccurrences] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => { load(); }, [me.org_id]);
@@ -36,7 +38,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
       const previousMonday = new Date(monday); previousMonday.setUTCDate(previousMonday.getUTCDate() - 7);
       const ministryStart = new Date(now); ministryStart.setDate(ministryStart.getDate() - 90);
 
-      const [doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, meetingRows, objectiveRows, periodRows, unitRows, operationRows] = await Promise.all([
+      const [doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, meetingRows, objectiveRows, strategyRows, periodRows, unitRows, operationRows, volunteerRows, staffRows, teamRows, activityResult] = await Promise.all([
         count("work_items", (query) => query.in("kind", ["task", "deliverable"]).in("status", ["completed", "self_certified"]).gte("completed_at", monday.toISOString())),
         count("work_items", (query) => query.in("kind", ["task", "deliverable"]).in("status", ["completed", "self_certified"]).gte("completed_at", previousMonday.toISOString()).lt("completed_at", monday.toISOString())),
         count("objectives"),
@@ -50,15 +52,29 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
           .lte("starts_at",new Date(Date.now()+14*864e5).toISOString())
           .neq("status","cancelled").order("starts_at").limit(5),
         supabase.from("objectives").select("status").eq("org_id",me.org_id),
+        supabase.from("strategy_nodes")
+          .select("id,node_type,name,status,measurement_kind,current_value,target_value,target_unit,created_at")
+          .eq("org_id",me.org_id)
+          .in("node_type",["ministry_direction","ministry_objective"])
+          .neq("status","closed")
+          .order("created_at",{ascending:false}),
         supabase.from("report_periods").select("id,label,status,starts_on").eq("status","open").order("starts_on",{ascending:false}).limit(1),
         supabase.from("units").select("id").eq("active",true),
         supabase.from("recurring_operations")
           .select("id,name,value_label,unit_id,units(name)")
           .eq("org_id",me.org_id).eq("active",true).eq("records_value",true)
           .order("name"),
+        supabase.from("employment_records").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").eq("employment_type", "volunteer"),
+        supabase.from("employment_records").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").neq("employment_type", "volunteer"),
+        supabase.from("sub_teams").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("active", true),
+        supabase.from("activity_events")
+          .select("id,actor_id,verb,object_type,object_id,at")
+          .eq("org_id", me.org_id)
+          .order("at", { ascending: false })
+          .limit(12),
       ]);
 
-      const firstError = [meetingRows.error, objectiveRows.error, periodRows.error, unitRows.error, operationRows.error].find(Boolean);
+      const firstError = [meetingRows.error, objectiveRows.error, strategyRows.error, periodRows.error, unitRows.error, operationRows.error].find(Boolean);
       if (firstError) throw new Error(firstError.message);
 
       const operations = operationRows.data || [];
@@ -75,6 +91,17 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
       }
       setMinistryOperations(operations);
       setMinistryOccurrences(occurrenceRows);
+
+      const visibleActivity = activityResult.error ? [] : (activityResult.data || []);
+      const actorIds = [...new Set(visibleActivity.map((row) => row.actor_id).filter(Boolean))];
+      let actorNames = {};
+      if (actorIds.length) {
+        const actorResult = await supabase.from("profiles").select("id,full_name").in("id", actorIds);
+        if (!actorResult.error) actorNames = Object.fromEntries((actorResult.data || []).map((row) => [row.id, row.full_name]));
+      }
+      setRecentActivity(visibleActivity.map((row) => ({ ...row, actor_name: actorNames[row.actor_id] || null })));
+
+      setMinistryStrategyRows(strategyRows.data || []);
 
       const mixRows=objectiveRows.data||[];
       const onTrack=mixRows.filter((row)=>row.status==="on_track").length;
@@ -93,7 +120,20 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
         setReporting({label:openPeriod.label,filed,total:(unitRows.data||[]).length});
       }else setReporting(null);
 
-      setX({ doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, activeUnits: (unitRows.data || []).length });
+      setX({
+        doneWeek,
+        donePreviousWeek,
+        objectives,
+        objectiveAttention,
+        projects,
+        blocked,
+        review,
+        activeUnits: (unitRows.data || []).length,
+        ministryObjectives: (strategyRows.data || []).filter((row) => row.node_type === "ministry_objective").length,
+        activeTeams: teamRows.error ? null : (teamRows.count ?? 0),
+        activeVolunteers: volunteerRows.error ? null : (volunteerRows.count ?? 0),
+        activeStaff: staffRows.error ? null : (staffRows.count ?? 0),
+      });
       setMeetings(meetingRows.data || []);
     } catch (loadError) {
       setError(loadError.message || "The ministry overview could not load.");
@@ -156,6 +196,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
     error={error}
     summary={x}
     objectiveMix={objectiveMix}
+    ministryStrategyRows={ministryStrategyRows}
     reporting={reporting}
     ministryOperations={ministryOperations}
     ministryOccurrences={ministryOccurrences}
@@ -163,6 +204,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
     unitsThisWeek={unitsThisWeek}
     ministryLatestRows={ministryLatestRows}
     ministryCharts={ministryCharts}
+    recentActivity={recentActivity}
     meetings={meetings}
     onRetry={load}
     onOpenWork={() => go?.("work")}
@@ -171,6 +213,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
     onOpenOrganisation={() => go?.("exec-organisation")}
     onOpenFinance={() => go?.("exec-finance")}
     onOpenReports={() => go?.("exec-reports")}
+    onOpenCalendar={() => go?.("exec-calendar")}
     onOpenMeeting={openMeeting}
     onScheduleMeeting={() => scheduleMeeting?.({ scope:"organisation", organisation:true })}
   />;

@@ -328,9 +328,10 @@ begin
     jsonb_build_array(
       jsonb_build_object(
         'leave_kind','annual',
-        'entitlement_amount',20,
+        'entitlement_amount',24,
         'entitlement_unit','days',
-        'accrual_method','annual',
+        'accrual_method','quarterly',
+        'accrual_rate',6,
         'carryover_method','none',
         'approval_route','manager_then_admin',
         'opening_balance_required',false
@@ -352,7 +353,10 @@ begin
     where policy_version_id=v_policy
       and leave_kind='annual'
       and complete
-      and accrual_method='annual'
+      and entitlement_amount=24
+      and entitlement_unit='days'
+      and accrual_method='quarterly'
+      and accrual_rate=6
       and carryover_method='none'
       and approval_route='manager_then_admin'
   ) then

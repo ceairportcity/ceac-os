@@ -1,0 +1,497 @@
+{
+  "provenance": "Read-only Supabase production supabase_migrations.schema_migrations; exact GitHub PR27 source tree SHA da7358a4e224d365af1a1a97887b057f2cdb8f0d",
+  "projectRef": "efjljhftsesssumtshvp",
+  "snapshotDate": "2026-10-10",
+  "appliedCount": 119,
+  "sourceFileCount": 129,
+  "pendingAtSnapshot": [
+    "20261007090000",
+    "20261007093000",
+    "20261007094500",
+    "20261007095500",
+    "20261007102000",
+    "20261007103000",
+    "20261007104000",
+    "20261007180500",
+    "20261010010000",
+    "20261010030000"
+  ],
+  "applied": [
+    {
+      "version": "20260912151134",
+      "name": "001_org_people_rls"
+    },
+    {
+      "version": "20260912154730",
+      "name": "002_work_core"
+    },
+    {
+      "version": "20260912154804",
+      "name": "003_work_rls"
+    },
+    {
+      "version": "20260912155646",
+      "name": "004_new_user_trigger"
+    },
+    {
+      "version": "20260912155839",
+      "name": "005_fix_private_item_leak"
+    },
+    {
+      "version": "20260912155910",
+      "name": "006_fix_projects_recursion"
+    },
+    {
+      "version": "20260917093538",
+      "name": "007_daily_jobs_and_heartbeat"
+    },
+    {
+      "version": "20260917153234",
+      "name": "008_pending_invitations"
+    },
+    {
+      "version": "20260917211413",
+      "name": "009_pass1_leave_goals_office"
+    },
+    {
+      "version": "20260919043003",
+      "name": "010_reports_and_performance"
+    },
+    {
+      "version": "20260919043020",
+      "name": "011_reports_and_performance_rls"
+    },
+    {
+      "version": "20260919043428",
+      "name": "012_cost_budgets_and_spend"
+    },
+    {
+      "version": "20260919094903",
+      "name": "013_work_reference_generator"
+    },
+    {
+      "version": "20260919105504",
+      "name": "014_income_and_internal_transfers"
+    },
+    {
+      "version": "20260919105522",
+      "name": "015_spend_lines_append_only"
+    },
+    {
+      "version": "20260919110204",
+      "name": "016_currency"
+    },
+    {
+      "version": "20260919145326",
+      "name": "017_self_certification_and_checklist_return"
+    },
+    {
+      "version": "20260919145348",
+      "name": "018_self_certify_and_return_rpcs"
+    },
+    {
+      "version": "20260919174056",
+      "name": "019_objective_integrity_project_visibility_budget_rls"
+    },
+    {
+      "version": "20260919174126",
+      "name": "020_project_close"
+    },
+    {
+      "version": "20260919174726",
+      "name": "021_overall_close_records_who_filed"
+    },
+    {
+      "version": "20260919180000",
+      "name": "022_finance_requests"
+    },
+    {
+      "version": "20260919180025",
+      "name": "023_finance_request_rpcs"
+    },
+    {
+      "version": "20260919180206",
+      "name": "024_ministry_calendar"
+    },
+    {
+      "version": "20260919184710",
+      "name": "025_project_close_authority_and_reversibility"
+    },
+    {
+      "version": "20260919190529",
+      "name": "026_report_identity_immutability_evidence"
+    },
+    {
+      "version": "20260919190556",
+      "name": "027_report_rpcs"
+    },
+    {
+      "version": "20260919191853",
+      "name": "028_report_hardening"
+    },
+    {
+      "version": "20260919191918",
+      "name": "029_revoke_anon_on_job_functions"
+    },
+    {
+      "version": "20260919192632",
+      "name": "030_reports_submitted_is_final"
+    },
+    {
+      "version": "20260920060524",
+      "name": "031_people_visibility"
+    },
+    {
+      "version": "20260920060543",
+      "name": "032_project_close_integrity"
+    },
+    {
+      "version": "20260920060609",
+      "name": "033_fix_close_project_column"
+    },
+    {
+      "version": "20260920105018",
+      "name": "034_profile_self_update_guard"
+    },
+    {
+      "version": "20260920105034",
+      "name": "035_profile_visibility_and_activity_hardening"
+    },
+    {
+      "version": "20260920105041",
+      "name": "036_append_only_routines_and_report_scope"
+    },
+    {
+      "version": "20260920105050",
+      "name": "037_background_job_security"
+    },
+    {
+      "version": "20260920105058",
+      "name": "038_revoke_public_helper_execution"
+    },
+    {
+      "version": "20260920105300",
+      "name": "039_harden_reference_and_helper_rpcs"
+    },
+    {
+      "version": "20260920140004",
+      "name": "040_authority_hardening"
+    },
+    {
+      "version": "20260920140419",
+      "name": "041_atomic_work_review_and_reopen"
+    },
+    {
+      "version": "20260920140918",
+      "name": "042_typed_work_schema"
+    },
+    {
+      "version": "20260920141231",
+      "name": "043_typed_work_contracts"
+    },
+    {
+      "version": "20260920141353",
+      "name": "044_fix_routine_schedule_versioning"
+    },
+    {
+      "version": "20260920162850",
+      "name": "045_typed_work_reconciliation_hardening"
+    },
+    {
+      "version": "20260920164125",
+      "name": "046_review_contract_hardening"
+    },
+    {
+      "version": "20260920172526",
+      "name": "047_work_session_recovery_and_blocker_resolution"
+    },
+    {
+      "version": "20260920173437",
+      "name": "048_announcements"
+    },
+    {
+      "version": "20260920173556",
+      "name": "049_fix_announcement_policy_recursion"
+    },
+    {
+      "version": "20260920174451",
+      "name": "050_unit_resources"
+    },
+    {
+      "version": "20260920174652",
+      "name": "051_unit_approved_leave_visibility"
+    },
+    {
+      "version": "20260920175344",
+      "name": "052_employee_personal_details"
+    },
+    {
+      "version": "20260920182250",
+      "name": "053_fix_stale_session_continue"
+    },
+    {
+      "version": "20260920182433",
+      "name": "054_enforce_attributable_personal_profile_updates"
+    },
+    {
+      "version": "20260920185442",
+      "name": "055_attention_state_semantics"
+    },
+    {
+      "version": "20260920185547",
+      "name": "056_historical_session_reconciliation"
+    },
+    {
+      "version": "20260920185632",
+      "name": "057_fix_historical_session_event_action"
+    },
+    {
+      "version": "20260920185731",
+      "name": "058_review_followup_contract"
+    },
+    {
+      "version": "20260920185910",
+      "name": "059_blocker_followup_contract"
+    },
+    {
+      "version": "20260920194350",
+      "name": "060_invitation_authority_and_invite_only_accounts"
+    },
+    {
+      "version": "20260920195902",
+      "name": "061_canonical_outputs_and_unit_head_authority"
+    },
+    {
+      "version": "20260920201104",
+      "name": "062_threshold_driven_attention_engine"
+    },
+    {
+      "version": "20260920201305",
+      "name": "063_project_silence_and_falling_rules"
+    },
+    {
+      "version": "20260920201736",
+      "name": "064_atomic_multirow_application_writes"
+    },
+    {
+      "version": "20260920202341",
+      "name": "065_hot_path_indexes_and_rls_initplan"
+    },
+    {
+      "version": "20260920214411",
+      "name": "066_admin_people_server_aggregation"
+    },
+    {
+      "version": "20260921071233",
+      "name": "admin_hr_security_gate"
+    },
+    {
+      "version": "20260921072235",
+      "name": "protected_hr_foundation"
+    },
+    {
+      "version": "20260921100000",
+      "name": "069_contextual_rooms"
+    },
+    {
+      "version": "20260921103000",
+      "name": "070_meeting_workspace"
+    },
+    {
+      "version": "20260921120000",
+      "name": "071_collaboration_audiences"
+    },
+    {
+      "version": "20260921144500",
+      "name": "072_meeting_participant_authority"
+    },
+    {
+      "version": "20260921211500",
+      "name": "073_private_meeting_notes"
+    },
+    {
+      "version": "20260922033628",
+      "name": "074_reduce_internal_rpc_surface"
+    },
+    {
+      "version": "20260922050000",
+      "name": "075_employment_history"
+    },
+    {
+      "version": "20260922060000",
+      "name": "076_platform_audit"
+    },
+    {
+      "version": "20260922070000",
+      "name": "077_capability_authority"
+    },
+    {
+      "version": "20260922080000",
+      "name": "078_event_framework"
+    },
+    {
+      "version": "20260922090000",
+      "name": "079_workflow_engine"
+    },
+    {
+      "version": "20260922100000",
+      "name": "080_policy_rules_engine"
+    },
+    {
+      "version": "20260922110000",
+      "name": "081_integration_gateway"
+    },
+    {
+      "version": "20260922120000",
+      "name": "082_employee_lifecycle"
+    },
+    {
+      "version": "20260922130000",
+      "name": "083_protected_hr_stage3"
+    },
+    {
+      "version": "20260922140000",
+      "name": "084_goals_strategy"
+    },
+    {
+      "version": "20260922150000",
+      "name": "085_work_management_2"
+    },
+    {
+      "version": "20260922160000",
+      "name": "086_resource_workload"
+    },
+    {
+      "version": "20260922170000",
+      "name": "087_performance_development"
+    },
+    {
+      "version": "20260922180000",
+      "name": "088_learning"
+    },
+    {
+      "version": "20260922190000",
+      "name": "089_workforce_management"
+    },
+    {
+      "version": "20260922230000",
+      "name": "090_assets_devices"
+    },
+    {
+      "version": "20260922233000",
+      "name": "091_compliance_policy"
+    },
+    {
+      "version": "20260923101500",
+      "name": "092_production_hardening_finance_integrity"
+    },
+    {
+      "version": "20260923135409",
+      "name": "093_second_authority_holder_and_budget_append_only"
+    },
+    {
+      "version": "20260923200732",
+      "name": "094_account_activity_self_service"
+    },
+    {
+      "version": "20260925071727",
+      "name": "095_ministry_number_definition_rpc"
+    },
+    {
+      "version": "20260925071859",
+      "name": "095_project_participant_register"
+    },
+    {
+      "version": "20260925122617",
+      "name": "095_ministry_number_definition_rpc"
+    },
+    {
+      "version": "20260925122851",
+      "name": "096_experience_stage6_finance_corrections"
+    },
+    {
+      "version": "20260930150414",
+      "name": "experience_stage7_work_capture_recipes"
+    },
+    {
+      "version": "20260930150423",
+      "name": "experience_stage8_interface_defects"
+    },
+    {
+      "version": "20261001100730",
+      "name": "099_integration_runtime"
+    },
+    {
+      "version": "20261001100914",
+      "name": "100_integration_table_privilege_hardening"
+    },
+    {
+      "version": "20261003101239",
+      "name": "101_payroll_domain_security"
+    },
+    {
+      "version": "20261003101257",
+      "name": "102_reference_counter_privilege_hardening"
+    },
+    {
+      "version": "20261003120215",
+      "name": "employee_roster_master"
+    },
+    {
+      "version": "20261003135007",
+      "name": "104_employee_protected_hr_subject"
+    },
+    {
+      "version": "20261003135010",
+      "name": "105_payroll_employee_population"
+    },
+    {
+      "version": "20261003135013",
+      "name": "106_payroll_readiness_summary"
+    },
+    {
+      "version": "20261003222056",
+      "name": "leave_owner_rules"
+    },
+    {
+      "version": "20261005133253",
+      "name": "108_operational_files_and_exec_rooms"
+    },
+    {
+      "version": "20261005133256",
+      "name": "109_exec_project_room_context"
+    },
+    {
+      "version": "20261005133259",
+      "name": "110_employee_operational_files"
+    },
+    {
+      "version": "20261006021138",
+      "name": "111_onboarding_access_presence_foundation"
+    },
+    {
+      "version": "20261006062907",
+      "name": "112_attendance_patterns_permissions"
+    },
+    {
+      "version": "20261006121001",
+      "name": "113_compliance_operating_surface"
+    },
+    {
+      "version": "20261006163734",
+      "name": "114_security_definer_surface_reduction"
+    },
+    {
+      "version": "20261006165945",
+      "name": "115_s6_hot_path_rls_fk_hardening"
+    },
+    {
+      "version": "20261007013047",
+      "name": "notification_work_state"
+    },
+    {
+      "version": "20261007075418",
+      "name": "privileged_mfa_aal2_enforcement"
+    }
+  ]
+}
