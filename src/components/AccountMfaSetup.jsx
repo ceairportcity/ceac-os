@@ -7,6 +7,7 @@ import { humanError } from "../lib/productLanguage";
 // Neither the service-role credential nor any colleague's MFA secrets belong here.
 export default function AccountMfaSetup() {
   const [loading, setLoading] = useState(true);
+  const [statusReady, setStatusReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [factors, setFactors] = useState([]);
   const [level, setLevel] = useState("aal1");
@@ -26,6 +27,7 @@ export default function AccountMfaSetup() {
     setFactors(verifiedMfaFactors(factorResult.data || {})
       .filter((factor) => factor.factor_type === "totp"));
     setLevel(assuranceResult.data?.currentLevel || "aal1");
+    setStatusReady(true);
   }
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export default function AccountMfaSetup() {
         setFactors(verifiedMfaFactors(factorResult.data || {})
           .filter((factor) => factor.factor_type === "totp"));
         setLevel(assuranceResult.data?.currentLevel || "aal1");
+        setStatusReady(true);
       } catch (err) {
         if (active) setError(humanError(err, "Authenticator status could not be loaded."));
       } finally {
@@ -139,7 +142,7 @@ export default function AccountMfaSetup() {
     </p>
 
     {loading && <p role="status" aria-busy="true">Checking your authenticator...</p>}
-    {!loading && !error && <p role="status">
+    {!loading && statusReady && !error && <p role="status">
       {level === "aal2"
         ? "This session has verified two-step access."
         : enrolled
@@ -149,7 +152,13 @@ export default function AccountMfaSetup() {
     {error && <div className="flag flag-brick" role="alert">{error}</div>}
     {notice && <p role="status" className="pill p-green">{notice}</p>}
 
-    {!loading && !enrolled && !setup &&
+    {!loading && !statusReady && <button type="button" className="btn btn-ghost" disabled={busy} onClick={async () => {
+      setBusy(true); setError(null);
+      try { await refresh(); } catch (err) { setError(humanError(err, "Authenticator status could not be loaded.")); }
+      finally { setBusy(false); }
+    }}>Retry authenticator status</button>}
+
+    {!loading && statusReady && !enrolled && !setup &&
       <button type="button" className="btn wide-auto" onClick={startEnrollment} disabled={busy}>
         {busy ? "Preparing..." : "Set up authenticator"}
       </button>}
@@ -166,7 +175,7 @@ export default function AccountMfaSetup() {
       <p className="screen-note">This setup is incomplete until you verify a code below.</p>
     </div>}
 
-    {!loading && (setup || needsStepUp) &&
+    {!loading && statusReady && (setup || needsStepUp) &&
       <div className="auth-form">
         <label className="auth-field">
           <span>Six-digit authenticator code</span>
