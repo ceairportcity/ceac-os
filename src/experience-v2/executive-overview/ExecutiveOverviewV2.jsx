@@ -156,6 +156,8 @@ export default function ExecutiveOverviewV2({
   const attentionCount = Number(summary.objectiveAttention || 0) + Number(summary.blocked || 0) + reportingGap;
   const objectiveRisk = Number(objectiveMix.atRisk || 0) + Number(objectiveMix.notMet || 0);
   const ministryDirectionRows = ministryStrategyRows.filter((row) => row.node_type === "ministry_objective").slice(0, 3);
+  // Preserve recent, authorised ministry numbers alongside attributable work events.
+  const recentMinistryRows = ministryLatestRows.filter((row) => row.value !== null).slice(0, 2);
   const directionFallbackRows = ministryDirectionRows.length ? ministryDirectionRows : ministryStrategyRows.filter((row) => row.node_type === "ministry_direction").slice(0, 3);
   const todayKey = accraDateKey();
   const meetingsToday = meetings.filter((meeting) => accraDateKey(meeting.starts_at) === todayKey).length;
@@ -315,8 +317,10 @@ export default function ExecutiveOverviewV2({
             </div>
             <div className="executivev2-activity-context">{recentActivity.length ? "Recent attributable CEAC activity" : "Recorded ministry activity"}</div>
             <div className="executivev2-activity-grid">
-              {recentActivity.length ? recentActivity.slice(0, 4).map((row) => <RecentActivityItem key={row.id} row={row} />)
-                : ministryLatestRows.length ? ministryLatestRows.slice(0, 4).map((row) => <ActivityItem key={row.id} row={row} />)
+              {recentMinistryRows.length || recentActivity.length ? <>
+                  {recentMinistryRows.map((row) => <ActivityItem key={row.id} row={row} />)}
+                  {recentActivity.slice(0, 4 - recentMinistryRows.length).map((row) => <RecentActivityItem key={row.id} row={row} />)}
+                </> : ministryLatestRows.length ? ministryLatestRows.slice(0, 4).map((row) => <ActivityItem key={row.id} row={row} />)
                 : <div className="executivev2-empty compact"><span><strong>No recent attributable activity is visible.</strong><small>This area only shows CEAC records your account is authorised to see.</small></span></div>}
             </div>
           </section>

@@ -2,6 +2,53 @@
 
 begin;
 
+-- An empty historical migration replay has no production organisation or
+-- existing owner-routing record. Create a confirmed synthetic owner policy
+-- THROUGH the same authorised RPC inside this transaction. The fixture is
+-- rolled back at the end; it never seeds production or weakens access checks.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+do $annual_owner_fixture$
+declare v_policy uuid;
+begin
+  v_policy:=public.workforce_record_leave_policy(
+    'CEAC annual leave owner lock fixture',
+    current_date,current_date+365,
+    'CEAC_OWNER_LEAVE_ROUTING_2026-10-02',
+    'Exercise approved owner lock on clean replay',
+    jsonb_build_array(jsonb_build_object(
+      'leave_kind','annual',
+      'entitlement_amount',24,
+      'entitlement_unit','days',
+      'accrual_method','quarterly',
+      'accrual_rate',6,
+      'carryover_method','none',
+      'approval_route','manager_then_admin',
+      'opening_balance_required',false
+    )),
+    true,null
+  );
+  if v_policy is null then
+    raise exception 'Annual-leave owner fixture was not activated.';
+  end if;
+end
+$annual_owner_fixture$;
+reset role;
+
+-- Migration 107 already seeded routing_confirmed for organisations existing at
+-- that historical point. This synthetic organisation was created AFTER the
+-- replay, so simulate that prerequisite explicitly, within this rollback-only
+-- test transaction. The next assertions still require the exact 24/6 policy.
+update public.leave_policy_rules r
+set routing_confirmed=true
+from public.leave_policy_versions p
+where r.policy_version_id=p.id
+  and p.org_id='10000000-0000-4000-8000-000000000010'
+  and p.source_reference='CEAC_OWNER_LEAVE_ROUTING_2026-10-02'
+  and r.leave_kind='annual'
+  and r.complete
+  and r.approval_route='manager_then_admin';
+
 do $annual_policy_shape$
 declare
   v_count integer;

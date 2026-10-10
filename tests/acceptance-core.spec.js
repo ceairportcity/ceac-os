@@ -469,7 +469,7 @@ test("Recurring ministry numbers flow from a unit record to the Group Pastor ove
 
   {
     const { context, page } = await openAs(browser, "exec@ceac.local.test");
-    await expect(page.getByText("Recorded ministry activity", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recent activity", exact: true })).toBeVisible();
     await expect(page.getByText(numberName, { exact: true })).toBeVisible();
     await expect(page.getByText(/17 People received/)).toBeVisible();
     await context.close();
@@ -605,6 +605,9 @@ test("OCR6C Unit Rooms carry attributable communication and private media betwee
     await page.getByPlaceholder("Message your unit").fill(message);
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(page.getByText(message, { exact: true })).toBeVisible();
+    // Distinguish an upload or registration failure from a private signed-URL/render failure.
+    // Both conditions are mandatory; never treat message delivery alone as media success.
+    await expect(page.locator(".room-error")).toHaveCount(0);
     await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
   }
@@ -934,7 +937,8 @@ test("Stage 5 Delivery manages programmes, milestones, dependencies and project 
     await expect(page.getByRole("heading", { name: "Portfolio", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Major projects", exact: true })).toBeVisible();
     await expect(page.getByText("Stage 4 Browser Project", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(/explicitly recorded health/i)).toBeVisible();
+    // Owner-approved Executive copy still requires explicit, never inferred, project health.
+    await expect(page.getByText("Health appears only when it is explicitly recorded.")).toBeVisible();
     await page.getByRole("button", { name: "Open operational details", exact: true }).click();
     await expect(page.locator(".row-t").filter({ hasText: /^Acceptance Unit A Programme$/ }).first()).toBeVisible();
     await context.close();
@@ -2042,14 +2046,16 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await employmentDialog.getByLabel("Reason / context").fill("Acceptance employment history change");
   await employmentDialog.getByRole("button", { name: "Record employment change", exact: true }).click();
   await page.getByRole("tab", { name: "History", exact: true }).click();
+  // A recorded employment event may appear in both the current summary and the history timeline.
+  // Require the exact event to be visible, without a strict-mode duplicate-text error.
   await expect(page.getByText("Working pattern changed", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
+  await expect(page.getByText("Acceptance employment history change", { exact: true }).first()).toBeVisible();
 
   await page.getByRole("button", { name: "← All people", exact: true }).click();
   await page.getByLabel("Find a person").fill("Staff Fixture");
   await page.getByRole("button", { name: /Staff Fixture/ }).click();
   await page.getByRole("tab", { name: "History", exact: true }).click();
-  await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
+  await expect(page.getByText("Acceptance employment history change", { exact: true }).first()).toBeVisible();
 
   await go(page, "Employee lifecycle");
   await expect(page.getByRole("heading", { name: "Employee lifecycle", exact: true })).toBeVisible();
@@ -2166,12 +2172,20 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByRole("heading", { name: "System events", exact: true })).toBeVisible();
 
   await go(page, "Workforce");
-  await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
+  // The approved Stage 9 policy is active after the full 129-migration replay:
+  // 24 days/year, 6 days per completed quarter, Manager then Administration.
+  // Do not assert the old unconfigured prototype state or weaken any safeguards.
+  await expect(page.getByText("Confirmed leave process", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Annual leave is 24 working days per leave year/i)).toBeVisible();
+  await expect(page.getByText(/Manager approval.*Administration final approval/i)).toBeVisible();
   await expect(page.getByText(/never an automatic absence finding/i)).toBeVisible();
 
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Office settings", exact: true }).click();
+  // The owner-confirmed 24-day process summary is guidance, not proof that
+  // this synthetic organisation has completed a per-organisation policy record.
+  // A fresh organisation has no active policy: don't invent entitlement data.
   await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
   await expect(page.getByText("Awaiting CEAC policy", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Configure policy in Workforce", exact: true })).toBeVisible();

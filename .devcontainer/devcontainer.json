@@ -1,0 +1,28 @@
+{
+  "name": "CEAC private release verification",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {}
+  },
+  "postCreateCommand": "bash .devcontainer/setup-ceac-test-tooling.sh",
+  "remoteUser": "node",
+  "forwardPorts": [
+    5173
+  ],
+  "portsAttributes": {
+    "5173": {
+      "label": "CEAC private preview",
+      "onAutoForward": "ignore",
+      "visibility": "private"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "postStartCommand": "bash .devcontainer/launch-automatic-verification.sh",
+  "postAttachCommand": "bash .devcontainer/launch-automatic-verification.sh"
+}
