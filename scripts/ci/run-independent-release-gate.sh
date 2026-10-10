@@ -162,7 +162,11 @@ account_flow() {
   fresh_database && seed_account && node scripts/test-account-security.mjs
 }
 gate migration_replay fresh_database || true
-if [[ "$running_db" == 1 ]]; then gate sql_security bash scripts/ci/run-sql-security-gates.sh || true; fi
+if [[ "$running_db" == 1 ]]; then
+  # Match the existing GitHub Quality Gate's seeded SQL/RLS security setup;
+  # SQL tests must not run without deterministic role fixtures.
+  gate sql_security bash -c 'node scripts/seed-role-fixtures.mjs && bash scripts/ci/run-sql-security-gates.sh' || true
+fi
 gate account_security account_flow || true
 
 browser_shard() {
