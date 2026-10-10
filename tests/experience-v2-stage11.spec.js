@@ -51,7 +51,10 @@ test("Stage 11B establishes isolated V2 calendar and data visualisation families
   expect(dataViz).not.toContain("components/primitives");
   expect(dataVizCss).not.toContain("!important");
 
-  expect(main).toContain('import "./experience-v2/calendar/calendar.css";');
+  // Calendar styling is loaded alongside the lazy calendar route instead of
+  // every sign-in screen. Keep the stylesheet and its no-!important contract.
+  expect(main).not.toContain('import "./experience-v2/calendar/calendar.css";');
+  expect(calendar).toContain('import "./calendar.css";');
   expect(main).toContain('import "./experience-v2/data-viz/data-viz.css";');
   expect(executive).toContain('from "../data-viz/DataVizV2"');
   expect(executive).toContain("<DataVizChart");
