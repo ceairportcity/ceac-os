@@ -16,6 +16,7 @@ const client = createClient(url, anon, { auth: { persistSession: false, autoRefr
 const email = `test-local-mfa-${randomBytes(12).toString("hex")}@ceac.local.test`;
 const password = `${randomBytes(26).toString("base64url")}Aa1!`;
 let uid;
+let invitationId;
 let failed = false;
 
 function base32Decode(text) {
@@ -44,6 +45,19 @@ function totp(secret) {
   return String(value).padStart(6, "0");
 }
 try {
+  // CEAC is invitation-only. Seed a disposable local invitation through
+  // service-role authority, never bypass the application registration gate.
+  const invitation = await admin.from("pending_invitations").insert({
+    org_id: "10000000-0000-4000-8000-000000000010",
+    email,
+    full_name: "Ephemeral MFA Acceptance",
+    unit_id: "20000000-0000-4000-8000-000000000011",
+    role: "staff",
+    invited_by: null,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  }).select("id").single();
+  if (invitation.error) throw invitation.error;
+  invitationId = invitation.data.id;
   const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (created.error) throw created.error;
   uid = created.data.user?.id;
@@ -86,6 +100,13 @@ try {
     if (removed.error) {
       failed = true;
       console.error("FAIL local test account cleanup:", removed.error.message);
+    }
+  }
+  if (invitationId) {
+    const cleared = await admin.from("pending_invitations").delete().eq("id", invitationId);
+    if (cleared.error) {
+      failed = true;
+      console.error("FAIL local invitation cleanup:", cleared.error.message);
     }
   }
 }
