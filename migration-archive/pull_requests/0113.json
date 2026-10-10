@@ -1,0 +1,699 @@
+{
+  "original_url": "https://github.com/thestandardinst-star/ceac-os/pull/113",
+  "number": 113,
+  "title": "Phase 2: factual attendance, working patterns and permissions",
+  "state": "closed",
+  "draft": false,
+  "base": "main",
+  "head": "chatgpt/attendance-working-patterns-permissions-2026-10-06",
+  "head_sha": "ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba",
+  "reviews": [],
+  "conversation_comments": [
+    {
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/comments/6009304893",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/pull/113#issuecomment-6009304893",
+      "issue_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/113",
+      "id": 6009304893,
+      "node_id": "IC_kwDOUgauO88AAAABZi63PQ",
+      "user": {
+        "login": "vercel[bot]",
+        "id": 35613825,
+        "node_id": "MDM6Qm90MzU2MTM4MjU=",
+        "avatar_url": "https://avatars.githubusercontent.com/in/8329?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/vercel%5Bbot%5D",
+        "html_url": "https://github.com/apps/vercel",
+        "followers_url": "https://api.github.com/users/vercel%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/vercel%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/vercel%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/vercel%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/vercel%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/vercel%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/vercel%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/vercel%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/vercel%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "created_at": "2026-10-06T04:24:43Z",
+      "updated_at": "2026-10-06T05:03:18Z",
+      "body": "[vc]: #mcoSrd/YSp0dZveQNJijg7XTXrq0kzWGR9bSwyOlaXM=:eyJpc01vbm9yZXBvIjp0cnVlLCJ0eXBlIjoiZ2l0aHViIiwicHJvamVjdHMiOlt7Im5hbWUiOiJjZWFjLW9zIiwicHJvamVjdElkIjoicHJqX2JBdjRnZ1g2dW1qcDU0VWpqTHFxR203YkJjSUIiLCJpbnNwZWN0b3JVcmwiOiJodHRwczovL3ZlcmNlbC5jb20vdGhlc3RhbmRhcmRpbnN0LTYzNDVzLXByb2plY3RzL2NlYWMtb3MvQzhBR213Yk53TGcxb2R0eVhtRHJFdTN6NWFBZSIsInByZXZpZXdVcmwiOiJjZWFjLW9zLWdpdC1jaGF0Z3B0LWF0dGVuLWI4YzZkYS10aGVzdGFuZGFyZGluc3QtNjM0NXMtcHJvamVjdHMudmVyY2VsLmFwcCIsIm5leHRDb21taXRTdGF0dXMiOiJERVBMT1lFRCIsImxpdmVGZWVkYmFjayI6eyJyZXNvbHZlZCI6MCwidW5yZXNvbHZlZCI6MCwidG90YWwiOjAsImxpbmsiOiJjZWFjLW9zLWdpdC1jaGF0Z3B0LWF0dGVuLWI4YzZkYS10aGVzdGFuZGFyZGluc3QtNjM0NXMtcHJvamVjdHMudmVyY2VsLmFwcCJ9LCJyb290RGlyZWN0b3J5IjpudWxsfV19\nThe latest updates on your projects. Learn more about [Vercel for GitHub](https://vercel.link/github-learn-more).\n\n| Project | Deployment | Actions | Updated |\n| :--- | :----- | :------ | :------ |\n| <a href=\"https://vercel.com/thestandardinst-6345s-projects/ceac-os\"><sup><img src=\"https://vercel.com/api/www/avatar?projectId=prj_bAv4ggX6umjp54UjjLqqGm7bBcIB&teamId=team_TqK18aG3TyiCk0vS8ukFnvmI&s=32\" width=\"16\" height=\"16\" align=\"middle\" alt=\"\" /></sup></a> [ceac-os](https://vercel.com/thestandardinst-6345s-projects/ceac-os) | ![Ready](https://vercel.com/static/status/ready.svg) [Ready](https://vercel.com/thestandardinst-6345s-projects/ceac-os/C8AGmwbNwLg1odtyXmDrEu3z5aAe) | [Preview](https://ceac-os-git-chatgpt-atten-b8c6da-thestandardinst-6345s-projects.vercel.app) | <relative-time datetime=\"2026-10-06T05:03:18.200Z\">Oct 6, 2026 5:03am UTC</relative-time> |\n\n",
+      "author_association": "NONE",
+      "reactions": {
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/comments/6009304893/reactions",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "performed_via_github_app": {
+        "id": 8329,
+        "client_id": "Iv1.9d7d662ea00b8481",
+        "slug": "vercel",
+        "node_id": "MDM6QXBwODMyOQ==",
+        "owner": {
+          "login": "vercel",
+          "id": 14985020,
+          "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTg1MDIw",
+          "avatar_url": "https://avatars.githubusercontent.com/u/14985020?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/vercel",
+          "html_url": "https://github.com/vercel",
+          "followers_url": "https://api.github.com/users/vercel/followers",
+          "following_url": "https://api.github.com/users/vercel/following{/other_user}",
+          "gists_url": "https://api.github.com/users/vercel/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/vercel/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/vercel/subscriptions",
+          "organizations_url": "https://api.github.com/users/vercel/orgs",
+          "repos_url": "https://api.github.com/users/vercel/repos",
+          "events_url": "https://api.github.com/users/vercel/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/vercel/received_events",
+          "type": "Organization",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "name": "Vercel",
+        "description": "Vercel for GitHub automatically deploys your PRs to Vercel.\r\nPreview every PR live, without any configuration required.\r\n\r\nFor more information, see our [documentation](https://vercel.com/docs/github?utm_source=github&utm_medium=marketplace&utm_campaign=vercel-app).\r\n\r\n![](https://assets.vercel.com/image/upload/v1597943727/front/github/github-comment-monorepo.png)",
+        "external_url": "https://vercel.com/github",
+        "html_url": "https://github.com/apps/vercel",
+        "created_at": "2018-01-19T21:51:06Z",
+        "updated_at": "2026-10-09T19:21:58Z",
+        "permissions": {
+          "actions": "read",
+          "administration": "write",
+          "checks": "write",
+          "contents": "write",
+          "deployments": "write",
+          "emails": "read",
+          "issues": "write",
+          "members": "read",
+          "metadata": "read",
+          "pull_requests": "write",
+          "repository_hooks": "write",
+          "statuses": "write",
+          "workflows": "write"
+        },
+        "events": [
+          "branch_protection_rule",
+          "check_run",
+          "delete",
+          "deployment",
+          "issue_comment",
+          "membership",
+          "pull_request",
+          "pull_request_review",
+          "pull_request_review_comment",
+          "pull_request_review_thread",
+          "push",
+          "repository",
+          "status",
+          "team"
+        ]
+      },
+      "minimized": null
+    }
+  ],
+  "inline_comments": [],
+  "commits": [
+    {
+      "sha": "7b2195625ed91cb77090fcf695d93bd7abf0bc41",
+      "node_id": "C_kwDOUgauO9oAKDdiMjE5NTYyNWVkOTFjYjc3MDkwZmNmNjk1ZDkzYmQ3YWJmMGJjNDE",
+      "commit": {
+        "author": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:11:39Z"
+        },
+        "committer": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:11:39Z"
+        },
+        "message": "Continuity: lock all 50 post-onboarding improvements and phased execution",
+        "tree": {
+          "sha": "cc8618bc0d0bcc7f44ef1c92d4182cb7a29d7e6e",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/cc8618bc0d0bcc7f44ef1c92d4182cb7a29d7e6e"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/7b2195625ed91cb77090fcf695d93bd7abf0bc41",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7b2195625ed91cb77090fcf695d93bd7abf0bc41",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/7b2195625ed91cb77090fcf695d93bd7abf0bc41",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7b2195625ed91cb77090fcf695d93bd7abf0bc41/comments",
+      "author": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "a88877379150c820bc74cce736dbf44bce09eeef",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/a88877379150c820bc74cce736dbf44bce09eeef",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/a88877379150c820bc74cce736dbf44bce09eeef"
+        }
+      ]
+    },
+    {
+      "sha": "2119c17deb26c3c50e7f12ec4faa46e158f50b68",
+      "node_id": "C_kwDOUgauO9oAKDIxMTljMTdkZWIyNmMzYzUwZTdmMTJlYzRmYWE0NmUxNThmNTBiNjg",
+      "commit": {
+        "author": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:24:39Z"
+        },
+        "committer": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:24:39Z"
+        },
+        "message": "Add factual attendance patterns, requests and foreground presence [level-b]",
+        "tree": {
+          "sha": "4b0a5c1650e93883c9ab6ad0591594bd3e968423",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/4b0a5c1650e93883c9ab6ad0591594bd3e968423"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/2119c17deb26c3c50e7f12ec4faa46e158f50b68",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/2119c17deb26c3c50e7f12ec4faa46e158f50b68",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/2119c17deb26c3c50e7f12ec4faa46e158f50b68",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/2119c17deb26c3c50e7f12ec4faa46e158f50b68/comments",
+      "author": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "7b2195625ed91cb77090fcf695d93bd7abf0bc41",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7b2195625ed91cb77090fcf695d93bd7abf0bc41",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/7b2195625ed91cb77090fcf695d93bd7abf0bc41"
+        }
+      ]
+    },
+    {
+      "sha": "d6e6e3fef25280d5a3a32ca50cbb06986b43962e",
+      "node_id": "C_kwDOUgauO9oAKGQ2ZTZlM2ZlZjI1MjgwZDVhM2EzMmNhNTBjYmIwNjk4NmI0Mzk2MmU",
+      "commit": {
+        "author": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:27:50Z"
+        },
+        "committer": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:27:50Z"
+        },
+        "message": "Preserve role workflows and executable security runner; harden notice response [level-b]",
+        "tree": {
+          "sha": "99ffd84a8336d7bf942bc99601bfc048f2c532bf",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/99ffd84a8336d7bf942bc99601bfc048f2c532bf"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/d6e6e3fef25280d5a3a32ca50cbb06986b43962e",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/d6e6e3fef25280d5a3a32ca50cbb06986b43962e",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/d6e6e3fef25280d5a3a32ca50cbb06986b43962e",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/d6e6e3fef25280d5a3a32ca50cbb06986b43962e/comments",
+      "author": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "2119c17deb26c3c50e7f12ec4faa46e158f50b68",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/2119c17deb26c3c50e7f12ec4faa46e158f50b68",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/2119c17deb26c3c50e7f12ec4faa46e158f50b68"
+        }
+      ]
+    },
+    {
+      "sha": "3cd5eac408a964b427c0a50e6c9d25482874144d",
+      "node_id": "C_kwDOUgauO9oAKDNjZDVlYWM0MDhhOTY0YjQyN2MwYTUwZTZjOWQyNTQ4Mjg3NDE0NGQ",
+      "commit": {
+        "author": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:37:18Z"
+        },
+        "committer": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:37:18Z"
+        },
+        "message": "Expose advance notices and verify foreground pre-close without GPS [level-b]",
+        "tree": {
+          "sha": "5026e316cd24c27e4862c9e705071a9987e09d42",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/5026e316cd24c27e4862c9e705071a9987e09d42"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/3cd5eac408a964b427c0a50e6c9d25482874144d",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/3cd5eac408a964b427c0a50e6c9d25482874144d",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/3cd5eac408a964b427c0a50e6c9d25482874144d",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/3cd5eac408a964b427c0a50e6c9d25482874144d/comments",
+      "author": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "d6e6e3fef25280d5a3a32ca50cbb06986b43962e",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/d6e6e3fef25280d5a3a32ca50cbb06986b43962e",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/d6e6e3fef25280d5a3a32ca50cbb06986b43962e"
+        }
+      ]
+    },
+    {
+      "sha": "4ec0db6587faa174eb8b668ddc5733d4ba8665d6",
+      "node_id": "C_kwDOUgauO9oAKDRlYzBkYjY1ODdmYWExNzRlYjhiNjY4ZGRjNTczM2Q0YmE4NjY1ZDY",
+      "commit": {
+        "author": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:48:52Z"
+        },
+        "committer": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:48:52Z"
+        },
+        "message": "Verify attendance with the real sign-in label and publish product evidence [level-b] [vercel]",
+        "tree": {
+          "sha": "48d3e45c50f3312296c9155e494db502941e8595",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/48d3e45c50f3312296c9155e494db502941e8595"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/4ec0db6587faa174eb8b668ddc5733d4ba8665d6",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/4ec0db6587faa174eb8b668ddc5733d4ba8665d6",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/4ec0db6587faa174eb8b668ddc5733d4ba8665d6",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/4ec0db6587faa174eb8b668ddc5733d4ba8665d6/comments",
+      "author": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "3cd5eac408a964b427c0a50e6c9d25482874144d",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/3cd5eac408a964b427c0a50e6c9d25482874144d",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/3cd5eac408a964b427c0a50e6c9d25482874144d"
+        }
+      ]
+    },
+    {
+      "sha": "f7a185a501baaf504a2693973a7bfc87585ee52c",
+      "node_id": "C_kwDOUgauO9oAKGY3YTE4NWE1MDFiYWFmNTA0YTI2OTM5NzNhN2JmYzg3NTg1ZWU1MmM",
+      "commit": {
+        "author": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:51:43Z"
+        },
+        "committer": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T04:51:43Z"
+        },
+        "message": "Verify foreground presence for sessions carried into a new day [level-b] [vercel]",
+        "tree": {
+          "sha": "d5ff9496c084f5c1e2aaa8124d3df017f6be15bd",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/d5ff9496c084f5c1e2aaa8124d3df017f6be15bd"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/f7a185a501baaf504a2693973a7bfc87585ee52c",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/f7a185a501baaf504a2693973a7bfc87585ee52c",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/f7a185a501baaf504a2693973a7bfc87585ee52c",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/f7a185a501baaf504a2693973a7bfc87585ee52c/comments",
+      "author": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "4ec0db6587faa174eb8b668ddc5733d4ba8665d6",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/4ec0db6587faa174eb8b668ddc5733d4ba8665d6",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/4ec0db6587faa174eb8b668ddc5733d4ba8665d6"
+        }
+      ]
+    },
+    {
+      "sha": "ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba",
+      "node_id": "C_kwDOUgauO9oAKGVhOWE1NWEyOWU2ZGY1YWVmOGVjMmFmM2Q4MWY0MmNiMDFjNmRlYmE",
+      "commit": {
+        "author": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T05:03:06Z"
+        },
+        "committer": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-10-06T05:03:06Z"
+        },
+        "message": "Keep attendance evidence and foreground collection within bundle budgets [level-b] [vercel]",
+        "tree": {
+          "sha": "4f1b08a078abbb0570e744222c4491ba76c95eea",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/4f1b08a078abbb0570e744222c4491ba76c95eea"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba/comments",
+      "author": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "f7a185a501baaf504a2693973a7bfc87585ee52c",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/f7a185a501baaf504a2693973a7bfc87585ee52c",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/f7a185a501baaf504a2693973a7bfc87585ee52c"
+        }
+      ]
+    }
+  ]
+}

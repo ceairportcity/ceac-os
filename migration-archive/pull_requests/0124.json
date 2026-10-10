@@ -1,0 +1,207 @@
+{
+  "original_url": "https://github.com/thestandardinst-star/ceac-os/pull/124",
+  "number": 124,
+  "title": "Bump lucide-react from 1.48.0 to 1.51.0",
+  "state": "open",
+  "draft": false,
+  "base": "main",
+  "head": "dependabot/npm_and_yarn/lucide-react-1.51.0",
+  "head_sha": "e15cd890a0b7add957c22b88967aaca51cf0430b",
+  "reviews": [],
+  "conversation_comments": [
+    {
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/comments/6021641335",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/pull/124#issuecomment-6021641335",
+      "issue_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/124",
+      "id": 6021641335,
+      "node_id": "IC_kwDOUgauO88AAAABZur0dw",
+      "user": {
+        "login": "vercel[bot]",
+        "id": 35613825,
+        "node_id": "MDM6Qm90MzU2MTM4MjU=",
+        "avatar_url": "https://avatars.githubusercontent.com/in/8329?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/vercel%5Bbot%5D",
+        "html_url": "https://github.com/apps/vercel",
+        "followers_url": "https://api.github.com/users/vercel%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/vercel%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/vercel%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/vercel%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/vercel%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/vercel%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/vercel%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/vercel%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/vercel%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "created_at": "2026-10-06T17:21:29Z",
+      "updated_at": "2026-10-06T17:21:33Z",
+      "body": "[vc]: #3YD1sxz4aLEiIJ1Md5vHqv961OdlxxTEW15vGw0S4Yk=:eyJpc01vbm9yZXBvIjp0cnVlLCJ0eXBlIjoiZ2l0aHViIiwicHJvamVjdHMiOlt7Im5hbWUiOiJjZWFjLW9zIiwicHJvamVjdElkIjoicHJqX2JBdjRnZ1g2dW1qcDU0VWpqTHFxR203YkJjSUIiLCJpbnNwZWN0b3JVcmwiOiJodHRwczovL3ZlcmNlbC5jb20vdGhlc3RhbmRhcmRpbnN0LTYzNDVzLXByb2plY3RzL2NlYWMtb3MvRWtEYm5vYXNTWHhZRWRVTjFpUG1NWTY0RDdzNyIsInByZXZpZXdVcmwiOiJjZWFjLW9zLWdpdC1kZXBlbmRhYm90LW5wLTQ0YWUzNC10aGVzdGFuZGFyZGluc3QtNjM0NXMtcHJvamVjdHMudmVyY2VsLmFwcCIsIm5leHRDb21taXRTdGF0dXMiOiJJR05PUkVEIiwibGl2ZUZlZWRiYWNrIjp7InJlc29sdmVkIjowLCJ1bnJlc29sdmVkIjowLCJ0b3RhbCI6MCwibGluayI6IiJ9fV19\nThe latest updates on your projects. Learn more about [Vercel for GitHub](https://vercel.link/github-learn-more).\n\n\n<details><summary>1 Skipped Deployment</summary>\n\n| Project | Deployment | Actions | Updated |\n| :--- | :----- | :------ | :------ |\n| <a href=\"https://vercel.com/thestandardinst-6345s-projects/ceac-os\"><sup><img src=\"https://vercel.com/api/www/avatar?projectId=prj_bAv4ggX6umjp54UjjLqqGm7bBcIB&teamId=team_TqK18aG3TyiCk0vS8ukFnvmI&s=32\" width=\"16\" height=\"16\" align=\"middle\" alt=\"\" /></sup></a> [ceac-os](https://vercel.com/thestandardinst-6345s-projects/ceac-os) | ![Ignored](https://vercel.com/static/status/canceled.svg) [Ignored](https://vercel.com/thestandardinst-6345s-projects/ceac-os/EkDbnoasSXxYEdUN1iPmMY64D7s7) | [Preview](https://ceac-os-git-dependabot-np-44ae34-thestandardinst-6345s-projects.vercel.app) | <relative-time datetime=\"2026-10-06T17:21:33.002Z\">Oct 6, 2026 5:21pm UTC</relative-time> |\n</details>\n\n",
+      "author_association": "NONE",
+      "reactions": {
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/comments/6021641335/reactions",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "performed_via_github_app": {
+        "id": 8329,
+        "client_id": "Iv1.9d7d662ea00b8481",
+        "slug": "vercel",
+        "node_id": "MDM6QXBwODMyOQ==",
+        "owner": {
+          "login": "vercel",
+          "id": 14985020,
+          "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTg1MDIw",
+          "avatar_url": "https://avatars.githubusercontent.com/u/14985020?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/vercel",
+          "html_url": "https://github.com/vercel",
+          "followers_url": "https://api.github.com/users/vercel/followers",
+          "following_url": "https://api.github.com/users/vercel/following{/other_user}",
+          "gists_url": "https://api.github.com/users/vercel/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/vercel/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/vercel/subscriptions",
+          "organizations_url": "https://api.github.com/users/vercel/orgs",
+          "repos_url": "https://api.github.com/users/vercel/repos",
+          "events_url": "https://api.github.com/users/vercel/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/vercel/received_events",
+          "type": "Organization",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "name": "Vercel",
+        "description": "Vercel for GitHub automatically deploys your PRs to Vercel.\r\nPreview every PR live, without any configuration required.\r\n\r\nFor more information, see our [documentation](https://vercel.com/docs/github?utm_source=github&utm_medium=marketplace&utm_campaign=vercel-app).\r\n\r\n![](https://assets.vercel.com/image/upload/v1597943727/front/github/github-comment-monorepo.png)",
+        "external_url": "https://vercel.com/github",
+        "html_url": "https://github.com/apps/vercel",
+        "created_at": "2018-01-19T21:51:06Z",
+        "updated_at": "2026-10-09T19:21:58Z",
+        "permissions": {
+          "actions": "read",
+          "administration": "write",
+          "checks": "write",
+          "contents": "write",
+          "deployments": "write",
+          "emails": "read",
+          "issues": "write",
+          "members": "read",
+          "metadata": "read",
+          "pull_requests": "write",
+          "repository_hooks": "write",
+          "statuses": "write",
+          "workflows": "write"
+        },
+        "events": [
+          "branch_protection_rule",
+          "check_run",
+          "delete",
+          "deployment",
+          "issue_comment",
+          "membership",
+          "pull_request",
+          "pull_request_review",
+          "pull_request_review_comment",
+          "pull_request_review_thread",
+          "push",
+          "repository",
+          "status",
+          "team"
+        ]
+      },
+      "minimized": null
+    }
+  ],
+  "inline_comments": [],
+  "commits": [
+    {
+      "sha": "e15cd890a0b7add957c22b88967aaca51cf0430b",
+      "node_id": "C_kwDOUgauO9oAKGUxNWNkODkwYTBiN2FkZDk1N2MyMmI4ODk2N2FhY2E1MWNmMDQzMGI",
+      "commit": {
+        "author": {
+          "name": "dependabot[bot]",
+          "email": "49699333+dependabot[bot]@users.noreply.github.com",
+          "date": "2026-10-06T17:21:25Z"
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "date": "2026-10-06T17:21:25Z"
+        },
+        "message": "Bump lucide-react from 1.48.0 to 1.51.0\n\nBumps [lucide-react](https://github.com/lucide-icons/lucide/tree/HEAD/packages/lucide-react) from 1.48.0 to 1.51.0.\n- [Release notes](https://github.com/lucide-icons/lucide/releases)\n- [Commits](https://github.com/lucide-icons/lucide/commits/1.51.0/packages/lucide-react)\n\n---\nupdated-dependencies:\n- dependency-name: lucide-react\n  dependency-version: 1.51.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+        "tree": {
+          "sha": "46d5b61ae1135c4f10b4ccec9be72913f8c62d95",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/46d5b61ae1135c4f10b4ccec9be72913f8c62d95"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/e15cd890a0b7add957c22b88967aaca51cf0430b",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqxS4VCRC1aQ7uu5UhlAAA2FgQAC9CKDIhC5v4DF9+PaGg0qfW\nt6bG4S/wvJjMO8xRP9sfN2z5cDrAFSwfoAorrWuTrNDaJoY1VAT+Dqt+NNllnfUb\nhgeeuZg3oY4/GmeuOttyG6vzV8JFuhBlePsPQs60hXuMBBR9yUBxsGsEK+QzHyLV\noE29ojrHX8qLv9R9mrUokdLk396Oo/LKuHlCFrOl+ygSp7p1RZ53nEUD7c1/V1Z8\nRN3SAx0nEMdBAITJfM7YkpKGw2N3RXc3i5dcoZ+ibrvPNsRk9mF8TBnTOGSnRlbO\nJat/brlpC2WjM++9BCGmlyQTTclZ+FVfmSLChBJa1navpnsUl2a++abXnlbMNH9B\nOMcjZlwM4n+rNCnAzXjQxTGOrt+Rc0vLjYpgQsHHxyoNFewJqLrw/B3c+b5z5Qkk\nC651O2hbxEUmkdNVvp7N6Fqs0UyYj9hNcCxkeUtWGMKK5+zibqRRk/cUQziz/yD7\ntJBezy28oV7nGgFubSpJd9rC9xuL0oYcY6XMB0qGULdLApN094QhTQs1JIb4bGve\nYkKv4XupNLo2VhReyDWv8sKYNo8lQwRjypc8h5slzfbWa+OZ0Wt5k0azx3Wg15HX\niednmb3SmVbj3aEb3su1qnxu42UWSdywlw184HbUEN6Ypi29UQo2YxCrgEDsX7W0\noK2ruFl/qI1EMPizQFsq\n=fpcM\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree 46d5b61ae1135c4f10b4ccec9be72913f8c62d95\nparent 68d9480dcc0cbef21c018fe771151671d3438aad\nauthor dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com> 1791307285 +0000\ncommitter GitHub <noreply@github.com> 1791307285 +0000\n\nBump lucide-react from 1.48.0 to 1.51.0\n\nBumps [lucide-react](https://github.com/lucide-icons/lucide/tree/HEAD/packages/lucide-react) from 1.48.0 to 1.51.0.\n- [Release notes](https://github.com/lucide-icons/lucide/releases)\n- [Commits](https://github.com/lucide-icons/lucide/commits/1.51.0/packages/lucide-react)\n\n---\nupdated-dependencies:\n- dependency-name: lucide-react\n  dependency-version: 1.51.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "verified_at": "2026-10-06T17:21:26Z"
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/e15cd890a0b7add957c22b88967aaca51cf0430b",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/e15cd890a0b7add957c22b88967aaca51cf0430b",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/e15cd890a0b7add957c22b88967aaca51cf0430b/comments",
+      "author": {
+        "login": "dependabot[bot]",
+        "id": 49699333,
+        "node_id": "MDM6Qm90NDk2OTkzMzM=",
+        "avatar_url": "https://avatars.githubusercontent.com/in/29110?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/dependabot%5Bbot%5D",
+        "html_url": "https://github.com/apps/dependabot",
+        "followers_url": "https://api.github.com/users/dependabot%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/dependabot%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/dependabot%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/dependabot%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/dependabot%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/dependabot%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/dependabot%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/dependabot%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/dependabot%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "68d9480dcc0cbef21c018fe771151671d3438aad",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/68d9480dcc0cbef21c018fe771151671d3438aad",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/68d9480dcc0cbef21c018fe771151671d3438aad"
+        }
+      ]
+    }
+  ]
+}
