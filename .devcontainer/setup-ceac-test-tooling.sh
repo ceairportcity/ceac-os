@@ -6,11 +6,11 @@ umask 077
 echo "Checking Codespaces runtime"
 node -e 'const v=process.versions.node.split(".").map(Number); if(v[0]!==22||v[1]<12)process.exit(1)'
 command -v docker >/dev/null || { echo "ERROR: Docker-in-Docker feature did not install" >&2; exit 1; }
+sudo apt-get update -qq
 if ! command -v psql >/dev/null; then
-  sudo apt-get update -qq
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq postgresql-client
+  sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq postgresql-client
 fi
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl tar
+sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl tar
 
 version="2.117.0"
 release="https://github.com/supabase/cli/releases/download/v$version"
