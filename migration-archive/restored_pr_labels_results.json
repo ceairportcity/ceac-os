@@ -1,0 +1,102 @@
+[
+  {
+    "original": 11,
+    "new": 4,
+    "labels": [
+      "dependencies",
+      "javascript"
+    ],
+    "success": true,
+    "error": null
+  },
+  {
+    "original": 12,
+    "new": 5,
+    "labels": [
+      "dependencies",
+      "javascript"
+    ],
+    "success": true,
+    "error": null
+  },
+  {
+    "original": 74,
+    "new": 6,
+    "labels": [
+      "dependencies",
+      "javascript"
+    ],
+    "success": true,
+    "error": null
+  },
+  {
+    "original": 110,
+    "new": 7,
+    "labels": [
+      "dependencies",
+      "javascript"
+    ],
+    "success": true,
+    "error": null
+  },
+  {
+    "original": 124,
+    "new": 8,
+    "labels": [
+      "dependencies",
+      "javascript"
+    ],
+    "success": true,
+    "error": null
+  },
+  {
+    "original": 125,
+    "new": 9,
+    "labels": [
+      "dependencies",
+      "github_actions"
+    ],
+    "success": true,
+    "error": null
+  },
+  {
+    "original": 126,
+    "new": 10,
+    "labels": [
+      "dependencies",
+      "github_actions"
+    ],
+    "success": true,
+    "error": null
+  },
+  {
+    "original": 127,
+    "new": 11,
+    "labels": [
+      "dependencies",
+      "github_actions"
+    ],
+    "success": true,
+    "error": null
+  },
+  {
+    "original": 128,
+    "new": 12,
+    "labels": [
+      "dependencies",
+      "github_actions"
+    ],
+    "success": true,
+    "error": null
+  },
+  {
+    "original": 129,
+    "new": 13,
+    "labels": [
+      "dependencies",
+      "github_actions"
+    ],
+    "success": true,
+    "error": null
+  }
+]
