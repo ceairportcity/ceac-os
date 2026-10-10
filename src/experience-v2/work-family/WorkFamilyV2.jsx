@@ -135,6 +135,7 @@ export function WorkRow({
     <button
       type="button"
       className={`ev2w-row ${attention ? "is-attention" : ""}`}
+      data-status={status || "open"}
       onClick={onClick}
     >
       <span className="ev2w-row-icon">
@@ -170,7 +171,7 @@ export function WorkReviewRow({
   onClick,
 }) {
   return (
-    <button type="button" className="ev2w-row ev2w-review-row" onClick={onClick}>
+    <button type="button" className="ev2w-row ev2w-review-row" data-status="in_review" onClick={onClick}>
       <span className="ev2w-row-icon ev2w-review-icon">
         <CeacIcon name="checkCircle" size="row" decorative />
       </span>

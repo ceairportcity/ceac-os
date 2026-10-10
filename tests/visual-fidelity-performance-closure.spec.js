@@ -18,9 +18,11 @@ const budgets = {
   // retain narrow regression headroom rather than exempting the new product CSS.
   coreCssRaw: 534 * KIB,
   coreCssGzip: 80 * KIB,
-  // The owner-approved Executive route remains isolated; aggregate measured CSS is 574.99 KiB.
-  allCssRaw: 578 * KIB,
+  // The owner-approved Executive redesign is route-isolated. Its current source is
+  // 25.77 KiB; preserve the 534 KiB core guard and allow only bounded aggregate growth.
+  allCssRaw: 604 * KIB,
   executiveRouteCssRaw: 16 * KIB,
+  executiveRedesignCssRaw: 28 * KIB,
   // Phase 5 measured 73,807 bytes on the canonical Node 22 CI build.
   mainJsRaw: 74 * KIB,
   routeJsRaw: 100 * KIB,
@@ -75,6 +77,11 @@ test("VF9C production bundle preserves measured route and vendor budgets", async
     executiveCssSourceRaw,
     "Executive Overview route CSS source budget",
   ).toBeLessThanOrEqual(budgets.executiveRouteCssRaw);
+  const executiveRedesignCssSourceRaw = statSync("src/experience-v2/executive-overview/executive-redesign.css").size;
+  expect(
+    executiveRedesignCssSourceRaw,
+    "Executive redesign CSS source budget",
+  ).toBeLessThanOrEqual(budgets.executiveRedesignCssRaw);
 
   const mainJs = js.find((asset) => /^index-.*\.js$/.test(asset.name));
   expect(mainJs, "Vite main index JS asset").toBeTruthy();

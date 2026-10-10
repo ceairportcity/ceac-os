@@ -28,6 +28,7 @@ const ExecutiveWork = lazy(() => import("./screens/ExecutiveWork"));
 const ExecutiveOrganisation = lazy(() => import("./screens/ExecutiveOrganisation"));
 const ExecutiveFinance = lazy(() => import("./screens/ExecutiveFinance"));
 const ExecutiveReports = lazy(() => import("./screens/ExecutiveReports"));
+const ExecutiveRedesignStyles = lazy(() => import("./experience-v2/executive-overview/ExecutiveRedesignStyles"));
 const Assign = lazy(() => import("./screens/Assign"));
 const Team = lazy(() => import("./screens/Team"));
 const PersonDetail = lazy(() => import("./screens/PersonDetail"));
@@ -428,6 +429,7 @@ export default function App() {
 
   return (
     <div className={`app ${appModeClass}`}>
+      {isExec ? <Suspense fallback={null}><ExecutiveRedesignStyles /></Suspense> : null}
       <SideNav
         tab={tab}
         setTab={go}

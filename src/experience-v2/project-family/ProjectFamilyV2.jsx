@@ -118,6 +118,7 @@ export function ProjectListRow({
     <button
       type="button"
       className={`ev2p-row${selected ? " is-selected" : ""}`}
+      data-health={health || ""}
       aria-pressed={selected || undefined}
       onClick={onClick}
     >
@@ -148,7 +149,7 @@ export function ProjectContextRow({
   actions = [],
 }) {
   return (
-    <article className="ev2p-context-row">
+    <article className="ev2p-context-row" data-health={health || ""}>
       <span className="ev2p-context-row-icon"><CeacIcon name="projects" size="row" decorative /></span>
       <div className="ev2p-context-row-main">
         {eyebrow ? <small>{eyebrow}</small> : null}

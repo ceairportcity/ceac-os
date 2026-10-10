@@ -1,31 +1,7 @@
-/* CEAC OS Premium Redesign — R4 Executive */
-.premium-exec-page{max-width:1240px!important}
-.exec-page-head{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin:4px 0 24px}
-.exec-page-head .h1{margin:5px 0 8px}
-.exec-page-head .screen-note{max-width:720px;margin:0}
-.exec-tabs{display:flex;gap:5px;padding:4px;width:max-content;max-width:100%;overflow:auto;background:#e9eef5;border-radius:12px;margin-bottom:18px}
-.exec-tabs button{border:0;background:transparent;border-radius:9px;padding:9px 13px;display:flex;gap:8px;align-items:center;color:#6d7b8e;cursor:pointer}
-.exec-tabs button.on{background:#fff;color:#17304f;box-shadow:0 3px 12px rgba(29,46,69,.08)}
-.exec-tabs span{font-size:12px;font-weight:700}.exec-tabs b{font-size:12px;background:#eef2f7;padding:2px 6px;border-radius:10px}
-.exec-list{background:#fff;border:1px solid #e5eaf0;border-radius:16px;overflow:hidden;box-shadow:0 7px 24px rgba(31,45,71,.045)}
-.exec-list>button,.exec-report-row{width:100%;border:0;border-bottom:1px solid #edf0f4;background:#fff;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:18px;align-items:center;padding:15px 17px;text-align:left;color:#26374d}
-.exec-list>button:last-child,.exec-report-row:last-child{border-bottom:0}.exec-list>button:hover{background:#f8faff}
-.exec-list strong,.exec-report-row strong{display:block;font-size:12px}.exec-list small,.exec-report-row small{display:block;margin-top:4px;color:#8390a2;font-size:12px}
-.exec-list em{font-style:normal;font-size:12px;color:#738196}.exec-footnote{color:#7d8998;font-size:12px;margin:10px 4px}
-.exec-org-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.exec-org-grid article{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:12px;background:#fff;border:1px solid #e4e9ef;border-radius:15px;padding:16px;box-shadow:0 6px 20px rgba(31,45,71,.04)}
-.exec-org-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(145deg,#e8f0ff,#f5f8ff);color:var(--ceac-action-blue);display:flex;align-items:center;justify-content:center;font-weight:800}
-.exec-org-grid article strong{display:block;font-size:12px}.exec-org-grid article small{display:block;color:#8592a4;font-size:12px;margin-top:4px}.exec-org-grid article>b{font-size:18px;color:#172f51}.exec-org-grid article>b span{font-size:12px;color:#8a96a6;font-weight:600}
-.exec-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}.exec-stat-grid article{background:#fff;border:1px solid #e4e9ef;border-radius:15px;padding:18px}.exec-stat-grid span{display:block;color:#7e8b9c;font-size:12px}.exec-stat-grid strong{display:block;color:#162b47;font-size:22px;letter-spacing:-.04em;margin-top:8px}
-.exec-finance-panel,.exec-report-hero{background:#fff;border:1px solid #e4e9ef;border-radius:16px;padding:20px;box-shadow:0 7px 24px rgba(31,45,71,.04)}.exec-finance-panel h2{font-size:16px;margin:5px 0 18px}
-.exec-bars{display:grid;gap:12px}.exec-bars>div{display:grid;grid-template-columns:150px minmax(100px,1fr) 110px;gap:12px;align-items:center}.exec-bars span{font-size:12px;color:#53647a}.exec-bars i{height:7px;background:#edf1f6;border-radius:20px;overflow:hidden}.exec-bars i b{display:block;height:100%;background:linear-gradient(90deg,var(--ceac-action-blue),var(--ceac-action-blue-2));border-radius:20px}.exec-bars strong{text-align:right;font-size:12px;color:#34465d}
-.exec-report-hero{margin-bottom:14px}.exec-report-hero>span{display:block;color:#8190a2;font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:750}.exec-report-hero>strong{display:block;font-size:22px;color:#172f51;margin:5px 0 18px}.exec-report-row{grid-template-columns:1fr auto}.exec-report-row>b{font-size:12px;padding:5px 8px;border-radius:12px;background:#f1f3f6;color:#7a8798}.exec-report-row>b.ok{background:#e7f8f0;color:#078955}
-@media(max-width:980px){.exec-page-head{align-items:flex-start;flex-direction:column}.exec-org-grid{grid-template-columns:1fr}.exec-stat-grid{grid-template-columns:1fr}.exec-bars>div{grid-template-columns:100px 1fr 86px}.premium-exec-page{padding-bottom:12px!important}}
-@media(max-width:520px){.exec-list>button{grid-template-columns:minmax(0,1fr) auto}.exec-list>button>em{display:none}.exec-org-grid article{grid-template-columns:38px minmax(0,1fr) auto}.exec-org-icon{width:38px;height:38px}.exec-bars>div{grid-template-columns:85px 1fr}.exec-bars>div>strong{grid-column:2}}
-
-.exec-currency-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.exec-currency-card{background:#fff;border:1px solid #e4e9ef;border-radius:16px;padding:18px;box-shadow:0 7px 24px rgba(31,45,71,.04)}
-.exec-currency-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}.exec-currency-head span{font-size:15px;font-weight:800;color:#172f51}.exec-currency-head small{font-size:12px;color:#8794a5}
-.exec-currency-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#edf0f4;border-radius:11px;overflow:hidden;margin-bottom:16px}
-.exec-currency-facts>div{background:#fafbfd;padding:11px}.exec-currency-facts span{display:block;font-size:12px;color:#7f8c9d}.exec-currency-facts strong{display:block;margin-top:5px;font-size:13px;color:#213650}
-@media(max-width:760px){.exec-currency-grid{grid-template-columns:1fr}.exec-currency-facts{grid-template-columns:1fr 1fr}}
+/* Legacy Executive compatibility only.
+   The active Executive product geometry is owned by
+   experience-v2/executive-overview/executive-redesign.css.
+   Avoid global width overrides and high-specificity layout rules here. */
+@media(max-width:980px){
+  .premium-exec-page{padding-bottom:12px}
+}

@@ -100,7 +100,7 @@ export default function AdminCalendar({ me, openItem, openMeeting, scheduleMeeti
     <CalendarPageHeader
       eyebrow={roleMode==="executive"?"Church schedule":"Organisation schedule"}
       title="Calendar"
-      description="Upcoming meetings, ministry activities, project dates and approved leave in one chronological operating view."
+      description={roleMode==="executive"?"Your meetings, ministry events and key recorded dates in one Executive calendar.":"Upcoming meetings, ministry activities, project dates and approved leave in one chronological operating view."}
       status={roleMode==="executive"?"Church timeline":"Organisation timeline"}
       statusTone="action"
       action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({scope:"organisation",organisation:true})}>Schedule meeting</Button>}
