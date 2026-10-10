@@ -115,8 +115,10 @@
 /* VF5C — Executive finance briefing composition.
    Leadership decision authority and currency-safe recorded context share the opening
    canvas; unit spend remains factual drill-down. No currency conversion is introduced. */
+/* Keep Executive Finance metadata and status text legible at every breakpoint. */
 .ev2-finance-executive {
   width: min(100%, 86rem);
+  --ev2-type-label: 12px;
 }
 
 .ev2-finance-executive .ev2fin-executive-brief {
