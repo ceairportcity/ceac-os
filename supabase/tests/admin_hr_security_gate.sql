@@ -116,8 +116,8 @@ end $$;
 -- a sanitised evidence read. attendance_phase2_gate.sql tests their identities,
 -- tenant isolation, privacy, append-only history, concurrency and no anon access.
 -- S2 migration 114 reduced the reviewed authenticated surface to 132.
--- Phase 6C explicitly reviews the resulting 135 signed-in-callable functions.
--- The net +3 are needed for the locked front-desk attendance corroboration and
+-- Phase 6C explicitly reviews the resulting 136 signed-in-callable functions.
+-- The net +4 are needed for the locked front-desk attendance corroboration and
 -- authorised per-person/manager evidence views. Two legacy office-code RPCs
 -- were already removed by migration 124; migration 125 safely revokes grants
 -- only on historical variants where their definitions remain.
@@ -133,8 +133,8 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n>135 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 135-function ceiling to %.',n;
+  if n>136 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 136-function ceiling to %.',n;
   end if;
 end $$;
 

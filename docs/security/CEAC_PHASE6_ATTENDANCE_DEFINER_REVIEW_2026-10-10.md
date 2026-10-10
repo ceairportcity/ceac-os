@@ -6,8 +6,8 @@ Date: 10 October 2026
 
 The Phase 6C owner-approved attendance-integrity design extends the authenticated
 SECURITY DEFINER surface previously bounded at 132 functions after S2 migration
-114. Replayed Phase 6 migrations require a reviewed ceiling of 135, a net growth
-of three. This is an explicit feature-specific security review, **not** a
+114. Replayed Phase 6 migrations require a reviewed ceiling of 136, a net growth
+of four. This is an explicit feature-specific security review, **not** a
 general relaxation of RLS, authority, privacy or protected-HR restrictions.
 
 ## Exact reviewed browser RPCs
@@ -47,7 +47,7 @@ lateness or absence conclusions.
 
 ## Acceptance conditions
 
-The authenticated-definer upper bound is 135, not an unbounded allowance.
+The authenticated-definer upper bound is 136, not an unbounded allowance.
 The security gate enumerates these five exact function signatures. Any further
 expansion requires another review and allowlist update. The unchanged
 no-anonymous-definer, fixed-search-path and RLS-on-all-public-tables gates
