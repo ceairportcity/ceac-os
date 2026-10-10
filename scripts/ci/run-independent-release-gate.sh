@@ -162,10 +162,13 @@ account_flow() {
   fresh_database && seed_account && node scripts/test-account-security.mjs
 }
 gate migration_replay fresh_database || true
+sql_security_flow() {
+  # The RLS suite requires BOTH unit/org fixtures and deterministic role
+  # profiles. Never execute it against an unseeded or stale local database.
+  seed_roles && bash scripts/ci/run-sql-security-gates.sh
+}
 if [[ "$running_db" == 1 ]]; then
-  # Match the existing GitHub Quality Gate's seeded SQL/RLS security setup;
-  # SQL tests must not run without deterministic role fixtures.
-  gate sql_security bash -c 'node scripts/seed-role-fixtures.mjs && bash scripts/ci/run-sql-security-gates.sh' || true
+  gate sql_security sql_security_flow || true
 fi
 gate account_security account_flow || true
 
