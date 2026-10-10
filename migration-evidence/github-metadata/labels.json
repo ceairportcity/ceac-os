@@ -1,0 +1,145 @@
+[
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "f143ab",
+    "default": true,
+    "description": "Barrier affecting people with disabilities",
+    "id": 12254091066,
+    "name": "accessibility",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXOg",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/accessibility"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "d73a4a",
+    "default": true,
+    "description": "Something isn't working",
+    "id": 12254091040,
+    "name": "bug",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXIA",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/bug"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "0366d6",
+    "default": false,
+    "description": "Pull requests that update a dependency file",
+    "id": 12285307390,
+    "name": "dependencies",
+    "node_id": "LA_kwDOUgauO88AAAAC3ELp_g",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/dependencies"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "0075ca",
+    "default": true,
+    "description": "Improvements or additions to documentation",
+    "id": 12254091088,
+    "name": "documentation",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXUA",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/documentation"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "cfd3d7",
+    "default": true,
+    "description": "This issue or pull request already exists",
+    "id": 12254091104,
+    "name": "duplicate",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXYA",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/duplicate"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "a2eeef",
+    "default": true,
+    "description": "New feature or request",
+    "id": 12254091118,
+    "name": "enhancement",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXbg",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/enhancement"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "000000",
+    "default": false,
+    "description": "Pull requests that update GitHub Actions code",
+    "id": 12285307402,
+    "name": "github_actions",
+    "node_id": "LA_kwDOUgauO88AAAAC3ELqCg",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/github_actions"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "7057ff",
+    "default": true,
+    "description": "Good for newcomers",
+    "id": 12254091150,
+    "name": "good first issue",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXjg",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/good%20first%20issue"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "008672",
+    "default": true,
+    "description": "Extra attention is needed",
+    "id": 12254091135,
+    "name": "help wanted",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXfw",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/help%20wanted"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "e4e669",
+    "default": true,
+    "description": "This doesn't seem right",
+    "id": 12254091163,
+    "name": "invalid",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXmw",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/invalid"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "168700",
+    "default": false,
+    "description": "Pull requests that update javascript code",
+    "id": 12285316798,
+    "name": "javascript",
+    "node_id": "LA_kwDOUgauO88AAAAC3EMOvg",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/javascript"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "d876e3",
+    "default": true,
+    "description": "Further information is requested",
+    "id": 12254091176,
+    "name": "question",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXqA",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/question"
+  },
+  {
+    "archived_at": null,
+    "archived_by": null,
+    "color": "ffffff",
+    "default": true,
+    "description": "This will not be worked on",
+    "id": 12254091186,
+    "name": "wontfix",
+    "node_id": "LA_kwDOUgauO88AAAAC2maXsg",
+    "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/labels/wontfix"
+  }
+]

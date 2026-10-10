@@ -1,0 +1,207 @@
+{
+  "original_url": "https://github.com/thestandardinst-star/ceac-os/pull/48",
+  "number": 48,
+  "title": "Experience Stage 1: design primitives",
+  "state": "closed",
+  "draft": false,
+  "base": "main",
+  "head": "chatgpt/experience-stage1-primitives-2026-09-24",
+  "head_sha": "cdf9e9e14e933f816fb3969fa315fc1747535e79",
+  "reviews": [],
+  "conversation_comments": [
+    {
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/comments/5813070566",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/pull/48#issuecomment-5813070566",
+      "issue_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/48",
+      "id": 5813070566,
+      "node_id": "IC_kwDOUgauO88AAAABWnxq5g",
+      "user": {
+        "login": "vercel[bot]",
+        "id": 35613825,
+        "node_id": "MDM6Qm90MzU2MTM4MjU=",
+        "avatar_url": "https://avatars.githubusercontent.com/in/8329?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/vercel%5Bbot%5D",
+        "html_url": "https://github.com/apps/vercel",
+        "followers_url": "https://api.github.com/users/vercel%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/vercel%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/vercel%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/vercel%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/vercel%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/vercel%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/vercel%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/vercel%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/vercel%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "created_at": "2026-09-24T11:20:54Z",
+      "updated_at": "2026-09-24T11:21:03Z",
+      "body": "[vc]: #MDS1W0/ubkz9fTTnHa/GWroCNxNdqJHgDAjcuEaVyc4=:eyJpc01vbm9yZXBvIjp0cnVlLCJ0eXBlIjoiZ2l0aHViIiwicHJvamVjdHMiOlt7Im5hbWUiOiJjZWFjLW9zIiwicHJvamVjdElkIjoicHJqX2JBdjRnZ1g2dW1qcDU0VWpqTHFxR203YkJjSUIiLCJpbnNwZWN0b3JVcmwiOiJodHRwczovL3ZlcmNlbC5jb20vdGhlc3RhbmRhcmRpbnN0LTYzNDVzLXByb2plY3RzL2NlYWMtb3MvQXJQWURrWVU5d0tvTXltdE5TWXZLWjM5cmRpaCIsInByZXZpZXdVcmwiOiJjZWFjLW9zLWdpdC1jaGF0Z3B0LWV4cGVyLWU5ZTYwYS10aGVzdGFuZGFyZGluc3QtNjM0NXMtcHJvamVjdHMudmVyY2VsLmFwcCIsIm5leHRDb21taXRTdGF0dXMiOiJERVBMT1lFRCIsImxpdmVGZWVkYmFjayI6eyJyZXNvbHZlZCI6MCwidW5yZXNvbHZlZCI6MCwidG90YWwiOjAsImxpbmsiOiJjZWFjLW9zLWdpdC1jaGF0Z3B0LWV4cGVyLWU5ZTYwYS10aGVzdGFuZGFyZGluc3QtNjM0NXMtcHJvamVjdHMudmVyY2VsLmFwcCJ9LCJyb290RGlyZWN0b3J5IjpudWxsfV19\nThe latest updates on your projects. Learn more about [Vercel for GitHub](https://vercel.link/github-learn-more).\n\n| Project | Deployment | Actions | Updated |\n| :--- | :----- | :------ | :------ |\n| <a href=\"https://vercel.com/thestandardinst-6345s-projects/ceac-os\"><sup><img src=\"https://vercel.com/api/www/avatar?projectId=prj_bAv4ggX6umjp54UjjLqqGm7bBcIB&teamId=team_TqK18aG3TyiCk0vS8ukFnvmI&s=32\" width=\"16\" height=\"16\" align=\"middle\" alt=\"\" /></sup></a> [ceac-os](https://vercel.com/thestandardinst-6345s-projects/ceac-os) | ![Ready](https://vercel.com/static/status/ready.svg) [Ready](https://vercel.com/thestandardinst-6345s-projects/ceac-os/ArPYDkYU9wKoMymtNSYvKZ39rdih) | [Preview](https://ceac-os-git-chatgpt-exper-e9e60a-thestandardinst-6345s-projects.vercel.app) | <relative-time datetime=\"2026-09-24T11:21:03.511Z\">Sep 24, 2026 11:21am UTC</relative-time> |\n\n",
+      "author_association": "NONE",
+      "reactions": {
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/comments/5813070566/reactions",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "performed_via_github_app": {
+        "id": 8329,
+        "client_id": "Iv1.9d7d662ea00b8481",
+        "slug": "vercel",
+        "node_id": "MDM6QXBwODMyOQ==",
+        "owner": {
+          "login": "vercel",
+          "id": 14985020,
+          "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTg1MDIw",
+          "avatar_url": "https://avatars.githubusercontent.com/u/14985020?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/vercel",
+          "html_url": "https://github.com/vercel",
+          "followers_url": "https://api.github.com/users/vercel/followers",
+          "following_url": "https://api.github.com/users/vercel/following{/other_user}",
+          "gists_url": "https://api.github.com/users/vercel/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/vercel/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/vercel/subscriptions",
+          "organizations_url": "https://api.github.com/users/vercel/orgs",
+          "repos_url": "https://api.github.com/users/vercel/repos",
+          "events_url": "https://api.github.com/users/vercel/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/vercel/received_events",
+          "type": "Organization",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "name": "Vercel",
+        "description": "Vercel for GitHub automatically deploys your PRs to Vercel.\r\nPreview every PR live, without any configuration required.\r\n\r\nFor more information, see our [documentation](https://vercel.com/docs/github?utm_source=github&utm_medium=marketplace&utm_campaign=vercel-app).\r\n\r\n![](https://assets.vercel.com/image/upload/v1597943727/front/github/github-comment-monorepo.png)",
+        "external_url": "https://vercel.com/github",
+        "html_url": "https://github.com/apps/vercel",
+        "created_at": "2018-01-19T21:51:06Z",
+        "updated_at": "2026-10-09T19:21:58Z",
+        "permissions": {
+          "actions": "read",
+          "administration": "write",
+          "checks": "write",
+          "contents": "write",
+          "deployments": "write",
+          "emails": "read",
+          "issues": "write",
+          "members": "read",
+          "metadata": "read",
+          "pull_requests": "write",
+          "repository_hooks": "write",
+          "statuses": "write",
+          "workflows": "write"
+        },
+        "events": [
+          "branch_protection_rule",
+          "check_run",
+          "delete",
+          "deployment",
+          "issue_comment",
+          "membership",
+          "pull_request",
+          "pull_request_review",
+          "pull_request_review_comment",
+          "pull_request_review_thread",
+          "push",
+          "repository",
+          "status",
+          "team"
+        ]
+      },
+      "minimized": null
+    }
+  ],
+  "inline_comments": [],
+  "commits": [
+    {
+      "sha": "cdf9e9e14e933f816fb3969fa315fc1747535e79",
+      "node_id": "C_kwDOUgauO9oAKGNkZjllOWUxNGU5MzNmODE2ZmIzOTY5ZmEzMTVmYzE3NDc1MzVlNzk",
+      "commit": {
+        "author": {
+          "name": "The Standard Institute",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-09-24T06:10:31Z"
+        },
+        "committer": {
+          "name": "The Standard Institute",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-09-24T06:10:31Z"
+        },
+        "message": "Stage 1: design primitives\n\nSix primitives the system was missing. Measured across 58 screens: 1 had\na chart, none had a table, and 12 primitives were used over 2,000 times,\nso every screen rendered as cards of form fields whatever its job.\n\nStat is always a link — onOpen is required and a Stat without one refuses\nto render rather than shipping a dead figure, which was the most common\ndefect found in the review.\n\nQueueRow puts age first, coloured by wait, with byOldest() so a queue can\nonly be sorted the way that surfaces the problem. Actions inline.\n\nChart is inline SVG — line, bar, pairedBar, donut. No charting library:\nnone are small and all bring a visual opinion that fights this system,\nand the bundle is already over 1MB. Every chart carries a chart/table\ntoggle, since some people read shapes and others read numbers.\n\nTable sorts, exports CSV, and scrolls inside its own container so the\npage body never scrolls sideways on a phone.\n\nIcon is inline SVG, one weight, meaning not decoration. MapPin uses a\nstatic OpenStreetMap embed — no library, no key, no tracking of the\nviewer.\n\nTokens: contrast raised throughout and --act defined as the single colour\nmeaning act on this. The old palette put a muted green button on a\nnear-white card and it was invisible on the Assign screen.\n\nDemonstration route added at Primitives, loading live CEAC data. Nothing\nplaceholder: a primitive proved with invented numbers is not proved.\n\nNo existing screen changed.",
+        "tree": {
+          "sha": "b9ce91d31d51aaf77bcbc1045d3ff50ac978a20e",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/b9ce91d31d51aaf77bcbc1045d3ff50ac978a20e"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/cdf9e9e14e933f816fb3969fa315fc1747535e79",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/cdf9e9e14e933f816fb3969fa315fc1747535e79",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/cdf9e9e14e933f816fb3969fa315fc1747535e79",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/cdf9e9e14e933f816fb3969fa315fc1747535e79/comments",
+      "author": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "6d076f048c091facba5a0fcb3bbd30505a647332",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/6d076f048c091facba5a0fcb3bbd30505a647332",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/6d076f048c091facba5a0fcb3bbd30505a647332"
+        }
+      ]
+    }
+  ]
+}

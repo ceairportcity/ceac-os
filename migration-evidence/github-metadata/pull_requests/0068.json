@@ -1,0 +1,207 @@
+{
+  "original_url": "https://github.com/thestandardinst-star/ceac-os/pull/68",
+  "number": 68,
+  "title": "Fix Manager 'Waiting on you' text collapse",
+  "state": "closed",
+  "draft": false,
+  "base": "main",
+  "head": "chatgpt/fix-manager-waiting-queue-wrap-2026-09-25",
+  "head_sha": "8e1dce3a6bf6ec27098420988180d42e82f317f1",
+  "reviews": [],
+  "conversation_comments": [
+    {
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/comments/5825962570",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/pull/68#issuecomment-5825962570",
+      "issue_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/68",
+      "id": 5825962570,
+      "node_id": "IC_kwDOUgauO88AAAABW0EiSg",
+      "user": {
+        "login": "vercel[bot]",
+        "id": 35613825,
+        "node_id": "MDM6Qm90MzU2MTM4MjU=",
+        "avatar_url": "https://avatars.githubusercontent.com/in/8329?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/vercel%5Bbot%5D",
+        "html_url": "https://github.com/apps/vercel",
+        "followers_url": "https://api.github.com/users/vercel%5Bbot%5D/followers",
+        "following_url": "https://api.github.com/users/vercel%5Bbot%5D/following{/other_user}",
+        "gists_url": "https://api.github.com/users/vercel%5Bbot%5D/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/vercel%5Bbot%5D/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/vercel%5Bbot%5D/subscriptions",
+        "organizations_url": "https://api.github.com/users/vercel%5Bbot%5D/orgs",
+        "repos_url": "https://api.github.com/users/vercel%5Bbot%5D/repos",
+        "events_url": "https://api.github.com/users/vercel%5Bbot%5D/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/vercel%5Bbot%5D/received_events",
+        "type": "Bot",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "created_at": "2026-09-25T03:01:09Z",
+      "updated_at": "2026-09-25T03:01:09Z",
+      "body": "Deployment failed for project [ceac-os](https://vercel.com/thestandardinst-6345s-projects/ceac-os) with the following error:\n~~~\nResource is limited - try again in 24 hours (more than 100, code: \"api-deployments-free-per-day\").\n~~~\nLearn More: https://vercel.com/thestandardinst-6345s-projects?upgradeToPro=build-rate-limit",
+      "author_association": "NONE",
+      "reactions": {
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/issues/comments/5825962570/reactions",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "performed_via_github_app": {
+        "id": 8329,
+        "client_id": "Iv1.9d7d662ea00b8481",
+        "slug": "vercel",
+        "node_id": "MDM6QXBwODMyOQ==",
+        "owner": {
+          "login": "vercel",
+          "id": 14985020,
+          "node_id": "MDEyOk9yZ2FuaXphdGlvbjE0OTg1MDIw",
+          "avatar_url": "https://avatars.githubusercontent.com/u/14985020?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/vercel",
+          "html_url": "https://github.com/vercel",
+          "followers_url": "https://api.github.com/users/vercel/followers",
+          "following_url": "https://api.github.com/users/vercel/following{/other_user}",
+          "gists_url": "https://api.github.com/users/vercel/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/vercel/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/vercel/subscriptions",
+          "organizations_url": "https://api.github.com/users/vercel/orgs",
+          "repos_url": "https://api.github.com/users/vercel/repos",
+          "events_url": "https://api.github.com/users/vercel/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/vercel/received_events",
+          "type": "Organization",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "name": "Vercel",
+        "description": "Vercel for GitHub automatically deploys your PRs to Vercel.\r\nPreview every PR live, without any configuration required.\r\n\r\nFor more information, see our [documentation](https://vercel.com/docs/github?utm_source=github&utm_medium=marketplace&utm_campaign=vercel-app).\r\n\r\n![](https://assets.vercel.com/image/upload/v1597943727/front/github/github-comment-monorepo.png)",
+        "external_url": "https://vercel.com/github",
+        "html_url": "https://github.com/apps/vercel",
+        "created_at": "2018-01-19T21:51:06Z",
+        "updated_at": "2026-10-09T19:21:58Z",
+        "permissions": {
+          "actions": "read",
+          "administration": "write",
+          "checks": "write",
+          "contents": "write",
+          "deployments": "write",
+          "emails": "read",
+          "issues": "write",
+          "members": "read",
+          "metadata": "read",
+          "pull_requests": "write",
+          "repository_hooks": "write",
+          "statuses": "write",
+          "workflows": "write"
+        },
+        "events": [
+          "branch_protection_rule",
+          "check_run",
+          "delete",
+          "deployment",
+          "issue_comment",
+          "membership",
+          "pull_request",
+          "pull_request_review",
+          "pull_request_review_comment",
+          "pull_request_review_thread",
+          "push",
+          "repository",
+          "status",
+          "team"
+        ]
+      },
+      "minimized": null
+    }
+  ],
+  "inline_comments": [],
+  "commits": [
+    {
+      "sha": "8e1dce3a6bf6ec27098420988180d42e82f317f1",
+      "node_id": "C_kwDOUgauO9oAKDhlMWRjZTNhNmJmNmVjMjcwOTg0MjA5ODgxODBkNDJlODJmMzE3ZjE",
+      "commit": {
+        "author": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-09-25T03:00:53Z"
+        },
+        "committer": {
+          "name": "thestandardinst-star",
+          "email": "thestandardinst@gmail.com",
+          "date": "2026-09-25T03:00:53Z"
+        },
+        "message": "Fix Manager waiting queue text collapse",
+        "tree": {
+          "sha": "dda95b019553e7011d21d9f5c304dbb48ca12265",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/trees/dda95b019553e7011d21d9f5c304dbb48ca12265"
+        },
+        "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/git/commits/8e1dce3a6bf6ec27098420988180d42e82f317f1",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/8e1dce3a6bf6ec27098420988180d42e82f317f1",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/8e1dce3a6bf6ec27098420988180d42e82f317f1",
+      "comments_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/8e1dce3a6bf6ec27098420988180d42e82f317f1/comments",
+      "author": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "thestandardinst-star",
+        "id": 327165936,
+        "node_id": "U_kgDOE4An8A",
+        "avatar_url": "https://avatars.githubusercontent.com/u/327165936?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/thestandardinst-star",
+        "html_url": "https://github.com/thestandardinst-star",
+        "followers_url": "https://api.github.com/users/thestandardinst-star/followers",
+        "following_url": "https://api.github.com/users/thestandardinst-star/following{/other_user}",
+        "gists_url": "https://api.github.com/users/thestandardinst-star/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/thestandardinst-star/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/thestandardinst-star/subscriptions",
+        "organizations_url": "https://api.github.com/users/thestandardinst-star/orgs",
+        "repos_url": "https://api.github.com/users/thestandardinst-star/repos",
+        "events_url": "https://api.github.com/users/thestandardinst-star/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/thestandardinst-star/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "1b98de22fa4c129db4a0dffbcb86862a78aca884",
+          "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1b98de22fa4c129db4a0dffbcb86862a78aca884",
+          "html_url": "https://github.com/thestandardinst-star/ceac-os/commit/1b98de22fa4c129db4a0dffbcb86862a78aca884"
+        }
+      ]
+    }
+  ]
+}

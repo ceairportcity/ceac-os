@@ -1,0 +1,77 @@
+{
+  "total_count": 6,
+  "workflows": [
+    {
+      "badge_url": "https://github.com/thestandardinst-star/ceac-os/workflows/Account%20Security/badge.svg",
+      "created_at": "2026-09-20T19:48:15.000Z",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/blob/main/.github/workflows/account-security.yml",
+      "id": 362854401,
+      "name": "Account Security",
+      "node_id": "W_kwDOUgauO84VoLgB",
+      "path": ".github/workflows/account-security.yml",
+      "state": "active",
+      "updated_at": "2026-09-21T06:35:00.000Z",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/workflows/362854401"
+    },
+    {
+      "badge_url": "https://github.com/thestandardinst-star/ceac-os/workflows/CI/badge.svg",
+      "created_at": "2026-09-20T06:40:51.000Z",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/blob/main/.github/workflows/ci.yml",
+      "id": 362494602,
+      "name": "CI",
+      "node_id": "W_kwDOUgauO84VmzqK",
+      "path": ".github/workflows/ci.yml",
+      "state": "active",
+      "updated_at": "2026-09-21T06:35:00.000Z",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/workflows/362494602"
+    },
+    {
+      "badge_url": "https://github.com/thestandardinst-star/ceac-os/workflows/Dependency%20Lock%20Refresh/badge.svg",
+      "created_at": "2026-09-21T07:25:17.000Z",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/blob/main/.github/workflows/dependency-lock-refresh.yml",
+      "id": 363141214,
+      "name": "Dependency Lock Refresh",
+      "node_id": "W_kwDOUgauO84VpRhe",
+      "path": ".github/workflows/dependency-lock-refresh.yml",
+      "state": "active",
+      "updated_at": "2026-09-21T07:25:17.000Z",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/workflows/363141214"
+    },
+    {
+      "badge_url": "https://github.com/thestandardinst-star/ceac-os/workflows/Migration%20Replay/badge.svg",
+      "created_at": "2026-09-20T19:37:58.000Z",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/blob/main/.github/workflows/migration-replay.yml",
+      "id": 362849731,
+      "name": "Migration Replay",
+      "node_id": "W_kwDOUgauO84VoKXD",
+      "path": ".github/workflows/migration-replay.yml",
+      "state": "active",
+      "updated_at": "2026-09-21T06:35:00.000Z",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/workflows/362849731"
+    },
+    {
+      "badge_url": "https://github.com/thestandardinst-star/ceac-os/workflows/Quality%20Gate/badge.svg",
+      "created_at": "2026-09-20T20:27:31.000Z",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/blob/main/.github/workflows/quality-gate.yml",
+      "id": 362872146,
+      "name": "Quality Gate",
+      "node_id": "W_kwDOUgauO84VoP1S",
+      "path": ".github/workflows/quality-gate.yml",
+      "state": "active",
+      "updated_at": "2026-09-21T06:35:00.000Z",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/workflows/362872146"
+    },
+    {
+      "badge_url": "https://github.com/thestandardinst-star/ceac-os/actions/workflows/dependabot/dependabot-updates/badge.svg",
+      "created_at": "2026-09-21T07:30:10.000Z",
+      "html_url": "https://github.com/thestandardinst-star/ceac-os/actions/workflows/dependabot/dependabot-updates",
+      "id": 363144243,
+      "name": "Dependabot Updates",
+      "node_id": "W_kwDOUgauO84VpSQz",
+      "path": "dynamic/dependabot/dependabot-updates",
+      "state": "active",
+      "updated_at": "2026-09-21T07:30:10.000Z",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/workflows/363144243"
+    }
+  ]
+}

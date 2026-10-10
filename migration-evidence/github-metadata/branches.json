@@ -1,0 +1,2506 @@
+[
+  {
+    "commit": {
+      "sha": "1cd82ebeb9da180c03fb92ee758719984bd61d2c",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1cd82ebeb9da180c03fb92ee758719984bd61d2c"
+    },
+    "name": "chatgpt/account-activity-parity-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/account-activity-parity-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "cb36a2e4ca57d72b9aea3a893db48ff3f9b1ef47",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/cb36a2e4ca57d72b9aea3a893db48ff3f9b1ef47"
+    },
+    "name": "chatgpt/admin-hr-completion-2026-09-21",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/admin-hr-completion-2026-09-21/protection"
+  },
+  {
+    "commit": {
+      "sha": "34c46dd09073167cd54d95ee145bf52d1429d86d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/34c46dd09073167cd54d95ee145bf52d1429d86d"
+    },
+    "name": "chatgpt/admin-unit-staff-onboarding-2026-10-05",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/admin-unit-staff-onboarding-2026-10-05/protection"
+  },
+  {
+    "commit": {
+      "sha": "ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/ea9a55a29e6df5aef8ec2af3d81f42cb01c6deba"
+    },
+    "name": "chatgpt/attendance-working-patterns-permissions-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/attendance-working-patterns-permissions-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "fdd159c7de36ce011fd1ca38ff4e0fe9bab1a9f8",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/fdd159c7de36ce011fd1ca38ff4e0fe9bab1a9f8"
+    },
+    "name": "chatgpt/ceac-experience-recovery-architecture-2026-09-23",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/ceac-experience-recovery-architecture-2026-09-23/protection"
+  },
+  {
+    "commit": {
+      "sha": "96975721da50b6f8651c17efe08b49fcb4e7b81a",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/96975721da50b6f8651c17efe08b49fcb4e7b81a"
+    },
+    "name": "chatgpt/ceac-resilience-pwa-dr-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/ceac-resilience-pwa-dr-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "328941116432099dd47984049f7c3f331cbed61c",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/328941116432099dd47984049f7c3f331cbed61c"
+    },
+    "name": "chatgpt/compliance-operating-surface-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/compliance-operating-surface-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "5956c44972b0f25c746b21757738e6274b76e56d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/5956c44972b0f25c746b21757738e6274b76e56d"
+    },
+    "name": "chatgpt/compliance-phase3-completion-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/compliance-phase3-completion-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "48bbbf0f2e9ae4bc5d89ffc01766659f5775649e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/48bbbf0f2e9ae4bc5d89ffc01766659f5775649e"
+    },
+    "name": "chatgpt/consolidate-enterprise-stage-0-through-2-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/consolidate-enterprise-stage-0-through-2-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "d945af469327a240ec177447eba4e02cd5a456ee",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/d945af469327a240ec177447eba4e02cd5a456ee"
+    },
+    "name": "chatgpt/continuity-lock-2026-10-03",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/continuity-lock-2026-10-03/protection"
+  },
+  {
+    "commit": {
+      "sha": "31f1d9d09a976856c96a1b22bf3e907eca119037",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/31f1d9d09a976856c96a1b22bf3e907eca119037"
+    },
+    "name": "chatgpt/design-foundation-v2-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/design-foundation-v2-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "5114be0355ab8aeeebea3951f0cdc91a141f88b1",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/5114be0355ab8aeeebea3951f0cdc91a141f88b1"
+    },
+    "name": "chatgpt/design-system-consolidation-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/design-system-consolidation-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "1a0fb33d3fff18ddae63e6523547b4f4d5d5c883",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1a0fb33d3fff18ddae63e6523547b4f4d5d5c883"
+    },
+    "name": "chatgpt/design-system-stabilization-2026-09-25",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/design-system-stabilization-2026-09-25/protection"
+  },
+  {
+    "commit": {
+      "sha": "30f606ac3f6fc86010ddbc085baca484f5e47106",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/30f606ac3f6fc86010ddbc085baca484f5e47106"
+    },
+    "name": "chatgpt/design-wave1-foundation-primitives-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/design-wave1-foundation-primitives-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "dc2fa9be4c1ea852694807a8108d38ff009738ef",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/dc2fa9be4c1ea852694807a8108d38ff009738ef"
+    },
+    "name": "chatgpt/design-wave2-shell-signin-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/design-wave2-shell-signin-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "e87c03ebcf4e25faf0ec7ed041bbd6f64e098e1c",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/e87c03ebcf4e25faf0ec7ed041bbd6f64e098e1c"
+    },
+    "name": "chatgpt/design-wave3-record-archetype-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/design-wave3-record-archetype-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "ed1c04348a4fc1213360f2b270f6d09d74bddc67",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/ed1c04348a4fc1213360f2b270f6d09d74bddc67"
+    },
+    "name": "chatgpt/design-wave4a-operational-ledgers-2026-09-25",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/design-wave4a-operational-ledgers-2026-09-25/protection"
+  },
+  {
+    "commit": {
+      "sha": "a324aeb0732ae09d76ee236444df1b5488cf4faa",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/a324aeb0732ae09d76ee236444df1b5488cf4faa"
+    },
+    "name": "chatgpt/design-wave4b-platform-ledgers-2026-09-25",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/design-wave4b-platform-ledgers-2026-09-25/protection"
+  },
+  {
+    "commit": {
+      "sha": "3acccbfe2139c9ff14340879e180d59912d940a0",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/3acccbfe2139c9ff14340879e180d59912d940a0"
+    },
+    "name": "chatgpt/employee-roster-payroll-completeness-2026-10-03",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/employee-roster-payroll-completeness-2026-10-03/protection"
+  },
+  {
+    "commit": {
+      "sha": "8d2fb7cd472b1209836472318ba92086ec268313",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/8d2fb7cd472b1209836472318ba92086ec268313"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-0-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-0-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "a2c7ecdbd5502c822887af9b018289ea5651e294",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/a2c7ecdbd5502c822887af9b018289ea5651e294"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-1a-employment-history-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-1a-employment-history-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "008e8f29508a946bed07a45f8f3a08adaf118237",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/008e8f29508a946bed07a45f8f3a08adaf118237"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-1b-platform-audit-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-1b-platform-audit-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "4f9f4c7e61e89a6df674a67ba839e7a814eb6045",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/4f9f4c7e61e89a6df674a67ba839e7a814eb6045"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-1c-capability-authority-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-1c-capability-authority-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "7a14a0a8b6b6a5059af29efff36378dd7a6dff61",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7a14a0a8b6b6a5059af29efff36378dd7a6dff61"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-1d-event-framework-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-1d-event-framework-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "2f767120eb89d6b0d66939d464a24ba024f85daa",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/2f767120eb89d6b0d66939d464a24ba024f85daa"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-1e-workflow-engine-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-1e-workflow-engine-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "7a07b1a9f7372dfe13e172d2bbe5f730114fd5cd",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7a07b1a9f7372dfe13e172d2bbe5f730114fd5cd"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-1f-policy-rules-engine-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-1f-policy-rules-engine-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "3862c7088de7d6e7d4a630618d7c94801e40c562",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/3862c7088de7d6e7d4a630618d7c94801e40c562"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-1g-integration-gateway-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-1g-integration-gateway-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "48bbbf0f2e9ae4bc5d89ffc01766659f5775649e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/48bbbf0f2e9ae4bc5d89ffc01766659f5775649e"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-2-employee-lifecycle-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-2-employee-lifecycle-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "f5842ab7e07abb6047a5ada66b9cdb5f00b4109d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/f5842ab7e07abb6047a5ada66b9cdb5f00b4109d"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-3-clean-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-3-clean-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "579eba6bd62dc358e45dbdd68bd1a6d8d49b7c08",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/579eba6bd62dc358e45dbdd68bd1a6d8d49b7c08"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-3-protected-hr-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-3-protected-hr-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "2b829ec597c0dd17a433493088b743c8c2aca4cb",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/2b829ec597c0dd17a433493088b743c8c2aca4cb"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-4-clean-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-4-clean-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "75d3624b8f6298e8769820e027eb81228b6e874e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/75d3624b8f6298e8769820e027eb81228b6e874e"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-4-goals-strategy-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-4-goals-strategy-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "7cc18a5dccc017f2e80d65be448e7332b1d78865",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7cc18a5dccc017f2e80d65be448e7332b1d78865"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-5-work-management-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-5-work-management-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "bb15c7074a7fcd5ca2df1173e1fcb38dc0506fd5",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/bb15c7074a7fcd5ca2df1173e1fcb38dc0506fd5"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-6-resource-workload-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-6-resource-workload-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "060326417de31d1eccd1f2950619c5f5319300dc",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/060326417de31d1eccd1f2950619c5f5319300dc"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-7-performance-development-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-7-performance-development-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "b1ef246001779b814f98c30e85bfdfc8f0e4bcfb",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/b1ef246001779b814f98c30e85bfdfc8f0e4bcfb"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-8-learning-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-8-learning-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "10d68689569459369fbd226b02c0e5acdfbba5af",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/10d68689569459369fbd226b02c0e5acdfbba5af"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-9-workforce-management-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-9-workforce-management-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "1439ac8e66f3f416c4a35460e1d1fa19ae00997d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1439ac8e66f3f416c4a35460e1d1fa19ae00997d"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-10-assets-devices-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-10-assets-devices-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "b96aee835a1b08233ef7dc552d7bebc5568ca36b",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/b96aee835a1b08233ef7dc552d7bebc5568ca36b"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-11-compliance-policy-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-11-compliance-policy-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "1752f022b07ccdbc96081c6b78e6aff73b028e0a",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1752f022b07ccdbc96081c6b78e6aff73b028e0a"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-12-integrations-2026-09-23",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-12-integrations-2026-09-23/protection"
+  },
+  {
+    "commit": {
+      "sha": "5864cb39339ee0560d1834d695cfdad82ff45571",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/5864cb39339ee0560d1834d695cfdad82ff45571"
+    },
+    "name": "chatgpt/enterprise-expansion-stage-12-integrations-2026-09-26",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/enterprise-expansion-stage-12-integrations-2026-09-26/protection"
+  },
+  {
+    "commit": {
+      "sha": "d8ec852abb7d9738cfb510c7927d5b551f81f09c",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/d8ec852abb7d9738cfb510c7927d5b551f81f09c"
+    },
+    "name": "chatgpt/erc-portable-handoff-2026-10-03",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/erc-portable-handoff-2026-10-03/protection"
+  },
+  {
+    "commit": {
+      "sha": "d29b840b1a6965a6871d746d67c93236bba4a8a9",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/d29b840b1a6965a6871d746d67c93236bba4a8a9"
+    },
+    "name": "chatgpt/erc-production-closure-2026-10-03",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/erc-production-closure-2026-10-03/protection"
+  },
+  {
+    "commit": {
+      "sha": "6ea900c3c869dbddbd30e824b8286fce75eb53f8",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/6ea900c3c869dbddbd30e824b8286fce75eb53f8"
+    },
+    "name": "chatgpt/executive-product-redesign-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/executive-product-redesign-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "cdf9e9e14e933f816fb3969fa315fc1747535e79",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/cdf9e9e14e933f816fb3969fa315fc1747535e79"
+    },
+    "name": "chatgpt/experience-stage1-primitives-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/experience-stage1-primitives-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "31d3de2d737d2d1437c1c5780a627991743f8675",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/31d3de2d737d2d1437c1c5780a627991743f8675"
+    },
+    "name": "chatgpt/experience-stage2-manager-overview-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/experience-stage2-manager-overview-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "f8efc7aaa755ff5c6fd72aaa2dc0dd7e9e5b2ffd",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/f8efc7aaa755ff5c6fd72aaa2dc0dd7e9e5b2ffd"
+    },
+    "name": "chatgpt/experience-stage3-ministry-layer-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/experience-stage3-ministry-layer-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "3f18cf2407ba82ce53c74c8ddd45aae3f5a2fc91",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/3f18cf2407ba82ce53c74c8ddd45aae3f5a2fc91"
+    },
+    "name": "chatgpt/experience-stage4-archetype-waves-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/experience-stage4-archetype-waves-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "5dbd338f8713c1608aeb67551d0a3390c4b60d93",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/5dbd338f8713c1608aeb67551d0a3390c4b60d93"
+    },
+    "name": "chatgpt/experience-stage5-project-register-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/experience-stage5-project-register-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "1c22f3adf3eb2b11c9d9fb3ca16a44bb2fc11215",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1c22f3adf3eb2b11c9d9fb3ca16a44bb2fc11215"
+    },
+    "name": "chatgpt/experience-stage6-finance-corrections-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/experience-stage6-finance-corrections-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "338ac1a3f316ca4e7d38b658927a89f0a27c1a49",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/338ac1a3f316ca4e7d38b658927a89f0a27c1a49"
+    },
+    "name": "chatgpt/experience-stage7-work-capture-recipes-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/experience-stage7-work-capture-recipes-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "ce337ea500e7e40a59a8489ac77ae3cd33ff3d0d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/ce337ea500e7e40a59a8489ac77ae3cd33ff3d0d"
+    },
+    "name": "chatgpt/experience-stage8-interface-defects-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/experience-stage8-interface-defects-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "1b11f14eb14770588ca0fb7acce2df7c30cdac0a",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1b11f14eb14770588ca0fb7acce2df7c30cdac0a"
+    },
+    "name": "chatgpt/experience-v2-2026-09-26",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/experience-v2-2026-09-26/protection"
+  },
+  {
+    "commit": {
+      "sha": "422ba0e894c2f457a2b1739356803af441d1548c",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/422ba0e894c2f457a2b1739356803af441d1548c"
+    },
+    "name": "chatgpt/final-literal-parity-2026-10-03",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/final-literal-parity-2026-10-03/protection"
+  },
+  {
+    "commit": {
+      "sha": "37875d5609d7bbd19dac396cb9bcc11622e3f16a",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/37875d5609d7bbd19dac396cb9bcc11622e3f16a"
+    },
+    "name": "chatgpt/final-parity-closure-state-2026-10-04",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/final-parity-closure-state-2026-10-04/protection"
+  },
+  {
+    "commit": {
+      "sha": "11dbcab59413d830e0d057d854c742e6bc262268",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/11dbcab59413d830e0d057d854c742e6bc262268"
+    },
+    "name": "chatgpt/final-product-parity-go-live-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/final-product-parity-go-live-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "8e1dce3a6bf6ec27098420988180d42e82f317f1",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/8e1dce3a6bf6ec27098420988180d42e82f317f1"
+    },
+    "name": "chatgpt/fix-manager-waiting-queue-wrap-2026-09-25",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/fix-manager-waiting-queue-wrap-2026-09-25/protection"
+  },
+  {
+    "commit": {
+      "sha": "ab4847fb96eb70cfa93bda615ba8a32b1793371e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/ab4847fb96eb70cfa93bda615ba8a32b1793371e"
+    },
+    "name": "chatgpt/go-live-owner-decisions-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/go-live-owner-decisions-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "67a2cabe8abcb6b34de96c62234772eb5614f356",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/67a2cabe8abcb6b34de96c62234772eb5614f356"
+    },
+    "name": "chatgpt/hotfix-vercel-runtime-config-2026-09-23",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/hotfix-vercel-runtime-config-2026-09-23/protection"
+  },
+  {
+    "commit": {
+      "sha": "7d653258e4cc8c083857894644f4ce74f58ad9da",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7d653258e4cc8c083857894644f4ce74f58ad9da"
+    },
+    "name": "chatgpt/intelligent-input-collaboration-2026-09-21",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/intelligent-input-collaboration-2026-09-21/protection"
+  },
+  {
+    "commit": {
+      "sha": "8ec30931428ba7ae07e27215510fe50c43dd651b",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/8ec30931428ba7ae07e27215510fe50c43dd651b"
+    },
+    "name": "chatgpt/laptop-density-correction-2026-09-25",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/laptop-density-correction-2026-09-25/protection"
+  },
+  {
+    "commit": {
+      "sha": "68b8ebca0b3890c51b6df46a3f48448ba1f1cc8b",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/68b8ebca0b3890c51b6df46a3f48448ba1f1cc8b"
+    },
+    "name": "chatgpt/leave-owner-rules-2026-10-03",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/leave-owner-rules-2026-10-03/protection"
+  },
+  {
+    "commit": {
+      "sha": "970c28c349b84cac9381bf722aa0e5db20e67374",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/970c28c349b84cac9381bf722aa0e5db20e67374"
+    },
+    "name": "chatgpt/literal-visual-parity-correction-2026-10-03",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/literal-visual-parity-correction-2026-10-03/protection"
+  },
+  {
+    "commit": {
+      "sha": "3b9ad3d4d2c0770edb3fe944fdc3bedf1eb59a27",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/3b9ad3d4d2c0770edb3fe944fdc3bedf1eb59a27"
+    },
+    "name": "chatgpt/migration-history-parity-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/migration-history-parity-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "338b2209b2f85d8e989fdb0140b2dda6473aca2d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/338b2209b2f85d8e989fdb0140b2dda6473aca2d"
+    },
+    "name": "chatgpt/mockup-conformity-executive-forms-2026-10-05",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/mockup-conformity-executive-forms-2026-10-05/protection"
+  },
+  {
+    "commit": {
+      "sha": "227d93c51c8df7c8a59eea52f6f213006abca392",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/227d93c51c8df7c8a59eea52f6f213006abca392"
+    },
+    "name": "chatgpt/onboarding-access-presence-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/onboarding-access-presence-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "b49a7536f909750130964d4bbfe41ddaad923e98",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/b49a7536f909750130964d4bbfe41ddaad923e98"
+    },
+    "name": "chatgpt/operational-clarity-final-closure-2026-10-04",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/operational-clarity-final-closure-2026-10-04/protection"
+  },
+  {
+    "commit": {
+      "sha": "674efe5fd2ae92ebaa4689ebe39e59e33cb8f3ae",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/674efe5fd2ae92ebaa4689ebe39e59e33cb8f3ae"
+    },
+    "name": "chatgpt/operational-clarity-implementation-2026-10-04",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/operational-clarity-implementation-2026-10-04/protection"
+  },
+  {
+    "commit": {
+      "sha": "249851621057029c7f6a84f18208d63fe10fcce1",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/249851621057029c7f6a84f18208d63fe10fcce1"
+    },
+    "name": "chatgpt/operational-clarity-lock-2026-10-04",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/operational-clarity-lock-2026-10-04/protection"
+  },
+  {
+    "commit": {
+      "sha": "e07b434658808e5928fd5907a10c054d5ab96b7b",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/e07b434658808e5928fd5907a10c054d5ab96b7b"
+    },
+    "name": "chatgpt/phase2-completion-record-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/phase2-completion-record-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "b7609818ec360ca65a2311d85173d08828c599cc",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/b7609818ec360ca65a2311d85173d08828c599cc"
+    },
+    "name": "chatgpt/phase5-admin-product-redesign-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/phase5-admin-product-redesign-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "2e9851fd496202a848db3a26d1475696341cec18",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/2e9851fd496202a848db3a26d1475696341cec18"
+    },
+    "name": "chatgpt/phase6-volunteer-calendar-design-lock-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/phase6-volunteer-calendar-design-lock-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "80d651b12ad0b9a52744188ef2f2d94025e2372c",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/80d651b12ad0b9a52744188ef2f2d94025e2372c"
+    },
+    "name": "chatgpt/phase6-volunteer-planning-attendance-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/phase6-volunteer-planning-attendance-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "94521f37789b3c24e72abd19c392a8bdab5a68a4",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/94521f37789b3c24e72abd19c392a8bdab5a68a4"
+    },
+    "name": "chatgpt/postmerge-level-b-classification-2026-10-04",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/postmerge-level-b-classification-2026-10-04/protection"
+  },
+  {
+    "commit": {
+      "sha": "533165d46118d9e2d97e6b7f31f74b80e2332994",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/533165d46118d9e2d97e6b7f31f74b80e2332994"
+    },
+    "name": "chatgpt/pre-restoration-go-live-ready-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/pre-restoration-go-live-ready-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "bba918fb0a740ca2d090754b6e32bca3b791992e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/bba918fb0a740ca2d090754b6e32bca3b791992e"
+    },
+    "name": "chatgpt/pre-stage3-design-consolidation-2026-09-24",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/pre-stage3-design-consolidation-2026-09-24/protection"
+  },
+  {
+    "commit": {
+      "sha": "196270f9fad519a53f81d53b97ce3d9466425218",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/196270f9fad519a53f81d53b97ce3d9466425218"
+    },
+    "name": "chatgpt/product-experience-architecture-2026-09-21",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/product-experience-architecture-2026-09-21/protection"
+  },
+  {
+    "commit": {
+      "sha": "f9de8bb1d0de47358187d6c28e7a13d02934627e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/f9de8bb1d0de47358187d6c28e7a13d02934627e"
+    },
+    "name": "chatgpt/product-intelligence-experience-2026-09-21",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/product-intelligence-experience-2026-09-21/protection"
+  },
+  {
+    "commit": {
+      "sha": "9b46d473d8a1ec64e54659fcdb893fa4f30575e8",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/9b46d473d8a1ec64e54659fcdb893fa4f30575e8"
+    },
+    "name": "chatgpt/product-refinement-phase-a",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/product-refinement-phase-a/protection"
+  },
+  {
+    "commit": {
+      "sha": "3fd4a007e4794535bab90e5492863f62639d9946",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/3fd4a007e4794535bab90e5492863f62639d9946"
+    },
+    "name": "chatgpt/reconcile-rooms-visual-2026-09-21",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/reconcile-rooms-visual-2026-09-21/protection"
+  },
+  {
+    "commit": {
+      "sha": "33b9766acb7ec28fb2315bbc7e34c15c0dc85be7",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/33b9766acb7ec28fb2315bbc7e34c15c0dc85be7"
+    },
+    "name": "chatgpt/restore-original-visual-direction-2026-09-25",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/restore-original-visual-direction-2026-09-25/protection"
+  },
+  {
+    "commit": {
+      "sha": "5f55e962a8c3079bb658658fe3ab438dff29964e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/5f55e962a8c3079bb658658fe3ab438dff29964e"
+    },
+    "name": "chatgpt/security-hardening-and-tech-support-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-hardening-and-tech-support-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "9f06b92af4e74be479a37b89b9faffbb13d3b290",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/9f06b92af4e74be479a37b89b9faffbb13d3b290"
+    },
+    "name": "chatgpt/security-historical-migration-parity-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-historical-migration-parity-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "27c375d5089f793e1b34b343ca0d03a39a195329",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/27c375d5089f793e1b34b343ca0d03a39a195329"
+    },
+    "name": "chatgpt/security-s1-aal2-database-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s1-aal2-database-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "5a261a361f339f5a8d08763a13e1d91f75a449c4",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/5a261a361f339f5a8d08763a13e1d91f75a449c4"
+    },
+    "name": "chatgpt/security-s1-aal2-enforcement-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s1-aal2-enforcement-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "c822b5e4bf4d436e75b57c291b3eea454bd97804",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/c822b5e4bf4d436e75b57c291b3eea454bd97804"
+    },
+    "name": "chatgpt/security-s1-browser-mfa-foundation-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s1-browser-mfa-foundation-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "8e3422ec6192375a810d65a7dc69b6700063af3a",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/8e3422ec6192375a810d65a7dc69b6700063af3a"
+    },
+    "name": "chatgpt/security-s1-browser-mfa-isolated-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s1-browser-mfa-isolated-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "635f35966c1d99a8476411590d0ceae1fc77e52d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/635f35966c1d99a8476411590d0ceae1fc77e52d"
+    },
+    "name": "chatgpt/security-s1-mfa-foundation-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s1-mfa-foundation-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "a6d4138f531e527298efaaf8e3131472d1c0dcc2",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/a6d4138f531e527298efaaf8e3131472d1c0dcc2"
+    },
+    "name": "chatgpt/security-s1-migration-parity-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s1-migration-parity-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "09ad13a6e8984ac83a89053f9e5ed397c82873e1",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/09ad13a6e8984ac83a89053f9e5ed397c82873e1"
+    },
+    "name": "chatgpt/security-s1-s5-auth-readiness-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s1-s5-auth-readiness-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "d74477f767ba27fbf7fa37d4b87996b28191654c",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/d74477f767ba27fbf7fa37d4b87996b28191654c"
+    },
+    "name": "chatgpt/security-s2-s6-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s2-s6-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "faa6cf6420cd4394896463bb784f67c753649a99",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/faa6cf6420cd4394896463bb784f67c753649a99"
+    },
+    "name": "chatgpt/security-s3-capability-expiry-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s3-capability-expiry-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "f2055636c1f87ff4ff7cbb2a87e6c490a5f52253",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/f2055636c1f87ff4ff7cbb2a87e6c490a5f52253"
+    },
+    "name": "chatgpt/security-s3-capability-expiry-main-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s3-capability-expiry-main-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "0a00ab14bdf8b7198d2d04da0db21470c32cc5d0",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/0a00ab14bdf8b7198d2d04da0db21470c32cc5d0"
+    },
+    "name": "chatgpt/security-s4-supply-chain-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s4-supply-chain-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "100ad00ddeb57fe4a83d7c928095742f081f07bd",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/100ad00ddeb57fe4a83d7c928095742f081f07bd"
+    },
+    "name": "chatgpt/security-s5-auth-error-hardening-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s5-auth-error-hardening-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "ef11bb643d20eba7f0a99779c0bfd23251eed2bb",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/ef11bb643d20eba7f0a99779c0bfd23251eed2bb"
+    },
+    "name": "chatgpt/security-s6-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s6-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "442ae2095ce9a96fac9a986bcb23ce996e85ce3e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/442ae2095ce9a96fac9a986bcb23ce996e85ce3e"
+    },
+    "name": "chatgpt/security-s7-private-storage-hardening-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s7-private-storage-hardening-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "7d34b50d0a3d6cc486f3b54960a38290b841a4cf",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7d34b50d0a3d6cc486f3b54960a38290b841a4cf"
+    },
+    "name": "chatgpt/security-s7-recovery-governance-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s7-recovery-governance-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "7566e2350660f7646f319e675e3fa8dab7e81d33",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7566e2350660f7646f319e675e3fa8dab7e81d33"
+    },
+    "name": "chatgpt/security-s8-attendance-policy-contract-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s8-attendance-policy-contract-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "418aba2fad45df07641e7311e41b733932580744",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/418aba2fad45df07641e7311e41b733932580744"
+    },
+    "name": "chatgpt/security-s8-attendance-safety-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-s8-attendance-safety-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "d318903abd0739efc4c45039ab9acf72b9db6de7",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/d318903abd0739efc4c45039ab9acf72b9db6de7"
+    },
+    "name": "chatgpt/security-technical-support-backend-contract-2026-10-07",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/security-technical-support-backend-contract-2026-10-07/protection"
+  },
+  {
+    "commit": {
+      "sha": "1558826f83ca6fc8709617d389b927735d2e32da",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1558826f83ca6fc8709617d389b927735d2e32da"
+    },
+    "name": "chatgpt/selective-ux-hardening-2026-09-25",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/selective-ux-hardening-2026-09-25/protection"
+  },
+  {
+    "commit": {
+      "sha": "a7ba9eddda9abb06fa7b9adf6ef5ce09003a4957",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/a7ba9eddda9abb06fa7b9adf6ef5ce09003a4957"
+    },
+    "name": "chatgpt/sign-in-error-diagnostics-2026-10-06",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/sign-in-error-diagnostics-2026-10-06/protection"
+  },
+  {
+    "commit": {
+      "sha": "1f1cd5d7159c34d9e9cbb4d6bb396b11adefe402",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1f1cd5d7159c34d9e9cbb4d6bb396b11adefe402"
+    },
+    "name": "chatgpt/stage17-closure-2026-10-01",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/stage17-closure-2026-10-01/protection"
+  },
+  {
+    "commit": {
+      "sha": "77eda92a18c477099d318b66df5052162a45c265",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/77eda92a18c477099d318b66df5052162a45c265"
+    },
+    "name": "chatgpt/stage17-doc-consistency-2026-10-01",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/stage17-doc-consistency-2026-10-01/protection"
+  },
+  {
+    "commit": {
+      "sha": "621869eb67abb90aca7faf18ba1ce847a361d8bc",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/621869eb67abb90aca7faf18ba1ce847a361d8bc"
+    },
+    "name": "chatgpt/stage-6-closure-handoff-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/stage-6-closure-handoff-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "7f1c0130427891f07c6144cde2ac3638e3ffba3f",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/7f1c0130427891f07c6144cde2ac3638e3ffba3f"
+    },
+    "name": "chatgpt/stage-8-closure-handoff-2026-09-22",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/stage-8-closure-handoff-2026-09-22/protection"
+  },
+  {
+    "commit": {
+      "sha": "c8c18388c9f6a8108704e1fe2e6193d338f626c2",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/c8c18388c9f6a8108704e1fe2e6193d338f626c2"
+    },
+    "name": "chatgpt/verify-stage11-main-2026-09-23",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/verify-stage11-main-2026-09-23/protection"
+  },
+  {
+    "commit": {
+      "sha": "efa372496e8414043898c91a3c56ca6beda2cd58",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/efa372496e8414043898c91a3c56ca6beda2cd58"
+    },
+    "name": "chatgpt/vf3c-vercel-retry-2026-10-01",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/vf3c-vercel-retry-2026-10-01/protection"
+  },
+  {
+    "commit": {
+      "sha": "69296e52531ea042b8bb3616d5ecf7ea5704f886",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/69296e52531ea042b8bb3616d5ecf7ea5704f886"
+    },
+    "name": "chatgpt/vf10e-main-push-gates-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/vf10e-main-push-gates-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "8ac280c6697ac50e9504fc60bbe934fd1b183299",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/8ac280c6697ac50e9504fc60bbe934fd1b183299"
+    },
+    "name": "chatgpt/vf10e-post-merge-verification-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/vf10e-post-merge-verification-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "584bd488d822112eb12cd8394ca69711d1932a76",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/584bd488d822112eb12cd8394ca69711d1932a76"
+    },
+    "name": "chatgpt/visual-fidelity-bootstrap-finalize-2026-10-01",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-bootstrap-finalize-2026-10-01/protection"
+  },
+  {
+    "commit": {
+      "sha": "4a457173940307bb93e98ca8b59b780d129755ef",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/4a457173940307bb93e98ca8b59b780d129755ef"
+    },
+    "name": "chatgpt/visual-fidelity-closure-2026-10-01",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-closure-2026-10-01/protection"
+  },
+  {
+    "commit": {
+      "sha": "c6ab00f542e329fe96af11cabfb04f156505f44e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/c6ab00f542e329fe96af11cabfb04f156505f44e"
+    },
+    "name": "chatgpt/visual-fidelity-implementation-2026-10-01",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-implementation-2026-10-01/protection"
+  },
+  {
+    "commit": {
+      "sha": "b3b56564b6b4504243e898197a1e66aa87aedb7b",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/b3b56564b6b4504243e898197a1e66aa87aedb7b"
+    },
+    "name": "chatgpt/visual-fidelity-post-merge-closure-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-post-merge-closure-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "eb7fa2368d9e055a251ccda5e0f2c897915c777a",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/eb7fa2368d9e055a251ccda5e0f2c897915c777a"
+    },
+    "name": "chatgpt/visual-fidelity-vercel-wait-prep-2026-10-01",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-vercel-wait-prep-2026-10-01/protection"
+  },
+  {
+    "commit": {
+      "sha": "81af2e82e98f506ab70487cdfa00d4b317c5dc0d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/81af2e82e98f506ab70487cdfa00d4b317c5dc0d"
+    },
+    "name": "chatgpt/visual-fidelity-vercel-wait-vf4a-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-vercel-wait-vf4a-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "67ea469646020fcbc340917b925355af55ac8180",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/67ea469646020fcbc340917b925355af55ac8180"
+    },
+    "name": "chatgpt/visual-fidelity-vercel-wait-vf4b-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-vercel-wait-vf4b-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "abc7677affbfcd0072cc9f01f6f4ec804664cdb3",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/abc7677affbfcd0072cc9f01f6f4ec804664cdb3"
+    },
+    "name": "chatgpt/visual-fidelity-vercel-wait-vf4b-reconciled-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-vercel-wait-vf4b-reconciled-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "3883c44df320e76fb3bd749ef4bcf776cd086936",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/3883c44df320e76fb3bd749ef4bcf776cd086936"
+    },
+    "name": "chatgpt/visual-fidelity-vercel-wait-vf4c-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-vercel-wait-vf4c-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "746790e329c85bccac0ea3cc52f20d352690d75d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/746790e329c85bccac0ea3cc52f20d352690d75d"
+    },
+    "name": "chatgpt/visual-fidelity-vercel-wait-vf4d-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-vercel-wait-vf4d-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "a46c237cccabb691846bd897342137f42ef08c33",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/a46c237cccabb691846bd897342137f42ef08c33"
+    },
+    "name": "chatgpt/visual-fidelity-vercel-wait-vf5b-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-vercel-wait-vf5b-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "8570a0b9d7e52338ac7b166c6405b1b70c67f4a1",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/8570a0b9d7e52338ac7b166c6405b1b70c67f4a1"
+    },
+    "name": "chatgpt/visual-fidelity-vf4a-vercel-wait-prep-2026-10-01",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-vf4a-vercel-wait-prep-2026-10-01/protection"
+  },
+  {
+    "commit": {
+      "sha": "d3b1202af09297530bb96b1c2a017142c8e82b05",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/d3b1202af09297530bb96b1c2a017142c8e82b05"
+    },
+    "name": "chatgpt/visual-fidelity-vf5a-level-b-2026-10-02",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-fidelity-vf5a-level-b-2026-10-02/protection"
+  },
+  {
+    "commit": {
+      "sha": "2dd1bc629e7acacaf3a9b27c1a0b9f44432bc74e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/2dd1bc629e7acacaf3a9b27c1a0b9f44432bc74e"
+    },
+    "name": "chatgpt/visual-parity-recovery-2026-09-23",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/chatgpt/visual-parity-recovery-2026-09-23/protection"
+  },
+  {
+    "commit": {
+      "sha": "e849508953f5c8ad527840298637072a4eac3442",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/e849508953f5c8ad527840298637072a4eac3442"
+    },
+    "name": "claude/account-activity",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/claude/account-activity/protection"
+  },
+  {
+    "commit": {
+      "sha": "28221512899eadd349bbe44907fc1d22b5c1493e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/28221512899eadd349bbe44907fc1d22b5c1493e"
+    },
+    "name": "claude/design-primitives",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/claude/design-primitives/protection"
+  },
+  {
+    "commit": {
+      "sha": "e1fd5a177565c751bf019d70453b623a91ec5be0",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/e1fd5a177565c751bf019d70453b623a91ec5be0"
+    },
+    "name": "claude/experience-architecture-v2",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/claude/experience-architecture-v2/protection"
+  },
+  {
+    "commit": {
+      "sha": "5fff2f8fc26447d88f3dcc5e9ec8629ca19f035b",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/5fff2f8fc26447d88f3dcc5e9ec8629ca19f035b"
+    },
+    "name": "codex/admin-hr-completion",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/codex/admin-hr-completion/protection"
+  },
+  {
+    "commit": {
+      "sha": "4137d6c56a360363c58ec5418409ddb5d3676e26",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/4137d6c56a360363c58ec5418409ddb5d3676e26"
+    },
+    "name": "codex/assign-next-work-ref",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/codex/assign-next-work-ref/protection"
+  },
+  {
+    "commit": {
+      "sha": "6fa0b22293cfb694f58dff7eb822bddeb7ed9ca7",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/6fa0b22293cfb694f58dff7eb822bddeb7ed9ca7"
+    },
+    "name": "codex/assign-work-kind-selector",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/codex/assign-work-kind-selector/protection"
+  },
+  {
+    "commit": {
+      "sha": "1b22dff36b0b9d1036eaa5f59a92b126f57fb477",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/1b22dff36b0b9d1036eaa5f59a92b126f57fb477"
+    },
+    "name": "codex/manager-home-my-work-foundation",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/codex/manager-home-my-work-foundation/protection"
+  },
+  {
+    "commit": {
+      "sha": "40380af63e390ff88663d4bcfcaabbac7adc5c80",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/40380af63e390ff88663d4bcfcaabbac7adc5c80"
+    },
+    "name": "codex/manager-home-task2",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/codex/manager-home-task2/protection"
+  },
+  {
+    "commit": {
+      "sha": "ece1757165a4271c348d6636a30f2e1e79daac81",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/ece1757165a4271c348d6636a30f2e1e79daac81"
+    },
+    "name": "codex/phase4-notification-work-state",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/codex/phase4-notification-work-state/protection"
+  },
+  {
+    "commit": {
+      "sha": "fe7dfc94cbcbb8fa4b84c3b78a2fec99a68e41f2",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/fe7dfc94cbcbb8fa4b84c3b78a2fec99a68e41f2"
+    },
+    "name": "dependabot/github_actions/actions/cache-6.1.0",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/github_actions/actions/cache-6.1.0/protection"
+  },
+  {
+    "commit": {
+      "sha": "a82866af429208b0639f22ba53024ab8e2dec61f",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/a82866af429208b0639f22ba53024ab8e2dec61f"
+    },
+    "name": "dependabot/github_actions/actions/checkout-7.0.1",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/github_actions/actions/checkout-7.0.1/protection"
+  },
+  {
+    "commit": {
+      "sha": "f57a60a188c140965dd3c9a9fcdbaa09a0820c4e",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/f57a60a188c140965dd3c9a9fcdbaa09a0820c4e"
+    },
+    "name": "dependabot/github_actions/actions/download-artifact-8.0.1",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/github_actions/actions/download-artifact-8.0.1/protection"
+  },
+  {
+    "commit": {
+      "sha": "45715f0dce758334af869c65bc4e59ebc1bc93c4",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/45715f0dce758334af869c65bc4e59ebc1bc93c4"
+    },
+    "name": "dependabot/github_actions/actions/setup-node-7.0.0",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/github_actions/actions/setup-node-7.0.0/protection"
+  },
+  {
+    "commit": {
+      "sha": "15845247087e824d12275436dba6ae7a720f7c1d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/15845247087e824d12275436dba6ae7a720f7c1d"
+    },
+    "name": "dependabot/github_actions/actions/upload-artifact-7.0.1",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/github_actions/actions/upload-artifact-7.0.1/protection"
+  },
+  {
+    "commit": {
+      "sha": "eb7f680ece5a382f23e917afe494b40e45edb429",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/eb7f680ece5a382f23e917afe494b40e45edb429"
+    },
+    "name": "dependabot/npm_and_yarn/frontend-security-and-tooling-37b18ec645",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/npm_and_yarn/frontend-security-and-tooling-37b18ec645/protection"
+  },
+  {
+    "commit": {
+      "sha": "e15cd890a0b7add957c22b88967aaca51cf0430b",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/e15cd890a0b7add957c22b88967aaca51cf0430b"
+    },
+    "name": "dependabot/npm_and_yarn/lucide-react-1.51.0",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/npm_and_yarn/lucide-react-1.51.0/protection"
+  },
+  {
+    "commit": {
+      "sha": "e7afbc2cabba594ca089b74a856f35c260f7c83b",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/e7afbc2cabba594ca089b74a856f35c260f7c83b"
+    },
+    "name": "dependabot/npm_and_yarn/motion-14.0.0",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/npm_and_yarn/motion-14.0.0/protection"
+  },
+  {
+    "commit": {
+      "sha": "ba7133001b941929c25b5413a89a1dfebbe6dd0d",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/ba7133001b941929c25b5413a89a1dfebbe6dd0d"
+    },
+    "name": "dependabot/npm_and_yarn/react-19.3.0",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/npm_and_yarn/react-19.3.0/protection"
+  },
+  {
+    "commit": {
+      "sha": "56f0d626e983b7f014020f620bc7346545035c97",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/56f0d626e983b7f014020f620bc7346545035c97"
+    },
+    "name": "dependabot/npm_and_yarn/react-dom-19.3.0",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/dependabot/npm_and_yarn/react-dom-19.3.0/protection"
+  },
+  {
+    "commit": {
+      "sha": "827fbe7391467dd13d6e411527416402a252993c",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/827fbe7391467dd13d6e411527416402a252993c"
+    },
+    "name": "main",
+    "protected": true,
+    "protection": {
+      "enabled": true,
+      "required_status_checks": {
+        "checks": [
+          {
+            "app_id": 15368,
+            "context": "build"
+          },
+          {
+            "app_id": 15368,
+            "context": "role-and-rls"
+          },
+          {
+            "app_id": 15368,
+            "context": "replay"
+          },
+          {
+            "app_id": 15368,
+            "context": "invited-account-flow"
+          }
+        ],
+        "contexts": [
+          "build",
+          "role-and-rls",
+          "replay",
+          "invited-account-flow"
+        ],
+        "enforcement_level": "everyone"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/main/protection"
+  },
+  {
+    "commit": {
+      "sha": "fdd159c7de36ce011fd1ca38ff4e0fe9bab1a9f8",
+      "url": "https://api.github.com/repos/thestandardinst-star/ceac-os/commits/fdd159c7de36ce011fd1ca38ff4e0fe9bab1a9f8"
+    },
+    "name": "release/ceac-os-r7-hardening-frozen-2026-09-23",
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "checks": [],
+        "contexts": [],
+        "enforcement_level": "off"
+      }
+    },
+    "protection_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/branches/release/ceac-os-r7-hardening-frozen-2026-09-23/protection"
+  }
+]

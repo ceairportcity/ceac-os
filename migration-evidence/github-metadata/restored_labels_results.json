@@ -1,0 +1,67 @@
+[
+  {
+    "name": "accessibility",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "bug",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "dependencies",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "documentation",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "duplicate",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "enhancement",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "github_actions",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "good first issue",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "help wanted",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "invalid",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "javascript",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "question",
+    "ok": true,
+    "error": null
+  },
+  {
+    "name": "wontfix",
+    "ok": true,
+    "error": null
+  }
+]
