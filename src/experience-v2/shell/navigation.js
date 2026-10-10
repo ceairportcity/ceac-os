@@ -65,7 +65,7 @@ const MOBILE_PRIMARY_KEYS = Object.freeze({
   staff: Object.freeze(["home", "work", "team", "me"]),
   manager: Object.freeze(["home", "work", "team", "projects"]),
   admin: Object.freeze(["home", "people", "attendance", "finance"]),
-  executive: Object.freeze(["home", "work", "strategy"]),
+  executive: Object.freeze(["home", "work", "strategy", "exec-calendar"]),
 });
 
 const ROLE_QUICK_ACTIONS = Object.freeze({
