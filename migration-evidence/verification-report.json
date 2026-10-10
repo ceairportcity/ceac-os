@@ -36,7 +36,10 @@
     "node22_vite_build": "pass",
     "node22_unit_tests": "20_pass_0_fail",
     "actions_artifacts_selected_zip_integrity": "15_pass_0_fail",
-    "destination_GitHub_CI_full_suite": "not_observed"
+    "destination_GitHub_CI_full_suite": "not_observed",
+    "playwright_design_static_checks": "6_pass_1_browser_unavailable",
+    "playwright_browser_install": "unsupported_pinned_playwright_1_55_chromium_headless_on_ubuntu_26_04",
+    "production_vercel_deployment": "ready_original_repo_SHA_827fbe7391467dd13d6e411527416402a252993c"
   },
   "latest_audit_update_utc": "2026-10-10T00:10:01.704804+00:00",
   "destination_original_source_PRs_recreated_as_draft": 22,
@@ -50,5 +53,16 @@
   "source_actions_artifacts_count": 11291,
   "recent_artifacts_inventoried": 100,
   "source_actions_artifacts_selected_and_validated": 15,
-  "check_node_22_version": "v22.23.3"
+  "check_node_22_version": "v22.23.3",
+  "final_status_updated_at_utc": "2026-10-10T00:13:52.909933+00:00",
+  "independent_destination_only_git_clone": "pass",
+  "original_git_bundle_sha256_remote_matches": "ba73659e680540f00546d12e109abd65c73940735b34ef25535b33c98fa14731",
+  "source_and_destination_environment_action_secret_and_variable_names": "none_reported",
+  "repo_labels": "13_match",
+  "environments": "Preview_and_Production_match",
+  "remaining_blockers": [
+    "GitHub private-repository protection/required checks unavailable on current GitHub plan",
+    "Database and browser end-to-end acceptance tests require isolated supported environments",
+    "Vercel production source switch not approved and intentionally not attempted"
+  ]
 }
