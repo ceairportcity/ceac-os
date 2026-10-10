@@ -71,10 +71,22 @@ test("Phase 6C invalid code does not close work and a valid code appears as corr
   expect(codeResult.error).toBeNull();
   expect(codeResult.data?.code).toHaveLength(6);
 
+  // Starting a real office session requires recent location evidence inside
+  // the organisation's configured geofence. Keep that security control active
+  // during the attendance-corroboration acceptance test.
+  const office = await admin.from("office_locations")
+    .select("lat,lng").eq("is_primary",true).limit(1).single();
+  expect(office.error).toBeNull();
+  const capturedAt = new Date().toISOString();
   const session = await staff.from("work_sessions").insert({
     org_id: "10000000-0000-4000-8000-000000000010",
     profile_id: "31000000-0000-4000-8000-000000000001",
     place: "office",
+    lat: Number(office.data.lat),
+    lng: Number(office.data.lng),
+    location_accuracy_m: 10,
+    location_captured_at: capturedAt,
+    device_time: capturedAt,
   }).select("id").single();
   expect(session.error).toBeNull();
 

@@ -27,7 +27,7 @@ async function openCalendar(browser, email, viewport) {
   await page.getByPlaceholder("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.locator(".staff-app")).toBeVisible({ timeout: 15000 });
-  await page.goto("/?tab=calendar");
+  await page.goto("/?tab=staff-calendar");
   await expect(page.locator(".phase6-calendar-page")).toBeVisible({ timeout: 15000 });
   return { context, page };
 }
