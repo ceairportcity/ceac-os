@@ -102,11 +102,11 @@ fresh_database() {
   local holding="$scratch/migrations"
   mkdir -p "$holding"
   mv supabase/migrations/*.sql "$holding/"
+  running_db=1
   if ! supabase start; then
     mv "$holding/"*.sql supabase/migrations/
     return 1
   fi
-  running_db=1
   mv "$holding/"*.sql supabase/migrations/
   psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 \
     -f supabase/replay/legacy-live-artifacts.sql
@@ -158,6 +158,7 @@ gate account_security account_flow || true
 browser_shard() {
   local shard="$1"
   fresh_database && seed_roles || return 1
+  rm -rf -- test-artifacts
   npm run dev -- --host 127.0.0.1 > "$evidence/vite_$shard.log" 2>&1 &
   vite_pid="$!"
   local ready=0
@@ -168,6 +169,10 @@ browser_shard() {
   [[ "$ready" == 1 ]] || return 1
   local rc=0
   npx playwright test "--shard=$shard/4" || rc="$?"
+  if [[ -d test-artifacts ]]; then
+    mkdir -p "$evidence/browser_artifacts_$shard"
+    cp -a test-artifacts/. "$evidence/browser_artifacts_$shard/"
+  fi
   kill "$vite_pid" >/dev/null 2>&1 || true
   wait "$vite_pid" >/dev/null 2>&1 || true
   vite_pid=""
@@ -178,7 +183,7 @@ for shard in 1 2 3 4; do
 done
 # Do not distribute private logs unless reviewed for sensitive values.
 printf 'ended_utc=%s\n' "$(date -u +%FT%TZ)" >> "$evidence/manifest.txt"
-(cd "$evidence" && sha256sum *.status *.log manifest.txt > SHA256SUMS.txt)
+(cd "$evidence" && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
 if grep -lE '^(FAIL|NOT_VERIFIED)$' "$evidence"/*.status >/dev/null; then
   echo 'RELEASE NOT VERIFIED: inspect private evidence and obtain separate visual/real-user review.' >&2
   exit 1
