@@ -2046,14 +2046,16 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await employmentDialog.getByLabel("Reason / context").fill("Acceptance employment history change");
   await employmentDialog.getByRole("button", { name: "Record employment change", exact: true }).click();
   await page.getByRole("tab", { name: "History", exact: true }).click();
+  // A recorded employment event may appear in both the current summary and the history timeline.
+  // Require the exact event to be visible, without a strict-mode duplicate-text error.
   await expect(page.getByText("Working pattern changed", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
+  await expect(page.getByText("Acceptance employment history change", { exact: true }).first()).toBeVisible();
 
   await page.getByRole("button", { name: "← All people", exact: true }).click();
   await page.getByLabel("Find a person").fill("Staff Fixture");
   await page.getByRole("button", { name: /Staff Fixture/ }).click();
   await page.getByRole("tab", { name: "History", exact: true }).click();
-  await expect(page.getByText("Acceptance employment history change", { exact: true })).toBeVisible();
+  await expect(page.getByText("Acceptance employment history change", { exact: true }).first()).toBeVisible();
 
   await go(page, "Employee lifecycle");
   await expect(page.getByRole("heading", { name: "Employee lifecycle", exact: true })).toBeVisible();
