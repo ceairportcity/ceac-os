@@ -4,7 +4,7 @@
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:4": {}
   },
-  "postCreateCommand": "bash .devcontainer/setup-ceac-test-tooling.sh && bash .devcontainer/launch-automatic-verification.sh",
+  "postCreateCommand": "bash .devcontainer/setup-ceac-test-tooling.sh",
   "remoteUser": "node",
   "forwardPorts": [
     5173
@@ -22,5 +22,7 @@
         "terminal.integrated.defaultProfile.linux": "bash"
       }
     }
-  }
+  },
+  "postStartCommand": "bash .devcontainer/launch-automatic-verification.sh",
+  "postAttachCommand": "bash .devcontainer/launch-automatic-verification.sh"
 }
