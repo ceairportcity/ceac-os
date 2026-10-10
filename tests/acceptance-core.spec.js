@@ -2183,14 +2183,16 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Office settings", exact: true }).click();
-  await expect(page.getByText("Leave policy configured", { exact: true })).toBeVisible();
-  // Salary and payroll approval structures are still owner-policy deferred.
+  // The owner-confirmed 24-day process summary is guidance, not proof that
+  // this synthetic organisation has completed a per-organisation policy record.
+  // A fresh organisation has no active policy: don't invent entitlement data.
+  await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
   await expect(page.getByText("Awaiting CEAC policy", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Review policy in Workforce", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Review policy in Workforce", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Configure policy in Workforce", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Configure policy in Workforce", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Workforce", exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Create policy revision", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Configure leave policy", exact: true })).toBeVisible();
 
   await go(page, "Settings");
   await page.getByRole("button", { name: "Office settings", exact: true }).click();
