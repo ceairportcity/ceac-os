@@ -93,7 +93,7 @@ input,textarea,select{font:inherit;color:inherit}
 .home-panel button:focus-visible,.home-session button:focus-visible{outline:3px solid rgba(62,97,118,.28);outline-offset:2px}
 @media (max-width:380px){
   .home-panel{padding:14px 12px}
-      }
+}
 @media (min-width:820px){
   .app{max-width:1200px !important;flex-direction:row !important;align-items:stretch !important}
   .side{display:block !important;width:236px;flex:none;border-right:1px solid var(--line);padding:26px 0;position:sticky;top:0;height:100vh;background:var(--card);overflow-y:auto}
@@ -103,7 +103,7 @@ input,textarea,select{font:inherit;color:inherit}
   .side nav button.on{color:var(--ink);font-weight:600;background:var(--paper)}
   .side nav button.on:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green)}
   .side .who{margin-top:22px;padding:14px 20px 0;font-size:12px;color:var(--ink-faint);border-top:1px solid var(--line-soft)}
-    .tabs{display:none !important}
+  .tabs{display:none !important}
   .body{padding:0 34px 60px;max-width:960px;flex:1}
   .h1{font-size:30px}
   .metric-grid{grid-template-columns:repeat(4,1fr)}
@@ -112,10 +112,10 @@ input,textarea,select{font:inherit;color:inherit}
   .split>.side-col{flex:1;min-width:0}
   .btn.wide-auto{width:auto;display:inline-block;padding:12px 22px}
   .sheet{border-radius:12px;max-width:460px;bottom:auto;top:8vh;left:50%;transform:translateX(-50%)}
-      .home-dashboard:not(.staff-home-dashboard)>.home-panel:first-child,
+  .home-dashboard:not(.staff-home-dashboard)>.home-panel:first-child,
   .home-dashboard:not(.staff-home-dashboard)>.home-panel:last-of-type{grid-column:1 / -1}
   .home-panel{padding:20px 22px}
-      }
+}
 
 
 /* Staff + Unit Manager visual system pass — scoped away from Admin/Executive. */
@@ -581,13 +581,13 @@ textarea{width:100%}
 
 @media (max-width:430px){
   .body{padding-left:14px;padding-right:14px}
-        .work-actions{align-items:stretch}
+  .work-actions{align-items:stretch}
   .work-actions .btn{max-width:100%}
 }
 
 @media (max-width:350px){
   .body{padding-left:12px;padding-right:12px}
-      .record-summary-grid{grid-template-columns:1fr}
+  .record-summary-grid{grid-template-columns:1fr}
   .leave-summary{grid-template-columns:1fr}
   .staff-segment{grid-auto-flow:row;grid-auto-columns:auto}
   .compact-context-row,.info-row,.session-row{align-items:flex-start;flex-direction:column}
@@ -1175,7 +1175,7 @@ textarea{width:100%}
     min-height:70px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
     color:#F7FAFB;background:var(--staff-shell)
   }
-            }
+}
 
 /* Staff Home — command surface */
 .staff-home .staff-command-surface{
@@ -2900,11 +2900,11 @@ button.office-config-card:active{background:#EEF5F4}
 @media (max-width:819px){
   .app,.app-workspace,.app-content{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
   .app-content>.body{width:100%;max-width:100%;min-width:0}
-  }
+}
 
 @media (min-width:820px){
   .app-workspace{background:var(--paper)}
-                        .app-content{min-height:calc(100dvh - 66px)}
+  .app-content{min-height:calc(100dvh - 66px)}
   .side nav{display:grid!important;gap:0!important}
   .side-nav-label{padding-left:12px;padding-right:12px;color:#748690}
   .office-app .side .brand,.executive-app .side .brand{padding:0 12px 20px}
@@ -3027,7 +3027,7 @@ button.office-config-card:active{background:#EEF5F4}
 .reporting-page-intro{padding-top:26px}
 .report-outstanding-row span:not(.pill){display:block;margin-top:2px;font-size:10.5px;color:var(--ink-faint)}
 @media(max-width:700px){
-    }
+}
 
 
 /* Finance decision workspace */
