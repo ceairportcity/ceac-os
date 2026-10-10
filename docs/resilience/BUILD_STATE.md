@@ -1,8 +1,8 @@
 # CEAC resilience programme build state
 
-Date: 7 October 2026  
-Branch: `chatgpt/ceac-resilience-pwa-dr-2026-10-07`  
-Base: Executive redesign `6ea900c3c869dbddbd30e824b8286fce75eb53f8`  
+Date: 7 October 2026
+Branch: `chatgpt/ceac-resilience-pwa-dr-2026-10-07`
+Base: Executive redesign `6ea900c3c869dbddbd30e824b8286fce75eb53f8`
 Status: IMPLEMENTED AND SOURCE-VERIFIED / NOT PROTECTED-MAIN ACCEPTED / NOT LIVE-VERIFIED
 
 ## Scope
