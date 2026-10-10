@@ -628,7 +628,7 @@
   background: #fff;
   box-shadow: 0 3px 12px rgba(26,36,57,.045);
 }
-.executive-app .inbox-page .ev2c-data-panel { margin-top: 12px; }
+.executive-app .inbox-page .ev2c-data-panel { margin-top: 12px; box-shadow: none; }
 .executive-app .inbox-page .ev2c-row-icon {
   border-radius: 8px;
   background: var(--exec-purple-soft);
