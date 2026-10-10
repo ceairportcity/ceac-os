@@ -605,6 +605,9 @@ test("OCR6C Unit Rooms carry attributable communication and private media betwee
     await page.getByPlaceholder("Message your unit").fill(message);
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(page.getByText(message, { exact: true })).toBeVisible();
+    // Distinguish an upload or registration failure from a private signed-URL/render failure.
+    // Both conditions are mandatory; never treat message delivery alone as media success.
+    await expect(page.locator(".room-error")).toHaveCount(0);
     await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
   }
