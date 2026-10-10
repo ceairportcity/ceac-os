@@ -104,6 +104,8 @@ $staff_boundary$;
 
 reset role;
 set local role service_role;
+-- Simulate the signed PostgREST role claim even within a SECURITY DEFINER call.
+select set_config('request.jwt.claim.role','authenticated',true);
 
 insert into public.attendance_network_sources(
   org_id,label,source_key,active
@@ -114,6 +116,24 @@ insert into public.attendance_network_sources(
   true
 );
 
+-- The SQL service role alone does not satisfy the required trusted JWT claim.
+do $reject_untrusted_claim$
+begin
+  begin
+    perform public.attendance_record_network_corroboration(
+      'phase6-integrity-source',
+      '31000000-0000-4000-8000-000000000001',
+      (select value::uuid from phase6_integrity_fixture where name='session'),
+      true,'unauthorised-claim-probe'
+    );
+    raise exception 'Phase 6C gate failure: missing service JWT role unexpectedly accepted.';
+  exception when insufficient_privilege then null;
+  end;
+end
+$reject_untrusted_claim$;
+
+select set_config('request.jwt.claim.role','service_role',true);
+
 select public.attendance_record_network_corroboration(
   'phase6-integrity-source',
   '31000000-0000-4000-8000-000000000001',
@@ -123,6 +143,7 @@ select public.attendance_record_network_corroboration(
 );
 
 set local role authenticated;
+select set_config('request.jwt.claim.role','authenticated',true);
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 
 do $network_self_read$
