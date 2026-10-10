@@ -10,7 +10,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund && echo 'dependencies PASS' >> /gate/verified.txt
 COPY . .
 RUN node scripts/ci/check-github-actions-pinning.mjs && echo 'supply_chain PASS' >> /gate/verified.txt
-RUN bash -n .devcontainer/setup-ceac-test-tooling.sh .devcontainer/launch-automatic-verification.sh scripts/ci/run-independent-release-gate.sh && echo 'codespaces_harness_syntax PASS' >> /gate/verified.txt
+RUN bash -n .devcontainer/setup-ceac-test-tooling.sh .devcontainer/launch-automatic-verification.sh .devcontainer/ceac-private-runner.sh scripts/ci/run-independent-release-gate.sh && echo 'codespaces_harness_syntax PASS' >> /gate/verified.txt
 RUN node scripts/ci/check-visual-fidelity-contract.mjs && echo 'visual_source PASS' >> /gate/verified.txt
 RUN node scripts/ci/check-production-migration-ledger.mjs && echo 'migration_ledger PASS' >> /gate/verified.txt
 RUN node --test tests/integration-runtime.test.mjs tests/onboarding-foundation.test.mjs tests/attendance.test.mjs tests/mfa-foundation.test.mjs && echo 'unit_tests PASS' >> /gate/verified.txt
