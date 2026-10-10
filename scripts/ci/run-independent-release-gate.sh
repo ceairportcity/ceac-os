@@ -45,6 +45,10 @@ evidence="$(mktemp -d /tmp/ceac-gate-evidence.XXXXXXXX)"
 work="$scratch/work"
 running_db=0; vite_pid=""
 cleanup() {
+  if [[ -d "$evidence" ]]; then
+    printf 'ended_utc=%s\n' "$(date -u +%FT%TZ)" >> "$evidence/manifest.txt"
+    (cd "$evidence" && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt) || true
+  fi
   if [[ -n "$vite_pid" ]]; then kill "$vite_pid" >/dev/null 2>&1 || true; fi
   if [[ "$running_db" == 1 ]]; then (cd "$work" && supabase stop --no-backup >/dev/null 2>&1) || true; fi
   git -C "$repo" worktree remove --force "$work" >/dev/null 2>&1 || true
@@ -172,7 +176,12 @@ browser_shard() {
     if curl -fsS http://127.0.0.1:5173/ >/dev/null 2>&1; then ready=1; break; fi
     sleep 1
   done
-  [[ "$ready" == 1 ]] || return 1
+  if [[ "$ready" != 1 ]]; then
+    kill "$vite_pid" >/dev/null 2>&1 || true
+    wait "$vite_pid" >/dev/null 2>&1 || true
+    vite_pid=""
+    return 1
+  fi
   local rc=0
   npx playwright test "--shard=$shard/4" || rc="$?"
   if [[ -d test-artifacts ]]; then
@@ -188,8 +197,6 @@ for shard in 1 2 3 4; do
   gate "browser_$shard" browser_shard "$shard" || true
 done
 # Do not distribute private logs unless reviewed for sensitive values.
-printf 'ended_utc=%s\n' "$(date -u +%FT%TZ)" >> "$evidence/manifest.txt"
-(cd "$evidence" && find . -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
 if grep -lE '^(FAIL|NOT_VERIFIED)$' "$evidence"/*.status >/dev/null; then
   echo 'RELEASE NOT VERIFIED: inspect private evidence and obtain separate visual/real-user review.' >&2
   exit 1
