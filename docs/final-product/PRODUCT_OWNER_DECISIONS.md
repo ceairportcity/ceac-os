@@ -39,3 +39,12 @@ Canonical cross-session detail:
 - New announcement authority: compact narrow composer with Title → audience pills → Message → Attachments → availability/advanced options → one full-width primary action.
 - Existing RLS, capability authority, draft/publish workflow, strategy parent requirement, audit history, truthful data, Work Engine semantics and all protected security/domain rules remain binding. Visual conformity may not fabricate values or weaken workflow truth.
 - Mockup-only sample values, rich-text controls or actions that do not exist in CEAC OS must not be faked merely for visual similarity.
+
+## Binding 10 October 2026 release and Technical Support ownership decision
+
+- **Absolute handover requirement:** the canonical `ceairportcity/ceac-os` GitHub repository **must be PRIVATE before CEAC Technical Support receives handover**; verify visibility, collaborator permissions, handover records and MFA at the final checkpoint.
+- **No GitHub Pro/paid account upgrade** is approved for the branch-protection workaround. The owner considered public-then-private only as an option; this must not be executed without explicit risk-reviewed authorization. Never assume GitHub public protection survives conversion back to private.
+- The accepted release is an evidence-based, security-first, lightweight app rather than a broad untested promise. Monday **12 October 2026** is a target, not a substitute for GO / LIMITED PILOT / NO-GO evaluation.
+- Keep the original Vercel production project and CEAC Supabase safe and unchanged until exact-commit checks, authority/privacy, real-role smoke, product visual acceptance, tested rollback and authorized cutover. No new production project, no hidden data migration, and no fake completion claims.
+- Handover must include technical ownership, narrow Technical Support permissions, private repo, backup/restore and incident runbook, known issues, staff activation and a usable in-app Guide. Support may not self-approve payroll or gain unrestricted protected HR authority.
+- Canonical detail and next-session instructions: `docs/continuity/CEAC_GO_LIVE_PRIVATE_HANDOVER_LOCK_2026-10-10.md`.

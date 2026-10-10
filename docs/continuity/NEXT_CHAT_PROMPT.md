@@ -1,5 +1,9 @@
 # Active programme — CEAC Operational Refinement, Post-Onboarding
 
+## IMPORTANT: CEAC 12 October 2026 release and private handover lock
+
+Before following older phases or prompts in this file, read `docs/continuity/CEAC_GO_LIVE_PRIVATE_HANDOVER_LOCK_2026-10-10.md` and `AGENTS.md`. This October 10 owner decision has precedence for current migration/release/handover logistics. Target Monday 12 October; no assumption that the build is accepted. The owner refuses GitHub Pro. The destination must be PRIVATE before handing over to CEAC Technical Support; a temporary public workaround is not approved without full-history sensitivity review and explicit informed authorization. Old original-account PRs are not accepted destination PRs. Fetch live heads and checks and never merge or deploy an unverified build. Handover/cutover are still separate steps.
+
 Continue CEAC OS from the live canonical repository state. GitHub is canonical; use one writer, fetch protected `main` before any write, reconcile forward, and never reset, force-push, revert or overwrite newer work.
 
 Read first:
