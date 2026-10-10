@@ -3,7 +3,7 @@ import { supabase, loadMe } from "./lib/supabase";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
 import SignIn from "./screens/SignIn";
-import AccountPassword from "./screens/AccountPassword";
+const AccountPassword = lazy(() => import("./screens/AccountPassword"));
 import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
 import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
@@ -271,13 +271,13 @@ export default function App() {
 
   const authPath = window.location.pathname;
   if (authPath === "/activate" || authPath === "/reset-password") {
-    return <AccountPassword
+    return <Suspense fallback={<div className="auth-boot">Opening secure account setup…</div>}><AccountPassword
       mode={authPath === "/activate" ? "activate" : "recover"}
       onDone={() => {
         window.history.replaceState({}, "", "/");
         boot();
       }}
-    />;
+    /></Suspense>;
   }
 
   if (!ready) return <div className="auth-boot"><span className="auth-boot-mark">CEAC</span><span>Opening your workspace…</span></div>;
