@@ -31,6 +31,12 @@ case "$origin" in
   *) echo "NOT VERIFIED: unexpected private-repository origin" >&2; exit 2 ;;
 esac
 export GIT_TERMINAL_PROMPT=0
+# Codespaces and GitHub integrations may provision a shallow checkout.
+# Exact-head compare needs ancestry for git diff base...head.
+if [[ "$(git -C "$repo" rev-parse --is-shallow-repository)" == true ]]; then
+  git -C "$repo" fetch --no-tags --unshallow origin >/dev/null ||
+    { echo "NOT VERIFIED: cannot fetch full GitHub source ancestry" >&2; exit 2; }
+fi
 git -C "$repo" fetch --no-tags origin "refs/pull/$pr/head" refs/heads/main >/dev/null
 actual="$(git -C "$repo" rev-parse FETCH_HEAD)"
 # FETCH_HEAD can refer to main when fetching multiple refs: compare named fetch ref instead.
