@@ -2170,19 +2170,25 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByRole("heading", { name: "System events", exact: true })).toBeVisible();
 
   await go(page, "Workforce");
-  await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
+  // The approved Stage 9 policy is active after the full 129-migration replay:
+  // 24 days/year, 6 days per completed quarter, Manager then Administration.
+  // Do not assert the old unconfigured prototype state or weaken any safeguards.
+  await expect(page.getByText("Confirmed leave process", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Annual leave is 24 working days per leave year/i)).toBeVisible();
+  await expect(page.getByText(/Manager approval.*Administration final approval/i)).toBeVisible();
   await expect(page.getByText(/never an automatic absence finding/i)).toBeVisible();
 
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Office settings", exact: true }).click();
-  await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
+  await expect(page.getByText("Leave policy configured", { exact: true })).toBeVisible();
+  // Salary and payroll approval structures are still owner-policy deferred.
   await expect(page.getByText("Awaiting CEAC policy", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Configure policy in Workforce", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Configure policy in Workforce", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Review policy in Workforce", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Review policy in Workforce", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Workforce", exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Configure leave policy", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create policy revision", exact: true })).toBeVisible();
 
   await go(page, "Settings");
   await page.getByRole("button", { name: "Office settings", exact: true }).click();
