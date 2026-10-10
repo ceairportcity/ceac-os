@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import AccountMfaSetup from "../components/AccountMfaSetup";
 import {
   PersonalBoundary,
   PersonalEmpty,
@@ -94,6 +95,14 @@ export default function AccountActivity({ me }) {
       />
 
       {actionError && <div className="flag flag-brick ev2pf-partial-error"><h4>Account action was not completed</h4>{actionError}</div>}
+
+      <PersonalSection
+        eyebrow="Account protection"
+        title="Authenticator app"
+        description="Manage your own two-step sign-in. Privileged CEAC access must be verified before MFA enforcement is enabled."
+      >
+        <AccountMfaSetup />
+      </PersonalSection>
 
       <PersonalSection
         eyebrow="Sessions"
