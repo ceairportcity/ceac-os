@@ -1,0 +1,128 @@
+{
+  "captured_at_utc": "2026-10-10T00:09:25.607999+00:00",
+  "source_total_artifacts": 11291,
+  "listed_recent_artifacts": 100,
+  "selected_important_artifacts": [
+    {
+      "name": "stage8-product-inspection",
+      "source_artifact_id": 11469635134,
+      "source_created_at": "2026-10-07T08:18:45Z",
+      "downloaded_zip": "stage8-product-inspection-11469635134.zip",
+      "bytes": 163958,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469635134/zip"
+    },
+    {
+      "name": "experience-v2-foundation",
+      "source_artifact_id": 11469611585,
+      "source_created_at": "2026-10-07T08:18:58Z",
+      "downloaded_zip": "experience-v2-foundation-11469611585.zip",
+      "bytes": 2537350,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469611585/zip"
+    },
+    {
+      "name": "laptop-density-inspection",
+      "source_artifact_id": 11469556778,
+      "source_created_at": "2026-10-07T08:18:54Z",
+      "downloaded_zip": "laptop-density-inspection-11469556778.zip",
+      "bytes": 762048,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469556778/zip"
+    },
+    {
+      "name": "phase2-attendance-inspection",
+      "source_artifact_id": 11469541891,
+      "source_created_at": "2026-10-07T08:18:48Z",
+      "downloaded_zip": "phase2-attendance-inspection-11469541891.zip",
+      "bytes": 500784,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469541891/zip"
+    },
+    {
+      "name": "stage6-product-inspection",
+      "source_artifact_id": 11469532005,
+      "source_created_at": "2026-10-07T08:18:42Z",
+      "downloaded_zip": "stage6-product-inspection-11469532005.zip",
+      "bytes": 438956,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469532005/zip"
+    },
+    {
+      "name": "stage7-product-inspection",
+      "source_artifact_id": 11469402374,
+      "source_created_at": "2026-10-07T08:18:43Z",
+      "downloaded_zip": "stage7-product-inspection-11469402374.zip",
+      "bytes": 415934,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469402374/zip"
+    },
+    {
+      "name": "stage12-connected-apps-inspection",
+      "source_artifact_id": 11469397295,
+      "source_created_at": "2026-10-07T08:18:52Z",
+      "downloaded_zip": "stage12-connected-apps-inspection-11469397295.zip",
+      "bytes": 263667,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469397295/zip"
+    },
+    {
+      "name": "stage9-product-inspection",
+      "source_artifact_id": 11469355473,
+      "source_created_at": "2026-10-07T08:06:36Z",
+      "downloaded_zip": "stage9-product-inspection-11469355473.zip",
+      "bytes": 390765,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469355473/zip"
+    },
+    {
+      "name": "redesign-r5-product-inspection",
+      "source_artifact_id": 11469221119,
+      "source_created_at": "2026-10-07T08:06:56Z",
+      "downloaded_zip": "redesign-r5-product-inspection-11469221119.zip",
+      "bytes": 461167,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469221119/zip"
+    },
+    {
+      "name": "redesign-r0-product-inspection",
+      "source_artifact_id": 11469106260,
+      "source_created_at": "2026-10-07T08:06:48Z",
+      "downloaded_zip": "redesign-r0-product-inspection-11469106260.zip",
+      "bytes": 1138980,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469106260/zip"
+    },
+    {
+      "name": "redesign-r1-product-inspection",
+      "source_artifact_id": 11469036532,
+      "source_created_at": "2026-10-07T08:06:50Z",
+      "downloaded_zip": "redesign-r1-product-inspection-11469036532.zip",
+      "bytes": 1010835,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11469036532/zip"
+    },
+    {
+      "name": "redesign-r3-product-inspection",
+      "source_artifact_id": 11468991708,
+      "source_created_at": "2026-10-07T08:06:53Z",
+      "downloaded_zip": "redesign-r3-product-inspection-11468991708.zip",
+      "bytes": 1225548,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11468991708/zip"
+    },
+    {
+      "name": "redesign-r6-product-inspection",
+      "source_artifact_id": 11468976883,
+      "source_created_at": "2026-10-07T08:06:58Z",
+      "downloaded_zip": "redesign-r6-product-inspection-11468976883.zip",
+      "bytes": 454756,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11468976883/zip"
+    },
+    {
+      "name": "stage10-product-inspection",
+      "source_artifact_id": 11468954135,
+      "source_created_at": "2026-10-07T08:18:49Z",
+      "downloaded_zip": "stage10-product-inspection-11468954135.zip",
+      "bytes": 150577,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11468954135/zip"
+    },
+    {
+      "name": "stage11-product-inspection",
+      "source_artifact_id": 11468834671,
+      "source_created_at": "2026-10-07T08:18:51Z",
+      "downloaded_zip": "stage11-product-inspection-11468834671.zip",
+      "bytes": 130014,
+      "source_url": "https://api.github.com/repos/thestandardinst-star/ceac-os/actions/artifacts/11468834671/zip"
+    }
+  ],
+  "archive_selection": "Latest nonexpired occurrence within first 100 artifacts for each named product/visual-inspection asset. Other artifacts intentionally not copied."
+}

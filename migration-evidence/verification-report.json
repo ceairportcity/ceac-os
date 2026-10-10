@@ -32,6 +32,23 @@
     "documentation_integrity": "pass",
     "supabase_connected_integration": "not_run_missing_local_test_credentials",
     "sql_security_database_gates": "not_run_no_isolated_database",
-    "playwright_browser": "not_run"
-  }
+    "playwright_browser": "not_run",
+    "node22_vite_build": "pass",
+    "node22_unit_tests": "20_pass_0_fail",
+    "actions_artifacts_selected_zip_integrity": "15_pass_0_fail",
+    "destination_GitHub_CI_full_suite": "not_observed"
+  },
+  "latest_audit_update_utc": "2026-10-10T00:10:01.704804+00:00",
+  "destination_original_source_PRs_recreated_as_draft": 22,
+  "destination_source_PR_head_base_title_SHA_checks": "22_out_of_22_match",
+  "destination_extra_dependabot_PRs": 3,
+  "destination_branch_count_including_archival_and_new_dependabot_branches": 151,
+  "destination_protection": "not_available_on_current_private_repository_plan_HTTP_403",
+  "destination_github_actions_enabled_at_check": true,
+  "wiki_source_config_enabled_but_source_wiki_clone_returns_404": true,
+  "destination_wiki_disabled_on_private_repo": true,
+  "source_actions_artifacts_count": 11291,
+  "recent_artifacts_inventoried": 100,
+  "source_actions_artifacts_selected_and_validated": 15,
+  "check_node_22_version": "v22.23.3"
 }

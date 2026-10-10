@@ -18,3 +18,15 @@ This archival branch is **not** the application development branch. Its single n
 - SQL security integration tests requiring a local Supabase/PostgreSQL service are not evidence of a successful database test unless actually executed.
 - Local source filesystem cloned from the destination built successfully and passed 20 Node unit tests; see verification report.
 - This branch is for audit and recovery only. **Do not merge into main.**
+
+## Selected GitHub Actions artifacts
+
+github-actions-artifacts/ contains 15 verified downloadable product-inspection and approved-design audit artifacts plus a recent artifact inventory and manifest. The original source advertised 11,291 Actions artifacts; copying every temporary test-output artifact was neither necessary nor feasible, and those not selected are **not** transferred. The manifest records exact source artifact IDs, creation timestamps and links. The selected ZIPs were validated as readable. Inspect them only in a trusted local environment; artifacts can contain screenshots or trace content.
+
+## Current destination account/plan limitation
+
+The private ceairportcity repository's current plan does not support GitHub branch-protection endpoints. GitHub explicitly responds: "Upgrade to GitHub Pro or make this repository public to enable this feature." Therefore enforcement of required checks and prevention of force pushes are **not** verified on the destination, even though the source had them. Do not treat destination main as fully protected or approve unverified merges. Do not change visibility or pay for an upgrade without owner authorization. Re-enable native protection if account entitlements allow it.
+
+The destination had all 22 original outstanding PR heads recreated as draft PRs, preserving base and head names, title and head SHA. Original review comments and PR IDs are preserved in the historical metadata archive, not transferred verbatim to the new live PR IDs. Three extra Dependabot proposals belong to the new destination and are not source-history omissions.
+
+Validation was also repeated on Node.js v22.23.3, satisfying the source's Node engine range; the build and all 20 runnable Node tests passed. Database-dependent and browser acceptance tests were not successfully executed in this isolated archive workflow. GitHub Actions workflow files were copied but a complete destination CI run was not independently observed here.
