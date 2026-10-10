@@ -10,26 +10,46 @@ export function verifiedMfaFactors(data = {}) {
 export function decideMfaAccess({
   currentLevel,
   nextLevel,
+  currentAuthenticationMethods = [],
   factors,
   privileged = false,
   enforcementEnabled = false,
 } = {}) {
+  const verified = verifiedMfaFactors(factors);
+  const totp = verified.find((factor) => factor.factor_type === "totp");
+  const sessionUsedTotp = (Array.isArray(currentAuthenticationMethods) ? currentAuthenticationMethods : [])
+    .some((entry) => entry === "totp" || entry?.method === "totp");
+
+  if (privileged && enforcementEnabled) {
+    if (!totp) {
+      if (verified.length > 0) {
+        return { state: "unsupported-factor", reason: "privileged_totp_required", factor: verified[0] || null };
+      }
+      return { state: "enroll", reason: "privileged_mfa_required", factor: null };
+    }
+
+    if (currentLevel === "aal2" && sessionUsedTotp) {
+      return { state: "allow", reason: "session_totp_aal2", factor: totp };
+    }
+
+    return {
+      state: "challenge",
+      reason: currentLevel === "aal2"
+        ? "privileged_totp_session_required"
+        : "privileged_factor_requires_step_up",
+      factor: totp,
+    };
+  }
+
   if (currentLevel === "aal2") {
     return { state: "allow", reason: "session_already_aal2", factor: null };
   }
-
-  const verified = verifiedMfaFactors(factors);
-  const totp = verified.find((factor) => factor.factor_type === "totp");
 
   if (nextLevel === "aal2" || verified.length > 0) {
     if (totp) {
       return { state: "challenge", reason: "verified_factor_requires_step_up", factor: totp };
     }
     return { state: "unsupported-factor", reason: "verified_factor_requires_step_up", factor: verified[0] || null };
-  }
-
-  if (privileged && enforcementEnabled) {
-    return { state: "enroll", reason: "privileged_mfa_required", factor: null };
   }
 
   return { state: "allow", reason: "mfa_not_required", factor: null };
