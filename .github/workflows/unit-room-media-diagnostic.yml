@@ -1,0 +1,50 @@
+name: Diagnose CEAC Unit Room Private Media
+
+on:
+  push:
+    branches: [chatgpt/diagnose-unit-room-private-media-2026-10-10]
+
+permissions:
+  contents: read
+
+jobs:
+  unit-room-media:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      ROLE_FIXTURE_PASSWORD: Local-role-fixture-2026!
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: ./.github/actions/setup-ceac-test-environment
+      - run: |
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start isolated local app
+        shell: bash
+        run: |
+          npm run dev -- --host 127.0.0.1 > /tmp/ceac-vite-diagnostic.log 2>&1 &
+          for i in {1..45}; do
+            if curl -fsS http://127.0.0.1:5173 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/ceac-vite-diagnostic.log
+          exit 1
+      - name: Reproduce single Unit Room private-media acceptance test, capturing trace
+        run: npx playwright test tests/acceptance-core.spec.js --grep "OCR6C Unit Rooms carry attributable communication and private media" --workers=1 --retries=1 --trace=on --reporter=line
+      - name: Preserve diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ceac-unit-room-media-diagnostic
+          path: |
+            test-results/
+            /tmp/ceac-vite-diagnostic.log
+          if-no-files-found: ignore
+          retention-days: 7
