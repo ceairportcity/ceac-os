@@ -487,7 +487,7 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
 
     await go(page, "Team");
     await expect(page.locator(".ev2-people-page.ev2-people-manager")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Your team", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "People & volunteers", exact: true })).toBeVisible();
     const peopleSection = page.locator(".ev2p-section").filter({ hasText: /^People/ }).first();
     const setupHeading = page.getByRole("heading", { name: "Team setup", exact: true });
     await expect(peopleSection).toBeVisible();
