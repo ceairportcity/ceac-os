@@ -126,7 +126,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path=public
-as $
+as $$
 declare
   v_pattern jsonb;
 begin
@@ -155,7 +155,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 revoke all on function public.phase6_sync_volunteer_working_pattern()
   from public,anon,authenticated;
