@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -90,6 +90,9 @@ export default function Performance({ me }) {
   const [feedbackResponses, setFeedbackResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [caseLoading, setCaseLoading] = useState(false);
+  // Selected-review queries can overlap when a person changes before an earlier fetch finishes.
+  // Only the newest request may update this review or its loading/error state.
+  const caseRequestSerial = useRef(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -130,6 +133,8 @@ export default function Performance({ me }) {
   useEffect(() => {
     if (selectedCaseId) loadCase(selectedCaseId);
     else {
+      caseRequestSerial.current += 1;
+      setCaseLoading(false);
       setEvidence([]); setEntries([]); setPlans([]); setFeedback([]); setFeedbackResponses([]);
     }
   }, [selectedCaseId]);
@@ -173,9 +178,13 @@ export default function Performance({ me }) {
   }
 
   async function loadCase(caseId) {
+    const requestSerial = ++caseRequestSerial.current;
     setCaseLoading(true); setError(null);
     const selected = cases.find((row) => row.id === caseId);
-    if (!selected) { setCaseLoading(false); return; }
+    if (!selected) {
+      if (requestSerial === caseRequestSerial.current) setCaseLoading(false);
+      return;
+    }
     try {
       const [e, en, p, f, fr] = await Promise.all([
         supabase.from("appraisal_evidence_items").select("*").eq("appraisal_id", caseId).order("occurred_on", { ascending:false, nullsFirst:false }),
@@ -184,6 +193,8 @@ export default function Performance({ me }) {
         supabase.from("feedback_notes").select("id,profile_id,author_id,note,kind,occurred_on,created_at,author:profiles!feedback_notes_author_id_fkey(full_name)").eq("profile_id", selected.profile_id).order("created_at", { ascending:false }),
         supabase.from("feedback_responses").select("*").eq("profile_id", selected.profile_id).order("created_at", { ascending:true }),
       ]);
+      // A previous employee/cycle may finish after this request. Ignore its stale results.
+      if (requestSerial !== caseRequestSerial.current) return;
       const failed = [e,en,p,f,fr].find((row) => row.error);
       if (failed) throw failed.error;
       setEvidence(e.data || []);
@@ -206,8 +217,11 @@ export default function Performance({ me }) {
       setPlanState(plan?.state || "active");
       setReviewerId(selected.manager_id || "");
     } catch (err) {
-      setError(humanError(err, "This review could not finish loading."));
-    } finally { setCaseLoading(false); }
+      if (requestSerial === caseRequestSerial.current)
+        setError(humanError(err, "This review could not finish loading."));
+    } finally {
+      if (requestSerial === caseRequestSerial.current) setCaseLoading(false);
+    }
   }
 
   const selectedCycle = cycles.find((row) => row.id === selectedCycleId) || null;

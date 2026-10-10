@@ -1315,6 +1315,36 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     await expect(page.locator(".performance-narrative p").filter({ hasText: assessmentText }).first()).toBeVisible();
     await expect(page.getByText(planFocus, { exact: true })).toBeVisible();
     await expect(page.getByText(feedbackText, { exact: true })).toBeVisible();
+
+    // Regression: an earlier employee's empty feedback response must not replace
+    // the current employee's recorded feedback when network responses overlap.
+    // Delay only a genuine local fixture read; never stub a permission/data result.
+    let markOlderStarted;
+    const olderStarted = new Promise((resolve) => { markOlderStarted = resolve; });
+    let delayedOlder = false;
+    const olderResponse = page.waitForResponse((response) =>
+      response.url().includes("/rest/v1/feedback_notes")
+      && decodeURIComponent(response.url()).includes("31000000-0000-4000-8000-000000000006")
+      && response.status() === 200,
+    { timeout: 15000 });
+    await page.route("**/rest/v1/feedback_notes?*", async (route) => {
+      const isOlderPerson = decodeURIComponent(route.request().url()).includes("31000000-0000-4000-8000-000000000006");
+      if (isOlderPerson && !delayedOlder) {
+        delayedOlder = true;
+        markOlderStarted();
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+      }
+      await route.continue();
+    });
+    await page.locator(".performance-case-row").filter({ hasText: "Same Unit Fixture" }).click();
+    await olderStarted;
+    await reloadedCase.click();
+    await expect(page.getByText(feedbackText, { exact: true })).toBeVisible();
+    await olderResponse;
+    await expect(page.getByText(feedbackText, { exact: true })).toBeVisible();
+    await expect(page.getByText("No continuous feedback has been recorded.", { exact: true })).toHaveCount(0);
+    await page.unroute("**/rest/v1/feedback_notes?*");
+
     await page.screenshot({ path: "test-artifacts/stage7-performance-manager.png", fullPage: true });
     await context.close();
   }
