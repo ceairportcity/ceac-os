@@ -58,7 +58,8 @@ test("Payroll readiness exposes completeness without exposing protected values",
   expect(readinessMigration).toContain("'payment_missing_count'");
   expect(readinessMigration).toContain("'identity_review_count'");
   expect(payroll).toContain('supabase.rpc("payroll_readiness_summary")');
-  expect(payroll).toContain("Every active employee is represented");
+  expect(payroll).toContain("Every salary-eligible employee is represented");
+  expect(payroll).toContain("Active volunteers are excluded from ordinary salary payroll");
 });
 
 

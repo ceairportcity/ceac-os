@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { LoadingState, ProductNotice } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button, StatePanel } from "../experience-v2/components";
+import StaffCalendar from "./StaffCalendar";
 import {
   CalendarPageHeader,
   CalendarTimeline,
@@ -22,7 +23,8 @@ const RANGE_ITEMS = [
   { value:"90", label:"Next 90 days", icon:"calendar" },
 ];
 
-export default function AdminCalendar({ me, openMeeting, scheduleMeeting }) {
+export default function AdminCalendar({ me, openItem, openMeeting, scheduleMeeting, roleMode="admin" }) {
+  const [calendarScope,setCalendarScope]=useState("organisation");
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
@@ -79,15 +81,32 @@ export default function AdminCalendar({ me, openMeeting, scheduleMeeting }) {
     }));
   },[visible,openMeeting]);
 
+  const personalLabel=roleMode==="executive"?"Group Pastor · My calendar":"Administration · My calendar";
+  const sharedLabel=roleMode==="executive"?"Church calendar":"Organisation calendar";
+  const scopeControl=<div className="phase6-calendar-scope" role="tablist" aria-label={roleMode==="executive"?"Executive calendar scope":"Administration calendar scope"}>
+    <button type="button" role="tab" aria-selected={calendarScope==="my"} className={calendarScope==="my"?"is-selected":""} onClick={()=>setCalendarScope("my")}>My calendar</button>
+    <button type="button" role="tab" aria-selected={calendarScope==="organisation"} className={calendarScope==="organisation"?"is-selected":""} onClick={()=>setCalendarScope("organisation")}>{sharedLabel}</button>
+  </div>;
+
+  if(calendarScope==="my") return <StaffCalendar
+    me={me}
+    openItem={openItem}
+    openMeeting={openMeeting}
+    statusLabel={personalLabel}
+    scopeControl={scopeControl}
+  />;
+
   return <div className="body ev2cal-role-page ev2cal-admin-page">
     <CalendarPageHeader
-      eyebrow="Organisation schedule"
+      eyebrow={roleMode==="executive"?"Church schedule":"Organisation schedule"}
       title="Calendar"
       description="Upcoming meetings, ministry activities, project dates and approved leave in one chronological operating view."
-      status="Organisation timeline"
+      status={roleMode==="executive"?"Church timeline":"Organisation timeline"}
       statusTone="action"
       action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({scope:"organisation",organisation:true})}>Schedule meeting</Button>}
     />
+
+    {scopeControl}
 
     {error&&<ProductNotice
       tone="error"

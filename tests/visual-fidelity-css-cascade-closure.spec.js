@@ -12,16 +12,18 @@ const modernCss = [
   "src/experience-v2/work-family/work-family.css",
   "src/experience-v2/executive-overview/executive-surfaces.css",
   "src/experience-v2/project-family/project-family.css",
-  "src/experience-v2/people-family/people-family.css",
+
   "src/experience-v2/workforce-family/workforce-family.css",
   "src/experience-v2/finance-family/finance-family.css",
   "src/experience-v2/personal-family/personal-family.css",
-  "src/experience-v2/calendar/calendar.css",
+
   "src/experience-v2/data-viz/data-viz.css",
   "src/experience-v2/integrations/integrations.css",
 ];
 
 const routeLazyCss = [
+  "src/experience-v2/people-family/people-family.css",
+  "src/experience-v2/calendar/calendar.css",
   "src/experience-v2/manager-overview/manager-overview.css",
   "src/experience-v2/executive-overview/executive-overview.css",
 ];
@@ -68,6 +70,12 @@ test("VF9B keeps legacy compatibility CSS before the low-specificity Experience 
   const executiveView = readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
   expect(managerView).toContain('import "./manager-overview.css";');
   expect(executiveView).toContain('import "./executive-overview.css";');
+  const peopleView = readFileSync("src/experience-v2/people-family/PeopleFamilyV2.jsx", "utf8");
+  const calendarView = readFileSync("src/experience-v2/calendar/CalendarFamilyV2.jsx", "utf8");
+  expect(peopleView).toContain('import "./people-family.css";');
+  expect(calendarView).toContain('import "./calendar.css";');
+  expect(main).not.toContain('import "./experience-v2/people-family/people-family.css";');
+  expect(main).not.toContain('import "./experience-v2/calendar/calendar.css";');
 
   for (const path of routeLazyCss) {
     const css = readFileSync(path, "utf8");

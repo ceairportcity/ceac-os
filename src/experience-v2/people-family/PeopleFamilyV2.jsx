@@ -1,3 +1,4 @@
+import "./people-family.css";
 import { CeacIcon } from "../icons";
 import { Avatar, Button, StatusBadge } from "../components";
 

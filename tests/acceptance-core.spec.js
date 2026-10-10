@@ -487,7 +487,7 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
 
     await go(page, "Team");
     await expect(page.locator(".ev2-people-page.ev2-people-manager")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Your team", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "People & volunteers", exact: true })).toBeVisible();
     const peopleSection = page.locator(".ev2p-section").filter({ hasText: /^People/ }).first();
     const setupHeading = page.getByRole("heading", { name: "Team setup", exact: true });
     await expect(peopleSection).toBeVisible();
@@ -2444,7 +2444,7 @@ test("FPG6 Payroll gives Administration preparation and Executive protected revi
     await dialog.getByLabel("Preparation note").fill("FPG6 visual acceptance fixture");
     await dialog.getByRole("button", { name: "Create draft Payroll", exact: true }).click();
 
-    await expect(page.getByText("Draft payroll run created from protected employee records.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: payrollLabel, exact: true })).toBeVisible();
     await expect(page.locator(".fpg-payroll-table")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/fpg6-payroll-admin-desktop.png", fullPage: true });

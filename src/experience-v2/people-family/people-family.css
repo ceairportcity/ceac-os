@@ -2382,3 +2382,462 @@
     width: 100%;
   }
 }
+
+
+/* Phase 6A — Manager People & Volunteers */
+
+.phase6-manager-people-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ev2-space-3);
+  margin: var(--ev2-space-4) 0 var(--ev2-space-5);
+  padding: var(--ev2-space-3);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface);
+}
+
+.phase6-manager-people-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ev2-space-1);
+}
+
+.phase6-manager-people-tabs button {
+  min-height: var(--ev2-control-min);
+  padding: 0 var(--ev2-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--ev2-radius-pill);
+  background: transparent;
+  color: var(--ev2-text-secondary);
+  font: inherit;
+  font-size: var(--ev2-type-supporting);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.phase6-manager-people-tabs button.is-selected {
+  border-color: color-mix(in srgb, var(--ev2-action) 26%, var(--ev2-line));
+  background: var(--ev2-action-soft);
+  color: var(--ev2-action);
+}
+
+.phase6-add-volunteer {
+  flex: 0 0 auto;
+  min-height: var(--ev2-control-min);
+}
+
+.phase6-volunteer-sheet {
+  display: grid;
+  gap: var(--ev2-space-5);
+}
+
+.phase6-volunteer-identity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ev2-space-3);
+}
+
+.phase6-volunteer-identity-grid label,
+.phase6-time-grid label {
+  display: grid;
+  gap: var(--ev2-space-1);
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  font-weight: 650;
+}
+
+.phase6-volunteer-identity-grid label:last-child {
+  grid-column: 1 / -1;
+}
+
+.phase6-working-pattern {
+  display: grid;
+  gap: var(--ev2-space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.phase6-working-pattern legend {
+  padding: 0;
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-card-mobile);
+  font-weight: 760;
+}
+
+.phase6-working-pattern > p {
+  margin: 0 0 var(--ev2-space-2);
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.45;
+}
+
+.phase6-pattern-choice {
+  min-height: 4.75rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--ev2-space-3);
+  align-items: center;
+  padding: var(--ev2-space-3) var(--ev2-space-4);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface);
+  cursor: pointer;
+}
+
+.phase6-pattern-choice.is-selected {
+  border-color: color-mix(in srgb, var(--ev2-action) 34%, var(--ev2-line));
+  background: var(--ev2-action-soft);
+}
+
+.phase6-pattern-choice input {
+  width: 1rem;
+  height: 1rem;
+}
+
+.phase6-pattern-choice span {
+  min-width: 0;
+  display: grid;
+  gap: var(--ev2-space-1);
+}
+
+.phase6-pattern-choice strong {
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+  line-height: 1.35;
+}
+
+.phase6-pattern-choice small {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.4;
+}
+
+.phase6-pattern-detail {
+  display: grid;
+  gap: var(--ev2-space-3);
+  padding: var(--ev2-space-4);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface-soft);
+}
+
+.phase6-day-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ev2-space-2);
+}
+
+.phase6-day-pills label {
+  position: relative;
+}
+
+.phase6-day-pills input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.phase6-day-pills span {
+  min-width: 2.85rem;
+  min-height: var(--ev2-control-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-pill);
+  background: var(--ev2-surface);
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.phase6-day-pills input:checked + span {
+  border-color: color-mix(in srgb, var(--ev2-action) 34%, var(--ev2-line));
+  background: var(--ev2-action-soft);
+  color: var(--ev2-action);
+}
+
+.phase6-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ev2-space-3);
+}
+
+.phase6-volunteer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ev2-space-2);
+}
+
+@media (max-width: 760px) {
+  .phase6-manager-people-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .phase6-manager-people-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .phase6-manager-people-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .phase6-manager-people-tabs button {
+    flex: 0 0 auto;
+  }
+
+  .phase6-add-volunteer {
+    width: 100%;
+  }
+
+  .phase6-volunteer-identity-grid,
+  .phase6-time-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .phase6-volunteer-identity-grid label:last-child {
+    grid-column: auto;
+  }
+
+  .phase6-volunteer-actions {
+    flex-direction: column-reverse;
+  }
+
+  .phase6-volunteer-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 900px) {
+  .phase6-working-pattern legend {
+    font-size: var(--ev2-type-card-desktop);
+  }
+
+  .phase6-pattern-choice strong {
+    font-size: var(--ev2-type-row-desktop);
+  }
+}
+
+
+/* Phase 6A — Volunteer Profile */
+
+.phase6-volunteer-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface);
+}
+
+.phase6-volunteer-profile-grid > div {
+  min-width: 0;
+  padding: var(--ev2-space-4);
+  border-right: 1px solid var(--ev2-line);
+}
+
+.phase6-volunteer-profile-grid > div:last-child {
+  border-right: 0;
+}
+
+.phase6-volunteer-profile-grid span,
+.phase6-volunteer-profile-grid strong {
+  display: block;
+}
+
+.phase6-volunteer-profile-grid span {
+  color: var(--ev2-text-tertiary);
+  font-size: var(--ev2-type-label);
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.phase6-volunteer-profile-grid strong {
+  margin-top: var(--ev2-space-1);
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.phase6-volunteer-profile-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ev2-space-4);
+  margin-top: var(--ev2-space-4);
+}
+
+.phase6-volunteer-pattern-editor,
+.phase6-volunteer-recommendation {
+  min-width: 0;
+  display: grid;
+  gap: var(--ev2-space-3);
+  align-content: start;
+  padding: var(--ev2-space-4);
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface-soft);
+}
+
+.phase6-volunteer-pattern-editor h3,
+.phase6-volunteer-recommendation h3 {
+  margin: 0;
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+  line-height: 1.35;
+}
+
+.phase6-volunteer-pattern-editor p,
+.phase6-volunteer-recommendation p {
+  margin: 0;
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.45;
+}
+
+.phase6-volunteer-recommendation-history {
+  display: grid;
+  gap: var(--ev2-space-2);
+  margin-top: var(--ev2-space-1);
+}
+
+.phase6-volunteer-recommendation-history > div {
+  display: grid;
+  gap: var(--ev2-space-1);
+  padding-top: var(--ev2-space-2);
+  border-top: 1px solid var(--ev2-line);
+}
+
+.phase6-volunteer-recommendation-history strong {
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-supporting);
+}
+
+.phase6-volunteer-recommendation-history span,
+.phase6-volunteer-recommendation-history small {
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .phase6-volunteer-profile-grid,
+  .phase6-volunteer-profile-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .phase6-volunteer-profile-grid > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--ev2-line);
+  }
+
+  .phase6-volunteer-profile-grid > div:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (min-width: 900px) {
+  .phase6-volunteer-profile-grid strong,
+  .phase6-volunteer-pattern-editor h3,
+  .phase6-volunteer-recommendation h3 {
+    font-size: var(--ev2-type-row-desktop);
+  }
+}
+
+
+/* Phase 6A — Administration volunteer recommendations */
+
+.phase6-admin-volunteer-recommendations {
+  overflow: hidden;
+  border: 1px solid var(--ev2-line);
+  border-radius: var(--ev2-radius-card);
+  background: var(--ev2-surface);
+}
+
+.phase6-admin-volunteer-recommendations article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ev2-space-4);
+  align-items: center;
+  padding: var(--ev2-space-4);
+  border-bottom: 1px solid var(--ev2-line);
+}
+
+.phase6-admin-volunteer-recommendations article:last-child {
+  border-bottom: 0;
+}
+
+.phase6-admin-volunteer-recommendations article > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: var(--ev2-space-1);
+}
+
+.phase6-admin-volunteer-recommendations strong {
+  color: var(--ev2-text);
+  font-size: var(--ev2-type-row-mobile);
+  line-height: 1.35;
+}
+
+.phase6-admin-volunteer-recommendations span,
+.phase6-admin-volunteer-recommendations p,
+.phase6-admin-volunteer-recommendations small {
+  margin: 0;
+  color: var(--ev2-text-secondary);
+  font-size: var(--ev2-type-supporting);
+  line-height: 1.45;
+}
+
+.phase6-admin-volunteer-decision {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ev2-space-2);
+  align-items: center;
+}
+
+.phase6-recommendation-status {
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--ev2-space-2);
+  border-radius: var(--ev2-radius-pill);
+  background: var(--ev2-surface-muted);
+  color: var(--ev2-text-secondary);
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.phase6-recommendation-status.is-accepted {
+  background: var(--ev2-success-soft);
+  color: var(--ev2-success);
+}
+
+.phase6-recommendation-status.is-declined {
+  background: var(--ev2-danger-soft);
+  color: var(--ev2-danger);
+}
+
+@media (max-width: 760px) {
+  .phase6-admin-volunteer-recommendations article {
+    grid-template-columns: 1fr;
+  }
+
+  .phase6-admin-volunteer-decision {
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 900px) {
+  .phase6-admin-volunteer-recommendations strong {
+    font-size: var(--ev2-type-row-desktop);
+  }
+}
