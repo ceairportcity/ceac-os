@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
 import { FieldGroup, ProductNotice, SectionHeader } from "../components/bits";
@@ -19,6 +19,8 @@ export default function OfficeSettings({ me, openWorkforce }) {
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [leaveRules, setLeaveRules] = useState([]);
   const [thresholds, setThresholds] = useState([]);
+  // A late settings refresh must not replace unsaved local attention-rule edits.
+  const thresholdDraftsRef = useRef(new Map());
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [integrity, setIntegrity] = useState(null);
   const [integrityMinutes, setIntegrityMinutes] = useState(10);
@@ -31,7 +33,7 @@ export default function OfficeSettings({ me, openWorkforce }) {
     const [officeResult, leaveResult, thresholdResult, inviteResult, integrityResult] = await Promise.all([
       supabase.from("office_locations").select("*").eq("is_primary", true).limit(1).maybeSingle(),
       supabase.from("leave_policy_versions").select("id,name,state,confirmed_at,source_reference,reason,leave_policy_rules(id,leave_kind,employment_type,entitlement_amount,entitlement_unit,accrual_method,accrual_rate,carryover_method,carryover_limit,approval_route,opening_balance_required,complete)").eq("org_id", me.org_id).eq("state","active").order("confirmed_at",{ascending:false}).limit(1).maybeSingle(),
-      supabase.from("thresholds").select("name,label,value,unit_label").neq("name","pay_change_pct").order("label"),
+      supabase.from("thresholds").select("name,label,value,unit_label").eq("org_id",me.org_id).neq("name","pay_change_pct").order("label"),
       supabase.from("pending_invitations").select("id,email,full_name,unit_id,invited_at,expires_at,units(name)").is("resolved_at",null).gt("expires_at",new Date().toISOString()).order("invited_at",{ascending:false}),
       supabase.rpc("attendance_integrity_status"),
     ]);
@@ -66,7 +68,10 @@ export default function OfficeSettings({ me, openWorkforce }) {
       setRadius(o.radius_meters);
     }
 
-    setThresholds((thresholdResult.data || []).map((row) => ({ ...row, value: String(row.value ?? "") })));
+    setThresholds((thresholdResult.data || []).map((row) => ({
+      ...row,
+      value: thresholdDraftsRef.current.get(row.name) ?? String(row.value ?? ""),
+    })));
     setPendingInvitations(inviteResult.data || []);
     setIntegrity(integrityResult.data || null);
     if (integrityResult.data?.front_desk_code_ttl_minutes) setIntegrityMinutes(integrityResult.data.front_desk_code_ttl_minutes);
@@ -166,7 +171,8 @@ export default function OfficeSettings({ me, openWorkforce }) {
     setSaving(true);
     setMessage(null);
     try {
-      const value = Number(row.value);
+      const draft = thresholdDraftsRef.current.get(row.name) ?? row.value;
+      const value = Number(draft);
       if (!Number.isFinite(value) || value < 0) throw new Error("Enter a valid non-negative number.");
       const result = await supabase.from("thresholds")
         .update({ value, updated_by: me.id, updated_at: new Date().toISOString() })
@@ -176,6 +182,8 @@ export default function OfficeSettings({ me, openWorkforce }) {
         .single();
       if (result.error) throw result.error;
       if (!result.data || Number(result.data.value) !== value) throw new Error("The attention rule was not persisted.");
+      // Clear only the draft actually saved; an edit made during Save remains intact.
+      if (thresholdDraftsRef.current.get(row.name) === draft) thresholdDraftsRef.current.delete(row.name);
       await load();
       setMessage({ tone: "success", title: "Attention rule updated", body: `${row.label} ${value} ${row.unit_label}.` });
     } catch (error) {
@@ -267,7 +275,7 @@ export default function OfficeSettings({ me, openWorkforce }) {
         <div className="office-threshold-list">
           {thresholds.map((row) => <div key={row.name} className="office-threshold-row">
             <div><strong>{row.label}</strong><span>{row.unit_label}</span></div>
-            <input aria-label={row.label} className="field" type="number" min="0" step={row.unit_label === "%" ? "1" : "1"} value={row.value} onChange={(event) => setThresholds((current) => current.map((item) => item.name === row.name ? { ...item, value:event.target.value } : item))} />
+            <input aria-label={row.label} className="field" type="number" min="0" step={row.unit_label === "%" ? "1" : "1"} value={row.value} onChange={(event) => { const draft = event.target.value; thresholdDraftsRef.current.set(row.name, draft); setThresholds((current) => current.map((item) => item.name === row.name ? { ...item, value:draft } : item)); }} />
             <button className="btn btn-ghost btn-sm" disabled={saving} onClick={() => saveThreshold(row)}>Save</button>
           </div>)}
         </div>
