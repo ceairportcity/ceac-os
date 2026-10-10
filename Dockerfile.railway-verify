@@ -11,6 +11,7 @@ RUN npm ci --no-audit --no-fund && echo 'dependencies PASS' >> /gate/verified.tx
 COPY . .
 RUN node scripts/ci/check-github-actions-pinning.mjs && echo 'supply_chain PASS' >> /gate/verified.txt
 RUN node scripts/ci/check-visual-fidelity-contract.mjs && echo 'visual_source PASS' >> /gate/verified.txt
+RUN node scripts/ci/check-production-migration-ledger.mjs && echo 'migration_ledger PASS' >> /gate/verified.txt
 RUN node --test tests/integration-runtime.test.mjs tests/onboarding-foundation.test.mjs tests/attendance.test.mjs tests/mfa-foundation.test.mjs && echo 'unit_tests PASS' >> /gate/verified.txt
 RUN npm audit --audit-level=high && echo 'dependency_audit PASS' >> /gate/verified.txt
 # Deterministic file/architecture contracts. This Playwright subset uses NO browser,
@@ -38,7 +39,7 @@ RUN set -eu; \
 RUN npm run build && echo 'production_build PASS' >> /gate/verified.txt
 RUN sha256sum package-lock.json > /gate/package-lock.sha256 && \
     printf '%s\n' 'database_replay NOT_VERIFIED' 'sql_rls NOT_VERIFIED' 'account_mfa NOT_VERIFIED' 'browser_shards NOT_VERIFIED' 'visual_level_c NOT_VERIFIED' 'independent_review NOT_VERIFIED' > /gate/outstanding.txt && \
-    test "$(wc -l < /gate/verified.txt)" -eq 8
+    test "$(wc -l < /gate/verified.txt)" -eq 9
 
 # The runtime contains evidence only, NEVER source, database keys or app server.
 FROM node:22.16.0-bookworm-slim
