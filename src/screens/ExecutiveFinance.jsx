@@ -216,7 +216,7 @@ export default function ExecutiveFinance({ me }) {
           </FinanceSection>
 
           <FinanceFootnote>
-            Recorded income minus recorded spend is not a bank balance. CEAC OS does not convert currencies or infer opening balances or unrecorded activity. Requests remain distinct from actual spend.
+            Recorded income minus recorded spend is not a bank balance. CEAC OS does not convert currencies or infer opening balances or unrecorded activity. Approved requests remain distinct from actual spend.
           </FinanceFootnote>
         </>
       ) : null}

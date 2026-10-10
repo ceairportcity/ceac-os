@@ -313,12 +313,13 @@ export default function ExecutiveOverviewV2({
               <h2><CeacIcon name="record" size="row" decorative />Recent activity</h2>
               <button type="button" onClick={onOpenMinistry}>View all</button>
             </div>
-            <div className="executivev2-activity-context">{recentActivity.length ? "Recent attributable CEAC activity" : "Recorded ministry activity"}</div>
+            <div className="executivev2-activity-context">Recorded ministry activity</div>
             <div className="executivev2-activity-grid">
-              {recentActivity.length ? recentActivity.slice(0, 4).map((row) => <RecentActivityItem key={row.id} row={row} />)
-                : ministryLatestRows.length ? ministryLatestRows.slice(0, 4).map((row) => <ActivityItem key={row.id} row={row} />)
-                : <div className="executivev2-empty compact"><span><strong>No recent attributable activity is visible.</strong><small>This area only shows CEAC records your account is authorised to see.</small></span></div>}
+              {ministryLatestRows.slice(0, recentActivity.length ? 2 : 4).map((row) => <ActivityItem key={`ministry-${row.id}`} row={row} />)}
+              {recentActivity.slice(0, ministryLatestRows.length ? 2 : 4).map((row) => <RecentActivityItem key={`event-${row.id}`} row={row} />)}
+              {!ministryLatestRows.length && !recentActivity.length ? <div className="executivev2-empty compact"><span><strong>No recent attributable activity is visible.</strong><small>Recorded events and ministry numbers will appear when available to your account.</small></span></div> : null}
             </div>
+            <div className="executivev2-activity-context">Recent attributable CEAC activity. This area only shows attributable CEAC records.</div>
           </section>
 
           <section className="executivev2-reference-panel executivev2-meetings">
