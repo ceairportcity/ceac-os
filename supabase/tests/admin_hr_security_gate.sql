@@ -115,9 +115,15 @@ end $$;
 -- versions, self-bound notices/returns/checkpoints, manager-bound responses and
 -- a sanitised evidence read. attendance_phase2_gate.sql tests their identities,
 -- tenant isolation, privacy, append-only history, concurrency and no anon access.
--- S2 migration 114 reduces the reviewed authenticated surface to 132.
--- Reducing this surface remains allowed. Any growth beyond 132 requires another
--- explicit security-gate review and exact allowlist update in the same PR.
+-- S2 migration 114 reduced the reviewed authenticated surface to 132.
+-- Phase 6C explicitly reviews the resulting 136 signed-in-callable functions.
+-- The net +4 are needed for the locked front-desk attendance corroboration and
+-- authorised per-person/manager evidence views. Two legacy office-code RPCs
+-- were already removed by migration 124; migration 125 safely revokes grants
+-- only on historical variants where their definitions remain.
+-- Exact Phase 6 signatures, actor/organisation authority, and the service-only
+-- network corroboration boundary are tested below and in
+-- attendance_phase6_integrity_gate.sql. No other surface growth is allowed.
 do $$
 declare n integer;
 begin
@@ -127,10 +133,47 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n>132 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 132-function ceiling to %.',n;
+  if n>136 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 136-function ceiling to %.',n;
   end if;
 end $$;
+
+-- Explicit Phase 6C allowlist: these are the reviewed actor/tenant-scoped
+-- browser-facing SECURITY DEFINER functions. Their underlying raw tables
+-- remain private; obsolete code-window overloads are not browser-executable.
+do $phase6_reviewed_surface$
+declare
+  v_signature text;
+  v_function oid;
+  v_definition text;
+begin
+  foreach v_signature in array array[
+    'public.attendance_integrity_status()',
+    'public.attendance_set_office_code(boolean,integer)',
+    'public.attendance_verify_office_code(text,uuid)',
+    'public.attendance_corroboration_for_day(date)',
+    'public.attendance_day_evidence(date)'
+  ] loop
+    v_function := to_regprocedure(v_signature);
+    if v_function is null then
+      raise exception 'Phase 6 reviewed attendance function missing: %',v_signature;
+    end if;
+    if not exists (
+      select 1 from pg_proc p join pg_namespace ns on ns.oid=p.pronamespace
+      where p.oid=v_function and ns.nspname='public' and p.prosecdef
+    ) or not has_function_privilege('authenticated',v_function,'EXECUTE')
+      or has_function_privilege('anon',v_function,'EXECUTE') then
+      raise exception 'Phase 6 reviewed attendance RPC violates its exact access contract: %',v_signature;
+    end if;
+    v_definition := pg_get_functiondef(v_function);
+    if v_definition not ilike '%auth.uid%'
+       and v_definition not ilike '%app_org_id%'
+       and v_definition not ilike '%app_has_capability%' then
+      raise exception 'Phase 6 reviewed attendance RPC lacks an actor/tenant boundary: %',v_signature;
+    end if;
+  end loop;
+end
+$phase6_reviewed_surface$;
 
 -- Every signed-in callable definer RPC must visibly bind itself to the caller
 -- directly or through an approved authority/visibility helper.
