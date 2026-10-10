@@ -174,6 +174,8 @@ set employment_type='volunteer'
 where profile_id='31000000-0000-4000-8000-000000000006';
 
 set local role service_role;
+select set_config('request.jwt.claim.role','service_role',true);
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000006',true);
 
 do $volunteer_office_session$
 declare v_session uuid;
@@ -212,6 +214,7 @@ values(
 on conflict do nothing;
 
 set local role authenticated;
+select set_config('request.jwt.claim.role','authenticated',true);
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000005',true);
 
 do $volunteer_compliance_boundary$
