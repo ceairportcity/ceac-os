@@ -48,7 +48,9 @@ test("Stage 10 Family B2 Staff Team uses the shared People family without author
   expect(screen).not.toContain("team-section-toggle");
   expect(css).toContain(".ev2-people-page");
   expect(css).not.toContain("!important");
-  expect(main).toContain('import "./experience-v2/people-family/people-family.css";');
+  // People styles travel with the lazy People route; the sign-in shell stays lean.
+  expect(main).not.toContain('import "./experience-v2/people-family/people-family.css";');
+  expect(shared).toContain('import "./people-family.css";');
 });
 
 for (const viewport of [
@@ -130,7 +132,7 @@ test("Stage 10 Family B3 Manager Team preserves factual unit scope without scori
   expect(screen).toContain('rpc("swap_sub_team_positions"');
   expect(screen).toContain('rpc("save_unit_resource"');
   expect(screen).toContain('rpc("set_unit_resource_active"');
-  expect(screen).toContain("They are not a score or judgement about a person.");
+  expect(screen).toContain("Volunteer is an engagement type, not a new CEAC role or authority level.");
   expect(screen).not.toMatch(/productivity score|performance score|ranking/i);
   expect(css).toContain(".ev2p-evidence-person");
   expect(css).not.toContain("!important");
@@ -145,9 +147,9 @@ for (const viewport of [
   test(`Stage 10 Family B3 Manager Team composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openManagerTeam(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "Your team", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "People & volunteers", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /Unit Room/ })).toBeVisible();
-    await expect(page.getByText("People", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("People & volunteers", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Work lanes", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Team setup", exact: true })).toBeVisible();
 
@@ -687,7 +689,7 @@ test("VF3C Manager Team and Person workspace locks factual command composition",
   const person = readFileSync("src/screens/PersonDetail.jsx", "utf8");
   const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
 
-  expect(team).toContain("They are not a score or judgement about a person.");
+  expect(team).toContain("Volunteer is an engagement type, not a new CEAC role or authority level.");
   expect(team).toContain("PeopleEvidencePerson");
   expect(person).toContain('className="ev2p-person-layout"');
   expect(person).toContain('className="ev2p-person-context-rail"');
