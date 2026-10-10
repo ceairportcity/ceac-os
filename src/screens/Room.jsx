@@ -372,7 +372,7 @@ export default function Room({
 
   async function send() {
     const clean = body.trim();
-    if (!clean || !room?.id) return;
+    if (!clean || !room?.id || loading) return;
     setSending(true); setError(null);
     try {
       const mentionIds = [...new Set(mentions)];
@@ -605,7 +605,7 @@ export default function Room({
           />
           <VoiceInput compact label="Speak message" onResult={appendVoice} />
         </div>
-        <button className="room-send" disabled={sending || !body.trim()} onClick={send}>{sending ? "…" : "Send"}</button>
+        <button className="room-send" disabled={sending || loading || !room?.id || !body.trim()} onClick={send}>{sending ? "…" : "Send"}</button>
       </div>
       <small>Work communication only · @ mentions notify people inside this Room</small>
     </footer>
