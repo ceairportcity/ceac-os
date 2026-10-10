@@ -67,7 +67,7 @@ test("Stage 11C migrates the existing Calendar role contracts without changing a
   expect(admin).not.toContain("<CalendarMonthGrid");
   expect(admin).not.toContain("calendar-window-switch");
 
-  expect(app).not.toContain('tab === "exec-calendar"');
+  expect(app).toContain('tab === "exec-calendar" && isExec');
   expect(css).toContain(".ev2cal-role-page");
   expect(css).toContain(".ev2cal-role-layout");
   expect(css).not.toContain("!important");
