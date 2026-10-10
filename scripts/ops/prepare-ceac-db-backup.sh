@@ -24,12 +24,14 @@ case "$origin" in
 esac
 [[ -r supabase/.temp/project-ref ]] || fail 'Supabase CLI must already be securely linked to the intended project'
 [[ "$(cat supabase/.temp/project-ref)" == efjljhftsesssumtshvp ]] || fail 'linked Supabase project is not CEAC production'
-mkdir -p -- "$CEAC_BACKUP_DIR"
-chmod 700 "$CEAC_BACKUP_DIR"
+# Never chmod or repurpose an existing location (especially /, /tmp, or a shared folder).
+[[ ! -e "$CEAC_BACKUP_DIR" ]] || fail 'select a fresh, dedicated backup directory that does not yet exist'
+mkdir -m 700 -- "$CEAC_BACKUP_DIR"
 out="$(cd "$CEAC_BACKUP_DIR" && pwd -P)"
 key="$(cd "$(dirname "$CEAC_BACKUP_PASSPHRASE_FILE")" && pwd -P)/$(basename "$CEAC_BACKUP_PASSPHRASE_FILE")"
 case "$out/" in "$repo/"*) fail 'backup destination is inside Git working tree';; esac
 case "$key" in "$repo/"*) fail 'passphrase file is inside Git working tree';; esac
+case "$key" in "$out/"*) fail 'encryption passphrase must not reside in the backup destination';; esac
 scratch="$(mktemp -d)"
 trap 'rm -rf -- "$scratch"' EXIT
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
