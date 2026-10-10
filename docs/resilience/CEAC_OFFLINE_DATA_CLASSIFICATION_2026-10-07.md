@@ -1,6 +1,6 @@
 # CEAC offline data classification
 
-Date: 7 October 2026  
+Date: 7 October 2026
 Default: **deny business-data persistence**
 
 ## Class O0 — cacheable public shell

@@ -1,7 +1,7 @@
 # CEAC standby deployment runbook
 
-Date: 7 October 2026  
-Primary remains: Vercel  
+Date: 7 October 2026
+Primary remains: Vercel
 Cutover authorised: **No**
 
 ## Prepare without Git deployment automation

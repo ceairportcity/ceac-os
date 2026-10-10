@@ -1,7 +1,7 @@
 # CEAC resilience architecture
 
-Date: 7 October 2026  
-Status: implementation contract  
+Date: 7 October 2026
+Status: implementation contract
 Product base: Executive redesign lineage after Phase 5 and Phase 6
 
 ## Locked principle
