@@ -13,10 +13,20 @@ RUN node scripts/ci/check-github-actions-pinning.mjs && echo 'supply_chain PASS'
 RUN node scripts/ci/check-visual-fidelity-contract.mjs && echo 'visual_source PASS' >> /gate/verified.txt
 RUN node --test tests/integration-runtime.test.mjs tests/onboarding-foundation.test.mjs tests/attendance.test.mjs tests/mfa-foundation.test.mjs && echo 'unit_tests PASS' >> /gate/verified.txt
 RUN npm audit --audit-level=high && echo 'dependency_audit PASS' >> /gate/verified.txt
+# Deterministic file/architecture contracts. This Playwright subset uses NO browser,
+# NO live Supabase, and NO user data. Full browser shards remain NOT_VERIFIED.
+RUN npm install --no-save --package-lock=false @playwright/test@1.55.0 && \
+    npx playwright test \
+      tests/experience-v2-icons.spec.js \
+      tests/experience-v2-components.spec.js \
+      tests/experience-v2-data-components.spec.js \
+      tests/experience-v2-gallery.spec.js \
+      tests/fpg8-reconciliation-contract.spec.js && \
+    echo 'source_contracts PASS' >> /gate/verified.txt
 RUN npm run build && echo 'production_build PASS' >> /gate/verified.txt
 RUN sha256sum package-lock.json > /gate/package-lock.sha256 && \
     printf '%s\n' 'database_replay NOT_VERIFIED' 'sql_rls NOT_VERIFIED' 'account_mfa NOT_VERIFIED' 'browser_shards NOT_VERIFIED' 'visual_level_c NOT_VERIFIED' 'independent_review NOT_VERIFIED' > /gate/outstanding.txt && \
-    test "$(wc -l < /gate/verified.txt)" -eq 6
+    test "$(wc -l < /gate/verified.txt)" -eq 7
 
 # The runtime contains evidence only, NEVER source, database keys or app server.
 FROM node:22.16.0-bookworm-slim
