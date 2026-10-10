@@ -102,4 +102,3 @@ After merge:
 3. require exact 119/119 parity;
 4. then continue S3 from canonical migration `20261007083250_118_capability_delegation_expiry.sql`;
 5. do not apply S3 through a tool that generates a different version.
-
