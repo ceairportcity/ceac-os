@@ -94,31 +94,36 @@ export ROLE_FIXTURE_PASSWORD='Local-role-fixture-2026!'
 export SUPABASE_URL=http://127.0.0.1:54321
 export VITE_SUPABASE_URL=http://127.0.0.1:54321
 stop_database() {
-  if [[ "$running_db" == 1 ]]; then supabase stop --no-backup; running_db=0; fi
+  if [[ "$running_db" == 1 ]]; then
+    supabase stop --no-backup || return 1
+    running_db=0
+  fi
 }
 fresh_database() {
-  stop_database
-  if [[ ! -f supabase/config.toml ]]; then supabase init; fi
+  # Called by a gate in an 'if' condition: every required step MUST check
+  # its own return code because bash errexit is suppressed in that context.
+  stop_database || return 1
+  if [[ ! -f supabase/config.toml ]]; then supabase init || return 1; fi
   local holding="$scratch/migrations"
-  mkdir -p "$holding"
-  mv supabase/migrations/*.sql "$holding/"
+  mkdir -p "$holding" || return 1
+  mv supabase/migrations/*.sql "$holding/" || return 1
   running_db=1
   if ! supabase start; then
-    mv "$holding/"*.sql supabase/migrations/
+    mv "$holding/"*.sql supabase/migrations/ || true
     return 1
   fi
-  mv "$holding/"*.sql supabase/migrations/
+  mv "$holding/"*.sql supabase/migrations/ || return 1
   psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 \
-    -f supabase/replay/legacy-live-artifacts.sql
-  supabase migration up --local
-  supabase migration list --local
+    -f supabase/replay/legacy-live-artifacts.sql || return 1
+  supabase migration up --local || return 1
+  supabase migration list --local || return 1
   local secrets="$scratch/local-only.env"
-  supabase status -o env > "$secrets"
+  supabase status -o env > "$secrets" || return 1
   set -a
-  source "$secrets"
+  source "$secrets" || { set +a; return 1; }
   set +a
-  rm -f "$secrets"
-  [[ "$API_URL" == 'http://127.0.0.1:54321' ]]
+  rm -f "$secrets" || return 1
+  [[ "$API_URL" == 'http://127.0.0.1:54321' ]] || return 1
   export SUPABASE_URL="$API_URL" VITE_SUPABASE_URL="$API_URL"
   export SUPABASE_ANON_KEY="$ANON_KEY" VITE_SUPABASE_PUBLISHABLE_KEY="$ANON_KEY"
   export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
@@ -132,7 +137,8 @@ insert into public.units(id,org_id,name,code) values
 ('20000000-0000-4000-8000-000000000012','10000000-0000-4000-8000-000000000010','Test Unit B','TSTB');
 alter table public.pending_invitations alter column invited_by drop not null;
 SQL
-  node scripts/seed-role-fixtures.mjs
+  [[ "$?" == 0 ]] || return 1
+  node scripts/seed-role-fixtures.mjs || return 1
 }
 seed_account() {
   psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 <<'SQL'
@@ -158,7 +164,7 @@ gate account_security account_flow || true
 browser_shard() {
   local shard="$1"
   fresh_database && seed_roles || return 1
-  rm -rf -- test-artifacts
+  rm -rf -- test-artifacts || return 1
   npm run dev -- --host 127.0.0.1 > "$evidence/vite_$shard.log" 2>&1 &
   vite_pid="$!"
   local ready=0
@@ -171,7 +177,7 @@ browser_shard() {
   npx playwright test "--shard=$shard/4" || rc="$?"
   if [[ -d test-artifacts ]]; then
     mkdir -p "$evidence/browser_artifacts_$shard"
-    cp -a test-artifacts/. "$evidence/browser_artifacts_$shard/"
+    cp -a test-artifacts/. "$evidence/browser_artifacts_$shard/" || rc=1
   fi
   kill "$vite_pid" >/dev/null 2>&1 || true
   wait "$vite_pid" >/dev/null 2>&1 || true
