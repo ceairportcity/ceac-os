@@ -65,6 +65,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   useEffect(() => { load(); }, [id, me.id, me.unit_id]);
 
   async function load() {
+    const tickReadVersion = tickMutationVersion.current;
     setErr(null);
     setCanReview(false);
     setResponsibleReviewer(null);
@@ -150,7 +151,6 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
       .select("id,label,position").eq("work_item_id", id).order("position");
     if (checklistError) { setErr(checklistError.message); return; }
     setChecks(c || []);
-    const tickReadVersion = tickMutationVersion.current;
     if (tickReadVersion === tickMutationVersion.current) setTicks({});
     if (c && c.length) {
       const { data: t, error: tickError } = await supabase.from("checklist_ticks")
