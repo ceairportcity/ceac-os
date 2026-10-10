@@ -9,6 +9,12 @@ begin
      or has_table_privilege('authenticated','public.attendance_corroboration_events','SELECT,INSERT,UPDATE,DELETE') then
     raise exception 'Phase 6C gate failure: raw corroboration tables opened to authenticated.';
   end if;
+  -- Legacy code-window endpoints must not be callable from the browser once
+  -- the reconciled, caller-bound front-desk attendance design is active.
+  if has_function_privilege('authenticated','public.attendance_create_office_code(uuid,integer)','EXECUTE')
+     or has_function_privilege('authenticated','public.attendance_verify_office_code(uuid,text)','EXECUTE') then
+    raise exception 'Phase 6C gate failure: obsolete office-code RPCs remain browser-executable.';
+  end if;
   if has_function_privilege('authenticated','public.attendance_record_network_corroboration(text,uuid,uuid,boolean,text)','EXECUTE') then
     raise exception 'Phase 6C gate failure: browser/user can forge trusted network corroboration.';
   end if;
