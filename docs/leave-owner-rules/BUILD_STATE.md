@@ -59,3 +59,39 @@ Exact-head verification:
 - all browser shards — PASS, including the Stage 9 Leave lifecycle and Staff/Manager routing contracts.
 
 GitHub's Vercel status on the branch is currently blocked by the external build-rate limit. This does not weaken the accepted application verification above and does not imply a Leave application defect.
+
+
+## 7 October 2026 go-live Annual policy extension — PRE-RESTORATION IMPLEMENTED / NOT YET ACCEPTED
+
+Owner-decision source:
+- `docs/final-product/LEAVE_RULES_v1.md`
+- annual entitlement: 24 working days per leave year;
+- accrual: 6 working days per completed quarter;
+- joiners: pro-rated first completed-quarter credit;
+- ordinary unused Annual leave: expires at leave-year end;
+- protected/contractual exceptions and approved cross-year leave remain preservable;
+- attendance/leave never automatically creates a Payroll consequence.
+
+Prepared implementation branch:
+`chatgpt/pre-restoration-go-live-ready-2026-10-07`
+
+Prepared implementation:
+- migration `20261007180500_go_live_annual_leave_policy.sql`;
+- Annual policy rule is upgraded from routing-only to 24 days / quarterly / 6-day credit without inventing secondary leave quantities;
+- annual request rows retain the legacy date span and additionally record a schedule-derived `working_days` value where attributable schedule evidence is available;
+- Annual balance is calculated server-side;
+- joiner pro-rating implements the literal portion of the completed join quarter served using calendar-day proportion, avoiding any invented pre-employment working pattern;
+- routine carry-forward is prohibited; explicit protected/contractual exceptions and corrections use an append-only, attributable adjustment ledger with reversals;
+- browser-facing new Annual RPCs are SECURITY INVOKER wrappers; privileged implementations are placed in the non-public `private` schema;
+- My Space and Workforce UI now state the confirmed Annual rule and keep unresolved secondary leave quantities truthful/unconfigured;
+- SQL acceptance gate `go_live_annual_leave_policy_gate.sql` is included in the complete SQL/security suite.
+
+Not yet claimed:
+- GitHub Actions exact-head acceptance;
+- Migration Replay acceptance;
+- browser-shard/product evidence;
+- protected-main merge;
+- production migration/application;
+- live Vercel acceptance.
+
+Those items remain acceptance gates, not missing product-owner decisions.

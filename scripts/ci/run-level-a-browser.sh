@@ -8,6 +8,7 @@ case "$scope" in
     tests=(
       tests/visual-fidelity-css-cascade-closure.spec.js
       tests/experience-v2-shell*.spec.js
+      tests/guide-adoption.spec.js
       tests/role-routing.spec.js
     )
     ;;

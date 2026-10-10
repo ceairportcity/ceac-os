@@ -37,6 +37,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
   const [profile, setProfile] = useState(me);
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [leavePolicyRules, setLeavePolicyRules] = useState([]);
+  const [annualLeaveSummary, setAnnualLeaveSummary] = useState(null);
   const [myRequests, setMyRequests] = useState([]);
   const [goals, setGoals] = useState([]);
   const [reminders, setReminders] = useState([]);
@@ -64,13 +65,17 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
   async function load() {
     setLoading(true);
 
-    const [requestsResult, policyResult, goalsResult, remindersResult, detailsResult, profileResult, engagementResult, volunteerNoticeResult] = await Promise.all([
+    const [requestsResult, policyResult, annualSummaryResult, goalsResult, remindersResult, detailsResult, profileResult, engagementResult, volunteerNoticeResult] = await Promise.all([
       supabase.from("leave_requests")
-        .select("id, kind, start_date, end_date, days, status, requested_at")
+        .select("id, kind, start_date, end_date, days, working_days, working_days_basis, status, requested_at")
         .eq("profile_id", me.id).order("requested_at", { ascending: false }).limit(100),
       supabase.from("leave_policy_versions")
         .select("*").eq("org_id", me.org_id).eq("state", "active")
         .order("confirmed_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.rpc("workforce_annual_leave_summary", {
+        p_profile_id: me.id,
+        p_as_of: new Date().toISOString().slice(0, 10),
+      }),
       supabase.from("personal_goals")
         .select("id, title, target_date, status, achieved_at")
         .eq("profile_id", me.id).order("created_at", { ascending: false }),
@@ -97,6 +102,13 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
 
     if (policyResult.error) errors.leavePolicy = humanError(policyResult.error, "The confirmed leave policy could not load.");
     else setLeavePolicy(policyResult.data || null);
+
+    if (annualSummaryResult.error) {
+      errors.annualLeaveSummary = humanError(annualSummaryResult.error, "Your annual leave balance could not load.");
+      setAnnualLeaveSummary(null);
+    } else {
+      setAnnualLeaveSummary(annualSummaryResult.data || null);
+    }
 
     if (goalsResult.error) errors.goals = humanError(goalsResult.error, "Your personal goals could not load.");
     else setGoals(goalsResult.data || []);
@@ -131,26 +143,14 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     return { errors };
   }
 
-  const policyConfigured = Boolean(leavePolicy);
-  const annualRule = leavePolicyRules.find((rule) => rule.leave_kind === "annual" && rule.complete);
-  const sickRule = leavePolicyRules.find((rule) => rule.leave_kind === "sick" && rule.complete);
-  const simpleBalanceRule = (rule) => Boolean(
-    rule
-    && rule.entitlement_unit === "days"
-    && !rule.opening_balance_required
-    && (rule.accrual_method === "annual" || rule.accrual_method === "none")
-    && rule.carryover_method === "none"
-  );
-  const annualEntitlement = simpleBalanceRule(annualRule) ? Number(annualRule.entitlement_amount || 0) : null;
-  const sickEntitlement = simpleBalanceRule(sickRule) ? Number(sickRule.entitlement_amount || 0) : null;
-  const currentYear = new Date().getFullYear();
-  const approvedThisYear = myRequests.filter((request) =>
-    request.status === "approved" && new Date(request.start_date + "T00:00:00").getFullYear() === currentYear
-  );
-  const annualTaken = approvedThisYear.filter((request) => request.kind === "annual").reduce((sum, request) => sum + Number(request.days || 0), 0);
-  const sickTaken = approvedThisYear.filter((request) => request.kind === "sick").reduce((sum, request) => sum + Number(request.days || 0), 0);
-  const annualLeft = annualEntitlement === null ? null : annualEntitlement - annualTaken;
-  const sickLeft = sickEntitlement === null ? null : sickEntitlement - sickTaken;
+  const annualEntitlement = annualLeaveSummary?.annual_entitlement == null ? 24 : Number(annualLeaveSummary.annual_entitlement);
+  const annualAccrued = annualLeaveSummary?.accrued_days == null ? null : Number(annualLeaveSummary.accrued_days);
+  const annualApproved = annualLeaveSummary?.approved_days == null ? null : Number(annualLeaveSummary.approved_days);
+  const annualLeft = annualLeaveSummary?.balance_available && annualLeaveSummary?.available_days != null
+    ? Number(annualLeaveSummary.available_days)
+    : null;
+  const annualBalanceReason = annualLeaveSummary?.reason || null;
+  const secondaryPolicyConfigured = Boolean(leavePolicy && leavePolicyRules.some((rule) => rule.leave_kind !== "annual" && rule.complete));
   const activeGoals = goals.filter((goal) => goal.status === "active");
   const achievedGoals = goals.filter((goal) => goal.status === "achieved");
   const hasProfileReadError = Boolean(datasetErrors.profile || datasetErrors.details);
@@ -396,18 +396,24 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         <Button size="sm" onClick={() => setSheet("leave")} disabled={Boolean(datasetErrors.leaveRequests)}>Ask for leave</Button>
       </div>}
     >
-      <ProductNotice tone="info" title="Confirmed leave process">
-        Annual, Sick, Maternity, Paternity and Study leave are available. Every request goes to your Manager first, then Administration makes the final decision. Entitlement amounts, accrual and carry-over are not yet configured.
+      <ProductNotice tone="info" title="Confirmed annual leave">
+        Annual leave is 24 working days per leave year, credited at 6 working days for each completed quarter. Joiners receive a pro-rated first completed-quarter credit, and ordinary unused days expire at year end subject to protected exceptions. Every leave request follows Manager approval → Administration final approval.
       </ProductNotice>
 
-      {datasetErrors.leavePolicy || datasetErrors.leaveRules ? <ProductNotice tone="attention" title="Leave policy unavailable">{datasetErrors.leavePolicy || datasetErrors.leaveRules}</ProductNotice>
-        : !policyConfigured ? <ProductNotice tone="attention" title="Leave policy not configured">Your requests remain available, but CEAC OS will not invent leave entitlement or remaining-day figures.</ProductNotice>
-        : (annualLeft === null || sickLeft === null) ? <ProductNotice tone="info" title="Some balances are unavailable">A confirmed policy exists, but CEAC OS only calculates a remaining balance when the relevant rule has explicit day entitlement, a supported accrual method, no carry-over, and no unresolved opening-balance requirement.</ProductNotice>
+      {datasetErrors.annualLeaveSummary ? <ProductNotice tone="attention" title="Annual balance unavailable">{datasetErrors.annualLeaveSummary}</ProductNotice>
+        : annualLeft === null ? <ProductNotice tone="info" title="Annual balance needs complete records">{annualBalanceReason === "join_date_not_recorded"
+          ? "Your join date is not recorded yet, so CEAC OS will not invent an annual leave balance."
+          : "CEAC OS needs attributable workforce schedule evidence for approved annual leave before it can show a reliable remaining working-day balance."}</ProductNotice>
         : null}
 
-      {!datasetErrors.leavePolicy && !datasetErrors.leaveRules ? <div className="ev2pf-facts">
-        <PersonalFact value={annualLeft === null ? "—" : String(annualLeft)} label={annualLeft === null ? "annual balance unavailable" : "annual days left"} />
-        <PersonalFact value={sickLeft === null ? "—" : String(sickLeft)} label={sickLeft === null ? "sick balance unavailable" : "sick days left"} />
+      {datasetErrors.leavePolicy || datasetErrors.leaveRules ? <ProductNotice tone="attention" title="Secondary leave policy unavailable">{datasetErrors.leavePolicy || datasetErrors.leaveRules}</ProductNotice>
+        : !secondaryPolicyConfigured ? <ProductNotice tone="info" title="Secondary leave quantities not configured">Sick, Maternity, Paternity and Study requests remain available on the confirmed approval route, but CEAC OS does not invent their entitlement quantities.</ProductNotice>
+        : null}
+
+      {!datasetErrors.annualLeaveSummary ? <div className="ev2pf-facts">
+        <PersonalFact value={annualLeft === null ? "—" : String(annualLeft)} label={annualLeft === null ? "annual balance unavailable" : "annual working days available"} />
+        <PersonalFact value={annualAccrued === null ? "—" : String(annualAccrued)} label="annual working days accrued" />
+        <PersonalFact value={String(annualEntitlement)} label="annual working-day entitlement" />
       </div> : null}
 
       {datasetErrors.leaveRequests ? <div className="ev2pf-partial-error"><StatePanel state="error" title="Leave requests could not be loaded" description={datasetErrors.leaveRequests} actionLabel="Try again" onAction={load} icon="error" /></div>
@@ -418,9 +424,13 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
             : request.status === "escalated" ? "With admin"
             : "Waiting";
           const kindLabel = request.kind ? request.kind.charAt(0).toUpperCase() + request.kind.slice(1) : "Leave";
-          const dayLabel = request.days === null || request.days === undefined
-            ? "Day count not recorded"
-            : `${request.days} recorded day${Number(request.days) === 1 ? "" : "s"}`;
+          const dayLabel = request.kind === "annual"
+            ? (request.working_days === null || request.working_days === undefined
+              ? "Working-day count unavailable"
+              : `${request.working_days} working day${Number(request.working_days) === 1 ? "" : "s"}`)
+            : (request.days === null || request.days === undefined
+              ? "Date span not recorded"
+              : `${request.days} calendar-day span`);
           return <PersonalRecordRow
             key={request.id}
             className="leave-request-row"
@@ -550,8 +560,8 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
           />
         </div>
         <TextareaField label="Reason" help="Optional. Keep it brief." rows={3} placeholder="A short reason" value={reason} onChange={(event) => setReason(event.target.value)} />
-        <ProductNotice tone="info" title="Dates only">
-          CEAC OS sends the dates you choose to the existing workforce leave process. It does not guess working-day totals, entitlement or payroll consequences here.
+        <ProductNotice tone="info" title="Working-day handling">
+          For Annual leave, CEAC OS counts working days from your attributable workforce schedule when that schedule is complete. It never turns leave or attendance into a Payroll deduction automatically.
         </ProductNotice>
       </div>
     </ModalDialog>

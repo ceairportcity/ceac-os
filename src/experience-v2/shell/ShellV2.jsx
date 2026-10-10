@@ -75,6 +75,7 @@ export function SideNav({
   onCreateMeeting,
   onMessages,
   onComposeMessage,
+  onGuide,
 }) {
   const context = navigationContext({ me, isAdmin, isExec, isManager });
   const navigation = getShellNavigation(context);
@@ -143,19 +144,32 @@ export function SideNav({
         </div> : null}
       </div>
 
-      <button
-        type="button"
-        className="ev2s-sidebar-profile"
-        onClick={() => setTab("me")}
-        aria-label="Open My Hub"
-      >
-        <Avatar name={me?.full_name || "CEAC"} size="md" />
-        <span className="ev2s-sidebar-profile-copy">
-          <strong>{me?.full_name || "Account"}</strong>
-          <small>{me?.unit_name || role}</small>
-        </span>
-        <CeacIcon name="chevronRight" size="meta" decorative />
-      </button>
+      <div className="ev2s-sidebar-footer">
+        {onGuide ? <button
+          type="button"
+          className={tab === "guide" ? "ev2s-sidebar-guide is-active" : "ev2s-sidebar-guide"}
+          onClick={onGuide}
+          aria-label="CEAC Guide"
+        >
+          <CeacIcon name="help" size="nav" decorative />
+          <span>CEAC Guide</span>
+          <CeacIcon name="chevronRight" size="meta" decorative />
+        </button> : null}
+
+        <button
+          type="button"
+          className="ev2s-sidebar-profile"
+          onClick={() => setTab("me")}
+          aria-label="Open My Hub"
+        >
+          <Avatar name={me?.full_name || "CEAC"} size="md" />
+          <span className="ev2s-sidebar-profile-copy">
+            <strong>{me?.full_name || "Account"}</strong>
+            <small>{me?.unit_name || role}</small>
+          </span>
+          <CeacIcon name="chevronRight" size="meta" decorative />
+        </button>
+      </div>
     </aside>
   );
 }
@@ -182,6 +196,7 @@ export function AppTopBar({
   onOpenMeeting,
   onOpenRoom,
   onOpenAnnouncement,
+  onGuide,
 }) {
   const [clock, setClock] = useState(() => new Date());
 
@@ -234,6 +249,16 @@ export function AppTopBar({
       </div>
 
       <div className="ev2s-topbar-actions">
+        {onGuide ? <button
+          type="button"
+          className="fpg9-topbar-message ev2s-context-help"
+          onClick={onGuide}
+          aria-label="Help for this page"
+          title="Help for this page"
+        >
+          <CeacIcon name="help" size="row" decorative />
+        </button> : null}
+
         {createItems.length ? (
           <PopoverMenu
             triggerLabel="Create"
@@ -297,6 +322,7 @@ export function MobileTopBar({
   onOpenMeeting,
   onOpenRoom,
   onOpenAnnouncement,
+  onGuide,
 }) {
   const context = navigationContext({ me, isAdmin, isExec, isManager });
   const canSwitchUnit = hasMultipleUnits(me, context);
@@ -338,6 +364,15 @@ export function MobileTopBar({
             onOpenRoom={onOpenRoom}
             onOpenAnnouncement={onOpenAnnouncement}
           />
+          {onGuide ? <button
+            type="button"
+            className="ev2s-mobile-profile"
+            aria-label="Help for this page"
+            title="Help for this page"
+            onClick={onGuide}
+          >
+            <CeacIcon name="help" size="row" decorative />
+          </button> : null}
           {isExec && onMessages ? <button
             type="button"
             className="ev2s-mobile-profile exec-redesign-mobile-notification"
@@ -379,6 +414,7 @@ export function Tabs({
   isExec = false,
   isAdmin = false,
   me = null,
+  onGuide,
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreTriggerRef = useRef(null);
@@ -426,6 +462,25 @@ export function Tabs({
               </div>
             </section>
           ))}
+          {onGuide ? <section className="ev2s-more-group" aria-label="Help">
+            <h4>Help</h4>
+            <div>
+              <button
+                type="button"
+                className={tab === "guide" ? "is-active" : ""}
+                aria-current={tab === "guide" ? "page" : undefined}
+                aria-label="CEAC Guide"
+                onClick={() => {
+                  setMoreOpen(false);
+                  onGuide();
+                }}
+              >
+                <CeacIcon name="help" size="nav" decorative />
+                <span>CEAC Guide</span>
+                <CeacIcon name="chevronRight" size="meta" decorative />
+              </button>
+            </div>
+          </section> : null}
         </div>
       </Drawer>
 
@@ -448,7 +503,7 @@ export function Tabs({
           ref={moreTriggerRef}
           type="button"
           aria-label="More"
-          className={moreOpen || secondary.some((item) => item.key === tab) ? "is-active" : ""}
+          className={moreOpen || tab === "guide" || secondary.some((item) => item.key === tab) ? "is-active" : ""}
           aria-expanded={moreOpen}
           onClick={() => setMoreOpen((value) => !value)}
         >

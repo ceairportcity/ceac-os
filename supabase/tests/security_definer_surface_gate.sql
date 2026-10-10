@@ -145,8 +145,7 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.workforce_record_day_type(p_id uuid, p_name text, p_description text, p_session_expected boolean, p_leave_overlay_allowed boolean, p_active boolean)'),
   ('public.workforce_record_leave_policy(p_name text, p_effective_from date, p_effective_to date, p_source_reference text, p_reason text, p_rules jsonb, p_activate boolean, p_supersedes_id uuid)'),
   ('public.workforce_record_pattern(p_profile_id uuid, p_unit_id uuid, p_effective_from date, p_effective_to date, p_day_map jsonb, p_clock_map jsonb, p_reason text, p_supersedes_id uuid)'),
-  ('public.workforce_record_schedule(p_profile_id uuid, p_unit_id uuid, p_effective_from date, p_effective_to date, p_source text, p_day_map jsonb, p_expected_start time without time zone, p_expected_end time without time zone, p_reason text, p_supersedes_id uuid)'),
-  ('public.workforce_request_leave(p_kind text, p_start_date date, p_end_date date, p_reason text)');
+  ('public.workforce_record_schedule(p_profile_id uuid, p_unit_id uuid, p_effective_from date, p_effective_to date, p_source text, p_day_map jsonb, p_expected_start time without time zone, p_expected_end time without time zone, p_reason text, p_supersedes_id uuid)');
 
 do $allowlist$
 declare
@@ -195,7 +194,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>136 or v_expected<>136 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>135 or v_expected<>135 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
