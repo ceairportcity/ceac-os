@@ -70,8 +70,11 @@ begin
   exception when insufficient_privilege then null;
   end;
 
-  insert into public.work_sessions(org_id,profile_id,place)
-  values(public.app_org_id(),auth.uid(),'office')
+  -- Office starts must use the same fresh, in-geofence GPS fixture verified
+  -- by onboarding_access_presence_gate.sql; never bypass the location trigger.
+  insert into public.work_sessions(
+    org_id,profile_id,place,lat,lng,location_accuracy_m,location_captured_at,device_time
+  ) values(public.app_org_id(),auth.uid(),'office',5.6037,-0.187,10,now(),now())
   returning id into s;
   insert into phase6_integrity_fixture(name,value) values('session',s::text);
 
@@ -151,18 +154,27 @@ where profile_id='31000000-0000-4000-8000-000000000006';
 
 set local role service_role;
 
-insert into public.work_sessions(org_id,profile_id,place)
-values(
-  '10000000-0000-4000-8000-000000000010',
-  '31000000-0000-4000-8000-000000000006',
-  'office'
-)
-returning id::text into temporary table phase6_volunteer_session;
+do $volunteer_office_session$
+declare v_session uuid;
+begin
+  -- The no-attendance employment rule does not bypass evidence required to
+  -- start a real office session. All test mutations roll back below.
+  insert into public.work_sessions(
+    org_id,profile_id,place,lat,lng,location_accuracy_m,location_captured_at,device_time
+  ) values(
+    '10000000-0000-4000-8000-000000000010',
+    '31000000-0000-4000-8000-000000000006',
+    'office',5.6037,-0.187,10,now(),now()
+  ) returning id into v_session;
+  insert into phase6_integrity_fixture(name,value)
+  values('volunteer_session',v_session::text);
+end
+$volunteer_office_session$;
 
 select public.attendance_record_network_corroboration(
   'phase6-integrity-source',
   '31000000-0000-4000-8000-000000000006',
-  (select id::uuid from phase6_volunteer_session),
+  (select value::uuid from phase6_integrity_fixture where name='volunteer_session'),
   true,
   'volunteer-network-reference'
 );
