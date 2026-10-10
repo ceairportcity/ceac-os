@@ -169,9 +169,18 @@ export default function Record({ me, openItem }) {
     finally { setBusy(false); }
   }
 
-  if (!record) return error
-    ? <div className="body"><div className="flag flag-brick" style={{ marginTop: 24 }}><h4>Could not load your record</h4>{error}</div></div>
-    : <div className="spin">Loading...</div>;
+  // Keep the destination's identity visible while its factual history is loading.
+  // A slow authorised read must not make navigation appear to have failed.
+  if (!record) return <div className="body staff-record ev2-personal-page ev2-personal-record">
+    <PersonalPageHeader
+      eyebrow="My Hub"
+      title="My work history"
+      description="Completed CEAC work, feedback and recorded activity from the period you choose. Private work and personal goals remain outside this history."
+    />
+    {error
+      ? <div className="flag flag-brick" role="alert" style={{ marginTop: 24 }}><h4>Could not load your record</h4>{error}</div>
+      : <div className="spin" role="status" aria-busy="true">Loading your history...</div>}
+  </div>;
 
   const [year, monthNumber] = month.split("-").map(Number);
   const monthLabel = new Date(year, monthNumber - 1, 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
