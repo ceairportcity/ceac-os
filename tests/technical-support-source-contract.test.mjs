@@ -200,3 +200,13 @@ test("needs-you queue excludes colleagues' assigned work", () => {
   assert.match(supportPanel, /<SupportRows cases=\{needsYou\}/);
   assert.doesNotMatch(supportPanel, /<SupportRows cases=\{groups\.attention\}/);
 });
+
+test("People & Access invalidates confidential roster state across identity changes", () => {
+  const peopleAccess = read("src/components/PeopleAccess.jsx");
+  assert.match(peopleAccess, /const loadGeneration = useRef\(0\)/);
+  assert.match(peopleAccess, /setSnapshot\(null\)/);
+  assert.match(peopleAccess, /\[me\.id, me\.org_id, canManage\]/);
+  assert.match(peopleAccess, /if \(generation !== loadGeneration\.current\) return false/);
+  assert.match(peopleAccess, /generation === loadGeneration\.current/);
+  assert.match(peopleAccess, /People & Access could not load verified records/);
+});
