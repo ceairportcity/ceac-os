@@ -57,7 +57,7 @@ jobs:
         run: npm ci
       - name: Run Telegram provider unit tests
         if: steps.classify.outputs.documentation_only != 'true'
-        run: node --test tests/integration-runtime.test.mjs tests/onboarding-foundation.test.mjs tests/attendance.test.mjs tests/mfa-foundation.test.mjs tests/technical-support-v1.test.mjs tests/technical-support-source-contract.test.mjs tests/report-rpc-tenant-scope-contract.test.mjs tests/capability-schema-compatibility.test.mjs
+        run: node --test tests/integration-runtime.test.mjs tests/onboarding-foundation.test.mjs tests/attendance.test.mjs tests/mfa-foundation.test.mjs tests/technical-support-v1.test.mjs tests/technical-support-source-contract.test.mjs tests/report-rpc-tenant-scope-contract.test.mjs tests/capability-schema-compatibility.test.mjs tests/pending-feature-compatibility.test.mjs
       - name: Dependency security audit
         if: steps.classify.outputs.documentation_only != 'true'
         run: npm audit --audit-level=high
