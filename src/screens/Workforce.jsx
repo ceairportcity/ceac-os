@@ -23,12 +23,17 @@ const DAY_LABELS={sun:"Sun",mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sa
 const OWNER_CONFIRMED_LEAVE_KINDS=new Set(["annual","sick","maternity","paternity","study"]);
 
 function isoDay(value){ return new Date(value).toISOString().slice(0,10); }
-function niceDay(value){ return new Date(value+"T00:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}); }
+function accraDayOffset(offset){
+  const now = new Date();
+  const midnight = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate());
+  return new Date(midnight + offset * 86400000);
+}
+function niceDay(value){ return new Date(value+"T00:00:00Z").toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"}); }
 function human(value=""){ return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase()); }
 function clock(value){
   if(!value) return "Not recorded";
   const date=new Date(value);
-  return date.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  return date.toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"});
 }
 function metresBetween(aLat,aLng,bLat,bLng){
   const R=6371000,toRad=(d)=>(d*Math.PI)/180;
@@ -177,7 +182,7 @@ export default function Workforce({ me }) {
   }
   function currentDayType(profileId,date=today){
     const schedule=latestSchedule(profileId,date);
-    const key=DAY_KEYS[new Date(date+"T00:00:00").getDay()];
+    const key=DAY_KEYS[new Date(date+"T00:00:00Z").getUTCDay()];
     const id=schedule?.day_map?.[key];
     return id?dayTypesById[id]||null:null;
   }
@@ -462,7 +467,7 @@ export default function Workforce({ me }) {
 
       {tab==="calendar"&&<WorkforceSection title="My next seven days" description="Schedule, recorded activity, approved leave and shared calendar context are shown as separate facts.">
         {Array.from({length:7},(_,i)=>{
-          const d=new Date(); d.setDate(d.getDate()+i); const date=isoDay(d);
+          const d=accraDayOffset(i); const date=isoDay(d);
           const ctx=contextFor(personId,date);
           const facts=sessionFacts(personId,date);
           const schedule=latestSchedule(personId,date);
@@ -704,7 +709,7 @@ export default function Workforce({ me }) {
           />
         </div>
         {Array.from({length:7},(_,i)=>{
-          const d=new Date(); d.setDate(d.getDate()+i); const date=isoDay(d);
+          const d=accraDayOffset(i); const date=isoDay(d);
           const events=calendarEventsOn(date);
           return <WorkforceSection key={date} title={niceDay(date)} description="Configured schedule and recorded activity for the selected managed scope." meta={calendarPeople.length+" people"}>
             {calendarPeople.map((person)=>{
@@ -872,7 +877,7 @@ export default function Workforce({ me }) {
 
   if(isAdminView){
     const absenceDays=Array.from({length:14},(_,i)=>{
-      const d=new Date(); d.setDate(d.getDate()+i); return {date:isoDay(d),dateObject:d};
+      const d=accraDayOffset(i); return {date:isoDay(d),dateObject:d};
     });
     const absenceFor=(profileId,date)=>leave.find((row)=>
       row.profile_id===profileId
@@ -1262,7 +1267,7 @@ export default function Workforce({ me }) {
       </div>
       <div className="workforce-calendar">
         {Array.from({length:7},(_,i)=>{
-          const d=new Date(); d.setDate(d.getDate()+i); const date=isoDay(d);
+          const d=accraDayOffset(i); const date=isoDay(d);
           const events=calendarEventsOn(date);
           return <section key={date}>
             <header><strong>{niceDay(date)}</strong><small>{events.length?events.length+" calendar item"+(events.length===1?"":"s"):"No shared calendar items"}</small></header>
