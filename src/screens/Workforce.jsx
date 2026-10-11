@@ -264,7 +264,7 @@ export default function Workforce({ me }) {
       p_profile_id:correctionPerson,p_work_date:correctionDate,p_work_session_id:null,
       p_correction_type:correctionType,p_before_context:{},
       p_after_context:{note:correctionNote.trim()},p_reason:correctionReason.trim(),p_reverses_id:null,
-    },"Attendance context correction recorded.");
+    },"Attendance context correction recorded.",["corrections"]);
     if(ok){ setCorrectionSheet(false); setCorrectionNote(""); setCorrectionReason(""); }
   }
 
@@ -281,7 +281,7 @@ export default function Workforce({ me }) {
   async function leaveAction(id,action){
     const reason=window.prompt(action==="manager_approved"?"Reason for approval":"Reason for this leave decision");
     if(!reason) return;
-    await runRpc("workforce_leave_action",{p_leave_request_id:id,p_action:action,p_reason:reason},"Leave decision recorded.");
+    await runRpc("workforce_leave_action",{p_leave_request_id:id,p_action:action,p_reason:reason},"Leave decision recorded.",["leave","leave history"]);
   }
 
   async function recordPolicy(){
