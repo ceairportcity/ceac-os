@@ -37,5 +37,5 @@ test("MFA runbook requires verified TOTP challenge, genuine AAL2 and safe recove
   assert.match(runbook, /totp/);
   assert.match(runbook, /zero real enrolled factors/);
   assert.match(runbook, /privileged_mfa_required=false/);
-  assert.match(runbook, /Do not toggle/i);
+  assert.match(runbook, /Do\s+(?:\*\*)?not(?:\*\*)?\s+toggle/i);
 });
