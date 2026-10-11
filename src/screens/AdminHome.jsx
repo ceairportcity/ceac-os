@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import SupportAccessApprovals from "../components/SupportAccessApprovals";
 import { humanError } from "../lib/productLanguage";
 import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
 import { summariseAdminToday, countRecordedSessionDays } from "../lib/adminTodaySummary";
@@ -313,6 +314,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenAttendance={() => go?.("attendance")}
       onLeaveDecision={decideLeave}
     />
+    {canManagePeople && verifiedSnapshot && <SupportAccessApprovals me={me} authority="people_administration" />}
 
   </>;
 }
