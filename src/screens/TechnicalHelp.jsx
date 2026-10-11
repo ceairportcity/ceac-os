@@ -5,7 +5,7 @@ import { HELP_CATEGORIES, supportCategoryLabel, supportUnavailableMessage } from
 import "../role-styles/technical-support.css";
 
 const formatDate = (date) => date ? new Date(date).toLocaleDateString("en-GB", {
-  day: "numeric", month: "short", year: "numeric",
+  day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Accra",
 }) : "Unknown date";
 
 export default function TechnicalHelp({ me }) {
