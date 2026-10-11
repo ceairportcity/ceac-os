@@ -207,6 +207,11 @@ export default function Workforce({ me }) {
     // Busy React state alone is not a synchronous double-submit lock.
     // Every correction, policy, schedule and leave decision uses this gate.
     if(mutationBusyRef.current || busy || loading) return false;
+    const unavailable=requiredDatasets.filter((dataset)=>datasetErrors[dataset]);
+    if(unavailable.length){
+      setError("Required Workforce records are currently unavailable: "+unavailable.join(", ")+". Reopen Workforce or refresh the page before recording a change.");
+      return false;
+    }
     mutationBusyRef.current=true;
     setBusy(true); setError(null); setNotice(null);
     let recorded=false;
