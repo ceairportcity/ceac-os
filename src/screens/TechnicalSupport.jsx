@@ -20,7 +20,7 @@ function SupportRows({ cases, onSelect, empty = "Nothing requires action here." 
   </div>;
 }
 
-function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, myId, busy, error }) {
+function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, myId, orgId, busy, error }) {
   const [nextState, setNextState] = useState(item.state);
   const [resolution, setResolution] = useState(item.resolution_summary || "");
   const [history, setHistory] = useState([]);
@@ -41,7 +41,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
     (async () => {
       try {
         const { data, error: failure } = await supabase.from("support_case_events")
-          .select("id,action,note,occurred_at").eq("case_id", item.id)
+          .select("id,action,note,occurred_at").eq("org_id", orgId).eq("case_id", item.id)
           .order("occurred_at", { ascending: false }).limit(75);
         if (failure) throw failure;
         if (active) setHistory(data || []);
@@ -52,7 +52,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
       }
     })();
     return () => { active = false; };
-  }, [item.id, item.state, item.resolution_summary, item.updated_at, historyRefreshToken]);
+  }, [orgId, item.id, item.state, item.resolution_summary, item.updated_at, historyRefreshToken]);
 
   return <section className="ceac-support-detail" aria-labelledby="support-case-title">
     <div className="ceac-support-detail-top">
@@ -337,7 +337,7 @@ export default function TechnicalSupport({ me, go }) {
       </nav>
 
       {selected ? <CaseDetails key={selected.id} item={selected} busy={busy} error={actionError}
-        myId={me.id} onClaim={claimCase} onRelease={releaseCase}
+        myId={me.id} orgId={me.org_id} onClaim={claimCase} onRelease={releaseCase}
         onClose={() => { setSelectedId(null); setActionError(null); }} onRefresh={refreshCases} onUpdate={updateCase} /> : <>
         {workspace === "home" && <div className="ceac-support-layout">
           <section className="ceac-support-main">
