@@ -19,6 +19,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
   const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [verifiedLoad, setVerifiedLoad] = useState(false);
   const [scopeRead, setScopeRead] = useState(null);
   const generation = useRef(0);
   const busyRef = useRef(false);
@@ -27,7 +28,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
 
   async function refresh() {
     const id = ++generation.current;
-    setRows([]); setHistory([]); setScopeRead(null); setLoading(true);
+    setRows([]); setHistory([]); setScopeRead(null); setLoading(true); setVerifiedLoad(false);
     setError(null);
     const [members, events] = await Promise.all([
       supabase.from("support_team_memberships")
@@ -41,6 +42,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
     if (members.error || events.error) {
       setError("Technical Support membership history is not available or authorised. No membership was changed.");
     } else {
+      setVerifiedLoad(true);
       setRows(members.data || []); setHistory(events.data || []);
     }
     setScopeRead(scope); setLoading(false);
@@ -57,7 +59,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
   }, [me.id, me.org_id]);
 
   async function save(type) {
-    if (busyRef.current || busy || loading || error || scopeRead !== scope) return;
+    if (busyRef.current || busy || loading || !verifiedLoad || scopeRead !== scope) return;
     if (type === "add" && (!selected || !unitId || reason.trim().length < 8)) {
       setError("Choose an existing active person, the associated Media & Technical unit and a reason of at least 8 characters."); return;
     }
@@ -111,7 +113,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
     <div className="phase5-access-form-grid">
       <label>Existing active CEAC person
         <select className="field" value={selected} disabled={busy || loading}
-          onChange={(e) => setSelected(e.target.value)}>
+          onChange={(e) => { setSelected(e.target.value); setError(null); }}>
           <option value="">Select person</option>
           {people.filter((person) => person.active).map((person) => <option key={person.id} value={person.id}>{person.full_name}</option>)}
         </select>
@@ -125,19 +127,19 @@ export default function SupportTeamMemberships({ me, people, units }) {
       </label>
       <label>Media & Technical association (context only)
         <select className="field" value={unitId} disabled={busy || loading}
-          onChange={(e) => setUnitId(e.target.value)}>
+          onChange={(e) => { setUnitId(e.target.value); setError(null); }}>
           <option value="">Choose the authorised associated unit</option>
           {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
         </select>
       </label>
       <label>Reason for team membership
         <textarea className="field" rows={2} maxLength={700} value={reason}
-          disabled={busy || loading} onChange={(e) => setReason(e.target.value)}
+          disabled={busy || loading} onChange={(e) => { setReason(e.target.value); setError(null); }}
           placeholder="Record who authorised this placement and why." />
       </label>
     </div>
     <p className="screen-note">Adding a member does not automatically grant case, integration, recovery, HR or Payroll authority. Any Support capability requires the separate approved authority process and privileged MFA where applicable.</p>
-    <Button disabled={busy || loading || !!error || !selected || !unitId || reason.trim().length < 8}
+    <Button disabled={busy || loading || !verifiedLoad || !selected || !unitId || reason.trim().length < 8}
       onClick={() => save("add")}>Record Support membership</Button>
     <h3>Current team</h3>
     {active.length === 0 && !loading && <p className="screen-note">No active Support memberships in the authorised records.</p>}
@@ -154,7 +156,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
         <p className="screen-note">End the active membership of {nameFor(ending.profile_id)}? Existing CEAC identity, employee status and historical case attribution remain intact. All current Support-only capability grants are revoked by the database in the same transition.</p>
         <label>Reason for ending this role
           <textarea className="field" rows={3} maxLength={700} value={endReason}
-            onChange={(e) => setEndReason(e.target.value)} />
+            onChange={(e) => { setEndReason(e.target.value); setError(null); }} />
         </label>
         <div className="phase5-access-actions">
           <Button variant="secondary" disabled={busy} onClick={() => setEnding(null)}>Keep membership</Button>
