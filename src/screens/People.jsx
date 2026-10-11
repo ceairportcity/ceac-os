@@ -105,6 +105,14 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   const employeeFileWriteBusy = useRef(false);
 
   const canManageProtectedHr = (me.capabilities || []).includes("hr_private.access");
+  function clearEditorsForNavigation() {
+    setSavingProtected(false);
+    setSavingEmployment(false);
+    setVolunteerDecisionBusy(false);
+    setProtectedEditor(null);
+    setEmploymentEditor(false);
+    setEmploymentForm(null);
+  }
 
   useEffect(() => {
     void load();
@@ -124,6 +132,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     personGeneration.current += 1;
     employeeFileWriteBusy.current = false;
     setEmployeeFileBusy(false);
+    clearEditorsForNavigation();
     setPerson(null);
     setProtectedHr(null);
     setDetailLoading(false);
@@ -244,6 +253,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     const generation = ++personGeneration.current;
     employeeFileWriteBusy.current = false;
     setEmployeeFileBusy(false);
+    clearEditorsForNavigation();
     setPerson(null);
     setProtectedHr(null);
     setVolunteerRecommendations([]);
@@ -390,6 +400,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     personGeneration.current += 1;
     employeeFileWriteBusy.current = false;
     setEmployeeFileBusy(false);
+    clearEditorsForNavigation();
     setDetailLoading(false);
     setProtectedHrLoading(false);
     setAccessFocusProfileId(profileId);
