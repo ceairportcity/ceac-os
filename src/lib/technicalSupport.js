@@ -92,10 +92,14 @@ export function supportUnavailableMessage(error) {
     : null;
 }
 
-export function canRecordSupportOutcome(caseRecord, nextState) {
-  // A support-only case transition is not proof of business authorization.
-  // Until the approval + execution ledger exists, access cases cannot be
-  // marked resolved or closed from the Technical Support queue.
-  return !(caseRecord?.category === "access_needed"
-    && (nextState === "resolved" || nextState === "closed"));
+export function canRecordSupportOutcome(caseRecord, nextState, recordedAccess = null) {
+  // UI convenience only. The PostgreSQL case guard independently requires
+  // approved, immutable business/technical evidence in the same organisation.
+  if (caseRecord?.category !== "access_needed"
+    || (nextState !== "resolved" && nextState !== "closed")) return true;
+  return Boolean(recordedAccess?.state === "executed"
+    && recordedAccess.approved_by && recordedAccess.executed_by
+    && recordedAccess.approved_by !== recordedAccess.executed_by
+    && recordedAccess.execution_reference?.trim()?.length >= 8
+    && recordedAccess.case_id === caseRecord.id);
 }
