@@ -73,10 +73,10 @@ function AdminCalendarRail({ meetings }) {
     <div className="adminv2-calendar-selection" role="status">
       <strong>{new Intl.DateTimeFormat("en-GB", {weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(selectedDay+"T00:00:00Z"))}</strong>
       <span>{!withinLoadedWindow
-        ? "Upcoming meeting data is limited to the next 14 days."
+        ? "This calendar previews at most six upcoming meetings within the next 14 days."
         : selectedMeetings.length
           ? `${selectedMeetings.length} recorded meeting${selectedMeetings.length === 1 ? "" : "s"}`
-          : "No upcoming meetings loaded for this date. Earlier meetings are not included."}</span>
+          : "No meeting is shown for this date in the limited upcoming preview."}</span>
     </div>
   </div>;
 }
@@ -312,7 +312,7 @@ export default function AdminOverviewV2({
                 <CeacIcon name="chevronRight" size="meta" decorative />
               </button>)}
             </div>
-            : <div className="adminv2-agenda-empty">No upcoming meetings on record in the next 14 days.</div>}
+            : <div className="adminv2-agenda-empty">No upcoming meetings were returned in this limited 14-day preview.</div>}
           {!loading && !loadFailed ? <div className="adminv2-agenda-foot">
             <span><strong>{pendingInvitations.length}</strong> invitations need follow-up</span>
             <span><strong>{leaveQueue.length}</strong> leave decisions</span>
@@ -572,7 +572,7 @@ export default function AdminOverviewV2({
               status={meeting.provider === "zoom" ? "Zoom" : "Meeting"}
               statusTone="action"
               onClick={() => onOpenMeeting?.(meeting.id)}
-            />) : <Quiet icon="calendar">No upcoming meeting is recorded in the next 14 days.</Quiet>}
+            />) : <Quiet icon="calendar">No upcoming meeting appears in this limited 14-day preview.</Quiet>}
           </DataPanel>
 
           {mine.length ? <DataPanel
