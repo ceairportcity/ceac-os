@@ -45,9 +45,8 @@ export default function TechnicalHelp({ me }) {
     setLoadError(null);
     (async () => {
       try {
-        const { data, error: failure } = await supabase.from("support_cases")
+        const { data, error: failure } = await supabase.from("support_case_safe_status")
           .select("id,reference,category,summary,description,affected_service,state,opened_at,resolved_at,closed_at,resolution_summary")
-          .eq("reported_by", me.id).eq("org_id", me.org_id)
           .order("opened_at", { ascending: false }).limit(30);
         if (failure) throw failure;
         if (live && generation === readGeneration.current) setCases(data || []);
@@ -79,12 +78,19 @@ export default function TechnicalHelp({ me }) {
     setError(null);
     setSuccess(null);
     try {
-      const { data, error: failure } = await supabase.from("support_cases").insert({
+      const requestId = crypto.randomUUID();
+      const { error: failure } = await supabase.from("support_cases").insert({
+        id: requestId,
         org_id: me.org_id, reported_by: me.id, affected_profile_id: me.id,
         category, summary: title, description: details,
         affected_service: service.trim() || null, impact: "normal", state: "open",
-      }).select("id,reference,category,summary,description,affected_service,state,opened_at,resolved_at,closed_at,resolution_summary").single();
+      });
       if (failure) throw failure;
+      if (generation !== readGeneration.current) return;
+      const { data, error: readFailure } = await supabase.from("support_case_safe_status")
+        .select("id,reference,category,summary,description,affected_service,state,opened_at,resolved_at,closed_at,resolution_summary")
+        .eq("id", requestId).maybeSingle();
+      if (readFailure || !data) throw readFailure || new Error("The recorded request could not be verified.");
       if (generation !== readGeneration.current) return;
       setCases((previous) => [data, ...previous]);
       setSummary(""); setDescription(""); setService("");

@@ -6,6 +6,7 @@ import { join } from "node:path";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 const backend = read("supabase/migrations/20261011130000_133_technical_support_v1_backend.sql");
+const hardening = read("supabase/migrations/20261011183000_134_technical_support_authority_hardening.sql");
 const proposedGate = read("supabase/tests/technical_support_v1_gate.sql");
 const app = read("src/App.jsx");
 const navigation = read("src/experience-v2/shell/navigation.js");
@@ -31,6 +32,22 @@ test("support-specific privileges never grant general administration or payroll"
   assert.doesNotMatch(backend, /grant\s+.*\bauthority\.manage\b/i);
 });
 
+test("independent review hardening preserves membership history and safe reporter projection", () => {
+  assert.match(hardening, /support_membership_events_immutable/);
+  assert.match(hardening, /BEFORE INSERT OR UPDATE OR DELETE ON public\.support_team_memberships/);
+  assert.match(hardening, /A membership may only transition once from active to ended/);
+  assert.match(hardening, /capability LIKE 'support\.%'/);
+  assert.match(hardening, /Technical Support capability cannot be self-granted/);
+  assert.match(hardening, /cg\.capability='support\.case\.manage'/);
+  assert.match(hardening, /CREATE VIEW public\.support_case_safe_status/);
+  const safeView = hardening.split("CREATE VIEW public.support_case_safe_status")[1]
+    ?.split("REVOKE ALL ON public.support_case_safe_status")[0] || "";
+  assert.doesNotMatch(safeView, /assigned_to/);
+  assert.doesNotMatch(safeView, /affected_profile_id\s*(?:,|FROM)/i);
+  assert.match(supportHelp, /from\("support_case_safe_status"\)/);
+  assert.doesNotMatch(supportHelp, /from\("support_cases"\)\s*\.select/);
+});
+
 test("case records and immutable audit history are deny-by-default", () => {
   for (const table of ["support_cases", "support_case_events", "support_team_memberships"]) {
     assert.match(backend, new RegExp("ALTER TABLE public\\." + table + " ENABLE ROW LEVEL SECURITY"));
@@ -40,13 +57,15 @@ test("case records and immutable audit history are deny-by-default", () => {
   assert.match(backend, /EXECUTE FUNCTION public\.platform_audit_immutable\(\)/);
   assert.match(backend, /AFTER INSERT ON public\.support_cases/);
   assert.match(backend, /BEFORE UPDATE ON public\.support_cases/);
-  assert.match(proposedGate, /support_case_events_immutable/);
+  const caseEventTriggerCheck = proposedGate.split("t.tgname='support_case_events_immutable'")[1]
+    ?.split("THEN RAISE EXCEPTION 'Support audit event immutability trigger missing.'")[0] || "";
+  assert.ok(caseEventTriggerCheck);
   // PostgreSQL pg_trigger.tgtype: BEFORE=2, DELETE=8, UPDATE=16.
   // INSERT=4 must not be mistaken for DELETE when proving immutability.
-  assert.match(proposedGate, /\(t\.tgtype & 2\)<>0/);
-  assert.match(proposedGate, /\(t\.tgtype & 8\)<>0/);
-  assert.match(proposedGate, /\(t\.tgtype & 16\)<>0/);
-  assert.doesNotMatch(proposedGate, /AND \(t\.tgtype & 4\)<>0/);
+  assert.match(caseEventTriggerCheck, /\(t\.tgtype & 2\)<>0/);
+  assert.match(caseEventTriggerCheck, /\(t\.tgtype & 8\)<>0/);
+  assert.match(caseEventTriggerCheck, /\(t\.tgtype & 16\)<>0/);
+  assert.doesNotMatch(caseEventTriggerCheck, /AND \(t\.tgtype & 4\)<>0/);
 
   const auditPolicy = backend.split("CREATE POLICY support_case_events_visible")[1]
     ?.split("CREATE OR REPLACE FUNCTION public.support_case_insert_guard")[0] || "";
@@ -90,12 +109,12 @@ test("approved Executive stylesheet has exactly the same Git blob", () => {
   assert.equal(digest, "5613e38749322da28f6bfd6f4a584dd4bebd6d47");
 });
 
-test("canonical S3 migration and seven reviewed security migrations have unique ordered versions", () => {
+test("canonical S3 migration and eight reviewed security migrations have unique ordered versions", () => {
   const folder = "supabase/migrations";
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 137, "expected reviewed 119-history + 11-pending + 7 security migration source tree");
+  assert.equal(migrations.length, 138, "expected reviewed 119-history + 11-pending + 8 security migration source tree");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
   const pending = [
@@ -157,7 +176,7 @@ test("later migrations may not redefine S3 authority functions", () => {
 });
 
 test("reporters can inspect only their own recorded case status and response", () => {
-  assert.match(supportHelp, /\.eq\("reported_by", me\.id\)\.eq\("org_id", me\.org_id\)/);
+  assert.match(supportHelp, /from\("support_case_safe_status"\)/);
   assert.match(supportHelp, /setSelectedId/);
   assert.match(supportHelp, /aria-pressed=\{selectedId === item\.id\}/);
   assert.match(supportHelp, /selected\.resolution_summary/);

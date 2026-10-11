@@ -61,7 +61,8 @@ test("Reporters cannot inherit cases from another login or invent a success", ()
   assert.match(help, /visibleCases = loadedScope === currentScope \? cases : \[\]/);
   assert.match(help, /scopedLoading = loading \|\| loadedScope !== currentScope/);
   assert.match(help, /generation !== readGeneration\.current/);
-  assert.match(help, /\.eq\("reported_by", me\.id\)\.eq\("org_id", me\.org_id\)/);
+  assert.match(help, /from\("support_case_safe_status"\)/);
+  assert.doesNotMatch(help, /from\("support_cases"\)\s*\.select/);
   assert.match(help, /Your request could not be confirmed/);
   assert.doesNotMatch(help, /support_case_events/);
 });

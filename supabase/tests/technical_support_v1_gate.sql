@@ -9,7 +9,9 @@ DECLARE
 BEGIN
   IF to_regclass('public.support_cases') IS NULL
      OR to_regclass('public.support_case_events') IS NULL
-     OR to_regclass('public.support_team_memberships') IS NULL THEN
+     OR to_regclass('public.support_team_memberships') IS NULL
+     OR to_regclass('public.support_membership_events') IS NULL
+     OR to_regclass('public.support_case_safe_status') IS NULL THEN
     RAISE EXCEPTION 'Technical Support schema not installed in fixture database.';
   END IF;
 
@@ -17,7 +19,8 @@ BEGIN
     SELECT 1 FROM pg_class c
       WHERE c.oid IN ('public.support_cases'::regclass,
                       'public.support_case_events'::regclass,
-                      'public.support_team_memberships'::regclass)
+                      'public.support_team_memberships'::regclass,
+                      'public.support_membership_events'::regclass)
         AND NOT c.relrowsecurity
   ) THEN RAISE EXCEPTION 'Technical Support RLS is required on all tables.'; END IF;
 
@@ -28,22 +31,43 @@ BEGIN
     RAISE EXCEPTION 'Anonymous role has Technical Support table access.';
   END IF;
 
-  IF has_table_privilege('authenticated','public.support_team_memberships','INSERT')
-     OR has_table_privilege('authenticated','public.support_team_memberships','UPDATE')
+  IF NOT has_table_privilege('authenticated','public.support_team_memberships','INSERT')
+     OR NOT has_table_privilege('authenticated','public.support_team_memberships','UPDATE')
      OR has_table_privilege('authenticated','public.support_team_memberships','DELETE')
      OR has_table_privilege('authenticated','public.support_case_events','INSERT')
      OR has_table_privilege('authenticated','public.support_case_events','UPDATE')
      OR has_table_privilege('authenticated','public.support_case_events','DELETE')
      OR has_table_privilege('authenticated','public.support_cases','DELETE') THEN
-    RAISE EXCEPTION 'Direct browser writes to membership/history or case deletion are forbidden.';
+    RAISE EXCEPTION 'People membership lifecycle or immutable history/delete privileges are incorrect.';
   END IF;
 
-  SELECT coalesce(string_agg(qual,' '),'') INTO v_qual FROM pg_policies
-    WHERE schemaname='public' AND tablename='support_cases' AND cmd IN ('SELECT','UPDATE');
-  IF position('support.case.manage' IN v_qual)=0
-     OR position('support_team_memberships' IN v_qual)=0
-     OR position('reported_by' IN v_qual)=0 THEN
+  IF NOT EXISTS(SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='support_team_memberships'
+      AND policyname='support_team_people_read' AND cmd='SELECT'
+      AND qual LIKE '%people.manage%') THEN
+    RAISE EXCEPTION 'People Administration cannot safely inspect membership lifecycle records.';
+  END IF;
+
+  IF (SELECT array_agg(policyname ORDER BY policyname) FROM pg_policies
+      WHERE schemaname='public' AND tablename='support_cases' AND cmd='SELECT')
+     IS DISTINCT FROM ARRAY['support_cases_support_read']::name[] THEN
+    RAISE EXCEPTION 'Unexpected or missing support-case SELECT policy.';
+  END IF;
+  SELECT qual INTO v_qual FROM pg_policies
+    WHERE schemaname='public' AND tablename='support_cases'
+      AND cmd='SELECT' AND policyname='support_cases_support_read';
+  IF position('support.case.manage' IN coalesce(v_qual,''))=0
+     OR position('support_team_memberships' IN coalesce(v_qual,''))=0
+     OR position('reported_by' IN coalesce(v_qual,''))<>0 THEN
     RAISE EXCEPTION 'Case visibility/management membership-capability gate is missing.';
+  END IF;
+
+  IF EXISTS(SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='support_case_safe_status'
+      AND column_name IN ('assigned_to','affected_profile_id','affected_unit_id','org_id','reported_by','impact','updated_at'))
+     OR NOT has_table_privilege('authenticated','public.support_case_safe_status','SELECT')
+     OR has_table_privilege('anon','public.support_case_safe_status','SELECT') THEN
+    RAISE EXCEPTION 'Reporter safe projection exposes internal fields or has incorrect grants.';
   END IF;
 
   -- Audit-event note content is restricted to the support team, even when
@@ -68,7 +92,11 @@ BEGIN
      OR has_function_privilege('authenticated','public.support_case_insert_guard()','EXECUTE')
      OR has_function_privilege('anon','public.support_case_insert_guard()','EXECUTE')
      OR has_function_privilege('authenticated','public.support_membership_scope_guard()','EXECUTE')
-     OR has_function_privilege('anon','public.support_membership_scope_guard()','EXECUTE') THEN
+     OR has_function_privilege('anon','public.support_membership_scope_guard()','EXECUTE')
+     OR has_function_privilege('authenticated','public.support_membership_history_guard()','EXECUTE')
+     OR has_function_privilege('anon','public.support_membership_history_guard()','EXECUTE')
+     OR has_function_privilege('authenticated','public.support_capability_grant_guard()','EXECUTE')
+     OR has_function_privilege('anon','public.support_capability_grant_guard()','EXECUTE') THEN
     RAISE EXCEPTION 'Internal support guard functions are directly callable.';
   END IF;
 
@@ -85,6 +113,19 @@ BEGIN
       AND (t.tgtype & 8)<>0
       AND (t.tgtype & 16)<>0
   ) THEN RAISE EXCEPTION 'Support audit event immutability trigger missing.'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid='public.support_team_memberships'::regclass
+      AND t.tgname='support_membership_scope_guard' AND NOT t.tgisinternal
+      AND (t.tgtype & 2)<>0 AND (t.tgtype & 4)<>0
+      AND (t.tgtype & 8)<>0 AND (t.tgtype & 16)<>0
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid='public.support_membership_events'::regclass
+      AND t.tgname='support_membership_events_immutable' AND NOT t.tgisinternal
+      AND (t.tgtype & 8)<>0 AND (t.tgtype & 16)<>0
+  ) THEN RAISE EXCEPTION 'Membership lifecycle/history immutability triggers are incomplete.'; END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_trigger t
@@ -119,18 +160,30 @@ ALTER TABLE auth.users ENABLE TRIGGER on_auth_user_created;
 INSERT INTO public.profiles(id,org_id,full_name,email,is_admin,is_exec,active) VALUES
 ('31000000-0000-4000-8000-000000000011','10000000-0000-4000-8000-000000000020','Tenant B Reporter','tenant-b@ceac.local.test',false,false,true);
 
-INSERT INTO public.capability_grants(
-  org_id,profile_id,capability,scope_unit_id,granted_by,grant_reason
-) VALUES
-('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000003','support.case.manage',null,'31000000-0000-4000-8000-000000000003','Technical Support gate lead authority.'),
-('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000002','support.case.manage',null,'31000000-0000-4000-8000-000000000003','Technical Support gate member authority.');
-
 INSERT INTO public.support_team_memberships(
   org_id,profile_id,role,added_by,reason,associated_unit_id
 ) VALUES
 ('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000003','lead','31000000-0000-4000-8000-000000000003','Gate Support Lead membership','20000000-0000-4000-8000-000000000011'),
 ('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000002','member','31000000-0000-4000-8000-000000000003','Gate Support Member membership','20000000-0000-4000-8000-000000000011'),
 ('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000006','member','31000000-0000-4000-8000-000000000003','Gate membership without capability','20000000-0000-4000-8000-000000000011');
+
+INSERT INTO public.capability_grants(
+  org_id,profile_id,capability,scope_unit_id,granted_by,grant_reason
+) VALUES
+('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000003','support.case.manage',null,'31000000-0000-4000-8000-000000000004','Technical Support gate lead authority.'),
+('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000002','support.case.manage',null,'31000000-0000-4000-8000-000000000003','Technical Support gate member authority.');
+
+DO $grant_guard$
+BEGIN
+  BEGIN
+    INSERT INTO public.capability_grants(org_id,profile_id,capability,granted_by,grant_reason)
+    VALUES('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000003',
+      'support.system.inspect','31000000-0000-4000-8000-000000000003','Forbidden lead self grant.');
+    RAISE EXCEPTION 'Support Lead self-granted support capability.';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END
+$grant_guard$;
 
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1"}',true);
@@ -148,8 +201,11 @@ INSERT INTO public.support_cases(
 
 DO $reporter$
 BEGIN
-  IF (SELECT count(*) FROM public.support_cases)<>2 THEN
-    RAISE EXCEPTION 'Reporter cannot read exactly their own cases.';
+  IF EXISTS(SELECT 1 FROM public.support_cases) THEN
+    RAISE EXCEPTION 'Reporter bypassed the safe projection through the base relation.';
+  END IF;
+  IF (SELECT count(*) FROM public.support_case_safe_status)<>2 THEN
+    RAISE EXCEPTION 'Reporter cannot read exactly their own safe case projection.';
   END IF;
   IF EXISTS(SELECT 1 FROM public.support_case_events) THEN
     RAISE EXCEPTION 'Reporter gained internal support audit history.';
@@ -211,6 +267,12 @@ WHERE id='61000000-0000-4000-8000-000000000002';
 DO $lead_behavior$
 BEGIN
   BEGIN
+    UPDATE public.support_cases SET assigned_to='31000000-0000-4000-8000-000000000006'
+      WHERE id='61000000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'Lead assigned a case to a member without support.case.manage.';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
     UPDATE public.support_cases SET state='resolved',resolution_summary='Access was supposedly completed.'
       WHERE id='61000000-0000-4000-8000-000000000002';
     RAISE EXCEPTION 'Access request was resolved without approved execution evidence.';
@@ -243,12 +305,74 @@ INSERT INTO public.support_cases(
 );
 DO $cross_tenant$
 BEGIN
-  IF (SELECT count(*) FROM public.support_cases)<>1
-     OR NOT EXISTS(SELECT 1 FROM public.support_cases
+  IF EXISTS(SELECT 1 FROM public.support_cases)
+     OR (SELECT count(*) FROM public.support_case_safe_status)<>1
+     OR NOT EXISTS(SELECT 1 FROM public.support_case_safe_status
        WHERE id='61000000-0000-4000-8000-000000000011') THEN
     RAISE EXCEPTION 'Cross-tenant reporter visibility is not isolated.';
   END IF;
 END
 $cross_tenant$;
+
+-- Tenant-A Support authority must not expose Tenant-B queue rows.
+SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
+DO $cross_tenant_support$
+BEGIN
+  IF EXISTS(SELECT 1 FROM public.support_cases
+      WHERE id='61000000-0000-4000-8000-000000000011') THEN
+    RAISE EXCEPTION 'Tenant-A Technical Support read Tenant-B queue data.';
+  END IF;
+END
+$cross_tenant_support$;
+
+-- People Administration lifecycle is attributable, append-only and does not
+-- mutate the profile, employment or ordinary unit history.
+INSERT INTO public.support_team_memberships(org_id,profile_id,role,added_by,reason,associated_unit_id)
+VALUES('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000007','member',
+  '31000000-0000-4000-8000-000000000001','Approved temporary support membership','20000000-0000-4000-8000-000000000011');
+SELECT public.grant_capability(
+  '31000000-0000-4000-8000-000000000007','support.guides.manage',NULL,
+  'Approved temporary support guide authority.',NULL
+);
+UPDATE public.support_team_memberships SET active=false,ended_at=now(),ended_by=auth.uid()
+WHERE profile_id='31000000-0000-4000-8000-000000000007' AND active;
+DO $membership_history$
+BEGIN
+  IF NOT EXISTS(SELECT 1 FROM public.profiles
+      WHERE id='31000000-0000-4000-8000-000000000007' AND active)
+     OR NOT EXISTS(SELECT 1 FROM public.unit_memberships
+      WHERE profile_id='31000000-0000-4000-8000-000000000007' AND role='manager')
+     OR NOT EXISTS(SELECT 1 FROM public.support_team_memberships
+      WHERE profile_id='31000000-0000-4000-8000-000000000007'
+        AND NOT active AND added_by='31000000-0000-4000-8000-000000000003'
+        AND ended_by='31000000-0000-4000-8000-000000000003')
+     OR (SELECT count(*) FROM public.support_membership_events
+      WHERE profile_id='31000000-0000-4000-8000-000000000007')<>2 THEN
+    RAISE EXCEPTION 'Membership lifecycle changed identity/business history or lost attribution.';
+  END IF;
+  IF EXISTS(SELECT 1 FROM public.capability_grants
+      WHERE profile_id='31000000-0000-4000-8000-000000000007'
+        AND capability LIKE 'support.%' AND revoked_at IS NULL)
+     OR NOT EXISTS(SELECT 1 FROM public.capability_grants
+      WHERE profile_id='31000000-0000-4000-8000-000000000007'
+        AND capability='support.guides.manage'
+        AND revoked_by='31000000-0000-4000-8000-000000000003'
+        AND revoked_at IS NOT NULL) THEN
+    RAISE EXCEPTION 'Ending membership did not close support authority with attribution.';
+  END IF;
+  BEGIN
+    DELETE FROM public.support_team_memberships
+    WHERE profile_id='31000000-0000-4000-8000-000000000007';
+    RAISE EXCEPTION 'Historical membership was deleted.';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE public.support_team_memberships SET role='lead'
+    WHERE profile_id='31000000-0000-4000-8000-000000000007';
+    IF FOUND THEN RAISE EXCEPTION 'Historical membership role was rewritten.'; END IF;
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END
+$membership_history$;
 
 ROLLBACK;
