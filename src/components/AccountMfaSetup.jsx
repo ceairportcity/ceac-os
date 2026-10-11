@@ -201,3 +201,4 @@ export default function AccountMfaSetup() {
         </div>
       </div>}
   </div>;
+}
