@@ -165,6 +165,13 @@ BEGIN
     ELSIF NEW.target_unit_id IS NOT NULL OR NEW.required_approver<>'people_administration' THEN
       RAISE EXCEPTION 'Account/invitation assistance requires People Administration.' USING ERRCODE='42501';
     END IF;
+    -- The business approver sees only reviewed, fixed safe object labels.
+    -- Arbitrary case text, credentials and protected records cannot be
+    -- laundered through this broader-visibility approval ledger.
+    NEW.access_object:=CASE NEW.requested_action
+      WHEN 'unit_access_assistance' THEN 'Unit workspace access troubleshooting'
+      WHEN 'invitation_delivery_assistance' THEN 'Invitation delivery troubleshooting'
+      ELSE 'Account access recovery assistance' END;
     NEW.requested_by:=actor;
     NEW.state:='pending';
     NEW.approved_by:=NULL;
