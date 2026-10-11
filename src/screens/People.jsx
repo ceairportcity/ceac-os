@@ -428,11 +428,16 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       });
       await refreshEmployeeFiles(person.id, generation);
     } catch (fileError) {
-      setError(humanError(fileError, kind === "photo"
-        ? "The employee photo could not be saved."
-        : "The employee document could not be saved."));
+      if (generation === personGeneration.current) {
+        setError(humanError(fileError, kind === "photo"
+          ? "The employee photo could not be confirmed. Review the record before trying again."
+          : "The employee document could not be confirmed. Review the record before trying again."));
+      }
     } finally {
-      setEmployeeFileBusy(false);
+      if (generation === personGeneration.current) {
+        employeeFileWriteBusy.current = false;
+        setEmployeeFileBusy(false);
+      }
     }
   }
 
