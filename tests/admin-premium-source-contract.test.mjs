@@ -72,3 +72,9 @@ test("the Administration calendar is navigable without fabricating missing event
   assert.match(stylesheet, /Approved Admin calendar rail/);
   assert.match(stylesheet, /adminv2-calendar-days/);
 });
+
+test("open work sessions never pretend to confirm live presence", () => {
+  assert.match(overview, /label="Open work sessions"/);
+  assert.match(overview, /supporting="Not verified live presence"/);
+  assert.doesNotMatch(overview, /label="Working now"/);
+});
