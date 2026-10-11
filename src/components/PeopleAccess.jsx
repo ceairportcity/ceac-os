@@ -48,6 +48,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       supabase.from("unit_memberships").select("id,profile_id,unit_id,role").eq("org_id", me.org_id),
       supabase.from("sub_teams").select("id,name,unit_id").eq("org_id", me.org_id).eq("active", true),
       supabase.rpc("admin_access_invitations"),
+      supabase.from("sub_team_members").select("sub_team_id,profile_id"),
     ]);
     const failure = results.find((result) => result.error);
     if (failure) {
@@ -60,6 +61,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       memberships: results[2].data || [],
       lanes: results[3].data || [],
       invitations: results[4].data || [],
+      laneMemberships: results[5].data || [],
     });
     return true;
   }
@@ -125,11 +127,24 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     }
   }
 
-  const set = (key) => (event) => setForm((current) => ({
-    ...current,
-    [key]: event.target.value,
-    ...(key === "unit" ? { lane: "" } : {}),
-  }));
+  const set = (key) => (event) => setForm((current) => {
+    const value = event.target.value;
+    // For a person with exactly one current unit responsibility, use
+    // that known context rather than asking Administration to select it again.
+    const peopleUnits = key === "person" && snapshot
+      ? snapshot.memberships.filter((row) => row.profile_id === value
+        && snapshot.units.some((unit) => unit.id === row.unit_id))
+      : [];
+    return {
+      ...current,
+      [key]: value,
+      ...(key === "unit" ? { lane: "" } : {}),
+      ...(key === "person" ? {
+        unit: peopleUnits.length === 1 ? peopleUnits[0].unit_id : "",
+        lane: "",
+      } : {}),
+    };
+  });
 
   const selectedPerson = useMemo(
     () => snapshot?.people.find((person) => person.id === form.person) || null,
@@ -139,6 +154,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     () => snapshot?.memberships.filter((membership) => membership.profile_id === form.person) || [],
     [snapshot, form.person]
   );
+  const selectedLaneMemberships = snapshot?.laneMemberships.filter((member) => member.profile_id === form.person) || [];
+  const belongsToSelectedLane = selectedLaneMemberships.some((member) => member.sub_team_id === form.lane);
   const pendingInvitationCount = snapshot?.invitations.filter((invitation) =>
     !invitation.revoked_at && invitation.activation_state !== "verified"
   ).length || 0;
@@ -286,6 +303,17 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
               </div>
 
               <div className="phase5-access-lane">
+                <div className="phase5-access-memberships" aria-label="Recorded team placements">
+                  <strong>Current team placements</strong>
+                  {selectedLaneMemberships.length ? selectedLaneMemberships.map((member) => {
+                    const lane = snapshot.lanes.find((item) => item.id === member.sub_team_id);
+                    const unit = snapshot.units.find((item) => item.id === lane?.unit_id);
+                    return <div className="phase5-access-membership" key={member.sub_team_id}>
+                      <div><strong>{lane?.name || "Team not returned"}</strong>
+                        <span>{unit?.name || "Unit not returned"}</span></div>
+                    </div>;
+                  }) : <div className="phase5-access-empty">No team placement is recorded for this person.</div>}
+                </div>
                 <FieldGroup label="Team / sub-team">
                   <select className="field" aria-label="Work lane" value={form.lane} onChange={set("lane")}>
                     <option value="">Choose a team / sub-team</option>
@@ -293,8 +321,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                   </select>
                 </FieldGroup>
                 <div className="phase5-access-actions">
-                  <Button variant="secondary" size="compact" disabled={busy || !form.person || !form.lane || !form.reason.trim()} onClick={() => action(() => saveLane(true), "Team / sub-team membership recorded.")}>Add to team</Button>
-                  <Button variant="quiet" size="compact" disabled={busy || !form.person || !form.lane || !form.reason.trim()} onClick={() => action(() => saveLane(false), "Team / sub-team membership ended.")}>Remove from team</Button>
+                  <Button variant="secondary" size="compact" disabled={busy || !form.person || !form.lane || belongsToSelectedLane || !form.reason.trim()} onClick={() => action(() => saveLane(true), "Team / sub-team membership recorded.")}>Add to team</Button>
+                  <Button variant="quiet" size="compact" disabled={busy || !form.person || !form.lane || !belongsToSelectedLane || !form.reason.trim()} onClick={() => action(() => saveLane(false), "Team / sub-team membership ended.")}>Remove from team</Button>
                 </div>
               </div>
             </>}
