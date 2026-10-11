@@ -28,3 +28,17 @@ The independent gate now uses `npm run verify:source`, covering the ten current 
 **This is code preparedness, not an executed Codespaces PostgreSQL/Playwright result.** A real private 2-core Codespace must be explicitly started by an authorised operator with available included quota; its automatic runner requires Docker and Supabase CLI 2.117.0. It MUST NOT receive production secrets. The separate encrypted production backup/restore cannot be certified by Codespaces' source checks.
 
 The next `[vercel]` opt-in confirms the existing project can run its Node source-verification gate plus Vite build. It is **preview only**; keep `main` and production unchanged.
+
+## Admin visual parity implementation continuation — preview checkpoint
+
+The owner explicitly asked that the final live product match the approved mockups, not merely that a build work. The reviewed Admin Overview screenshot lacked the welcome briefing and contextual agenda visible in the repository master reference.
+
+- Retained exact existing work/people/leave decision data selectors, RLS/RPC authority and callbacks.
+- Reworked `AdminOverviewV2.jsx` to show time-appropriate personal greeting, decision-inbox jump, existing-authorised People/Control Center actions and an **actual recorded meetings only** agenda (zero-event state is factual).
+- Reused already-committed `public/ceac-hero-landscape.svg`, sampled approved blue `#0c5df9`, off-white / navy semantics and responsive premium CSS rather than adding stock images or inventing data.
+- `DataPanel` now passes the optional HTML id through to the real section, so the decision-inbox anchor works.
+- Added `tests/admin-premium-briefing.spec.js` with authenticated 1366px desktop and 390px mobile screenshots, no-horizontal-overflow and real in-page action checks.
+- Added `tests/admin-premium-source-contract.test.mjs`; 4/4 exact-source isolated JavaScript checks passed. Registered in existing Node/Vercel unit suite and GitHub workflow.
+- **NOT YET accepted visual parity:** the tiny committed reference image is an interpretation aid, but direct rendered side-by-side owner review across all approved roles/surfaces is still mandatory. These source tests do not prove literal pixel fidelity. No production DDL, user grants or role changes.
+
+One explicit `[vercel]` checkpoint requests an exact-candidate **preview-only** Node source-test plus Vite build. GitHub main, production domain, Supabase and protected HR remain unchanged.
