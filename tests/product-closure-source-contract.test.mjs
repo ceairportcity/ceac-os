@@ -285,3 +285,9 @@ test("People file reads never cross between two employee records", () => {
   assert.match(people, /await refreshEmployeeFiles\(person\.id, generation\)/);
   assert.match(people, /employeeFileWriteBusy\.current = false/);
 });
+
+test("People attendance facts and invitation records have Accra-local timestamps", () => {
+  assert.match(people, /\.toLocaleTimeString\("en-GB", \{ timeZone: "Africa\/Accra"/);
+  assert.match(people, /\.toLocaleDateString\("en-GB", \{ timeZone: "Africa\/Accra"/);
+  assert.match(people, /new Date\(accessInvitation\.invited_at\)\.toLocaleString\("en-GB", \{ timeZone: "Africa\/Accra" \}\)/);
+});
