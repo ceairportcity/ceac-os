@@ -93,3 +93,14 @@ test("People and Access mutations are single-flight and identity-generation scop
   assert.match(access, /if \(sameIdentity\(\)\) \{\s*actionBusyRef\.current = false;\s*setBusy\(false\)/);
   assert.match(access, /return recorded \|\| Boolean\(actionError\?\.invitationRecorded\)/);
 });
+
+test("Technical Support case revisions and case history can recover without false success", () => {
+  assert.match(support, /onRefresh=\{refreshCases\}/);
+  assert.match(support, /onClick=\{onRefresh\}>Refresh case/);
+  assert.match(support, /setHistory\(\[\]\)/);
+  assert.match(support, /setHistoryError\(null\)/);
+  assert.match(support, /if \(failure\) throw failure/);
+  assert.match(support, /Case history could not be verified/);
+  assert.match(support, /setHistoryRefreshToken\(\(n\) => n \+ 1\)/);
+  assert.match(support, /historyRefreshToken\]/);
+});
