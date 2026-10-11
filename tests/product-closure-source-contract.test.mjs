@@ -250,11 +250,13 @@ test("Technical Support event history is scoped by organisation and case", () =>
   assert.match(support, /if \(currentCase\.assigned_to !== me\.id\)/);
 });
 
-test("a unit responsibility cannot be ended while its team placements remain", () => {
+test("unit responsibility removal confirms the server-side dependent team cleanup", () => {
   assert.match(access, /const stillInUnitTeam = selectedLaneMemberships\.some/);
   assert.match(access, /lane\.unit_id === membership\.unit_id/);
-  assert.match(access, /disabled=\{busy \|\| stillInUnitTeam \|\| !form\.reason\.trim\(\)\}/);
-  assert.match(access, /Remove this person's recorded team placements in this unit/);
+  assert.match(access, /if \(!window\.confirm\("End this unit responsibility/);
+  assert.match(access, /All team placements within this unit will also end/);
+  assert.match(access, /Unit responsibility ended; the server also clears team placements/);
+  assert.doesNotMatch(access, /disabled=\{busy \|\| stillInUnitTeam/);
 });
 
 test("People directory and protected employee details reject stale navigation responses", () => {
