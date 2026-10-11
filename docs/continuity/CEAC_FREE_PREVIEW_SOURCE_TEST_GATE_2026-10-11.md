@@ -42,3 +42,13 @@ The owner explicitly asked that the final live product match the approved mockup
 - **NOT YET accepted visual parity:** the tiny committed reference image is an interpretation aid, but direct rendered side-by-side owner review across all approved roles/surfaces is still mandatory. These source tests do not prove literal pixel fidelity. No production DDL, user grants or role changes.
 
 One explicit `[vercel]` checkpoint requests an exact-candidate **preview-only** Node source-test plus Vite build. GitHub main, production domain, Supabase and protected HR remain unchanged.
+
+## Original full-resolution mockup reconciliation — desktop Admin
+
+The reference JPEG committed in `docs/visual-fidelity/references` is a small preview, NOT enough for literal screen comparison. A previously approved full 1536 × 1024 image was located in the owner's private ChatGPT Library at `/CEAC OS/Experience V2/References/Original Quality References/CEAC_original_premium_mockup.jpeg` (binary SHA-256 `87a67c5b2902e6c0b62e7d55570ec644483aa501c0584bff5c7fae70d41917cc`). The earlier Administration desktop screenshot reference `redesign-r7-administration-desktop(1).png` is 1440 × 2353, SHA-256 `7f4ff5c08a3a0b7cb0710c11fa94b546a41f6b7f68739cb0adf48009507799a6`. Repository contract claims a DIFFERENT master SHA `f3f867faa8f35a3be46f995ecd915743241ddd7a57632fb677205640c069febd`; do not pretend they are binary-identical or silently replace the owner's canonical master.
+
+These richer source visuals revealed the missing **monthly calendar rail, dominant next action and broad landscaped welcome**. This PR now implements these against existing authorised CEAC records. The calendar is interactive but only has a 14-day meeting data horizon: dates outside that horizon explicitly state the limitation; there are no invented appointments.
+
+Actual screenshots at 1366px and 390px and side-by-side visual comparison remain pending. The original Executive/Volunteer/Technical Support locks remain binding separately, regardless of this Admin improvement. No change in SQL grants/HR privacy.
+
+A single `[vercel]` opt-in verifies the current JS source tests + actual Vite build on the existing nonproduction preview. **Do not merge PR44** or deploy production from build success alone.
