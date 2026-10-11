@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   HELP_CATEGORIES, SUPPORT_WORKSPACES, SUPPORT_GUIDES, SERVICE_NAMES,
-  canManageSupport, supportCaseGroups, supportCategoryLabel,
+  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases,
 } from "../src/lib/technicalSupport.js";
 
 test("support panel has the six locked workspaces and categories", () => {
@@ -35,4 +35,19 @@ test("cases are grouped only by facts; unresolved approval is not marked resolve
   assert.deepEqual(result.recentlyResolved.map((x) => x.id), ["c", "e"]);
   assert.equal(result.access.length, 3);
   assert.deepEqual(result.recurring.map((x) => x.id), ["cannot_sign_in", "other"]);
+});
+
+test("Help Desk filters only already-authorised loaded cases without changing their order", () => {
+  const cases = [
+    { id: "a", state: "open", category: "cannot_sign_in", summary: "Password reset", reference: "TS-123" },
+    { id: "b", state: "resolved", category: "cannot_upload", summary: "PDF upload", reference: "TS-456" },
+    { id: "c", state: "open", category: "access_needed", summary: "Unit access", reference: "TS-789" },
+  ];
+  assert.deepEqual(filterSupportCases(cases, "ts-456").map((item) => item.id), ["b"]);
+  assert.deepEqual(filterSupportCases(cases, "cannot sign in", "open").map((item) => item.id), ["a"]);
+  assert.deepEqual(filterSupportCases(cases, "access", "open").map((item) => item.id), ["c"]);
+  assert.deepEqual(filterSupportCases(cases, "", "open").map((item) => item.id), ["a", "c"]);
+  assert.deepEqual(filterSupportCases(cases, "pdf", "open"), []);
+  assert.deepEqual(filterSupportCases(null), []);
+  assert.deepEqual(cases.map((item) => item.id), ["a", "b", "c"]);
 });
