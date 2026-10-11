@@ -276,3 +276,12 @@ test("People confidential writes are account-scoped and cannot falsely succeed",
   assert.match(people, /if \(!data\) throw new Error/);
   assert.match(people, /\.maybeSingle\(\)/);
 });
+
+test("People file reads never cross between two employee records", () => {
+  assert.match(people, /const employeeFileWriteBusy = useRef\(false\)/);
+  assert.match(people, /employeeFileWriteBusy\.current = true/);
+  assert.match(people, /if \(generation !== personGeneration\.current\) return/);
+  assert.match(people, /async function refreshEmployeeFiles\(employeeId, generation\)/);
+  assert.match(people, /await refreshEmployeeFiles\(person\.id, generation\)/);
+  assert.match(people, /employeeFileWriteBusy\.current = false/);
+});
