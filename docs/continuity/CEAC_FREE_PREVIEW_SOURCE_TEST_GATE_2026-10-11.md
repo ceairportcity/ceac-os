@@ -77,3 +77,11 @@ This `[vercel]` commit exercises all current Node source/unit tests and Vite bui
 Confirmed directly (read-only) that `meeting_sessions`, `report_periods`, `units` and `reports` in production all have an `org_id` column. The Executive overview now explicitly adds the signed-in `me.org_id` to those formerly unscoped REST reads, in addition to their existing database RLS. This is defence in depth, not a grant or change to RLS. The Executive source regression was extended with that invariant; **5/5** targeted pure/source test callbacks passed. Production remains unchanged.
 
 The `[vercel]` tagged commit is a one-off verification of current candidate Node source tests plus Vite frontend build. It does not claim cross-tenant role-runtime testing, Executive rendered mockup parity or production go-live readiness.
+
+## Executive master reference composition — scenic hero parity checkpoint
+
+The Executive R7/master reference uses a scenic landscape header. The candidate had a generated pastel gradient and polygon clip-path placeholder, despite having the existing, self-hosted CEAC `/ceac-hero-landscape.svg` used in the premium Administration header. The Executive now uses that local SVG under a light foreground readability overlay for desktop, without adding a network dependency, duplicate asset or modifying application data. Its previous clean white mobile header remains. Source regression `tests/executive-progress-contract.test.mjs` now asserts the local artwork exists and checks the mobile reset; all 6/6 focused source/pure-JS callbacks PASS. Pixel-level and authenticated device testing remain outstanding.
+
+TinyFish authenticated browser inspection found the owner's existing Codespace checked out 39 commits behind current PR44. The VS Code web editor repeatedly failed to accept keyboard input and its terminal only exposed a stale cached result; **no exact-head full SQL/Playwright verification was obtained or claimed**. Avoid creating another paid runner or forcing branch resets. The latest exact-head sandbox workflow remains available in repository files.
+
+This `[vercel]` opt-in is one nonproduction build/test smoke-check of the current PR44 source. Live `main`, production Supabase and the existing Vercel production deployment remain untouched.
