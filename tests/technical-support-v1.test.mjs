@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   HELP_CATEGORIES, SUPPORT_WORKSPACES, SUPPORT_GUIDES, SERVICE_NAMES,
-  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome,
+  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome, supportReportedServiceIssues,
 } from "../src/lib/technicalSupport.js";
 
 test("support panel has the six locked workspaces and categories", () => {
@@ -87,4 +87,26 @@ test("case closure cannot imply unverified business access approval", () => {
   }
   assert.equal(canRecordSupportOutcome({ category: "cannot_sign_in" }, "resolved"), true);
   assert.equal(canRecordSupportOutcome(null, "closed"), true);
+});
+
+
+test("system health never manufactures uptime from self-reported support incidents", () => {
+  const incidents = [
+    { state: "open", affected_service: "CEAC platform" },
+    { state: "waiting_approval", affected_service: "CEAC platform" },
+    { state: "resolved", affected_service: "CEAC platform" },
+    { state: "in_progress", affected_service: "Files & uploads" },
+    { state: "open", affected_service: "Other service" },
+  ];
+  const counts = supportReportedServiceIssues(incidents);
+  assert.equal(counts.length, SERVICE_NAMES.length);
+  assert.deepEqual(counts.find((x) => x.service === "CEAC platform"), {
+    service: "CEAC platform", reportCount: 2, health: "Not verified",
+  });
+  assert.equal(counts.find((x) => x.service === "Files & uploads").reportCount, 1);
+  assert.equal(counts.find((x) => x.service === "Automatic jobs").reportCount, 0);
+  assert.ok(counts.every((x) => x.health === "Not verified"));
+  assert.deepEqual(supportReportedServiceIssues(null, ["CEAC platform"]), [
+    { service: "CEAC platform", reportCount: 0, health: "Not verified" },
+  ]);
 });
