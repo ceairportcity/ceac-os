@@ -5,6 +5,7 @@ const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence")
 import { dailyClocks } from "../lib/attendance";
 import { accraDayOffset } from "../lib/workforceDate";
 import { settleWorkforceDatasets } from "../lib/workforceQueries";
+import { isValidPolicyAmount } from "../lib/workforcePolicyNumbers";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button, SelectField } from "../experience-v2/components";
@@ -330,13 +331,12 @@ export default function Workforce({ me }) {
   const policyReady=
     policyName.trim().length>=3
     && policyKind.trim().length>=2
-    && policyEntitlement!==""
-    && Number(policyEntitlement)>=0
+    && isValidPolicyAmount(policyEntitlement)
     && Boolean(policyEntitlementUnit)
     && Boolean(policyAccrualMethod)
-    && (!["monthly","quarterly"].includes(policyAccrualMethod) || (policyAccrualRate!=="" && Number(policyAccrualRate)>=0))
+    && (!["monthly","quarterly"].includes(policyAccrualMethod) || isValidPolicyAmount(policyAccrualRate))
     && Boolean(policyCarryoverMethod)
-    && (policyCarryoverMethod!=="limited" || (policyCarryoverLimit!=="" && Number(policyCarryoverLimit)>=0))
+    && (policyCarryoverMethod!=="limited" || isValidPolicyAmount(policyCarryoverLimit))
     && Boolean(policyRoute)
     && policyReason.trim().length>=3;
 
