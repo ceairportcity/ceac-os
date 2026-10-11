@@ -12,6 +12,7 @@ export default function TechnicalHelp({ me }) {
   const [cases, setCases] = useState([]);
   const [loadedScope, setLoadedScope] = useState(null);
   const readGeneration = useRef(0);
+  const submitBusyRef = useRef(false);
   const [selectedId, setSelectedId] = useState(null);
   const [reloadCount, setReloadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -31,6 +32,7 @@ export default function TechnicalHelp({ me }) {
     setCategory(HELP_CATEGORIES[0].id);
     setSummary(""); setDescription(""); setService("");
     setError(null); setSuccess(null); setBusy(false);
+    submitBusyRef.current = false;
   }, [me.id, me.org_id]);
 
   useEffect(() => {
@@ -60,7 +62,10 @@ export default function TechnicalHelp({ me }) {
 
   async function submit(event) {
     event.preventDefault();
-    if (busy || scopedLoading || loadError) return;
+    // Lock synchronously: state updates alone do not prevent two rapid
+    // clicks from inserting duplicate requests.
+    if (busy || scopedLoading || loadError || submitBusyRef.current) return;
+    submitBusyRef.current = true;
     const generation = readGeneration.current;
     const title = summary.trim();
     const details = description.trim();
@@ -86,7 +91,10 @@ export default function TechnicalHelp({ me }) {
     } catch (failure) {
       if (generation === readGeneration.current) setError(supportUnavailableMessage(failure) || humanError(failure, "Your request could not be confirmed. Check your existing requests before trying again, or use the approved CEAC support contact."));
     } finally {
-      if (generation === readGeneration.current) setBusy(false);
+      if (generation === readGeneration.current) {
+        submitBusyRef.current = false;
+        setBusy(false);
+      }
     }
   }
 
