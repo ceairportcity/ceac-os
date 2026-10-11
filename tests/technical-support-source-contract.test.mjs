@@ -165,3 +165,12 @@ test("Support Help Desk clearly bounds and filters the permitted queue", () => {
   assert.match(supportPanel, /Case status/);
   assert.match(supportPanel, /\.eq\("org_id", me\.org_id\)/);
 });
+
+test("Support case taking is conditional on current assignment, without granting access", () => {
+  assert.match(supportPanel, /onClaim\(item\.id\)/);
+  assert.match(supportPanel, /!item\.assigned_to/);
+  assert.match(supportPanel, /\.is\("assigned_to", null\)/);
+  assert.match(supportPanel, /\.maybeSingle\(\)/);
+  assert.match(supportPanel, /support_team_memberships/);
+  assert.doesNotMatch(supportPanel, /\.rpc\("grant_capability"/);
+});
