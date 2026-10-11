@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import {
   canManageSupport, SUPPORT_WORKSPACES, SERVICE_NAMES, SUPPORT_GUIDES,
-  supportCategoryLabel, supportCaseGroups, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage,
+  supportCategoryLabel, supportCaseGroups, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome,
 } from "../lib/technicalSupport";
 import "../role-styles/technical-support.css";
 
@@ -259,7 +259,7 @@ export default function TechnicalSupport({ me, go }) {
       setActionError("The selected case is no longer in the verified Help Desk queue. Refresh before saving.");
       return;
     }
-    if (currentCase.category === "access_needed" && (state === "resolved" || state === "closed")) {
+    if (!canRecordSupportOutcome(currentCase, state)) {
       setActionError("An access request cannot be marked fulfilled here without the approved business-authority evidence and verified execution path.");
       return;
     }
