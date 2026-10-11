@@ -26,6 +26,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
   const [history, setHistory] = useState([]);
   const [historyError, setHistoryError] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
   const requiresBusinessApproval = item.category === "access_needed";
   useEffect(() => {
     setNextState(item.state);
@@ -35,17 +36,23 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
   useEffect(() => {
     let active = true;
     setHistoryLoading(true);
+    setHistory([]);
+    setHistoryError(null);
     (async () => {
-      const { data, error: failure } = await supabase.from("support_case_events")
-        .select("id,action,note,occurred_at").eq("case_id", item.id)
-        .order("occurred_at", { ascending: false }).limit(75);
-      if (!active) return;
-      setHistory(data || []);
-      setHistoryError(failure ? "Case history could not be verified." : null);
-      setHistoryLoading(false);
+      try {
+        const { data, error: failure } = await supabase.from("support_case_events")
+          .select("id,action,note,occurred_at").eq("case_id", item.id)
+          .order("occurred_at", { ascending: false }).limit(75);
+        if (failure) throw failure;
+        if (active) setHistory(data || []);
+      } catch {
+        if (active) setHistoryError("Case history could not be verified.");
+      } finally {
+        if (active) setHistoryLoading(false);
+      }
     })();
     return () => { active = false; };
-  }, [item.id, item.state, item.resolution_summary, item.updated_at]);
+  }, [item.id, item.state, item.resolution_summary, item.updated_at, historyRefreshToken]);
 
   return <section className="ceac-support-detail" aria-labelledby="support-case-title">
     <div className="ceac-support-detail-top">
@@ -96,7 +103,10 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
     <div className="ceac-support-history">
       <h3>Case history</h3>
       {historyLoading && <p role="status">Loading attributable support history...</p>}
-      {historyError && <p role="alert" className="ceac-support-error">{historyError}</p>}
+      {historyError && <div role="alert" className="ceac-support-error">
+        {historyError} <button type="button" className="btn btn-ghost"
+          onClick={() => setHistoryRefreshToken((n) => n + 1)}>Try history again</button>
+      </div>}
       {!historyLoading && !historyError && !history.length && <p className="screen-note">No verified event history is available.</p>}
       <ol className="ceac-support-history-list">
         {history.map((event) => <li key={event.id}>
