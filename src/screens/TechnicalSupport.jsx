@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import {
@@ -110,17 +110,23 @@ export default function TechnicalSupport({ me, go }) {
   const [deskStatus, setDeskStatus] = useState("all");
   const [membership, setMembership] = useState(null);
   const [ready, setReady] = useState(false);
+  const [verifiedScope, setVerifiedScope] = useState(null);
+  const readGeneration = useRef(0);
   const [cases, setCases] = useState([]);
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const canManage = canManageSupport(me);
+  const currentScope = `${me.org_id}:${me.id}:${canManage ? "support" : "no-support"}`;
+  const scopedReady = ready && verifiedScope === currentScope;
 
   useEffect(() => {
+    const generation = ++readGeneration.current;
     let live = true;
     // A role/account transition must not keep an old user's case data visible.
     setReady(false);
+    setVerifiedScope(null);
     setMembership(null);
     setCases([]);
     setSelectedId(null);
@@ -132,21 +138,21 @@ export default function TechnicalSupport({ me, go }) {
           .select("id,role").eq("org_id", me.org_id).eq("profile_id", me.id)
           .eq("active", true).maybeSingle();
         if (membershipFailure) throw membershipFailure;
-        if (!live) return;
+        if (!live || generation !== readGeneration.current) return;
         setMembership(membershipData);
         if (!membershipData) return;
         const { data: caseData, error: casesFailure } = await supabase.from("support_cases")
           .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
           .eq("org_id", me.org_id).order("opened_at", { ascending: false }).limit(150);
         if (casesFailure) throw casesFailure;
-        if (live) setCases(caseData || []);
+        if (live && generation === readGeneration.current) setCases(caseData || []);
       } catch (failure) {
-        if (live) setError(supportUnavailableMessage(failure) || humanError(failure, "The Technical Support service cannot be opened. No permissions were changed."));
+        if (live && generation === readGeneration.current) setError(supportUnavailableMessage(failure) || humanError(failure, "The Technical Support service cannot be opened. No permissions were changed."));
       } finally {
-        if (live) setReady(true);
+        if (live && generation === readGeneration.current) { setVerifiedScope(currentScope); setReady(true); }
       }
     })();
-    return () => { live = false; };
+    return () => { live = false; readGeneration.current += 1; };
   }, [me.id, me.org_id, canManage]);
 
   const groups = useMemo(() => supportCaseGroups(cases), [cases]);
@@ -161,9 +167,11 @@ export default function TechnicalSupport({ me, go }) {
 
   async function refreshCases() {
     if (busy) return;
+    const generation = ++readGeneration.current;
     // Clear previously obtained case data BEFORE rechecking current
     // membership, so a removed member cannot keep browsing a stale list.
     setReady(false);
+    setVerifiedScope(null);
     setError(null);
     setActionError(null);
     setSelectedId(null);
@@ -181,12 +189,13 @@ export default function TechnicalSupport({ me, go }) {
         .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
         .eq("org_id", me.org_id).order("opened_at", { ascending: false }).limit(150);
       if (casesFailure) throw casesFailure;
+      if (generation !== readGeneration.current) return;
       setCases(currentCases || []);
       setMembership(currentMembership);
     } catch (failure) {
-      setError(supportUnavailableMessage(failure) || humanError(failure, "The Technical Support queue cannot be refreshed. No case was changed."));
+      if (generation === readGeneration.current) setError(supportUnavailableMessage(failure) || humanError(failure, "The Technical Support queue cannot be refreshed. No case was changed."));
     } finally {
-      setReady(true);
+      if (generation === readGeneration.current) { setVerifiedScope(currentScope); setReady(true); }
     }
   }
 
@@ -270,14 +279,14 @@ export default function TechnicalSupport({ me, go }) {
       <p>Help people use CEAC, maintain approved access and escalate service issues. This workspace does not grant HR, payroll, leave or general administrative permissions.</p>
     </header>
 
-    {!ready && <p role="status" aria-busy="true">Checking your Technical Support authority...</p>}
-    {ready && error && <div className="ceac-support-error" role="alert">
+    {!scopedReady && <p role="status" aria-busy="true">Checking your Technical Support authority...</p>}
+    {scopedReady && error && <div className="ceac-support-error" role="alert">
       {error} <button type="button" className="btn btn-ghost" onClick={refreshCases}>Try again</button>
     </div>}
-    {ready && !error && !membership && <div className="ceac-support-empty" role="status">
+    {scopedReady && !error && !membership && <div className="ceac-support-empty" role="status">
       You do not have an active Technical Support team membership. Contact People Administration to complete the approved transition. No support queue is visible.
     </div>}
-    {ready && !error && membership && <>
+    {scopedReady && !error && membership && <>
       <nav aria-label="Technical Support workspaces" className="ceac-support-nav">
         {SUPPORT_WORKSPACES.map((item) => <button key={item.id} type="button"
           aria-current={workspace === item.id ? "page" : undefined}
