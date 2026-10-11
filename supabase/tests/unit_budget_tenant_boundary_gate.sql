@@ -32,6 +32,28 @@ VALUES
  ('10000000-0000-4000-8000-000000000010','20000000-0000-4000-8000-000000000011',2099,1234,'GHS'),
  ('10000000-0000-4000-8000-000000000098','20000000-0000-4000-8000-000000000098',2099,998877,'GHS');
 
+-- Corrupt-link fixtures are deliberately permitted by the existing single-key
+-- foreign keys. Even a valid in-org target unit must not pull ledger rows
+-- carrying another org_id. All rows are rolled back at the end of this test.
+INSERT INTO public.spend_lines(org_id,unit_id,spent_on,description,amount_minor,entered_by,currency)
+VALUES
+ ('10000000-0000-4000-8000-000000000098','20000000-0000-4000-8000-000000000011',
+  date '2099-02-01','Synthetic cross-org GHS spend',765,
+  '31000000-0000-4000-8000-000000000003','GHS'),
+ ('10000000-0000-4000-8000-000000000098','20000000-0000-4000-8000-000000000011',
+  date '2099-02-01','Synthetic cross-org EUR spend',432,
+  '31000000-0000-4000-8000-000000000003','EUR');
+
+INSERT INTO public.finance_requests(org_id,unit_id,requested_by,title,amount_minor,currency,state)
+VALUES
+ ('10000000-0000-4000-8000-000000000098','20000000-0000-4000-8000-000000000011',
+  '31000000-0000-4000-8000-000000000003','Synthetic foreign GHS approval',
+  876,'GHS','approved'),
+ ('10000000-0000-4000-8000-000000000098','20000000-0000-4000-8000-000000000011',
+  '31000000-0000-4000-8000-000000000003','Synthetic foreign EUR approval',
+  654,'EUR','approved');
+
+
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims',
  '{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',
@@ -44,6 +66,11 @@ BEGIN
  FROM public.unit_budget_position('20000000-0000-4000-8000-000000000011',2099);
  IF v IS DISTINCT FROM 1234 THEN
    RAISE EXCEPTION 'Budget scope gate: authorised same-org admin budget failed, found %',v;
+ END IF;
+ IF EXISTS (SELECT 1 FROM public.unit_budget_position(
+       '20000000-0000-4000-8000-000000000011',2099)
+       WHERE currency <> 'GHS' OR spent_minor <> 0 OR committed_minor <> 0) THEN
+   RAISE EXCEPTION 'Budget scope gate: cross-organisation ledger rows leaked through a valid in-org unit';
  END IF;
  IF EXISTS (SELECT 1 FROM public.unit_budget_position(
        '20000000-0000-4000-8000-000000000098',2099)) THEN
