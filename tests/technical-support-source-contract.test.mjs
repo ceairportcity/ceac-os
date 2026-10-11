@@ -170,6 +170,7 @@ test("Support case taking is conditional on current assignment, without granting
   assert.match(supportPanel, /onClaim\(item\.id\)/);
   assert.match(supportPanel, /!item\.assigned_to/);
   assert.match(supportPanel, /\.is\("assigned_to", null\)/);
+  assert.match(supportPanel, /\.not\("state", "in", "\(resolved,closed\)"\)/);
   assert.match(supportPanel, /\.maybeSingle\(\)/);
   assert.match(supportPanel, /support_team_memberships/);
   assert.doesNotMatch(supportPanel, /\.rpc\("grant_capability"/);
