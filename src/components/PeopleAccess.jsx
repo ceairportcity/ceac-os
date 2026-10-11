@@ -419,7 +419,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                 <div className="phase5-invitation-main">
                   <strong>{invitation.full_name}</strong>
                   <span>{invitation.email}</span>
-                  <small>{unit?.name || "Unit not returned"} · Invited {new Date(invitation.invited_at).toLocaleString("en-GB")}</small>
+                  <small>{unit?.name || "Unit not returned"} · Invited {new Date(invitation.invited_at).toLocaleString("en-GB", { timeZone: "Africa/Accra" })}</small>
                 </div>
                 <StatusBadge tone={invitationTone(invitation.activation_state, invitation.revoked_at)} icon={false}>
                   {invitation.revoked_at ? "Cancelled" : invitation.activation_state.replaceAll("_", " ")}
