@@ -146,3 +146,10 @@ test("Administration never renders previous-account calendar or roster before ro
   assert.match(admin, /message=\{verifiedSnapshot \? msg : null\}/);
   assert.match(admin, /payrollReadiness=\{verifiedSnapshot \? payrollReadiness : null\}/);
 });
+
+test("sensitive workspaces remount when the authorised account changes", () => {
+  for (const component of ["TechnicalHelp", "TechnicalSupport", "AdminHome", "Workforce", "People", "AdminProtectedHR", "AdminPayroll"]) {
+    const opening = new RegExp("<" + component + "\\s+[\\s\\S]{0,85}?key=\\{\\x60\\$\\{me\\.org_id\\}:\\$\\{me\\.id\\}\\x60\\}");
+    assert.match(app, opening, component + " must not retain previous-account React state");
+  }
+});
