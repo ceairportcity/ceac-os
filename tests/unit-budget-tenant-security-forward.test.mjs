@@ -47,3 +47,11 @@ test("all budget, spend and approval ledger inputs are confined to the caller or
   assert.equal((migration.match(/where b\.org_id=public\.app_org_id\(\) and b\.unit_id = p_unit_id/g) || []).length, 2);
   assert.equal((migration.match(/where fr\.org_id=public\.app_org_id\(\) and fr\.unit_id = p_unit_id/g) || []).length, 2);
 });
+
+test("budget adversarial SQL also rejects mismatched-org ledger rows against a legitimate unit", () => {
+  assert.match(gate, /Synthetic cross-org GHS spend/);
+  assert.match(gate, /Synthetic cross-org EUR spend/);
+  assert.match(gate, /Synthetic foreign GHS approval/);
+  assert.match(gate, /Synthetic foreign EUR approval/);
+  assert.match(gate, /cross-organisation ledger rows leaked through a valid in-org unit/);
+});
