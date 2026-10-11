@@ -28,6 +28,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const [revokeTarget, setRevokeTarget] = useState(null);
   const [revokeReason, setRevokeReason] = useState("");
   const loadGeneration = useRef(0);
+  const identityGeneration = useRef(0);
+  const actionBusyRef = useRef(false);
   const scopeKey = `${me.org_id}:${me.id}`;
   const canManage = (me.capability_grants || []).some((grant) => grant.capability === "people.manage" && !grant.scope_unit_id);
 
@@ -35,6 +37,9 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     // A change of authenticated identity or organisation immediately invalidates
     // the previous account's sensitive directory and membership records.
     loadGeneration.current += 1;
+    identityGeneration.current += 1;
+    actionBusyRef.current = false;
+    setBusy(false);
     setSnapshot(null);
     setSnapshotScope(null);
     setError(null);
@@ -43,7 +48,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     setRevokeReason("");
     setForm({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
     if (canManage) void load();
-    return () => { loadGeneration.current += 1; };
+    return () => { loadGeneration.current += 1; identityGeneration.current += 1; actionBusyRef.current = false; };
   }, [me.id, me.org_id, canManage]);
   useEffect(() => {
     if (!initialProfileId && !initialUnitId && !initialMode) return;
@@ -96,6 +101,12 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   }
 
   async function action(work, success) {
+    // React state updates are asynchronous; the ref closes the double-click
+    // window before a second database mutation can be scheduled.
+    if (actionBusyRef.current || busy || !canManage || snapshotScope !== scopeKey) return false;
+    const identity = identityGeneration.current;
+    const sameIdentity = () => identity === identityGeneration.current;
+    actionBusyRef.current = true;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -103,24 +114,32 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     try {
       await work();
       recorded = true;
+      // A response from an account that has since changed must never update
+      // the current person's access controls, notices or directory state.
+      if (!sameIdentity()) return true;
       setNotice(success);
       const refreshed = await load();
+      if (!sameIdentity()) return true;
       if (!refreshed) throw new Error("The latest records could not be loaded.");
       if (onChanged) await onChanged();
       return true;
     } catch (actionError) {
+      if (!sameIdentity()) return recorded || Boolean(actionError?.invitationRecorded);
       if (actionError?.invitationRecorded) {
-        // The secure pending invitation or resend preparation already succeeded,
-        // although the email provider did not accept the activation request.
-        // Refresh the recorded state to discourage duplicate invitations.
+        // Invitation preparation was saved even though email dispatch failed.
+        // Do not present the pending identity as an entirely failed write.
         await load();
+        if (!sameIdentity()) return true;
       }
       setError(recorded
         ? "The change was recorded, but the page could not refresh. Reload before repeating this action."
         : actionError?.message || "The operation could not be confirmed. Review current records before retrying.");
-      return recorded;
+      return recorded || Boolean(actionError?.invitationRecorded);
     } finally {
-      setBusy(false);
+      if (sameIdentity()) {
+        actionBusyRef.current = false;
+        setBusy(false);
+      }
     }
   }
 
