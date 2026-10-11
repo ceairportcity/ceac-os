@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import {
   canManageSupport, SUPPORT_WORKSPACES, SERVICE_NAMES, SUPPORT_GUIDES,
-  supportCategoryLabel, supportCaseGroups,
+  supportCategoryLabel, supportCaseGroups, filterSupportCases,
 } from "../lib/technicalSupport";
 import "../role-styles/technical-support.css";
 
@@ -140,12 +140,10 @@ export default function TechnicalSupport({ me, go }) {
   const groups = useMemo(() => supportCaseGroups(cases), [cases]);
   // These filters apply only to the latest RLS-authorised cases fetched above;
   // never suggest that an incomplete 150-record window is the full history.
-  const deskCases = useMemo(() => cases.filter((item) => {
-    if (deskStatus !== "all" && item.state !== deskStatus) return false;
-    const needle = deskQuery.trim().toLocaleLowerCase();
-    return !needle || [item.summary, item.reference, supportCategoryLabel(item.category)]
-      .some((value) => String(value || "").toLocaleLowerCase().includes(needle));
-  }), [cases, deskQuery, deskStatus]);
+  const deskCases = useMemo(
+    () => filterSupportCases(cases, deskQuery, deskStatus),
+    [cases, deskQuery, deskStatus],
+  );
   const selected = cases.find((item) => item.id === selectedId);
 
   async function updateCase(id, state, note) {
