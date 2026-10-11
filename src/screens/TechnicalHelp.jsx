@@ -11,6 +11,7 @@ const formatDate = (date) => date ? new Date(date).toLocaleDateString("en-GB", {
 export default function TechnicalHelp({ me }) {
   const [cases, setCases] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [reloadCount, setReloadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [error, setError] = useState(null);
@@ -25,6 +26,7 @@ export default function TechnicalHelp({ me }) {
     let live = true;
     setLoading(true);
     setCases([]);
+    setSelectedId(null);
     setLoadError(null);
     (async () => {
       try {
@@ -41,7 +43,7 @@ export default function TechnicalHelp({ me }) {
       }
     })();
     return () => { live = false; };
-  }, [me.id, me.org_id]);
+  }, [me.id, me.org_id, reloadCount]);
 
   async function submit(event) {
     event.preventDefault();
@@ -111,7 +113,10 @@ export default function TechnicalHelp({ me }) {
       <aside className="ceac-support-side" aria-labelledby="support-my-requests">
         <h2 id="support-my-requests">Your requests</h2>
         {loading && <p role="status">Loading your requests...</p>}
-        {loadError && <p className="ceac-support-error" role="status">{loadError}</p>}
+        {loadError && <div className="ceac-support-error" role="alert">
+          {loadError} <button type="button" className="btn btn-ghost"
+            onClick={() => setReloadCount((previous) => previous + 1)}>Try again</button>
+        </div>}
         {!loading && !loadError && cases.length === 0 && <p className="screen-note">No requests have been recorded.</p>}
         <div className="ceac-support-rows">
           {cases.map((item) => <button type="button" key={item.id}
