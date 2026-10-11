@@ -65,6 +65,13 @@ VALUES
   'something_not_working','Normal incident fixture',
   'Incident resolution must not depend on access approval ledger.');
 
+-- An unrelated second-organisation unit must never be accepted as target.
+INSERT INTO public.organisations(id,name,short_code)
+VALUES('10000000-0000-4000-8000-000000000099','Other support tenant','SUP99');
+INSERT INTO public.units(id,org_id,name,code)
+VALUES('20000000-0000-4000-8000-000000000099',
+  '10000000-0000-4000-8000-000000000099','Other support unit','SUP99');
+
 -- Support Lead is both current owner and separate support-capability holder.
 SELECT set_config('request.jwt.claims',
  '{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
@@ -88,9 +95,37 @@ VALUES('62000000-0000-4000-8000-000000000091',
 
 DO $unapproved$
 BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.support_access_requests
+   WHERE id='62000000-0000-4000-8000-000000000091'
+     AND access_object='Unit workspace access troubleshooting')
+ THEN RAISE EXCEPTION 'Untrusted client supplied a business-approval label.'; END IF;
+ BEGIN
+   INSERT INTO public.support_access_requests(
+    org_id,case_id,requested_action,target_profile_id,target_unit_id,
+    access_object,requested_by,required_approver)
+   VALUES('10000000-0000-4000-8000-000000000010',
+    '61000000-0000-4000-8000-000000000091',
+    'unit_access_assistance',
+    '31000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000011',
+    'Duplicate access case',auth.uid(),'unit_manager');
+   RAISE EXCEPTION 'Second access request for the same case was accepted.';
+ EXCEPTION WHEN unique_violation THEN NULL; END;
  IF (SELECT state FROM public.support_access_requests
    WHERE id='62000000-0000-4000-8000-000000000091')<>'pending'
  THEN RAISE EXCEPTION 'Support request was not created pending approval.'; END IF;
+ BEGIN
+   INSERT INTO public.support_access_requests(
+    org_id,case_id,requested_action,target_profile_id,target_unit_id,
+    access_object,requested_by,required_approver)
+   VALUES('10000000-0000-4000-8000-000000000010',
+    '61000000-0000-4000-8000-000000000091',
+    'unit_access_assistance',
+    '31000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000099',
+    'Foreign unit must be rejected',auth.uid(),'unit_manager');
+   RAISE EXCEPTION 'Support selected a different organisation access unit.';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN
    UPDATE public.support_cases
      SET state='resolved',resolution_summary='Should be blocked without business approval.'
