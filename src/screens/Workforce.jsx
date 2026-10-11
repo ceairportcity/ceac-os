@@ -3,6 +3,7 @@ import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
 import { dailyClocks } from "../lib/attendance";
+import { accraDayOffset } from "../lib/workforceDate";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button, SelectField } from "../experience-v2/components";
@@ -23,11 +24,6 @@ const DAY_LABELS={sun:"Sun",mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sa
 const OWNER_CONFIRMED_LEAVE_KINDS=new Set(["annual","sick","maternity","paternity","study"]);
 
 function isoDay(value){ return new Date(value).toISOString().slice(0,10); }
-function accraDayOffset(offset){
-  const now = new Date();
-  const midnight = Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate());
-  return new Date(midnight + offset * 86400000);
-}
 function niceDay(value){ return new Date(value+"T00:00:00Z").toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"}); }
 function human(value=""){ return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase()); }
 function clock(value){
