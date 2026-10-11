@@ -34,10 +34,11 @@ Live production has **119 applied versions** with exact name agreement against *
 | `20261010030000_126_phase6_network_service_role_guard` | Fixes service-role JWT check and service-only grant for attendance corroboration. | Browser denial, valid server-only addition, tenant/session match |
 | **Review PR #48** `20261011100000_127_report_draft_tenant_integrity` | Protects report period, unit and project tenant linkage; includes draft retrieval/update and version queries. Production has 1 report and **0 pre-existing mismatched period/unit/project links**. | Transactional two-org role-aware gate, positive draft update, no foreign report rows |
 | **Review PR #48** `20261011103000_128_unit_budget_tenant_boundary` | Protects budget-position SECURITY DEFINER RPC from cross-org unit reads and from individually mismatched-org budgets, spend lines and finance approvals, retaining legitimate in-org access. | Same-org Finance/admin positive, ordinary staff/foreign unit denied, mismatched ledger rows invisible |
+| **Review PR #48** `20261011110000_129_report_evidence_tenant_integrity` | Protects `save_and_submit_report` from linking cross-org work items, submissions or sessions despite matching unit UUIDs. Preserves the existing submission evidence and period rules. | Transactional genuine submission positive; foreign item, foreign submission and foreign session denial with no persisted records |
 
 **No version in this table has been applied to production by the assurance work.** Review of source syntax and existing database counts is not migration execution.
 
-| **Review PR #48** `20261011110000_129_report_evidence_tenant_integrity` | Protects `save_and_submit_report` from linking cross-org work items, submissions or sessions despite matching unit UUIDs. Preserves the existing submission evidence and period rules. | Transactional genuine submission positive; foreign item, foreign submission and foreign session denial with no persisted records | 
+ 
 
 ## 3. Other live privileged-RPC authority review
 
