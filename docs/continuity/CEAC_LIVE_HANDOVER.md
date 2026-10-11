@@ -108,3 +108,17 @@
 - MFA/operator recovery details: docs/security/CEAC_RECOVERY_REAL_MFA_ACCEPTANCE_2026-10-11.md on PR48
 - Independent private runner: scripts/ci/run-independent-release-gate.sh on PR44
 - Codespaces runner config/scripts: .devcontainer/devcontainer.json, .devcontainer/launch-automatic-verification.sh, .devcontainer/ceac-private-runner.sh on PR44
+
+
+## H. Unified Work execution checkpoint — 11 October 2026 12:00 UTC
+
+- New isolated draft PR: #50, branch `chatgpt/unified-release-candidate-20261011`.
+- Traceable integration commit: `7d7fbfd4f3bbead6e5ee33034574178f608f2d41`, with parents PR47 `41718e6`, PR48 `0bdb610`, and PR49 `83ff03d`. PR50 is mergeable but remains DRAFT / NO-GO.
+- Explicit overlap resolution: combined `package.json` retains PR47 product tests and PR48 security/recovery tests; migration inventory assertion now expects 135 unique source migrations (119 live history + 11 earlier pending + 5 PR48 forward migrations).
+- Real Work shell: Node 22.12.0 selected; `npm ci` exit 0; PR47 source suite 140/140 exit 0; combined source suite 159/159 exit 0; combined Vite production build exit 0.
+- Source provenance: authenticated GitHub recursive tree/blob reads; 519 non-document/non-binary PR47 files verified against exact Git blob SHAs with zero mismatches.
+- Build warning: unresolved `docs/visual-fidelity/references/CEAC_original_premium_mockup_reference.jpg` path was left for runtime by Vite; this is not accepted visual parity.
+- Vercel: PR50 automatic deployment was IGNORED, preserving the rate-limited free preview allowance; no manual preview or production deploy.
+- Runtime limit: this Work shell has neither Docker nor psql and cannot acquire sudo; full isolated PostgreSQL/Supabase migration replay is NOT RUN here.
+- Production: `main`, frozen PR44, Supabase production and Vercel production unchanged.
+- Next safe actions: inspect the missing visual-reference path; complete source/security review on PR50; obtain a genuine Docker/PostgreSQL-capable private executor for 135-version replay and rollback-only SQL gates; then authenticated Playwright, backup/restore, real MFA/AAL2 and owner visual acceptance. Do not merge or deploy before all mandatory gates and explicit owner GO.
