@@ -49,6 +49,14 @@ VALUES
   '10000000-0000-4000-8000-000000000094','week',
   'Report integrity foreign',date '2026-10-05',date '2026-10-11','open');
 
+-- This authentic foreign-org report provides a real correction-lineage FK.
+INSERT INTO public.reports(id,org_id,period_id,scope,unit_id,status,narrative)
+VALUES('29000000-0000-4000-8000-000000000094',
+       '10000000-0000-4000-8000-000000000094',
+       '23000000-0000-4000-8000-000000000095',
+       'unit','20000000-0000-4000-8000-000000000094',
+       'submitted','Synthetic foreign report lineage');
+
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims',
  '{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',
@@ -100,6 +108,13 @@ BEGIN
     WHERE id=v_good;
     RAISE EXCEPTION 'Report-row gate: accepted cross-org draft UPDATE';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+
+  BEGIN
+    UPDATE public.reports
+      SET supersedes_report_id='29000000-0000-4000-8000-000000000094'
+    WHERE id=v_good;
+    RAISE EXCEPTION 'Report-row gate: accepted cross-org correction lineage UPDATE';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END
 $attacks$;
 RESET ROLE;
@@ -109,7 +124,7 @@ BEGIN
   IF (SELECT count(*) FROM public.reports
       WHERE period_id IN (
         '23000000-0000-4000-8000-000000000094',
-        '23000000-0000-4000-8000-000000000095')) <> 1
+        '23000000-0000-4000-8000-000000000095')) <> 2
      OR EXISTS(
        SELECT 1 FROM public.reports
        WHERE period_id='23000000-0000-4000-8000-000000000094'
