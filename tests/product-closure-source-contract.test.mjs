@@ -164,3 +164,10 @@ test("Workforce attendance and protected employment reads have explicit tenant s
   assert.match(workforce, /\.from\("employment_records"\).*\.eq\("org_id",me\.org_id\)/);
   assert.match(workforce, /\.from\("work_sessions"\).*\.eq\("org_id",me\.org_id\)/);
 });
+
+test("Workforce calendar uses Ghana dates rather than the operator's local clock", () => {
+  assert.match(workforce, /import \{ accraDayOffset \} from "\.\.\/lib\/workforceDate"/);
+  assert.match(workforce, /const d=accraDayOffset\(i\)/);
+  assert.match(workforce, /date\+"T00:00:00Z"\)\.getUTCDay\(\)/);
+  assert.match(workforce, /timeZone:"Africa\/Accra",hour:"2-digit"/);
+});
