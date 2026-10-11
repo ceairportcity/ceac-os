@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
-import { HELP_CATEGORIES, supportCategoryLabel } from "../lib/technicalSupport";
+import { HELP_CATEGORIES, supportCategoryLabel, supportUnavailableMessage } from "../lib/technicalSupport";
 import "../role-styles/technical-support.css";
 
 const formatDate = (date) => date ? new Date(date).toLocaleDateString("en-GB", {
@@ -36,8 +36,8 @@ export default function TechnicalHelp({ me }) {
           .order("opened_at", { ascending: false }).limit(30);
         if (failure) throw failure;
         if (live) setCases(data || []);
-      } catch {
-        if (live) setLoadError("Your support requests cannot be loaded right now. This does not mean they have been deleted.");
+      } catch (failure) {
+        if (live) setLoadError(supportUnavailableMessage(failure) || "Your support requests cannot be loaded right now. This does not mean they have been deleted.");
       } finally {
         if (live) setLoading(false);
       }
@@ -69,7 +69,7 @@ export default function TechnicalHelp({ me }) {
       setSuccess("Your request was recorded. Reference: " + data.reference);
       setLoadError(null);
     } catch (failure) {
-      setError(humanError(failure, "Your request could not be recorded. Nothing was submitted. Please use the current approved CEAC support contact."));
+      setError(supportUnavailableMessage(failure) || humanError(failure, "Your request could not be confirmed. Check your existing requests before trying again, or use the approved CEAC support contact."));
     } finally {
       setBusy(false);
     }
