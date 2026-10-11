@@ -190,15 +190,16 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     // For a person with exactly one current unit responsibility, use
     // that known context rather than asking Administration to select it again.
     const peopleUnits = key === "person" && snapshot
-      ? snapshot.memberships.filter((row) => row.profile_id === value
-        && snapshot.units.some((unit) => unit.id === row.unit_id))
+      ? [...new Set(snapshot.memberships.filter((row) => row.profile_id === value
+        && snapshot.units.some((unit) => unit.id === row.unit_id)).map((row) => row.unit_id))]
       : [];
     return {
       ...current,
       [key]: value,
       ...(key === "unit" ? { lane: "" } : {}),
       ...(key === "person" ? {
-        unit: peopleUnits.length === 1 ? peopleUnits[0].unit_id : "",
+        // Several distinct roles in one unit still constitute one unit.
+        unit: peopleUnits.length === 1 ? peopleUnits[0] : "",
         lane: "",
       } : {}),
     };
