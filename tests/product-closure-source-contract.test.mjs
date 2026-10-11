@@ -219,3 +219,11 @@ test("Workforce provides a retry path after failed data reads in every role view
   assert.match(workforce, /onClick=\{\(\)=>void load\(\)\}/);
   assert.match(workforce, /Required Workforce records are currently unavailable/);
 });
+
+test("HR leave policy activation cannot silently convert invalid numeric values to null", () => {
+  assert.match(workforce, /import \{ isValidPolicyAmount \} from "\.\.\/lib\/workforcePolicyNumbers"/);
+  assert.match(workforce, /&& isValidPolicyAmount\(policyEntitlement\)/);
+  assert.match(workforce, /isValidPolicyAmount\(policyAccrualRate\)/);
+  assert.match(workforce, /isValidPolicyAmount\(policyCarryoverLimit\)/);
+  assert.doesNotMatch(workforce, /Number\(policyEntitlement\)>=0/);
+});
