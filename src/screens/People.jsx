@@ -99,6 +99,9 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   const [error, setError] = useState(null);
   const rosterGeneration = useRef(0);
   const personGeneration = useRef(0);
+  const protectedWriteBusy = useRef(false);
+  const employmentWriteBusy = useRef(false);
+  const recommendationWriteBusy = useRef(false);
 
   const canManageProtectedHr = (me.capabilities || []).includes("hr_private.access");
 
@@ -425,32 +428,41 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }
 
   async function saveProtectedRecord(form) {
-    if (!person?.employee_id) return;
+    if (!person?.employee_id || !canManageProtectedHr || protectedWriteBusy.current) return;
+    const employeeId = person.employee_id;
+    const generation = personGeneration.current;
+    protectedWriteBusy.current = true;
     setSavingProtected(true);
     setError(null);
-    const { error: saveError } = await supabase.rpc("hr_employee_protected_record", {
-      p_employee_id: person.employee_id,
-      p_record_type: form.recordType,
-      p_payload: form.payload,
-      p_replaces_id: form.replacesId || null,
-      p_reason: form.reason,
-    });
-    if (saveError) {
-      setSavingProtected(false);
-      setError(humanError(saveError, "Protected HR data could not be recorded."));
-      return;
+    let recorded = false;
+    try {
+      const { error: saveError } = await supabase.rpc("hr_employee_protected_record", {
+        p_employee_id: employeeId,
+        p_record_type: form.recordType,
+        p_payload: form.payload,
+        p_replaces_id: form.replacesId || null,
+        p_reason: form.reason,
+      });
+      if (saveError) throw saveError;
+      recorded = true;
+      if (generation !== personGeneration.current) return;
+      const { data, error: refreshError } = await supabase.rpc("hr_employee_protected_summary", {
+        p_employee_id: employeeId,
+      });
+      if (refreshError) throw refreshError;
+      if (generation !== personGeneration.current) return;
+      setProtectedHr(data || null);
+      setProtectedEditor(null);
+    } catch (failure) {
+      if (generation === personGeneration.current) {
+        setError(recorded
+          ? "Protected HR data was recorded, but its latest state could not be verified. Review the record before submitting again."
+          : humanError(failure, "Protected HR data could not be confirmed. Review before retrying."));
+      }
+    } finally {
+      protectedWriteBusy.current = false;
+      if (generation === personGeneration.current) setSavingProtected(false);
     }
-
-    const { data, error: refreshError } = await supabase.rpc("hr_employee_protected_summary", {
-      p_employee_id: person.employee_id,
-    });
-    setSavingProtected(false);
-    if (refreshError) {
-      setError(humanError(refreshError, "Protected HR data was recorded but could not be refreshed."));
-      return;
-    }
-    setProtectedHr(data || null);
-    setProtectedEditor(null);
   }
 
   function openEmploymentEditor() {
