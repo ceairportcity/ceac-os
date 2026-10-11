@@ -139,6 +139,7 @@ test("Administration invitation attention opens actual People and Access Invitat
 
 test("Administration never renders previous-account calendar or roster before role verification", () => {
   assert.match(admin, /const verifiedSnapshot = loadedScope === scopeKey && !loading && !loadError/);
+  assert.match(admin, /humanError\(error, "Administration records could not be verified/);
   for (const key of ["units", "alerts", "blockers", "leaveQueue", "checks", "mine", "watch", "meetings", "employeeRoster", "pendingInvitations"]) {
     assert.ok(admin.includes(key + "={verifiedSnapshot ? " + key + " : []}"), key + " must not leak previous-account data");
   }
