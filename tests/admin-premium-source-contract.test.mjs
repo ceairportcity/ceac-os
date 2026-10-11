@@ -71,7 +71,8 @@ test("the Administration calendar is navigable without fabricating missing event
   assert.match(overview, /onClick=\{\(\) => setMonthOffset/);
   assert.match(overview, /aria-pressed=\{day\.date === selectedDay\}/);
   assert.match(overview, /meetingDays\.has\(day\.date\)/);
-  assert.match(overview, /Upcoming meeting data is limited to the next 14 days/);
+  assert.match(overview, /This calendar previews at most six upcoming meetings within the next 14 days/);
+  assert.match(overview, /No meeting is shown for this date in the limited upcoming preview/);
   assert.match(stylesheet, /Approved Admin calendar rail/);
   assert.match(stylesheet, /adminv2-calendar-days/);
 });
