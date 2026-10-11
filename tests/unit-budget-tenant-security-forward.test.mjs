@@ -38,3 +38,12 @@ test("existing local SQL runner includes rollback-only foreign-budget adversaria
   assert.match(gate, /admin disclosed another tenant budget/i);
   assert.match(gate, /ordinary staff unexpectedly read budget/i);
 });
+
+test("all budget, spend and approval ledger inputs are confined to the caller organisation", () => {
+  assert.match(migration, /select currency from budgets where org_id=public\.app_org_id\(\) and unit_id = p_unit_id/);
+  assert.match(migration, /union select currency from spend_lines where org_id=public\.app_org_id\(\) and unit_id = p_unit_id/);
+  assert.match(migration, /union select currency from finance_requests where org_id=public\.app_org_id\(\) and unit_id = p_unit_id/);
+  assert.match(migration, /where s\.org_id=public\.app_org_id\(\) and s\.unit_id = p_unit_id/);
+  assert.equal((migration.match(/where b\.org_id=public\.app_org_id\(\) and b\.unit_id = p_unit_id/g) || []).length, 2);
+  assert.equal((migration.match(/where fr\.org_id=public\.app_org_id\(\) and fr\.unit_id = p_unit_id/g) || []).length, 2);
+});
