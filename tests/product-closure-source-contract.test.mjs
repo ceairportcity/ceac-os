@@ -136,3 +136,12 @@ test("Administration invitation attention opens actual People and Access Invitat
   assert.match(people, /setViewMode\("access"\)/);
   assert.match(people, /initialMode=\{accessFocusMode\}/);
 });
+
+test("Administration never renders previous-account calendar or roster before role verification", () => {
+  assert.match(admin, /const verifiedSnapshot = loadedScope === scopeKey && !loading && !loadError/);
+  for (const key of ["units", "alerts", "blockers", "leaveQueue", "checks", "mine", "watch", "meetings", "employeeRoster", "pendingInvitations"]) {
+    assert.ok(admin.includes(key + "={verifiedSnapshot ? " + key + " : []}"), key + " must not leak previous-account data");
+  }
+  assert.match(admin, /message=\{verifiedSnapshot \? msg : null\}/);
+  assert.match(admin, /payrollReadiness=\{verifiedSnapshot \? payrollReadiness : null\}/);
+});
