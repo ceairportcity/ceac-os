@@ -430,7 +430,7 @@ export default function AdminOverviewV2({
               <StatTile label="Working now" value={today?.working || 0} supporting="Current sessions" icon="people" tone="success" onClick={onOpenAttendance} />
               <StatTile label="Approved leave" value={today?.leave || 0} supporting="Today" icon="time" tone="action" onClick={onOpenAttendance} />
               <StatTile label="No session" value={today?.notStarted || 0} supporting="Not absence" icon="pending" tone="neutral" onClick={onOpenAttendance} />
-              <StatTile label="People on record" value={today?.headcount || 0} supporting="Active people" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Active accounts" value={today?.headcount || 0} supporting="Login profiles, not the full employee roster" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
             </div>
           </DataPanel>
           <DataPanel
