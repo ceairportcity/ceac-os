@@ -24,12 +24,17 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadedScope, setLoadedScope] = useState(null);
   const readGeneration = useRef(0);
+  const scopeKey = `${me.org_id}:${me.id}`;
+  const scopedLoading = loading || loadedScope !== scopeKey;
 
   useEffect(() => {
     // The administrator can change account or organisation while reads are in flight.
     // Clear the old scoped records immediately; stale requests may not repopulate them.
     readGeneration.current += 1;
+    setLoadedScope(null);
+    setBusy(false);
     setUnits([]); setAlerts([]); setBlockers([]); setLeaveQueue([]);
     setChecks([]); setMine([]); setOffice(null);
     setEmployeeRoster([]); setPendingInvitations([]); setPayrollReadiness(null);
@@ -49,6 +54,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
 
   async function load() {
     const generation = ++readGeneration.current;
+    setLoadedScope(null);
     setLoadError(null);
     setLoading(true);
     try {
@@ -217,11 +223,13 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     } catch (error) {
       if (generation === readGeneration.current) setLoadError(error.message || "Administration could not load.");
     } finally {
-      if (generation === readGeneration.current) setLoading(false);
+      if (generation === readGeneration.current) { setLoadedScope(scopeKey); setLoading(false); }
     }
   }
 
   async function decideLeave(request, decision) {
+    if (busy || scopedLoading || loadError) return;
+    const generation = readGeneration.current;
     setBusy(true); setMsg(null);
     try {
       const { error } = await supabase.rpc("workforce_leave_action", {
@@ -230,9 +238,13 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
         p_reason: "Administration dashboard decision",
       });
       if (error) throw error;
+      if (generation !== readGeneration.current) return;
       await load();
-    } catch (error) { setMsg(humanError(error, "The leave decision could not be saved.")); }
-    finally { setBusy(false); }
+    } catch (error) {
+      if (generation === readGeneration.current) setMsg(humanError(error, "The leave decision could not be confirmed. Review its recorded state before retrying."));
+    } finally {
+      if (generation === readGeneration.current) setBusy(false);
+    }
   }
 
   const adminDate = new Date().toLocaleDateString("en-GB", {
@@ -249,8 +261,8 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     <AdminOverviewV2
       me={me}
       dateLabel={adminDate}
-      loading={loading}
-      loadFailed={loadError}
+      loading={scopedLoading}
+      loadFailed={loadedScope === scopeKey ? loadError : null}
       message={msg}
       busy={busy}
       units={units}
