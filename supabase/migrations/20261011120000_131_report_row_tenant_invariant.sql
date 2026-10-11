@@ -40,6 +40,42 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
+  -- People and correction lineage are also ordinary single-key foreign
+  -- references; they must not attach a profile or prior report from another
+  -- organisation, even if the same-org report RLS policy permits the draft.
+  IF NEW.profile_id IS NOT NULL AND NOT EXISTS(
+    SELECT 1 FROM public.profiles subject
+    WHERE subject.id = NEW.profile_id AND subject.org_id = NEW.org_id
+  ) THEN
+    RAISE EXCEPTION 'Report subject is outside the report organisation.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  IF NEW.submitted_by IS NOT NULL AND NOT EXISTS(
+    SELECT 1 FROM public.profiles submitter
+    WHERE submitter.id = NEW.submitted_by AND submitter.org_id = NEW.org_id
+  ) THEN
+    RAISE EXCEPTION 'Report submitter is outside the report organisation.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  IF NEW.confirmed_by IS NOT NULL AND NOT EXISTS(
+    SELECT 1 FROM public.profiles reviewer
+    WHERE reviewer.id = NEW.confirmed_by AND reviewer.org_id = NEW.org_id
+  ) THEN
+    RAISE EXCEPTION 'Report confirmer is outside the report organisation.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  IF NEW.supersedes_report_id IS NOT NULL AND NOT EXISTS(
+    SELECT 1 FROM public.reports previous
+    WHERE previous.id = NEW.supersedes_report_id
+      AND previous.org_id = NEW.org_id
+  ) THEN
+    RAISE EXCEPTION 'Report correction reference belongs to another organisation.'
+      USING ERRCODE = '42501';
+  END IF;
+
   RETURN NEW;
 END;
 $function$;
@@ -50,7 +86,8 @@ REVOKE ALL ON FUNCTION public.guard_report_tenant_references()
 DROP TRIGGER IF EXISTS reports_tenant_reference_integrity ON public.reports;
 
 CREATE TRIGGER reports_tenant_reference_integrity
-BEFORE INSERT OR UPDATE OF org_id, period_id, unit_id, project_id
+BEFORE INSERT OR UPDATE OF org_id, period_id, unit_id, project_id,
+  profile_id, submitted_by, confirmed_by, supersedes_report_id
 ON public.reports
 FOR EACH ROW EXECUTE FUNCTION public.guard_report_tenant_references();
 
