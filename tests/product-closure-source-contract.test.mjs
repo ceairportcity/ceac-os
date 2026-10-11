@@ -255,3 +255,15 @@ test("a unit responsibility cannot be ended while its team placements remain", (
   assert.match(access, /disabled=\{busy \|\| stillInUnitTeam \|\| !form\.reason\.trim\(\)\}/);
   assert.match(access, /Remove this person's recorded team placements in this unit/);
 });
+
+test("People directory and protected employee details reject stale navigation responses", () => {
+  assert.match(people, /const rosterGeneration = useRef\(0\)/);
+  assert.match(people, /const personGeneration = useRef\(0\)/);
+  assert.match(people, /generation !== rosterGeneration\.current/);
+  assert.match(people, /generation !== personGeneration\.current/);
+  assert.match(people, /personGeneration\.current \+= 1/);
+  assert.match(people, /if \(!initialEmployeeId \|\| !rows\.length \|\| person \|\| accessIntent\) return/);
+  assert.match(people, /setProtectedHr\(null\)/);
+  assert.match(people, /People records could not be verified/);
+  assert.match(people, /This employee's current record could not be verified/);
+});
