@@ -20,7 +20,7 @@ function SupportRows({ cases, onSelect, empty = "Nothing requires action here." 
   </div>;
 }
 
-function CaseDetails({ item, onClose, onUpdate, onClaim, myId, busy, error }) {
+function CaseDetails({ item, onClose, onUpdate, onClaim, onRelease, myId, busy, error }) {
   const [nextState, setNextState] = useState(item.state);
   const [resolution, setResolution] = useState(item.resolution_summary || "");
   const [history, setHistory] = useState([]);
@@ -59,8 +59,11 @@ function CaseDetails({ item, onClose, onUpdate, onClaim, myId, busy, error }) {
       <div><dt>Current status</dt><dd>{String(item.state).replaceAll("_", " ")}</dd></div>
       <div><dt>Assignment</dt><dd>{item.assigned_to === myId ? "Assigned to you" : item.assigned_to ? "Assigned to another support member" : "Unassigned"}</dd></div>
     </dl>
-    {!item.assigned_to && <button type="button" className="btn btn-ghost" disabled={busy}
+    {!item.assigned_to && item.state !== "resolved" && item.state !== "closed" && <button type="button" className="btn btn-ghost" disabled={busy}
       onClick={() => onClaim(item.id)}>{busy ? "Recording..." : "Take this case"}</button>}
+    {item.assigned_to === myId && item.state !== "resolved" && item.state !== "closed" &&
+      <button type="button" className="btn btn-ghost" disabled={busy}
+        onClick={() => onRelease(item.id)}>{busy ? "Recording..." : "Return to unassigned queue"}</button>}
     <h3>What happened</h3>
     <p className="ceac-support-description">{item.description}</p>
     <h3>Record next action</h3>
@@ -208,6 +211,27 @@ export default function TechnicalSupport({ me, go }) {
     }
   }
 
+  async function releaseCase(id) {
+    if (!canManage || !membership || busy) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      const { data, error: failure } = await supabase.from("support_cases")
+        .update({ assigned_to: null }).eq("id", id).eq("org_id", me.org_id)
+        .eq("assigned_to", me.id)
+        .not("state", "in", "(resolved,closed)")
+        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
+        .maybeSingle();
+      if (failure) throw failure;
+      if (!data) throw new Error("This case is no longer yours to release. Refresh before trying again.");
+      setCases((items) => items.map((item) => item.id === id ? data : item));
+    } catch (failure) {
+      setActionError(humanError(failure, "The case was not released."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function updateCase(id, state, note, expectedUpdatedAt) {
     if (!canManage || !membership || busy) return;
     if (!expectedUpdatedAt) {
@@ -262,7 +286,7 @@ export default function TechnicalSupport({ me, go }) {
       </nav>
 
       {selected ? <CaseDetails key={selected.id} item={selected} busy={busy} error={actionError}
-        myId={me.id} onClaim={claimCase}
+        myId={me.id} onClaim={claimCase} onRelease={releaseCase}
         onClose={() => { setSelectedId(null); setActionError(null); }} onUpdate={updateCase} /> : <>
         {workspace === "home" && <div className="ceac-support-layout">
           <section className="ceac-support-main">
