@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import SupportAccessCaseActions from "../components/SupportAccessCaseActions";
+import { OperationalFileList } from "../components/OperationalFiles";
 import {
   canManageSupport, SUPPORT_WORKSPACES, SERVICE_NAMES, SUPPORT_GUIDES,
   supportCategoryLabel, supportCaseGroups, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome,
@@ -107,6 +108,11 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
       <p className="screen-note">Access changes still require separate business approval. This form cannot grant permissions.</p>
     </form>
     {requiresBusinessApproval && <SupportAccessCaseActions item={item} me={me} onLedgerChange={setAccessLedger} />}
+    <OperationalFileList contextType="support_case" contextId={item.id} relation="support_evidence"
+      canUpload={item.state !== "closed" && item.state !== "resolved"
+        && (item.assigned_to === me.id)}
+      title="Private case evidence"
+      emptyText="No private technical evidence is recorded for this case." />
     <div className="ceac-support-history">
       <h3>Case history</h3>
       {historyLoading && <p role="status">Loading attributable support history...</p>}
