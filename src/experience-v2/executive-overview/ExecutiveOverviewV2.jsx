@@ -4,6 +4,7 @@ import {
 } from "../components";
 import { CeacIcon } from "../icons";
 import "./executive-overview.css";
+import { strategyProgress } from "./strategyProgress.js";
 
 function formatDate(value, options = {}) {
   if (!value) return "Not recorded";
@@ -57,14 +58,6 @@ function DirectionRow({ icon, label, detail, progress = null, tone = "success" }
       <small>{Math.round(progress)}%</small>
     </> : <small className="executivev2-direction-state">Recorded</small>}
   </div>;
-}
-
-function strategyProgress(row) {
-  if (row?.measurement_kind !== "numeric") return null;
-  const target = Number(row?.target_value);
-  const current = Number(row?.current_value);
-  if (!Number.isFinite(target) || target <= 0 || !Number.isFinite(current)) return null;
-  return Math.max(0, Math.min(100, (current / target) * 100));
 }
 
 function strategyStatusLabel(row) {
