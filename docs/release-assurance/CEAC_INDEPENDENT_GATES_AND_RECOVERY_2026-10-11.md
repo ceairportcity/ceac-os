@@ -17,7 +17,7 @@ The private repo includes `.devcontainer/devcontainer.json` with automatic `post
 
 ## 2. Candidate migrations — actual source review and production impact
 
-Live production has **119 applied versions** with exact name agreement against **130 SQL files** on frozen PR #44; **11 unapplied versions**. Timestamp versions are unique: there are two descriptive `123` files but no duplicate version IDs. The review branch adds **three further unique forward versions**, 127, 128 and 129, producing **133** files *only if integrated after PR #44*. Product PR #47 must be reconciled before final sequence lock.
+Live production has **119 applied versions** with exact name agreement against **130 SQL files** on frozen PR #44; **11 unapplied versions**. Timestamp versions are unique: there are two descriptive `123` files but no duplicate version IDs. The review branch adds **four further unique forward versions**, 127, 128, 129 and 130, producing **134** files *only if integrated after PR #44*. Product PR #47 must be reconciled before final sequence lock.
 
 | Order / file | Main change / potential effect | Mandatory isolated test |
 | --- | --- | --- |
@@ -35,6 +35,7 @@ Live production has **119 applied versions** with exact name agreement against *
 | **Review PR #48** `20261011100000_127_report_draft_tenant_integrity` | Protects report period, unit and project tenant linkage; includes draft retrieval/update and version queries. Production has 1 report and **0 pre-existing mismatched period/unit/project links**. | Transactional two-org role-aware gate, positive draft update, no foreign report rows |
 | **Review PR #48** `20261011103000_128_unit_budget_tenant_boundary` | Protects budget-position SECURITY DEFINER RPC from cross-org unit reads and from individually mismatched-org budgets, spend lines and finance approvals, retaining legitimate in-org access. | Same-org Finance/admin positive, ordinary staff/foreign unit denied, mismatched ledger rows invisible |
 | **Review PR #48** `20261011110000_129_report_evidence_tenant_integrity` | Protects `save_and_submit_report` from linking cross-org work items, submissions or sessions despite matching unit UUIDs. Preserves the existing submission evidence and period rules. | Transactional genuine submission positive; foreign item, foreign submission and foreign session denial with no persisted records |
+| **Review PR #48** `20261011113000_130_report_evidence_browser_write_lock` | Closes direct anon/authenticated table DML for report evidence refs, retaining authorised SELECT under RLS and normal SECURITY DEFINER RPC writes. | SQL ACL denial under real role, valid SELECT and RPC preserved, RLS still enabled |
 
 **No version in this table has been applied to production by the assurance work.** Review of source syntax and existing database counts is not migration execution.
 
@@ -45,7 +46,7 @@ Live production has **119 applied versions** with exact name agreement against *
 Production publicly exposed SECURITY DEFINER inventory: **132 callable by authenticated**, **0 callable by anon**, and all 132 have an explicit `search_path`. Neither `authenticated` nor `anon` has `CREATE` on the public schema, and no direct `hr_private` SELECT is granted. Those are useful static boundaries, not proof of absence of privilege escalation.
 
 Two specific investigations:
-1. `save_report_draft` originally accepted unit/project IDs without comparing their organisations to the report period; its single-ID foreign keys do not check same-tenant linkage. PR #48 forward 127 and its SQL gate address this. Forward 129 and its SQL gate separately bind work/submission/session evidence rows to the report and reporting-period organisation.
+1. `save_report_draft` originally accepted unit/project IDs without comparing their organisations to the report period; its single-ID foreign keys do not check same-tenant linkage. PR #48 forward 127 and its SQL gate address this. Forward 129 and its SQL gate separately bind work/submission/session evidence rows to the report and reporting-period organisation. Forward 130 blocks direct browser mutation of the reference table: the live ACL currently grants broad DML to `anon`/`authenticated`, and the `rer_write` policy only tests access to a draft report, not the referenced objects. ManagerReports uses SELECT + the vetted submission RPC, so this closes a bypass without removing intended UI write functionality.
 2. `unit_budget_position` originally read arbitrary `p_unit_id` where `app_is_admin()`, `app_is_exec()` or membership in **any** finance unit was true. It lacked a requirement that the requested unit belong to `app_org_id()`. PR #48 forward 128 closes that cross-tenant read while preserving in-org Finance access.
 
 `project_close_readiness` uses `app_visible_projects()`, whose live definition restricts visible project IDs to `app_org_id()`; its lack of a literal org predicate is not by itself a confirmed vulnerability. `mark_room_read` and `mark_announcement_read` check subject-bound access helpers. Audit further exposed RPCs via same-org adversarial tests, not keyword regex alone. Final reviewed SQL surface after pending migrations must match the repository's exact-signature allowlist and all approved grants.
@@ -83,7 +84,7 @@ Acceptance sequence:
 
 - PR #44 remains frozen until every baseline acceptance result is associated with its exact SHA and is independently reviewed.
 - PR #47 is independent product implementation (Administration/People/attendance/invitations/Technical Support); do not alter it through assurance. Check its latest HEAD before integrating.
-- PR #48 is the independent **DRAFT** security repair. Three additional migrations must be reconciled with the final product stack; local verification requires **133**, not the frozen baseline's 130, when tested together.
+- PR #48 is the independent **DRAFT** security repair. Four additional migrations must be reconciled with the final product stack; local verification requires **134**, not the frozen baseline's 130, when tested together.
 - No successful Vercel preview or existing Codespace configuration authorises a merge, Supabase DDL, public visibility, paid plan or production deployment.
 - Final acceptance requires exact-head locally executed complete unit/build/browser/SQL gates, two-tenant adversarial authority, literal approved-role visual comparison, real restored backup, real MFA, signed second reviewer and separate owner go-live approval.
 
