@@ -130,6 +130,8 @@ export default function TechnicalSupport({ me, go }) {
     setMembership(null);
     setCases([]);
     setSelectedId(null);
+    setBusy(false);
+    setActionError(null);
     setError(null);
     (async () => {
       try {
@@ -201,6 +203,7 @@ export default function TechnicalSupport({ me, go }) {
 
   async function claimCase(id) {
     if (!canManage || !membership || busy) return;
+    const generation = readGeneration.current;
     setBusy(true);
     setActionError(null);
     try {
@@ -214,16 +217,18 @@ export default function TechnicalSupport({ me, go }) {
         .maybeSingle();
       if (failure) throw failure;
       if (!data) throw new Error("This case is no longer unassigned. Refresh the Help Desk before taking it.");
+      if (generation !== readGeneration.current) return;
       setCases((items) => items.map((item) => item.id === id ? data : item));
     } catch (failure) {
-      setActionError(humanError(failure, "The case was not assigned to you."));
+      if (generation === readGeneration.current) setActionError(humanError(failure, "The case was not assigned to you."));
     } finally {
-      setBusy(false);
+      if (generation === readGeneration.current) setBusy(false);
     }
   }
 
   async function releaseCase(id) {
     if (!canManage || !membership || busy) return;
+    const generation = readGeneration.current;
     setBusy(true);
     setActionError(null);
     try {
@@ -235,16 +240,18 @@ export default function TechnicalSupport({ me, go }) {
         .maybeSingle();
       if (failure) throw failure;
       if (!data) throw new Error("This case is no longer yours to release. Refresh before trying again.");
+      if (generation !== readGeneration.current) return;
       setCases((items) => items.map((item) => item.id === id ? data : item));
     } catch (failure) {
-      setActionError(humanError(failure, "The case was not released."));
+      if (generation === readGeneration.current) setActionError(humanError(failure, "The case was not released."));
     } finally {
-      setBusy(false);
+      if (generation === readGeneration.current) setBusy(false);
     }
   }
 
   async function updateCase(id, state, note, expectedUpdatedAt) {
     if (!canManage || !membership || busy) return;
+    const generation = readGeneration.current;
     if (!expectedUpdatedAt) {
       setActionError("The case revision cannot be verified. Refresh the Help Desk before saving.");
       return;
@@ -264,11 +271,12 @@ export default function TechnicalSupport({ me, go }) {
         .maybeSingle();
       if (failure) throw failure;
       if (!data) throw new Error("The case changed since you opened it. Refresh the Help Desk before saving.");
+      if (generation !== readGeneration.current) return;
       setCases((items) => items.map((item) => item.id === id ? data : item));
     } catch (failure) {
-      setActionError(humanError(failure, "The case change was not recorded. No further action was taken."));
+      if (generation === readGeneration.current) setActionError(humanError(failure, "The case change was not recorded. No further action was taken."));
     } finally {
-      setBusy(false);
+      if (generation === readGeneration.current) setBusy(false);
     }
   }
 
