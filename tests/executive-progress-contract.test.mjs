@@ -28,3 +28,11 @@ test("Executive UI actually uses the measured-only helper", () => {
   assert.match(source, /const progress = strategyProgress\(row\);/);
   assert.doesNotMatch(source, /const current = Number\(row\?\.current_value\);/);
 });
+
+test("Executive organisational overview explicitly scopes all read-context queries", () => {
+  const source=readFileSync("src/screens/ExecutiveHome.jsx","utf8");
+  assert.match(source, /from\("meeting_sessions"\)[\s\S]{0,180}\.eq\("org_id",me\.org_id\)/);
+  assert.match(source, /from\("report_periods"\)[\s\S]{0,150}\.eq\("org_id",me\.org_id\)/);
+  assert.match(source, /from\("units"\)[\s\S]{0,90}\.eq\("org_id",me\.org_id\)/);
+  assert.match(source, /from\("reports"\)[\s\S]{0,155}\.eq\("org_id",me\.org_id\)/);
+});
