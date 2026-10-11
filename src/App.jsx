@@ -66,6 +66,8 @@ const Meeting = lazy(() => import("./screens/Meeting"));
 const DesignPrimitives = lazy(() => import("./screens/DesignPrimitives"));
 const AccountActivity = lazy(() => import("./screens/AccountActivity"));
 const Guide = lazy(() => import("./screens/Guide"));
+const TechnicalHelp = lazy(() => import("./screens/TechnicalHelp"));
+const TechnicalSupport = lazy(() => import("./screens/TechnicalSupport"));
 const MeetingScheduler = lazy(() => import("./components/MeetingScheduler"));
 
 
@@ -297,6 +299,7 @@ export default function App() {
     grant.capability === capability && !grant.scope_unit_id
   );
   const canManagePeople = hasCapability("people.manage");
+  const canManageSupport = hasCapability("support.case.manage");
   const canViewAudit = hasCapability("audit.view");
   const canManageAuthority = hasCapability("authority.manage");
   const canUseWorkflows = canViewAudit || canManagePeople || canManageAuthority;
@@ -330,6 +333,10 @@ export default function App() {
   function pageForTab() {
     if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
+    if (tab === "technical-help") return <TechnicalHelp me={me} />;
+    if (tab === "technical-support") return canManageSupport
+      ? <TechnicalSupport me={me} go={go} />
+      : <div className="body" role="alert">This account is not authorised to manage Technical Support.</div>;
     if (tab === "primitives" && isAdmin) return <DesignPrimitives me={me} />;
     if (tab === "home") {
       if (me.is_exec) return <ExecutiveHome me={me} openMeeting={openMeeting} scheduleMeeting={startMeeting} go={go} />;
