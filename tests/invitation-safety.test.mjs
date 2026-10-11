@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { invitationEmailConflicts } from "../src/lib/invitationSafety.js";
+import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../src/lib/invitationSafety.js";
 
 test("invitation duplicate guard normalizes email case and spaces", () => {
   assert.deepEqual(invitationEmailConflicts(" Existing@ceac.org ",
@@ -32,4 +32,12 @@ test("missing and corrupted read rows cannot invent an email conflict", () => {
   assert.deepEqual(invitationEmailConflicts(""), { accountExists: false, invitationPending: false });
   assert.deepEqual(invitationEmailConflicts("new@example.org", null, [null, {}, { email: 4 }]),
     { accountExists: false, invitationPending: false });
+});
+
+test("invalid, missing, whitespace and overlong emails are blocked before recording", () => {
+  for (const email of [null, "", "admin", "admin@", "@church.org", "admin@church", "a b@church.org", "x@ y.org", "a".repeat(255) + "@church.org"]) {
+    assert.equal(isPlausibleInvitationEmail(email), false, String(email));
+  }
+  assert.equal(isPlausibleInvitationEmail(" staff@ceac.org "), true);
+  assert.equal(isPlausibleInvitationEmail("staff+work@ceac.org"), true);
 });
