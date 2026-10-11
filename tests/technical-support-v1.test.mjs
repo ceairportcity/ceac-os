@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   HELP_CATEGORIES, SUPPORT_WORKSPACES, SUPPORT_GUIDES, SERVICE_NAMES,
-  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe,
+  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage,
 } from "../src/lib/technicalSupport.js";
 
 test("support panel has the six locked workspaces and categories", () => {
@@ -65,4 +65,15 @@ test("personal Support home excludes colleagues' assignments and awaiting approv
   assert.deepEqual(supportCasesNeedingMe(cases, "other").map((item) => item.id), ["new", "theirs"]);
   assert.deepEqual(supportCasesNeedingMe(null, "me"), []);
   assert.deepEqual(supportCasesNeedingMe(cases, null).map((item) => item.id), ["new"]);
+});
+
+test("unavailable support schema has a truthful safe message", () => {
+  for (const code of ["PGRST205", "42P01"]) {
+    const message = supportUnavailableMessage({ code });
+    assert.match(message, /not enabled in this environment/);
+    assert.doesNotMatch(message, /permission denied|not found|SQL/i);
+  }
+  assert.equal(supportUnavailableMessage({ code: "42501" }), null);
+  assert.equal(supportUnavailableMessage({ code: "PGRST301" }), null);
+  assert.equal(supportUnavailableMessage(null), null);
 });
