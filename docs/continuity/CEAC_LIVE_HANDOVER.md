@@ -47,3 +47,15 @@ Next immediately executable work: publish this isolated candidate checkpoint, re
 - Production remains unchanged and PR #50 remains draft/NO-GO.
 
 Next immediately executable work: commit the collection/playbook repair, then either obtain a genuine private Git checkout/isolated role-fixture environment or continue source/database implementation work that does not require owner credentials.
+
+## 2026-10-11 19:25 UTC — Stale Playwright source contracts reconciled
+
+- After excluding the invalid cross-session loopback failures, nine credential-independent assertions inside otherwise credentialed Playwright files were stale relative to newer accepted implementation language/composition.
+- Reconciled assertions only; application behavior was not changed:
+  - Administration `Invitations to review` replaced the superseded `Pending Staff invitations` label;
+  - Executive Finance, Reports, Organisation and overview checks now bind to the current equally strict factual/non-performance wording;
+  - Personal and Manager leave checks now bind to the confirmed annual/secondary leave language and explicit no-automatic-payroll consequence;
+  - the Executive overview visualization contract now binds to the measured-only `strategyProgress` helper, while the shared `DataVizChart` family remains separately covered.
+- Focused Playwright source-contract rerun: 9/9 passed, exit 0.
+- Latest durable candidate before this test-only checkpoint: `60623d3236331d8bef09e0707dd728669dfa8102`.
+- Production remains unchanged; credentialed browser flows still require an isolated test Supabase and private role fixtures.

@@ -43,7 +43,7 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
   expect(view).toContain("Good morning");
   expect(view).toContain("Recent activity");
   expect(view).toContain("Organisational overview");
-  expect(view).toContain("This area only shows attributable CEAC records.");
+  expect(view).toContain("This area only shows CEAC records your account is authorised to see.");
   expect(view).not.toContain("ReferenceDashboard");
   expect(view).not.toContain("components/primitives");
 
