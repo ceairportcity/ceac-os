@@ -26,6 +26,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [loading, setLoading] = useState(true);
   const [loadedScope, setLoadedScope] = useState(null);
   const readGeneration = useRef(0);
+  const leaveActionBusyRef = useRef(false);
   const scopeKey = `${me.org_id}:${me.id}`;
   const scopedLoading = loading || loadedScope !== scopeKey;
 
@@ -34,6 +35,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     // Clear the old scoped records immediately; stale requests may not repopulate them.
     readGeneration.current += 1;
     setLoadedScope(null);
+    leaveActionBusyRef.current = false;
     setBusy(false);
     setUnits([]); setAlerts([]); setBlockers([]); setLeaveQueue([]);
     setChecks([]); setMine([]); setOffice(null);
@@ -43,7 +45,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     setDelivery({ active: 0, closedThisMonth: 0, onTrack: 0, atRisk: 0, met: 0, notMet: 0, other: 0, objectives: 0 });
     setMsg(null);
     void load();
-    return () => { readGeneration.current += 1; };
+    return () => { readGeneration.current += 1; leaveActionBusyRef.current = false; };
   }, [me.id, me.org_id]);
 
   async function must(query, label) {
@@ -228,7 +230,8 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   }
 
   async function decideLeave(request, decision) {
-    if (busy || scopedLoading || loadError) return;
+    if (busy || scopedLoading || loadError || leaveActionBusyRef.current) return;
+    leaveActionBusyRef.current = true;
     const generation = readGeneration.current;
     setBusy(true); setMsg(null);
     try {
@@ -241,12 +244,16 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       if (generation !== readGeneration.current) return;
       // The next load deliberately acquires a new generation. Release this
       // action's busy latch before starting it, while the page enters loading.
+      leaveActionBusyRef.current = false;
       setBusy(false);
       await load();
     } catch (error) {
       if (generation === readGeneration.current) setMsg(humanError(error, "The leave decision could not be confirmed. Review its recorded state before retrying."));
     } finally {
-      if (generation === readGeneration.current) setBusy(false);
+      if (generation === readGeneration.current) {
+        leaveActionBusyRef.current = false;
+        setBusy(false);
+      }
     }
   }
 
