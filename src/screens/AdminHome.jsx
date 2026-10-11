@@ -225,7 +225,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setWatch(rules.slice(0,12));
       setMeetings(meetingRows || []);
     } catch (error) {
-      if (generation === readGeneration.current) setLoadError(error.message || "Administration could not load.");
+      if (generation === readGeneration.current) setLoadError(humanError(error, "Administration records could not be verified. Please try again."));
     } finally {
       if (generation === readGeneration.current) { setLoadedScope(scopeKey); setLoading(false); }
     }
