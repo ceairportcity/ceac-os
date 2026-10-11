@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const auto = readFileSync(".devcontainer/ceac-private-runner.sh", "utf8");
+const launcher = readFileSync(".devcontainer/launch-automatic-verification.sh", "utf8");
 const gate = readFileSync("scripts/ci/run-independent-release-gate.sh", "utf8");
 const config = readFileSync(".devcontainer/devcontainer.json", "utf8");
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
@@ -32,4 +33,11 @@ test("Codespaces setup is an isolated Docker-in-Docker test runner", () => {
   assert.match(parsed.postStartCommand, /launch-automatic-verification/);
   assert.match(pkg.scripts["verify:source"], /technical-support-source-contract\.test\.mjs/);
   assert.match(pkg.scripts["verify:source"], /pending-feature-compatibility\.test\.mjs/);
+});
+
+test("Codespaces never accepts a stale result after the PR branch advances", () => {
+  assert.match(launcher, /current_head="\$\(git rev-parse HEAD\)"/);
+  assert.match(launcher, /previous_head="\$\(cat \/tmp\/ceac-private-autorun-tested-head/);
+  assert.match(launcher, /"\$previous_head" == "\$current_head"/);
+  assert.match(auto, /printf '%s\\n' "\$\{expected_pr:-UNRESOLVED\}" > \/tmp\/ceac-private-autorun-tested-head/);
 });
