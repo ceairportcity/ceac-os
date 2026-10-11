@@ -78,6 +78,9 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
     <h3>What happened</h3>
     <p className="ceac-support-description">{item.description}</p>
     <h3>Record next action</h3>
+    {item.assigned_to !== myId && <p role="status" className="ceac-support-unverified">
+      Take the unassigned case before editing it. Cases assigned to another technician are read-only here.
+    </p>}
     <form className="ceac-support-form" onSubmit={(event) => {
       event.preventDefault();
       onUpdate(item.id, nextState, resolution, item.updated_at);
@@ -97,7 +100,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
           maxLength={2000} placeholder="Record factual work completed. Do not include credentials or protected records." />
       </label>
       {error && <p role="alert" className="ceac-support-error">{error}</p>}
-      <button className="btn" type="submit" disabled={busy}>{busy ? "Saving..." : "Save case change"}</button>
+      <button className="btn" type="submit" disabled={busy || item.assigned_to !== myId}>{busy ? "Saving..." : "Save case change"}</button>
       <p className="screen-note">Access changes still require separate business approval. This form cannot grant permissions.</p>
     </form>
     <div className="ceac-support-history">
@@ -272,6 +275,10 @@ export default function TechnicalSupport({ me, go }) {
       setActionError("The selected case is no longer in the verified Help Desk queue. Refresh before saving.");
       return;
     }
+    if (currentCase.assigned_to !== me.id) {
+      setActionError("Take ownership of an unassigned case before editing. A colleague's assignment cannot be overwritten here.");
+      return;
+    }
     if (!canRecordSupportOutcome(currentCase, state)) {
       setActionError("An access request cannot be marked fulfilled here without the approved business-authority evidence and verified execution path.");
       return;
@@ -291,6 +298,7 @@ export default function TechnicalSupport({ me, go }) {
         .update({ state, resolution_summary: note.trim() || null })
         .eq("id", id).eq("org_id", me.org_id)
         .eq("updated_at", expectedUpdatedAt)
+        .eq("assigned_to", me.id)
         .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
         .maybeSingle();
       if (failure) throw failure;
