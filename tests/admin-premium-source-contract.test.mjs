@@ -46,3 +46,16 @@ test("mobile and desktop have separate first-class hierarchy and real screenshot
   assert.match(mobile, /screenshot\(/);
   assert.match(mobile, /document\.documentElement\.scrollWidth/);
 });
+
+test("the dominant next step contains real CEAC authority-preserving navigation", () => {
+  assert.match(overview, /const suggestedAction = leaveQueue\.length/);
+  assert.match(overview, /eyebrow: "Leave decision waiting"/);
+  assert.match(overview, /action: onOpenAttendance/);
+  assert.match(overview, /action: onOpenWorkflows/);
+  assert.match(overview, /pendingInvitations\.length && canManagePeople/);
+  assert.match(overview, /action: onOpenPeople/);
+  assert.match(overview, /onOpenItem\?\.\(mine\[0\]\.id\)/);
+  assert.match(overview, /adminv2-focus-strip/);
+  assert.match(stylesheet, /Admin premium reference: dominant next-decision focus/);
+  assert.doesNotMatch(overview, /automatically.*approve.*leave/i);
+});
