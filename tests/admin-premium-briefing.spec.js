@@ -3,7 +3,9 @@ import { expect, test } from "@playwright/test";
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 
 for (const viewport of [
+  { name: "desktop-1440", width: 1440, height: 900 },
   { name: "desktop-1366", width: 1366, height: 768 },
+  { name: "tablet-820", width: 820, height: 1180 },
   { name: "phone-390", width: 390, height: 844 },
 ]) {
   test(`premium Administration daily briefing at ${viewport.name}`, async ({ browser }) => {
