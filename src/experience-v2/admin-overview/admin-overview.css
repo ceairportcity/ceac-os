@@ -870,3 +870,103 @@ button.adminv2-action-main {
   .adminv2-focus-summary > .ev2c-button {grid-column:1/-1;justify-self:stretch}
   .adminv2-focus-metrics span {padding:.85rem 1rem}
 }
+
+
+/* Approved Admin calendar rail — recorded meetings only */
+.adminv2-mini-calendar {
+  display: grid;
+  gap: .65rem;
+  margin-bottom: .8rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5ecf4;
+}
+.adminv2-calendar-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.adminv2-calendar-title > strong {
+  font-size: .83rem;
+  color: #263a54;
+}
+.adminv2-calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: .15rem;
+}
+.adminv2-calendar-controls button {
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: .4rem;
+  color: #5c6f89;
+  font-size: .9rem;
+}
+.adminv2-calendar-controls button[aria-label="Show current month"] {
+  padding: 0 .35rem;
+  font-size: .67rem;
+  font-weight: 750;
+}
+.adminv2-calendar-controls button:hover,
+.adminv2-calendar-controls button:focus-visible { background: #edf4ff; color: #0c5df9; }
+.adminv2-calendar-weekdays,
+.adminv2-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: .16rem;
+}
+.adminv2-calendar-weekdays span {
+  text-align: center;
+  font-size: .65rem;
+  font-weight: 650;
+  color: #8090a4;
+}
+.adminv2-calendar-day {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: .13rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 2rem;
+  padding: .2rem;
+  border-radius: .45rem;
+  color: #233951;
+  font-size: .75rem;
+}
+.adminv2-calendar-day.is-outside { color: #c4cdd8; }
+.adminv2-calendar-day:hover,
+.adminv2-calendar-day:focus-visible { background: #eaf2ff; }
+.adminv2-calendar-day.is-selected {
+  background: #0c5df9;
+  color: #fff;
+  font-weight: 800;
+}
+.adminv2-calendar-day.is-today:not(.is-selected) {
+  box-shadow: inset 0 0 0 1px #0c5df9;
+  font-weight: 800;
+}
+.adminv2-calendar-day i {
+  width: .22rem;
+  height: .22rem;
+  border-radius: 50%;
+  background: #31ac8e;
+}
+.adminv2-calendar-day.is-selected i { background: #fff; }
+.adminv2-calendar-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .35rem .6rem;
+  padding: .65rem .7rem;
+  border-radius: .5rem;
+  background: #f6f9fd;
+  font-size: .7rem;
+  color: #64758c;
+}
+.adminv2-calendar-selection strong { color: #243b5a; white-space: nowrap; }
+.adminv2-agenda-heading { margin-top: .1rem; }
+@media (max-width: 599px) {
+  .adminv2-calendar-day { min-height: 2.15rem; }
+}
