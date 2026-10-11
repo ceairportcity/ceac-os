@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const read=(path)=>readFileSync(path,"utf8");
 const migration=read("supabase/migrations/20261011195500_137_support_private_case_evidence.sql");
+const auditMigration=read("supabase/migrations/20261011201000_138_support_evidence_audit_history.sql");
 const gate=read("supabase/tests/support_private_case_evidence_gate.sql");
 const runner=read("scripts/ci/run-sql-security-gates.sh");
 const panel=read("src/screens/TechnicalSupport.jsx");
@@ -54,4 +55,18 @@ test("SQL rollback gate proves reporter and manager denied and Support evidence 
   assert.match(gate,/Support evidence was not registered in private bucket/);
   assert.match(gate,/Support evidence used protected employee file relation/);
   assert.match(gate,/Manager could read internal Support private evidence/);
+});
+
+
+test("case evidence registration is append-only and never falsely labelled uploaded",()=>{
+  assert.match(auditMigration,/ALTER TABLE public\.support_case_events/);
+  assert.match(auditMigration,/evidence_registered/);
+  assert.match(auditMigration,/AFTER INSERT ON public\.operational_file_links/);
+  assert.match(auditMigration,/NEW\.context_type='support_case'/);
+  assert.match(auditMigration,/NEW\.linked_by IS DISTINCT FROM auth\.uid\(\)/);
+  assert.match(auditMigration,/f\.org_id=NEW\.org_id/);
+  assert.match(auditMigration,/sc\.org_id=NEW\.org_id/);
+  assert.match(auditMigration,/upload not yet verified/);
+  assert.match(auditMigration,/REVOKE ALL ON FUNCTION public\.support_evidence_registration_audit\(\)/);
+  assert.match(gate,/Immutable Support evidence registration history was not recorded truthfully/);
 });
