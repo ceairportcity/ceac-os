@@ -100,6 +100,8 @@ function CaseDetails({ item, onClose, onUpdate, busy, error }) {
 
 export default function TechnicalSupport({ me, go }) {
   const [workspace, setWorkspace] = useState("home");
+  const [deskQuery, setDeskQuery] = useState("");
+  const [deskStatus, setDeskStatus] = useState("all");
   const [membership, setMembership] = useState(null);
   const [ready, setReady] = useState(false);
   const [cases, setCases] = useState([]);
@@ -136,6 +138,14 @@ export default function TechnicalSupport({ me, go }) {
   }, [me.id, me.org_id, canManage]);
 
   const groups = useMemo(() => supportCaseGroups(cases), [cases]);
+  // These filters apply only to the latest RLS-authorised cases fetched above;
+  // never suggest that an incomplete 150-record window is the full history.
+  const deskCases = useMemo(() => cases.filter((item) => {
+    if (deskStatus !== "all" && item.state !== deskStatus) return false;
+    const needle = deskQuery.trim().toLocaleLowerCase();
+    return !needle || [item.summary, item.reference, supportCategoryLabel(item.category)]
+      .some((value) => String(value || "").toLocaleLowerCase().includes(needle));
+  }), [cases, deskQuery, deskStatus]);
   const selected = cases.find((item) => item.id === selectedId);
 
   async function updateCase(id, state, note) {
@@ -205,7 +215,27 @@ export default function TechnicalSupport({ me, go }) {
             <p className="screen-note">Only cases authorised for the support queue are listed.</p></div>
             <button className="btn btn-ghost" type="button" onClick={() => go("technical-help")}>Submit your own request</button>
           </div>
-          <SupportRows cases={cases} onSelect={setSelectedId} empty="No support cases have been recorded." />
+          <div className="ceac-support-desk-filters">
+            <label>Find a request
+              <input type="search" value={deskQuery} onChange={(event) => setDeskQuery(event.target.value)}
+                placeholder="Reference, summary or category" />
+            </label>
+            <label>Case status
+              <select value={deskStatus} onChange={(event) => setDeskStatus(event.target.value)}>
+                <option value="all">All statuses</option>
+                <option value="open">Open</option>
+                <option value="in_progress">In progress</option>
+                <option value="waiting_approval">Waiting for approval</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+            </label>
+          </div>
+          <p className="screen-note" role="status">
+            {deskCases.length} of {cases.length} loaded cases shown. This view loads up to 150 recent cases.
+          </p>
+          <SupportRows cases={deskCases} onSelect={setSelectedId}
+            empty={cases.length ? "No loaded cases match these filters." : "No support cases have been recorded."} />
         </section>}
         {workspace === "people-access" && <section className="ceac-support-main">
           <h2>People & Access</h2>
