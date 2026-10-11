@@ -383,9 +383,9 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
         {mode === "invitations" && <DataPanel
           eyebrow="Account activation"
           title="Invitations"
-          supporting="Invitation status is separate from employment. Resending requests a new activation email; cancelling prevents activation through that invitation."
+          supporting="Outstanding and expired invitations require follow-up. Resending only requests an activation email; it does not independently prove delivery. Cancelling prevents activation through that invitation."
           className="phase5-access-panel"
-          action={<StatusBadge tone={pendingInvitationCount ? "action" : "success"}>{pendingInvitationCount ? String(pendingInvitationCount) + " pending" : "No pending"}</StatusBadge>}
+          action={<StatusBadge tone={pendingInvitationCount ? "action" : "success"}>{pendingInvitationCount ? String(pendingInvitationCount) + " to review" : "No outstanding"}</StatusBadge>}
         >
           {!snapshot.invitations.length ? <div className="phase5-access-empty">No invitations are recorded.</div> : <div className="phase5-invitation-list">
             {snapshot.invitations.map((invitation) => {
