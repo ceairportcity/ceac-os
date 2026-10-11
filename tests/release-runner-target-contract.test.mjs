@@ -68,7 +68,7 @@ test("private verification entrypoints parse as Bash without executing", () => {
 test("Vercel checkpoints run source gates and routine pushes remain intentionally skipped", () => {
   const vercel = JSON.parse(readFileSync("vercel.json", "utf8"));
   const ignore = readFileSync("scripts/vercel/ignore-build.mjs", "utf8");
-  assert.match(vercel.buildCommand, /^npm run verify:source && npm run build$/);
-  assert.match(vercel.ignoreCommand, /ignore-build\\.mjs/);
-  assert.match(ignore, /message\\.includes\\("\\[vercel\\]"\\)/);
+  assert.equal(vercel.buildCommand, "npm run verify:source && npm run build");
+  assert.ok(vercel.ignoreCommand.includes("ignore-build.mjs"));
+  assert.ok(ignore.includes('message.includes("[vercel]")'));
 });
