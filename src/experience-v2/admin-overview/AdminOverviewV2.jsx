@@ -76,7 +76,7 @@ function AdminCalendarRail({ meetings }) {
         ? "Upcoming meeting data is limited to the next 14 days."
         : selectedMeetings.length
           ? `${selectedMeetings.length} recorded meeting${selectedMeetings.length === 1 ? "" : "s"}`
-          : "No meetings recorded for this date in the current window."}</span>
+          : "No upcoming meetings loaded for this date. Earlier meetings are not included."}</span>
     </div>
   </div>;
 }
