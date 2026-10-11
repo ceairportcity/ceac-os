@@ -11,6 +11,7 @@ const help = file("src/screens/TechnicalHelp.jsx");
 const support = file("src/screens/TechnicalSupport.jsx");
 const app = file("src/App.jsx");
 const people = file("src/screens/People.jsx");
+const workforce = file("src/screens/Workforce.jsx");
 
 test("Administration only presents verified counts for its current identity", () => {
   assert.match(admin, /\[me\.id, me\.org_id\]/);
@@ -153,4 +154,13 @@ test("sensitive workspaces remount when the authorised account changes", () => {
     assert.match(app, opening, component + " must not retain previous-account React state");
   }
   assert.match(app, /<Workforce key=\{\x60\$\{me\.org_id\}:\$\{me\.id\}:\$\{me\.unit_id \|\| "none"\}:\$\{me\.role \|\| "none"\}\x60\}/);
+});
+
+test("Workforce attendance and protected employment reads have explicit tenant scope", () => {
+  const queries = [...workforce.matchAll(/\.from\("([a-z_]+)"\)\s*\.select\("[^"]*"\)/g)];
+  const scoped = [...workforce.matchAll(/\.from\("([a-z_]+)"\)\s*\.select\("[^"]*"\)\s*\.eq\("org_id",\s*me\.org_id\)/g)];
+  assert.equal(queries.length, 12, "unexpected Workforce query inventory");
+  assert.equal(scoped.length, queries.length, "an attendance or confidential Workforce query lacks organisation scope");
+  assert.match(workforce, /\.from\("employment_records"\).*\.eq\("org_id",me\.org_id\)/);
+  assert.match(workforce, /\.from\("work_sessions"\).*\.eq\("org_id",me\.org_id\)/);
 });
