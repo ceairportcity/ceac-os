@@ -44,7 +44,7 @@ CREATE INDEX IF NOT EXISTS support_team_org_membership
 -- treat the Media & Technical association as a unit-membership grant.
 CREATE OR REPLACE FUNCTION public.support_membership_scope_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
-SET search_path=public AS $
+SET search_path=public AS $$
 BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.profiles p
       WHERE p.id=NEW.profile_id AND p.org_id=NEW.org_id
@@ -65,7 +65,7 @@ BEGIN
   NEW.updated_at:=now();
   RETURN NEW;
 END
-$;
+$$;
 REVOKE ALL ON FUNCTION public.support_membership_scope_guard() FROM PUBLIC,anon,authenticated;
 DROP TRIGGER IF EXISTS support_membership_scope_guard ON public.support_team_memberships;
 CREATE TRIGGER support_membership_scope_guard
@@ -198,7 +198,7 @@ CREATE POLICY support_case_events_visible ON public.support_case_events
 -- not accepted as claims from the reporting person's browser.
 CREATE OR REPLACE FUNCTION public.support_case_insert_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
-SET search_path=public AS $
+SET search_path=public AS $$
 BEGIN
   IF auth.uid() IS NULL OR NOT public.app_identity_confirmed()
     OR NEW.reported_by IS DISTINCT FROM auth.uid()
@@ -209,7 +209,7 @@ BEGIN
   NEW.updated_at:=NEW.opened_at;
   RETURN NEW;
 END
-$;
+$$;
 REVOKE ALL ON FUNCTION public.support_case_insert_guard() FROM PUBLIC,anon,authenticated;
 DROP TRIGGER IF EXISTS support_case_insert_guard ON public.support_cases;
 CREATE TRIGGER support_case_insert_guard
