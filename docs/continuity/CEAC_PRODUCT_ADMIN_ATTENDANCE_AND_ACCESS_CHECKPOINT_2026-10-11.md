@@ -67,3 +67,15 @@ Application HEAD before preview checkpoint: `50b2af38bd108a2cfe4b497574deca685c1
 - Existing backend SQL remains under `supabase/proposals/` and has NOT been deployed; no role or support case database record was created or altered by this product effort.
 
 **Release status:** still NO-GO. Authenticated role/browser/SQL tests and owner design acceptance are outstanding. A deliberate single existing-project Vercel PREVIEW is requested by this documentation commit to exercise `verify:source` plus Vite build at the exact new head; Vercel READY must not be mistaken for complete approval.
+
+
+## Further completion — support ownership and validated preview
+
+- The Technical Support case-details panel can now **take an unassigned case** using the active support member's own verified profile ID, a conditional `assigned_to IS NULL` update and the existing support-only RLS/trigger membership checks. An already assigned case cannot be silently seized, and a concurrent assignment leaves an explicit refresh instruction instead of false success.
+- Case assignments have an explicit "Unassigned / Assigned to you / Assigned to another support member" status. The same support-case audit trigger proposal records assignment history once deployed.
+- Support role/account switches clear formerly loaded support case records before new authority verification; reporter and manager refresh actions similarly clear old record state on failure.
+- Source contract regression added for assignment concurrency/authority restrictions.
+- **Existing-project preview:** `dpl_Cicqz7Nh9JVjPyAULeUQ7c9miSox`, source `694fb51cb310cfe69ad849452af8cd95bf993719` reported Vercel **READY**, and GitHub Vercel status **success**. `vercel.json` requires `npm run verify:source && npm run build`. This does not prove authenticated support roles or database migrations.
+- Application head for this checkpoint: `fa4494ee17241b57799918b6fe3c3dc9e398d383`. A new preview will verify source and Vite compilation at the latest head.
+
+**Still not deployed:** proposed Technical Support database tables, transition RPCs, protected-file evidence, provider-backed health, human approvals and exact owner visual parity. The unrelated release team must independently validate/approve these before production.
