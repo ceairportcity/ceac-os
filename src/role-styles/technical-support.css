@@ -1,0 +1,63 @@
+/* Support-only workspace styling. Deliberately separate from shared V2,
+   Executive, Administration, Volunteer and Manager design systems. */
+.ceac-support-page { max-width: 1420px; margin-inline: auto; color: var(--ink, #152537); }
+.ceac-support-heading { max-width: 960px; margin-bottom: 24px; }
+.ceac-support-heading h1 { margin: 4px 0 8px; font-size: clamp(1.7rem, 2.5vw, 2.3rem); line-height: 1.12; letter-spacing: -.025em; }
+.ceac-support-heading > p:last-child { max-width: 78ch; line-height: 1.55; }
+.ceac-support-eyebrow { margin: 0; font-size: .75rem; letter-spacing: .075em; font-weight: 800; text-transform: uppercase; color: #466482; }
+.ceac-support-layout { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(265px, 1fr); gap: 24px; align-items: start; }
+.ceac-support-main, .ceac-support-side, .ceac-support-detail { min-width: 0; }
+.ceac-support-page h2 { font-size: 1.23rem; letter-spacing: -.01em; margin: 0 0 12px; }
+.ceac-support-page h3 { font-size: .95rem; margin: 20px 0 8px; }
+.ceac-support-form { display: grid; gap: 15px; max-width: 760px; }
+.ceac-support-form label { display: grid; gap: 6px; font-weight: 650; font-size: .92rem; }
+.ceac-support-form input, .ceac-support-form select, .ceac-support-form textarea {
+  font: inherit; color: inherit; width: 100%; background: #fff;
+  border: 1px solid #bdcbd8; border-radius: 9px; padding: 11px 12px;
+}
+.ceac-support-form textarea { min-height: 102px; resize: vertical; }
+.ceac-support-form button[type="submit"] { width: fit-content; }
+.ceac-support-error { color: #8c2424; border-left: 3px solid #b64040; padding: 10px 12px; background: #fff5f4; }
+.ceac-support-success { color: #155b43; border-left: 3px solid #258268; padding: 10px 12px; background: #edf8f3; }
+.ceac-support-rows { display: grid; border-top: 1px solid #dbe3eb; }
+.ceac-support-row { display: flex; align-items: start; justify-content: space-between; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid #dbe3eb; min-width: 0; }
+.ceac-support-row strong { font-size: .93rem; display: block; overflow-wrap: anywhere; }
+.ceac-support-row small, .ceac-support-row span { font-size: .8rem; color: #547087; }
+.ceac-support-row span strong { color: #152537; }
+.ceac-support-case-button { width: 100%; text-align: left; border-left: 0; border-top: 0; border-right: 0;
+  background: transparent; color: inherit; cursor: pointer; }
+.ceac-support-case-button:hover, .ceac-support-case-button:focus-visible { background: #eaf0f7; outline-offset: 2px; }
+.ceac-support-state { white-space: nowrap; text-transform: capitalize; font-size: .78rem; font-weight: 700; }
+.ceac-support-side > h2:not(:first-child) { margin-top: 25px; }
+.ceac-support-nav { display: flex; align-items: center; gap: 5px; overflow-x: auto;
+  border-bottom: 1px solid #bdcbd8; margin-bottom: 23px; padding-bottom: 2px; }
+.ceac-support-nav button { flex: 0 0 auto; border: 0; border-bottom: 3px solid transparent; background: transparent;
+  padding: 13px 12px; color: #425e78; font: inherit; cursor: pointer; }
+.ceac-support-nav button.is-active { border-color: #345a8b; color: #1c4369; font-weight: 800; }
+.ceac-support-nav button:focus-visible { outline: 2px solid #284b75; }
+.ceac-support-section-head, .ceac-support-detail-top { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.ceac-support-unverified, .ceac-support-empty { margin: 16px 0; padding: 15px;
+  border-left: 3px solid #899db3; background: #f1f5f8; }
+.ceac-support-unverified p { margin: 8px 0 0; }
+.ceac-support-guides details { border-bottom: 1px solid #dbe3eb; padding: 12px 0; }
+.ceac-support-guides summary { cursor: pointer; font-weight: 700; }
+.ceac-support-guides p { max-width: 74ch; line-height: 1.55; }
+.ceac-support-case-facts { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin: 20px 0; }
+.ceac-support-case-facts > div { border-bottom: 1px solid #dbe3eb; padding-bottom: 10px; }
+.ceac-support-case-facts dt { font-size: .76rem; color: #597186; }
+.ceac-support-case-facts dd { margin: 5px 0 0; font-weight: 700; overflow-wrap: anywhere; }
+.ceac-support-description { max-width: 84ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 850px) {
+ .ceac-support-layout { grid-template-columns: 1fr; gap: 22px; }
+ .ceac-support-case-facts { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 540px) {
+ .ceac-support-heading { margin-bottom: 16px; }
+ .ceac-support-section-head, .ceac-support-detail-top { align-items: start; flex-direction: column; }
+ .ceac-support-nav button { padding: 11px 9px; font-size: .88rem; }
+ .ceac-support-page h2 { font-size: 1.1rem; }
+ .ceac-support-row { flex-direction: column; gap: 5px; }
+ .ceac-support-row .ceac-support-state { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) { .ceac-support-page *, .ceac-support-page *::before { scroll-behavior: auto; } }
