@@ -427,7 +427,7 @@ export default function AdminOverviewV2({
             supporting="Recorded sessions and confirmed leave are operational context only. No work session is not an absence and never creates a Payroll deduction."
           >
             <div className="adminv2-stat-grid is-four">
-              <StatTile label="Working now" value={today?.working || 0} supporting="Current sessions" icon="people" tone="success" onClick={onOpenAttendance} />
+              <StatTile label="Open work sessions" value={today?.working || 0} supporting="Not verified live presence" icon="people" tone="neutral" onClick={onOpenAttendance} />
               <StatTile label="Approved leave" value={today?.leave || 0} supporting="Today" icon="time" tone="action" onClick={onOpenAttendance} />
               <StatTile label="No session" value={today?.notStarted || 0} supporting="Not absence" icon="pending" tone="neutral" onClick={onOpenAttendance} />
               <StatTile label="Active accounts" value={today?.headcount || 0} supporting="Login profiles, not the full employee roster" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
