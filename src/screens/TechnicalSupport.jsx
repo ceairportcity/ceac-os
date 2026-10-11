@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import {
   canManageSupport, SUPPORT_WORKSPACES, SERVICE_NAMES, SUPPORT_GUIDES,
-  supportCategoryLabel, supportCaseGroups, filterSupportCases, supportCasesNeedingMe,
+  supportCategoryLabel, supportCaseGroups, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage,
 } from "../lib/technicalSupport";
 import "../role-styles/technical-support.css";
 
@@ -141,7 +141,7 @@ export default function TechnicalSupport({ me, go }) {
         if (casesFailure) throw casesFailure;
         if (live) setCases(caseData || []);
       } catch (failure) {
-        if (live) setError(humanError(failure, "The Technical Support service cannot be opened. No permissions were changed."));
+        if (live) setError(supportUnavailableMessage(failure) || humanError(failure, "The Technical Support service cannot be opened. No permissions were changed."));
       } finally {
         if (live) setReady(true);
       }
@@ -184,7 +184,7 @@ export default function TechnicalSupport({ me, go }) {
       setCases(currentCases || []);
       setMembership(currentMembership);
     } catch (failure) {
-      setError(humanError(failure, "The Technical Support queue cannot be refreshed. No case was changed."));
+      setError(supportUnavailableMessage(failure) || humanError(failure, "The Technical Support queue cannot be refreshed. No case was changed."));
     } finally {
       setReady(true);
     }
