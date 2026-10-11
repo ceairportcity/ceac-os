@@ -10,3 +10,9 @@ export function invitationEmailConflicts(email, people = [], invitations = []) {
       .some((item) => same(item) && !item.revoked_at && item.activation_state !== "verified"),
   };
 }
+
+export function isPlausibleInvitationEmail(email) {
+  // Client-side guard only: server-side invitation validation is authoritative.
+  const value = String(email || "").trim();
+  return value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
