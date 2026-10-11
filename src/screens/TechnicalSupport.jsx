@@ -20,7 +20,7 @@ function SupportRows({ cases, onSelect, empty = "Nothing requires action here." 
   </div>;
 }
 
-function CaseDetails({ item, onClose, onUpdate, onClaim, onRelease, myId, busy, error }) {
+function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, myId, busy, error }) {
   const [nextState, setNextState] = useState(item.state);
   const [resolution, setResolution] = useState(item.resolution_summary || "");
   const [history, setHistory] = useState([]);
@@ -51,7 +51,10 @@ function CaseDetails({ item, onClose, onUpdate, onClaim, onRelease, myId, busy, 
     <div className="ceac-support-detail-top">
       <div><p className="ceac-support-eyebrow">{item.reference || "Support case"}</p>
         <h2 id="support-case-title">{item.summary}</h2></div>
-      <button type="button" className="btn btn-ghost" onClick={onClose}>Close details</button>
+      <div className="ceac-support-section-actions">
+        <button type="button" className="btn btn-ghost" disabled={busy} onClick={onRefresh}>Refresh case</button>
+        <button type="button" className="btn btn-ghost" disabled={busy} onClick={onClose}>Close details</button>
+      </div>
     </div>
     <dl className="ceac-support-case-facts">
       <div><dt>Category</dt><dd>{supportCategoryLabel(item.category)}</dd></div>
@@ -317,7 +320,7 @@ export default function TechnicalSupport({ me, go }) {
 
       {selected ? <CaseDetails key={selected.id} item={selected} busy={busy} error={actionError}
         myId={me.id} onClaim={claimCase} onRelease={releaseCase}
-        onClose={() => { setSelectedId(null); setActionError(null); }} onUpdate={updateCase} /> : <>
+        onClose={() => { setSelectedId(null); setActionError(null); }} onRefresh={refreshCases} onUpdate={updateCase} /> : <>
         {workspace === "home" && <div className="ceac-support-layout">
           <section className="ceac-support-main">
             <h2>Needs you</h2>
