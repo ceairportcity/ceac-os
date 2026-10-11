@@ -49,3 +49,9 @@ Vercel PREVIEW `dpl_5AfhtcRhgVUPmBuZNzSq7g3mWXgH`: **READY**, source `59c5e0091d
 - [ ] Normal non-force GitHub main merge, Vercel main production deployment in original project, post-release error/security/data monitoring and handover.
 
 **Current release state: NO-GO.** GitHub main production and original 119-migration Supabase are intentionally untouched. Do not make repository public, purchase GitHub Pro, bypass failing checks, create replacement production infrastructure, or infer owner acceptance from a READY preview.
+
+## Exact-head verification result invalidation on Codespace branch advance
+
+The Codespaces postStart/postAttach launcher used to reuse `/tmp/ceac-private-autorun-summary.md` and `exit-code` **without checking which commit produced them**. A successful result on the prior head could suppress verification on later PR #44 commits. Fixed both sides: `.devcontainer/ceac-private-runner.sh` writes `/tmp/ceac-private-autorun-tested-head` from the exact fetched PR SHA; the launcher only skips when that marker equals `git rev-parse HEAD`. A stale result triggers a new attempt (subject to the existing active-worker lock). Four independent source contract callbacks passed 4/4. No actual Codespace postStart result is present on PR #44 yet. This change does not execute tests or authorise a release.
+
+The following explicit `[vercel]` commit runs the Node source contract + Vite build on the original Vercel project once, **preview only**.
