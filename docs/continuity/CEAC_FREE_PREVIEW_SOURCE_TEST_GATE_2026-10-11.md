@@ -71,3 +71,9 @@ This commit intentionally includes `[vercel]` to run an isolated preview with th
 The previous Executive overview `strategyProgress()` coerced `null` current values to numeric 0 via `Number(null)`, displaying fabricated 0% progress when no measured observation had been recorded. A pure helper `src/experience-v2/executive-overview/strategyProgress.js` now preserves missing measurements as `null`, while retaining real measured zero, fractional values and maximum-100% visual clipping. The dashboard imports the helper. Four exact-GitHub-source regression callbacks passed 4/4; `tests/executive-progress-contract.test.mjs` is in both existing CI and Vercel `verify:source` command.
 
 This `[vercel]` commit exercises all current Node source/unit tests and Vite build for one private preview. **No owner/mockup parity, PostgreSQL migration acceptance, Codespace full test evidence, Auth/MFA, backup/recovery, production merge or deployment approval is implied.**
+
+## Executive cross-organisation read scoping
+
+Confirmed directly (read-only) that `meeting_sessions`, `report_periods`, `units` and `reports` in production all have an `org_id` column. The Executive overview now explicitly adds the signed-in `me.org_id` to those formerly unscoped REST reads, in addition to their existing database RLS. This is defence in depth, not a grant or change to RLS. The Executive source regression was extended with that invariant; **5/5** targeted pure/source test callbacks passed. Production remains unchanged.
+
+The `[vercel]` tagged commit is a one-off verification of current candidate Node source tests plus Vite frontend build. It does not claim cross-tenant role-runtime testing, Executive rendered mockup parity or production go-live readiness.
