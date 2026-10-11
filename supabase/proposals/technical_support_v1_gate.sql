@@ -47,6 +47,17 @@ BEGIN
     RAISE EXCEPTION 'Case visibility/management membership-capability gate is missing.';
   END IF;
 
+  -- Audit-event note content is restricted to the support team, even when
+  -- the reporting person is authorised to see the case's own state.
+  SELECT coalesce(string_agg(qual,' '),'') INTO v_qual
+  FROM pg_policies
+  WHERE schemaname='public' AND tablename='support_case_events' AND cmd='SELECT';
+  IF position('support.case.manage' IN v_qual)=0
+     OR position('support_team_memberships' IN v_qual)=0
+     OR position('app_org_id' IN v_qual)=0 THEN
+    RAISE EXCEPTION 'Internal support-case audit events are not support-only.';
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM public.capability_definitions WHERE capability='support.case.manage'
   ) OR NOT EXISTS (
