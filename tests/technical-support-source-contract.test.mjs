@@ -56,6 +56,10 @@ test("case records and immutable audit history are deny-by-default", () => {
   assert.ok(proposedGate.includes("Internal support-case audit events are not support-only"));
 
   assert.doesNotMatch(backend, /GRANT\s+(INSERT|UPDATE|DELETE)\s+ON\s+public\.support_case_events\s+TO\s+authenticated/i);
+  // Direct close must set its own authoritative timestamps. Otherwise a
+  // browser could forge resolved_at while changing a case to 'closed'.
+  assert.match(backend, /ELSIF NEW\.state='closed' THEN\s*(?:--[^\n]*\n\s*)*NEW\.resolved_at:=coalesce\(OLD\.resolved_at,now\(\)\);\s*NEW\.closed_at:=now\(\);/);
+
 });
 
 test("support authority is separate from ordinary employment role and client-side checks", () => {
