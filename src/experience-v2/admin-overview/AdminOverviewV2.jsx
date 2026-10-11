@@ -372,7 +372,7 @@ export default function AdminOverviewV2({
               onClick={onOpenWorkflows}
             /> : null}
 
-            {pendingInvitations.length ? <AdminActionRow
+            {pendingInvitations.length && canManagePeople ? <AdminActionRow
               icon="people"
               title={`Staff invitations to review · ${pendingInvitations.length}`}
               meta={expiredInvitationCount ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Check before resending.` : "Activation is outstanding. Reconcile existing identities rather than inviting again."}
