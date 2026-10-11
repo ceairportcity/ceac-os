@@ -63,6 +63,8 @@ evidence="$(grep '^PRIVATE EVIDENCE DIRECTORY: ' "$log" | tail -1 | sed 's/^PRIV
 } > "$summary"
 cat "$summary" >> "$log"
 echo "$rc" > "$status"
+# An absent/unresolved SHA must never mark a future checkout as verified.
+printf '%s\n' "${expected_pr:-UNRESOLVED}" > /tmp/ceac-private-autorun-tested-head
 echo "CEAC_AUTORUN_FINISHED exit=$rc at $(date -u +%FT%TZ)" >> "$log"
 # Best effort: never print credentials or upload raw logs.
 if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
