@@ -24,20 +24,30 @@ done
 if ! command -v supabase >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
   echo 'NOT VERIFIED: local Docker/Supabase setup did not become ready.' >> "$log"
 else
-  # Every new Codespace verifies the live release PR44 HEAD; the independent
-  # gate rechecks the remote before worktree creation and rejects SHA drift.
+  # A Codespace may still be checked out at yesterday's commit while PR44
+  # has advanced. Verify an isolated exact-current-HEAD worktree instead;
+  # NEVER modify, reset, merge or force-update the user's working tree.
   expected_pr="$(git ls-remote origin refs/pull/44/head | awk '{print $1}')"
   expected_main="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
-  # The Codespace itself must boot from the current candidate commit;
-  # never let stale verification scripts certify a newer PR.
-  local_head="$(git rev-parse HEAD)"
-  if [[ "$expected_pr" =~ ^[0-9a-f]{40}$ && "$expected_main" =~ ^[0-9a-f]{40}$ && "$local_head" == "$expected_pr" ]]; then
+  if [[ "$expected_pr" =~ ^[0-9a-f]{40}$ && "$expected_main" =~ ^[0-9a-f]{40}$ ]]; then
     printf 'PR44_TEST_SHA=%s MAIN_SHA=%s\n' "$expected_pr" "$expected_main" >> "$log"
-    bash scripts/ci/run-independent-release-gate.sh "$PWD" 44 \
-      "$expected_pr" "$expected_main" >> "$log" 2>&1
-    rc=$?
+    verify_checkout="$(mktemp -d /tmp/ceac-exact-head.XXXXXXXX)"
+    if git fetch --no-tags origin refs/pull/44/head >> "$log" 2>&1 &&
+       [[ "$(git rev-parse FETCH_HEAD)" == "$expected_pr" ]] &&
+       git worktree add --detach "$verify_checkout/source" "$expected_pr" >> "$log" 2>&1; then
+      # Execute the gate from the VERIFIED candidate itself; never reuse a
+      # stale runner script from an old Codespace checkout.
+      bash "$verify_checkout/source/scripts/ci/run-independent-release-gate.sh" "$PWD" 44 \
+        "$expected_pr" "$expected_main" >> "$log" 2>&1
+      rc=$?
+    else
+      echo 'NOT VERIFIED: cannot prepare isolated exact PR44 HEAD test runner' >> "$log"
+      rc=2
+    fi
+    git worktree remove --force "$verify_checkout/source" >/dev/null 2>&1 || true
+    rm -rf -- "$verify_checkout"
   else
-    echo "NOT VERIFIED: Codespace checkout is not exact live PR44 HEAD (or refs unavailable)" >> "$log"
+    echo 'NOT VERIFIED: cannot resolve exact private PR44/main refs' >> "$log"
     rc=2
   fi
 fi
