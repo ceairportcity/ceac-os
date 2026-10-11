@@ -267,3 +267,12 @@ test("People directory and protected employee details reject stale navigation re
   assert.match(people, /People records could not be verified/);
   assert.match(people, /This employee's current record could not be verified/);
 });
+
+test("People confidential writes are account-scoped and cannot falsely succeed", () => {
+  assert.match(people, /protectedWriteBusy\.current = true/);
+  assert.match(people, /employmentWriteBusy\.current = true/);
+  assert.match(people, /recommendationWriteBusy\.current = true/);
+  assert.match(people, /value\?\.employee_id === employeeId/);
+  assert.match(people, /if \(!data\) throw new Error/);
+  assert.match(people, /\.maybeSingle\(\)/);
+});
