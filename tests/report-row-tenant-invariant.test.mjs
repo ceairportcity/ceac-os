@@ -14,6 +14,11 @@ test("report row trigger preserves normal grants and RLS while denying cross-ten
   assert.match(migration,/rp\.id = NEW\.period_id AND rp\.org_id = NEW\.org_id/);
   assert.match(migration,/u\.id = NEW\.unit_id AND u\.org_id = NEW\.org_id/);
   assert.match(migration,/p\.id = NEW\.project_id AND p\.org_id = NEW\.org_id/);
+  assert.match(migration,/subject\.id = NEW\.profile_id AND subject\.org_id = NEW\.org_id/);
+  assert.match(migration,/submitter\.id = NEW\.submitted_by AND submitter\.org_id = NEW\.org_id/);
+  assert.match(migration,/reviewer\.id = NEW\.confirmed_by AND reviewer\.org_id = NEW\.org_id/);
+  assert.match(migration,/previous\.id = NEW\.supersedes_report_id/);
+  assert.match(migration,/previous\.org_id = NEW\.org_id/);
   assert.match(migration,/BEFORE INSERT OR UPDATE OF org_id, period_id, unit_id, project_id/);
   assert.match(migration,/REVOKE ALL ON FUNCTION public\.guard_report_tenant_references\(\)/);
   assert.doesNotMatch(migration,/DISABLE ROW LEVEL SECURITY|DROP TABLE|DELETE FROM public\.reports/i);
@@ -29,6 +34,7 @@ test("all direct cross-tenant report writes are tested and positive same-org edi
   assert.match(gate,/accepted direct cross-org project INSERT/);
   assert.match(gate,/accepted direct cross-org period INSERT/);
   assert.match(gate,/accepted cross-org draft UPDATE/);
+  assert.match(gate,/accepted cross-org correction lineage UPDATE/);
   assert.match(gate,/cross-tenant record persisted/);
   assert.match(runner,/report_row_tenant_invariant_gate\.sql/);
 });
