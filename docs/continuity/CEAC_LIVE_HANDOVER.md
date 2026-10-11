@@ -59,3 +59,23 @@ Next immediately executable work: commit the collection/playbook repair, then ei
 - Focused Playwright source-contract rerun: 9/9 passed, exit 0.
 - Latest durable candidate before this test-only checkpoint: `60623d3236331d8bef09e0707dd728669dfa8102`.
 - Production remains unchanged; credentialed browser flows still require an isolated test Supabase and private role fixtures.
+
+## 11 October 2026 — Independent Technical Support review repaired
+
+- Independent read-only review of checkpoint `432ee6410912b05b60306a5aba9984837fc1d126` found the bounded backend safely fail-closed but not release-complete. Concrete findings were mutable membership history, assignment to a member without case authority, base-table reporter projection, permissive-policy false-pass risk, and missing cross-tenant Support behavior.
+- Published forward-only repair `0bfada37befc0d5c6c0617575aa7c1a29b2ec8c9` on PR #50. Migration `20261011183000_134_technical_support_authority_hardening.sql`:
+  - makes Technical Support membership add/end attributable to People Administration, forbids deletion/reactivation/fact rewriting, and records immutable membership events;
+  - atomically revokes active `support.*` grants when membership ends without deleting capability history;
+  - prevents Support capability self-grant, unit-scoped Support grants, and grants to a person without active Support membership;
+  - rejects assignment to a member lacking active, unexpired `support.case.manage` authority;
+  - confines reporter and affected-person reads to `support_case_safe_status`, which excludes internal assignment and object identifiers, while the base relation is Support-only.
+- The behavioral SQL gate now locks the exact base SELECT policy, checks the safe projection, exercises People membership attribution/history/capability cleanup, denies Lead self-grant, denies assignment to membership-without-power, and checks both reporter and Support cross-tenant isolation.
+- Actual private isolated evidence for the repaired tree:
+  - `npm run verify:source`: 162/162 passed, exit 0;
+  - `npm run build`: exit 0;
+  - PostgreSQL 16 ordered replay: 138/138 migration files, exit 0;
+  - all 53 registered SQL gates: 53/53 passed, aggregate exit 0.
+- A first aggregate attempt printed three failures but returned exit 0 because its local loop ended with `echo`. It was rejected as evidence; the runner was corrected to exit non-zero when `FAIL>0`, defects were repaired, and the complete run above was repeated. The playbook now records this mandatory runner rule.
+- No production database, GitHub main, Vercel deployment, real user, Auth factor or Storage object was changed. Access approval/execution, operational support evidence, system telemetry, authenticated role-browser acceptance, genuine backup/restore, real-user MFA/invitation delivery and owner visual acceptance remain open release gates.
+
+Next immediately executable work: implement the separately authorised access approval/action ledger without giving Technical Support business-approval authority, then add its adversarial SQL and application behavior tests. Production remains NO-GO.

@@ -23,3 +23,7 @@ For reproducible local Playwright browser runs:
 4. stop the server with a shell trap;
 
 all inside the same bounded shell execution. A terminal-like persistent process in a different Work execution is not proof that browser workers can reach it. Treat `ERR_CONNECTION_REFUSED` from the cross-session pattern as an invalid harness run, not an application failure.
+
+### Aggregate gate exit status
+
+A shell loop that records individual SQL failures can still return exit 0 when its final command is only an `echo`. Every aggregate runner must explicitly exit non-zero when its failure counter is non-zero. Acceptance evidence requires both the per-gate result list and the aggregate process exit code; a printed `FAIL` line with exit 0 is a harness defect, never a passing run.
