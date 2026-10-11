@@ -2,9 +2,14 @@ import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
 const rolePassword = process.env.ROLE_FIXTURE_PASSWORD;
-const service = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+const hasFixtureEnvironment = Boolean(
+  rolePassword && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY,
+);
+const service = hasFixtureEnvironment ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
-});
+}) : null;
+
+test.skip(!hasFixtureEnvironment, "requires the isolated Supabase role-fixture environment");
 
 const orgId = "10000000-0000-4000-8000-000000000010";
 const unitId = "20000000-0000-4000-8000-000000000011";

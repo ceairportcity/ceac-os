@@ -13,6 +13,13 @@ const app = file("src/App.jsx");
 const people = file("src/screens/People.jsx");
 const workforce = file("src/screens/Workforce.jsx");
 const compensation = file("src/lib/protectedCompensation.js");
+const notificationBrowser = file("tests/notification-work-state-phase4.spec.js");
+
+test("credentialed Playwright collection is safe when private fixtures are absent", () => {
+  assert.match(notificationBrowser, /const hasFixtureEnvironment = Boolean/);
+  assert.match(notificationBrowser, /hasFixtureEnvironment \? createClient/);
+  assert.match(notificationBrowser, /test\.skip\(!hasFixtureEnvironment/);
+});
 
 test("Administration only presents verified counts for its current identity", () => {
   assert.match(admin, /\[me\.id, me\.org_id\]/);
