@@ -52,3 +52,16 @@ These richer source visuals revealed the missing **monthly calendar rail, domina
 Actual screenshots at 1366px and 390px and side-by-side visual comparison remain pending. The original Executive/Volunteer/Technical Support locks remain binding separately, regardless of this Admin improvement. No change in SQL grants/HR privacy.
 
 A single `[vercel]` opt-in verifies the current JS source tests + actual Vite build on the existing nonproduction preview. **Do not merge PR44** or deploy production from build success alone.
+
+## 11 October: exact-head Codespaces runner hardening
+
+The previous runner required the existing Codespace checkout to equal the latest PR HEAD. This incorrectly rejected a legitimate long-lived Codespace whenever the review branch advanced; it could also retain stale result-cache markers. The corrected implementation:
+
+- Resolves the exact live PR #44 and `main` SHA over authenticated Git.
+- Fetches the live PR ref and adds it as an isolated **detached worktree**, without rewriting the user's Codespace checkout or touching production.
+- Executes `scripts/ci/run-independent-release-gate.sh` **from that fetched, verified commit**, not from stale local script content.
+- Checks both PR/main SHAs at the end of the long local test run before reporting technical PASS; a changed head is recorded STALE and requires retest.
+- Compares the launcher result-cache marker with the **remote PR HEAD**, not the local checkout, preventing stale summary reuse.
+- Four dedicated source-contract test callbacks passed 4/4 against exact GitHub source content. This is static/JavaScript verification only; actual PostgreSQL/Playwright/Codespaces execution remains **NOT VERIFIED** until evidence is posted.
+
+This commit intentionally includes `[vercel]` to run an isolated preview with the complete existing Node source-suite and Vite build, not a production release. NO database writes or Vercel production promotion are authorised.
