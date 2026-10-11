@@ -32,3 +32,16 @@ The database's current public.app_has_capability(text,uuid) RPC is authenticated
 Five new server-validation cases plus five earlier narrow mismatch tests passed in isolated JS exact-source harness (10/10). **No browser login was automated; owner must verify the actual route.** Admin Overview itself retains much of its prior appearance; separate literal owner-design comparison is still required. Do not mark Phase 5 visually accepted from this fix.
 
 This tagged commit triggers **one** preproduction build from the existing private CEAC project to confirm the candidate compiles. Production main/database remain unchanged.
+
+## Screenshots 05:16–05:19 — People detail and Office Settings pending Phase 6
+
+User supplied authenticated Admin screenshots confirming the complete People & Access directory renders, with an employee-detail error, and Organisation settings renders with an attendance-integrity error. Full Administration Overview layout remains pending owner visual acceptance.
+
+**Read-only Supabase proof:** current production has public.admin_employee_roster_detail(uuid), admin_person_detail(uuid), admin_employment_detail(uuid), and admin_access_invitations(). It does **not** have public.volunteer_change_recommendations (Phase 6 pending migration) or public.attendance_integrity_status() (Phase 6 attendance-integrity pending migration). Existing main production remains at its prior 119 migrations; no speculative migration may be applied.
+
+On draft release candidate only:
+- People employee detail treats ONLY exact missing relation errors (42P01/PGRST205) for public.volunteer_change_recommendations as **unavailable**. Existing employee detail RPCs, employment history, protected HR and file authority remain mandatory; no other error is silently swallowed. Employee workspace explains recommendation history/decisions are pending.
+- Office Settings treats ONLY exact missing function errors (42883/PGRST202) for attendance_integrity_status() as **unavailable**. Existing office, leave-policy, thresholds, invitations continue loading. Presence-code creation/rotation is disabled and the missing feature is clearly identified. Auth errors and other RPC errors remain fatal.
+- Six narrow security-and-compatibility test callbacks passed against exact canonical GitHub files in isolated V8. Not a substitute for real-user browser acceptance or SQL tests.
+
+This document-only [vercel] commit requests **one build** of the exact candidate preview for user verification. It authorises no production deployment, migration, privilege grant, role-change or release acceptance.
