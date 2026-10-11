@@ -19,6 +19,7 @@ function invitationTone(state, revokedAt) {
 
 export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, onLifecycle, initialProfileId = null, initialUnitId = null, initialMode = null }) {
   const [snapshot, setSnapshot] = useState(null);
+  const [snapshotScope, setSnapshotScope] = useState(null);
   const [mode, setMode] = useState("invite");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
   const [busy, setBusy] = useState(false);
@@ -27,6 +28,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const [revokeTarget, setRevokeTarget] = useState(null);
   const [revokeReason, setRevokeReason] = useState("");
   const loadGeneration = useRef(0);
+  const scopeKey = `${me.org_id}:${me.id}`;
   const canManage = (me.capability_grants || []).some((grant) => grant.capability === "people.manage" && !grant.scope_unit_id);
 
   useEffect(() => {
@@ -34,6 +36,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     // the previous account's sensitive directory and membership records.
     loadGeneration.current += 1;
     setSnapshot(null);
+    setSnapshotScope(null);
     setError(null);
     setNotice(null);
     setRevokeTarget(null);
@@ -56,6 +59,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
 
   async function load() {
     const generation = ++loadGeneration.current;
+    setSnapshot(null);
+    setSnapshotScope(null);
     setError(null);
     try {
       const results = await Promise.all([
@@ -72,6 +77,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       setError(failure.error.message);
       return false;
     }
+    setSnapshotScope(scopeKey);
     setSnapshot({
       people: results[0].data || [],
       units: results[1].data || [],
@@ -216,7 +222,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     {error && <ProductNotice tone="error" title="People & Access">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
-    {!snapshot ? error
+    {!snapshot || snapshotScope !== scopeKey ? error
       ? <Button onClick={load}>Try again</Button>
       : <LoadingState label="Loading People & Access…" />
       : <>
