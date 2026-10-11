@@ -1,4 +1,4 @@
-import "./executive-redesign.css";
+import "../../role-styles/executive-redesign.css";
 
 export default function ExecutiveRedesignStyles() {
   return null;
