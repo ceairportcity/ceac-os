@@ -297,3 +297,11 @@ test("People Access propagates failed roster refreshes after a successful mutati
   assert.match(people, /return true;/);
   assert.match(people, /onChanged=\{async \(\) => \{ if \(!\(await load\(\{ silent: true \}\)\)\) throw new Error/);
 });
+
+test("People roster fails closed on unsuccessful RPC reads and offers recovery", () => {
+  assert.match(people, /const \[verifiedRosterScope, setVerifiedRosterScope\] = useState\(null\)/);
+  assert.match(people, /setVerifiedRosterScope\(scopeKey\)/);
+  assert.match(people, /setVerifiedRosterScope\(null\)/);
+  assert.match(people, /if \(verifiedRosterScope !== scopeKey\) return/);
+  assert.match(people, /Retry People records/);
+});
