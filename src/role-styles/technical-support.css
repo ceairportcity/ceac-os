@@ -61,3 +61,10 @@
  .ceac-support-row .ceac-support-state { white-space: normal; }
 }
 @media (prefers-reduced-motion: reduce) { .ceac-support-page *, .ceac-support-page *::before { scroll-behavior: auto; } }
+
+.ceac-support-history { margin-top: 28px; max-width: 900px; }
+.ceac-support-history-list { list-style: none; padding: 0; margin: 0; border-top: 1px solid #dbe3eb; }
+.ceac-support-history-list li { padding: 12px 0; border-bottom: 1px solid #dbe3eb; }
+.ceac-support-history-list strong { display: block; font-size: .88rem; text-transform: capitalize; }
+.ceac-support-history-list time { display: block; margin-top: 3px; color: #597186; font-size: .8rem; }
+.ceac-support-history-list p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0 0; }
