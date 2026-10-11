@@ -449,7 +449,7 @@ export default function Workforce({ me }) {
         statusTone={personContext.tone}
       />
 
-      {error&&<ProductNotice tone="error" title="Workforce">{error}</ProductNotice>}
+      {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="My workforce sections"/>
@@ -650,7 +650,7 @@ export default function Workforce({ me }) {
         statusTone="neutral"
       />
 
-      {error&&<ProductNotice tone="error" title="Workforce">{error}</ProductNotice>}
+      {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Manager workforce sections"/>
@@ -948,7 +948,7 @@ export default function Workforce({ me }) {
         statusTone="neutral"
       />
 
-      {error&&<ProductNotice tone="error" title="Workforce">{error}</ProductNotice>}
+      {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Administration workforce sections"/>
@@ -1242,7 +1242,7 @@ export default function Workforce({ me }) {
       <h1 className="h1">Workforce</h1>
       <p className="screen-note">Schedules, recorded sessions, approved leave and attributable corrections. “No session recorded” is context only and never an automatic absence finding.</p>
     </div>
-    {error&&<ProductNotice tone="error" title="Workforce">{error}</ProductNotice>}
+    {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
     <div className="workforce-tabs" role="tablist" aria-label="Workforce sections">
