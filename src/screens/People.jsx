@@ -631,8 +631,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         {drill.kind === "sessions" && drill.rows.map((session) => <PeopleFactRow
           key={session.id}
           icon="time"
-          title={new Date(session.started_at).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
-          subtitle={`Started ${new Date(session.started_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}${session.ended_at ? " · ended " + new Date(session.ended_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : " · still open"}${session.place === "office" ? " · at the office" : " · elsewhere"}`}
+          title={new Date(session.started_at).toLocaleDateString("en-GB", { timeZone: "Africa/Accra", weekday: "short", day: "numeric", month: "short" })}
+          subtitle={`Started ${new Date(session.started_at).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" })}${session.ended_at ? " · ended " + new Date(session.ended_at).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" }) : " · still open"}${session.place === "office" ? " · at the office" : " · elsewhere"}`}
         />)}
         {drill.kind === "leave" && drill.rows.map((request) => <PeopleFactRow
           key={request.id}
@@ -731,7 +731,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           {!hasLinkedProfile && person.source_department_text && <PeopleFactRow icon="people" title="Source department" subtitle={person.source_department_text} />}
           {!hasLinkedProfile && rosterUnitNames.length > 0 && <PeopleFactRow icon="people" title="Recorded units" subtitle={rosterUnitNames.join(" · ")} />}
           {!hasLinkedProfile && person.responsibility_context?.length > 0 && <PeopleFactRow icon="work" title="Programme / responsibility context" subtitle={person.responsibility_context.join(" · ")} />}
-          {person.birthday && <PeopleFactRow icon="calendar" title="Birthday" subtitle={new Date(person.birthday).toLocaleDateString("en-GB", { day: "numeric", month: "long" })} />}
+          {person.birthday && <PeopleFactRow icon="calendar" title="Birthday" subtitle={new Date(person.birthday).toLocaleDateString("en-GB", { timeZone: "Africa/Accra", day: "numeric", month: "long" })} />}
         </div>
       </PeopleWorkspaceSection>
 
@@ -822,7 +822,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         {accessInvitation ? <div className="phase5-person-invitation">
           <div>
             <strong>{accessInvitation.email}</strong>
-            <span>Invited {new Date(accessInvitation.invited_at).toLocaleString("en-GB")} · {invitationState}</span>
+            <span>Invited {new Date(accessInvitation.invited_at).toLocaleString("en-GB", { timeZone: "Africa/Accra" })} · {invitationState}</span>
           </div>
           <Button variant="quiet" size="compact" onClick={() => openAccessAdministration(person.profile_id || null)}>Review invitation</Button>
         </div> : null}
