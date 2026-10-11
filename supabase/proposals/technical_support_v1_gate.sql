@@ -80,8 +80,11 @@ BEGIN
     WHERE t.tgrelid='public.support_case_events'::regclass
       AND t.tgname='support_case_events_immutable'
       AND NOT t.tgisinternal
+      -- pg_trigger.tgtype bits: 2=BEFORE, 4=INSERT, 8=DELETE, 16=UPDATE.
+      -- The immutable audit guard must intercept BOTH UPDATE and DELETE.
       AND (t.tgtype & 2)<>0
-      AND (t.tgtype & 4)<>0
+      AND (t.tgtype & 8)<>0
+      AND (t.tgtype & 16)<>0
   ) THEN RAISE EXCEPTION 'Support audit event immutability trigger missing.'; END IF;
 
   IF NOT EXISTS (
