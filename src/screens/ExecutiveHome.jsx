@@ -48,6 +48,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
         count("work_items", (query) => query.eq("status", "in_review")),
         supabase.from("meeting_sessions")
           .select("id,title,starts_at,status,provider")
+          .eq("org_id",me.org_id)
           .gte("starts_at",now.toISOString())
           .lte("starts_at",new Date(Date.now()+14*864e5).toISOString())
           .neq("status","cancelled").order("starts_at").limit(5),
@@ -58,8 +59,8 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
           .in("node_type",["ministry_direction","ministry_objective"])
           .neq("status","closed")
           .order("created_at",{ascending:false}),
-        supabase.from("report_periods").select("id,label,status,starts_on").eq("status","open").order("starts_on",{ascending:false}).limit(1),
-        supabase.from("units").select("id").eq("active",true),
+        supabase.from("report_periods").select("id,label,status,starts_on").eq("org_id",me.org_id).eq("status","open").order("starts_on",{ascending:false}).limit(1),
+        supabase.from("units").select("id").eq("org_id",me.org_id).eq("active",true),
         supabase.from("recurring_operations")
           .select("id,name,value_label,unit_id,units(name)")
           .eq("org_id",me.org_id).eq("active",true).eq("records_value",true)
@@ -112,7 +113,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
 
       const openPeriod=(periodRows.data||[])[0]||null;
       if(openPeriod){
-        const reportRows=await supabase.from("reports").select("unit_id,status,version").eq("period_id",openPeriod.id).eq("scope","unit");
+        const reportRows=await supabase.from("reports").select("unit_id,status,version").eq("org_id",me.org_id).eq("period_id",openPeriod.id).eq("scope","unit");
         if(reportRows.error) throw new Error(`reports: ${reportRows.error.message}`);
         const latest={};
         (reportRows.data||[]).forEach((row)=>{if(!latest[row.unit_id]||Number(row.version)>Number(latest[row.unit_id].version))latest[row.unit_id]=row;});
