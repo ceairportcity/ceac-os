@@ -53,3 +53,17 @@ Last application/source commit before this checkpoint: `a6de862d1695193488019b7f
 This product branch should become a draft PR targeting PR #44's **current branch** for independent review only. Keep PR #44 frozen until release owners independently accept and incorporate reviewed product changes. Do not merge to `main`, run migrations or deploy production based on this checkpoint.
 
 The deliberate `[vercel]` checkpoint is for a single existing-project PREVIEW source/build validation, not live product visual acceptance or a production cutover.
+
+
+## Product continuation — self-service Technical Support (following the original Administration fix)
+
+Application HEAD before preview checkpoint: `50b2af38bd108a2cfe4b497574deca685c15844b`.
+
+- Reporters can now open their own submitted support requests to see authoritative case status, original description, and Technical Support's recorded response. Request reads remain explicitly scoped to `reported_by = me.id` AND `org_id = me.org_id`; direct internal `support_case_events` access is not exposed.
+- Reporters can retry failed request-history loads. A role change clears the previous account's selected request and list.
+- Help Desk search now filters the at-most-150 recently loaded, RLS-authorised cases by reference, summary, category, and case status. The UI truthfully describes that bound rather than implying global full-text search.
+- Support case list refresh rechecks current active Technical Support membership before returning queue data. Previously selected case data is cleared before this check; membership or case fetch failure leaves no old queue visible.
+- One deterministic helper test was added to `tests/technical-support-v1.test.mjs` covering search, category, status, order preservation and empty input. Two new source assertions were added for reporter scoping and bounded search.
+- Existing backend SQL remains under `supabase/proposals/` and has NOT been deployed; no role or support case database record was created or altered by this product effort.
+
+**Release status:** still NO-GO. Authenticated role/browser/SQL tests and owner design acceptance are outstanding. A deliberate single existing-project Vercel PREVIEW is requested by this documentation commit to exercise `verify:source` plus Vite build at the exact new head; Vercel READY must not be mistaken for complete approval.
