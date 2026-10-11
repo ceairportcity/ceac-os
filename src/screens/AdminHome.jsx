@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
-import { summariseAdminToday } from "../lib/adminTodaySummary";
+import { summariseAdminToday, countRecordedSessionDays } from "../lib/adminTodaySummary";
 
 export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, openSettings, openUnits, go }) {
   const [units, setUnits] = useState([]);
@@ -89,7 +89,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
         must(supabase.from("profiles").select("id,full_name").eq("active",true), "Active people"),
         must(supabase.from("work_sessions").select("profile_id,started_at").gte("started_at",dayStart.toISOString()).lt("started_at",tomorrow.toISOString()), "Today's sessions"),
         must(supabase.from("work_sessions").select("profile_id").is("ended_at",null).lte("started_at",nowDate.toISOString()), "Active work sessions"),
-        must(supabase.from("work_sessions").select("profile_id,started_at").gte("started_at",weekAgo), "Recent sessions"),
+        must(supabase.from("work_sessions").select("profile_id,started_at").gte("started_at",weekAgo).lte("started_at",nowDate.toISOString()), "Recent sessions"),
         must(supabase.from("leave_requests").select("profile_id").eq("status","approved").lte("start_date",todayStr).gte("end_date",todayStr), "Today's leave"),
         must(supabase.from("projects").select("id,name,status,lead_unit_id,ends_on"), "Projects"),
         must(supabase.from("project_closes")
@@ -202,7 +202,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       });
 
       (staff || []).forEach((person) => {
-        const days = new Set((sessWeek || []).filter((row) => row.profile_id === person.id).map((row) => new Date(row.started_at).toISOString().slice(0, 10))).size;
+        const days = countRecordedSessionDays(sessWeek, person.id, now);
         if (days >= 3 && !lastSub[person.id]) rules.push({
           k: "p"+person.id,
           who: person.full_name,
