@@ -146,6 +146,37 @@ export default function TechnicalSupport({ me, go }) {
   );
   const selected = cases.find((item) => item.id === selectedId);
 
+  async function refreshCases() {
+    if (busy) return;
+    // Clear previously obtained case data BEFORE rechecking current
+    // membership, so a removed member cannot keep browsing a stale list.
+    setReady(false);
+    setError(null);
+    setActionError(null);
+    setSelectedId(null);
+    setMembership(null);
+    setCases([]);
+    try {
+      if (!canManage) throw new Error("Your account has no Technical Support case-management authority.");
+      const { data: currentMembership, error: membershipFailure } = await supabase
+        .from("support_team_memberships").select("id,role")
+        .eq("org_id", me.org_id).eq("profile_id", me.id).eq("active", true).maybeSingle();
+      if (membershipFailure) throw membershipFailure;
+      if (!currentMembership) return;
+      const { data: currentCases, error: casesFailure } = await supabase
+        .from("support_cases")
+        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary")
+        .eq("org_id", me.org_id).order("opened_at", { ascending: false }).limit(150);
+      if (casesFailure) throw casesFailure;
+      setCases(currentCases || []);
+      setMembership(currentMembership);
+    } catch (failure) {
+      setError(humanError(failure, "The Technical Support queue cannot be refreshed. No case was changed."));
+    } finally {
+      setReady(true);
+    }
+  }
+
   async function updateCase(id, state, note) {
     if (!canManage || !membership || busy) return;
     if ((state === "resolved" || state === "closed") && note.trim().length < 10) {
@@ -177,7 +208,9 @@ export default function TechnicalSupport({ me, go }) {
     </header>
 
     {!ready && <p role="status" aria-busy="true">Checking your Technical Support authority...</p>}
-    {ready && error && <div className="ceac-support-error" role="alert">{error}</div>}
+    {ready && error && <div className="ceac-support-error" role="alert">
+      {error} <button type="button" className="btn btn-ghost" onClick={refreshCases}>Try again</button>
+    </div>}
     {ready && !error && !membership && <div className="ceac-support-empty" role="status">
       You do not have an active Technical Support team membership. Contact People Administration to complete the approved transition. No support queue is visible.
     </div>}
@@ -211,7 +244,10 @@ export default function TechnicalSupport({ me, go }) {
         {workspace === "help-desk" && <section className="ceac-support-main">
           <div className="ceac-support-section-head"><div><h2>Help people work</h2>
             <p className="screen-note">Only cases authorised for the support queue are listed.</p></div>
-            <button className="btn btn-ghost" type="button" onClick={() => go("technical-help")}>Submit your own request</button>
+            <div className="ceac-support-section-actions">
+              <button className="btn btn-ghost" type="button" onClick={refreshCases}>Refresh cases</button>
+              <button className="btn btn-ghost" type="button" onClick={() => go("technical-help")}>Submit your own request</button>
+            </div>
           </div>
           <div className="ceac-support-desk-filters">
             <label>Find a request
