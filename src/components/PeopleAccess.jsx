@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase, inviteByEmail, resendStaffInvitation } from "../lib/supabase";
-import { invitationEmailConflicts } from "../lib/invitationSafety";
+import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../lib/invitationSafety";
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
 
@@ -263,6 +263,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             <strong>Existing identity?</strong>
             <span>Do not invite again. Use Responsibilities below so the existing CEAC identity keeps one account and gains the authorised organisational responsibility.</span>
           </div>
+          {form.email.trim() && !isPlausibleInvitationEmail(form.email) && <p className="screen-note" role="status">Enter an email address in the form person@example.org before recording an invitation.</p>}
           {existingAccountEmail && <ProductNotice tone="attention" title="Account already exists">
             This email is already associated with a CEAC identity. Use Responsibilities or review that person's existing account instead of sending a second invitation.
           </ProductNotice>}
@@ -272,7 +273,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
           <div className="phase5-access-actions">
             <Button
               busy={busy}
-              disabled={busy || !form.name.trim() || !form.email.trim() || !form.unit || existingAccountEmail || existingInvitationEmail}
+              disabled={busy || form.name.trim().length < 2 || !isPlausibleInvitationEmail(form.email) || !form.unit || existingAccountEmail || existingInvitationEmail}
               onClick={() => action(
                 () => inviteByEmail({ email: form.email, fullName: form.name, unitId: form.unit }),
                 "Activation email requested. The recipient must verify their email and set a password; delivery has not been independently confirmed."
