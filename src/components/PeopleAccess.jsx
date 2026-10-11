@@ -102,9 +102,15 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       if (onChanged) await onChanged();
       return true;
     } catch (actionError) {
+      if (actionError?.invitationRecorded) {
+        // The secure pending invitation or resend preparation already succeeded,
+        // although the email provider did not accept the activation request.
+        // Refresh the recorded state to discourage duplicate invitations.
+        await load();
+      }
       setError(recorded
         ? "The change was recorded, but the page could not refresh. Reload before repeating this action."
-        : actionError.message || "This change could not be recorded.");
+        : actionError?.message || "The operation could not be confirmed. Review current records before retrying.");
       return recorded;
     } finally {
       setBusy(false);
@@ -181,6 +187,14 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const pendingInvitationCount = snapshot?.invitations.filter((invitation) =>
     !invitation.revoked_at && invitation.activation_state !== "verified"
   ).length || 0;
+  // The roster is not proof that every account is activated, but an identical
+  // email must not be invited blindly a second time.
+  const typedInviteEmail = form.email.trim().toLowerCase();
+  const existingAccountEmail = snapshot?.people.some((person) =>
+    person.email?.trim().toLowerCase() === typedInviteEmail) || false;
+  const existingInvitationEmail = snapshot?.invitations.some((invitation) =>
+    invitation.email?.trim().toLowerCase() === typedInviteEmail
+    && !invitation.revoked_at && invitation.activation_state !== "verified") || false;
 
   if (!canManage) return <ProductNotice tone="attention" title="People administration required">This account does not hold organisation-wide People access.</ProductNotice>;
 
@@ -243,10 +257,16 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             <strong>Existing identity?</strong>
             <span>Do not invite again. Use Responsibilities below so the existing CEAC identity keeps one account and gains the authorised organisational responsibility.</span>
           </div>
+          {existingAccountEmail && <ProductNotice tone="attention" title="Account already exists">
+            This email is already associated with a CEAC identity. Use Responsibilities or review that person's existing account instead of sending a second invitation.
+          </ProductNotice>}
+          {!existingAccountEmail && existingInvitationEmail && <ProductNotice tone="attention" title="Invitation already recorded">
+            This email already has an outstanding invitation. Review Invitations to resend or cancel the existing record rather than creating another.
+          </ProductNotice>}
           <div className="phase5-access-actions">
             <Button
               busy={busy}
-              disabled={busy || !form.name.trim() || !form.email.trim() || !form.unit}
+              disabled={busy || !form.name.trim() || !form.email.trim() || !form.unit || existingAccountEmail || existingInvitationEmail}
               onClick={() => action(
                 () => inviteByEmail({ email: form.email, fullName: form.name, unitId: form.unit }),
                 "Activation email requested. The recipient must verify their email and set a password; delivery has not been independently confirmed."
@@ -372,7 +392,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                   {invitation.revoked_at ? "Cancelled" : invitation.activation_state.replaceAll("_", " ")}
                 </StatusBadge>
                 {cancellable ? <div className="phase5-invitation-actions">
-                  <Button variant="quiet" size="compact" disabled={busy} onClick={() => action(() => resendStaffInvitation(invitation.id), "Activation email requested. Check the newest email link.")}>Resend</Button>
+                  <Button variant="quiet" size="compact" disabled={busy} onClick={() => action(() => resendStaffInvitation(invitation.id), "Another activation email was requested. Delivery is not yet independently confirmed.")}>Resend</Button>
                   <Button variant="quiet" size="compact" disabled={busy} onClick={() => { setRevokeTarget(invitation); setRevokeReason(""); }}>Cancel</Button>
                 </div> : null}
               </article>;
