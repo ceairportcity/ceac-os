@@ -17,15 +17,18 @@ flock -w 10 9
 # not suppress a new exact-head run (nor count as acceptance).
 current_head="$(git rev-parse HEAD)"
 previous_head="$(cat /tmp/ceac-private-autorun-tested-head 2>/dev/null || true)"
+# PR44 can advance while an existing Codespace stays checked out at an old
+# commit. Its checkout SHA is NOT a valid cache key for release verification.
+live_pr_head="$(git ls-remote origin refs/pull/44/head 2>/dev/null | awk '{print $1}' || true)"
 if [[ -f /tmp/ceac-private-autorun-exit-code &&
       -f /tmp/ceac-private-autorun-summary.md &&
-      "$previous_head" == "$current_head" ]]; then
-  echo "CEAC verification already completed for this exact checkout $current_head."
+      "$live_pr_head" =~ ^[0-9a-f]{40}$ &&
+      "$previous_head" == "$live_pr_head" ]]; then
+  echo "CEAC verification already attempted for exact live PR44 HEAD $live_pr_head."
   exit 0
 fi
-if [[ -f /tmp/ceac-private-autorun-exit-code &&
-      "$previous_head" != "$current_head" ]]; then
-  echo "Recorded verification is for a stale commit; starting exact-head retest."
+if [[ -f /tmp/ceac-private-autorun-exit-code ]]; then
+  echo "Existing CEAC verification is stale or the live PR cannot be confirmed; rerunning safely."
 fi
 pidfile=/tmp/ceac-private-autorun-worker.pid
 if [[ -s "$pidfile" ]]; then
