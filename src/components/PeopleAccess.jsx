@@ -72,8 +72,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       setNotice(success);
       await load();
       if (onChanged) await onChanged();
+      return true;
     } catch (actionError) {
       setError(actionError.message || "This change could not be recorded.");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -103,15 +105,18 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   async function revokeInvitation() {
     if (!revokeTarget || !revokeReason.trim()) return;
     const target = revokeTarget;
-    await action(async () => {
+    const recorded = await action(async () => {
       const result = await supabase.rpc("admin_revoke_staff_invitation", {
         p_invitation_id: target.id,
         p_reason: revokeReason.trim(),
       });
       if (result.error) throw result.error;
     }, "Invitation cancelled; operational access cannot activate through it.");
-    setRevokeTarget(null);
-    setRevokeReason("");
+    // Keep the confirmation open on failure; do not discard the operator's reason.
+    if (recorded) {
+      setRevokeTarget(null);
+      setRevokeReason("");
+    }
   }
 
   const set = (key) => (event) => setForm((current) => ({
