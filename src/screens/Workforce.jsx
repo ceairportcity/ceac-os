@@ -67,6 +67,7 @@ export default function Workforce({ me }) {
   const [notice,setNotice]=useState(null);
   const [busy,setBusy]=useState(false);
   const mutationBusyRef=useRef(false);
+  const readGeneration=useRef(0);
   const [calendarUnit,setCalendarUnit]=useState("");
   const [calendarPerson,setCalendarPerson]=useState("");
 
@@ -107,9 +108,13 @@ export default function Workforce({ me }) {
   const [policyOpeningBalanceRequired,setPolicyOpeningBalanceRequired]=useState(false);
   const [policyRoute,setPolicyRoute]=useState("");
 
-  useEffect(()=>{ load(); },[me.id]);
+  useEffect(()=>{
+    void load();
+    return ()=>{ readGeneration.current+=1; };
+  },[me.id,me.org_id,me.unit_id,me.role]);
 
   async function load(){
+    const generation=++readGeneration.current;
     setLoading(true); setError(null);
     const since=new Date(Date.now()-31*86400000).toISOString();
     const datasets=[
@@ -128,6 +133,9 @@ export default function Workforce({ me }) {
       ["ministry events", supabase.from("ministry_events").select("id,title,starts_at,ends_at,location,cancelled,scope,unit_id").eq("org_id",me.org_id).gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString())],
     ];
     const results=await settleWorkforceDatasets(datasets);
+    // A later refresh or scope switch owns the UI. Older results must never
+    // replace the latest verified employment, leave and correction records.
+    if(generation!==readGeneration.current) return {errors:{},superseded:true};
     const errors={};
     const byName=Object.fromEntries(results.map((row)=>[row.name,row]));
     for(const row of results){
@@ -207,6 +215,10 @@ export default function Workforce({ me }) {
       if(e) throw e;
       recorded=true;
       const reload=await load();
+      if(reload.superseded){
+        setError("Workforce records changed during verification. Review the current record before retrying.");
+        return false;
+      }
       const missing=requiredDatasets.filter((dataset)=>reload.errors[dataset]);
       if(missing.length){
         setError("The change was recorded, but these required datasets failed to reload: "+missing.join(", ")+". Review recorded state before trying again.");
