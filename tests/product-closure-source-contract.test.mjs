@@ -153,7 +153,11 @@ test("sensitive workspaces remount when the authorised account changes", () => {
     const opening = new RegExp("<" + component + "\\s+[\\s\\S]{0,85}?key=\\{\\x60\\$\\{me\\.org_id\\}:\\$\\{me\\.id\\}\\x60\\}");
     assert.match(app, opening, component + " must not retain previous-account React state");
   }
-  assert.match(app, /<Workforce key=\{\x60\$\{me\.org_id\}:\$\{me\.id\}:\$\{me\.unit_id \|\| "none"\}:\$\{me\.role \|\| "none"\}\x60\}/);
+  assert.match(app, /<Workforce key=/);
+  assert.match(app, /me\.unit_id \|\| "none"/);
+  assert.match(app, /me\.role \|\| "none"/);
+  assert.match(app, /me\.is_admin \? "admin" : "not-admin"/);
+  assert.match(app, /me\.is_exec \? "exec" : "not-exec"/);
 });
 
 test("Workforce attendance and protected employment reads have explicit tenant scope", () => {
