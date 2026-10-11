@@ -122,7 +122,7 @@ export default function TechnicalHelp({ me }) {
             <span className="ceac-support-state">{String(item.state).replaceAll("_", " ")} · {formatDate(item.opened_at)}</span>
           </button>)}
         </div>
-        {selected && <section className="ceac-support-request-details" aria-labelledby="support-own-case-title">
+        {selected && <section className="ceac-support-detail" aria-labelledby="support-own-case-title">
           <div className="ceac-support-detail-top">
             <h3 id="support-own-case-title">Request {selected.reference || "details"}</h3>
             <button type="button" className="btn btn-ghost" onClick={() => setSelectedId(null)}>Close details</button>
