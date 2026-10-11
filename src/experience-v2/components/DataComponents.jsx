@@ -133,6 +133,7 @@ export function ActionFocusCard({
 }
 
 export function DataPanel({
+  id,
   eyebrow,
   title,
   supporting,
@@ -142,7 +143,7 @@ export function DataPanel({
   surfaceVariant = "section",
 }) {
   return (
-    <Surface variant={surfaceVariant} padding={surfaceVariant === "section" ? "none" : "standard"} className={joinClasses("ev2c-data-panel", className)}>
+    <Surface id={id} variant={surfaceVariant} padding={surfaceVariant === "section" ? "none" : "standard"} className={joinClasses("ev2c-data-panel", className)}>
       <div className="ev2c-data-panel-head">
         <div>
           {eyebrow ? <span className="ev2c-data-eyebrow">{eyebrow}</span> : null}
