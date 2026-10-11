@@ -220,12 +220,7 @@ if [[ "$live_pr_final" != "$expected" || "$live_main_final" != "$expected_main" 
   exit 3
 fi
 printf 'PASS\n' > "$evidence/exact_head_freshness.status"
-if grep -lE '^(FAIL|NOT_VERIFIED|STALE)
-  echo 'RELEASE NOT VERIFIED: inspect private evidence and obtain separate visual/real-user review.' >&2
-  exit 1
-fi
-echo 'LOCAL TECHNICAL GATES PASS; production roles, visual owner acceptance, reviewer and deployment remain NOT VERIFIED.'
- "$evidence"/*.status >/dev/null; then
+if grep -lE '^(FAIL|NOT_VERIFIED|STALE)$' "$evidence"/*.status >/dev/null; then
   echo 'RELEASE NOT VERIFIED: inspect private evidence and obtain separate visual/real-user review.' >&2
   exit 1
 fi
