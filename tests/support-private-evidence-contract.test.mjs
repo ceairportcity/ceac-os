@@ -35,7 +35,7 @@ test("case access requires current membership plus case capability; author-only 
 });
 
 test("Support uses existing upload and private signed URL architecture",()=>{
-  assert.match(panel,/OperationalFileList contextType="support_case" contextId=\{item\.id\}/);
+  assert.match(panel,/OperationalFileList key=\{`\$\{me\.org_id\}:\$\{me\.id\}:\$\{item\.id\}`\} contextType="support_case" contextId=\{item\.id\}/);
   assert.match(panel,/relation="support_evidence"/);
   assert.match(panel,/canUpload=\{item\.state !== "closed" && item\.state !== "resolved"/);
   assert.match(core,/register_operational_file/);
