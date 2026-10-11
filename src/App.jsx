@@ -396,7 +396,7 @@ export default function App() {
     if (tab === "cost" && isAdmin) return <Cost me={me} />;
     if (tab === "finance" && isAdmin) return <Finance me={me} openExpenses={() => go("cost")} />;
     if (tab === "reporting" && isAdmin) return <Reports me={me} />;
-    if (tab === "attendance" && canUseWorkforce) return <Workforce key={`${me.org_id}:${me.id}`} me={me} />;
+    if (tab === "attendance" && canUseWorkforce) return <Workforce key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${me.role || "none"}`} me={me} />;
     if (tab === "people" && canManagePeople) return <People
       key={`${me.org_id}:${me.id}`}
       me={me}
