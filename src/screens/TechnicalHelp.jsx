@@ -65,7 +65,6 @@ export default function TechnicalHelp({ me }) {
     // Lock synchronously: state updates alone do not prevent two rapid
     // clicks from inserting duplicate requests.
     if (busy || scopedLoading || loadError || submitBusyRef.current) return;
-    submitBusyRef.current = true;
     const generation = readGeneration.current;
     const title = summary.trim();
     const details = description.trim();
@@ -73,6 +72,9 @@ export default function TechnicalHelp({ me }) {
       setError("Add a short summary and explain what is happening before sending.");
       return;
     }
+    // Acquire the synchronous lock only after validating the draft;
+    // otherwise an invalid first submission permanently disables retry.
+    submitBusyRef.current = true;
     setBusy(true);
     setError(null);
     setSuccess(null);
