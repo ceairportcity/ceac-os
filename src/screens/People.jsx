@@ -487,24 +487,38 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }
 
   async function decideVolunteerRecommendation(row, status) {
-    if (!row?.id || !["accepted","declined"].includes(status)) return;
+    if (!row?.id || !["accepted","declined"].includes(status)
+        || recommendationWriteBusy.current || !volunteerRecommendationsAvailable) return;
+    const generation = personGeneration.current;
+    const visibleId = person?.employee_id;
+    recommendationWriteBusy.current = true;
     setVolunteerDecisionBusy(true);
     setError(null);
     const note = status === "accepted"
       ? "Recommendation accepted for formal Administration follow-up. No employment or compensation value was changed automatically."
       : "Recommendation declined by Administration.";
-    const { error: decisionError } = await supabase.from("volunteer_change_recommendations")
-      .update({ status, decided_by: me.id, decided_at: new Date().toISOString(), decision_note: note })
-      .eq("id", row.id)
-      .eq("status", "pending");
-    setVolunteerDecisionBusy(false);
-    if (decisionError) {
-      setError(humanError(decisionError, "The volunteer recommendation could not be decided."));
-      return;
+    try {
+      // Zero matching rows means another approver already acted; it is NOT a
+      // successful decision from this administrator.
+      const { data, error: decisionError } = await supabase.from("volunteer_change_recommendations")
+        .update({ status, decided_by: me.id, decided_at: new Date().toISOString(), decision_note: note })
+        .eq("id", row.id)
+        .eq("status", "pending")
+        .select("id,status,decided_at,decision_note")
+        .maybeSingle();
+      if (decisionError) throw decisionError;
+      if (!data) throw new Error("This recommendation was already changed or is no longer available. Reload its record before trying again.");
+      if (generation !== personGeneration.current) return;
+      setVolunteerRecommendations((entries) => visibleId === person?.employee_id
+        ? entries.map((entry) => entry.id === row.id ? { ...entry, ...data } : entry)
+        : entries);
+    } catch (failure) {
+      if (generation === personGeneration.current)
+        setError(humanError(failure, "The recommendation decision could not be confirmed. Reload the record before retrying."));
+    } finally {
+      recommendationWriteBusy.current = false;
+      if (generation === personGeneration.current) setVolunteerDecisionBusy(false);
     }
-    setVolunteerRecommendations((rows) => rows.map((entry) => entry.id === row.id
-      ? { ...entry, status, decided_at: new Date().toISOString(), decision_note: note }
-      : entry));
   }
 
   async function saveEmployment() {
