@@ -227,3 +227,10 @@ test("HR leave policy activation cannot silently convert invalid numeric values 
   assert.match(workforce, /isValidPolicyAmount\(policyCarryoverLimit\)/);
   assert.doesNotMatch(workforce, /Number\(policyEntitlement\)>=0/);
 });
+
+test("Support status changes can only be saved by their current assigned technician", () => {
+  assert.match(support, /if \(currentCase\.assigned_to !== me\.id\)/);
+  assert.match(support, /\.eq\("updated_at", expectedUpdatedAt\)\s*\.eq\("assigned_to", me\.id\)/);
+  assert.match(support, /disabled=\{busy \|\| item\.assigned_to !== myId\}/);
+  assert.match(support, /Cases assigned to another technician are read-only/);
+});
