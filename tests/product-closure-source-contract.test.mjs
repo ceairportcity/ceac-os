@@ -66,3 +66,19 @@ test("Technical Support cannot show stale authorisation or close access without 
   assert.match(support, /\.not\("state", "in", "\(resolved,closed\)"\)/);
   assert.doesNotMatch(support, /auth\.admin/);
 });
+
+test("expired invitations remain visible for authorised follow-up but revoked ones do not", () => {
+  assert.match(admin, /\.from\("pending_invitations"\)/);
+  assert.match(admin, /\.is\("resolved_at",null\)\.is\("revoked_at",null\)/);
+  assert.doesNotMatch(admin, /\.gt\("expires_at"/);
+  assert.match(adminView, /expiredInvitationCount/);
+  assert.match(adminView, /Invitations to review/);
+  assert.match(access, /Outstanding and expired invitations require follow-up/);
+});
+
+test("invitation entry is validated before the record-creating RPC", () => {
+  assert.match(auth, /isPlausibleInvitationEmail\(cleanEmail\)/);
+  assert.match(auth, /cleanName\.length < 2/);
+  assert.match(access, /isPlausibleInvitationEmail\(form\.email\)/);
+  assert.match(access, /existingAccountEmail \|\| existingInvitationEmail/);
+});
