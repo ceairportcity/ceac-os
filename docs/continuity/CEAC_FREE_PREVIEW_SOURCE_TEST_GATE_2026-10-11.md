@@ -65,3 +65,9 @@ The previous runner required the existing Codespace checkout to equal the latest
 - Four dedicated source-contract test callbacks passed 4/4 against exact GitHub source content. This is static/JavaScript verification only; actual PostgreSQL/Playwright/Codespaces execution remains **NOT VERIFIED** until evidence is posted.
 
 This commit intentionally includes `[vercel]` to run an isolated preview with the complete existing Node source-suite and Vite build, not a production release. NO database writes or Vercel production promotion are authorised.
+
+## Executive objective measurement integrity — 11 October
+
+The previous Executive overview `strategyProgress()` coerced `null` current values to numeric 0 via `Number(null)`, displaying fabricated 0% progress when no measured observation had been recorded. A pure helper `src/experience-v2/executive-overview/strategyProgress.js` now preserves missing measurements as `null`, while retaining real measured zero, fractional values and maximum-100% visual clipping. The dashboard imports the helper. Four exact-GitHub-source regression callbacks passed 4/4; `tests/executive-progress-contract.test.mjs` is in both existing CI and Vercel `verify:source` command.
+
+This `[vercel]` commit exercises all current Node source/unit tests and Vite build for one private preview. **No owner/mockup parity, PostgreSQL migration acceptance, Codespace full test evidence, Auth/MFA, backup/recovery, production merge or deployment approval is implied.**
