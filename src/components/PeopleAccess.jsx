@@ -373,10 +373,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                       variant="quiet"
                       size="compact"
                       disabled={busy || !form.reason.trim()}
-                      onClick={() => {
-                        if (!window.confirm("End this unit responsibility? All team placements within this unit will also end. The change is recorded with audit history.")) return;
-                        return action(() => saveResponsibility("remove", membership), "Unit responsibility ended; the server also clears team placements in this unit.");
-                      }}
+                      onClick={() => setEndMembershipTarget({ membership, personId: form.person, personName: selectedPerson?.full_name || "this person", unitName: unit?.name || "unit", reason: form.reason.trim() })}
                     >End membership</Button>
                     {stillInUnitTeam && <span className="screen-note" role="status">Ending this unit responsibility also clears its team placements through the authorised database action.</span>}
                   </div>;
