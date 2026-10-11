@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase, inviteByEmail, resendStaffInvitation } from "../lib/supabase";
+import { invitationEmailConflicts } from "../lib/invitationSafety";
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
 
@@ -189,12 +190,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   ).length || 0;
   // The roster is not proof that every account is activated, but an identical
   // email must not be invited blindly a second time.
-  const typedInviteEmail = form.email.trim().toLowerCase();
-  const existingAccountEmail = snapshot?.people.some((person) =>
-    person.email?.trim().toLowerCase() === typedInviteEmail) || false;
-  const existingInvitationEmail = snapshot?.invitations.some((invitation) =>
-    invitation.email?.trim().toLowerCase() === typedInviteEmail
-    && !invitation.revoked_at && invitation.activation_state !== "verified") || false;
+  const { accountExists: existingAccountEmail, invitationPending: existingInvitationEmail } =
+    invitationEmailConflicts(form.email, snapshot?.people, snapshot?.invitations);
 
   if (!canManage) return <ProductNotice tone="attention" title="People administration required">This account does not hold organisation-wide People access.</ProductNotice>;
 
