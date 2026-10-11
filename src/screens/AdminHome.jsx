@@ -239,6 +239,9 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       });
       if (error) throw error;
       if (generation !== readGeneration.current) return;
+      // The next load deliberately acquires a new generation. Release this
+      // action's busy latch before starting it, while the page enters loading.
+      setBusy(false);
       await load();
     } catch (error) {
       if (generation === readGeneration.current) setMsg(humanError(error, "The leave decision could not be confirmed. Review its recorded state before retrying."));
