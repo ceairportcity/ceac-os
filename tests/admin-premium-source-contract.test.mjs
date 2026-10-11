@@ -55,7 +55,8 @@ test("the dominant next step contains real CEAC authority-preserving navigation"
   assert.match(overview, /action: onOpenAttendance/);
   assert.match(overview, /action: onOpenWorkflows/);
   assert.match(overview, /pendingInvitations\.length && canManagePeople/);
-  assert.match(overview, /action: onOpenPeople/);
+  assert.match(overview, /action: onOpenInvitations/);
+  assert.match(overview, /onClick=\{onOpenInvitations\}/);
   assert.match(overview, /onOpenItem\?\.\(mine\[0\]\.id\)/);
   assert.match(overview, /adminv2-focus-strip/);
   assert.match(stylesheet, /Admin premium reference: dominant next-decision focus/);
