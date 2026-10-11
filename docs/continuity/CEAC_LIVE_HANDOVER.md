@@ -1,4 +1,4 @@
-undefined
+# CEAC Live Handover
 
 ### Complete isolated SQL acceptance — 11 October 2026
 
@@ -79,3 +79,17 @@ Next immediately executable work: commit the collection/playbook repair, then ei
 - No production database, GitHub main, Vercel deployment, real user, Auth factor or Storage object was changed. Access approval/execution, operational support evidence, system telemetry, authenticated role-browser acceptance, genuine backup/restore, real-user MFA/invitation delivery and owner visual acceptance remain open release gates.
 
 Next immediately executable work: implement the separately authorised access approval/action ledger without giving Technical Support business-approval authority, then add its adversarial SQL and application behavior tests. Production remains NO-GO.
+
+
+## 11 October 2026 — Chat continuation Technical Support access approval and execution (draft PR #51)
+
+- Source reconciliation: private canonical PR #50 initially verified at `de4601bbf8b68666b5fcb0cb3e27ddd7972149c3`; independent branch `chatgpt/pr50-chat-technical-access-ledger-20261011` created with that exact parent. PR #51 targets PR50's existing branch, remains DRAFT/NO-GO. Frozen PR44 `e00f13873409e4cc16ec1493b60b71d5cde1114a` unchanged.
+- Completed source implementation: forward-only migration `20261011190000_135_support_access_approval_execution_ledger.sql`, database-enforced one active record per access-help case, monotonic pending → approved/declined → executed, immutable actor and decision history, version-based stale/concurrent write denial, same-org/target checks, approval by actual Unit Manager or People Administration, support-member non-self approval, active assigned technician and `support.access.apply_approved` execution boundary, and evidence-gated access-case closure. Ordinary incidents preserve original flow.
+- Purposefully bounded actions: `unit_access_assistance`, `invitation_delivery_assistance`, `account_recovery_assistance`. Business approval record uses server-enforced fixed safe labels. **This ledger records approvals/technical assistance and does not independently create accounts, deliver email, assign business roles, grant capabilities, reset real credentials, or prove downstream service actions.** Existing People/authority APIs remain the only permitted business power source.
+- UI implementation: `src/components/SupportAccessApprovals.jsx` embedded in `AdminHome.jsx` (People Administration) and `ManagerHome.jsx` (unit-level Manager); `src/components/SupportAccessCaseActions.jsx` integrated with `TechnicalSupport.jsx`, plus `technicalSupport.js` conditional closure affordance. Frontend uses optimistic version comparisons, loading/scope guards, and literal evidence references; backend remains authoritative.
+- SQL regression source: `supabase/tests/support_access_approval_execution_gate.sql` registered in `scripts/ci/run-sql-security-gates.sh`. It contains rolled-back seeded actor checks for nonself approval, actual manager decision, unrelated-unit denial, duplicate request/foreign unit denial, stale version, immutable event history, proper execution, access closure and ordinary technical incident independence.
+- Node regression source: `tests/support-access-approval-contract.test.mjs` registered in `package.json`. Chat executed its **five exact GitHub-blob JS test callbacks (5 PASS, 60 assertions)** in an isolated V8 harness substituting restricted `node:test`/`assert`/`readFileSync`. **Not native Node test execution.**
+- **Not run:** genuine `npm ci`, full `npm run verify:source`, Vite production build, isolated PostgreSQL replay, SQL security gate execution, authenticated browser roles, invitation email delivery, real privileged MFA/AAL2, encrypted backup and isolated restore, owner literal mockup review, independent release review.
+- No Vercel deployment, Supabase production SQL/Auth modification, merge to PR50 or production, paid infrastructure, or TinyFish use. Latest continuation PR commit must be re-fetched after documentation updates; the implementation parent is the exact canonical SHA above.
+- **Work handoff:** inspect PR #51 source diff, audit the ledger business authority and resource scope, execute 139 ordered unique migrations and registered SQL suite in an isolated production-free PostgreSQL fixture, rerun real source suite + build + authenticated role journeys, confirm approved access actually has an underlying authorised business operation where applicable, then integrate reviewed changes on a new combined PR50 SHA. Release NO-GO persists.
+
