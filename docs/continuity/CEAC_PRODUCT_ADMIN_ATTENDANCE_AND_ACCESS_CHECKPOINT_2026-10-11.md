@@ -101,3 +101,38 @@ Application HEAD immediately before this checkpoint: `84299552924dcf70ddda6be887
 - Later Vercel check for `8678f4fd...` returned **build-rate-limit** failure, not a source test failure. No paid upgrade, duplicate preview retries or substituted production project were attempted.
 - Current Support case claim and People & Access team membership changes have **not** received exact-head full npm/build/Playwright acceptance. Do not call them production-ready. Historical source and role tests cannot substitute for final-head acceptance.
 - The release gate remains **NO-GO**; production main, preview release PR #44, live Supabase schema/Auth and Vercel production aliases untouched.
+
+## Continued product and security corrections — 11 October (additional live review)
+
+Application HEAD before this documentation update: `b6b5f9ae531a730d3b4cec22d5f8e04f53e27953`.
+
+**Administration daily briefing**
+- The hero no longer claims an empty decision inbox, zero invitations or zero leave decisions before the authoritative reads have completed.
+- On a query failure the hero and meeting rail describe data as unavailable rather than implying an empty schedule.
+- The Time & Leave overview now says "Open work sessions" and "Not verified live presence" because an unclosed database session does not establish current presence, and missing sessions cannot establish absence.
+- Authenticated screenshot assertions now explicitly capture desktop 1440, desktop 1366, tablet 820 and phone 390 (reference comparisons still required).
+
+**People & Access**
+- Sensitive roster/unit/invitation data is invalidated immediately on authenticated identity/organisation change.
+- Older in-flight reads cannot reinsert another account's directory state after a newer scope change; network rejection yields a fail-closed retry state.
+- True current sub-team placements and idempotent add/remove availability are driven from RLS-scoped records. Existing server-side audited RPC remains the only write route.
+
+**Technical Support**
+- Reporter self-service shows own status and recorded response, with case-list refresh.
+- Help Desk supports bounded search/state filters, active membership revalidation and per-case assignment to self or return to the unassigned queue without moving another technician's case.
+- The personal "Needs you" view excludes cases assigned to colleagues and cases awaiting business approval.
+- Status/resolution updates compare exact server `updated_at` so stale operators cannot quietly overwrite another saved decision. Assignment changes refresh case history using the new server timestamp.
+- Resolved/closed cases cannot be taken/released through these controls.
+- When the secure `support_cases` tables are absent (read-only Supabase catalogue reconfirmed none exist), users see a truthful not-enabled message rather than an invented empty queue or false lack of personal authority.
+- This UI is **future backend-dependent**: the protected migrations, support membership administration, business approval/execution, private case evidence, service telemetry and recovery evidence still require completed independent implementation.
+
+**Executed evidence (not release acceptance)**
+- Fresh local Node 22.16.0: **11 unit tests PASSED**, including personal ownership routing and undeployed-backend handling; exact local tested source/test Git blob SHA equals canonical current GitHub blobs:
+  - `src/lib/technicalSupport.js`: `95553cbe01762b8ff4076c11759664ca8f3b47c1`;
+  - `tests/technical-support-v1.test.mjs`: `90d3a3bf6119d168e13224096802faa9ebb63694`;
+  - Administration helper/test blobs remain `5c85c8fb6967eca394f7c32669a7cd43b0b8eec1` and `9b1870eb54eca7e5ca401e9d5e4435780ea1eeb3`.
+- Current GitHub files underwent 21/21 lightweight source-structure assertions PASS. These are NOT executed JSX compilation, browser tests, full technical/security acceptance or visual signoff.
+- Live GitHub Actions at latest commits still terminate jobs with **zero executed steps** (external runner restriction), not a recorded code failure. Existing Vercel Hobby preview later returns `build-rate-limit`; no chargeable alternative was launched.
+- Connected GitHub browser explicitly confirmed existing active `symmetrical goggles` Codespace. A non-mutating attempt to operate a new VS Code web terminal through TinyFish could not reliably focus/send commands; **no claim of npm CI/build execution** at latest SHA. No existing assurance runner, release branch or terminal job was changed.
+
+**Release:** production main and PR #44 unchanged; production Supabase/Auth, schema and Vercel main unchanged. PR #47 must remain DRAFT and unmerged until exact-head application/visual tests, secure support backend, independent migration and release gates pass. NO-GO is intentional.
