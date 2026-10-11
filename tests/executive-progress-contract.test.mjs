@@ -36,3 +36,12 @@ test("Executive organisational overview explicitly scopes all read-context queri
   assert.match(source, /from\("units"\)[\s\S]{0,90}\.eq\("org_id",me\.org_id\)/);
   assert.match(source, /from\("reports"\)[\s\S]{0,155}\.eq\("org_id",me\.org_id\)/);
 });
+
+test("Executive scenic hero reuses the local approved CEAC asset and keeps clean mobile composition", () => {
+  const css = readFileSync("src/experience-v2/executive-overview/executive-overview.css", "utf8");
+  const svg = readFileSync("public/ceac-hero-landscape.svg", "utf8");
+  assert.match(css, /url\('\/ceac-hero-landscape\.svg'\)/);
+  assert.match(svg, /<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+  assert.match(css, /@media \(max-width: 720px\)\s*\{[\s\S]*?\.executivev2-hero\s*\{[^}]*background:\s*#fff;/);
+  assert.doesNotMatch(css, /\.executivev2-hero::before\s*\{\s*background:/);
+});
