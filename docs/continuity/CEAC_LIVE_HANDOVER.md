@@ -110,15 +110,20 @@
 - Codespaces runner config/scripts: .devcontainer/devcontainer.json, .devcontainer/launch-automatic-verification.sh, .devcontainer/ceac-private-runner.sh on PR44
 
 
-## H. Unified Work execution checkpoint — 11 October 2026 12:00 UTC
+## H. Unified Work execution checkpoint — 11 October 2026
 
-- New isolated draft PR: #50, branch `chatgpt/unified-release-candidate-20261011`.
-- Traceable integration commit: `7d7fbfd4f3bbead6e5ee33034574178f608f2d41`, with parents PR47 `41718e6`, PR48 `0bdb610`, and PR49 `83ff03d`. PR50 is mergeable but remains DRAFT / NO-GO.
-- Explicit overlap resolution: combined `package.json` retains PR47 product tests and PR48 security/recovery tests; migration inventory assertion now expects 135 unique source migrations (119 live history + 11 earlier pending + 5 PR48 forward migrations).
-- Real Work shell: Node 22.12.0 selected; `npm ci` exit 0; PR47 source suite 140/140 exit 0; combined source suite 159/159 exit 0; combined Vite production build exit 0.
-- Source provenance: authenticated GitHub recursive tree/blob reads; 519 non-document/non-binary PR47 files verified against exact Git blob SHAs with zero mismatches.
-- Build warning: unresolved `docs/visual-fidelity/references/CEAC_original_premium_mockup_reference.jpg` path was left for runtime by Vite; this is not accepted visual parity.
-- Vercel: PR50 automatic deployment was IGNORED, preserving the rate-limited free preview allowance; no manual preview or production deploy.
+- Isolated draft PR: #50, branch `chatgpt/unified-release-candidate-20261011`. Production branches and services remain unchanged.
+- Traceable integration commit: `7d7fbfd4f3bbead6e5ee33034574178f608f2d41`, with parents PR47 `41718e6`, PR48 `0bdb610`, and PR49 `83ff03d`. Later documentation-only commits advance the PR head; always refresh the exact head before testing. PR50 remains DRAFT / NO-GO.
+- Explicit overlap resolution: combined `package.json` retains PR47 product tests and PR48 security/recovery tests; migration inventory assertion expects 135 unique source migrations (119 live history + 11 earlier pending + 5 PR48 forward migrations).
+- Real Work shell, Node 22.12.0: `npm ci` exit 0; PR47 source suite 140/140 exit 0; combined source suite 159/159 exit 0; combined Vite production build exit 0.
+- Source provenance: authenticated GitHub recursive tree/blob reads; 519 non-document/non-binary PR47 files verified against exact Git blob SHAs with zero mismatches. Binary visual reference and PWA icons were subsequently fetched and individually Git-blob verified.
+- The earlier Vite warning for `docs/visual-fidelity/references/CEAC_original_premium_mockup_reference.jpg` was a temporary reconstruction omission, not a repository defect. With the exact tracked asset present, the combined build again exited 0 and emitted no missing-reference warning. This does not constitute visual parity acceptance.
+- Playwright Chromium 1.56.1 installed successfully. Direct local-browser smoke against Vite passed at desktop 1440x900 and mobile 390x844: HTTP 200, CEAC OS title, expected email/password fields, and zero horizontal overflow; command exit 0.
+- Resilience Playwright: manifest/installability, service-worker/no-business-data caching, and offline-shell cases passed (3 tests). The later recovery/security cases were NOT accepted because the authenticated GitHub blob reconstruction is not a Git checkout and `git rev-parse HEAD` fails. Do not report the suite as passed.
+- Authenticated role Playwright is NOT RUN: the current Work shell has no approved isolated Supabase URL/service-role fixture credentials. No production credentials were requested or exposed.
 - Runtime limit: this Work shell has neither Docker nor psql and cannot acquire sudo; full isolated PostgreSQL/Supabase migration replay is NOT RUN here.
+- Read-only production refresh: Supabase reports 119 applied migrations. Security advisor reports 12 RLS-enabled/no-policy tables (principally deliberately inaccessible `hr_private` and counter tables, subject to review) and 132 authenticated-callable SECURITY DEFINER functions. These are linter findings, not proof of safe or unsafe authority; every intended browser RPC requires explicit role/tenant/AAL tests.
+- Static review of forward migrations 127–131 confirms bounded search paths, same-organisation checks for report/unit/project/evidence references, browser evidence-write revocation, and a report-row tenant trigger. This remains SOURCE-ONLY until ordered isolated replay and adversarial SQL tests pass.
+- Vercel: PR50 automatic deployment was IGNORED, preserving the rate-limited free preview allowance; no manual preview or production deploy.
 - Production: `main`, frozen PR44, Supabase production and Vercel production unchanged.
-- Next safe actions: inspect the missing visual-reference path; complete source/security review on PR50; obtain a genuine Docker/PostgreSQL-capable private executor for 135-version replay and rollback-only SQL gates; then authenticated Playwright, backup/restore, real MFA/AAL2 and owner visual acceptance. Do not merge or deploy before all mandatory gates and explicit owner GO.
+- Next safe actions: obtain a genuine Docker/PostgreSQL-capable private executor for 135-version replay and rollback-only SQL gates; then run authenticated multi-role Playwright, encrypted backup/isolated restore, real MFA/AAL2 and owner literal visual acceptance. Do not merge or deploy before all mandatory gates and explicit owner GO.
