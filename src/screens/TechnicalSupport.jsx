@@ -20,7 +20,7 @@ function SupportRows({ cases, onSelect, empty = "Nothing requires action here." 
   </div>;
 }
 
-function CaseDetails({ item, onClose, onUpdate, busy, error }) {
+function CaseDetails({ item, onClose, onUpdate, onClaim, myId, busy, error }) {
   const [nextState, setNextState] = useState(item.state);
   const [resolution, setResolution] = useState(item.resolution_summary || "");
   const [history, setHistory] = useState([]);
@@ -57,7 +57,10 @@ function CaseDetails({ item, onClose, onUpdate, busy, error }) {
       <div><dt>Service</dt><dd>{item.affected_service || "Not specified"}</dd></div>
       <div><dt>Impact</dt><dd>{item.impact || "Unspecified"}</dd></div>
       <div><dt>Current status</dt><dd>{String(item.state).replaceAll("_", " ")}</dd></div>
+      <div><dt>Assignment</dt><dd>{item.assigned_to === myId ? "Assigned to you" : item.assigned_to ? "Assigned to another support member" : "Unassigned"}</dd></div>
     </dl>
+    {!item.assigned_to && <button type="button" className="btn btn-ghost" disabled={busy}
+      onClick={() => onClaim(item.id)}>{busy ? "Recording..." : "Take this case"}</button>}
     <h3>What happened</h3>
     <p className="ceac-support-description">{item.description}</p>
     <h3>Record next action</h3>
@@ -183,6 +186,28 @@ export default function TechnicalSupport({ me, go }) {
     }
   }
 
+  async function claimCase(id) {
+    if (!canManage || !membership || busy) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      // Do not silently seize an already assigned case. RLS/membership and
+      // the backend assignment guard independently authorise this transition.
+      const { data, error: failure } = await supabase.from("support_cases")
+        .update({ assigned_to: me.id }).eq("id", id).eq("org_id", me.org_id)
+        .is("assigned_to", null)
+        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary")
+        .maybeSingle();
+      if (failure) throw failure;
+      if (!data) throw new Error("This case is no longer unassigned. Refresh the Help Desk before taking it.");
+      setCases((items) => items.map((item) => item.id === id ? data : item));
+    } catch (failure) {
+      setActionError(humanError(failure, "The case was not assigned to you."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function updateCase(id, state, note) {
     if (!canManage || !membership || busy) return;
     if ((state === "resolved" || state === "closed") && note.trim().length < 10) {
@@ -231,6 +256,7 @@ export default function TechnicalSupport({ me, go }) {
       </nav>
 
       {selected ? <CaseDetails key={selected.id} item={selected} busy={busy} error={actionError}
+        myId={me.id} onClaim={claimCase}
         onClose={() => { setSelectedId(null); setActionError(null); }} onUpdate={updateCase} /> : <>
         {workspace === "home" && <div className="ceac-support-layout">
           <section className="ceac-support-main">
