@@ -394,20 +394,23 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 
-  async function refreshEmployeeFiles(employeeId) {
+  async function refreshEmployeeFiles(employeeId, generation) {
     const [photos, documents] = await Promise.all([
       listOperationalFiles("employee_photo", employeeId),
       listOperationalFiles("employee_document", employeeId),
     ]);
+    if (generation !== personGeneration.current) return;
     const latest = photos[0] || null;
     const photoUrl = latest ? await signedOperationalFileUrl(latest, 3600) : null;
+    if (generation !== personGeneration.current) return;
     setEmployeeFiles({ photos, documents });
     setRows((current) => current.map((entry) => entry.id === employeeId ? { ...entry, photo_url: photoUrl } : entry));
     setPerson((current) => current?.id === employeeId ? { ...current, photo_url: photoUrl } : current);
   }
 
   async function uploadEmployeeFile(file, kind) {
-    if (!person?.id || !file) return;
+    if (!person?.id || !file || employeeFileBusy) return;
+    const generation = personGeneration.current;
     setEmployeeFileBusy(true);
     setError(null);
     try {
@@ -417,7 +420,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         contextId: person.id,
         relation: kind === "photo" ? "employee_photo" : "employee_document",
       });
-      await refreshEmployeeFiles(person.id);
+      await refreshEmployeeFiles(person.id, generation);
     } catch (fileError) {
       setError(humanError(fileError, kind === "photo"
         ? "The employee photo could not be saved."
