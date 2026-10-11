@@ -155,21 +155,21 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       supabase.from("leave_settings").select("annual_days,sick_days,max_carryover,updated_by,updated_at").eq("org_id", me.org_id).maybeSingle(),
       supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("name"),
     ]);
-    if (generation !== rosterGeneration.current) return;
+    if (generation !== rosterGeneration.current) return false;
     if (rosterResult.error || peopleResult.error) {
       setError(humanError(rosterResult.error || peopleResult.error, "The People record could not load."));
       setLoading(false);
-      return;
+      return false;
     }
     if (leaveResult.error) {
       setError(humanError(leaveResult.error, "Leave policy status could not load."));
       setLoading(false);
-      return;
+      return false;
     }
     if (unitsResult.error) {
       setError(humanError(unitsResult.error, "Organisation units could not load."));
       setLoading(false);
-      return;
+      return false;
     }
     const operationalByProfile = new Map((Array.isArray(peopleResult.data) ? peopleResult.data : []).map((entry) => [entry.id, entry]));
     const rosterRows = (Array.isArray(rosterResult.data) ? rosterResult.data : []).map((employee) => {
@@ -236,16 +236,18 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     } catch {
       hydratedRows = rosterRows;
     }
-    if (generation !== rosterGeneration.current) return;
+    if (generation !== rosterGeneration.current) return false;
     setRows(hydratedRows);
     setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
     setUnits(unitsResult.data || []);
     setLoading(false);
+    return true;
     } catch (failure) {
       if (generation === rosterGeneration.current) {
         setError(humanError(failure, "People records could not be verified. Retry before making changes."));
         setLoading(false);
       }
+      return false;
     }
   }
 
@@ -1251,7 +1253,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       initialProfileId={accessFocusProfileId}
       initialUnitId={accessFocusUnitId}
       initialMode={accessFocusMode}
-      onChanged={() => load({ silent: true })}
+      onChanged={async () => { if (!(await load({ silent: true }))) throw new Error("People records could not be refreshed."); }}
       onLifecycle={(profileId, type) => openLifecycle?.(profileId, type)}
       onOpenPerson={(profileId) => {
         const match = rows.find((entry) => entry.profile_id === profileId);
