@@ -26,6 +26,7 @@ function CaseDetails({ item, onClose, onUpdate, onClaim, onRelease, myId, busy, 
   const [history, setHistory] = useState([]);
   const [historyError, setHistoryError] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const requiresBusinessApproval = item.category === "access_needed";
   useEffect(() => {
     setNextState(item.state);
     setResolution(item.resolution_summary || "");
@@ -76,10 +77,11 @@ function CaseDetails({ item, onClose, onUpdate, onClaim, onRelease, myId, busy, 
           <option value="open">Open</option>
           <option value="in_progress">In progress</option>
           <option value="waiting_approval">Waiting for business approval</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Closed</option>
+          <option value="resolved" disabled={requiresBusinessApproval}>Resolved</option>
+          <option value="closed" disabled={requiresBusinessApproval}>Closed</option>
         </select>
       </label>
+      {requiresBusinessApproval && <p className="ceac-support-unverified" role="status">Access requests cannot be marked resolved or closed here. The business approval and technical execution records are not integrated with this service; escalate to People Administration.</p>}
       <label>Action or resolution note
         <textarea rows={3} value={resolution} onChange={(event) => setResolution(event.target.value)}
           maxLength={2000} placeholder="Record factual work completed. Do not include credentials or protected records." />
@@ -252,6 +254,15 @@ export default function TechnicalSupport({ me, go }) {
   async function updateCase(id, state, note, expectedUpdatedAt) {
     if (!canManage || !membership || busy) return;
     const generation = readGeneration.current;
+    const currentCase = cases.find((item) => item.id === id);
+    if (!currentCase) {
+      setActionError("The selected case is no longer in the verified Help Desk queue. Refresh before saving.");
+      return;
+    }
+    if (currentCase.category === "access_needed" && (state === "resolved" || state === "closed")) {
+      setActionError("An access request cannot be marked fulfilled here without the approved business-authority evidence and verified execution path.");
+      return;
+    }
     if (!expectedUpdatedAt) {
       setActionError("The case revision cannot be verified. Refresh the Help Desk before saving.");
       return;
