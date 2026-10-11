@@ -79,3 +79,25 @@ Application HEAD before preview checkpoint: `50b2af38bd108a2cfe4b497574deca685c1
 - Application head for this checkpoint: `fa4494ee17241b57799918b6fe3c3dc9e398d383`. A new preview will verify source and Vite compilation at the latest head.
 
 **Still not deployed:** proposed Technical Support database tables, transition RPCs, protected-file evidence, provider-backed health, human approvals and exact owner visual parity. The unrelated release team must independently validate/approve these before production.
+
+
+## Continued product work — Administration team placement accuracy
+
+Application HEAD immediately before this checkpoint: `84299552924dcf70ddda6be8870b7e3444fa8635`.
+
+- People & Access now retrieves actual current team-placement records through `sub_team_members`; the existing Supabase catalog verified the table contains `sub_team_id` and `profile_id`, and its current SELECT policy scopes through visible `sub_teams`.
+- The current team placements are shown for the selected person, with the related unit context, and no missing association is invented.
+- Selecting a person with one existing active unit membership preselects that known unit; someone with multiple memberships must still explicitly choose the relevant unit.
+- `Add to team` is unavailable for a selected lane already joined; `Remove from team` is unavailable for a lane not joined. The existing audited `admin_set_work_lane_membership` RPC remains authoritative for both actions. No direct browser modification to `sub_team_members` was introduced.
+
+## Executed verification and external limits
+
+- Fresh isolated Node 22.16.0 execution of **nine exact-blob pure unit tests**: **9 passed, 0 failed**. Actual local Git blob hashes match the four relevant GitHub source/test files:
+  - `src/lib/adminTodaySummary.js`: `5c85c8fb6967eca394f7c32669a7cd43b0b8eec1`;
+  - `tests/admin-today-summary.test.mjs`: `9b1870eb54eca7e5ca401e9d5e4435780ea1eeb3`;
+  - `src/lib/technicalSupport.js`: `e9d2e37784dafb58ce938fadfa885871d3eec77d`;
+  - `tests/technical-support-v1.test.mjs`: `cba5fb632ba2d8d9bb963f93064c36bf5ca880b7`.
+- Earlier existing Vercel source/build preview `dpl_Cicqz7Nh9JVjPyAULeUQ7c9miSox` at `694fb51c...` was READY; that is **not** build evidence for later changes.
+- Later Vercel check for `8678f4fd...` returned **build-rate-limit** failure, not a source test failure. No paid upgrade, duplicate preview retries or substituted production project were attempted.
+- Current Support case claim and People & Access team membership changes have **not** received exact-head full npm/build/Playwright acceptance. Do not call them production-ready. Historical source and role tests cannot substitute for final-head acceptance.
+- The release gate remains **NO-GO**; production main, preview release PR #44, live Supabase schema/Auth and Vercel production aliases untouched.
