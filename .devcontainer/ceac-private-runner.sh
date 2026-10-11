@@ -9,7 +9,7 @@ summary=/tmp/ceac-private-autorun-summary.md
 status=/tmp/ceac-private-autorun-exit-code
 started=/tmp/ceac-private-autorun-worker-started
 printf 'Codespaces CEAC runner started %s\n' "$(date -u +%FT%TZ)" > "$started"
-printf 'Private CEAC PR #27 exact-head verification started %s\n' "$(date -u +%FT%TZ)" > "$log"
+printf 'Private CEAC PR #44 exact-head verification started %s\n' "$(date -u +%FT%TZ)" > "$log"
 rc=2
 # Wait for postCreateCommand to complete, not for a global or production DB.
 for attempt in $(seq 1 90); do
@@ -24,15 +24,24 @@ done
 if ! command -v supabase >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
   echo 'NOT VERIFIED: local Docker/Supabase setup did not become ready.' >> "$log"
 else
-  bash scripts/ci/run-independent-release-gate.sh "$PWD" 27 \
-    386e59086fa79e1d27b28c42677d2252877cf0e0 \
-    827fbe7391467dd13d6e411527416402a252993c >> "$log" 2>&1
-  rc=$?
+  # Every new Codespace verifies the live release PR44 HEAD; the independent
+  # gate rechecks the remote before worktree creation and rejects SHA drift.
+  expected_pr="$(git ls-remote origin refs/pull/44/head | awk '{print $1}')"
+  expected_main="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+  if [[ "$expected_pr" =~ ^[0-9a-f]{40}$ && "$expected_main" =~ ^[0-9a-f]{40}$ ]]; then
+    printf 'PR44_TEST_SHA=%s MAIN_SHA=%s\n' "$expected_pr" "$expected_main" >> "$log"
+    bash scripts/ci/run-independent-release-gate.sh "$PWD" 44 \
+      "$expected_pr" "$expected_main" >> "$log" 2>&1
+    rc=$?
+  else
+    echo "NOT VERIFIED: could not resolve private PR44 and main refs" >> "$log"
+    rc=2
+  fi
 fi
 evidence="$(grep '^PRIVATE EVIDENCE DIRECTORY: ' "$log" | tail -1 | sed 's/^PRIVATE EVIDENCE DIRECTORY: //' || true)"
 {
   printf '### Independent private CEAC Codespaces verification — not release acceptance\n\n'
-  printf 'Target candidate: \`386e59086fa79e1d27b28c42677d2252877cf0e0\`, expected main: \`827fbe7391467dd13d6e411527416402a252993c\`.\n\n'
+  printf 'Target PR: #44; tested candidate SHA: %s; expected main SHA: %s.\n\n' "${expected_pr:-UNRESOLVED}" "${expected_main:-UNRESOLVED}"
   printf 'Technical runner exit code: **%s**. No merge, Level C, second review, or production authorization is implied.\n\n' "$rc"
   if [[ -n "$evidence" && -d "$evidence" ]]; then
     for result in "$evidence"/*.status; do
@@ -54,7 +63,7 @@ echo "$rc" > "$status"
 echo "CEAC_AUTORUN_FINISHED exit=$rc at $(date -u +%FT%TZ)" >> "$log"
 # Best effort: never print credentials or upload raw logs.
 if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
-  gh pr comment 29 --repo ceairportcity/ceac-os --body-file "$summary" >> "$log" 2>&1 ||
+  gh pr comment 44 --repo ceairportcity/ceac-os --body-file "$summary" >> "$log" 2>&1 ||
     echo 'PR comment permission unavailable; summary preserved in Codespace.' >> "$log"
 else
   echo 'GitHub PR comment permission unavailable; summary preserved in Codespace.' >> "$log"
