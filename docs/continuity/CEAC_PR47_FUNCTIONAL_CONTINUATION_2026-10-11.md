@@ -96,3 +96,15 @@
 - Direct read scopes unchanged: Administration **24/24** and Workforce **12/12** queries use `org_id=me.org_id`. Production database status has only been inspected read-only.
 - PR #47 remains draft and review-only. The secure Technical Support backend is not yet deployed; real authenticated Staff, Manager, Executive, Admin and Volunteer workflows, protected-HR authority, MFA, invitation email delivery, production RLS, full application build, responsive screenshot parity, migration replay and backup restore still require independent execution and acceptance.
 - No TinyFish, CI replacement, Vercel rerun/production build, Supabase write or GitHub main/PR #44 modification occurred.
+
+
+## In-app access acceptance and isolated compensation tests
+
+**Verified PR #47 product HEAD before this documentation commit:** `1514edb87107c88c5e41aa3b2a26f510b8d75809`.
+
+- Inspected production `admin_record_unit_responsibility` and `admin_set_work_lane_membership` definitions with read-only catalogue SQL. The first atomically removes same-unit team placements when a responsibility is ended, including assignments to inactive sub-teams; the second checks that a new lane belongs to an active unit and that the person already has an active unit role. No production function was edited.
+- Corrected an initially overrestrictive People & Access form assumption: unit responsibilities need not be manually stripped of each team assignment first, because the production function handles the dependent rows. The form now opens an accessible in-app review dialog that explicitly confirms ending all affected team placements and captures the immutable selected profile, exact membership and entered audit reason. A native `window.confirm` was replaced without changing server authority.
+- Extracted safe salary formatting and conversion from the protected-HR employee panel into `src/lib/protectedCompensation.js`; the UI uses this helper. `tests/protected-compensation.test.mjs` verifies GHS minor-unit arithmetic, malformed and overflowing inputs, rounding and unverifiable currency metadata.
+- **Actually executed local Node suite:** `node --test tests/*.test.mjs` on seven isolated test files against their exact Git blob source: **32 tests passed, 0 failed, 0 skipped**. The two new verified source/test blobs are `1cb296cb96e6ef3907faea7f78e919146012fbe5` and `c91b314f02315f7fab9317d96e7938dc2f6ccd60`.
+- **Independently evaluated live-GitHub source contract:** **180/180** product assertions and **59/59** Admin premium source assertions passed. This is neither a full `npm run verify:source` execution nor an executable JSX build. Protected-HR backend RLS, email delivery, MFA, authenticated visual tests, secure Support backend, migration/backup and release acceptance are still pending.
+- PR #47 stays **DRAFT / NO-GO**. PR #44, production main, Supabase production and Vercel production are unchanged. No TinyFish or rate-limited preview use.
