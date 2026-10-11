@@ -147,10 +147,13 @@ BEGIN
      AND approved_by='31000000-0000-4000-8000-000000000002'
      AND decided_at IS NOT NULL
  ) THEN RAISE EXCEPTION 'Actual Unit Manager approval was not recorded.'; END IF;
- UPDATE public.support_access_requests
-   SET state='declined',decision_reason='Duplicate decision after approval is invalid.'
- WHERE id='62000000-0000-4000-8000-000000000091' AND version=2;
- IF FOUND THEN RAISE EXCEPTION 'Second conflicting business decision succeeded.'; END IF;
+ BEGIN
+   UPDATE public.support_access_requests
+     SET state='declined',decision_reason='Duplicate decision after approval is invalid.'
+   WHERE id='62000000-0000-4000-8000-000000000091' AND version=2;
+   IF FOUND THEN RAISE EXCEPTION 'Second conflicting business decision succeeded.'; END IF;
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
 END
 $approved$;
 
