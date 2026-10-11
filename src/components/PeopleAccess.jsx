@@ -26,6 +26,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const [notice, setNotice] = useState(null);
   const [error, setError] = useState(null);
   const [revokeTarget, setRevokeTarget] = useState(null);
+  const [endMembershipTarget, setEndMembershipTarget] = useState(null);
   const [revokeReason, setRevokeReason] = useState("");
   const loadGeneration = useRef(0);
   const identityGeneration = useRef(0);
@@ -45,6 +46,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     setError(null);
     setNotice(null);
     setRevokeTarget(null);
+    setEndMembershipTarget(null);
     setRevokeReason("");
     setForm({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
     if (canManage) void load();
@@ -147,9 +149,9 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     }
   }
 
-  async function saveResponsibility(operation = "add", membership = null) {
+  async function saveResponsibility(operation = "add", membership = null, profileId = form.person) {
     const { error: failure } = await supabase.rpc("admin_record_unit_responsibility", {
-      p_profile_id: form.person,
+      p_profile_id: profileId,
       p_unit_id: membership?.unit_id || form.unit,
       p_role: membership?.role || form.role,
       p_action: operation,
