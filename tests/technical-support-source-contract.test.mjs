@@ -194,3 +194,9 @@ test("an assigned case may be returned only by its current holder", () => {
   assert.match(supportPanel, /\.not\("state", "in", "\(resolved,closed\)"\)/);
   assert.match(supportPanel, /onRelease=\{releaseCase\}/);
 });
+
+test("needs-you queue excludes colleagues' assigned work", () => {
+  assert.match(supportPanel, /supportCasesNeedingMe\(cases, me\.id\)/);
+  assert.match(supportPanel, /<SupportRows cases=\{needsYou\}/);
+  assert.doesNotMatch(supportPanel, /<SupportRows cases=\{groups\.attention\}/);
+});
