@@ -210,7 +210,18 @@ for shard in 1 2 3 4; do
   gate "browser_$shard" browser_shard "$shard" || true
 done
 # Do not distribute private logs unless reviewed for sensitive values.
-if grep -lE '^(FAIL|NOT_VERIFIED)$' "$evidence"/*.status >/dev/null; then
+# The PR and main can advance during a long 130-migration / four-shard run.
+# A green test result from a now-stale SHA cannot certify the live release.
+live_pr_final="$(git -C "$repo" ls-remote origin "refs/pull/$pr/head" | cut -f1)"
+live_main_final="$(git -C "$repo" ls-remote origin refs/heads/main | cut -f1)"
+if [[ "$live_pr_final" != "$expected" || "$live_main_final" != "$expected_main" ]]; then
+  echo "STALE: PR44/main changed during verification; exact-head rerun required." >&2
+  printf 'STALE\n' > "$evidence/exact_head_freshness.status"
+  exit 3
+fi
+printf 'PASS\n' > "$evidence/exact_head_freshness.status"
+if grep -lE '^(FAIL|NOT_VERIFIED|STALE)
+ "$evidence"/*.status >/dev/null; then
   echo 'RELEASE NOT VERIFIED: inspect private evidence and obtain separate visual/real-user review.' >&2
   exit 1
 fi
