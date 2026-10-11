@@ -41,6 +41,13 @@ test("case records and immutable audit history are deny-by-default", () => {
   assert.match(backend, /AFTER INSERT ON public\.support_cases/);
   assert.match(backend, /BEFORE UPDATE ON public\.support_cases/);
   assert.match(proposedGate, /support_case_events_immutable/);
+  // PostgreSQL pg_trigger.tgtype: BEFORE=2, DELETE=8, UPDATE=16.
+  // INSERT=4 must not be mistaken for DELETE when proving immutability.
+  assert.match(proposedGate, /\(t\.tgtype & 2\)<>0/);
+  assert.match(proposedGate, /\(t\.tgtype & 8\)<>0/);
+  assert.match(proposedGate, /\(t\.tgtype & 16\)<>0/);
+  assert.doesNotMatch(proposedGate, /AND \(t\.tgtype & 4\)<>0/);
+
   const auditPolicy = backend.split("CREATE POLICY support_case_events_visible")[1]
     ?.split("CREATE OR REPLACE FUNCTION public.support_case_insert_guard")[0] || "";
   assert.ok(auditPolicy.includes("support.case.manage"));
