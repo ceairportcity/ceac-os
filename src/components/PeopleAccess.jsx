@@ -360,6 +360,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
               <div className="phase5-access-memberships">
                 {selectedMemberships.map((membership) => {
                   const unit = snapshot.units.find((entry) => entry.id === membership.unit_id);
+                  const stillInUnitTeam = selectedLaneMemberships.some((entry) =>
+                    snapshot.lanes.some((lane) => lane.id === entry.sub_team_id && lane.unit_id === membership.unit_id));
                   return <div className="phase5-access-membership" key={membership.id}>
                     <div>
                       <strong>{unit?.name || "Unit"}</strong>
@@ -368,9 +370,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                     <Button
                       variant="quiet"
                       size="compact"
-                      disabled={busy || !form.reason.trim()}
+                      disabled={busy || stillInUnitTeam || !form.reason.trim()}
                       onClick={() => action(() => saveResponsibility("remove", membership), "Membership ended with its audit history preserved.")}
                     >End membership</Button>
+                    {stillInUnitTeam && <span className="screen-note" role="status">Remove this person's recorded team placements in this unit before ending its responsibility.</span>}
                   </div>;
                 })}
                 {!selectedMemberships.length ? <div className="phase5-access-empty">No active unit responsibility is returned for this person.</div> : null}
