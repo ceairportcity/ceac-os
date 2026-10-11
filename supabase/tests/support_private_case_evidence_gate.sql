@@ -94,6 +94,18 @@ BEGIN
    SELECT 1 FROM public.operational_files
    WHERE id=v_file AND storage_bucket<>'ceac-operational-private'
  ) THEN RAISE EXCEPTION 'Support evidence was stored in wrong bucket.'; END IF;
+ IF (SELECT count(*) FROM public.support_case_events
+     WHERE case_id='61000000-0000-4000-8000-000000000093'
+       AND action='evidence_registered')<>1
+    OR NOT EXISTS(
+      SELECT 1 FROM public.support_case_events
+      WHERE case_id='61000000-0000-4000-8000-000000000093'
+        AND action='evidence_registered'
+        AND actor_id='31000000-0000-4000-8000-000000000003'
+        AND note LIKE '%upload not yet verified%'
+    ) THEN
+     RAISE EXCEPTION 'Immutable Support evidence registration history was not recorded truthfully.';
+ END IF;
  BEGIN
    PERFORM public.register_operational_file(
      'support_case','61000000-0000-4000-8000-000000000093',
