@@ -40,6 +40,36 @@ CREATE UNIQUE INDEX IF NOT EXISTS support_team_one_active_membership
   ON public.support_team_memberships(profile_id) WHERE active;
 CREATE INDEX IF NOT EXISTS support_team_org_membership
   ON public.support_team_memberships(org_id,profile_id,active);
+-- Enforce organisational scope independently of browser privileges; never
+-- treat the Media & Technical association as a unit-membership grant.
+CREATE OR REPLACE FUNCTION public.support_membership_scope_guard()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path=public AS $
+BEGIN
+  IF NOT EXISTS(SELECT 1 FROM public.profiles p
+      WHERE p.id=NEW.profile_id AND p.org_id=NEW.org_id AND p.active)
+     OR NOT EXISTS(SELECT 1 FROM public.profiles p
+      WHERE p.id=NEW.added_by AND p.org_id=NEW.org_id)
+     OR (NEW.ended_by IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.profiles p
+      WHERE p.id=NEW.ended_by AND p.org_id=NEW.org_id))
+     OR (NEW.associated_unit_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.units u
+      WHERE u.id=NEW.associated_unit_id AND u.org_id=NEW.org_id))
+  THEN RAISE EXCEPTION 'Support membership organisation does not match verified CEAC identity.' USING ERRCODE='42501'; END IF;
+  IF TG_OP='UPDATE' AND (NEW.org_id IS DISTINCT FROM OLD.org_id
+     OR NEW.profile_id IS DISTINCT FROM OLD.profile_id
+     OR NEW.added_by IS DISTINCT FROM OLD.added_by
+     OR NEW.started_at IS DISTINCT FROM OLD.started_at) THEN
+    RAISE EXCEPTION 'Historical membership ownership is immutable.' USING ERRCODE='42501';
+  END IF;
+  NEW.updated_at:=now();
+  RETURN NEW;
+END
+$;
+REVOKE ALL ON FUNCTION public.support_membership_scope_guard() FROM PUBLIC,anon,authenticated;
+DROP TRIGGER IF EXISTS support_membership_scope_guard ON public.support_team_memberships;
+CREATE TRIGGER support_membership_scope_guard
+BEFORE INSERT OR UPDATE ON public.support_team_memberships
+FOR EACH ROW EXECUTE FUNCTION public.support_membership_scope_guard();
 ALTER TABLE public.support_team_memberships ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.support_team_memberships FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.support_team_memberships TO authenticated;
@@ -208,7 +238,8 @@ BEGIN
   END IF;
   IF NEW.resolution_summary IS DISTINCT FROM OLD.resolution_summary THEN
     INSERT INTO public.support_case_events(org_id,case_id,actor_id,action,note)
-      VALUES(NEW.org_id,NEW.id,v_actor,'resolution_updated','Resolution note changed');
+      VALUES(NEW.org_id,NEW.id,v_actor,'resolution_updated',
+        left(coalesce(NEW.resolution_summary,'Resolution note cleared'),2000));
   END IF;
   IF NEW.assigned_to IS DISTINCT FROM OLD.assigned_to THEN
     INSERT INTO public.support_case_events(org_id,case_id,actor_id,action,note)
