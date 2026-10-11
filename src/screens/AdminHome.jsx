@@ -72,7 +72,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
         must(supabase.from("unit_memberships").select("unit_id,profile_id,profiles(id,full_name,email)").eq("role","manager"), "Unit heads"),
         must(supabase.from("completed_outputs").select("unit_id").gte("completed_at", weekAgo), "Completed outputs"),
         must(supabase.from("alerts").select("for_unit_id").is("acknowledged_at",null).is("resolved_at",null).not("for_unit_id","is",null), "Unit alerts"),
-        must(supabase.from("pending_invitations").select("unit_id,email,full_name,invited_at,expires_at").is("resolved_at",null).gt("expires_at",new Date().toISOString()), "Pending invitations"),
+        must(supabase.from("pending_invitations").select("unit_id,email,full_name,invited_at,expires_at").is("resolved_at",null).is("revoked_at",null), "Unresolved invitations, including expired links"),
         must(supabase.from("alerts")
           .select("id,kind,subject_id,subject_type,message,first_seen_at,for_unit_id,for_profile_id")
           .is("acknowledged_at",null).is("resolved_at",null)
