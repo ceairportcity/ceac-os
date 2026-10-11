@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import "../role-styles/technical-support.css";
 
 // An inbox for existing business authorities, never for Technical Support.
 // SQL RLS and the state-machine trigger, not this component, decide who
