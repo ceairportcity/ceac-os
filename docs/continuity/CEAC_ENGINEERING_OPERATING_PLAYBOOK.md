@@ -121,3 +121,17 @@ Secure backup reminder: a default Supabase CLI db dump does NOT include managed 
 ### Reusable startup statement (for any new ChatGPT thread)
 
 "Continue CEAC OS on the CANONICAL private ceairportcity/ceac-os repository. First read AGENTS.md, docs/continuity/CEAC_ENGINEERING_OPERATING_PLAYBOOK.md and docs/continuity/CEAC_LIVE_HANDOVER.md from the newest reviewed operations PR (if not yet integrated), then current live PR47 product/PR48 security/PR44 frozen baseline and Issue46. Reconcile live SHAs and owner decisions. Own ONE isolated lane; use functioning connected GitHub/Supabase/Vercel tools, no TinyFish and no paid/public workaround. Execute safe work without arbitrary pauses; record working tools, actual tests, failures and updated handoff back into the repository before completion. Never modify production or count unexecuted gates as PASS." 
+
+
+## 8. Work native-shell exact-source reconstruction (verified 11 October 2026)
+
+When Work has a real shell but its GitHub OAuth connector cannot expose a clone credential, a private exact-source application runner can still be constructed without publishing the repository or disclosing a token:
+
+1. Use the authenticated GitHub connector to fetch the target commit's recursive Git tree and each required UTF-8 blob by exact blob SHA.
+2. Materialise those blobs into an isolated Work directory; preserve byte endings and verify every file with Git's blob hash formula (`git hash-object <path>`) against the authenticated tree. Do not claim exact source until mismatch count is zero.
+3. Run the repository's pinned Node version. On 11 October 2026 the Work shell had Node 24 by default, so `npx -y -p node@22.12.0 -c '...'` provided the repository-required Node 22.12 runtime.
+4. Execute `npm ci`, the registered source suite and production build, recording actual exit codes and test totals. Missing documentation files referenced by tests must be fetched and hash-verified too; do not delete those assertions.
+5. For an integration candidate, reconcile overlapping files explicitly. PR47 and PR48 both modified `package.json`; the correct combined form retains every product test and every security/recovery test. The five PR48 migrations increase the combined source inventory from 130 to 135, so the frozen 130-file assertion must advance only on the unified branch.
+6. This route proves source and build execution only. It does not provide Docker/PostgreSQL, authenticated browser users, production backup/restore, or real MFA. The observed Work shell had no Docker or psql and no usable sudo, so those gates remain separate.
+
+Verified example: unified PR #50 initial integration commit `7d7fbfd4f3bbead6e5ee33034574178f608f2d41`; zero mismatches across 519 non-document/non-binary PR47 blobs, `npm ci` exit 0, PR47 140/140 source tests exit 0, combined 159/159 source tests exit 0, and production build exit 0. Vite reported one non-fatal unresolved visual-reference path; visual acceptance remains open.
