@@ -131,6 +131,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
         await load();
         if (!sameIdentity()) return true;
       }
+      // A successful server write paired with a failed refresh is not a
+      // fully confirmed screen state; do not show a green success notice
+      // alongside a partial-failure message.
+      setNotice(null);
       setError(recorded
         ? "The change was recorded, but the page could not refresh. Reload before repeating this action."
         : actionError?.message || "The operation could not be confirmed. Review current records before retrying.");
