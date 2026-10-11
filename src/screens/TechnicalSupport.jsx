@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import {
   canManageSupport, SUPPORT_WORKSPACES, SERVICE_NAMES, SUPPORT_GUIDES,
-  supportCategoryLabel, supportCaseGroups, filterSupportCases,
+  supportCategoryLabel, supportCaseGroups, filterSupportCases, supportCasesNeedingMe,
 } from "../lib/technicalSupport";
 import "../role-styles/technical-support.css";
 
@@ -150,6 +150,7 @@ export default function TechnicalSupport({ me, go }) {
   }, [me.id, me.org_id, canManage]);
 
   const groups = useMemo(() => supportCaseGroups(cases), [cases]);
+  const needsYou = useMemo(() => supportCasesNeedingMe(cases, me.id), [cases, me.id]);
   // These filters apply only to the latest RLS-authorised cases fetched above;
   // never suggest that an incomplete 150-record window is the full history.
   const deskCases = useMemo(
@@ -292,8 +293,8 @@ export default function TechnicalSupport({ me, go }) {
         {workspace === "home" && <div className="ceac-support-layout">
           <section className="ceac-support-main">
             <h2>Needs you</h2>
-            <p className="screen-note">Open and in-progress cases that need Technical Support action.</p>
-            <SupportRows cases={groups.attention} onSelect={setSelectedId} />
+            <p className="screen-note">Open cases awaiting triage or currently assigned to you. Other technicians’ assigned cases stay in Help Desk.</p>
+            <SupportRows cases={needsYou} onSelect={setSelectedId} />
           </section>
           <aside className="ceac-support-side">
             <h2>Waiting for approval</h2>
