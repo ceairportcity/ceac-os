@@ -134,7 +134,7 @@ function UnitRow({ unit, onInvite }) {
   const meta = unit.head
     ? `${unit.head.full_name} · ${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`
     : pending
-      ? `Invitation sent to ${unit.pending.email} · ${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`
+      ? `Account invitation pending for ${unit.pending.email} · ${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`
       : `${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`;
 
   return <div className="adminv2-unit-row">
