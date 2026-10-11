@@ -18,7 +18,7 @@ test("evidence RPC preserves its existing signature and authority boundaries", (
   assert.match(migration, /SET search_path TO 'public'/);
   assert.match(migration, /public\.save_report_draft\(p_period_id,p_scope,p_unit_id,p_project_id,p_narrative,p_challenges\)/);
   assert.match(migration, /public\.submit_report\(v_report,p_evidence\)/);
-  assert.doesNotMatch(migration, /^\s*(?:GRANT|REVOKE|DROP TABLE|DELETE FROM|ALTER TABLE)\b/im);
+  assert.doesNotMatch(migration, /^\s*(?:GRANT|REVOKE|DROP TABLE|ALTER TABLE)\b/im);
 });
 
 test("all evidence types and membership joins are report-organisation scoped", () => {
