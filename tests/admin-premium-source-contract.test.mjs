@@ -78,3 +78,11 @@ test("open work sessions never pretend to confirm live presence", () => {
   assert.match(overview, /supporting="Not verified live presence"/);
   assert.doesNotMatch(overview, /label="Working now"/);
 });
+
+test("no fabricated clear inbox state while loading or after a failed read", () => {
+  assert.match(overview, /Loading your recorded Administration priorities/);
+  assert.match(overview, /latest Administration priorities could not be verified/);
+  assert.match(overview, /Current meeting information could not be verified/);
+  assert.match(overview, /!loading && !loadFailed \? <div className="adminv2-agenda-foot"/);
+  assert.match(overview, /loading\s*\? "Loading your recorded/);
+});
