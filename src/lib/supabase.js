@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { authRedirect } from "./authRedirect";
-import { resolveCapabilityGrantRead } from "./capabilitySchemaCompatibility";
+import { readServerVerifiedLegacyGrants, resolveCapabilityGrantRead } from "./capabilitySchemaCompatibility";
 
 const fallbackSupabaseUrl = "https://efjljhftsesssumtshvp.supabase.co";
 const fallbackSupabasePublishableKey = "sb_publishable_CVq1sCY0Z4-o9Us4Y6RaUw_53FUHQj-";
@@ -48,8 +48,14 @@ export async function loadMe() {
     resolveCapabilityGrantRead({ data: capabilityGrants, error: capabilityError });
   if (resolvedCapabilityError) throw resolvedCapabilityError;
   if (leadError) throw leadError;
-  const activeCapabilityGrants = grants.filter(
-    (grant) => !grant.expires_at || Date.parse(grant.expires_at) > Date.now()
+  // Legacy production schema has no expiry field yet. Verify every
+  // existing grant through the CURRENT server RPC before making it visible.
+  // If any server check fails, this stays deny-all.
+  const legacyAuthority = capabilitySchemaReady
+    ? null : await readServerVerifiedLegacyGrants(supabase, auth.user.id, p.org_id);
+  const activeCapabilityGrants = (capabilitySchemaReady
+    ? grants.filter((grant) => !grant.expires_at || Date.parse(grant.expires_at) > Date.now())
+    : legacyAuthority.grants
   );
   const options = (memberships || []).map((m) => ({
     unit_id: m.unit_id,
@@ -68,6 +74,7 @@ export async function loadMe() {
     memberships: options,
     led_sub_team_ids: (ledSubTeams || []).map((subTeam) => subTeam.id),
     capabilitySchemaReady,
+    legacyAuthorityVerified: legacyAuthority?.verificationComplete ?? null,
     capability_grants: activeCapabilityGrants,
     capabilities: [...new Set(activeCapabilityGrants.map((grant) => grant.capability))] };
 }
