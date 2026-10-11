@@ -22,15 +22,22 @@ export default function TechnicalHelp({ me }) {
 
   useEffect(() => {
     let live = true;
+    setLoading(true);
+    setCases([]);
+    setLoadError(null);
     (async () => {
-      const { data, error: failure } = await supabase.from("support_cases")
-        .select("id,reference,category,summary,state,opened_at")
-        .eq("reported_by", me.id).eq("org_id", me.org_id)
-        .order("opened_at", { ascending: false }).limit(30);
-      if (!live) return;
-      setCases(failure ? [] : (data || []));
-      setLoadError(failure ? "The Help Desk is not connected to a verified support service yet. No existing requests can be displayed." : null);
-      setLoading(false);
+      try {
+        const { data, error: failure } = await supabase.from("support_cases")
+          .select("id,reference,category,summary,state,opened_at")
+          .eq("reported_by", me.id).eq("org_id", me.org_id)
+          .order("opened_at", { ascending: false }).limit(30);
+        if (failure) throw failure;
+        if (live) setCases(data || []);
+      } catch {
+        if (live) setLoadError("Your support requests cannot be loaded right now. This does not mean they have been deleted.");
+      } finally {
+        if (live) setLoading(false);
+      }
     })();
     return () => { live = false; };
   }, [me.id, me.org_id]);

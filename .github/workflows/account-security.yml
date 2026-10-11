@@ -98,6 +98,10 @@ jobs:
         if: steps.classify.outputs.run_account_security == 'true'
         run: node scripts/test-account-security.mjs
 
+      - name: Test real CEAC invitation RPC acceptance
+        if: steps.classify.outputs.run_account_security == 'true'
+        run: node scripts/test-real-invitation-rpc.mjs
+
       - name: Record unaffected account-security boundary
         if: steps.classify.outputs.run_account_security != 'true'
         run: echo "Account Security not required for this Level A or documentation-only change."

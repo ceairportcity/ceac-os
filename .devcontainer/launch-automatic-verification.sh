@@ -12,10 +12,23 @@ cd "$(git rev-parse --show-toplevel)"
 command -v flock >/dev/null || { echo "NOT VERIFIED: flock unavailable" >&2; exit 2; }
 exec 9>/tmp/ceac-private-autorun-launch.flock
 flock -w 10 9
+# A completion marker is valid only for the exact checked-out commit.
+# A Codespace can survive later PR commits: stale PASS or FAIL summaries may
+# not suppress a new exact-head run (nor count as acceptance).
+current_head="$(git rev-parse HEAD)"
+previous_head="$(cat /tmp/ceac-private-autorun-tested-head 2>/dev/null || true)"
+# PR44 can advance while an existing Codespace stays checked out at an old
+# commit. Its checkout SHA is NOT a valid cache key for release verification.
+live_pr_head="$(git ls-remote origin refs/pull/44/head 2>/dev/null | awk '{print $1}' || true)"
 if [[ -f /tmp/ceac-private-autorun-exit-code &&
-      -f /tmp/ceac-private-autorun-summary.md ]]; then
-  echo "CEAC verification has a recorded result; avoiding duplicate execution."
+      -f /tmp/ceac-private-autorun-summary.md &&
+      "$live_pr_head" =~ ^[0-9a-f]{40}$ &&
+      "$previous_head" == "$live_pr_head" ]]; then
+  echo "CEAC verification already attempted for exact live PR44 HEAD $live_pr_head."
   exit 0
+fi
+if [[ -f /tmp/ceac-private-autorun-exit-code ]]; then
+  echo "Existing CEAC verification is stale or the live PR cannot be confirmed; rerunning safely."
 fi
 pidfile=/tmp/ceac-private-autorun-worker.pid
 if [[ -s "$pidfile" ]]; then

@@ -52,25 +52,14 @@
   padding: 21px 24px 58px;
   border: 1px solid #e7e3f5;
   border-radius: 14px;
+  /* Use CEAC's locally hosted scenic art, already part of the approved
+     Administration premium visual language. Do not embed private mockups
+     as backgrounds or rely on third-party image hosts. */
   background:
-    radial-gradient(circle at 65% 34%, rgba(255,255,255,.9) 0 2%, rgba(255,255,255,0) 8%),
-    linear-gradient(115deg, rgba(244,224,241,.96), rgba(255,235,224,.92) 44%, rgba(220,224,249,.94));
+    linear-gradient(100deg, rgba(250,244,253,.96) 0%, rgba(248,242,253,.88) 38%, rgba(254,246,246,.5) 73%, rgba(255,246,229,.22) 100%),
+    url('/ceac-hero-landscape.svg') center 53% / cover no-repeat;
   box-shadow: 0 8px 28px rgba(57,44,91,.08);
 }
-.executivev2-hero::before,
-.executivev2-hero::after {
-  content: "";
-  position: absolute;
-  left: -5%;
-  right: -5%;
-  bottom: -28px;
-  height: 78px;
-  opacity: .28;
-  pointer-events: none;
-  clip-path: polygon(0 62%, 10% 48%, 20% 61%, 31% 41%, 43% 62%, 57% 38%, 70% 58%, 82% 34%, 100% 54%, 100% 100%, 0 100%);
-}
-.executivev2-hero::before { background: #8f86b9; }
-.executivev2-hero::after { bottom: -42px; height: 74px; background: #676d9a; opacity: .2; }
 .executivev2-hero-copy,
 .executivev2-hero time { position: relative; z-index: 1; }
 .executivev2-hero-copy h2 {

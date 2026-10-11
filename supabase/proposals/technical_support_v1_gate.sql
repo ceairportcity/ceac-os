@@ -47,6 +47,17 @@ BEGIN
     RAISE EXCEPTION 'Case visibility/management membership-capability gate is missing.';
   END IF;
 
+  -- Audit-event note content is restricted to the support team, even when
+  -- the reporting person is authorised to see the case's own state.
+  SELECT coalesce(string_agg(qual,' '),'') INTO v_qual
+  FROM pg_policies
+  WHERE schemaname='public' AND tablename='support_case_events' AND cmd='SELECT';
+  IF position('support.case.manage' IN v_qual)=0
+     OR position('support_team_memberships' IN v_qual)=0
+     OR position('app_org_id' IN v_qual)=0 THEN
+    RAISE EXCEPTION 'Internal support-case audit events are not support-only.';
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM public.capability_definitions WHERE capability='support.case.manage'
   ) OR NOT EXISTS (
@@ -69,8 +80,11 @@ BEGIN
     WHERE t.tgrelid='public.support_case_events'::regclass
       AND t.tgname='support_case_events_immutable'
       AND NOT t.tgisinternal
+      -- pg_trigger.tgtype bits: 2=BEFORE, 4=INSERT, 8=DELETE, 16=UPDATE.
+      -- The immutable audit guard must intercept BOTH UPDATE and DELETE.
       AND (t.tgtype & 2)<>0
-      AND (t.tgtype & 4)<>0
+      AND (t.tgtype & 8)<>0
+      AND (t.tgtype & 16)<>0
   ) THEN RAISE EXCEPTION 'Support audit event immutability trigger missing.'; END IF;
 
   IF NOT EXISTS (

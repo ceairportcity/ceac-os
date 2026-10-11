@@ -512,6 +512,11 @@ export default function App() {
           onGuide={() => openGuide(true)}
         />
         <main className="app-content ev2s-content">
+          {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
+            {me.legacyAuthorityVerified
+              ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."
+              : "Preview compatibility: the database upgrade is not installed and server permission verification was incomplete. Privileged capabilities are disabled here. Use production for normal work."}
+          </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
           {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} openRoom={openRoom} back={closeUrlOverlay} />

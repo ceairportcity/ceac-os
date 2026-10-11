@@ -13,6 +13,12 @@ tests=(
   employment_history_gate.sql
   platform_audit_gate.sql
   capability_authority_gate.sql
+  capability_delegation_expiry_gate.sql
+  security_jml_authority_gate.sql
+  security_joiner_authority_gate.sql
+  security_mover_authority_gate.sql
+  security_invitation_reopen_gate.sql
+  security_invitation_resend_scope_gate.sql
   event_framework_gate.sql
   workflow_engine_gate.sql
   policy_rules_gate.sql
