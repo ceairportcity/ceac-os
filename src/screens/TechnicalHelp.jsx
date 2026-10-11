@@ -111,7 +111,11 @@ export default function TechnicalHelp({ me }) {
         </form>
       </section>
       <aside className="ceac-support-side" aria-labelledby="support-my-requests">
-        <h2 id="support-my-requests">Your requests</h2>
+        <div className="ceac-support-section-head">
+          <h2 id="support-my-requests">Your requests</h2>
+          <button type="button" className="btn btn-ghost" disabled={loading}
+            onClick={() => setReloadCount((previous) => previous + 1)}>Refresh requests</button>
+        </div>
         {loading && <p role="status">Loading your requests...</p>}
         {loadError && <div className="ceac-support-error" role="alert">
           {loadError} <button type="button" className="btn btn-ghost"
