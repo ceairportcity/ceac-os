@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
@@ -24,8 +24,22 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const readGeneration = useRef(0);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // The administrator can change account or organisation while reads are in flight.
+    // Clear the old scoped records immediately; stale requests may not repopulate them.
+    readGeneration.current += 1;
+    setUnits([]); setAlerts([]); setBlockers([]); setLeaveQueue([]);
+    setChecks([]); setMine([]); setOffice(null);
+    setEmployeeRoster([]); setPendingInvitations([]); setPayrollReadiness(null);
+    setMeetings([]); setReporting(null); setWatch([]);
+    setToday({ working: 0, leave: 0, notStarted: 0, headcount: 0 });
+    setDelivery({ active: 0, closedThisMonth: 0, onTrack: 0, atRisk: 0, met: 0, notMet: 0, other: 0, objectives: 0 });
+    setMsg(null);
+    void load();
+    return () => { readGeneration.current += 1; };
+  }, [me.id, me.org_id]);
 
   async function must(query, label) {
     const result = await query;
@@ -34,6 +48,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   }
 
   async function load() {
+    const generation = ++readGeneration.current;
     setLoadError(null);
     setLoading(true);
     try {
@@ -92,6 +107,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
           .neq("status","cancelled").order("starts_at").limit(6), "Upcoming meetings"),
         must(supabase.rpc("admin_employee_roster_summary"), "Employee roster"),
       ]);
+      if (generation !== readGeneration.current) return;
 
       const headByUnit = {};
       (mgrs || []).forEach((row) => { if (row.profiles) headByUnit[row.unit_id] = row.profiles; });
@@ -119,7 +135,9 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setEmployeeRoster(Array.isArray(rosterRows) ? rosterRows : []);
       setPendingInvitations(pi || []);
       if (myCapabilities.has("payroll.prepare") || myCapabilities.has("payroll.approve")) {
-        setPayrollReadiness(await must(supabase.rpc("payroll_readiness_summary"), "Payroll readiness"));
+        const payroll = await must(supabase.rpc("payroll_readiness_summary"), "Payroll readiness");
+        if (generation !== readGeneration.current) return;
+        setPayrollReadiness(payroll);
       } else {
         setPayrollReadiness(null);
       }
@@ -150,6 +168,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
 
       if (period) {
         const submitted = await must(supabase.from("reports").select("unit_id").eq("period_id",period.id).in("status",["submitted","confirmed"]), "Submitted reports");
+        if (generation !== readGeneration.current) return;
         const inIds = new Set((submitted || []).map((row) => row.unit_id));
         setReporting({
           label: period.label,
@@ -183,11 +202,11 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       });
 
       (staff || []).forEach((person) => {
-        const days = new Set((sessWeek || []).filter((row) => row.profile_id === person.id).map((row) => new Date(row.started_at).toDateString())).size;
+        const days = new Set((sessWeek || []).filter((row) => row.profile_id === person.id).map((row) => new Date(row.started_at).toISOString().slice(0, 10))).size;
         if (days >= 3 && !lastSub[person.id]) rules.push({
           k: "p"+person.id,
           who: person.full_name,
-          why: "present on "+days+" days this week, nothing submitted",
+          why: "work sessions opened on "+days+" calendar days in the last week; no submission recorded in this window",
         });
       });
       (objs || []).filter((objective) => objective.status === "at_risk").forEach((objective) => rules.push({
@@ -196,9 +215,9 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setWatch(rules.slice(0,12));
       setMeetings(meetingRows || []);
     } catch (error) {
-      setLoadError(error.message || "Administration could not load.");
+      if (generation === readGeneration.current) setLoadError(error.message || "Administration could not load.");
     } finally {
-      setLoading(false);
+      if (generation === readGeneration.current) setLoading(false);
     }
   }
 
