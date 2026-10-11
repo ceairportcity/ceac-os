@@ -103,3 +103,17 @@ export function canRecordSupportOutcome(caseRecord, nextState, recordedAccess = 
     && recordedAccess.execution_reference?.trim()?.length >= 8
     && recordedAccess.case_id === caseRecord.id);
 }
+
+
+export function supportReportedServiceIssues(cases = [], services = SERVICE_NAMES) {
+  // Reporting facts are not telemetry. A self-reported incident must never
+  // make a service's unverified operational health read as Working or Down.
+  const known = Array.isArray(cases) ? cases : [];
+  return (Array.isArray(services) ? services : []).map((service) => ({
+    service,
+    reportCount: known.filter((item) => item
+      && item.affected_service === service
+      && item.state !== "resolved" && item.state !== "closed").length,
+    health: "Not verified",
+  }));
+}
