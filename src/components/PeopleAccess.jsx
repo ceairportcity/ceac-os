@@ -149,13 +149,13 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     }
   }
 
-  async function saveResponsibility(operation = "add", membership = null, profileId = form.person) {
+  async function saveResponsibility(operation = "add", membership = null, profileId = form.person, reason = form.reason) {
     const { error: failure } = await supabase.rpc("admin_record_unit_responsibility", {
       p_profile_id: profileId,
       p_unit_id: membership?.unit_id || form.unit,
       p_role: membership?.role || form.role,
       p_action: operation,
-      p_reason: form.reason,
+      p_reason: reason,
     });
     if (failure) throw failure;
   }
