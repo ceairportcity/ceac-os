@@ -108,7 +108,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
       <p className="screen-note">Access changes still require separate business approval. This form cannot grant permissions.</p>
     </form>
     {requiresBusinessApproval && <SupportAccessCaseActions item={item} me={me} onLedgerChange={setAccessLedger} />}
-    <OperationalFileList contextType="support_case" contextId={item.id} relation="support_evidence"
+    <OperationalFileList key={`${me.org_id}:${me.id}:${item.id}`} contextType="support_case" contextId={item.id} relation="support_evidence"
       canUpload={item.state !== "closed" && item.state !== "resolved"
         && (item.assigned_to === me.id)}
       title="Private case evidence"
