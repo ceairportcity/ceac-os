@@ -55,9 +55,8 @@ as $support_read$
     );
 $support_read$;
 revoke all on function public.app_can_read_support_case(uuid)
-  from public,anon;
-grant execute on function public.app_can_read_support_case(uuid)
-  to authenticated,service_role;
+  from public,anon,authenticated;
+-- Trigger/library-internal helper only: do not expand browser-definer RPC surface.
 
 create or replace function public.app_can_write_support_case(p_case_id uuid)
 returns boolean language sql stable security definer set search_path=''
@@ -78,9 +77,8 @@ as $support_write$
     );
 $support_write$;
 revoke all on function public.app_can_write_support_case(uuid)
-  from public,anon;
-grant execute on function public.app_can_write_support_case(uuid)
-  to authenticated,service_role;
+  from public,anon,authenticated;
+-- Existing caller app_can_write_operational_context is the sole reviewed entrypoint.
 
 create or replace function public.app_can_read_operational_context(
   p_context_type text,
