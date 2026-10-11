@@ -37,6 +37,10 @@ test("ledger cannot write permissions, impersonate actors or expose trigger inte
   assert.match(migration,/CREATE TRIGGER support_access_events_immutable/);
   assert.match(migration,/support\.access\.apply_approved/);
   assert.match(migration,/case_id uuid NOT NULL UNIQUE/);
+  assert.match(migration,/NEW\.access_object:=CASE NEW\.requested_action/);
+  assert.match(migration,/Unit workspace access troubleshooting/);
+  assert.match(migration,/Invitation delivery troubleshooting/);
+  assert.match(migration,/Account access recovery assistance/);
   assert.match(migration,/NEW\.requested_by:=actor/);
   assert.match(migration,/NEW\.approved_by:=actor/);
   assert.match(migration,/NEW\.executed_by:=actor/);
@@ -49,6 +53,9 @@ test("authenticated role gate proves denial, approval, execution and ordinary-in
   assert.match(gate,/^ROLLBACK;/m);
   assert.match(gate,/SET LOCAL ROLE authenticated;/);
   assert.match(gate,/Support operator business-approved its own request/);
+  assert.match(gate,/Second access request for the same case was accepted/);
+  assert.match(gate,/Support selected a different organisation access unit/);
+  assert.match(gate,/Untrusted client supplied a business-approval label/);
   assert.match(gate,/Unrelated Unit B manager approved Unit A request/);
   assert.match(gate,/Actual Unit Manager approval was not recorded/);
   assert.match(gate,/Stale version wrote access execution/);
