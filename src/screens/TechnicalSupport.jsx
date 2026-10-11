@@ -23,9 +23,27 @@ function SupportRows({ cases, onSelect, empty = "Nothing requires action here." 
 function CaseDetails({ item, onClose, onUpdate, busy, error }) {
   const [nextState, setNextState] = useState(item.state);
   const [resolution, setResolution] = useState(item.resolution_summary || "");
+  const [history, setHistory] = useState([]);
+  const [historyError, setHistoryError] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
   useEffect(() => {
     setNextState(item.state);
     setResolution(item.resolution_summary || "");
+  }, [item.id, item.state, item.resolution_summary]);
+
+  useEffect(() => {
+    let active = true;
+    setHistoryLoading(true);
+    (async () => {
+      const { data, error: failure } = await supabase.from("support_case_events")
+        .select("id,action,note,occurred_at").eq("case_id", item.id)
+        .order("occurred_at", { ascending: false }).limit(75);
+      if (!active) return;
+      setHistory(data || []);
+      setHistoryError(failure ? "Case history could not be verified." : null);
+      setHistoryLoading(false);
+    })();
+    return () => { active = false; };
   }, [item.id, item.state, item.resolution_summary]);
 
   return <section className="ceac-support-detail" aria-labelledby="support-case-title">
@@ -64,6 +82,19 @@ function CaseDetails({ item, onClose, onUpdate, busy, error }) {
       <button className="btn" type="submit" disabled={busy}>{busy ? "Saving..." : "Save case change"}</button>
       <p className="screen-note">Access changes still require separate business approval. This form cannot grant permissions.</p>
     </form>
+    <div className="ceac-support-history">
+      <h3>Case history</h3>
+      {historyLoading && <p role="status">Loading attributable support history...</p>}
+      {historyError && <p role="alert" className="ceac-support-error">{historyError}</p>}
+      {!historyLoading && !historyError && !history.length && <p className="screen-note">No verified event history is available.</p>}
+      <ol className="ceac-support-history-list">
+        {history.map((event) => <li key={event.id}>
+          <strong>{event.action.replaceAll("_", " ")}</strong>
+          <time dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString("en-GB")}</time>
+          {event.note && <p>{event.note}</p>}
+        </li>)}
+      </ol>
+    </div>
   </section>;
 }
 
