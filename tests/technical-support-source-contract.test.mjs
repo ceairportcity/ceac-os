@@ -112,10 +112,10 @@ test("later migrations may not redefine S3 authority functions", () => {
   const folder = "supabase/migrations";
   const s3Filename = "20261007083250_118_capability_delegation_expiry.sql";
   const pending = readdirSync(folder).filter((file) =>
-    /^\\d+_.+\\.sql$/.test(file) && file > s3Filename
+    /^\d+_.+\.sql$/.test(file) && file > s3Filename
   );
   const extractDefinitions = (sql) => {
-    const pattern = /(?:create\\s+(?:or\\s+replace\\s+)?function|drop\\s+function\\s+(?:if\\s+exists\\s+)?)\\s+(?:public\\.)?([a-zA-Z_][\\w]*)\\s*\\(/gi;
+    const pattern = /(?:create\s+(?:or\s+replace\s+)?function|drop\s+function\s+(?:if\s+exists\s+)?)\s+(?:public\.)?([a-zA-Z_][\w]*)\s*\(/gi;
     return [...sql.matchAll(pattern)].map((match) => match[1].toLowerCase());
   };
   const s3Functions = new Set(extractDefinitions(read(join(folder, s3Filename))));
