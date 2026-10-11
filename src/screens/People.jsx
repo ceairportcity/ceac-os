@@ -159,16 +159,19 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     ]);
     if (generation !== rosterGeneration.current) return false;
     if (rosterResult.error || peopleResult.error) {
+      setVerifiedRosterScope(null);
       setError(humanError(rosterResult.error || peopleResult.error, "The People record could not load."));
       setLoading(false);
       return false;
     }
     if (leaveResult.error) {
+      setVerifiedRosterScope(null);
       setError(humanError(leaveResult.error, "Leave policy status could not load."));
       setLoading(false);
       return false;
     }
     if (unitsResult.error) {
+      setVerifiedRosterScope(null);
       setError(humanError(unitsResult.error, "Organisation units could not load."));
       setLoading(false);
       return false;
@@ -247,6 +250,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     return true;
     } catch (failure) {
       if (generation === rosterGeneration.current) {
+        setVerifiedRosterScope(null);
         setError(humanError(failure, "People records could not be verified. Retry before making changes."));
         setLoading(false);
       }
