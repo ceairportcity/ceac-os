@@ -29,7 +29,7 @@ function CaseDetails({ item, onClose, onUpdate, onClaim, myId, busy, error }) {
   useEffect(() => {
     setNextState(item.state);
     setResolution(item.resolution_summary || "");
-  }, [item.id, item.state, item.resolution_summary]);
+  }, [item.id, item.state, item.resolution_summary, item.updated_at]);
 
   useEffect(() => {
     let active = true;
@@ -44,7 +44,7 @@ function CaseDetails({ item, onClose, onUpdate, onClaim, myId, busy, error }) {
       setHistoryLoading(false);
     })();
     return () => { active = false; };
-  }, [item.id, item.state, item.resolution_summary]);
+  }, [item.id, item.state, item.resolution_summary, item.updated_at]);
 
   return <section className="ceac-support-detail" aria-labelledby="support-case-title">
     <div className="ceac-support-detail-top">
@@ -66,7 +66,7 @@ function CaseDetails({ item, onClose, onUpdate, onClaim, myId, busy, error }) {
     <h3>Record next action</h3>
     <form className="ceac-support-form" onSubmit={(event) => {
       event.preventDefault();
-      onUpdate(item.id, nextState, resolution);
+      onUpdate(item.id, nextState, resolution, item.updated_at);
     }}>
       <label>Case status
         <select value={nextState} onChange={(event) => setNextState(event.target.value)}>
@@ -133,7 +133,7 @@ export default function TechnicalSupport({ me, go }) {
         setMembership(membershipData);
         if (!membershipData) return;
         const { data: caseData, error: casesFailure } = await supabase.from("support_cases")
-          .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary")
+          .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
           .eq("org_id", me.org_id).order("opened_at", { ascending: false }).limit(150);
         if (casesFailure) throw casesFailure;
         if (live) setCases(caseData || []);
@@ -174,7 +174,7 @@ export default function TechnicalSupport({ me, go }) {
       if (!currentMembership) return;
       const { data: currentCases, error: casesFailure } = await supabase
         .from("support_cases")
-        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary")
+        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
         .eq("org_id", me.org_id).order("opened_at", { ascending: false }).limit(150);
       if (casesFailure) throw casesFailure;
       setCases(currentCases || []);
@@ -196,7 +196,7 @@ export default function TechnicalSupport({ me, go }) {
       const { data, error: failure } = await supabase.from("support_cases")
         .update({ assigned_to: me.id }).eq("id", id).eq("org_id", me.org_id)
         .is("assigned_to", null)
-        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary")
+        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
         .maybeSingle();
       if (failure) throw failure;
       if (!data) throw new Error("This case is no longer unassigned. Refresh the Help Desk before taking it.");
@@ -208,8 +208,12 @@ export default function TechnicalSupport({ me, go }) {
     }
   }
 
-  async function updateCase(id, state, note) {
+  async function updateCase(id, state, note, expectedUpdatedAt) {
     if (!canManage || !membership || busy) return;
+    if (!expectedUpdatedAt) {
+      setActionError("The case revision cannot be verified. Refresh the Help Desk before saving.");
+      return;
+    }
     if ((state === "resolved" || state === "closed") && note.trim().length < 10) {
       setActionError("Record what was resolved before closing the case.");
       return;
@@ -220,9 +224,11 @@ export default function TechnicalSupport({ me, go }) {
       const { data, error: failure } = await supabase.from("support_cases")
         .update({ state, resolution_summary: note.trim() || null })
         .eq("id", id).eq("org_id", me.org_id)
-        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary")
-        .single();
+        .eq("updated_at", expectedUpdatedAt)
+        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
+        .maybeSingle();
       if (failure) throw failure;
+      if (!data) throw new Error("The case changed since you opened it. Refresh the Help Desk before saving.");
       setCases((items) => items.map((item) => item.id === id ? data : item));
     } catch (failure) {
       setActionError(humanError(failure, "The case change was not recorded. No further action was taken."));
