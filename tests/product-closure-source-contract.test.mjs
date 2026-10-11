@@ -171,3 +171,9 @@ test("Workforce calendar uses Ghana dates rather than the operator's local clock
   assert.match(workforce, /date\+"T00:00:00Z"\)\.getUTCDay\(\)/);
   assert.match(workforce, /timeZone:"Africa\/Accra",hour:"2-digit"/);
 });
+
+test("Workforce renders every historical session date in Accra, not the viewer's timezone", () => {
+  const dates = workforce.match(/new Date\(session\.started_at\)\.toLocaleDateString\("en-GB",\{timeZone:"Africa\/Accra",/g) || [];
+  assert.equal(dates.length, 8);
+  assert.doesNotMatch(workforce, /\.toLocaleString\("en-GB"\)/);
+});
