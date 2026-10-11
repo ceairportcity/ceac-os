@@ -438,6 +438,23 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
           </div>}
         </DataPanel>}
 
+        {endMembershipTarget ? <div className="phase5-access-revoke" role="dialog" aria-modal="true" aria-labelledby="end-unit-title">
+          <div className="phase5-access-revoke-card">
+            <span className="eyebrow">Responsibility change</span>
+            <h3 className="h2" id="end-unit-title">End unit responsibility?</h3>
+            <p className="screen-note">End {endMembershipTarget.personName}'s responsibility in {endMembershipTarget.unitName}? The server also removes all team placements for that unit and records the change.</p>
+            <p className="screen-note">Recorded reason: {endMembershipTarget.reason}</p>
+            <div className="phase5-access-actions">
+              <Button variant="secondary" disabled={busy} onClick={() => setEndMembershipTarget(null)}>Keep responsibility</Button>
+              <Button busy={busy} onClick={async () => {
+                const target = endMembershipTarget;
+                const ok = await action(() => saveResponsibility("remove", target.membership, target.personId, target.reason), "Unit responsibility and its team placements ended with audit history.");
+                if (ok) setEndMembershipTarget(null);
+              }}>End responsibility and teams</Button>
+            </div>
+          </div>
+        </div> : null}
+
         {revokeTarget ? <div className="phase5-access-revoke" role="dialog" aria-modal="true" aria-labelledby="phase5-revoke-title">
           <div className="phase5-access-revoke-card">
             <span className="eyebrow">Invitation control</span>
