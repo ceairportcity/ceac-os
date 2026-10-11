@@ -5,7 +5,7 @@ import SupportAccessCaseActions from "../components/SupportAccessCaseActions";
 import { OperationalFileList } from "../components/OperationalFiles";
 import {
   canManageSupport, SUPPORT_WORKSPACES, SERVICE_NAMES, SUPPORT_GUIDES,
-  supportCategoryLabel, supportCaseGroups, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome,
+  supportCategoryLabel, supportCaseGroups, filterSupportCases, supportCasesNeedingMe, supportReportedServiceIssues, supportUnavailableMessage, canRecordSupportOutcome,
 } from "../lib/technicalSupport";
 import "../role-styles/technical-support.css";
 
@@ -186,6 +186,7 @@ export default function TechnicalSupport({ me, go }) {
   }, [me.id, me.org_id, canManage]);
 
   const groups = useMemo(() => supportCaseGroups(cases), [cases]);
+  const serviceIssues = useMemo(() => supportReportedServiceIssues(cases), [cases]);
   const needsYou = useMemo(() => supportCasesNeedingMe(cases, me.id), [cases, me.id]);
   // These filters apply only to the latest RLS-authorised cases fetched above;
   // never suggest that an incomplete 150-record window is the full history.
@@ -406,10 +407,12 @@ export default function TechnicalSupport({ me, go }) {
         </section>}
         {workspace === "system" && <section className="ceac-support-main">
           <h2>Is CEAC working?</h2>
-          <p className="screen-note">Only verified service telemetry may establish Working, Needs attention or Down. No unverified check is presented as healthy.</p>
+          <p className="screen-note">Service health remains Not verified until trustworthy provider telemetry is connected. Open case counts below come from recorded reports, not live infrastructure checks.</p>
           <div className="ceac-support-rows">
-            {SERVICE_NAMES.map((service) => <div key={service} className="ceac-support-row">
-              <strong>{service}</strong><span className="ceac-support-state">Not verified</span>
+            {serviceIssues.map(({ service, reportCount, health }) => <div key={service} className="ceac-support-row">
+              <strong>{service}</strong><span className="ceac-support-state">{health}
+                {reportCount > 0 ? ` · ${reportCount} unresolved reported ${reportCount === 1 ? "case" : "cases"}` : ""}
+              </span>
             </div>)}
           </div>
           <p className="ceac-support-unverified">Live service-health providers and recovery evidence have not been connected to this panel. Use the approved operational incident and backup records until verified integrations are available.</p>
