@@ -33,8 +33,9 @@ function AdminCalendarRail({ meetings }) {
     month: "long", year: "numeric", timeZone: "UTC",
   }).format(month);
   const isoDate = (date) => date.toISOString().slice(0, 10);
-  const meetingDays = new Set(meetings.filter((item) => item.starts_at).map((item) => isoDate(new Date(item.starts_at))));
-  const selectedMeetings = meetings.filter((item) => item.starts_at && isoDate(new Date(item.starts_at)) === selectedDay);
+  const validMeetingTime = (item) => item?.starts_at && Number.isFinite(Date.parse(item.starts_at));
+  const meetingDays = new Set(meetings.filter(validMeetingTime).map((item) => isoDate(new Date(item.starts_at))));
+  const selectedMeetings = meetings.filter((item) => validMeetingTime(item) && isoDate(new Date(item.starts_at)) === selectedDay);
   const todayIso = isoDate(now);
   const through = isoDate(new Date(now.getTime() + 14 * 86400000));
   const withinLoadedWindow = selectedDay >= todayIso && selectedDay <= through;
