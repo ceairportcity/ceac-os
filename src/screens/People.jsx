@@ -122,6 +122,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     // Deep-link to access administration wins over any slower employee
     // detail request that was in flight when navigation occurred.
     personGeneration.current += 1;
+    employeeFileWriteBusy.current = false;
+    setEmployeeFileBusy(false);
     setPerson(null);
     setProtectedHr(null);
     setDetailLoading(false);
@@ -664,7 +666,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       : "No organisational responsibility recorded";
 
     return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
-      <PeopleBackButton onClick={() => { personGeneration.current += 1; setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
+      <PeopleBackButton onClick={() => { personGeneration.current += 1; employeeFileWriteBusy.current = false; setEmployeeFileBusy(false); setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
 
       <div className="ev2p-admin-person-layout">
         <aside className="ev2p-admin-person-rail" aria-label="Employee context">
