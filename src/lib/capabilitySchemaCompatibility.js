@@ -3,10 +3,10 @@
 // Let the person's ordinary profile load while failing CLOSED on client-side
 // capability-driven features. Server-side RLS and RPC checks remain authoritative.
 export function isMissingCapabilityExpiryColumn(error) {
-  if (!error || !["42703", "PGRST204"].includes(error.code)) return false;
+  if (!error || error.code !== "42703") return false;
   const message = String(error.message || "");
-  return /capability_grants(?:\."?|"?)\.?"?expires_at"?/i.test(message)
-    && /(?:does not exist|could not find|not found)/i.test(message);
+  return /\bcapability_grants\.expires_at\b/i.test(message)
+    && /\bdoes not exist\b/i.test(message);
 }
 
 export function resolveCapabilityGrantRead({ data, error }) {
