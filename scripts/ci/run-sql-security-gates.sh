@@ -56,6 +56,7 @@ tests=(
   compliance_phase3_gate.sql
   notification_work_state_gate.sql
   technical_support_v1_gate.sql
+  support_access_approval_execution_gate.sql
 )
 
 for test_file in "${tests[@]}"; do
