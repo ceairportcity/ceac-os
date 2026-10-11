@@ -5,15 +5,15 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
-const backend = read("supabase/proposals/technical_support_v1_backend.sql");
-const proposedGate = read("supabase/proposals/technical_support_v1_gate.sql");
+const backend = read("supabase/migrations/20261011130000_133_technical_support_v1_backend.sql");
+const proposedGate = read("supabase/tests/technical_support_v1_gate.sql");
 const app = read("src/App.jsx");
 const navigation = read("src/experience-v2/shell/navigation.js");
 const supportPanel = read("src/screens/TechnicalSupport.jsx");
 const supportHelp = read("src/screens/TechnicalHelp.jsx");
 const activeMe = read("src/lib/supabase.js");
 
-test("proposed SQL functions use valid paired dollar-quote delimiters", () => {
+test("canonical Technical Support SQL functions use valid paired dollar-quote delimiters", () => {
   assert.equal((backend.match(/\bAS \$\$/g) || []).length, 3);
   assert.equal((backend.match(/^\$\$;$/gm) || []).length, 3);
   assert.doesNotMatch(backend, /\bAS \$(?!\$)/);
@@ -60,6 +60,13 @@ test("case records and immutable audit history are deny-by-default", () => {
   // browser could forge resolved_at while changing a case to 'closed'.
   assert.match(backend, /ELSIF NEW\.state='closed' THEN\s*(?:--[^\n]*\n\s*)*NEW\.resolved_at:=coalesce\(OLD\.resolved_at,now\(\)\);\s*NEW\.closed_at:=now\(\);/);
 
+  assert.match(backend, /Only the current case holder or Support Lead can change this case/);
+  assert.match(backend, /A support member can claim only for themselves/);
+  assert.match(backend, /Access requests require recorded business approval and a reviewed execution path/);
+  assert.match(proposedGate, /Membership without support\.case\.manage exposed the queue/);
+  assert.match(proposedGate, /Cross-tenant reporter visibility is not isolated/);
+  assert.match(proposedGate, /Access request was resolved without approved execution evidence/);
+
 });
 
 test("support authority is separate from ordinary employment role and client-side checks", () => {
@@ -83,12 +90,12 @@ test("approved Executive stylesheet has exactly the same Git blob", () => {
   assert.equal(digest, "5613e38749322da28f6bfd6f4a584dd4bebd6d47");
 });
 
-test("canonical S3 migration and six reviewed security migrations have unique ordered versions", () => {
+test("canonical S3 migration and seven reviewed security migrations have unique ordered versions", () => {
   const folder = "supabase/migrations";
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 136, "expected reviewed 119-history + 11-pending + 6 security migration source tree");
+  assert.equal(migrations.length, 137, "expected reviewed 119-history + 11-pending + 7 security migration source tree");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
   const pending = [
@@ -120,6 +127,7 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /capability_delegation_expiry_gate\.sql/);
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
+  assert.match(runner, /technical_support_v1_gate\.sql/);
   assert.match(mfa, /callable_count<>135/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);

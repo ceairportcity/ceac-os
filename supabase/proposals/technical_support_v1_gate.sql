@@ -1,6 +1,6 @@
--- CEAC Support v1 candidate gate. RUN ONLY ON DISPOSABLE LOCAL DB AFTER
--- APPROVED S3 + all prior migrations + promoted Technical Support migration.
--- Never run against production and never assume this tests actual role isolation.
+-- SUPERSEDED STRUCTURAL GATE — retained only for historical traceability.
+-- Canonical behavioral gate: ../tests/technical_support_v1_gate.sql.
+-- Do not register or execute this proposal as release evidence.
 \set ON_ERROR_STOP on
 BEGIN;
 DO $gate$
