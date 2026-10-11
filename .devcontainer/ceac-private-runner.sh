@@ -28,13 +28,16 @@ else
   # gate rechecks the remote before worktree creation and rejects SHA drift.
   expected_pr="$(git ls-remote origin refs/pull/44/head | awk '{print $1}')"
   expected_main="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
-  if [[ "$expected_pr" =~ ^[0-9a-f]{40}$ && "$expected_main" =~ ^[0-9a-f]{40}$ ]]; then
+  # The Codespace itself must boot from the current candidate commit;
+  # never let stale verification scripts certify a newer PR.
+  local_head="$(git rev-parse HEAD)"
+  if [[ "$expected_pr" =~ ^[0-9a-f]{40}$ && "$expected_main" =~ ^[0-9a-f]{40}$ && "$local_head" == "$expected_pr" ]]; then
     printf 'PR44_TEST_SHA=%s MAIN_SHA=%s\n' "$expected_pr" "$expected_main" >> "$log"
     bash scripts/ci/run-independent-release-gate.sh "$PWD" 44 \
       "$expected_pr" "$expected_main" >> "$log" 2>&1
     rc=$?
   else
-    echo "NOT VERIFIED: could not resolve private PR44 and main refs" >> "$log"
+    echo "NOT VERIFIED: Codespace checkout is not exact live PR44 HEAD (or refs unavailable)" >> "$log"
     rc=2
   fi
 fi
