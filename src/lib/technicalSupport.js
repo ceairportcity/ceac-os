@@ -72,3 +72,13 @@ export function filterSupportCases(cases = [], query = "", status = "all") {
       .some((value) => String(value || "").toLocaleLowerCase().includes(needle));
   });
 }
+
+export function supportCasesNeedingMe(cases = [], profileId) {
+  // Organisation queues can include cases held by other support operators.
+  // The personal "Needs you" queue must not mislabel their assignments.
+  return (Array.isArray(cases) ? cases : []).filter((item) =>
+    isUnresolved(item)
+    && item.state !== "waiting_approval"
+    && (!item.assigned_to || (profileId && item.assigned_to === profileId))
+  );
+}
