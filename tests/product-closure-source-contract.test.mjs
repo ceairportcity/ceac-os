@@ -203,3 +203,12 @@ test("Workforce sensitive mutations cannot double-submit or strand loading on RP
   assert.match(workforce, /mutationBusyRef\.current=false/);
   assert.match(workforce, /setBusy\(false\)/);
 });
+
+test("Attendance writes are unavailable while required current evidence has failed", () => {
+  assert.match(workforce, /const unavailable=requiredDatasets\.filter\(\(dataset\)=>datasetErrors\[dataset\]\)/);
+  assert.match(workforce, /if\(unavailable\.length\)\{/);
+  assert.match(workforce, /Required Workforce records are currently unavailable/);
+  assert.match(workforce, /"Attendance context correction recorded\.",\["corrections"\]/);
+  assert.match(workforce, /"Leave decision recorded\.",\["leave","leave history"\]/);
+  assert.match(workforce, /"Confirmed leave policy activated\.",\["leave policies","leave policy rules"\]/);
+});
