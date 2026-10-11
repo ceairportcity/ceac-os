@@ -185,6 +185,7 @@ export default function AdminOverviewV2({
   onOpenReports,
   onOpenFinance,
   onOpenPeople,
+  onOpenInvitations,
   onOpenProtectedHR,
   onOpenPayroll,
   onOpenProjects,
@@ -246,7 +247,7 @@ export default function AdminOverviewV2({
           detail: expiredInvitationCount
             ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Review before resending.`
             : "Continue account onboarding through the authorised People & Access workspace.",
-          action: onOpenPeople,
+          action: onOpenInvitations,
           label: "Open invitations",
         }
         : mine.length
@@ -377,7 +378,7 @@ export default function AdminOverviewV2({
               meta={expiredInvitationCount ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Check before resending.` : "Activation is outstanding. Reconcile existing identities rather than inviting again."}
               status="Onboarding"
               statusTone="action"
-              onClick={onOpenPeople}
+              onClick={onOpenInvitations}
             /> : null}
 
             {leaveQueue.map((request) => <AdminActionRow
@@ -417,7 +418,7 @@ export default function AdminOverviewV2({
           >
             <div className="adminv2-stat-grid is-four">
               <StatTile label="Employees" value={employeeRoster.length} supporting="Roster records" icon="people" tone="action" onClick={canManagePeople ? onOpenPeople : undefined} />
-              <StatTile label="Invitations to review" value={pendingInvitations.length} supporting={expiredInvitationCount ? `${expiredInvitationCount} expired` : "Awaiting activation"} icon="notification" tone={pendingInvitations.length ? "action" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Invitations to review" value={pendingInvitations.length} supporting={expiredInvitationCount ? `${expiredInvitationCount} expired` : "Awaiting activation"} icon="notification" tone={pendingInvitations.length ? "action" : "neutral"} onClick={canManagePeople ? onOpenInvitations : undefined} />
               <StatTile label="Identity review" value={identityReviewCount} supporting="Needs confirmation" icon="warning" tone={identityReviewCount ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
               <StatTile label="Needs attention" value={peopleAttention} supporting="Recorded gaps" icon="notification" tone={peopleAttention ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
             </div>
