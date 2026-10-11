@@ -14,7 +14,7 @@ test("Codespaces verifies current private PR44 instead of obsolete PR27", () => 
   assert.match(auto, /git worktree add --detach "\$verify_checkout\/source" "\$expected_pr"/);
   assert.match(auto, /verify_checkout\/source\/scripts\/ci\/run-independent-release-gate\.sh/);
   assert.doesNotMatch(auto, /"\$local_head" == "\$expected_pr"/);
-  assert.match(auto, /run-independent-release-gate\.sh "\$PWD" 44/);
+  assert.match(auto, /run-independent-release-gate\.sh" "\$PWD" 44/);
   assert.match(auto, /gh pr comment 44/);
   assert.doesNotMatch(auto, /refs\/pull\/27\/head|run-independent-release-gate\.sh "\$PWD" 27|gh pr comment 29/);
 });
