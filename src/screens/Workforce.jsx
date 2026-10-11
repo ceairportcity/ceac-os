@@ -111,18 +111,18 @@ export default function Workforce({ me }) {
     const since=new Date(Date.now()-31*86400000).toISOString();
     const datasets=[
       ["people", supabase.from("employment_records").select("profile_id,unit_id,manager_profile_id,employment_type,working_pattern,profiles!employment_records_profile_id_fkey(full_name,job_title,active),units(name)").eq("org_id",me.org_id).eq("employment_status","active")],
-      ["sessions", supabase.from("work_sessions").select("id,profile_id,started_at,ended_at,place,end_reason,flags,lat,lng,ip,location_captured_at,location_accuracy_m,start_geofence,end_location_captured_at,end_location_status,end_location_failure,end_lat,end_lng,end_accuracy_m").gte("started_at",since).order("started_at",{ascending:false})],
+      ["sessions", supabase.from("work_sessions").select("id,profile_id,started_at,ended_at,place,end_reason,flags,lat,lng,ip,location_captured_at,location_accuracy_m,start_geofence,end_location_captured_at,end_location_status,end_location_failure,end_lat,end_lng,end_accuracy_m").eq("org_id",me.org_id).gte("started_at",since).order("started_at",{ascending:false})],
       ["last CEAC activity", supabase.rpc("visible_last_ceac_activity")],
-      ["leave", supabase.from("leave_requests").select("id,profile_id,kind,start_date,end_date,days,working_days,working_days_basis,status,reason,requested_at,decided_by,decided_at,decision_note,profiles!leave_requests_profile_id_fkey(full_name)").order("start_date",{ascending:false})],
-      ["leave history", supabase.from("leave_request_events").select("*").order("created_at",{ascending:false})],
-      ["day types", supabase.from("workforce_day_types").select("*").eq("active",true).order("name")],
-      ["schedules", supabase.from("workforce_schedule_versions").select("*").order("created_at",{ascending:false})],
-      ["corrections", supabase.from("attendance_corrections").select("*").order("created_at",{ascending:false})],
-      ["leave policies", supabase.from("leave_policy_versions").select("*").order("created_at",{ascending:false})],
-      ["leave policy rules", supabase.from("leave_policy_rules").select("*").order("leave_kind")],
-      ["office location", supabase.from("office_locations").select("name,lat,lng,radius_meters").eq("is_primary",true).limit(1).maybeSingle()],
-      ["meetings", supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,scope,unit_id,meeting_participants(profile_id)").gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString()).neq("status","cancelled")],
-      ["ministry events", supabase.from("ministry_events").select("id,title,starts_at,ends_at,location,cancelled,scope,unit_id").gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString())],
+      ["leave", supabase.from("leave_requests").select("id,profile_id,kind,start_date,end_date,days,working_days,working_days_basis,status,reason,requested_at,decided_by,decided_at,decision_note,profiles!leave_requests_profile_id_fkey(full_name)").eq("org_id",me.org_id).order("start_date",{ascending:false})],
+      ["leave history", supabase.from("leave_request_events").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
+      ["day types", supabase.from("workforce_day_types").select("*").eq("org_id",me.org_id).eq("active",true).order("name")],
+      ["schedules", supabase.from("workforce_schedule_versions").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
+      ["corrections", supabase.from("attendance_corrections").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
+      ["leave policies", supabase.from("leave_policy_versions").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
+      ["leave policy rules", supabase.from("leave_policy_rules").select("*").eq("org_id",me.org_id).order("leave_kind")],
+      ["office location", supabase.from("office_locations").select("name,lat,lng,radius_meters").eq("org_id",me.org_id).eq("is_primary",true).limit(1).maybeSingle()],
+      ["meetings", supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,scope,unit_id,meeting_participants(profile_id)").eq("org_id",me.org_id).gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString()).neq("status","cancelled")],
+      ["ministry events", supabase.from("ministry_events").select("id,title,starts_at,ends_at,location,cancelled,scope,unit_id").eq("org_id",me.org_id).gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString())],
     ];
     const results=await Promise.all(datasets.map(async ([name,query])=>({name,...await query})));
     const errors={};
