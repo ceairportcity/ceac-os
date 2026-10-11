@@ -12,6 +12,7 @@ const support = file("src/screens/TechnicalSupport.jsx");
 const app = file("src/App.jsx");
 const people = file("src/screens/People.jsx");
 const workforce = file("src/screens/Workforce.jsx");
+const compensation = file("src/lib/protectedCompensation.js");
 
 test("Administration only presents verified counts for its current identity", () => {
   assert.match(admin, /\[me\.id, me\.org_id\]/);
