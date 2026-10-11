@@ -49,6 +49,8 @@ Two specific investigations:
 
 ## 4. Encrypted production backup and genuine isolated restore — NOT DONE
 
+**Verified vendor limitation:** Supabase's standard `supabase db dump` excludes managed `auth` and `storage` schemas by default (https://supabase.com/docs/reference/cli/supabase-db-dump). The existing encrypted export script now stamps `complete_recovery_backup=NO`, `auth_managed_schema_data=NOT_IN_DEFAULT_EXPORT` and `storage_managed_schema_data=NOT_IN_DEFAULT_EXPORT`. A successfully decrypted default archive alone cannot recover real users or all Storage metadata; demand a separately verified, supported managed-data export and isolated restore.
+
 The existing `scripts/ops/prepare-ceac-db-backup.sh` is a useful encrypted logical-export scaffold, **not a full accepted recovery**: it explicitly marks `restore_status=NOT_TESTED`, omits Storage object bytes, and needs a verified strategy for Auth/Storage-managed tables. Current read-only snapshot: 9 Auth users, 0 verified TOTP factors, 2 Storage buckets, **0 Storage objects**, 119 migration records. Preserve Auth users and storage metadata even if object count is zero.
 
 Required execution procedure, using authorised private credentials and a trusted nonproduction host, **never ChatGPT chat, source or issue comments**:
