@@ -41,3 +41,36 @@
 - Finish Technical Support's secured backend migration, membership transitions and business-approval/technical-execution path on a disposable database and pass reviewed RLS, privacy, MFA and migration replay/restore gates. The app's newly added support controls are intentionally **not operational** until the corresponding backend is verified and deployed.
 - Release assurance owner must independently verify real-user MFA, invitation delivery, isolated replay of the canonical migration sequence, encrypted backup restoration and release/roll-back plan.
 - Keep PR #47 **DRAFT**, do not self-merge to `main` or mutate PR #44. The exact-head source-only work is **not production acceptance**.
+
+
+## Further independently reviewed fixes — Administration, Workforce, invitations and support
+
+**Exact application HEAD before this documentation update:** `92925d6ffb250b33e511f788642469cc09307c78`.  
+**Release PR #44 frozen:** `e00f13873409e4cc16ec1493b60b71d5cde1114a`.  
+**Production main unchanged:** `827fbe7391467dd13d6e411527416402a252993c`.
+
+- All **24 direct Administration reads** have an explicit `org_id = me.org_id` PostgREST condition. The 12 Workforce direct reads have the same guard, independently cross-checked against the existing read-only production table catalogue: every table has an `org_id` column. RPC-level tenancy still requires independent release verification.
+- Administration overview now passes calendar, employee roster, payroll readiness and alerts to the renderer **only after the current identity's full snapshot is verified**. A prior user's records cannot flash in the header before React effect cleanup.
+- Administration invitations-to-review tiles and decision actions now navigate straight to the existing authorised People & Access **Invitations** tab, not the generic People directory; the invitation queue action is capability-gated.
+- The Administration calendar says exactly what it knows: at most **six** future meeting records in the next **14** days; missing preview entries cannot be described as proof no meetings exist. Query bounds have not been enlarged.
+- People & Access mutations have synchronous **single-flight** locking, identity-generation leases and noncontradictory partial-success messaging. Technical Help request creation and Administration leave decisions are similarly single-flight; duplicate clicks cannot schedule duplicate RPC operations.
+- Technical Support operators may refresh a stale selected case and retry history if the event query rejects; old unverified history is cleared instead of displayed. Business approval and execution gates remain intact.
+- Sensitive Support, People, Workforce, Administration, HR and Payroll screens are **keyed by identity** at their React shell boundary. Workforce additionally remounts when the active unit or operational role changes.
+- Workforce datasets are explicitly organisation-scoped and settled independently. A rejected network fetch no longer causes a perpetual Loading state or silently retains stale rows for that failed dataset. A later read cannot overwrite a newer scoped refresh.
+- Accra (UTC year-round) controls Workforce planning-day math, work-schedule weekdays, session clock/date labels and approval-event timestamps, regardless of the viewer's computer timezone.
+- Workforce day-type/schedule/leave/correction/policy RPC actions now use synchronous **single-flight** locking and `try/catch/finally`, distinguish written-but-unverified refresh from failed writes, and require relevant **correction/leave plus decision history** to reload before declaring completion. No production attendance or payroll records were changed.
+
+### Source-level verification actually executed
+
+- Node 22.16.0 isolated suite `node --test tests/admin-today-summary.test.mjs tests/technical-support-v1.test.mjs tests/invitation-safety.test.mjs tests/workforce-date.test.mjs tests/workforce-queries.test.mjs` => **26 passed, 0 failed, 0 skipped**.
+- Ten tested helper/test inputs matched canonical GitHub Git blob SHA byte-for-byte. This includes earlier six Administration/Support/Invitation blobs, plus:
+  - `src/lib/workforceDate.js`: `6df04cae29432113a7f562b4dc1a1c57f0e07ec2`
+  - `tests/workforce-date.test.mjs`: `7fccf2bbdebc6f28bb426bf49982ece4ed5fc31e`
+  - `src/lib/workforceQueries.js`: `8c881157cbf9a894a59fe9f25d96d0a910c9300a`
+  - `tests/workforce-queries.test.mjs`: `b99dc6df774a76222c4a835b0732442bfe23f3ce`
+- Current live-branch sources: **113/113** product source-contract pattern assertions PASS; **59/59** Administration visual-source pattern assertions PASS; **24/24** direct Administration table reads and **12/12** Workforce table reads visibly organisation-scoped. Seven sensitive React remount boundaries independently checked.
+- This is **NOT** execution of every `node --test` contract or the latest Vite/JSX build. It is not an authenticated browser screenshot, backend security, real MFA, payroll or release acceptance.
+- Exact latest PR #47 `npm ci`, `npm run verify:source`, `npm run build`, responsive screenshot/mockup comparison, staff/manager/volunteer role acceptance and restored-production-clone migration testing remain mandatory and outstanding.
+- Technical Support production tables/approval ledger are still **not deployed**. Release integration, Supabase production, Vercel production, PR #44 and `main` have not been touched. No TinyFish, new CI system, paid provider or Vercel preview reruns were used during these changes.
+
+**Decision:** Product development PR #47 remains **DRAFT / NO-GO**, to be independently tested/reviewed and integrated later; source-only progress is not production approval.
