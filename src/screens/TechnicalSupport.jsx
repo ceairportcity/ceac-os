@@ -114,7 +114,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
       <ol className="ceac-support-history-list">
         {history.map((event) => <li key={event.id}>
           <strong>{event.action.replaceAll("_", " ")}</strong>
-          <time dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString("en-GB")}</time>
+          <time dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString("en-GB", { timeZone: "Africa/Accra" })}</time>
           {event.note && <p>{event.note}</p>}
         </li>)}
       </ol>
