@@ -72,3 +72,8 @@ test("Vercel checkpoints run source gates and routine pushes remain intentionall
   assert.ok(vercel.ignoreCommand.includes("ignore-build.mjs"));
   assert.ok(ignore.includes('message.includes("[vercel]")'));
 });
+
+test("release verification has a single fail-closed status result scan", () => {
+  assert.equal((gate.match(/if grep -lE/g) || []).length, 1);
+  assert.ok(gate.includes("^(FAIL|NOT_VERIFIED|STALE)$"));
+});
