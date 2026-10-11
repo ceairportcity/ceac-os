@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase, inviteByEmail, resendStaffInvitation } from "../lib/supabase";
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
@@ -25,9 +25,22 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const [error, setError] = useState(null);
   const [revokeTarget, setRevokeTarget] = useState(null);
   const [revokeReason, setRevokeReason] = useState("");
+  const loadGeneration = useRef(0);
   const canManage = (me.capability_grants || []).some((grant) => grant.capability === "people.manage" && !grant.scope_unit_id);
 
-  useEffect(() => { if (canManage) load(); }, [me.id, canManage]);
+  useEffect(() => {
+    // A change of authenticated identity or organisation immediately invalidates
+    // the previous account's sensitive directory and membership records.
+    loadGeneration.current += 1;
+    setSnapshot(null);
+    setError(null);
+    setNotice(null);
+    setRevokeTarget(null);
+    setRevokeReason("");
+    setForm({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
+    if (canManage) void load();
+    return () => { loadGeneration.current += 1; };
+  }, [me.id, me.org_id, canManage]);
   useEffect(() => {
     if (!initialProfileId && !initialUnitId && !initialMode) return;
     setForm((current) => ({
@@ -41,8 +54,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   }, [initialProfileId, initialUnitId, initialMode]);
 
   async function load() {
+    const generation = ++loadGeneration.current;
     setError(null);
-    const results = await Promise.all([
+    try {
+      const results = await Promise.all([
       supabase.from("profiles").select("id,full_name,email,active").eq("org_id", me.org_id).order("full_name"),
       supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("name"),
       supabase.from("unit_memberships").select("id,profile_id,unit_id,role").eq("org_id", me.org_id),
@@ -50,6 +65,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       supabase.rpc("admin_access_invitations"),
       supabase.from("sub_team_members").select("sub_team_id,profile_id"),
     ]);
+    if (generation !== loadGeneration.current) return false;
     const failure = results.find((result) => result.error);
     if (failure) {
       setError(failure.error.message);
@@ -64,6 +80,12 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       laneMemberships: results[5].data || [],
     });
     return true;
+    } catch (loadFailure) {
+      if (generation === loadGeneration.current) {
+        setError("People & Access could not load verified records. Retry before making changes.");
+      }
+      return false;
+    }
   }
 
   async function action(work, success) {
