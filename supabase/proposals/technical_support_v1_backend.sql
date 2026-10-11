@@ -45,7 +45,8 @@ REVOKE ALL ON public.support_team_memberships FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.support_team_memberships TO authenticated;
 CREATE POLICY support_team_self_read ON public.support_team_memberships
   FOR SELECT TO authenticated
-  USING (org_id=public.app_org_id() AND profile_id=auth.uid());
+  USING (org_id=public.app_org_id() AND public.app_identity_confirmed()
+    AND profile_id=auth.uid());
 -- No direct browser INSERT/UPDATE/DELETE. Business-authorised membership
 -- transition, expiry cleanup and case reassignment remain separate migrations.
 
@@ -90,7 +91,7 @@ GRANT SELECT,INSERT,UPDATE ON public.support_cases TO authenticated;
 -- implies support authority.
 CREATE POLICY support_cases_visible ON public.support_cases
   FOR SELECT TO authenticated
-  USING (org_id=public.app_org_id() AND (
+  USING (org_id=public.app_org_id() AND public.app_identity_confirmed() AND (
     reported_by=auth.uid()
     OR (
       public.app_has_capability('support.case.manage',NULL)
@@ -106,6 +107,7 @@ CREATE POLICY support_cases_report_self ON public.support_cases
   FOR INSERT TO authenticated
   WITH CHECK (
     org_id=public.app_org_id()
+    AND public.app_identity_confirmed()
     AND reported_by=auth.uid()
     AND affected_profile_id=auth.uid()
     AND affected_unit_id IS NULL
@@ -120,6 +122,7 @@ CREATE POLICY support_cases_manage ON public.support_cases
   FOR UPDATE TO authenticated
   USING (
     org_id=public.app_org_id()
+    AND public.app_identity_confirmed()
     AND public.app_has_capability('support.case.manage',NULL)
     AND EXISTS (
       SELECT 1 FROM public.support_team_memberships tm
@@ -129,6 +132,7 @@ CREATE POLICY support_cases_manage ON public.support_cases
   )
   WITH CHECK (
     org_id=public.app_org_id()
+    AND public.app_identity_confirmed()
     AND public.app_has_capability('support.case.manage',NULL)
     AND EXISTS (
       SELECT 1 FROM public.support_team_memberships tm
@@ -215,9 +219,13 @@ BEGIN
 END
 $$;
 REVOKE ALL ON FUNCTION public.support_case_audit_guard() FROM PUBLIC,anon,authenticated;
-DROP TRIGGER IF EXISTS support_case_audit_guard ON public.support_cases;
-CREATE TRIGGER support_case_audit_guard
-AFTER INSERT OR BEFORE UPDATE ON public.support_cases
+DROP TRIGGER IF EXISTS support_case_audit_insert ON public.support_cases;
+CREATE TRIGGER support_case_audit_insert
+AFTER INSERT ON public.support_cases
+FOR EACH ROW EXECUTE FUNCTION public.support_case_audit_guard();
+DROP TRIGGER IF EXISTS support_case_audit_update ON public.support_cases;
+CREATE TRIGGER support_case_audit_update
+BEFORE UPDATE ON public.support_cases
 FOR EACH ROW EXECUTE FUNCTION public.support_case_audit_guard();
 
 COMMENT ON TABLE public.support_team_memberships IS
