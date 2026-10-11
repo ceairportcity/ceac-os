@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { authRedirect } from "./authRedirect";
+import { isPlausibleInvitationEmail } from "./invitationSafety";
 import { readServerVerifiedLegacyGrants, resolveCapabilityGrantRead } from "./capabilitySchemaCompatibility";
 
 const fallbackSupabaseUrl = "https://efjljhftsesssumtshvp.supabase.co";
@@ -90,8 +91,11 @@ export class InvitationDeliveryUnconfirmedError extends Error {
 
 export async function inviteByEmail({ email, fullName, unitId }) {
   const redirect = authRedirect("/activate");
-  const cleanEmail = email.trim().toLowerCase();
-  const cleanName = fullName.trim();
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  const cleanName = String(fullName || "").trim();
+  if (!isPlausibleInvitationEmail(cleanEmail) || cleanName.length < 2 || !unitId) {
+    throw new Error("Enter a valid work email, full name and primary unit before recording an invitation.");
+  }
   const { error: inviteError } = await supabase.rpc("create_pending_invitation", {
     p_email: cleanEmail,
     p_full_name: cleanName,
