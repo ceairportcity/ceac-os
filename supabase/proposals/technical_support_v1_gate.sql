@@ -62,6 +62,29 @@ BEGIN
     RAISE EXCEPTION 'Internal support guard functions are directly callable.';
   END IF;
 
+  -- An append-only audit trail must reject even privileged UPDATE/DELETE
+  -- attempts; checking browser GRANTs alone is insufficient.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid='public.support_case_events'::regclass
+      AND t.tgname='support_case_events_immutable'
+      AND NOT t.tgisinternal
+      AND (t.tgtype & 2)<>0
+      AND (t.tgtype & 4)<>0
+  ) THEN RAISE EXCEPTION 'Support audit event immutability trigger missing.'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid='public.support_cases'::regclass
+      AND t.tgname='support_case_audit_insert'
+      AND NOT t.tgisinternal
+  ) OR NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid='public.support_cases'::regclass
+      AND t.tgname='support_case_audit_update'
+      AND NOT t.tgisinternal
+  ) THEN RAISE EXCEPTION 'Case history recording triggers are missing.'; END IF;
+
   SELECT count(*) INTO v_anon
   FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
   WHERE n.nspname='public' AND p.prosecdef AND
