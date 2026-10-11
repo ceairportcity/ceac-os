@@ -59,3 +59,16 @@ test("the dominant next step contains real CEAC authority-preserving navigation"
   assert.match(stylesheet, /Admin premium reference: dominant next-decision focus/);
   assert.doesNotMatch(overview, /automatically.*approve.*leave/i);
 });
+
+test("the Administration calendar is navigable without fabricating missing events", () => {
+  assert.match(overview, /function AdminCalendarRail\(\{ meetings \}\)/);
+  assert.match(overview, /aria-label="Previous month"/);
+  assert.match(overview, /aria-label="Next month"/);
+  assert.match(overview, /aria-label="Show current month"/);
+  assert.match(overview, /onClick=\{\(\) => setMonthOffset/);
+  assert.match(overview, /aria-pressed=\{day\.date === selectedDay\}/);
+  assert.match(overview, /meetingDays\.has\(day\.date\)/);
+  assert.match(overview, /Upcoming meeting data is limited to the next 14 days/);
+  assert.match(stylesheet, /Approved Admin calendar rail/);
+  assert.match(stylesheet, /adminv2-calendar-days/);
+});
