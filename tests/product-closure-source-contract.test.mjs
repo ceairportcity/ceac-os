@@ -9,6 +9,8 @@ const access = file("src/components/PeopleAccess.jsx");
 const auth = file("src/lib/supabase.js");
 const help = file("src/screens/TechnicalHelp.jsx");
 const support = file("src/screens/TechnicalSupport.jsx");
+const app = file("src/App.jsx");
+const people = file("src/screens/People.jsx");
 
 test("Administration only presents verified counts for its current identity", () => {
   assert.match(admin, /\[me\.id, me\.org_id\]/);
@@ -123,4 +125,13 @@ test("all Administration direct reads have explicit organisation scope", () => {
   assert.equal(scoped.length, queries.length, "a direct Administration query lacks current-organisation filtering");
   assert.match(admin, /from\("profiles"\)\.select\("id,full_name"\)\.eq\("org_id", me\.org_id\)/);
   assert.match(admin, /from\("work_sessions"\)\.select\("profile_id"\)\.eq\("org_id", me\.org_id\)/);
+});
+
+test("Administration invitation attention opens actual People and Access Invitations tab", () => {
+  assert.match(app, /openPeopleAccess=\{openPeopleAccess\}/);
+  assert.match(admin, /onOpenInvitations=\{\(\) => openPeopleAccess\?\.\(\{ mode: "invitations" \}\)\}/);
+  assert.match(adminView, /action: onOpenInvitations/);
+  assert.match(adminView, /onClick=\{onOpenInvitations\}/);
+  assert.match(people, /setViewMode\("access"\)/);
+  assert.match(people, /initialMode=\{accessFocusMode\}/);
 });
