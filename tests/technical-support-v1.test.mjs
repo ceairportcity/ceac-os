@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   HELP_CATEGORIES, SUPPORT_WORKSPACES, SUPPORT_GUIDES, SERVICE_NAMES,
-  canManageSupport, supportCaseGroups, supportCategoryLabel,
+  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome,
 } from "../src/lib/technicalSupport.js";
 
 test("support panel has the six locked workspaces and categories", () => {
@@ -35,4 +35,56 @@ test("cases are grouped only by facts; unresolved approval is not marked resolve
   assert.deepEqual(result.recentlyResolved.map((x) => x.id), ["c", "e"]);
   assert.equal(result.access.length, 3);
   assert.deepEqual(result.recurring.map((x) => x.id), ["cannot_sign_in", "other"]);
+});
+
+test("Help Desk filters only already-authorised loaded cases without changing their order", () => {
+  const cases = [
+    { id: "a", state: "open", category: "cannot_sign_in", summary: "Password reset", reference: "TS-123" },
+    { id: "b", state: "resolved", category: "cannot_upload", summary: "PDF upload", reference: "TS-456" },
+    { id: "c", state: "open", category: "access_needed", summary: "Unit access", reference: "TS-789" },
+  ];
+  assert.deepEqual(filterSupportCases(cases, "ts-456").map((item) => item.id), ["b"]);
+  assert.deepEqual(filterSupportCases(cases, "cannot sign in", "open").map((item) => item.id), ["a"]);
+  assert.deepEqual(filterSupportCases(cases, "access", "open").map((item) => item.id), ["c"]);
+  assert.deepEqual(filterSupportCases(cases, "", "open").map((item) => item.id), ["a", "c"]);
+  assert.deepEqual(filterSupportCases(cases, "pdf", "open"), []);
+  assert.deepEqual(filterSupportCases(null), []);
+  assert.deepEqual(cases.map((item) => item.id), ["a", "b", "c"]);
+});
+
+test("personal Support home excludes colleagues' assignments and awaiting approval", () => {
+  const cases = [
+    { id: "own", state: "in_progress", assigned_to: "me" },
+    { id: "new", state: "open", assigned_to: null },
+    { id: "theirs", state: "open", assigned_to: "other" },
+    { id: "approval", state: "waiting_approval", assigned_to: "me" },
+    { id: "closed", state: "closed", assigned_to: "me" },
+    { id: "resolved", state: "resolved", assigned_to: null },
+  ];
+  assert.deepEqual(supportCasesNeedingMe(cases, "me").map((item) => item.id), ["own", "new"]);
+  assert.deepEqual(supportCasesNeedingMe(cases, "other").map((item) => item.id), ["new", "theirs"]);
+  assert.deepEqual(supportCasesNeedingMe(null, "me"), []);
+  assert.deepEqual(supportCasesNeedingMe(cases, null).map((item) => item.id), ["new"]);
+});
+
+test("unavailable support schema has a truthful safe message", () => {
+  for (const code of ["PGRST205", "42P01"]) {
+    const message = supportUnavailableMessage({ code });
+    assert.match(message, /not enabled in this environment/);
+    assert.doesNotMatch(message, /permission denied|not found|SQL/i);
+  }
+  assert.equal(supportUnavailableMessage({ code: "42501" }), null);
+  assert.equal(supportUnavailableMessage({ code: "PGRST301" }), null);
+  assert.equal(supportUnavailableMessage(null), null);
+});
+
+test("case closure cannot imply unverified business access approval", () => {
+  for (const state of ["resolved", "closed"]) {
+    assert.equal(canRecordSupportOutcome({ category: "access_needed" }, state), false);
+  }
+  for (const state of ["open", "waiting_approval", "in_progress"]) {
+    assert.equal(canRecordSupportOutcome({ category: "access_needed" }, state), true);
+  }
+  assert.equal(canRecordSupportOutcome({ category: "cannot_sign_in" }, "resolved"), true);
+  assert.equal(canRecordSupportOutcome(null, "closed"), true);
 });

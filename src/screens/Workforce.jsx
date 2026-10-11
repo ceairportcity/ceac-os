@@ -1,8 +1,11 @@
-import { Fragment, Suspense, lazy, useEffect, useState } from "react";
+import { Fragment, Suspense, lazy, useEffect, useRef, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
 import { dailyClocks } from "../lib/attendance";
+import { accraDayOffset } from "../lib/workforceDate";
+import { settleWorkforceDatasets } from "../lib/workforceQueries";
+import { isValidPolicyAmount } from "../lib/workforcePolicyNumbers";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button, SelectField } from "../experience-v2/components";
@@ -23,12 +26,12 @@ const DAY_LABELS={sun:"Sun",mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sa
 const OWNER_CONFIRMED_LEAVE_KINDS=new Set(["annual","sick","maternity","paternity","study"]);
 
 function isoDay(value){ return new Date(value).toISOString().slice(0,10); }
-function niceDay(value){ return new Date(value+"T00:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}); }
+function niceDay(value){ return new Date(value+"T00:00:00Z").toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"}); }
 function human(value=""){ return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase()); }
 function clock(value){
   if(!value) return "Not recorded";
   const date=new Date(value);
-  return date.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  return date.toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"});
 }
 function metresBetween(aLat,aLng,bLat,bLng){
   const R=6371000,toRad=(d)=>(d*Math.PI)/180;
@@ -64,6 +67,8 @@ export default function Workforce({ me }) {
   const [datasetErrors,setDatasetErrors]=useState({});
   const [notice,setNotice]=useState(null);
   const [busy,setBusy]=useState(false);
+  const mutationBusyRef=useRef(false);
+  const readGeneration=useRef(0);
   const [calendarUnit,setCalendarUnit]=useState("");
   const [calendarPerson,setCalendarPerson]=useState("");
 
@@ -104,46 +109,53 @@ export default function Workforce({ me }) {
   const [policyOpeningBalanceRequired,setPolicyOpeningBalanceRequired]=useState(false);
   const [policyRoute,setPolicyRoute]=useState("");
 
-  useEffect(()=>{ load(); },[me.id]);
+  useEffect(()=>{
+    void load();
+    return ()=>{ readGeneration.current+=1; };
+  },[me.id,me.org_id,me.unit_id,me.role]);
 
   async function load(){
+    const generation=++readGeneration.current;
     setLoading(true); setError(null);
     const since=new Date(Date.now()-31*86400000).toISOString();
     const datasets=[
       ["people", supabase.from("employment_records").select("profile_id,unit_id,manager_profile_id,employment_type,working_pattern,profiles!employment_records_profile_id_fkey(full_name,job_title,active),units(name)").eq("org_id",me.org_id).eq("employment_status","active")],
-      ["sessions", supabase.from("work_sessions").select("id,profile_id,started_at,ended_at,place,end_reason,flags,lat,lng,ip,location_captured_at,location_accuracy_m,start_geofence,end_location_captured_at,end_location_status,end_location_failure,end_lat,end_lng,end_accuracy_m").gte("started_at",since).order("started_at",{ascending:false})],
+      ["sessions", supabase.from("work_sessions").select("id,profile_id,started_at,ended_at,place,end_reason,flags,lat,lng,ip,location_captured_at,location_accuracy_m,start_geofence,end_location_captured_at,end_location_status,end_location_failure,end_lat,end_lng,end_accuracy_m").eq("org_id",me.org_id).gte("started_at",since).order("started_at",{ascending:false})],
       ["last CEAC activity", supabase.rpc("visible_last_ceac_activity")],
-      ["leave", supabase.from("leave_requests").select("id,profile_id,kind,start_date,end_date,days,working_days,working_days_basis,status,reason,requested_at,decided_by,decided_at,decision_note,profiles!leave_requests_profile_id_fkey(full_name)").order("start_date",{ascending:false})],
-      ["leave history", supabase.from("leave_request_events").select("*").order("created_at",{ascending:false})],
-      ["day types", supabase.from("workforce_day_types").select("*").eq("active",true).order("name")],
-      ["schedules", supabase.from("workforce_schedule_versions").select("*").order("created_at",{ascending:false})],
-      ["corrections", supabase.from("attendance_corrections").select("*").order("created_at",{ascending:false})],
-      ["leave policies", supabase.from("leave_policy_versions").select("*").order("created_at",{ascending:false})],
-      ["leave policy rules", supabase.from("leave_policy_rules").select("*").order("leave_kind")],
-      ["office location", supabase.from("office_locations").select("name,lat,lng,radius_meters").eq("is_primary",true).limit(1).maybeSingle()],
-      ["meetings", supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,scope,unit_id,meeting_participants(profile_id)").gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString()).neq("status","cancelled")],
-      ["ministry events", supabase.from("ministry_events").select("id,title,starts_at,ends_at,location,cancelled,scope,unit_id").gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString())],
+      ["leave", supabase.from("leave_requests").select("id,profile_id,kind,start_date,end_date,days,working_days,working_days_basis,status,reason,requested_at,decided_by,decided_at,decision_note,profiles!leave_requests_profile_id_fkey(full_name)").eq("org_id",me.org_id).order("start_date",{ascending:false})],
+      ["leave history", supabase.from("leave_request_events").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
+      ["day types", supabase.from("workforce_day_types").select("*").eq("org_id",me.org_id).eq("active",true).order("name")],
+      ["schedules", supabase.from("workforce_schedule_versions").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
+      ["corrections", supabase.from("attendance_corrections").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
+      ["leave policies", supabase.from("leave_policy_versions").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
+      ["leave policy rules", supabase.from("leave_policy_rules").select("*").eq("org_id",me.org_id).order("leave_kind")],
+      ["office location", supabase.from("office_locations").select("name,lat,lng,radius_meters").eq("org_id",me.org_id).eq("is_primary",true).limit(1).maybeSingle()],
+      ["meetings", supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,scope,unit_id,meeting_participants(profile_id)").eq("org_id",me.org_id).gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString()).neq("status","cancelled")],
+      ["ministry events", supabase.from("ministry_events").select("id,title,starts_at,ends_at,location,cancelled,scope,unit_id").eq("org_id",me.org_id).gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString())],
     ];
-    const results=await Promise.all(datasets.map(async ([name,query])=>({name,...await query})));
+    const results=await settleWorkforceDatasets(datasets);
+    // A later refresh or scope switch owns the UI. Older results must never
+    // replace the latest verified employment, leave and correction records.
+    if(generation!==readGeneration.current) return {errors:{},superseded:true};
     const errors={};
     const byName=Object.fromEntries(results.map((row)=>[row.name,row]));
     for(const row of results){
       if(row.error) errors[row.name]=humanError(row.error, row.name+" could not load.");
     }
 
-    if(!byName.people.error) setPeople((byName.people.data||[]).filter((row)=>row.profiles?.active!==false));
-    if(!byName["last CEAC activity"].error) setLastActivity(byName["last CEAC activity"].data||[]);
-    if(!byName.sessions.error) setSessions(byName.sessions.data||[]);
-    if(!byName.leave.error) setLeave(byName.leave.data||[]);
-    if(!byName["leave history"].error) setLeaveEvents(byName["leave history"].data||[]);
-    if(!byName["day types"].error) setDayTypes(byName["day types"].data||[]);
-    if(!byName.schedules.error) setSchedules(byName.schedules.data||[]);
-    if(!byName.corrections.error) setCorrections(byName.corrections.data||[]);
-    if(!byName["leave policies"].error) setPolicies(byName["leave policies"].data||[]);
-    if(!byName["leave policy rules"].error) setPolicyRules(byName["leave policy rules"].data||[]);
-    if(!byName["office location"].error) setOffice(byName["office location"].data||null);
-    if(!byName.meetings.error) setMeetings(byName.meetings.data||[]);
-    if(!byName["ministry events"].error) setMinistryEvents((byName["ministry events"].data||[]).filter((row)=>!row.cancelled));
+    setPeople(!byName.people.error ? (byName.people.data||[]).filter((row)=>row.profiles?.active!==false) : []);
+    setLastActivity(!byName["last CEAC activity"].error ? byName["last CEAC activity"].data||[] : []);
+    setSessions(!byName.sessions.error ? byName.sessions.data||[] : []);
+    setLeave(!byName.leave.error ? byName.leave.data||[] : []);
+    setLeaveEvents(!byName["leave history"].error ? byName["leave history"].data||[] : []);
+    setDayTypes(!byName["day types"].error ? byName["day types"].data||[] : []);
+    setSchedules(!byName.schedules.error ? byName.schedules.data||[] : []);
+    setCorrections(!byName.corrections.error ? byName.corrections.data||[] : []);
+    setPolicies(!byName["leave policies"].error ? byName["leave policies"].data||[] : []);
+    setPolicyRules(!byName["leave policy rules"].error ? byName["leave policy rules"].data||[] : []);
+    setOffice(!byName["office location"].error ? byName["office location"].data||null : null);
+    setMeetings(!byName.meetings.error ? byName.meetings.data||[] : []);
+    setMinistryEvents(!byName["ministry events"].error ? (byName["ministry events"].data||[]).filter((row)=>!row.cancelled) : []);
 
     setDatasetErrors(errors);
     if(Object.keys(errors).length) setError("Some workforce data could not load. The affected dataset is identified below; available datasets remain usable.");
@@ -177,7 +189,7 @@ export default function Workforce({ me }) {
   }
   function currentDayType(profileId,date=today){
     const schedule=latestSchedule(profileId,date);
-    const key=DAY_KEYS[new Date(date+"T00:00:00").getDay()];
+    const key=DAY_KEYS[new Date(date+"T00:00:00Z").getUTCDay()];
     const id=schedule?.day_map?.[key];
     return id?dayTypesById[id]||null:null;
   }
@@ -193,18 +205,42 @@ export default function Workforce({ me }) {
   }
 
   async function runRpc(name,args,success,requiredDatasets=[]){
-    setBusy(true); setError(null); setNotice(null);
-    const {error:e}=await supabase.rpc(name,args);
-    if(e){ setBusy(false); setError(humanError(e,"That workforce change could not be recorded.")); return false; }
-    const reload=await load();
-    const missing=requiredDatasets.filter((name)=>reload.errors[name]);
-    setBusy(false);
-    if(missing.length){
-      setError("The change was recorded, but these required datasets failed to reload: "+missing.join(", ")+".");
+    // Busy React state alone is not a synchronous double-submit lock.
+    // Every correction, policy, schedule and leave decision uses this gate.
+    if(mutationBusyRef.current || busy || loading) return false;
+    const unavailable=requiredDatasets.filter((dataset)=>datasetErrors[dataset]);
+    if(unavailable.length){
+      setError("Required Workforce records are currently unavailable: "+unavailable.join(", ")+". Reopen Workforce or refresh the page before recording a change.");
       return false;
     }
-    setNotice(success);
-    return true;
+    mutationBusyRef.current=true;
+    setBusy(true); setError(null); setNotice(null);
+    let recorded=false;
+    try {
+      const {error:e}=await supabase.rpc(name,args);
+      if(e) throw e;
+      recorded=true;
+      const reload=await load();
+      if(reload.superseded){
+        setError("Workforce records changed during verification. Review the current record before retrying.");
+        return false;
+      }
+      const missing=requiredDatasets.filter((dataset)=>reload.errors[dataset]);
+      if(missing.length){
+        setError("The change was recorded, but these required datasets failed to reload: "+missing.join(", ")+". Review recorded state before trying again.");
+        return false;
+      }
+      setNotice(success);
+      return true;
+    } catch (failure) {
+      setError(recorded
+        ? "The change was recorded but refresh could not be confirmed. Review the current record before retrying."
+        : humanError(failure,"The workforce action could not be confirmed. Check its current state before repeating."));
+      return false;
+    } finally {
+      mutationBusyRef.current=false;
+      setBusy(false);
+    }
   }
 
   async function recordDayType(){
@@ -234,7 +270,7 @@ export default function Workforce({ me }) {
       p_profile_id:correctionPerson,p_work_date:correctionDate,p_work_session_id:null,
       p_correction_type:correctionType,p_before_context:{},
       p_after_context:{note:correctionNote.trim()},p_reason:correctionReason.trim(),p_reverses_id:null,
-    },"Attendance context correction recorded.");
+    },"Attendance context correction recorded.",["corrections"]);
     if(ok){ setCorrectionSheet(false); setCorrectionNote(""); setCorrectionReason(""); }
   }
 
@@ -251,7 +287,7 @@ export default function Workforce({ me }) {
   async function leaveAction(id,action){
     const reason=window.prompt(action==="manager_approved"?"Reason for approval":"Reason for this leave decision");
     if(!reason) return;
-    await runRpc("workforce_leave_action",{p_leave_request_id:id,p_action:action,p_reason:reason},"Leave decision recorded.");
+    await runRpc("workforce_leave_action",{p_leave_request_id:id,p_action:action,p_reason:reason},"Leave decision recorded.",["leave","leave history"]);
   }
 
   async function recordPolicy(){
@@ -295,13 +331,12 @@ export default function Workforce({ me }) {
   const policyReady=
     policyName.trim().length>=3
     && policyKind.trim().length>=2
-    && policyEntitlement!==""
-    && Number(policyEntitlement)>=0
+    && isValidPolicyAmount(policyEntitlement)
     && Boolean(policyEntitlementUnit)
     && Boolean(policyAccrualMethod)
-    && (!["monthly","quarterly"].includes(policyAccrualMethod) || (policyAccrualRate!=="" && Number(policyAccrualRate)>=0))
+    && (!["monthly","quarterly"].includes(policyAccrualMethod) || isValidPolicyAmount(policyAccrualRate))
     && Boolean(policyCarryoverMethod)
-    && (policyCarryoverMethod!=="limited" || (policyCarryoverLimit!=="" && Number(policyCarryoverLimit)>=0))
+    && (policyCarryoverMethod!=="limited" || isValidPolicyAmount(policyCarryoverLimit))
     && Boolean(policyRoute)
     && policyReason.trim().length>=3;
 
@@ -414,7 +449,7 @@ export default function Workforce({ me }) {
         statusTone={personContext.tone}
       />
 
-      {error&&<ProductNotice tone="error" title="Workforce">{error}</ProductNotice>}
+      {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="My workforce sections"/>
@@ -462,7 +497,7 @@ export default function Workforce({ me }) {
 
       {tab==="calendar"&&<WorkforceSection title="My next seven days" description="Schedule, recorded activity, approved leave and shared calendar context are shown as separate facts.">
         {Array.from({length:7},(_,i)=>{
-          const d=new Date(); d.setDate(d.getDate()+i); const date=isoDay(d);
+          const d=accraDayOffset(i); const date=isoDay(d);
           const ctx=contextFor(personId,date);
           const facts=sessionFacts(personId,date);
           const schedule=latestSchedule(personId,date);
@@ -490,7 +525,7 @@ export default function Workforce({ me }) {
           return <WorkforceRecordRow
             key={session.id}
             icon="time"
-            eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}
+            eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})}
             title={clock(session.started_at)+" → "+(session.ended_at?clock(session.ended_at):"no recorded end")}
             meta={session.place||"Place not recorded"}
             note={(diff.length||sessionCorrections.length)?(diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s")):null}
@@ -520,7 +555,7 @@ export default function Workforce({ me }) {
           {personSessions.map((session)=>({session,differences:recordedDifferences(session)})).filter((row)=>row.differences.length).map(({session,differences})=><WorkforceRecordRow
             key={session.id}
             icon="warning"
-            eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+            eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short"})}
             title={clock(session.started_at)}
             meta={session.place||"Place not recorded"}
             note={differences.join(" · ")}
@@ -549,7 +584,7 @@ export default function Workforce({ me }) {
           {personLeaveEvents.slice(0,80).map((event)=><WorkforceRecordRow
             key={event.id}
             icon="record"
-            eyebrow={new Date(event.created_at).toLocaleString("en-GB")}
+            eyebrow={new Date(event.created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}
             title={human(event.action)}
             meta={human(event.from_status||"new")+" → "+human(event.to_status)}
             note={event.reason||null}
@@ -615,7 +650,7 @@ export default function Workforce({ me }) {
         statusTone="neutral"
       />
 
-      {error&&<ProductNotice tone="error" title="Workforce">{error}</ProductNotice>}
+      {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Manager workforce sections"/>
@@ -677,7 +712,7 @@ export default function Workforce({ me }) {
           {leaveEvents.slice(0,80).map((event)=><WorkforceRecordRow
             key={event.id}
             icon="record"
-            eyebrow={new Date(event.created_at).toLocaleString("en-GB")}
+            eyebrow={new Date(event.created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}
             title={peopleById[event.profile_id]?.profiles?.full_name||"Employee"}
             meta={human(event.action)+" · "+human(event.from_status||"new")+" → "+human(event.to_status)}
             note={event.reason||null}
@@ -704,7 +739,7 @@ export default function Workforce({ me }) {
           />
         </div>
         {Array.from({length:7},(_,i)=>{
-          const d=new Date(); d.setDate(d.getDate()+i); const date=isoDay(d);
+          const d=accraDayOffset(i); const date=isoDay(d);
           const events=calendarEventsOn(date);
           return <WorkforceSection key={date} title={niceDay(date)} description="Configured schedule and recorded activity for the selected managed scope." meta={calendarPeople.length+" people"}>
             {calendarPeople.map((person)=>{
@@ -739,7 +774,7 @@ export default function Workforce({ me }) {
             icon="time"
             eyebrow={person?.units?.name||"Managed unit"}
             title={person?.profiles?.full_name||"Employee"}
-            meta={new Date(session.started_at).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" · "+clock(session.started_at)+" → "+(session.ended_at?clock(session.ended_at):"no recorded end")}
+            meta={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})+" · "+clock(session.started_at)+" → "+(session.ended_at?clock(session.ended_at):"no recorded end")}
             note={(session.place||"Place not recorded")+(diff.length||sessionCorrections.length?" · "+diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s"):"")}
           />;
         })}
@@ -770,7 +805,7 @@ export default function Workforce({ me }) {
           {flaggedSessions.map(({session,differences})=><WorkforceRecordRow
             key={session.id}
             icon="warning"
-            eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+            eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short"})}
             title={peopleById[session.profile_id]?.profiles?.full_name||"Employee"}
             meta={clock(session.started_at)}
             note={differences.join(" · ")}
@@ -816,7 +851,7 @@ export default function Workforce({ me }) {
           {!dayTypes.length&&<WorkforceEmpty compact title="No active day types" description="No day types are visible in the current organisation scope."/>}
         </WorkforceSection>
         <WorkforceSection title="Leave policy status">
-          {activePolicy?<WorkforceRecordRow icon="record" eyebrow="Confirmed policy" title={activePolicy.name} meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB")} note={activeRules.map((r)=>human(r.leave_kind)+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · route "+(r.approval_route?human(r.approval_route):"not configured")).join(" | ")} />:<WorkforceEmpty compact title="No confirmed CEAC leave policy is active" description="Legacy seeded defaults are not used as policy."/>}
+          {activePolicy?<WorkforceRecordRow icon="record" eyebrow="Confirmed policy" title={activePolicy.name} meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})} note={activeRules.map((r)=>human(r.leave_kind)+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · route "+(r.approval_route?human(r.approval_route):"not configured")).join(" | ")} />:<WorkforceEmpty compact title="No confirmed CEAC leave policy is active" description="Legacy seeded defaults are not used as policy."/>}
         </WorkforceSection>
       </>}
 
@@ -872,7 +907,7 @@ export default function Workforce({ me }) {
 
   if(isAdminView){
     const absenceDays=Array.from({length:14},(_,i)=>{
-      const d=new Date(); d.setDate(d.getDate()+i); return {date:isoDay(d),dateObject:d};
+      const d=accraDayOffset(i); return {date:isoDay(d),dateObject:d};
     });
     const absenceFor=(profileId,date)=>leave.find((row)=>
       row.profile_id===profileId
@@ -913,7 +948,7 @@ export default function Workforce({ me }) {
         statusTone="neutral"
       />
 
-      {error&&<ProductNotice tone="error" title="Workforce">{error}</ProductNotice>}
+      {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Administration workforce sections"/>
@@ -1026,7 +1061,7 @@ export default function Workforce({ me }) {
             icon="time"
             eyebrow={person?.units?.name||"Unit not recorded"}
             title={person?.profiles?.full_name||"Employee"}
-            meta={new Date(session.started_at).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" · "+clock(session.started_at)+" → "+(session.ended_at?clock(session.ended_at):"no recorded end")+" · "+(session.place||"place not recorded")}
+            meta={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})+" · "+clock(session.started_at)+" → "+(session.ended_at?clock(session.ended_at):"no recorded end")+" · "+(session.place||"place not recorded")}
             note={(diff.length||sessionCorrections.length)?diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s"):null}
           />;
         })}
@@ -1059,7 +1094,7 @@ export default function Workforce({ me }) {
           {flaggedSessions.map(({session,differences})=><WorkforceRecordRow
             key={session.id}
             icon="warning"
-            eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+            eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short"})}
             title={peopleById[session.profile_id]?.profiles?.full_name||"Employee"}
             meta={clock(session.started_at)}
             note={differences.join(" · ")}
@@ -1096,7 +1131,7 @@ export default function Workforce({ me }) {
           {leaveEvents.slice(0,80).map((event)=><WorkforceRecordRow
             key={event.id}
             icon="record"
-            eyebrow={new Date(event.created_at).toLocaleString("en-GB")}
+            eyebrow={new Date(event.created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}
             title={peopleById[event.profile_id]?.profiles?.full_name||"Employee"}
             meta={human(event.action)+" · "+human(event.from_status||"new")+" → "+human(event.to_status)}
             note={event.reason||null}
@@ -1144,7 +1179,7 @@ export default function Workforce({ me }) {
             icon="record"
             eyebrow="Confirmed policy"
             title={activePolicy.name}
-            meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB")}
+            meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}
             note={activeRules.map((r)=>human(r.leave_kind)+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · accrual "+(r.accrual_method?human(r.accrual_method):"not configured")+" · carry-over "+(r.carryover_method?human(r.carryover_method):"not configured")+" · route "+(r.approval_route?human(r.approval_route):"not configured")+(r.opening_balance_required?" · opening balance required":"")).join(" | ")}
             statusLabel="Active"
             statusTone="green"
@@ -1207,7 +1242,7 @@ export default function Workforce({ me }) {
       <h1 className="h1">Workforce</h1>
       <p className="screen-note">Schedules, recorded sessions, approved leave and attributable corrections. “No session recorded” is context only and never an automatic absence finding.</p>
     </div>
-    {error&&<ProductNotice tone="error" title="Workforce">{error}</ProductNotice>}
+    {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
     <div className="workforce-tabs" role="tablist" aria-label="Workforce sections">
@@ -1262,7 +1297,7 @@ export default function Workforce({ me }) {
       </div>
       <div className="workforce-calendar">
         {Array.from({length:7},(_,i)=>{
-          const d=new Date(); d.setDate(d.getDate()+i); const date=isoDay(d);
+          const d=accraDayOffset(i); const date=isoDay(d);
           const events=calendarEventsOn(date);
           return <section key={date}>
             <header><strong>{niceDay(date)}</strong><small>{events.length?events.length+" calendar item"+(events.length===1?"":"s"):"No shared calendar items"}</small></header>
@@ -1290,7 +1325,7 @@ export default function Workforce({ me }) {
         const sessionCorrections=effectiveCorrections(session.profile_id,isoDay(session.started_at)).filter((row)=>!row.work_session_id||row.work_session_id===session.id);
         return <div className="row workforce-session-row" key={session.id}>
           <div className="row-t">{person?.profiles?.full_name||"Employee"}</div>
-          <div className="row-m">{new Date(session.started_at).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} · {clock(session.started_at)} → {session.ended_at?clock(session.ended_at):"no recorded end"} · {session.place||"place not recorded"}</div>
+          <div className="row-m">{new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})} · {clock(session.started_at)} → {session.ended_at?clock(session.ended_at):"no recorded end"} · {session.place||"place not recorded"}</div>
           {(diff.length>0||sessionCorrections.length>0)&&<div className="row-note">{diff.length} recorded difference{diff.length===1?"":"s"} · {sessionCorrections.length} effective correction{sessionCorrections.length===1?"":"s"}</div>}
         </div>;
       })}
@@ -1316,7 +1351,7 @@ export default function Workforce({ me }) {
       {!office&&<ProductNotice tone="info" title="Office point not configured">Location-based differences stay unavailable until a primary office point exists. Other factual differences still appear.</ProductNotice>}
       {flaggedSessions.map(({session,differences})=><div className="row" key={session.id}>
         <div className="row-t">{peopleById[session.profile_id]?.profiles?.full_name||"Employee"}</div>
-        <div className="row-m">{new Date(session.started_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"})} · {clock(session.started_at)}</div>
+        <div className="row-m">{new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short"})} · {clock(session.started_at)}</div>
         {differences.map((difference,index)=><div className="row-note" key={index}>{difference}</div>)}
       </div>)}
       {!flaggedSessions.length&&<EmptyState compact title="No recorded session differences">Nothing in the last 31 days matches the factual difference checks.</EmptyState>}
@@ -1353,7 +1388,7 @@ export default function Workforce({ me }) {
       </div>)}
 
       <div className="sec"><span>Decision history</span></div>
-      {leaveEvents.slice(0,80).map((e)=><div className="row" key={e.id}><div className="row-t">{human(e.action)}</div><div className="row-m">{peopleById[e.profile_id]?.profiles?.full_name||"Employee"} · {human(e.from_status||"new")} → {human(e.to_status)} · {new Date(e.created_at).toLocaleString("en-GB")}</div>{e.reason&&<div className="row-note">{e.reason}</div>}</div>)}
+      {leaveEvents.slice(0,80).map((e)=><div className="row" key={e.id}><div className="row-t">{human(e.action)}</div><div className="row-m">{peopleById[e.profile_id]?.profiles?.full_name||"Employee"} · {human(e.from_status||"new")} → {human(e.to_status)} · {new Date(e.created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}</div>{e.reason&&<div className="row-note">{e.reason}</div>}</div>)}
     </>}
 
     {tab==="corrections"&&<>
@@ -1382,7 +1417,7 @@ export default function Workforce({ me }) {
       <div className="sec"><span>Day types</span><span>{dayTypes.length}</span></div>
       {dayTypes.map((d)=><div className="row" key={d.id}><div className="row-t">{d.name}</div><div className="row-m">{d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} · {d.description||"No description"}</div></div>)}
       <div className="sec"><span>Leave policy status</span></div>
-      {activePolicy?<div className="card workforce-policy"><strong>{activePolicy.name}</strong><span>Confirmed {new Date(activePolicy.confirmed_at).toLocaleString("en-GB")}</span>{activeRules.map((r)=><small key={r.id}>{human(r.leave_kind)} · {r.complete?(String(r.entitlement_amount)+" "+r.entitlement_unit):"rule incomplete"} · accrual {r.accrual_method?human(r.accrual_method):"not configured"} · carry-over {r.carryover_method?human(r.carryover_method):"not configured"} · route {r.approval_route?human(r.approval_route):"not configured"}{r.opening_balance_required?" · opening balance required":""}</small>)}</div>:<div className="card small">No confirmed CEAC leave policy is active. Legacy seeded defaults are not used as policy.</div>}
+      {activePolicy?<div className="card workforce-policy"><strong>{activePolicy.name}</strong><span>Confirmed {new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}</span>{activeRules.map((r)=><small key={r.id}>{human(r.leave_kind)} · {r.complete?(String(r.entitlement_amount)+" "+r.entitlement_unit):"rule incomplete"} · accrual {r.accrual_method?human(r.accrual_method):"not configured"} · carry-over {r.carryover_method?human(r.carryover_method):"not configured"} · route {r.approval_route?human(r.approval_route):"not configured"}{r.opening_balance_required?" · opening balance required":""}</small>)}</div>:<div className="card small">No confirmed CEAC leave policy is active. Legacy seeded defaults are not used as policy.</div>}
     </>}
 
     {dayTypeSheet&&<Sheet onClose={()=>!busy&&setDayTypeSheet(false)}>

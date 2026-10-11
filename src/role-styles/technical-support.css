@@ -68,3 +68,21 @@
 .ceac-support-history-list strong { display: block; font-size: .88rem; text-transform: capitalize; }
 .ceac-support-history-list time { display: block; margin-top: 3px; color: #597186; font-size: .8rem; }
 .ceac-support-history-list p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0 0; }
+
+/* Help Desk filters are intentionally bounded to the RLS-authorised loaded queue. */
+.ceac-support-desk-filters {
+  display: grid; grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr);
+  gap: 12px; align-items: end; margin: 14px 0 10px;
+}
+.ceac-support-desk-filters label { display: grid; gap: 6px; font-size: .84rem; font-weight: 650; }
+.ceac-support-desk-filters input, .ceac-support-desk-filters select {
+  width: 100%; min-width: 0; border: 1px solid #bdcbd8; border-radius: 9px;
+  background: #fff; padding: 10px 12px; color: inherit; font: inherit;
+}
+.ceac-support-desk-filters input:focus-visible,
+.ceac-support-desk-filters select:focus-visible {
+  outline: 2px solid #284b75; outline-offset: 2px;
+}
+@media (max-width: 620px) {
+  .ceac-support-desk-filters { grid-template-columns: 1fr; }
+}

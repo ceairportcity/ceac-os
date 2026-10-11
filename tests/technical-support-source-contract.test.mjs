@@ -147,3 +147,66 @@ test("later migrations may not redefine S3 authority functions", () => {
     }
   }
 });
+
+test("reporters can inspect only their own recorded case status and response", () => {
+  assert.match(supportHelp, /\.eq\("reported_by", me\.id\)\.eq\("org_id", me\.org_id\)/);
+  assert.match(supportHelp, /setSelectedId/);
+  assert.match(supportHelp, /aria-pressed=\{selectedId === item\.id\}/);
+  assert.match(supportHelp, /selected\.resolution_summary/);
+  assert.match(supportHelp, /Technical Support response/);
+  assert.doesNotMatch(supportHelp, /support_case_events/);
+  assert.doesNotMatch(supportHelp, /supabase\.auth\.admin/);
+});
+
+test("Support Help Desk clearly bounds and filters the permitted queue", () => {
+  assert.match(supportPanel, /filterSupportCases\(cases, deskQuery, deskStatus\)/);
+  assert.match(supportPanel, /150 recent cases/);
+  assert.match(supportPanel, /Find a request/);
+  assert.match(supportPanel, /Case status/);
+  assert.match(supportPanel, /\.eq\("org_id", me\.org_id\)/);
+});
+
+test("Support case taking is conditional on current assignment, without granting access", () => {
+  assert.match(supportPanel, /onClaim\(item\.id\)/);
+  assert.match(supportPanel, /!item\.assigned_to/);
+  assert.match(supportPanel, /\.is\("assigned_to", null\)/);
+  assert.match(supportPanel, /\.not\("state", "in", "\(resolved,closed\)"\)/);
+  assert.match(supportPanel, /\.maybeSingle\(\)/);
+  assert.match(supportPanel, /support_team_memberships/);
+  assert.doesNotMatch(supportPanel, /\.rpc\("grant_capability"/);
+});
+
+test("case status edits require a matching server revision, with an explicit collision message", () => {
+  assert.match(supportPanel, /onUpdate\(item\.id, nextState, resolution, item\.updated_at\)/);
+  assert.match(supportPanel, /\.eq\("updated_at", expectedUpdatedAt\)/);
+  assert.match(supportPanel, /\.maybeSingle\(\)/);
+  assert.match(supportPanel, /The case changed since you opened it/);
+  assert.match(supportPanel, /item\.updated_at\]/);
+  const caseReads = supportPanel.match(/\.select\("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at"\)/g) || [];
+  assert.equal(caseReads.length, 5, "all current case projections must include server revision");
+});
+
+test("an assigned case may be returned only by its current holder", () => {
+  assert.match(supportPanel, /item\.assigned_to === myId && item\.state !== "resolved"/);
+  assert.match(supportPanel, /Return to unassigned queue/);
+  assert.match(supportPanel, /\.update\(\{ assigned_to: null \}\)\.eq\("id", id\)\.eq\("org_id", me\.org_id\)/);
+  assert.match(supportPanel, /\.eq\("assigned_to", me\.id\)/);
+  assert.match(supportPanel, /\.not\("state", "in", "\(resolved,closed\)"\)/);
+  assert.match(supportPanel, /onRelease=\{releaseCase\}/);
+});
+
+test("needs-you queue excludes colleagues' assigned work", () => {
+  assert.match(supportPanel, /supportCasesNeedingMe\(cases, me\.id\)/);
+  assert.match(supportPanel, /<SupportRows cases=\{needsYou\}/);
+  assert.doesNotMatch(supportPanel, /<SupportRows cases=\{groups\.attention\}/);
+});
+
+test("People & Access invalidates confidential roster state across identity changes", () => {
+  const peopleAccess = read("src/components/PeopleAccess.jsx");
+  assert.match(peopleAccess, /const loadGeneration = useRef\(0\)/);
+  assert.match(peopleAccess, /setSnapshot\(null\)/);
+  assert.match(peopleAccess, /\[me\.id, me\.org_id, canManage\]/);
+  assert.match(peopleAccess, /if \(generation !== loadGeneration\.current\) return false/);
+  assert.match(peopleAccess, /generation === loadGeneration\.current/);
+  assert.match(peopleAccess, /People & Access could not load verified records/);
+});

@@ -41,7 +41,9 @@ test("mobile and desktop have separate first-class hierarchy and real screenshot
   assert.match(stylesheet, /max-width: 599px/);
   assert.match(stylesheet, /grid-template-columns: 1fr/);
   assert.match(stylesheet, /prefers-reduced-motion/);
+  assert.match(mobile, /desktop-1440/);
   assert.match(mobile, /desktop-1366/);
+  assert.match(mobile, /tablet-820/);
   assert.match(mobile, /phone-390/);
   assert.match(mobile, /screenshot\(/);
   assert.match(mobile, /document\.documentElement\.scrollWidth/);
@@ -53,7 +55,8 @@ test("the dominant next step contains real CEAC authority-preserving navigation"
   assert.match(overview, /action: onOpenAttendance/);
   assert.match(overview, /action: onOpenWorkflows/);
   assert.match(overview, /pendingInvitations\.length && canManagePeople/);
-  assert.match(overview, /action: onOpenPeople/);
+  assert.match(overview, /action: onOpenInvitations/);
+  assert.match(overview, /onClick=\{onOpenInvitations\}/);
   assert.match(overview, /onOpenItem\?\.\(mine\[0\]\.id\)/);
   assert.match(overview, /adminv2-focus-strip/);
   assert.match(stylesheet, /Admin premium reference: dominant next-decision focus/);
@@ -68,7 +71,22 @@ test("the Administration calendar is navigable without fabricating missing event
   assert.match(overview, /onClick=\{\(\) => setMonthOffset/);
   assert.match(overview, /aria-pressed=\{day\.date === selectedDay\}/);
   assert.match(overview, /meetingDays\.has\(day\.date\)/);
-  assert.match(overview, /Upcoming meeting data is limited to the next 14 days/);
+  assert.match(overview, /This calendar previews at most six upcoming meetings within the next 14 days/);
+  assert.match(overview, /No meeting is shown for this date in the limited upcoming preview/);
   assert.match(stylesheet, /Approved Admin calendar rail/);
   assert.match(stylesheet, /adminv2-calendar-days/);
+});
+
+test("open work sessions never pretend to confirm live presence", () => {
+  assert.match(overview, /label="Open work sessions"/);
+  assert.match(overview, /supporting="Not verified live presence"/);
+  assert.doesNotMatch(overview, /label="Working now"/);
+});
+
+test("no fabricated clear inbox state while loading or after a failed read", () => {
+  assert.match(overview, /Loading your recorded Administration priorities/);
+  assert.match(overview, /latest Administration priorities could not be verified/);
+  assert.match(overview, /Current meeting information could not be verified/);
+  assert.match(overview, /!loading && !loadFailed \? <div className="adminv2-agenda-foot"/);
+  assert.match(overview, /loading\s*\? "Loading your recorded/);
 });

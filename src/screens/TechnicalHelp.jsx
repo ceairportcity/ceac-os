@@ -1,15 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
-import { HELP_CATEGORIES, supportCategoryLabel } from "../lib/technicalSupport";
+import { HELP_CATEGORIES, supportCategoryLabel, supportUnavailableMessage } from "../lib/technicalSupport";
 import "../role-styles/technical-support.css";
 
 const formatDate = (date) => date ? new Date(date).toLocaleDateString("en-GB", {
-  day: "numeric", month: "short", year: "numeric",
+  day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Accra",
 }) : "Unknown date";
 
 export default function TechnicalHelp({ me }) {
   const [cases, setCases] = useState([]);
+  const [loadedScope, setLoadedScope] = useState(null);
+  const readGeneration = useRef(0);
+  const submitBusyRef = useRef(false);
+  const [selectedId, setSelectedId] = useState(null);
+  const [reloadCount, setReloadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [error, setError] = useState(null);
@@ -19,38 +24,57 @@ export default function TechnicalHelp({ me }) {
   const [summary, setSummary] = useState("");
   const [description, setDescription] = useState("");
   const [service, setService] = useState("");
+  const currentScope = `${me.org_id}:${me.id}`;
+  const visibleCases = loadedScope === currentScope ? cases : [];
+  const scopedLoading = loading || loadedScope !== currentScope;
 
   useEffect(() => {
+    setCategory(HELP_CATEGORIES[0].id);
+    setSummary(""); setDescription(""); setService("");
+    setError(null); setSuccess(null); setBusy(false);
+    submitBusyRef.current = false;
+  }, [me.id, me.org_id]);
+
+  useEffect(() => {
+    const generation = ++readGeneration.current;
     let live = true;
     setLoading(true);
+    setLoadedScope(null);
     setCases([]);
+    setSelectedId(null);
     setLoadError(null);
     (async () => {
       try {
         const { data, error: failure } = await supabase.from("support_cases")
-          .select("id,reference,category,summary,state,opened_at")
+          .select("id,reference,category,summary,description,affected_service,state,opened_at,resolved_at,closed_at,resolution_summary")
           .eq("reported_by", me.id).eq("org_id", me.org_id)
           .order("opened_at", { ascending: false }).limit(30);
         if (failure) throw failure;
-        if (live) setCases(data || []);
-      } catch {
-        if (live) setLoadError("Your support requests cannot be loaded right now. This does not mean they have been deleted.");
+        if (live && generation === readGeneration.current) setCases(data || []);
+      } catch (failure) {
+        if (live && generation === readGeneration.current) setLoadError(supportUnavailableMessage(failure) || "Your support requests cannot be loaded right now. This does not mean they have been deleted.");
       } finally {
-        if (live) setLoading(false);
+        if (live && generation === readGeneration.current) { setLoadedScope(currentScope); setLoading(false); }
       }
     })();
-    return () => { live = false; };
-  }, [me.id, me.org_id]);
+    return () => { live = false; readGeneration.current += 1; };
+  }, [me.id, me.org_id, reloadCount]);
 
   async function submit(event) {
     event.preventDefault();
-    if (busy) return;
+    // Lock synchronously: state updates alone do not prevent two rapid
+    // clicks from inserting duplicate requests.
+    if (busy || scopedLoading || loadError || submitBusyRef.current) return;
+    const generation = readGeneration.current;
     const title = summary.trim();
     const details = description.trim();
     if (title.length < 8 || details.length < 12) {
       setError("Add a short summary and explain what is happening before sending.");
       return;
     }
+    // Acquire the synchronous lock only after validating the draft;
+    // otherwise an invalid first submission permanently disables retry.
+    submitBusyRef.current = true;
     setBusy(true);
     setError(null);
     setSuccess(null);
@@ -59,18 +83,24 @@ export default function TechnicalHelp({ me }) {
         org_id: me.org_id, reported_by: me.id, affected_profile_id: me.id,
         category, summary: title, description: details,
         affected_service: service.trim() || null, impact: "normal", state: "open",
-      }).select("id,reference,category,summary,state,opened_at").single();
+      }).select("id,reference,category,summary,description,affected_service,state,opened_at,resolved_at,closed_at,resolution_summary").single();
       if (failure) throw failure;
+      if (generation !== readGeneration.current) return;
       setCases((previous) => [data, ...previous]);
       setSummary(""); setDescription(""); setService("");
       setSuccess("Your request was recorded. Reference: " + data.reference);
       setLoadError(null);
     } catch (failure) {
-      setError(humanError(failure, "Your request could not be recorded. Nothing was submitted. Please use the current approved CEAC support contact."));
+      if (generation === readGeneration.current) setError(supportUnavailableMessage(failure) || humanError(failure, "Your request could not be confirmed. Check your existing requests before trying again, or use the approved CEAC support contact."));
     } finally {
-      setBusy(false);
+      if (generation === readGeneration.current) {
+        submitBusyRef.current = false;
+        setBusy(false);
+      }
     }
   }
+
+  const selected = visibleCases.find((item) => item.id === selectedId) || null;
 
   return <main className="body ceac-support-page">
     <header className="ceac-support-heading">
@@ -102,20 +132,47 @@ export default function TechnicalHelp({ me }) {
           </label>
           {error && <p className="ceac-support-error" role="alert">{error}</p>}
           {success && <p className="ceac-support-success" role="status">{success}</p>}
-          <button className="btn" type="submit" disabled={busy}>{busy ? "Recording request..." : "Send help request"}</button>
+          <button className="btn" type="submit" disabled={busy || scopedLoading || Boolean(loadError)}>{busy ? "Recording request..." : "Send help request"}</button>
         </form>
       </section>
       <aside className="ceac-support-side" aria-labelledby="support-my-requests">
-        <h2 id="support-my-requests">Your requests</h2>
-        {loading && <p role="status">Loading your requests...</p>}
-        {loadError && <p className="ceac-support-error" role="status">{loadError}</p>}
-        {!loading && !loadError && cases.length === 0 && <p className="screen-note">No requests have been recorded.</p>}
-        <div className="ceac-support-rows">
-          {cases.map((item) => <article key={item.id} className="ceac-support-row">
-            <div><strong>{item.summary}</strong><span>{item.reference || "Reference pending"} · {supportCategoryLabel(item.category)}</span></div>
-            <small>{item.state.replaceAll("_", " ")} · {formatDate(item.opened_at)}</small>
-          </article>)}
+        <div className="ceac-support-section-head">
+          <h2 id="support-my-requests">Your requests</h2>
+          <button type="button" className="btn btn-ghost" disabled={scopedLoading || busy}
+            onClick={() => setReloadCount((previous) => previous + 1)}>Refresh requests</button>
         </div>
+        {scopedLoading && <p role="status">Loading your requests...</p>}
+        {loadError && <div className="ceac-support-error" role="alert">
+          {loadError} <button type="button" disabled={busy} className="btn btn-ghost"
+            onClick={() => setReloadCount((previous) => previous + 1)}>Try again</button>
+        </div>}
+        {!scopedLoading && !loadError && visibleCases.length === 0 && <p className="screen-note">No requests have been recorded.</p>}
+        <div className="ceac-support-rows">
+          {visibleCases.map((item) => <button type="button" key={item.id}
+            aria-pressed={selectedId === item.id}
+            className="ceac-support-row ceac-support-case-button"
+            onClick={() => setSelectedId((current) => current === item.id ? null : item.id)}>
+            <span><strong>{item.summary}</strong><small>{item.reference || "Reference pending"} · {supportCategoryLabel(item.category)}</small></span>
+            <span className="ceac-support-state">{String(item.state).replaceAll("_", " ")} · {formatDate(item.opened_at)}</span>
+          </button>)}
+        </div>
+        {selected && <section className="ceac-support-detail" aria-labelledby="support-own-case-title">
+          <div className="ceac-support-detail-top">
+            <h3 id="support-own-case-title">Request {selected.reference || "details"}</h3>
+            <button type="button" className="btn btn-ghost" onClick={() => setSelectedId(null)}>Close details</button>
+          </div>
+          <dl className="ceac-support-case-facts">
+            <div><dt>Status</dt><dd>{String(selected.state).replaceAll("_", " ")}</dd></div>
+            <div><dt>Opened</dt><dd>{formatDate(selected.opened_at)}</dd></div>
+            <div><dt>Area</dt><dd>{selected.affected_service || "Not specified"}</dd></div>
+          </dl>
+          <h4>{selected.summary}</h4>
+          <p className="ceac-support-description">{selected.description}</p>
+          {selected.resolution_summary ? <>
+            <h4>Technical Support response</h4>
+            <p className="ceac-support-description">{selected.resolution_summary}</p>
+          </> : <p className="screen-note">No resolution has been recorded yet. Case updates are subject to the Technical Support team's review.</p>}
+        </section>}
       </aside>
     </div>
   </main>;
