@@ -9,6 +9,7 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
   const [history, setHistory] = useState([]);
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [ledgerVerified, setLedgerVerified] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [action, setAction] = useState("account_recovery_assistance");
@@ -26,7 +27,7 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
   useEffect(() => {
     const gen = ++activeGeneration.current;
     setRecord(null); setHistory([]); setUnits([]); setError(null);
-    setLoading(true); setLoadedScope(null); busyRef.current = false; setBusy(false);
+    setLoading(true); setLoadedScope(null); setLedgerVerified(false); busyRef.current = false; setBusy(false);
     onLedgerChange(null);
     async function load() {
       const [ledger, events, unitList] = await Promise.all([
@@ -41,6 +42,7 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
       if (activeGeneration.current !== gen) return;
       if (ledger.error) setError("Access approval and execution cannot be verified. No action can be confirmed.");
       else {
+        setLedgerVerified(true);
         setRecord(ledger.data || null);
         onLedgerChange(ledger.data || null);
       }
@@ -53,7 +55,7 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
   }, [me.id, me.org_id, item.id, reload]);
 
   async function change(kind) {
-    if (busyRef.current || busy || loading || loadedScope !== scope || error) return;
+    if (busyRef.current || busy || loading || loadedScope !== scope || !ledgerVerified) return;
     if (!claimed) { setError("Take this support case before recording technical actions."); return; }
     const label = action === "unit_access_assistance" ? "Unit workspace access troubleshooting"
       : action === "invitation_delivery_assistance" ? "Invitation delivery troubleshooting"
@@ -107,9 +109,9 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
     {error && <p className="ceac-support-error" role="alert">{error}</p>}
     {!loading && <button className="btn btn-ghost" type="button" disabled={busy}
       onClick={() => setReload((value) => value + 1)}>Refresh approval record</button>}
-    {!loading && !error && !visible && <div className="ceac-support-form">
+    {!loading && ledgerVerified && !visible && <div className="ceac-support-form">
       <label>Requested technical assistance
-        <select value={action} disabled={!claimed || busy} onChange={(event) => setAction(event.target.value)}>
+        <select value={action} disabled={!claimed || busy} onChange={(event) => { setAction(event.target.value); setError(null); }}>
           <option value="account_recovery_assistance">Account recovery assistance · People Administration approval</option>
           <option value="invitation_delivery_assistance">Invitation delivery assistance · People Administration approval</option>
           <option value="unit_access_assistance">Unit access assistance · Unit Manager approval</option>
@@ -117,7 +119,7 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
       </label>
       {action === "unit_access_assistance" && <label>Unit requiring approval
         <select value={unitId} disabled={!claimed || busy || !units.length}
-          onChange={(event) => setUnitId(event.target.value)}>
+          onChange={(event) => { setUnitId(event.target.value); setError(null); }}>
           <option value="">Select the actual organisational unit</option>
           {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
         </select>
@@ -136,12 +138,12 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
         <p className="screen-note">Approval recorded. Only the assigned technician with the separate approved execution capability may attest an action. Do not mark an access grant as completed merely because this ledger is approved.</p>
         <label>Technical action actually completed
           <textarea rows={2} maxLength={1000} value={result} disabled={!claimed || busy}
-            onChange={(e) => setResult(e.target.value)}
+            onChange={(e) => { setResult(e.target.value); setError(null); }}
             placeholder="Record the verified assistance provided, not a promised change." />
         </label>
         <label>Evidence reference
           <input maxLength={180} value={reference} disabled={!claimed || busy}
-            onChange={(e) => setReference(e.target.value)}
+            onChange={(e) => { setReference(e.target.value); setError(null); }}
             placeholder="Existing approved system ticket or attributable activity reference" />
         </label>
         <button type="button" className="btn" disabled={!claimed || busy || !me.capabilities?.includes("support.access.apply_approved")}
