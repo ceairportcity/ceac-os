@@ -271,6 +271,9 @@ BEGIN
       NEW.resolved_at:=now();
       NEW.closed_at:=NULL;
     ELSIF NEW.state='closed' THEN
+      -- Closing cannot accept client-supplied resolution or closure timestamps.
+      -- Preserve an already server-recorded resolution, or date a direct close now.
+      NEW.resolved_at:=coalesce(OLD.resolved_at,now());
       NEW.closed_at:=now();
     ELSE NEW.resolved_at:=NULL; NEW.closed_at:=NULL; END IF;
     INSERT INTO public.support_case_events(org_id,case_id,actor_id,action,note)
