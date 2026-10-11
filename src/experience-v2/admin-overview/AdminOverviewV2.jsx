@@ -153,6 +153,13 @@ export default function AdminOverviewV2({
   const onboardingAttention = pendingInvitations.length;
   const reportingAttention = reportingGap;
   const totalAttention = decisionCount + onboardingAttention + peopleAttention + payrollAttention + deliveryAttention + reportingAttention;
+  const adminFirstName = String(me?.full_name || "").trim().split(/\s+/)[0] || "there";
+  const accraHour = Number(new Intl.DateTimeFormat("en-GB", { timeZone:"Africa/Accra", hour:"2-digit", hourCycle:"h23" }).format(new Date()));
+  const greeting = accraHour < 12 ? "Good morning" : accraHour < 17 ? "Good afternoon" : "Good evening";
+  const nextMeetings = [...meetings]
+    .filter((meeting) => meeting.starts_at && new Date(meeting.starts_at).getTime() >= Date.now())
+    .sort((left, right) => new Date(left.starts_at) - new Date(right.starts_at))
+    .slice(0, 3);
   const objectiveTotal = Number(delivery?.objectives || 0);
   const objectiveItems = [
     ["Met", delivery?.met || 0],
@@ -169,20 +176,43 @@ export default function AdminOverviewV2({
 
   return <div className="body admin-home">
     <div className="adminv2">
-      <header className="adminv2-intro">
-        <div className="adminv2-context"><span>Administration &amp; HR</span><time>{dateLabel}</time></div>
-        <div className="adminv2-intro-row">
-          <div>
-            <h1>Administration</h1>
-            <p>{totalAttention
-              ? `${totalAttention} recorded operational item${totalAttention === 1 ? "" : "s"} need Administration attention now.`
-              : "No recorded Administration decision, onboarding action or operational exception is waiting right now."}</p>
+      <header className="adminv2-intro adminv2-hero" aria-label="Administration daily briefing">
+        <div className="adminv2-hero-main">
+          <div className="adminv2-context"><span>Administration &amp; HR</span><time>{dateLabel}</time></div>
+          <div className="adminv2-intro-row">
+            <div className="adminv2-hero-title">
+              <span className="adminv2-eyebrow">Your CEAC workspace</span>
+              <h1>{greeting}, {adminFirstName}<span className="adminv2-greeting-mark">.</span></h1>
+              <p>{totalAttention
+                ? `You have ${totalAttention} recorded item${totalAttention === 1 ? "" : "s"} to review. Start with what needs a decision, then move the work forward.`
+                : "Your decision inbox is clear. Keep the people, work and organisation moving forward."}</p>
+            </div>
           </div>
           <div className="adminv2-intro-actions">
-            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People &amp; Access</Button> : null}
-            <Button icon="control" onClick={onOpenSettings}>Control Center</Button>
+            <a className="adminv2-hero-link" href="#admin-operational-inbox">Review your inbox <CeacIcon name="chevronRight" size="meta" decorative /></a>
+            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>People &amp; Access</Button> : null}
+            <Button icon="control" variant="secondary" onClick={onOpenSettings}>Control Center</Button>
           </div>
         </div>
+        <aside className="adminv2-hero-agenda" aria-label="Upcoming commitments">
+          <div className="adminv2-agenda-heading">
+            <span><CeacIcon name="calendar" size="row" decorative /> Coming up</span>
+            <button type="button" onClick={() => onScheduleMeeting?.({ scope: "organisation", organisation: true })} className="adminv2-agenda-add">Schedule <CeacIcon name="chevronRight" size="meta" decorative /></button>
+          </div>
+          {loading ? <div className="adminv2-agenda-empty">Loading your schedule…</div> : nextMeetings.length
+            ? <div className="adminv2-agenda-list">
+              {nextMeetings.map((meeting) => <button type="button" key={meeting.id} className="adminv2-agenda-item" onClick={() => onOpenMeeting?.(meeting.id)}>
+                <span className="adminv2-agenda-date">{formatDate(meeting.starts_at, {weekday:"short",hour:"2-digit",minute:"2-digit"})}</span>
+                <strong>{meeting.title}</strong>
+                <CeacIcon name="chevronRight" size="meta" decorative />
+              </button>)}
+            </div>
+            : <div className="adminv2-agenda-empty">No upcoming meetings on record in the next 14 days.</div>}
+          <div className="adminv2-agenda-foot">
+            <span><strong>{pendingInvitations.length}</strong> invitations pending</span>
+            <span><strong>{leaveQueue.length}</strong> leave decisions</span>
+          </div>
+        </aside>
       </header>
 
       {loadFailed ? <StatePanel
@@ -205,6 +235,7 @@ export default function AdminOverviewV2({
         <section className="adminv2-command-grid" aria-label="Administration actions and setup">
           <DataPanel
             className="adminv2-panel adminv2-inbox"
+            id="admin-operational-inbox"
             eyebrow="Operational inbox"
             title="Needs Administration"
             supporting="Decisions, onboarding follow-up and checks that require Administration authority. Unit-level daily management stays with managers."
