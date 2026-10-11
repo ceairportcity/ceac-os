@@ -13,7 +13,6 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
   const [busy, setBusy] = useState(false);
   const [action, setAction] = useState("account_recovery_assistance");
   const [unitId, setUnitId] = useState("");
-  const [objectLabel, setObjectLabel] = useState("");
   const [result, setResult] = useState("");
   const [reference, setReference] = useState("");
   const [reload, setReload] = useState(0);
@@ -56,10 +55,10 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
   async function change(kind) {
     if (busyRef.current || busy || loading || loadedScope !== scope || error) return;
     if (!claimed) { setError("Take this support case before recording technical actions."); return; }
-    const label = objectLabel.trim(), note = result.trim(), proof = reference.trim();
-    if (kind === "request" && label.length < 6) {
-      setError("Describe the access assistance needed before requesting business approval."); return;
-    }
+    const label = action === "unit_access_assistance" ? "Unit workspace access troubleshooting"
+      : action === "invitation_delivery_assistance" ? "Invitation delivery troubleshooting"
+      : "Account access recovery assistance";
+    const note = result.trim(), proof = reference.trim();
     if (kind === "request" && action === "unit_access_assistance" && !unitId) {
       setError("Select the relevant organisational unit for manager approval."); return;
     }
@@ -123,12 +122,7 @@ export default function SupportAccessCaseActions({ item, me, onLedgerChange }) {
           {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
         </select>
       </label>}
-      <label>What assistance needs approval?
-        <textarea rows={2} maxLength={120} minLength={6}
-          value={objectLabel} disabled={!claimed || busy}
-          onChange={(event) => setObjectLabel(event.target.value)}
-          placeholder="Explain the bounded technical action without confidential information." />
-      </label>
+      <p className="screen-note">Only the selected reviewed action, person and unit are included in the business-approval record. Keep confidential case details out of decision notes.</p>
       <button type="button" className="btn" disabled={!claimed || busy}
         onClick={() => change("request")}>Request business approval</button>
     </div>}
