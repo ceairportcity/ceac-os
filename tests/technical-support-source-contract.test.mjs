@@ -147,3 +147,21 @@ test("later migrations may not redefine S3 authority functions", () => {
     }
   }
 });
+
+test("reporters can inspect only their own recorded case status and response", () => {
+  assert.match(supportHelp, /\.eq\("reported_by", me\.id\)\.eq\("org_id", me\.org_id\)/);
+  assert.match(supportHelp, /setSelectedId/);
+  assert.match(supportHelp, /aria-pressed=\{selectedId === item\.id\}/);
+  assert.match(supportHelp, /selected\.resolution_summary/);
+  assert.match(supportHelp, /Technical Support response/);
+  assert.doesNotMatch(supportHelp, /support_case_events/);
+  assert.doesNotMatch(supportHelp, /supabase\.auth\.admin/);
+});
+
+test("Support Help Desk clearly bounds and filters the permitted queue", () => {
+  assert.match(supportPanel, /filterSupportCases\(cases, deskQuery, deskStatus\)/);
+  assert.match(supportPanel, /150 recent cases/);
+  assert.match(supportPanel, /Find a request/);
+  assert.match(supportPanel, /Case status/);
+  assert.match(supportPanel, /\.eq\("org_id", me\.org_id\)/);
+});
