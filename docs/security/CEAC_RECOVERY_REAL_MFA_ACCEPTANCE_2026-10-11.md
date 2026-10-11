@@ -38,6 +38,20 @@ Official Supabase MFA: https://supabase.com/docs/guides/auth/auth-mfa
 
 ## Codespaces native verification — exact evidence rule
 
+### Confirmed old-checkout runner mismatch — Git blob parity, not conjecture
+
+Independently fetched both the frozen PR #44 tree and the existing Codespace's **remote** checkout branch `chatgpt/private-independent-release-gate-2026-10-10` using the authenticated CEAC GitHub connector:
+
+- `.devcontainer/devcontainer.json` is the **same blob** `920f02fb8a93c46d8cd76b8676a15fda7e4a4956` in both and does configure `postStartCommand` and `postAttachCommand`.
+- In the **existing verification branch**, `.devcontainer/launch-automatic-verification.sh` blob `5c6657460f7d6181b79e7278884bb57697fa3a1f` treats the presence of ANY previous exit-code + summary as a valid cache and does not compare a recorded SHA with live PR #44.
+- Its `.devcontainer/ceac-private-runner.sh` blob `8c4f557679837bb065659d18472f6bcc6b73d4e0` **hardcodes obsolete PR #27** `386e59086fa79e1d27b28c42677d2252877cf0e0`, labels itself PR27 and tries to post its summary to **PR #29**, not PR44.
+- Frozen PR #44 has corrected launcher blob `00f3d9db3d82a93f3635fa4fd5bbcc6a052a4837` (cache bound to remote PR #44 HEAD) and corrected runner blob `f32d54278f20d4ddc4bef58ddb7f5ac49558f917` (fetches live PR44 + main and executes detached candidate).
+- PR #29 conversation has no later real exit-code report proving PR #44's SHA; PR #44 has no such report either. An existing Codespace may have run an OLD verification but can never be counted as PR44 acceptance without independently recovering its tested SHA and status files.
+
+**Consequently the one indispensable native execution capability remains a direct authenticated shell or read-file channel inside the *existing* Codespace**: inspect its actual `/tmp/ceac-private-autorun-*` evidence, then run the current PR44 exact-head launcher/runner **from the PR44 commit** in a detached worktree without relying on the old checkout scripts or stale cache. The GitHub connector cannot access Codespace process `/tmp` or execute a terminal command; no browser automation retries, paid runners or new CI are authorised. Simply restarting the old checkout or seeing a `postAttachCommand` line does **not** correct this discrepancy.
+
+
+
 Existing private Codespace `fuzzy-space-giggle` at https://github.com/codespaces/fuzzy-space-giggle-xrx595q5r555266qq was observed connected to `ceairportcity/ceac-os`. The repository's `.devcontainer/devcontainer.json` defines `postStartCommand` and `postAttachCommand` invoking `.devcontainer/launch-automatic-verification.sh`. It may start the exact-head runner automatically, but **configuration and running Codespace do not prove that it did run**.
 
 PR #44 has no authenticated, exact-`e00f138` Codespaces per-gate runner summary, exit code, checksum manifest or Level B pass comment at this review. GitHub API shows failed/skipped Actions runs (jobs report zero executed test steps), not a passed browser/migration suite; only the Vercel preview status is READY.
