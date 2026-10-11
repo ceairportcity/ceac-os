@@ -131,6 +131,7 @@ test("Administration invitation attention opens actual People and Access Invitat
   assert.match(app, /openPeopleAccess=\{openPeopleAccess\}/);
   assert.match(admin, /onOpenInvitations=\{\(\) => openPeopleAccess\?\.\(\{ mode: "invitations" \}\)\}/);
   assert.match(adminView, /action: onOpenInvitations/);
+  assert.match(adminView, /pendingInvitations\.length && canManagePeople \? <AdminActionRow/);
   assert.match(adminView, /onClick=\{onOpenInvitations\}/);
   assert.match(people, /setViewMode\("access"\)/);
   assert.match(people, /initialMode=\{accessFocusMode\}/);
