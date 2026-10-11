@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
+import { classifyPreviewFeatureResult } from "../lib/pendingFeatureCompatibility";
 import { dateOnly, dueLabel } from "../lib/time";
 import { statusPill, ProductNotice, LoadingState, FieldGroup, EmptyState, Avatar, ProgressMeter, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -84,6 +85,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   const [employmentForm, setEmploymentForm] = useState(null);
   const [savingEmployment, setSavingEmployment] = useState(false);
   const [volunteerRecommendations, setVolunteerRecommendations] = useState([]);
+  const [volunteerRecommendationsAvailable, setVolunteerRecommendationsAvailable] = useState(true);
   const [volunteerDecisionBusy, setVolunteerDecisionBusy] = useState(false);
   const [protectedHr, setProtectedHr] = useState(null);
   const [protectedHrLoading, setProtectedHrLoading] = useState(false);
@@ -211,6 +213,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }
 
   async function openPerson(summary) {
+    setVolunteerRecommendationsAvailable(true);
     setDetailLoading(true);
     setError(null);
     setDrill(null);
@@ -266,16 +269,18 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
 
     [detailResult, employmentResult] = linkedResults;
     protectedResult = protectedResponse;
+    const volunteerFeature = classifyPreviewFeatureResult("volunteerRecommendations", recommendationResponse);
     setProtectedHrLoading(false);
     setDetailLoading(false);
 
-    if (detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error || recommendationResponse.error) {
-      setError(humanError(detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error || recommendationResponse.error, "That employee record could not load."));
+    if (detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error || volunteerFeature.error) {
+      setError(humanError(detailResult.error || employmentResult.error || protectedResult.error || invitationResponse.error || volunteerFeature.error, "That employee record could not load."));
       return;
     }
 
     setProtectedHr(protectedResult.data || null);
-    setVolunteerRecommendations(Array.isArray(recommendationResponse.data) ? recommendationResponse.data : []);
+    setVolunteerRecommendationsAvailable(volunteerFeature.available);
+    setVolunteerRecommendations(Array.isArray(volunteerFeature.data) ? volunteerFeature.data : []);
     setEmployeeFiles({ photos: photoFiles, documents: documentFiles });
 
     let photoUrl = summary.photo_url || null;
@@ -597,6 +602,9 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       <p className="screen-note">Stored privately in CEAC. Initials remain the fallback when no photo is recorded.</p>
 
       {error && <ProductNotice tone="error" title="Employee record">{error}</ProductNotice>}
+      {!volunteerRecommendationsAvailable && <ProductNotice tone="attention" title="Volunteer recommendations pending">
+        This feature is not yet installed in the approved database. The employee record is available; recommendation history and decisions remain unavailable until the Phase 6 migration passes release verification.
+      </ProductNotice>}
       {person.on_leave_now && <ProductNotice tone="attention" title="On approved leave">This employee is currently away on approved leave.</ProductNotice>}
       {!person.active && <ProductNotice tone="error" title="Inactive employee">This employee is marked inactive and cannot sign in.</ProductNotice>}
 
