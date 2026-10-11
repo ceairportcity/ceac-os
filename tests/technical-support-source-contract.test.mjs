@@ -183,7 +183,7 @@ test("case status edits require a matching server revision, with an explicit col
   assert.match(supportPanel, /The case changed since you opened it/);
   assert.match(supportPanel, /item\.updated_at\]/);
   const caseReads = supportPanel.match(/\.select\("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at"\)/g) || [];
-  assert.equal(caseReads.length, 4, "all current case projections must include server revision");
+  assert.equal(caseReads.length, 5, "all current case projections must include server revision");
 });
 
 test("an assigned case may be returned only by its current holder", () => {
