@@ -83,12 +83,12 @@ test("approved Executive stylesheet has exactly the same Git blob", () => {
   assert.equal(digest, "5613e38749322da28f6bfd6f4a584dd4bebd6d47");
 });
 
-test("canonical S3 migration and five reviewed security migrations have unique ordered versions", () => {
+test("canonical S3 migration and six reviewed security migrations have unique ordered versions", () => {
   const folder = "supabase/migrations";
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 135, "expected reviewed 119-history + 11-pending + 5 security migration source tree");
+  assert.equal(migrations.length, 136, "expected reviewed 119-history + 11-pending + 6 security migration source tree");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
   const pending = [

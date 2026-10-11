@@ -205,13 +205,15 @@ do $revoked_surface$
 begin
   if has_function_privilege('authenticated','public.app_can_write_operational_context(text,uuid)','EXECUTE')
      or has_function_privilege('authenticated','public.cancel_ministry_event(uuid,text)','EXECUTE')
-     or has_function_privilege('authenticated','public.link_work_items(uuid,uuid,text)','EXECUTE') then
+     or has_function_privilege('authenticated','public.link_work_items(uuid,uuid,text)','EXECUTE')
+     or has_function_privilege('authenticated','public.guard_last_authority()','EXECUTE') then
     raise exception 'S2 gate failure: an internal/dead RPC remains directly executable by authenticated.';
   end if;
 
   if not has_function_privilege('service_role','public.app_can_write_operational_context(text,uuid)','EXECUTE')
      or not has_function_privilege('service_role','public.cancel_ministry_event(uuid,text)','EXECUTE')
-     or not has_function_privilege('service_role','public.link_work_items(uuid,uuid,text)','EXECUTE') then
+     or not has_function_privilege('service_role','public.link_work_items(uuid,uuid,text)','EXECUTE')
+     or not has_function_privilege('service_role','public.guard_last_authority()','EXECUTE') then
     raise exception 'S2 gate failure: controlled service execution was removed from a retained compatibility function.';
   end if;
 end
