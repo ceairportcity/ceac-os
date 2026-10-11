@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
 import { dailyClocks } from "../lib/attendance";
 import { accraDayOffset } from "../lib/workforceDate";
+import { settleWorkforceDatasets } from "../lib/workforceQueries";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button, SelectField } from "../experience-v2/components";
@@ -125,26 +126,26 @@ export default function Workforce({ me }) {
       ["meetings", supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,scope,unit_id,meeting_participants(profile_id)").eq("org_id",me.org_id).gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString()).neq("status","cancelled")],
       ["ministry events", supabase.from("ministry_events").select("id,title,starts_at,ends_at,location,cancelled,scope,unit_id").eq("org_id",me.org_id).gte("starts_at",new Date().toISOString()).lte("starts_at",new Date(Date.now()+7*86400000).toISOString())],
     ];
-    const results=await Promise.all(datasets.map(async ([name,query])=>({name,...await query})));
+    const results=await settleWorkforceDatasets(datasets);
     const errors={};
     const byName=Object.fromEntries(results.map((row)=>[row.name,row]));
     for(const row of results){
       if(row.error) errors[row.name]=humanError(row.error, row.name+" could not load.");
     }
 
-    if(!byName.people.error) setPeople((byName.people.data||[]).filter((row)=>row.profiles?.active!==false));
-    if(!byName["last CEAC activity"].error) setLastActivity(byName["last CEAC activity"].data||[]);
-    if(!byName.sessions.error) setSessions(byName.sessions.data||[]);
-    if(!byName.leave.error) setLeave(byName.leave.data||[]);
-    if(!byName["leave history"].error) setLeaveEvents(byName["leave history"].data||[]);
-    if(!byName["day types"].error) setDayTypes(byName["day types"].data||[]);
-    if(!byName.schedules.error) setSchedules(byName.schedules.data||[]);
-    if(!byName.corrections.error) setCorrections(byName.corrections.data||[]);
-    if(!byName["leave policies"].error) setPolicies(byName["leave policies"].data||[]);
-    if(!byName["leave policy rules"].error) setPolicyRules(byName["leave policy rules"].data||[]);
-    if(!byName["office location"].error) setOffice(byName["office location"].data||null);
-    if(!byName.meetings.error) setMeetings(byName.meetings.data||[]);
-    if(!byName["ministry events"].error) setMinistryEvents((byName["ministry events"].data||[]).filter((row)=>!row.cancelled));
+    setPeople(!byName.people.error ? (byName.people.data||[]).filter((row)=>row.profiles?.active!==false) : []);
+    setLastActivity(!byName["last CEAC activity"].error ? byName["last CEAC activity"].data||[] : []);
+    setSessions(!byName.sessions.error ? byName.sessions.data||[] : []);
+    setLeave(!byName.leave.error ? byName.leave.data||[] : []);
+    setLeaveEvents(!byName["leave history"].error ? byName["leave history"].data||[] : []);
+    setDayTypes(!byName["day types"].error ? byName["day types"].data||[] : []);
+    setSchedules(!byName.schedules.error ? byName.schedules.data||[] : []);
+    setCorrections(!byName.corrections.error ? byName.corrections.data||[] : []);
+    setPolicies(!byName["leave policies"].error ? byName["leave policies"].data||[] : []);
+    setPolicyRules(!byName["leave policy rules"].error ? byName["leave policy rules"].data||[] : []);
+    setOffice(!byName["office location"].error ? byName["office location"].data||null : null);
+    setMeetings(!byName.meetings.error ? byName.meetings.data||[] : []);
+    setMinistryEvents(!byName["ministry events"].error ? (byName["ministry events"].data||[]).filter((row)=>!row.cancelled) : []);
 
     setDatasetErrors(errors);
     if(Object.keys(errors).length) setError("Some workforce data could not load. The affected dataset is identified below; available datasets remain usable.");
