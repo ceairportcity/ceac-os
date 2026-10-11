@@ -370,10 +370,13 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                     <Button
                       variant="quiet"
                       size="compact"
-                      disabled={busy || stillInUnitTeam || !form.reason.trim()}
-                      onClick={() => action(() => saveResponsibility("remove", membership), "Membership ended with its audit history preserved.")}
+                      disabled={busy || !form.reason.trim()}
+                      onClick={() => {
+                        if (stillInUnitTeam && !window.confirm("End this unit responsibility and remove its team placements? The server records the change and preserves its audit history.")) return;
+                        return action(() => saveResponsibility("remove", membership), "Unit responsibility ended; the server also clears team placements in this unit.");
+                      }}
                     >End membership</Button>
-                    {stillInUnitTeam && <span className="screen-note" role="status">Remove this person's recorded team placements in this unit before ending its responsibility.</span>}
+                    {stillInUnitTeam && <span className="screen-note" role="status">Ending this unit responsibility also clears its team placements through the authorised database action.</span>}
                   </div>;
                 })}
                 {!selectedMemberships.length ? <div className="phase5-access-empty">No active unit responsibility is returned for this person.</div> : null}
