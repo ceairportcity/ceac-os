@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import SupportAccessCaseActions from "../components/SupportAccessCaseActions";
 import {
   canManageSupport, SUPPORT_WORKSPACES, SERVICE_NAMES, SUPPORT_GUIDES,
   supportCategoryLabel, supportCaseGroups, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome,
@@ -20,14 +21,16 @@ function SupportRows({ cases, onSelect, empty = "Nothing requires action here." 
   </div>;
 }
 
-function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, myId, orgId, busy, error }) {
+function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, me, myId, orgId, busy, error }) {
   const [nextState, setNextState] = useState(item.state);
   const [resolution, setResolution] = useState(item.resolution_summary || "");
   const [history, setHistory] = useState([]);
   const [historyError, setHistoryError] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
+  const [accessLedger, setAccessLedger] = useState(null);
   const requiresBusinessApproval = item.category === "access_needed";
+  const accessReadyToClose = canRecordSupportOutcome(item, "resolved", accessLedger);
   useEffect(() => {
     setNextState(item.state);
     setResolution(item.resolution_summary || "");
@@ -83,18 +86,18 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
     </p>}
     <form className="ceac-support-form" onSubmit={(event) => {
       event.preventDefault();
-      onUpdate(item.id, nextState, resolution, item.updated_at);
+      onUpdate(item.id, nextState, resolution, item.updated_at, accessLedger);
     }}>
       <label>Case status
         <select value={nextState} onChange={(event) => setNextState(event.target.value)}>
           <option value="open">Open</option>
           <option value="in_progress">In progress</option>
           <option value="waiting_approval">Waiting for business approval</option>
-          <option value="resolved" disabled={requiresBusinessApproval}>Resolved</option>
-          <option value="closed" disabled={requiresBusinessApproval}>Closed</option>
+          <option value="resolved" disabled={requiresBusinessApproval && !accessReadyToClose}>Resolved</option>
+          <option value="closed" disabled={requiresBusinessApproval && !accessReadyToClose}>Closed</option>
         </select>
       </label>
-      {requiresBusinessApproval && <p className="ceac-support-unverified" role="status">Access requests cannot be marked resolved or closed here. The business approval and technical execution records are not integrated with this service; escalate to People Administration.</p>}
+      {requiresBusinessApproval && !accessReadyToClose && <p className="ceac-support-unverified" role="status">Access requests remain open until independent business approval and attributable technical execution are recorded. The database verifies both before closure.</p>}
       <label>Action or resolution note
         <textarea rows={3} value={resolution} onChange={(event) => setResolution(event.target.value)}
           maxLength={2000} placeholder="Record factual work completed. Do not include credentials or protected records." />
@@ -103,6 +106,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
       <button className="btn" type="submit" disabled={busy || item.assigned_to !== myId}>{busy ? "Saving..." : "Save case change"}</button>
       <p className="screen-note">Access changes still require separate business approval. This form cannot grant permissions.</p>
     </form>
+    {requiresBusinessApproval && <SupportAccessCaseActions item={item} me={me} onLedgerChange={setAccessLedger} />}
     <div className="ceac-support-history">
       <h3>Case history</h3>
       {historyLoading && <p role="status">Loading attributable support history...</p>}
@@ -162,7 +166,7 @@ export default function TechnicalSupport({ me, go }) {
         setMembership(membershipData);
         if (!membershipData) return;
         const { data: caseData, error: casesFailure } = await supabase.from("support_cases")
-          .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
+          .select("id,reference,category,summary,description,affected_service,impact,state,reported_by,affected_profile_id,affected_unit_id,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
           .eq("org_id", me.org_id).order("opened_at", { ascending: false }).limit(150);
         if (casesFailure) throw casesFailure;
         if (live && generation === readGeneration.current) setCases(caseData || []);
@@ -206,7 +210,7 @@ export default function TechnicalSupport({ me, go }) {
       if (!currentMembership) return;
       const { data: currentCases, error: casesFailure } = await supabase
         .from("support_cases")
-        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
+        .select("id,reference,category,summary,description,affected_service,impact,state,reported_by,affected_profile_id,affected_unit_id,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
         .eq("org_id", me.org_id).order("opened_at", { ascending: false }).limit(150);
       if (casesFailure) throw casesFailure;
       if (generation !== readGeneration.current) return;
@@ -231,7 +235,7 @@ export default function TechnicalSupport({ me, go }) {
         .update({ assigned_to: me.id }).eq("id", id).eq("org_id", me.org_id)
         .is("assigned_to", null)
         .not("state", "in", "(resolved,closed)")
-        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
+        .select("id,reference,category,summary,description,affected_service,impact,state,reported_by,affected_profile_id,affected_unit_id,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
         .maybeSingle();
       if (failure) throw failure;
       if (!data) throw new Error("This case is no longer unassigned. Refresh the Help Desk before taking it.");
@@ -254,7 +258,7 @@ export default function TechnicalSupport({ me, go }) {
         .update({ assigned_to: null }).eq("id", id).eq("org_id", me.org_id)
         .eq("assigned_to", me.id)
         .not("state", "in", "(resolved,closed)")
-        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
+        .select("id,reference,category,summary,description,affected_service,impact,state,reported_by,affected_profile_id,affected_unit_id,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
         .maybeSingle();
       if (failure) throw failure;
       if (!data) throw new Error("This case is no longer yours to release. Refresh before trying again.");
@@ -267,7 +271,7 @@ export default function TechnicalSupport({ me, go }) {
     }
   }
 
-  async function updateCase(id, state, note, expectedUpdatedAt) {
+  async function updateCase(id, state, note, expectedUpdatedAt, accessLedger = null) {
     if (!canManage || !membership || busy) return;
     const generation = readGeneration.current;
     const currentCase = cases.find((item) => item.id === id);
@@ -279,7 +283,7 @@ export default function TechnicalSupport({ me, go }) {
       setActionError("Take ownership of an unassigned case before editing. A colleague's assignment cannot be overwritten here.");
       return;
     }
-    if (!canRecordSupportOutcome(currentCase, state)) {
+    if (!canRecordSupportOutcome(currentCase, state, accessLedger)) {
       setActionError("An access request cannot be marked fulfilled here without the approved business-authority evidence and verified execution path.");
       return;
     }
@@ -299,7 +303,7 @@ export default function TechnicalSupport({ me, go }) {
         .eq("id", id).eq("org_id", me.org_id)
         .eq("updated_at", expectedUpdatedAt)
         .eq("assigned_to", me.id)
-        .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
+        .select("id,reference,category,summary,description,affected_service,impact,state,reported_by,affected_profile_id,affected_unit_id,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
         .maybeSingle();
       if (failure) throw failure;
       if (!data) throw new Error("The case changed since you opened it. Refresh the Help Desk before saving.");
@@ -337,7 +341,7 @@ export default function TechnicalSupport({ me, go }) {
       </nav>
 
       {selected ? <CaseDetails key={selected.id} item={selected} busy={busy} error={actionError}
-        myId={me.id} orgId={me.org_id} onClaim={claimCase} onRelease={releaseCase}
+        me={me} myId={me.id} orgId={me.org_id} onClaim={claimCase} onRelease={releaseCase}
         onClose={() => { setSelectedId(null); setActionError(null); }} onRefresh={refreshCases} onUpdate={updateCase} /> : <>
         {workspace === "home" && <div className="ceac-support-layout">
           <section className="ceac-support-main">
@@ -390,8 +394,8 @@ export default function TechnicalSupport({ me, go }) {
           <SupportRows cases={groups.access} onSelect={setSelectedId}
             empty="No account or access cases were reported." />
           <div className="ceac-support-unverified">
-            <strong>Access execution is not enabled in this workspace.</strong>
-            <p>Business approvers must authorise a change using the existing CEAC protected-authority process. Technical Support cannot approve its own request or assign itself new powers.</p>
+            <strong>Business-approved access assistance is recorded per case.</strong>
+            <p>Unit Managers and People Administration decide requests within their existing business authority. Assigned technicians may record approved assistance and evidence, but cannot grant permissions or approve their own requests.</p>
           </div>
         </section>}
         {workspace === "system" && <section className="ceac-support-main">
