@@ -52,7 +52,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     const failure = results.find((result) => result.error);
     if (failure) {
       setError(failure.error.message);
-      return;
+      return false;
     }
     setSnapshot({
       people: results[0].data || [],
@@ -61,21 +61,27 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       lanes: results[3].data || [],
       invitations: results[4].data || [],
     });
+    return true;
   }
 
   async function action(work, success) {
     setBusy(true);
     setError(null);
     setNotice(null);
+    let recorded = false;
     try {
       await work();
+      recorded = true;
       setNotice(success);
-      await load();
+      const refreshed = await load();
+      if (!refreshed) throw new Error("The latest records could not be loaded.");
       if (onChanged) await onChanged();
       return true;
     } catch (actionError) {
-      setError(actionError.message || "This change could not be recorded.");
-      return false;
+      setError(recorded
+        ? "The change was recorded, but the page could not refresh. Reload before repeating this action."
+        : actionError.message || "This change could not be recorded.");
+      return recorded;
     } finally {
       setBusy(false);
     }
