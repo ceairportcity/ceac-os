@@ -508,45 +508,59 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }
 
   async function saveEmployment() {
-    if (!person || !employmentForm) return;
+    if (!person?.profile_id || !employmentForm || employmentWriteBusy.current) return;
+    const profileId = person.profile_id;
+    const employeeId = person.employee_id;
+    const generation = personGeneration.current;
+    employmentWriteBusy.current = true;
     setSavingEmployment(true);
     setError(null);
-    const { data, error: saveError } = await supabase.rpc("admin_update_employment", {
-      p_profile_id: person.profile_id,
-      p_employment_type: employmentForm.employmentType,
-      p_job_title: employmentForm.jobTitle || null,
-      p_unit_id: employmentForm.unitId || null,
-      p_manager_profile_id: employmentForm.managerId || null,
-      p_membership_role: employmentForm.role,
-      p_working_pattern: { kind: employmentForm.workingPattern || "not_recorded" },
-      p_employment_status: employmentForm.status,
-      p_joined_on: employmentForm.joinedOn || null,
-      p_exited_on: employmentForm.status === "exited" ? (employmentForm.exitedOn || null) : null,
-      p_change_type: employmentForm.changeType,
-      p_effective_on: employmentForm.effectiveOn,
-      p_reason: employmentForm.reason || null,
-      p_correction_of: employmentForm.changeType === "correction" ? (employmentForm.correctionOf || null) : null,
-    });
-    setSavingEmployment(false);
-    if (saveError) {
-      setError(humanError(saveError, "The employment change could not be recorded."));
-      return;
+    try {
+      const { data, error: saveError } = await supabase.rpc("admin_update_employment", {
+        p_profile_id: profileId,
+        p_employment_type: employmentForm.employmentType,
+        p_job_title: employmentForm.jobTitle || null,
+        p_unit_id: employmentForm.unitId || null,
+        p_manager_profile_id: employmentForm.managerId || null,
+        p_membership_role: employmentForm.role,
+        p_working_pattern: { kind: employmentForm.workingPattern || "not_recorded" },
+        p_employment_status: employmentForm.status,
+        p_joined_on: employmentForm.joinedOn || null,
+        p_exited_on: employmentForm.status === "exited" ? (employmentForm.exitedOn || null) : null,
+        p_change_type: employmentForm.changeType,
+        p_effective_on: employmentForm.effectiveOn,
+        p_reason: employmentForm.reason || null,
+        p_correction_of: employmentForm.changeType === "correction" ? (employmentForm.correctionOf || null) : null,
+      });
+      if (saveError) throw saveError;
+      if (generation !== personGeneration.current) return;
+      const current = data?.current;
+      if (!current) {
+        setError("The employment update response could not be verified. Reopen the record before retrying.");
+        return;
+      }
+      setPerson((value) => value?.employee_id === employeeId ? ({
+        ...value,
+        employment: data,
+        unit_id: current.unit_id,
+        unit_name: current.unit_name,
+        role: current.membership_role,
+        job_title: current.job_title,
+        contract_type: current.employment_type,
+        started_on: current.joined_on,
+        active: current.employment_status === "active",
+      }) : value);
+      setEmploymentEditor(false);
+      setEmploymentForm(null);
+      await load();
+    } catch (failure) {
+      if (generation === personGeneration.current) {
+        setError(humanError(failure, "The employment change could not be confirmed. Check current employment history before retrying."));
+      }
+    } finally {
+      employmentWriteBusy.current = false;
+      if (generation === personGeneration.current) setSavingEmployment(false);
     }
-    const current = data?.current || {};
-    setPerson((value) => ({
-      ...value,
-      employment: data,
-      unit_id: current.unit_id,
-      unit_name: current.unit_name,
-      role: current.membership_role,
-      job_title: current.job_title,
-      contract_type: current.employment_type,
-      started_on: current.joined_on,
-      active: current.employment_status === "active",
-    }));
-    setEmploymentEditor(false);
-    setEmploymentForm(null);
-    load();
   }
 
   if (loading) return <div className="body"><LoadingState label="Loading People…" /></div>;
