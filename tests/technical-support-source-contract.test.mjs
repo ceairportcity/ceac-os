@@ -184,3 +184,12 @@ test("case status edits require a matching server revision, with an explicit col
   const caseReads = supportPanel.match(/\.select\("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at"\)/g) || [];
   assert.equal(caseReads.length, 4, "all current case projections must include server revision");
 });
+
+test("an assigned case may be returned only by its current holder", () => {
+  assert.match(supportPanel, /item\.assigned_to === myId && item\.state !== "resolved"/);
+  assert.match(supportPanel, /Return to unassigned queue/);
+  assert.match(supportPanel, /\.update\(\{ assigned_to: null \}\)\.eq\("id", id\)\.eq\("org_id", me\.org_id\)/);
+  assert.match(supportPanel, /\.eq\("assigned_to", me\.id\)/);
+  assert.match(supportPanel, /\.not\("state", "in", "\(resolved,closed\)"\)/);
+  assert.match(supportPanel, /onRelease=\{releaseCase\}/);
+});
