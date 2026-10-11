@@ -234,3 +234,17 @@ test("Support status changes can only be saved by their current assigned technic
   assert.match(support, /disabled=\{busy \|\| item\.assigned_to !== myId\}/);
   assert.match(support, /Cases assigned to another technician are read-only/);
 });
+
+test("Technical Help validates the draft before taking its submission lock", () => {
+  const validation = help.indexOf('if (title.length < 8 || details.length < 12)');
+  const lock = help.indexOf('submitBusyRef.current = true;', validation);
+  const request = help.indexOf('setBusy(true);', validation);
+  assert.ok(validation >= 0 && lock > validation && request > lock);
+  assert.match(help, /if \(title\.length < 8 \|\| details\.length < 12\) \{\s*setError\([\s\S]*?return;/);
+});
+
+test("Technical Support event history is scoped by organisation and case", () => {
+  assert.match(support, /\.select\("id,action,note,occurred_at"\)\.eq\("org_id", orgId\)\.eq\("case_id", item\.id\)/);
+  assert.match(support, /orgId=\{me\.org_id\}/);
+  assert.match(support, /if \(currentCase\.assigned_to !== me\.id\)/);
+});
