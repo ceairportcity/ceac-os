@@ -308,7 +308,8 @@ test("People roster fails closed on unsuccessful RPC reads and offers recovery",
 });
 
 test("protected employee compensation never accepts overflowing minor-unit arithmetic", () => {
-  assert.match(people, /Number\.isSafeInteger\(Math\.round\(minor\)\)/);
-  assert.match(people, /if \(!Number\.isSafeInteger\(amount\)\) return "Amount could not be verified"/);
-  assert.match(people, /return "Currency could not be verified"/);
+  assert.match(people, /protectedMoney, amountToMinor/);
+  assert.match(compensation, /Number\.isSafeInteger\(Math\.round\(minor\)\)/);
+  assert.match(compensation, /if \(!Number\.isSafeInteger\(amount\)\) return "Amount could not be verified"/);
+  assert.match(compensation, /return "Currency could not be verified"/);
 });
