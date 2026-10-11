@@ -119,7 +119,18 @@ export function getShellNavigation({ me, ...context } = {}) {
   const role = getRoleKey(context);
   const capabilities = new Set(me?.capabilities || []);
 
-  return ROLE_DESTINATIONS[role].filter(
+  // Every signed-in person can report a support problem. Technical Support
+  // is separate from employment roles and never implies administrative power.
+  const destinations = [...ROLE_DESTINATIONS[role],
+    { key: "technical-help", label: "Get technical help", icon: "help", group: "account" },
+  ];
+  if (capabilities.has("support.case.manage")) {
+    destinations.push({
+      key: "technical-support", label: "Technical Support",
+      icon: "help", group: "system", capability: "support.case.manage",
+    });
+  }
+  return destinations.filter(
     (item) => !item.capability || capabilities.has(item.capability)
   );
 }
