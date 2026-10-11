@@ -94,7 +94,7 @@ gate supply_chain node scripts/ci/check-github-actions-pinning.mjs || true
 gate visual_source node scripts/ci/check-visual-fidelity-contract.mjs || true
 gate docs docs || true
 if ! gate dependencies npm ci; then exit 1; fi
-gate unit_tests node --test tests/integration-runtime.test.mjs tests/onboarding-foundation.test.mjs tests/attendance.test.mjs tests/mfa-foundation.test.mjs || true
+gate unit_tests npm run verify:source || true
 gate audit npm audit --audit-level=high || true
 gate build npm run build || true
 if ! gate playwright_setup bash -c 'npm install --no-save --package-lock=false @playwright/test@1.55.0 && npx playwright install --with-deps chromium'; then exit 1; fi
