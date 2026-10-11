@@ -210,6 +210,8 @@ export default function AdminOverviewV2({
       + Number(payrollReadiness.identity_review_count || 0)
     : 0;
   const onboardingAttention = pendingInvitations.length;
+  const expiredInvitationCount = pendingInvitations.filter((invitation) =>
+    invitation.expires_at && Date.parse(invitation.expires_at) <= Date.now()).length;
   const reportingAttention = reportingGap;
   const totalAttention = decisionCount + onboardingAttention + peopleAttention + payrollAttention + deliveryAttention + reportingAttention;
   const adminFirstName = String(me?.full_name || "").trim().split(/\s+/)[0] || "there";
@@ -240,8 +242,10 @@ export default function AdminOverviewV2({
       : pendingInvitations.length && canManagePeople
         ? {
           eyebrow: "Onboarding",
-          title: `${pendingInvitations.length} Staff invitation${pendingInvitations.length === 1 ? "" : "s"} awaiting activation`,
-          detail: "Continue account onboarding through the authorised People & Access workspace.",
+          title: `${pendingInvitations.length} Staff invitation${pendingInvitations.length === 1 ? "" : "s"} need follow-up`,
+          detail: expiredInvitationCount
+            ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Review before resending.`
+            : "Continue account onboarding through the authorised People & Access workspace.",
           action: onOpenPeople,
           label: "Open invitations",
         }
@@ -309,7 +313,7 @@ export default function AdminOverviewV2({
             </div>
             : <div className="adminv2-agenda-empty">No upcoming meetings on record in the next 14 days.</div>}
           {!loading && !loadFailed ? <div className="adminv2-agenda-foot">
-            <span><strong>{pendingInvitations.length}</strong> invitations pending</span>
+            <span><strong>{pendingInvitations.length}</strong> invitations need follow-up</span>
             <span><strong>{leaveQueue.length}</strong> leave decisions</span>
           </div> : null}
         </aside>
@@ -369,8 +373,8 @@ export default function AdminOverviewV2({
 
             {pendingInvitations.length ? <AdminActionRow
               icon="people"
-              title={`Pending Staff invitations · ${pendingInvitations.length}`}
-              meta="Activation is still outstanding. Existing identities must be reconciled rather than invited again."
+              title={`Staff invitations to review · ${pendingInvitations.length}`}
+              meta={expiredInvitationCount ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Check before resending.` : "Activation is outstanding. Reconcile existing identities rather than inviting again."}
               status="Onboarding"
               statusTone="action"
               onClick={onOpenPeople}
@@ -413,7 +417,7 @@ export default function AdminOverviewV2({
           >
             <div className="adminv2-stat-grid is-four">
               <StatTile label="Employees" value={employeeRoster.length} supporting="Roster records" icon="people" tone="action" onClick={canManagePeople ? onOpenPeople : undefined} />
-              <StatTile label="Pending invitations" value={pendingInvitations.length} supporting="Awaiting activation" icon="notification" tone={pendingInvitations.length ? "action" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Invitations to review" value={pendingInvitations.length} supporting={expiredInvitationCount ? `${expiredInvitationCount} expired` : "Awaiting activation"} icon="notification" tone={pendingInvitations.length ? "action" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
               <StatTile label="Identity review" value={identityReviewCount} supporting="Needs confirmation" icon="warning" tone={identityReviewCount ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
               <StatTile label="Needs attention" value={peopleAttention} supporting="Recorded gaps" icon="notification" tone={peopleAttention ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
             </div>
