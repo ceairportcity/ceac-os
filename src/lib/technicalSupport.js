@@ -82,3 +82,12 @@ export function supportCasesNeedingMe(cases = [], profileId) {
     && (!item.assigned_to || (profileId && item.assigned_to === profileId))
   );
 }
+
+export function supportUnavailableMessage(error) {
+  // An undeployed backend must not be reported as an empty Help Desk or as
+  // a missing personal permission. No automatic schema writes are attempted.
+  const code = String(error?.code || "");
+  return code === "42P01" || code === "PGRST205"
+    ? "Technical Support requests are not enabled in this environment. Use the currently approved CEAC support contact until the secured service is activated."
+    : null;
+}
