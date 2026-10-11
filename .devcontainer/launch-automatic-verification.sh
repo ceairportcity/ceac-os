@@ -12,10 +12,20 @@ cd "$(git rev-parse --show-toplevel)"
 command -v flock >/dev/null || { echo "NOT VERIFIED: flock unavailable" >&2; exit 2; }
 exec 9>/tmp/ceac-private-autorun-launch.flock
 flock -w 10 9
+# A completion marker is valid only for the exact checked-out commit.
+# A Codespace can survive later PR commits: stale PASS or FAIL summaries may
+# not suppress a new exact-head run (nor count as acceptance).
+current_head="$(git rev-parse HEAD)"
+previous_head="$(cat /tmp/ceac-private-autorun-tested-head 2>/dev/null || true)"
 if [[ -f /tmp/ceac-private-autorun-exit-code &&
-      -f /tmp/ceac-private-autorun-summary.md ]]; then
-  echo "CEAC verification has a recorded result; avoiding duplicate execution."
+      -f /tmp/ceac-private-autorun-summary.md &&
+      "$previous_head" == "$current_head" ]]; then
+  echo "CEAC verification already completed for this exact checkout $current_head."
   exit 0
+fi
+if [[ -f /tmp/ceac-private-autorun-exit-code &&
+      "$previous_head" != "$current_head" ]]; then
+  echo "Recorded verification is for a stale commit; starting exact-head retest."
 fi
 pidfile=/tmp/ceac-private-autorun-worker.pid
 if [[ -s "$pidfile" ]]; then
