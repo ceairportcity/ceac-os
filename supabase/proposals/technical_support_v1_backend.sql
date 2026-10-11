@@ -184,6 +184,13 @@ CREATE TABLE IF NOT EXISTS public.support_case_events (
 CREATE INDEX IF NOT EXISTS support_events_by_case
   ON public.support_case_events(case_id,occurred_at DESC);
 ALTER TABLE public.support_case_events ENABLE ROW LEVEL SECURITY;
+-- Use the existing production-verified append-only audit guard so even
+-- elevated database maintenance must use an explicit reviewed recovery path.
+DROP TRIGGER IF EXISTS support_case_events_immutable ON public.support_case_events;
+CREATE TRIGGER support_case_events_immutable
+BEFORE UPDATE OR DELETE ON public.support_case_events
+FOR EACH ROW EXECUTE FUNCTION public.platform_audit_immutable();
+
 REVOKE ALL ON public.support_case_events FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.support_case_events TO authenticated;
 CREATE POLICY support_case_events_visible ON public.support_case_events
