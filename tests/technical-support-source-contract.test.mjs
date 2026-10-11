@@ -70,6 +70,7 @@ test("canonical S3 migration is ordered before ten pending files, with no duplic
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
+  assert.equal(migrations.length, 130, "expected reviewed 119-history + 11-pending migration source tree");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
   const pending = [
@@ -104,4 +105,27 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(mfa, /callable_count<>135/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);
+});
+
+
+test("later migrations may not redefine S3 authority functions", () => {
+  const folder = "supabase/migrations";
+  const s3Filename = "20261007083250_118_capability_delegation_expiry.sql";
+  const pending = readdirSync(folder).filter((file) =>
+    /^\\d+_.+\\.sql$/.test(file) && file > s3Filename
+  );
+  const extractDefinitions = (sql) => {
+    const pattern = /(?:create\\s+(?:or\\s+replace\\s+)?function|drop\\s+function\\s+(?:if\\s+exists\\s+)?)\\s+(?:public\\.)?([a-zA-Z_][\\w]*)\\s*\\(/gi;
+    return [...sql.matchAll(pattern)].map((match) => match[1].toLowerCase());
+  };
+  const s3Functions = new Set(extractDefinitions(read(join(folder, s3Filename))));
+  assert.ok(s3Functions.has("app_has_capability"));
+  assert.ok(s3Functions.has("app_identity_confirmed"));
+  assert.ok(s3Functions.has("grant_capability"));
+  for (const migration of pending) {
+    for (const functionName of extractDefinitions(read(join(folder, migration)))) {
+      assert.equal(s3Functions.has(functionName), false,
+        migration + " illegally replaces/overrides S3 security function " + functionName);
+    }
+  }
 });
