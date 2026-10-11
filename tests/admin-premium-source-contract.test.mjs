@@ -41,7 +41,9 @@ test("mobile and desktop have separate first-class hierarchy and real screenshot
   assert.match(stylesheet, /max-width: 599px/);
   assert.match(stylesheet, /grid-template-columns: 1fr/);
   assert.match(stylesheet, /prefers-reduced-motion/);
+  assert.match(mobile, /desktop-1440/);
   assert.match(mobile, /desktop-1366/);
+  assert.match(mobile, /tablet-820/);
   assert.match(mobile, /phone-390/);
   assert.match(mobile, /screenshot\(/);
   assert.match(mobile, /document\.documentElement\.scrollWidth/);
