@@ -199,6 +199,7 @@ export default function TechnicalSupport({ me, go }) {
       const { data, error: failure } = await supabase.from("support_cases")
         .update({ assigned_to: me.id }).eq("id", id).eq("org_id", me.org_id)
         .is("assigned_to", null)
+        .not("state", "in", "(resolved,closed)")
         .select("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
         .maybeSingle();
       if (failure) throw failure;
