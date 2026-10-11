@@ -8,6 +8,7 @@ tests=(
   platform_kernel_gate.sql
   report_draft_tenant_integrity_gate.sql
   report_evidence_tenant_integrity_gate.sql
+  report_evidence_browser_write_gate.sql
   unit_budget_tenant_boundary_gate.sql
   security_definer_surface_gate.sql
   privileged_mfa_aal2_gate.sql
