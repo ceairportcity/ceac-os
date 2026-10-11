@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 
 const auto = readFileSync(".devcontainer/ceac-private-runner.sh", "utf8");
 const launcher = readFileSync(".devcontainer/launch-automatic-verification.sh", "utf8");
@@ -47,4 +48,17 @@ test("Codespaces never accepts a stale result after the PR branch advances", () 
   assert.match(launcher, /"\$previous_head" == "\$live_pr_head"/);
   assert.doesNotMatch(launcher, /"\$previous_head" == "\$current_head"/);
   assert.match(auto, /printf '%s\\n' "\$\{expected_pr:-UNRESOLVED\}" > \/tmp\/ceac-private-autorun-tested-head/);
+});
+
+// The independent Level B runner must parse before it is entrusted with a
+// long-lived disposable database or a privileged GitHub Codespace.
+test("private verification entrypoints parse as Bash without executing", () => {
+  for (const script of [
+    "scripts/ci/run-independent-release-gate.sh",
+    ".devcontainer/ceac-private-runner.sh",
+    ".devcontainer/launch-automatic-verification.sh",
+  ]) {
+    const result = spawnSync("bash", ["-n", script], { encoding: "utf8" });
+    assert.equal(result.status, 0, script + ": " + (result.error?.message || result.stderr || "Bash syntax invalid"));
+  }
 });
