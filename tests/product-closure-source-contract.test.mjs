@@ -177,3 +177,25 @@ test("Workforce renders every historical session date in Accra, not the viewer's
   assert.equal(dates.length, 8);
   assert.doesNotMatch(workforce, /\.toLocaleString\("en-GB"\)/);
 });
+
+test("Workforce dataset failures cannot leave the console on stale or unverified rows", () => {
+  assert.match(workforce, /settleWorkforceDatasets\(datasets\)/);
+  assert.match(workforce, /setPeople\(!byName\.people\.error/);
+  assert.match(workforce, /setSessions\(!byName\.sessions\.error/);
+  assert.match(workforce, /setLeave\(!byName\.leave\.error/);
+  assert.match(workforce, /setPolicies\(!byName\["leave policies"\]\.error/);
+  assert.match(workforce, /setOffice\(!byName\["office location"\]\.error/);
+  assert.match(workforce, /setDatasetErrors\(errors\)/);
+  assert.match(workforce, /setLoading\(false\)/);
+});
+
+test("Workforce sensitive mutations cannot double-submit or strand loading on RPC errors", () => {
+  assert.match(workforce, /const mutationBusyRef=useRef\(false\)/);
+  assert.match(workforce, /if\(mutationBusyRef\.current \|\| busy \|\| loading\) return false/);
+  assert.match(workforce, /mutationBusyRef\.current=true/);
+  assert.match(workforce, /let recorded=false/);
+  assert.match(workforce, /recorded=true/);
+  assert.match(workforce, /catch \(failure\)/);
+  assert.match(workforce, /mutationBusyRef\.current=false/);
+  assert.match(workforce, /setBusy\(false\)/);
+});
