@@ -29,6 +29,8 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const leaveActionBusyRef = useRef(false);
   const scopeKey = `${me.org_id}:${me.id}`;
   const scopedLoading = loading || loadedScope !== scopeKey;
+  // Never render prior-account records before the next effect clears state.
+  const verifiedSnapshot = loadedScope === scopeKey && !loading && !loadError;
 
   useEffect(() => {
     // The administrator can change account or organisation while reads are in flight.
@@ -273,23 +275,23 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       dateLabel={adminDate}
       loading={scopedLoading}
       loadFailed={loadedScope === scopeKey ? loadError : null}
-      message={msg}
+      message={verifiedSnapshot ? msg : null}
       busy={busy}
-      units={units}
-      alerts={alerts}
-      blockers={blockers}
-      leaveQueue={leaveQueue}
-      checks={checks}
-      mine={mine}
-      office={office}
-      today={today}
-      delivery={delivery}
-      reporting={reporting}
-      watch={watch}
-      meetings={meetings}
-      employeeRoster={employeeRoster}
-      pendingInvitations={pendingInvitations}
-      payrollReadiness={payrollReadiness}
+      units={verifiedSnapshot ? units : []}
+      alerts={verifiedSnapshot ? alerts : []}
+      blockers={verifiedSnapshot ? blockers : []}
+      leaveQueue={verifiedSnapshot ? leaveQueue : []}
+      checks={verifiedSnapshot ? checks : []}
+      mine={verifiedSnapshot ? mine : []}
+      office={verifiedSnapshot ? office : null}
+      today={verifiedSnapshot ? today : { working: 0, leave: 0, notStarted: 0, headcount: 0 }}
+      delivery={verifiedSnapshot ? delivery : { active: 0, closedThisMonth: 0, onTrack: 0, atRisk: 0, met: 0, notMet: 0, other: 0, objectives: 0 }}
+      reporting={verifiedSnapshot ? reporting : null}
+      watch={verifiedSnapshot ? watch : []}
+      meetings={verifiedSnapshot ? meetings : []}
+      employeeRoster={verifiedSnapshot ? employeeRoster : []}
+      pendingInvitations={verifiedSnapshot ? pendingInvitations : []}
+      payrollReadiness={verifiedSnapshot ? payrollReadiness : null}
       canManagePeople={canManagePeople}
       canUsePayroll={canUsePayroll}
       canAccessProtectedHR={canAccessProtectedHR}
