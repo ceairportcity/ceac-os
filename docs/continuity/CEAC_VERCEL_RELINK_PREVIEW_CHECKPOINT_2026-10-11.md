@@ -22,3 +22,13 @@ Candidate-only fix introduced `src/lib/capabilitySchemaCompatibility.js`:
 - unrelated failures continue to throw; unchanged database/RLS and MFA code.
 The five exact-source isolated regression callbacks all pass in the available JavaScript harness; Node suite/real-user authentication is still outstanding.
 The existing Vercel preview opt-in is being exercised again for one isolated preproduction build. This is not a release or authorisation to migrate live SQL.
+
+## Admin visual report and capability-authority preview restoration
+
+Owner confirmed the prior preview could sign in, but still looked like the old Administration panel. Source comparison shows the Administration home component is unchanged from the Phase 5 candidate; the visual owner-acceptance claim is **NOT** established. The original preview compatibility path also denied all capability menus on the absent capability_grants.expires_at column, hiding the Phase 5 People & Access destination even for properly authorised Admin.
+
+The database's current public.app_has_capability(text,uuid) RPC is authenticated-executable and anon-inaccessible, and independently checks current identity, privilege assurance, revocation, and organisation/scope. With S3 uninstalled this is the current production authorisation semantics. Instead of inventing expiry information or bypassing RLS, the pre-S3 preview now reads only the signed-in person's unrevoked legacy grants and requires this existing server authoriser to approve each grant/scope. An RPC error anywhere empties all delegated capabilities. The implementation never creates or extends authority. Current production contains active Admin grants including people.manage (aggregate existence checked, no identities accessed), so the permission-backed People & Access navigation should reappear on the next preview.
+
+Five new server-validation cases plus five earlier narrow mismatch tests passed in isolated JS exact-source harness (10/10). **No browser login was automated; owner must verify the actual route.** Admin Overview itself retains much of its prior appearance; separate literal owner-design comparison is still required. Do not mark Phase 5 visually accepted from this fix.
+
+This tagged commit triggers **one** preproduction build from the existing private CEAC project to confirm the candidate compiles. Production main/database remain unchanged.
