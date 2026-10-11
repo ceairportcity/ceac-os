@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
+import { summariseAdminToday } from "../lib/adminTodaySummary";
 
 export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, openSettings, openUnits, go }) {
   const [units, setUnits] = useState([]);
@@ -38,11 +39,14 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     try {
       const now = Date.now();
       const weekAgo = new Date(now - 7 * 864e5).toISOString();
-      const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
-      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-      const todayStr = new Date().toISOString().slice(0, 10);
+      // CEAC reporting dates use Accra time (UTC year-round), not the viewer's device timezone.
+      const nowDate = new Date(now);
+      const dayStart = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), nowDate.getUTCDate()));
+      const tomorrow = new Date(dayStart.getTime() + 864e5);
+      const monthStart = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), 1));
+      const todayStr = dayStart.toISOString().slice(0, 10);
 
-      const [us, mgrs, done7, openAlerts, pi, al, bl, lq, workflowSteps, my, o, staff, sessToday, sessWeek, away, projs, projectCloses, objs, period, subs, memberships, meetingRows, rosterRows] = await Promise.all([
+      const [us, mgrs, done7, openAlerts, pi, al, bl, lq, workflowSteps, my, o, staff, sessToday, activeSessionsNow, sessWeek, away, projs, projectCloses, objs, period, subs, memberships, meetingRows, rosterRows] = await Promise.all([
         must(supabase.from("units").select("id,name").order("name"), "Units"),
         must(supabase.from("unit_memberships").select("unit_id,profile_id,profiles(id,full_name,email)").eq("role","manager"), "Unit heads"),
         must(supabase.from("completed_outputs").select("unit_id").gte("completed_at", weekAgo), "Completed outputs"),
@@ -68,7 +72,8 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
           .not("status","in","(completed,self_certified,cancelled)"), "Administration work"),
         must(supabase.from("office_locations").select("id").eq("is_primary",true).limit(1).maybeSingle(), "Office location"),
         must(supabase.from("profiles").select("id,full_name").eq("active",true), "Active people"),
-        must(supabase.from("work_sessions").select("profile_id,ended_at,started_at").gte("started_at",dayStart.toISOString()), "Today's sessions"),
+        must(supabase.from("work_sessions").select("profile_id,started_at").gte("started_at",dayStart.toISOString()).lt("started_at",tomorrow.toISOString()), "Today's sessions"),
+        must(supabase.from("work_sessions").select("profile_id").is("ended_at",null).lte("started_at",nowDate.toISOString()), "Active work sessions"),
         must(supabase.from("work_sessions").select("profile_id,started_at").gte("started_at",weekAgo), "Recent sessions"),
         must(supabase.from("leave_requests").select("profile_id").eq("status","approved").lte("start_date",todayStr).gte("end_date",todayStr), "Today's leave"),
         must(supabase.from("projects").select("id,name,status,lead_unit_id,ends_on"), "Projects"),
@@ -119,14 +124,12 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
         setPayrollReadiness(null);
       }
 
-      const awayIds = new Set((away || []).map((row) => row.profile_id));
-      const startedIds = new Set((sessToday || []).map((row) => row.profile_id));
-      setToday({
-        working: (sessToday || []).filter((row) => !row.ended_at).length,
-        leave: awayIds.size,
-        notStarted: (staff || []).filter((person) => !startedIds.has(person.id) && !awayIds.has(person.id)).length,
-        headcount: (staff || []).length,
-      });
+      setToday(summariseAdminToday({
+        activeProfiles: staff || [],
+        todaySessions: sessToday || [],
+        activeSessions: activeSessionsNow || [],
+        approvedLeave: away || [],
+      }));
 
       const closedProjectIds = new Set((projectCloses || []).map((row) => row.project_id));
       const objectiveRows = objs || [];
