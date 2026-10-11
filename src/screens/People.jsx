@@ -239,6 +239,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     setDrill(null);
     setPersonTab("overview");
 
+    try {
     const rosterDetailResult = await supabase.rpc("admin_employee_roster_detail", { p_employee_id: summary.id });
     if (generation !== personGeneration.current) return;
     if (rosterDetailResult.error) {
@@ -361,6 +362,13 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         carryover_from_last_year: summary.carryover_from_last_year || 0,
       },
     });
+    } catch (failure) {
+      if (generation === personGeneration.current) {
+        setDetailLoading(false);
+        setProtectedHrLoading(false);
+        setError(humanError(failure, "This employee's current record could not be verified. Try opening it again."));
+      }
+    }
   }
 
   function openAccessAdministration(profileId = null) {
