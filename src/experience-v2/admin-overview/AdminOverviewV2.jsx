@@ -277,9 +277,13 @@ export default function AdminOverviewV2({
             <div className="adminv2-hero-title">
               <span className="adminv2-eyebrow">Your CEAC workspace</span>
               <h1>{greeting}, {adminFirstName}<span className="adminv2-greeting-mark">.</span></h1>
-              <p>{totalAttention
-                ? `You have ${totalAttention} recorded item${totalAttention === 1 ? "" : "s"} to review. Start with what needs a decision, then move the work forward.`
-                : "Your decision inbox is clear. Keep the people, work and organisation moving forward."}</p>
+              <p>{loading
+                ? "Loading your recorded Administration priorities…"
+                : loadFailed
+                  ? "The latest Administration priorities could not be verified. Retry the connection before making decisions."
+                  : totalAttention
+                    ? `You have ${totalAttention} recorded item${totalAttention === 1 ? "" : "s"} to review. Start with what needs a decision, then move the work forward.`
+                    : "Your decision inbox is clear. Keep the people, work and organisation moving forward."}</p>
             </div>
           </div>
           <div className="adminv2-intro-actions">
@@ -294,7 +298,8 @@ export default function AdminOverviewV2({
             <span><CeacIcon name="calendar" size="row" decorative /> Coming up</span>
             <button type="button" onClick={() => onScheduleMeeting?.({ scope: "organisation", organisation: true })} className="adminv2-agenda-add">Schedule <CeacIcon name="chevronRight" size="meta" decorative /></button>
           </div>
-          {loading ? <div className="adminv2-agenda-empty">Loading your schedule…</div> : nextMeetings.length
+          {loadFailed ? <div className="adminv2-agenda-empty" role="status">Current meeting information could not be verified.</div>
+            : loading ? <div className="adminv2-agenda-empty">Loading your schedule…</div> : nextMeetings.length
             ? <div className="adminv2-agenda-list">
               {nextMeetings.map((meeting) => <button type="button" key={meeting.id} className="adminv2-agenda-item" onClick={() => onOpenMeeting?.(meeting.id)}>
                 <span className="adminv2-agenda-date">{formatDate(meeting.starts_at, {weekday:"short",hour:"2-digit",minute:"2-digit"})}</span>
@@ -303,10 +308,10 @@ export default function AdminOverviewV2({
               </button>)}
             </div>
             : <div className="adminv2-agenda-empty">No upcoming meetings on record in the next 14 days.</div>}
-          <div className="adminv2-agenda-foot">
+          {!loading && !loadFailed ? <div className="adminv2-agenda-foot">
             <span><strong>{pendingInvitations.length}</strong> invitations pending</span>
             <span><strong>{leaveQueue.length}</strong> leave decisions</span>
-          </div>
+          </div> : null}
         </aside>
       </header>
 
