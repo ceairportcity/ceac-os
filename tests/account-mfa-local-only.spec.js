@@ -47,10 +47,23 @@ test("self-only authenticator enrollment rejects a wrong code then grants AAL2",
   const context = await browser.newContext();
   const page = await context.newPage();
   try {
-    // Never execute against a non-local host even if someone sets the opt-in flag.
+    // The Vite page may point to a remote Supabase even when its own URL is local.
+    // Fail closed at the browser network boundary BEFORE the first auth request.
     const url = test.info().project.use.baseURL || "";
     expect(new URL(url).hostname).toBe("127.0.0.1");
+    const disallowedRequests = [];
+    await page.route("**/*", (route) => {
+      const target = new URL(route.request().url());
+      const allowed = target.protocol === "http:" && target.hostname === "127.0.0.1"
+        && (target.port === "5173" || target.port === "54321");
+      if (!allowed) {
+        disallowedRequests.push(target.origin);
+        return route.abort("blockedbyclient");
+      }
+      return route.continue();
+    });
     await signIn(page, "staff@ceac.local.test");
+    expect(disallowedRequests, "MFA test attempted a non-fixture network request").toEqual([]);
     await expect(page.getByText("No verified authenticator is registered for this account.")).toBeVisible();
     await page.getByRole("button", { name: "Set up authenticator" }).click();
     await expect(page.getByText("This setup is incomplete until you verify a code below.")).toBeVisible();
