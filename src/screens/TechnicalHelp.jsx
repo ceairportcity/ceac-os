@@ -10,6 +10,7 @@ const formatDate = (date) => date ? new Date(date).toLocaleDateString("en-GB", {
 
 export default function TechnicalHelp({ me }) {
   const [cases, setCases] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [error, setError] = useState(null);
@@ -28,7 +29,7 @@ export default function TechnicalHelp({ me }) {
     (async () => {
       try {
         const { data, error: failure } = await supabase.from("support_cases")
-          .select("id,reference,category,summary,state,opened_at")
+          .select("id,reference,category,summary,description,affected_service,state,opened_at,resolved_at,closed_at,resolution_summary")
           .eq("reported_by", me.id).eq("org_id", me.org_id)
           .order("opened_at", { ascending: false }).limit(30);
         if (failure) throw failure;
@@ -59,7 +60,7 @@ export default function TechnicalHelp({ me }) {
         org_id: me.org_id, reported_by: me.id, affected_profile_id: me.id,
         category, summary: title, description: details,
         affected_service: service.trim() || null, impact: "normal", state: "open",
-      }).select("id,reference,category,summary,state,opened_at").single();
+      }).select("id,reference,category,summary,description,affected_service,state,opened_at,resolved_at,closed_at,resolution_summary").single();
       if (failure) throw failure;
       setCases((previous) => [data, ...previous]);
       setSummary(""); setDescription(""); setService("");
@@ -71,6 +72,8 @@ export default function TechnicalHelp({ me }) {
       setBusy(false);
     }
   }
+
+  const selected = cases.find((item) => item.id === selectedId) || null;
 
   return <main className="body ceac-support-page">
     <header className="ceac-support-heading">
@@ -111,11 +114,31 @@ export default function TechnicalHelp({ me }) {
         {loadError && <p className="ceac-support-error" role="status">{loadError}</p>}
         {!loading && !loadError && cases.length === 0 && <p className="screen-note">No requests have been recorded.</p>}
         <div className="ceac-support-rows">
-          {cases.map((item) => <article key={item.id} className="ceac-support-row">
-            <div><strong>{item.summary}</strong><span>{item.reference || "Reference pending"} · {supportCategoryLabel(item.category)}</span></div>
-            <small>{item.state.replaceAll("_", " ")} · {formatDate(item.opened_at)}</small>
-          </article>)}
+          {cases.map((item) => <button type="button" key={item.id}
+            aria-pressed={selectedId === item.id}
+            className="ceac-support-row ceac-support-case-button"
+            onClick={() => setSelectedId((current) => current === item.id ? null : item.id)}>
+            <span><strong>{item.summary}</strong><small>{item.reference || "Reference pending"} · {supportCategoryLabel(item.category)}</small></span>
+            <span className="ceac-support-state">{String(item.state).replaceAll("_", " ")} · {formatDate(item.opened_at)}</span>
+          </button>)}
         </div>
+        {selected && <section className="ceac-support-request-details" aria-labelledby="support-own-case-title">
+          <div className="ceac-support-detail-top">
+            <h3 id="support-own-case-title">Request {selected.reference || "details"}</h3>
+            <button type="button" className="btn btn-ghost" onClick={() => setSelectedId(null)}>Close details</button>
+          </div>
+          <dl className="ceac-support-case-facts">
+            <div><dt>Status</dt><dd>{String(selected.state).replaceAll("_", " ")}</dd></div>
+            <div><dt>Opened</dt><dd>{formatDate(selected.opened_at)}</dd></div>
+            <div><dt>Area</dt><dd>{selected.affected_service || "Not specified"}</dd></div>
+          </dl>
+          <h4>{selected.summary}</h4>
+          <p className="ceac-support-description">{selected.description}</p>
+          {selected.resolution_summary ? <>
+            <h4>Technical Support response</h4>
+            <p className="ceac-support-description">{selected.resolution_summary}</p>
+          </> : <p className="screen-note">No resolution has been recorded yet. Case updates are subject to the Technical Support team's review.</p>}
+        </section>}
       </aside>
     </div>
   </main>;
