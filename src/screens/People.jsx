@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 import { classifyPreviewFeatureResult } from "../lib/pendingFeatureCompatibility";
@@ -97,10 +97,15 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState(null);
+  const rosterGeneration = useRef(0);
+  const personGeneration = useRef(0);
 
   const canManageProtectedHr = (me.capabilities || []).includes("hr_private.access");
 
-  useEffect(() => { load(); }, [me.id]);
+  useEffect(() => {
+    void load();
+    return () => { rosterGeneration.current += 1; personGeneration.current += 1; };
+  }, [me.id, me.org_id]);
   useEffect(() => {
     if (!initialEmployeeId || !rows.length || person) return;
     const match = rows.find((row) => row.id === initialEmployeeId || row.profile_id === initialEmployeeId);
@@ -118,14 +123,17 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }, [accessIntent]);
 
   async function load({ silent = false } = {}) {
+    const generation = ++rosterGeneration.current;
     if (!silent) setLoading(true);
     setError(null);
+    try {
     const [rosterResult, peopleResult, leaveResult, unitsResult] = await Promise.all([
       supabase.rpc("admin_employee_roster_summary"),
       supabase.rpc("admin_people_summary"),
       supabase.from("leave_settings").select("annual_days,sick_days,max_carryover,updated_by,updated_at").eq("org_id", me.org_id).maybeSingle(),
       supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("name"),
     ]);
+    if (generation !== rosterGeneration.current) return;
     if (rosterResult.error || peopleResult.error) {
       setError(humanError(rosterResult.error || peopleResult.error, "The People record could not load."));
       setLoading(false);
@@ -206,13 +214,25 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     } catch {
       hydratedRows = rosterRows;
     }
+    if (generation !== rosterGeneration.current) return;
     setRows(hydratedRows);
     setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
     setUnits(unitsResult.data || []);
     setLoading(false);
+    } catch (failure) {
+      if (generation === rosterGeneration.current) {
+        setError(humanError(failure, "People records could not be verified. Retry before making changes."));
+        setLoading(false);
+      }
+    }
   }
 
   async function openPerson(summary) {
+    const generation = ++personGeneration.current;
+    setPerson(null);
+    setProtectedHr(null);
+    setVolunteerRecommendations([]);
+    setEmployeeFiles({ photos: [], documents: [] });
     setVolunteerRecommendationsAvailable(true);
     setDetailLoading(true);
     setError(null);
@@ -220,6 +240,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     setPersonTab("overview");
 
     const rosterDetailResult = await supabase.rpc("admin_employee_roster_detail", { p_employee_id: summary.id });
+    if (generation !== personGeneration.current) return;
     if (rosterDetailResult.error) {
       setDetailLoading(false);
       setError(humanError(rosterDetailResult.error, "That employee record could not load."));
@@ -260,7 +281,9 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
               .order("requested_at", { ascending: false })
           : Promise.resolve({ data: [], error: null }),
       ]);
+      if (generation !== personGeneration.current) return;
     } catch (fileError) {
+      if (generation !== personGeneration.current) return;
       setProtectedHrLoading(false);
       setDetailLoading(false);
       setError(humanError(fileError, "That employee's private files could not load."));
@@ -293,6 +316,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       }
     }
 
+    if (generation !== personGeneration.current) return;
     const data = detailResult.data;
     const work = Array.isArray(data?.work) ? data.work.map((item) => ({
       ...item,
@@ -340,6 +364,9 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }
 
   function openAccessAdministration(profileId = null) {
+    personGeneration.current += 1;
+    setDetailLoading(false);
+    setProtectedHrLoading(false);
     setAccessFocusProfileId(profileId);
     setAccessFocusUnitId(null);
     setAccessFocusMode(profileId ? "responsibility" : "invite");
@@ -568,7 +595,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       : "No organisational responsibility recorded";
 
     return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
-      <PeopleBackButton onClick={() => { setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
+      <PeopleBackButton onClick={() => { personGeneration.current += 1; setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
 
       <div className="ev2p-admin-person-layout">
         <aside className="ev2p-admin-person-rail" aria-label="Employee context">
