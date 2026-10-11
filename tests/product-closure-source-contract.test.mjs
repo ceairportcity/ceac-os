@@ -104,3 +104,14 @@ test("Technical Support case revisions and case history can recover without fals
   assert.match(support, /setHistoryRefreshToken\(\(n\) => n \+ 1\)/);
   assert.match(support, /historyRefreshToken\]/);
 });
+
+test("attendance decisions and reporter submissions are single-flight", () => {
+  assert.match(admin, /const leaveActionBusyRef = useRef\(false\)/);
+  assert.match(admin, /if \(busy \|\| scopedLoading \|\| loadError \|\| leaveActionBusyRef\.current\) return/);
+  assert.match(admin, /leaveActionBusyRef\.current = true/);
+  assert.match(admin, /leaveActionBusyRef\.current = false/);
+  assert.match(help, /const submitBusyRef = useRef\(false\)/);
+  assert.match(help, /if \(busy \|\| scopedLoading \|\| loadError \|\| submitBusyRef\.current\) return/);
+  assert.match(help, /submitBusyRef\.current = true/);
+  assert.match(help, /submitBusyRef\.current = false/);
+});
