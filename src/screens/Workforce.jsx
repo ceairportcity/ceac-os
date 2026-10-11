@@ -1,4 +1,4 @@
-import { Fragment, Suspense, lazy, useEffect, useState } from "react";
+import { Fragment, Suspense, lazy, useEffect, useRef, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
@@ -66,6 +66,7 @@ export default function Workforce({ me }) {
   const [datasetErrors,setDatasetErrors]=useState({});
   const [notice,setNotice]=useState(null);
   const [busy,setBusy]=useState(false);
+  const mutationBusyRef=useRef(false);
   const [calendarUnit,setCalendarUnit]=useState("");
   const [calendarPerson,setCalendarPerson]=useState("");
 
@@ -195,18 +196,33 @@ export default function Workforce({ me }) {
   }
 
   async function runRpc(name,args,success,requiredDatasets=[]){
+    // Busy React state alone is not a synchronous double-submit lock.
+    // Every correction, policy, schedule and leave decision uses this gate.
+    if(mutationBusyRef.current || busy || loading) return false;
+    mutationBusyRef.current=true;
     setBusy(true); setError(null); setNotice(null);
-    const {error:e}=await supabase.rpc(name,args);
-    if(e){ setBusy(false); setError(humanError(e,"That workforce change could not be recorded.")); return false; }
-    const reload=await load();
-    const missing=requiredDatasets.filter((name)=>reload.errors[name]);
-    setBusy(false);
-    if(missing.length){
-      setError("The change was recorded, but these required datasets failed to reload: "+missing.join(", ")+".");
+    let recorded=false;
+    try {
+      const {error:e}=await supabase.rpc(name,args);
+      if(e) throw e;
+      recorded=true;
+      const reload=await load();
+      const missing=requiredDatasets.filter((dataset)=>reload.errors[dataset]);
+      if(missing.length){
+        setError("The change was recorded, but these required datasets failed to reload: "+missing.join(", ")+". Review recorded state before trying again.");
+        return false;
+      }
+      setNotice(success);
+      return true;
+    } catch (failure) {
+      setError(recorded
+        ? "The change was recorded but refresh could not be confirmed. Review the current record before retrying."
+        : humanError(failure,"The workforce action could not be confirmed. Check its current state before repeating."));
       return false;
+    } finally {
+      mutationBusyRef.current=false;
+      setBusy(false);
     }
-    setNotice(success);
-    return true;
   }
 
   async function recordDayType(){
