@@ -107,14 +107,21 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     return () => { rosterGeneration.current += 1; personGeneration.current += 1; };
   }, [me.id, me.org_id]);
   useEffect(() => {
-    if (!initialEmployeeId || !rows.length || person) return;
+    if (!initialEmployeeId || !rows.length || person || accessIntent) return;
     const match = rows.find((row) => row.id === initialEmployeeId || row.profile_id === initialEmployeeId);
     if (!match) return;
     openPerson(match);
     onInitialHandled?.();
-  }, [initialEmployeeId, rows, person]);
+  }, [initialEmployeeId, rows, person, accessIntent]);
   useEffect(() => {
     if (!accessIntent) return;
+    // Deep-link to access administration wins over any slower employee
+    // detail request that was in flight when navigation occurred.
+    personGeneration.current += 1;
+    setPerson(null);
+    setProtectedHr(null);
+    setDetailLoading(false);
+    setProtectedHrLoading(false);
     setAccessFocusProfileId(accessIntent.profileId || null);
     setAccessFocusUnitId(accessIntent.unitId || null);
     setAccessFocusMode(accessIntent.mode || null);
