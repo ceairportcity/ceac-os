@@ -199,7 +199,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
               disabled={busy || !form.name.trim() || !form.email.trim() || !form.unit}
               onClick={() => action(
                 () => inviteByEmail({ email: form.email, fullName: form.name, unitId: form.unit }),
-                "Invitation sent. Email verification and personal password setup are required."
+                "Activation email requested. The recipient must verify their email and set a password; delivery has not been independently confirmed."
               )}
             >Send Staff invitation</Button>
           </div>
