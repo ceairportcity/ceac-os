@@ -148,8 +148,9 @@ test("Administration never renders previous-account calendar or roster before ro
 });
 
 test("sensitive workspaces remount when the authorised account changes", () => {
-  for (const component of ["TechnicalHelp", "TechnicalSupport", "AdminHome", "Workforce", "People", "AdminProtectedHR", "AdminPayroll"]) {
+  for (const component of ["TechnicalHelp", "TechnicalSupport", "AdminHome", "People", "AdminProtectedHR", "AdminPayroll"]) {
     const opening = new RegExp("<" + component + "\\s+[\\s\\S]{0,85}?key=\\{\\x60\\$\\{me\\.org_id\\}:\\$\\{me\\.id\\}\\x60\\}");
     assert.match(app, opening, component + " must not retain previous-account React state");
   }
+  assert.match(app, /<Workforce key=\{\x60\$\{me\.org_id\}:\$\{me\.id\}:\$\{me\.unit_id \|\| "none"\}:\$\{me\.role \|\| "none"\}\x60\}/);
 });
