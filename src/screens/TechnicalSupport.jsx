@@ -214,7 +214,7 @@ export default function TechnicalSupport({ me, go }) {
             empty="No account or access cases were reported." />
           <div className="ceac-support-unverified">
             <strong>Access execution is not enabled in this workspace.</strong>
-            <p>Business approvers must authorise a change using CEAC's existing protected authority process. Technical Support cannot approve its own request or assign itself new powers.</p>
+            <p>Business approvers must authorise a change using the existing CEAC protected-authority process. Technical Support cannot approve its own request or assign itself new powers.</p>
           </div>
         </section>}
         {workspace === "system" && <section className="ceac-support-main">
