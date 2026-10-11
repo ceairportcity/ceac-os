@@ -22,6 +22,8 @@ for (const viewport of [
     await expect(hero.getByRole("complementary", { name:"Upcoming commitments" })).toBeVisible();
     await expect(hero.getByRole("link", {name:/Review your inbox/})).toBeVisible();
     await expect(page.locator(".adminv2-inbox")).toBeVisible({timeout:15000});
+    await expect(page.getByRole("region", {name:"Next useful Administration step"})).toBeVisible();
+    await expect(page.locator(".adminv2-focus-metrics")).toBeVisible();
 
     await page.screenshot({path:`test-artifacts/admin-premium-briefing-${viewport.name}.png`,fullPage:true});
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
