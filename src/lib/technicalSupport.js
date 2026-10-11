@@ -91,3 +91,11 @@ export function supportUnavailableMessage(error) {
     ? "Technical Support requests are not enabled in this environment. Use the currently approved CEAC support contact until the secured service is activated."
     : null;
 }
+
+export function canRecordSupportOutcome(caseRecord, nextState) {
+  // A support-only case transition is not proof of business authorization.
+  // Until the approval + execution ledger exists, access cases cannot be
+  // marked resolved or closed from the Technical Support queue.
+  return !(caseRecord?.category === "access_needed"
+    && (nextState === "resolved" || nextState === "closed"));
+}
