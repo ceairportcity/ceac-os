@@ -89,6 +89,9 @@ export default function SupportTeamMemberships({ me, people, units }) {
         ? "Membership recorded. No Support capability or business authority was granted."
         : "Membership ended with its own reason. Server-side Support capability revocation is recorded without deleting history.");
       setReason(""); setSelected(""); setUnitId(""); setEnding(null); setEndReason("");
+      // refresh() increments generation; release the synchronous busy latch
+      // before it does so or the new generation would retain a stuck action.
+      busyRef.current = false; setBusy(false);
       await refresh();
     } catch (failure) {
       if (id === generation.current) setError(humanError(failure, "The membership transition was not verified. Refresh its history before retrying."));
