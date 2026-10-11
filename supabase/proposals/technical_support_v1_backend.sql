@@ -47,7 +47,8 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
 SET search_path=public AS $
 BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.profiles p
-      WHERE p.id=NEW.profile_id AND p.org_id=NEW.org_id AND p.active)
+      WHERE p.id=NEW.profile_id AND p.org_id=NEW.org_id
+        AND (NOT NEW.active OR p.active))
      OR NOT EXISTS(SELECT 1 FROM public.profiles p
       WHERE p.id=NEW.added_by AND p.org_id=NEW.org_id)
      OR (NEW.ended_by IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.profiles p
