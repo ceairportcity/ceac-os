@@ -62,3 +62,13 @@ export function supportCaseGroups(cases = []) {
     })).filter((category) => category.cases.length >= 2),
   };
 }
+
+export function filterSupportCases(cases = [], query = "", status = "all") {
+  // A presentation-only filter over an already-authorised and bounded result.
+  const needle = String(query || "").trim().toLocaleLowerCase();
+  return (Array.isArray(cases) ? cases : []).filter((item) => {
+    if (status !== "all" && item.state !== status) return false;
+    return !needle || [item.summary, item.reference, supportCategoryLabel(item.category)]
+      .some((value) => String(value || "").toLocaleLowerCase().includes(needle));
+  });
+}
