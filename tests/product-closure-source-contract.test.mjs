@@ -212,3 +212,10 @@ test("Attendance writes are unavailable while required current evidence has fail
   assert.match(workforce, /"Leave decision recorded\.",\["leave","leave history"\]/);
   assert.match(workforce, /"Confirmed leave policy activated\.",\["leave policies","leave policy rules"\]/);
 });
+
+test("Workforce provides a retry path after failed data reads in every role view", () => {
+  const retries = workforce.match(/Retry Workforce data<\/Button>/g) || [];
+  assert.equal(retries.length, 4);
+  assert.match(workforce, /onClick=\{\(\)=>void load\(\)\}/);
+  assert.match(workforce, /Required Workforce records are currently unavailable/);
+});
