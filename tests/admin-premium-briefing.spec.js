@@ -20,6 +20,8 @@ for (const viewport of [
     await expect(hero).toBeVisible({timeout:15000});
     await expect(hero.getByRole("heading", { name:/Good morning|Good afternoon|Good evening/ })).toBeVisible();
     await expect(hero.getByRole("complementary", { name:"Upcoming commitments" })).toBeVisible();
+    await expect(hero.locator(".adminv2-mini-calendar")).toBeVisible();
+    await expect(hero.getByRole("button", { name:"Next month" })).toBeVisible();
     await expect(hero.getByRole("link", {name:/Review your inbox/})).toBeVisible();
     await expect(page.locator(".adminv2-inbox")).toBeVisible({timeout:15000});
     await expect(page.getByRole("region", {name:"Next useful Administration step"})).toBeVisible();
@@ -29,6 +31,8 @@ for (const viewport of [
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
 
+    await hero.getByRole("button", { name:"Next month" }).click();
+    await hero.getByRole("button", { name:"Show current month" }).click();
     await hero.getByRole("link", { name:/Review your inbox/ }).click();
     await expect(page).toHaveURL(/#admin-operational-inbox/);
     await expect(page.locator("#admin-operational-inbox")).toBeVisible();
