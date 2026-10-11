@@ -3,7 +3,7 @@
 **Date:** 11 October 2026 (UTC). **Status:** NOT EXECUTED IN DISPOSABLE POSTGRES; RELEASE NO-GO.
 
 **Frozen production release candidate:** PR #44 at `e00f13873409e4cc16ec1493b60b71d5cde1114a`. Its 130 migration files must remain frozen.
-**Existing production DB:** `efjljhftsesssumtshvp`, 119 recorded applied migrations. **Independent security branch:** `chatgpt/security-report-tenant-integrity-assurance-20261011`, based on the frozen SHA; adds two proposed 127/128 forward migrations after those 130 source files, making **132 files on this security branch only**.
+**Existing production DB:** `efjljhftsesssumtshvp`, 119 recorded applied migrations. **Independent security branch:** `chatgpt/security-report-tenant-integrity-assurance-20261011`, based on the frozen SHA; adds three proposed 127/128/129 forward migrations after those 130 source files, making **133 files on this security branch only**.
 **Other development:** PR #47 proceeds independently; do not edit that branch, PR #44 or main.
 
 ## Executed read-only checks against real production
@@ -36,7 +36,8 @@ The two `123` labels have **distinct full timestamp versions**, therefore no dup
 - Denies a foreign report period; validates that the supplied unit and any project belong to the same organisation; restricts existing draft lookups, updates, and version queries to the reporting-period organisation. `42501` error for new cross-tenant link violations.
 - New rollback-only adversarial SQL gate: `supabase/tests/report_draft_tenant_integrity_gate.sql`, registered in the existing `scripts/ci/run-sql-security-gates.sh`. It requires local role fixtures, creates an **unrelated synthetic tenant**, tests positive same-tenant create/update and cross-tenant unit/project/period denial, verifies no foreign draft, and ROLLBACKs everything.
 - New Node source-level contract: `tests/report-draft-security-forward.test.mjs`, added to existing `npm run verify:source`.
-- A second reviewed draft migration, `20261011103000_128_unit_budget_tenant_boundary.sql`, now enforces that a budget-position target unit belongs to the signed-in organisation, and that Finance-unit membership comes from that same organisation. Its rollback-only gate `supabase/tests/unit_budget_tenant_boundary_gate.sql` and source test `tests/unit-budget-tenant-security-forward.test.mjs` are registered in the same existing test runners. Neither patch has run in isolated PostgreSQL.
+- A second reviewed draft migration, `20261011103000_128_unit_budget_tenant_boundary.sql`, enforces same-org budget target units, same-org Finance membership, and filters every budget/spend/finance-request ledger source by its own `org_id`. Its rollback-only gate `supabase/tests/unit_budget_tenant_boundary_gate.sql` contains a foreign-unit denial and deliberately mismatched-org ledger source fixtures; source test `tests/unit-budget-tenant-security-forward.test.mjs` is registered.
+- A third reviewed draft migration, `20261011110000_129_report_evidence_tenant_integrity.sql`, binds work-item, submission, work-session and unit-membership evidence to the submitting report's organisation. Its rollback-only local authority SQL gate `supabase/tests/report_evidence_tenant_integrity_gate.sql` creates mismatched-org synthetic evidence, proves legitimate report submission and rejects three foreign reference types. Source contract `tests/report-evidence-tenant-security-forward.test.mjs` is registered. **None of these migrations or SQL tests have been executed in isolated PostgreSQL.**
 - Thirteen **static** exact-branch checks passed via GitHub source connector (exact blob SHA, authority text, tenant checks, test registration). **No PostgreSQL query against a disposable database has been executed to test this SQL.** Do not conflate source checks, production catalog reads or the Vercel preview with runtime assurance.
 
 ## Related privileged report RPCs still requiring behavioural review
@@ -47,7 +48,7 @@ The two `123` labels have **distinct full timestamp versions**, therefore no dup
 
 1. Secure offsite production encrypted database backup and actual isolated restoration, with Auth and Storage checks, privately. Never import real rows into public test hosts.
 2. Run frozen **130-migration** replay and all 4 browser shards on exact PR #44 HEAD in a trusted Docker-enabled private Codespace or other already-authorised machine; retain per-step status, exit code, exact SHA and hashes. Without a runner summary it is **NOT VERIFIED**.
-3. On this independent security branch only, run **132-version** disposable replay plus both new SQL gates and Node gates. Both the original baseline and increment must pass. If PR #47 eventually changes SQL, invalidate relevant checks and review separately.
+3. On this independent security branch only, run **133-version** disposable replay plus all three new SQL gates and Node gates. Both the original baseline and increment must pass. If PR #47 eventually changes SQL, invalidate relevant checks and review separately.
 4. Document data effects, approvals, schema/RLS/definer checks and owner/second-reviewer acceptance before a later approved forward migration. Do **not** merge PR #44, this branch or PR #47 as a verification shortcut.
 
 **No production DDL, data updates, Auth changes, merge, deploy or backup claim was made by this file.**
