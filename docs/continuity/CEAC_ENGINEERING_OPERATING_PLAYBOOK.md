@@ -1,4 +1,4 @@
-undefined
+# CEAC Engineering Operating Playbook
 
 ### Local replay fidelity corrections
 
@@ -27,3 +27,17 @@ all inside the same bounded shell execution. A terminal-like persistent process 
 ### Aggregate gate exit status
 
 A shell loop that records individual SQL failures can still return exit 0 when its final command is only an `echo`. Every aggregate runner must explicitly exit non-zero when its failure counter is non-zero. Acceptance evidence requires both the per-gate result list and the aggregate process exit code; a printed `FAIL` line with exit 0 is a harness defect, never a passing run.
+
+
+## 11 October 2026 — Chat continuation after Work quota
+
+**Canonical candidate:** PR #50, branch `chatgpt/unified-release-candidate-20261011`, source checkpoint `de4601bbf8b68666b5fcb0cb3e27ddd7972149c3` (recheck live HEAD before Work integrates). **Independent Chat writer:** `chatgpt/pr50-chat-technical-access-ledger-20261011` in draft PR #51, derived directly from that PR50 HEAD. No writes to PR50, frozen PR44, live Supabase, Vercel or production main.
+
+**Safe workflow:** The approved Support contract requires business owners to decide and Technical Support to perform narrowly scoped assistance. Implement a forward-only table+trigger state machine on a separate PR50 child branch. Write dedicated business/Support actor RLS policies and rollback-only SQL gates. A support capability is not People Administration, general Manager, HR, Payroll or authority-management power. No external access change may be inferred from a support note.
+
+**Source contract verification available in Chat:** Fetch exact SHA GitHub blobs and execute pure JavaScript source-contract functions with clearly declared Node `test/assert/fs` stand-ins; these results are source-level only. They are not `node --test`, native JSX transpilation, SQL migration replay or browser acceptance. For this milestone, an exact-commit five-case JavaScript source-contract suite ran with **5 passed / 60 assertions**, no source fixture errors, using the GitHub connector + isolated V8. Native package install/build, 139-migration replay, 54 registered SQL gates and role/browser verification must be executed later in a capable Work shell.
+
+**Operational lessons:** Separate user-visible `approved` from `executed`, enforce version/CAS and actor identities in PostgreSQL rather than only client buttons, keep an immutable history, and do not automatically grant permissions or claim email delivery. Report `NOT RUN` for native SQL/Playwright and encrypted restore, not PASS. Keep the existing 138-migration/53-gate checkpoint only as historical evidence for PR50, not approval of the continuation SHA. Preserve prior 133/134 Support migrations and 162-source-test outcomes; new tests must be retested at combined integration SHA.
+
+**Integration:** Work should review draft PR #51 against live PR50, reconcile any meanwhile-advanced PR50 HEAD, ensure both test registrations survive, and run genuine Node/build/Postgres/role acceptance before incorporating this branch. Do not force merge or bypass a missing release gate.
+
