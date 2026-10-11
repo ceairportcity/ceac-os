@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import { HELP_CATEGORIES, supportCategoryLabel, supportUnavailableMessage } from "../lib/technicalSupport";
@@ -10,6 +10,8 @@ const formatDate = (date) => date ? new Date(date).toLocaleDateString("en-GB", {
 
 export default function TechnicalHelp({ me }) {
   const [cases, setCases] = useState([]);
+  const [loadedScope, setLoadedScope] = useState(null);
+  const readGeneration = useRef(0);
   const [selectedId, setSelectedId] = useState(null);
   const [reloadCount, setReloadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -21,10 +23,21 @@ export default function TechnicalHelp({ me }) {
   const [summary, setSummary] = useState("");
   const [description, setDescription] = useState("");
   const [service, setService] = useState("");
+  const currentScope = `${me.org_id}:${me.id}`;
+  const visibleCases = loadedScope === currentScope ? cases : [];
+  const scopedLoading = loading || loadedScope !== currentScope;
 
   useEffect(() => {
+    setCategory(HELP_CATEGORIES[0].id);
+    setSummary(""); setDescription(""); setService("");
+    setError(null); setSuccess(null); setBusy(false);
+  }, [me.id, me.org_id]);
+
+  useEffect(() => {
+    const generation = ++readGeneration.current;
     let live = true;
     setLoading(true);
+    setLoadedScope(null);
     setCases([]);
     setSelectedId(null);
     setLoadError(null);
@@ -35,19 +48,20 @@ export default function TechnicalHelp({ me }) {
           .eq("reported_by", me.id).eq("org_id", me.org_id)
           .order("opened_at", { ascending: false }).limit(30);
         if (failure) throw failure;
-        if (live) setCases(data || []);
+        if (live && generation === readGeneration.current) setCases(data || []);
       } catch (failure) {
-        if (live) setLoadError(supportUnavailableMessage(failure) || "Your support requests cannot be loaded right now. This does not mean they have been deleted.");
+        if (live && generation === readGeneration.current) setLoadError(supportUnavailableMessage(failure) || "Your support requests cannot be loaded right now. This does not mean they have been deleted.");
       } finally {
-        if (live) setLoading(false);
+        if (live && generation === readGeneration.current) { setLoadedScope(currentScope); setLoading(false); }
       }
     })();
-    return () => { live = false; };
+    return () => { live = false; readGeneration.current += 1; };
   }, [me.id, me.org_id, reloadCount]);
 
   async function submit(event) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || scopedLoading || loadError) return;
+    const generation = readGeneration.current;
     const title = summary.trim();
     const details = description.trim();
     if (title.length < 8 || details.length < 12) {
@@ -64,18 +78,19 @@ export default function TechnicalHelp({ me }) {
         affected_service: service.trim() || null, impact: "normal", state: "open",
       }).select("id,reference,category,summary,description,affected_service,state,opened_at,resolved_at,closed_at,resolution_summary").single();
       if (failure) throw failure;
+      if (generation !== readGeneration.current) return;
       setCases((previous) => [data, ...previous]);
       setSummary(""); setDescription(""); setService("");
       setSuccess("Your request was recorded. Reference: " + data.reference);
       setLoadError(null);
     } catch (failure) {
-      setError(supportUnavailableMessage(failure) || humanError(failure, "Your request could not be confirmed. Check your existing requests before trying again, or use the approved CEAC support contact."));
+      if (generation === readGeneration.current) setError(supportUnavailableMessage(failure) || humanError(failure, "Your request could not be confirmed. Check your existing requests before trying again, or use the approved CEAC support contact."));
     } finally {
-      setBusy(false);
+      if (generation === readGeneration.current) setBusy(false);
     }
   }
 
-  const selected = cases.find((item) => item.id === selectedId) || null;
+  const selected = visibleCases.find((item) => item.id === selectedId) || null;
 
   return <main className="body ceac-support-page">
     <header className="ceac-support-heading">
@@ -107,23 +122,23 @@ export default function TechnicalHelp({ me }) {
           </label>
           {error && <p className="ceac-support-error" role="alert">{error}</p>}
           {success && <p className="ceac-support-success" role="status">{success}</p>}
-          <button className="btn" type="submit" disabled={busy}>{busy ? "Recording request..." : "Send help request"}</button>
+          <button className="btn" type="submit" disabled={busy || scopedLoading || Boolean(loadError)}>{busy ? "Recording request..." : "Send help request"}</button>
         </form>
       </section>
       <aside className="ceac-support-side" aria-labelledby="support-my-requests">
         <div className="ceac-support-section-head">
           <h2 id="support-my-requests">Your requests</h2>
-          <button type="button" className="btn btn-ghost" disabled={loading}
+          <button type="button" className="btn btn-ghost" disabled={scopedLoading || busy}
             onClick={() => setReloadCount((previous) => previous + 1)}>Refresh requests</button>
         </div>
-        {loading && <p role="status">Loading your requests...</p>}
+        {scopedLoading && <p role="status">Loading your requests...</p>}
         {loadError && <div className="ceac-support-error" role="alert">
-          {loadError} <button type="button" className="btn btn-ghost"
+          {loadError} <button type="button" disabled={busy} className="btn btn-ghost"
             onClick={() => setReloadCount((previous) => previous + 1)}>Try again</button>
         </div>}
-        {!loading && !loadError && cases.length === 0 && <p className="screen-note">No requests have been recorded.</p>}
+        {!scopedLoading && !loadError && visibleCases.length === 0 && <p className="screen-note">No requests have been recorded.</p>}
         <div className="ceac-support-rows">
-          {cases.map((item) => <button type="button" key={item.id}
+          {visibleCases.map((item) => <button type="button" key={item.id}
             aria-pressed={selectedId === item.id}
             className="ceac-support-row ceac-support-case-button"
             onClick={() => setSelectedId((current) => current === item.id ? null : item.id)}>
