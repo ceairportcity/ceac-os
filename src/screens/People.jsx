@@ -95,8 +95,10 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   const [employeeFileBusy, setEmployeeFileBusy] = useState(false);
   const [drill, setDrill] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [verifiedRosterScope, setVerifiedRosterScope] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState(null);
+  const scopeKey = `${me.org_id}:${me.id}`;
   const rosterGeneration = useRef(0);
   const personGeneration = useRef(0);
   const protectedWriteBusy = useRef(false);
@@ -146,7 +148,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
 
   async function load({ silent = false } = {}) {
     const generation = ++rosterGeneration.current;
-    if (!silent) setLoading(true);
+    if (!silent) { setLoading(true); setVerifiedRosterScope(null); }
     setError(null);
     try {
     const [rosterResult, peopleResult, leaveResult, unitsResult] = await Promise.all([
@@ -237,6 +239,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       hydratedRows = rosterRows;
     }
     if (generation !== rosterGeneration.current) return false;
+    setVerifiedRosterScope(scopeKey);
     setRows(hydratedRows);
     setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
     setUnits(unitsResult.data || []);
@@ -607,6 +610,10 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }
 
   if (loading) return <div className="body"><LoadingState label="Loading People…" /></div>;
+  if (verifiedRosterScope !== scopeKey) return <div className="body">
+    <ProductNotice tone="error" title="People records unavailable">{error || "The authorised People directory could not be verified."}</ProductNotice>
+    <Button onClick={() => void load()}>Retry People records</Button>
+  </div>;
 
   if (person && drill) {
     return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
