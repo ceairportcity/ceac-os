@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { isMissingCapabilityExpiryColumn, resolveCapabilityGrantRead }
+import { isMissingCapabilityExpiryColumn, resolveCapabilityGrantRead, readServerVerifiedLegacyGrants }
   from "../src/lib/capabilitySchemaCompatibility.js";
 
 const exactLegacyError = {
@@ -56,6 +56,86 @@ test("account loader and visible preview warning both enforce compatibility mode
   assert.match(loader, /if \(resolvedCapabilityError\) throw resolvedCapabilityError;/);
   assert.match(loader, /capabilitySchemaReady,/);
   assert.match(app, /me\.capabilitySchemaReady === false/);
-  assert.match(app, /Delegated capability-based\s+actions are unavailable here/);
+  assert.match(app, /me\.legacyAuthorityVerified/);
+  assert.match(loader, /readServerVerifiedLegacyGrants\(supabase, auth\.user\.id, p\.org_id\)/);
   assert.doesNotMatch(app, /force.*mfa.*false/i);
+});
+
+
+function stubLegacyServer({ rows = [], authorizer = () => true, readError = null } = {}) {
+  const scope = { profile_id: null, org_id: null, revoked_at: null };
+  const request = {
+    select: () => request,
+    eq: (key, value) => { scope[key] = value; return request; },
+    is: (key, value) => { scope[key] = value; return Promise.resolve({ data: rows, error: readError }); },
+  };
+  const calls = [];
+  const supabase = {
+    from: (table) => {
+      assert.equal(table, "capability_grants");
+      return request;
+    },
+    rpc: async (name, args) => {
+      calls.push({ name, args });
+      assert.equal(name, "app_has_capability");
+      const result = await authorizer(args);
+      return result && typeof result === "object" && "error" in result
+        ? result : { data: result, error: null };
+    },
+  };
+  return { supabase, calls, scope };
+}
+
+test("pre-S3 Admin permission appears only after signed-in server RPC approves it", async () => {
+  const rows = [{ id:"g1", capability:"people.manage", scope_unit_id:null }];
+  const fixture = stubLegacyServer({ rows, authorizer: () => true });
+  const result = await readServerVerifiedLegacyGrants(fixture.supabase,"me","org");
+  assert.deepEqual(result.grants, rows);
+  assert.equal(result.verificationComplete,true);
+  assert.deepEqual(fixture.calls[0],{
+    name:"app_has_capability",
+    args:{p_capability:"people.manage",p_unit_id:null},
+  });
+  assert.equal(fixture.scope.profile_id,"me");
+  assert.equal(fixture.scope.org_id,"org");
+  assert.equal(fixture.scope.revoked_at,null);
+});
+
+test("server rejection never authorizes a legacy people-admin capability", async () => {
+  const fixture = stubLegacyServer({
+    rows: [{capability:"people.manage",scope_unit_id:null}],
+    authorizer:()=>false,
+  });
+  const result = await readServerVerifiedLegacyGrants(fixture.supabase,"me","org");
+  assert.deepEqual(result.grants,[]);
+  assert.equal(result.verificationComplete,true);
+});
+
+test("scoped permission is sent to the server with exact scope", async () => {
+  const fixture = stubLegacyServer({
+    rows: [{capability:"work.manage",scope_unit_id:"unit-a"}],
+    authorizer:({p_unit_id})=>p_unit_id==="unit-a",
+  });
+  const result = await readServerVerifiedLegacyGrants(fixture.supabase,"me","org");
+  assert.equal(result.grants.length,1);
+  assert.equal(fixture.calls[0].args.p_unit_id,"unit-a");
+});
+
+test("unavailable authorisation denies every grant even if others were approved", async () => {
+  const fixture = stubLegacyServer({
+    rows: [{capability:"people.manage",scope_unit_id:null},{capability:"payroll.prepare",scope_unit_id:null}],
+    authorizer:({p_capability})=>p_capability==="payroll.prepare"
+      ? {data:null,error:{code:"42501"}} : true,
+  });
+  const result = await readServerVerifiedLegacyGrants(fixture.supabase,"me","org");
+  assert.deepEqual(result.grants,[]);
+  assert.equal(result.verificationComplete,false);
+});
+
+test("failed legacy grant read cannot expose unauthorised Admin controls", async () => {
+  const fixture = stubLegacyServer({readError:{code:"42501"}});
+  const result = await readServerVerifiedLegacyGrants(fixture.supabase,"me","org");
+  assert.deepEqual(result.grants,[]);
+  assert.equal(result.verificationComplete,false);
+  assert.equal(fixture.calls.length,0);
 });
