@@ -305,3 +305,9 @@ test("People roster fails closed on unsuccessful RPC reads and offers recovery",
   assert.match(people, /if \(verifiedRosterScope !== scopeKey\) return/);
   assert.match(people, /Retry People records/);
 });
+
+test("protected employee compensation never accepts overflowing minor-unit arithmetic", () => {
+  assert.match(people, /Number\.isSafeInteger\(Math\.round\(minor\)\)/);
+  assert.match(people, /if \(!Number\.isSafeInteger\(amount\)\) return "Amount could not be verified"/);
+  assert.match(people, /return "Currency could not be verified"/);
+});
