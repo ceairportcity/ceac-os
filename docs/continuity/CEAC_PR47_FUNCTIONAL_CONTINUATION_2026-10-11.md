@@ -74,3 +74,25 @@
 - Technical Support production tables/approval ledger are still **not deployed**. Release integration, Supabase production, Vercel production, PR #44 and `main` have not been touched. No TinyFish, new CI system, paid provider or Vercel preview reruns were used during these changes.
 
 **Decision:** Product development PR #47 remains **DRAFT / NO-GO**, to be independently tested/reviewed and integrated later; source-only progress is not production approval.
+
+
+## Further confidential-People and case ownership fixes (11 October 2026)
+
+**Implementation HEAD before this appended evidence:** `066e9612b8d9e081254df3f5927d15c00bfef28f`. Branch: `chatgpt/product-admin-attendance-integrity-20261011`.
+
+- **Technical Help:** corrected a real single-flight validation defect. Previously `submitBusyRef.current` became true before summary/description validation and the invalid-input return never unlocked it. Now invalid drafts can be corrected and successfully resubmitted; rapid valid double-submits remain synchronously locked.
+- **Technical Support:** case status/resolution controls are now disabled for unassigned cases and cases owned by another technician. The UPDATE also requires matching `assigned_to=me.id` and `updated_at`, so concurrent reassignment cannot silently overwrite a colleague's work. Support event-history reads explicitly require the active organisation *and* selected case.
+- **People/HR directory:** added per-request generation leases to employee roster, selected employee detail, confidential files and access-navigation; slow record A cannot appear after operator opens record B or switches to Invitations. Pending private editors and old upload controls are cleared on navigation. Failed roster reads fail closed to a retry view rather than showing outdated confidential employee information.
+- **Protected HR:** salary/payment/identifier updates are single-flight; write and refresh are bound to the originally selected employee ID. Rejected RPCs are handled without leaving a permanent busy state. A recorded-but-unverified refresh is not presented as a fully confirmed saved edit. Invalid or overflowing currency minor units and invalid stored currency metadata cannot silently become authoritative compensation or crash the employee screen.
+- **Employment:** changes are single-flight, bind to the selected immutable profile ID, require a server-returned current record, and only update the selected employee if the employee ID remains unchanged. A subsequent roster refresh is checked and can report failure.
+- **Volunteer decisions:** the decision update is conditional on `status='pending'`, requires a returned changed row (`.maybeSingle()`), and cannot label zero rows updated as success. Existing production does **not** yet have the `volunteer_change_recommendations` table, so this remains reviewed future-compatibility code, not a production-tested volunteer approval.
+- **People & Access:** duplicate role assignments and residual team placements cannot be treated as independently safe member removal. Team membership must be resolved before ending its corresponding unit responsibility. Auto-selection now uses distinct unit IDs, so a person holding multiple roles in one unit still selects that unit correctly.
+- **Accra date integrity:** employee work sessions, protected HR roster birthday, support events and invitation timestamps use Ghana/Accra time rather than the operator browser's local timezone.
+
+### What has and has not been verified
+
+- Local isolated Node 22.16.0 executable suite was rerun on the 12 helper/test files with exact matching committed Git blob IDs: **28 passed, 0 failed**. It covers attendance summary, Support pure helpers, invitation controls, Ghana date boundaries, failed Workforce query settlement and finite leave-policy inputs.
+- Post-change live GitHub source assertions: **177/177** product source-contract regex assertions PASSED and **59/59** Administration premium source-contract regex assertions PASSED. These were evaluated independently against exact GitHub file bytes; the complete `node --test tests/product-closure-source-contract.test.mjs` and other JSX-dependent tests have **not** run.
+- Direct read scopes unchanged: Administration **24/24** and Workforce **12/12** queries use `org_id=me.org_id`. Production database status has only been inspected read-only.
+- PR #47 remains draft and review-only. The secure Technical Support backend is not yet deployed; real authenticated Staff, Manager, Executive, Admin and Volunteer workflows, protected-HR authority, MFA, invitation email delivery, production RLS, full application build, responsive screenshot parity, migration replay and backup restore still require independent execution and acceptance.
+- No TinyFish, CI replacement, Vercel rerun/production build, Supabase write or GitHub main/PR #44 modification occurred.
