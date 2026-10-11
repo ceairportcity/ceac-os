@@ -512,6 +512,11 @@ export default function App() {
           onGuide={() => openGuide(true)}
         />
         <main className="app-content ev2s-content">
+          {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
+            This preview is ahead of the approved database migration. Delegated capability-based
+            actions are unavailable here until the database upgrade is independently tested and
+            approved. Use the existing production CEAC workspace for normal work.
+          </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
           {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} openRoom={openRoom} back={closeUrlOverlay} />
