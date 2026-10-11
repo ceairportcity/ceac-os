@@ -160,6 +160,41 @@ export default function AdminOverviewV2({
     .filter((meeting) => meeting.starts_at && new Date(meeting.starts_at).getTime() >= Date.now())
     .sort((left, right) => new Date(left.starts_at) - new Date(right.starts_at))
     .slice(0, 3);
+  // Suggested next step is a navigation aid only: no automatic approval,
+  // invented urgency, work ranking or additional authority is created.
+  const suggestedAction = leaveQueue.length
+    ? {
+      eyebrow: "Leave decision waiting",
+      title: `${leaveQueue[0].requester?.full_name || "Team member"} · ${leaveQueue[0].kind} leave`,
+      detail: "Open Time & Leave to review the recorded request and supporting context.",
+      action: onOpenAttendance,
+      label: "Review request",
+    }
+    : checks.length
+      ? {
+        eyebrow: "Operational check",
+        title: `${checks.length} check${checks.length === 1 ? "" : "s"} waiting for review`,
+        detail: "Open the workflow queue; decisions remain subject to the existing CEAC approval rules.",
+        action: onOpenWorkflows,
+        label: "Review checks",
+      }
+      : pendingInvitations.length && canManagePeople
+        ? {
+          eyebrow: "Onboarding",
+          title: `${pendingInvitations.length} Staff invitation${pendingInvitations.length === 1 ? "" : "s"} awaiting activation`,
+          detail: "Continue account onboarding through the authorised People & Access workspace.",
+          action: onOpenPeople,
+          label: "Open invitations",
+        }
+        : mine.length
+          ? {
+            eyebrow: "Your work",
+            title: mine[0].title || "Open work item",
+            detail: `Recorded work · ${dueLabel(mine[0].due_at)}`,
+            action: () => onOpenItem?.(mine[0].id),
+            label: "Open work",
+          }
+          : null;
   const objectiveTotal = Number(delivery?.objectives || 0);
   const objectiveItems = [
     ["Met", delivery?.met || 0],
@@ -232,6 +267,21 @@ export default function AdminOverviewV2({
       </div> : null}
 
       {!loading && !loadFailed ? <main className="adminv2-main">
+        <section className="adminv2-focus-strip" aria-label="Next useful Administration step">
+          <div className="adminv2-focus-summary">
+            <span className="adminv2-focus-icon"><CeacIcon name={suggestedAction ? "notification" : "checkCircle"} size="feature" decorative /></span>
+            <div>
+              <span className="adminv2-focus-eyebrow">{suggestedAction?.eyebrow || "Decision inbox clear"}</span>
+              <h2>{suggestedAction?.title || "You are up to date on recorded Administration decisions."}</h2>
+              <p>{suggestedAction?.detail || "Keep an eye on your people, work and the next recorded commitments."}</p>
+            </div>
+            {suggestedAction?.action ? <Button icon="arrowRight" onClick={suggestedAction.action}>{suggestedAction.label}</Button> : null}
+          </div>
+          <div className="adminv2-focus-metrics" aria-label="Recorded organisation context">
+            <span><strong>{employeeRoster.length}</strong><small>Employees recorded</small></span>
+            <span><strong>{reporting ? `${reporting.submitted}/${reporting.total}` : "—"}</strong><small>Reports submitted</small></span>
+          </div>
+        </section>
         <section className="adminv2-command-grid" aria-label="Administration actions and setup">
           <DataPanel
             className="adminv2-panel adminv2-inbox"
