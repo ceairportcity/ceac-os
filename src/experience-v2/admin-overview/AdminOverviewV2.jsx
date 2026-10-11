@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Button,
   DataPanel,
@@ -20,6 +21,63 @@ function formatDate(value, options = {}) {
     month: "short",
     ...options,
   });
+}
+
+function AdminCalendarRail({ meetings }) {
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [selectedDay, setSelectedDay] = useState(() => new Date().toISOString().slice(0, 10));
+  const now = new Date();
+  const month = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + monthOffset, 1));
+  const weekdayOffset = (month.getUTCDay() + 6) % 7;
+  const monthTitle = new Intl.DateTimeFormat("en-GB", {
+    month: "long", year: "numeric", timeZone: "UTC",
+  }).format(month);
+  const isoDate = (date) => date.toISOString().slice(0, 10);
+  const meetingDays = new Set(meetings.filter((item) => item.starts_at).map((item) => isoDate(new Date(item.starts_at))));
+  const selectedMeetings = meetings.filter((item) => item.starts_at && isoDate(new Date(item.starts_at)) === selectedDay);
+  const todayIso = isoDate(now);
+  const through = isoDate(new Date(now.getTime() + 14 * 86400000));
+  const withinLoadedWindow = selectedDay >= todayIso && selectedDay <= through;
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), index - weekdayOffset + 1));
+    return {
+      date: isoDate(date),
+      day: date.getUTCDate(),
+      inMonth: date.getUTCMonth() === month.getUTCMonth(),
+    };
+  });
+  return <div className="adminv2-mini-calendar" aria-label="Administration calendar context">
+    <div className="adminv2-calendar-title">
+      <strong>{monthTitle}</strong>
+      <div className="adminv2-calendar-controls">
+        <button type="button" aria-label="Previous month" onClick={() => setMonthOffset((x) => x - 1)}>‹</button>
+        <button type="button" aria-label="Show current month" onClick={() => { setMonthOffset(0); setSelectedDay(todayIso); }}>Today</button>
+        <button type="button" aria-label="Next month" onClick={() => setMonthOffset((x) => x + 1)}>›</button>
+      </div>
+    </div>
+    <div className="adminv2-calendar-weekdays" aria-hidden="true">
+      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day}>{day}</span>)}
+    </div>
+    <div className="adminv2-calendar-days" role="group" aria-label={monthTitle}>
+      {days.map((day) => <button type="button"
+        key={day.date}
+        className={["adminv2-calendar-day", day.inMonth ? "" : "is-outside", day.date === selectedDay ? "is-selected" : "", day.date === todayIso ? "is-today" : ""].filter(Boolean).join(" ")}
+        aria-label={day.date}
+        aria-pressed={day.date === selectedDay}
+        onClick={() => { setSelectedDay(day.date); if(!day.inMonth) setMonthOffset((x) => x + (day.date < isoDate(month) ? -1 : 1)); }}
+      >
+        <span>{day.day}</span>{meetingDays.has(day.date) && <i aria-hidden="true" />}
+      </button>)}
+    </div>
+    <div className="adminv2-calendar-selection" role="status">
+      <strong>{new Intl.DateTimeFormat("en-GB", {weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(selectedDay+"T00:00:00Z"))}</strong>
+      <span>{!withinLoadedWindow
+        ? "Upcoming meeting data is limited to the next 14 days."
+        : selectedMeetings.length
+          ? `${selectedMeetings.length} recorded meeting${selectedMeetings.length === 1 ? "" : "s"}`
+          : "No meetings recorded for this date in the current window."}</span>
+    </div>
+  </div>;
 }
 
 function Count({ value, tone = "neutral" }) {
@@ -230,6 +288,7 @@ export default function AdminOverviewV2({
           </div>
         </div>
         <aside className="adminv2-hero-agenda" aria-label="Upcoming commitments">
+          <AdminCalendarRail meetings={meetings} />
           <div className="adminv2-agenda-heading">
             <span><CeacIcon name="calendar" size="row" decorative /> Coming up</span>
             <button type="button" onClick={() => onScheduleMeeting?.({ scope: "organisation", organisation: true })} className="adminv2-agenda-add">Schedule <CeacIcon name="chevronRight" size="meta" decorative /></button>
