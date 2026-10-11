@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   HELP_CATEGORIES, SUPPORT_WORKSPACES, SUPPORT_GUIDES, SERVICE_NAMES,
-  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases,
+  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe,
 } from "../src/lib/technicalSupport.js";
 
 test("support panel has the six locked workspaces and categories", () => {
@@ -50,4 +50,19 @@ test("Help Desk filters only already-authorised loaded cases without changing th
   assert.deepEqual(filterSupportCases(cases, "pdf", "open"), []);
   assert.deepEqual(filterSupportCases(null), []);
   assert.deepEqual(cases.map((item) => item.id), ["a", "b", "c"]);
+});
+
+test("personal Support home excludes colleagues' assignments and awaiting approval", () => {
+  const cases = [
+    { id: "own", state: "in_progress", assigned_to: "me" },
+    { id: "new", state: "open", assigned_to: null },
+    { id: "theirs", state: "open", assigned_to: "other" },
+    { id: "approval", state: "waiting_approval", assigned_to: "me" },
+    { id: "closed", state: "closed", assigned_to: "me" },
+    { id: "resolved", state: "resolved", assigned_to: null },
+  ];
+  assert.deepEqual(supportCasesNeedingMe(cases, "me").map((item) => item.id), ["own", "new"]);
+  assert.deepEqual(supportCasesNeedingMe(cases, "other").map((item) => item.id), ["new", "theirs"]);
+  assert.deepEqual(supportCasesNeedingMe(null, "me"), []);
+  assert.deepEqual(supportCasesNeedingMe(cases, null).map((item) => item.id), ["new"]);
 });
