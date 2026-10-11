@@ -256,8 +256,11 @@ BEGIN
      )
   THEN RAISE EXCEPTION 'Case assignment requires an active support member.' USING ERRCODE='42501'; END IF;
   IF NEW.state IS DISTINCT FROM OLD.state THEN
-    IF NEW.state='resolved' THEN NEW.resolved_at:=now();
-    ELSIF NEW.state='closed' THEN NEW.closed_at:=now();
+    IF NEW.state='resolved' THEN
+      NEW.resolved_at:=now();
+      NEW.closed_at:=NULL;
+    ELSIF NEW.state='closed' THEN
+      NEW.closed_at:=now();
     ELSE NEW.resolved_at:=NULL; NEW.closed_at:=NULL; END IF;
     INSERT INTO public.support_case_events(org_id,case_id,actor_id,action,note)
       VALUES(NEW.org_id,NEW.id,v_actor,'state_changed',
