@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { classifyPreviewFeatureResult } from "../lib/pendingFeatureCompatibility";
 import { dateOnly } from "../lib/time";
 import { FieldGroup, ProductNotice, SectionHeader } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -23,6 +24,7 @@ export default function OfficeSettings({ me, openWorkforce }) {
   const thresholdDraftsRef = useRef(new Map());
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [integrity, setIntegrity] = useState(null);
+  const [integrityAvailable, setIntegrityAvailable] = useState(true);
   const [integrityMinutes, setIntegrityMinutes] = useState(10);
   const [integrityBusy, setIntegrityBusy] = useState(false);
 
@@ -38,6 +40,7 @@ export default function OfficeSettings({ me, openWorkforce }) {
       supabase.rpc("attendance_integrity_status"),
     ]);
 
+    const integrityFeature = classifyPreviewFeatureResult("attendanceIntegrity", integrityResult);
     if (officeResult.error) {
       setMessage({ tone: "error", title: "Office settings could not load", body: humanError(officeResult.error) });
       return;
@@ -54,8 +57,8 @@ export default function OfficeSettings({ me, openWorkforce }) {
       setMessage({ tone: "error", title: "People & access status could not load", body: humanError(inviteResult.error) });
       return;
     }
-    if (integrityResult.error) {
-      setMessage({ tone: "error", title: "Attendance integrity status could not load", body: humanError(integrityResult.error) });
+    if (integrityFeature.error) {
+      setMessage({ tone: "error", title: "Attendance integrity status could not load", body: humanError(integrityFeature.error) });
       return;
     }
 
@@ -73,8 +76,9 @@ export default function OfficeSettings({ me, openWorkforce }) {
       value: thresholdDraftsRef.current.get(row.name) ?? String(row.value ?? ""),
     })));
     setPendingInvitations(inviteResult.data || []);
-    setIntegrity(integrityResult.data || null);
-    if (integrityResult.data?.front_desk_code_ttl_minutes) setIntegrityMinutes(integrityResult.data.front_desk_code_ttl_minutes);
+    setIntegrityAvailable(integrityFeature.available);
+    setIntegrity(integrityFeature.data || null);
+    if (integrityFeature.data?.front_desk_code_ttl_minutes) setIntegrityMinutes(integrityFeature.data.front_desk_code_ttl_minutes);
 
     const policy = leaveResult.data || null;
     setLeavePolicy(policy);
@@ -138,6 +142,7 @@ export default function OfficeSettings({ me, openWorkforce }) {
   }
 
   async function rotatePresenceCode(enabled = true) {
+    if (!integrityAvailable) return; // The pending RPC must never be invoked in preview compatibility mode.
     setIntegrityBusy(true);
     setMessage(null);
     try {
@@ -230,8 +235,11 @@ export default function OfficeSettings({ me, openWorkforce }) {
       <section id="attendance-integrity-settings" className="office-settings-card">
         <SectionHeader eyebrow="Attendance integrity" title="Office presence code" />
         <p className="screen-note">This short-lived front-desk code adds a second corroborating signal to GPS/geofence evidence. A matching code is not proof by itself and never creates an automatic absence, deduction or disciplinary state.</p>
+        {!integrityAvailable && <ProductNotice tone="attention" title="Office presence code pending">
+          This Phase 6 feature is not installed in the approved database. Presence-code controls are disabled; existing office location, leave rules and attention settings remain available.
+        </ProductNotice>}
         <FieldGroup label="Code lifetime" hint="Short-lived rotation only; allowed range is 5–30 minutes.">
-          <div className="office-inline-field"><input className="field" aria-label="Office presence code lifetime" type="number" min="5" max="30" value={integrityMinutes} onChange={(event) => setIntegrityMinutes(event.target.value)} /><span>minutes</span></div>
+          <div className="office-inline-field"><input className="field" aria-label="Office presence code lifetime" type="number" min="5" max="30" disabled={!integrityAvailable} value={integrityMinutes} onChange={(event) => setIntegrityMinutes(event.target.value)} /><span>minutes</span></div>
         </FieldGroup>
         {integrity?.front_desk_code_active && <div className="office-presence-code">
           <span>Current code</span>
@@ -239,8 +247,8 @@ export default function OfficeSettings({ me, openWorkforce }) {
           <small>Valid until {integrity.front_desk_code_valid_until ? new Date(integrity.front_desk_code_valid_until).toLocaleTimeString("en-GB", { timeZone:"Africa/Accra", hour:"2-digit", minute:"2-digit" }) : "expiry not available"}</small>
         </div>}
         <div className="workforce-setup-actions">
-          <button className="btn" disabled={integrityBusy || !office} onClick={() => rotatePresenceCode(true)}>{integrityBusy ? "Rotating…" : integrity?.front_desk_code_active ? "Rotate code" : "Enable and issue code"}</button>
-          {integrity?.front_desk_code_active && <button className="btn btn-ghost" disabled={integrityBusy} onClick={() => rotatePresenceCode(false)}>Disable code</button>}
+          <button className="btn" disabled={!integrityAvailable || integrityBusy || !office} onClick={() => rotatePresenceCode(true)}>{integrityBusy ? "Rotating…" : integrity?.front_desk_code_active ? "Rotate code" : "Enable and issue code"}</button>
+          {integrity?.front_desk_code_active && <button className="btn btn-ghost" disabled={!integrityAvailable || integrityBusy} onClick={() => rotatePresenceCode(false)}>Disable code</button>}
         </div>
         {!office && <p className="screen-note">Configure the primary office location before using office-presence corroboration.</p>}
         <p className="screen-note">{integrity?.network_note || "Trusted office-network corroboration remains optional and is accepted only from configured server-side infrastructure."}</p>
