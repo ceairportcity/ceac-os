@@ -291,3 +291,9 @@ test("People attendance facts and invitation records have Accra-local timestamps
   assert.match(people, /\.toLocaleDateString\("en-GB", \{ timeZone: "Africa\/Accra"/);
   assert.match(people, /new Date\(accessInvitation\.invited_at\)\.toLocaleString\("en-GB", \{ timeZone: "Africa\/Accra" \}\)/);
 });
+
+test("People Access propagates failed roster refreshes after a successful mutation", () => {
+  assert.match(people, /return false;/);
+  assert.match(people, /return true;/);
+  assert.match(people, /onChanged=\{async \(\) => \{ if \(!\(await load\(\{ silent: true \}\)\)\) throw new Error/);
+});
