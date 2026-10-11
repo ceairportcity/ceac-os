@@ -41,3 +41,22 @@ A shell loop that records individual SQL failures can still return exit 0 when i
 
 **Integration:** Work should review draft PR #51 against live PR50, reconcile any meanwhile-advanced PR50 HEAD, ensure both test registrations survive, and run genuine Node/build/Postgres/role acceptance before incorporating this branch. Do not force merge or bypass a missing release gate.
 
+
+## 11 October 2026 — Chat milestone 2: completed Support membership/evidence and truthful system panel
+
+New forward-only migration order after PR #50's 138:
+- `20261011190000_135_support_access_approval_execution_ledger.sql`: business decision/Support-assisted execution evidence.
+- `20261011193000_136_support_membership_end_reason.sql`: original joining reason vs independently attributable end reason; preserve history and automatic Support grant revocation.
+- `20261011195500_137_support_private_case_evidence.sql`: extends existing `ceac-operational-private` operational files to `support_case` / `support_evidence`; requires current same-org Support membership + `support.case.manage`, and current assignment or Lead for uploads; reporters and ordinary managers cannot inspect internal evidence; file relinking from employee/project contexts into Support and vice versa is refused.
+- `20261011201000_138_support_evidence_audit_history.sql`: append immutable, actor-bound `evidence_registered` event after a new case file-link registration, **not** a false claim that storage upload succeeded. Never write credentials or filenames to case event notes.
+
+The existing 133/134 case backend and support capability checks are preserved. The system-status page continues to show every service as **Not verified** unless trusted health-provider data becomes available; it now displays counts of *actually recorded unresolved case reports* by exact service name separately, never extrapolates "Working" or "Down" from reports. Protected HR storage buckets are not used.
+
+Current isolated review target is **142 unique migration timestamp versions** and **56 registered SQL security gates** (the earlier 138/53 remains a historically completed separate candidate). Three new rollback-only SQL gates cover access approval, membership end reason and private case file/audit rules. Full migration replay and database behaviour for the new SHA are **NOT RUN** in Chat.
+
+**Source contracts executed at exact GitHub SHA `c6c9ebc8135b11d900ff8ffd2b03ee3633b08fa7` with source verified through the connected GitHub account:** new approval contract: 5/5 callback tests, 60 source/assertion checks; membership lifecycle contract: 3/3, 27; private Support evidence/audit contract: 5/5, 45; service health case-report helper: 1/1, 6. These JavaScript callback executions use a restricted JS runtime with explicitly defined stand-ins for Node test/assert/fs, not genuine Node's test command. **Total newly added/revised focused JS callbacks 14/14 (138 assertion checks) at source SHA**, pending final exact-HEAD check after documentation commits. Never use these tests to certify native Postgres, Playwright or final Vite build.
+
+**Work-first acceptance:** run `npm ci`, full `npm run verify:source`, `npm run build`, all 142 migration versions in isolated Supabase Postgres, 56 SQL gates including adversarial role tests, Support file registration/finalisation and download in authenticated browser, person transfer/membership end, real business approver/technician separation and account/invitation delivery. Do not trust "registration" event as verified upload; browser must prove the bytes actually exist. Preserve release NO-GO, real MFA, encrypted backup/isolated restore and visual review boundaries.
+
+**Implementation note:** The new `app_can_read_support_case` and `app_can_write_support_case` SQL helpers are intentionally not directly callable by `anon` or `authenticated`. They are invoked by the existing reviewed operational-context SECURITY DEFINER entrypoints. Thus this extension does not arbitrarily enlarge the exposed browser RPC surface. Work must verify actual effective grants and service-role behavior after replay.
+
