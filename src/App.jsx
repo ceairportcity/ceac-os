@@ -513,9 +513,9 @@ export default function App() {
         />
         <main className="app-content ev2s-content">
           {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
-            This preview is ahead of the approved database migration. Delegated capability-based
-            actions are unavailable here until the database upgrade is independently tested and
-            approved. Use the existing production CEAC workspace for normal work.
+            {me.legacyAuthorityVerified
+              ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."
+              : "Preview compatibility: the database upgrade is not installed and server permission verification was incomplete. Privileged capabilities are disabled here. Use production for normal work."}
           </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
