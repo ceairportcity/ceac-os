@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { authRedirect } from "./authRedirect";
+import { resolveCapabilityGrantRead } from "./capabilitySchemaCompatibility";
 
 const fallbackSupabaseUrl = "https://efjljhftsesssumtshvp.supabase.co";
 const fallbackSupabasePublishableKey = "sb_publishable_CVq1sCY0Z4-o9Us4Y6RaUw_53FUHQj-";
@@ -43,9 +44,11 @@ export async function loadMe() {
       .eq("active", true),
   ]);
   if (membershipError) throw membershipError;
-  if (capabilityError) throw capabilityError;
+  const { grants, capabilitySchemaReady, error: resolvedCapabilityError } =
+    resolveCapabilityGrantRead({ data: capabilityGrants, error: capabilityError });
+  if (resolvedCapabilityError) throw resolvedCapabilityError;
   if (leadError) throw leadError;
-  const activeCapabilityGrants = (capabilityGrants || []).filter(
+  const activeCapabilityGrants = grants.filter(
     (grant) => !grant.expires_at || Date.parse(grant.expires_at) > Date.now()
   );
   const options = (memberships || []).map((m) => ({
@@ -64,6 +67,7 @@ export async function loadMe() {
     role: selected ? selected.role : null,
     memberships: options,
     led_sub_team_ids: (ledSubTeams || []).map((subTeam) => subTeam.id),
+    capabilitySchemaReady,
     capability_grants: activeCapabilityGrants,
     capabilities: [...new Set(activeCapabilityGrants.map((grant) => grant.capability))] };
 }
