@@ -248,3 +248,10 @@ test("Technical Support event history is scoped by organisation and case", () =>
   assert.match(support, /orgId=\{me\.org_id\}/);
   assert.match(support, /if \(currentCase\.assigned_to !== me\.id\)/);
 });
+
+test("a unit responsibility cannot be ended while its team placements remain", () => {
+  assert.match(access, /const stillInUnitTeam = selectedLaneMemberships\.some/);
+  assert.match(access, /lane\.unit_id === membership\.unit_id/);
+  assert.match(access, /disabled=\{busy \|\| stillInUnitTeam \|\| !form\.reason\.trim\(\)\}/);
+  assert.match(access, /Remove this person's recorded team placements in this unit/);
+});
