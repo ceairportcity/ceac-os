@@ -102,6 +102,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   const protectedWriteBusy = useRef(false);
   const employmentWriteBusy = useRef(false);
   const recommendationWriteBusy = useRef(false);
+  const employeeFileWriteBusy = useRef(false);
 
   const canManageProtectedHr = (me.capabilities || []).includes("hr_private.access");
 
@@ -239,6 +240,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
 
   async function openPerson(summary) {
     const generation = ++personGeneration.current;
+    employeeFileWriteBusy.current = false;
+    setEmployeeFileBusy(false);
     setPerson(null);
     setProtectedHr(null);
     setVolunteerRecommendations([]);
@@ -383,6 +386,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
 
   function openAccessAdministration(profileId = null) {
     personGeneration.current += 1;
+    employeeFileWriteBusy.current = false;
+    setEmployeeFileBusy(false);
     setDetailLoading(false);
     setProtectedHrLoading(false);
     setAccessFocusProfileId(profileId);
@@ -409,8 +414,9 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }
 
   async function uploadEmployeeFile(file, kind) {
-    if (!person?.id || !file || employeeFileBusy) return;
+    if (!person?.id || !file || employeeFileWriteBusy.current) return;
     const generation = personGeneration.current;
+    employeeFileWriteBusy.current = true;
     setEmployeeFileBusy(true);
     setError(null);
     try {
