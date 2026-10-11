@@ -189,6 +189,9 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     () => snapshot?.memberships.filter((membership) => membership.profile_id === form.person) || [],
     [snapshot, form.person]
   );
+  const alreadyHasResponsibility = selectedMemberships.some((member) =>
+    member.unit_id === form.unit && member.role === form.role);
+  const belongsToSelectedUnit = selectedMemberships.some((member) => member.unit_id === form.unit);
   const selectedLaneMemberships = snapshot?.laneMemberships.filter((member) => member.profile_id === form.person) || [];
   const belongsToSelectedLane = selectedLaneMemberships.some((member) => member.sub_team_id === form.lane);
   const pendingInvitationCount = snapshot?.invitations.filter((invitation) =>
@@ -312,11 +315,12 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             <div className="phase5-access-actions">
               <Button
                 busy={busy}
-                disabled={busy || !form.person || !form.unit || !form.reason.trim()}
+                disabled={busy || !form.person || !form.unit || alreadyHasResponsibility || !form.reason.trim()}
                 onClick={() => action(() => saveResponsibility(), "Responsibility recorded. Other unit memberships are preserved.")}
               >Record responsibility</Button>
               {selectedPerson && onOpenPerson ? <Button variant="secondary" onClick={() => onOpenPerson(selectedPerson.id)}>Open employee record</Button> : null}
             </div>
+            {alreadyHasResponsibility && <p className="screen-note" role="status">This person already has that responsibility in the selected unit. The existing membership will not be duplicated.</p>}
             <p className="screen-note">Use the employee record for primary-unit transfer, Manager/reporting-line changes and employment status. Those changes preserve employment history.</p>
           </DataPanel>
 
@@ -365,8 +369,9 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                     {snapshot.lanes.filter((lane) => lane.unit_id === form.unit).map((lane) => <option key={lane.id} value={lane.id}>{lane.name}</option>)}
                   </select>
                 </FieldGroup>
+                {!belongsToSelectedUnit && form.unit ? <p className="screen-note" role="status">Assign an authorised unit responsibility before adding this person to one of its teams.</p> : null}
                 <div className="phase5-access-actions">
-                  <Button variant="secondary" size="compact" disabled={busy || !form.person || !form.lane || belongsToSelectedLane || !form.reason.trim()} onClick={() => action(() => saveLane(true), "Team / sub-team membership recorded.")}>Add to team</Button>
+                  <Button variant="secondary" size="compact" disabled={busy || !form.person || !form.lane || !belongsToSelectedUnit || belongsToSelectedLane || !form.reason.trim()} onClick={() => action(() => saveLane(true), "Team / sub-team membership recorded.")}>Add to team</Button>
                   <Button variant="quiet" size="compact" disabled={busy || !form.person || !form.lane || !belongsToSelectedLane || !form.reason.trim()} onClick={() => action(() => saveLane(false), "Team / sub-team membership ended.")}>Remove from team</Button>
                 </div>
               </div>
