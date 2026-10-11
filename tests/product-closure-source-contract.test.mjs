@@ -82,3 +82,14 @@ test("invitation entry is validated before the record-creating RPC", () => {
   assert.match(access, /isPlausibleInvitationEmail\(form\.email\)/);
   assert.match(access, /existingAccountEmail \|\| existingInvitationEmail/);
 });
+
+test("People and Access mutations are single-flight and identity-generation scoped", () => {
+  assert.match(access, /const identityGeneration = useRef\(0\)/);
+  assert.match(access, /const actionBusyRef = useRef\(false\)/);
+  assert.match(access, /if \(actionBusyRef\.current \|\| busy \|\| !canManage \|\| snapshotScope !== scopeKey\) return false/);
+  assert.match(access, /const identity = identityGeneration\.current/);
+  assert.match(access, /const sameIdentity = \(\) => identity === identityGeneration\.current/);
+  assert.match(access, /if \(!sameIdentity\(\)\) return true/);
+  assert.match(access, /if \(sameIdentity\(\)\) \{\s*actionBusyRef\.current = false;\s*setBusy\(false\)/);
+  assert.match(access, /return recorded \|\| Boolean\(actionError\?\.invitationRecorded\)/);
+});
