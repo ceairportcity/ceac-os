@@ -3,11 +3,13 @@ import { supabase, inviteByEmail, resendStaffInvitation } from "../lib/supabase"
 import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../lib/invitationSafety";
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
+import SupportTeamMemberships from "./SupportTeamMemberships";
 
 const ACCESS_MODES = [
   ["invite", "Invite"],
   ["responsibility", "Responsibilities"],
   ["invitations", "Invitations"],
+  ["technical-support", "Technical Support"],
 ];
 
 function invitationTone(state, revokedAt) {
@@ -408,6 +410,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             </>}
           </DataPanel>
         </div>}
+
+        {mode === "technical-support" && <SupportTeamMemberships me={me} people={snapshot.people} units={snapshot.units} />}
 
         {mode === "invitations" && <DataPanel
           eyebrow="Account activation"
