@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   HELP_CATEGORIES, SUPPORT_WORKSPACES, SUPPORT_GUIDES, SERVICE_NAMES,
-  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage,
+  canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome,
 } from "../src/lib/technicalSupport.js";
 
 test("support panel has the six locked workspaces and categories", () => {
@@ -76,4 +76,15 @@ test("unavailable support schema has a truthful safe message", () => {
   assert.equal(supportUnavailableMessage({ code: "42501" }), null);
   assert.equal(supportUnavailableMessage({ code: "PGRST301" }), null);
   assert.equal(supportUnavailableMessage(null), null);
+});
+
+test("case closure cannot imply unverified business access approval", () => {
+  for (const state of ["resolved", "closed"]) {
+    assert.equal(canRecordSupportOutcome({ category: "access_needed" }, state), false);
+  }
+  for (const state of ["open", "waiting_approval", "in_progress"]) {
+    assert.equal(canRecordSupportOutcome({ category: "access_needed" }, state), true);
+  }
+  assert.equal(canRecordSupportOutcome({ category: "cannot_sign_in" }, "resolved"), true);
+  assert.equal(canRecordSupportOutcome(null, "closed"), true);
 });
