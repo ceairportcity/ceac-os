@@ -62,3 +62,13 @@ test("private verification entrypoints parse as Bash without executing", () => {
     assert.equal(result.status, 0, script + ": " + (result.error?.message || result.stderr || "Bash syntax invalid"));
   }
 });
+
+// A READY preview can be treated as a source-test checkpoint only when
+// Vercel actually runs the same auditable source suite before the Vite build.
+test("Vercel checkpoints run source gates and routine pushes remain intentionally skipped", () => {
+  const vercel = JSON.parse(readFileSync("vercel.json", "utf8"));
+  const ignore = readFileSync("scripts/vercel/ignore-build.mjs", "utf8");
+  assert.match(vercel.buildCommand, /^npm run verify:source && npm run build$/);
+  assert.match(vercel.ignoreCommand, /ignore-build\\.mjs/);
+  assert.match(ignore, /message\\.includes\\("\\[vercel\\]"\\)/);
+});
