@@ -113,6 +113,12 @@ export default function TechnicalSupport({ me, go }) {
 
   useEffect(() => {
     let live = true;
+    // A role/account transition must not keep an old user's case data visible.
+    setReady(false);
+    setMembership(null);
+    setCases([]);
+    setSelectedId(null);
+    setError(null);
     (async () => {
       try {
         if (!canManage) throw new Error("Your account has no Technical Support case-management authority.");
