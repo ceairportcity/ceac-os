@@ -273,52 +273,58 @@ export default function AdminProtectedHR({ me }) {
   },[employeeId,reason,recordType,fields,file]);
 
   async function saveRecord() {
-    if(!formReady) return;
+    if(!formReady || busy) return;
     const saveScope=scopeRef.current.snapshot();
     setBusy(true);
     setError(null);
     setNotice(null);
     let uploadedPath=null;
-    let payload=payloadForType();
-
-    if(recordType==="document") {
-      uploadedPath=`${me.org_id}/${employeeId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
-      const upload=await supabase.storage.from("ceac-hr-private").upload(uploadedPath,file,{upsert:false});
-      if(upload.error){
-        setBusy(false);
-        setError(humanError(upload.error,"The protected document could not be uploaded."));
-        return;
+    let recorded=false;
+    let phase="upload";
+    try {
+      let payload=payloadForType();
+      if(recordType==="document") {
+        uploadedPath=`${me.org_id}/${employeeId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+        const upload=await supabase.storage.from("ceac-hr-private").upload(uploadedPath,file,{upsert:false});
+        if(upload.error) throw upload.error;
+        payload={
+          document_type:fields.documentType.trim(),
+          title:fields.title.trim(),
+          storage_path:uploadedPath,
+          issued_on:fields.issuedOn||"",
+          expires_on:fields.expiresOn||"",
+        };
       }
-      payload={
-        document_type:fields.documentType.trim(),
-        title:fields.title.trim(),
-        storage_path:uploadedPath,
-        issued_on:fields.issuedOn||"",
-        expires_on:fields.expiresOn||"",
-      };
-    }
-
-    const {error:e}=await supabase.rpc("hr_employee_protected_record",{
-      p_employee_id:employeeId,
-      p_record_type:recordType,
-      p_payload:payload,
-      p_replaces_id:replaceId||null,
-      p_reason:reason.trim(),
-    });
-
-    if(e){
-      if(uploadedPath) await supabase.storage.from("ceac-hr-private").remove([uploadedPath]);
+      phase="record";
+      const {error:e}=await supabase.rpc("hr_employee_protected_record",{
+        p_employee_id:employeeId,
+        p_record_type:recordType,
+        p_payload:payload,
+        p_replaces_id:replaceId||null,
+        p_reason:reason.trim(),
+      });
+      if(e) throw e;
+      recorded=true;
+      if(!scopeRef.current.matches(saveScope)) return;
+      setNotice("Protected HR record saved.");
+      setComposerOpen(false);
+      resetForm(recordType);
+      await loadSummary(employeeId);
+    } catch(failure) {
+      // A network rejection must not trap HR in a permanently busy composer.
+      // If record creation failed, a partly uploaded private blob is not a record.
+      if(uploadedPath && !recorded) {
+        try { await supabase.storage.from("ceac-hr-private").remove([uploadedPath]); }
+        catch { /* Keep the original error; private Storage remains server-gated. */ }
+      }
+      if(scopeRef.current.matches(saveScope)) {
+        setError(humanError(failure,phase==="upload"
+          ? "The protected document could not be uploaded."
+          : "The protected HR record could not be saved. Review before retrying."));
+      }
+    } finally {
       setBusy(false);
-      setError(humanError(e,"The protected HR record could not be saved."));
-      return;
     }
-
-    setBusy(false);
-    if(!scopeRef.current.matches(saveScope)) return;
-    setNotice("Protected HR record saved.");
-    setComposerOpen(false);
-    resetForm(recordType);
-    await loadSummary(employeeId);
   }
 
   async function openDocument(row) {
