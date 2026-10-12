@@ -173,7 +173,7 @@ export default function AdminProtectedHR({ me }) {
     // A refreshed authorised roster may remove an employee after an access
     // change. Do not preserve that employee's cached private HR detail.
     const currentId=scopeRef.current.snapshot().employeeId;
-    if(!currentId || !rows.some(person=>person.id===currentId)){
+    if((currentId || rows.length) && !rows.some(person=>person.id===currentId)){
       let remembered="";
       try { remembered=sessionStorage.getItem(`ceac:protected-hr:employee:${me.id}`)||""; } catch {}
       const next=rows.some(person=>person.id===remembered) ? remembered : rows[0]?.id || "";
