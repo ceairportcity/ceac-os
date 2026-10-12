@@ -34,6 +34,16 @@ SELECT
   (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='hr_private' AND c.relkind='r'
       AND has_table_privilege('authenticated',c.oid,'SELECT')) AS protected_hr_authenticated_select_grants,
+  -- Backup scope signals only: counts never substitute for encrypted Auth/Storage restore.
+  (SELECT count(*) FROM auth.users) AS auth_users_needing_preservation,
+  (SELECT count(*) FROM storage.buckets WHERE id IN ('ceac-hr-private','ceac-operational-private'))
+    AS required_storage_buckets_present,
+  (SELECT count(*) FROM storage.buckets
+    WHERE id IN ('ceac-hr-private','ceac-operational-private') AND public)
+    AS required_storage_buckets_public,
+  (SELECT count(*) FROM storage.objects
+    WHERE bucket_id IN ('ceac-hr-private','ceac-operational-private'))
+    AS private_storage_objects_needing_preservation,
   (SELECT count(*) FROM auth.mfa_factors WHERE status='verified') AS verified_production_mfa_factors,
   (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
     WHERE n.nspname='public' AND p.prosecdef
