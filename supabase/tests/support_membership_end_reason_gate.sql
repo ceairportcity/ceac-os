@@ -12,6 +12,8 @@ BEGIN
  THEN RAISE EXCEPTION 'End-reason schema/trigger-only authority not installed.'; END IF;
  IF pg_get_functiondef('public.support_membership_history_guard()'::regprocedure)
        NOT ILIKE '%coalesce(NEW.end_reason,NEW.reason)%'
+    OR pg_get_functiondef('public.support_membership_history_guard()'::regprocedure)
+       NOT ILIKE '%revoke_reason=%NEW.end_reason%'
  THEN RAISE EXCEPTION 'End history still reuses original joining reason.'; END IF;
 END
 $contract$;
@@ -70,6 +72,10 @@ BEGIN
    OR EXISTS(SELECT 1 FROM public.capability_grants
       WHERE profile_id='31000000-0000-4000-8000-000000000006'
        AND capability LIKE 'support.%' AND revoked_at IS NULL)
+   OR NOT EXISTS(SELECT 1 FROM public.capability_grants
+      WHERE profile_id='31000000-0000-4000-8000-000000000006'
+       AND capability='support.guides.manage'
+       AND revoke_reason='Technical Support membership ended: Temporary assistance concluded and separately reviewed.')
  THEN RAISE EXCEPTION 'Membership end deactivated profile or retained privileged Support grants.'; END IF;
  BEGIN
    UPDATE public.support_membership_events SET reason='History rewritten'
