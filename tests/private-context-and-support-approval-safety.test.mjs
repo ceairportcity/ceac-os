@@ -71,3 +71,17 @@ test("private media previews never reuse stale signed links for changed file ide
   assert.match(privateFiles, /Retry private media/);
   assert.doesNotMatch(privateFiles, /const url = urls\[file\.id\]/);
 });
+
+
+test("same-account Manager transfer and grant revocation invalidate approval snapshots", () => {
+  assert.match(approvals, /const membershipSignature = \(me\.memberships \|\| \[\]\)/);
+  assert.match(approvals, /membership\.unit_id/);
+  assert.match(approvals, /membership\.role/);
+  assert.match(approvals, /const capabilitySignature = \(me\.capability_grants \|\| \[\]\)/);
+  assert.match(approvals, /grant\.scope_unit_id/);
+  assert.match(approvals, /grant\.expires_at/);
+  assert.match(approvals, /me\.unit_id \|\| ""/);
+  assert.match(approvals, /\}, \[scope\]\);/);
+  assert.match(approvals, /const verified = loadedScope === scope/);
+  assert.match(approvals, /if \(generation\.current !== id\) return/);
+});
