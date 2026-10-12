@@ -280,6 +280,7 @@ export default function AdminProtectedHR({ me }) {
     setNotice(null);
     let uploadedPath=null;
     let recorded=false;
+    let confirmedFailure=false;
     let phase="upload";
     try {
       let payload=payloadForType();
@@ -303,7 +304,10 @@ export default function AdminProtectedHR({ me }) {
         p_replaces_id:replaceId||null,
         p_reason:reason.trim(),
       });
-      if(e) throw e;
+      if(e) {
+        confirmedFailure=true;
+        throw e;
+      }
       recorded=true;
       if(!scopeRef.current.matches(saveScope)) return;
       setNotice("Protected HR record saved.");
@@ -311,16 +315,21 @@ export default function AdminProtectedHR({ me }) {
       resetForm(recordType);
       await loadSummary(employeeId);
     } catch(failure) {
-      // A network rejection must not trap HR in a permanently busy composer.
-      // If record creation failed, a partly uploaded private blob is not a record.
-      if(uploadedPath && !recorded) {
+      // An explicit database error is a failed transaction; a rejected
+      // network promise is ambiguous and must not erase possibly linked bytes.
+      if(uploadedPath && !recorded && (phase==="upload" || confirmedFailure)) {
         try { await supabase.storage.from("ceac-hr-private").remove([uploadedPath]); }
-        catch { /* Keep the original error; private Storage remains server-gated. */ }
+        catch { /* Preserve the original error and keep Storage private. */ }
       }
       if(scopeRef.current.matches(saveScope)) {
-        setError(humanError(failure,phase==="upload"
-          ? "The protected document could not be uploaded."
-          : "The protected HR record could not be saved. Review before retrying."));
+        const message=recorded
+          ? "The protected record was saved, but its latest state could not be loaded."
+          : phase==="upload"
+            ? "The protected document could not be uploaded."
+            : confirmedFailure
+              ? "The protected HR record could not be saved."
+              : "The save outcome is unconfirmed. Review the protected record before trying again.";
+        setError(humanError(failure,message));
       }
     } finally {
       setBusy(false);
