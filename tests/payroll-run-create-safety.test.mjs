@@ -6,7 +6,9 @@ import { runInNewContext } from "node:vm";
 const source = readFileSync(new URL("../src/screens/AdminPayroll.jsx", import.meta.url), "utf8");
 function extract(name) {
   const start = source.indexOf("  async function " + name + "(");
-  const end = source.indexOf("\n  async function ", start + 5);
+  const nextFunction = source.indexOf("\n  async function ", start + 5);
+  const nextRender = source.indexOf("\n  // Render only data", start + 5);
+  const end = nextFunction >= 0 ? nextFunction : nextRender;
   assert.ok(start >= 0 && end > start, name + " function source must exist");
   return source.slice(start, end).trim();
 }
