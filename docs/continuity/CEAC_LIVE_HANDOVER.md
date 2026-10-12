@@ -138,3 +138,11 @@ Next immediately executable action: run credential-independent Playwright and an
 
 Next immediately executable action: complete remaining read-only source/security review and preserve evidence; then obtain one approved isolated-runtime path: either a genuine private checkout with Node 22 at confirmed no cost, or explicit cost confirmation for an isolated Supabase branch. Authenticated fixtures, real Support file lifecycle, restore, real-user MFA/invitation/recovery, literal visual acceptance, independent final review and production authorisation remain mandatory.
 
+## 12 October 2026 — Node 22 gate completed without external compute
+
+- A package-scoped Node `v22.12.0` runtime was established in the Work shell using `npx --yes -p node@22.12.0`; no repository dependency or production configuration changed.
+- Against application/security tree `ed00759d7b12f7f590ace78dba7ede76a7913f42`: clean `npm ci` exit 0; `npm run verify:source` **176/176**, exit 0; `npm run build` exit 0; credential-independent Playwright **68/68**, exit 0.
+- The Node 22 resilience subset passed manifest, service-worker and offline-shell checks, then failed standby R4 at the same truthful missing-Git boundary. Genuine checkout/recovery bundle remains open.
+- GitHub HTTPS and the Work Git proxy do not provide this shell with a scoped private credential. Vercel was not resumed because zero-cost capacity is unproven. Production still has 119 migrations; candidate versions are unapplied and the known pre-candidate SECURITY DEFINER advisory surface remains live.
+- Release remains **NO-GO**. The Node 22 source/build/credential-independent-browser sub-gates are now complete; authenticated isolated acceptance, complete ancestry-bound resilience, restore, MFA/invitation/recovery, visuals, independent review and owner-authorised release remain open.
+
