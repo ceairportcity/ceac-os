@@ -83,5 +83,5 @@ test("same-account Manager transfer and grant revocation invalidate approval sna
   assert.match(approvals, /me\.unit_id \|\| ""/);
   assert.match(approvals, /\}, \[scope\]\);/);
   assert.match(approvals, /const verified = loadedScope === scope/);
-  assert.match(approvals, /if \(generation\.current !== id\) return/);
+  assert.match(approvals, /if \(generation\.current === id\) setRows\(data \|\| \[\]\)/);
 });
