@@ -58,7 +58,8 @@ test("rejected roster call stops loading and exposes a retryable error", async (
   await pending;
   assert.deepEqual(h.seen.loading, [true, false]);
   assert.match(h.seen.errors.at(-1), /could not load/);
-  assert.equal(h.seen.people.length, 0);
+  assert.deepEqual(h.seen.people, [[]]);
+  assert.equal(h.seen.clearedSummary, 1);
 });
 
 test("stale older roster response cannot replace a later verified roster", async () => {
@@ -136,4 +137,18 @@ test("empty refreshed roster clears existing selection and protected details", a
   assert.equal(h.scopeRef.current.snapshot().employeeId, null);
   assert.equal(h.seen.clearedSummary, 1);
   assert.equal(h.seen.clearedLoaded, 1);
+});
+
+test("failed refreshed roster revokes previously displayed confidential selection", async () => {
+  const h = harness();
+  h.scopeRef.current.select("employee-A");
+  const pending = h.loadPeople();
+  h.calls[0].reject(new Error("permission unavailable"));
+  await pending;
+  assert.deepEqual(h.seen.selected, [""]);
+  assert.deepEqual(h.seen.people, [[]]);
+  assert.equal(h.scopeRef.current.snapshot().employeeId, null);
+  assert.equal(h.seen.clearedSummary, 1);
+  assert.equal(h.seen.clearedLoaded, 1);
+  assert.equal(h.seen.closed, 1);
 });
