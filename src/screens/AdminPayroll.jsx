@@ -241,6 +241,7 @@ export default function AdminPayroll({ me }) {
       }
       recorded = true;
       if (selectedRunRef.current !== runId) return;
+      setSheet(null);
       setNotice("Payroll line removed from the draft.");
       await Promise.all([loadDetail(runId), loadRuns(runId)]);
     } catch (failure) {
