@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 // Registered private-context suite also runs the focused Protected HR guards.
 import "./protected-hr-context-race.test.mjs";
 import "./protected-hr-save-failure.test.mjs";
+import "./protected-hr-roster-read.test.mjs";
 
 
 const read = (path) => readFileSync(path, "utf8");
