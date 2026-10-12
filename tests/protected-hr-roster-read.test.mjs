@@ -19,15 +19,23 @@ function deferred() {
 
 function harness(initialRemembered = "") {
   const calls = [];
-  const seen = { loading: [], errors: [], people: [], selected: [], contexts: [] };
+  const seen = { loading: [], errors: [], people: [], selected: [], contexts: [], clearedSummary: 0, clearedLoaded: 0, clearedHistory: 0, closed: 0 };
   const rosterReadGeneration = { current: 0 };
-  const scopeRef = { current: { select: id => seen.contexts.push(id) } };
+  let currentEmployeeId = null;
+  const scopeRef = { current: {
+    select: id => { currentEmployeeId=id || null; seen.contexts.push(id); },
+    snapshot: () => ({ employeeId: currentEmployeeId }),
+  } };
   const bindings = {
     rosterReadGeneration,
     scopeRef,
     setLoading: value => seen.loading.push(value),
     setError: value => seen.errors.push(value),
     setPeople: rows => seen.people.push(rows),
+    setSummary: value => { if(value===null) seen.clearedSummary++; },
+    setLoadedEmployeeId: value => { if(value===null) seen.clearedLoaded++; },
+    setHistoryOpen: () => { seen.clearedHistory++; },
+    setComposerOpen: () => { seen.closed++; },
     setEmployeeId: id => seen.selected.push(id),
     employeeId: "",
     me: { id: "hr-fixture" },
@@ -40,7 +48,7 @@ function harness(initialRemembered = "") {
     } },
   };
   const loadPeople = runInNewContext("(" + handler + ")", bindings, { timeout: 1000 });
-  return { loadPeople, calls, seen, rosterReadGeneration };
+  return { loadPeople, calls, seen, rosterReadGeneration, scopeRef };
 }
 
 test("rejected roster call stops loading and exposes a retryable error", async () => {
@@ -92,4 +100,40 @@ test("empty authorized roster settles without fabricating a record", async () =>
   await pending;
   assert.deepEqual(h.seen.loading, [true, false]);
   assert.equal(h.seen.selected.length, 0);
+});
+
+test("roster removal invalidates previously selected employee and cached HR data", async () => {
+  const h = harness();
+  h.scopeRef.current.select("employee-A");
+  const pending = h.loadPeople();
+  h.calls[0].resolve({ data: [{ id: "employee-B" }], error: null });
+  await pending;
+  assert.deepEqual(h.seen.selected, ["employee-B"]);
+  assert.equal(h.scopeRef.current.snapshot().employeeId, "employee-B");
+  assert.equal(h.seen.clearedSummary, 1);
+  assert.equal(h.seen.clearedLoaded, 1);
+  assert.equal(h.seen.closed, 1);
+});
+
+test("existing selected employee survives a refresh when still authorised", async () => {
+  const h = harness();
+  h.scopeRef.current.select("employee-A");
+  const pending = h.loadPeople();
+  h.calls[0].resolve({ data: [{ id: "employee-A" }, { id: "employee-B" }], error: null });
+  await pending;
+  assert.deepEqual(h.seen.selected, []);
+  assert.equal(h.scopeRef.current.snapshot().employeeId, "employee-A");
+  assert.equal(h.seen.clearedSummary, 0);
+});
+
+test("empty refreshed roster clears existing selection and protected details", async () => {
+  const h = harness();
+  h.scopeRef.current.select("employee-A");
+  const pending = h.loadPeople();
+  h.calls[0].resolve({ data: [], error: null });
+  await pending;
+  assert.deepEqual(h.seen.selected, [""]);
+  assert.equal(h.scopeRef.current.snapshot().employeeId, null);
+  assert.equal(h.seen.clearedSummary, 1);
+  assert.equal(h.seen.clearedLoaded, 1);
 });
