@@ -90,3 +90,13 @@ Current isolated review target is **142 unique migration timestamp versions** an
 - Under the same Node 22 package-scoped runtime, `npm audit --omit=dev --audit-level=high` and the full `npm audit --audit-level=high` both exited 0 with `found 0 vulnerabilities` for the locked dependency graph.
 - GitHub reports a successful Vercel status for documentation checkpoint `a5fb9991b3c8eff9cd5af08107bbce3d9a963d98`, but the connected Vercel account returned 403 when listing deployments and has no local CLI credential. A green commit status is not authenticated functional, visual or production acceptance; do not infer a deployable GO from it.
 
+
+
+## 12 October 2026 — local Supabase Auth/Storage preflight without hosted spend
+
+- The product owner declined creating or modifying either visible hosted Supabase project and directed verification toward existing free local capabilities. Treat the production CEAC project and the older unrelated project as non-disposable; neither is a fixture.
+- The reviewed CLI is available without changing repository dependencies: `npx --yes supabase@2.117.0 --version` returned `2.117.0`, exit 0. In a disposable `/tmp` directory, `supabase init` completed successfully.
+- `supabase start` then exited 1 with `LegacyDockerLifecycleInspectError`: Docker was not found and Podman was not found. This sandbox cannot presently run the local GoTrue/Storage/PostgREST stack. Do not reinterpret CLI availability as a working local Supabase runtime.
+- The ordinary apt sandbox user also failed because this execution environment forbids the required setgroups/setuid transitions. Running apt metadata refresh as root bypassed that specific apt-user error but did not establish a container engine; do not cycle package-provider experiments or assume nested-container privileges.
+- The authenticated Supabase dashboard fallback reached only the sign-in page and made no account, project, branch, billing or production change. The official public branch rate observed was $0.01344 per branch-hour, but the owner explicitly chose the local-first path. No paid branch is approved.
+- Local Auth, TOTP, Storage and invitation-token acceptance remain feasible only in a supported disposable host that has Docker or Podman plus the pinned CLI. Real outbound email delivery, real-user authenticator enrolment/AAL2 acceptance and production Auth/Storage-aware backup restoration remain separate hosted/private-human gates; local simulations cannot certify them.
