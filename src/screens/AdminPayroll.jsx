@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer } from "../experience-v2/components";
@@ -64,9 +64,15 @@ export default function AdminPayroll({ me }) {
   const [sheet, setSheet] = useState(null);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
+  const detailReadGeneration = useRef(0);
 
   useEffect(() => { loadRuns(); }, [me.id]);
-  useEffect(() => { if (selectedId) loadDetail(selectedId); else setDetail(null); }, [selectedId]);
+  useEffect(() => {
+    setSheet(null);
+    if (selectedId) void loadDetail(selectedId);
+    else { detailReadGeneration.current += 1; setDetail(null); }
+    return () => { detailReadGeneration.current += 1; };
+  }, [selectedId]);
 
   async function loadRuns(preferId = null) {
     setLoading(true); setError(null);
@@ -87,11 +93,23 @@ export default function AdminPayroll({ me }) {
   }
 
   async function loadDetail(id) {
+    const generation = ++detailReadGeneration.current;
     setDetailLoading(true); setError(null);
-    const { data, error: detailError } = await supabase.rpc("payroll_run_detail", { p_run_id: id });
+    let result;
+    try {
+      result = await supabase.rpc("payroll_run_detail", { p_run_id: id });
+    } catch (failure) {
+      result = { error: failure };
+    }
+    // An old run may resolve after a newer selection or an unmount.
+    if (generation !== detailReadGeneration.current) return;
     setDetailLoading(false);
-    if (detailError) { setError(detailError.message || "Payroll run could not be opened."); return; }
-    setDetail(data || null);
+    if (result.error || (result.data && result.data.run?.id !== id)) {
+      setDetail(null);
+      setError(result.error?.message || "Payroll run could not be verified.");
+      return;
+    }
+    setDetail(result.data || null);
   }
 
   async function createRun(form) {
@@ -183,8 +201,13 @@ export default function AdminPayroll({ me }) {
     await loadRuns(data);
   }
 
-  const run = detail?.run || null;
-  const entries = Array.isArray(detail?.entries) ? detail.entries : [];
+  // Render only data bound to the currently selected payroll run, even
+  // before the selection effect begins its next asynchronous fetch.
+  const verifiedDetail = detail?.run?.id === selectedId ? detail : null;
+  const run = verifiedDetail?.run || null;
+  const entries = Array.isArray(verifiedDetail?.entries) ? verifiedDetail.entries : [];
+  const visibleSheet = sheet?.type === "create" ? sheet
+    : run && sheet?.runId === selectedId ? sheet : null;
   const flagged = useMemo(() => entries.filter((entry) => Array.isArray(entry.flags) && entry.flags.length), [entries]);
 
   if (loading) return <div className="body fpg-payroll"><LoadingState label="Loading Payroll…" /></div>;
@@ -258,9 +281,9 @@ export default function AdminPayroll({ me }) {
           </section>
 
           <div className="fpg-payroll-actions">
-            {canPrepare && run.status === "draft" && <button className="btn" disabled={busy} onClick={() => setSheet({ type:"submit" })}>Submit for approval</button>}
-            {canApprove && run.status === "in_review" && <button className="btn" disabled={busy} onClick={() => setSheet({ type:"approve" })}>Approve payroll</button>}
-            {canPrepare && run.status === "approved" && <button className="btn btn-ghost" disabled={busy} onClick={() => setSheet({ type:"correction" })}>Create correction</button>}
+            {canPrepare && run.status === "draft" && <button className="btn" disabled={busy} onClick={() => setSheet({ type:"submit", runId:run.id })}>Submit for approval</button>}
+            {canApprove && run.status === "in_review" && <button className="btn" disabled={busy} onClick={() => setSheet({ type:"approve", runId:run.id })}>Approve payroll</button>}
+            {canPrepare && run.status === "approved" && <button className="btn btn-ghost" disabled={busy} onClick={() => setSheet({ type:"correction", runId:run.id })}>Create correction</button>}
             <span>Approved payroll is immutable. Corrections create a new attributable revision.</span>
           </div>
 
@@ -275,7 +298,7 @@ export default function AdminPayroll({ me }) {
                   <td>{money(entry.deductions_minor, entry.currency)}</td>
                   <td><strong>{money(entry.net_minor, entry.currency)}</strong></td>
                   <td>{entry.flags?.length ? <span className="fpg-payroll-flags">{entry.flags.map((flag) => flag.replaceAll("_"," ")).join(" · ")}</span> : <span className="fpg-payroll-clear">Clear</span>}</td>
-                  <td>{canPrepare && run.status === "draft" ? <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"entry", entry })}>Adjust</button> : <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"view", entry })}>Review</button>}</td>
+                  <td>{canPrepare && run.status === "draft" ? <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"entry", runId:run.id, entry })}>Adjust</button> : <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"view", runId:run.id, entry })}>Review</button>}</td>
                 </tr>)}</tbody>
               </table>
             </div>
@@ -288,12 +311,12 @@ export default function AdminPayroll({ me }) {
       </main>
     </div>
 
-    {sheet?.type === "create" && <CreateRunSheet busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
-    {sheet?.type === "entry" && <EntrySheet entry={sheet.entry} busy={busy} onClose={() => setSheet(null)} onSave={saveLine} onRemove={removeLine} />}
-    {sheet?.type === "view" && <ViewEntrySheet entry={sheet.entry} onClose={() => setSheet(null)} />}
-    {sheet?.type === "submit" && <DecisionSheet title="Submit Payroll" action="Submit for approval" busy={busy} onClose={() => setSheet(null)} onSave={submitRun} />}
-    {sheet?.type === "approve" && <DecisionSheet title="Approve Payroll" action="Approve and lock" busy={busy} onClose={() => setSheet(null)} onSave={approveRun} />}
-    {sheet?.type === "correction" && <DecisionSheet title="Create correction" action="Create correction draft" busy={busy} onClose={() => setSheet(null)} onSave={createCorrection} />}
+    {visibleSheet?.type === "create" && <CreateRunSheet busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
+    {visibleSheet?.type === "entry" && <EntrySheet entry={visibleSheet.entry} busy={busy} onClose={() => setSheet(null)} onSave={saveLine} onRemove={removeLine} />}
+    {visibleSheet?.type === "view" && <ViewEntrySheet entry={visibleSheet.entry} onClose={() => setSheet(null)} />}
+    {visibleSheet?.type === "submit" && <DecisionSheet title="Submit Payroll" action="Submit for approval" busy={busy} onClose={() => setSheet(null)} onSave={submitRun} />}
+    {visibleSheet?.type === "approve" && <DecisionSheet title="Approve Payroll" action="Approve and lock" busy={busy} onClose={() => setSheet(null)} onSave={approveRun} />}
+    {visibleSheet?.type === "correction" && <DecisionSheet title="Create correction" action="Create correction draft" busy={busy} onClose={() => setSheet(null)} onSave={createCorrection} />}
   </div>;
 }
 
