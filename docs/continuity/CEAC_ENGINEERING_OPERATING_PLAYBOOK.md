@@ -1,3 +1,5 @@
+> **CURRENT OWNER INSTRUCTION / FIRST READ (12 October 2026):** [CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md](CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md) governs the original **improved CEAC GitHub-account migration** and all subsequent Chat/Work sessions. This playbook's older technical procedures remain useful only where they do not contradict the owner's latest migration-first priority. Chat can act independently with connected GitHub and strictly read-only Supabase/Vercel where allowed; Work owns unfinished Google-only/AAL2 authentication, credentialled acceptance and cutover. No TinyFish (credits exhausted), new paid provider, repeated failed startup loop, source edit overlapping Work or direct production/main change. Read the linked contract *before* choosing a task; persist exact verification and return to actual migration completion.
+
 # CEAC Engineering Operating Playbook
 
 ### Local replay fidelity corrections
