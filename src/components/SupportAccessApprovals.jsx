@@ -10,41 +10,57 @@ export default function SupportAccessApprovals({ me, authority }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [notice, setNotice] = useState(null);
   const [notes, setNotes] = useState({});
   const [busy, setBusy] = useState(false);
   const [loadedScope, setLoadedScope] = useState(null);
   const generation = useRef(0);
   const busyRef = useRef(false);
   const scope = `${me.org_id}:${me.id}:${authority}`;
-  const visible = loadedScope === scope ? rows : [];
+  const verified = loadedScope === scope;
+  const visible = verified && !loadFailed ? rows : [];
 
-  useEffect(() => {
+  async function refresh() {
+    if (busyRef.current) return;
     const id = ++generation.current;
-    setRows([]); setLoadedScope(null); setNotes({}); setError(null); setLoading(true);
-    busyRef.current = false; setBusy(false);
-    if (!me.id || !me.org_id) return;
-    async function load() {
+    setRows([]); setLoadedScope(null); setError(null); setLoadFailed(false);
+    setLoading(true); setNotice(null);
+    try {
+      if (!me.id || !me.org_id) throw new Error("Missing verified business identity.");
       const { data, error: failure } = await supabase.from("support_access_requests")
         .select("id,requested_action,access_object,required_approver,target_unit_id,state,version,created_at")
         .eq("org_id", me.org_id).eq("required_approver", authority)
         .eq("state", "pending").order("created_at", { ascending: true }).limit(30);
-      if (generation.current !== id) return;
-      if (failure) setError("Support access approvals could not be verified. Nothing has been approved.");
-      else setRows(data || []);
-      setLoadedScope(scope); setLoading(false);
+      if (failure) throw failure;
+      if (generation.current === id) setRows(data || []);
+    } catch {
+      if (generation.current === id) {
+        setLoadFailed(true);
+        setError("Business approval records could not be verified. Refresh before taking any action.");
+      }
+    } finally {
+      if (generation.current === id) {
+        setLoadedScope(scope); setLoading(false);
+      }
     }
-    void load();
+  }
+
+  useEffect(() => {
+    setNotes({}); setError(null); setNotice(null);
+    busyRef.current = false; setBusy(false);
+    void refresh();
     return () => { generation.current++; };
   }, [me.id, me.org_id, authority]);
 
   async function decide(request, decision) {
-    if (busyRef.current || busy) return;
+    if (busyRef.current || busy || !verified || loadFailed || loading) return;
     const reason = String(notes[request.id] || "").trim();
     if (reason.length < 10) {
       setError("Add a reason of at least 10 characters before approving or declining.");
       return;
     }
-    busyRef.current = true; setBusy(true); setError(null);
+    busyRef.current = true; setBusy(true); setError(null); setNotice(null);
     const id = generation.current;
     try {
       const { data, error: failure } = await supabase.from("support_access_requests")
@@ -56,6 +72,7 @@ export default function SupportAccessApprovals({ me, authority }) {
       if (id === generation.current) {
         setRows((items) => items.filter((item) => item.id !== request.id));
         setNotes((old) => ({ ...old, [request.id]: "" }));
+        setNotice("Business decision recorded. Technical Support must separately verify and record the approved action.");
       }
     } catch (failure) {
       if (id === generation.current) setError(humanError(failure, "Business decision not recorded. Refresh and confirm its status before retrying."));
@@ -68,8 +85,12 @@ export default function SupportAccessApprovals({ me, authority }) {
     <h2>Technical access approvals</h2>
     <p className="screen-note">Your business decision authorises a bounded support action. It does not itself create an account, membership or permission. Technical Support must separately record what was actually done.</p>
     {loading && <p role="status">Checking pending business decisions...</p>}
-    {error && <p className="ceac-support-error" role="alert">{error}</p>}
-    {!loading && !error && !visible.length && <p className="screen-note">No pending access-assistance decisions assigned to this business authority.</p>}
+    {verified && <button type="button" className="btn btn-ghost" disabled={busy}
+      onClick={() => void refresh()}>Refresh approval requests</button>}
+    {verified && error && <p className="ceac-support-error" role="alert">{error}</p>}
+    {verified && notice && <p className="ceac-support-success" role="status">{notice}</p>}
+    {verified && !loadFailed && !loading && !visible.length && <p className="screen-note">No pending access-assistance decisions in the first 30 authorised records.</p>}
+    {verified && !loadFailed && visible.length === 30 && <p className="screen-note">Showing the oldest 30 pending requests. More may exist.</p>}
     {visible.map((item) => <div key={item.id} className="ceac-support-approval-item">
       <strong>{item.requested_action.replaceAll("_", " ")}</strong>
       <p>{item.access_object}</p>
