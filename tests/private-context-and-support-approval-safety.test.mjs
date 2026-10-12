@@ -57,3 +57,17 @@ test("valid business decision is acknowledged without claiming technical executi
   assert.match(approvals, /onClick=\{\(\) => decide\(item, "declined"\)\}/);
   assert.doesNotMatch(approvals, /from\("capability_grants"\)/);
 });
+
+
+test("private media previews never reuse stale signed links for changed file identity", () => {
+  assert.match(privateFiles, /const mediaKey = files\.map/);
+  assert.match(privateFiles, /file\.storage_bucket \|\| ""/);
+  assert.match(privateFiles, /file\.storage_path \|\| ""/);
+  assert.match(privateFiles, /const safeUrls = loadedMediaKey === mediaKey \? urls : \{\}/);
+  assert.match(privateFiles, /const url = safeUrls\[file\.id\]/);
+  assert.match(privateFiles, /if \(!cancelled\) \{ setUrls\(Object\.fromEntries\(pairs\)\); setLoadedMediaKey\(mediaKey\); \}/);
+  assert.match(privateFiles, /if \(activeMediaKey\.current === expectedKey\) window\.open/);
+  assert.match(privateFiles, /if \(loadedMediaKey !== mediaKey\) return/);
+  assert.match(privateFiles, /Retry private media/);
+  assert.doesNotMatch(privateFiles, /const url = urls\[file\.id\]/);
+});
