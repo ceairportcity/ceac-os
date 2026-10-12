@@ -170,3 +170,19 @@ Next immediately executable action: finish source/security review and any repair
 - Production GitHub main, Supabase, Vercel, Auth, Storage and real users remain unchanged. Release remains NO-GO.
 
 Next immediately executable action: obtain the already-approved disposable PostgreSQL capability, replay all 143 migrations and rerun all registered SQL gates; then continue authenticated local Supabase browser acceptance when an existing no-cost Docker/Podman host is available.
+
+
+## 12 October 2026 — source continuation PR #52
+
+**Starting actual GitHub state:** PR #50 HEAD `37a44ad3f7eacb29e9dee843010627ac814e5666`. Draft PR #51 is now MERGED into PR #50's development branch at its own 47-commit continuation; no new work was applied to PR #51. Separate draft PR #52 `https://github.com/ceairportcity/ceac-os/pull/52`, branch `chatgpt/pr50-chat-defect-hardening-20261012`, starts exactly from PR #50's `37a44ad...`.
+
+**Code delivered on separate branch:**
+1. `src/components/OperationalFiles.jsx` — private file attachment list is now rendered only for the currently verified context, late responses are discarded, signed URLs are not opened after the context changes, uploads use a synchronous lock and stale callbacks cannot claim success, private read errors expose Retry.
+2. `src/components/SupportAccessApprovals.jsx` — Manager/People Administration business decision inbox now refreshes and retries, discards stale request responses, cannot decide after an invalid/failed read, and distinguishes no pending requests from an unverified/limited result.
+3. `tests/private-context-and-support-approval-safety.test.mjs` — five new source-contract tests registered by `package.json` `verify:source`. Exact source JS callback evaluation in V8 at `9c997ae774f5ed85fcaee7fc16d79230007c9539`: 5 pass / 5 attempted, 36 assertions, source-contract only (not native Node).
+
+**Scope/authority:** No SQL migration was added or altered, no capability, role, payroll, attendance, backup, Auth, signed storage policy, business authority or production configuration changed. The existing candidate contains 143 unique migrations, 56 SQL gates; prior applied production remains 119. Protected private files remain server-authorised by RLS and short-lived signed links; the UI fix prevents stale authorised *display*, but does not replace testing real revocation behavior.
+
+**Verification still required by Work:** `npm ci`, Node 22 `npm run verify:source` and build against exact PR #52 combined SHA; manual/Playwright private-file context switch while earlier result/signature is inflight; Manager/People Admin pending approval refresh/denial and stale version; complete integrated PostgreSQL/Supabase, MFA/AAL2, invitation delivery, encrypted/isolated restore, visual parity, independent review and owner release decision. Not run in this Chat. No TinyFish, paid provider, CI restart, production merge or deployment performed.
+
+**Next executable task in Chat:** inspect another independent supported source-level defect, commit any reviewed smallest fix plus focused tests, and update this handover at the final SHA. Work should consume PR #52 rather than reconstructing its implementation.
