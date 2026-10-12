@@ -1,3 +1,13 @@
+# BINDING FIRST READ — FINISH CEAC MIGRATION WITH DUAL CHAT/WORK EXECUTION (12 OCT 2026)
+
+**Before interpreting any older "active phase", running tools, editing source, or asking the owner for another plan, read [CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md](docs/continuity/CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md).** This is the latest owner-approved operating objective and division of labour. The outcome is the fully **improved** CEAC application migrated from the old GitHub account to private `ceairportcity/ceac-os`, with existing Vercel/Supabase production preserved, functioning real HR and other role access, and Google-only HR-approved identities with universal TOTP/AAL2 in the same release. Preserve all approved design, features, data and security. No rollback to the unimproved old app.
+
+**When Work is unavailable:** Chat uses only actually connected GitHub, read-only Supabase, permissioned read-only Vercel and genuinely available local analysis/test tools for separate, bounded, verifiable work. **TinyFish credits are exhausted: DO NOT USE TinyFish or substitute paid providers.** Do not edit Work-owned authentication/MFA/identity files, overwrite unpushed Work state, commit directly into its source branch, change `main`/production, or start repeated CI/Codespace/provider loops. Document proof and leave reviewable results for Work to integrate. When Work returns, it must recover uncommitted work first and continue from the latest actual state.
+
+**Authority:** This first-read operating objective overrides stale *process/sequence* text further down, but does not waive owner product contracts, RLS/privacy, data recoverability, reviewed releases or explicit production GO. The linked contract defines exact responsibilities, available tools, start/stop conditions, evidence and existing live checkpoint facts.
+
+---
+
 # CEAC CURRENT ENGINEERING WORKFLOW — READ THIS BEFORE LEGACY PHASE HEADINGS
 
 **Process authority (proposed, documentation-only, 11 October 2026):** Read [docs/continuity/CEAC_ENGINEERING_OPERATING_PLAYBOOK.md](docs/continuity/CEAC_ENGINEERING_OPERATING_PLAYBOOK.md) and [docs/continuity/CEAC_LIVE_HANDOVER.md](docs/continuity/CEAC_LIVE_HANDOVER.md) FIRST in every new CEAC engineering chat/session. Revalidate actual GitHub PR/branch HEADs before using the handover's dated values. Those files govern **working methods, proven tools, coordination, evidence, and handoff**; binding product scope still comes from the latest documented owner decisions and accepted contracts. The process notes override this file's superseded *workflow/active phase* statements where they conflict, but NEVER waive privacy, RLS, MFA, payroll/HR, testing or visual acceptance requirements.
