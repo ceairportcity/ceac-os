@@ -69,6 +69,8 @@ test("private media previews never reuse stale signed links for changed file ide
   assert.match(privateFiles, /if \(activeMediaKey\.current === expectedKey\) window\.open/);
   assert.match(privateFiles, /if \(loadedMediaKey !== mediaKey\) return/);
   assert.match(privateFiles, /Retry private media/);
+  assert.match(privateFiles, /Checking private media/);
+  assert.match(privateFiles, /disabled=\{loadedMediaKey !== mediaKey\} onClick=\{\(\) => void openMedia\(file\)\}/);
   assert.doesNotMatch(privateFiles, /const url = urls\[file\.id\]/);
 });
 
