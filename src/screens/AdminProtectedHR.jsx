@@ -141,6 +141,7 @@ export default function AdminProtectedHR({ me }) {
   const [loading,setLoading]=useState(true);
   const [detailLoading,setDetailLoading]=useState(false);
   const [busy,setBusy]=useState(false);
+  const saveBusyRef=useRef(false);
   const [error,setError]=useState(null);
   const [notice,setNotice]=useState(null);
 
@@ -273,7 +274,10 @@ export default function AdminProtectedHR({ me }) {
   },[employeeId,reason,recordType,fields,file]);
 
   async function saveRecord() {
-    if(!formReady || busy) return;
+    // React state is batched; lock immediately to prevent duplicate protected
+    // rows or private uploads from two clicks before the next render.
+    if(!formReady || saveBusyRef.current) return;
+    saveBusyRef.current=true;
     const saveScope=scopeRef.current.snapshot();
     setBusy(true);
     setError(null);
@@ -332,6 +336,7 @@ export default function AdminProtectedHR({ me }) {
         setError(humanError(failure,message));
       }
     } finally {
+      saveBusyRef.current=false;
       setBusy(false);
     }
   }
