@@ -118,6 +118,9 @@ export default function AdminPayroll({ me }) {
   }
 
   async function loadDetail(id) {
+    // A late write callback for run A must not invalidate the current run B
+    // fetch, nor reintroduce A's private amounts under B's selection.
+    if (!id || selectedRunRef.current !== id) return;
     const generation = ++detailReadGeneration.current;
     setDetailLoading(true); setError(null);
     let result;
@@ -127,7 +130,7 @@ export default function AdminPayroll({ me }) {
       result = { error: failure };
     }
     // An old run may resolve after a newer selection or an unmount.
-    if (generation !== detailReadGeneration.current) return;
+    if (generation !== detailReadGeneration.current || selectedRunRef.current !== id) return;
     setDetailLoading(false);
     if (result.error || result.data?.run?.id !== id) {
       setDetail(null);
