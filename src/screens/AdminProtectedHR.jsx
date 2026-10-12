@@ -144,7 +144,10 @@ export default function AdminProtectedHR({ me }) {
   const [error,setError]=useState(null);
   const [notice,setNotice]=useState(null);
 
-  useEffect(()=>{ loadPeople(); },[me.id]);
+  useEffect(()=>{
+    void loadPeople();
+    return ()=>{ scopeRef.current.select(null); };
+  },[me.id]);
   useEffect(()=>{ if(employeeId) loadSummary(employeeId); },[employeeId]);
 
   async function loadPeople() {
