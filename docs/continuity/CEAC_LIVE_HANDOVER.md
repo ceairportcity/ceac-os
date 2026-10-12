@@ -159,3 +159,14 @@ Next immediately executable action: complete remaining read-only source/security
 - Hosted/private-human-only gates remain explicit: real outbound invitation delivery; real-user privileged MFA/AAL2 and recovery; encrypted production backup plus separate managed Auth/Storage-aware restore; owner literal visual acceptance; and production authorisation. None is passed by local simulation.
 
 Next immediately executable action: finish source/security review and any repairs on PR #50, rerun affected Node/PostgreSQL/browser gates only when code changes, and use a genuine private checkout plus Docker/Podman when an already-authorised free environment becomes available. Release remains NO-GO.
+
+
+## 12 October 2026 — forward audit repair checkpoint
+
+- Independent review found mismatched reason provenance when a Technical Support membership ended: immutable membership history used the new end reason, while automatic Support capability revocations reused the original joining reason.
+- Added forward-only migration `20261012041000_139_support_revocation_end_reason.sql`; no prior migration was edited. The existing rollback SQL gate now requires the exact end reason on the revoked capability grant.
+- Exact source/build evidence in Node `v22.12.0`: focused contracts 19/19, exit 0; full source suite 176/176, exit 0; production build exit 0.
+- Current migration inventory: 143 files/unique timestamp versions. PostgreSQL replay and the affected SQL gate are NOT RUN for this new migration in the refreshed shell because local Supabase start has no Docker/Podman and the prior standalone PostgreSQL binaries are absent.
+- Production GitHub main, Supabase, Vercel, Auth, Storage and real users remain unchanged. Release remains NO-GO.
+
+Next immediately executable action: obtain the already-approved disposable PostgreSQL capability, replay all 143 migrations and rerun all registered SQL gates; then continue authenticated local Supabase browser acceptance when an existing no-cost Docker/Podman host is available.
