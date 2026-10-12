@@ -127,3 +127,14 @@ Latest source evidence before writing this entry: `c6c9ebc8135b11d900ff8ffd2b03e
 
 Next immediately executable action: run credential-independent Playwright and ancestry/resilience checks against `ed00759...`, inspect the available secure fixture/runtime paths without exposing secrets, and prepare the isolated authenticated test environment. Do not deploy or apply migrations to production.
 
+## 12 October 2026 — credential-independent browser gate and environment boundary
+
+- Canonical PR #50 documentation HEAD entering this checkpoint was `c52f85d6e897a2cee153263f0a6145ae5c61ce73`; application/security tree remains `ed00759d7b12f7f590ace78dba7ede76a7913f42`.
+- After installing the matching Playwright Chromium `1194` bundle, the signed-out laptop/phone/PWA smoke suite passed **3/3**, exit 0. The complete credential-independent Playwright subset then passed **68/68**, exit 0.
+- The resilience suite passed manifest, service-worker and offline-shell checks, then failed R3 exactly because `git rev-parse HEAD` returned 128 in the reconstructed source directory; aggregate suite exit 1, with two later serial checks not run. This is an environment failure and remains an open gate, not an application pass.
+- Verification of the canonical recursive tree showed this reconstruction is not a genuine checkout: 317 tracked documentation/reference files are absent and `AGENTS.md` differs. No synthetic repository metadata was created.
+- Vercel lists only stopped historical Node 22 sandboxes for the CEAC project. The billing-charge endpoint returned `404 costs_not_found`, so zero-charge capacity was not proven and no sandbox was resumed or created. Supabase lists zero development branches, and no isolated fixture credentials are present in the Work environment.
+- Production `main`, production Supabase, Vercel production and MFA enforcement remain untouched. Release status remains **NO-GO**.
+
+Next immediately executable action: complete remaining read-only source/security review and preserve evidence; then obtain one approved isolated-runtime path: either a genuine private checkout with Node 22 at confirmed no cost, or explicit cost confirmation for an isolated Supabase branch. Authenticated fixtures, real Support file lifecycle, restore, real-user MFA/invitation/recovery, literal visual acceptance, independent final review and production authorisation remain mandatory.
+
