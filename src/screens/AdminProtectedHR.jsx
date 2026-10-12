@@ -130,6 +130,7 @@ export default function AdminProtectedHR({ me }) {
   const [summary,setSummary]=useState(null);
   const [loadedEmployeeId,setLoadedEmployeeId]=useState(null);
   const scopeRef=useRef(null);
+  const rosterReadGeneration=useRef(0);
   if(!scopeRef.current) scopeRef.current=createProtectedHrRequestScope();
   const [recordType,setRecordType]=useState("identifier");
   const [replaceId,setReplaceId]=useState("");
@@ -147,20 +148,27 @@ export default function AdminProtectedHR({ me }) {
 
   useEffect(()=>{
     void loadPeople();
-    return ()=>{ scopeRef.current.select(null); };
+    return ()=>{ rosterReadGeneration.current += 1; scopeRef.current.select(null); };
   },[me.id]);
   useEffect(()=>{ if(employeeId) loadSummary(employeeId); },[employeeId]);
 
   async function loadPeople() {
+    const generation=++rosterReadGeneration.current;
     setLoading(true);
     setError(null);
-    const {data,error:e}=await supabase.rpc("admin_employee_roster_summary");
-    if(e){
-      setError(humanError(e,"Protected HR could not load the employee roster."));
+    let response;
+    try {
+      response=await supabase.rpc("admin_employee_roster_summary");
+    } catch(failure) {
+      response={error:failure};
+    }
+    if(generation!==rosterReadGeneration.current) return;
+    if(response.error){
+      setError(humanError(response.error,"Protected HR could not load the employee roster."));
       setLoading(false);
       return;
     }
-    const rows=Array.isArray(data) ? data : [];
+    const rows=Array.isArray(response.data) ? response.data : [];
     setPeople(rows);
     if(!employeeId && rows.length){
       let remembered="";
@@ -371,7 +379,7 @@ export default function AdminProtectedHR({ me }) {
       <p className="screen-note">Sensitive identifiers, employment terms, compensation, payment details and protected documents. Access remains separately capability-gated and every view/change is attributable.</p>
     </header>
 
-    {error&&<ProductNotice tone="error" title="Protected HR">{error}</ProductNotice>}
+    {error&&<ProductNotice tone="error" title="Protected HR">{error}<Button variant="secondary" size="compact" onClick={()=>void loadPeople()} disabled={busy}>Retry protected employee roster</Button></ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Protected HR">{notice}</ProductNotice>}
 
     <DataPanel
