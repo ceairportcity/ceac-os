@@ -148,3 +148,14 @@ Next immediately executable action: complete remaining read-only source/security
 - Node 22 dependency audit also passed for production-only and complete locked graphs: both commands exited 0 with zero reported vulnerabilities.
 - GitHub's Vercel status is green for the documentation checkpoint, but direct deployment listing is forbidden to the connector and no Vercel CLI credential exists in this Work shell. Preview status was not promoted to acceptance.
 
+
+
+## 12 October 2026 — owner-directed local-first continuation
+
+- PR #50 live HEAD rechecked through the CEAC GitHub connection: `2b04225962d7a19e35559e0cefbfb4bfcd73170e`; application/security tree remains `ed00759d7b12f7f590ace78dba7ede76a7913f42`. Production `main` was not modified.
+- A clean HTTPS clone was attempted and failed before transfer because this shell has no scoped private GitHub credential: `could not read Username for 'https://github.com'`, exit 128. The unrelated local Git history was rejected as a source for PR #50.
+- Pinned local Supabase CLI preflight: version command exit 0 at `2.117.0`; disposable `supabase init` succeeded; `supabase start` exit 1 because neither Docker nor Podman exists. No hosted Supabase project, production record, credential or paid branch was touched.
+- Owner decision: do not purchase/create a hosted fixture and do not modify either connected project. Continue independent implementation/source/security work and use the documented PostgreSQL-only runner for database gates. Local Auth/Storage/browser acceptance remains blocked in this particular sandbox until an existing no-cost disposable host supplies a container engine.
+- Hosted/private-human-only gates remain explicit: real outbound invitation delivery; real-user privileged MFA/AAL2 and recovery; encrypted production backup plus separate managed Auth/Storage-aware restore; owner literal visual acceptance; and production authorisation. None is passed by local simulation.
+
+Next immediately executable action: finish source/security review and any repairs on PR #50, rerun affected Node/PostgreSQL/browser gates only when code changes, and use a genuine private checkout plus Docker/Podman when an already-authorised free environment becomes available. Release remains NO-GO.
