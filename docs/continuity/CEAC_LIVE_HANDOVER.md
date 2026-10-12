@@ -145,4 +145,6 @@ Next immediately executable action: complete remaining read-only source/security
 - The Node 22 resilience subset passed manifest, service-worker and offline-shell checks, then failed standby R4 at the same truthful missing-Git boundary. Genuine checkout/recovery bundle remains open.
 - GitHub HTTPS and the Work Git proxy do not provide this shell with a scoped private credential. Vercel was not resumed because zero-cost capacity is unproven. Production still has 119 migrations; candidate versions are unapplied and the known pre-candidate SECURITY DEFINER advisory surface remains live.
 - Release remains **NO-GO**. The Node 22 source/build/credential-independent-browser sub-gates are now complete; authenticated isolated acceptance, complete ancestry-bound resilience, restore, MFA/invitation/recovery, visuals, independent review and owner-authorised release remain open.
+- Node 22 dependency audit also passed for production-only and complete locked graphs: both commands exited 0 with zero reported vulnerabilities.
+- GitHub's Vercel status is green for the documentation checkpoint, but direct deployment listing is forbidden to the connector and no Vercel CLI credential exists in this Work shell. Preview status was not promoted to acceptance.
 
