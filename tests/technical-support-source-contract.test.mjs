@@ -94,7 +94,8 @@ test("support authority is separate from ordinary employment role and client-sid
   assert.match(navigation, /capabilities\.has\("support\.case\.manage"\)/);
   assert.match(supportPanel, /support_team_memberships/);
   assert.match(supportPanel, /\.eq\("active", true\)/);
-  assert.match(supportPanel, /Access execution is not enabled/);
+  assert.match(supportPanel, /SupportAccessCaseActions/);
+  assert.match(supportPanel, /canRecordSupportOutcome\(currentCase, state, accessLedger\)/);
   assert.match(supportHelp, /reported_by: me\.id/);
   assert.doesNotMatch(supportPanel, /supabase\.auth\.admin/);
   assert.doesNotMatch(supportPanel, /supabase\.rpc\("grant_capability"/);
@@ -109,12 +110,12 @@ test("approved Executive stylesheet has exactly the same Git blob", () => {
   assert.equal(digest, "5613e38749322da28f6bfd6f4a584dd4bebd6d47");
 });
 
-test("canonical S3 migration and eight reviewed security migrations have unique ordered versions", () => {
+test("canonical S3 migration and twelve reviewed security migrations have unique ordered versions", () => {
   const folder = "supabase/migrations";
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 138, "expected reviewed 119-history + 11-pending + 8 security migration source tree");
+  assert.equal(migrations.length, 142, "expected reviewed 119-history + 11-pending + 12 security migration source tree");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
   const pending = [
@@ -204,13 +205,15 @@ test("Support case taking is conditional on current assignment, without granting
 });
 
 test("case status edits require a matching server revision, with an explicit collision message", () => {
-  assert.match(supportPanel, /onUpdate\(item\.id, nextState, resolution, item\.updated_at\)/);
+  assert.match(supportPanel, /onUpdate\(item\.id, nextState, resolution, item\.updated_at, accessLedger\)/);
   assert.match(supportPanel, /\.eq\("updated_at", expectedUpdatedAt\)/);
   assert.match(supportPanel, /\.maybeSingle\(\)/);
   assert.match(supportPanel, /The case changed since you opened it/);
   assert.match(supportPanel, /item\.updated_at\]/);
-  const caseReads = supportPanel.match(/\.select\("id,reference,category,summary,description,affected_service,impact,state,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at"\)/g) || [];
-  assert.equal(caseReads.length, 5, "all current case projections must include server revision");
+  const caseReads = [...supportPanel.matchAll(/\.from\("support_cases"\)[\s\S]{0,300}?\.select\("([^"]+)"\)/g)];
+  assert.equal(caseReads.length, 5, "all current case reads must remain explicit projections");
+  assert.ok(caseReads.every((match) => match[1].split(",").includes("updated_at")),
+    "all current case projections must include server revision");
 });
 
 test("an assigned case may be returned only by its current holder", () => {

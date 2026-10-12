@@ -334,7 +334,8 @@ SELECT public.grant_capability(
   '31000000-0000-4000-8000-000000000007','support.guides.manage',NULL,
   'Approved temporary support guide authority.',NULL
 );
-UPDATE public.support_team_memberships SET active=false,ended_at=now(),ended_by=auth.uid()
+UPDATE public.support_team_memberships SET active=false,ended_at=now(),ended_by=auth.uid(),
+  end_reason='Temporary support assignment completed'
 WHERE profile_id='31000000-0000-4000-8000-000000000007' AND active;
 DO $membership_history$
 BEGIN

@@ -1,5 +1,5 @@
 \set ON_ERROR_STOP on
--- Only on a freshly seeded disposable 139-migration PostgreSQL replay.
+-- Only on a freshly seeded disposable 142-migration PostgreSQL replay.
 -- All synthetic fixture writes are inside the transaction and rolled back.
 BEGIN;
 
@@ -46,6 +46,14 @@ VALUES
   'support.access.apply_approved','31000000-0000-4000-8000-000000000004',
   'Isolated fixture technical execution authority.');
 
+-- Cross-tenant setup is privileged fixture preparation. Application actors
+-- below remain authenticated and must not be able to create organisations.
+INSERT INTO public.organisations(id,name,short_code)
+VALUES('10000000-0000-4000-8000-000000000099','Other support tenant','SUP99');
+INSERT INTO public.units(id,org_id,name,code)
+VALUES('20000000-0000-4000-8000-000000000099',
+  '10000000-0000-4000-8000-000000000099','Other support unit','SUP99');
+
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims',
  '{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1"}',true);
@@ -64,13 +72,6 @@ VALUES
   '31000000-0000-4000-8000-000000000001',
   'something_not_working','Normal incident fixture',
   'Incident resolution must not depend on access approval ledger.');
-
--- An unrelated second-organisation unit must never be accepted as target.
-INSERT INTO public.organisations(id,name,short_code)
-VALUES('10000000-0000-4000-8000-000000000099','Other support tenant','SUP99');
-INSERT INTO public.units(id,org_id,name,code)
-VALUES('20000000-0000-4000-8000-000000000099',
-  '10000000-0000-4000-8000-000000000099','Other support unit','SUP99');
 
 -- Support Lead is both current owner and separate support-capability holder.
 SELECT set_config('request.jwt.claims',

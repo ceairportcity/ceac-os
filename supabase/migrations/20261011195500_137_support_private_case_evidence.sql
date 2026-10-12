@@ -185,6 +185,18 @@ as $$
   end;
 $$;
 
+-- These two functions are an existing authenticated Data API surface. Reassert
+-- the exact prior ACL explicitly so a clean replay cannot depend on inherited
+-- function privileges. The Support-only helpers they invoke remain internal.
+revoke all on function public.app_can_read_operational_context(text,uuid)
+  from public,anon;
+revoke all on function public.app_can_write_operational_context(text,uuid)
+  from public,anon,authenticated;
+grant execute on function public.app_can_read_operational_context(text,uuid)
+  to authenticated,service_role;
+grant execute on function public.app_can_write_operational_context(text,uuid)
+  to service_role;
+
 create or replace function public.register_operational_file(
   p_context_type text,
   p_context_id uuid,

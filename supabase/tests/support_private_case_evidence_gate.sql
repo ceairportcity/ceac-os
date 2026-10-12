@@ -1,6 +1,6 @@
 \set ON_ERROR_STOP on
 -- Support case private evidence contract. Synthetic and rollback-only.
--- Requires all 141 candidate migrations applied in disposable postgres,
+-- Requires all 142 candidate migrations applied in disposable postgres,
 -- normal seed-role-fixtures.mjs and reviewed local grants.
 BEGIN;
 
@@ -19,8 +19,10 @@ BEGIN
       'public.register_operational_file(text,uuid,text,text,text,bigint)','EXECUTE')
    OR NOT has_function_privilege('authenticated',
       'public.app_can_read_operational_context(text,uuid)','EXECUTE')
+   OR has_function_privilege('authenticated',
+      'public.app_can_write_operational_context(text,uuid)','EXECUTE')
  THEN
-   RAISE EXCEPTION 'Existing private file helper was disabled';
+   RAISE EXCEPTION 'Private file helper execution surface is not least privilege';
  END IF;
 END
 $contract$;
@@ -54,8 +56,6 @@ DO $reporter$
 BEGIN
  IF public.app_can_read_operational_context(
      'support_case','61000000-0000-4000-8000-000000000093')
-   OR public.app_can_write_operational_context(
-     'support_case','61000000-0000-4000-8000-000000000093')
  THEN RAISE EXCEPTION 'Case reporting created access to Support private evidence.'; END IF;
  BEGIN
    PERFORM public.register_operational_file(
@@ -73,27 +73,18 @@ UPDATE public.support_cases
  WHERE id='61000000-0000-4000-8000-000000000093';
 
 DO $support$
-DECLARE v_file uuid;
+DECLARE v_file uuid; v_bucket text;
 BEGIN
  IF NOT public.app_can_read_operational_context(
       'support_case','61000000-0000-4000-8000-000000000093')
-    OR NOT public.app_can_write_operational_context(
-      'support_case','61000000-0000-4000-8000-000000000093')
  THEN RAISE EXCEPTION 'Assigned Support operator lacks case evidence access.'; END IF;
 
- SELECT file_id INTO v_file FROM public.register_operational_file(
+ SELECT file_id,storage_bucket INTO v_file,v_bucket FROM public.register_operational_file(
      'support_case','61000000-0000-4000-8000-000000000093',
      'support_evidence','case-test.pdf','application/pdf',1024);
- IF v_file IS NULL OR NOT EXISTS(
-   SELECT 1 FROM public.operational_file_links
-   WHERE file_id=v_file AND context_type='support_case'
-     AND context_id='61000000-0000-4000-8000-000000000093'
-     AND relation='support_evidence'
- ) THEN RAISE EXCEPTION 'Support evidence was not registered in private bucket.'; END IF;
- IF EXISTS(
-   SELECT 1 FROM public.operational_files
-   WHERE id=v_file AND storage_bucket<>'ceac-operational-private'
- ) THEN RAISE EXCEPTION 'Support evidence was stored in wrong bucket.'; END IF;
+ IF v_file IS NULL OR v_bucket<>'ceac-operational-private' THEN
+   RAISE EXCEPTION 'Support evidence was not registered in private bucket.';
+ END IF;
  IF (SELECT count(*) FROM public.support_case_events
      WHERE case_id='61000000-0000-4000-8000-000000000093'
        AND action='evidence_registered')<>1

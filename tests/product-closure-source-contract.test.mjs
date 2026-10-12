@@ -71,7 +71,8 @@ test("Technical Support cannot show stale authorisation or close access without 
   assert.match(support, /scopedReady = ready && verifiedScope === currentScope/);
   assert.match(support, /\[me\.id, me\.org_id, canManage\]/);
   assert.match(support, /generation !== readGeneration\.current/);
-  assert.match(support, /canRecordSupportOutcome\(currentCase, state\)/);
+  assert.match(support, /canRecordSupportOutcome\(currentCase, state, accessLedger\)/);
+  assert.match(support, /onUpdate\(item\.id, nextState, resolution, item\.updated_at, accessLedger\)/);
   assert.match(support, /\.eq\("updated_at", expectedUpdatedAt\)/);
   assert.match(support, /\.is\("assigned_to", null\)/);
   assert.match(support, /\.eq\("assigned_to", me\.id\)/);
