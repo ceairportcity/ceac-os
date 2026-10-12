@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   OPERATIONAL_FILE_ACCEPT,
   formatOperationalFileSize,
@@ -54,51 +54,98 @@ export function OperationalFileList({
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [loadedContext, setLoadedContext] = useState(null);
+  // Context identity is checked during render as well as in async callbacks:
+  // old private attachments must never flash while a new case loads.
+  const contextKey = `${contextType || ""}:${contextId || ""}`;
+  const readGeneration = useRef(0);
+  const scopeGeneration = useRef(0);
+  const writeBusy = useRef(false);
+  const verified = loadedContext === contextKey;
+  const visibleRows = verified ? rows : [];
+  const visibleError = verified ? error : null;
 
-  useEffect(() => { load(); }, [contextType, contextId]);
+  useEffect(() => {
+    scopeGeneration.current += 1;
+    writeBusy.current = false;
+    setBusy(false);
+    void load();
+    return () => { scopeGeneration.current += 1; readGeneration.current += 1; };
+  }, [contextKey]);
 
   async function load() {
-    if (!contextId) { setRows([]); return; }
+    const generation = ++readGeneration.current;
+    setLoadedContext(null);
+    setRows([]);
     setError(null);
+    if (!contextType || !contextId) {
+      if (generation === readGeneration.current) setLoadedContext(contextKey);
+      return;
+    }
     try {
-      setRows(await listOperationalFiles(contextType, contextId));
+      const latest = await listOperationalFiles(contextType, contextId);
+      if (generation === readGeneration.current) setRows(latest);
     } catch (err) {
-      setError(err.message || "Files could not be loaded.");
-      setRows([]);
+      if (generation === readGeneration.current) {
+        setError(err.message || "Files could not be loaded.");
+      }
+    } finally {
+      if (generation === readGeneration.current) setLoadedContext(contextKey);
     }
   }
 
   async function add(event) {
     const files = [...(event.target.files || [])];
     event.target.value = "";
-    if (!files.length) return;
+    if (!files.length || !canUpload || !verified || !contextId || writeBusy.current) return;
+    const scopeGenerationAtStart = scopeGeneration.current;
+    writeBusy.current = true;
     setBusy(true); setError(null);
     try {
       await uploadOperationalFiles({ files, contextType, contextId, relation });
+      if (scopeGenerationAtStart !== scopeGeneration.current) return;
       await load();
-      onChanged?.();
+      if (scopeGenerationAtStart === scopeGeneration.current) onChanged?.();
     } catch (err) {
-      setError(err.message || "The file could not be uploaded.");
+      if (scopeGenerationAtStart === scopeGeneration.current) {
+        setError(err.message || "The file could not be uploaded.");
+      }
     } finally {
-      setBusy(false);
+      if (scopeGenerationAtStart === scopeGeneration.current) {
+        writeBusy.current = false; setBusy(false);
+      }
     }
   }
 
   async function open(file) {
+    if (!verified) return;
+    const scopeGenerationAtStart = scopeGeneration.current;
     setError(null);
-    try { await openOperationalFile(file); }
-    catch (err) { setError(err.message || "The file could not be opened."); }
+    try {
+      const url = await signedOperationalFileUrl(file, 300);
+      if (scopeGenerationAtStart === scopeGeneration.current) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    } catch (err) {
+      if (scopeGenerationAtStart === scopeGeneration.current) {
+        setError(err.message || "The file could not be opened.");
+      }
+    }
   }
 
   return <section className="operational-files">
-    <div className="sec"><span>{title}</span><span>{rows.length}</span></div>
+    <div className="sec"><span>{title}</span><span>{visibleRows.length}</span></div>
     {canUpload && <label className="btn btn-ghost btn-sm" style={{ marginBottom:10 }}>
       {busy ? "Uploading…" : "Upload file"}
-      <input type="file" multiple accept={OPERATIONAL_FILE_ACCEPT} onChange={add} disabled={busy} style={{ display:"none" }} />
+      <input type="file" multiple accept={OPERATIONAL_FILE_ACCEPT} onChange={add}
+        disabled={busy || !verified || !contextId || Boolean(visibleError)} style={{ display:"none" }} />
     </label>}
-    {error && <div className="hint" role="alert">{error}</div>}
-    {!rows.length && !error && <div className="card small">{emptyText}</div>}
-    {rows.map((file) => <button type="button" className="row" key={file.link_id || file.id} onClick={() => open(file)}>
+    {!verified && <div role="status" className="hint">Checking authorised private files…</div>}
+    {visibleError && <div className="hint" role="alert">
+      {visibleError} <button type="button" className="text-action" onClick={() => void load()}>Retry private files</button>
+    </div>}
+    {verified && !visibleRows.length && !visibleError && <div className="card small">{emptyText}</div>}
+    {visibleRows.map((file) => <button type="button" className="row" key={file.link_id || file.id} onClick={() => open(file)}>
       <div className="row-t">{file.filename}</div>
       <div className="row-m">{formatOperationalFileSize(file.size_bytes)} · {file.mime_type}</div>
       <div className="row-note">Private CEAC file · open with a short-lived signed link</div>
