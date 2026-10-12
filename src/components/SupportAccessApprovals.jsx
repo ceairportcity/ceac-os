@@ -17,7 +17,16 @@ export default function SupportAccessApprovals({ me, authority }) {
   const [loadedScope, setLoadedScope] = useState(null);
   const generation = useRef(0);
   const busyRef = useRef(false);
-  const scope = `${me.org_id}:${me.id}:${authority}`;
+  // A person can retain the same auth identity while losing a Manager unit,
+  // changing role or having a privileged grant revoked. Invalidate the
+  // previously fetched approval queue as soon as the refreshed identity
+  // exposes a different authority state; the database still remains final.
+  const membershipSignature = (me.memberships || [])
+    .map((membership) => `${membership.unit_id}:${membership.role}`).sort().join("|");
+  const capabilitySignature = (me.capability_grants || [])
+    .map((grant) => `${grant.id || ""}:${grant.capability}:${grant.scope_unit_id || ""}:${grant.expires_at || ""}`)
+    .sort().join("|");
+  const scope = `${me.org_id}:${me.id}:${me.unit_id || ""}:${authority}:${membershipSignature}:${capabilitySignature}`;
   const verified = loadedScope === scope;
   const visible = verified && !loadFailed ? rows : [];
 
@@ -51,7 +60,7 @@ export default function SupportAccessApprovals({ me, authority }) {
     busyRef.current = false; setBusy(false);
     void refresh();
     return () => { generation.current++; };
-  }, [me.id, me.org_id, authority]);
+  }, [scope]);
 
   async function decide(request, decision) {
     if (busyRef.current || busy || !verified || loadFailed || loading) return;
@@ -97,7 +106,7 @@ export default function SupportAccessApprovals({ me, authority }) {
       <small>Requested {new Date(item.created_at).toLocaleString("en-GB", { timeZone: "Africa/Accra" })}</small>
       <label>Reason for the business decision
         <textarea rows={2} maxLength={1000} value={notes[item.id] || ""}
-          onChange={(e) => setNotes((old) => ({ ...old, [item.id]: e.target.value }))}
+          onChange={(e) => { setNotes((old) => ({ ...old, [item.id]: e.target.value })); setError(null); }}
           placeholder="Record the organisational reason. Do not include credentials or protected employee records." />
       </label>
       <div className="ceac-support-section-actions">
