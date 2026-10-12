@@ -87,3 +87,14 @@ test("same-account Manager transfer and grant revocation invalidate approval sna
   assert.match(approvals, /const verified = loadedScope === scope/);
   assert.match(approvals, /if \(generation\.current === id\) setRows\(data \|\| \[\]\)/);
 });
+
+
+test("file-picker errors do not reference private-media state from another component", () => {
+  const picker = privateFiles.split("export function PendingFilePicker")[1]
+    ?.split("export function OperationalFileList")[0] || "";
+  const media = privateFiles.split("export function OperationalMediaList")[1] || "";
+  assert.match(picker, /\{error && <div className="hint" role="alert">\{error\}<\/div>\}/);
+  assert.doesNotMatch(picker, /loadedMediaKey|mediaKey|setRetry/);
+  assert.match(media, /\{error && loadedMediaKey === mediaKey/);
+  assert.match(media, /Retry private media/);
+});
