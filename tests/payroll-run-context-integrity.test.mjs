@@ -19,7 +19,9 @@ function harness() {
   const pending = [];
   const seen = { loading: [], errors: [], details: [] };
   const detailReadGeneration = { current: 0 };
+  const selectedRunRef = { current: null };
   const scope = {
+    selectedRunRef,
     detailReadGeneration,
     setDetailLoading: value => seen.loading.push(value),
     setError: value => seen.errors.push(value),
@@ -31,12 +33,14 @@ function harness() {
     } },
   };
   return { read: runInNewContext("(" + reader + ")", scope, { timeout: 1000 }),
-    pending, seen, detailReadGeneration };
+    pending, seen, detailReadGeneration, selectedRunRef };
 }
 
 test("late payroll run A may not replace a selected run B", async () => {
   const h = harness();
+  h.selectedRunRef.current = "A";
   const old = h.read("A");
+  h.selectedRunRef.current = "B";
   const latest = h.read("B");
   h.pending[1].resolve({ data: { run: { id:"B" }, entries:[{ id:"B-employee" }] }, error: null });
   await latest;
@@ -49,6 +53,7 @@ test("late payroll run A may not replace a selected run B", async () => {
 
 test("payroll RPC must not render details whose run id differs from requested id", async () => {
   const h = harness();
+  h.selectedRunRef.current = "B";
   const request = h.read("B");
   h.pending[0].resolve({ data: { run: { id:"A" }, entries:[] }, error: null });
   await request;
@@ -58,6 +63,7 @@ test("payroll RPC must not render details whose run id differs from requested id
 
 test("empty run detail response is unavailable rather than silently showing old data", async () => {
   const h = harness();
+  h.selectedRunRef.current = "B";
   const request = h.read("B");
   h.pending[0].resolve({ data: null, error: null });
   await request;
@@ -67,6 +73,7 @@ test("empty run detail response is unavailable rather than silently showing old 
 
 test("rejected payroll detail RPC clears the loading state", async () => {
   const h = harness();
+  h.selectedRunRef.current = "B";
   const request = h.read("B");
   h.pending[0].reject(new Error("network unavailable"));
   await request;
@@ -77,6 +84,7 @@ test("rejected payroll detail RPC clears the loading state", async () => {
 
 test("unmounted payroll detail request is discarded", async () => {
   const h = harness();
+  h.selectedRunRef.current = "A";
   const request = h.read("A");
   h.detailReadGeneration.current += 1;
   h.pending[0].resolve({ data: { run: { id:"A" }, entries:[] }, error: null });
@@ -92,4 +100,13 @@ test("payroll render and composer are scoped to selected run before effects sett
   assert.match(source, /setSheet\(\{ type:"entry", runId:run\.id, entry \}\)/);
   assert.match(source, /setSheet\(\{ type:"approve", runId:run\.id \}\)/);
   assert.match(source, /setSheet\(null\);\s*if \(selectedId\) void loadDetail/);
+});
+
+
+test("payroll detail refuses an outdated write callback before RPC starts", async () => {
+  const h = harness();
+  h.selectedRunRef.current = "B";
+  await h.read("A");
+  assert.equal(h.pending.length, 0);
+  assert.equal(h.seen.loading.length, 0);
 });
