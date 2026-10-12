@@ -144,3 +144,14 @@ In `src/components/SupportAccessApprovals.jsx`, the scope key now includes the r
 - Acceptance requires four matching counts and exit 0: migration files, unique timestamp versions, migration-ledger rows and successfully applied migrations. The frozen tree produced 143/143/143/143, migration 139 exactly once, then 56/56 registered SQL gates with aggregate exit 0.
 - If system packages must be refreshed, this sandbox can download apt packages only when the archive cache is redirected to a writable task-specific directory and `APT::Sandbox::User=root` is used. PostgreSQL package post-install configuration still fails because group/user switching is outside the uid/gid map. Do not treat partially configured packages as proof and do not weaken PostgreSQL's root guard; reuse the previously reviewed local prefix/shim boundary instead.
 - `playwright test --list` is safe fixture-independent discovery and returned 741 tests/77 files. Do not run the entire authenticated suite with missing role fixture variables: many older specs call `fill(password)` without a fixture guard. Such failures prove missing harness inputs, not role acceptance. Run only the reviewed credential-independent selection until an isolated Auth/Storage fixture supplies the documented role variables, then run all registered shards.
+
+
+## Local Supabase on constrained GitHub Codespaces (verified 12 October 2026)
+
+Use the existing CEAC Codespace only after verifying the billing page reports USD 0 billable usage and included allowance. Pin Node and CLI versions; do not rely on the image defaults:
+
+- Node: `npx -p node@22.12.0 node --version`
+- Supabase CLI: `npx --yes supabase@2.117.0 --version`
+- When Public ECR returns `Rate exceeded`, set `SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io` to use the CLI-supported official GitHub Container Registry mirror.
+
+A two-core runner is insufficient for this repository's full local Supabase bootstrap. The database can be warmed to a healthy state, but concurrent Auth, Storage and REST startup produced PostgreSQL connection timeouts and unhealthy containers. Do not loop the same bootstrap or weaken health checks. Move to an already authorised private runner with at least 4 vCPU / 8 GB RAM, after confirming a hard zero-spend control or included allowance. Generated local keys and service logs remain private; record only sanitised exit codes and health outcomes.
