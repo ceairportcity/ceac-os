@@ -60,3 +60,13 @@ Current isolated review target is **142 unique migration timestamp versions** an
 
 **Implementation note:** The new `app_can_read_support_case` and `app_can_write_support_case` SQL helpers are intentionally not directly callable by `anon` or `authenticated`. They are invoked by the existing reviewed operational-context SECURITY DEFINER entrypoints. Thus this extension does not arbitrarily enlarge the exposed browser RPC surface. Work must verify actual effective grants and service-role behavior after replay.
 
+
+## 12 October 2026 — PR #51 reconciliation and exact SQL replay procedure
+
+- Re-fetch both branch refs immediately before integration. PR #50 was still `de4601bbf8b68666b5fcb0cb3e27ddd7972149c3`; PR #51 was the clean 47-commit descendant `9c1bdf5ae7905288382c292a7e13dc6a518c085b` with merge base exactly `de4601...`, so PR #50 could be advanced by a normal non-force ref update while preserving every continuation commit.
+- When a reconstructed workspace contains unpublished experiments, Git-blob-verify every file copied from the continuation and explicitly restore any locally modified files outside the continuation diff before treating the workspace as exact. An extra trailing newline changes the Git blob; compare with `git hash-object`, not file size or visual inspection.
+- The local disposable PostgreSQL 16 method remains valid for the 142-file tree: postgres-owned objects, Africa/Accra timezone, migration-history rows, synthetic Auth/Vault compatibility and a runner that exits non-zero when any gate fails. The accepted aggregate result requires the printed per-gate list and process exit code 0.
+- New lifecycle gates must satisfy newer forward contracts. Ending a Support membership now needs a substantive `end_reason`; cross-tenant fixture objects must be prepared before `SET LOCAL ROLE authenticated`; application actors must never be given organisation-creation power just to make a test pass.
+- `app_can_write_operational_context(text,uuid)` remains an internal SECURITY DEFINER dependency of the vetted file RPCs, not an authenticated browser RPC. `register_operational_file` is the supported write probe. Pending file links are intentionally invisible through the ordinary link SELECT policy until the file is finalised, so registration acceptance uses the returned private bucket plus immutable registration event rather than weakening RLS.
+- This Work runtime currently resolves Node `v24.19.0`, while `package.json` requires `>=22.12 <23`. Native source/build results from this host are useful defect evidence but do not replace the final Node 22 gate. Do not hide the `EBADENGINE` warning or relabel Node 24 as Node 22.
+

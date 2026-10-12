@@ -110,3 +110,20 @@ Latest source evidence before writing this entry: `c6c9ebc8135b11d900ff8ffd2b03e
 
 **Next developer tasks if source-only capacity remains:** focused security review of the Support ledger's stored status projection and nested file-link ACL, review potentially stale membership/approval snapshots and case concurrency, then finish final PR #51 review comment with native command instructions for Work. Do not weaken legacy 162/138/53 acceptance or declare its results apply to this new SHA.
 
+
+## 12 October 2026 — Chat continuation integrated and database-accepted on PR #50
+
+- Live reconciliation confirmed production `main` remains `827fbe7391467dd13d6e411527416402a252993c`, PR #50 remained `de4601bbf8b68666b5fcb0cb3e27ddd7972149c3`, and draft PR #51 was a clean, non-divergent 47-commit descendant at `9c1bdf5ae7905288382c292a7e13dc6a518c085b`. No other post-checkpoint continuation PR was identified.
+- PR #50 was advanced by normal non-force ancestry to repair commit `ed00759d7b12f7f590ace78dba7ede76a7913f42`, whose parent is the complete PR #51 head. PR #51 itself, frozen PR #44, `main`, Vercel production and Supabase production were not modified.
+- Native execution found and repaired continuation integration defects rather than weakening tests: stale source assertions for the executed-ledger closure argument and 142-file inventory; missing membership `end_reason` in the older gate; an authenticated cross-tenant fixture attempting to create an organisation; and a private-evidence gate that directly invoked an internal write helper and tried to read a pending link hidden by valid RLS.
+- Final application/security tree `ed00759...` evidence in the private Work shell:
+  - `npm ci`: exit 0, with explicit `EBADENGINE` because this runtime supplies Node `v24.19.0` rather than required Node 22;
+  - `npm run verify:source`: **176/176 passed**, exit 0;
+  - `npm run build`: exit 0;
+  - PostgreSQL 16 clean ordered replay: **142/142 migration files applied**, exit 0;
+  - all registered SQL/RLS/security gates: **56/56 passed**, aggregate exit 0.
+- Database acceptance used only synthetic fixtures in a disposable loopback cluster. No production database, real Auth factor, real invitation, protected employee record or Storage object was touched. The Node source/build evidence must still be repeated in Node 22 against the final SHA.
+- Release remains **NO-GO**. Open mandatory gates: genuine Git checkout/ancestry-bound resilience run, Node 22 final suite, authenticated multi-role Supabase/browser fixtures, actual Support upload/finalisation/download, literal desktop/mobile reference comparison and owner acceptance, encrypted production backup plus genuine separate restore including managed Auth/Storage, real-user MFA/AAL2/invitation/recovery acceptance, independent final review and explicit owner production authorisation.
+
+Next immediately executable action: run credential-independent Playwright and ancestry/resilience checks against `ed00759...`, inspect the available secure fixture/runtime paths without exposing secrets, and prepare the isolated authenticated test environment. Do not deploy or apply migrations to production.
+
