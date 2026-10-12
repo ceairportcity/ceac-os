@@ -169,6 +169,8 @@ export function OperationalMediaList({ files = [] }) {
     file.id, file.storage_bucket || "", file.storage_path || "",
   ].join(":")).join("|");
   const safeUrls = loadedMediaKey === mediaKey ? urls : {};
+  const activeMediaKey = useRef(mediaKey);
+  activeMediaKey.current = mediaKey;
 
   useEffect(() => {
     let cancelled = false;
@@ -195,6 +197,19 @@ export function OperationalMediaList({ files = [] }) {
     return () => { cancelled = true; };
   }, [mediaKey, retry]);
 
+  async function openMedia(file) {
+    if (loadedMediaKey !== mediaKey) return;
+    const expectedKey = mediaKey;
+    try {
+      const url = await signedOperationalFileUrl(file, 300);
+      if (activeMediaKey.current === expectedKey) window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      if (activeMediaKey.current === expectedKey) {
+        setError(err.message || "The private media file could not be opened.");
+      }
+    }
+  }
+
   if (!files.length) return null;
   return <div className="operational-media-list">
     {files.map((file) => {
@@ -210,7 +225,7 @@ export function OperationalMediaList({ files = [] }) {
         <video controls preload="metadata" src={url} aria-label={file.filename} />
         <span>{file.filename}</span>
       </div>;
-      return <button type="button" className="operational-media-file" key={file.id} onClick={() => openOperationalFile(file)}>
+      return <button type="button" className="operational-media-file" key={file.id} onClick={() => void openMedia(file)}>
         <strong>{file.filename}</strong><span>{formatOperationalFileSize(file.size_bytes)} · private CEAC file</span>
       </button>;
     })}
