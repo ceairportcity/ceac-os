@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(path,"utf8");
 const migration = read("supabase/migrations/20261011193000_136_support_membership_end_reason.sql");
+const revocationReasonRepair = read("supabase/migrations/20261012041000_139_support_revocation_end_reason.sql");
 const predecessor = read("supabase/migrations/20261011183000_134_technical_support_authority_hardening.sql");
 const sqlGate = read("supabase/tests/support_membership_end_reason_gate.sql");
 const sqlRunner = read("scripts/ci/run-sql-security-gates.sh");
@@ -14,6 +15,8 @@ test("forward 136 adds a separate history-backed end reason without deleting mem
   assert.match(migration,/ALTER TABLE public\.support_team_memberships ADD COLUMN end_reason text/);
   assert.match(migration,/char_length\(btrim\(coalesce\(NEW\.end_reason,''\)\)\)<8/);
   assert.match(migration,/coalesce\(NEW\.end_reason,NEW\.reason\)/);
+  assert.match(revocationReasonRepair,/revoke_reason='Technical Support membership ended: '\|\|NEW\.end_reason/);
+  assert.doesNotMatch(revocationReasonRepair,/revoke_reason='Technical Support membership ended: '\|\|NEW\.reason/);
   assert.match(migration,/NEW\.reason,NEW\.associated_unit_id/);
   assert.match(migration,/REVOKE ALL ON FUNCTION public\.support_membership_scope_guard\(\) FROM PUBLIC,anon,authenticated/);
   assert.doesNotMatch(migration,/UPDATE public\.profiles|DELETE FROM public\.support_team_memberships|DROP TABLE/i);
@@ -43,5 +46,6 @@ test("isolated SQL gate verifies distinct exit reason and support-power removal"
   assert.match(sqlGate,/Membership ended without substantive end reason/);
   assert.match(sqlGate,/Joining\/end reason distinction or history attribution failed/);
   assert.match(sqlGate,/Membership end deactivated profile or retained privileged Support grants/);
+  assert.match(sqlGate,/revoke_reason='Technical Support membership ended: Temporary assistance concluded and separately reviewed\.'/);
   assert.match(sqlGate,/Immutable Support transition history was overwritten/);
 });
