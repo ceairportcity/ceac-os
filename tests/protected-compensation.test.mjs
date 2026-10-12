@@ -3,6 +3,7 @@ import test from "node:test";
 import "./payroll-run-context-integrity.test.mjs";
 import "./payroll-run-list-scope.test.mjs";
 import "./payroll-decision-write-safety.test.mjs";
+import "./payroll-run-create-safety.test.mjs";
 import assert from "node:assert/strict";
 import { amountToMinor, protectedMoney } from "../src/lib/protectedCompensation.js";
 
