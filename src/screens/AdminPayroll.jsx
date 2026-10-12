@@ -67,6 +67,7 @@ export default function AdminPayroll({ me }) {
   const detailReadGeneration = useRef(0);
   const runsReadGeneration = useRef(0);
   const decisionWriteBusyRef = useRef(false);
+  const creationWriteBusyRef = useRef(false);
   const selectedRunRef = useRef(null);
   function selectRun(id) {
     selectedRunRef.current = id;
@@ -137,20 +138,41 @@ export default function AdminPayroll({ me }) {
   }
 
   async function createRun(form) {
+    // Creating a payroll run is not safely repeatable on double click.
+    if (busy || creationWriteBusyRef.current) return;
+    creationWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { data, error: createError } = await supabase.rpc("payroll_create_run", {
-      p_label: form.label.trim(),
-      p_period_start: form.start,
-      p_period_end: form.end,
-      p_currency: form.currency,
-      p_pay_date: form.payDate || null,
-      p_note: form.note.trim() || null,
-    });
-    setBusy(false);
-    if (createError) { setError(createError.message || "Payroll run could not be created."); return; }
-    setSheet(null);
-    setNotice("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.");
-    await loadRuns(data);
+    let recorded = false;
+    try {
+      const { data, error } = await supabase.rpc("payroll_create_run", {
+        p_label: form.label.trim(),
+        p_period_start: form.start,
+        p_period_end: form.end,
+        p_currency: form.currency,
+        p_pay_date: form.payDate || null,
+        p_note: form.note.trim() || null,
+      });
+      if (error) {
+        setError(error.message || "Payroll run could not be created.");
+        return;
+      }
+      // Without an authoritative new run ID, never claim creation succeeded.
+      if (!data) {
+        setError("Payroll creation could not be confirmed. Refresh the run list before retrying.");
+        return;
+      }
+      recorded = true;
+      setSheet(null);
+      setNotice("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.");
+      await loadRuns(data);
+    } catch (failure) {
+      setError(recorded
+        ? "Payroll was created, but the run list could not refresh. Reload before continuing."
+        : "Payroll creation outcome is unconfirmed. Review existing runs before trying again.");
+    } finally {
+      creationWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function saveLine(form) {
@@ -263,16 +285,39 @@ export default function AdminPayroll({ me }) {
   }
 
   async function createCorrection(reason) {
+    const runId = detail?.run?.id;
+    if (!runId || selectedRunRef.current !== runId || busy || creationWriteBusyRef.current) return;
+    creationWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { data, error: correctionError } = await supabase.rpc("payroll_create_correction", {
-      p_source_run_id: detail.run.id,
-      p_reason: reason.trim(),
-    });
-    setBusy(false);
-    if (correctionError) { setError(correctionError.message || "Payroll correction could not be created."); return; }
-    setSheet(null);
-    setNotice("Attributable correction draft created.");
-    await loadRuns(data);
+    let recorded = false;
+    try {
+      const { data, error } = await supabase.rpc("payroll_create_correction", {
+        p_source_run_id: runId, p_reason: reason.trim(),
+      });
+      if (error) {
+        if (selectedRunRef.current === runId)
+          setError(error.message || "Payroll correction could not be created.");
+        return;
+      }
+      if (!data) {
+        if (selectedRunRef.current === runId)
+          setError("Correction creation could not be confirmed. Review existing runs before retrying.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId) return;
+      setSheet(null);
+      setNotice("Attributable correction draft created.");
+      await loadRuns(data);
+    } catch (failure) {
+      if (selectedRunRef.current === runId)
+        setError(recorded
+          ? "Correction was created, but Payroll could not refresh. Reload before continuing."
+          : "Correction outcome is unconfirmed. Review existing runs before attempting it again.");
+    } finally {
+      creationWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   // Render only data bound to the currently selected payroll run, even
