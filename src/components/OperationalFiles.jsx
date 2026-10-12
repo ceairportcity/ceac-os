@@ -38,11 +38,7 @@ export function PendingFilePicker({ files, onChange, label = "Attach files", dis
         <button className="text-action" type="button" onClick={() => onChange?.(files.filter((entry) => entry !== file))}>Remove</button>
       </div>)}
     </div>}
-    {error && loadedMediaKey === mediaKey && <div className="hint" role="alert">
-      {error} <button type="button" className="text-action" onClick={() => setRetry((n) => n + 1)}>
-        Retry private media
-      </button>
-    </div>}
+    {error && <div className="hint" role="alert">{error}</div>}
   </div>;
 }
 
@@ -231,6 +227,10 @@ export function OperationalMediaList({ files = [] }) {
         <strong>{file.filename}</strong><span>{formatOperationalFileSize(file.size_bytes)} · private CEAC file</span>
       </button>;
     })}
-    {error && <div className="hint" role="alert">{error}</div>}
+    {error && loadedMediaKey === mediaKey && <div className="hint" role="alert">
+      {error} <button type="button" className="text-action" onClick={() => setRetry((n) => n + 1)}>
+        Retry private media
+      </button>
+    </div>}
   </div>;
 }
