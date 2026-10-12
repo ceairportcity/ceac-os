@@ -158,6 +158,7 @@ export default function AdminPayroll({ me }) {
     // Creating a payroll run is not safely repeatable on double click.
     if (busy || creationWriteBusyRef.current) return;
     creationWriteBusyRef.current = true;
+    const manualSelectionAtCreation = manualSelectionGeneration.current;
     setBusy(true); setError(null); setNotice(null);
     let recorded = false;
     try {
@@ -181,7 +182,7 @@ export default function AdminPayroll({ me }) {
       recorded = true;
       setSheet(null);
       setNotice("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.");
-      await loadRuns(data, true);
+      await loadRuns(data, manualSelectionGeneration.current === manualSelectionAtCreation);
     } catch (failure) {
       setError(recorded
         ? "Payroll was created, but the run list could not refresh. Reload before continuing."
