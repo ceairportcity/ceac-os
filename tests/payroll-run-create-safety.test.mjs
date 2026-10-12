@@ -19,19 +19,21 @@ const pause = () => {
 };
 function harness(action) {
   const requests = [];
-  const seen = { busy:[], errors:[], notices:[], sheets:[], reload:[] };
+  const seen = { busy:[], errors:[], notices:[], sheets:[], reload:[], reloadPreferences:[] };
   const creationWriteBusyRef = { current:false };
   const selectedRunRef = { current:"payroll-A" };
+  const manualSelectionGeneration = { current:0 };
   const context = {
     busy:false,
     creationWriteBusyRef,
     selectedRunRef,
+    manualSelectionGeneration,
     detail:{ run:{ id:"payroll-A" } },
     setBusy: value => seen.busy.push(value),
     setError: value => seen.errors.push(value),
     setNotice: value => seen.notices.push(value),
     setSheet: value => seen.sheets.push(value),
-    loadRuns: async id => seen.reload.push(id),
+    loadRuns: async (id, preference) => { seen.reload.push(id); seen.reloadPreferences.push(preference); },
     supabase: { rpc:(name, args) => {
       const pending = pause();
       requests.push({ ...pending, name, args });
@@ -40,7 +42,7 @@ function harness(action) {
   };
   return {
     act:runInNewContext("(" + extract(action) + ")", context, { timeout:1000 }),
-    requests, seen, creationWriteBusyRef, selectedRunRef,
+    requests, seen, creationWriteBusyRef, selectedRunRef, manualSelectionGeneration,
   };
 }
 const draft = {
@@ -114,4 +116,24 @@ test("a switched payroll run cannot accept old correction completion", async () 
   assert.equal(h.seen.reload.length, 0);
   assert.equal(h.seen.sheets.length, 0);
   assert.deepEqual(h.seen.busy, [true,false]);
+});
+
+test("manual selection during pending creation must win over automatic new-run focus", async () => {
+  const h = harness("createRun");
+  const creating = h.act(draft);
+  h.selectedRunRef.current = "payroll-B";
+  h.manualSelectionGeneration.current += 1;
+  h.requests[0].resolve({ data:"new-run-id", error:null });
+  await creating;
+  assert.deepEqual(h.seen.reload, ["new-run-id"]);
+  assert.deepEqual(h.seen.reloadPreferences, [false]);
+  assert.deepEqual(h.seen.busy, [true,false]);
+});
+
+test("newly created payroll run remains preferred without manual selection", async () => {
+  const h = harness("createRun");
+  const creating = h.act(draft);
+  h.requests[0].resolve({ data:"new-run-id", error:null });
+  await creating;
+  assert.deepEqual(h.seen.reloadPreferences, [true]);
 });
