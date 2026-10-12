@@ -65,8 +65,20 @@ export default function AdminPayroll({ me }) {
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
   const detailReadGeneration = useRef(0);
+  const runsReadGeneration = useRef(0);
+  const selectedRunRef = useRef(null);
+  function selectRun(id) {
+    selectedRunRef.current = id;
+    setSelectedId(id);
+  }
 
-  useEffect(() => { loadRuns(); }, [me.id]);
+  useEffect(() => {
+    void loadRuns();
+    return () => {
+      runsReadGeneration.current += 1;
+      detailReadGeneration.current += 1;
+    };
+  }, [me.id]);
   useEffect(() => {
     setSheet(null);
     if (selectedId) void loadDetail(selectedId);
@@ -75,12 +87,21 @@ export default function AdminPayroll({ me }) {
   }, [selectedId]);
 
   async function loadRuns(preferId = null) {
+    const generation = ++runsReadGeneration.current;
+    const selectionAtStart = selectedRunRef.current;
     setLoading(true); setError(null);
-    const [runsResult, readinessResult] = await Promise.all([
-      supabase.rpc("payroll_list_runs"),
-      supabase.rpc("payroll_readiness_summary"),
-    ]);
+    let response;
+    try {
+      response = await Promise.all([
+        supabase.rpc("payroll_list_runs"),
+        supabase.rpc("payroll_readiness_summary"),
+      ]);
+    } catch (failure) {
+      response = [{ error: failure }, { error: failure }];
+    }
+    if (generation !== runsReadGeneration.current) return;
     setLoading(false);
+    const [runsResult, readinessResult] = response;
     if (runsResult.error || readinessResult.error) {
       setError((runsResult.error || readinessResult.error)?.message || "Payroll could not load.");
       return;
@@ -88,8 +109,10 @@ export default function AdminPayroll({ me }) {
     const rows = Array.isArray(runsResult.data) ? runsResult.data : [];
     setRuns(rows);
     setReadiness(readinessResult.data || null);
-    const next = preferId || selectedId || rows[0]?.id || null;
-    setSelectedId(next && rows.some((row) => row.id === next) ? next : rows[0]?.id || null);
+    const chosen = selectedRunRef.current !== selectionAtStart
+      ? selectedRunRef.current
+      : preferId || selectedRunRef.current || rows[0]?.id || null;
+    selectRun(chosen && rows.some((row) => row.id === chosen) ? chosen : rows[0]?.id || null);
   }
 
   async function loadDetail(id) {
@@ -252,7 +275,7 @@ export default function AdminPayroll({ me }) {
     <div className="fpg-payroll-layout">
       <aside className="fpg-payroll-runs" aria-label="Payroll runs">
         <div className="fpg-payroll-side-title"><span>Payroll periods</span><b>{runs.length}</b></div>
-        {runs.map((row) => <button key={row.id} type="button" className={selectedId === row.id ? "is-selected" : ""} onClick={() => setSelectedId(row.id)}>
+        {runs.map((row) => <button key={row.id} type="button" className={selectedId === row.id ? "is-selected" : ""} onClick={() => selectRun(row.id)}>
           <span><strong>{row.label}</strong><small>{dateLabel(row.period_start)} – {dateLabel(row.period_end)}</small></span>
           <span className={"fpg-payroll-status " + statusTone(row.status)}>{statusLabel(row.status)}</span>
           <b>{money(row.total_net_minor, row.currency)}</b>
