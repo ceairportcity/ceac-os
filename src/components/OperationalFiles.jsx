@@ -212,6 +212,7 @@ export function OperationalMediaList({ files = [] }) {
 
   if (!files.length) return null;
   return <div className="operational-media-list">
+    {loadedMediaKey !== mediaKey && <div role="status" className="hint">Checking private media…</div>}
     {files.map((file) => {
       const url = safeUrls[file.id];
       if (file.mime_type?.startsWith("image/") && url) return <figure className="operational-media-image" key={file.id}>
@@ -225,7 +226,8 @@ export function OperationalMediaList({ files = [] }) {
         <video controls preload="metadata" src={url} aria-label={file.filename} />
         <span>{file.filename}</span>
       </div>;
-      return <button type="button" className="operational-media-file" key={file.id} onClick={() => void openMedia(file)}>
+      return <button type="button" className="operational-media-file" key={file.id}
+        disabled={loadedMediaKey !== mediaKey} onClick={() => void openMedia(file)}>
         <strong>{file.filename}</strong><span>{formatOperationalFileSize(file.size_bytes)} · private CEAC file</span>
       </button>;
     })}
