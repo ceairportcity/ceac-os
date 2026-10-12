@@ -58,7 +58,8 @@ test("rejected roster call stops loading and exposes a retryable error", async (
   await pending;
   assert.deepEqual(h.seen.loading, [true, false]);
   assert.match(h.seen.errors.at(-1), /could not load/);
-  assert.deepEqual(h.seen.people, [[]]);
+  assert.equal(h.seen.people.length, 1);
+  assert.equal(h.seen.people[0].length, 0);
   assert.equal(h.seen.clearedSummary, 1);
 });
 
@@ -146,7 +147,8 @@ test("failed refreshed roster revokes previously displayed confidential selectio
   h.calls[0].reject(new Error("permission unavailable"));
   await pending;
   assert.deepEqual(h.seen.selected, [""]);
-  assert.deepEqual(h.seen.people, [[]]);
+  assert.equal(h.seen.people.length, 1);
+  assert.equal(h.seen.people[0].length, 0);
   assert.equal(h.scopeRef.current.snapshot().employeeId, null);
   assert.equal(h.seen.clearedSummary, 1);
   assert.equal(h.seen.clearedLoaded, 1);
