@@ -56,7 +56,8 @@ test("failed payroll run list request settles loading without stale success", as
   await promise;
   assert.deepEqual(h.observed.loading, [true, false]);
   assert.match(h.observed.errors.at(-1), /access could not be verified/);
-  assert.equal(h.observed.rows.length, 0);
+  assert.equal(h.observed.rows.at(-1)?.length, 0);
+  assert.equal(h.observed.details.at(-1), null);
 });
 
 test("older list refresh cannot replace the newer payroll list", async () => {
@@ -133,7 +134,7 @@ test("failed refresh after authorised load clears cached payroll and composer", 
   h.calls[2].resolve({ error: { message: "permission denied" } });
   h.calls[3].resolve({ data: {}, error: null });
   await pending;
-  assert.deepEqual(h.observed.rows.at(-1), []);
+  assert.equal(h.observed.rows.at(-1)?.length, 0);
   assert.equal(h.observed.readiness.at(-1), null);
   assert.equal(h.observed.details.at(-1), null);
   assert.equal(h.observed.sheets.at(-1), null);
