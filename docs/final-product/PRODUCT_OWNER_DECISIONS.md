@@ -1,5 +1,23 @@
 # Product Owner Decisions
 
+## Binding first-release authentication decision — 12 October 2026
+
+**Owner override of the earlier privileged-only MFA scope, pending implementation and full isolated acceptance.** CEAC first release must use **Google-only interactive sign-in for exact HR/Administration-authorised Google email identities** and require a CEAC-controlled, verified **TOTP authenticator MFA session (Supabase AAL2) for every enabled account**, including Staff, Managers, Administrators, Executives, Volunteers and Technical Support. Google Workspace is a future option and is **not** required to exist before go-live. No arbitrary Google user, uninvited email, unverified identity, title, or provider metadata may grant CEAC membership or permissions.
+
+The owner ordered a **minimum-safe assessment before any application/security release-candidate mutation**. The prior frozen app SHA remains `51223157f28e16e90acda6a35dd71389513b6d6f`; this document does not assert Google OAuth/MFA-all has been implemented or tested. No production Auth setting, OAuth provider, secrets, database, source, or deployment is authorised to change by this decision alone.
+
+**Implementation guardrails:**
+- Keep Supabase Auth and the CEAC server-authorised identity/role model. HR's approved email/invitation is a prerequisite; a verified Google login authenticates identity only, and must not create permissions. Enforce invitation/allowlist server-side **before account creation** as well as active profile and role checks after login.
+- Preserve verified existing users' `auth.users.id`, employee-roster records, profile foreign keys, audit history, unit memberships, capability grants, private files and invitation history. Reconcile existing password identities with Google through verified same-email identity linking; never create a second workforce record or silently link an unverified/mismatched email. Any account without a proven match needs an audited, owner-approved recovery/mapping process.
+- Implement one canonical Google OAuth callback to a fixed, allowlisted HTTPS application origin; scope Google sign-in to minimal OpenID/email/profile permissions. Do not trust arbitrary preview domains, URL redirect parameters, Google display names, unverified email or job titles as authority.
+- Replace password/magic-link user-facing sign-in and activation with authorised Google entry plus mandatory TOTP enrollment/challenge. An existing Supabase password route may not remain an unaudited bypass merely because its button is hidden; provider/config/session-level rejection and legacy-session revocation require explicit verification.
+- Require **Supabase AAL2** for every protected CEAC row, RPC, Storage object, and sensitive Edge Function/API, not just privileged UI; provide a narrowly restricted AAL1 pre-enrollment path to Auth's own factor APIs, with no protected staff data available until AAL2. Google account MFA alone does not establish a CEAC AAL2 session.
+- Define safe lost-device/TOTP recovery, new-phone replacement, Google account/email change, terminated employee revocation and emergency admin recovery without opening an email/password fallback for routine business access.
+- Before cutover, test in an isolated approved Auth/Storage-capable fixture: invited/uninvited and expired accounts; first Google OAuth and MFA enrollment; repeated/new sessions, stale sessions, bypass attempts at AAL1; verified existing-user linking and stable IDs; every role, org/tenant, unit, HR/Support access; Storage signed links; invitation/recovery; account switch; and genuine mobile/desktop redirects. Fail closed on ambiguity.
+- Do not apply the Google-only or MFA-all policy to production, migrate users, disable legacy sign-in, or merge release code until dedicated review, authenticated end-to-end evidence, backup/restore readiness and explicit production GO.
+
+The 12 October owner-ordered release freeze continues to prohibit unrelated changes; this owner-requested authentication requirement is the sole newly approved first-release scope change.
+
 ## Binding decisions — 2 October 2026
 - FPG supersedes conflicting older visual/VF sequencing.
 - Approved references are literal visible authorities, not inspiration.
