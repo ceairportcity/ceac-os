@@ -127,7 +127,7 @@ export default function AdminPayroll({ me }) {
     // An old run may resolve after a newer selection or an unmount.
     if (generation !== detailReadGeneration.current) return;
     setDetailLoading(false);
-    if (result.error || (result.data && result.data.run?.id !== id)) {
+    if (result.error || result.data?.run?.id !== id) {
       setDetail(null);
       setError(result.error?.message || "Payroll run could not be verified.");
       return;
