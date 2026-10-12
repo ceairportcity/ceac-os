@@ -91,7 +91,7 @@ export default function AdminPayroll({ me }) {
     return () => { detailReadGeneration.current += 1; };
   }, [selectedId]);
 
-  async function loadRuns(preferId = null) {
+  async function loadRuns(preferId = null, preferCreated = false) {
     const generation = ++runsReadGeneration.current;
     const selectionAtStart = selectedRunRef.current;
     const manualSelectionAtStart = manualSelectionGeneration.current;
@@ -125,7 +125,7 @@ export default function AdminPayroll({ me }) {
     setReadiness(readinessResult.data || null);
     const chosen = manualSelectionGeneration.current !== manualSelectionAtStart
       ? selectedRunRef.current
-      : preferId && !selectionAtStart
+      : preferCreated && preferId
         ? preferId
         : selectedRunRef.current || preferId || rows[0]?.id || null;
     selectRun(chosen && rows.some((row) => row.id === chosen) ? chosen : rows[0]?.id || null);
@@ -181,7 +181,7 @@ export default function AdminPayroll({ me }) {
       recorded = true;
       setSheet(null);
       setNotice("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.");
-      await loadRuns(data);
+      await loadRuns(data, true);
     } catch (failure) {
       setError(recorded
         ? "Payroll was created, but the run list could not refresh. Reload before continuing."
@@ -362,7 +362,7 @@ export default function AdminPayroll({ me }) {
       if (selectedRunRef.current !== runId) return;
       setSheet(null);
       setNotice("Attributable correction draft created.");
-      await loadRuns(data);
+      await loadRuns(data, true);
     } catch (failure) {
       if (selectedRunRef.current === runId)
         setError(recorded
