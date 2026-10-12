@@ -164,6 +164,15 @@ export default function AdminProtectedHR({ me }) {
     }
     if(generation!==rosterReadGeneration.current) return;
     if(response.error){
+      // A failed permission/roster refresh cannot justify retaining previously
+      // authorised confidential records while current access is unknown.
+      scopeRef.current.select(null);
+      setPeople([]);
+      setEmployeeId("");
+      setSummary(null);
+      setLoadedEmployeeId(null);
+      setComposerOpen(false);
+      setHistoryOpen({});
       setError(humanError(response.error,"Protected HR could not load the employee roster."));
       setLoading(false);
       return;
