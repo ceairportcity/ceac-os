@@ -38,7 +38,11 @@ export function PendingFilePicker({ files, onChange, label = "Attach files", dis
         <button className="text-action" type="button" onClick={() => onChange?.(files.filter((entry) => entry !== file))}>Remove</button>
       </div>)}
     </div>}
-    {error && <div className="hint" role="alert">{error}</div>}
+    {error && loadedMediaKey === mediaKey && <div className="hint" role="alert">
+      {error} <button type="button" className="text-action" onClick={() => setRetry((n) => n + 1)}>
+        Retry private media
+      </button>
+    </div>}
   </div>;
 }
 
@@ -157,26 +161,44 @@ export function OperationalFileList({
 export function OperationalMediaList({ files = [] }) {
   const [urls, setUrls] = useState({});
   const [error, setError] = useState(null);
+  const [loadedMediaKey, setLoadedMediaKey] = useState(null);
+  const [retry, setRetry] = useState(0);
+  // Same file ID must not accidentally reuse a signed URL for a changed
+  // private storage object. Never render URL state from a previous file set.
+  const mediaKey = files.map((file) => [
+    file.id, file.storage_bucket || "", file.storage_path || "",
+  ].join(":")).join("|");
+  const safeUrls = loadedMediaKey === mediaKey ? urls : {};
 
   useEffect(() => {
     let cancelled = false;
+    setUrls({}); setError(null); setLoadedMediaKey(null);
     async function loadUrls() {
-      if (!files.length) { setUrls({}); return; }
+      if (!files.length) {
+        if (!cancelled) setLoadedMediaKey(mediaKey);
+        return;
+      }
       try {
-        const pairs = await Promise.all(files.map(async (file) => [file.id, await signedOperationalFileUrl(file, 300)]));
-        if (!cancelled) { setUrls(Object.fromEntries(pairs)); setError(null); }
+        const pairs = await Promise.all(files.map(async (file) => [
+          file.id, await signedOperationalFileUrl(file, 300),
+        ]));
+        if (!cancelled) { setUrls(Object.fromEntries(pairs)); setLoadedMediaKey(mediaKey); }
       } catch (err) {
-        if (!cancelled) setError(err.message || "Private media could not be prepared.");
+        if (!cancelled) {
+          setUrls({});
+          setError(err.message || "Private media could not be prepared.");
+          setLoadedMediaKey(mediaKey);
+        }
       }
     }
-    loadUrls();
+    void loadUrls();
     return () => { cancelled = true; };
-  }, [files.map((file) => file.id).join("|")]);
+  }, [mediaKey, retry]);
 
   if (!files.length) return null;
   return <div className="operational-media-list">
     {files.map((file) => {
-      const url = urls[file.id];
+      const url = safeUrls[file.id];
       if (file.mime_type?.startsWith("image/") && url) return <figure className="operational-media-image" key={file.id}>
         <img src={url} alt={file.filename} loading="lazy" />
         <figcaption>{file.filename} · {formatOperationalFileSize(file.size_bytes)}</figcaption>
