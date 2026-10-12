@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+// Registered private-context suite also runs the focused Protected HR guards.
+import "./protected-hr-context-race.test.mjs";
+import "./protected-hr-save-failure.test.mjs";
+
 
 const read = (path) => readFileSync(path, "utf8");
 const privateFiles = read("src/components/OperationalFiles.jsx");
