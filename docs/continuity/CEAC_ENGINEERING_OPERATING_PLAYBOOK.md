@@ -100,3 +100,15 @@ Current isolated review target is **142 unique migration timestamp versions** an
 - The ordinary apt sandbox user also failed because this execution environment forbids the required setgroups/setuid transitions. Running apt metadata refresh as root bypassed that specific apt-user error but did not establish a container engine; do not cycle package-provider experiments or assume nested-container privileges.
 - The authenticated Supabase dashboard fallback reached only the sign-in page and made no account, project, branch, billing or production change. The official public branch rate observed was $0.01344 per branch-hour, but the owner explicitly chose the local-first path. No paid branch is approved.
 - Local Auth, TOTP, Storage and invitation-token acceptance remain feasible only in a supported disposable host that has Docker or Podman plus the pinned CLI. Real outbound email delivery, real-user authenticator enrolment/AAL2 acceptance and production Auth/Storage-aware backup restoration remain separate hosted/private-human gates; local simulations cannot certify them.
+
+
+## 12 October 2026 — Support revocation reason audit repair
+
+Independent source review found that migration 136 correctly wrote the new membership `end_reason` to immutable membership history, but the automatic Support capability-revocation note still copied `NEW.reason`, the original joining reason. This could leave two audit trails describing different decisions.
+
+Repair rule:
+- preserve committed migration identities; add forward migration `20261012041000_139_support_revocation_end_reason.sql`;
+- replace only `support_membership_history_guard()` so future Support grant revocations use the separately attributable `NEW.end_reason`;
+- assert both the final trigger definition and the persisted grant `revoke_reason` in the existing rollback-only membership gate.
+
+Actual Node 22 evidence after the repair: focused contracts 19/19, exit 0; complete `npm run verify:source` 176/176, exit 0; production build exit 0. Candidate inventory is now 143 unique migration files. The affected PostgreSQL replay/gate is NOT RUN in this refreshed shell because no PostgreSQL/container runtime is present; do not promote the source pass to database acceptance.
