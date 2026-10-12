@@ -70,7 +70,9 @@ export default function AdminPayroll({ me }) {
   const creationWriteBusyRef = useRef(false);
   const lineWriteBusyRef = useRef(false);
   const selectedRunRef = useRef(null);
-  function selectRun(id) {
+  const manualSelectionGeneration = useRef(0);
+  function selectRun(id, intentional = false) {
+    if (intentional) manualSelectionGeneration.current += 1;
     selectedRunRef.current = id;
     setSelectedId(id);
   }
@@ -92,6 +94,7 @@ export default function AdminPayroll({ me }) {
   async function loadRuns(preferId = null) {
     const generation = ++runsReadGeneration.current;
     const selectionAtStart = selectedRunRef.current;
+    const manualSelectionAtStart = manualSelectionGeneration.current;
     setLoading(true); setError(null);
     let response;
     try {
@@ -106,15 +109,25 @@ export default function AdminPayroll({ me }) {
     setLoading(false);
     const [runsResult, readinessResult] = response;
     if (runsResult.error || readinessResult.error) {
-      setError((runsResult.error || readinessResult.error)?.message || "Payroll could not load.");
+      detailReadGeneration.current += 1;
+      setRuns([]);
+      setReadiness(null);
+      setDetail(null);
+      setDetailLoading(false);
+      setSheet(null);
+      selectRun(null);
+      setNotice(null);
+      setError("Payroll access could not be verified. Retry to load current authorised data.");
       return;
     }
     const rows = Array.isArray(runsResult.data) ? runsResult.data : [];
     setRuns(rows);
     setReadiness(readinessResult.data || null);
-    const chosen = selectedRunRef.current !== selectionAtStart
+    const chosen = manualSelectionGeneration.current !== manualSelectionAtStart
       ? selectedRunRef.current
-      : preferId || selectedRunRef.current || rows[0]?.id || null;
+      : preferId && !selectionAtStart
+        ? preferId
+        : selectedRunRef.current || preferId || rows[0]?.id || null;
     selectRun(chosen && rows.some((row) => row.id === chosen) ? chosen : rows[0]?.id || null);
   }
 
@@ -387,7 +400,7 @@ export default function AdminPayroll({ me }) {
       </div>
     </header>
 
-    {error && <ProductNotice tone="error" title="Payroll">{error}</ProductNotice>}
+    {error && <ProductNotice tone="error" title="Payroll">{error} {!runs.length && <button type="button" className="btn btn-ghost" onClick={() => void loadRuns()}>Retry Payroll access</button>}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Payroll">{notice}</ProductNotice>}
 
     {readiness && <section className="fpg-payroll-table-card">
@@ -412,7 +425,7 @@ export default function AdminPayroll({ me }) {
     <div className="fpg-payroll-layout">
       <aside className="fpg-payroll-runs" aria-label="Payroll runs">
         <div className="fpg-payroll-side-title"><span>Payroll periods</span><b>{runs.length}</b></div>
-        {runs.map((row) => <button key={row.id} type="button" className={selectedId === row.id ? "is-selected" : ""} onClick={() => selectRun(row.id)}>
+        {runs.map((row) => <button key={row.id} type="button" className={selectedId === row.id ? "is-selected" : ""} onClick={() => selectRun(row.id, true)}>
           <span><strong>{row.label}</strong><small>{dateLabel(row.period_start)} – {dateLabel(row.period_end)}</small></span>
           <span className={"fpg-payroll-status " + statusTone(row.status)}>{statusLabel(row.status)}</span>
           <b>{money(row.total_net_minor, row.currency)}</b>
