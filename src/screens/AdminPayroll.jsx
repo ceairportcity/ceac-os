@@ -68,6 +68,7 @@ export default function AdminPayroll({ me }) {
   const runsReadGeneration = useRef(0);
   const decisionWriteBusyRef = useRef(false);
   const creationWriteBusyRef = useRef(false);
+  const lineWriteBusyRef = useRef(false);
   const selectedRunRef = useRef(null);
   function selectRun(id) {
     selectedRunRef.current = id;
@@ -179,42 +180,78 @@ export default function AdminPayroll({ me }) {
   }
 
   async function saveLine(form) {
-    if (!detail?.run?.id || !form.employeeId) return;
+    const runId = detail?.run?.id;
+    if (!runId || selectedRunRef.current !== runId || !form.employeeId || busy || lineWriteBusyRef.current) return;
+    lineWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { error: lineError } = await supabase.rpc("payroll_set_line", {
-      p_run_id: detail.run.id,
-      p_profile_id: form.employeeId,
-      p_line_id: form.lineId || null,
-      p_category: form.category,
-      p_direction: form.direction,
-      p_label: form.label.trim(),
-      p_amount_minor: amountToMinor(form.amount),
-      p_note: form.note.trim() || null,
-    });
-    setBusy(false);
-    if (lineError) { setError(lineError.message || "Payroll line could not be saved."); return; }
-    setSheet(null);
-    setNotice("Payroll line recorded.");
-    await Promise.all([loadDetail(detail.run.id), loadRuns(detail.run.id)]);
+    let recorded = false;
+    try {
+      const { error } = await supabase.rpc("payroll_set_line", {
+        p_run_id: runId,
+        p_profile_id: form.employeeId,
+        p_line_id: form.lineId || null,
+        p_category: form.category,
+        p_direction: form.direction,
+        p_label: form.label.trim(),
+        p_amount_minor: amountToMinor(form.amount),
+        p_note: form.note.trim() || null,
+      });
+      if (error) {
+        if (selectedRunRef.current === runId)
+          setError(error.message || "Payroll line could not be saved.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId) return;
+      setSheet(null);
+      setNotice("Payroll line recorded.");
+      await Promise.all([loadDetail(runId), loadRuns(runId)]);
+    } catch (failure) {
+      if (selectedRunRef.current === runId)
+        setError(recorded
+          ? "Payroll line was recorded, but the run could not refresh. Reload before continuing."
+          : "Payroll line outcome is unconfirmed. Review the employee's lines before retrying.");
+    } finally {
+      lineWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function removeLine(entry, line) {
-    if (!detail?.run?.id || line.category === "base_salary") return;
+    const runId = detail?.run?.id;
+    if (!runId || selectedRunRef.current !== runId || line.category === "base_salary" || busy || lineWriteBusyRef.current) return;
+    lineWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { error: removeError } = await supabase.rpc("payroll_set_line", {
-      p_run_id: detail.run.id,
-      p_profile_id: entry.employee_id || entry.profile_id,
-      p_line_id: line.id,
-      p_category: line.category,
-      p_direction: line.direction,
-      p_label: line.label,
-      p_amount_minor: null,
-      p_note: "Removed during payroll preparation",
-    });
-    setBusy(false);
-    if (removeError) { setError(removeError.message || "Payroll line could not be removed."); return; }
-    setNotice("Payroll line removed from the draft.");
-    await Promise.all([loadDetail(detail.run.id), loadRuns(detail.run.id)]);
+    let recorded = false;
+    try {
+      const { error } = await supabase.rpc("payroll_set_line", {
+        p_run_id: runId,
+        p_profile_id: entry.employee_id || entry.profile_id,
+        p_line_id: line.id,
+        p_category: line.category,
+        p_direction: line.direction,
+        p_label: line.label,
+        p_amount_minor: null,
+        p_note: "Removed during payroll preparation",
+      });
+      if (error) {
+        if (selectedRunRef.current === runId)
+          setError(error.message || "Payroll line could not be removed.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId) return;
+      setNotice("Payroll line removed from the draft.");
+      await Promise.all([loadDetail(runId), loadRuns(runId)]);
+    } catch (failure) {
+      if (selectedRunRef.current === runId)
+        setError(recorded
+          ? "The removal was recorded, but Payroll could not refresh. Reload before continuing."
+          : "Line-removal outcome is unconfirmed. Review the employee's lines before retrying.");
+    } finally {
+      lineWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function submitRun(note) {
