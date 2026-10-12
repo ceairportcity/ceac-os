@@ -2,6 +2,7 @@ import test from "node:test";
 // Already registered in verify:source; include the protected Payroll run privacy regression.
 import "./payroll-run-context-integrity.test.mjs";
 import "./payroll-run-list-scope.test.mjs";
+import "./payroll-decision-write-safety.test.mjs";
 import assert from "node:assert/strict";
 import { amountToMinor, protectedMoney } from "../src/lib/protectedCompensation.js";
 
