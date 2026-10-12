@@ -56,6 +56,15 @@ test("payroll RPC must not render details whose run id differs from requested id
   assert.match(h.seen.errors.at(-1), /could not be verified/);
 });
 
+test("empty run detail response is unavailable rather than silently showing old data", async () => {
+  const h = harness();
+  const request = h.read("B");
+  h.pending[0].resolve({ data: null, error: null });
+  await request;
+  assert.deepEqual(h.seen.details, [null]);
+  assert.match(h.seen.errors.at(-1), /could not be verified/);
+});
+
 test("rejected payroll detail RPC clears the loading state", async () => {
   const h = harness();
   const request = h.read("B");
