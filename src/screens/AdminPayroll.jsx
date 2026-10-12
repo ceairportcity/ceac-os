@@ -66,6 +66,7 @@ export default function AdminPayroll({ me }) {
   const [notice, setNotice] = useState(null);
   const detailReadGeneration = useRef(0);
   const runsReadGeneration = useRef(0);
+  const decisionWriteBusyRef = useRef(false);
   const selectedRunRef = useRef(null);
   function selectRun(id) {
     selectedRunRef.current = id;
@@ -192,23 +193,73 @@ export default function AdminPayroll({ me }) {
   }
 
   async function submitRun(note) {
+    const runId = detail?.run?.id;
+    // Approval and submission are attributable state transitions. Keep one
+    // request at a time and never act from a stale run's decision composer.
+    if (!runId || selectedRunRef.current !== runId || busy || decisionWriteBusyRef.current) return;
+    const readGenerationAtStart = detailReadGeneration.current;
+    decisionWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { error: submitError } = await supabase.rpc("payroll_submit_run", { p_run_id: detail.run.id, p_note: note.trim() });
-    setBusy(false);
-    if (submitError) { setError(submitError.message || "Payroll could not be submitted."); return; }
-    setSheet(null);
-    setNotice("Payroll submitted for Group Pastor approval.");
-    await Promise.all([loadDetail(detail.run.id), loadRuns(detail.run.id)]);
+    let recorded = false;
+    try {
+      const { error } = await supabase.rpc("payroll_submit_run", {
+        p_run_id: runId,
+        p_note: note.trim(),
+      });
+      if (error) {
+        if (selectedRunRef.current === runId && readGenerationAtStart === detailReadGeneration.current)
+          setError(error.message || "Payroll could not be submitted.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId || readGenerationAtStart !== detailReadGeneration.current) return;
+      setSheet(null);
+      setNotice("Payroll submitted for Group Pastor approval.");
+      await Promise.all([loadDetail(runId), loadRuns(runId)]);
+    } catch (failure) {
+      if (selectedRunRef.current === runId && readGenerationAtStart === detailReadGeneration.current)
+        setError(recorded
+          ? "The decision succeeded, but Payroll could not refresh. Reload before continuing."
+          : "The decision outcome is unconfirmed. Review the Payroll run before attempting it again.");
+    } finally {
+      decisionWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function approveRun(note) {
+    const runId = detail?.run?.id;
+    // Approval and submission are attributable state transitions. Keep one
+    // request at a time and never act from a stale run's decision composer.
+    if (!runId || selectedRunRef.current !== runId || busy || decisionWriteBusyRef.current) return;
+    const readGenerationAtStart = detailReadGeneration.current;
+    decisionWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { error: approveError } = await supabase.rpc("payroll_approve_run", { p_run_id: detail.run.id, p_note: note.trim() });
-    setBusy(false);
-    if (approveError) { setError(approveError.message || "Payroll could not be approved."); return; }
-    setSheet(null);
-    setNotice("Payroll approved and locked.");
-    await Promise.all([loadDetail(detail.run.id), loadRuns(detail.run.id)]);
+    let recorded = false;
+    try {
+      const { error } = await supabase.rpc("payroll_approve_run", {
+        p_run_id: runId,
+        p_note: note.trim(),
+      });
+      if (error) {
+        if (selectedRunRef.current === runId && readGenerationAtStart === detailReadGeneration.current)
+          setError(error.message || "Payroll could not be approved.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId || readGenerationAtStart !== detailReadGeneration.current) return;
+      setSheet(null);
+      setNotice("Payroll approved and locked.");
+      await Promise.all([loadDetail(runId), loadRuns(runId)]);
+    } catch (failure) {
+      if (selectedRunRef.current === runId && readGenerationAtStart === detailReadGeneration.current)
+        setError(recorded
+          ? "The decision succeeded, but Payroll could not refresh. Reload before continuing."
+          : "The decision outcome is unconfirmed. Review the Payroll run before attempting it again.");
+    } finally {
+      decisionWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function createCorrection(reason) {
