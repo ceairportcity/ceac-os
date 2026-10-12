@@ -58,6 +58,17 @@ SELECT
     WHERE r.leave_kind='annual' AND r.routing_confirmed
       AND v.source_reference='CEAC_OWNER_LEAVE_ROUTING_2026-10-02') AS annual_policy_rows_targeted_by_pending_update,
   (SELECT count(*) FROM public.employment_records) AS existing_employment_records,
+  (SELECT count(*) FROM public.workforce_day_types WHERE active)
+    AS active_workforce_day_types,
+  (SELECT count(distinct v.profile_id) FROM public.workforce_schedule_versions v
+    WHERE v.effective_from <= current_date
+      AND (v.effective_to IS NULL OR v.effective_to >= current_date)
+      AND NOT EXISTS (
+        SELECT 1 FROM public.workforce_schedule_versions successor
+        WHERE successor.supersedes_id=v.id
+          AND successor.effective_from<=current_date
+          AND (successor.effective_to IS NULL OR successor.effective_to>=current_date)
+      )) AS profiles_with_effective_workforce_schedule,
   (SELECT count(*) FROM public.pending_invitations
     WHERE resolved_at IS NULL AND revoked_at IS NULL) AS unresolved_invitations,
   (to_regclass('public.attendance_presence_evidence') IS NOT NULL) AS redundant_attendance_evidence_table_preexists,
