@@ -170,12 +170,19 @@ export default function AdminProtectedHR({ me }) {
     }
     const rows=Array.isArray(response.data) ? response.data : [];
     setPeople(rows);
-    if(!employeeId && rows.length){
+    // A refreshed authorised roster may remove an employee after an access
+    // change. Do not preserve that employee's cached private HR detail.
+    const currentId=scopeRef.current.snapshot().employeeId;
+    if(!currentId || !rows.some(person=>person.id===currentId)){
       let remembered="";
       try { remembered=sessionStorage.getItem(`ceac:protected-hr:employee:${me.id}`)||""; } catch {}
-      const next=rows.some(person=>person.id===remembered) ? remembered : rows[0].id;
+      const next=rows.some(person=>person.id===remembered) ? remembered : rows[0]?.id || "";
       scopeRef.current.select(next);
       setEmployeeId(next);
+      setSummary(null);
+      setLoadedEmployeeId(null);
+      setHistoryOpen({});
+      setComposerOpen(false);
     }
     setLoading(false);
   }
