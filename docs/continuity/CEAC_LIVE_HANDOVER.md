@@ -250,3 +250,20 @@ Additional frozen-SHA checks: the real Chromium signed-out laptop/phone recovery
 - Authenticated multi-role, Support Storage, identity-switch and account-recovery acceptance remain **NOT RUN**. Release remains **NO-GO**.
 
 Smallest indispensable owner action: provide or authorise one existing private runner with at least 4 vCPU / 8 GB RAM and Docker, with a hard zero-spend control or confirmed included allowance, then grant this Work session access to it. The preferred action is resizing the existing CEAC Codespace only after GitHub confirms it cannot create an unapproved charge. Do not provide production credentials or create a hosted Supabase fixture.
+
+
+## 12 October 2026 — zero-spend 4-core acceptance attempt
+
+- Live GitHub billing verification before resize: GitHub Free; Codespaces gross usage USD 1.24, discounts USD 1.24, billable USD 0. Codespaces account budget is USD 0 with `Stop usage: Yes`. Included-usage alerts are on.
+- Live Codespaces usage: 6.63 machine-hours on the 2-core SKU (13.26 core-hours) and 0.72 GB-hours storage. Against the owner's 120 included core-hours, approximately 106.74 core-hours remained before the resize run.
+- Existing Codespace `improved-space-guide-wvxr9rjrv7qxh99jp` was resized in place to the available 4-core / 16 GB RAM / 32 GB option. No new Codespace or paid resource was created.
+- Runtime preflight after restart: 4 CPUs, 15 GiB visible RAM, 6.9 GiB free workspace storage, Docker 29.8.0, real private origin, exact frozen SHA `51223157f28e16e90acda6a35dd71389513b6d6f`, 143 migration files.
+- Full local Supabase startup with CLI 2.117.0 and official GHCR images: **FAIL** (exit 1). PostgreSQL, Kong and Inbucket became healthy without CPU or memory saturation, but Auth and Storage remained unhealthy and REST timed out. Logs showed database-notification/query timeouts.
+- One justified adjustment excluded optional Realtime while retaining PostgreSQL, Auth, REST and Storage. Result: **FAIL** (exit 1) with the same Auth/Storage PostgreSQL timeouts. This rules out Realtime contention and insufficient CPU/RAM as the primary cause.
+- No production endpoint, credential, database or file was used. All generated local credentials and detailed private logs remained outside GitHub.
+- Genuine Git-ancestry resilience gate: `npx -p node@22.12.0 npm run resilience:verify`, 2026-10-12T11:37:31Z to 11:37:36Z, exact frozen SHA, exit 0, **PASS** (`CEAC resilience source contract passed`).
+- Authenticated multi-role browser, Support Storage, identity switching, account recovery and authenticated visual captures remain **NOT RUN** because local Auth/Storage never became healthy.
+- Actual production backup/restore, real MFA/AAL2 and outbound invitation delivery remain **BLOCKED / OWNER-CONTROLLED** and were not simulated or claimed.
+- Release remains **NO-GO**. Previously completed 184 source tests, 143 isolated migrations and 56 SQL security tests were not repeated.
+
+Smallest next environment action: provide an already verified disposable Supabase test project reference, or explicitly authorise creation of one free disposable Supabase project with billing disabled and no connection to production. Another Codespace resize or local Supabase retry is not justified by the evidence.

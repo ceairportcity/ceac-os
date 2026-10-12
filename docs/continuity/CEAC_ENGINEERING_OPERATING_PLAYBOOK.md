@@ -155,3 +155,10 @@ Use the existing CEAC Codespace only after verifying the billing page reports US
 - When Public ECR returns `Rate exceeded`, set `SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io` to use the CLI-supported official GitHub Container Registry mirror.
 
 A two-core runner is insufficient for this repository's full local Supabase bootstrap. The database can be warmed to a healthy state, but concurrent Auth, Storage and REST startup produced PostgreSQL connection timeouts and unhealthy containers. Do not loop the same bootstrap or weaken health checks. Move to an already authorised private runner with at least 4 vCPU / 8 GB RAM, after confirming a hard zero-spend control or included allowance. Generated local keys and service logs remain private; record only sanitised exit codes and health outcomes.
+
+
+## Four-core Codespace result (verified 12 October 2026)
+
+The existing CEAC Codespace can be resized safely only when the personal account shows a USD 0 Codespaces budget with `Stop usage: Yes`. The verified 4-core option provides 16 GB RAM and 32 GB storage.
+
+Do not assume more Codespace capacity fixes the local Supabase issue. On 4 cores / 16 GB, PostgreSQL and Kong reached healthy state with low resource use, while Auth and Storage repeatedly timed out against PostgreSQL. Excluding Realtime produced the same failure. Stop after these two bounded attempts; do not resize further or loop the CLI. Continue Git-ancestry resilience checks independently and use a verified disposable Supabase project for Auth/Storage acceptance if the owner authorises one.
