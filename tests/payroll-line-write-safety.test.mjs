@@ -65,6 +65,7 @@ for (const [name, args] of [
     h.requests[0].resolve({ error:null });
     await result;
     assert.deepEqual(h.events.reload, ["detail:run-A", "runs:run-A"]);
+    assert.equal(h.events.sheets.at(-1), null);
     assert.deepEqual(h.events.busy, [true,false]);
     assert.equal(h.lineWriteBusyRef.current, false);
   });
