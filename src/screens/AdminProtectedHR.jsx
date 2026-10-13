@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
+import { createProtectedHrRequestScope } from "../lib/protectedHrRequestScope";
 import {
   Button,
   ComposerDrawer,
@@ -127,6 +128,10 @@ export default function AdminProtectedHR({ me }) {
   const [people,setPeople]=useState([]);
   const [employeeId,setEmployeeId]=useState("");
   const [summary,setSummary]=useState(null);
+  const [loadedEmployeeId,setLoadedEmployeeId]=useState(null);
+  const scopeRef=useRef(null);
+  const rosterReadGeneration=useRef(0);
+  if(!scopeRef.current) scopeRef.current=createProtectedHrRequestScope();
   const [recordType,setRecordType]=useState("identifier");
   const [replaceId,setReplaceId]=useState("");
   const [reason,setReason]=useState("");
@@ -137,53 +142,94 @@ export default function AdminProtectedHR({ me }) {
   const [loading,setLoading]=useState(true);
   const [detailLoading,setDetailLoading]=useState(false);
   const [busy,setBusy]=useState(false);
+  const saveBusyRef=useRef(false);
   const [error,setError]=useState(null);
   const [notice,setNotice]=useState(null);
 
-  useEffect(()=>{ loadPeople(); },[me.id]);
+  useEffect(()=>{
+    void loadPeople();
+    return ()=>{ rosterReadGeneration.current += 1; scopeRef.current.select(null); };
+  },[me.id]);
   useEffect(()=>{ if(employeeId) loadSummary(employeeId); },[employeeId]);
 
   async function loadPeople() {
+    const generation=++rosterReadGeneration.current;
     setLoading(true);
     setError(null);
-    const {data,error:e}=await supabase.rpc("admin_employee_roster_summary");
-    if(e){
-      setError(humanError(e,"Protected HR could not load the employee roster."));
+    let response;
+    try {
+      response=await supabase.rpc("admin_employee_roster_summary");
+    } catch(failure) {
+      response={error:failure};
+    }
+    if(generation!==rosterReadGeneration.current) return;
+    if(response.error){
+      // A failed permission/roster refresh cannot justify retaining previously
+      // authorised confidential records while current access is unknown.
+      scopeRef.current.select(null);
+      setPeople([]);
+      setEmployeeId("");
+      setSummary(null);
+      setLoadedEmployeeId(null);
+      setComposerOpen(false);
+      setHistoryOpen({});
+      setError(humanError(response.error,"Protected HR could not load the employee roster."));
       setLoading(false);
       return;
     }
-    const rows=Array.isArray(data) ? data : [];
+    const rows=Array.isArray(response.data) ? response.data : [];
     setPeople(rows);
-    if(!employeeId && rows.length){
+    // A refreshed authorised roster may remove an employee after an access
+    // change. Do not preserve that employee's cached private HR detail.
+    const currentId=scopeRef.current.snapshot().employeeId;
+    if((currentId || rows.length) && !rows.some(person=>person.id===currentId)){
       let remembered="";
       try { remembered=sessionStorage.getItem(`ceac:protected-hr:employee:${me.id}`)||""; } catch {}
-      const next=rows.some(person=>person.id===remembered) ? remembered : rows[0].id;
+      const next=rows.some(person=>person.id===remembered) ? remembered : rows[0]?.id || "";
+      scopeRef.current.select(next);
       setEmployeeId(next);
+      setSummary(null);
+      setLoadedEmployeeId(null);
+      setHistoryOpen({});
+      setComposerOpen(false);
     }
     setLoading(false);
   }
 
   async function loadSummary(id=employeeId) {
-    if(!id) return;
+    const token=scopeRef.current.begin(id);
+    if(!token) return;
     setDetailLoading(true);
     setError(null);
-    const {data,error:e}=await supabase.rpc("hr_employee_protected_summary",{p_employee_id:id});
+    let response;
+    try {
+      response=await supabase.rpc("hr_employee_protected_summary",{p_employee_id:id});
+    } catch(failure) {
+      response={error:failure};
+    }
+    // A request for another employee or an older same-employee refresh
+    // must never render private HR data in the currently selected record.
+    if(!scopeRef.current.matches(token)) return;
     setDetailLoading(false);
-    if(e){
-      setError(humanError(e,"Protected HR records could not be opened."));
+    if(response.error){
+      setSummary(null);
+      setLoadedEmployeeId(null);
+      setError(humanError(response.error,"Protected HR records could not be opened."));
       return;
     }
-    setSummary(data||{identifiers:[],employment_terms:[],compensation:[],payment_details:[],documents:[]});
+    setSummary(response.data||{identifiers:[],employment_terms:[],compensation:[],payment_details:[],documents:[]});
+    setLoadedEmployeeId(id);
   }
 
   const selectedPerson=people.find((person)=>person.id===employeeId)||null;
+  const visibleSummary=loadedEmployeeId===employeeId ? summary : null;
   const collections=useMemo(()=>({
-    identifier:summary?.identifiers||[],
-    employment_term:summary?.employment_terms||[],
-    compensation:summary?.compensation||[],
-    payment_detail:summary?.payment_details||[],
-    document:summary?.documents||[],
-  }),[summary]);
+    identifier:visibleSummary?.identifiers||[],
+    employment_term:visibleSummary?.employment_terms||[],
+    compensation:visibleSummary?.compensation||[],
+    payment_detail:visibleSummary?.payment_details||[],
+    document:visibleSummary?.documents||[],
+  }),[visibleSummary]);
   const activeReplacements=currentAndHistory(collections[recordType]).current;
 
   function resetForm(nextType=recordType) {
@@ -252,60 +298,90 @@ export default function AdminProtectedHR({ me }) {
   },[employeeId,reason,recordType,fields,file]);
 
   async function saveRecord() {
-    if(!formReady) return;
+    // React state is batched; lock immediately to prevent duplicate protected
+    // rows or private uploads from two clicks before the next render.
+    if(!formReady || saveBusyRef.current) return;
+    saveBusyRef.current=true;
+    const saveScope=scopeRef.current.snapshot();
     setBusy(true);
     setError(null);
     setNotice(null);
     let uploadedPath=null;
-    let payload=payloadForType();
-
-    if(recordType==="document") {
-      uploadedPath=`${me.org_id}/${employeeId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
-      const upload=await supabase.storage.from("ceac-hr-private").upload(uploadedPath,file,{upsert:false});
-      if(upload.error){
-        setBusy(false);
-        setError(humanError(upload.error,"The protected document could not be uploaded."));
-        return;
+    let recorded=false;
+    let confirmedFailure=false;
+    let phase="upload";
+    try {
+      let payload=payloadForType();
+      if(recordType==="document") {
+        uploadedPath=`${me.org_id}/${employeeId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+        const upload=await supabase.storage.from("ceac-hr-private").upload(uploadedPath,file,{upsert:false});
+        if(upload.error) throw upload.error;
+        payload={
+          document_type:fields.documentType.trim(),
+          title:fields.title.trim(),
+          storage_path:uploadedPath,
+          issued_on:fields.issuedOn||"",
+          expires_on:fields.expiresOn||"",
+        };
       }
-      payload={
-        document_type:fields.documentType.trim(),
-        title:fields.title.trim(),
-        storage_path:uploadedPath,
-        issued_on:fields.issuedOn||"",
-        expires_on:fields.expiresOn||"",
-      };
-    }
-
-    const {error:e}=await supabase.rpc("hr_employee_protected_record",{
-      p_employee_id:employeeId,
-      p_record_type:recordType,
-      p_payload:payload,
-      p_replaces_id:replaceId||null,
-      p_reason:reason.trim(),
-    });
-
-    if(e){
-      if(uploadedPath) await supabase.storage.from("ceac-hr-private").remove([uploadedPath]);
+      phase="record";
+      const {error:e}=await supabase.rpc("hr_employee_protected_record",{
+        p_employee_id:employeeId,
+        p_record_type:recordType,
+        p_payload:payload,
+        p_replaces_id:replaceId||null,
+        p_reason:reason.trim(),
+      });
+      if(e) {
+        confirmedFailure=true;
+        throw e;
+      }
+      recorded=true;
+      if(!scopeRef.current.matches(saveScope)) return;
+      setNotice("Protected HR record saved.");
+      setComposerOpen(false);
+      resetForm(recordType);
+      await loadSummary(employeeId);
+    } catch(failure) {
+      // An explicit database error is a failed transaction; a rejected
+      // network promise is ambiguous and must not erase possibly linked bytes.
+      if(uploadedPath && !recorded && (phase==="upload" || confirmedFailure)) {
+        try { await supabase.storage.from("ceac-hr-private").remove([uploadedPath]); }
+        catch { /* Preserve the original error and keep Storage private. */ }
+      }
+      if(scopeRef.current.matches(saveScope)) {
+        const message=recorded
+          ? "The protected record was saved, but its latest state could not be loaded."
+          : phase==="upload"
+            ? "The protected document could not be uploaded."
+            : confirmedFailure
+              ? "The protected HR record could not be saved."
+              : "The save outcome is unconfirmed. Review the protected record before trying again.";
+        setError(humanError(failure,message));
+      }
+    } finally {
+      saveBusyRef.current=false;
       setBusy(false);
-      setError(humanError(e,"The protected HR record could not be saved."));
-      return;
     }
-
-    setBusy(false);
-    setNotice("Protected HR record saved.");
-    setComposerOpen(false);
-    resetForm(recordType);
-    await loadSummary();
   }
 
   async function openDocument(row) {
+    if(loadedEmployeeId!==employeeId) return;
+    const token=scopeRef.current.snapshot();
     setError(null);
-    const {data,error:e}=await supabase.storage.from(row.storage_bucket||"ceac-hr-private").createSignedUrl(row.storage_path,60);
-    if(e || !data?.signedUrl){
-      setError(humanError(e,"The protected document could not be opened."));
+    let response;
+    try {
+      response=await supabase.storage.from(row.storage_bucket||"ceac-hr-private").createSignedUrl(row.storage_path,60);
+    } catch(failure) {
+      response={error:failure};
+    }
+    // Never open a signed protected document after its employee context changed.
+    if(!scopeRef.current.matches(token)) return;
+    if(response.error || !response.data?.signedUrl){
+      setError(humanError(response.error,"The protected document could not be opened."));
       return;
     }
-    window.open(data.signedUrl,"_blank","noopener,noreferrer");
+    window.open(response.data.signedUrl,"_blank","noopener,noreferrer");
   }
 
   const set=(key,value)=>setFields(current=>({...current,[key]:value}));
@@ -319,7 +395,7 @@ export default function AdminProtectedHR({ me }) {
       <p className="screen-note">Sensitive identifiers, employment terms, compensation, payment details and protected documents. Access remains separately capability-gated and every view/change is attributable.</p>
     </header>
 
-    {error&&<ProductNotice tone="error" title="Protected HR">{error}</ProductNotice>}
+    {error&&<ProductNotice tone="error" title="Protected HR">{error}<Button variant="secondary" size="compact" onClick={()=>void loadPeople()} disabled={busy}>Retry protected employee roster</Button></ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Protected HR">{notice}</ProductNotice>}
 
     <DataPanel
@@ -330,17 +406,23 @@ export default function AdminProtectedHR({ me }) {
         selectedPerson.account_email || "Roster only · no account linked",
         selectedPerson.employment_status ? `Employment ${selectedPerson.employment_status}` : null,
       ].filter(Boolean).join(" · ") : "Protected HR uses the canonical employee roster, not login identity."}
-      action={<Button icon="create" onClick={()=>openComposer("identifier")} disabled={!employeeId}>Add protected record</Button>}
+      action={<Button icon="create" onClick={()=>openComposer("identifier")} disabled={!employeeId||detailLoading||loadedEmployeeId!==employeeId}>Add protected record</Button>}
     >
       <FieldGroup label="Employee">
         <select
           className="field"
           aria-label="Protected HR employee"
           value={employeeId}
+          disabled={busy}
           onChange={(event)=>{
             const next=event.target.value;
+            scopeRef.current.select(next);
             setEmployeeId(next);
             setSummary(null);
+            setLoadedEmployeeId(null);
+            setDetailLoading(Boolean(next));
+            setComposerOpen(false);
+            setNotice(null);
             setHistoryOpen({});
             try { sessionStorage.setItem(`ceac:protected-hr:employee:${me.id}`,next); } catch {}
             resetForm("identifier");
@@ -356,7 +438,7 @@ export default function AdminProtectedHR({ me }) {
 
     {detailLoading ? <LoadingState label="Opening protected record…" /> : <div style={{display:"grid",gap:"var(--ev2-space-4)",marginTop:"var(--ev2-space-4)"}}>
       {GROUPS.map(([type,label,key])=>{
-        const {current,history}=currentAndHistory(summary?.[key]||[]);
+        const {current,history}=currentAndHistory(visibleSummary?.[key]||[]);
         const open=Boolean(historyOpen[type]);
         return <DataPanel
           key={type}
