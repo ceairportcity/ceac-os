@@ -5,7 +5,7 @@ import { humanError } from "../lib/productLanguage";
 
 // This surface only manages the signed-in person's own Auth factors.
 // Neither the service-role credential nor any colleague's MFA secrets belong here.
-export default function AccountMfaSetup() {
+export default function AccountMfaSetup({ onVerified }) {
   const [loading, setLoading] = useState(true);
   const [statusReady, setStatusReady] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -96,7 +96,7 @@ export default function AccountMfaSetup() {
     setBusy(true);
     setError(null);
     setNotice(null);
-    try {
+        try {
       const { error: failure } = await supabase.auth.mfa.challengeAndVerify({
         factorId,
         code: candidate,
@@ -106,7 +106,8 @@ export default function AccountMfaSetup() {
       setSetup(null);
       setShowKey(false);
       await refresh();
-      setNotice("Authenticator verified for this session.");
+            onVerified?.();
+            setNotice("Authenticator verified for this session.");
     } catch (err) {
       setError(humanError(err, "That code could not be verified. Check your authenticator and try again."));
     } finally {
@@ -132,15 +133,13 @@ export default function AccountMfaSetup() {
     }
   }
 
-  const enrolled = factors.length > 0;
+      const enrolled = factors.length > 0;
   const needsStepUp = enrolled && level !== "aal2";
-
-  return <div className="ev2pf-account-mfa" aria-label="Your authenticator security">
-    <p className="screen-note">
+return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
+      <p className="screen-note">
       An authenticator app adds a second check when you sign in to a privileged CEAC workspace.
       Set this up for your own account only. Never share setup keys or verification codes.
     </p>
-
     {loading && <p role="status" aria-busy="true">Checking your authenticator...</p>}
     {!loading && statusReady && !error && <p role="status">
       {level === "aal2"
