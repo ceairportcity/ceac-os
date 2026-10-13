@@ -343,6 +343,7 @@ export default function AdminPayroll({ me }) {
     const runId = detail?.run?.id;
     if (!runId || selectedRunRef.current !== runId || busy || creationWriteBusyRef.current) return;
     creationWriteBusyRef.current = true;
+    const manualSelectionAtCorrection = manualSelectionGeneration.current;
     setBusy(true); setError(null); setNotice(null);
     let recorded = false;
     try {
@@ -363,7 +364,7 @@ export default function AdminPayroll({ me }) {
       if (selectedRunRef.current !== runId) return;
       setSheet(null);
       setNotice("Attributable correction draft created.");
-      await loadRuns(data, true);
+      await loadRuns(data, manualSelectionGeneration.current === manualSelectionAtCorrection);
     } catch (failure) {
       if (selectedRunRef.current === runId)
         setError(recorded
