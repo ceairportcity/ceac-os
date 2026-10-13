@@ -145,7 +145,7 @@ begin
   -- The sole pre-AAL2 Data API exception discloses one boolean to the
   -- signed-in Google identity itself. It cannot read or mutate application data.
   if current_user = 'authenticated'
-     and request_path = 'rpc/ceac_google_mfa_eligible'
+     and request_path = '/rpc/ceac_google_mfa_eligible'
      and public.ceac_session_is_google() then
     return;
   end if;
