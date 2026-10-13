@@ -2,8 +2,8 @@
 -- This is NOT a release authorisation, backup/restore test, privilege penetration test,
 -- migration rehearsal or visual acceptance. Do not run pending migrations from this file.
 -- Intentionally returns aggregate counts/booleans only; no personal/HR records.
--- Manifest is the 24 unapplied timestamp versions independently reconciled
--- against production on 12 Oct 2026 (PR #50, comment 6129962791).
+-- Manifest is the 25 unapplied timestamp versions independently reconciled
+-- against production on 13 Oct 2026: the prior 24 plus Google/AAL2 migration.
 -- Reconcile it again against the live migration ledger before actual cutover.
 WITH expected_pending(version) AS (
   VALUES
@@ -14,7 +14,8 @@ WITH expected_pending(version) AS (
     ('20261011103000'),('20261011110000'),('20261011113000'),
     ('20261011120000'),('20261011123000'),('20261011130000'),
     ('20261011183000'),('20261011190000'),('20261011193000'),
-    ('20261011195500'),('20261011201000'),('20261012041000')
+    ('20261011195500'),('20261011201000'),('20261012041000'),
+    ('20261012172718')
 )
 SELECT
   current_timestamp AS inspected_at,
