@@ -15,10 +15,7 @@ as $$
       from jsonb_array_elements(coalesce(auth.jwt() -> 'amr', '[]'::jsonb)) as method
       where method ->> 'method' = 'oauth'
     )
-    and (
-      coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', '') = 'google'
-      or coalesce(auth.jwt() -> 'app_metadata' -> 'providers', '[]'::jsonb) ? 'google'
-    );
+    and coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', '') = 'google';
 $$;
 
 comment on function public.ceac_session_is_google() is
@@ -26,29 +23,6 @@ comment on function public.ceac_session_is_google() is
 
 revoke all on function public.ceac_session_is_google() from public;
 grant execute on function public.ceac_session_is_google() to authenticated, service_role;
-
-create or replace function public.ceac_session_is_google_aal2()
-returns boolean
-language sql
-stable
-security invoker
-set search_path = ''
-as $$
-  select
-    public.ceac_session_is_google()
-    and coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2'
-    and exists (
-      select 1
-      from jsonb_array_elements(coalesce(auth.jwt() -> 'amr', '[]'::jsonb)) as method
-      where method ->> 'method' = 'totp'
-    );
-$$;
-
-comment on function public.ceac_session_is_google_aal2() is
-  'True only for a Google OAuth session stepped up with a verified TOTP factor to AAL2.';
-
-revoke all on function public.ceac_session_is_google_aal2() from public;
-grant execute on function public.ceac_session_is_google_aal2() to authenticated, service_role;
 
 create or replace function public.ceac_google_mfa_eligible()
 returns boolean
@@ -69,10 +43,33 @@ as $$
 $$;
 
 comment on function public.ceac_google_mfa_eligible() is
-  'Returns one boolean indicating whether the current Google identity maps to its preserved active CEAC profile and may enroll or verify MFA.';
+  'Returns one boolean indicating whether the current Google identity maps to its preserved active CEAC profile and may enroll, verify or use MFA.';
 
 revoke all on function public.ceac_google_mfa_eligible() from public, anon;
 grant execute on function public.ceac_google_mfa_eligible() to authenticated;
+
+create or replace function public.ceac_session_is_google_aal2()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    public.ceac_google_mfa_eligible()
+    and coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2'
+    and exists (
+      select 1
+      from jsonb_array_elements(coalesce(auth.jwt() -> 'amr', '[]'::jsonb)) as method
+      where method ->> 'method' = 'totp'
+    );
+$$;
+
+comment on function public.ceac_session_is_google_aal2() is
+  'True only for an active preserved CEAC identity signed in through Google OAuth and stepped up with verified TOTP to AAL2.';
+
+revoke all on function public.ceac_session_is_google_aal2() from public;
+grant execute on function public.ceac_session_is_google_aal2() to authenticated, service_role;
 
 create or replace function public.ceac_require_google_aal2()
 returns void
@@ -101,12 +98,12 @@ begin
   end if;
 
   raise insufficient_privilege using
-    message = 'CEAC protected access requires Google sign-in and verified authenticator AAL2.';
+    message = 'CEAC protected access requires an active authorised identity, Google sign-in and verified authenticator AAL2.';
 end;
 $$;
 
 comment on function public.ceac_require_google_aal2() is
-  'PostgREST pre-request guard for CEAC Google OAuth plus TOTP AAL2 enforcement, with one boolean pre-enrollment eligibility check.';
+  'PostgREST pre-request guard for active CEAC identity plus Google OAuth and TOTP AAL2, with one boolean pre-enrollment eligibility check.';
 
 revoke all on function public.ceac_require_google_aal2() from public;
 grant execute on function public.ceac_require_google_aal2() to anon, authenticated, service_role;
