@@ -65,11 +65,14 @@ as $$
       from jsonb_array_elements(coalesce(auth.jwt() -> 'amr', '[]'::jsonb)) as method
       where method ->> 'method' = 'oauth'
     )
-    and coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', '') = 'google';
-$$;
+    and (
+      coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', '') = 'google'
+      or coalesce(auth.jwt() -> 'app_metadata' -> 'providers', '[]'::jsonb) ? 'google'
+    );
+$;
 
 comment on function public.ceac_session_is_google() is
-  'True only when the current Supabase session was established through Google OAuth.';
+  'True for an OAuth session linked to Google. Release configuration must keep Google as the sole enabled OAuth provider; email may remain only as the non-OAuth rollback path.';
 
 revoke all on function public.ceac_session_is_google() from public;
 grant execute on function public.ceac_session_is_google() to authenticated, service_role;
