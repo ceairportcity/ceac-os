@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer } from "../experience-v2/components";
@@ -64,127 +64,325 @@ export default function AdminPayroll({ me }) {
   const [sheet, setSheet] = useState(null);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
+  const detailReadGeneration = useRef(0);
+  const runsReadGeneration = useRef(0);
+  const decisionWriteBusyRef = useRef(false);
+  const creationWriteBusyRef = useRef(false);
+  const lineWriteBusyRef = useRef(false);
+  const selectedRunRef = useRef(null);
+  const manualSelectionGeneration = useRef(0);
+  function selectRun(id, intentional = false) {
+    if (intentional) manualSelectionGeneration.current += 1;
+    selectedRunRef.current = id;
+    setSelectedId(id);
+  }
 
-  useEffect(() => { loadRuns(); }, [me.id]);
-  useEffect(() => { if (selectedId) loadDetail(selectedId); else setDetail(null); }, [selectedId]);
+  useEffect(() => {
+    void loadRuns();
+    return () => {
+      runsReadGeneration.current += 1;
+      detailReadGeneration.current += 1;
+    };
+  }, [me.id]);
+  useEffect(() => {
+    setSheet(null);
+    if (selectedId) void loadDetail(selectedId);
+    else { detailReadGeneration.current += 1; setDetail(null); }
+    return () => { detailReadGeneration.current += 1; };
+  }, [selectedId]);
 
-  async function loadRuns(preferId = null) {
+  async function loadRuns(preferId = null, preferCreated = false) {
+    const generation = ++runsReadGeneration.current;
+    const selectionAtStart = selectedRunRef.current;
+    const manualSelectionAtStart = manualSelectionGeneration.current;
     setLoading(true); setError(null);
-    const [runsResult, readinessResult] = await Promise.all([
-      supabase.rpc("payroll_list_runs"),
-      supabase.rpc("payroll_readiness_summary"),
-    ]);
+    let response;
+    try {
+      response = await Promise.all([
+        supabase.rpc("payroll_list_runs"),
+        supabase.rpc("payroll_readiness_summary"),
+      ]);
+    } catch (failure) {
+      response = [{ error: failure }, { error: failure }];
+    }
+    if (generation !== runsReadGeneration.current) return;
     setLoading(false);
+    const [runsResult, readinessResult] = response;
     if (runsResult.error || readinessResult.error) {
-      setError((runsResult.error || readinessResult.error)?.message || "Payroll could not load.");
+      detailReadGeneration.current += 1;
+      setRuns([]);
+      setReadiness(null);
+      setDetail(null);
+      setDetailLoading(false);
+      setSheet(null);
+      selectRun(null);
+      setNotice(null);
+      setError("Payroll access could not be verified. Retry to load current authorised data.");
       return;
     }
     const rows = Array.isArray(runsResult.data) ? runsResult.data : [];
     setRuns(rows);
     setReadiness(readinessResult.data || null);
-    const next = preferId || selectedId || rows[0]?.id || null;
-    setSelectedId(next && rows.some((row) => row.id === next) ? next : rows[0]?.id || null);
+    const chosen = manualSelectionGeneration.current !== manualSelectionAtStart
+      ? selectedRunRef.current
+      : preferCreated && preferId
+        ? preferId
+        : selectedRunRef.current || preferId || rows[0]?.id || null;
+    selectRun(chosen && rows.some((row) => row.id === chosen) ? chosen : rows[0]?.id || null);
   }
 
   async function loadDetail(id) {
+    // A late write callback for run A must not invalidate the current run B
+    // fetch, nor reintroduce A's private amounts under B's selection.
+    if (!id || selectedRunRef.current !== id) return;
+    const generation = ++detailReadGeneration.current;
     setDetailLoading(true); setError(null);
-    const { data, error: detailError } = await supabase.rpc("payroll_run_detail", { p_run_id: id });
+    let result;
+    try {
+      result = await supabase.rpc("payroll_run_detail", { p_run_id: id });
+    } catch (failure) {
+      result = { error: failure };
+    }
+    // An old run may resolve after a newer selection or an unmount.
+    if (generation !== detailReadGeneration.current || selectedRunRef.current !== id) return;
     setDetailLoading(false);
-    if (detailError) { setError(detailError.message || "Payroll run could not be opened."); return; }
-    setDetail(data || null);
+    if (result.error || result.data?.run?.id !== id) {
+      setDetail(null);
+      setError(result.error?.message || "Payroll run could not be verified.");
+      return;
+    }
+    setDetail(result.data || null);
   }
 
   async function createRun(form) {
+    // Creating a payroll run is not safely repeatable on double click.
+    if (busy || creationWriteBusyRef.current) return;
+    creationWriteBusyRef.current = true;
+    const manualSelectionAtCreation = manualSelectionGeneration.current;
     setBusy(true); setError(null); setNotice(null);
-    const { data, error: createError } = await supabase.rpc("payroll_create_run", {
-      p_label: form.label.trim(),
-      p_period_start: form.start,
-      p_period_end: form.end,
-      p_currency: form.currency,
-      p_pay_date: form.payDate || null,
-      p_note: form.note.trim() || null,
-    });
-    setBusy(false);
-    if (createError) { setError(createError.message || "Payroll run could not be created."); return; }
-    setSheet(null);
-    setNotice("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.");
-    await loadRuns(data);
+    let recorded = false;
+    try {
+      const { data, error } = await supabase.rpc("payroll_create_run", {
+        p_label: form.label.trim(),
+        p_period_start: form.start,
+        p_period_end: form.end,
+        p_currency: form.currency,
+        p_pay_date: form.payDate || null,
+        p_note: form.note.trim() || null,
+      });
+      if (error) {
+        setError(error.message || "Payroll run could not be created.");
+        return;
+      }
+      // Without an authoritative new run ID, never claim creation succeeded.
+      if (!data) {
+        setError("Payroll creation could not be confirmed. Refresh the run list before retrying.");
+        return;
+      }
+      recorded = true;
+      setSheet(null);
+      setNotice("Draft payroll run created from salary-eligible protected employee records. Active volunteers remain outside ordinary salary payroll.");
+      await loadRuns(data, manualSelectionGeneration.current === manualSelectionAtCreation);
+    } catch (failure) {
+      setError(recorded
+        ? "Payroll was created, but the run list could not refresh. Reload before continuing."
+        : "Payroll creation outcome is unconfirmed. Review existing runs before trying again.");
+    } finally {
+      creationWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function saveLine(form) {
-    if (!detail?.run?.id || !form.employeeId) return;
+    const runId = detail?.run?.id;
+    if (!runId || selectedRunRef.current !== runId || !form.employeeId || busy || lineWriteBusyRef.current) return;
+    lineWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { error: lineError } = await supabase.rpc("payroll_set_line", {
-      p_run_id: detail.run.id,
-      p_profile_id: form.employeeId,
-      p_line_id: form.lineId || null,
-      p_category: form.category,
-      p_direction: form.direction,
-      p_label: form.label.trim(),
-      p_amount_minor: amountToMinor(form.amount),
-      p_note: form.note.trim() || null,
-    });
-    setBusy(false);
-    if (lineError) { setError(lineError.message || "Payroll line could not be saved."); return; }
-    setSheet(null);
-    setNotice("Payroll line recorded.");
-    await Promise.all([loadDetail(detail.run.id), loadRuns(detail.run.id)]);
+    let recorded = false;
+    try {
+      const { error } = await supabase.rpc("payroll_set_line", {
+        p_run_id: runId,
+        p_profile_id: form.employeeId,
+        p_line_id: form.lineId || null,
+        p_category: form.category,
+        p_direction: form.direction,
+        p_label: form.label.trim(),
+        p_amount_minor: amountToMinor(form.amount),
+        p_note: form.note.trim() || null,
+      });
+      if (error) {
+        if (selectedRunRef.current === runId)
+          setError(error.message || "Payroll line could not be saved.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId) return;
+      setSheet(null);
+      setNotice("Payroll line recorded.");
+      await Promise.all([loadDetail(runId), loadRuns(runId)]);
+    } catch (failure) {
+      if (selectedRunRef.current === runId)
+        setError(recorded
+          ? "Payroll line was recorded, but the run could not refresh. Reload before continuing."
+          : "Payroll line outcome is unconfirmed. Review the employee's lines before retrying.");
+    } finally {
+      lineWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function removeLine(entry, line) {
-    if (!detail?.run?.id || line.category === "base_salary") return;
+    const runId = detail?.run?.id;
+    if (!runId || selectedRunRef.current !== runId || line.category === "base_salary" || busy || lineWriteBusyRef.current) return;
+    lineWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { error: removeError } = await supabase.rpc("payroll_set_line", {
-      p_run_id: detail.run.id,
-      p_profile_id: entry.employee_id || entry.profile_id,
-      p_line_id: line.id,
-      p_category: line.category,
-      p_direction: line.direction,
-      p_label: line.label,
-      p_amount_minor: null,
-      p_note: "Removed during payroll preparation",
-    });
-    setBusy(false);
-    if (removeError) { setError(removeError.message || "Payroll line could not be removed."); return; }
-    setNotice("Payroll line removed from the draft.");
-    await Promise.all([loadDetail(detail.run.id), loadRuns(detail.run.id)]);
+    let recorded = false;
+    try {
+      const { error } = await supabase.rpc("payroll_set_line", {
+        p_run_id: runId,
+        p_profile_id: entry.employee_id || entry.profile_id,
+        p_line_id: line.id,
+        p_category: line.category,
+        p_direction: line.direction,
+        p_label: line.label,
+        p_amount_minor: null,
+        p_note: "Removed during payroll preparation",
+      });
+      if (error) {
+        if (selectedRunRef.current === runId)
+          setError(error.message || "Payroll line could not be removed.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId) return;
+      setSheet(null);
+      setNotice("Payroll line removed from the draft.");
+      await Promise.all([loadDetail(runId), loadRuns(runId)]);
+    } catch (failure) {
+      if (selectedRunRef.current === runId)
+        setError(recorded
+          ? "The removal was recorded, but Payroll could not refresh. Reload before continuing."
+          : "Line-removal outcome is unconfirmed. Review the employee's lines before retrying.");
+    } finally {
+      lineWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function submitRun(note) {
+    const runId = detail?.run?.id;
+    // Approval and submission are attributable state transitions. Keep one
+    // request at a time and never act from a stale run's decision composer.
+    if (!runId || selectedRunRef.current !== runId || busy || decisionWriteBusyRef.current) return;
+    const readGenerationAtStart = detailReadGeneration.current;
+    decisionWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { error: submitError } = await supabase.rpc("payroll_submit_run", { p_run_id: detail.run.id, p_note: note.trim() });
-    setBusy(false);
-    if (submitError) { setError(submitError.message || "Payroll could not be submitted."); return; }
-    setSheet(null);
-    setNotice("Payroll submitted for Group Pastor approval.");
-    await Promise.all([loadDetail(detail.run.id), loadRuns(detail.run.id)]);
+    let recorded = false;
+    try {
+      const { error } = await supabase.rpc("payroll_submit_run", {
+        p_run_id: runId,
+        p_note: note.trim(),
+      });
+      if (error) {
+        if (selectedRunRef.current === runId && readGenerationAtStart === detailReadGeneration.current)
+          setError(error.message || "Payroll could not be submitted.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId || readGenerationAtStart !== detailReadGeneration.current) return;
+      setSheet(null);
+      setNotice("Payroll submitted for Group Pastor approval.");
+      await Promise.all([loadDetail(runId), loadRuns(runId)]);
+    } catch (failure) {
+      if (selectedRunRef.current === runId && readGenerationAtStart === detailReadGeneration.current)
+        setError(recorded
+          ? "The decision succeeded, but Payroll could not refresh. Reload before continuing."
+          : "The decision outcome is unconfirmed. Review the Payroll run before attempting it again.");
+    } finally {
+      decisionWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function approveRun(note) {
+    const runId = detail?.run?.id;
+    // Approval and submission are attributable state transitions. Keep one
+    // request at a time and never act from a stale run's decision composer.
+    if (!runId || selectedRunRef.current !== runId || busy || decisionWriteBusyRef.current) return;
+    const readGenerationAtStart = detailReadGeneration.current;
+    decisionWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
-    const { error: approveError } = await supabase.rpc("payroll_approve_run", { p_run_id: detail.run.id, p_note: note.trim() });
-    setBusy(false);
-    if (approveError) { setError(approveError.message || "Payroll could not be approved."); return; }
-    setSheet(null);
-    setNotice("Payroll approved and locked.");
-    await Promise.all([loadDetail(detail.run.id), loadRuns(detail.run.id)]);
+    let recorded = false;
+    try {
+      const { error } = await supabase.rpc("payroll_approve_run", {
+        p_run_id: runId,
+        p_note: note.trim(),
+      });
+      if (error) {
+        if (selectedRunRef.current === runId && readGenerationAtStart === detailReadGeneration.current)
+          setError(error.message || "Payroll could not be approved.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId || readGenerationAtStart !== detailReadGeneration.current) return;
+      setSheet(null);
+      setNotice("Payroll approved and locked.");
+      await Promise.all([loadDetail(runId), loadRuns(runId)]);
+    } catch (failure) {
+      if (selectedRunRef.current === runId && readGenerationAtStart === detailReadGeneration.current)
+        setError(recorded
+          ? "The decision succeeded, but Payroll could not refresh. Reload before continuing."
+          : "The decision outcome is unconfirmed. Review the Payroll run before attempting it again.");
+    } finally {
+      decisionWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
   async function createCorrection(reason) {
+    const runId = detail?.run?.id;
+    if (!runId || selectedRunRef.current !== runId || busy || creationWriteBusyRef.current) return;
+    creationWriteBusyRef.current = true;
+    const manualSelectionAtCorrection = manualSelectionGeneration.current;
     setBusy(true); setError(null); setNotice(null);
-    const { data, error: correctionError } = await supabase.rpc("payroll_create_correction", {
-      p_source_run_id: detail.run.id,
-      p_reason: reason.trim(),
-    });
-    setBusy(false);
-    if (correctionError) { setError(correctionError.message || "Payroll correction could not be created."); return; }
-    setSheet(null);
-    setNotice("Attributable correction draft created.");
-    await loadRuns(data);
+    let recorded = false;
+    try {
+      const { data, error } = await supabase.rpc("payroll_create_correction", {
+        p_source_run_id: runId, p_reason: reason.trim(),
+      });
+      if (error) {
+        if (selectedRunRef.current === runId)
+          setError(error.message || "Payroll correction could not be created.");
+        return;
+      }
+      if (!data) {
+        if (selectedRunRef.current === runId)
+          setError("Correction creation could not be confirmed. Review existing runs before retrying.");
+        return;
+      }
+      recorded = true;
+      if (selectedRunRef.current !== runId) return;
+      setSheet(null);
+      setNotice("Attributable correction draft created.");
+      await loadRuns(data, manualSelectionGeneration.current === manualSelectionAtCorrection);
+    } catch (failure) {
+      if (selectedRunRef.current === runId)
+        setError(recorded
+          ? "Correction was created, but Payroll could not refresh. Reload before continuing."
+          : "Correction outcome is unconfirmed. Review existing runs before attempting it again.");
+    } finally {
+      creationWriteBusyRef.current = false;
+      setBusy(false);
+    }
   }
 
-  const run = detail?.run || null;
-  const entries = Array.isArray(detail?.entries) ? detail.entries : [];
+  // Render only data bound to the currently selected payroll run, even
+  // before the selection effect begins its next asynchronous fetch.
+  const verifiedDetail = detail?.run?.id === selectedId ? detail : null;
+  const run = verifiedDetail?.run || null;
+  const entries = Array.isArray(verifiedDetail?.entries) ? verifiedDetail.entries : [];
+  const visibleSheet = sheet?.type === "create" ? sheet
+    : run && sheet?.runId === selectedId ? sheet : null;
   const flagged = useMemo(() => entries.filter((entry) => Array.isArray(entry.flags) && entry.flags.length), [entries]);
 
   if (loading) return <div className="body fpg-payroll"><LoadingState label="Loading Payroll…" /></div>;
@@ -204,7 +402,7 @@ export default function AdminPayroll({ me }) {
       </div>
     </header>
 
-    {error && <ProductNotice tone="error" title="Payroll">{error}</ProductNotice>}
+    {error && <ProductNotice tone="error" title="Payroll">{error} {!runs.length && <button type="button" className="btn btn-ghost" onClick={() => void loadRuns()}>Retry Payroll access</button>}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Payroll">{notice}</ProductNotice>}
 
     {readiness && <section className="fpg-payroll-table-card">
@@ -229,7 +427,7 @@ export default function AdminPayroll({ me }) {
     <div className="fpg-payroll-layout">
       <aside className="fpg-payroll-runs" aria-label="Payroll runs">
         <div className="fpg-payroll-side-title"><span>Payroll periods</span><b>{runs.length}</b></div>
-        {runs.map((row) => <button key={row.id} type="button" className={selectedId === row.id ? "is-selected" : ""} onClick={() => setSelectedId(row.id)}>
+        {runs.map((row) => <button key={row.id} type="button" className={selectedId === row.id ? "is-selected" : ""} onClick={() => selectRun(row.id, true)}>
           <span><strong>{row.label}</strong><small>{dateLabel(row.period_start)} – {dateLabel(row.period_end)}</small></span>
           <span className={"fpg-payroll-status " + statusTone(row.status)}>{statusLabel(row.status)}</span>
           <b>{money(row.total_net_minor, row.currency)}</b>
@@ -258,9 +456,9 @@ export default function AdminPayroll({ me }) {
           </section>
 
           <div className="fpg-payroll-actions">
-            {canPrepare && run.status === "draft" && <button className="btn" disabled={busy} onClick={() => setSheet({ type:"submit" })}>Submit for approval</button>}
-            {canApprove && run.status === "in_review" && <button className="btn" disabled={busy} onClick={() => setSheet({ type:"approve" })}>Approve payroll</button>}
-            {canPrepare && run.status === "approved" && <button className="btn btn-ghost" disabled={busy} onClick={() => setSheet({ type:"correction" })}>Create correction</button>}
+            {canPrepare && run.status === "draft" && <button className="btn" disabled={busy} onClick={() => setSheet({ type:"submit", runId:run.id })}>Submit for approval</button>}
+            {canApprove && run.status === "in_review" && <button className="btn" disabled={busy} onClick={() => setSheet({ type:"approve", runId:run.id })}>Approve payroll</button>}
+            {canPrepare && run.status === "approved" && <button className="btn btn-ghost" disabled={busy} onClick={() => setSheet({ type:"correction", runId:run.id })}>Create correction</button>}
             <span>Approved payroll is immutable. Corrections create a new attributable revision.</span>
           </div>
 
@@ -275,7 +473,7 @@ export default function AdminPayroll({ me }) {
                   <td>{money(entry.deductions_minor, entry.currency)}</td>
                   <td><strong>{money(entry.net_minor, entry.currency)}</strong></td>
                   <td>{entry.flags?.length ? <span className="fpg-payroll-flags">{entry.flags.map((flag) => flag.replaceAll("_"," ")).join(" · ")}</span> : <span className="fpg-payroll-clear">Clear</span>}</td>
-                  <td>{canPrepare && run.status === "draft" ? <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"entry", entry })}>Adjust</button> : <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"view", entry })}>Review</button>}</td>
+                  <td>{canPrepare && run.status === "draft" ? <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"entry", runId:run.id, entry })}>Adjust</button> : <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"view", runId:run.id, entry })}>Review</button>}</td>
                 </tr>)}</tbody>
               </table>
             </div>
@@ -288,12 +486,12 @@ export default function AdminPayroll({ me }) {
       </main>
     </div>
 
-    {sheet?.type === "create" && <CreateRunSheet busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
-    {sheet?.type === "entry" && <EntrySheet entry={sheet.entry} busy={busy} onClose={() => setSheet(null)} onSave={saveLine} onRemove={removeLine} />}
-    {sheet?.type === "view" && <ViewEntrySheet entry={sheet.entry} onClose={() => setSheet(null)} />}
-    {sheet?.type === "submit" && <DecisionSheet title="Submit Payroll" action="Submit for approval" busy={busy} onClose={() => setSheet(null)} onSave={submitRun} />}
-    {sheet?.type === "approve" && <DecisionSheet title="Approve Payroll" action="Approve and lock" busy={busy} onClose={() => setSheet(null)} onSave={approveRun} />}
-    {sheet?.type === "correction" && <DecisionSheet title="Create correction" action="Create correction draft" busy={busy} onClose={() => setSheet(null)} onSave={createCorrection} />}
+    {visibleSheet?.type === "create" && <CreateRunSheet busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
+    {visibleSheet?.type === "entry" && <EntrySheet entry={visibleSheet.entry} busy={busy} onClose={() => setSheet(null)} onSave={saveLine} onRemove={removeLine} />}
+    {visibleSheet?.type === "view" && <ViewEntrySheet entry={visibleSheet.entry} onClose={() => setSheet(null)} />}
+    {visibleSheet?.type === "submit" && <DecisionSheet title="Submit Payroll" action="Submit for approval" busy={busy} onClose={() => setSheet(null)} onSave={submitRun} />}
+    {visibleSheet?.type === "approve" && <DecisionSheet title="Approve Payroll" action="Approve and lock" busy={busy} onClose={() => setSheet(null)} onSave={approveRun} />}
+    {visibleSheet?.type === "correction" && <DecisionSheet title="Create correction" action="Create correction draft" busy={busy} onClose={() => setSheet(null)} onSave={createCorrection} />}
   </div>;
 }
 
