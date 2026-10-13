@@ -2,18 +2,29 @@
 -- This is NOT a release authorisation, backup/restore test, privilege penetration test,
 -- migration rehearsal or visual acceptance. Do not run pending migrations from this file.
 -- Intentionally returns aggregate counts/booleans only; no personal/HR records.
+-- Manifest is the 24 unapplied timestamp versions independently reconciled
+-- against production on 12 Oct 2026 (PR #50, comment 6129962791).
+-- Reconcile it again against the live migration ledger before actual cutover.
 WITH expected_pending(version) AS (
   VALUES
-    ('20261007090000'),('20261007093000'),('20261007094500'),
-    ('20261007095500'),('20261007102000'),('20261007103000'),
-    ('20261007104000'),('20261007180500'),('20261010010000'),
-    ('20261010030000')
+    ('20261007083250'),('20261007090000'),('20261007093000'),
+    ('20261007094500'),('20261007095500'),('20261007102000'),
+    ('20261007103000'),('20261007104000'),('20261007180500'),
+    ('20261010010000'),('20261010030000'),('20261011100000'),
+    ('20261011103000'),('20261011110000'),('20261011113000'),
+    ('20261011120000'),('20261011123000'),('20261011130000'),
+    ('20261011183000'),('20261011190000'),('20261011193000'),
+    ('20261011195500'),('20261011201000'),('20261012041000')
 )
 SELECT
   current_timestamp AS inspected_at,
   (SELECT count(*) FROM supabase_migrations.schema_migrations) AS applied_migrations,
+  (SELECT count(*) FROM expected_pending) AS release_manifest_pending_versions,
   (SELECT count(*) FROM expected_pending p
     JOIN supabase_migrations.schema_migrations m ON m.version=p.version) AS expected_pending_already_applied,
+  (SELECT count(*) FROM expected_pending p WHERE NOT EXISTS
+    (SELECT 1 FROM supabase_migrations.schema_migrations m WHERE m.version=p.version))
+      AS expected_pending_still_unapplied,
   (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relkind='r') AS public_tables,
   (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
@@ -23,6 +34,16 @@ SELECT
   (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='hr_private' AND c.relkind='r'
       AND has_table_privilege('authenticated',c.oid,'SELECT')) AS protected_hr_authenticated_select_grants,
+  -- Backup scope signals only: counts never substitute for encrypted Auth/Storage restore.
+  (SELECT count(*) FROM auth.users) AS auth_users_needing_preservation,
+  (SELECT count(*) FROM storage.buckets WHERE id IN ('ceac-hr-private','ceac-operational-private'))
+    AS required_storage_buckets_present,
+  (SELECT count(*) FROM storage.buckets
+    WHERE id IN ('ceac-hr-private','ceac-operational-private') AND public)
+    AS required_storage_buckets_public,
+  (SELECT count(*) FROM storage.objects
+    WHERE bucket_id IN ('ceac-hr-private','ceac-operational-private'))
+    AS private_storage_objects_needing_preservation,
   (SELECT count(*) FROM auth.mfa_factors WHERE status='verified') AS verified_production_mfa_factors,
   (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
     WHERE n.nspname='public' AND p.prosecdef
@@ -37,6 +58,17 @@ SELECT
     WHERE r.leave_kind='annual' AND r.routing_confirmed
       AND v.source_reference='CEAC_OWNER_LEAVE_ROUTING_2026-10-02') AS annual_policy_rows_targeted_by_pending_update,
   (SELECT count(*) FROM public.employment_records) AS existing_employment_records,
+  (SELECT count(*) FROM public.workforce_day_types WHERE active)
+    AS active_workforce_day_types,
+  (SELECT count(distinct v.profile_id) FROM public.workforce_schedule_versions v
+    WHERE v.effective_from <= current_date
+      AND (v.effective_to IS NULL OR v.effective_to >= current_date)
+      AND NOT EXISTS (
+        SELECT 1 FROM public.workforce_schedule_versions successor
+        WHERE successor.supersedes_id=v.id
+          AND successor.effective_from<=current_date
+          AND (successor.effective_to IS NULL OR successor.effective_to>=current_date)
+      )) AS profiles_with_effective_workforce_schedule,
   (SELECT count(*) FROM public.pending_invitations
     WHERE resolved_at IS NULL AND revoked_at IS NULL) AS unresolved_invitations,
   (to_regclass('public.attendance_presence_evidence') IS NOT NULL) AS redundant_attendance_evidence_table_preexists,
