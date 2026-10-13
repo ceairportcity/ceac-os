@@ -27,11 +27,6 @@ export default function MandatoryMfaGate({ children }) {
       const { data, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (assuranceError) throw assuranceError;
       if (generation !== refreshGeneration.current) return;
-      if (data?.currentLevel === "aal2") {
-        setState("allowed");
-        return;
-      }
-
       // This is the only Data API call permitted before AAL2. The server
       // returns one boolean and verifies Google OAuth, the preserved Auth ID,
       // the matching profile email, and the profile's active state.
@@ -39,7 +34,11 @@ export default function MandatoryMfaGate({ children }) {
         .rpc("ceac_google_mfa_eligible");
       if (eligibilityError) throw eligibilityError;
       if (generation !== refreshGeneration.current) return;
-      setState(eligible === true ? "enroll" : "denied");
+      if (eligible !== true) {
+        setState("denied");
+        return;
+      }
+      setState(data?.currentLevel === "aal2" ? "allowed" : "enroll");
     } catch (failure) {
       if (generation !== refreshGeneration.current) return;
       setState("error");
