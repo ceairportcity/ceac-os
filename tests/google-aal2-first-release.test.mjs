@@ -30,6 +30,24 @@ test("new Auth users require Google plus a live CEAC invitation", () => {
   assert.match(migration, /revoke all on function public\.ceac_before_user_created\(jsonb\) from public, anon, authenticated/i);
 });
 
+test("all authentication SQL functions use matched dollar-quote delimiters", () => {
+  for (const name of [
+    "ceac_before_user_created",
+    "ceac_session_is_google",
+    "ceac_google_mfa_eligible",
+    "ceac_session_is_google_aal2",
+    "ceac_require_google_aal2",
+  ]) {
+    const definition = migration
+      .split(`create or replace function public.${name}`)[1]
+      ?.split(`comment on function public.${name}`)[0] || "";
+    const opener = definition.match(/\nas (\$[A-Za-z0-9_]*\$)\n/)?.[1];
+    const closer = definition.trimEnd().match(/\n(\$[A-Za-z0-9_]*\$);$/)?.[1];
+    assert.ok(opener, `${name} must have a dollar-quoted body opener`);
+    assert.equal(closer, opener, `${name} must close with its matching delimiter`);
+  }
+});
+
 test("signed-out visitors reach sign-in and every AAL2 session rechecks CEAC admission", () => {
   assert.match(app, new RegExp("<MandatoryMfaGate>\\s*<AuthenticatedApp\\s*/>\\s*</MandatoryMfaGate>", "s"));
   assert.doesNotMatch(app, /AccountPassword|\/activate|\/reset-password/);
