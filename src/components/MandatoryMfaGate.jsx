@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AuthFrame from "./AuthFrame";
 import AccountMfaSetup from "./AccountMfaSetup";
@@ -6,13 +6,16 @@ import AccountMfaSetup from "./AccountMfaSetup";
 export default function MandatoryMfaGate({ children }) {
   const [state, setState] = useState("checking");
   const [error, setError] = useState(null);
+  const refreshGeneration = useRef(0);
 
   const refresh = useCallback(async () => {
+    const generation = ++refreshGeneration.current;
     setState("checking");
     setError(null);
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
+      if (generation !== refreshGeneration.current) return;
 
       // Signed-out visitors must reach the Google-only sign-in screen. MFA
       // enrollment is never offered until Supabase has established a session.
@@ -23,6 +26,7 @@ export default function MandatoryMfaGate({ children }) {
 
       const { data, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (assuranceError) throw assuranceError;
+      if (generation !== refreshGeneration.current) return;
       if (data?.currentLevel === "aal2") {
         setState("allowed");
         return;
@@ -34,8 +38,10 @@ export default function MandatoryMfaGate({ children }) {
       const { data: eligible, error: eligibilityError } = await supabase
         .rpc("ceac_google_mfa_eligible");
       if (eligibilityError) throw eligibilityError;
+      if (generation !== refreshGeneration.current) return;
       setState(eligible === true ? "enroll" : "denied");
     } catch (failure) {
+      if (generation !== refreshGeneration.current) return;
       setState("error");
       setError(failure?.message || "CEAC could not verify account security.");
     }
