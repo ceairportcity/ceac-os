@@ -2,6 +2,56 @@
 -- Interactive access is Google OAuth only and every enabled user must present
 -- a verified TOTP factor (AAL2) before Data API or private Storage access.
 
+-- Auth must be configured to run this as the Before User Created hook.
+-- Existing users with the same verified email are linked automatically and keep
+-- their auth.users.id. A genuinely new Auth user requires a live CEAC invitation.
+create or replace function public.ceac_before_user_created(event jsonb)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $
+declare
+  candidate_email text := lower(coalesce(event -> 'user' ->> 'email', ''));
+  candidate_provider text := coalesce(event -> 'user' -> 'app_metadata' ->> 'provider', '');
+begin
+  if candidate_provider <> 'google' then
+    return jsonb_build_object(
+      'error', jsonb_build_object(
+        'message', 'CEAC accounts must use an authorised Google invitation.',
+        'http_code', 403
+      )
+    );
+  end if;
+
+  if candidate_email <> ''
+     and exists (
+       select 1
+       from public.pending_invitations i
+       where lower(i.email) = candidate_email
+         and i.resolved_at is null
+         and i.revoked_at is null
+         and i.expires_at > now()
+     ) then
+    return '{}'::jsonb;
+  end if;
+
+  return jsonb_build_object(
+    'error', jsonb_build_object(
+      'message', 'This Google account is not authorised for CEAC.',
+      'http_code', 403
+    )
+  );
+end;
+$;
+
+comment on function public.ceac_before_user_created(jsonb) is
+  'Before User Created Auth hook: permits only Google identities with a live CEAC invitation. Existing verified-email users link without user creation.';
+
+revoke all on function public.ceac_before_user_created(jsonb) from public, anon, authenticated;
+grant execute on function public.ceac_before_user_created(jsonb) to supabase_auth_admin;
+
 create or replace function public.ceac_session_is_google()
 returns boolean
 language sql
