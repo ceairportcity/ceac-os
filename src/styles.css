@@ -219,6 +219,7 @@ input,textarea,select{font:inherit;color:inherit}
 .manager-app .home-panel-projects{border-top:1px solid var(--line);border-left:4px solid var(--amber)}
 .manager-app .home-panel-week{background:#FBFCFA}
 .manager-app .home-stat{border-radius:9px;background:#fff}
+.home-chip{font-size:12px}
 .manager-app .home-chip{min-height:26px;align-items:center;border:1px solid transparent}
 .manager-app button.home-chip{cursor:pointer}
 .manager-app button.home-chip:hover{text-decoration:underline}

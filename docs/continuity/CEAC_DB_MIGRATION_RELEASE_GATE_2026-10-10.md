@@ -1,3 +1,8 @@
+> **ARCHIVED BASELINE — NOT A CURRENT CUTOVER INSTRUCTION (12 October 2026).**
+> This file preserves the 10 October PR #27/129-version evidence for audit only. Do **not** use its ten-file pending list, 129-version total, old PR reference or GO checklist to migrate the current CEAC OS release.
+> The owner-frozen integrated application/security commit is `51223157f28e16e90acda6a35dd71389513b6d6f` on unified PR #50; the complete isolated replay executed **143/143** unique migration versions and **56/56** registered SQL gates under Work. The last independently recorded production migration inventory was **119 applied**; if it remains unchanged at cutover, **24** forward versions, not ten, are pending. Requery the *live* version/name history and compare with the exact owner-approved candidate before preparing an ordered cutover, and refuse any missing/mismatched historical version.
+> These isolated successes are not a rehearsal on restored real production data. The destructive migration-124 emptiness guard, annual-leave pre/post rows, protected Auth/Storage-aware encrypted backup and actual isolated restore, real authenticated/MFA/visual acceptance, independent review and owner GO are all mandatory before any production change. See `docs/continuity/CEAC_OWNER_RELEASE_SCOPE_FREEZE_2026-10-12.md` and `docs/continuity/CEAC_LIVE_HANDOVER.md` for active release authority.
+
 # CEAC OS — production database migration safety gate
 
 **Audit date:** 2026-10-10 UTC. **Outcome:** READ-ONLY BASELINE VERIFIED; MIGRATION RELEASE BLOCKED.  

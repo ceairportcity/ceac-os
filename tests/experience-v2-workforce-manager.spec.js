@@ -29,7 +29,7 @@ test("Stage 10 Family D3 preserves Manager Workforce authority while establishin
   expect(workforce).toContain('leaveAction(l.id,"manager_approved")');
   expect(workforce).toContain('Manager approval → Administration final approval');
   expect(workforce).toContain('Confirmed leave process');
-  expect(workforce).toContain('Annual, Sick, Maternity, Paternity and Study leave are available');
+  expect(workforce).toContain('Annual, Sick, Maternity, Paternity and Study requests follow');
   expect(workforce).not.toContain('onClick={()=>leaveAction(l.id,"escalated")}');
   expect(workforce).toContain("Manager role alone does not grant this authority.");
   expect(workforce).toContain("never converted into an automatic absence or performance judgement");

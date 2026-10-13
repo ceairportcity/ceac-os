@@ -22,7 +22,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(fs.existsSync(contract), contract).toBeTruthy();
 
   const lock = fs.readFileSync(contract, "utf8");
-  const css = fs.readFileSync("src/experience-v2/executive-overview/executive-redesign.css", "utf8");
+  const css = fs.readFileSync("src/role-styles/executive-redesign.css", "utf8");
   const overview = fs.readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
   const home = fs.readFileSync("src/screens/ExecutiveHome.jsx", "utf8");
   const shell = fs.readFileSync("src/experience-v2/shell/ShellV2.jsx", "utf8");

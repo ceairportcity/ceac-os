@@ -56,8 +56,8 @@ test("Stage 11B establishes isolated V2 calendar and data visualisation families
   expect(main).not.toContain('import "./experience-v2/calendar/calendar.css";');
   expect(calendar).toContain('import "./calendar.css";');
   expect(main).toContain('import "./experience-v2/data-viz/data-viz.css";');
-  expect(executive).toContain('from "../data-viz/DataVizV2"');
-  expect(executive).toContain("<DataVizChart");
+  expect(executive).toContain('from "./strategyProgress.js"');
+  expect(executive).toContain("const progress = strategyProgress(row)");
   expect(executive).not.toContain("function MiniTrend");
   expect(executive).not.toContain('className="executivev2-trend"');
 });

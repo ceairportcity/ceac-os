@@ -17,8 +17,8 @@ begin
   end if;
 
   select count(*) into n from public.capability_definitions;
-  if n<>17 then
-    raise exception 'Capability authority gate failure: expected 17 canonical capabilities after Phase 3 announcement reconciliation, found %.',n;
+  if n<>23 then
+    raise exception 'Capability authority gate failure: expected 23 canonical capabilities including bounded Technical Support, found %.',n;
   end if;
 
   if not exists(

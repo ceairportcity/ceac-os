@@ -68,3 +68,42 @@
 .ceac-support-history-list strong { display: block; font-size: .88rem; text-transform: capitalize; }
 .ceac-support-history-list time { display: block; margin-top: 3px; color: #597186; font-size: .8rem; }
 .ceac-support-history-list p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0 0; }
+
+/* Help Desk filters are intentionally bounded to the RLS-authorised loaded queue. */
+.ceac-support-desk-filters {
+  display: grid; grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr);
+  gap: 12px; align-items: end; margin: 14px 0 10px;
+}
+.ceac-support-desk-filters label { display: grid; gap: 6px; font-size: .84rem; font-weight: 650; }
+.ceac-support-desk-filters input, .ceac-support-desk-filters select {
+  width: 100%; min-width: 0; border: 1px solid #bdcbd8; border-radius: 9px;
+  background: #fff; padding: 10px 12px; color: inherit; font: inherit;
+}
+.ceac-support-desk-filters input:focus-visible,
+.ceac-support-desk-filters select:focus-visible {
+  outline: 2px solid #284b75; outline-offset: 2px;
+}
+@media (max-width: 620px) {
+  .ceac-support-desk-filters { grid-template-columns: 1fr; }
+}
+
+
+/* Compact review panel reused in the existing Manager and Administration
+   overviews. Never suggests that a business approval is an account grant. */
+.ceac-support-approvals { margin: 22px auto; max-width: 1240px; padding: 20px; }
+.ceac-support-approvals h2 { font-size: 1.1rem; margin: 0 0 8px; }
+.ceac-support-approval-item { padding: 14px 0; border-top: 1px solid #dbe3eb; }
+.ceac-support-approval-item > p { margin: 6px 0 8px; overflow-wrap: anywhere; }
+.ceac-support-approval-item > small { display: block; margin-bottom: 10px; color: #547087; }
+.ceac-support-approval-item label { display: grid; gap: 8px; font-weight: 650; margin: 10px 0; }
+.ceac-support-approval-item textarea, .ceac-support-approval-item input {
+  box-sizing: border-box; width: 100%; font: inherit; padding: 10px 12px;
+  border: 1px solid #bdcbd8; border-radius: 9px; background: #fff;
+}
+.ceac-support-approval-item textarea { min-height: 75px; resize: vertical; }
+.ceac-support-approvals .ceac-support-section-actions,
+.ceac-support-approval-item .ceac-support-section-actions {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+}
+.ceac-support-access-ledger { margin: 18px 0; border-top: 1px solid #dbe3eb; padding-top: 6px; }
+.ceac-support-access-ledger .ceac-support-form { margin-top: 12px; }

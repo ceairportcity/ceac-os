@@ -73,10 +73,10 @@ function AdminCalendarRail({ meetings }) {
     <div className="adminv2-calendar-selection" role="status">
       <strong>{new Intl.DateTimeFormat("en-GB", {weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(selectedDay+"T00:00:00Z"))}</strong>
       <span>{!withinLoadedWindow
-        ? "Upcoming meeting data is limited to the next 14 days."
+        ? "This calendar previews at most six upcoming meetings within the next 14 days."
         : selectedMeetings.length
           ? `${selectedMeetings.length} recorded meeting${selectedMeetings.length === 1 ? "" : "s"}`
-          : "No meetings recorded for this date in the current window."}</span>
+          : "No meeting is shown for this date in the limited upcoming preview."}</span>
     </div>
   </div>;
 }
@@ -134,7 +134,7 @@ function UnitRow({ unit, onInvite }) {
   const meta = unit.head
     ? `${unit.head.full_name} · ${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`
     : pending
-      ? `Invitation sent to ${unit.pending.email} · ${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`
+      ? `Account invitation pending for ${unit.pending.email} · ${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`
       : `${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`;
 
   return <div className="adminv2-unit-row">
@@ -185,6 +185,7 @@ export default function AdminOverviewV2({
   onOpenReports,
   onOpenFinance,
   onOpenPeople,
+  onOpenInvitations,
   onOpenProtectedHR,
   onOpenPayroll,
   onOpenProjects,
@@ -210,6 +211,8 @@ export default function AdminOverviewV2({
       + Number(payrollReadiness.identity_review_count || 0)
     : 0;
   const onboardingAttention = pendingInvitations.length;
+  const expiredInvitationCount = pendingInvitations.filter((invitation) =>
+    invitation.expires_at && Date.parse(invitation.expires_at) <= Date.now()).length;
   const reportingAttention = reportingGap;
   const totalAttention = decisionCount + onboardingAttention + peopleAttention + payrollAttention + deliveryAttention + reportingAttention;
   const adminFirstName = String(me?.full_name || "").trim().split(/\s+/)[0] || "there";
@@ -240,9 +243,11 @@ export default function AdminOverviewV2({
       : pendingInvitations.length && canManagePeople
         ? {
           eyebrow: "Onboarding",
-          title: `${pendingInvitations.length} Staff invitation${pendingInvitations.length === 1 ? "" : "s"} awaiting activation`,
-          detail: "Continue account onboarding through the authorised People & Access workspace.",
-          action: onOpenPeople,
+          title: `${pendingInvitations.length} Staff invitation${pendingInvitations.length === 1 ? "" : "s"} need follow-up`,
+          detail: expiredInvitationCount
+            ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Review before resending.`
+            : "Continue account onboarding through the authorised People & Access workspace.",
+          action: onOpenInvitations,
           label: "Open invitations",
         }
         : mine.length
@@ -277,9 +282,13 @@ export default function AdminOverviewV2({
             <div className="adminv2-hero-title">
               <span className="adminv2-eyebrow">Your CEAC workspace</span>
               <h1>{greeting}, {adminFirstName}<span className="adminv2-greeting-mark">.</span></h1>
-              <p>{totalAttention
-                ? `You have ${totalAttention} recorded item${totalAttention === 1 ? "" : "s"} to review. Start with what needs a decision, then move the work forward.`
-                : "Your decision inbox is clear. Keep the people, work and organisation moving forward."}</p>
+              <p>{loading
+                ? "Loading your recorded Administration priorities…"
+                : loadFailed
+                  ? "The latest Administration priorities could not be verified. Retry the connection before making decisions."
+                  : totalAttention
+                    ? `You have ${totalAttention} recorded item${totalAttention === 1 ? "" : "s"} to review. Start with what needs a decision, then move the work forward.`
+                    : "Your decision inbox is clear. Keep the people, work and organisation moving forward."}</p>
             </div>
           </div>
           <div className="adminv2-intro-actions">
@@ -294,7 +303,8 @@ export default function AdminOverviewV2({
             <span><CeacIcon name="calendar" size="row" decorative /> Coming up</span>
             <button type="button" onClick={() => onScheduleMeeting?.({ scope: "organisation", organisation: true })} className="adminv2-agenda-add">Schedule <CeacIcon name="chevronRight" size="meta" decorative /></button>
           </div>
-          {loading ? <div className="adminv2-agenda-empty">Loading your schedule…</div> : nextMeetings.length
+          {loadFailed ? <div className="adminv2-agenda-empty" role="status">Current meeting information could not be verified.</div>
+            : loading ? <div className="adminv2-agenda-empty">Loading your schedule…</div> : nextMeetings.length
             ? <div className="adminv2-agenda-list">
               {nextMeetings.map((meeting) => <button type="button" key={meeting.id} className="adminv2-agenda-item" onClick={() => onOpenMeeting?.(meeting.id)}>
                 <span className="adminv2-agenda-date">{formatDate(meeting.starts_at, {weekday:"short",hour:"2-digit",minute:"2-digit"})}</span>
@@ -302,11 +312,11 @@ export default function AdminOverviewV2({
                 <CeacIcon name="chevronRight" size="meta" decorative />
               </button>)}
             </div>
-            : <div className="adminv2-agenda-empty">No upcoming meetings on record in the next 14 days.</div>}
-          <div className="adminv2-agenda-foot">
-            <span><strong>{pendingInvitations.length}</strong> invitations pending</span>
+            : <div className="adminv2-agenda-empty">No upcoming meetings were returned in this limited 14-day preview.</div>}
+          {!loading && !loadFailed ? <div className="adminv2-agenda-foot">
+            <span><strong>{pendingInvitations.length}</strong> invitations need follow-up</span>
             <span><strong>{leaveQueue.length}</strong> leave decisions</span>
-          </div>
+          </div> : null}
         </aside>
       </header>
 
@@ -362,13 +372,13 @@ export default function AdminOverviewV2({
               onClick={onOpenWorkflows}
             /> : null}
 
-            {pendingInvitations.length ? <AdminActionRow
+            {pendingInvitations.length && canManagePeople ? <AdminActionRow
               icon="people"
-              title={`Pending Staff invitations · ${pendingInvitations.length}`}
-              meta="Activation is still outstanding. Existing identities must be reconciled rather than invited again."
+              title={`Staff invitations to review · ${pendingInvitations.length}`}
+              meta={expiredInvitationCount ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Check before resending.` : "Activation is outstanding. Reconcile existing identities rather than inviting again."}
               status="Onboarding"
               statusTone="action"
-              onClick={onOpenPeople}
+              onClick={onOpenInvitations}
             /> : null}
 
             {leaveQueue.map((request) => <AdminActionRow
@@ -408,7 +418,7 @@ export default function AdminOverviewV2({
           >
             <div className="adminv2-stat-grid is-four">
               <StatTile label="Employees" value={employeeRoster.length} supporting="Roster records" icon="people" tone="action" onClick={canManagePeople ? onOpenPeople : undefined} />
-              <StatTile label="Pending invitations" value={pendingInvitations.length} supporting="Awaiting activation" icon="notification" tone={pendingInvitations.length ? "action" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Invitations to review" value={pendingInvitations.length} supporting={expiredInvitationCount ? `${expiredInvitationCount} expired` : "Awaiting activation"} icon="notification" tone={pendingInvitations.length ? "action" : "neutral"} onClick={canManagePeople ? onOpenInvitations : undefined} />
               <StatTile label="Identity review" value={identityReviewCount} supporting="Needs confirmation" icon="warning" tone={identityReviewCount ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
               <StatTile label="Needs attention" value={peopleAttention} supporting="Recorded gaps" icon="notification" tone={peopleAttention ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
             </div>
@@ -427,10 +437,10 @@ export default function AdminOverviewV2({
             supporting="Recorded sessions and confirmed leave are operational context only. No work session is not an absence and never creates a Payroll deduction."
           >
             <div className="adminv2-stat-grid is-four">
-              <StatTile label="Working now" value={today?.working || 0} supporting="Current sessions" icon="people" tone="success" onClick={onOpenAttendance} />
+              <StatTile label="Open work sessions" value={today?.working || 0} supporting="Not verified live presence" icon="people" tone="neutral" onClick={onOpenAttendance} />
               <StatTile label="Approved leave" value={today?.leave || 0} supporting="Today" icon="time" tone="action" onClick={onOpenAttendance} />
               <StatTile label="No session" value={today?.notStarted || 0} supporting="Not absence" icon="pending" tone="neutral" onClick={onOpenAttendance} />
-              <StatTile label="People on record" value={today?.headcount || 0} supporting="Active people" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Active accounts" value={today?.headcount || 0} supporting="Login profiles, not the full employee roster" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
             </div>
           </DataPanel>
           <DataPanel
@@ -562,7 +572,7 @@ export default function AdminOverviewV2({
               status={meeting.provider === "zoom" ? "Zoom" : "Meeting"}
               statusTone="action"
               onClick={() => onOpenMeeting?.(meeting.id)}
-            />) : <Quiet icon="calendar">No upcoming meeting is recorded in the next 14 days.</Quiet>}
+            />) : <Quiet icon="calendar">No upcoming meeting appears in this limited 14-day preview.</Quiet>}
           </DataPanel>
 
           {mine.length ? <DataPanel

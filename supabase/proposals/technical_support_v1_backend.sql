@@ -1,7 +1,7 @@
--- CEAC Technical Support v1 — SCHEMA PROPOSAL ONLY, NOT A CANONICAL MIGRATION.
--- DO NOT apply to production. Generate a canonical migration via Supabase CLI
--- AFTER Security S3 PR #14 is integrated, exact 129+ migration ancestry
--- is reconciled, encrypted backup is restored, and independent SQL gates pass.
+-- SUPERSEDED REVIEW PROPOSAL — retained only for historical traceability.
+-- Canonical forward candidate: migrations/20261011130000_133_technical_support_v1_backend.sql.
+-- Do not execute this proposal. The canonical migration adds assignment-holder
+-- and access-approval fail-closed controls that are intentionally absent here.
 -- Source: docs/security/CEAC_TECHNICAL_SUPPORT_BACKEND_CONTRACT_2026-10-07.md
 -- Review scope: basic self-help, bounded support queue, immutable status history.
 -- Deliberately excludes access execution, external service health claims,

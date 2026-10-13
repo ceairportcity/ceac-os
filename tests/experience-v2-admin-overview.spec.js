@@ -50,7 +50,7 @@ test("Stage 7 Administration Overview is isolated V2 presentation on preserved A
   expect(view).toContain('title="Payroll readiness"');
   expect(view).toContain('title="Finance & reporting"');
   expect(view).toContain('title="Control Center"');
-  expect(view).toContain("Pending Staff invitations");
+  expect(view).toContain("Invitations to review");
   expect(view).not.toContain("onInviteUnit");
   expect(view).toContain("No work session is not an absence");
   expect(view).toContain("signals for review, not conclusions about performance");

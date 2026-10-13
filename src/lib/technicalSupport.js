@@ -62,3 +62,58 @@ export function supportCaseGroups(cases = []) {
     })).filter((category) => category.cases.length >= 2),
   };
 }
+
+export function filterSupportCases(cases = [], query = "", status = "all") {
+  // A presentation-only filter over an already-authorised and bounded result.
+  const needle = String(query || "").trim().toLocaleLowerCase();
+  return (Array.isArray(cases) ? cases : []).filter((item) => {
+    if (status !== "all" && item.state !== status) return false;
+    return !needle || [item.summary, item.reference, supportCategoryLabel(item.category)]
+      .some((value) => String(value || "").toLocaleLowerCase().includes(needle));
+  });
+}
+
+export function supportCasesNeedingMe(cases = [], profileId) {
+  // Organisation queues can include cases held by other support operators.
+  // The personal "Needs you" queue must not mislabel their assignments.
+  return (Array.isArray(cases) ? cases : []).filter((item) =>
+    isUnresolved(item)
+    && item.state !== "waiting_approval"
+    && (!item.assigned_to || (profileId && item.assigned_to === profileId))
+  );
+}
+
+export function supportUnavailableMessage(error) {
+  // An undeployed backend must not be reported as an empty Help Desk or as
+  // a missing personal permission. No automatic schema writes are attempted.
+  const code = String(error?.code || "");
+  return code === "42P01" || code === "PGRST205"
+    ? "Technical Support requests are not enabled in this environment. Use the currently approved CEAC support contact until the secured service is activated."
+    : null;
+}
+
+export function canRecordSupportOutcome(caseRecord, nextState, recordedAccess = null) {
+  // UI convenience only. The PostgreSQL case guard independently requires
+  // approved, immutable business/technical evidence in the same organisation.
+  if (caseRecord?.category !== "access_needed"
+    || (nextState !== "resolved" && nextState !== "closed")) return true;
+  return Boolean(recordedAccess?.state === "executed"
+    && recordedAccess.approved_by && recordedAccess.executed_by
+    && recordedAccess.approved_by !== recordedAccess.executed_by
+    && recordedAccess.execution_reference?.trim()?.length >= 8
+    && recordedAccess.case_id === caseRecord.id);
+}
+
+
+export function supportReportedServiceIssues(cases = [], services = SERVICE_NAMES) {
+  // Reporting facts are not telemetry. A self-reported incident must never
+  // make a service's unverified operational health read as Working or Down.
+  const known = Array.isArray(cases) ? cases : [];
+  return (Array.isArray(services) ? services : []).map((service) => ({
+    service,
+    reportCount: known.filter((item) => item
+      && item.affected_service === service
+      && item.state !== "resolved" && item.state !== "closed").length,
+    health: "Not verified",
+  }));
+}

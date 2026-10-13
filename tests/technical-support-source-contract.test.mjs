@@ -5,15 +5,16 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
-const backend = read("supabase/proposals/technical_support_v1_backend.sql");
-const proposedGate = read("supabase/proposals/technical_support_v1_gate.sql");
+const backend = read("supabase/migrations/20261011130000_133_technical_support_v1_backend.sql");
+const hardening = read("supabase/migrations/20261011183000_134_technical_support_authority_hardening.sql");
+const proposedGate = read("supabase/tests/technical_support_v1_gate.sql");
 const app = read("src/App.jsx");
 const navigation = read("src/experience-v2/shell/navigation.js");
 const supportPanel = read("src/screens/TechnicalSupport.jsx");
 const supportHelp = read("src/screens/TechnicalHelp.jsx");
 const activeMe = read("src/lib/supabase.js");
 
-test("proposed SQL functions use valid paired dollar-quote delimiters", () => {
+test("canonical Technical Support SQL functions use valid paired dollar-quote delimiters", () => {
   assert.equal((backend.match(/\bAS \$\$/g) || []).length, 3);
   assert.equal((backend.match(/^\$\$;$/gm) || []).length, 3);
   assert.doesNotMatch(backend, /\bAS \$(?!\$)/);
@@ -31,6 +32,22 @@ test("support-specific privileges never grant general administration or payroll"
   assert.doesNotMatch(backend, /grant\s+.*\bauthority\.manage\b/i);
 });
 
+test("independent review hardening preserves membership history and safe reporter projection", () => {
+  assert.match(hardening, /support_membership_events_immutable/);
+  assert.match(hardening, /BEFORE INSERT OR UPDATE OR DELETE ON public\.support_team_memberships/);
+  assert.match(hardening, /A membership may only transition once from active to ended/);
+  assert.match(hardening, /capability LIKE 'support\.%'/);
+  assert.match(hardening, /Technical Support capability cannot be self-granted/);
+  assert.match(hardening, /cg\.capability='support\.case\.manage'/);
+  assert.match(hardening, /CREATE VIEW public\.support_case_safe_status/);
+  const safeView = hardening.split("CREATE VIEW public.support_case_safe_status")[1]
+    ?.split("REVOKE ALL ON public.support_case_safe_status")[0] || "";
+  assert.doesNotMatch(safeView, /assigned_to/);
+  assert.doesNotMatch(safeView, /affected_profile_id\s*(?:,|FROM)/i);
+  assert.match(supportHelp, /from\("support_case_safe_status"\)/);
+  assert.doesNotMatch(supportHelp, /from\("support_cases"\)\s*\.select/);
+});
+
 test("case records and immutable audit history are deny-by-default", () => {
   for (const table of ["support_cases", "support_case_events", "support_team_memberships"]) {
     assert.match(backend, new RegExp("ALTER TABLE public\\." + table + " ENABLE ROW LEVEL SECURITY"));
@@ -40,13 +57,15 @@ test("case records and immutable audit history are deny-by-default", () => {
   assert.match(backend, /EXECUTE FUNCTION public\.platform_audit_immutable\(\)/);
   assert.match(backend, /AFTER INSERT ON public\.support_cases/);
   assert.match(backend, /BEFORE UPDATE ON public\.support_cases/);
-  assert.match(proposedGate, /support_case_events_immutable/);
+  const caseEventTriggerCheck = proposedGate.split("t.tgname='support_case_events_immutable'")[1]
+    ?.split("THEN RAISE EXCEPTION 'Support audit event immutability trigger missing.'")[0] || "";
+  assert.ok(caseEventTriggerCheck);
   // PostgreSQL pg_trigger.tgtype: BEFORE=2, DELETE=8, UPDATE=16.
   // INSERT=4 must not be mistaken for DELETE when proving immutability.
-  assert.match(proposedGate, /\(t\.tgtype & 2\)<>0/);
-  assert.match(proposedGate, /\(t\.tgtype & 8\)<>0/);
-  assert.match(proposedGate, /\(t\.tgtype & 16\)<>0/);
-  assert.doesNotMatch(proposedGate, /AND \(t\.tgtype & 4\)<>0/);
+  assert.match(caseEventTriggerCheck, /\(t\.tgtype & 2\)<>0/);
+  assert.match(caseEventTriggerCheck, /\(t\.tgtype & 8\)<>0/);
+  assert.match(caseEventTriggerCheck, /\(t\.tgtype & 16\)<>0/);
+  assert.doesNotMatch(caseEventTriggerCheck, /AND \(t\.tgtype & 4\)<>0/);
 
   const auditPolicy = backend.split("CREATE POLICY support_case_events_visible")[1]
     ?.split("CREATE OR REPLACE FUNCTION public.support_case_insert_guard")[0] || "";
@@ -60,6 +79,13 @@ test("case records and immutable audit history are deny-by-default", () => {
   // browser could forge resolved_at while changing a case to 'closed'.
   assert.match(backend, /ELSIF NEW\.state='closed' THEN\s*(?:--[^\n]*\n\s*)*NEW\.resolved_at:=coalesce\(OLD\.resolved_at,now\(\)\);\s*NEW\.closed_at:=now\(\);/);
 
+  assert.match(backend, /Only the current case holder or Support Lead can change this case/);
+  assert.match(backend, /A support member can claim only for themselves/);
+  assert.match(backend, /Access requests require recorded business approval and a reviewed execution path/);
+  assert.match(proposedGate, /Membership without support\.case\.manage exposed the queue/);
+  assert.match(proposedGate, /Cross-tenant reporter visibility is not isolated/);
+  assert.match(proposedGate, /Access request was resolved without approved execution evidence/);
+
 });
 
 test("support authority is separate from ordinary employment role and client-side checks", () => {
@@ -68,7 +94,8 @@ test("support authority is separate from ordinary employment role and client-sid
   assert.match(navigation, /capabilities\.has\("support\.case\.manage"\)/);
   assert.match(supportPanel, /support_team_memberships/);
   assert.match(supportPanel, /\.eq\("active", true\)/);
-  assert.match(supportPanel, /Access execution is not enabled/);
+  assert.match(supportPanel, /SupportAccessCaseActions/);
+  assert.match(supportPanel, /canRecordSupportOutcome\(currentCase, state, accessLedger\)/);
   assert.match(supportHelp, /reported_by: me\.id/);
   assert.doesNotMatch(supportPanel, /supabase\.auth\.admin/);
   assert.doesNotMatch(supportPanel, /supabase\.rpc\("grant_capability"/);
@@ -83,12 +110,12 @@ test("approved Executive stylesheet has exactly the same Git blob", () => {
   assert.equal(digest, "5613e38749322da28f6bfd6f4a584dd4bebd6d47");
 });
 
-test("canonical S3 migration is ordered before ten pending files, with no duplicate versions", () => {
+test("canonical S3 migration and thirteen reviewed security migrations have unique ordered versions", () => {
   const folder = "supabase/migrations";
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 130, "expected reviewed 119-history + 11-pending migration source tree");
+  assert.equal(migrations.length, 143, "expected reviewed 119-history + 11-pending + 13 security migration source tree");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
   const pending = [
@@ -120,6 +147,7 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /capability_delegation_expiry_gate\.sql/);
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
+  assert.match(runner, /technical_support_v1_gate\.sql/);
   assert.match(mfa, /callable_count<>135/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);
@@ -146,4 +174,69 @@ test("later migrations may not redefine S3 authority functions", () => {
         migration + " illegally replaces/overrides S3 security function " + functionName);
     }
   }
+});
+
+test("reporters can inspect only their own recorded case status and response", () => {
+  assert.match(supportHelp, /from\("support_case_safe_status"\)/);
+  assert.match(supportHelp, /setSelectedId/);
+  assert.match(supportHelp, /aria-pressed=\{selectedId === item\.id\}/);
+  assert.match(supportHelp, /selected\.resolution_summary/);
+  assert.match(supportHelp, /Technical Support response/);
+  assert.doesNotMatch(supportHelp, /support_case_events/);
+  assert.doesNotMatch(supportHelp, /supabase\.auth\.admin/);
+});
+
+test("Support Help Desk clearly bounds and filters the permitted queue", () => {
+  assert.match(supportPanel, /filterSupportCases\(cases, deskQuery, deskStatus\)/);
+  assert.match(supportPanel, /150 recent cases/);
+  assert.match(supportPanel, /Find a request/);
+  assert.match(supportPanel, /Case status/);
+  assert.match(supportPanel, /\.eq\("org_id", me\.org_id\)/);
+});
+
+test("Support case taking is conditional on current assignment, without granting access", () => {
+  assert.match(supportPanel, /onClaim\(item\.id\)/);
+  assert.match(supportPanel, /!item\.assigned_to/);
+  assert.match(supportPanel, /\.is\("assigned_to", null\)/);
+  assert.match(supportPanel, /\.not\("state", "in", "\(resolved,closed\)"\)/);
+  assert.match(supportPanel, /\.maybeSingle\(\)/);
+  assert.match(supportPanel, /support_team_memberships/);
+  assert.doesNotMatch(supportPanel, /\.rpc\("grant_capability"/);
+});
+
+test("case status edits require a matching server revision, with an explicit collision message", () => {
+  assert.match(supportPanel, /onUpdate\(item\.id, nextState, resolution, item\.updated_at, accessLedger\)/);
+  assert.match(supportPanel, /\.eq\("updated_at", expectedUpdatedAt\)/);
+  assert.match(supportPanel, /\.maybeSingle\(\)/);
+  assert.match(supportPanel, /The case changed since you opened it/);
+  assert.match(supportPanel, /item\.updated_at\]/);
+  const caseReads = [...supportPanel.matchAll(/\.from\("support_cases"\)[\s\S]{0,300}?\.select\("([^"]+)"\)/g)];
+  assert.equal(caseReads.length, 5, "all current case reads must remain explicit projections");
+  assert.ok(caseReads.every((match) => match[1].split(",").includes("updated_at")),
+    "all current case projections must include server revision");
+});
+
+test("an assigned case may be returned only by its current holder", () => {
+  assert.match(supportPanel, /item\.assigned_to === myId && item\.state !== "resolved"/);
+  assert.match(supportPanel, /Return to unassigned queue/);
+  assert.match(supportPanel, /\.update\(\{ assigned_to: null \}\)\.eq\("id", id\)\.eq\("org_id", me\.org_id\)/);
+  assert.match(supportPanel, /\.eq\("assigned_to", me\.id\)/);
+  assert.match(supportPanel, /\.not\("state", "in", "\(resolved,closed\)"\)/);
+  assert.match(supportPanel, /onRelease=\{releaseCase\}/);
+});
+
+test("needs-you queue excludes colleagues' assigned work", () => {
+  assert.match(supportPanel, /supportCasesNeedingMe\(cases, me\.id\)/);
+  assert.match(supportPanel, /<SupportRows cases=\{needsYou\}/);
+  assert.doesNotMatch(supportPanel, /<SupportRows cases=\{groups\.attention\}/);
+});
+
+test("People & Access invalidates confidential roster state across identity changes", () => {
+  const peopleAccess = read("src/components/PeopleAccess.jsx");
+  assert.match(peopleAccess, /const loadGeneration = useRef\(0\)/);
+  assert.match(peopleAccess, /setSnapshot\(null\)/);
+  assert.match(peopleAccess, /\[me\.id, me\.org_id, canManage\]/);
+  assert.match(peopleAccess, /if \(generation !== loadGeneration\.current\) return false/);
+  assert.match(peopleAccess, /generation === loadGeneration\.current/);
+  assert.match(peopleAccess, /People & Access could not load verified records/);
 });

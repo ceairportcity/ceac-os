@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import SupportAccessApprovals from "../components/SupportAccessApprovals";
 import { humanError } from "../lib/productLanguage";
 import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
+import { summariseAdminToday, countRecordedSessionDays } from "../lib/adminTodaySummary";
 
-export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, openSettings, openUnits, go }) {
+export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, openSettings, openUnits, openPeopleAccess, go }) {
   const [units, setUnits] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [blockers, setBlockers] = useState([]);
@@ -23,8 +25,31 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadedScope, setLoadedScope] = useState(null);
+  const readGeneration = useRef(0);
+  const leaveActionBusyRef = useRef(false);
+  const scopeKey = `${me.org_id}:${me.id}`;
+  const scopedLoading = loading || loadedScope !== scopeKey;
+  // Never render prior-account records before the next effect clears state.
+  const verifiedSnapshot = loadedScope === scopeKey && !loading && !loadError;
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // The administrator can change account or organisation while reads are in flight.
+    // Clear the old scoped records immediately; stale requests may not repopulate them.
+    readGeneration.current += 1;
+    setLoadedScope(null);
+    leaveActionBusyRef.current = false;
+    setBusy(false);
+    setUnits([]); setAlerts([]); setBlockers([]); setLeaveQueue([]);
+    setChecks([]); setMine([]); setOffice(null);
+    setEmployeeRoster([]); setPendingInvitations([]); setPayrollReadiness(null);
+    setMeetings([]); setReporting(null); setWatch([]);
+    setToday({ working: 0, leave: 0, notStarted: 0, headcount: 0 });
+    setDelivery({ active: 0, closedThisMonth: 0, onTrack: 0, atRisk: 0, met: 0, notMet: 0, other: 0, objectives: 0 });
+    setMsg(null);
+    void load();
+    return () => { readGeneration.current += 1; leaveActionBusyRef.current = false; };
+  }, [me.id, me.org_id]);
 
   async function must(query, label) {
     const result = await query;
@@ -33,60 +58,67 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   }
 
   async function load() {
+    const generation = ++readGeneration.current;
+    setLoadedScope(null);
     setLoadError(null);
     setLoading(true);
     try {
       const now = Date.now();
       const weekAgo = new Date(now - 7 * 864e5).toISOString();
-      const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
-      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-      const todayStr = new Date().toISOString().slice(0, 10);
+      // CEAC reporting dates use Accra time (UTC year-round), not the viewer's device timezone.
+      const nowDate = new Date(now);
+      const dayStart = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), nowDate.getUTCDate()));
+      const tomorrow = new Date(dayStart.getTime() + 864e5);
+      const monthStart = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), 1));
+      const todayStr = dayStart.toISOString().slice(0, 10);
 
-      const [us, mgrs, done7, openAlerts, pi, al, bl, lq, workflowSteps, my, o, staff, sessToday, sessWeek, away, projs, projectCloses, objs, period, subs, memberships, meetingRows, rosterRows] = await Promise.all([
-        must(supabase.from("units").select("id,name").order("name"), "Units"),
-        must(supabase.from("unit_memberships").select("unit_id,profile_id,profiles(id,full_name,email)").eq("role","manager"), "Unit heads"),
-        must(supabase.from("completed_outputs").select("unit_id").gte("completed_at", weekAgo), "Completed outputs"),
-        must(supabase.from("alerts").select("for_unit_id").is("acknowledged_at",null).is("resolved_at",null).not("for_unit_id","is",null), "Unit alerts"),
-        must(supabase.from("pending_invitations").select("unit_id,email,full_name,invited_at,expires_at").is("resolved_at",null).gt("expires_at",new Date().toISOString()), "Pending invitations"),
+      const [us, mgrs, done7, openAlerts, pi, al, bl, lq, workflowSteps, my, o, staff, sessToday, activeSessionsNow, sessWeek, away, projs, projectCloses, objs, period, subs, memberships, meetingRows, rosterRows] = await Promise.all([
+        must(supabase.from("units").select("id,name").eq("org_id", me.org_id).order("name"), "Units"),
+        must(supabase.from("unit_memberships").select("unit_id,profile_id,profiles(id,full_name,email)").eq("org_id", me.org_id).eq("role","manager"), "Unit heads"),
+        must(supabase.from("completed_outputs").select("unit_id").eq("org_id", me.org_id).gte("completed_at", weekAgo), "Completed outputs"),
+        must(supabase.from("alerts").select("for_unit_id").eq("org_id", me.org_id).is("acknowledged_at",null).is("resolved_at",null).not("for_unit_id","is",null), "Unit alerts"),
+        must(supabase.from("pending_invitations").select("unit_id,email,full_name,invited_at,expires_at").eq("org_id", me.org_id).is("resolved_at",null).is("revoked_at",null), "Unresolved invitations, including expired links"),
         must(supabase.from("alerts")
-          .select("id,kind,subject_id,subject_type,message,first_seen_at,for_unit_id,for_profile_id")
+          .select("id,kind,subject_id,subject_type,message,first_seen_at,for_unit_id,for_profile_id").eq("org_id", me.org_id)
           .is("acknowledged_at",null).is("resolved_at",null)
           .or("for_profile_id.eq."+me.id+",and(for_unit_id.is.null,for_profile_id.is.null)")
           .order("first_seen_at",{ascending:false}).limit(30), "Administration alerts"),
         must(supabase.from("blockers")
-          .select("id,party_text,since,state,party_unit_id,work_items(id,title,unit_id),claimant:profiles!blockers_claimed_by_fkey(full_name),units(name)")
+          .select("id,party_text,since,state,party_unit_id,work_items(id,title,unit_id),claimant:profiles!blockers_claimed_by_fkey(full_name),units(name)").eq("org_id", me.org_id)
           .neq("state","resolved").limit(20), "Cross-unit blockers"),
         must(supabase.from("leave_requests")
-          .select("id,kind,start_date,end_date,days,status,requester:profiles!leave_requests_profile_id_fkey(full_name)")
+          .select("id,kind,start_date,end_date,days,status,requester:profiles!leave_requests_profile_id_fkey(full_name)").eq("org_id", me.org_id)
           .in("status",["pending","escalated"]).order("requested_at",{ascending:false}).limit(20), "Leave queue"),
         must(supabase.from("workflow_run_steps")
           .select("id,label,required_capability,created_at,workflow_run_id")
           .eq("org_id",me.org_id).eq("state","ready")
           .order("created_at",{ascending:true}).limit(30), "Checks"),
         must(supabase.from("work_items")
-          .select("id,ref,title,status,due_at").eq("assignee_id",me.id)
+          .select("id,ref,title,status,due_at").eq("org_id", me.org_id).eq("assignee_id",me.id)
           .not("status","in","(completed,self_certified,cancelled)"), "Administration work"),
-        must(supabase.from("office_locations").select("id").eq("is_primary",true).limit(1).maybeSingle(), "Office location"),
-        must(supabase.from("profiles").select("id,full_name").eq("active",true), "Active people"),
-        must(supabase.from("work_sessions").select("profile_id,ended_at,started_at").gte("started_at",dayStart.toISOString()), "Today's sessions"),
-        must(supabase.from("work_sessions").select("profile_id,started_at").gte("started_at",weekAgo), "Recent sessions"),
-        must(supabase.from("leave_requests").select("profile_id").eq("status","approved").lte("start_date",todayStr).gte("end_date",todayStr), "Today's leave"),
-        must(supabase.from("projects").select("id,name,status,lead_unit_id,ends_on"), "Projects"),
+        must(supabase.from("office_locations").select("id").eq("org_id", me.org_id).eq("is_primary",true).limit(1).maybeSingle(), "Office location"),
+        must(supabase.from("profiles").select("id,full_name").eq("org_id", me.org_id).eq("active",true), "Active people"),
+        must(supabase.from("work_sessions").select("profile_id,started_at").eq("org_id", me.org_id).gte("started_at",dayStart.toISOString()).lt("started_at",tomorrow.toISOString()), "Today's sessions"),
+        must(supabase.from("work_sessions").select("profile_id").eq("org_id", me.org_id).is("ended_at",null).lte("started_at",nowDate.toISOString()), "Active work sessions"),
+        must(supabase.from("work_sessions").select("profile_id,started_at").eq("org_id", me.org_id).gte("started_at",weekAgo).lte("started_at",nowDate.toISOString()), "Recent sessions"),
+        must(supabase.from("leave_requests").select("profile_id").eq("org_id", me.org_id).eq("status","approved").lte("start_date",todayStr).gte("end_date",todayStr), "Today's leave"),
+        must(supabase.from("projects").select("id,name,status,lead_unit_id,ends_on").eq("org_id", me.org_id), "Projects"),
         must(supabase.from("project_closes")
-          .select("project_id,submitted_at")
+          .select("project_id,submitted_at").eq("org_id", me.org_id)
           .eq("scope","overall").eq("status","submitted")
           .gte("submitted_at",monthStart.toISOString()), "Project closes"),
-        must(supabase.from("objectives").select("id,name,status,unit_id,project_id"), "Objectives"),
-        must(supabase.from("report_periods").select("id,label").eq("status","open").order("starts_on",{ascending:false}).limit(1).maybeSingle(), "Open reporting period"),
-        must(supabase.from("submissions").select("profile_id,submitted_at").gte("submitted_at",weekAgo), "Recent submissions"),
-        must(supabase.from("unit_memberships").select("profile_id,unit_id"), "Memberships"),
+        must(supabase.from("objectives").select("id,name,status,unit_id,project_id").eq("org_id", me.org_id), "Objectives"),
+        must(supabase.from("report_periods").select("id,label").eq("org_id", me.org_id).eq("status","open").order("starts_on",{ascending:false}).limit(1).maybeSingle(), "Open reporting period"),
+        must(supabase.from("submissions").select("profile_id,submitted_at").eq("org_id", me.org_id).gte("submitted_at",weekAgo), "Recent submissions"),
+        must(supabase.from("unit_memberships").select("profile_id,unit_id").eq("org_id", me.org_id), "Memberships"),
         must(supabase.from("meeting_sessions")
-          .select("id,title,scope,starts_at,ends_at,provider,status,units(name),projects(name)")
+          .select("id,title,scope,starts_at,ends_at,provider,status,units(name),projects(name)").eq("org_id", me.org_id)
           .gte("starts_at",new Date().toISOString())
           .lte("starts_at",new Date(now + 14*864e5).toISOString())
           .neq("status","cancelled").order("starts_at").limit(6), "Upcoming meetings"),
         must(supabase.rpc("admin_employee_roster_summary"), "Employee roster"),
       ]);
+      if (generation !== readGeneration.current) return;
 
       const headByUnit = {};
       (mgrs || []).forEach((row) => { if (row.profiles) headByUnit[row.unit_id] = row.profiles; });
@@ -114,19 +146,19 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setEmployeeRoster(Array.isArray(rosterRows) ? rosterRows : []);
       setPendingInvitations(pi || []);
       if (myCapabilities.has("payroll.prepare") || myCapabilities.has("payroll.approve")) {
-        setPayrollReadiness(await must(supabase.rpc("payroll_readiness_summary"), "Payroll readiness"));
+        const payroll = await must(supabase.rpc("payroll_readiness_summary"), "Payroll readiness");
+        if (generation !== readGeneration.current) return;
+        setPayrollReadiness(payroll);
       } else {
         setPayrollReadiness(null);
       }
 
-      const awayIds = new Set((away || []).map((row) => row.profile_id));
-      const startedIds = new Set((sessToday || []).map((row) => row.profile_id));
-      setToday({
-        working: (sessToday || []).filter((row) => !row.ended_at).length,
-        leave: awayIds.size,
-        notStarted: (staff || []).filter((person) => !startedIds.has(person.id) && !awayIds.has(person.id)).length,
-        headcount: (staff || []).length,
-      });
+      setToday(summariseAdminToday({
+        activeProfiles: staff || [],
+        todaySessions: sessToday || [],
+        activeSessions: activeSessionsNow || [],
+        approvedLeave: away || [],
+      }));
 
       const closedProjectIds = new Set((projectCloses || []).map((row) => row.project_id));
       const objectiveRows = objs || [];
@@ -146,7 +178,8 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       });
 
       if (period) {
-        const submitted = await must(supabase.from("reports").select("unit_id").eq("period_id",period.id).in("status",["submitted","confirmed"]), "Submitted reports");
+        const submitted = await must(supabase.from("reports").select("unit_id").eq("org_id", me.org_id).eq("period_id",period.id).in("status",["submitted","confirmed"]), "Submitted reports");
+        if (generation !== readGeneration.current) return;
         const inIds = new Set((submitted || []).map((row) => row.unit_id));
         setReporting({
           label: period.label,
@@ -180,11 +213,11 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       });
 
       (staff || []).forEach((person) => {
-        const days = new Set((sessWeek || []).filter((row) => row.profile_id === person.id).map((row) => new Date(row.started_at).toDateString())).size;
+        const days = countRecordedSessionDays(sessWeek, person.id, now);
         if (days >= 3 && !lastSub[person.id]) rules.push({
           k: "p"+person.id,
           who: person.full_name,
-          why: "present on "+days+" days this week, nothing submitted",
+          why: "work sessions opened on "+days+" calendar days in the last week; no submission recorded in this window",
         });
       });
       (objs || []).filter((objective) => objective.status === "at_risk").forEach((objective) => rules.push({
@@ -193,13 +226,16 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setWatch(rules.slice(0,12));
       setMeetings(meetingRows || []);
     } catch (error) {
-      setLoadError(error.message || "Administration could not load.");
+      if (generation === readGeneration.current) setLoadError(humanError(error, "Administration records could not be verified. Please try again."));
     } finally {
-      setLoading(false);
+      if (generation === readGeneration.current) { setLoadedScope(scopeKey); setLoading(false); }
     }
   }
 
   async function decideLeave(request, decision) {
+    if (busy || scopedLoading || loadError || leaveActionBusyRef.current) return;
+    leaveActionBusyRef.current = true;
+    const generation = readGeneration.current;
     setBusy(true); setMsg(null);
     try {
       const { error } = await supabase.rpc("workforce_leave_action", {
@@ -208,9 +244,20 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
         p_reason: "Administration dashboard decision",
       });
       if (error) throw error;
+      if (generation !== readGeneration.current) return;
+      // The next load deliberately acquires a new generation. Release this
+      // action's busy latch before starting it, while the page enters loading.
+      leaveActionBusyRef.current = false;
+      setBusy(false);
       await load();
-    } catch (error) { setMsg(humanError(error, "The leave decision could not be saved.")); }
-    finally { setBusy(false); }
+    } catch (error) {
+      if (generation === readGeneration.current) setMsg(humanError(error, "The leave decision could not be confirmed. Review its recorded state before retrying."));
+    } finally {
+      if (generation === readGeneration.current) {
+        leaveActionBusyRef.current = false;
+        setBusy(false);
+      }
+    }
   }
 
   const adminDate = new Date().toLocaleDateString("en-GB", {
@@ -227,25 +274,25 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     <AdminOverviewV2
       me={me}
       dateLabel={adminDate}
-      loading={loading}
-      loadFailed={loadError}
-      message={msg}
+      loading={scopedLoading}
+      loadFailed={loadedScope === scopeKey ? loadError : null}
+      message={verifiedSnapshot ? msg : null}
       busy={busy}
-      units={units}
-      alerts={alerts}
-      blockers={blockers}
-      leaveQueue={leaveQueue}
-      checks={checks}
-      mine={mine}
-      office={office}
-      today={today}
-      delivery={delivery}
-      reporting={reporting}
-      watch={watch}
-      meetings={meetings}
-      employeeRoster={employeeRoster}
-      pendingInvitations={pendingInvitations}
-      payrollReadiness={payrollReadiness}
+      units={verifiedSnapshot ? units : []}
+      alerts={verifiedSnapshot ? alerts : []}
+      blockers={verifiedSnapshot ? blockers : []}
+      leaveQueue={verifiedSnapshot ? leaveQueue : []}
+      checks={verifiedSnapshot ? checks : []}
+      mine={verifiedSnapshot ? mine : []}
+      office={verifiedSnapshot ? office : null}
+      today={verifiedSnapshot ? today : { working: 0, leave: 0, notStarted: 0, headcount: 0 }}
+      delivery={verifiedSnapshot ? delivery : { active: 0, closedThisMonth: 0, onTrack: 0, atRisk: 0, met: 0, notMet: 0, other: 0, objectives: 0 }}
+      reporting={verifiedSnapshot ? reporting : null}
+      watch={verifiedSnapshot ? watch : []}
+      meetings={verifiedSnapshot ? meetings : []}
+      employeeRoster={verifiedSnapshot ? employeeRoster : []}
+      pendingInvitations={verifiedSnapshot ? pendingInvitations : []}
+      payrollReadiness={verifiedSnapshot ? payrollReadiness : null}
       canManagePeople={canManagePeople}
       canUsePayroll={canUsePayroll}
       canAccessProtectedHR={canAccessProtectedHR}
@@ -259,6 +306,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenReports={() => go?.("reporting")}
       onOpenFinance={() => go?.("finance")}
       onOpenPeople={() => go?.("people")}
+      onOpenInvitations={() => openPeopleAccess?.({ mode: "invitations" })}
       onOpenProtectedHR={() => go?.("protected-hr")}
       onOpenPayroll={() => go?.("payroll")}
       onOpenProjects={() => go?.("admin-projects")}
@@ -266,6 +314,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenAttendance={() => go?.("attendance")}
       onLeaveDecision={decideLeave}
     />
+    {canManagePeople && verifiedSnapshot && <SupportAccessApprovals me={me} authority="people_administration" />}
 
   </>;
 }

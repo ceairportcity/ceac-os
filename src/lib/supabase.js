@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { authRedirect } from "./authRedirect";
+import { isPlausibleInvitationEmail } from "./invitationSafety";
 import { readServerVerifiedLegacyGrants, resolveCapabilityGrantRead } from "./capabilitySchemaCompatibility";
 
 const fallbackSupabaseUrl = "https://efjljhftsesssumtshvp.supabase.co";
@@ -78,10 +79,23 @@ export async function loadMe() {
     capability_grants: activeCapabilityGrants,
     capabilities: [...new Set(activeCapabilityGrants.map((grant) => grant.capability))] };
 }
+export class InvitationDeliveryUnconfirmedError extends Error {
+  constructor(kind = "new") {
+    super(kind === "resend"
+      ? "The resend was prepared, but the activation email request was not accepted. Delivery is unconfirmed. Review the invitation's latest state before retrying."
+      : "The invitation was recorded, but the activation email request was not accepted. Delivery is unconfirmed. Review Invitations before retrying.");
+    this.name = "InvitationDeliveryUnconfirmedError";
+    this.invitationRecorded = true;
+  }
+}
+
 export async function inviteByEmail({ email, fullName, unitId }) {
   const redirect = authRedirect("/activate");
-  const cleanEmail = email.trim().toLowerCase();
-  const cleanName = fullName.trim();
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  const cleanName = String(fullName || "").trim();
+  if (!isPlausibleInvitationEmail(cleanEmail) || cleanName.length < 2 || !unitId) {
+    throw new Error("Enter a valid work email, full name and primary unit before recording an invitation.");
+  }
   const { error: inviteError } = await supabase.rpc("create_pending_invitation", {
     p_email: cleanEmail,
     p_full_name: cleanName,
@@ -90,21 +104,34 @@ export async function inviteByEmail({ email, fullName, unitId }) {
   });
   if (inviteError) throw inviteError;
 
-  const { error: authError } = await supabase.auth.signInWithOtp({
-    email: cleanEmail,
-    options: {
-      shouldCreateUser: true,
-      emailRedirectTo: redirect,
-    },
-  });
-  if (authError) throw authError;
+  // The database invitation already exists. An OTP/provider failure must
+  // never be represented to Administration as "nothing was recorded".
+  try {
+    const { error: authError } = await supabase.auth.signInWithOtp({
+      email: cleanEmail,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: redirect,
+      },
+    });
+    if (authError) throw authError;
+  } catch {
+    throw new InvitationDeliveryUnconfirmedError("new");
+  }
 }
 
 export async function resendStaffInvitation(id) {
   const redirect = authRedirect("/activate");
   const { data, error } = await supabase.rpc("prepare_staff_invitation_resend", { p_invitation_id: id });
   if (error) throw error;
-  const result = await supabase.auth.signInWithOtp({ email: data.email,
-    options: { shouldCreateUser: !data.account_created, emailRedirectTo: redirect } });
-  if (result.error) throw result.error;
+  if (!data?.email || typeof data.email !== "string") {
+    throw new InvitationDeliveryUnconfirmedError("resend");
+  }
+  try {
+    const result = await supabase.auth.signInWithOtp({ email: data.email,
+      options: { shouldCreateUser: !data.account_created, emailRedirectTo: redirect } });
+    if (result.error) throw result.error;
+  } catch {
+    throw new InvitationDeliveryUnconfirmedError("resend");
+  }
 }

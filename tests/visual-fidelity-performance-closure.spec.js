@@ -18,13 +18,16 @@ const budgets = {
   // retain narrow regression headroom rather than exempting the new product CSS.
   coreCssRaw: 534 * KIB,
   coreCssGzip: 80 * KIB,
-  // The owner-approved Executive redesign is route-isolated. Its current source is
-  // 25.77 KiB; preserve the 534 KiB core guard and allow only bounded aggregate growth.
-  allCssRaw: 604 * KIB,
+  // The owner-approved Executive redesign and the subsequently approved Guide and
+  // Technical Support routes are isolated. The integrated candidate measures
+  // 614.82 KiB aggregate while core CSS remains below its existing 534 KiB guard;
+  // retain only 1.18 KiB aggregate regression headroom.
+  allCssRaw: 616 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
-  // Phase 5 measured 73,807 bytes on the canonical Node 22 CI build.
-  mainJsRaw: 74 * KIB,
+  // The integrated product/security candidate measures 79,367 bytes on Node 22;
+  // keep less than 0.7 KiB headroom while retaining route-level lazy loading.
+  mainJsRaw: 78 * KIB,
   routeJsRaw: 100 * KIB,
   vendors: {
     "motion-vendor": 130 * KIB,
@@ -77,7 +80,7 @@ test("VF9C production bundle preserves measured route and vendor budgets", async
     executiveCssSourceRaw,
     "Executive Overview route CSS source budget",
   ).toBeLessThanOrEqual(budgets.executiveRouteCssRaw);
-  const executiveRedesignCssSourceRaw = statSync("src/experience-v2/executive-overview/executive-redesign.css").size;
+  const executiveRedesignCssSourceRaw = statSync("src/role-styles/executive-redesign.css").size;
   expect(
     executiveRedesignCssSourceRaw,
     "Executive redesign CSS source budget",

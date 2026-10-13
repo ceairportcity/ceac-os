@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # CEAC OS: encrypted, read-only logical backup preparation.
 # This does NOT authorise migrations or establish tested restore capability.
+# This partial export cannot certify full recovery: the standard Supabase CLI
+# default dump excludes managed auth/storage schema data and Storage file bytes.
+# Keep an explicit NO on full-recovery acceptance until separate managed-data
+# extraction and actual isolated restore have been demonstrated.
 set -Eeuo pipefail
 umask 077
 
@@ -47,11 +51,11 @@ supabase db dump --linked --schema supabase_migrations --use-copy --data-only -f
 for f in roles.sql schema.sql data.sql history-schema.sql history-data.sql; do
   [[ -s "$scratch/$f" ]] || fail "empty dump: $f"
 done
-printf 'repo=%s\nsource_sha=%s\nlinked_project=%s\ncreated_utc=%s\nrestore_status=NOT_TESTED\nstorage_object_blobs=NOT_INCLUDED\nmanaged_auth_storage_customisations=VERIFY_SEPARATELY\n' \
+printf 'repo=%s\nsource_sha=%s\nlinked_project=%s\ncreated_utc=%s\nrestore_status=NOT_TESTED\nstorage_object_blobs=NOT_INCLUDED\nauth_managed_schema_data=NOT_IN_DEFAULT_EXPORT\nstorage_managed_schema_data=NOT_IN_DEFAULT_EXPORT\ncomplete_recovery_backup=NO\nmanaged_auth_storage_customisations=VERIFY_SEPARATELY\n' \
   'ceairportcity/ceac-os' "$CEAC_EXPECTED_SHA" efjljhftsesssumtshvp "$stamp" > "$scratch/manifest.txt"
 ( cd "$scratch" && tar -czf - roles.sql schema.sql data.sql history-schema.sql history-data.sql manifest.txt ) |
   gpg --batch --yes --pinentry-mode loopback --passphrase-file "$key" --symmetric --cipher-algo AES256 --output "$archive"
 [[ -s "$archive" ]] || fail 'encrypted archive missing'
 gpg --batch --quiet --yes --pinentry-mode loopback --passphrase-file "$key" --decrypt "$archive" | tar -tzf - >/dev/null || fail 'decryption/integrity check failed'
 ( cd "$out" && sha256sum "$(basename "$archive")" > "$(basename "$archive").sha256" )
-printf 'ENCRYPTED_LOGICAL_EXPORT_CREATED: %s\nNOT RELEASE-READY: restore test, auth/storage review, and owner approval still required.\n' "$archive"
+printf 'ENCRYPTED_PARTIAL_LOGICAL_EXPORT_CREATED: %s\nNOT A FULL BACKUP: default managed Auth/Storage rows and Storage objects need separately proven coverage.\nNOT RELEASE-READY: actual isolated restore, managed data and owner approval still required.\n' "$archive"

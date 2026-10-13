@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase, inviteByEmail, resendStaffInvitation } from "../lib/supabase";
+import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../lib/invitationSafety";
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
+import SupportTeamMemberships from "./SupportTeamMemberships";
 
 const ACCESS_MODES = [
   ["invite", "Invite"],
   ["responsibility", "Responsibilities"],
   ["invitations", "Invitations"],
+  ["technical-support", "Technical Support"],
 ];
 
 function invitationTone(state, revokedAt) {
@@ -18,16 +21,39 @@ function invitationTone(state, revokedAt) {
 
 export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, onLifecycle, initialProfileId = null, initialUnitId = null, initialMode = null }) {
   const [snapshot, setSnapshot] = useState(null);
+  const [snapshotScope, setSnapshotScope] = useState(null);
   const [mode, setMode] = useState("invite");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
   const [error, setError] = useState(null);
   const [revokeTarget, setRevokeTarget] = useState(null);
+  const [endMembershipTarget, setEndMembershipTarget] = useState(null);
   const [revokeReason, setRevokeReason] = useState("");
+  const loadGeneration = useRef(0);
+  const identityGeneration = useRef(0);
+  const actionBusyRef = useRef(false);
+  const scopeKey = `${me.org_id}:${me.id}`;
   const canManage = (me.capability_grants || []).some((grant) => grant.capability === "people.manage" && !grant.scope_unit_id);
 
-  useEffect(() => { if (canManage) load(); }, [me.id, canManage]);
+  useEffect(() => {
+    // A change of authenticated identity or organisation immediately invalidates
+    // the previous account's sensitive directory and membership records.
+    loadGeneration.current += 1;
+    identityGeneration.current += 1;
+    actionBusyRef.current = false;
+    setBusy(false);
+    setSnapshot(null);
+    setSnapshotScope(null);
+    setError(null);
+    setNotice(null);
+    setRevokeTarget(null);
+    setEndMembershipTarget(null);
+    setRevokeReason("");
+    setForm({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
+    if (canManage) void load();
+    return () => { loadGeneration.current += 1; identityGeneration.current += 1; actionBusyRef.current = false; };
+  }, [me.id, me.org_id, canManage]);
   useEffect(() => {
     if (!initialProfileId && !initialUnitId && !initialMode) return;
     setForm((current) => ({
@@ -41,51 +67,97 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   }, [initialProfileId, initialUnitId, initialMode]);
 
   async function load() {
+    const generation = ++loadGeneration.current;
+    setSnapshot(null);
+    setSnapshotScope(null);
     setError(null);
-    const results = await Promise.all([
+    try {
+      const results = await Promise.all([
       supabase.from("profiles").select("id,full_name,email,active").eq("org_id", me.org_id).order("full_name"),
       supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("name"),
       supabase.from("unit_memberships").select("id,profile_id,unit_id,role").eq("org_id", me.org_id),
       supabase.from("sub_teams").select("id,name,unit_id").eq("org_id", me.org_id).eq("active", true),
       supabase.rpc("admin_access_invitations"),
+      supabase.from("sub_team_members").select("sub_team_id,profile_id"),
     ]);
+    if (generation !== loadGeneration.current) return false;
     const failure = results.find((result) => result.error);
     if (failure) {
       setError(failure.error.message);
-      return;
+      return false;
     }
+    setSnapshotScope(scopeKey);
     setSnapshot({
       people: results[0].data || [],
       units: results[1].data || [],
       memberships: results[2].data || [],
       lanes: results[3].data || [],
       invitations: results[4].data || [],
+      laneMemberships: results[5].data || [],
     });
-  }
-
-  async function action(work, success) {
-    setBusy(true);
-    setError(null);
-    setNotice(null);
-    try {
-      await work();
-      setNotice(success);
-      await load();
-      if (onChanged) await onChanged();
-    } catch (actionError) {
-      setError(actionError.message || "This change could not be recorded.");
-    } finally {
-      setBusy(false);
+    return true;
+    } catch (loadFailure) {
+      if (generation === loadGeneration.current) {
+        setError("People & Access could not load verified records. Retry before making changes.");
+      }
+      return false;
     }
   }
 
-  async function saveResponsibility(operation = "add", membership = null) {
+  async function action(work, success) {
+    // React state updates are asynchronous; the ref closes the double-click
+    // window before a second database mutation can be scheduled.
+    if (actionBusyRef.current || busy || !canManage || snapshotScope !== scopeKey) return false;
+    const identity = identityGeneration.current;
+    const sameIdentity = () => identity === identityGeneration.current;
+    actionBusyRef.current = true;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    let recorded = false;
+    try {
+      await work();
+      recorded = true;
+      // A response from an account that has since changed must never update
+      // the current person's access controls, notices or directory state.
+      if (!sameIdentity()) return true;
+      setNotice(success);
+      const refreshed = await load();
+      if (!sameIdentity()) return true;
+      if (!refreshed) throw new Error("The latest records could not be loaded.");
+      if (onChanged) await onChanged();
+      return true;
+    } catch (actionError) {
+      if (!sameIdentity()) return recorded || Boolean(actionError?.invitationRecorded);
+      if (actionError?.invitationRecorded) {
+        // Invitation preparation was saved even though email dispatch failed.
+        // Do not present the pending identity as an entirely failed write.
+        await load();
+        if (!sameIdentity()) return true;
+      }
+      // A successful server write paired with a failed refresh is not a
+      // fully confirmed screen state; do not show a green success notice
+      // alongside a partial-failure message.
+      setNotice(null);
+      setError(recorded
+        ? "The change was recorded, but the page could not refresh. Reload before repeating this action."
+        : actionError?.message || "The operation could not be confirmed. Review current records before retrying.");
+      return recorded || Boolean(actionError?.invitationRecorded);
+    } finally {
+      if (sameIdentity()) {
+        actionBusyRef.current = false;
+        setBusy(false);
+      }
+    }
+  }
+
+  async function saveResponsibility(operation = "add", membership = null, profileId = form.person, reason = form.reason) {
     const { error: failure } = await supabase.rpc("admin_record_unit_responsibility", {
-      p_profile_id: form.person,
+      p_profile_id: profileId,
       p_unit_id: membership?.unit_id || form.unit,
       p_role: membership?.role || form.role,
       p_action: operation,
-      p_reason: form.reason,
+      p_reason: reason,
     });
     if (failure) throw failure;
   }
@@ -103,22 +175,39 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   async function revokeInvitation() {
     if (!revokeTarget || !revokeReason.trim()) return;
     const target = revokeTarget;
-    await action(async () => {
+    const recorded = await action(async () => {
       const result = await supabase.rpc("admin_revoke_staff_invitation", {
         p_invitation_id: target.id,
         p_reason: revokeReason.trim(),
       });
       if (result.error) throw result.error;
     }, "Invitation cancelled; operational access cannot activate through it.");
-    setRevokeTarget(null);
-    setRevokeReason("");
+    // Keep the confirmation open on failure; do not discard the operator's reason.
+    if (recorded) {
+      setRevokeTarget(null);
+      setRevokeReason("");
+    }
   }
 
-  const set = (key) => (event) => setForm((current) => ({
-    ...current,
-    [key]: event.target.value,
-    ...(key === "unit" ? { lane: "" } : {}),
-  }));
+  const set = (key) => (event) => setForm((current) => {
+    const value = event.target.value;
+    // For a person with exactly one current unit responsibility, use
+    // that known context rather than asking Administration to select it again.
+    const peopleUnits = key === "person" && snapshot
+      ? [...new Set(snapshot.memberships.filter((row) => row.profile_id === value
+        && snapshot.units.some((unit) => unit.id === row.unit_id)).map((row) => row.unit_id))]
+      : [];
+    return {
+      ...current,
+      [key]: value,
+      ...(key === "unit" ? { lane: "" } : {}),
+      ...(key === "person" ? {
+        // Several distinct roles in one unit still constitute one unit.
+        unit: peopleUnits.length === 1 ? peopleUnits[0] : "",
+        lane: "",
+      } : {}),
+    };
+  });
 
   const selectedPerson = useMemo(
     () => snapshot?.people.find((person) => person.id === form.person) || null,
@@ -128,9 +217,18 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     () => snapshot?.memberships.filter((membership) => membership.profile_id === form.person) || [],
     [snapshot, form.person]
   );
+  const alreadyHasResponsibility = selectedMemberships.some((member) =>
+    member.unit_id === form.unit && member.role === form.role);
+  const belongsToSelectedUnit = selectedMemberships.some((member) => member.unit_id === form.unit);
+  const selectedLaneMemberships = snapshot?.laneMemberships.filter((member) => member.profile_id === form.person) || [];
+  const belongsToSelectedLane = selectedLaneMemberships.some((member) => member.sub_team_id === form.lane);
   const pendingInvitationCount = snapshot?.invitations.filter((invitation) =>
     !invitation.revoked_at && invitation.activation_state !== "verified"
   ).length || 0;
+  // The roster is not proof that every account is activated, but an identical
+  // email must not be invited blindly a second time.
+  const { accountExists: existingAccountEmail, invitationPending: existingInvitationEmail } =
+    invitationEmailConflicts(form.email, snapshot?.people, snapshot?.invitations);
 
   if (!canManage) return <ProductNotice tone="attention" title="People administration required">This account does not hold organisation-wide People access.</ProductNotice>;
 
@@ -155,7 +253,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     {error && <ProductNotice tone="error" title="People & Access">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
-    {!snapshot ? error
+    {!snapshot || snapshotScope !== scopeKey ? error
       ? <Button onClick={load}>Try again</Button>
       : <LoadingState label="Loading People & Access…" />
       : <>
@@ -193,13 +291,20 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             <strong>Existing identity?</strong>
             <span>Do not invite again. Use Responsibilities below so the existing CEAC identity keeps one account and gains the authorised organisational responsibility.</span>
           </div>
+          {form.email.trim() && !isPlausibleInvitationEmail(form.email) && <p className="screen-note" role="status">Enter an email address in the form person@example.org before recording an invitation.</p>}
+          {existingAccountEmail && <ProductNotice tone="attention" title="Account already exists">
+            This email is already associated with a CEAC identity. Use Responsibilities or review that person's existing account instead of sending a second invitation.
+          </ProductNotice>}
+          {!existingAccountEmail && existingInvitationEmail && <ProductNotice tone="attention" title="Invitation already recorded">
+            This email already has an outstanding invitation. Review Invitations to resend or cancel the existing record rather than creating another.
+          </ProductNotice>}
           <div className="phase5-access-actions">
             <Button
               busy={busy}
-              disabled={busy || !form.name.trim() || !form.email.trim() || !form.unit}
+              disabled={busy || form.name.trim().length < 2 || !isPlausibleInvitationEmail(form.email) || !form.unit || existingAccountEmail || existingInvitationEmail}
               onClick={() => action(
                 () => inviteByEmail({ email: form.email, fullName: form.name, unitId: form.unit }),
-                "Invitation sent. Email verification and personal password setup are required."
+                "Activation email requested. The recipient must verify their email and set a password; delivery has not been independently confirmed."
               )}
             >Send Staff invitation</Button>
           </div>
@@ -239,11 +344,12 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             <div className="phase5-access-actions">
               <Button
                 busy={busy}
-                disabled={busy || !form.person || !form.unit || !form.reason.trim()}
+                disabled={busy || !form.person || !form.unit || alreadyHasResponsibility || !form.reason.trim()}
                 onClick={() => action(() => saveResponsibility(), "Responsibility recorded. Other unit memberships are preserved.")}
               >Record responsibility</Button>
               {selectedPerson && onOpenPerson ? <Button variant="secondary" onClick={() => onOpenPerson(selectedPerson.id)}>Open employee record</Button> : null}
             </div>
+            {alreadyHasResponsibility && <p className="screen-note" role="status">This person already has that responsibility in the selected unit. The existing membership will not be duplicated.</p>}
             <p className="screen-note">Use the employee record for primary-unit transfer, Manager/reporting-line changes and employment status. Those changes preserve employment history.</p>
           </DataPanel>
 
@@ -258,6 +364,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
               <div className="phase5-access-memberships">
                 {selectedMemberships.map((membership) => {
                   const unit = snapshot.units.find((entry) => entry.id === membership.unit_id);
+                  const stillInUnitTeam = selectedLaneMemberships.some((entry) =>
+                    snapshot.lanes.some((lane) => lane.id === entry.sub_team_id && lane.unit_id === membership.unit_id));
                   return <div className="phase5-access-membership" key={membership.id}>
                     <div>
                       <strong>{unit?.name || "Unit"}</strong>
@@ -267,35 +375,50 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                       variant="quiet"
                       size="compact"
                       disabled={busy || !form.reason.trim()}
-                      onClick={() => action(() => saveResponsibility("remove", membership), "Membership ended with its audit history preserved.")}
+                      onClick={() => setEndMembershipTarget({ membership, personId: form.person, personName: selectedPerson?.full_name || "this person", unitName: unit?.name || "unit", reason: form.reason.trim() })}
                     >End membership</Button>
+                    {stillInUnitTeam && <span className="screen-note" role="status">Ending this unit responsibility also clears its team placements through the authorised database action.</span>}
                   </div>;
                 })}
                 {!selectedMemberships.length ? <div className="phase5-access-empty">No active unit responsibility is returned for this person.</div> : null}
               </div>
 
               <div className="phase5-access-lane">
+                <div className="phase5-access-memberships" aria-label="Recorded team placements">
+                  <strong>Current team placements</strong>
+                  {selectedLaneMemberships.length ? selectedLaneMemberships.map((member) => {
+                    const lane = snapshot.lanes.find((item) => item.id === member.sub_team_id);
+                    const unit = snapshot.units.find((item) => item.id === lane?.unit_id);
+                    return <div className="phase5-access-membership" key={member.sub_team_id}>
+                      <div><strong>{lane?.name || "Team not returned"}</strong>
+                        <span>{unit?.name || "Unit not returned"}</span></div>
+                    </div>;
+                  }) : <div className="phase5-access-empty">No team placement is recorded for this person.</div>}
+                </div>
                 <FieldGroup label="Team / sub-team">
                   <select className="field" aria-label="Work lane" value={form.lane} onChange={set("lane")}>
                     <option value="">Choose a team / sub-team</option>
                     {snapshot.lanes.filter((lane) => lane.unit_id === form.unit).map((lane) => <option key={lane.id} value={lane.id}>{lane.name}</option>)}
                   </select>
                 </FieldGroup>
+                {!belongsToSelectedUnit && form.unit ? <p className="screen-note" role="status">Assign an authorised unit responsibility before adding this person to one of its teams.</p> : null}
                 <div className="phase5-access-actions">
-                  <Button variant="secondary" size="compact" disabled={busy || !form.person || !form.lane || !form.reason.trim()} onClick={() => action(() => saveLane(true), "Team / sub-team membership recorded.")}>Add to team</Button>
-                  <Button variant="quiet" size="compact" disabled={busy || !form.person || !form.lane || !form.reason.trim()} onClick={() => action(() => saveLane(false), "Team / sub-team membership ended.")}>Remove from team</Button>
+                  <Button variant="secondary" size="compact" disabled={busy || !form.person || !form.lane || !belongsToSelectedUnit || belongsToSelectedLane || !form.reason.trim()} onClick={() => action(() => saveLane(true), "Team / sub-team membership recorded.")}>Add to team</Button>
+                  <Button variant="quiet" size="compact" disabled={busy || !form.person || !form.lane || !belongsToSelectedLane || !form.reason.trim()} onClick={() => action(() => saveLane(false), "Team / sub-team membership ended.")}>Remove from team</Button>
                 </div>
               </div>
             </>}
           </DataPanel>
         </div>}
 
+        {mode === "technical-support" && <SupportTeamMemberships me={me} people={snapshot.people} units={snapshot.units} />}
+
         {mode === "invitations" && <DataPanel
           eyebrow="Account activation"
           title="Invitations"
-          supporting="Invitation status is separate from employment. Resending requests a new activation email; cancelling prevents activation through that invitation."
+          supporting="Outstanding and expired invitations require follow-up. Resending only requests an activation email; it does not independently prove delivery. Cancelling prevents activation through that invitation."
           className="phase5-access-panel"
-          action={<StatusBadge tone={pendingInvitationCount ? "action" : "success"}>{pendingInvitationCount ? String(pendingInvitationCount) + " pending" : "No pending"}</StatusBadge>}
+          action={<StatusBadge tone={pendingInvitationCount ? "action" : "success"}>{pendingInvitationCount ? String(pendingInvitationCount) + " to review" : "No outstanding"}</StatusBadge>}
         >
           {!snapshot.invitations.length ? <div className="phase5-access-empty">No invitations are recorded.</div> : <div className="phase5-invitation-list">
             {snapshot.invitations.map((invitation) => {
@@ -305,19 +428,36 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                 <div className="phase5-invitation-main">
                   <strong>{invitation.full_name}</strong>
                   <span>{invitation.email}</span>
-                  <small>{unit?.name || "Unit not returned"} · Invited {new Date(invitation.invited_at).toLocaleString("en-GB")}</small>
+                  <small>{unit?.name || "Unit not returned"} · Invited {new Date(invitation.invited_at).toLocaleString("en-GB", { timeZone: "Africa/Accra" })}</small>
                 </div>
                 <StatusBadge tone={invitationTone(invitation.activation_state, invitation.revoked_at)} icon={false}>
                   {invitation.revoked_at ? "Cancelled" : invitation.activation_state.replaceAll("_", " ")}
                 </StatusBadge>
                 {cancellable ? <div className="phase5-invitation-actions">
-                  <Button variant="quiet" size="compact" disabled={busy} onClick={() => action(() => resendStaffInvitation(invitation.id), "Activation email requested. Check the newest email link.")}>Resend</Button>
+                  <Button variant="quiet" size="compact" disabled={busy} onClick={() => action(() => resendStaffInvitation(invitation.id), "Another activation email was requested. Delivery is not yet independently confirmed.")}>Resend</Button>
                   <Button variant="quiet" size="compact" disabled={busy} onClick={() => { setRevokeTarget(invitation); setRevokeReason(""); }}>Cancel</Button>
                 </div> : null}
               </article>;
             })}
           </div>}
         </DataPanel>}
+
+        {endMembershipTarget ? <div className="phase5-access-revoke" role="dialog" aria-modal="true" aria-labelledby="end-unit-title">
+          <div className="phase5-access-revoke-card">
+            <span className="eyebrow">Responsibility change</span>
+            <h3 className="h2" id="end-unit-title">End unit responsibility?</h3>
+            <p className="screen-note">End {endMembershipTarget.personName}'s responsibility in {endMembershipTarget.unitName}? The server also removes all team placements for that unit and records the change.</p>
+            <p className="screen-note">Recorded reason: {endMembershipTarget.reason}</p>
+            <div className="phase5-access-actions">
+              <Button variant="secondary" disabled={busy} onClick={() => setEndMembershipTarget(null)}>Keep responsibility</Button>
+              <Button busy={busy} onClick={async () => {
+                const target = endMembershipTarget;
+                const ok = await action(() => saveResponsibility("remove", target.membership, target.personId, target.reason), "Unit responsibility and its team placements ended with audit history.");
+                if (ok) setEndMembershipTarget(null);
+              }}>End responsibility and teams</Button>
+            </div>
+          </div>
+        </div> : null}
 
         {revokeTarget ? <div className="phase5-access-revoke" role="dialog" aria-modal="true" aria-labelledby="phase5-revoke-title">
           <div className="phase5-access-revoke-card">

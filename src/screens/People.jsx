@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 import { classifyPreviewFeatureResult } from "../lib/pendingFeatureCompatibility";
 import { dateOnly, dueLabel } from "../lib/time";
 import { statusPill, ProductNotice, LoadingState, FieldGroup, EmptyState, Avatar, ProgressMeter, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
+import { protectedMoney, amountToMinor } from "../lib/protectedCompensation";
 import {
   OPERATIONAL_FILE_ACCEPT,
   listOperationalFiles,
@@ -54,21 +55,6 @@ function avgStartLabel(minutes) {
   return String(Math.floor(value / 60)).padStart(2, "0") + ":" + String(value % 60).padStart(2, "0");
 }
 
-function protectedMoney(minor, currency = "GHS") {
-  if (minor == null) return "Not recorded";
-  return new Intl.NumberFormat("en-GH", {
-    style: "currency",
-    currency,
-    currencyDisplay: "code",
-    maximumFractionDigits: 2,
-  }).format(Number(minor) / 100);
-}
-
-function amountToMinor(value) {
-  const number = Number(String(value || "").replace(/,/g, ""));
-  return Number.isFinite(number) ? Math.round(number * 100) : 0;
-}
-
 export default function People({ me, openItem, go, openLifecycle, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -95,21 +81,50 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   const [employeeFileBusy, setEmployeeFileBusy] = useState(false);
   const [drill, setDrill] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [verifiedRosterScope, setVerifiedRosterScope] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState(null);
+  const scopeKey = `${me.org_id}:${me.id}`;
+  const rosterGeneration = useRef(0);
+  const personGeneration = useRef(0);
+  const protectedWriteBusy = useRef(false);
+  const employmentWriteBusy = useRef(false);
+  const recommendationWriteBusy = useRef(false);
+  const employeeFileWriteBusy = useRef(false);
 
   const canManageProtectedHr = (me.capabilities || []).includes("hr_private.access");
+  function clearEditorsForNavigation() {
+    setSavingProtected(false);
+    setSavingEmployment(false);
+    setVolunteerDecisionBusy(false);
+    setProtectedEditor(null);
+    setEmploymentEditor(false);
+    setEmploymentForm(null);
+  }
 
-  useEffect(() => { load(); }, [me.id]);
   useEffect(() => {
-    if (!initialEmployeeId || !rows.length || person) return;
+    void load();
+    return () => { rosterGeneration.current += 1; personGeneration.current += 1; };
+  }, [me.id, me.org_id]);
+  useEffect(() => {
+    if (!initialEmployeeId || !rows.length || person || accessIntent) return;
     const match = rows.find((row) => row.id === initialEmployeeId || row.profile_id === initialEmployeeId);
     if (!match) return;
     openPerson(match);
     onInitialHandled?.();
-  }, [initialEmployeeId, rows, person]);
+  }, [initialEmployeeId, rows, person, accessIntent]);
   useEffect(() => {
     if (!accessIntent) return;
+    // Deep-link to access administration wins over any slower employee
+    // detail request that was in flight when navigation occurred.
+    personGeneration.current += 1;
+    employeeFileWriteBusy.current = false;
+    setEmployeeFileBusy(false);
+    clearEditorsForNavigation();
+    setPerson(null);
+    setProtectedHr(null);
+    setDetailLoading(false);
+    setProtectedHrLoading(false);
     setAccessFocusProfileId(accessIntent.profileId || null);
     setAccessFocusUnitId(accessIntent.unitId || null);
     setAccessFocusMode(accessIntent.mode || null);
@@ -118,28 +133,34 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }, [accessIntent]);
 
   async function load({ silent = false } = {}) {
-    if (!silent) setLoading(true);
+    const generation = ++rosterGeneration.current;
+    if (!silent) { setLoading(true); setVerifiedRosterScope(null); }
     setError(null);
+    try {
     const [rosterResult, peopleResult, leaveResult, unitsResult] = await Promise.all([
       supabase.rpc("admin_employee_roster_summary"),
       supabase.rpc("admin_people_summary"),
       supabase.from("leave_settings").select("annual_days,sick_days,max_carryover,updated_by,updated_at").eq("org_id", me.org_id).maybeSingle(),
       supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("name"),
     ]);
+    if (generation !== rosterGeneration.current) return false;
     if (rosterResult.error || peopleResult.error) {
+      setVerifiedRosterScope(null);
       setError(humanError(rosterResult.error || peopleResult.error, "The People record could not load."));
       setLoading(false);
-      return;
+      return false;
     }
     if (leaveResult.error) {
+      setVerifiedRosterScope(null);
       setError(humanError(leaveResult.error, "Leave policy status could not load."));
       setLoading(false);
-      return;
+      return false;
     }
     if (unitsResult.error) {
+      setVerifiedRosterScope(null);
       setError(humanError(unitsResult.error, "Organisation units could not load."));
       setLoading(false);
-      return;
+      return false;
     }
     const operationalByProfile = new Map((Array.isArray(peopleResult.data) ? peopleResult.data : []).map((entry) => [entry.id, entry]));
     const rosterRows = (Array.isArray(rosterResult.data) ? rosterResult.data : []).map((employee) => {
@@ -206,20 +227,41 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     } catch {
       hydratedRows = rosterRows;
     }
+    if (generation !== rosterGeneration.current) return false;
+    setVerifiedRosterScope(scopeKey);
     setRows(hydratedRows);
     setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
     setUnits(unitsResult.data || []);
     setLoading(false);
+    return true;
+    } catch (failure) {
+      if (generation === rosterGeneration.current) {
+        setVerifiedRosterScope(null);
+        setError(humanError(failure, "People records could not be verified. Retry before making changes."));
+        setLoading(false);
+      }
+      return false;
+    }
   }
 
   async function openPerson(summary) {
+    const generation = ++personGeneration.current;
+    employeeFileWriteBusy.current = false;
+    setEmployeeFileBusy(false);
+    clearEditorsForNavigation();
+    setPerson(null);
+    setProtectedHr(null);
+    setVolunteerRecommendations([]);
+    setEmployeeFiles({ photos: [], documents: [] });
     setVolunteerRecommendationsAvailable(true);
     setDetailLoading(true);
     setError(null);
     setDrill(null);
     setPersonTab("overview");
 
+    try {
     const rosterDetailResult = await supabase.rpc("admin_employee_roster_detail", { p_employee_id: summary.id });
+    if (generation !== personGeneration.current) return;
     if (rosterDetailResult.error) {
       setDetailLoading(false);
       setError(humanError(rosterDetailResult.error, "That employee record could not load."));
@@ -260,7 +302,9 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
               .order("requested_at", { ascending: false })
           : Promise.resolve({ data: [], error: null }),
       ]);
+      if (generation !== personGeneration.current) return;
     } catch (fileError) {
+      if (generation !== personGeneration.current) return;
       setProtectedHrLoading(false);
       setDetailLoading(false);
       setError(humanError(fileError, "That employee's private files could not load."));
@@ -293,6 +337,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       }
     }
 
+    if (generation !== personGeneration.current) return;
     const data = detailResult.data;
     const work = Array.isArray(data?.work) ? data.work.map((item) => ({
       ...item,
@@ -337,9 +382,22 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         carryover_from_last_year: summary.carryover_from_last_year || 0,
       },
     });
+    } catch (failure) {
+      if (generation === personGeneration.current) {
+        setDetailLoading(false);
+        setProtectedHrLoading(false);
+        setError(humanError(failure, "This employee's current record could not be verified. Try opening it again."));
+      }
+    }
   }
 
   function openAccessAdministration(profileId = null) {
+    personGeneration.current += 1;
+    employeeFileWriteBusy.current = false;
+    setEmployeeFileBusy(false);
+    clearEditorsForNavigation();
+    setDetailLoading(false);
+    setProtectedHrLoading(false);
     setAccessFocusProfileId(profileId);
     setAccessFocusUnitId(null);
     setAccessFocusMode(profileId ? "responsibility" : "invite");
@@ -349,20 +407,24 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 
-  async function refreshEmployeeFiles(employeeId) {
+  async function refreshEmployeeFiles(employeeId, generation) {
     const [photos, documents] = await Promise.all([
       listOperationalFiles("employee_photo", employeeId),
       listOperationalFiles("employee_document", employeeId),
     ]);
+    if (generation !== personGeneration.current) return;
     const latest = photos[0] || null;
     const photoUrl = latest ? await signedOperationalFileUrl(latest, 3600) : null;
+    if (generation !== personGeneration.current) return;
     setEmployeeFiles({ photos, documents });
     setRows((current) => current.map((entry) => entry.id === employeeId ? { ...entry, photo_url: photoUrl } : entry));
     setPerson((current) => current?.id === employeeId ? { ...current, photo_url: photoUrl } : current);
   }
 
   async function uploadEmployeeFile(file, kind) {
-    if (!person?.id || !file) return;
+    if (!person?.id || !file || employeeFileWriteBusy.current) return;
+    const generation = personGeneration.current;
+    employeeFileWriteBusy.current = true;
     setEmployeeFileBusy(true);
     setError(null);
     try {
@@ -372,43 +434,57 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         contextId: person.id,
         relation: kind === "photo" ? "employee_photo" : "employee_document",
       });
-      await refreshEmployeeFiles(person.id);
+      await refreshEmployeeFiles(person.id, generation);
     } catch (fileError) {
-      setError(humanError(fileError, kind === "photo"
-        ? "The employee photo could not be saved."
-        : "The employee document could not be saved."));
+      if (generation === personGeneration.current) {
+        setError(humanError(fileError, kind === "photo"
+          ? "The employee photo could not be confirmed. Review the record before trying again."
+          : "The employee document could not be confirmed. Review the record before trying again."));
+      }
     } finally {
-      setEmployeeFileBusy(false);
+      if (generation === personGeneration.current) {
+        employeeFileWriteBusy.current = false;
+        setEmployeeFileBusy(false);
+      }
     }
   }
 
   async function saveProtectedRecord(form) {
-    if (!person?.employee_id) return;
+    if (!person?.employee_id || !canManageProtectedHr || protectedWriteBusy.current) return;
+    const employeeId = person.employee_id;
+    const generation = personGeneration.current;
+    protectedWriteBusy.current = true;
     setSavingProtected(true);
     setError(null);
-    const { error: saveError } = await supabase.rpc("hr_employee_protected_record", {
-      p_employee_id: person.employee_id,
-      p_record_type: form.recordType,
-      p_payload: form.payload,
-      p_replaces_id: form.replacesId || null,
-      p_reason: form.reason,
-    });
-    if (saveError) {
-      setSavingProtected(false);
-      setError(humanError(saveError, "Protected HR data could not be recorded."));
-      return;
+    let recorded = false;
+    try {
+      const { error: saveError } = await supabase.rpc("hr_employee_protected_record", {
+        p_employee_id: employeeId,
+        p_record_type: form.recordType,
+        p_payload: form.payload,
+        p_replaces_id: form.replacesId || null,
+        p_reason: form.reason,
+      });
+      if (saveError) throw saveError;
+      recorded = true;
+      if (generation !== personGeneration.current) return;
+      const { data, error: refreshError } = await supabase.rpc("hr_employee_protected_summary", {
+        p_employee_id: employeeId,
+      });
+      if (refreshError) throw refreshError;
+      if (generation !== personGeneration.current) return;
+      setProtectedHr(data || null);
+      setProtectedEditor(null);
+    } catch (failure) {
+      if (generation === personGeneration.current) {
+        setError(recorded
+          ? "Protected HR data was recorded, but its latest state could not be verified. Review the record before submitting again."
+          : humanError(failure, "Protected HR data could not be confirmed. Review before retrying."));
+      }
+    } finally {
+      protectedWriteBusy.current = false;
+      if (generation === personGeneration.current) setSavingProtected(false);
     }
-
-    const { data, error: refreshError } = await supabase.rpc("hr_employee_protected_summary", {
-      p_employee_id: person.employee_id,
-    });
-    setSavingProtected(false);
-    if (refreshError) {
-      setError(humanError(refreshError, "Protected HR data was recorded but could not be refreshed."));
-      return;
-    }
-    setProtectedHr(data || null);
-    setProtectedEditor(null);
   }
 
   function openEmploymentEditor() {
@@ -433,69 +509,101 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }
 
   async function decideVolunteerRecommendation(row, status) {
-    if (!row?.id || !["accepted","declined"].includes(status)) return;
+    if (!row?.id || !["accepted","declined"].includes(status)
+        || recommendationWriteBusy.current || !volunteerRecommendationsAvailable) return;
+    const generation = personGeneration.current;
+    const visibleId = person?.employee_id;
+    recommendationWriteBusy.current = true;
     setVolunteerDecisionBusy(true);
     setError(null);
     const note = status === "accepted"
       ? "Recommendation accepted for formal Administration follow-up. No employment or compensation value was changed automatically."
       : "Recommendation declined by Administration.";
-    const { error: decisionError } = await supabase.from("volunteer_change_recommendations")
-      .update({ status, decided_by: me.id, decided_at: new Date().toISOString(), decision_note: note })
-      .eq("id", row.id)
-      .eq("status", "pending");
-    setVolunteerDecisionBusy(false);
-    if (decisionError) {
-      setError(humanError(decisionError, "The volunteer recommendation could not be decided."));
-      return;
+    try {
+      // Zero matching rows means another approver already acted; it is NOT a
+      // successful decision from this administrator.
+      const { data, error: decisionError } = await supabase.from("volunteer_change_recommendations")
+        .update({ status, decided_by: me.id, decided_at: new Date().toISOString(), decision_note: note })
+        .eq("id", row.id)
+        .eq("status", "pending")
+        .select("id,status,decided_at,decision_note")
+        .maybeSingle();
+      if (decisionError) throw decisionError;
+      if (!data) throw new Error("This recommendation was already changed or is no longer available. Reload its record before trying again.");
+      if (generation !== personGeneration.current) return;
+      setVolunteerRecommendations((entries) => visibleId === person?.employee_id
+        ? entries.map((entry) => entry.id === row.id ? { ...entry, ...data } : entry)
+        : entries);
+    } catch (failure) {
+      if (generation === personGeneration.current)
+        setError(humanError(failure, "The recommendation decision could not be confirmed. Reload the record before retrying."));
+    } finally {
+      recommendationWriteBusy.current = false;
+      if (generation === personGeneration.current) setVolunteerDecisionBusy(false);
     }
-    setVolunteerRecommendations((rows) => rows.map((entry) => entry.id === row.id
-      ? { ...entry, status, decided_at: new Date().toISOString(), decision_note: note }
-      : entry));
   }
 
   async function saveEmployment() {
-    if (!person || !employmentForm) return;
+    if (!person?.profile_id || !employmentForm || employmentWriteBusy.current) return;
+    const profileId = person.profile_id;
+    const employeeId = person.employee_id;
+    const generation = personGeneration.current;
+    employmentWriteBusy.current = true;
     setSavingEmployment(true);
     setError(null);
-    const { data, error: saveError } = await supabase.rpc("admin_update_employment", {
-      p_profile_id: person.profile_id,
-      p_employment_type: employmentForm.employmentType,
-      p_job_title: employmentForm.jobTitle || null,
-      p_unit_id: employmentForm.unitId || null,
-      p_manager_profile_id: employmentForm.managerId || null,
-      p_membership_role: employmentForm.role,
-      p_working_pattern: { kind: employmentForm.workingPattern || "not_recorded" },
-      p_employment_status: employmentForm.status,
-      p_joined_on: employmentForm.joinedOn || null,
-      p_exited_on: employmentForm.status === "exited" ? (employmentForm.exitedOn || null) : null,
-      p_change_type: employmentForm.changeType,
-      p_effective_on: employmentForm.effectiveOn,
-      p_reason: employmentForm.reason || null,
-      p_correction_of: employmentForm.changeType === "correction" ? (employmentForm.correctionOf || null) : null,
-    });
-    setSavingEmployment(false);
-    if (saveError) {
-      setError(humanError(saveError, "The employment change could not be recorded."));
-      return;
+    try {
+      const { data, error: saveError } = await supabase.rpc("admin_update_employment", {
+        p_profile_id: profileId,
+        p_employment_type: employmentForm.employmentType,
+        p_job_title: employmentForm.jobTitle || null,
+        p_unit_id: employmentForm.unitId || null,
+        p_manager_profile_id: employmentForm.managerId || null,
+        p_membership_role: employmentForm.role,
+        p_working_pattern: { kind: employmentForm.workingPattern || "not_recorded" },
+        p_employment_status: employmentForm.status,
+        p_joined_on: employmentForm.joinedOn || null,
+        p_exited_on: employmentForm.status === "exited" ? (employmentForm.exitedOn || null) : null,
+        p_change_type: employmentForm.changeType,
+        p_effective_on: employmentForm.effectiveOn,
+        p_reason: employmentForm.reason || null,
+        p_correction_of: employmentForm.changeType === "correction" ? (employmentForm.correctionOf || null) : null,
+      });
+      if (saveError) throw saveError;
+      if (generation !== personGeneration.current) return;
+      const current = data?.current;
+      if (!current) {
+        setError("The employment update response could not be verified. Reopen the record before retrying.");
+        return;
+      }
+      setPerson((value) => value?.employee_id === employeeId ? ({
+        ...value,
+        employment: data,
+        unit_id: current.unit_id,
+        unit_name: current.unit_name,
+        role: current.membership_role,
+        job_title: current.job_title,
+        contract_type: current.employment_type,
+        started_on: current.joined_on,
+        active: current.employment_status === "active",
+      }) : value);
+      setEmploymentEditor(false);
+      setEmploymentForm(null);
+      await load();
+    } catch (failure) {
+      if (generation === personGeneration.current) {
+        setError(humanError(failure, "The employment change could not be confirmed. Check current employment history before retrying."));
+      }
+    } finally {
+      employmentWriteBusy.current = false;
+      if (generation === personGeneration.current) setSavingEmployment(false);
     }
-    const current = data?.current || {};
-    setPerson((value) => ({
-      ...value,
-      employment: data,
-      unit_id: current.unit_id,
-      unit_name: current.unit_name,
-      role: current.membership_role,
-      job_title: current.job_title,
-      contract_type: current.employment_type,
-      started_on: current.joined_on,
-      active: current.employment_status === "active",
-    }));
-    setEmploymentEditor(false);
-    setEmploymentForm(null);
-    load();
   }
 
   if (loading) return <div className="body"><LoadingState label="Loading People…" /></div>;
+  if (verifiedRosterScope !== scopeKey) return <div className="body">
+    <ProductNotice tone="error" title="People records unavailable">{error || "The authorised People directory could not be verified."}</ProductNotice>
+    <Button onClick={() => void load()}>Retry People records</Button>
+  </div>;
 
   if (person && drill) {
     return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
@@ -522,8 +630,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         {drill.kind === "sessions" && drill.rows.map((session) => <PeopleFactRow
           key={session.id}
           icon="time"
-          title={new Date(session.started_at).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
-          subtitle={`Started ${new Date(session.started_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}${session.ended_at ? " · ended " + new Date(session.ended_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : " · still open"}${session.place === "office" ? " · at the office" : " · elsewhere"}`}
+          title={new Date(session.started_at).toLocaleDateString("en-GB", { timeZone: "Africa/Accra", weekday: "short", day: "numeric", month: "short" })}
+          subtitle={`Started ${new Date(session.started_at).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" })}${session.ended_at ? " · ended " + new Date(session.ended_at).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" }) : " · still open"}${session.place === "office" ? " · at the office" : " · elsewhere"}`}
         />)}
         {drill.kind === "leave" && drill.rows.map((request) => <PeopleFactRow
           key={request.id}
@@ -568,7 +676,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       : "No organisational responsibility recorded";
 
     return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
-      <PeopleBackButton onClick={() => { setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
+      <PeopleBackButton onClick={() => { personGeneration.current += 1; employeeFileWriteBusy.current = false; setEmployeeFileBusy(false); setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
 
       <div className="ev2p-admin-person-layout">
         <aside className="ev2p-admin-person-rail" aria-label="Employee context">
@@ -622,7 +730,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           {!hasLinkedProfile && person.source_department_text && <PeopleFactRow icon="people" title="Source department" subtitle={person.source_department_text} />}
           {!hasLinkedProfile && rosterUnitNames.length > 0 && <PeopleFactRow icon="people" title="Recorded units" subtitle={rosterUnitNames.join(" · ")} />}
           {!hasLinkedProfile && person.responsibility_context?.length > 0 && <PeopleFactRow icon="work" title="Programme / responsibility context" subtitle={person.responsibility_context.join(" · ")} />}
-          {person.birthday && <PeopleFactRow icon="calendar" title="Birthday" subtitle={new Date(person.birthday).toLocaleDateString("en-GB", { day: "numeric", month: "long" })} />}
+          {person.birthday && <PeopleFactRow icon="calendar" title="Birthday" subtitle={new Date(person.birthday).toLocaleDateString("en-GB", { timeZone: "Africa/Accra", day: "numeric", month: "long" })} />}
         </div>
       </PeopleWorkspaceSection>
 
@@ -713,7 +821,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         {accessInvitation ? <div className="phase5-person-invitation">
           <div>
             <strong>{accessInvitation.email}</strong>
-            <span>Invited {new Date(accessInvitation.invited_at).toLocaleString("en-GB")} · {invitationState}</span>
+            <span>Invited {new Date(accessInvitation.invited_at).toLocaleString("en-GB", { timeZone: "Africa/Accra" })} · {invitationState}</span>
           </div>
           <Button variant="quiet" size="compact" onClick={() => openAccessAdministration(person.profile_id || null)}>Review invitation</Button>
         </div> : null}
@@ -1142,7 +1250,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       initialProfileId={accessFocusProfileId}
       initialUnitId={accessFocusUnitId}
       initialMode={accessFocusMode}
-      onChanged={() => load({ silent: true })}
+      onChanged={async () => { if (!(await load({ silent: true }))) throw new Error("People records could not be refreshed."); }}
       onLifecycle={(profileId, type) => openLifecycle?.(profileId, type)}
       onOpenPerson={(profileId) => {
         const match = rows.find((entry) => entry.profile_id === profileId);

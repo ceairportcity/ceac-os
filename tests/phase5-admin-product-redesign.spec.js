@@ -23,7 +23,7 @@ test("Phase 5 keeps Administration monitoring, People & Access and configuration
   const signedSecurityBaseline = readFileSync("supabase/migrations/20261007075418_privileged_mfa_aal2_enforcement.sql", "utf8");
 
   expect(overview).toContain("Needs Administration");
-  expect(overview).toContain("Pending Staff invitations");
+  expect(overview).toContain("Invitations to review");
   expect(overview).toContain("Durable configuration");
   expect(overview).not.toContain("onInviteUnit");
   expect(people).toContain('["access","Access"]');

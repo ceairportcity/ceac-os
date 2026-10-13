@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
+import SupportAccessApprovals from "../components/SupportAccessApprovals";
 import { isOverdue } from "../lib/time";
 import { Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -443,6 +444,7 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
       onNavigate={go}
       onDrill={setDrill}
     />
+    {!loading && !loadFailed && <SupportAccessApprovals me={me} authority="unit_manager" />}
 
     {!loading && !loadFailed ? <>
       {sheet?.type === "work-review" && <Sheet onClose={() => { setSheet(null); setComment(""); setReturnItems([]); setSelectedReturnItems([]); }}>
