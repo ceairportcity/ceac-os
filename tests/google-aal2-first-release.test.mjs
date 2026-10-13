@@ -80,7 +80,12 @@ test("pre-MFA admission discloses only eligibility for the preserved active iden
   assert.match(migration, /p\.id = auth\.uid\(\)/);
   assert.match(migration, /p\.active/);
   assert.match(migration, /lower\(p\.email\) = lower\(coalesce\(auth\.jwt\(\) ->> 'email', ''\)\)/);
-  assert.match(migration, /request_path = 'rpc\/ceac_google_mfa_eligible'/);
+  assert.match(migration, /request_path = '\/rpc\/ceac_google_mfa_eligible'/);
+  assert.doesNotMatch(
+    migration,
+    /request_path = 'rpc\/ceac_google_mfa_eligible'/,
+    "PostgREST RPC request paths must include the leading slash",
+  );
   assert.match(migration, /current_user = 'authenticated'/);
   assert.match(migration, /revoke all on function public\.ceac_google_mfa_eligible\(\) from public, anon/i);
   assert.match(migration, /grant execute on function public\.ceac_google_mfa_eligible\(\) to authenticated/i);
@@ -113,7 +118,7 @@ test("database and Storage require active CEAC identity plus Google OAuth and TO
   assert.match(migration, /ceac_require_google_aal2/);
   assert.match(migration, /current_user not in \('anon', 'authenticated'\)/);
   const exception = migration.match(/if current_user = 'authenticated'[\s\S]*?return;[\s\S]*?end if;/i)?.[0] || "";
-  assert.match(exception, /request_path = 'rpc\/ceac_google_mfa_eligible'/);
+  assert.match(exception, /request_path = '\/rpc\/ceac_google_mfa_eligible'/);
   assert.match(exception, /ceac_session_is_google\(\)/);
   assert.doesNotMatch(exception, /storage|profiles|select|insert|update|delete/i);
 });
