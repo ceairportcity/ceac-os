@@ -11,7 +11,7 @@ language plpgsql
 stable
 security definer
 set search_path = ''
-as $
+as $ceac_hook$
 declare
   candidate_email text := lower(coalesce(event -> 'user' ->> 'email', ''));
   candidate_provider text := coalesce(event -> 'user' -> 'app_metadata' ->> 'provider', '');
@@ -44,7 +44,7 @@ begin
     )
   );
 end;
-$;
+$ceac_hook$;
 
 comment on function public.ceac_before_user_created(jsonb) is
   'Before User Created Auth hook: permits only Google identities with a live CEAC invitation. Existing verified-email users link without user creation.';
@@ -58,7 +58,7 @@ language sql
 stable
 security invoker
 set search_path = ''
-as $$
+as $ceac_google$
   select
     exists (
       select 1
@@ -69,7 +69,7 @@ as $$
       coalesce(auth.jwt() -> 'app_metadata' ->> 'provider', '') = 'google'
       or coalesce(auth.jwt() -> 'app_metadata' -> 'providers', '[]'::jsonb) ? 'google'
     );
-$;
+$ceac_google$;
 
 comment on function public.ceac_session_is_google() is
   'True for an OAuth session linked to Google. Release configuration must keep Google as the sole enabled OAuth provider; email may remain only as the non-OAuth rollback path.';
