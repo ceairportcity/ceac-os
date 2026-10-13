@@ -16,10 +16,13 @@ declare
   candidate_email text := lower(coalesce(event -> 'user' ->> 'email', ''));
   candidate_provider text := coalesce(event -> 'user' -> 'app_metadata' ->> 'provider', '');
 begin
-  if candidate_provider <> 'google' then
+  -- CEAC's invitation delivery provisions an email identity first. That
+  -- identity cannot pass ceac_session_is_google(); it exists only so the
+  -- verified email can later link to Google without changing auth.users.id.
+  if candidate_provider not in ('google', 'email') then
     return jsonb_build_object(
       'error', jsonb_build_object(
-        'message', 'CEAC accounts must use an authorised Google invitation.',
+        'message', 'CEAC accounts require an authorised invitation.',
         'http_code', 403
       )
     );
@@ -47,7 +50,7 @@ end;
 $ceac_hook$;
 
 comment on function public.ceac_before_user_created(jsonb) is
-  'Before User Created Auth hook: permits only Google identities with a live CEAC invitation. Existing verified-email users link without user creation.';
+  'Before User Created Auth hook: permits Google or invitation-provisioning email identities only with a live CEAC invitation. Email sessions remain unable to pass the Google OAuth data boundary.';
 
 revoke all on function public.ceac_before_user_created(jsonb) from public, anon, authenticated;
 grant execute on function public.ceac_before_user_created(jsonb) to supabase_auth_admin;
