@@ -1,3 +1,13 @@
+# 13 OCT 2026 OWNER UPDATE — TINYFISH RECOVERY ONLY; FIRST READ
+
+**Latest owner override to the 12 October "TinyFish unavailable" rule:** TinyFish has been replenished and its connected wallet verified as positive on 13 October. One **bounded** browser-assisted recovery of Work's existing CEAC Codespace is now permitted **after the owner signs into the GitHub account that owns that Codespace using a secure TinyFish profile setup**. No browser profile currently records a GitHub sign-in, so do not run metered authenticated automation until sign-in is confirmed. Never ask for a password/OTP in chat or copy credentials into PRs.
+
+**Sequence:** inspect Codespaces listing and verify original workspace/repository/branch/HEAD and exact uncommitted Google OAuth/identity/TOTP files **read-only**; do not reset, checkout, discard, stash, overwrite or expose credentials/employee data. Once verified, preserve unpublished work through a reviewable, privacy-safe recovery branch/snapshot, avoiding secrets, without changing existing working files. Recover first, then determine what Work already completed and which release gates remain. Never use this tool for a blind production deployment or run unrestricted QA.
+
+**Credit protection:** Check wallet before each automation. Cap initial run at ≤35 agent steps and ≤10 minutes; stop on authentication, workspace ownership, spend or Codespace access failures rather than retry. No top-ups or auto-reload. Monitor wallet after each run and cap the recovery effort at $1 without fresh owner approval. Existing production and PR #50 application source remain untouched; this exception does not constitute owner release GO. The full [dual-mode execution contract](docs/continuity/CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md) remains mandatory.
+
+---
+
 # BINDING FIRST READ — FINISH CEAC MIGRATION WITH DUAL CHAT/WORK EXECUTION (12 OCT 2026)
 
 **Before interpreting any older "active phase", running tools, editing source, or asking the owner for another plan, read [CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md](docs/continuity/CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md).** This is the latest owner-approved operating objective and division of labour. The outcome is the fully **improved** CEAC application migrated from the old GitHub account to private `ceairportcity/ceac-os`, with existing Vercel/Supabase production preserved, functioning real HR and other role access, and Google-only HR-approved identities with universal TOTP/AAL2 in the same release. Preserve all approved design, features, data and security. No rollback to the unimproved old app.
