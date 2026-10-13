@@ -137,3 +137,21 @@ test("newly created payroll run remains preferred without manual selection", asy
   await creating;
   assert.deepEqual(h.seen.reloadPreferences, [true]);
 });
+
+test("manual selection during pending correction preserves user's run preference", async () => {
+  const h = harness("createCorrection");
+  const correcting = h.act("Correct amount");
+  h.manualSelectionGeneration.current += 1;
+  h.requests[0].resolve({ data:"correction-A", error:null });
+  await correcting;
+  assert.deepEqual(h.seen.reload, ["correction-A"]);
+  assert.deepEqual(h.seen.reloadPreferences, [false]);
+});
+
+test("correction creation prefers its new run when no manual selection intervenes", async () => {
+  const h = harness("createCorrection");
+  const correcting = h.act("Correct amount");
+  h.requests[0].resolve({ data:"correction-A", error:null });
+  await correcting;
+  assert.deepEqual(h.seen.reloadPreferences, [true]);
+});
