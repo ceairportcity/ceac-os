@@ -4,22 +4,40 @@ import AuthFrame from "./AuthFrame";
 import AccountMfaSetup from "./AccountMfaSetup";
 
 export default function MandatoryMfaGate({ children }) {
-  const [checking, setChecking] = useState(true);
-  const [allowed, setAllowed] = useState(false);
+  const [state, setState] = useState("checking");
   const [error, setError] = useState(null);
 
   const refresh = useCallback(async () => {
-    setChecking(true);
+    setState("checking");
     setError(null);
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      // Signed-out visitors must reach the Google-only sign-in screen. MFA
+      // enrollment is never offered until Supabase has established a session.
+      if (!sessionData?.session) {
+        setState("signed-out");
+        return;
+      }
+
       const { data, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (assuranceError) throw assuranceError;
-      setAllowed(data?.currentLevel === "aal2");
+      if (data?.currentLevel === "aal2") {
+        setState("allowed");
+        return;
+      }
+
+      // This is the only Data API call permitted before AAL2. The server
+      // returns one boolean and verifies Google OAuth, the preserved Auth ID,
+      // the matching profile email, and the profile's active state.
+      const { data: eligible, error: eligibilityError } = await supabase
+        .rpc("ceac_google_mfa_eligible");
+      if (eligibilityError) throw eligibilityError;
+      setState(eligible === true ? "enroll" : "denied");
     } catch (failure) {
-      setAllowed(false);
-      setError(failure?.message || "CEAC could not verify authenticator security.");
-    } finally {
-      setChecking(false);
+      setState("error");
+      setError(failure?.message || "CEAC could not verify account security.");
     }
   }, []);
 
@@ -29,20 +47,23 @@ export default function MandatoryMfaGate({ children }) {
     return () => data.subscription.unsubscribe();
   }, [refresh]);
 
-  if (checking) {
-    return <div className="auth-boot">Verifying authenticator security…</div>;
+  if (state === "checking") {
+    return <div className="auth-boot">Verifying account security…</div>;
   }
 
-  if (allowed) return children;
+  if (state === "signed-out" || state === "allowed") return children;
 
+  const denied = state === "denied";
   return (
     <AuthFrame
-      eyebrow="Required security step"
-      title="Verify your authenticator"
-      description="Every enabled CEAC account must reach AAL2 before application data, files or workflows are available."
+      eyebrow={denied ? "Account not authorised" : "Required security step"}
+      title={denied ? "CEAC access is not enabled" : "Verify your authenticator"}
+      description={denied
+        ? "This Google account is not linked to an active CEAC profile. No application data or authenticator enrollment is available."
+        : "Every enabled CEAC account must reach AAL2 before application data, files or workflows are available."}
     >
       {error && <p className="auth-message error" role="alert">{error}</p>}
-      <AccountMfaSetup onVerified={refresh} />
+      {state === "enroll" && <AccountMfaSetup onVerified={refresh} />}
       <button className="btn secondary" type="button" onClick={() => supabase.auth.signOut()}>
         Sign out
       </button>
