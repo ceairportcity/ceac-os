@@ -19,15 +19,22 @@ test("interactive sign-in is Google OAuth only", () => {
   assert.doesNotMatch(signIn, /type=["']password["']/);
 });
 
-test("new Auth users require Google plus a live CEAC invitation", () => {
+test("new Auth users require supported identity provisioning plus a live CEAC invitation", () => {
   assert.match(migration, /create or replace function public\.ceac_before_user_created\(event jsonb\)/i);
-  assert.match(migration, /candidate_provider <> 'google'/);
+  assert.match(migration, /candidate_provider not in \('google', 'email'\)/);
+  assert.match(migration, /identity cannot pass ceac_session_is_google/);
   assert.match(migration, /from public\.pending_invitations i/i);
   assert.match(migration, /i\.resolved_at is null/);
   assert.match(migration, /i\.revoked_at is null/);
   assert.match(migration, /i\.expires_at > now\(\)/);
   assert.match(migration, /grant execute on function public\.ceac_before_user_created\(jsonb\) to supabase_auth_admin/i);
   assert.match(migration, /revoke all on function public\.ceac_before_user_created\(jsonb\) from public, anon, authenticated/i);
+  const googleSessionFunction = migration
+    .split("create or replace function public.ceac_session_is_google()")[1]
+    ?.split("comment on function public.ceac_session_is_google()")[0] || "";
+  assert.match(googleSessionFunction, /method' = 'oauth'/);
+  assert.match(googleSessionFunction, /google/);
+  assert.doesNotMatch(googleSessionFunction, /candidate_provider|pending_invitations/);
 });
 
 test("all authentication SQL functions use matched dollar-quote delimiters", () => {
