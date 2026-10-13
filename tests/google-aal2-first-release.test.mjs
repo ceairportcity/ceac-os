@@ -22,7 +22,9 @@ test("interactive sign-in is Google OAuth only", () => {
 test("signed-out visitors reach sign-in and only eligible Google users reach MFA", () => {
   assert.match(app, new RegExp("<MandatoryMfaGate>\\s*<AuthenticatedApp\\s*/>\\s*</MandatoryMfaGate>", "s"));
   assert.doesNotMatch(app, /AccountPassword|\/activate|\/reset-password/);
-  assert.match(gate, /useRef/);\n  assert.match(gate, /refreshGeneration\\.current/);\n  assert.match(gate, /getSession/);
+  assert.match(gate, /useRef/);
+  assert.match(gate, /refreshGeneration\\.current/);
+  assert.match(gate, /getSession/);
   assert.match(gate, /if \(!sessionData\?\.session\)/);
   assert.match(gate, /state === "signed-out" \|\| state === "allowed"/);
   assert.match(gate, /getAuthenticatorAssuranceLevel/);
