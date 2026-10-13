@@ -19,18 +19,23 @@ test("interactive sign-in is Google OAuth only", () => {
   assert.doesNotMatch(signIn, /type=["']password["']/);
 });
 
-test("signed-out visitors reach sign-in and only eligible Google users reach MFA", () => {
+test("signed-out visitors reach sign-in and every AAL2 session rechecks CEAC admission", () => {
   assert.match(app, new RegExp("<MandatoryMfaGate>\\s*<AuthenticatedApp\\s*/>\\s*</MandatoryMfaGate>", "s"));
   assert.doesNotMatch(app, /AccountPassword|\/activate|\/reset-password/);
   assert.match(gate, /useRef/);
-  assert.match(gate, /refreshGeneration\\.current/);
+  assert.match(gate, /refreshGeneration\.current/);
   assert.match(gate, /getSession/);
   assert.match(gate, /if \(!sessionData\?\.session\)/);
   assert.match(gate, /state === "signed-out" \|\| state === "allowed"/);
   assert.match(gate, /getAuthenticatorAssuranceLevel/);
-  assert.match(gate, /currentLevel === "aal2"/);
   assert.match(gate, /rpc\("ceac_google_mfa_eligible"\)/);
-  assert.match(gate, /eligible === true \? "enroll" : "denied"/);
+  assert.match(gate, /if \(eligible !== true\)/);
+  assert.match(gate, /setState\(data\?\.currentLevel === "aal2" \? "allowed" : "enroll"\)/);
+  assert.ok(
+    gate.indexOf('rpc("ceac_google_mfa_eligible")') <
+      gate.indexOf('setState(data?.currentLevel === "aal2"'),
+    "active CEAC eligibility must be checked before any AAL2 session is allowed",
+  );
   assert.match(gate, /state === "enroll" && <AccountMfaSetup onVerified=\{refresh\}/);
   assert.match(gate, /not linked to an active CEAC profile/);
 });
@@ -50,9 +55,22 @@ test("pre-MFA admission discloses only eligibility for the preserved active iden
   assert.match(migration, /current_user = 'authenticated'/);
   assert.match(migration, /revoke all on function public\.ceac_google_mfa_eligible\(\) from public, anon/i);
   assert.match(migration, /grant execute on function public\.ceac_google_mfa_eligible\(\) to authenticated/i);
+  assert.doesNotMatch(
+    migration,
+    /app_metadata' -> 'providers'/,
+    "a linked Google identity must not be mistaken for the provider used by this session",
+  );
+  const aal2Function = migration
+    .split("create or replace function public.ceac_session_is_google_aal2()")[1]
+    ?.split("comment on function public.ceac_session_is_google_aal2()")[0] || "";
+  assert.match(
+    aal2Function,
+    /ceac_google_mfa_eligible\(\)/,
+    "every AAL2 authorization decision must recheck the active preserved CEAC identity",
+  );
 });
 
-test("database and Storage require a Google OAuth plus TOTP AAL2 session", () => {
+test("database and Storage require active CEAC identity plus Google OAuth and TOTP AAL2", () => {
   for (const required of ["aal2", "oauth", "totp", "google"]) {
     assert.match(migration, new RegExp(required, "i"));
   }
