@@ -19,6 +19,17 @@ test("interactive sign-in is Google OAuth only", () => {
   assert.doesNotMatch(signIn, /type=["']password["']/);
 });
 
+test("new Auth users require Google plus a live CEAC invitation", () => {
+  assert.match(migration, /create or replace function public\.ceac_before_user_created\(event jsonb\)/i);
+  assert.match(migration, /candidate_provider <> 'google'/);
+  assert.match(migration, /from public\.pending_invitations i/i);
+  assert.match(migration, /i\.resolved_at is null/);
+  assert.match(migration, /i\.revoked_at is null/);
+  assert.match(migration, /i\.expires_at > now\(\)/);
+  assert.match(migration, /grant execute on function public\.ceac_before_user_created\(jsonb\) to supabase_auth_admin/i);
+  assert.match(migration, /revoke all on function public\.ceac_before_user_created\(jsonb\) from public, anon, authenticated/i);
+});
+
 test("signed-out visitors reach sign-in and every AAL2 session rechecks CEAC admission", () => {
   assert.match(app, new RegExp("<MandatoryMfaGate>\\s*<AuthenticatedApp\\s*/>\\s*</MandatoryMfaGate>", "s"));
   assert.doesNotMatch(app, /AccountPassword|\/activate|\/reset-password/);
