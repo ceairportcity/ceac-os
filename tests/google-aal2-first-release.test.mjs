@@ -66,10 +66,15 @@ test("pre-MFA admission discloses only eligibility for the preserved active iden
   assert.match(migration, /current_user = 'authenticated'/);
   assert.match(migration, /revoke all on function public\.ceac_google_mfa_eligible\(\) from public, anon/i);
   assert.match(migration, /grant execute on function public\.ceac_google_mfa_eligible\(\) to authenticated/i);
-  assert.doesNotMatch(
+  assert.match(
     migration,
     /app_metadata' -> 'providers'/,
-    "a linked Google identity must not be mistaken for the provider used by this session",
+    "email-first accounts must remain eligible after automatic Google identity linking",
+  );
+  assert.match(
+    migration,
+    /Google as the sole enabled OAuth provider/,
+    "the linked-provider fallback is safe only when Google is the sole enabled OAuth provider",
   );
   const aal2Function = migration
     .split("create or replace function public.ceac_session_is_google_aal2()")[1]
