@@ -600,9 +600,9 @@ export default function Performance({ me }) {
                 <textarea className="field" rows="2" aria-label="HR assessment publication decision reason"
                   value={releaseDecisionNote} onChange={(event)=>setReleaseDecisionNote(event.target.value)} />
               </FieldGroup>
-              <button className="btn btn-sm" disabled={busy || releaseDecisionNote.trim().length < 8}
+              <button className="btn btn-sm" disabled={busy || currentReleaseRequest.requested_by === me.id || releaseDecisionNote.trim().length < 8}
                 onClick={()=>decideHRRelease(true)}>HR approve publication</button>
-              <button className="btn btn-ghost btn-sm" disabled={busy || releaseDecisionNote.trim().length < 8}
+              <button className="btn btn-ghost btn-sm" disabled={busy || currentReleaseRequest.requested_by === me.id || releaseDecisionNote.trim().length < 8}
                 onClick={()=>decideHRRelease(false)}>HR decline with reason</button>
             </>}
           </div>}
