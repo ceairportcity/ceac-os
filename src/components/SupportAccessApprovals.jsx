@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import { isMissingTechnicalSupportStageSchema } from "../lib/stage1SchemaCompatibility";
 import "../role-styles/technical-support.css";
 
 // An inbox for existing business authorities, never for Technical Support.
@@ -11,6 +12,7 @@ export default function SupportAccessApprovals({ me, authority }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [stagePending, setStagePending] = useState(false);
   const [notice, setNotice] = useState(null);
   const [notes, setNotes] = useState({});
   const [busy, setBusy] = useState(false);
@@ -33,7 +35,7 @@ export default function SupportAccessApprovals({ me, authority }) {
   async function refresh() {
     if (busyRef.current) return;
     const id = ++generation.current;
-    setRows([]); setLoadedScope(null); setError(null); setLoadFailed(false);
+    setRows([]); setLoadedScope(null); setError(null); setLoadFailed(false); setStagePending(false);
     setLoading(true); setNotice(null);
     try {
       if (!me.id || !me.org_id) throw new Error("Missing verified business identity.");
@@ -43,10 +45,14 @@ export default function SupportAccessApprovals({ me, authority }) {
         .eq("state", "pending").order("created_at", { ascending: true }).limit(30);
       if (failure) throw failure;
       if (generation.current === id) setRows(data || []);
-    } catch {
+    } catch (failure) {
       if (generation.current === id) {
-        setLoadFailed(true);
-        setError("Business approval records could not be verified. Refresh before taking any action.");
+        if (isMissingTechnicalSupportStageSchema(failure)) {
+          setStagePending(true);
+        } else {
+          setLoadFailed(true);
+          setError("Business approval records could not be verified. Refresh before taking any action.");
+        }
       }
     } finally {
       if (generation.current === id) {
@@ -94,11 +100,12 @@ export default function SupportAccessApprovals({ me, authority }) {
     <h2>Technical access approvals</h2>
     <p className="screen-note">Your business decision authorises a bounded support action. It does not itself create an account, membership or permission. Technical Support must separately record what was actually done.</p>
     {loading && <p role="status">Checking pending business decisions...</p>}
-    {verified && <button type="button" className="btn btn-ghost" disabled={busy}
+    {verified && stagePending && <p className="screen-note" role="status">Technical access approvals are not enabled in Stage 1. Existing Manager and Administration work remains available; no support-access decision can be recorded until the separately reviewed Technical Support migrations are approved.</p>}
+    {verified && !stagePending && <button type="button" className="btn btn-ghost" disabled={busy}
       onClick={() => void refresh()}>Refresh approval requests</button>}
     {verified && error && <p className="ceac-support-error" role="alert">{error}</p>}
     {verified && notice && <p className="ceac-support-success" role="status">{notice}</p>}
-    {verified && !loadFailed && !loading && !visible.length && <p className="screen-note">No pending access-assistance decisions in the first 30 authorised records.</p>}
+    {verified && !loadFailed && !stagePending && !loading && !visible.length && <p className="screen-note">No pending access-assistance decisions in the first 30 authorised records.</p>}
     {verified && !loadFailed && visible.length === 30 && <p className="screen-note">Showing the oldest 30 pending requests. More may exist.</p>}
     {visible.map((item) => <div key={item.id} className="ceac-support-approval-item">
       <strong>{item.requested_action.replaceAll("_", " ")}</strong>

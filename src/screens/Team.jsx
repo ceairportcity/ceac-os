@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase, inviteByEmail } from "../lib/supabase";
 import { authRedirect } from "../lib/authRedirect";
 import { isOverdue } from "../lib/time";
+import { isMissingVolunteerInvitationSchema } from "../lib/stage1SchemaCompatibility";
 import { LoadingState, ProductNotice, Sheet } from "../components/bits";
 import {
   PeopleEmpty,
@@ -27,6 +28,23 @@ function dayKey(date = new Date()) {
 function requireResult(result, label) {
   if (result.error) throw new Error(`${label}: ${result.error.message}`);
   return result.data || [];
+}
+
+async function loadPendingInvitations(unitId) {
+  const current = await supabase.from("pending_invitations")
+    .select("email, full_name, invited_at, engagement_type, engagement_working_pattern")
+    .eq("unit_id", unitId).is("resolved_at", null);
+  if (!current.error) return { ...current, volunteerFieldsReady: true };
+  if (!isMissingVolunteerInvitationSchema(current.error)) return { ...current, volunteerFieldsReady: true };
+
+  const existing = await supabase.from("pending_invitations")
+    .select("email, full_name, invited_at")
+    .eq("unit_id", unitId).is("resolved_at", null);
+  return {
+    ...existing,
+    data: (existing.data || []).map((invitation) => ({ ...invitation, engagement_type: "staff" })),
+    volunteerFieldsReady: false,
+  };
 }
 
 function PersonRow({ person, openPerson, laneNames = [] }) {
@@ -78,6 +96,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState(null);
   const [error, setError] = useState(null);
+  const [volunteerInvitationsReady, setVolunteerInvitationsReady] = useState(false);
 
   useEffect(() => { load(); }, [me.id, me.unit_id]);
 
@@ -88,11 +107,13 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
       setMembers({});
       setPending([]);
       setResources([]);
+      setVolunteerInvitationsReady(false);
       setError(null);
       setLoading(false);
       return;
     }
     setLoading(true);
+    setVolunteerInvitationsReady(false);
     setError(null);
     try {
       const start = weekStart();
@@ -117,8 +138,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
           .eq("work_items.unit_id", me.unit_id).gte("submitted_at", start.toISOString()),
         supabase.from("leave_requests").select("profile_id, start_date, end_date, status")
           .eq("status", "approved").lte("start_date", today).gte("end_date", today),
-        supabase.from("pending_invitations").select("email, full_name, invited_at, engagement_type, engagement_working_pattern")
-          .eq("unit_id", me.unit_id).is("resolved_at", null),
+        loadPendingInvitations(me.unit_id),
         supabase.from("unit_resources").select("*").eq("unit_id", me.unit_id)
           .order("active", { ascending: false }).order("pinned", { ascending: false }).order("sort_order").order("title"),
       ]);
@@ -176,6 +196,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
         setMembers(map);
       } else setMembers({});
       setPending(requireResult(pendingResult, "Pending invitations"));
+      setVolunteerInvitationsReady(pendingResult.volunteerFieldsReady !== false);
       setResources(requireResult(resourceResult, "Unit resources"));
     } catch (err) { setError(err.message || "The team could not be loaded."); }
     finally { setLoading(false); }
@@ -254,6 +275,10 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
   }
 
   async function inviteVolunteer() {
+    if (!volunteerInvitationsReady) {
+      setMsg("Volunteer invitations are unavailable until the separately reviewed volunteer schema is installed.");
+      return;
+    }
     setBusy(true); setMsg(null);
     try {
       const cleanEmail = email.trim().toLowerCase();
@@ -372,10 +397,15 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
             onClick={() => setPeopleView(value)}
           >{label}</button>)}
         </div>
-        <button className="btn phase6-add-volunteer" onClick={() => { setSheet("volunteer"); setMsg(null); }}>
+        <button className="btn phase6-add-volunteer" disabled={!volunteerInvitationsReady}
+          onClick={() => { setSheet("volunteer"); setMsg(null); }}>
           + Add volunteer
         </button>
       </section>
+
+      {!loading && !volunteerInvitationsReady && <ProductNotice tone="info" title="Volunteer invitations unavailable">
+        Existing Staff, team membership and pending Staff invitations remain available. New volunteer invitations require the separately reviewed volunteer schema.
+      </ProductNotice>}
 
       {error && <ProductNotice tone="error" title="Could not complete that">{error}</ProductNotice>}
       {loading && <LoadingState label="Loading your team…" />}
@@ -472,7 +502,8 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
                 </div>)}
                 <div className="ev2p-manager-setup-actions">
                   <button className="btn btn-ghost wide-auto" onClick={() => { setSheet("invite"); setMsg(null); }}>Add Staff</button>
-                  <button className="btn btn-ghost wide-auto" onClick={() => { setSheet("volunteer"); setMsg(null); }}>Add volunteer</button>
+                  <button className="btn btn-ghost wide-auto" disabled={!volunteerInvitationsReady}
+                    onClick={() => { setSheet("volunteer"); setMsg(null); }}>Add volunteer</button>
                 </div>
               </PeopleSection>
 

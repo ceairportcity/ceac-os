@@ -5,41 +5,96 @@ import { authRedirect } from "../lib/authRedirect";
 import { authErrorMessage } from "../lib/signInError";
 
 export default function SignIn() {
+  const [mode, setMode] = useState("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
 
-  async function signInWithGoogle() {
-    if (busy) return;
-    setBusy(true);
-    setMessage(null);
+  async function signIn() {
+    if (busy || !email.trim() || !password) return;
+    setBusy(true); setMessage(null);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: authRedirect(),
-          queryParams: { prompt: "select_account" },
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      setMessage(authErrorMessage(error));
-      setBusy(false);
-    }
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      if (error) setMessage(authErrorMessage(error));
+    } catch (error) { setMessage(authErrorMessage(error)); }
+    finally { setBusy(false); }
   }
 
-  return (
-    <AuthFrame
-      eyebrow="Secure sign in"
-      title="Welcome back"
-      description="Use the Google account authorised by CEAC. Authenticator verification is required before CEAC data opens."
-    >
-      <div className="auth-form">
-        <button className="btn primary" type="button" onClick={signInWithGoogle} disabled={busy}>
-          {busy ? "Opening Google…" : "Continue with Google"}
-        </button>
-        {message && <p className="auth-message error" role="alert">{message}</p>}
-        <p className="auth-note">Only HR-authorised CEAC accounts can continue. Password and magic-link sign-in are disabled.</p>
-      </div>
-    </AuthFrame>
-  );
+  async function recover() {
+    setBusy(true); setMessage(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: authRedirect("/reset-password"),
+      });
+      if (error) throw error;
+      setMessage("If that address belongs to a CEAC account, a password-recovery email is on its way.");
+    } catch (error) { setMessage(authErrorMessage(error, "recovery")); }
+    finally { setBusy(false); }
+  }
+
+  const isSignIn = mode === "signin";
+
+  return <AuthFrame
+    eyebrow={isSignIn ? "Secure sign in" : "Account recovery"}
+    title={isSignIn ? "Welcome back" : "Reset your password"}
+    description={isSignIn
+      ? "Enter the work email attached to your CEAC account."
+      : "Enter your CEAC work email and we will send a secure recovery link."}
+  >
+    <div className="auth-form">
+      <label className="auth-field">
+        <span>Work email</span>
+        <input
+          placeholder="Work email"
+          type="email"
+          inputMode="email"
+          autoCapitalize="none"
+          autoComplete="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+        />
+      </label>
+
+      {isSignIn && <label className="auth-field">
+        <span>Password</span>
+        <div className="auth-password">
+          <input
+            placeholder="Password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            onKeyDown={(event) => event.key === "Enter" && signIn()}
+          />
+          <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
+      </label>}
+
+      {message && <div className={`auth-message ${message.startsWith("If that") ? "success" : "error"}`} role="status">{message}</div>}
+
+      <button className="auth-primary" onClick={isSignIn ? signIn : recover}
+        disabled={busy || !email || (isSignIn && !password)}>
+        <span>{busy ? "Please wait..." : isSignIn ? "Sign in to CEAC OS" : "Send recovery link"}</span>
+        {!busy && <span aria-hidden="true">→</span>}
+      </button>
+
+      <button className="auth-secondary" onClick={() => {
+        setMode(isSignIn ? "recover" : "signin");
+        setMessage(null);
+        setPassword("");
+      }}>
+        {isSignIn ? "Forgot your password?" : "Back to sign in"}
+      </button>
+    </div>
+
+    <div className="auth-help">
+      <span>Account access is issued by CEAC Administration.</span>
+      <span>Your password is handled by the secure authentication service, not stored in this interface.</span>
+      <span>If you cannot sign in, use password recovery or contact CEAC Administration through its existing approved contact route. Do not share your password or authenticator code.</span>
+    </div>
+  </AuthFrame>;
 }

@@ -21,6 +21,18 @@ function accraDateKey(value = new Date()) {
   return new Date(value).toLocaleDateString("en-CA", { timeZone: "Africa/Accra" });
 }
 
+function accraGreeting(value = new Date()) {
+  const hourPart = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Accra",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(value)).find((part) => part.type === "hour");
+  const hour = Number(hourPart?.value || 0);
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 function displayCount(value) {
   return value === null || value === undefined ? "—" : Number(value).toLocaleString("en-GH");
 }
@@ -154,6 +166,7 @@ export default function ExecutiveOverviewV2({
   const directionFallbackRows = ministryDirectionRows.length ? ministryDirectionRows : ministryStrategyRows.filter((row) => row.node_type === "ministry_direction").slice(0, 3);
   const todayKey = accraDateKey();
   const meetingsToday = meetings.filter((meeting) => accraDateKey(meeting.starts_at) === todayKey).length;
+  const greeting = accraGreeting();
 
   const attentionRows = [
     reportingGap > 0 ? {
@@ -195,7 +208,7 @@ export default function ExecutiveOverviewV2({
 
       <header className="executivev2-hero">
         <div className="executivev2-hero-copy">
-          <h2>Good morning, {executiveName || "Executive"}</h2>
+          <h2>{greeting}, {executiveName || "Executive"}</h2>
           <p>Here&apos;s what matters today across your ministry, people and operations.</p>
         </div>
         <time>{executiveDate}</time>

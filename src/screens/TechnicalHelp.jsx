@@ -107,6 +107,7 @@ export default function TechnicalHelp({ me }) {
   }
 
   const selected = visibleCases.find((item) => item.id === selectedId) || null;
+  const requestUnavailable = scopedLoading || Boolean(loadError);
 
   return <main className="body ceac-support-page">
     <header className="ceac-support-heading">
@@ -119,26 +120,26 @@ export default function TechnicalHelp({ me }) {
         <h2 id="support-new-request">Describe the problem</h2>
         <form className="ceac-support-form" onSubmit={submit}>
           <label>What do you need help with?
-            <select value={category} onChange={(event) => setCategory(event.target.value)} required>
+            <select value={category} onChange={(event) => setCategory(event.target.value)} disabled={requestUnavailable} required>
               {HELP_CATEGORIES.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}
             </select>
           </label>
           <label>Short summary
             <input value={summary} onChange={(event) => setSummary(event.target.value)}
-              maxLength={160} minLength={8} placeholder="What is preventing you from working?" required />
+              disabled={requestUnavailable} maxLength={160} minLength={8} placeholder="What is preventing you from working?" required />
           </label>
           <label>What happened?
             <textarea value={description} onChange={(event) => setDescription(event.target.value)}
-              maxLength={3000} minLength={12} rows={5}
+              disabled={requestUnavailable} maxLength={3000} minLength={12} rows={5}
               placeholder="Describe the steps and the error you saw. Leave out confidential content." required />
           </label>
           <label>Affected CEAC feature (optional)
             <input value={service} onChange={(event) => setService(event.target.value)}
-              maxLength={120} placeholder="For example, invitations or file uploads" />
+              disabled={requestUnavailable} maxLength={120} placeholder="For example, invitations or file uploads" />
           </label>
           {error && <p className="ceac-support-error" role="alert">{error}</p>}
           {success && <p className="ceac-support-success" role="status">{success}</p>}
-          <button className="btn" type="submit" disabled={busy || scopedLoading || Boolean(loadError)}>{busy ? "Recording request..." : "Send help request"}</button>
+          <button className="btn" type="submit" disabled={busy || requestUnavailable}>{busy ? "Recording request..." : "Send help request"}</button>
         </form>
       </section>
       <aside className="ceac-support-side" aria-labelledby="support-my-requests">

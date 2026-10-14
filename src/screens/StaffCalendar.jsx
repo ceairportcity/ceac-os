@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice, Sheet } from "../components/bits";
 import { Button } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
+import { isMissingPersonalPlanningSchema } from "../lib/stage1SchemaCompatibility";
 import {
   CalendarAgenda,
   CalendarFilters,
@@ -63,6 +64,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const [error,setError]=useState(null);
   const [notice,setNotice]=useState(null);
   const [filter,setFilter]=useState("all");
+  const [personalPlanningReady,setPersonalPlanningReady]=useState(true);
 
   useEffect(()=>{load();},[me.id,me.unit_id,cursor.getFullYear(),cursor.getMonth()]);
   useEffect(()=>{
@@ -79,17 +81,25 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       const to=rangeEnd.toISOString();
       const fromDay=dayKey(rangeStart);
       const toDay=dayKey(rangeEnd);
-      const [work,meetings,ministry,leave,tasks,unscheduledTasks,notes,privateEvents]=await Promise.all([
+      const [work,meetings,ministry,leave]=await Promise.all([
         supabase.from("work_items").select("id,ref,title,status,due_at,project_id,projects(id,name)").eq("assignee_id",me.id).neq("visibility","private"),
         supabase.from("meeting_sessions").select("id,title,scope,unit_id,project_id,starts_at,ends_at,status,provider,projects(name),units(name)").gte("starts_at",from).lt("starts_at",to).order("starts_at"),
         supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,cancelled").gte("starts_at",from).lt("starts_at",to).order("starts_at"),
         supabase.from("leave_requests").select("id,kind,start_date,end_date,status").eq("profile_id",me.id).eq("status","approved").order("start_date"),
+      ]);
+      const sharedError=[work.error,meetings.error,ministry.error,leave.error].find(Boolean);if(sharedError)throw sharedError;
+      let [tasks,unscheduledTasks,notes,privateEvents]=await Promise.all([
         supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at").eq("profile_id",me.id).gte("plan_date",fromDay).lt("plan_date",toDay).order("plan_date").order("planned_time",{ascending:true,nullsFirst:false}),
         supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at").eq("profile_id",me.id).is("plan_date",null).is("completed_at",null).order("created_at",{ascending:false}).limit(30),
         supabase.from("personal_day_notes").select("id,note_date,note_kind,title,body,reminder_at,updated_at").eq("profile_id",me.id).or(`note_date.is.null,and(note_date.gte.${fromDay},note_date.lt.${toDay})`).order("updated_at",{ascending:false}),
         supabase.from("personal_calendar_events").select("id,title,details,starts_at,ends_at,location,reminder_at").eq("profile_id",me.id).gte("starts_at",from).lt("starts_at",to).order("starts_at"),
       ]);
-      const first=[work.error,meetings.error,ministry.error,leave.error,tasks.error,unscheduledTasks.error,notes.error,privateEvents.error].find(Boolean);if(first)throw first;
+      const personalError=[tasks.error,unscheduledTasks.error,notes.error,privateEvents.error].find(Boolean);
+      if(personalError){
+        if(!isMissingPersonalPlanningSchema(personalError))throw personalError;
+        tasks={data:[],error:null};unscheduledTasks={data:[],error:null};notes={data:[],error:null};privateEvents={data:[],error:null};
+        setPersonalPlanningReady(false);
+      }else setPersonalPlanningReady(true);
       const privateTasks=[...(tasks.data||[]),...(unscheduledTasks.data||[])];
       const meetingRows=(meetings.data||[]).filter(row=>row.status!=="cancelled");
       const [checklists,privateMeetingNotes]=await Promise.all([
@@ -100,7 +110,11 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
           ? supabase.from("meeting_private_notes").select("id,meeting_id,body,updated_at").eq("author_id",me.id).in("meeting_id",meetingRows.map(row=>row.id))
           : Promise.resolve({data:[],error:null}),
       ]);
-      if(checklists.error||privateMeetingNotes.error)throw checklists.error||privateMeetingNotes.error;
+      if(checklists.error){
+        if(!isMissingPersonalPlanningSchema(checklists.error))throw checklists.error;
+        checklists.data=[];checklists.error=null;setPersonalPlanningReady(false);
+      }
+      if(privateMeetingNotes.error)throw privateMeetingNotes.error;
 
       const rows=[];
       (work.data||[]).filter(item=>item.due_at).forEach(item=>rows.push({id:`work-${item.id}`,kind:"work",date:accraDay(item.due_at),title:item.title,meta:`${item.ref}${item.projects?.name?` · ${item.projects.name}`:""}`,itemId:item.id,sortAt:item.due_at,time:new Date(item.due_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
@@ -261,14 +275,15 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     <CalendarPageHeader
       eyebrow="My workspace"
       title="Calendar"
-      description="Shared CEAC commitments and your private planning in one calendar. Private events, tasks and notes stay visible only to you."
+      description={personalPlanningReady?"Shared CEAC commitments and your private planning in one calendar. Private events, tasks and notes stay visible only to you.":"Shared CEAC Work, meetings, approved leave and ministry commitments on the existing production database."}
       status={statusLabel}
       statusTone="action"
-      action={<Button onClick={()=>openComposer("event")}>+ Add</Button>}
+      action={personalPlanningReady?<Button onClick={()=>openComposer("event")}>+ Add</Button>:null}
     />
 
     {scopeControl}
-    <CalendarFilters value={filter} onChange={setFilter} items={FILTER_ITEMS} ariaLabel="Calendar filters" />
+    <CalendarFilters value={filter} onChange={setFilter} items={personalPlanningReady?FILTER_ITEMS:FILTER_ITEMS.filter(item=>item.value!=="personal")} ariaLabel="Calendar filters" />
+    {!personalPlanningReady&&<ProductNotice tone="attention" title="Private planning comes in Stage 2">Shared calendar commitments remain available. Private calendar events, tasks and notes need the separately rehearsed planning migration and are not being written to this production database.</ProductNotice>}
     {error&&<ProductNotice tone="error" title="Could not load Calendar">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Calendar">{notice}</ProductNotice>}
 
@@ -311,14 +326,14 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
               </button>)}
               {selectedPrivate.map(task=><div key={task.id} className="phase6-private-task-card"><label className={task.completed_at?"phase6-private-task is-complete":"phase6-private-task"}><input type="checkbox" checked={Boolean(task.completed_at)} disabled={busy} onChange={()=>togglePersonalTask(task)}/><span><strong>{task.title}</strong><small>{[task.planned_time?timeLabel(task.planned_time):"Private personal task",task.reminder_at?"reminder set":null,task.linked_work_item_id?"linked CEAC Work":task.linked_project_id?"linked Project":null].filter(Boolean).join(" · ")}</small></span><em>Private</em></label>{checklistFor(task.id).length>0&&<div className="phase6-task-checklist">{checklistFor(task.id).map(row=><label key={row.id}><input type="checkbox" checked={Boolean(row.completed_at)} disabled={busy} onChange={()=>toggleChecklist(row)}/><span>{row.title}</span></label>)}</div>}</div>)}
               {!selectedPrivate.length&&!selectedWork.length?<p className="phase6-day-empty">No task is planned or due on this day.</p>:null}
-              <div className="phase6-private-task-compose">
+              {personalPlanningReady&&<div className="phase6-private-task-compose">
                 <input className="field" aria-label="New private task" placeholder="Add a private task" value={taskTitle} onChange={event=>setTaskTitle(event.target.value)} />
                 <input className="field" aria-label="Private task time" type="time" value={taskTime} onChange={event=>setTaskTime(event.target.value)} />
                 <div className="phase6-private-task-actions">
                   <Button variant="secondary" size="sm" disabled={busy||!taskTitle.trim()} onClick={()=>addPersonalTask(true)}>Keep unscheduled</Button>
                   <Button size="sm" disabled={busy||!taskTitle.trim()} onClick={()=>addPersonalTask(false)}>Add to day</Button>
                 </div>
-              </div>
+              </div>}
             </section>
 
             <section className="phase6-day-block phase6-unscheduled-block">
@@ -329,7 +344,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
               </div>):<p className="phase6-day-empty">No private tasks are waiting for a date.</p>}
             </section>
           </div>:<div className="phase6-day-note-view">
-            <article className="phase6-note-card is-journal"><div className="phase6-note-card-head"><span>Journal</span><div><strong>Daily journal</strong><small>Private · {shortDate(selectedDate)}</small></div></div><textarea className="field phase6-day-note-editor" aria-label="Private day notes" rows={8} value={noteDraft} onChange={event=>setNoteDraft(event.target.value)} placeholder="Write private planning notes for this day…" /><div className="phase6-day-note-actions"><span>{noteDraft.length.toLocaleString()} / 12,000</span><Button disabled={busy||noteDraft.length>12000} onClick={saveDayNote}>{busy?"Saving…":"Save journal"}</Button></div></article>
+            {personalPlanningReady?<article className="phase6-note-card is-journal"><div className="phase6-note-card-head"><span>Journal</span><div><strong>Daily journal</strong><small>Private · {shortDate(selectedDate)}</small></div></div><textarea className="field phase6-day-note-editor" aria-label="Private day notes" rows={8} value={noteDraft} onChange={event=>setNoteDraft(event.target.value)} placeholder="Write private planning notes for this day…" /><div className="phase6-day-note-actions"><span>{noteDraft.length.toLocaleString()} / 12,000</span><Button disabled={busy||noteDraft.length>12000} onClick={saveDayNote}>{busy?"Saving…":"Save journal"}</Button></div></article>:<p className="phase6-day-empty">Private journal notes are not available in Stage 1.</p>}
             {selectedMeetingNotes.map(note=><button key={note.id} type="button" className="phase6-note-card is-meeting" onClick={()=>openMeeting?.(note.meeting_id)}><div className="phase6-note-card-head"><span>Meeting</span><div><strong>{note.meeting?.title||"Meeting note"}</strong><small>Linked meeting note · authoritative in Meeting</small></div></div><p>{note.body}</p></button>)}
             {generalNotes.map(note=><article key={note.id} className={`phase6-note-card is-${note.note_kind}`}><div className="phase6-note-card-head"><span>{note.note_kind==="personal"?"Personal":"General"}</span><div><strong>{note.title||(note.note_kind==="personal"?"Personal note":"General note")}</strong><small>Private note{note.reminder_at?" · reminder set":""}</small></div></div><p>{note.body||"No note text recorded."}</p></article>)}
           </div>}
@@ -339,7 +354,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       <div className="phase6-calendar-coming-up"><CalendarAgenda eyebrow="Shared commitments" title="Coming up" description="Upcoming Work, meetings, approved leave and ministry commitments. Private planning stays in your day workspace." events={upcoming} emptyTitle="Nothing coming up" emptyDescription="Nothing shared is recorded in this view."/></div>
     </>}
 
-    {composer&&<Sheet onClose={()=>!busy&&setComposer(null)}>
+    {composer&&personalPlanningReady&&<Sheet onClose={()=>!busy&&setComposer(null)}>
       <div className="phase6-planning-composer">
         <div><span className="eyebrow">Private planning</span><div className="h2">Add to my workspace</div><p className="screen-note">Personal Events, Tasks and Notes stay private. Use CEAC Work or Meetings when an organisational record is required.</p></div>
         <div className="phase6-composer-tabs" role="tablist" aria-label="Personal planning item type">

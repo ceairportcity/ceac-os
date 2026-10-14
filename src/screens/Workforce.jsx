@@ -8,6 +8,7 @@ import { settleWorkforceDatasets } from "../lib/workforceQueries";
 import { isValidPolicyAmount } from "../lib/workforcePolicyNumbers";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
+import { isMissingAnnualLeaveStageSchema } from "../lib/stage1SchemaCompatibility";
 import { Button, SelectField } from "../experience-v2/components";
 import {
   WorkforceDecisionRow,
@@ -65,6 +66,7 @@ export default function Workforce({ me }) {
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
   const [datasetErrors,setDatasetErrors]=useState({});
+  const [annualWorkingDayReady,setAnnualWorkingDayReady]=useState(true);
   const [notice,setNotice]=useState(null);
   const [busy,setBusy]=useState(false);
   const mutationBusyRef=useRef(false);
@@ -137,9 +139,18 @@ export default function Workforce({ me }) {
     // A later refresh or scope switch owns the UI. Older results must never
     // replace the latest verified employment, leave and correction records.
     if(generation!==readGeneration.current) return {errors:{},superseded:true};
-    const errors={};
     const byName=Object.fromEntries(results.map((row)=>[row.name,row]));
-    for(const row of results){
+    let annualStageAvailable=true;
+    if(byName.leave.error&&isMissingAnnualLeaveStageSchema(byName.leave.error)){
+      annualStageAvailable=false;
+      const legacyLeave=await supabase.from("leave_requests")
+        .select("id,profile_id,kind,start_date,end_date,days,status,reason,requested_at,decided_by,decided_at,decision_note,profiles!leave_requests_profile_id_fkey(full_name)")
+        .eq("org_id",me.org_id).order("start_date",{ascending:false});
+      if(generation!==readGeneration.current) return {errors:{},superseded:true};
+      byName.leave={name:"leave",data:legacyLeave.data||[],error:legacyLeave.error||null};
+    }
+    const errors={};
+    for(const row of Object.values(byName)){
       if(row.error) errors[row.name]=humanError(row.error, row.name+" could not load.");
     }
 
@@ -158,6 +169,7 @@ export default function Workforce({ me }) {
     setMinistryEvents(!byName["ministry events"].error ? (byName["ministry events"].data||[]).filter((row)=>!row.cancelled) : []);
 
     setDatasetErrors(errors);
+    setAnnualWorkingDayReady(annualStageAvailable);
     if(Object.keys(errors).length) setError("Some workforce data could not load. The affected dataset is identified below; available datasets remain usable.");
     setLoading(false);
     return {errors};
@@ -168,7 +180,7 @@ export default function Workforce({ me }) {
   const dayTypesById=Object.fromEntries(dayTypes.map((d)=>[d.id,d]));
   const activePolicy=policies.find((p)=>p.state==="active")||null;
   const activeRules=activePolicy?policyRules.filter((r)=>r.policy_version_id===activePolicy.id):[];
-  const confirmedLeaveSummary=<ProductNotice tone="info" title="Confirmed leave process">Annual leave is 24 working days per leave year, credited at 6 working days per completed quarter with joiner pro-rating and ordinary year-end expiry. Annual, Sick, Maternity, Paternity and Study requests follow Manager approval → Administration final approval. Secondary leave quantities remain unconfigured.</ProductNotice>;
+  const confirmedLeaveSummary=<><ProductNotice tone="info" title="Confirmed leave process">Annual leave is 24 working days per leave year, credited at 6 working days per completed quarter with joiner pro-rating and ordinary year-end expiry. Annual, Sick, Maternity, Paternity and Study requests follow Manager approval → Administration final approval. Secondary leave quantities remain unconfigured.</ProductNotice>{!annualWorkingDayReady?<ProductNotice tone="attention" title="Working-day counts come after migration acceptance">Existing leave requests and approvals remain available. CEAC OS will not invent working-day calculations until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice>:null}</>;
 
   function rawSchedule(profileId,date=today){
     const rows=schedules.filter((s)=>s.profile_id===profileId && s.effective_from<=date && (!s.effective_to || s.effective_to>=date));

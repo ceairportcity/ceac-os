@@ -173,7 +173,7 @@ test("sensitive workspaces remount when the authorised account changes", () => {
 test("Workforce attendance and protected employment reads have explicit tenant scope", () => {
   const queries = [...workforce.matchAll(/\.from\("([a-z_]+)"\)\s*\.select\("[^"]*"\)/g)];
   const scoped = [...workforce.matchAll(/\.from\("([a-z_]+)"\)\s*\.select\("[^"]*"\)\s*\.eq\("org_id",\s*me\.org_id\)/g)];
-  assert.equal(queries.length, 12, "unexpected Workforce query inventory");
+  assert.equal(queries.length, 13, "unexpected Workforce query inventory");
   assert.equal(scoped.length, queries.length, "an attendance or confidential Workforce query lacks organisation scope");
   assert.match(workforce, /\.from\("employment_records"\).*\.eq\("org_id",me\.org_id\)/);
   assert.match(workforce, /\.from\("work_sessions"\).*\.eq\("org_id",me\.org_id\)/);
