@@ -93,6 +93,8 @@ test("My Hub and Workforce fall back to existing leave rows without inventing ba
   assert.match(workforce, /select\("id,profile_id,kind,start_date,end_date,days,status,reason,requested_at/);
   assert.match(me, /CEAC OS will not invent a working-day balance/);
   assert.match(workforce, /CEAC OS will not invent working-day calculations/);
+  assert.match(workforce, /for\(const row of Object\.values\(byName\)\)/);
+  assert.doesNotMatch(workforce, /for\(const row of results\)\{\s*if\(row\.error\) errors/);
 });
 
 test("Manager person detail remains usable when volunteer migrations are pending", () => {

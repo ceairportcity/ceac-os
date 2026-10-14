@@ -150,7 +150,7 @@ export default function Workforce({ me }) {
       byName.leave={name:"leave",data:legacyLeave.data||[],error:legacyLeave.error||null};
     }
     const errors={};
-    for(const row of results){
+    for(const row of Object.values(byName)){
       if(row.error) errors[row.name]=humanError(row.error, row.name+" could not load.");
     }
 
