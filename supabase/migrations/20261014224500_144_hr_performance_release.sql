@@ -64,7 +64,6 @@ as $$
     where a.id=p_appraisal_id
       and a.org_id=public.app_org_id()
       and a.profile_id=auth.uid()
-      and a.status in ('shared','closed')
       and d.state='approved' and d.decided_at>=p_entry_created_at
   ),false);
 $$;
@@ -138,8 +137,8 @@ begin
   end if;
   select * into v_review from public.appraisals
   where id=p_appraisal_id and org_id=v_org for update;
-  if v_review.id is null or v_review.manager_id is distinct from v_actor then
-    raise exception 'Only the assigned reviewer may request release.' using errcode='42501';
+  if v_review.id is null or v_review.manager_id is distinct from v_actor or v_review.status='closed' then
+    raise exception 'Only the current reviewer of an open review may request release.' using errcode='42501';
   end if;
   select * into v_assessment from public.appraisal_entries
   where appraisal_id=v_review.id and org_id=v_org and entry_type='manager_assessment'
@@ -201,7 +200,8 @@ begin
   end if;
   select * into v_review from public.appraisals
   where id=v_request.appraisal_id and org_id=v_org for update;
-  if v_review.id is null or (v_ok and v_review.manager_id is distinct from v_request.requested_by) then
+  if v_review.id is null or v_review.status='closed' or v_actor=v_request.requested_by
+     or (v_ok and v_review.manager_id is distinct from v_request.requested_by) then
     raise exception 'The assigned reviewer changed. Request a fresh review.' using errcode='42501';
   end if;
   select id into v_latest from public.appraisal_entries
