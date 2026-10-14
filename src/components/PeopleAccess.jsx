@@ -469,6 +469,9 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             {snapshot.invitations.map((invitation) => {
               const unit = snapshot.units.find((entry) => entry.id === invitation.unit_id);
               const cancellable = !invitation.revoked_at && invitation.activation_state !== "verified";
+              const volunteer = (snapshot.volunteerInvitations || []).find((item) => item.id === invitation.id);
+              const pendingVolunteerApproval = volunteer?.engagement_type === "volunteer" && !volunteer.volunteer_approved_at;
+              const approvedVolunteer = volunteer?.engagement_type === "volunteer" && Boolean(volunteer.volunteer_approved_at);
               return <article className="phase5-invitation-row" key={invitation.id}>
                 <div className="phase5-invitation-main">
                   <strong>{invitation.full_name}</strong>
@@ -479,7 +482,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                   {invitation.revoked_at ? "Cancelled" : invitation.activation_state.replaceAll("_", " ")}
                 </StatusBadge>
                 {cancellable ? <div className="phase5-invitation-actions">
-                  <Button variant="quiet" size="compact" disabled={busy} onClick={() => action(() => resendStaffInvitation(invitation.id), "Another activation email was requested. Delivery is not yet independently confirmed.")}>Resend</Button>
+                  {pendingVolunteerApproval
+                    ? <Button variant="quiet" size="compact" disabled={busy} onClick={() => { setApproveVolunteerTarget(invitation); setVolunteerApprovalReason(""); }}>Review volunteer activation</Button>
+                    : <Button variant="quiet" size="compact" disabled={busy || (volunteer?.engagement_type==="volunteer" && !approvedVolunteer)}
+                      onClick={() => action(() => resendStaffInvitation(invitation.id), "Another activation email was requested. Delivery is not yet independently confirmed.")}>Resend</Button>}
                   <Button variant="quiet" size="compact" disabled={busy} onClick={() => { setRevokeTarget(invitation); setRevokeReason(""); }}>Cancel</Button>
                 </div> : null}
               </article>;
@@ -500,6 +506,20 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
                 const ok = await action(() => saveResponsibility("remove", target.membership, target.personId, target.reason), "Unit responsibility and its team placements ended with audit history.");
                 if (ok) setEndMembershipTarget(null);
               }}>End responsibility and teams</Button>
+            </div>
+          </div>
+        </div> : null}
+
+        {approveVolunteerTarget ? <div className="phase5-access-revoke" role="dialog" aria-modal="true" aria-labelledby="volunteer-approval-title">
+          <div className="phase5-access-revoke-card">
+            <span className="eyebrow">HR approval required</span>
+            <h3 className="h2" id="volunteer-approval-title">Approve volunteer activation?</h3>
+            <p className="screen-note">Manager proposed {approveVolunteerTarget.full_name}. Approving authorises the volunteer invitation; it does not grant Manager, HR, Payroll or Executive powers.</p>
+            <FieldGroup label="HR decision reason"><textarea className="field" rows="3" autoFocus
+              value={volunteerApprovalReason} onChange={(event) => setVolunteerApprovalReason(event.target.value)} /></FieldGroup>
+            <div className="phase5-access-actions">
+              <Button variant="secondary" disabled={busy} onClick={() => { setApproveVolunteerTarget(null); setVolunteerApprovalReason(""); }}>Return to invitations</Button>
+              <Button busy={busy} disabled={busy || volunteerApprovalReason.trim().length < 3} onClick={approveVolunteer}>Approve and request activation email</Button>
             </div>
           </div>
         </div> : null}
