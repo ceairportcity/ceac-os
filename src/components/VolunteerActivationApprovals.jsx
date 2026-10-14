@@ -18,7 +18,7 @@ const expectedSchemaMissing = (error) =>
 export default function VolunteerActivationApprovals({ me }) {
   const [invitations, setInvitations] = useState([]);
   const [approvals, setApprovals] = useState([]);
-  const [reason, setReason] = useState("");
+  const [reasons, setReasons] = useState({});
   const [busy, setBusy] = useState(false);
   const [busyId, setBusyId] = useState("");
   const [ready, setReady] = useState(false);
@@ -63,7 +63,7 @@ export default function VolunteerActivationApprovals({ me }) {
     setInvitations([]);
     setApprovals([]);
     setReady(false);
-    setReason("");
+    setReasons({});
     setError("");
     setNotice("");
     void reload();
@@ -72,6 +72,7 @@ export default function VolunteerActivationApprovals({ me }) {
 
   async function authoriseAndRequestEmail(invite) {
     if (writing.current) return;
+    const reason = reasons[invite.id] || "";
     writing.current = true;
     const token = generation.current;
     setBusy(true);
@@ -105,7 +106,11 @@ export default function VolunteerActivationApprovals({ me }) {
       } else {
         setNotice("HR approval is recorded. The activation email was requested; actual delivery and account verification remain unconfirmed.");
       }
-      setReason("");
+      setReasons((current) => {
+        const next = { ...current };
+        delete next[invite.id];
+        return next;
+      });
       try { await reload(); } catch {
         setError("Approval was recorded but the latest invitation list could not be loaded.");
       }
@@ -140,10 +145,10 @@ export default function VolunteerActivationApprovals({ me }) {
         </div>
         {!isApproved && <label>HR approval reason
           <textarea className="field" rows={2} aria-label={"Volunteer approval reason for "+invite.full_name}
-            disabled={busy} value={busyId === invite.id ? reason : reason}
-            onChange={(event)=>setReason(event.target.value)} />
+            disabled={busy} value={reasons[invite.id] || ""}
+            onChange={(event)=>setReasons((current)=>({ ...current,[invite.id]:event.target.value }))} />
         </label>}
-        <button type="button" className="btn btn-ghost" disabled={busy || (!isApproved && reason.trim().length < 8)}
+        <button type="button" className="btn btn-ghost" disabled={busy || (!isApproved && (reasons[invite.id] || "").trim().length < 8)}
           onClick={() => authoriseAndRequestEmail(invite)}>
           {busyId === invite.id ? "Processing..." : isApproved ? "Request activation email again" : "HR approve and request activation"}
         </button>
