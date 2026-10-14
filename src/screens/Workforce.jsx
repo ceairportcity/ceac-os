@@ -2,6 +2,7 @@ import { Fragment, Suspense, lazy, useEffect, useRef, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
+import AttendanceCorrectionWorkflow from "../components/AttendanceCorrectionWorkflow";
 import { dailyClocks } from "../lib/attendance";
 import { accraDayOffset } from "../lib/workforceDate";
 import { settleWorkforceDatasets } from "../lib/workforceQueries";
@@ -606,6 +607,7 @@ export default function Workforce({ me }) {
       </>}
 
       {tab==="corrections"&&<WorkforceSection title="Attendance correction history" description="Corrections overlay the factual record. Original work-session rows are not rewritten, and a reversal is another linked history row.">
+        <AttendanceCorrectionWorkflow me={me} />
         {personCorrections.map((row)=>{
           const reversed=row.correction_type!=="reversal"&&reversedCorrectionIds.has(row.id);
           return <WorkforceRecordRow
@@ -829,6 +831,7 @@ export default function Workforce({ me }) {
       </>}
 
       {tab==="corrections"&&<>
+        <AttendanceCorrectionWorkflow me={me} />
         {canCorrect&&<div className="ev2wf-toolbar"><Button variant="secondary" onClick={()=>{setCorrectionPerson(people[0]?.profile_id||"");setCorrectionSheet(true)}}>Record correction</Button></div>}
         <WorkforceSection title="Attendance correction history" description="Corrections overlay factual evidence; original work-session rows are not rewritten. Manager access remains read-only unless attendance.correct is explicitly granted.">
           {corrections.map((row)=>{
@@ -1153,6 +1156,7 @@ export default function Workforce({ me }) {
       </>}
 
       {tab==="corrections"&&<>
+        <AttendanceCorrectionWorkflow me={me} />
         {canCorrect&&<div className="ev2wf-toolbar"><Button variant="secondary" onClick={()=>{setCorrectionPerson(people[0]?.profile_id||"");setCorrectionSheet(true)}}>Record correction</Button></div>}
         <WorkforceSection title="Attendance correction history" description="Corrections overlay the factual record. Original work-session rows are not rewritten; reversal is another linked history row.">
           {corrections.map((row)=>{
@@ -1404,6 +1408,7 @@ export default function Workforce({ me }) {
     </>}
 
     {tab==="corrections"&&<>
+        <AttendanceCorrectionWorkflow me={me} />
       <div className="sec"><span>Attendance correction history</span>{canCorrect&&<button className="btn btn-sm" onClick={()=>{setCorrectionPerson(people[0]?.profile_id||"");setCorrectionSheet(true)}}>Record correction</button>}</div>
       <p className="screen-note">Corrections overlay the factual record. Original work-session rows are not rewritten; reversal is another linked history row.</p>
       {corrections.map((row)=>{
