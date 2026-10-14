@@ -9,10 +9,13 @@ create table if not exists public.volunteer_invitation_approvals(
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organisations(id) on delete restrict,
   invitation_id uuid not null references public.pending_invitations(id) on delete restrict,
+  invited_at timestamptz not null,
+  approved_unit_id uuid not null references public.units(id) on delete restrict,
+  approved_pattern jsonb not null check(jsonb_typeof(approved_pattern)='object'),
   approved_by uuid not null references public.profiles(id) on delete restrict,
   approved_at timestamptz not null default now(),
   reason text not null check(length(btrim(reason)) between 8 and 1000),
-  constraint volunteer_invitation_approval_once unique(invitation_id)
+  constraint volunteer_invitation_approval_version_unique unique(invitation_id,invited_at)
 );
 
 create index if not exists volunteer_invitation_approvals_org_idx
@@ -33,6 +36,37 @@ using (
         and i.unit_id in(select public.app_managed_units()))
   )
 );
+
+-- Manager's request and its volunteer classification must be atomic, and
+-- must not send an activation link before HR has approved the request.
+create or replace function public.volunteer_request_invitation(
+  p_email text, p_full_name text, p_unit_id uuid, p_working_pattern jsonb
+) returns jsonb language plpgsql security definer set search_path='' as $
+declare v_invite public.pending_invitations;
+begin
+  if auth.uid() is null or public.app_org_id() is null then
+    raise exception 'Sign in to request a volunteer.' using errcode='42501';
+  end if;
+  if jsonb_typeof(p_working_pattern) is distinct from 'object'
+     or coalesce(p_working_pattern->>'kind','') not in ('no_attendance','event_based','specific_days','custom')
+     or length(p_working_pattern::text)>1500 then
+    raise exception 'Choose a valid volunteer working arrangement.';
+  end if;
+  v_invite:=public.create_pending_invitation(p_email,p_full_name,p_unit_id,'staff');
+  update public.pending_invitations set
+    engagement_type='volunteer',
+    engagement_working_pattern=p_working_pattern
+  where id=v_invite.id and org_id=public.app_org_id()
+  returning * into v_invite;
+  if v_invite.id is null then raise exception 'Volunteer request was not recorded.'; end if;
+  insert into public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
+  values(v_invite.org_id,auth.uid(),'volunteer_invitation_requested','pending_invitation',v_invite.id,
+    jsonb_build_object('unit_id',v_invite.unit_id,'awaiting_hr',true));
+  return jsonb_build_object('invitation_id',v_invite.id,'awaiting_hr',true);
+end;
+$;
+revoke all on function public.volunteer_request_invitation(text,text,uuid,jsonb) from public,anon;
+grant execute on function public.volunteer_request_invitation(text,text,uuid,jsonb) to authenticated;
 
 -- Approval rows cannot be edited or destroyed by ordinary API roles.
 -- Server RPC inserts once and records the actor/decision atomically.
@@ -71,9 +105,10 @@ begin
   end if;
 
   insert into public.volunteer_invitation_approvals(
-    org_id,invitation_id,approved_by,reason
-  ) values (v_org,v_invite.id,v_actor,btrim(p_reason))
-  on conflict(invitation_id) do nothing
+    org_id,invitation_id,invited_at,approved_unit_id,approved_pattern,approved_by,reason
+  ) values (v_org,v_invite.id,v_invite.invited_at,v_invite.unit_id,
+    v_invite.engagement_working_pattern,v_actor,btrim(p_reason))
+  on conflict(invitation_id,invited_at) do nothing
   returning id into v_decision;
 
   if v_decision is not null then
@@ -148,6 +183,9 @@ begin
   if v_invite.engagement_type='volunteer' and not exists (
     select 1 from public.volunteer_invitation_approvals a
     where a.org_id=v_invite.org_id and a.invitation_id=v_invite.id
+      and a.invited_at=v_invite.invited_at
+      and a.approved_unit_id=v_invite.unit_id
+      and a.approved_pattern=v_invite.engagement_working_pattern
   ) then
     raise exception 'HR approval is required before volunteer activation.' using errcode='42501';
   end if;
