@@ -1,6 +1,6 @@
 # CEAC OS — Owner decisions for next controlled release (14 October 2026)
 
-Status: explicit owner decisions; technical design and acceptance details pending reconciliation with three owner-supplied HR/contract/policy documents and existing binding contracts. This is a release-scope register, not a production deployment authorisation.
+Status: OWNER-APPROVED and incorporated into `CEAC_LOCKED_NEXT_RELEASE_EXECUTION_2026-10-14.md` along with the subsequently approved HR/payroll/attendance/volunteer/work decisions. Read that newer consolidated contract for the complete binding scope and S0–S3 one-bundle execution. Production cutover still requires separate final owner GO.
 
 ## Next controlled production release
 
@@ -26,6 +26,6 @@ Status: explicit owner decisions; technical design and acceptance details pendin
 - Stage 1 remains live on original production Supabase (119 applied migrations) and existing Vercel; do not create a replacement project or enable Stage 2 Google/OAuth/universal AAL2 as part of this follow-on product release.
 - The owner has deferred comprehensive backup/restore remediation to the **initial Stage 2 work**. Record the recovery exposure as unresolved and assess migration rollback/restore for any intervening release without falsely calling it complete.
 - Stage 2 is provisionally targeted for November: verify CE Airport City-owned project existence/ownership; compare authorized project transfer with migration/cutover, including all subsequent live data and schema changes.
-- Upcoming **three owner-supplied documents are not yet attached or reviewed**. When received, reconcile them with contracts, existing code, schema and these ten decisions. Seek clarification only for genuine conflicts.
+- Three owner-supplied **distinct policy documents have now been reviewed**: Work & Office Policy v1.0 (two identical uploads), Re-onboarding Procedure, and CEAC Terms of Reference v1.0. The complete binding reconciliation is in `CEAC_LOCKED_NEXT_RELEASE_EXECUTION_2026-10-14.md`. Individual signed terms and the complete HR & Admin Compliance Manual were not supplied; never invent their missing provisions.
 - Reconcile current live production commit and canonical main before another automatic production deployment; do not overwrite unmerged work.
 - Review existing protected HR/Payroll source fixes and stage genuine functional/role acceptance before expansion. No owner-authorized production SQL mutation or deployment follows from this file alone.
