@@ -152,3 +152,101 @@ grant execute on function public.performance_hr_authorise_release(uuid,text) to 
 -- Disable the older Manager-only release route; neither an API call nor an
 -- unupdated client may circumvent HR's recorded approval.
 revoke execute on function public.share_performance_review(uuid) from public,anon,authenticated;
+
+-- Guard revisions and staff responses while preserving the existing reviewed
+-- source function's original validation/ownership/history behavior.
+CREATE OR REPLACE FUNCTION public.record_appraisal_entry(p_appraisal_id uuid, p_entry_type text, p_body text, p_supersedes_id uuid DEFAULT NULL::uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_org uuid:=public.app_org_id();
+  v_actor uuid:=auth.uid();
+  v_appraisal public.appraisals;
+  v_prior public.appraisal_entries;
+  v_id uuid;
+begin
+  select * into v_appraisal
+  from public.appraisals
+  where id=p_appraisal_id and org_id=v_org;
+
+  if v_appraisal.id is null then
+    raise exception 'Review case not found.' using errcode='42501';
+  end if;
+  if p_entry_type not in (
+    'employee_reflection','manager_assessment','conversation_record','staff_response'
+  ) then
+    raise exception 'That review entry type is not supported.';
+  end if;
+  if length(btrim(coalesce(p_body,'')))<3 then
+    raise exception 'Write at least a short review note.';
+  end if;
+
+  if p_entry_type in ('employee_reflection','staff_response') then
+    if v_actor is distinct from v_appraisal.profile_id then
+      raise exception 'Only the employee can write this part of the review.' using errcode='42501';
+    end if;
+  else
+    if v_actor is distinct from v_appraisal.manager_id then
+      raise exception 'Only the assigned reviewer can write this part of the review.' using errcode='42501';
+    end if;
+  end if;
+
+  -- The employee sees and responds to the formal manager assessment only
+  -- after the explicit Manager-requested, HR-authorised publication event.
+  if p_entry_type='staff_response' and v_appraisal.status not in ('shared','closed') then
+    raise exception 'The formal assessment has not been released by HR.' using errcode='42501';
+  end if;
+  -- Preserve signed-off narratives; write a new review for further changes.
+  if p_entry_type in ('manager_assessment','conversation_record')
+     and v_appraisal.status in ('shared','closed') then
+    raise exception 'Published narratives cannot be changed in this review.' using errcode='42501';
+  end if;
+
+  if p_supersedes_id is not null then
+    select * into v_prior
+    from public.appraisal_entries
+    where id=p_supersedes_id
+      and appraisal_id=v_appraisal.id
+      and entry_type=p_entry_type;
+
+    if v_prior.id is null then
+      raise exception 'The review entry being revised was not found.';
+    end if;
+    if exists(select 1 from public.appraisal_entries where supersedes_id=v_prior.id) then
+      raise exception 'That review entry has already been revised.';
+    end if;
+  end if;
+
+  insert into public.appraisal_entries(
+    org_id,appraisal_id,profile_id,entry_type,body,supersedes_id,created_by
+  ) values (
+    v_org,v_appraisal.id,v_appraisal.profile_id,p_entry_type,btrim(p_body),
+    p_supersedes_id,v_actor
+  )
+  returning id into v_id;
+
+  if p_entry_type='employee_reflection'
+     and v_appraisal.status='evidence' then
+    update public.appraisals
+    set status='reflection_submitted'
+    where id=v_appraisal.id;
+  elsif p_entry_type='manager_assessment'
+     and v_appraisal.status in ('evidence','reflection_submitted') then
+    update public.appraisals
+    set status='manager_draft'
+    where id=v_appraisal.id;
+  elsif p_entry_type='conversation_record'
+     and v_appraisal.status in ('evidence','reflection_submitted','manager_draft') then
+    update public.appraisals
+    set status='conversation_recorded'
+    where id=v_appraisal.id;
+  end if;
+
+  return v_id;
+end;
+$function$;
+revoke all on function public.record_appraisal_entry(uuid,text,text,uuid) from public,anon;
+grant execute on function public.record_appraisal_entry(uuid,text,text,uuid) to authenticated;
