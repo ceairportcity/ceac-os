@@ -2,6 +2,7 @@ import { Fragment, Suspense, lazy, useEffect, useRef, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
+import AttendanceCodeIssuer from "../components/AttendanceCodeIssuer";
 import { dailyClocks } from "../lib/attendance";
 import { accraDayOffset } from "../lib/workforceDate";
 import { settleWorkforceDatasets } from "../lib/workforceQueries";
@@ -858,6 +859,7 @@ export default function Workforce({ me }) {
           <Button variant="secondary" disabled={busy||!dayTypes.length||!people.length} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</Button>
           <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
+        <AttendanceCodeIssuer me={me} />
         <WorkforceSection title="Day types" meta={dayTypes.length+" active"}>
           {dayTypes.map((d)=><WorkforceRecordRow key={d.id} icon="calendar" title={d.name} meta={d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} note={d.description||"No description"}/>)}
           {!dayTypes.length&&<WorkforceEmpty compact title="No active day types" description="No day types are visible in the current organisation scope."/>}
@@ -1182,6 +1184,7 @@ export default function Workforce({ me }) {
           <Button variant="secondary" disabled={busy||!dayTypes.length||!people.length} title={!people.length?"No visible active people loaded":!dayTypes.length?"No active day types loaded":""} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</Button>
           <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
+        <AttendanceCodeIssuer me={me} />
         <WorkforceSection title="Day types" description="Organisation schedule vocabulary remains explicit and attributable." meta={dayTypes.length+" active"}>
           {dayTypes.map((d)=><WorkforceRecordRow key={d.id} icon="calendar" title={d.name} meta={d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} note={d.description||"No description"}/>)}
           {!dayTypes.length&&<WorkforceEmpty compact title="No active day types" description="Record a confirmed day type before creating schedules."/>}
@@ -1426,6 +1429,7 @@ export default function Workforce({ me }) {
         <button className="btn btn-ghost" disabled={busy||!dayTypes.length||!people.length} title={!people.length?"No visible active people loaded":!dayTypes.length?"No active day types loaded":""} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</button>
         <button className="btn" onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</button>
       </div>
+      <AttendanceCodeIssuer me={me} />
       <div className="sec"><span>Day types</span><span>{dayTypes.length}</span></div>
       {dayTypes.map((d)=><div className="row" key={d.id}><div className="row-t">{d.name}</div><div className="row-m">{d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} · {d.description||"No description"}</div></div>)}
       <div className="sec"><span>Leave policy status</span></div>
