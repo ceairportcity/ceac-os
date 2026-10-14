@@ -14,7 +14,7 @@ test("volunteer claims are separate from salary/payroll and require active roste
 });
 test("manager confirms duty; HR and Finance consultation both precede approval",()=>{
   assert.match(sql,/r\.unit_id not in\(select public\.app_managed_units\(\)\)/);
-  assert.match(sql,/p_authority in \('hr','finance'\)/);
+  assert.match(sql,/p_authority not in \('hr','finance'\)/);
   assert.match(sql,/v_consult_count<>2 or v_ready<>2/);
   assert.match(sql,/not public\.app_has_capability\('people\.manage'|v_hr:=public\.app_is_admin\(\)/);
   assert.match(sql,/u\.handles_finance/);
