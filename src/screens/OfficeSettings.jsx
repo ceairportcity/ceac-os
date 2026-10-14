@@ -5,6 +5,7 @@ import { dateOnly } from "../lib/time";
 import { FieldGroup, ProductNotice, SectionHeader } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { StatusBadge } from "../experience-v2/components";
+import DutyLocationSettings from "../components/DutyLocationSettings";
 
 export default function OfficeSettings({ me, openWorkforce }) {
   const [office, setOffice] = useState(null);
@@ -232,6 +233,7 @@ export default function OfficeSettings({ me, openWorkforce }) {
         {office && <div className="office-setting-footnote">Last confirmed {dateOnly(office.set_at)}.</div>}
       </section>
 
+      <DutyLocationSettings me={me} />
       <section id="attendance-integrity-settings" className="office-settings-card">
         <SectionHeader eyebrow="Attendance integrity" title="Office presence code" />
         <p className="screen-note">This short-lived front-desk code adds a second corroborating signal to GPS/geofence evidence. A matching code is not proof by itself and never creates an automatic absence, deduction or disciplinary state.</p>
