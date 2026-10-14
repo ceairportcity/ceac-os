@@ -22,6 +22,15 @@ export function isMissingAnnualLeaveStageSchema(error) {
     .some((name) => text(error).includes(name));
 }
 
+export function isMissingAttendanceEvidenceStageSchema(error) {
+  if (!missingSchemaObject(error)) return false;
+  return [
+    "attendance_corroboration_for_day",
+    "attendance_integrity_status",
+    "attendance_verify_office_code",
+  ].some((name) => text(error).includes(name));
+}
+
 export function isMissingVolunteerNoticeSchema(error) {
   return missingSchemaObject(error) && text(error).includes("volunteer_engagement_notices");
 }

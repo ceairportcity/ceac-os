@@ -2,6 +2,7 @@ import {useEffect,useState} from 'react';
 import {supabase} from '../lib/supabase';
 import {attendanceDate,startEvidence} from '../lib/attendance';
 import {humanError} from '../lib/productLanguage';
+import {isMissingAttendanceEvidenceStageSchema} from '../lib/stage1SchemaCompatibility';
 import {FieldGroup,LoadingState,ProductNotice,Sheet} from './bits';
 import {WorkforceSection,WorkforceEmpty,WorkforceRecordRow,WorkforceFactGrid} from '../experience-v2/workforce-family/WorkforceFamilyV2';
 
@@ -27,7 +28,7 @@ function LocationPlot({rows}) {
 }
 
 export default function AttendanceEvidence({me}) {
-  const [date,setDate]=useState(attendanceDate()),[rows,setRows]=useState([]),[corroboration,setCorroboration]=useState([]),[integrity,setIntegrity]=useState(null),[ownOpenSession,setOwnOpenSession]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(null),[notice,setNotice]=useState(null),[busy,setBusy]=useState(false);
+  const [date,setDate]=useState(attendanceDate()),[rows,setRows]=useState([]),[corroboration,setCorroboration]=useState([]),[integrity,setIntegrity]=useState(null),[attendanceStageReady,setAttendanceStageReady]=useState(true),[ownOpenSession,setOwnOpenSession]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(null),[notice,setNotice]=useState(null),[busy,setBusy]=useState(false);
   const [sheet,setSheet]=useState(false),[kind,setKind]=useState('late_arrival'),[starts,setStarts]=useState(''),[returns,setReturns]=useState(''),[reason,setReason]=useState(''),[note,setNote]=useState('');
   const [decision,setDecision]=useState(null),[decisionNote,setDecisionNote]=useState('');
   const [codeSheet,setCodeSheet]=useState(false),[officeCode,setOfficeCode]=useState('');
@@ -39,11 +40,15 @@ export default function AttendanceEvidence({me}) {
       supabase.rpc('attendance_integrity_status'),
       supabase.from('work_sessions').select('id,place,started_at,ended_at').eq('profile_id',me.id).is('ended_at',null).order('started_at',{ascending:false}).limit(1).maybeSingle(),
     ]);
-    const e=evidenceResult.error||corroborationResult.error||integrityResult.error||sessionResult.error;
-    if(e)throw e;
+    const requiredError=evidenceResult.error||sessionResult.error;
+    if(requiredError)throw requiredError;
+    const optionalErrors=[corroborationResult.error,integrityResult.error].filter(Boolean);
+    const pendingOnly=optionalErrors.every(isMissingAttendanceEvidenceStageSchema);
+    if(optionalErrors.length&&!pendingOnly)throw optionalErrors[0];
     setRows(evidenceResult.data||[]);
-    setCorroboration(corroborationResult.data||[]);
-    setIntegrity(integrityResult.data||null);
+    setCorroboration(corroborationResult.error?[]:(corroborationResult.data||[]));
+    setIntegrity(integrityResult.error?null:(integrityResult.data||null));
+    setAttendanceStageReady(optionalErrors.length===0);
     setOwnOpenSession(sessionResult.data||null);
   }
   async function reload(){await loadEvidence();}
@@ -85,6 +90,7 @@ export default function AttendanceEvidence({me}) {
     </div>
     {error&&<ProductNotice tone="error" title="Attendance evidence unavailable">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Attendance updated">{notice}</ProductNotice>}
+    {!attendanceStageReady&&<ProductNotice tone="attention" title="Additional corroboration comes after migration acceptance">Existing attendance evidence and notices remain available. Office-code verification and additional corroborating signals are not being used until their migrations pass restored-data acceptance; CEAC OS will not infer a result.</ProductNotice>}
     {loading?<LoadingState label="Loading attendance evidence…"/>:<>
       <LocationPlot rows={rows}/>
       {rows.map(row=>{const noAttendanceVolunteer=row.employment_type==='volunteer'&&['no_attendance','not_recorded'].includes(row.working_pattern?.kind||'not_recorded'),start=noAttendanceVolunteer?{label:'No attendance obligation',verified:null}:startEvidence(row,date),location=row.latest_location,currentLeave=row.approved_leave?.filter(l=>l.state==='current')||[],upcoming=row.approved_leave?.filter(l=>l.state==='upcoming')||[];

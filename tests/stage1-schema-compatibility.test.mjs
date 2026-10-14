@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  isMissingAttendanceEvidenceStageSchema,
   isMissingAnnualLeaveStageSchema,
   isMissingPersonalPlanningSchema,
   isMissingVolunteerManagementSchema,
@@ -13,6 +14,7 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 test("only exact missing Stage 2 schema objects enable compatibility", () => {
   assert.equal(isMissingPersonalPlanningSchema({ code: "42P01", message: 'relation "personal_day_tasks" does not exist' }), true);
   assert.equal(isMissingAnnualLeaveStageSchema({ code: "PGRST202", message: "Could not find workforce_annual_leave_summary in the schema cache" }), true);
+  assert.equal(isMissingAttendanceEvidenceStageSchema({ code: "42883", message: "function attendance_corroboration_for_day(date) does not exist" }), true);
   assert.equal(isMissingVolunteerNoticeSchema({ code: "PGRST205", message: "Could not find public.volunteer_engagement_notices" }), true);
   assert.equal(isMissingVolunteerManagementSchema({ code: "42P01", message: 'relation "volunteer_change_recommendations" does not exist' }), true);
 });
@@ -25,8 +27,16 @@ test("permission, network and unrelated database failures never enable compatibi
   ]) {
     assert.equal(isMissingPersonalPlanningSchema(error), false);
     assert.equal(isMissingAnnualLeaveStageSchema(error), false);
+    assert.equal(isMissingAttendanceEvidenceStageSchema(error), false);
     assert.equal(isMissingVolunteerManagementSchema(error), false);
   }
+});
+
+test("Workforce keeps existing attendance evidence when Stage 2 corroboration is pending", () => {
+  const evidence = source("src/components/AttendanceEvidence.jsx");
+  assert.match(evidence, /isMissingAttendanceEvidenceStageSchema/);
+  assert.match(evidence, /Existing attendance evidence and notices remain available/);
+  assert.match(evidence, /optionalErrors\.length&&!pendingOnly/);
 });
 
 test("Calendar keeps shared commitments and visibly defers only private planning", () => {
