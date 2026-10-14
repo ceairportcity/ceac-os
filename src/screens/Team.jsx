@@ -305,7 +305,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
       setEmail(""); setFullName(""); setVolunteerPattern("no_attendance"); setVolunteerDays(["sat"]);
       setVolunteerStart(""); setVolunteerEnd("");
       await load();
-    } catch (err) { setMsg(err.message || "The volunteer invitation could not be sent."); }
+    } catch (err) { setMsg(err.message || "The volunteer request could not be confirmed. Check pending requests before trying again."); }
     finally { setBusy(false); }
   }
 
@@ -624,7 +624,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
             <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => setSheet(null)}>Cancel</button>
             <button className="btn" type="button" onClick={inviteVolunteer}
               disabled={busy || !email.trim() || !fullName.trim() || ((volunteerPattern === "specific_days" || volunteerPattern === "custom") && volunteerDays.length === 0)}>
-              {busy ? "Sending…" : "Send volunteer invitation"}
+              {busy ? "Recording…" : "Request HR approval for volunteer"}
             </button>
           </div>
         </div>
