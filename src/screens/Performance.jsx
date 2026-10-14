@@ -74,7 +74,8 @@ function CaseState({ status }) {
 }
 
 export default function Performance({ me }) {
-  const orgPerformanceAdmin = (me.capability_grants || []).some((grant) =>
+  const hrReleaseAdmin = Boolean(me.is_admin) && (me.capabilities || []).includes("people.manage");
+  const orgPerformanceAdmin = hrReleaseAdmin || (me.capability_grants || []).some((grant) =>
     grant.capability === "performance.admin" && !grant.scope_unit_id
   );
   const [cycles, setCycles] = useState([]);
@@ -85,6 +86,9 @@ export default function Performance({ me }) {
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [evidence, setEvidence] = useState([]);
   const [entries, setEntries] = useState([]);
+  const [releaseQueue, setReleaseQueue] = useState([]);
+  const [releaseQueueAvailable, setReleaseQueueAvailable] = useState(true);
+  const [releaseDecisionNote, setReleaseDecisionNote] = useState("");
   const [plans, setPlans] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [feedbackResponses, setFeedbackResponses] = useState([]);
@@ -140,6 +144,7 @@ export default function Performance({ me }) {
       caseRequestSerial.current += 1;
       setCaseLoading(false);
       setEvidence([]); setEntries([]); setPlans([]); setFeedback([]); setFeedbackResponses([]);
+      setReleaseQueue([]); setReleaseQueueAvailable(true); setReleaseDecisionNote("");
     }
   }, [selectedCaseId]);
 
@@ -211,6 +216,17 @@ export default function Performance({ me }) {
       if (requestSerial !== caseRequestSerial.current) return;
       const failed = [e,en,p,f,fr].find((row) => row.error);
       if (failed) throw failed.error;
+      const releaseResult = hrReleaseAdmin
+        ? await supabase.from("performance_review_release_requests")
+            .select("id,requested_assessment_id,request_reason,requested_at,state")
+            .eq("org_id",me.org_id).eq("appraisal_id",caseId).eq("state","pending")
+        : { data:[],error:null };
+      if (requestSerial !== caseRequestSerial.current) return;
+      const releaseMissing = ["42P01","PGRST205"].includes(releaseResult.error?.code)
+        && /performance_review_release_requests/i.test(releaseResult.error?.message || "");
+      if (releaseResult.error && !releaseMissing) throw releaseResult.error;
+      setReleaseQueueAvailable(!releaseMissing);
+      setReleaseQueue(releaseMissing ? [] : (releaseResult.data || []));
       setEvidence(e.data || []);
       setEntries(en.data || []);
       setPlans(p.data || []);
@@ -245,6 +261,9 @@ export default function Performance({ me }) {
   const isReviewer = selectedCase?.manager_id === me.id;
   const currentReflection = latestEntry(entries, "employee_reflection");
   const currentAssessment = latestEntry(entries, "manager_assessment");
+  const currentReleaseRequest = releaseQueue.find((request) =>
+    request.requested_assessment_id === currentAssessment?.id
+  ) || null;
   const currentConversation = latestEntry(entries, "conversation_record");
   const currentPlan = latestPlan(plans);
 
@@ -318,6 +337,18 @@ export default function Performance({ me }) {
   async function refreshEvidence() {
     if (!selectedCase) return;
     await rpc("refresh_performance_evidence", { p_appraisal_id: selectedCase.id }, "Evidence pack checked for new recorded rows.");
+  }
+
+  async function decideHRRelease(approved) {
+    if (!hrReleaseAdmin || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
+    const confirmed = await rpc("performance_hr_decide_release", {
+      p_request_id:currentReleaseRequest.id,
+      p_approve:approved,
+      p_reason:releaseDecisionNote.trim(),
+    }, approved
+      ? "HR approved publication of this manager assessment version."
+      : "HR declined publication; the manager assessment remains restricted.");
+    if (confirmed) setReleaseDecisionNote("");
   }
 
   async function requestRelease() {
