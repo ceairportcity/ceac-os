@@ -16,6 +16,7 @@ import {
 } from "../lib/operationalFiles";
 import { Button, ComposerDrawer } from "../experience-v2/components";
 import PeopleAccess from "../components/PeopleAccess";
+import EmployeeScheduleEditor from "../components/EmployeeScheduleEditor";
 import {
   PeopleAdminPersonRow,
   PeopleBackButton,
@@ -944,6 +945,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       >
         {!hasLinkedProfile && <PeopleEmpty title="No linked time or leave record" description="The employee remains represented in the roster without fabricated leave or attendance data." />}
         {hasLinkedProfile && <>
+        <EmployeeScheduleEditor me={me} profileId={person.profile_id} unitId={person.unit_id} name={person.full_name} />
         <PeopleEvidenceSummary
           facts={[
             { value: person.days_this_month || 0, label: "days with a recorded session this month" },
