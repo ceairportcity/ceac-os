@@ -37,6 +37,42 @@ using (
   )
 );
 
+-- Once HR approves a specific invitation generation, Managers cannot
+-- change the engagement, unit or work pattern under that same approval.
+-- Reissue through the authorised request RPC; invited_at will advance and
+-- will require a fresh HR approval before activation.
+create or replace function public.volunteer_approved_invitation_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $
+begin
+  if old.engagement_type='volunteer'
+     and new.invited_at is not distinct from old.invited_at
+     and (new.engagement_type is distinct from old.engagement_type
+          or new.engagement_working_pattern is distinct from old.engagement_working_pattern
+          or new.unit_id is distinct from old.unit_id)
+     and exists (
+       select 1 from public.volunteer_invitation_approvals a
+       where a.invitation_id=old.id and a.org_id=old.org_id
+         and a.invited_at=old.invited_at
+         and a.approved_unit_id=old.unit_id
+         and a.approved_pattern=old.engagement_working_pattern
+     )
+  then
+    raise exception 'HR-approved volunteer terms cannot change without a new invitation request.'
+      using errcode='42501';
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.volunteer_approved_invitation_guard() from public,anon,authenticated;
+drop trigger if exists volunteer_approved_invitation_guard on public.pending_invitations;
+create trigger volunteer_approved_invitation_guard
+before update on public.pending_invitations
+for each row execute function public.volunteer_approved_invitation_guard();
+
 -- Manager's request and its volunteer classification must be atomic, and
 -- must not send an activation link before HR has approved the request.
 create or replace function public.volunteer_request_invitation(
