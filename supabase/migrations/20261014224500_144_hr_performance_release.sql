@@ -85,7 +85,6 @@ using(
       and a.org_id=appraisal_entries.org_id
       and (
         a.manager_id=auth.uid()
-        or public.app_has_capability('performance.admin',null)
         or (public.app_is_admin() and public.app_has_capability('people.manage',null))
         or (
           a.profile_id=auth.uid()
@@ -271,7 +270,6 @@ using (
   org_id=public.app_org_id()
   and (
     manager_id=auth.uid()
-    or public.app_has_capability('performance.admin',null)
     or (public.app_is_admin() and public.app_has_capability('people.manage',null))
     or (profile_id=auth.uid()
       and public.performance_employee_release_visible(appraisal_id,created_at))
