@@ -308,3 +308,20 @@ end;
 $$;
 revoke all on function public.volunteer_expense_record_payment(uuid,text) from public,anon;
 grant execute on function public.volunteer_expense_record_payment(uuid,text) to authenticated;
+
+
+-- Voluntary self-service eligibility exposes only this signed-in volunteer's
+-- authorised unit names/IDs. Ordinary users cannot SELECT the private roster.
+create or replace function public.volunteer_expense_my_assignments()
+returns jsonb language sql stable security definer set search_path='' as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'unit_id',m.unit_id,'unit_name',u.name
+  ) order by u.name),'[]'::jsonb)
+  from public.employee_roster er
+  join public.unit_memberships m on m.org_id=er.org_id and m.profile_id=er.profile_id
+  join public.units u on u.id=m.unit_id and u.org_id=m.org_id
+  where er.org_id=public.app_org_id() and er.profile_id=auth.uid()
+    and er.employment_type='volunteer' and er.employment_status='active';
+$$;
+revoke all on function public.volunteer_expense_my_assignments() from public,anon;
+grant execute on function public.volunteer_expense_my_assignments() to authenticated;
