@@ -53,3 +53,12 @@ export function isMissingVolunteerManagementSchema(error) {
   return ["volunteer_working_pattern_versions", "volunteer_change_recommendations"]
     .some((name) => text(error).includes(name));
 }
+
+export function isMissingVolunteerInvitationSchema(error) {
+  if (!missingSchemaObject(error)) return false;
+  const message = text(error);
+  return message.includes("pending_invitations") && [
+    "engagement_type",
+    "engagement_working_pattern",
+  ].some((name) => message.includes(name));
+}

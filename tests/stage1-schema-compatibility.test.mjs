@@ -8,6 +8,7 @@ import {
   isMissingTechnicalSupportStageSchema,
   isMissingVolunteerManagementSchema,
   isMissingVolunteerNoticeSchema,
+  isMissingVolunteerInvitationSchema,
 } from "../src/lib/stage1SchemaCompatibility.js";
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -32,7 +33,21 @@ test("permission, network and unrelated database failures never enable compatibi
     assert.equal(isMissingAttendanceEvidenceStageSchema(error), false);
     assert.equal(isMissingTechnicalSupportStageSchema(error), false);
     assert.equal(isMissingVolunteerManagementSchema(error), false);
+    assert.equal(isMissingVolunteerInvitationSchema(error), false);
   }
+});
+
+test("Manager Team preserves existing Staff when only volunteer invitation columns are pending", () => {
+  assert.equal(isMissingVolunteerInvitationSchema({ code: "42703", message: "column pending_invitations.engagement_type does not exist" }), true);
+  assert.equal(isMissingVolunteerInvitationSchema({ code: "42703", message: "column pending_invitations.engagement_working_pattern does not exist" }), true);
+  assert.equal(isMissingVolunteerInvitationSchema({ code: "42703", message: "column pending_invitations.expires_at does not exist" }), false);
+
+  const team = source("src/screens/Team.jsx");
+  assert.match(team, /loadPendingInvitations\(me\.unit_id\)/);
+  assert.match(team, /select\("email, full_name, invited_at"\)/);
+  assert.match(team, /volunteerFieldsReady: false/);
+  assert.equal((team.match(/disabled=\{!volunteerInvitationsReady\}/g) || []).length, 2);
+  assert.match(team, /Existing Staff, team membership and pending Staff invitations remain available/);
 });
 
 test("Workforce keeps existing attendance evidence when Stage 2 corroboration is pending", () => {
