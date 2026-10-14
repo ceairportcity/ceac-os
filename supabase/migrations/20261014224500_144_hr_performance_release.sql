@@ -201,13 +201,13 @@ begin
   end if;
   select * into v_review from public.appraisals
   where id=v_request.appraisal_id and org_id=v_org for update;
-  if v_review.id is null or v_review.manager_id is distinct from v_request.requested_by then
+  if v_review.id is null or (v_ok and v_review.manager_id is distinct from v_request.requested_by) then
     raise exception 'The assigned reviewer changed. Request a fresh review.' using errcode='42501';
   end if;
   select id into v_latest from public.appraisal_entries
   where appraisal_id=v_review.id and org_id=v_org and entry_type='manager_assessment'
   order by created_at desc,id desc limit 1;
-  if v_latest is distinct from v_request.requested_assessment_id then
+  if v_ok and v_latest is distinct from v_request.requested_assessment_id then
     raise exception 'The manager assessment changed. Request HR review of the latest version.' using errcode='42501';
   end if;
   update public.performance_review_release_requests
