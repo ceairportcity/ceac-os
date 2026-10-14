@@ -12,3 +12,9 @@ Status: S0 IN PROGRESS. This is evidence, not acceptance.
 - Tests this branch: NOT RUN. Migration ledger and 25 pending migration manifest: NOT REVERIFIED. Production Auth and data: NOT REVERIFIED.
 - Production: NO CHANGES. Stage 2 OAuth/universal MFA and comprehensive recovery are excluded.
 - Immediate next action: inspect PR diffs, feature inventory and safe pending migrations; preserve any Codespace changes; implement on this branch only. Never call this ledger a completed release.
+
+## S0 ancestry verification
+- GitHub comparisons show PR #50, #47, #55, #56, #42 and #63 head branches are all ancestors of this integration branch (zero commits ahead relative to it). Their commits are already in this baseline; do not duplicate them by cherry-picking. Ancestry is not proof of functional completeness.
+- PR #65 owner-contract head is exactly one ledger commit behind this branch.
+- package.json registers existing Support, protected-compensation, Stage 1 authentication and schema source tests; native suite not run.
+- Codespace uncommitted work: NOT INSPECTED. Pending migrations: NOT VERIFIED. Cross-role acceptance: NOT RUN.
