@@ -1,3 +1,9 @@
+# 14 OCT 2026 OWNER-LOCKED NEXT BUNDLE — FIRST READ OVERRIDE
+
+**Read [docs/continuity/CEAC_LOCKED_NEXT_RELEASE_EXECUTION_2026-10-14.md](docs/continuity/CEAC_LOCKED_NEXT_RELEASE_EXECUTION_2026-10-14.md) immediately after this header.** Owner approved the next **one-bundle** Volunteer + Technical Support + attendance-integrity + HR/workforce/Payroll/work-acceptance completion and a four-stage S0–S3 execution. Stage 1 is **already deployed live** from PR #63 SHA `1b0a4fbb3acb2db5efb407d8c39b6a8e909dfe38` on original 119-migration Supabase. Google OAuth, universal MFA/AAL2, and comprehensive Auth/Storage recovery move to separate Stage 2 (provisional November), without waiving interim RLS/privacy and migration safety. Earlier Google-first/no-production-before-MFA wording and old production-status snapshots **are superseded on scope/sequence/status**. Preserve all accepted security, protected HR/payroll, source code and real data. One build integration branch, no premature SQL/merge/deploy; final owner GO for a migration-bearing production release. Read current canonical state and avoid overwriting uncommitted Codespace changes.
+
+---
+
 # 13 OCT 2026 OWNER UPDATE — TINYFISH RECOVERY ONLY; FIRST READ
 
 **Latest owner override to the 12 October "TinyFish unavailable" rule:** TinyFish has been replenished and its connected wallet verified as positive on 13 October. One **bounded** browser-assisted recovery of Work's existing CEAC Codespace is now permitted **after the owner signs into the GitHub account that owns that Codespace using a secure TinyFish profile setup**. No browser profile currently records a GitHub sign-in, so do not run metered authenticated automation until sign-in is confirmed. Never ask for a password/OTP in chat or copy credentials into PRs.
