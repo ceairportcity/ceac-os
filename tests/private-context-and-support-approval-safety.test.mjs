@@ -46,7 +46,8 @@ test("file upload or load failure remains truthful and recoverable", () => {
 test("business approvals never mistake failed reads for empty queues", () => {
   assert.match(approvals, /const verified = loadedScope === scope/);
   assert.match(approvals, /const visible = verified && !loadFailed \? rows : \[\]/);
-  assert.match(approvals, /if \(generation\.current === id\) \{\s*setLoadFailed\(true\)/);
+  assert.match(approvals, /if \(isMissingTechnicalSupportStageSchema\(failure\)\) \{\s*setStagePending\(true\)/);
+  assert.match(approvals, /else \{\s*setLoadFailed\(true\)/);
   assert.match(approvals, /Refresh approval requests/);
   assert.match(approvals, /if \(busyRef\.current \|\| busy \|\| !verified \|\| loadFailed \|\| loading\) return/);
   assert.match(approvals, /\.eq\("version", request\.version\)/);

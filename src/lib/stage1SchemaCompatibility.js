@@ -31,6 +31,19 @@ export function isMissingAttendanceEvidenceStageSchema(error) {
   ].some((name) => text(error).includes(name));
 }
 
+export function isMissingTechnicalSupportStageSchema(error) {
+  if (!missingSchemaObject(error)) return false;
+  return [
+    "support_access_requests",
+    "support_access_events",
+    "support_case_events",
+    "support_case_safe_status",
+    "support_cases",
+    "support_membership_events",
+    "support_team_memberships",
+  ].some((name) => text(error).includes(name));
+}
+
 export function isMissingVolunteerNoticeSchema(error) {
   return missingSchemaObject(error) && text(error).includes("volunteer_engagement_notices");
 }
