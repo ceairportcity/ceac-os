@@ -25,6 +25,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
   const busyRef = useRef(false);
   const scope = `${me.org_id}:${me.id}`;
   const visible = scopeRead === scope ? rows : [];
+  const unavailable = !loading && !verifiedLoad;
 
   async function refresh() {
     const id = ++generation.current;
@@ -112,21 +113,21 @@ export default function SupportTeamMemberships({ me, people, units }) {
     {notice && <p role="status" className="ceac-support-success">{notice}</p>}
     <div className="phase5-access-form-grid">
       <label>Existing active CEAC person
-        <select className="field" value={selected} disabled={busy || loading}
+        <select className="field" value={selected} disabled={busy || loading || unavailable}
           onChange={(e) => { setSelected(e.target.value); setError(null); }}>
           <option value="">Select person</option>
           {people.filter((person) => person.active).map((person) => <option key={person.id} value={person.id}>{person.full_name}</option>)}
         </select>
       </label>
       <label>Team membership
-        <select className="field" value={role} disabled={busy || loading}
+        <select className="field" value={role} disabled={busy || loading || unavailable}
           onChange={(e) => setRole(e.target.value)}>
           <option value="member">Member</option>
           <option value="lead">Support Lead</option>
         </select>
       </label>
       <label>Media & Technical association (context only)
-        <select className="field" value={unitId} disabled={busy || loading}
+        <select className="field" value={unitId} disabled={busy || loading || unavailable}
           onChange={(e) => { setUnitId(e.target.value); setError(null); }}>
           <option value="">Choose the authorised associated unit</option>
           {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
@@ -134,7 +135,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
       </label>
       <label>Reason for team membership
         <textarea className="field" rows={2} maxLength={700} value={reason}
-          disabled={busy || loading} onChange={(e) => { setReason(e.target.value); setError(null); }}
+          disabled={busy || loading || unavailable} onChange={(e) => { setReason(e.target.value); setError(null); }}
           placeholder="Record who authorised this placement and why." />
       </label>
     </div>
@@ -142,7 +143,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
     <Button disabled={busy || loading || !verifiedLoad || !selected || !unitId || reason.trim().length < 8}
       onClick={() => save("add")}>Record Support membership</Button>
     <h3>Current team</h3>
-    {active.length === 0 && !loading && <p className="screen-note">No active Support memberships in the authorised records.</p>}
+    {active.length === 0 && !loading && verifiedLoad && <p className="screen-note">No active Support memberships in the authorised records.</p>}
     <div className="phase5-access-memberships">
       {active.map((item) => <div className="phase5-access-membership" key={item.id}>
         <div><strong>{nameFor(item.profile_id)}</strong><span>{item.role === "lead" ? "Support Lead" : "Support member"}</span></div>
@@ -166,7 +167,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
       </div>
     </div>}
     <h3>Membership changes</h3>
-    {history.length === 0 && !loading && <p className="screen-note">No recorded membership transitions.</p>}
+    {history.length === 0 && !loading && verifiedLoad && <p className="screen-note">No recorded membership transitions.</p>}
     <ol className="ceac-support-history-list">
       {history.map((ev) => <li key={ev.id}>
         <strong>{ev.action === "added" ? "Added" : "Ended"} · {nameFor(ev.profile_id)}</strong>

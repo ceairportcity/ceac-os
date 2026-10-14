@@ -49,6 +49,14 @@ test("Manager and Administration homes label pending Support approvals without h
   assert.match(approvals, /!stagePending && !loading && !visible\.length/);
 });
 
+test("People Administration cannot begin Support membership changes while Stage 1 schema is unavailable", () => {
+  const memberships = source("src/components/SupportTeamMemberships.jsx");
+  assert.match(memberships, /const unavailable = !loading && !verifiedLoad/);
+  assert.equal((memberships.match(/disabled=\{busy \|\| loading \|\| unavailable\}/g) || []).length, 4);
+  assert.match(memberships, /!loading && verifiedLoad && <p className="screen-note">No active Support memberships/);
+  assert.match(memberships, /!loading && verifiedLoad && <p className="screen-note">No recorded membership transitions/);
+});
+
 test("Calendar keeps shared commitments and visibly defers only private planning", () => {
   const calendar = source("src/screens/StaffCalendar.jsx");
   assert.match(calendar, /isMissingPersonalPlanningSchema/);
