@@ -74,7 +74,8 @@ function CaseState({ status }) {
 }
 
 export default function Performance({ me }) {
-  const orgPerformanceAdmin = (me.capability_grants || []).some((grant) =>
+  const hrReleaseAdmin = Boolean(me.is_admin) && (me.capabilities || []).includes("people.manage");
+  const orgPerformanceAdmin = hrReleaseAdmin || (me.capability_grants || []).some((grant) =>
     grant.capability === "performance.admin" && !grant.scope_unit_id
   );
   const [cycles, setCycles] = useState([]);
@@ -85,6 +86,9 @@ export default function Performance({ me }) {
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [evidence, setEvidence] = useState([]);
   const [entries, setEntries] = useState([]);
+  const [releaseQueue, setReleaseQueue] = useState([]);
+  const [releaseQueueAvailable, setReleaseQueueAvailable] = useState(true);
+  const [releaseDecisionNote, setReleaseDecisionNote] = useState("");
   const [plans, setPlans] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [feedbackResponses, setFeedbackResponses] = useState([]);
@@ -113,6 +117,7 @@ export default function Performance({ me }) {
   const [reviewerReason, setReviewerReason] = useState("");
   const [reflection, setReflection] = useState("");
   const [assessment, setAssessment] = useState("");
+  const [releaseReason, setReleaseReason] = useState("");
   const [conversation, setConversation] = useState("");
   const [staffReply, setStaffReply] = useState("");
 
@@ -139,6 +144,7 @@ export default function Performance({ me }) {
       caseRequestSerial.current += 1;
       setCaseLoading(false);
       setEvidence([]); setEntries([]); setPlans([]); setFeedback([]); setFeedbackResponses([]);
+      setReleaseQueue([]); setReleaseQueueAvailable(true); setReleaseDecisionNote("");
     }
   }, [selectedCaseId]);
 
@@ -210,6 +216,17 @@ export default function Performance({ me }) {
       if (requestSerial !== caseRequestSerial.current) return;
       const failed = [e,en,p,f,fr].find((row) => row.error);
       if (failed) throw failed.error;
+      const releaseResult = hrReleaseAdmin
+        ? await supabase.from("performance_review_release_requests")
+            .select("id,requested_assessment_id,request_reason,requested_at,state")
+            .eq("org_id",me.org_id).eq("appraisal_id",caseId).eq("state","pending")
+        : { data:[],error:null };
+      if (requestSerial !== caseRequestSerial.current) return;
+      const releaseMissing = ["42P01","PGRST205"].includes(releaseResult.error?.code)
+        && /performance_review_release_requests/i.test(releaseResult.error?.message || "");
+      if (releaseResult.error && !releaseMissing) throw releaseResult.error;
+      setReleaseQueueAvailable(!releaseMissing);
+      setReleaseQueue(releaseMissing ? [] : (releaseResult.data || []));
       setEvidence(e.data || []);
       setEntries(en.data || []);
       setPlans(p.data || []);
@@ -244,6 +261,9 @@ export default function Performance({ me }) {
   const isReviewer = selectedCase?.manager_id === me.id;
   const currentReflection = latestEntry(entries, "employee_reflection");
   const currentAssessment = latestEntry(entries, "manager_assessment");
+  const currentReleaseRequest = releaseQueue.find((request) =>
+    request.requested_assessment_id === currentAssessment?.id
+  ) || null;
   const currentConversation = latestEntry(entries, "conversation_record");
   const currentPlan = latestPlan(plans);
 
@@ -319,9 +339,25 @@ export default function Performance({ me }) {
     await rpc("refresh_performance_evidence", { p_appraisal_id: selectedCase.id }, "Evidence pack checked for new recorded rows.");
   }
 
-  async function shareReview() {
-    if (!selectedCase) return;
-    await rpc("share_performance_review", { p_appraisal_id: selectedCase.id }, "Review marked shared.");
+  async function decideHRRelease(approved) {
+    if (!hrReleaseAdmin || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
+    const confirmed = await rpc("performance_hr_decide_release", {
+      p_request_id:currentReleaseRequest.id,
+      p_approve:approved,
+      p_reason:releaseDecisionNote.trim(),
+    }, approved
+      ? "HR approved publication of this manager assessment version."
+      : "HR declined publication; the manager assessment remains restricted.");
+    if (confirmed) setReleaseDecisionNote("");
+  }
+
+  async function requestRelease() {
+    if (!selectedCase || releaseReason.trim().length < 8) return;
+    const submitted = await rpc("performance_request_release", {
+      p_appraisal_id: selectedCase.id,
+      p_reason: releaseReason.trim(),
+    }, "The manager's assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.");
+    if (submitted) setReleaseReason("");
   }
 
   async function recordPlan() {
@@ -548,9 +584,32 @@ export default function Performance({ me }) {
             <button className="btn btn-sm" disabled={busy || feedbackNote.trim().length < 3} onClick={recordFeedback}>Record feedback</button>
           </section>}
 
-          {isReviewer && selectedCase.status !== "shared" && selectedCase.status !== "closed" && <div className="performance-share-bar">
-            <div><strong>Finish this review</strong><span>Sharing marks the review as formally shared. The employee already sees recorded narrative as it is written.</span></div>
-            <button className="btn btn-sm" disabled={busy} onClick={shareReview}>Mark as shared</button>
+          {hrReleaseAdmin && <div className="performance-share-bar">
+            <div><strong>HR publication decisions</strong>
+              <span>Only HR may publish a completed manager narrative. Review the manager assessment above before deciding.</span>
+            </div>
+            {!releaseQueueAvailable && <p className="screen-note">Formal approval controls await the accepted database migration.</p>}
+            {releaseQueueAvailable && !currentReleaseRequest && <p className="screen-note">No pending HR request matches the current manager assessment version.</p>}
+            {releaseQueueAvailable && currentReleaseRequest && <>
+              <p className="screen-note">Manager's reason: {currentReleaseRequest.request_reason}</p>
+              <FieldGroup label="HR approval or decline reason">
+                <textarea className="field" rows="2" aria-label="HR assessment publication decision reason"
+                  value={releaseDecisionNote} onChange={(event)=>setReleaseDecisionNote(event.target.value)} />
+              </FieldGroup>
+              <button className="btn btn-sm" disabled={busy || releaseDecisionNote.trim().length < 8}
+                onClick={()=>decideHRRelease(true)}>HR approve publication</button>
+              <button className="btn btn-ghost btn-sm" disabled={busy || releaseDecisionNote.trim().length < 8}
+                onClick={()=>decideHRRelease(false)}>HR decline with reason</button>
+            </>}
+          </div>}
+
+          {isReviewer && selectedCase.status !== "closed" && <div className="performance-share-bar">
+            <div><strong>Request HR release</strong><span>Your assessment remains restricted to the assigned reviewer and authorised HR until HR approves its formal publication. New revisions require their own release approval.</span></div>
+            {!currentAssessment && <p className="screen-note">Record your assessment before requesting HR publication.</p>}
+            <FieldGroup label="Reason to release this assessment">
+              <textarea className="field" rows="2" value={releaseReason} onChange={(event) => setReleaseReason(event.target.value)} aria-label="Performance release request reason" />
+            </FieldGroup>
+            <button className="btn btn-sm" disabled={busy || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>Submit release request to HR</button>
           </div>}
         </>}
       </section>

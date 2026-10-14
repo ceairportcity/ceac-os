@@ -16,6 +16,7 @@ import {
 } from "../lib/operationalFiles";
 import { Button, ComposerDrawer } from "../experience-v2/components";
 import PeopleAccess from "../components/PeopleAccess";
+import EmployeeScheduleEditor from "../components/EmployeeScheduleEditor";
 import {
   PeopleAdminPersonRow,
   PeopleBackButton,
@@ -942,7 +943,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           ? (leavePolicy ? "Recorded work-session and leave context against the currently configured leave policy. No work session is not an absence." : "Recorded work-session and leave context is shown, but entitlement is not calculated because Administration has not configured the policy. No work session is not an absence.")
           : "Time and leave history appears only when this employee is linked to an operational CEAC account."}
       >
-        {!hasLinkedProfile && <PeopleEmpty title="No linked time or leave record" description="The employee remains represented in the roster without fabricated leave or attendance data." />}
+        {!hasLinkedProfile && <PeopleEmpty title="No linked time or leave record" description="A real roster record can receive its HR-confirmed work schedule before an account is activated. Attendance and leave remain unavailable until a genuine profile is linked." />}
+        <EmployeeScheduleEditor me={me} profileId={person.profile_id} employeeId={person.employee_id} unitId={person.unit_id} name={person.full_name} />
         {hasLinkedProfile && <>
         <PeopleEvidenceSummary
           facts={[

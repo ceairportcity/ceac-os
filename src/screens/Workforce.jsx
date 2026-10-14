@@ -2,6 +2,8 @@ import { Fragment, Suspense, lazy, useEffect, useRef, useState } from "react";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
+import AttendanceCorrectionWorkflow from "../components/AttendanceCorrectionWorkflow";
+import AttendanceCodeIssuer from "../components/AttendanceCodeIssuer";
 import { dailyClocks } from "../lib/attendance";
 import { accraDayOffset } from "../lib/workforceDate";
 import { settleWorkforceDatasets } from "../lib/workforceQueries";
@@ -84,12 +86,6 @@ export default function Workforce({ me }) {
   const [scheduleEnd,setScheduleEnd]=useState("");
   const [scheduleReason,setScheduleReason]=useState("");
 
-  const [correctionSheet,setCorrectionSheet]=useState(false);
-  const [correctionPerson,setCorrectionPerson]=useState("");
-  const [correctionDate,setCorrectionDate]=useState(isoDay(new Date()));
-  const [correctionType,setCorrectionType]=useState("context_note");
-  const [correctionNote,setCorrectionNote]=useState("");
-  const [correctionReason,setCorrectionReason]=useState("");
 
   const [dayTypeSheet,setDayTypeSheet]=useState(false);
   const [dayTypeName,setDayTypeName]=useState("");
@@ -275,25 +271,6 @@ export default function Workforce({ me }) {
       p_reason:scheduleReason.trim(),p_supersedes_id:prior?.id||null,
     },"Workforce schedule recorded.",["people","day types","schedules"]);
     if(ok){ setScheduleSheet(false); setScheduleReason(""); }
-  }
-
-  async function recordCorrection(){
-    const ok=await runRpc("workforce_record_attendance_correction",{
-      p_profile_id:correctionPerson,p_work_date:correctionDate,p_work_session_id:null,
-      p_correction_type:correctionType,p_before_context:{},
-      p_after_context:{note:correctionNote.trim()},p_reason:correctionReason.trim(),p_reverses_id:null,
-    },"Attendance context correction recorded.",["corrections"]);
-    if(ok){ setCorrectionSheet(false); setCorrectionNote(""); setCorrectionReason(""); }
-  }
-
-  async function reverseCorrection(row){
-    const reason=window.prompt("Reason for reversing this attendance correction");
-    if(!reason) return;
-    await runRpc("workforce_record_attendance_correction",{
-      p_profile_id:row.profile_id,p_work_date:row.work_date,p_work_session_id:row.work_session_id||null,
-      p_correction_type:"reversal",p_before_context:{},p_after_context:{},
-      p_reason:reason,p_reverses_id:row.id,
-    },"Attendance correction reversal recorded.",["corrections"]);
   }
 
   async function leaveAction(id,action){
@@ -606,6 +583,7 @@ export default function Workforce({ me }) {
       </>}
 
       {tab==="corrections"&&<WorkforceSection title="Attendance correction history" description="Corrections overlay the factual record. Original work-session rows are not rewritten, and a reversal is another linked history row.">
+        <AttendanceCorrectionWorkflow me={me} />
         {personCorrections.map((row)=>{
           const reversed=row.correction_type!=="reversal"&&reversedCorrectionIds.has(row.id);
           return <WorkforceRecordRow
@@ -829,7 +807,8 @@ export default function Workforce({ me }) {
       </>}
 
       {tab==="corrections"&&<>
-        {canCorrect&&<div className="ev2wf-toolbar"><Button variant="secondary" onClick={()=>{setCorrectionPerson(people[0]?.profile_id||"");setCorrectionSheet(true)}}>Record correction</Button></div>}
+        <AttendanceCorrectionWorkflow me={me} />
+        
         <WorkforceSection title="Attendance correction history" description="Corrections overlay factual evidence; original work-session rows are not rewritten. Manager access remains read-only unless attendance.correct is explicitly granted.">
           {corrections.map((row)=>{
             const reversed=row.correction_type!=="reversal"&&reversedCorrectionIds.has(row.id);
@@ -843,7 +822,7 @@ export default function Workforce({ me }) {
               statusLabel={row.correction_type==="reversal"?"Reversal recorded":reversed?"Reversed":"Recorded"}
               statusTone={reversed||row.correction_type==="reversal"?"grey":"blue"}
             >
-              {canCorrect&&row.correction_type!=="reversal"&&!reversed?<Button variant="quiet" onClick={()=>reverseCorrection(row)}>Reverse correction</Button>:null}
+              
             </WorkforceDecisionRow>;
           })}
           {!corrections.length&&<WorkforceEmpty compact title="No attendance corrections recorded" description="Nothing has been corrected in your visible managed scope."/>}
@@ -858,6 +837,7 @@ export default function Workforce({ me }) {
           <Button variant="secondary" disabled={busy||!dayTypes.length||!people.length} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</Button>
           <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
+        <AttendanceCodeIssuer me={me} />
         <WorkforceSection title="Day types" meta={dayTypes.length+" active"}>
           {dayTypes.map((d)=><WorkforceRecordRow key={d.id} icon="calendar" title={d.name} meta={d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} note={d.description||"No description"}/>)}
           {!dayTypes.length&&<WorkforceEmpty compact title="No active day types" description="No day types are visible in the current organisation scope."/>}
@@ -887,15 +867,7 @@ export default function Workforce({ me }) {
         <button className="btn" style={{marginTop:14}} disabled={busy||!schedulePerson||!scheduleDayType||scheduleReason.trim().length<3} onClick={recordSchedule}>Record schedule</button>
       </Sheet>}
 
-      {correctionSheet&&canCorrect&&<Sheet onClose={()=>!busy&&setCorrectionSheet(false)}>
-        <div className="h2">Record attendance context correction</div>
-        <p className="screen-note">This adds an attributable correction. It does not rewrite the original work session.</p>
-        <FieldGroup label="Person"><select className="field" aria-label="Correction person" value={correctionPerson} onChange={e=>setCorrectionPerson(e.target.value)}>{people.map(p=><option key={p.profile_id} value={p.profile_id}>{p.profiles?.full_name}</option>)}</select></FieldGroup>
-        <div className="form-grid two"><FieldGroup label="Date"><input className="field" type="date" value={correctionDate} onChange={e=>setCorrectionDate(e.target.value)}/></FieldGroup><FieldGroup label="Type"><select className="field" value={correctionType} onChange={e=>setCorrectionType(e.target.value)}><option value="context_note">Context note</option><option value="start_time">Start time</option><option value="end_time">End time</option><option value="day_type">Day type</option><option value="administrative_finding">Human administrative finding</option></select></FieldGroup></div>
-        <FieldGroup label="Corrected context"><textarea className="field" aria-label="Corrected context" rows="3" value={correctionNote} onChange={e=>setCorrectionNote(e.target.value)}/></FieldGroup>
-        <FieldGroup label="Reason"><textarea className="field" aria-label="Correction reason" rows="2" value={correctionReason} onChange={e=>setCorrectionReason(e.target.value)}/></FieldGroup>
-        <button className="btn" style={{marginTop:14}} disabled={busy||!correctionPerson||correctionReason.trim().length<3} onClick={recordCorrection}>Record correction</button>
-      </Sheet>}
+
 
       {policySheet&&canManage&&<Sheet onClose={()=>!busy&&setPolicySheet(false)}>
         <div className="h2">{activePolicy?"Create leave policy revision":"Configure confirmed leave policy"}</div>
@@ -1153,7 +1125,8 @@ export default function Workforce({ me }) {
       </>}
 
       {tab==="corrections"&&<>
-        {canCorrect&&<div className="ev2wf-toolbar"><Button variant="secondary" onClick={()=>{setCorrectionPerson(people[0]?.profile_id||"");setCorrectionSheet(true)}}>Record correction</Button></div>}
+        <AttendanceCorrectionWorkflow me={me} />
+        
         <WorkforceSection title="Attendance correction history" description="Corrections overlay the factual record. Original work-session rows are not rewritten; reversal is another linked history row.">
           {corrections.map((row)=>{
             const reversed=row.correction_type!=="reversal"&&reversedCorrectionIds.has(row.id);
@@ -1167,7 +1140,7 @@ export default function Workforce({ me }) {
               statusLabel={row.correction_type==="reversal"?"Reversal recorded":reversed?"Reversed":"Recorded"}
               statusTone={reversed||row.correction_type==="reversal"?"grey":"blue"}
             >
-              {canCorrect&&row.correction_type!=="reversal"&&!reversed?<Button variant="quiet" busy={busy} onClick={()=>reverseCorrection(row)}>Reverse correction</Button>:null}
+              
             </WorkforceDecisionRow>;
           })}
           {!corrections.length&&<WorkforceEmpty compact title="No attendance corrections recorded" description="Nothing has been corrected in your visible scope."/>}
@@ -1182,6 +1155,7 @@ export default function Workforce({ me }) {
           <Button variant="secondary" disabled={busy||!dayTypes.length||!people.length} title={!people.length?"No visible active people loaded":!dayTypes.length?"No active day types loaded":""} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</Button>
           <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
+        <AttendanceCodeIssuer me={me} />
         <WorkforceSection title="Day types" description="Organisation schedule vocabulary remains explicit and attributable." meta={dayTypes.length+" active"}>
           {dayTypes.map((d)=><WorkforceRecordRow key={d.id} icon="calendar" title={d.name} meta={d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} note={d.description||"No description"}/>)}
           {!dayTypes.length&&<WorkforceEmpty compact title="No active day types" description="Record a confirmed day type before creating schedules."/>}
@@ -1219,15 +1193,7 @@ export default function Workforce({ me }) {
         <button className="btn" style={{marginTop:14}} disabled={busy||!schedulePerson||!scheduleDayType||scheduleReason.trim().length<3} onClick={recordSchedule}>Record schedule</button>
       </Sheet>}
 
-      {correctionSheet&&canCorrect&&<Sheet onClose={()=>!busy&&setCorrectionSheet(false)}>
-        <div className="h2">Record attendance context correction</div>
-        <p className="screen-note">This adds an attributable correction. It does not rewrite the original work session.</p>
-        <FieldGroup label="Person"><select className="field" aria-label="Correction person" value={correctionPerson} onChange={e=>setCorrectionPerson(e.target.value)}>{people.map(p=><option key={p.profile_id} value={p.profile_id}>{p.profiles?.full_name}</option>)}</select></FieldGroup>
-        <div className="form-grid two"><FieldGroup label="Date"><input className="field" type="date" value={correctionDate} onChange={e=>setCorrectionDate(e.target.value)}/></FieldGroup><FieldGroup label="Type"><select className="field" value={correctionType} onChange={e=>setCorrectionType(e.target.value)}><option value="context_note">Context note</option><option value="start_time">Start time</option><option value="end_time">End time</option><option value="day_type">Day type</option><option value="administrative_finding">Human administrative finding</option></select></FieldGroup></div>
-        <FieldGroup label="Corrected context"><textarea className="field" aria-label="Corrected context" rows="3" value={correctionNote} onChange={e=>setCorrectionNote(e.target.value)}/></FieldGroup>
-        <FieldGroup label="Reason"><textarea className="field" aria-label="Correction reason" rows="2" value={correctionReason} onChange={e=>setCorrectionReason(e.target.value)}/></FieldGroup>
-        <button className="btn" style={{marginTop:14}} disabled={busy||!correctionPerson||correctionReason.trim().length<3} onClick={recordCorrection}>Record correction</button>
-      </Sheet>}
+
 
       {policySheet&&canManage&&<Sheet onClose={()=>!busy&&setPolicySheet(false)}>
         <div className="h2">{activePolicy?"Create leave policy revision":"Configure confirmed leave policy"}</div>
@@ -1404,7 +1370,8 @@ export default function Workforce({ me }) {
     </>}
 
     {tab==="corrections"&&<>
-      <div className="sec"><span>Attendance correction history</span>{canCorrect&&<button className="btn btn-sm" onClick={()=>{setCorrectionPerson(people[0]?.profile_id||"");setCorrectionSheet(true)}}>Record correction</button>}</div>
+        <AttendanceCorrectionWorkflow me={me} />
+      <div className="sec"><span>Attendance correction history</span></div>
       <p className="screen-note">Corrections overlay the factual record. Original work-session rows are not rewritten; reversal is another linked history row.</p>
       {corrections.map((row)=>{
         const reversed=row.correction_type!=="reversal"&&reversedCorrectionIds.has(row.id);
@@ -1412,7 +1379,7 @@ export default function Workforce({ me }) {
           <div className="row-t">{peopleById[row.profile_id]?.profiles?.full_name||"Employee"} · {human(row.correction_type)}{reversed?" · reversed":""}</div>
           <div className="row-m">{niceDay(row.work_date)} · {row.reason}</div>
           {row.after_context?.note&&<div className="row-note">{row.after_context.note}</div>}
-          {canCorrect&&row.correction_type!=="reversal"&&!reversed&&<div className="workforce-row-actions"><button className="btn btn-ghost btn-sm" onClick={()=>reverseCorrection(row)}>Reverse correction</button></div>}
+          
         </div>;
       })}
       {!corrections.length&&<EmptyState compact title="No attendance corrections recorded">Nothing has been corrected in your visible scope.</EmptyState>}
@@ -1426,6 +1393,7 @@ export default function Workforce({ me }) {
         <button className="btn btn-ghost" disabled={busy||!dayTypes.length||!people.length} title={!people.length?"No visible active people loaded":!dayTypes.length?"No active day types loaded":""} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</button>
         <button className="btn" onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</button>
       </div>
+      <AttendanceCodeIssuer me={me} />
       <div className="sec"><span>Day types</span><span>{dayTypes.length}</span></div>
       {dayTypes.map((d)=><div className="row" key={d.id}><div className="row-t">{d.name}</div><div className="row-m">{d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} · {d.description||"No description"}</div></div>)}
       <div className="sec"><span>Leave policy status</span></div>
@@ -1450,15 +1418,7 @@ export default function Workforce({ me }) {
       <button className="btn" style={{marginTop:14}} disabled={busy||!schedulePerson||!scheduleDayType||scheduleReason.trim().length<3} onClick={recordSchedule}>Record schedule</button>
     </Sheet>}
 
-    {correctionSheet&&<Sheet onClose={()=>!busy&&setCorrectionSheet(false)}>
-      <div className="h2">Record attendance context correction</div>
-      <p className="screen-note">This adds an attributable correction. It does not rewrite the original work session.</p>
-      <FieldGroup label="Person"><select className="field" aria-label="Correction person" value={correctionPerson} onChange={e=>setCorrectionPerson(e.target.value)}>{people.map(p=><option key={p.profile_id} value={p.profile_id}>{p.profiles?.full_name}</option>)}</select></FieldGroup>
-      <div className="form-grid two"><FieldGroup label="Date"><input className="field" type="date" value={correctionDate} onChange={e=>setCorrectionDate(e.target.value)}/></FieldGroup><FieldGroup label="Type"><select className="field" value={correctionType} onChange={e=>setCorrectionType(e.target.value)}><option value="context_note">Context note</option><option value="start_time">Start time</option><option value="end_time">End time</option><option value="day_type">Day type</option><option value="administrative_finding">Human administrative finding</option></select></FieldGroup></div>
-      <FieldGroup label="Corrected context"><textarea className="field" aria-label="Corrected context" rows="3" value={correctionNote} onChange={e=>setCorrectionNote(e.target.value)}/></FieldGroup>
-      <FieldGroup label="Reason"><textarea className="field" aria-label="Correction reason" rows="2" value={correctionReason} onChange={e=>setCorrectionReason(e.target.value)}/></FieldGroup>
-      <button className="btn" style={{marginTop:14}} disabled={busy||!correctionPerson||correctionReason.trim().length<3} onClick={recordCorrection}>Record correction</button>
-    </Sheet>}
+
 
     {policySheet&&<Sheet onClose={()=>!busy&&setPolicySheet(false)}>
       <div className="h2">{activePolicy?"Create leave policy revision":"Configure confirmed leave policy"}</div>

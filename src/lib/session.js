@@ -8,13 +8,32 @@ export async function openSession(orgId, userId) {
   if (error) throw error;
   return data || null;
 }
-export async function startWork(orgId, userId, place, workItemId) {
+export async function startWork(orgId, userId, place, workItemId, officeLocationId = null) {
   const pos = await getPositionOnce();
   if (place === "office" && pos.failure) {
     throw new Error(`${pos.failure}. Allow location access and retry to verify an office start. No session was started.`);
   }
+  let verifiedOfficeLocationId = null;
+  if (place === "office") {
+    // A declared office/programme location must be a recorded CEAC location
+    // in the active organisation. Other callers retain the primary-office
+    // fallback until they adopt the explicit location picker.
+    let locationQuery = supabase.from("office_locations")
+      .select("id").eq("org_id", orgId);
+    locationQuery = officeLocationId
+      ? locationQuery.eq("id", officeLocationId)
+      : locationQuery.eq("is_primary", true);
+    const { data: location, error: locationError } =
+      await locationQuery.limit(1).maybeSingle();
+    if (locationError) throw locationError;
+    if (!location) {
+      throw new Error("Choose a CEAC-authorised office or programme location before starting work.");
+    }
+    verifiedOfficeLocationId = location.id;
+  }
   const { data, error } = await supabase.from("work_sessions").insert({
     org_id: orgId, profile_id: userId, place, work_item_id: workItemId,
+    office_location_id: verifiedOfficeLocationId,
     lat: pos.lat ?? null, lng: pos.lng ?? null,
     location_accuracy_m: pos.accuracy ?? null, location_captured_at: pos.capturedAt ?? null,
     device_time: new Date().toISOString(),
