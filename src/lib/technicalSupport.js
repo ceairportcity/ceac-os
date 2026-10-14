@@ -100,7 +100,8 @@ export function canRecordSupportOutcome(caseRecord, nextState, recordedAccess = 
   return Boolean(recordedAccess?.state === "executed"
     && recordedAccess.approved_by && recordedAccess.executed_by
     && recordedAccess.approved_by !== recordedAccess.executed_by
-    && recordedAccess.execution_reference?.trim()?.length >= 8
+    && typeof recordedAccess.execution_reference === "string"
+    && recordedAccess.execution_reference.trim().length >= 8
     && recordedAccess.case_id === caseRecord.id);
 }
 
