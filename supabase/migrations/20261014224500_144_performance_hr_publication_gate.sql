@@ -74,14 +74,9 @@ using (
             where rr.appraisal_id=a.id and rr.org_id=a.org_id
               and rr.decision='approved'
               and rr.decided_at >= appraisal_entries.created_at
-              -- No published request may authorise later manager revisions.
-              and exists (
-                select 1 from public.appraisal_entries approved_version
-                where approved_version.id=rr.assessment_entry_id
-                  and approved_version.appraisal_id=a.id
-                  and approved_version.entry_type='manager_assessment'
-                  and approved_version.created_at >= appraisal_entries.created_at
-              )
+              -- A published approval never exposes a draft written later.
+              -- Do not query appraisal_entries from its own RLS policy:
+              -- that would recursively evaluate this same policy.
           )
         )
       )
