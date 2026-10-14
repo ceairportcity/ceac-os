@@ -1,5 +1,16 @@
 # Product Owner Decisions
 
+## Binding owner decision — 14 October 2026: two-stage release and continuing CAC product development
+
+**Authority:** [Two-Stage Production and Future Supabase Continuity](../continuity/CEAC_TWO_STAGE_PRODUCTION_AND_FUTURE_SUPABASE_CONTINUITY_2026-10-14.md).
+
+1. **Stage 1** targets the existing production Supabase `efjljhftsesssumtshvp`, existing private GitHub `ceairportcity/ceac-os` and existing Vercel `ceac-os`, using proven email/password sign-in instead of requiring Google OAuth for the first release. This is a release target subject to compatibility, preserved privileged MFA, recovery, security and explicit GO, not permission to deploy unverified work.
+2. **Stage 2** remains a required later move to the already-reported CE Airport City-controlled Supabase project (verify project ID/ownership) with Google-only approved identity sign-in and verified TOTP/AAL2 for every role. This is **deferred, not cancelled or completed**. Do not revive blocked ownership transfer of the old project or unnecessarily create another new project.
+3. **Ongoing app improvements are expected after Stage 1.** The architecture and CAC final product discussions are not finished. Any change to Stage 1's production schema, data, policies, roles, files, Auth, UI or approved features must be recorded in a forward-migration/compatibility register and reflected in Stage 2's eventual current-state migration. The old 144-migration checkpoint is not the final target specification.
+4. Historical test users being dispensable does **not** justify losing live operational data created after Stage 1 launch. Reconcile and protect all genuine production data, audited actions and private files; use a tested reversible cutover and separate owner GO for Stage 2.
+5. Neither stage weakens existing privacy, RLS, payroll/HR authority, security, recoverability or accepted product/visual decisions. The owner must separately approve any substantive scope reduction and final production cutover.
+
+
 ## Binding decisions — 2 October 2026
 - FPG supersedes conflicting older visual/VF sequencing.
 - Approved references are literal visible authorities, not inspiration.
