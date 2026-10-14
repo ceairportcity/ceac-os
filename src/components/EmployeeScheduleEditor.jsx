@@ -11,7 +11,7 @@ const emptyDays = () => Object.fromEntries(DAYS.map(([day]) => [day, {
 }]));
 const dateOf = (value) => value ? String(value).slice(0,10) : "";
 
-export default function EmployeeScheduleEditor({ me, profileId, unitId, name }) {
+export default function EmployeeScheduleEditor({ me, profileId, employeeId, unitId, name }) {
   const authorised = Boolean(me?.is_admin) && (me.capabilities || []).includes("workforce.manage");
   const [dayTypes,setDayTypes] = useState([]);
   const [versions,setVersions] = useState([]);
@@ -33,9 +33,14 @@ export default function EmployeeScheduleEditor({ me, profileId, unitId, name }) 
     const [types, schedules] = await Promise.all([
       supabase.from("workforce_day_types").select("id,name,session_expected,active")
         .eq("org_id",me.org_id).eq("active",true).order("name"),
-      supabase.from("workforce_schedule_versions")
-        .select("id,effective_from,effective_to,day_map,clock_map,reason,created_at")
-        .eq("org_id",me.org_id).eq("profile_id",profileId)
+      (employeeId
+        ? supabase.from("workforce_schedule_versions")
+            .select("id,effective_from,effective_to,day_map,clock_map,reason,created_at")
+            .eq("org_id",me.org_id)
+            .or(profileId ? "employee_id.eq."+employeeId+",profile_id.eq."+profileId : "employee_id.eq."+employeeId)
+        : supabase.from("workforce_schedule_versions")
+            .select("id,effective_from,effective_to,day_map,clock_map,reason,created_at")
+            .eq("org_id",me.org_id).eq("profile_id",profileId))
         .order("created_at",{ascending:false}).limit(20),
     ]);
     if (token !== generation.current) return false;
@@ -60,11 +65,11 @@ export default function EmployeeScheduleEditor({ me, profileId, unitId, name }) 
     setReason("");
     setError("");
     setNotice("");
-    if (authorised && profileId) void load();
+    if (authorised && (employeeId || profileId)) void load();
     return () => { generation.current += 1; };
-  }, [me.id,me.org_id,profileId,authorised]);
+  }, [me.id,me.org_id,profileId,employeeId,authorised]);
 
-  if (!authorised || !profileId) return null;
+  if (!authorised || (!profileId && !employeeId)) return null;
 
   const previous = versions[0] || null;
   function beginEdit() {
@@ -100,7 +105,7 @@ export default function EmployeeScheduleEditor({ me, profileId, unitId, name }) 
     && reason.trim().length>=8 && complete;
 
   async function save() {
-    if (writeBusy.current || !valid || !profileId) return;
+    if (writeBusy.current || !valid || (!profileId && !employeeId)) return;
     writeBusy.current=true;
     setBusy(true);
     setError("");
@@ -112,12 +117,16 @@ export default function EmployeeScheduleEditor({ me, profileId, unitId, name }) 
       const clockMap=Object.fromEntries(DAYS.map(([key])=>[key,{
         start:days[key].start || null,end:days[key].end || null,
       }]));
-      const { data, error:failure }=await supabase.rpc("workforce_record_pattern",{
-        p_profile_id:profileId,p_unit_id:unitId || null,
+      const shared={
         p_effective_from:startDate,p_effective_to:endDate || null,
         p_day_map:dayMap,p_clock_map:clockMap,
         p_reason:reason.trim(),p_supersedes_id:previous?.id || null,
-      });
+      };
+      const { data, error:failure }=await supabase.rpc(
+        employeeId ? "workforce_record_roster_pattern" : "workforce_record_pattern",
+        employeeId ? { ...shared, p_employee_id:employeeId }
+          : { ...shared,p_profile_id:profileId,p_unit_id:unitId || null },
+      );
       if (failure) throw failure;
       if (!data) throw new Error("The schedule write outcome was not confirmed.");
       recorded=true;
