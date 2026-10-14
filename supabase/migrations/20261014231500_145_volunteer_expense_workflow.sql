@@ -33,8 +33,8 @@ create table if not exists public.volunteer_expense_requests(
   check((state='requested' and manager_confirmed_by is null and decided_by is null)
     or (state='declined' and decided_by is not null)
     or (state in ('manager_confirmed','approved','paid') and manager_confirmed_by is not null)),
-  check((state in ('approved','paid'))=(decided_by is not null and decided_at is not null and
-    manager_confirmed_by is not null)),
+  check(state not in ('approved','paid') or
+    (decided_by is not null and decided_at is not null and manager_confirmed_by is not null)),
   check(state<>'paid' or (paid_by is not null and paid_at is not null and
     length(btrim(payment_reference)) between 6 and 300))
 );
@@ -179,3 +179,132 @@ end;
 $$;
 revoke all on function public.volunteer_expense_manager_confirm(uuid,boolean,text) from public,anon;
 grant execute on function public.volunteer_expense_manager_confirm(uuid,boolean,text) to authenticated;
+
+
+-- HR and Finance may consult in either order. These are recorded assessments,
+-- not two separate compulsory sequential payment approvals. Either authorised
+-- officer can make the one final decision after both consultations exist.
+create or replace function public.volunteer_expense_consult(
+  p_request_id uuid,p_authority text,p_recommendation text,p_note text
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+  v_org uuid:=public.app_org_id();v_actor uuid:=auth.uid();
+  v_hr boolean;v_finance boolean;
+  v_request public.volunteer_expense_requests%rowtype;
+  v_id uuid;
+begin
+  if v_actor is null or v_org is null
+    or p_authority not in ('hr','finance')
+    or p_recommendation not in ('support','hold')
+    or length(btrim(coalesce(p_note,''))) not between 8 and 1000 then
+    raise exception 'An authorised HR or Finance consultation and reason are required.' using errcode='42501';
+  end if;
+  v_hr:=public.app_is_admin() and public.app_has_capability('people.manage',null);
+  select exists(select 1 from public.unit_memberships m join public.units u
+    on u.id=m.unit_id and u.org_id=m.org_id
+    where m.org_id=v_org and m.profile_id=v_actor and u.handles_finance) into v_finance;
+  if (p_authority='hr' and not v_hr) or (p_authority='finance' and not v_finance) then
+    raise exception 'This consultation requires the designated HR or Finance authority.' using errcode='42501';
+  end if;
+  select * into v_request from public.volunteer_expense_requests
+    where id=p_request_id and org_id=v_org and state='manager_confirmed'
+    for update;
+  if v_request.id is null then
+    raise exception 'The manager must confirm the volunteer assignment first.' using errcode='42501';
+  end if;
+  if v_actor=v_request.volunteer_profile_id then
+    raise exception 'A volunteer cannot review their own reimbursement.' using errcode='42501';
+  end if;
+  insert into public.volunteer_expense_consultations(
+    org_id,request_id,authority,reviewer_id,recommendation,note
+  ) values (v_org,v_request.id,p_authority,v_actor,p_recommendation,btrim(p_note))
+  returning id into v_id;
+  insert into public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
+  values(v_org,v_actor,'volunteer_expense_consulted','volunteer_expense',v_request.id,
+    jsonb_build_object('authority',p_authority,'recommendation',p_recommendation,'consultation_id',v_id));
+  return jsonb_build_object('request_id',v_request.id,'authority',p_authority,'consulted',true);
+end;
+$$;
+revoke all on function public.volunteer_expense_consult(uuid,text,text,text) from public,anon;
+grant execute on function public.volunteer_expense_consult(uuid,text,text,text) to authenticated;
+
+create or replace function public.volunteer_expense_finalize(
+  p_request_id uuid,p_approve boolean,p_note text
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+  v_org uuid:=public.app_org_id();v_actor uuid:=auth.uid();
+  v_request public.volunteer_expense_requests%rowtype;
+  v_hr boolean;v_finance boolean;v_ready integer;
+  v_consult_count integer;
+begin
+  if v_actor is null or v_org is null or length(btrim(coalesce(p_note,''))) not between 8 and 1000 then
+    raise exception 'A final decision and reason are required.' using errcode='42501';
+  end if;
+  v_hr:=public.app_is_admin() and public.app_has_capability('people.manage',null);
+  select exists(select 1 from public.unit_memberships m join public.units u
+    on u.id=m.unit_id and u.org_id=m.org_id
+    where m.org_id=v_org and m.profile_id=v_actor and u.handles_finance) into v_finance;
+  if not (v_hr or v_finance) then
+    raise exception 'Only HR or Finance may finalise volunteer expense review.' using errcode='42501';
+  end if;
+  select * into v_request from public.volunteer_expense_requests
+    where id=p_request_id and org_id=v_org and state='manager_confirmed'
+    for update;
+  if v_request.id is null or v_request.volunteer_profile_id=v_actor then
+    raise exception 'An active, manager-confirmed claim is required.' using errcode='42501';
+  end if;
+  select count(*),count(*) filter(where recommendation='support')
+  into v_consult_count,v_ready
+  from public.volunteer_expense_consultations
+  where org_id=v_org and request_id=v_request.id;
+  if v_consult_count=0 then
+    raise exception 'Record an HR or Finance consultation before finalising.';
+  end if;
+  if coalesce(p_approve,false) and (v_consult_count<>2 or v_ready<>2) then
+    raise exception 'Both HR and Finance must document support before payment is approved.';
+  end if;
+  update public.volunteer_expense_requests
+  set state=case when p_approve then 'approved' else 'declined' end,
+      decided_by=v_actor,decided_at=now(),decision_note=btrim(p_note)
+  where id=v_request.id;
+  insert into public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
+  values(v_org,v_actor,'volunteer_expense_final_decision','volunteer_expense',v_request.id,
+    jsonb_build_object('approved',coalesce(p_approve,false),'consultations',v_consult_count));
+  return jsonb_build_object('request_id',v_request.id,
+    'approved',coalesce(p_approve,false),'payment_status','not_paid');
+end;
+$$;
+revoke all on function public.volunteer_expense_finalize(uuid,boolean,text) from public,anon;
+grant execute on function public.volunteer_expense_finalize(uuid,boolean,text) to authenticated;
+
+-- Approval authorises a reimbursement; it is not proof that a payment was
+-- made. Only Finance may record the actual payment with a documentary ref.
+create or replace function public.volunteer_expense_record_payment(
+  p_request_id uuid,p_payment_reference text
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_org uuid:=public.app_org_id();v_actor uuid:=auth.uid();
+  v_request public.volunteer_expense_requests%rowtype;
+begin
+  if v_actor is null or v_org is null
+    or length(btrim(coalesce(p_payment_reference,''))) not between 6 and 300
+    or not exists(select 1 from public.unit_memberships m join public.units u
+      on u.id=m.unit_id and u.org_id=m.org_id
+      where m.org_id=v_org and m.profile_id=v_actor and u.handles_finance) then
+    raise exception 'Finance and a valid payment reference are required.' using errcode='42501';
+  end if;
+  select * into v_request from public.volunteer_expense_requests
+    where id=p_request_id and org_id=v_org and state='approved' for update;
+  if v_request.id is null or v_request.volunteer_profile_id=v_actor then
+    raise exception 'Only an approved, unpaid reimbursement can be marked paid.' using errcode='42501';
+  end if;
+  update public.volunteer_expense_requests
+  set state='paid',paid_by=v_actor,paid_at=now(),payment_reference=btrim(p_payment_reference)
+  where id=v_request.id;
+  insert into public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
+  values(v_org,v_actor,'volunteer_expense_payment_recorded','volunteer_expense',v_request.id,
+    jsonb_build_object('reference_recorded',true));
+  return jsonb_build_object('request_id',v_request.id,'paid_recorded',true);
+end;
+$$;
+revoke all on function public.volunteer_expense_record_payment(uuid,text) from public,anon;
+grant execute on function public.volunteer_expense_record_payment(uuid,text) to authenticated;
