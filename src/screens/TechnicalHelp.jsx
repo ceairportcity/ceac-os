@@ -90,11 +90,17 @@ export default function TechnicalHelp({ me }) {
       const { data, error: readFailure } = await supabase.from("support_case_safe_status")
         .select("id,reference,category,summary,description,affected_service,state,opened_at,resolved_at,closed_at,resolution_summary")
         .eq("id", requestId).maybeSingle();
-      if (readFailure || !data) throw readFailure || new Error("The recorded request could not be verified.");
       if (generation !== readGeneration.current) return;
-      setCases((previous) => [data, ...previous]);
+      // The insert has succeeded. A failed follow-up read must not tell the
+      // reporter to submit again: that could create a second support case.
       setSummary(""); setDescription(""); setService("");
-      setSuccess("Your request was recorded. Reference: " + data.reference);
+      if (readFailure || !data) {
+        setSuccess("Your request was recorded, but its reference could not be loaded. Refresh your requests to see the saved case. Do not submit it again.");
+        setReloadCount((previous) => previous + 1);
+      } else {
+        setCases((previous) => [data, ...previous.filter((item) => item.id !== data.id)]);
+        setSuccess("Your request was recorded. Reference: " + data.reference);
+      }
       setLoadError(null);
     } catch (failure) {
       if (generation === readGeneration.current) setError(supportUnavailableMessage(failure) || humanError(failure, "Your request could not be confirmed. Check your existing requests before trying again, or use the approved CEAC support contact."));
