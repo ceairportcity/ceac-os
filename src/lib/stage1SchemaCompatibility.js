@@ -1,0 +1,33 @@
+const text = (error) => String(error?.message || error?.details || error?.hint || "").toLowerCase();
+
+const missingSchemaObject = (error) => {
+  const code = String(error?.code || "").toUpperCase();
+  return ["42P01", "42703", "42883", "PGRST202", "PGRST204", "PGRST205"].includes(code)
+    || /does not exist|schema cache|could not find/.test(text(error));
+};
+
+export function isMissingPersonalPlanningSchema(error) {
+  if (!missingSchemaObject(error)) return false;
+  return [
+    "personal_day_tasks",
+    "personal_day_task_checklist",
+    "personal_day_notes",
+    "personal_calendar_events",
+  ].some((name) => text(error).includes(name));
+}
+
+export function isMissingAnnualLeaveStageSchema(error) {
+  if (!missingSchemaObject(error)) return false;
+  return ["working_days", "working_days_basis", "workforce_annual_leave_summary"]
+    .some((name) => text(error).includes(name));
+}
+
+export function isMissingVolunteerNoticeSchema(error) {
+  return missingSchemaObject(error) && text(error).includes("volunteer_engagement_notices");
+}
+
+export function isMissingVolunteerManagementSchema(error) {
+  if (!missingSchemaObject(error)) return false;
+  return ["volunteer_working_pattern_versions", "volunteer_change_recommendations"]
+    .some((name) => text(error).includes(name));
+}

@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { ProductNotice } from "../components/bits";
 import { dateOnly } from "../lib/time";
 import { humanError } from "../lib/productLanguage";
+import { isMissingAnnualLeaveStageSchema, isMissingVolunteerNoticeSchema } from "../lib/stage1SchemaCompatibility";
 import {
   Button,
   Drawer,
@@ -59,13 +60,15 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
   const [loading, setLoading] = useState(true);
   const [datasetErrors, setDatasetErrors] = useState({});
   const [message, setMessage] = useState(null);
+  const [annualLeaveStageReady, setAnnualLeaveStageReady] = useState(true);
+  const [volunteerNoticesReady, setVolunteerNoticesReady] = useState(true);
 
   useEffect(() => { load(); }, [me.id]);
 
   async function load() {
     setLoading(true);
 
-    const [requestsResult, policyResult, annualSummaryResult, goalsResult, remindersResult, detailsResult, profileResult, engagementResult, volunteerNoticeResult] = await Promise.all([
+    let [requestsResult, policyResult, annualSummaryResult, goalsResult, remindersResult, detailsResult, profileResult, engagementResult, volunteerNoticeResult] = await Promise.all([
       supabase.from("leave_requests")
         .select("id, kind, start_date, end_date, days, working_days, working_days_basis, status, requested_at")
         .eq("profile_id", me.id).order("requested_at", { ascending: false }).limit(100),
@@ -97,13 +100,23 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     ]);
 
     const errors = {};
+    let annualStageAvailable = true;
+    if (requestsResult.error && isMissingAnnualLeaveStageSchema(requestsResult.error)) {
+      annualStageAvailable = false;
+      requestsResult = await supabase.from("leave_requests")
+        .select("id, kind, start_date, end_date, days, status, requested_at")
+        .eq("profile_id", me.id).order("requested_at", { ascending: false }).limit(100);
+    }
     if (requestsResult.error) errors.leaveRequests = humanError(requestsResult.error, "Your leave requests could not load.");
     else setMyRequests(requestsResult.data || []);
 
     if (policyResult.error) errors.leavePolicy = humanError(policyResult.error, "The confirmed leave policy could not load.");
     else setLeavePolicy(policyResult.data || null);
 
-    if (annualSummaryResult.error) {
+    if (annualSummaryResult.error && isMissingAnnualLeaveStageSchema(annualSummaryResult.error)) {
+      annualStageAvailable = false;
+      setAnnualLeaveSummary(null);
+    } else if (annualSummaryResult.error) {
       errors.annualLeaveSummary = humanError(annualSummaryResult.error, "Your annual leave balance could not load.");
       setAnnualLeaveSummary(null);
     } else {
@@ -125,8 +138,16 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     if (engagementResult.error) errors.engagement = humanError(engagementResult.error, "Your engagement record could not load.");
     else setEngagement(engagementResult.data || null);
 
-    if (volunteerNoticeResult.error) errors.volunteerNotices = humanError(volunteerNoticeResult.error, "Your volunteer change notices could not load.");
-    else setVolunteerNotices(volunteerNoticeResult.data || []);
+    if (volunteerNoticeResult.error && isMissingVolunteerNoticeSchema(volunteerNoticeResult.error)) {
+      setVolunteerNoticesReady(false);
+      setVolunteerNotices([]);
+    } else if (volunteerNoticeResult.error) {
+      setVolunteerNoticesReady(true);
+      errors.volunteerNotices = humanError(volunteerNoticeResult.error, "Your volunteer change notices could not load.");
+    } else {
+      setVolunteerNoticesReady(true);
+      setVolunteerNotices(volunteerNoticeResult.data || []);
+    }
 
     const policy = policyResult.error ? null : policyResult.data;
     if (policy) {
@@ -139,6 +160,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     }
 
     setDatasetErrors(errors);
+    setAnnualLeaveStageReady(annualStageAvailable);
     setLoading(false);
     return { errors };
   }
@@ -322,7 +344,8 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         <PersonalFact value={String(engagement?.working_pattern?.kind || "not_recorded").replaceAll("_"," ")} label="working arrangement" />
         <PersonalFact value={engagement?.employment_status || "active"} label="engagement status" />
       </div>}
-      {datasetErrors.volunteerNotices ? <ProductNotice tone="attention" title="Change notices unavailable">{datasetErrors.volunteerNotices}</ProductNotice>
+      {!volunteerNoticesReady ? <ProductNotice tone="attention" title="Volunteer notices come in Stage 2">Your existing engagement record remains visible. Formal in-app volunteer change notices need the separately rehearsed volunteer migration and are not being written to this production database.</ProductNotice>
+        : datasetErrors.volunteerNotices ? <ProductNotice tone="attention" title="Change notices unavailable">{datasetErrors.volunteerNotices}</ProductNotice>
         : volunteerNotices.length ? <div className="phase6-volunteer-self-notices">{volunteerNotices.map((notice) => <article key={notice.id}>
             <div>
               <strong>{notice.title}</strong>
@@ -400,7 +423,9 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         Annual leave is 24 working days per leave year, credited at 6 working days for each completed quarter. Joiners receive a pro-rated first completed-quarter credit, and ordinary unused days expire at year end subject to protected exceptions. Every leave request follows Manager approval → Administration final approval.
       </ProductNotice>
 
-      {datasetErrors.annualLeaveSummary ? <ProductNotice tone="attention" title="Annual balance unavailable">{datasetErrors.annualLeaveSummary}</ProductNotice>
+      {!annualLeaveStageReady ? <ProductNotice tone="attention" title="Working-day balance comes after migration acceptance">Existing leave requests and the approved request route remain available. CEAC OS will not invent a working-day balance until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice> : null}
+
+      {annualLeaveStageReady && datasetErrors.annualLeaveSummary ? <ProductNotice tone="attention" title="Annual balance unavailable">{datasetErrors.annualLeaveSummary}</ProductNotice>
         : annualLeft === null ? <ProductNotice tone="info" title="Annual balance needs complete records">{annualBalanceReason === "join_date_not_recorded"
           ? "Your join date is not recorded yet, so CEAC OS will not invent an annual leave balance."
           : "CEAC OS needs attributable workforce schedule evidence for approved annual leave before it can show a reliable remaining working-day balance."}</ProductNotice>
@@ -410,7 +435,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         : !secondaryPolicyConfigured ? <ProductNotice tone="info" title="Secondary leave quantities not configured">Sick, Maternity, Paternity and Study requests remain available on the confirmed approval route, but CEAC OS does not invent their entitlement quantities.</ProductNotice>
         : null}
 
-      {!datasetErrors.annualLeaveSummary ? <div className="ev2pf-facts">
+      {annualLeaveStageReady && !datasetErrors.annualLeaveSummary ? <div className="ev2pf-facts">
         <PersonalFact value={annualLeft === null ? "—" : String(annualLeft)} label={annualLeft === null ? "annual balance unavailable" : "annual working days available"} />
         <PersonalFact value={annualAccrued === null ? "—" : String(annualAccrued)} label="annual working days accrued" />
         <PersonalFact value={String(annualEntitlement)} label="annual working-day entitlement" />

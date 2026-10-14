@@ -12,6 +12,7 @@ import {
   PeopleEmpty,
 } from "../experience-v2/people-family/PeopleFamilyV2";
 import { humanError } from "../lib/productLanguage";
+import { isMissingVolunteerManagementSchema } from "../lib/stage1SchemaCompatibility";
 
 function requireResult(result, label) {
   if (result.error) throw new Error(`${label}: ${result.error.message}`);
@@ -57,6 +58,7 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [volunteerStageReady, setVolunteerStageReady] = useState(true);
 
   useEffect(() => {
     setCurrentFilter(focus === "overdue" ? "overdue" : focus === "review" ? "in_review" : "active");
@@ -115,12 +117,15 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
       setFeedback(requireResult(feedbackResult, "Feedback"));
       setSubTeams(requireResult(subTeamResult, "Parts of the team").map((row) => row.sub_teams?.name).filter(Boolean));
       if (employmentResult.error) throw new Error(`Engagement record: ${employmentResult.error.message}`);
-      if (patternResult.error) throw new Error(`Volunteer working pattern: ${patternResult.error.message}`);
-      if (recommendationResult.error) throw new Error(`Volunteer recommendations: ${recommendationResult.error.message}`);
+      const volunteerSchemaError = patternResult.error || recommendationResult.error;
+      if (volunteerSchemaError && !isMissingVolunteerManagementSchema(volunteerSchemaError)) {
+        throw new Error(`Volunteer management: ${volunteerSchemaError.message}`);
+      }
+      setVolunteerStageReady(!volunteerSchemaError);
       setEmployment(employmentResult.data || null);
-      const patternRows = patternResult.data || [];
+      const patternRows = volunteerSchemaError ? [] : (patternResult.data || []);
       setVolunteerPatterns(patternRows);
-      setRecommendations(recommendationResult.data || []);
+      setRecommendations(volunteerSchemaError ? [] : (recommendationResult.data || []));
       const activePattern = patternRows[0];
       const fallbackPattern = employmentResult.data?.working_pattern || {};
       const nextKind = activePattern?.pattern_kind || fallbackPattern.kind || "no_attendance";
@@ -296,6 +301,7 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
           description="Operational volunteer engagement in this unit. Formal engagement, compensation and protected HR remain with Administration."
           meta={<StatusBadge tone="action" icon={false}>Volunteer · {employment?.employment_status || "active"}</StatusBadge>}
         >
+          {!volunteerStageReady ? <ProductNotice tone="attention" title="Volunteer changes come after migration acceptance">The existing engagement and working pattern remain visible. New working-arrangement versions and formal change recommendations are not being written until the volunteer migrations pass restored-data acceptance and are separately approved.</ProductNotice> : null}
           <div className="phase6-volunteer-profile-grid">
             <div><span>Unit</span><strong>{me.unit_name || "Current unit"}</strong></div>
             <div><span>Working pattern</span><strong>{patternLabel}</strong></div>
@@ -327,7 +333,7 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
               </>}
               <textarea className="field" rows={2} aria-label="Volunteer working pattern reason" placeholder="Reason / context" value={patternReason} onChange={(event) => setPatternReason(event.target.value)} />
               <Button variant="secondary" onClick={recordVolunteerPattern}
-                disabled={busy || ((patternKind === "specific_days" || patternKind === "custom") && patternDays.length === 0)}>
+                disabled={!volunteerStageReady || busy || ((patternKind === "specific_days" || patternKind === "custom") && patternDays.length === 0)}>
                 {busy ? "Recording…" : "Update working arrangement"}
               </Button>
             </div>
@@ -342,7 +348,7 @@ export default function PersonDetail({ me, profileId, focus, openItem, openProje
               </select>
               <input className="field" aria-label="Volunteer recommendation" placeholder="What change are you recommending?" value={recommendationSummary} onChange={(event) => setRecommendationSummary(event.target.value)} />
               <textarea className="field" rows={2} aria-label="Volunteer recommendation reason" placeholder="Why?" value={recommendationReason} onChange={(event) => setRecommendationReason(event.target.value)} />
-              <Button onClick={submitVolunteerRecommendation} disabled={busy || recommendationSummary.trim().length < 3 || recommendationReason.trim().length < 3}>
+              <Button onClick={submitVolunteerRecommendation} disabled={!volunteerStageReady || busy || recommendationSummary.trim().length < 3 || recommendationReason.trim().length < 3}>
                 {busy ? "Sending…" : "Send recommendation to Administration"}
               </Button>
               {recommendations.length > 0 && <div className="phase6-volunteer-recommendation-history">
