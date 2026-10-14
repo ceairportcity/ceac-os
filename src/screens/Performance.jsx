@@ -218,7 +218,7 @@ export default function Performance({ me }) {
       if (failed) throw failed.error;
       const releaseResult = hrReleaseAdmin
         ? await supabase.from("performance_review_release_requests")
-            .select("id,requested_assessment_id,request_reason,requested_at,state")
+            .select("id,requested_assessment_id,requested_by,request_reason,requested_at,state")
             .eq("org_id",me.org_id).eq("appraisal_id",caseId).eq("state","pending")
         : { data:[],error:null };
       if (requestSerial !== caseRequestSerial.current) return;
