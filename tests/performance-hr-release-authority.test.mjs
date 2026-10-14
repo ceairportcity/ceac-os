@@ -49,7 +49,7 @@ test("unpublished manager narratives and development plans are protected by RLS"
 
 test("review UI does not claim publication while pending",()=>{
   assert.match(source,/performance_review_release_requests/);
-  assert.match(source,/Manager.+?HR/);
+  assert.match(source,/The manager\x27s assessment release request was recorded for HR review/);
   assert.match(source,/HR publication decision/);
   assert.match(source,/HR is reviewing the current manager release request/);
   assert.match(source,/!approvedCurrentAssessment/);
