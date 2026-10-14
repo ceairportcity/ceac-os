@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase, inviteByEmail } from "../lib/supabase";
-import { authRedirect } from "../lib/authRedirect";
 import { isOverdue } from "../lib/time";
 import { isMissingVolunteerInvitationSchema } from "../lib/stage1SchemaCompatibility";
 import { LoadingState, ProductNotice, Sheet } from "../components/bits";
@@ -290,35 +289,23 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
           : {}),
       };
 
-      const { error: inviteError } = await supabase.rpc("create_pending_invitation", {
+      const { data: requested, error: requestError } = await supabase.rpc("volunteer_request_invitation", {
         p_email: cleanEmail,
         p_full_name: cleanName,
         p_unit_id: me.unit_id,
-        p_role: "staff",
+        p_working_pattern: pattern,
       });
-      if (inviteError) throw inviteError;
-
-      const { data: classified, error: classifyError } = await supabase.from("pending_invitations")
-        .update({ engagement_type: "volunteer", engagement_working_pattern: pattern })
-        .eq("org_id", me.org_id)
-        .eq("unit_id", me.unit_id)
-        .eq("email", cleanEmail)
-        .is("resolved_at", null)
-        .select("id")
-        .single();
-      if (classifyError || !classified?.id) throw classifyError || new Error("Volunteer engagement could not be recorded.");
-
-      const { error: authError } = await supabase.auth.signInWithOtp({
-        email: cleanEmail,
-        options: { shouldCreateUser: true, emailRedirectTo: authRedirect("/activate") },
-      });
-      if (authError) throw authError;
-
-      setMsg("Volunteer invitation sent. Their account will still activate as Staff; volunteer is their engagement type.");
+      if (requestError) throw requestError;
+      if (!requested?.invitation_id || !requested?.awaiting_hr) {
+        throw new Error("The volunteer request could not be confirmed. Review pending requests before retrying.");
+      }
+      // The activation message must be sent only after HR approves the
+      // matching invitation generation; manager submission does not activate.
+      setMsg("Volunteer request recorded for HR review. No activation email was sent yet.");
       setEmail(""); setFullName(""); setVolunteerPattern("no_attendance"); setVolunteerDays(["sat"]);
       setVolunteerStart(""); setVolunteerEnd("");
       await load();
-    } catch (err) { setMsg(err.message || "The volunteer invitation could not be sent."); }
+    } catch (err) { setMsg(err.message || "The volunteer request could not be confirmed. Check pending requests before trying again."); }
     finally { setBusy(false); }
   }
 
@@ -637,7 +624,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
             <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => setSheet(null)}>Cancel</button>
             <button className="btn" type="button" onClick={inviteVolunteer}
               disabled={busy || !email.trim() || !fullName.trim() || ((volunteerPattern === "specific_days" || volunteerPattern === "custom") && volunteerDays.length === 0)}>
-              {busy ? "Sending…" : "Send volunteer invitation"}
+              {busy ? "Recording…" : "Request HR approval for volunteer"}
             </button>
           </div>
         </div>
