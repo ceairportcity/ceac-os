@@ -64,7 +64,6 @@ as $
     where a.id=p_appraisal_id
       and a.org_id=public.app_org_id()
       and a.profile_id=auth.uid()
-      and a.status in ('shared','closed')
       and d.state='approved' and d.decided_at>=p_entry_created_at
   ),false);
 $;
@@ -201,7 +200,9 @@ begin
   end if;
   select * into v_review from public.appraisals
   where id=v_request.appraisal_id and org_id=v_org for update;
-  if v_review.id is null or v_review.manager_id is distinct from v_request.requested_by then
+  if v_review.id is null or v_review.status='closed'
+     or v_review.manager_id is distinct from v_request.requested_by
+     or v_actor=v_request.requested_by then
     raise exception 'The assigned reviewer changed. Request a fresh review.' using errcode='42501';
   end if;
   select id into v_latest from public.appraisal_entries
