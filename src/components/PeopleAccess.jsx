@@ -166,6 +166,36 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     }
   }
 
+  async function approveVolunteer() {
+    const target = approveVolunteerTarget;
+    const reason = volunteerApprovalReason.trim();
+    if (!target || reason.length < 3 || !snapshot?.volunteerApprovalsAvailable) return;
+    const approved = await action(async () => {
+      const { data, error: approvalError } = await supabase.rpc("volunteer_approve_pending_invitation", {
+        p_invitation_id: target.id, p_reason: reason,
+      });
+      if (approvalError) throw approvalError;
+      if (!data?.approved || data.invitation_id !== target.id || !data.email) {
+        throw new Error("HR approval could not be confirmed; review the pending invitation.");
+      }
+      try {
+        const { error: sendError } = await supabase.auth.signInWithOtp({
+          email: data.email,
+          options: { shouldCreateUser: true, emailRedirectTo: authRedirect("/activate") },
+        });
+        if (sendError) throw sendError;
+      } catch {
+        const failure = new Error("HR approval was recorded but email dispatch is unconfirmed. Review the invitation before resending.");
+        failure.invitationRecorded = true;
+        throw failure;
+      }
+    }, "HR volunteer approval recorded. Activation-email request accepted; actual delivery is not yet independently confirmed.");
+    if (approved) {
+      setApproveVolunteerTarget(null);
+      setVolunteerApprovalReason("");
+    }
+  }
+
   async function saveResponsibility(operation = "add", membership = null, profileId = form.person, reason = form.reason) {
     const { error: failure } = await supabase.rpc("admin_record_unit_responsibility", {
       p_profile_id: profileId,
