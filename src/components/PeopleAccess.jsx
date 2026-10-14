@@ -4,6 +4,7 @@ import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../lib/inv
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
 import SupportTeamMemberships from "./SupportTeamMemberships";
+import VolunteerActivationApprovals from "./VolunteerActivationApprovals";
 
 const ACCESS_MODES = [
   ["invite", "Invite"],
@@ -441,6 +442,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             })}
           </div>}
         </DataPanel>}
+        {mode === "invitations" && <VolunteerActivationApprovals me={me} />}
 
         {endMembershipTarget ? <div className="phase5-access-revoke" role="dialog" aria-modal="true" aria-labelledby="end-unit-title">
           <div className="phase5-access-revoke-card">
