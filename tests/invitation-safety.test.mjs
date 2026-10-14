@@ -21,6 +21,16 @@ test("revoked and verified invitations never block a new request on their own", 
     { accountExists: false, invitationPending: false });
 });
 
+test("expired invitations do not falsely block HR re-invitation", () => {
+  assert.deepEqual(invitationEmailConflicts("staff@ceac.org", [],
+    [{ email: "staff@ceac.org", activation_state: "expired", revoked_at: null }]),
+    { accountExists: false, invitationPending: false });
+  assert.deepEqual(invitationEmailConflicts("staff@ceac.org", [],
+    [{ email: "staff@ceac.org", activation_state: "expired" },
+      { email: "staff@ceac.org", activation_state: "pending" }]),
+    { accountExists: false, invitationPending: true });
+});
+
 test("a verified invitation does not cancel a separately active existing profile", () => {
   assert.deepEqual(invitationEmailConflicts("user@ceac.org",
     [{ email: "user@ceac.org", active: false }],
