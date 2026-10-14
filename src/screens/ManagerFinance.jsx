@@ -6,6 +6,7 @@ import { Button } from "../experience-v2/components";
 import { FinanceCurrencyCard, FinancePageHeader, FinanceSection, FinanceFootnote } from "../experience-v2/finance-family/FinanceFamilyV2";
 import { humanError } from "../lib/productLanguage";
 import FinanceRequestQueue from "../components/FinanceRequestQueue";
+import VolunteerExpenseWorkflow from "../components/VolunteerExpenseWorkflow";
 
 const money=(minor,cur)=>`${cur} ${(Number(minor||0)/100).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 function totals(rows){const out={}; rows.forEach(r=>{if(!r.currency)return; out[r.currency]=(out[r.currency]||0)+Number(r.amount_minor||0);}); return out;}
@@ -142,6 +143,7 @@ export default function ManagerFinance({me,openProject}){
   </FinanceSection>
   </div>
   {financeHandler&&<div className="ev2fin-authority"><FinanceRequestQueue me={me} authority="finance" canFulfil title="Requests needing Finance" /></div>}
+  {financeHandler&&<VolunteerExpenseWorkflow me={me} view="finance" />}
   {drill&&<div className="ev2fin-drill">
    <div className="sec"><span>{drill.title}</span></div>
    {drill.kind==="source"&&transfers.filter(x=>x.to_unit_id===me.unit_id&&x.state==="confirmed"&&x.currency===drill.currency).map(x=><div className="row" key={"t-"+x.id}><div className="row-t">{money(x.amount_minor,x.currency)} received</div><div className="row-m">{x.sent_on} · {x.purpose}</div><div className="row-note">Confirmed transfer into your unit</div></div>)}
