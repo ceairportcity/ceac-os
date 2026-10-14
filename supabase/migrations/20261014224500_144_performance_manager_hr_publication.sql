@@ -34,6 +34,25 @@ for select to authenticated using (
   )
 );
 
+-- Development-plan versions may contain unreleased manager-authored narrative.
+-- Keep drafts with the assigned reviewer/HR until authorised sharing.
+drop policy if exists stage7_development_read on public.development_plan_versions;
+create policy stage7_development_read on public.development_plan_versions
+for select to authenticated using (
+  org_id=public.app_org_id()
+  and (
+    manager_id=auth.uid()
+    or public.app_has_capability('performance.admin',null)
+    or (
+      profile_id=auth.uid()
+      and exists(select 1 from public.appraisals a
+        where a.id=development_plan_versions.appraisal_id
+          and a.org_id=development_plan_versions.org_id
+          and a.status in ('shared','closed'))
+    )
+  )
+);
+
 create table if not exists public.appraisal_release_requests(
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organisations(id) on delete restrict,
