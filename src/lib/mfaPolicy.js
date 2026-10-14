@@ -14,12 +14,21 @@ export function decideMfaAccess({
   privileged = false,
   enforcementEnabled = false,
 } = {}) {
+  const verified = verifiedMfaFactors(factors);
+  const totp = verified.find((factor) => factor.factor_type === "totp");
+
+  // AAL2 alone is not evidence of the required TOTP method. A verified
+  // phone/WebAuthn factor can also establish AAL2; it must not satisfy CEAC's
+  // enforced privileged-account TOTP requirement.
+  if (privileged && enforcementEnabled && !totp) {
+    return verified.length > 0
+      ? { state: "unsupported-factor", reason: "privileged_totp_required", factor: verified[0] }
+      : { state: "enroll", reason: "privileged_totp_required", factor: null };
+  }
+
   if (currentLevel === "aal2") {
     return { state: "allow", reason: "session_already_aal2", factor: null };
   }
-
-  const verified = verifiedMfaFactors(factors);
-  const totp = verified.find((factor) => factor.factor_type === "totp");
 
   if (nextLevel === "aal2" || verified.length > 0) {
     if (totp) {
