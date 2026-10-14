@@ -38,7 +38,7 @@ export default function AttendanceEvidence({me}) {
       supabase.rpc('attendance_day_evidence',{p_date:date}),
       supabase.rpc('attendance_corroboration_for_day',{p_date:date}),
       supabase.rpc('attendance_integrity_status'),
-      supabase.from('work_sessions').select('id,place,started_at,ended_at').eq('profile_id',me.id).is('ended_at',null).order('started_at',{ascending:false}).limit(1).maybeSingle(),
+      supabase.from('work_sessions').select('id,place,office_location_id,started_at,ended_at').eq('profile_id',me.id).is('ended_at',null).order('started_at',{ascending:false}).limit(1).maybeSingle(),
     ]);
     const requiredError=evidenceResult.error||sessionResult.error;
     if(requiredError)throw requiredError;
@@ -80,12 +80,13 @@ export default function AttendanceEvidence({me}) {
   }
     function submit(){mutate('attendance_create_notice',{p_kind:kind,p_starts_at:starts?`${starts}:00Z`:null,p_expected_return_at:returns?`${returns}:00Z`:null,p_reason:kind==='medical_absence'?null:reason.trim(),p_note:kind==='medical_absence'?null:note.trim()},'Attendance notice recorded. Its response history is preserved.');}
   const mine=rows.find(r=>r.profile_id===me.id);
-  const canVerifyOffice=Boolean(integrity?.front_desk_code_enabled&&ownOpenSession?.place==='office');
+  const canVerifyOffice=Boolean(integrity?.front_desk_code_enabled&&ownOpenSession?.place==='office'&&ownOpenSession?.office_location_id);
   return <WorkforceSection title="Today’s work location evidence" description="Expected hours, presence and authorised context are separate facts. Location checks happen only while CEAC is open in the foreground; they do not prove productivity.">
     <div className="workforce-setup-actions">
       <FieldGroup label="Evidence date"><input aria-label="Attendance evidence date" className="field" type="date" value={date} onChange={e=>setDate(e.target.value)}/></FieldGroup>
       <button className="btn btn-ghost btn-sm" disabled={busy} onClick={()=>reload().catch(e=>setError(humanError(e,'Evidence could not refresh.')))}>Refresh evidence</button>
       {mine&&<button className="btn btn-sm" onClick={()=>{setKind('late_arrival');setStarts(attendanceDate()+'T'+new Date().toISOString().slice(11,16));setReturns('');setReason('');setNote('');setSheet(true);}}>Record attendance notice</button>}
+      {integrity?.front_desk_code_enabled && ownOpenSession?.place==='office' && !ownOpenSession?.office_location_id && <p className="screen-note">This older session has no registered duty location. End it and start work at an authorised office or programme venue before verifying that location's code.</p>}
       {canVerifyOffice&&<button className="btn btn-ghost btn-sm" onClick={()=>{setOfficeCode('');setCodeSheet(true);}}>Verify office presence</button>}
     </div>
     {error&&<ProductNotice tone="error" title="Attendance evidence unavailable">{error}</ProductNotice>}
