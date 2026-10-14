@@ -6,6 +6,7 @@ import { FieldGroup, ProductNotice, SectionHeader } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { StatusBadge } from "../experience-v2/components";
 import DutyLocationSettings from "../components/DutyLocationSettings";
+import AttendanceCodeIssuer from "../components/AttendanceCodeIssuer";
 
 export default function OfficeSettings({ me, openWorkforce }) {
   const [office, setOffice] = useState(null);
@@ -235,25 +236,12 @@ export default function OfficeSettings({ me, openWorkforce }) {
 
       <DutyLocationSettings me={me} />
       <section id="attendance-integrity-settings" className="office-settings-card">
-        <SectionHeader eyebrow="Attendance integrity" title="Office presence code" />
-        <p className="screen-note">This short-lived front-desk code adds a second corroborating signal to GPS/geofence evidence. A matching code is not proof by itself and never creates an automatic absence, deduction or disciplinary state.</p>
-        {!integrityAvailable && <ProductNotice tone="attention" title="Office presence code pending">
-          This Phase 6 feature is not installed in the approved database. Presence-code controls are disabled; existing office location, leave rules and attention settings remain available.
+        <SectionHeader eyebrow="Attendance integrity" title="Approved location codes" />
+        {!integrityAvailable && <ProductNotice tone="attention" title="Attendance codes awaiting backend acceptance">
+          The original Stage 1 database has not yet applied the reviewed attendance migrations. The code issuer cannot operate until the next one-bundle schema release is accepted.
         </ProductNotice>}
-        <FieldGroup label="Code lifetime" hint="Short-lived rotation only; allowed range is 5–30 minutes.">
-          <div className="office-inline-field"><input className="field" aria-label="Office presence code lifetime" type="number" min="5" max="30" disabled={!integrityAvailable} value={integrityMinutes} onChange={(event) => setIntegrityMinutes(event.target.value)} /><span>minutes</span></div>
-        </FieldGroup>
-        {integrity?.front_desk_code_active && <div className="office-presence-code">
-          <span>Current code</span>
-          <strong>{integrity.front_desk_code || "Active · visible to Workforce Administration"}</strong>
-          <small>Valid until {integrity.front_desk_code_valid_until ? new Date(integrity.front_desk_code_valid_until).toLocaleTimeString("en-GB", { timeZone:"Africa/Accra", hour:"2-digit", minute:"2-digit" }) : "expiry not available"}</small>
-        </div>}
-        <div className="workforce-setup-actions">
-          <button className="btn" disabled={!integrityAvailable || integrityBusy || !office} onClick={() => rotatePresenceCode(true)}>{integrityBusy ? "Rotating…" : integrity?.front_desk_code_active ? "Rotate code" : "Enable and issue code"}</button>
-          {integrity?.front_desk_code_active && <button className="btn btn-ghost" disabled={!integrityAvailable || integrityBusy} onClick={() => rotatePresenceCode(false)}>Disable code</button>}
-        </div>
-        {!office && <p className="screen-note">Configure the primary office location before using office-presence corroboration.</p>}
-        <p className="screen-note">{integrity?.network_note || "Trusted office-network corroboration remains optional and is accepted only from configured server-side infrastructure."}</p>
+        {integrityAvailable && <AttendanceCodeIssuer me={me} />}
+        <p className="screen-note">Codes are issued separately for each authorised duty location. They expire automatically and are corroborating evidence only, never an automatic attendance, pay or disciplinary decision.</p>
       </section>
 
       <section id="leave-policy-settings" className="office-settings-card">
