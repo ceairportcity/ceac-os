@@ -9,6 +9,12 @@
 - Existing Vercel production project/domain and live Supabase project `efjljhftsesssumtshvp` remain unchanged unless separately authorised. No new production project/database.
 - Earlier CI/Migration Replay/Account Security/Quality Gate runs failed with **zero executed job steps**. Public visibility may allow standard GitHub-hosted runners, but this is only a hypothesis until a *new* workflow actually obtains a runner and executes tests. Never mark a zero-step failure, skipped deployment or nominal status green as a test pass.
 
+## Initial post-public runner evidence (documentation-only; not release acceptance)
+
+- **Verified 14 October 2026:** after owner changed canonical GitHub visibility to PUBLIC, both policy PR #76 and PR #77 triggered GitHub Actions that **received runners and executed steps**. PR #77 CI run `38647663550`, job `116138436279`: checkout, supply-chain/source-of-truth and documentation checks **executed and succeeded**. This supports public-runner access working.
+- PR #77 Migration Replay run `38647663347`, job `116138435419`: checkout/scope classification executed and succeeded; **Supabase CLI, local database startup and all migration-replay steps were SKIPPED because the PR changes documentation only**. PR #77 Vite build/dependency install/browser were also SKIPPED.
+- Therefore these green runs **do not** prove the final application build, database replay, live authentication, RLS, cross-role behaviour or production readiness. The bounded public-CI window remains justified only for the genuinely required integrated-candidate test runs. Immediately restore PRIVATE when those are completed and recorded or if no longer needed.
+
 ## Strict expiry: restore PRIVATE at the earliest safe point
 
 1. Run only the required, bounded CI / migration rehearsal / account-security / acceptance workflows needed to verify the approved final integrated candidate. Record exact commit, workflow/run IDs, executed steps, results and any blockers. Never loosen RLS/security or manufacture green checks.
