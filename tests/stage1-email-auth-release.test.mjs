@@ -4,6 +4,7 @@ import test from "node:test";
 
 const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 const signIn = readFileSync(new URL("../src/screens/SignIn.jsx", import.meta.url), "utf8");
+const accountPassword = readFileSync(new URL("../src/screens/AccountPassword.jsx", import.meta.url), "utf8");
 const privilegedGate = readFileSync(new URL("../src/components/PrivilegedMfaGate.jsx", import.meta.url), "utf8");
 const googleGate = readFileSync(new URL("../src/components/MandatoryMfaGate.jsx", import.meta.url), "utf8");
 const googleMigration = readFileSync(
@@ -23,6 +24,9 @@ test("Stage 1 preserves password recovery and account activation", () => {
   assert.match(app, /authPath === "\/activate"/);
   assert.match(app, /authPath === "\/reset-password"/);
   assert.match(app, /AccountPassword/);
+  assert.match(accountPassword, /const description = hasSession/);
+  assert.match(accountPassword, /A current CEAC invitation link is required/);
+  assert.match(accountPassword, /A current CEAC recovery link is required/);
 });
 
 test("Stage 1 does not activate the Google-only universal gate", () => {

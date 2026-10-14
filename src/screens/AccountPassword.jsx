@@ -62,9 +62,13 @@ export default function AccountPassword({ mode, onDone }) {
   if (!ready) return <div className="auth-boot"><span className="auth-boot-mark">CEAC</span><span>Opening your secure link…</span></div>;
 
   const title = mode === "activate" ? "Create your password" : "Choose a new password";
-  const description = mode === "activate"
-    ? "Your invitation has been verified. Set the password you will use for CEAC OS."
-    : "Your recovery link has been verified. Choose a new password for your CEAC account.";
+  const description = hasSession
+    ? mode === "activate"
+      ? "Your invitation has been verified. Set the password you will use for CEAC OS."
+      : "Your recovery link has been verified. Choose a new password for your CEAC account."
+    : mode === "activate"
+      ? "A current CEAC invitation link is required before you can create a password."
+      : "A current CEAC recovery link is required before you can choose a new password.";
 
   return <AuthFrame eyebrow={mode === "activate" ? "Account activation" : "Secure recovery"} title={title} description={description}>
     {!hasSession ? <div className="auth-message error">
