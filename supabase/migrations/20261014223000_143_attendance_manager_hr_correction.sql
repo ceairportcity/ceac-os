@@ -2,6 +2,12 @@
 -- Corrections are attributable evidence overlays. Never rewrite historical
 -- work sessions, GPS readings, leave, Payroll or disciplinary records.
 -- No direct user writes: constrained SECURITY DEFINER RPCs enforce authority.
+-- Retire pre-review direct correction and reversal API for ordinary clients.
+-- All new factual correction overlays must originate from manager approval.
+revoke all on function public.workforce_record_attendance_correction(
+  uuid,date,uuid,text,jsonb,jsonb,text,uuid
+) from public,anon,authenticated;
+
 
 create table if not exists public.attendance_correction_requests(
   id uuid primary key default gen_random_uuid(),
