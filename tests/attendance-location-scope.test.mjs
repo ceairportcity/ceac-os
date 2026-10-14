@@ -50,3 +50,16 @@ test("a legacy unbound session is not falsely presented as location-code verifie
   assert.match(evidence, /ownOpenSession\?\.office_location_id/);
   assert.match(evidence, /older session has no registered duty location/);
 });
+
+const venues = read("../src/components/DutyLocationSettings.jsx");
+const settings = read("../src/screens/OfficeSettings.jsx");
+
+test("Administration registers programme venues with an explicit non-primary flag and organisation scope", () => {
+  assert.match(venues, /is_primary: false/);
+  assert.match(venues, /\.eq\("org_id", me\.org_id\)/);
+  assert.match(venues, /!location\.is_primary/);
+  assert.match(venues, /Number\.isFinite\(latitude\)/);
+  assert.match(venues, /Number\.isFinite\(longitude\)/);
+  assert.match(venues, /busyRef\.current/);
+  assert.match(settings, /<DutyLocationSettings me=\{me\} \/>/);
+});
