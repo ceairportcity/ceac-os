@@ -257,3 +257,53 @@ revoke all on function public.attendance_set_office_code(boolean,integer) from p
 grant execute on function public.attendance_set_office_code(boolean,integer) to authenticated,service_role;
 revoke all on function public.attendance_verify_office_code(text,uuid) from public,anon;
 grant execute on function public.attendance_verify_office_code(text,uuid) to authenticated,service_role;
+
+-- LOCATION-BOUND WORK SESSION INSERT GUARD
+-- Retain all existing identity/fresh-GPS/geofence checks. Use explicitly
+-- selected organisation duty venue rather than silently selecting primary.
+-- Historic sessions are never rewritten. Legacy callers use primary office.
+create or replace function public.guard_office_session_location()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare o public.office_locations; d double precision; x double precision; evidence jsonb;
+begin
+  if auth.uid() is null then return new; end if; -- service fixture/import retains historical evidence
+  if new.profile_id is distinct from auth.uid() or new.org_id is distinct from public.app_org_id() then raise exception 'Only your own active work session can be started.' using errcode='42501'; end if;
+  if new.flags ? 'continued_from_session_id' then
+    evidence:=nullif(current_setting('ceac.recovery_location',true),'')::jsonb;
+    if evidence is not null then
+      new.lat:=(evidence->>'lat')::double precision; new.lng:=(evidence->>'lng')::double precision;
+      new.location_accuracy_m:=(evidence->>'accuracy')::double precision;
+      new.location_captured_at:=(evidence->>'captured_at')::timestamptz;
+    end if;
+  end if;
+  new.server_received_at:=now(); new.started_at:=now(); new.last_confirmed_at:=now();
+  if new.ended_at is not null then raise exception 'Start a new open work session.'; end if;
+  new.end_lat:=null; new.end_lng:=null; new.end_accuracy_m:=null; new.end_location_captured_at:=null; new.end_location_status:=null; new.end_location_failure:=null; new.end_device_time:=null;
+  if (new.lat is null)<>(new.lng is null) then raise exception 'Provide both location coordinates.'; end if;
+  if new.lat is not null and (new.lat not between -90 and 90 or new.lng is null or new.lng not between -180 and 180) then raise exception 'A valid fresh location is required.'; end if;
+  if new.location_accuracy_m is not null and not (new.location_accuracy_m>=0 and new.location_accuracy_m<'Infinity'::double precision) then raise exception 'Location accuracy is invalid.'; end if;
+  if new.place='office' then
+    if new.lat is null or new.lng is null or new.lat not between -90 and 90 or new.lng not between -180 and 180 then raise exception 'Allow location access to verify an office start. No office session was started.'; end if;
+    if new.location_captured_at is null or new.location_captured_at<now()-interval '2 minutes' or new.location_captured_at>now()+interval '30 seconds' or new.device_time is null then raise exception 'A fresh location is required. Try Start work again.'; end if;
+    if new.office_location_id is not null then
+      select * into o from public.office_locations where org_id=new.org_id and id=new.office_location_id;
+    else
+      select * into o from public.office_locations where org_id=new.org_id and is_primary order by set_at desc limit 1;
+    end if;
+    if o.id is null then raise exception 'The chosen CEAC duty location is not configured in this organisation.'; end if;
+    x:=power(sin(radians(new.lat-o.lat::double precision)/2),2)+cos(radians(o.lat::double precision))*cos(radians(new.lat))*power(sin(radians(new.lng-o.lng::double precision)/2),2);
+    d:=6371000*2*asin(sqrt(least(1,greatest(0,x))));
+    if d>o.radius_meters then raise exception 'Recorded coordinates are outside this authorised CEAC duty location.'; end if;
+    new.office_location_id:=o.id; new.start_geofence:='inside';
+    -- Poor accuracy is evidence, never a hidden assertion of precise/live presence.
+    new.flags:=coalesce(new.flags,'{}'::jsonb)||jsonb_build_object('location_accuracy_exceeds_radius',coalesce(new.location_accuracy_m>o.radius_meters,false));
+  else
+    new.office_location_id:=null; new.start_geofence:='not_applicable';
+    if new.lat is null or new.location_captured_at is null or new.location_captured_at<now()-interval '2 minutes' or new.location_captured_at>now()+interval '30 seconds' then
+      new.lat:=null; new.lng:=null; new.location_captured_at:=null; new.location_accuracy_m:=null;
+      new.flags:=coalesce(new.flags,'{}'::jsonb)||jsonb_build_object('start_location_not_verified',true);
+    end if;
+  end if;
+  return new;
+end;
+$$;
