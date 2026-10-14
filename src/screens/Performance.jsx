@@ -113,6 +113,7 @@ export default function Performance({ me }) {
   const [reviewerReason, setReviewerReason] = useState("");
   const [reflection, setReflection] = useState("");
   const [assessment, setAssessment] = useState("");
+  const [releaseReason, setReleaseReason] = useState("");
   const [conversation, setConversation] = useState("");
   const [staffReply, setStaffReply] = useState("");
 
@@ -319,9 +320,13 @@ export default function Performance({ me }) {
     await rpc("refresh_performance_evidence", { p_appraisal_id: selectedCase.id }, "Evidence pack checked for new recorded rows.");
   }
 
-  async function shareReview() {
-    if (!selectedCase) return;
-    await rpc("share_performance_review", { p_appraisal_id: selectedCase.id }, "Review marked shared.");
+  async function requestRelease() {
+    if (!selectedCase || releaseReason.trim().length < 8) return;
+    const submitted = await rpc("performance_request_release", {
+      p_appraisal_id: selectedCase.id,
+      p_reason: releaseReason.trim(),
+    }, "The manager's assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.");
+    if (submitted) setReleaseReason("");
   }
 
   async function recordPlan() {
@@ -548,9 +553,13 @@ export default function Performance({ me }) {
             <button className="btn btn-sm" disabled={busy || feedbackNote.trim().length < 3} onClick={recordFeedback}>Record feedback</button>
           </section>}
 
-          {isReviewer && selectedCase.status !== "shared" && selectedCase.status !== "closed" && <div className="performance-share-bar">
-            <div><strong>Finish this review</strong><span>Sharing marks the review as formally shared. The employee already sees recorded narrative as it is written.</span></div>
-            <button className="btn btn-sm" disabled={busy} onClick={shareReview}>Mark as shared</button>
+          {isReviewer && selectedCase.status !== "closed" && <div className="performance-share-bar">
+            <div><strong>Request HR release</strong><span>Your assessment remains restricted to the assigned reviewer and authorised HR until HR approves its formal publication. New revisions require their own release approval.</span></div>
+            {!currentAssessment && <p className="screen-note">Record your assessment before requesting HR publication.</p>}
+            <FieldGroup label="Reason to release this assessment">
+              <textarea className="field" rows="2" value={releaseReason} onChange={(event) => setReleaseReason(event.target.value)} aria-label="Performance release request reason" />
+            </FieldGroup>
+            <button className="btn btn-sm" disabled={busy || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>Submit release request to HR</button>
           </div>}
         </>}
       </section>
