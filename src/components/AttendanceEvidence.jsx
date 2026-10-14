@@ -38,7 +38,7 @@ export default function AttendanceEvidence({me}) {
       supabase.rpc('attendance_day_evidence',{p_date:date}),
       supabase.rpc('attendance_corroboration_for_day',{p_date:date}),
       supabase.rpc('attendance_integrity_status'),
-      supabase.from('work_sessions').select('id,place,started_at,ended_at').eq('profile_id',me.id).is('ended_at',null).order('started_at',{ascending:false}).limit(1).maybeSingle(),
+      supabase.from('work_sessions').select('id,place,office_location_id,started_at,ended_at').eq('profile_id',me.id).is('ended_at',null).order('started_at',{ascending:false}).limit(1).maybeSingle(),
     ]);
     const requiredError=evidenceResult.error||sessionResult.error;
     if(requiredError)throw requiredError;
@@ -80,12 +80,13 @@ export default function AttendanceEvidence({me}) {
   }
     function submit(){mutate('attendance_create_notice',{p_kind:kind,p_starts_at:starts?`${starts}:00Z`:null,p_expected_return_at:returns?`${returns}:00Z`:null,p_reason:kind==='medical_absence'?null:reason.trim(),p_note:kind==='medical_absence'?null:note.trim()},'Attendance notice recorded. Its response history is preserved.');}
   const mine=rows.find(r=>r.profile_id===me.id);
-  const canVerifyOffice=Boolean(integrity?.front_desk_code_enabled&&ownOpenSession?.place==='office');
+  const canVerifyOffice=Boolean(integrity?.front_desk_code_enabled&&ownOpenSession?.place==='office'&&ownOpenSession?.office_location_id);
   return <WorkforceSection title="Today’s work location evidence" description="Expected hours, presence and authorised context are separate facts. Location checks happen only while CEAC is open in the foreground; they do not prove productivity.">
     <div className="workforce-setup-actions">
       <FieldGroup label="Evidence date"><input aria-label="Attendance evidence date" className="field" type="date" value={date} onChange={e=>setDate(e.target.value)}/></FieldGroup>
       <button className="btn btn-ghost btn-sm" disabled={busy} onClick={()=>reload().catch(e=>setError(humanError(e,'Evidence could not refresh.')))}>Refresh evidence</button>
       {mine&&<button className="btn btn-sm" onClick={()=>{setKind('late_arrival');setStarts(attendanceDate()+'T'+new Date().toISOString().slice(11,16));setReturns('');setReason('');setNote('');setSheet(true);}}>Record attendance notice</button>}
+      {integrity?.front_desk_code_enabled && ownOpenSession?.place==='office' && !ownOpenSession?.office_location_id && <p className="screen-note">This older session has no registered duty location. End it and start work at an authorised office or programme venue before verifying that location's code.</p>}
       {canVerifyOffice&&<button className="btn btn-ghost btn-sm" onClick={()=>{setOfficeCode('');setCodeSheet(true);}}>Verify office presence</button>}
     </div>
     {error&&<ProductNotice tone="error" title="Attendance evidence unavailable">{error}</ProductNotice>}
@@ -95,6 +96,12 @@ export default function AttendanceEvidence({me}) {
       <LocationPlot rows={rows}/>
       {rows.map(row=>{const noAttendanceVolunteer=row.employment_type==='volunteer'&&['no_attendance','not_recorded'].includes(row.working_pattern?.kind||'not_recorded'),start=noAttendanceVolunteer?{label:'No attendance obligation',verified:null}:startEvidence(row,date),location=row.latest_location,currentLeave=row.approved_leave?.filter(l=>l.state==='current')||[],upcoming=row.approved_leave?.filter(l=>l.state==='upcoming')||[];
         const rowCorroboration=corroboration.filter(item=>item.profile_id===row.profile_id);
+        // Required on-site codes are attributed to a particular work session.
+        // A matching code for another session, person or programme cannot
+        // satisfy this session's evidence requirement.
+        const onSiteSessions=(row.sessions||[]).filter(item=>item.place==='office');
+        const onSiteCodeSessionIds=new Set(rowCorroboration.filter(item=>item.evidence_type==='front_desk_code'&&item.result==='verified').map(item=>item.work_session_id));
+        const onSiteCodeCount=onSiteSessions.filter(item=>onSiteCodeSessionIds.has(item.id)).length;
         const latestCorroboration=rowCorroboration[0]||null;
         return <div key={row.employee_id||row.profile_id}>
           <WorkforceRecordRow icon="person" title={row.name} meta={start.label} note={'Last verified location: '+(location?stamp(location.captured_at)+' · '+(location.geofence==='inside'?'inside office area':location.geofence==='outside'?'outside office area':'location recorded')+(location.accuracy_m!=null?' · accuracy ±'+Math.round(location.accuracy_m)+' m':''):'Not recorded')+' · Last CEAC activity: '+stamp(row.last_activity_at)+(row.sessions?.some(s=>s.end_location_status==='not_verified')?' · End location not verified':'')}/>
@@ -102,7 +109,8 @@ export default function AttendanceEvidence({me}) {
             {label:'Expected today',value:noAttendanceVolunteer?'No attendance obligation':row.expected_today===true?'Session expected':row.expected_today===false?(row.day_type||'No session expected'):'Schedule not configured'},
             {label:'Expected hours',value:noAttendanceVolunteer?'Not applicable':row.expected_start&&row.expected_end?row.expected_start.slice(0,5)+'–'+row.expected_end.slice(0,5):'Not recorded'},
             {label:'First recorded start',value:time(row.sessions?.[0]?.started_at)},
-            {label:'Verified office start',value:noAttendanceVolunteer?'Not required':time(start.verified)},
+            {label:'Location-verified office start',value:noAttendanceVolunteer?'Not required':time(start.verified)},
+            {label:'On-site code evidence',value:noAttendanceVolunteer?'Not required':!onSiteSessions.length?'No office session':!attendanceStageReady?'Awaiting approved attendance migration':onSiteCodeCount===onSiteSessions.length?'Code corroboration recorded':`${onSiteCodeCount} of ${onSiteSessions.length} office sessions corroborated — follow up required`},
             {label:'Session state',value:row.sessions?.some(s=>!s.ended_at)?'Open':row.sessions?.length?'Ended':'No session recorded'},
             {label:'Corroboration',value:latestCorroboration?(latestCorroboration.result==='verified'?'Recorded · '+latestCorroboration.source_label:'Not verified · '+latestCorroboration.source_label):'No additional signal recorded'},
           ]}/>

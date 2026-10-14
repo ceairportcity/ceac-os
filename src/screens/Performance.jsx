@@ -115,6 +115,10 @@ export default function Performance({ me }) {
   const [assessment, setAssessment] = useState("");
   const [conversation, setConversation] = useState("");
   const [staffReply, setStaffReply] = useState("");
+  const [releaseRequest, setReleaseRequest] = useState(null);
+  const [releaseReason, setReleaseReason] = useState("");
+  const [hrReleaseReason, setHrReleaseReason] = useState("");
+  const releaseReadSerial = useRef(0);
 
   const [planFlow, setPlanFlow] = useState(false);
   const [planStep, setPlanStep] = useState(1);
@@ -134,6 +138,11 @@ export default function Performance({ me }) {
 
   useEffect(() => { loadBase(); }, [me.id]);
   useEffect(() => {
+    setReleaseReason(""); setHrReleaseReason("");
+    void loadReleaseRequest(selectedCaseId);
+    return () => { releaseReadSerial.current += 1; };
+  }, [selectedCaseId, me.id, me.org_id]);
+  useEffect(() => {
     if (selectedCaseId) loadCase(selectedCaseId);
     else {
       caseRequestSerial.current += 1;
@@ -141,6 +150,28 @@ export default function Performance({ me }) {
       setEvidence([]); setEntries([]); setPlans([]); setFeedback([]); setFeedbackResponses([]);
     }
   }, [selectedCaseId]);
+
+  async function loadReleaseRequest(caseId) {
+    const serial = ++releaseReadSerial.current;
+    setReleaseRequest(null);
+    if (!caseId) return;
+    try {
+      const { data, error: failure } = await supabase
+        .from("appraisal_release_requests")
+        .select("id,appraisal_id,requested_by,requested_at,reason,approved_by,approved_at")
+        .eq("org_id", me.org_id).eq("appraisal_id", caseId).maybeSingle();
+      if (serial !== releaseReadSerial.current) return;
+      if (failure) {
+        if (["42P01","PGRST205"].includes(failure.code)) return;
+        setError("The HR release-request state could not be verified.");
+        return;
+      }
+      setReleaseRequest(data || null);
+    } catch {
+      if (serial === releaseReadSerial.current)
+        setError("The HR release-request state could not be verified.");
+    }
+  }
 
   async function loadBase() {
     const baseSerial = ++baseRequestSerial.current;
@@ -319,9 +350,22 @@ export default function Performance({ me }) {
     await rpc("refresh_performance_evidence", { p_appraisal_id: selectedCase.id }, "Evidence pack checked for new recorded rows.");
   }
 
-  async function shareReview() {
-    if (!selectedCase) return;
-    await rpc("share_performance_review", { p_appraisal_id: selectedCase.id }, "Review marked shared.");
+  async function requestReviewRelease() {
+    if (!selectedCase || releaseReason.trim().length < 8) return;
+    const id = selectedCase.id;
+    const ok = await rpc("performance_request_release", {
+      p_appraisal_id:id,p_reason:releaseReason.trim(),
+    }, "Manager request recorded for HR approval. The employee cannot see the formal assessment yet.");
+    if (ok) { setReleaseReason(""); await loadReleaseRequest(id); }
+  }
+
+  async function authoriseReviewRelease() {
+    if (!selectedCase || hrReleaseReason.trim().length < 8) return;
+    const id = selectedCase.id;
+    const ok = await rpc("performance_hr_authorise_release", {
+      p_appraisal_id:id,p_reason:hrReleaseReason.trim(),
+    }, "HR authorised formal publication. The employee can now read the review.");
+    if (ok) { setHrReleaseReason(""); await loadReleaseRequest(id); }
   }
 
   async function recordPlan() {
@@ -549,9 +593,25 @@ export default function Performance({ me }) {
           </section>}
 
           {isReviewer && selectedCase.status !== "shared" && selectedCase.status !== "closed" && <div className="performance-share-bar">
-            <div><strong>Finish this review</strong><span>Sharing marks the review as formally shared. The employee already sees recorded narrative as it is written.</span></div>
-            <button className="btn btn-sm" disabled={busy} onClick={shareReview}>Mark as shared</button>
+            <div><strong>Request HR release</strong><span>The manager's assessment and development-plan drafts remain restricted until HR authorises publication.</span></div>
+            {releaseRequest ? <p className="screen-note">Manager request recorded {new Date(releaseRequest.requested_at).toLocaleDateString("en-GB")}. Awaiting HR approval.</p> : <>
+              <textarea className="field" rows="2" aria-label="Manager release request reason"
+                value={releaseReason} onChange={(event)=>setReleaseReason(event.target.value)}
+                placeholder="Why is this review ready for HR release?" />
+              <button className="btn btn-sm" disabled={busy || releaseReason.trim().length < 8 || !currentAssessment}
+                onClick={requestReviewRelease}>Request HR release</button>
+            </>}
           </div>}
+          {orgPerformanceAdmin && !isReviewer && releaseRequest && !releaseRequest.approved_at
+            && selectedCase.status !== "shared" && selectedCase.status !== "closed" && <div className="performance-share-bar">
+              <div><strong>HR publication decision</strong><span>Verify the recorded manager assessment before allowing this employee to see it. The manager's request does not publish the review.</span></div>
+              <textarea className="field" rows="2" aria-label="HR performance release reason"
+                value={hrReleaseReason} onChange={(event)=>setHrReleaseReason(event.target.value)} />
+              <button className="btn btn-sm" disabled={busy || hrReleaseReason.trim().length < 8}
+                onClick={authoriseReviewRelease}>HR authorise publication</button>
+            </div>}
+          {isSelf && selectedCase.status !== "shared" && selectedCase.status !== "closed" &&
+            <p className="screen-note">Formal manager assessment and development-plan narrative are visible only after HR release. Your own reflection remains available.</p>}
         </>}
       </section>
     </div>}

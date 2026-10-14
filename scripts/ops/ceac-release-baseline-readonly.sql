@@ -2,9 +2,12 @@
 -- This is NOT a release authorisation, backup/restore test, privilege penetration test,
 -- migration rehearsal or visual acceptance. Do not run pending migrations from this file.
 -- Intentionally returns aggregate counts/booleans only; no personal/HR records.
--- Manifest is the 25 unapplied timestamp versions independently reconciled
--- against production on 13 Oct 2026: the prior 24 plus Google/AAL2 migration.
--- Reconcile it again against the live migration ledger before actual cutover.
+-- The next-bundle release manifest retains 24 pending non-MFA source versions
+-- and adds migrations 140–143 for venue-specific attendance codes,
+-- volunteer HR approval, individual HR schedules and attendance correction:
+-- 29 expected next-bundle release migrations (including HR-released narratives).
+-- Google/AAL2 version 20261012172718 belongs to Stage 2, NOT this release.
+-- Reconcile again against the live migration ledger before cutover.
 WITH expected_pending(version) AS (
   VALUES
     ('20261007083250'),('20261007090000'),('20261007093000'),
@@ -15,7 +18,8 @@ WITH expected_pending(version) AS (
     ('20261011120000'),('20261011123000'),('20261011130000'),
     ('20261011183000'),('20261011190000'),('20261011193000'),
     ('20261011195500'),('20261011201000'),('20261012041000'),
-    ('20261012172718')
+    ('20261014211500'),('20261014213500'),
+    ('20261014220000'),('20261014223000'),('20261014224500')
 )
 SELECT
   current_timestamp AS inspected_at,
@@ -26,6 +30,8 @@ SELECT
   (SELECT count(*) FROM expected_pending p WHERE NOT EXISTS
     (SELECT 1 FROM supabase_migrations.schema_migrations m WHERE m.version=p.version))
       AS expected_pending_still_unapplied,
+  (SELECT NOT EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations
+    WHERE version='20261012172718')) AS deferred_google_aal2_unapplied,
   (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='public' AND c.relkind='r') AS public_tables,
   (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
