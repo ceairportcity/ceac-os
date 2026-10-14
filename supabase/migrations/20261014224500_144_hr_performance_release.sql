@@ -241,3 +241,30 @@ end;
 $$;
 revoke all on function public.share_performance_review(uuid) from public,anon;
 grant execute on function public.share_performance_review(uuid) to authenticated;
+
+-- Preserve the established organisation-scoped metadata reader rules
+-- while authorising HR to see the case they must approve.
+drop policy if exists stage7_appraisals_read on public.appraisals;
+create policy stage7_appraisals_read on public.appraisals
+for select to authenticated
+using (
+  org_id=public.app_org_id() and (
+    profile_id=auth.uid() or manager_id=auth.uid()
+    or public.app_has_capability('performance.admin',null)
+    or (public.app_is_admin() and public.app_has_capability('people.manage',null))
+  )
+);
+
+-- Formal development plans are review narrative, not automatically
+-- readable by employees while the manager is still drafting them.
+drop policy if exists stage7_development_read on public.development_plan_versions;
+create policy stage7_development_read on public.development_plan_versions
+for select to authenticated
+using (
+  org_id=public.app_org_id() and (
+    manager_id=auth.uid()
+    or (public.app_is_admin() and public.app_has_capability('people.manage',null))
+    or (profile_id=auth.uid()
+      and public.performance_employee_release_visible(appraisal_id,created_at))
+  )
+);
