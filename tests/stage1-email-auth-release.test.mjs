@@ -19,8 +19,8 @@ test("Stage 1 uses the existing email and password sign-in", () => {
 test("Stage 1 preserves password recovery and account activation", () => {
   assert.match(signIn, /resetPasswordForEmail/);
   assert.match(signIn, /authRedirect\("\/reset-password"\)/);
-  assert.match(app, /pathName === "\/activate"/);
-  assert.match(app, /pathName === "\/reset-password"/);
+  assert.match(app, /authPath === "\/activate"/);
+  assert.match(app, /authPath === "\/reset-password"/);
   assert.match(app, /AccountPassword/);
 });
 
