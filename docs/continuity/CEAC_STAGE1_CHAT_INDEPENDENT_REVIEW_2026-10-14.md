@@ -10,6 +10,10 @@
 
 **Local focused evaluation:** executed the exact new `src/lib/mfaPolicy.js` GitHub blob in a JavaScript isolate and checked six cases: privileged phone-only AAL2 denied; privileged AAL2 with unverified TOTP requires enrollment; privileged AAL2 with verified TOTP allowed; disabled switch behaviour preserved; ordinary role unaffected; privileged AAL1 + verified TOTP requires challenge. **6/6 PASS** at reviewed policy blob. This does **not** replace `npm run verify:source`, `npm run build` or real authenticated MFA testing after integration.
 
+## Confirmed server-side AAL2 factor-method gap — OPEN
+
+The existing applied `public.app_privileged_aal_allowed()` SQL function was inspected read-only. When `privileged_mfa_required` is on, it checks the caller JWT has `aal2` and that **any** verified row exists in `auth.mfa_factors` for the caller. It does **not** require factor type `totp` or prove TOTP was the method used for this AAL2 session. This is a **separate server-side acceptance blocker**: the isolated client policy fix is useful defense-in-depth but cannot secure direct Data API access. Before the organisation enforcement switch is enabled or privileged TOTP accepted, the migration owner must design a minimal forward-only SQL correction, validate supported Supabase JWT AMR semantics and register AAL1/TOTP-AAL2/non-TOTP-AAL2/identity isolation cases in a recoverable environment. No applied SQL is edited or production mutation authorised here.
+
 ## Read-only live database findings (14 Oct 2026, approximately 10:00 UTC)
 
 Original production Supabase project: `efjljhftsesssumtshvp`. Status ACTIVE_HEALTHY, 119 applied migrations; last `20261007075418`. Current Stage 1 deliberately does not apply its 25 pending candidate migrations.
