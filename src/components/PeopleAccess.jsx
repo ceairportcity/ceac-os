@@ -4,6 +4,7 @@ import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../lib/inv
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
 import SupportTeamMemberships from "./SupportTeamMemberships";
+import { authRedirect } from "../lib/authRedirect";
 
 const ACCESS_MODES = [
   ["invite", "Invite"],
@@ -30,6 +31,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const [revokeTarget, setRevokeTarget] = useState(null);
   const [endMembershipTarget, setEndMembershipTarget] = useState(null);
   const [revokeReason, setRevokeReason] = useState("");
+  const [approveVolunteerTarget, setApproveVolunteerTarget] = useState(null);
+  const [volunteerApprovalReason, setVolunteerApprovalReason] = useState("");
   const loadGeneration = useRef(0);
   const identityGeneration = useRef(0);
   const actionBusyRef = useRef(false);
@@ -50,6 +53,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     setRevokeTarget(null);
     setEndMembershipTarget(null);
     setRevokeReason("");
+    setApproveVolunteerTarget(null);
+    setVolunteerApprovalReason("");
     setForm({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
     if (canManage) void load();
     return () => { loadGeneration.current += 1; identityGeneration.current += 1; actionBusyRef.current = false; };
@@ -79,9 +84,17 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       supabase.from("sub_teams").select("id,name,unit_id").eq("org_id", me.org_id).eq("active", true),
       supabase.rpc("admin_access_invitations"),
       supabase.from("sub_team_members").select("sub_team_id,profile_id"),
+      supabase.from("pending_invitations").select("id,engagement_type,volunteer_approved_at")
+        .eq("org_id",me.org_id).is("resolved_at",null),
     ]);
     if (generation !== loadGeneration.current) return false;
-    const failure = results.find((result) => result.error);
+    // Stage 1's 119-migration database lacks volunteer approval fields. Keep
+    // ordinary staff invitations usable without impersonating an HR approval.
+    const missingApproval = results[6].error &&
+      ["42703","PGRST204","PGRST200"].includes(String(results[6].error.code)) &&
+      String(results[6].error.message||"").includes("volunteer_approved_at");
+    const failure = results.slice(0,6).find((result) => result.error)
+      || (results[6].error && !missingApproval ? results[6] : null);
     if (failure) {
       setError(failure.error.message);
       return false;
@@ -93,6 +106,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       memberships: results[2].data || [],
       lanes: results[3].data || [],
       invitations: results[4].data || [],
+      volunteerApprovalsAvailable: !missingApproval,
+      volunteerInvitations: missingApproval ? [] : (results[6].data || []),
       laneMemberships: results[5].data || [],
     });
     return true;
