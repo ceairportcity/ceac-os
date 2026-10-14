@@ -308,13 +308,9 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
         .single();
       if (classifyError || !classified?.id) throw classifyError || new Error("Volunteer engagement could not be recorded.");
 
-      const { error: authError } = await supabase.auth.signInWithOtp({
-        email: cleanEmail,
-        options: { shouldCreateUser: true, emailRedirectTo: authRedirect("/activate") },
-      });
-      if (authError) throw authError;
-
-      setMsg("Volunteer invitation sent. Their account will still activate as Staff; volunteer is their engagement type.");
+      // Managers may propose a volunteer but must never activate the account.
+      // The pending invitation remains unsent until HR explicitly approves it.
+      setMsg("Volunteer request recorded for HR approval. No activation email has been sent.");
       setEmail(""); setFullName(""); setVolunteerPattern("no_attendance"); setVolunteerDays(["sat"]);
       setVolunteerStart(""); setVolunteerEnd("");
       await load();
