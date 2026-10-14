@@ -223,7 +223,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const selectedLaneMemberships = snapshot?.laneMemberships.filter((member) => member.profile_id === form.person) || [];
   const belongsToSelectedLane = selectedLaneMemberships.some((member) => member.sub_team_id === form.lane);
   const pendingInvitationCount = snapshot?.invitations.filter((invitation) =>
-    !invitation.revoked_at && invitation.activation_state !== "verified"
+    !invitation.revoked_at && invitation.activation_state !== "verified" && invitation.activation_state !== "expired"
   ).length || 0;
   // The roster is not proof that every account is activated, but an identical
   // email must not be invited blindly a second time.
