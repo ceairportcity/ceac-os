@@ -47,6 +47,32 @@ using(
   )
 );
 
+-- A SECURITY DEFINER visibility predicate is needed because the release
+-- request table itself is restricted to HR and the assigned reviewer.
+-- Employee RLS cannot directly SELECT those approval rows.
+create or replace function public.performance_employee_release_visible(
+  p_appraisal_id uuid,
+  p_entry_created_at timestamptz
+)
+returns boolean
+language sql stable security definer set search_path=''
+as $
+  select coalesce(exists(
+    select 1 from public.appraisals a
+    join public.performance_review_release_requests d
+      on d.appraisal_id=a.id and d.org_id=a.org_id
+    where a.id=p_appraisal_id
+      and a.org_id=public.app_org_id()
+      and a.profile_id=auth.uid()
+      and a.status in ('shared','closed')
+      and d.state='approved' and d.decided_at>=p_entry_created_at
+  ),false);
+$;
+revoke all on function public.performance_employee_release_visible(uuid,timestamptz)
+  from public,anon;
+grant execute on function public.performance_employee_release_visible(uuid,timestamptz)
+  to authenticated;
+
 -- Prevent a staff member reading unpublished manager-authored assessment or
 -- conversation entries directly through PostgREST, regardless of UI hiding.
 drop policy if exists stage7_entries_read on public.appraisal_entries;
@@ -66,12 +92,8 @@ using(
           and (
             appraisal_entries.entry_type not in ('manager_assessment','conversation_record')
             or (
-              a.status in ('shared','closed')
-              and exists (
-                select 1 from public.performance_review_release_requests d
-                where d.appraisal_id=a.id and d.org_id=a.org_id
-                  and d.state='approved'
-                  and d.decided_at>=appraisal_entries.created_at
+              public.performance_employee_release_visible(
+                a.id,appraisal_entries.created_at
               )
             )
           )
