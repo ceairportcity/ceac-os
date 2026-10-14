@@ -7,7 +7,7 @@ export function invitationEmailConflicts(email, people = [], invitations = []) {
   return {
     accountExists: (Array.isArray(people) ? people : []).some(same),
     invitationPending: (Array.isArray(invitations) ? invitations : [])
-      .some((item) => same(item) && !item.revoked_at && item.activation_state !== "verified"),
+      .some((item) => same(item) && !item.revoked_at && item.activation_state !== "verified" && item.activation_state !== "expired"),
   };
 }
 
