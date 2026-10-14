@@ -56,7 +56,7 @@ create or replace function public.performance_employee_release_visible(
 )
 returns boolean
 language sql stable security definer set search_path=''
-as $
+as $$
   select coalesce(exists(
     select 1 from public.appraisals a
     join public.performance_review_release_requests d
@@ -66,7 +66,7 @@ as $
       and a.profile_id=auth.uid()
       and d.state='approved' and d.decided_at>=p_entry_created_at
   ),false);
-$;
+$$;
 revoke all on function public.performance_employee_release_visible(uuid,timestamptz)
   from public,anon;
 grant execute on function public.performance_employee_release_visible(uuid,timestamptz)
