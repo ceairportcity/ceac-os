@@ -584,6 +584,25 @@ export default function Performance({ me }) {
             <button className="btn btn-sm" disabled={busy || feedbackNote.trim().length < 3} onClick={recordFeedback}>Record feedback</button>
           </section>}
 
+          {hrReleaseAdmin && <div className="performance-share-bar">
+            <div><strong>HR publication decisions</strong>
+              <span>Only HR may publish a completed manager narrative. Review the manager assessment above before deciding.</span>
+            </div>
+            {!releaseQueueAvailable && <p className="screen-note">Formal approval controls await the accepted database migration.</p>}
+            {releaseQueueAvailable && !currentReleaseRequest && <p className="screen-note">No pending HR request matches the current manager assessment version.</p>}
+            {releaseQueueAvailable && currentReleaseRequest && <>
+              <p className="screen-note">Manager's reason: {currentReleaseRequest.request_reason}</p>
+              <FieldGroup label="HR approval or decline reason">
+                <textarea className="field" rows="2" aria-label="HR assessment publication decision reason"
+                  value={releaseDecisionNote} onChange={(event)=>setReleaseDecisionNote(event.target.value)} />
+              </FieldGroup>
+              <button className="btn btn-sm" disabled={busy || releaseDecisionNote.trim().length < 8}
+                onClick={()=>decideHRRelease(true)}>HR approve publication</button>
+              <button className="btn btn-ghost btn-sm" disabled={busy || releaseDecisionNote.trim().length < 8}
+                onClick={()=>decideHRRelease(false)}>HR decline with reason</button>
+            </>}
+          </div>}
+
           {isReviewer && selectedCase.status !== "closed" && <div className="performance-share-bar">
             <div><strong>Request HR release</strong><span>Your assessment remains restricted to the assigned reviewer and authorised HR until HR approves its formal publication. New revisions require their own release approval.</span></div>
             {!currentAssessment && <p className="screen-note">Record your assessment before requesting HR publication.</p>}
