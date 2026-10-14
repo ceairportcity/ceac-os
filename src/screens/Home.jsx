@@ -59,6 +59,9 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
   const [blockerFollowups, setBlockerFollowups] = useState([]);
   const [ask, setAsk] = useState(false);
   const [place, setPlace] = useState("office");
+  const [officeLocations, setOfficeLocations] = useState([]);
+  const [officeLocationId, setOfficeLocationId] = useState("");
+  const [officeLocationStatus, setOfficeLocationStatus] = useState("loading");
   const [sessionWorkItem, setSessionWorkItem] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -73,6 +76,21 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
 
   useEffect(() => { const timer = setInterval(() => tick((value) => value + 1), 30000); return () => clearInterval(timer); }, []);
   useEffect(() => { load(); }, [me.id, me.unit_id]);
+  useEffect(() => {
+    let active = true;
+    setOfficeLocations([]);
+    setOfficeLocationId("");
+    setOfficeLocationStatus("loading");
+    supabase.from("office_locations").select("id,name")
+      .eq("org_id", me.org_id).order("name")
+      .then(({ data, error: locationError }) => {
+        if (!active) return;
+        if (locationError) { setOfficeLocationStatus("error"); return; }
+        setOfficeLocations(data || []);
+        setOfficeLocationStatus("ready");
+      }, () => { if (active) setOfficeLocationStatus("error"); });
+    return () => { active = false; };
+  }, [me.id, me.org_id]);
 
   async function load() {
     setLoading(true);
@@ -280,7 +298,10 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
     setBusy(true); setError(null);
     try {
       if (place === "elsewhere" && !sessionWorkItem) throw new Error("Choose the work you are doing off-site before you start.");
-      const current = await startWork(me.org_id, me.id, place, place === "elsewhere" ? sessionWorkItem : null);
+      if (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId)) {
+        throw new Error("Choose the authorised office or programme location before you start.");
+      }
+      const current = await startWork(me.org_id, me.id, place, place === "elsewhere" ? sessionWorkItem : null, place === "office" ? officeLocationId : null);
       setSession(current); setAsk(false); setSessionWorkItem("");
     }
     catch (err) { setError(humanError(err, "Work could not be started.")); }
@@ -384,8 +405,20 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
     {ask && <Sheet onClose={() => setAsk(false)}>
       <div className="h2">Where are you working?</div>
       <p className="screen-note" style={{ marginBottom: 10 }}>We record where you start. We do not track you during the day.</p>
-      <button className="opt" onClick={() => { setPlace("office"); setSessionWorkItem(""); }}><span className={`rd ${place === "office" ? "on" : ""}`} /> At the office</button>
+      <button className="opt" onClick={() => { setPlace("office"); setSessionWorkItem(""); }}><span className={`rd ${place === "office" ? "on" : ""}`} /> At an authorised office or programme location</button>
       <button className="opt" onClick={() => setPlace("elsewhere")}><span className={`rd ${place === "elsewhere" ? "on" : ""}`} /> Somewhere else</button>
+      {place === "office" && <>
+        <label className="screen-note" htmlFor="ceac-attendance-office-location">Authorised duty location</label>
+        <select className="field" id="ceac-attendance-office-location" aria-label="Authorised duty location"
+          value={officeLocationId} disabled={officeLocationStatus !== "ready"}
+          onChange={(event) => setOfficeLocationId(event.target.value)}>
+          <option value="">Choose your office or programme location</option>
+          {officeLocations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+        </select>
+        {officeLocationStatus === "error" && <p className="hint" role="alert">Approved locations could not be loaded. Please retry this screen.</p>}
+        {officeLocationStatus === "ready" && officeLocations.length === 0 && <p className="hint">No authorised duty location has been recorded. Ask Administration to configure the location.</p>}
+        <p className="hint">Your selected duty location is recorded with this work session. Verification still requires evidence; selecting it does not prove presence.</p>
+      </>}
       {place === "elsewhere" && <>
         <select className="field" aria-label="Work being done off-site" value={sessionWorkItem} onChange={(event) => setSessionWorkItem(event.target.value)}>
           <option value="">Choose the work you are doing</option>
@@ -393,7 +426,7 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
         </select>
         <div className="hint">The location is attached to this work when you start. CEAC OS does not track you during the day.</div>
       </>}
-      <button className="btn" style={{ marginTop: 16 }} onClick={begin} disabled={busy || (place === "elsewhere" && !sessionWorkItem)}>{busy ? "Starting..." : "Start work"}</button>
+      <button className="btn" style={{ marginTop: 16 }} onClick={begin} disabled={busy || (place === "elsewhere" && !sessionWorkItem) || (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId))}>{busy ? "Starting..." : "Start work"}</button>
     </Sheet>}
     {recoveryOpen && <Sheet onClose={() => !busy && setRecoveryOpen(false)}>
       <div className="h2">Close the earlier work session</div>
