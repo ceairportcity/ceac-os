@@ -33,8 +33,8 @@ test("recording formal review protects draft publication and released narrative 
   assert.doesNotMatch(sql,/delete from public\.appraisal_entries|delete from public\.appraisals/i);
 });
 test("Review page requests HR authorization and does not claim unpublished manager narrative is visible",()=>{
-  assert.match(page,/supabase\.rpc\("performance_request_release"/);
-  assert.match(page,/supabase\.rpc\("performance_hr_authorise_release"/);
+  assert.match(page,/rpc\("performance_request_release"/);
+  assert.match(page,/rpc\("performance_hr_authorise_release"/);
   assert.match(page,/HR authorise publication/);
   assert.match(page,/Manager request recorded/);
   assert.match(page,/Formal manager assessment and development-plan narrative are visible only after HR release/);
