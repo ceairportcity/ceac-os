@@ -87,6 +87,15 @@ test("case closure cannot imply unverified business access approval", () => {
   }
   assert.equal(canRecordSupportOutcome({ category: "cannot_sign_in" }, "resolved"), true);
   assert.equal(canRecordSupportOutcome(null, "closed"), true);
+  assert.equal(canRecordSupportOutcome({ id: "case-1", category: "access_needed" }, "resolved", {
+    state: "executed", approved_by: "approver", executed_by: "operator",
+    execution_reference: 12345678, case_id: "case-1",
+  }), false);
+  assert.equal(canRecordSupportOutcome({ id: "case-1", category: "access_needed" }, "resolved", {
+    state: "executed", approved_by: "approver", executed_by: "operator",
+    execution_reference: "TICKET-1234", case_id: "case-1",
+  }), true);
+
 });
 
 
