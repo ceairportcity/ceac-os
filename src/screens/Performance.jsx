@@ -77,6 +77,11 @@ export default function Performance({ me }) {
   const orgPerformanceAdmin = (me.capability_grants || []).some((grant) =>
     grant.capability === "performance.admin" && !grant.scope_unit_id
   );
+  const canHrAuthoriseRelease = Boolean(me.is_admin) && (
+    (me.capability_grants || []).some((grant) =>
+      grant.capability === "people.manage" && !grant.scope_unit_id
+    ) || (me.capabilities || []).includes("people.manage")
+  );
   const [cycles, setCycles] = useState([]);
   const [cases, setCases] = useState([]);
   const [profiles, setProfiles] = useState([]);
@@ -116,6 +121,8 @@ export default function Performance({ me }) {
   const [releaseReason, setReleaseReason] = useState("");
   const [conversation, setConversation] = useState("");
   const [staffReply, setStaffReply] = useState("");
+  const [releaseRequests, setReleaseRequests] = useState([]);
+  const [hrReleaseReason, setHrReleaseReason] = useState("");
 
   const [planFlow, setPlanFlow] = useState(false);
   const [planStep, setPlanStep] = useState(1);
@@ -140,6 +147,7 @@ export default function Performance({ me }) {
       caseRequestSerial.current += 1;
       setCaseLoading(false);
       setEvidence([]); setEntries([]); setPlans([]); setFeedback([]); setFeedbackResponses([]);
+      setReleaseRequests([]);
     }
   }, [selectedCaseId]);
 
@@ -200,22 +208,26 @@ export default function Performance({ me }) {
       return;
     }
     try {
-      const [e, en, p, f, fr] = await Promise.all([
+      const [e, en, p, f, fr, rr] = await Promise.all([
         supabase.from("appraisal_evidence_items").select("*").eq("appraisal_id", caseId).order("occurred_on", { ascending:false, nullsFirst:false }),
         supabase.from("appraisal_entries").select("*, author:profiles!appraisal_entries_created_by_fkey(full_name)").eq("appraisal_id", caseId).order("created_at", { ascending:true }),
         supabase.from("development_plan_versions").select("*").eq("appraisal_id", caseId).order("created_at", { ascending:true }),
         supabase.from("feedback_notes").select("id,profile_id,author_id,note,kind,occurred_on,created_at,author:profiles!feedback_notes_author_id_fkey(full_name)").eq("profile_id", selected.profile_id).order("created_at", { ascending:false }),
         supabase.from("feedback_responses").select("*").eq("profile_id", selected.profile_id).order("created_at", { ascending:true }),
+        supabase.from("performance_review_release_requests")
+          .select("id,appraisal_id,requested_assessment_id,requested_by,requested_at,request_reason,state,decided_at,decided_by,decision_reason")
+          .eq("appraisal_id",caseId).order("requested_at",{ascending:false}),
       ]);
       // A previous employee/cycle may finish after this request. Ignore its stale results.
       if (requestSerial !== caseRequestSerial.current) return;
-      const failed = [e,en,p,f,fr].find((row) => row.error);
+      const failed = [e,en,p,f,fr,rr].find((row) => row.error);
       if (failed) throw failed.error;
       setEvidence(e.data || []);
       setEntries(en.data || []);
       setPlans(p.data || []);
       setFeedback(f.data || []);
       setFeedbackResponses(fr.data || []);
+      setReleaseRequests(rr.data || []);
       const reflectionEntry = latestEntry(en.data || [], "employee_reflection");
       const assessmentEntry = latestEntry(en.data || [], "manager_assessment");
       const conversationEntry = latestEntry(en.data || [], "conversation_record");
@@ -245,6 +257,10 @@ export default function Performance({ me }) {
   const isReviewer = selectedCase?.manager_id === me.id;
   const currentReflection = latestEntry(entries, "employee_reflection");
   const currentAssessment = latestEntry(entries, "manager_assessment");
+  const currentReleaseRequest = releaseRequests.find((item) => item.state === "pending") || null;
+  const approvedCurrentAssessment = Boolean(currentAssessment && releaseRequests.some((item) =>
+    item.state === "approved" && item.requested_assessment_id === currentAssessment.id
+  ));
   const currentConversation = latestEntry(entries, "conversation_record");
   const currentPlan = latestPlan(plans);
 
@@ -327,6 +343,23 @@ export default function Performance({ me }) {
       p_reason: releaseReason.trim(),
     }, "The manager's assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.");
     if (submitted) setReleaseReason("");
+  }
+
+  async function hrDecideRelease(approve) {
+    if (!selectedCase || !currentReleaseRequest || !canHrAuthoriseRelease || hrReleaseReason.trim().length < 8) return;
+    if (currentReleaseRequest.requested_by === me.id) {
+      setError("A manager cannot authorise their own assessment publication.");
+      return;
+    }
+    const ok = await rpc("performance_hr_decide_release", {
+      p_request_id:currentReleaseRequest.id,
+      p_approve:approve,
+      p_reason:hrReleaseReason.trim(),
+    }, approve
+      ? "HR approved formal employee publication of this assessment."
+      : "HR declined publication and kept the assessment restricted."
+    );
+    if (ok) setHrReleaseReason("");
   }
 
   async function recordPlan() {
@@ -553,14 +586,32 @@ export default function Performance({ me }) {
             <button className="btn btn-sm" disabled={busy || feedbackNote.trim().length < 3} onClick={recordFeedback}>Record feedback</button>
           </section>}
 
-          {isReviewer && selectedCase.status !== "closed" && <div className="performance-share-bar">
+          {isReviewer && selectedCase.status !== "closed" && !approvedCurrentAssessment && <div className="performance-share-bar">
             <div><strong>Request HR release</strong><span>Your assessment remains restricted to the assigned reviewer and authorised HR until HR approves its formal publication. New revisions require their own release approval.</span></div>
             {!currentAssessment && <p className="screen-note">Record your assessment before requesting HR publication.</p>}
             <FieldGroup label="Reason to release this assessment">
               <textarea className="field" rows="2" value={releaseReason} onChange={(event) => setReleaseReason(event.target.value)} aria-label="Performance release request reason" />
             </FieldGroup>
-            <button className="btn btn-sm" disabled={busy || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>Submit release request to HR</button>
+            {currentReleaseRequest && <p className="screen-note">HR is reviewing the current manager release request. Do not submit a duplicate.</p>}
+            <button className="btn btn-sm" disabled={busy || Boolean(currentReleaseRequest) || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>Submit release request to HR</button>
           </div>}
+          {canHrAuthoriseRelease && currentReleaseRequest && <section className="card performance-authority-card">
+            <div className="sec" style={{ marginTop:0 }}><span>HR publication decision</span></div>
+            <p className="screen-note">The manager has requested release of a specific narrative version. Check the assessment and supporting evidence before approval. Only independently authorised HR may publish it.</p>
+            <p><strong>Manager's request:</strong> {currentReleaseRequest.request_reason}</p>
+            <FieldGroup label="HR decision reason">
+              <textarea className="field" rows="3" aria-label="HR performance publication reason"
+                value={hrReleaseReason} onChange={(event) => setHrReleaseReason(event.target.value)} />
+            </FieldGroup>
+            {currentReleaseRequest.requested_by === me.id
+              ? <p className="screen-note">A different authorised HR officer must approve this manager's request.</p>
+              : <div className="guided-actions">
+                <button className="btn" disabled={busy || hrReleaseReason.trim().length < 8}
+                  onClick={() => hrDecideRelease(true)}>Approve release to employee</button>
+                <button className="btn btn-ghost" disabled={busy || hrReleaseReason.trim().length < 8}
+                  onClick={() => hrDecideRelease(false)}>Decline publication</button>
+              </div>}
+          </section>}
         </>}
       </section>
     </div>}
