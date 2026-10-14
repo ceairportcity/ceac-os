@@ -29,6 +29,15 @@ test("Executive UI actually uses the measured-only helper", () => {
   assert.doesNotMatch(source, /const current = Number\(row\?\.current_value\);/);
 });
 
+test("Executive greeting follows Accra local time", () => {
+  const source=readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx","utf8");
+  assert.match(source, /function accraGreeting/);
+  assert.match(source, /timeZone: "Africa\/Accra"/);
+  assert.match(source, /hour < 12/);
+  assert.match(source, /hour < 17/);
+  assert.match(source, /<h2>\{greeting\}, \{executiveName \|\| "Executive"\}<\/h2>/);
+});
+
 test("Executive organisational overview explicitly scopes all read-context queries", () => {
   const source=readFileSync("src/screens/ExecutiveHome.jsx","utf8");
   assert.match(source, /from\("meeting_sessions"\)[\s\S]{0,180}\.eq\("org_id",me\.org_id\)/);

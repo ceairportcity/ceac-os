@@ -21,6 +21,18 @@ function accraDateKey(value = new Date()) {
   return new Date(value).toLocaleDateString("en-CA", { timeZone: "Africa/Accra" });
 }
 
+function accraGreeting(value = new Date()) {
+  const hourPart = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Accra",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(value)).find((part) => part.type === "hour");
+  const hour = Number(hourPart?.value || 0);
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 function displayCount(value) {
   return value === null || value === undefined ? "—" : Number(value).toLocaleString("en-GH");
 }
@@ -154,6 +166,7 @@ export default function ExecutiveOverviewV2({
   const directionFallbackRows = ministryDirectionRows.length ? ministryDirectionRows : ministryStrategyRows.filter((row) => row.node_type === "ministry_direction").slice(0, 3);
   const todayKey = accraDateKey();
   const meetingsToday = meetings.filter((meeting) => accraDateKey(meeting.starts_at) === todayKey).length;
+  const greeting = accraGreeting();
 
   const attentionRows = [
     reportingGap > 0 ? {
@@ -195,7 +208,7 @@ export default function ExecutiveOverviewV2({
 
       <header className="executivev2-hero">
         <div className="executivev2-hero-copy">
-          <h2>Good morning, {executiveName || "Executive"}</h2>
+          <h2>{greeting}, {executiveName || "Executive"}</h2>
           <p>Here&apos;s what matters today across your ministry, people and operations.</p>
         </div>
         <time>{executiveDate}</time>
@@ -245,95 +258,3 @@ export default function ExecutiveOverviewV2({
             icon="reports"
             value={displayCount(attentionCount)}
             label="Reports / Actions"
-            supporting={attentionCount ? `${attentionCount} need your attention` : "No recorded urgent action"}
-            tone="blue"
-            onClick={onOpenReports}
-          />
-        </section>
-
-        <section className="executivev2-reference-grid">
-          <section className="executivev2-reference-panel executivev2-attention" aria-label="Needs your attention">
-            <div className="executivev2-panel-head">
-              <h2><CeacIcon name="warning" size="row" decorative />Needs your attention</h2>
-              <button type="button" onClick={onOpenWork}>View all</button>
-            </div>
-            <div className="executivev2-panel-body">
-              {attentionRows.length ? attentionRows.slice(0, 4).map((row) => <AttentionItem key={row.title} {...row} />) : (
-                <div className="executivev2-empty">
-                  <CeacIcon name="checkCircle" size="row" decorative />
-                  <span><strong>No recorded item needs your decision right now.</strong><small>New exceptions will appear here when an underlying CEAC record requires Executive attention.</small></span>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="executivev2-reference-panel executivev2-direction">
-            <div className="executivev2-panel-head">
-              <h2><CeacIcon name="goal" size="row" decorative />Ministry direction</h2>
-              <button type="button" onClick={onOpenMinistry}>View all</button>
-            </div>
-            <div className="executivev2-panel-body">
-              {directionFallbackRows.length ? directionFallbackRows.map((row, index) => {
-                const progress = strategyProgress(row);
-                const tone = row.status === "met" ? "success" : row.status === "draft" ? "blue" : index === 1 ? "warning" : "success";
-                return <DirectionRow
-                  key={row.id}
-                  icon={row.node_type === "ministry_direction" ? "ministry" : "goal"}
-                  label={row.name}
-                  detail={strategyStatusLabel(row)}
-                  progress={progress}
-                  tone={tone}
-                />;
-              }) : <div className="executivev2-empty compact"><span><strong>No ministry objective is recorded yet.</strong><small>Open Ministry to add or review the recorded direction.</small></span></div>}
-            </div>
-          </section>
-
-          <section className="executivev2-reference-panel executivev2-organisation">
-            <div className="executivev2-panel-head">
-              <h2><CeacIcon name="organisation" size="row" decorative />Organisational overview</h2>
-              <button type="button" onClick={onOpenOrganisation}>View all</button>
-            </div>
-            <div className="executivev2-panel-body">
-              <OrganisationRow icon="organisation" label="Departments" value={summary.activeUnits} tone="purple" onClick={onOpenOrganisation} />
-              <OrganisationRow icon="team" label="Teams" value={summary.activeTeams} tone="blue" onClick={onOpenOrganisation} />
-              <OrganisationRow icon="people" label="Active Volunteers" value={summary.activeVolunteers} tone="amber" onClick={onOpenOrganisation} />
-              <OrganisationRow icon="account" label="Active Staff" value={summary.activeStaff} tone="green" onClick={onOpenOrganisation} />
-            </div>
-          </section>
-        </section>
-
-        <section className="executivev2-lower-grid">
-          <section className="executivev2-reference-panel executivev2-activity">
-            <div className="executivev2-panel-head">
-              <h2><CeacIcon name="record" size="row" decorative />Recent activity</h2>
-              <button type="button" onClick={onOpenMinistry}>View all</button>
-            </div>
-            <div className="executivev2-activity-context">{recentActivity.length ? "Recent attributable CEAC activity" : "Recorded ministry activity"}</div>
-            <div className="executivev2-activity-grid">
-              {recentMinistryRows.length || recentActivity.length ? <>
-                  {recentMinistryRows.map((row) => <ActivityItem key={row.id} row={row} />)}
-                  {recentActivity.slice(0, 4 - recentMinistryRows.length).map((row) => <RecentActivityItem key={row.id} row={row} />)}
-                </> : ministryLatestRows.length ? ministryLatestRows.slice(0, 4).map((row) => <ActivityItem key={row.id} row={row} />)
-                : <div className="executivev2-empty compact"><span><strong>No recent attributable activity is visible.</strong><small>This area only shows CEAC records your account is authorised to see.</small></span></div>}
-            </div>
-          </section>
-
-          <section className="executivev2-reference-panel executivev2-meetings">
-            <div className="executivev2-panel-head">
-              <h2><CeacIcon name="calendar" size="row" decorative />Upcoming meetings</h2>
-              <button type="button" onClick={onOpenCalendar}>View calendar</button>
-            </div>
-            <div className="executivev2-panel-body">
-              {meetings.length ? meetings.slice(0, 4).map((meeting) => <button type="button" className="executivev2-meeting-row" key={meeting.id} onClick={() => onOpenMeeting?.(meeting.id)}>
-                <time>{formatDate(meeting.starts_at, { hour: "2-digit", minute: "2-digit" })}</time>
-                <span><strong>{meeting.title}</strong><small>{meeting.provider || "Meeting"} · {formatDate(meeting.starts_at, { weekday: "short" })}</small></span>
-                <span className="executivev2-row-action" aria-hidden="true">›</span>
-              </button>) : <div className="executivev2-empty compact"><span><strong>No upcoming meeting is visible.</strong><small>Meetings appear here when they are recorded in CEAC.</small></span></div>}
-            </div>
-            <button type="button" className="executivev2-schedule-link" onClick={onScheduleMeeting}>Schedule meeting</button>
-          </section>
-        </section>
-      </main> : null}
-    </div>
-  </div>;
-}
