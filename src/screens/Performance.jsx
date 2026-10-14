@@ -341,6 +341,10 @@ export default function Performance({ me }) {
 
   async function decideHRRelease(approved) {
     if (!hrReleaseAdmin || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
+    if (currentReleaseRequest.requested_by === me.id) {
+      setError("An independent HR officer must authorise assessment publication.");
+      return;
+    }
     const confirmed = await rpc("performance_hr_decide_release", {
       p_request_id:currentReleaseRequest.id,
       p_approve:approved,
