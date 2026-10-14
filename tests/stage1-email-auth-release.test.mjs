@@ -4,6 +4,7 @@ import test from "node:test";
 
 const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 const signIn = readFileSync(new URL("../src/screens/SignIn.jsx", import.meta.url), "utf8");
+const privilegedGate = readFileSync(new URL("../src/components/PrivilegedMfaGate.jsx", import.meta.url), "utf8");
 const googleGate = readFileSync(new URL("../src/components/MandatoryMfaGate.jsx", import.meta.url), "utf8");
 const googleMigration = readFileSync(
   new URL("../supabase/migrations/20261012172718_google_oauth_aal2_enforcement.sql", import.meta.url),
@@ -27,6 +28,15 @@ test("Stage 1 preserves password recovery and account activation", () => {
 test("Stage 1 does not activate the Google-only universal gate", () => {
   assert.doesNotMatch(app, /MandatoryMfaGate/);
   assert.doesNotMatch(app, /ceac_google_mfa_eligible/);
+});
+
+test("Stage 1 retains the applied privileged-only TOTP and AAL2 gate", () => {
+  assert.match(app, /<PrivilegedMfaGate me=\{me\} onVerified=\{boot\}>/);
+  assert.match(privilegedGate, /privileged_mfa_required/);
+  assert.match(privilegedGate, /isPrivilegedIdentity\(me\)/);
+  assert.match(privilegedGate, /getAuthenticatorAssuranceLevel/);
+  assert.match(privilegedGate, /state === "enroll" \|\| state === "challenge"/);
+  assert.doesNotMatch(privilegedGate, /ceac_google_mfa_eligible/);
 });
 
 test("Stage 2 Google and universal AAL2 work remains preserved", () => {

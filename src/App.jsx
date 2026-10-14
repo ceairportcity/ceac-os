@@ -7,6 +7,7 @@ const AccountPassword = lazy(() => import("./screens/AccountPassword"));
 import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
 import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
+import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
 
 const Home = lazy(() => import("./screens/Home"));
 const Work = lazy(() => import("./screens/Work"));
@@ -447,6 +448,7 @@ export default function App() {
                   : `tab:${tab}`;
 
   return (
+    <PrivilegedMfaGate me={me} onVerified={boot}>
     <div className={`app ${appModeClass}`}>
       {isExec ? <Suspense fallback={null}><ExecutiveRedesignStyles /></Suspense> : null}
       <SideNav
@@ -547,5 +549,6 @@ export default function App() {
         </main>
         {!overlay && <Tabs tab={tab} setTab={go} isManager={isUnitManager} isExec={isExec} isAdmin={isAdmin} me={me} onGuide={() => openGuide(false)} />}
       </div>
-    </div>);
+    </div>
+    </PrivilegedMfaGate>);
 }
