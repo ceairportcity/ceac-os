@@ -90,3 +90,89 @@ revoke all on function public.volunteer_reimbursement_request(text,bigint,text,t
   from public,anon;
 grant execute on function public.volunteer_reimbursement_request(text,bigint,text,text)
   to authenticated;
+
+create or replace function public.volunteer_reimbursement_review(
+  p_request_id uuid,p_action text,p_note text
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+  v_org uuid:=public.app_org_id();
+  v_actor uuid:=auth.uid();
+  r public.volunteer_reimbursement_requests%rowtype;
+  v_hr boolean;
+  v_finance boolean;
+  v_manager boolean;
+begin
+  if v_org is null or v_actor is null then
+    raise exception 'Sign in to review this volunteer request.' using errcode='42501';
+  end if;
+  if p_action not in ('manager_confirm','hr_consult','finance_consult','authorise','decline')
+     or length(btrim(coalesce(p_note,''))) not between 8 and 1200 then
+    raise exception 'Choose a permitted action and record an attributable review.';
+  end if;
+  select * into r from public.volunteer_reimbursement_requests
+  where id=p_request_id and org_id=v_org for update;
+  if r.id is null or r.status in ('authorised','declined') then
+    raise exception 'An open volunteer request in this organisation is required.'
+      using errcode='42501';
+  end if;
+  v_hr:=public.app_is_admin() and public.app_has_capability('people.manage',null);
+  v_manager:=r.unit_id in(select public.app_managed_units());
+  select exists(select 1 from public.unit_memberships m
+    join public.units u on u.id=m.unit_id
+    where m.profile_id=v_actor and m.org_id=v_org and u.handles_finance)
+    into v_finance;
+
+  if p_action='manager_confirm' then
+    if not v_manager or r.status<>'requested' then
+      raise exception 'The assigned Manager must confirm the activity first.'
+        using errcode='42501';
+    end if;
+    update public.volunteer_reimbursement_requests
+      set status='manager_confirmed',manager_confirmed_by=v_actor,
+          manager_confirmed_at=now(),manager_note=btrim(p_note)
+    where id=r.id;
+  elsif p_action='hr_consult' then
+    if not v_hr or r.status<>'manager_confirmed' or r.hr_consulted_by is not null then
+      raise exception 'A single documented HR consultation is required.' using errcode='42501';
+    end if;
+    update public.volunteer_reimbursement_requests
+      set hr_consulted_by=v_actor,hr_consulted_at=now(),hr_note=btrim(p_note)
+    where id=r.id;
+  elsif p_action='finance_consult' then
+    if not v_finance or r.status<>'manager_confirmed' or r.finance_consulted_by is not null then
+      raise exception 'A single documented Finance consultation is required.' using errcode='42501';
+    end if;
+    update public.volunteer_reimbursement_requests
+      set finance_consulted_by=v_actor,finance_consulted_at=now(),finance_note=btrim(p_note)
+    where id=r.id;
+  elsif p_action='authorise' then
+    if not (v_hr or v_finance) or r.status<>'manager_confirmed'
+       or r.hr_consulted_by is null or r.finance_consulted_by is null then
+      raise exception 'Manager confirmation and both HR/Finance consultations are required before authorization.'
+        using errcode='42501';
+    end if;
+    update public.volunteer_reimbursement_requests
+      set status='authorised',authorised_by=v_actor,
+          authorised_at=now(),authorization_note=btrim(p_note)
+    where id=r.id;
+  elsif p_action='decline' then
+    if not (v_hr or v_finance) or r.status<>'manager_confirmed' then
+      raise exception 'Only HR or Finance may decline a manager-confirmed request.'
+        using errcode='42501';
+    end if;
+    update public.volunteer_reimbursement_requests
+      set status='declined',authorised_by=v_actor,
+          authorised_at=now(),authorization_note=btrim(p_note)
+    where id=r.id;
+  end if;
+  insert into public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
+  values(v_org,v_actor,'volunteer_reimbursement_reviewed','volunteer_reimbursement',r.id,
+    jsonb_build_object('action',p_action,'final',p_action in ('authorise','decline')));
+  return jsonb_build_object('request_id',r.id,'action',p_action,
+    'payment_completed',false,'salary',false);
+end;
+$$;
+revoke all on function public.volunteer_reimbursement_review(uuid,text,text)
+  from public,anon;
+grant execute on function public.volunteer_reimbursement_review(uuid,text,text)
+  to authenticated;
