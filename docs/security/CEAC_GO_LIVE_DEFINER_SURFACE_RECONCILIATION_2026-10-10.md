@@ -1,6 +1,6 @@
 # CEAC OS — Go-live authenticated SECURITY DEFINER reconciliation
 
-**Date:** 10 October 2026  
+**Date:** 10 October 2026
 **Scope:** draft release-integration PR #27 only; not production authorisation.
 
 ## Evidence and cause
