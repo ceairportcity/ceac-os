@@ -87,11 +87,19 @@ export default function GlobalSearch({
           onPartial: (partialGroups, issue) => {
             if (cancelled) return;
             if (issue?.error) {
-              setError("Work search could not be verified. " + issue.error);
+              const category = issue.source === "organisation" ? "Organisation" : "Work";
+              setError(`${category} search could not be verified. ${issue.error}`);
               return;
             }
+            // Concurrent partial catalogues are independently authorised. A
+            // slower Work response must not erase an already-arrived Unit, nor
+            // may a Unit response erase the Work results before final settle.
             if (partialGroups.some((group) => group.items.length)) {
-              setRecordGroups(partialGroups);
+              setRecordGroups((current) => {
+                const byKey = new Map(current.map((group) => [group.key, group]));
+                for (const group of partialGroups) byKey.set(group.key, group);
+                return [...byKey.values()];
+              });
             }
           },
         });
