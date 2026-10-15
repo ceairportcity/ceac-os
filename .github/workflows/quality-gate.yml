@@ -131,7 +131,7 @@ jobs:
           exit 1
 
       - name: Run Playwright role smoke tests
-        run: npx playwright test --shard=${{ matrix.shard }}/4
+        run: npx playwright test --shard=${{ matrix.shard }}/4 --workers=1
 
       - name: Upload shard evidence
         if: always()
