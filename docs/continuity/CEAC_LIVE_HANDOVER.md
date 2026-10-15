@@ -1,3 +1,15 @@
+# CURRENT ACTIVE HANDOVER — 14 OCTOBER 2026 (READ BEFORE EARLIER LOG BELOW)
+
+The earlier PR #50/Stage 1 NO-GO and 12 October Work Google-first summaries below are **historical**; Stage 1 has since gone live. The *current owner-directed one-bundle* execution and after-release same-project Supabase transfer are defined in [CEAC_ACTIVE_ONE_BUNDLE_EXECUTION_AND_TRANSFER_2026-10-14.md](CEAC_ACTIVE_ONE_BUNDLE_EXECUTION_AND_TRANSFER_2026-10-14.md). Read this and `AGENTS.md` first. Continue actual engineering from live repository HEAD; no reports-only milestones.
+
+**Source map:** `ceairportcity/ceac-os` canonical, temporarily PUBLIC for bounded GitHub-hosted final candidate CI; restore PRIVATE **immediately** after last required CI evidence or if public CI is unhelpful. Former restored `thestandardinst-star/ceac-os` remains historic, private. Current PR #72 one-bundle product HEAD at inspection `d3b45b7bc9b7d2f1e4c7dfec404cc20069ad05d5`, PR #71 reviewed HEAD `07cfa42c8c8dae49a793804afd8b7f528ca3b670` **diverged**. PR #74 has performance security fixes; duplicate migration 144 in PR #72 blocks replay; existing hotfix `chatgpt/ceac-migration-144-single-source-20261014` is review-only until reconciled to latest head. PR #75 duplicate Volunteer expenses CLOSED: PR #72 contains `20261014231500_145_roster_schedule_no_fake_auth.sql` and `20261014233000_146_volunteer_reimbursement.sql`. Do not resurrect colliding schema. PR #76/#77 carry owner public CI exception and are not merged into `main`/latest candidate; this handoff branch incorporates the instructions. **All SHAs are dated evidence; immediately refresh**.
+
+**Run evidence:** full application candidate GitHub CI/Replay/Account Security/Quality Gate at 21:59 UTC had no steps (INFRA BLOCKED), while later public CI on documentation PR #77 executed basic checkout/docs/source scope but skipped full Vite/SQL replay. **No honest application PASS yet.** Exact final SHA needs real hosted runner build/replay/role checks, then restore PRIVATE. Production Stage 1 previously deployed on Vercel source `1b0a4fbb3acb2db5efb407d8c39b6a8e909dfe38`, original Supabase `efjljhftsesssumtshvp` remains 119 applied at last inspection. No new migration was applied by these documentation changes.
+
+**Owner sequence:** S0 reconcile correct integrated source → S1 finish all locked Admin/HR, Volunteers, Support, Attendance, Payroll and Work/Performance → S2 one real exact-head integrated suite → S3 one owner-authorised production migration/deploy/smoke → **S4** separately owner-authorised transfer of **same Supabase project after successful S3**, never before. Google-only OAuth/AAL2 and comprehensive DB/Auth/Storage/config encrypted restore remain separate Stage 2; still record migration recoverability exposure. Owner monitor chat may inspect commits/CI when asked but does not asynchronously watch another agent. Never ask owner to repeat settled choices. Proceed through nonproduction milestones without stopping to narrate; maintain concise evidence and continue.
+
+---
+
 # CEAC Live Handover
 
 
