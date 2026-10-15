@@ -211,7 +211,7 @@ test("Stage 4C all four mobile role shells stay within the 390px viewport", asyn
 
     const mobileNav = page.locator(".ev2s-mobile-nav");
     await expect(mobileNav).toBeVisible();
-    await expect(mobileNav.getByRole("button")).toHaveCount(role.key === "executive" ? 4 : 5);
+    await expect(mobileNav.getByRole("button")).toHaveCount(5);
 
     const overflow = await page.evaluate(() => ({
       document: document.documentElement.scrollWidth - document.documentElement.clientWidth,

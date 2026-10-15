@@ -708,7 +708,7 @@ button.adminv2-action-main {
   gap: .5rem 1rem;
   margin-top: auto;
   padding-top: .85rem;
-  font-size: .74rem;
+  font-size: .75rem;
   color: #65758b;
 }
 .adminv2-agenda-foot strong { color: #233d5e; }
@@ -855,7 +855,7 @@ button.adminv2-action-main {
   color: #18314d;
 }
 .adminv2-focus-metrics small {
-  font-size: .72rem;
+  font-size: .75rem;
   line-height: 1.35;
   color: #5f718b;
 }
@@ -904,7 +904,7 @@ button.adminv2-action-main {
 }
 .adminv2-calendar-controls button[aria-label="Show current month"] {
   padding: 0 .35rem;
-  font-size: .67rem;
+  font-size: .75rem;
   font-weight: 750;
 }
 .adminv2-calendar-controls button:hover,
@@ -917,7 +917,7 @@ button.adminv2-action-main {
 }
 .adminv2-calendar-weekdays span {
   text-align: center;
-  font-size: .65rem;
+  font-size: .75rem;
   font-weight: 650;
   color: #8090a4;
 }
@@ -970,3 +970,6 @@ button.adminv2-action-main {
 @media (max-width: 599px) {
   .adminv2-calendar-day { min-height: 2.15rem; }
 }
+
+/* Approved mobile Administration controls must remain fingertip accessible. */
+.adminv2-hero .adminv2-intro-actions .ev2c-button { min-height: 44px; }

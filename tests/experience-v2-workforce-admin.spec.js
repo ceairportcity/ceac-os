@@ -64,7 +64,9 @@ for (const viewport of [
     await expect(page.locator(".ev2-workforce-admin")).toContainText("Other Unit Fixture");
 
     await page.getByRole("tab", { name: "Corrections", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Record correction", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Record correction", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Missed check-in and attendance corrections" })).toBeVisible();
+    await expect(page.getByText(/manager approves the correction; HR audits approved corrections afterward/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
     await expect(page.getByRole("button", { name: "Add day type", exact: true })).toBeVisible();
