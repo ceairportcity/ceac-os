@@ -229,12 +229,15 @@ test("VF6C cross-role Calendar surfaces stay top-anchored and context-led", asyn
       const root = page.locator(role.root);
       await expect(root).toBeVisible({ timeout: 15000 });
 
-      const layout = await root.evaluate((node) => ({
-        alignContent: getComputedStyle(node).alignContent,
-        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      }));
-      expect(layout.alignContent).toBe("start");
-      expect(layout.overflow).toBeLessThanOrEqual(1);
+      // Await the real attached Calendar route after async data re-renders:
+      // getComputedStyle on a detached root returns an empty string.
+      await expect.poll(() => root.evaluate((node) =>
+        node.isConnected ? getComputedStyle(node).alignContent : "detached"
+      ), { message: role.key + " Calendar stays top anchored" }).toBe("start");
+      const overflow = await page.evaluate(() =>
+        document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(overflow).toBeLessThanOrEqual(1);
 
       if (role.key === "staff" || role.key === "manager") {
         const agenda = root.locator(".ev2cal-agenda").first();
