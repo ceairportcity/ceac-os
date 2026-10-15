@@ -249,6 +249,7 @@ declare
   v_plan uuid;
   v_plan2 uuid;
   v_feedback uuid;
+  v_release_request uuid;
   v_before integer;
   v_after integer;
 begin
@@ -321,7 +322,19 @@ begin
     null
   );
 
-  perform public.share_performance_review(v_appraisal);
+  -- The old Manager-only publication RPC must not remain directly callable.
+  if has_function_privilege('authenticated','public.share_performance_review(uuid)','EXECUTE') then
+    raise exception 'Stage 7 gate failure: Manager can call the retired direct publication RPC.';
+  end if;
+
+  v_release_request:=public.performance_request_release(
+    v_appraisal,
+    'Manager assessment and supporting development evidence are complete for HR review.'
+  );
+  if v_release_request is null then
+    raise exception 'Stage 7 gate failure: Manager request for HR publication was not recorded.';
+  end if;
+  perform set_config('ceac.stage7_release_request_id',v_release_request::text,true);
 
   perform set_config('ceac.stage7_assessment_id',v_assessment::text,true);
   perform set_config('ceac.stage7_conversation_id',v_conversation::text,true);
@@ -333,7 +346,60 @@ $stage7_manager_flow$;
 
 reset role;
 
--- Staff sees manager narrative immediately/final review and can exercise right of reply.
+-- Manager-authored narrative and development history stay hidden from the
+-- employee until a different authorised HR actor approves publication.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+
+do $stage7_before_hr_publication$
+declare
+  v_appraisal uuid:=nullif(current_setting('ceac.stage7_appraisal_id',true),'')::uuid;
+  n integer;
+begin
+  select count(*) into n from public.appraisal_entries
+  where appraisal_id=v_appraisal
+    and entry_type in ('manager_assessment','conversation_record');
+  if n<>0 then
+    raise exception 'Stage 7 gate failure: employee read unreleased manager narrative.';
+  end if;
+  select count(*) into n from public.development_plan_versions
+  where appraisal_id=v_appraisal;
+  if n<>0 then
+    raise exception 'Stage 7 gate failure: employee read unreleased development history.';
+  end if;
+  if exists(select 1 from public.appraisals where id=v_appraisal and status='shared') then
+    raise exception 'Stage 7 gate failure: Manager silently published the review before HR approval.';
+  end if;
+end
+$stage7_before_hr_publication$;
+
+reset role;
+
+-- HR (not the requesting Manager) independently authorises the exact
+-- assessment version and preserves the approval record.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+
+do $stage7_hr_publication$
+declare
+  v_request uuid:=nullif(current_setting('ceac.stage7_release_request_id',true),'')::uuid;
+  v_appraisal uuid:=nullif(current_setting('ceac.stage7_appraisal_id',true),'')::uuid;
+  v_outcome jsonb;
+begin
+  v_outcome:=public.performance_hr_decide_release(
+    v_request,true,'HR reviewed the current Manager assessment and authorises employee publication.'
+  );
+  if v_outcome->>'approved' <> 'true'
+    or v_outcome->>'request_id' <> v_request::text
+    or v_outcome->>'appraisal_id' <> v_appraisal::text then
+    raise exception 'Stage 7 gate failure: HR publication response was not verified.';
+  end if;
+end
+$stage7_hr_publication$;
+
+reset role;
+
+-- Staff sees only the HR-released manager narrative and may reply.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 
@@ -414,13 +480,24 @@ begin
     raise exception 'Stage 7 gate failure: review-entry semantic events are incomplete (%).',n;
   end if;
 
+  -- The obsolete Manager-only share event has been replaced with an
+  -- attributable Manager request and separate HR decision.
   select count(*) into n
-  from public.platform_events
-  where event_type='performance.review_shared'
-    and aggregate_id=v_appraisal;
-
+  from public.performance_review_release_requests
+  where appraisal_id=v_appraisal
+    and state='approved'
+    and requested_by='31000000-0000-4000-8000-000000000002'
+    and decided_by='31000000-0000-4000-8000-000000000003';
   if n<>1 then
-    raise exception 'Stage 7 gate failure: expected one review-shared event, found %.',n;
+    raise exception 'Stage 7 gate failure: Manager request and independent HR approval are missing (%).',n;
+  end if;
+  select count(*) into n
+  from public.activity_events
+  where verb='performance_hr_release_decided'
+    and object_type='performance_review' and object_id=v_appraisal
+    and actor_id='31000000-0000-4000-8000-000000000003';
+  if n<>1 then
+    raise exception 'Stage 7 gate failure: HR performance-publication audit is missing (%).',n;
   end if;
 
   select count(*) into n
