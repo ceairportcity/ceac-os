@@ -2075,7 +2075,8 @@ test("Administration surfaces use policy-safe HR states and real employee record
   test.setTimeout(150000);
   const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
 
-  await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
+  await expect(page.locator(".adminv2-hero-title h1")).toContainText(/Good morning|Good afternoon|Good evening/);
+  await expect(page.locator(".adminv2-context")).toContainText("Administration & HR");
   await expect(page.getByText("Needs Administration", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Finance & reporting", exact: true })).toBeVisible();
   await expect(page.getByText("Delivery signals", { exact: true })).toBeVisible();
