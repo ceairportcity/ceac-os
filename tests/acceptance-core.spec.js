@@ -1622,24 +1622,13 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await expect(page.getByText(/does not convert a missing or different record/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Corrections", exact: true }).click();
-    await page.getByRole("button", { name: "Record correction", exact: true }).click();
-    dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Correction person").selectOption("31000000-0000-4000-8000-000000000001");
-    await dialog.getByLabel("Corrected context").fill("Acceptance corrected workforce context");
-    await dialog.getByLabel("Correction reason").fill(correctionReason);
-    await dialog.getByRole("button", { name: "Record correction", exact: true }).click();
-    await expect(page.getByText("Attendance context correction recorded.", { exact: true })).toBeVisible();
-
-    const correctionRow = page.locator(".row").filter({ hasText: correctionReason }).first();
-    await expect(correctionRow).toBeVisible();
-    page.once("dialog", (prompt) => prompt.accept("Acceptance reversal reason"));
-    await correctionRow.getByRole("button", { name: "Reverse correction", exact: true }).click();
-    await expect(page.getByText("Attendance correction reversal recorded.", { exact: true })).toBeVisible();
-
-    await page.reload();
-    await go(page, "Workforce");
-    await page.getByRole("tab", { name: "Corrections", exact: true }).click();
-    await expect(page.locator(".row").filter({ hasText: correctionReason }).first()).toContainText("reversed");
+    const correctionWorkflow=page.locator(".ev2wf-correction-workflow");
+    await expect(correctionWorkflow.getByRole("heading",{name:"Missed check-in and attendance corrections"})).toBeVisible();
+    await expect(correctionWorkflow.getByText(/manager approves the correction; HR audits approved corrections afterward/i)).toBeVisible();
+    // Legacy direct HR modification/reversal is prohibited. Dedicated browser
+    // approval test separately verifies Staff request → Manager decision → HR audit.
+    await expect(page.getByRole("button",{name:"Record correction",exact:true})).toHaveCount(0);
+    await expect(page.getByRole("button",{name:"Reverse correction",exact:true})).toHaveCount(0);
 
     await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
     await page.getByRole("button", { name: "Configure leave policy", exact: true }).click();
