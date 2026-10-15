@@ -301,8 +301,14 @@ for (const viewport of [
       await expect(page.locator(".ev2-work-page")).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
-      const tabs = page.locator(".ev2w-tabs").first().getByRole("tab");
-      expect(await tabs.count()).toBeGreaterThanOrEqual(3);
+      const tabs = page.locator(".ev2-work-page .ev2w-tabs").first().getByRole("tab");
+      // After lazy role-route navigation, the Work shell can be visible before
+      // its role-specific tabs mount. Require at least three *actual*
+      // interactive tabs rather than passing on an incomplete loading frame.
+      await expect.poll(() => tabs.count(), {
+        timeout:15000,
+        message:`${role.key} Work must expose the authorised tabs after route readiness`,
+      }).toBeGreaterThanOrEqual(3);
 
       const smallest = await page.locator(".ev2-work-page").evaluate((root) => {
         const values = [...root.querySelectorAll("*")]
