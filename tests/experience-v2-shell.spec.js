@@ -282,7 +282,12 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
     .eq("id","26000000-0000-4000-8000-000000000011");
   expect(verifiedWork.error, "Manager-authorised source Work search must not be silently denied").toBeNull();
   expect(verifiedWork.data, "Manager should see its own unit's seeded predecessor work").toHaveLength(1);
-  await authorised.auth.signOut();
+  // The Node preflight is a second Supabase session for the same manager.
+  // A default global sign-out revokes the browser's refresh token and makes
+  // the subsequent navigation appear unauthorised. Close ONLY the preflight
+  // session; the browser session must remain live for the exact RLS journey.
+  const preflightClosed = await authorised.auth.signOut({ scope: "local" });
+  expect(preflightClosed.error).toBeNull();
 
   await page.goto("/?tab=home");
   await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });

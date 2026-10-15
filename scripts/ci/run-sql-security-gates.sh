@@ -59,6 +59,7 @@ tests=(
   support_access_approval_execution_gate.sql
   support_membership_end_reason_gate.sql
   support_private_case_evidence_gate.sql
+  private_personal_recurrence_gate.sql
 )
 
 for test_file in "${tests[@]}"; do
