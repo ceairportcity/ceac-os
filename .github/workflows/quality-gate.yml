@@ -79,7 +79,7 @@ jobs:
       - uses: ./.github/actions/setup-ceac-test-environment
 
       - name: Run complete SQL, RLS and security contract suite
-        run: scripts/ci/run-sql-security-gates.sh
+        run: bash scripts/ci/run-sql-security-gates.sh
 
   browser-shard:
     name: Level B browser shard ${{ matrix.shard }}/4
