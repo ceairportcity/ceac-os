@@ -1,7 +1,7 @@
 /* Legacy Executive compatibility only.
    The active Executive product geometry is owned by
    experience-v2/executive-overview/executive-redesign.css.
-   Do not add global width or !important layout rules here. */
+   Do not add global width or force-override layout declarations here. */
 @media(max-width:980px){
   .premium-exec-page{padding-bottom:12px}
 }
