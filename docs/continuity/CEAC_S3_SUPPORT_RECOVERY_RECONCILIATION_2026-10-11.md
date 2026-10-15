@@ -1,7 +1,7 @@
 # CEAC OS — S3 / Technical Support / Recovery reconciliation checkpoint
 
-Date: 2026-10-11 UTC  
-Repository: `ceairportcity/ceac-os` (private)  
+Date: 2026-10-11 UTC
+Repository: `ceairportcity/ceac-os` (private)
 Release status: **DRAFT / NO-GO. Do not merge, migrate or deploy.**
 
 ## Source of truth and traceable ancestry
