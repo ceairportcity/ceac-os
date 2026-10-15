@@ -723,7 +723,7 @@ button.adminv2-action-main {
   border: 1px solid var(--admin-line);
   border-radius: .9rem;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(20,45,80,.025);
+  box-shadow: none;
 }
 .adminv2-panel .ev2c-data-panel-head {
   padding: 1.05rem 1.1rem .9rem;

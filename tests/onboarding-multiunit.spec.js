@@ -46,7 +46,13 @@ test('one Manager account keeps two headships across switching and reload', asyn
     expect(ended.error).toBeNull();
     // Keep the isolated unit inactive so its referenced audit/history remains intact.
     const closed=await service.from('units').update({active:false}).in('id',[unit,first]); expect(closed.error).toBeNull();
-    expect((await service.from('profiles').update({active:false}).eq('id',manager)).error).toBeNull();
+    // Deactivation must be an attributable HR/Administration action even for
+    // service-role clients. This isolated browser fixture must not bypass the
+    // production deactivation trigger merely to clean up random test identities.
+    const unapprovedDeactivation=await service.from('profiles').update({active:false}).eq('id',manager);
+    expect(unapprovedDeactivation.error?.code).toBe('42501');
+    // The disposable test database is discarded after the isolated gate run.
+    // Its historical account can remain active without affecting production.
     await admin.auth.signOut();
   }
 });
