@@ -1,10 +1,10 @@
 # CEAC OS — Executed Private Local Release-Gate Evidence
 
-**Evidence date:** 2026-10-10 UTC  
-**Private canonical GitHub repository:** `ceairportcity/ceac-os`  
-**Exact application release candidate PR #27:** `386e59086fa79e1d27b28c42677d2252877cf0e0`  
-**Production `main` baseline:** `827fbe7391467dd13d6e411527416402a252993c`  
-**Verification fixes on draft PR #29:** `369abc98a9851f7c000961d2dce7660552c61985`  
+**Evidence date:** 2026-10-10 UTC
+**Private canonical GitHub repository:** `ceairportcity/ceac-os`
+**Exact application release candidate PR #27:** `386e59086fa79e1d27b28c42677d2252877cf0e0`
+**Production `main` baseline:** `827fbe7391467dd13d6e411527416402a252993c`
+**Verification fixes on draft PR #29:** `369abc98a9851f7c000961d2dce7660552c61985`
 **Gate decision:** **TECHNICAL PARTIAL PASS — RELEASE NO-GO** pending all mandatory browser, owner visual, real MFA, DR and reviewer gates.
 
 ## Isolated execution environment
