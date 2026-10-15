@@ -613,6 +613,35 @@ test("OCR6C Unit Rooms carry attributable communication and private media betwee
     // Distinguish an upload or registration failure from a private signed-URL/render failure.
     // Both conditions are mandatory; never treat message delivery alone as media success.
     await expect(page.locator(".room-error")).toHaveCount(0);
+
+    // Prove registration, link visibility and private Storage signing with a
+    // separate signed-in MANAGER, not a service-role bypass. Missing media must
+    // not be called successful merely because message text was delivered.
+    const { createClient } = await import("@supabase/supabase-js");
+    const managerClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+      auth: { persistSession:false, autoRefreshToken:false },
+    });
+    const mediaAuth = await managerClient.auth.signInWithPassword({
+      email:"manager@ceac.local.test", password:rolePassword,
+    });
+    expect(mediaAuth.error, "Private media must be independently readable with Manager's own credentials").toBeNull();
+    const roomMessage = await managerClient.from("room_messages").select("id,room_id")
+      .eq("body", message).order("created_at", { ascending:false }).limit(1).single();
+    expect(roomMessage.error, "Uploaded media's Room message must be RLS-readable").toBeNull();
+    const link = await managerClient.from("operational_file_links")
+      .select("id,context_id,file:operational_files!inner(id,filename,storage_bucket,storage_path,mime_type,state)")
+      .eq("context_type","room_message").eq("context_id",roomMessage.data.id)
+      .limit(10);
+    expect(link.error, "Manager's RLS-scoped media link lookup must succeed").toBeNull();
+    const image = (link.data || []).find((row)=>row.file?.filename===filename);
+    expect(image, "Media registration/link must persist and be readable after Send").toBeTruthy();
+    expect(image.file.state, "Private uploaded media must be finalised").toBe("active");
+    const signed = await managerClient.storage.from(image.file.storage_bucket)
+      .createSignedUrl(image.file.storage_path, 300, { download:false });
+    expect(signed.error, "Signed private Room media URL must be permitted for the Manager").toBeNull();
+    expect(signed.data?.signedUrl, "Signed private media link must not be empty").toBeTruthy();
+    await managerClient.auth.signOut({ scope:"local" });
+
     await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
   }

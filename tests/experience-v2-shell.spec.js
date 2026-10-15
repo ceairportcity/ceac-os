@@ -311,6 +311,25 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
 
   await page.goto("/?tab=home");
   await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
+  // Verify the Admin's exact signed-in, RLS-scoped unit query before
+  // checking the search component, so a missing result identifies the correct
+  // backend-vs-rendering failure without granting broader read permissions.
+  const adminClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+    auth: { persistSession:false, autoRefreshToken:false },
+  });
+  const adminAuth = await adminClient.auth.signInWithPassword({
+    email: "admin@ceac.local.test", password,
+  });
+  expect(adminAuth.error, "Organisation search preflight must authenticate as real Admin").toBeNull();
+  const orgUnits = await adminClient.from("units").select("id,name,org_id,active")
+    .eq("org_id", "10000000-0000-4000-8000-000000000010")
+    .ilike("name", "%Test Unit A%");
+  expect(orgUnits.error, "Admin's real RLS-scoped Organisation search query failed").toBeNull();
+  expect(orgUnits.data, "Authorised Test Unit A must exist and be readable before testing Global Search").toEqual(
+    expect.arrayContaining([expect.objectContaining({ name:"Test Unit A" })])
+  );
+  await adminClient.auth.signOut({ scope: "local" });
+
   search = page.getByPlaceholder("Search CEAC…");
   await search.fill("Test Unit A");
   results = page.getByRole("dialog", { name: "Search CEAC results" });
