@@ -212,28 +212,40 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         phone: operational?.phone || null,
       };
     });
-    let hydratedRows = rosterRows;
-    try {
-      const photoGroups = await listOperationalFilesForContexts("employee_photo", rosterRows.map((entry) => entry.id));
-      hydratedRows = await Promise.all(rosterRows.map(async (entry) => {
-        const files = photoGroups.get(entry.id) || [];
-        const latest = files[files.length - 1] || null;
-        if (!latest) return entry;
-        try {
-          return { ...entry, photo_url: await signedOperationalFileUrl(latest, 3600) };
-        } catch {
-          return entry;
-        }
-      }));
-    } catch {
-      hydratedRows = rosterRows;
-    }
+    // Publish the permission-verified roster before fetching optional private
+    // employee photos. A slow Storage signed-URL request must never block
+    // legitimate People & Access / HR actions or tempt anyone to bypass RLS.
     if (generation !== rosterGeneration.current) return false;
     setVerifiedRosterScope(scopeKey);
-    setRows(hydratedRows);
+    setRows(rosterRows);
     setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
     setUnits(unitsResult.data || []);
     setLoading(false);
+
+    // Photos remain strictly context-scoped: the request runs only after
+    // privileged roster access succeeds and can neither expose a previous
+    // organisation's rows nor replace newer search/filter/roster generations.
+    void (async () => {
+      try {
+        const photoGroups = await listOperationalFilesForContexts(
+          "employee_photo", rosterRows.map((entry) => entry.id)
+        );
+        const hydratedRows = await Promise.all(rosterRows.map(async (entry) => {
+          const files = photoGroups.get(entry.id) || [];
+          const latest = files[files.length - 1] || null;
+          if (!latest) return entry;
+          try {
+            return { ...entry, photo_url: await signedOperationalFileUrl(latest, 3600) };
+          } catch {
+            return entry;
+          }
+        }));
+        if (generation === rosterGeneration.current) setRows(hydratedRows);
+      } catch {
+        // Optional private media failure must never erase an authorised roster.
+        // The photo is simply unavailable; no public Storage URL is substituted.
+      }
+    })();
     return true;
     } catch (failure) {
       if (generation === rosterGeneration.current) {
