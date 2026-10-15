@@ -69,7 +69,7 @@ test("VF8A 320–430 phone matrix preserves all four role shells and deliberate 
       expect(geometry.bodyRight, `${role.key} body ends outside ${width}px`).toBeLessThanOrEqual(1);
       expect(Math.abs(geometry.navRight), `${role.key} nav edge at ${width}px`).toBeLessThanOrEqual(1);
       expect(Math.abs(geometry.topbarRight), `${role.key} topbar edge at ${width}px`).toBeLessThanOrEqual(1);
-      expect(geometry.navCount).toBe(5);
+      expect(geometry.navCount).toBe(role.key === "executive" ? 4 : 5);
       expect(geometry.minNavHeight, `${role.key} mobile nav touch floor at ${width}px`).toBeGreaterThanOrEqual(44);
 
       if (role.key === "administration") {
@@ -158,7 +158,7 @@ test("VF8B 768–1024 tablet and small-laptop matrix preserves the shell breakpo
 
       if (mobileShell) {
         const navHeights = await page.locator(".ev2s-mobile-nav button").evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
-        expect(navHeights).toHaveLength(5);
+        expect(navHeights).toHaveLength(role.key === "executive" ? 4 : 5);
         expect(Math.min(...navHeights)).toBeGreaterThanOrEqual(44);
       } else {
         await expect(page.locator(".ev2s-sidebar-profile")).toBeVisible();

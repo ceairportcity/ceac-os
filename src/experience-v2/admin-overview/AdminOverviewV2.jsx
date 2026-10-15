@@ -405,6 +405,7 @@ export default function AdminOverviewV2({
           </DataPanel>
 
           <div className="adminv2-mobile-actions" aria-label="Administration shortcuts">
+            <a className="adminv2-hero-link" href="#admin-operational-inbox">Review your inbox <CeacIcon name="chevronRight" size="meta" decorative /></a>
             {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People &amp; Access</Button> : null}
             <Button icon="control" onClick={onOpenSettings}>Control Center</Button>
           </div>

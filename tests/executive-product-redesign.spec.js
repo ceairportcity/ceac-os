@@ -96,7 +96,9 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
     isManager: false,
     me: { capabilities: ["payroll.approve"] },
   });
-  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Ministry", "Calendar"]);
+  // Locked Executive mobile dock: three destinations plus More.
+  // Calendar must remain reachable in More, not become a fifth dock item.
+  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Ministry"]);
 
   const desktop = getShellNavigation({
     isExec: true,
@@ -104,6 +106,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
     isManager: false,
     me: { capabilities: ["payroll.approve"] },
   });
+  expect(desktop.some((item) => item.label === "Calendar")).toBe(true);
   expect(desktop.map((item) => item.label)).toEqual([
     "Overview",
     "Work",
