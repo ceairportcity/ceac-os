@@ -353,6 +353,33 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
   await expect(page.getByText("OCR6 searchable announcement record", { exact: true })).toBeVisible({ timeout: 15000 });
 });
 
+test("OCR6C Organisation search remains available while an unrelated authorised catalogue is pending", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "admin@ceac.local.test");
+  await page.goto("/?tab=home");
+  await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
+
+  // The local seed supplies Test Unit A and the Administration identity in
+  // the same organisation. Hold only the optional meeting-catalogue HTTP
+  // response: Organisation still must resolve from its own real RLS query.
+  let releaseMeetings;
+  const heldMeetings = new Promise((resolve) => { releaseMeetings = resolve; });
+  await page.route("**/rest/v1/meeting_sessions?*", async (route) => {
+    await heldMeetings;
+    await route.continue();
+  });
+  try {
+    await page.getByPlaceholder("Search CEAC…").fill("Test Unit A");
+    const results = page.getByRole("dialog", { name: "Search CEAC results" });
+    await expect(results.locator('.ev2s-search-group[aria-label="Organisation"]')
+      .getByRole("button", { name: /Test Unit A/ })).toBeVisible({ timeout: 15000 });
+    await expect(results.getByText(/Organisation search could not be verified/i)).toBeHidden();
+  } finally {
+    releaseMeetings?.();
+    await page.unroute("**/rest/v1/meeting_sessions?*");
+  }
+});
+
 test("OCR6C Project Files upload is searchable and opens through a signed private URL", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "manager@ceac.local.test");
