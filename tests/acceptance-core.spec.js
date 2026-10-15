@@ -1319,8 +1319,14 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     await page.getByRole("button", { name: "Record feedback", exact: true }).click();
     await expect(page.getByText("Visible feedback recorded.", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Mark as shared", exact: true }).click();
-    await expect(page.getByText("Review marked shared.", { exact: true })).toBeVisible();
+    // Publication is HR-only. The Manager requests an exact-version release
+    // instead of bypassing HR through the retired Mark-as-shared shortcut.
+    await page.getByLabel("Performance release request reason").fill("Manager completed a factual review and requests independent HR publication.");
+    await page.getByRole("button", { name: "Submit release request to HR", exact: true }).click();
+    await expect(page.getByText(
+      "The manager's assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.",
+      { exact: true }
+    )).toBeVisible();
 
     await page.reload();
     const reloadedCase = page.locator(".performance-case-row").filter({ hasText: "Staff Fixture" });
@@ -1359,6 +1365,35 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     await page.unroute("**/rest/v1/feedback_notes?*");
 
     await page.screenshot({ path: "test-artifacts/stage7-performance-manager.png", fullPage: true });
+    await context.close();
+  }
+
+  // A pending Manager request is never employee-visible before HR signs
+  // the decision, even though the employee can still see their own feedback.
+  {
+    const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
+    await go(page, "Me");
+    await page.getByRole("button", { name: /Reviews & development/ }).click();
+    await expect(page.getByText(assessmentText, { exact: true })).toHaveCount(0);
+    await expect(page.getByText(conversationText, { exact: true })).toHaveCount(0);
+    await context.close();
+  }
+
+  {
+    const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
+    await go(page, "Performance & development");
+    const staffCase = page.locator(".performance-case-row").filter({ hasText: "Staff Fixture" }).first();
+    await expect(staffCase).toBeVisible({ timeout: 15000 });
+    await staffCase.click();
+    const approve = page.getByRole("button", { name: "HR approve publication", exact: true });
+    await expect(approve).toBeVisible({ timeout: 15000 });
+    await page.getByLabel("HR assessment publication decision reason").fill(
+      "HR independently reviewed the manager narrative and approved this version for employee publication."
+    );
+    await approve.click();
+    await expect(page.getByText(
+      "HR approved publication of this manager assessment version.", { exact: true }
+    )).toBeVisible();
     await context.close();
   }
 
