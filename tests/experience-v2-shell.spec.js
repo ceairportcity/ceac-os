@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { test, expect } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 
@@ -261,6 +262,31 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
 
   await page.goto("/?tab=home");
   await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
+  // This is an isolated local test fixture, never a live Supabase project.
+  // Confirm the seeded work still exists and is visible under the Manager's
+  // actual RLS identity before asserting the Global Search UI. This separates
+  // fixture drift, denied RLS and frontend query errors without bypassing any.
+  const localUrl = process.env.SUPABASE_URL;
+  expect(new URL(localUrl).hostname).toMatch(/^(localhost|127\\.0\\.0\\.1)$/);
+  const seededWorkId = "26000000-0000-4000-8000-000000000011";
+  const service = createClient(localUrl, process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { persistSession: false } });
+  const seeded = await service.from("work_items").select("id,title").eq("id", seededWorkId);
+  expect(seeded.error, "Service-role local fixture probe").toBeNull();
+  expect(seeded.data, "The expected local acceptance work record must exist").toHaveLength(1);
+  const manager = createClient(localUrl, process.env.SUPABASE_ANON_KEY,
+    { auth: { persistSession: false } });
+  const managerSession = await manager.auth.signInWithPassword({
+    email: "manager@ceac.local.test",
+    password: process.env.ROLE_FIXTURE_PASSWORD,
+  });
+  expect(managerSession.error, "Manager must establish an attributable session").toBeNull();
+  const managerVisible = await manager.from("work_items")
+    .select("id,title").eq("id", seededWorkId);
+  expect(managerVisible.error, "Work search requires a valid RLS read, not a swallowed SQL error").toBeNull();
+  expect(managerVisible.data, "The Manager must see the accepted unit work record under RLS").toHaveLength(1);
+  await manager.auth.signOut();
+
   const searchAgain = page.getByPlaceholder("Search CEAC…");
   await searchAgain.fill("Stage 5 predecessor work");
   const work = page.getByRole("dialog", { name: "Search CEAC results" }).locator('.ev2s-search-group[aria-label="Work"]');
