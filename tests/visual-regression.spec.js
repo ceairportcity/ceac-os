@@ -173,6 +173,12 @@ test.describe("CEAC visual regression", () => {
       } else {
         const actual = visualFingerprint(screenshot);
         const expected = visualHomeBaselines[role];
+        // Fail closed on missing/truncated approved reference data. The owner
+        // approved R3/R4 fingerprints for Admin/Executive, not an empty array
+        // or a relaxed visual threshold.
+        expect(expected.rgb, `${role} approved 12×12 reference must be complete`)
+          .toHaveLength(GRID_W * GRID_H * 3);
+        expect(actual.rgb).toHaveLength(GRID_W * GRID_H * 3);
         expect(actual.width).toBe(expected.width);
         expect(actual.height).toBe(expected.height);
         const actualContent = roleContentRegion(actual.rgb);
