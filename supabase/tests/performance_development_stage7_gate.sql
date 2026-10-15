@@ -249,6 +249,7 @@ declare
   v_plan uuid;
   v_plan2 uuid;
   v_feedback uuid;
+  v_release_request uuid;
   v_before integer;
   v_after integer;
 begin
@@ -321,7 +322,18 @@ begin
     null
   );
 
-  perform public.share_performance_review(v_appraisal);
+  -- The legacy direct Manager publication function must be inaccessible.
+  if has_function_privilege('authenticated','public.share_performance_review(uuid)','EXECUTE') then
+    raise exception 'Stage 7 gate failure: Manager still has legacy direct publication authority.';
+  end if;
+
+  v_release_request:=public.performance_request_release(
+    v_appraisal,'Manager assessment is ready for independent HR publication review.'
+  );
+  if v_release_request is null then
+    raise exception 'Stage 7 gate failure: Manager request for HR publication is missing.';
+  end if;
+  perform set_config('ceac.stage7_release_request_id',v_release_request::text,true);
 
   perform set_config('ceac.stage7_assessment_id',v_assessment::text,true);
   perform set_config('ceac.stage7_conversation_id',v_conversation::text,true);
@@ -333,7 +345,56 @@ $stage7_manager_flow$;
 
 reset role;
 
--- Staff sees manager narrative immediately/final review and can exercise right of reply.
+-- Employee must NOT see the Manager assessment or conversation before HR releases
+-- that exact assessment version. A missing direct share permission is intentional.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+do $stage7_pre_hr_privacy$
+declare
+  v_appraisal uuid:=nullif(current_setting('ceac.stage7_appraisal_id',true),'')::uuid;
+  n integer;
+begin
+  select count(*) into n from public.appraisal_entries
+  where appraisal_id=v_appraisal
+    and entry_type in ('manager_assessment','conversation_record');
+  if n<>0 then
+    raise exception 'Stage 7 gate failure: employee read unpublished Manager narrative (% rows).',n;
+  end if;
+end
+$stage7_pre_hr_privacy$;
+reset role;
+
+-- Only Administration/HR may publish the exact current assessment after
+-- the Manager requests it. Publication remains separately attributable.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+do $stage7_hr_approve$
+declare
+  v_request uuid:=nullif(current_setting('ceac.stage7_release_request_id',true),'')::uuid;
+  v_result jsonb;
+begin
+  if v_request is null then
+    raise exception 'Stage 7 gate failure: release request was not recorded.';
+  end if;
+  v_result:=public.performance_hr_decide_release(
+    v_request,true,'HR has reviewed the manager-authored narrative for publication.'
+  );
+  if coalesce((v_result->>'approved')::boolean,false) is not true then
+    raise exception 'Stage 7 gate failure: HR release decision was not approved.';
+  end if;
+  if not exists(
+    select 1 from public.performance_review_release_requests
+    where id=v_request and state='approved'
+      and decided_by='31000000-0000-4000-8000-000000000003'
+  ) then
+    raise exception 'Stage 7 gate failure: independent HR release audit is missing.';
+  end if;
+end
+$stage7_hr_approve$;
+reset role;
+
+-- Only after approved HR publication can the employee read the manager narrative
+-- and exercise the recorded right of reply.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 
@@ -414,13 +475,15 @@ begin
     raise exception 'Stage 7 gate failure: review-entry semantic events are incomplete (%).',n;
   end if;
 
+  -- The new Manager-request → independent HR approval path audits both
+  -- decisions in immutable activity_events, rather than legacy direct-share.
   select count(*) into n
-  from public.platform_events
-  where event_type='performance.review_shared'
-    and aggregate_id=v_appraisal;
+  from public.activity_events
+  where object_type='performance_review' and object_id=v_appraisal
+    and verb in ('performance_release_requested','performance_hr_release_decided');
 
-  if n<>1 then
-    raise exception 'Stage 7 gate failure: expected one review-shared event, found %.',n;
+  if n<>2 then
+    raise exception 'Stage 7 gate failure: expected Manager request and HR publication audit events, found %.',n;
   end if;
 
   select count(*) into n
