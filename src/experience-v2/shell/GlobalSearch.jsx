@@ -78,10 +78,23 @@ export default function GlobalSearch({
     }
     setLoading(true);
     setError(null);
+    setRecordGroups([]);
     const timer = window.setTimeout(async () => {
       try {
         const { searchCeacRecords } = await import("../../lib/globalSearch");
-        const groups = await searchCeacRecords({ query: cleaned, me, isAdmin });
+        const groups = await searchCeacRecords({
+          query: cleaned, me, isAdmin,
+          onPartial: (partialGroups, issue) => {
+            if (cancelled) return;
+            if (issue?.error) {
+              setError("Work search could not be verified. " + issue.error);
+              return;
+            }
+            if (partialGroups.some((group) => group.items.length)) {
+              setRecordGroups(partialGroups);
+            }
+          },
+        });
         if (!cancelled) setRecordGroups(groups);
       } catch (searchError) {
         if (!cancelled) {

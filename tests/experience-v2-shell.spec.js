@@ -295,6 +295,16 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
   await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
   const searchAgain = page.getByPlaceholder("Search CEAC…");
   await searchAgain.fill("Stage 5 predecessor work");
+  // The same browser session must read every Work column required by Search.
+  const browserWork = await page.evaluate(async () => {
+    const { supabase } = await import("/src/lib/supabase.js");
+    const { data, error } = await supabase.from("work_items")
+      .select("id,ref,title,status,project_id")
+      .eq("id", "26000000-0000-4000-8000-000000000011");
+    return { rows: data?.length || 0, error: error?.message || null };
+  });
+  expect(browserWork.error, "Browser-authenticated Work lookup must not fail silently").toBeNull();
+  expect(browserWork.rows, "Browser should see the Work row under real RLS").toBe(1);
   const work = page.getByRole("dialog", { name: "Search CEAC results" }).locator('.ev2s-search-group[aria-label="Work"]');
   await expect(work.getByRole("button", { name: /Stage 5 predecessor work/ })).toBeVisible();
   await work.getByRole("button", { name: /Stage 5 predecessor work/ }).click();
