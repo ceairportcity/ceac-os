@@ -55,6 +55,8 @@ test("office settings preserve existing fields and disable undeployed attendance
   assert.match(office, /if \(integrityFeature\.error\)/);
   assert.match(office, /setIntegrityAvailable\(integrityFeature\.available\)/);
   assert.match(office, /if \(!integrityAvailable\) return;/);
-  assert.match(office, /disabled=\{!integrityAvailable \|\| integrityBusy \|\| !office\}/);
-  assert.match(office, /Office presence code pending/);
+  assert.match(office, /!integrityAvailable && <ProductNotice/);
+  assert.match(office, /Attendance codes awaiting backend acceptance/);
+  assert.match(office, /integrityAvailable && <AttendanceCodeIssuer me=\{me\}/);
+  assert.match(office, /<DutyLocationSettings me=\{me\}/);
 });
