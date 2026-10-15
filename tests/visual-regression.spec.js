@@ -152,8 +152,23 @@ test.describe("CEAC visual regression", () => {
         await expect(page.locator(".managerv2-main")).toBeVisible({ timeout: 15000 });
       } else if (role === "administration") {
         await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });
+      } else if (role === "executive") {
+        await expect(page.locator(".executivev2-main")).toBeVisible({ timeout: 15000 });
       }
       await page.evaluate(() => document.fonts.ready);
+      // Measure the actual settled design, not an intermediate entry-motion frame.
+      // This does not change the approved baseline or its strict RGB threshold.
+      await page.evaluate(async () => {
+        const running = document.getAnimations().filter((animation) => {
+          const timing = animation.effect?.getComputedTiming?.();
+          return animation.playState === "running"
+            && Number.isFinite(timing?.endTime) && timing.endTime <= 3000;
+        });
+        await Promise.race([
+          Promise.allSettled(running.map((animation) => animation.finished)),
+          new Promise((resolve) => setTimeout(resolve, 2500)),
+        ]);
+      });
       await page.waitForTimeout(250);
 
       // Preserve the actual synthetic-role rendering for comparison against
