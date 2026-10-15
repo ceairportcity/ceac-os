@@ -483,7 +483,9 @@ test("Stage 10 Family B5B Administration employee workspace preserves employment
   expect(screen).toContain("p_replaces_id: form.replacesId || null");
   expect(screen).toContain('setProtectedEditor({ type:"compensation", record:compensation })');
   expect(screen).not.toContain("function ProtectedHrSheet");
-  expect(screen).toContain('listOperationalFilesForContexts("employee_photo"');
+  // A permission-verified roster loads before optional, asynchronously signed
+  // private employee photos. Allow formatting whitespace, never a public URL.
+  expect(screen).toMatch(/listOperationalFilesForContexts\(\s*"employee_photo",\s*rosterRows\.map\(/);
   expect(screen).toContain('listOperationalFiles("employee_document"');
   expect(screen).toContain('contextType: kind === "photo" ? "employee_photo" : "employee_document"');
   expect(screen).toContain('aria-label="Employee photo"');
