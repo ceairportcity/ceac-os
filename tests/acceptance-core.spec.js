@@ -725,7 +725,8 @@ test("Administration can combine multiple units into one meeting audience", asyn
 
   const { context, page } = await openAs(browser, "admin@ceac.local.test");
   await go(page, "Home");
-  await page.getByRole("button", { name: "Schedule", exact: true }).click();
+  await page.getByRole("complementary", { name: "Upcoming commitments" })
+    .getByRole("button", { name: "Schedule", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByPlaceholder("What is this meeting for?").fill(title);
   await dialog.locator('input[type="datetime-local"]').first().fill(localValue);
