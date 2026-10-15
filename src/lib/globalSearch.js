@@ -30,7 +30,7 @@ function roomContext(room) {
   return { kind: "unit", unitId: room?.unit_id };
 }
 
-export async function searchCeacRecords({ query, me, isAdmin = false }) {
+export async function searchCeacRecords({ query, me, isAdmin = false, onPartial = null }) {
   const cleaned = cleanQuery(query);
   if (cleaned.length < 2 || !me?.org_id) return [];
   const pattern = `%${cleaned}%`;
@@ -92,7 +92,27 @@ export async function searchCeacRecords({ query, me, isAdmin = false }) {
     isAdmin ? supabase.rpc("admin_employee_roster_summary") : Promise.resolve({ data: [], error: null }),
   ];
 
+  // Return authorised Work matches independently of slower optional catalogues.
+  // A real Promise ensures the PostgREST thenable executes exactly once.
+  const workPromise = Promise.resolve(tasks[0]);
+  tasks[0] = workPromise;
+  if (typeof onPartial === "function") {
+    void workPromise.then((result) => {
+      if (result?.error) {
+        onPartial([], { source: "work", error: result.error.message });
+        return;
+      }
+      const rows = safeData(result).map((row) => ({
+        kind: "work", id: row.id, title: row.title,
+        meta: [row.ref, String(row.status || "").replaceAll("_", " ")].filter(Boolean).join(" · "),
+        icon: "work",
+      }));
+      onPartial(rows.length ? [group("work", "Work", rows)] : []);
+    }).catch((error) => onPartial([], { source: "work", error: error?.message || "Work lookup failed." }));
+  }
+
   const [workResult, projectResult, strategyResult, profileResult, unitResult, subTeamResult, meetingResult, announcementResult, roomResult, fileResult, rosterResult] = await Promise.all(tasks);
+  if (workResult?.error) throw new Error("Work search could not be verified: " + workResult.error.message);
 
   const work = safeData(workResult).map((row) => ({
     kind: "work",
