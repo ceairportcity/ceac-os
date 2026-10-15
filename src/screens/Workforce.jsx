@@ -808,7 +808,7 @@ export default function Workforce({ me }) {
 
       {tab==="corrections"&&<>
         <AttendanceCorrectionWorkflow me={me} />
-        
+
         <WorkforceSection title="Attendance correction history" description="Corrections overlay factual evidence; original work-session rows are not rewritten. Manager access remains read-only unless attendance.correct is explicitly granted.">
           {corrections.map((row)=>{
             const reversed=row.correction_type!=="reversal"&&reversedCorrectionIds.has(row.id);
@@ -822,7 +822,7 @@ export default function Workforce({ me }) {
               statusLabel={row.correction_type==="reversal"?"Reversal recorded":reversed?"Reversed":"Recorded"}
               statusTone={reversed||row.correction_type==="reversal"?"grey":"blue"}
             >
-              
+
             </WorkforceDecisionRow>;
           })}
           {!corrections.length&&<WorkforceEmpty compact title="No attendance corrections recorded" description="Nothing has been corrected in your visible managed scope."/>}
@@ -1126,7 +1126,7 @@ export default function Workforce({ me }) {
 
       {tab==="corrections"&&<>
         <AttendanceCorrectionWorkflow me={me} />
-        
+
         <WorkforceSection title="Attendance correction history" description="Corrections overlay the factual record. Original work-session rows are not rewritten; reversal is another linked history row.">
           {corrections.map((row)=>{
             const reversed=row.correction_type!=="reversal"&&reversedCorrectionIds.has(row.id);
@@ -1140,7 +1140,7 @@ export default function Workforce({ me }) {
               statusLabel={row.correction_type==="reversal"?"Reversal recorded":reversed?"Reversed":"Recorded"}
               statusTone={reversed||row.correction_type==="reversal"?"grey":"blue"}
             >
-              
+
             </WorkforceDecisionRow>;
           })}
           {!corrections.length&&<WorkforceEmpty compact title="No attendance corrections recorded" description="Nothing has been corrected in your visible scope."/>}
@@ -1379,7 +1379,7 @@ export default function Workforce({ me }) {
           <div className="row-t">{peopleById[row.profile_id]?.profiles?.full_name||"Employee"} · {human(row.correction_type)}{reversed?" · reversed":""}</div>
           <div className="row-m">{niceDay(row.work_date)} · {row.reason}</div>
           {row.after_context?.note&&<div className="row-note">{row.after_context.note}</div>}
-          
+
         </div>;
       })}
       {!corrections.length&&<EmptyState compact title="No attendance corrections recorded">Nothing has been corrected in your visible scope.</EmptyState>}
