@@ -90,7 +90,15 @@ test("Phase 5 person access opens the same employee in controlled offboarding", 
   const row = page.locator(".fpg-people-roster-row").filter({ hasText: "Staff Fixture" }).first();
   await expect(row).toBeVisible();
   await row.click();
-  await page.getByRole("tab", { name: "Access", exact: true }).click();
+  // Directory and employee detail both have an "Access" tab. A slow
+  // authenticated employee-detail read must not let the test click the
+  // directory tab while the selected employee is still loading.
+  const employeeSections = page.getByRole("tablist", { name: "Employee record sections" });
+  await expect(employeeSections).toBeVisible({ timeout: 15000 });
+  const accessTab = employeeSections.getByRole("tab", { name: "Access", exact: true });
+  await accessTab.click();
+  await expect(accessTab).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { name: "Access & responsibilities", exact: true })).toBeVisible();
   const offboard = page.getByRole("button", { name: "Offboard / deactivate access", exact: true });
   await expect(offboard).toBeVisible({ timeout: 15000 });
   await expect(offboard).toBeEnabled();
