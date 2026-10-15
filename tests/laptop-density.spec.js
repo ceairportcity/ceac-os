@@ -73,11 +73,15 @@ for (const width of [1024, 1180, 1366]) {
 test("Administration Learning remains centred and readable on a laptop", async ({ browser }) => {
   const { context, page } = await signIn(browser, "admin@ceac.local.test", { width: 1180, height: 820 });
   await page.goto("/?tab=learning");
-  await expect(page.getByRole("heading", { name: "Learning", exact: true })).toBeVisible({ timeout: 15000 });
+  // A route heading can mount before the full authorised Learning workspace
+  // has rendered. Verify the actual Learning h1 before sampling its font.
+  const learningHeading = page.locator(".office-app .learning-page h1.h1");
+  await expect(learningHeading).toBeVisible({ timeout: 15000 });
+  await expect(learningHeading).toHaveText("Learning");
 
   const geometry = await page.evaluate(() => {
     const body = document.querySelector(".office-app .app-content .body");
-    const heading = document.querySelector(".office-app .h1");
+    const heading = document.querySelector(".office-app .learning-page h1.h1");
     return {
       bodyWidth: body?.getBoundingClientRect().width || 0,
       headingSize: heading ? parseFloat(getComputedStyle(heading).fontSize) : 0,
