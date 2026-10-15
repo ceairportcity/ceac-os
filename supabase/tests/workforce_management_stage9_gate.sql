@@ -569,10 +569,22 @@ begin
   where event_type='workforce.schedule_changed';
   if n<2 then raise exception 'Stage 9 gate failure: schedule events missing (%).',n; end if;
 
+  -- Current approved correction path creates one factual overlay, not a
+  -- legacy direct correction followed by an unauthorised reversal.
   select count(*) into n
   from public.platform_events
-  where event_type in ('workforce.attendance_corrected','workforce.attendance_correction_reversed');
-  if n<2 then raise exception 'Stage 9 gate failure: attendance events missing (%).',n; end if;
+  where event_type='workforce.attendance_corrected';
+  if n<1 then raise exception 'Stage 9 gate failure: factual correction platform event missing (%).',n; end if;
+
+  -- The new decision chain must have all three attributable actors in the
+  -- activity ledger. The historical work-session evidence stays unchanged.
+  select count(*) into n
+  from public.activity_events
+  where object_type='attendance_correction_request'
+    and object_id=nullif(current_setting('ceac.stage9_correction_request_id',true),'')::uuid
+    and verb in ('attendance_correction_requested',
+      'attendance_manager_correction_decided','attendance_hr_correction_audited');
+  if n<>3 then raise exception 'Stage 9 gate failure: Staff/Manager/HR correction audit chain incomplete (%).',n; end if;
 
   select count(*) into n
   from public.platform_events
