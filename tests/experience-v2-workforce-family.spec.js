@@ -52,13 +52,17 @@ test("Stage 10 Family D2 preserves Stage 9 Workforce authority while establishin
   for (const rpc of [
     "workforce_record_day_type",
     "workforce_record_schedule",
-    "workforce_record_attendance_correction",
     "workforce_leave_action",
     "workforce_record_leave_policy",
   ]) {
     expect(workforce).toContain(rpc);
   }
 
+  const correctionWorkflow = readFileSync("src/components/AttendanceCorrectionWorkflow.jsx", "utf8");
+  expect(workforce).toContain("AttendanceCorrectionWorkflow");
+  for (const rpc of ["attendance_request_correction", "attendance_manager_decide_correction", "attendance_hr_audit_correction"]) {
+    expect(correctionWorkflow).toContain(`supabase.rpc("${rpc}"`);
+  }
   expect(workforce).toContain('caps.includes("workforce.manage")');
   expect(workforce).toContain('caps.includes("attendance.correct")');
   expect(workforce).toContain("No session recorded");

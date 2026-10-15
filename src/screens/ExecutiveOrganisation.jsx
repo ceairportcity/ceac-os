@@ -60,7 +60,7 @@ export default function ExecutiveOrganisation({ me }) {
       <div>
         <span>Executive structure</span>
         <h1>Organisation</h1>
-        <p>View departments, teams and people across the recorded CEAC structure. Administration remains responsible for structural changes.</p>
+        <p>View departments, teams and people across the recorded CEAC structure. Structural exceptions are shown first for review; Administration remains responsible for structural changes.</p>
       </div>
       <StatusBadge tone={missingLeaders.length ? "warning" : "success"} icon={false}>
         {missingLeaders.length ? `${missingLeaders.length} leadership gap${missingLeaders.length === 1 ? "" : "s"}` : "Leadership recorded"}

@@ -79,7 +79,8 @@ for (const viewport of [
   test(`Stage 7 Administration Overview composes cleanly at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openAdmin(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
+    await expect(page.locator(".adminv2-hero-title h1")).toContainText(/Good morning|Good afternoon|Good evening/);
+    await expect(page.locator(".adminv2-context")).toContainText("Administration & HR");
     await expect(page.locator(".adminv2-inbox")).toBeVisible();
     await expect(page.locator(".adminv2-people")).toBeVisible();
     await expect(page.locator(".adminv2-reporting")).toBeVisible();
