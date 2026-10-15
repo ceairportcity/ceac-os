@@ -586,7 +586,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         </div>
         <TextareaField label="Reason" help="Optional. Keep it brief." rows={3} placeholder="A short reason" value={reason} onChange={(event) => setReason(event.target.value)} />
         <ProductNotice tone="info" title="Working-day handling">
-          For Annual leave, CEAC OS counts working days from your attributable workforce schedule when that schedule is complete. It never turns leave or attendance into a Payroll deduction automatically.
+          For Annual leave, CEAC OS counts working days from your attributable workforce schedule when that schedule is complete. It does not guess working-day totals, entitlement or payroll consequences from request dates. It never turns leave or attendance into a Payroll deduction automatically.
         </ProductNotice>
       </div>
     </ModalDialog>

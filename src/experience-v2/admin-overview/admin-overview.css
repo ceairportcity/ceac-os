@@ -629,7 +629,7 @@ button.adminv2-action-main {
   align-items: center;
   justify-content: center;
   gap: .5rem;
-  min-height: 2.45rem;
+  min-height: 44px;
   padding: .55rem .85rem;
   border-radius: .6rem;
   background: var(--admin-blue);
@@ -806,7 +806,7 @@ button.adminv2-action-main {
   display: block;
   margin-bottom: .2rem;
   color: #4169a4;
-  font-size: .7rem;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .055em;
   text-transform: uppercase;
@@ -962,7 +962,7 @@ button.adminv2-action-main {
   padding: .65rem .7rem;
   border-radius: .5rem;
   background: #f6f9fd;
-  font-size: .7rem;
+  font-size: 12px;
   color: #64758c;
 }
 .adminv2-calendar-selection strong { color: #243b5a; white-space: nowrap; }

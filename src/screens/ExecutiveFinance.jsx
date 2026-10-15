@@ -122,7 +122,7 @@ export default function ExecutiveFinance({ me }) {
       <FinancePageHeader
         eyebrow="Executive insight"
         title="Finance"
-        description="View financial overview and key recorded information. Currencies stay separate, and requests requiring Group Pastor authority remain explicit."
+        description="View financial overview and key recorded information. Currencies stay separate. Requests that specifically require Group Pastor authority appear below; other records remain contextual."
         statusLabel={statusLabel}
         statusTone={error ? "danger" : "neutral"}
       />
