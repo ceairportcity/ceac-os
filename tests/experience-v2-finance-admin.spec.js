@@ -153,12 +153,11 @@ test("VF6B cross-role finance surfaces use one flat factual grammar", async ({ b
   ]) {
     const admin = await openAdminFinance(browser, { width: viewport.width, height: viewport.height });
     const activeTab = admin.page.locator(".ev2fin-tabs button.is-active");
-    const activeStyle = await activeTab.evaluate((node) => ({
-      radius: getComputedStyle(node).borderRadius,
-      shadow: getComputedStyle(node).boxShadow,
-    }));
-    expect(activeStyle.radius).toBe("0px");
-    expect(activeStyle.shadow).toBe("none");
+    // Computed geometry can briefly be blank during SPA navigation and the
+    // route CSS chunk's initial paint. Await the *exact* approved flat style
+    // rather than treating a transient empty CSSOM read as a design failure.
+    await expect(activeTab).toHaveCSS("border-radius", "0px");
+    await expect(activeTab).toHaveCSS("box-shadow", "none");
 
     const overview = admin.page.locator(".ev2fin-admin-overview-grid");
     const layout = await overview.evaluate((node) => ({
@@ -202,7 +201,12 @@ test("VF6B cross-role finance surfaces use one flat factual grammar", async ({ b
     await expect(executivePage.locator(".executive-app")).toBeVisible({ timeout: 15000 });
     await executivePage.goto("/?tab=exec-finance");
     await expect(executivePage.locator(".ev2-finance-executive")).toBeVisible({ timeout: 15000 });
-    expect(await executivePage.locator(".ev2fin-authority").evaluate((node) => getComputedStyle(node).boxShadow)).toBe("none");
+    // A lazy route may remount as the Finance request queue resolves. Check
+    // the attached rendered panel once its styles have settled, not a
+    // transient detached node returning an empty computed-style string.
+    await expect.poll(() => executivePage.locator(".ev2-finance-executive .ev2fin-authority").evaluate(
+      (node) => getComputedStyle(node).boxShadow
+    ), { timeout: 15000 }).toBe("none");
     await executivePage.screenshot({ path: `test-artifacts/vf6b-executive-finance-${viewport.name}.png`, fullPage: true });
     await executiveContext.close();
   }

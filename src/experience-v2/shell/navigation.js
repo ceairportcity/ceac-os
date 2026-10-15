@@ -33,9 +33,10 @@ const ROLE_DESTINATIONS = Object.freeze({
   ]),
   admin: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
-    { key: "people", label: "People", icon: "people", group: "workspace", capability: "people.manage" },
+    { key: "people", label: "People & Access", icon: "people", group: "workspace", capability: "people.manage" },
     { key: "work", label: "Work", icon: "work", group: "workspace" },
     { key: "attendance", label: "Time & Leave", icon: "time", group: "planning" },
+    { key: "admin-calendar", label: "Calendar", icon: "calendar", group: "planning" },
     { key: "finance", label: "Finance", icon: "finance", group: "insight" },
     { key: "payroll", label: "Payroll", icon: "finance", group: "insight", capability: "payroll.prepare" },
     { key: "reporting", label: "Reports", icon: "reports", group: "insight" },
@@ -50,12 +51,13 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "strategy", label: "Ministry", icon: "ministry", group: "workspace" },
     { key: "delivery", label: "Portfolio", icon: "portfolio", group: "workspace" },
     { key: "exec-organisation", label: "Organisation", icon: "organisation", group: "workspace" },
+    { key: "exec-calendar", label: "Calendar", icon: "calendar", group: "planning" },
     { key: "exec-finance", label: "Finance", icon: "finance", group: "insight" },
     { key: "payroll", label: "Payroll", icon: "finance", group: "insight", capability: "payroll.approve" },
     { key: "exec-reports", label: "Reports", icon: "reports", group: "insight" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
     { key: "me", label: "My Hub", icon: "account", group: "account" },
-    { key: "account", label: "Your account", icon: "account", group: "account" },
+    { key: "account", label: "Account", icon: "account", group: "account" },
   ]),
 });
 
@@ -63,7 +65,9 @@ const MOBILE_PRIMARY_KEYS = Object.freeze({
   staff: Object.freeze(["home", "work", "team", "me"]),
   manager: Object.freeze(["home", "work", "team", "projects"]),
   admin: Object.freeze(["home", "people", "attendance", "finance"]),
-  executive: Object.freeze(["home", "work", "strategy", "delivery"]),
+  // Owner-approved mobile dock is Overview / Work / Ministry / More.
+  // Calendar stays available in the More drawer, never as a fifth item.
+  executive: Object.freeze(["home", "work", "strategy"]),
 });
 
 const ROLE_QUICK_ACTIONS = Object.freeze({
@@ -117,7 +121,18 @@ export function getShellNavigation({ me, ...context } = {}) {
   const role = getRoleKey(context);
   const capabilities = new Set(me?.capabilities || []);
 
-  return ROLE_DESTINATIONS[role].filter(
+  // Every signed-in person can report a support problem. Technical Support
+  // is separate from employment roles and never implies administrative power.
+  const destinations = [...ROLE_DESTINATIONS[role],
+    { key: "technical-help", label: "Get technical help", icon: "help", group: "account" },
+  ];
+  if (capabilities.has("support.case.manage")) {
+    destinations.push({
+      key: "technical-support", label: "Technical Support",
+      icon: "help", group: "system", capability: "support.case.manage",
+    });
+  }
+  return destinations.filter(
     (item) => !item.capability || capabilities.has(item.capability)
   );
 }

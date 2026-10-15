@@ -14,6 +14,13 @@ function safeData(result) {
   return result?.error ? [] : (result?.data || []);
 }
 
+// Surface authorised Work lookup failures without exposing private SQL details,
+ // table text, or database exception messages in the browser.
+function safeWorkSearchFailure(error) {
+  const code = String(error?.code || "query_error").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 32) || "query_error";
+  return `Work lookup failed (${code}). Retry or contact Technical Support.`;
+}
+
 function group(key, label, items) {
   return { key, label, items: items.filter(Boolean).slice(0, LIMIT) };
 }
@@ -30,7 +37,7 @@ function roomContext(room) {
   return { kind: "unit", unitId: room?.unit_id };
 }
 
-export async function searchCeacRecords({ query, me, isAdmin = false }) {
+export async function searchCeacRecords({ query, me, isAdmin = false, onPartial = null }) {
   const cleaned = cleanQuery(query);
   if (cleaned.length < 2 || !me?.org_id) return [];
   const pattern = `%${cleaned}%`;
@@ -92,7 +99,65 @@ export async function searchCeacRecords({ query, me, isAdmin = false }) {
     isAdmin ? supabase.rpc("admin_employee_roster_summary") : Promise.resolve({ data: [], error: null }),
   ];
 
+  // Expose authorised organisation results without waiting for unrelated slow
+  // catalogues (or private HR roster reads). A PostgREST thenable must be
+  // converted to a Promise once so both the partial result and final aggregate
+  // reuse exactly the same authenticated request.
+  const unitPromise = Promise.resolve(tasks[4]);
+  const subTeamPromise = Promise.resolve(tasks[5]);
+  tasks[4] = unitPromise;
+  tasks[5] = subTeamPromise;
+  if (typeof onPartial === "function") {
+    void Promise.all([unitPromise, subTeamPromise]).then(([units, subTeams]) => {
+      if (units?.error || subTeams?.error) {
+        const code = String((units?.error || subTeams?.error)?.code || "query_error")
+          .replace(/[^a-zA-Z0-9_]/g, "").slice(0, 32) || "query_error";
+        onPartial([], { source: "organisation", error: `Organisation lookup failed (${code}). Retry or contact Technical Support.` });
+        return;
+      }
+      const items = [
+        ...(units?.data || []).map((row) => ({
+          kind: "unit", id: row.id, title: row.name,
+          meta: row.code ? `Unit · ${row.code}` : "Unit",
+          context: { kind: "unit", unitId: row.id }, icon: "organisation",
+        })),
+        ...(subTeams?.data || []).map((row) => ({
+          kind: "sub_team", id: row.id, title: row.name,
+          meta: "Sub-team", context: { kind: "sub_team", subTeamId: row.id }, icon: "team",
+        })),
+      ];
+      if (items.length) onPartial([group("organisation", "Organisation", items)]);
+    }).catch(() => onPartial([], {
+      source: "organisation",
+      error: "Organisation lookup failed (query_error). Retry or contact Technical Support.",
+    }));
+  }
+
+  // Return authorised Work matches independently of slower optional catalogues.
+  // A real Promise ensures the PostgREST thenable executes exactly once.
+  const workPromise = Promise.resolve(tasks[0]);
+  tasks[0] = workPromise;
+  if (typeof onPartial === "function") {
+    void workPromise.then((result) => {
+      if (result?.error) {
+        onPartial([], { source: "work", error: safeWorkSearchFailure(result.error) });
+        return;
+      }
+      const rows = safeData(result).map((row) => ({
+        kind: "work", id: row.id, title: row.title,
+        meta: [row.ref, String(row.status || "").replaceAll("_", " ")].filter(Boolean).join(" · "),
+        icon: "work",
+      }));
+      onPartial(rows.length ? [group("work", "Work", rows)] : []);
+    }).catch((error) => onPartial([], { source: "work", error: safeWorkSearchFailure(error) }));
+  }
+
   const [workResult, projectResult, strategyResult, profileResult, unitResult, subTeamResult, meetingResult, announcementResult, roomResult, fileResult, rosterResult] = await Promise.all(tasks);
+  if (workResult?.error) throw new Error("Work search could not be verified: " + safeWorkSearchFailure(workResult.error));
+  // Never disguise a failed organisation authority check as an empty directory.
+  if (unitResult?.error || subTeamResult?.error) {
+    throw new Error("Organisation search could not be verified. Retry or contact Technical Support.");
+  }
 
   const work = safeData(workResult).map((row) => ({
     kind: "work",

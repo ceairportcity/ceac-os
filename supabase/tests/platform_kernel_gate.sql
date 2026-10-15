@@ -63,7 +63,14 @@ $definer_search_path$;
 -- Foundation 111 adds seven reviewed RPCs: responsibility, work-lane membership,
 -- invitation revoke/list/resend, and self-bound end-location and continuation evidence.
 -- onboarding_access_presence_gate.sql covers authority and evidence failures.
--- S2 migration 114 revokes direct authenticated execution from one internal helper and two unused RPCs, reducing the exact reviewed surface from 135 to 132. The exact signature allowlist is enforced by security_definer_surface_gate.sql.
+-- Go-live baseline: 135 authenticated SECURITY DEFINER RPCs after the approved narrow
+-- workforce_request_leave SECURITY INVOKER wrapper. The integrated one-bundle release
+-- adds twelve reviewed caller-scoped interfaces and removes two obsolete direct
+-- execution grants (attendance correction and performance publication): 145.
+-- The full 145 signature exact allowlist plus anon-denial and caller-binding checks
+-- remain independently enforced in security_definer_surface_gate.sql,
+-- admin_hr_security_gate.sql and privileged_mfa_aal2_gate.sql. Count alone is
+-- insufficient evidence of security; never relax the signature allowlist.
 -- Phase 2 migration 112 adds six reviewed RPCs: capability-bound daily pattern
 -- versions, self-bound notices/returns/checkpoints, manager-bound responses and
 -- a sanitised evidence read. attendance_phase2_gate.sql tests their identities,
@@ -78,8 +85,8 @@ begin
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
 
-  if n<>132 then
-    raise exception 'Platform Kernel gate failure: expected 132 authenticated SECURITY DEFINER functions after S2 direct-exposure reduction, found %.',n;
+  if n<>145 then
+    raise exception 'Platform Kernel gate failure: expected 145 explicitly reviewed authenticated SECURITY DEFINER functions for the integrated release (exact signature allowlist enforced separately), found %.',n;
   end if;
 
   if to_regprocedure('public.my_sessions()') is null

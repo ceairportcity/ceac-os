@@ -1,0 +1,26 @@
+/* Shared cross-role density refinement. Preserve full-width mobile actions. */
+@media (min-width: 768px) {
+  .phase6-manager-people-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 20px;
+  }
+  .phase6-manager-people-toolbar .phase6-manager-people-tabs {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .phase6-manager-people-toolbar .phase6-add-volunteer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 148px;
+    min-height: 42px;
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+}
+.phase6-add-volunteer { min-height: 44px; }

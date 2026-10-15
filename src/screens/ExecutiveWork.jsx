@@ -57,11 +57,11 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
   ];
   const rows = view === "given" ? activeGiven : activeMine;
 
-  return <div className="body executive-work premium-exec-page ev2-work-page ev2-work-executive">
+  return <div className="body executive-work ev2-work-page ev2-work-executive">
     <WorkPageHeader
-      eyebrow="Leadership work"
+      eyebrow="Executive workspace"
       title="Work"
-      description="What you have given out, what needs review and what you personally carry."
+      description="Give out work, track progress and support your teams."
       actionLabel="Give out work"
       onAction={() => goAssign?.()}
     />

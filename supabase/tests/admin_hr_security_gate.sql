@@ -115,9 +115,20 @@ end $$;
 -- versions, self-bound notices/returns/checkpoints, manager-bound responses and
 -- a sanitised evidence read. attendance_phase2_gate.sql tests their identities,
 -- tenant isolation, privacy, append-only history, concurrency and no anon access.
--- S2 migration 114 reduces the reviewed authenticated surface to 132.
--- Reducing this surface remains allowed. Any growth beyond 132 requires another
--- explicit security-gate review and exact allowlist update in the same PR.
+-- S2 migration 114 reduced the reviewed authenticated surface to 132.
+-- Phase 6C explicitly reviews 136 signed-in-callable functions. The go-live annual leave policy keeps the public workforce_request_leave RPC but shifts it to a narrow SECURITY INVOKER wrapper, reducing this exact count to 135. No new definer privilege is granted.
+-- The current integrated bundle adds 12 reviewed authenticated definer
+-- RPC/predicate interfaces across migrations 140-146 while revoking the
+-- legacy direct attendance-correction and unsafe direct performance-share RPC
+-- grants, resulting in exactly 145 authenticated SECURITY DEFINER functions.
+-- A separate exact signature check rejects substitutions or additions.
+-- The historical net +4 were needed for front-desk attendance corroboration and
+-- authorised per-person/manager evidence views. Two legacy office-code RPCs
+-- were already removed by migration 124; migration 125 safely revokes grants
+-- only on historical variants where their definitions remain.
+-- Exact Phase 6 signatures, actor/organisation authority, and the service-only
+-- network corroboration boundary are tested below and in
+-- attendance_phase6_integrity_gate.sql. No other surface growth is allowed.
 do $$
 declare n integer;
 begin
@@ -127,17 +138,55 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n>132 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 132-function ceiling to %.',n;
+  if n<>145 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface differs from the reviewed 145-function exact release surface to %.',n;
   end if;
 end $$;
+
+-- Explicit Phase 6C allowlist: these are the reviewed actor/tenant-scoped
+-- browser-facing SECURITY DEFINER functions. Their underlying raw tables
+-- remain private; obsolete code-window overloads are not browser-executable.
+do $phase6_reviewed_surface$
+declare
+  v_signature text;
+  v_function oid;
+  v_definition text;
+begin
+  foreach v_signature in array array[
+    'public.attendance_integrity_status()',
+    'public.attendance_set_office_code(boolean,integer)',
+    'public.attendance_verify_office_code(text,uuid)',
+    'public.attendance_corroboration_for_day(date)',
+    'public.attendance_day_evidence(date)'
+  ] loop
+    v_function := to_regprocedure(v_signature);
+    if v_function is null then
+      raise exception 'Phase 6 reviewed attendance function missing: %',v_signature;
+    end if;
+    if not exists (
+      select 1 from pg_proc p join pg_namespace ns on ns.oid=p.pronamespace
+      where p.oid=v_function and ns.nspname='public' and p.prosecdef
+    ) or not has_function_privilege('authenticated',v_function,'EXECUTE')
+      or has_function_privilege('anon',v_function,'EXECUTE') then
+      raise exception 'Phase 6 reviewed attendance RPC violates its exact access contract: %',v_signature;
+    end if;
+    v_definition := pg_get_functiondef(v_function);
+    if v_definition not ilike '%auth.uid%'
+       and v_definition not ilike '%app_org_id%'
+       and v_definition not ilike '%app_has_capability%' then
+      raise exception 'Phase 6 reviewed attendance RPC lacks an actor/tenant boundary: %',v_signature;
+    end if;
+  end loop;
+end
+$phase6_reviewed_surface$;
 
 -- Every signed-in callable definer RPC must visibly bind itself to the caller
 -- directly or through an approved authority/visibility helper.
 do $rpc_authority$
-declare n integer;
+declare n integer; v_unbound text;
 begin
-  select count(*) into n
+  select count(*), string_agg(p.oid::regprocedure::text, ', ' order by p.oid::regprocedure::text)
+  into n, v_unbound
   from pg_proc p
   join pg_namespace ns on ns.oid=p.pronamespace
   where ns.nspname='public'
@@ -151,7 +200,7 @@ begin
     and pg_get_functiondef(p.oid) not ilike '%app_my_units%'
     and pg_get_functiondef(p.oid) not ilike '%app_led_sub_teams%';
   if n<>0 then
-    raise exception 'Security gate failure: % authenticated SECURITY DEFINER RPC(s) lack an approved actor/authority binding.',n;
+    raise exception 'Security gate failure: % authenticated SECURITY DEFINER RPC(s) lack an approved actor/authority binding: %',n,coalesce(v_unbound,'unknown');
   end if;
 end
 $rpc_authority$;

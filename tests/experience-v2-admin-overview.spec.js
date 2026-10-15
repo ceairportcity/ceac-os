@@ -32,7 +32,7 @@ test("Stage 7 Administration Overview is isolated V2 presentation on preserved A
   const main = fs.readFileSync("src/main.jsx", "utf8");
 
   expect(home).toContain('from "../experience-v2/admin-overview/AdminOverviewV2"');
-  expect(home).toContain('inviteByEmail');
+  expect(home).not.toContain('inviteByEmail');
   expect(home).toContain('supabase.rpc("workforce_leave_action"');
   expect(home).toContain('required_capability');
   expect(home).toContain('rpc("admin_employee_roster_summary")');
@@ -49,7 +49,9 @@ test("Stage 7 Administration Overview is isolated V2 presentation on preserved A
   expect(view).toContain('title="Today and leave context"');
   expect(view).toContain('title="Payroll readiness"');
   expect(view).toContain('title="Finance & reporting"');
-  expect(view).toContain('title="Organisation configuration"');
+  expect(view).toContain('title="Control Center"');
+  expect(view).toContain("Invitations to review");
+  expect(view).not.toContain("onInviteUnit");
   expect(view).toContain("No work session is not an absence");
   expect(view).toContain("signals for review, not conclusions about performance");
   expect(view).not.toContain("ReferenceDashboard");
@@ -77,7 +79,8 @@ for (const viewport of [
   test(`Stage 7 Administration Overview composes cleanly at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openAdmin(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
+    await expect(page.locator(".adminv2-hero-title h1")).toContainText(/Good morning|Good afternoon|Good evening/);
+    await expect(page.locator(".adminv2-context")).toContainText("Administration & HR");
     await expect(page.locator(".adminv2-inbox")).toBeVisible();
     await expect(page.locator(".adminv2-people")).toBeVisible();
     await expect(page.locator(".adminv2-reporting")).toBeVisible();
@@ -100,7 +103,10 @@ for (const viewport of [
       );
       for (const height of compactHeights) expect(height).toBeGreaterThanOrEqual(44);
 
+      // A single reachable mobile inbox shortcut replaces the hidden desktop
+      // hero controls; do not show duplicate, cramped primary actions.
       await expect(page.locator(".adminv2-intro-actions")).toBeHidden();
+      await expect(page.locator(".adminv2-mobile-actions .adminv2-hero-link")).toBeVisible();
       await expect(page.locator(".adminv2-mobile-actions")).toBeVisible();
 
       const inboxBox = await page.locator(".adminv2-inbox").boundingBox();

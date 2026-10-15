@@ -76,6 +76,9 @@ export default function Room({
   const unreadRef = useRef(null);
   const feedRef = useRef(null);
   const atBottomRef = useRef(true);
+  const sendingRef = useRef(false);
+  const roomOpenSerial = useRef(0);
+  const messageLoadSerial = useRef(0);
   const PAGE_SIZE = 60;
 
   const canCoordinate = Boolean(me.is_admin || me.is_exec || me.role === "manager");
@@ -128,13 +131,17 @@ export default function Room({
   }
 
   async function loadInitialRoom() {
+    const openSerial = ++roomOpenSerial.current;
+    ++messageLoadSerial.current;
     setLoading(true); setError(null); setRoom(null); setMessages([]); setLastReadAt(null); setHasOlder(false); setNewMessageCount(0);
     try {
       const result = await roomQueryForContext();
+      if (openSerial !== roomOpenSerial.current) return;
       if (result.error) throw result.error;
       if (!result.data) throw new Error("This Room is not available to your account.");
       await selectRoom(result.data, true);
     } catch (err) {
+      if (openSerial !== roomOpenSerial.current) return;
       setError(humanError(err, "This Room could not be opened."));
       setLoading(false);
     }
@@ -279,6 +286,7 @@ export default function Room({
 
   async function loadMessages(roomId, showLoading = false) {
     if (!roomId) return;
+    const requestSerial = ++messageLoadSerial.current;
     if (showLoading) setLoading(true);
     try {
       const result = await supabase.from("room_messages")
@@ -288,12 +296,14 @@ export default function Room({
         .limit(PAGE_SIZE);
       if (result.error) throw result.error;
       const hydrated = await hydrateMessageMedia(result.data || []);
+      if (requestSerial !== messageLoadSerial.current) return;
       setMessages([...hydrated].reverse());
       setHasOlder((result.data || []).length === PAGE_SIZE);
     } catch (err) {
-      setError(humanError(err, "Room messages could not be loaded."));
+      if (requestSerial === messageLoadSerial.current)
+        setError(humanError(err, "Room messages could not be loaded."));
     } finally {
-      setLoading(false);
+      if (requestSerial === messageLoadSerial.current) setLoading(false);
     }
   }
 
@@ -372,12 +382,27 @@ export default function Room({
 
   async function send() {
     const clean = body.trim();
-    if (!clean || !room?.id) return;
+    if (!clean || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true); setError(null);
     try {
+      // Route transitions may invalidate the rendered room between a user's click
+      // and the handler. Resolve the authorised context rather than discarding the draft.
+      const matchesContext = room?.id && (
+        context?.kind === "project" ? room.kind === "project" && room.project_id === context.projectId
+          : context?.kind === "sub_team" ? room.kind === "sub_team" && room.sub_team_id === context.subTeamId
+            : room.kind === "unit" && room.unit_id === (context?.unitId || me.unit_id)
+      );
+      let targetRoomId = matchesContext ? room.id : null;
+      if (!targetRoomId) {
+        const resolved = await roomQueryForContext();
+        if (resolved.error) throw resolved.error;
+        if (!resolved.data?.id) throw new Error("The Room is not ready or you do not have access.");
+        targetRoomId = resolved.data.id;
+      }
       const mentionIds = [...new Set(mentions)];
       const result = await supabase.rpc("send_room_message", {
-        p_room_id: room.id,
+        p_room_id: targetRoomId,
         p_body: clean,
         p_reply_to_id: replyTo?.id || null,
         p_refs: selectedRefs,
@@ -398,10 +423,11 @@ export default function Room({
         }
       }
       setBody(""); setPendingFiles([]); setReplyTo(null); setMentions([]); setMentionQuery(null); setSelectedRefs([]);
-      await loadMessages(room.id, false);
+      await loadMessages(targetRoomId, false);
     } catch (err) {
       setError(humanError(err, "Your message could not be sent."));
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -605,7 +631,7 @@ export default function Room({
           />
           <VoiceInput compact label="Speak message" onResult={appendVoice} />
         </div>
-        <button className="room-send" disabled={sending || !body.trim()} onClick={send}>{sending ? "…" : "Send"}</button>
+        <button className="room-send" disabled={sending || loading || !room?.id || !body.trim()} onClick={send}>{sending ? "…" : "Send"}</button>
       </div>
       <small>Work communication only · @ mentions notify people inside this Room</small>
     </footer>

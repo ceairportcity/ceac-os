@@ -1,0 +1,25 @@
+# Keep credentials, local build state, test archives and VCS metadata
+# out of the isolated Railway verification image's build context.
+.git
+**/.git
+node_modules
+**/node_modules
+dist
+**/dist
+coverage
+**/coverage
+test-artifacts
+**/test-artifacts
+*.log
+*.pem
+*.key
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+supabase/.temp
+supabase/.branches
+supabase/.profiles
+.DS_Store

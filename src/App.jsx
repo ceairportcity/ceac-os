@@ -3,10 +3,11 @@ import { supabase, loadMe } from "./lib/supabase";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
 import SignIn from "./screens/SignIn";
-import AccountPassword from "./screens/AccountPassword";
+const AccountPassword = lazy(() => import("./screens/AccountPassword"));
 import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
 import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
+import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
 
 const Home = lazy(() => import("./screens/Home"));
 const Work = lazy(() => import("./screens/Work"));
@@ -28,6 +29,7 @@ const ExecutiveWork = lazy(() => import("./screens/ExecutiveWork"));
 const ExecutiveOrganisation = lazy(() => import("./screens/ExecutiveOrganisation"));
 const ExecutiveFinance = lazy(() => import("./screens/ExecutiveFinance"));
 const ExecutiveReports = lazy(() => import("./screens/ExecutiveReports"));
+const ExecutiveRedesignStyles = lazy(() => import("./experience-v2/executive-overview/ExecutiveRedesignStyles"));
 const Assign = lazy(() => import("./screens/Assign"));
 const Team = lazy(() => import("./screens/Team"));
 const PersonDetail = lazy(() => import("./screens/PersonDetail"));
@@ -64,6 +66,9 @@ const Room = lazy(() => import("./screens/Room"));
 const Meeting = lazy(() => import("./screens/Meeting"));
 const DesignPrimitives = lazy(() => import("./screens/DesignPrimitives"));
 const AccountActivity = lazy(() => import("./screens/AccountActivity"));
+const Guide = lazy(() => import("./screens/Guide"));
+const TechnicalHelp = lazy(() => import("./screens/TechnicalHelp"));
+const TechnicalSupport = lazy(() => import("./screens/TechnicalSupport"));
 const MeetingScheduler = lazy(() => import("./components/MeetingScheduler"));
 
 
@@ -107,7 +112,10 @@ export default function App() {
   const [meetingId, setMeetingId] = useState(initialRoute.meetingId);
   const [meetingDraft, setMeetingDraft] = useState(null);
   const [createIntent, setCreateIntent] = useState(null);
+  const [guideContextTab, setGuideContextTab] = useState(null);
   const [peopleFocusId, setPeopleFocusId] = useState(null);
+  const [peopleAccessIntent, setPeopleAccessIntent] = useState(null);
+  const [lifecycleIntent, setLifecycleIntent] = useState(null);
   const [announcementFocusId, setAnnouncementFocusId] = useState(null);
   const [session, setSession] = useState(null);
   useForegroundPresence(me, session);
@@ -151,6 +159,7 @@ export default function App() {
     setMeetingDraft(null);
     setCreateIntent(null);
     setPeopleFocusId(null);
+    setPeopleAccessIntent(null);
     setAnnouncementFocusId(null);
   }
 
@@ -188,7 +197,23 @@ export default function App() {
     else navigate({ tab }, { replace: true });
   }
 
-  function go(t) { navigate({ tab: t }); }
+  function go(t) {
+    if (t !== "guide") setGuideContextTab(null);
+    navigate({ tab: t });
+  }
+
+  function openGuide(contextual = false) {
+    setGuideContextTab(contextual && tab !== "guide" ? tab : null);
+    navigate({ tab: "guide" });
+  }
+  function openLifecycle(profileId = null, type = "offboarding") {
+    navigate({ tab: "lifecycle" });
+    setLifecycleIntent(profileId ? { profileId, type } : null);
+  }
+  function openPeopleAccess(intent = {}) {
+    navigate({ tab: "people" });
+    setPeopleAccessIntent(intent);
+  }
   function openItem(id) { navigate({ tab, itemId: id }); }
   function openProject(id) { navigate({ tab, projectId: id }); }
   function openMeeting(id) { navigate({ tab, meetingId: id }); }
@@ -249,13 +274,13 @@ export default function App() {
 
   const authPath = window.location.pathname;
   if (authPath === "/activate" || authPath === "/reset-password") {
-    return <AccountPassword
+    return <Suspense fallback={<div className="auth-boot">Opening secure account setup…</div>}><AccountPassword
       mode={authPath === "/activate" ? "activate" : "recover"}
       onDone={() => {
         window.history.replaceState({}, "", "/");
         boot();
       }}
-    />;
+    /></Suspense>;
   }
 
   if (!ready) return <div className="auth-boot"><span className="auth-boot-mark">CEAC</span><span>Opening your workspace…</span></div>;
@@ -275,6 +300,7 @@ export default function App() {
     grant.capability === capability && !grant.scope_unit_id
   );
   const canManagePeople = hasCapability("people.manage");
+  const canManageSupport = hasCapability("support.case.manage");
   const canViewAudit = hasCapability("audit.view");
   const canManageAuthority = hasCapability("authority.manage");
   const canUseWorkflows = canViewAudit || canManagePeople || canManageAuthority;
@@ -306,11 +332,16 @@ export default function App() {
   }
 
   function pageForTab() {
+    if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
+    if (tab === "technical-help") return <TechnicalHelp key={`${me.org_id}:${me.id}`} me={me} />;
+    if (tab === "technical-support") return canManageSupport
+      ? <TechnicalSupport key={`${me.org_id}:${me.id}`} me={me} go={go} />
+      : <div className="body" role="alert">This account is not authorised to manage Technical Support.</div>;
     if (tab === "primitives" && isAdmin) return <DesignPrimitives me={me} />;
     if (tab === "home") {
       if (me.is_exec) return <ExecutiveHome me={me} openMeeting={openMeeting} scheduleMeeting={startMeeting} go={go} />;
-      if (me.is_admin) return <AdminHome me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} openSettings={() => go("settings")} openUnits={() => go("units")} go={go} />;
+      if (me.is_admin) return <AdminHome key={`${me.org_id}:${me.id}`} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} openSettings={() => go("settings")} openUnits={() => go("units")} openPeopleAccess={openPeopleAccess} go={go} />;
       if (isManager) return <ManagerHome me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
       return <Home me={me} session={session} setSession={setSession} openItem={openItem} openMeeting={openMeeting} openRoom={openRoom} openWork={() => go("work")} openMe={() => go("me")} openAnnouncements={() => go("announcements")} openTeam={() => go("team")} openCalendar={() => go("staff-calendar")} />;
     }
@@ -366,19 +397,25 @@ export default function App() {
     if (tab === "cost" && isAdmin) return <Cost me={me} />;
     if (tab === "finance" && isAdmin) return <Finance me={me} openExpenses={() => go("cost")} />;
     if (tab === "reporting" && isAdmin) return <Reports me={me} />;
-    if (tab === "attendance" && canUseWorkforce) return <Workforce me={me} />;
+    if (tab === "attendance" && canUseWorkforce) return <Workforce key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${me.role || "none"}:${me.is_admin ? "admin" : "not-admin"}:${me.is_exec ? "exec" : "not-exec"}`} me={me} />;
     if (tab === "people" && canManagePeople) return <People
+      key={`${me.org_id}:${me.id}`}
       me={me}
       openItem={openItem}
+      go={go}
+      openLifecycle={openLifecycle}
+      accessIntent={peopleAccessIntent}
+      onAccessIntentHandled={() => setPeopleAccessIntent(null)}
       initialEmployeeId={peopleFocusId}
       onInitialHandled={() => setPeopleFocusId(null)}
     />;
-    if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} />;
-    if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR me={me} />;
-    if (tab === "payroll" && canUsePayroll) return <AdminPayroll me={me} />;
-    if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} />;
+    if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} initialProfileId={lifecycleIntent?.profileId || null} initialType={lifecycleIntent?.type || null} onInitialHandled={() => setLifecycleIntent(null)} />;
+    if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR key={`${me.org_id}:${me.id}`} me={me} />;
+    if (tab === "payroll" && canUsePayroll) return <AdminPayroll key={`${me.org_id}:${me.id}`} me={me} />;
+    if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} />;
     if (tab === "admin-projects" && isAdmin) return <AdminProjects me={me} scheduleMeeting={startMeeting} />;
-    if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openMeeting={openMeeting} scheduleMeeting={startMeeting} />;
+    if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" />;
+    if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;
     if (tab === "events" && canViewAudit) return <AdminEvents me={me} />;
     if (tab === "workflows" && canUseWorkflows) return <AdminWorkflows me={me} />;
@@ -411,7 +448,9 @@ export default function App() {
                   : `tab:${tab}`;
 
   return (
+    <PrivilegedMfaGate me={me} onVerified={boot}>
     <div className={`app ${appModeClass}`}>
+      {isExec ? <Suspense fallback={null}><ExecutiveRedesignStyles /></Suspense> : null}
       <SideNav
         tab={tab}
         setTab={go}
@@ -426,6 +465,7 @@ export default function App() {
         onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
         onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
         onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
+        onGuide={() => openGuide(false)}
       />
       <div className="ev2s-workspace">
         <MobileTopBar
@@ -449,6 +489,7 @@ export default function App() {
           onOpenMeeting={openMeeting}
           onOpenRoom={openRoom}
           onOpenAnnouncement={openSearchAnnouncement}
+          onGuide={() => openGuide(true)}
         />
         <AppTopBar
           me={me}
@@ -471,8 +512,14 @@ export default function App() {
           onOpenMeeting={openMeeting}
           onOpenRoom={openRoom}
           onOpenAnnouncement={openSearchAnnouncement}
+          onGuide={() => openGuide(true)}
         />
         <main className="app-content ev2s-content">
+          {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
+            {me.legacyAuthorityVerified
+              ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."
+              : "Preview compatibility: the database upgrade is not installed and server permission verification was incomplete. Privileged capabilities are disabled here. Use production for normal work."}
+          </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
           {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} openRoom={openRoom} back={closeUrlOverlay} />
@@ -500,7 +547,8 @@ export default function App() {
           </Suspense>
           </RouteTransition>
         </main>
-        {!overlay && <Tabs tab={tab} setTab={go} isManager={isUnitManager} isExec={isExec} isAdmin={isAdmin} me={me} />}
+        {!overlay && <Tabs tab={tab} setTab={go} isManager={isUnitManager} isExec={isExec} isAdmin={isAdmin} me={me} onGuide={() => openGuide(false)} />}
       </div>
-    </div>);
+    </div>
+    </PrivilegedMfaGate>);
 }

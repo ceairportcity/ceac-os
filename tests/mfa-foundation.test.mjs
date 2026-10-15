@@ -73,6 +73,40 @@ test("verified unsupported factor never silently bypasses step-up", () => {
   }).state, "unsupported-factor");
 });
 
+test("privileged TOTP enforcement rejects AAL2 established with a phone-only factor", () => {
+  const decision = decideMfaAccess({
+    currentLevel: "aal2",
+    nextLevel: "aal2",
+    factors: { phone: [{ id: "phone-only", status: "verified", factor_type: "phone" }] },
+    privileged: true,
+    enforcementEnabled: true,
+  });
+  assert.equal(decision.state, "unsupported-factor");
+  assert.equal(decision.reason, "privileged_totp_required");
+});
+
+test("privileged TOTP enforcement never accepts AAL2 without verified TOTP", () => {
+  const decision = decideMfaAccess({
+    currentLevel: "aal2",
+    nextLevel: "aal2",
+    factors: { totp: [{ id: "unverified", status: "unverified" }] },
+    privileged: true,
+    enforcementEnabled: true,
+  });
+  assert.equal(decision.state, "enroll");
+});
+
+test("the Stage 1 TOTP requirement applies only when the privileged switch is enabled", () => {
+  const decision = decideMfaAccess({
+    currentLevel: "aal2",
+    nextLevel: "aal2",
+    factors: { phone: [{ id: "phone-only", status: "verified", factor_type: "phone" }] },
+    privileged: true,
+    enforcementEnabled: false,
+  });
+  assert.equal(decision.state, "allow");
+});
+
 test("privileged identity is based on authority, not job title", () => {
   assert.equal(isPrivilegedIdentity({ is_admin: true, capability_grants: [] }), true);
   assert.equal(isPrivilegedIdentity({ is_exec: true, capability_grants: [] }), true);

@@ -113,7 +113,7 @@ for (const role of roles) {
     expect(geometry.bodyOverflow).toBeLessThanOrEqual(1);
 
     const navButtons = page.locator(".ev2s-mobile-nav button");
-    expect(await navButtons.count()).toBe(5);
+    expect(await navButtons.count()).toBe(role.key === "executive" ? 4 : 5);
     const navHeights = await navButtons.evaluateAll((nodes) =>
       nodes.map((node) => node.getBoundingClientRect().height)
     );

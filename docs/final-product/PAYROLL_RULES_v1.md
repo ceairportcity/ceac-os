@@ -35,15 +35,22 @@ Leave requesting/cancellation must not depend on starting a work session. No wor
 
 Attendance and leave data must not automatically create Payroll deductions.
 
-Still unresolved and therefore not to be invented:
-- exact leave entitlement quantities;
-- whether leave is granted at the start of the year or accrued monthly;
-- carry-over rules/limits/expiry;
-- unpaid-leave treatment;
-- unpaid-leave Payroll calculation;
-- any automatic Payroll consequence of leave or absence.
+Confirmed annual-leave boundary:
+- annual leave entitlement is 24 working days per leave year;
+- accrual is quarterly at 6 working days per completed quarter;
+- a joiner receives a pro-rated credit for the portion of the completed join quarter served;
+- ordinary unused annual leave expires at year end with no routine automatic carry-forward;
+- legally/contractually protected exceptions and an already-approved cross-year leave period must be preserved;
+- annual leave working-day counts use attributable workforce schedule evidence rather than a guessed Monday-Friday pattern.
 
-Until CEAC confirms those rules, Payroll must treat them as manual-authoritative/unconfigured and the UI must show truthful unknown/unconfigured states.
+Still unresolved and therefore not to be invented:
+- sick-leave entitlement quantity/rules beyond separation from annual leave;
+- maternity/paternity entitlement quantities and detailed eligibility;
+- study-leave quantity/rules;
+- approved unpaid-leave salary treatment/calculation;
+- any automatic Payroll consequence of leave, absence or attendance.
+
+Payroll must therefore recognise the confirmed Annual policy while keeping unresolved secondary leave and unpaid-leave Payroll formulae manual-authoritative/unconfigured. Leave or attendance never posts a deduction automatically.
 
 ## Required protected foundations
 `hr_private.*`; `capability_grants`; `platform_audit_events`; `payroll.prepare`; `payroll.approve`.

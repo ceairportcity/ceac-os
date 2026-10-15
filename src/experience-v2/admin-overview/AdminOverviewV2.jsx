@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Button,
   DataPanel,
@@ -20,6 +21,64 @@ function formatDate(value, options = {}) {
     month: "short",
     ...options,
   });
+}
+
+function AdminCalendarRail({ meetings }) {
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [selectedDay, setSelectedDay] = useState(() => new Date().toISOString().slice(0, 10));
+  const now = new Date();
+  const month = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + monthOffset, 1));
+  const weekdayOffset = (month.getUTCDay() + 6) % 7;
+  const monthTitle = new Intl.DateTimeFormat("en-GB", {
+    month: "long", year: "numeric", timeZone: "UTC",
+  }).format(month);
+  const isoDate = (date) => date.toISOString().slice(0, 10);
+  const validMeetingTime = (item) => item?.starts_at && Number.isFinite(Date.parse(item.starts_at));
+  const meetingDays = new Set(meetings.filter(validMeetingTime).map((item) => isoDate(new Date(item.starts_at))));
+  const selectedMeetings = meetings.filter((item) => validMeetingTime(item) && isoDate(new Date(item.starts_at)) === selectedDay);
+  const todayIso = isoDate(now);
+  const through = isoDate(new Date(now.getTime() + 14 * 86400000));
+  const withinLoadedWindow = selectedDay >= todayIso && selectedDay <= through;
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), index - weekdayOffset + 1));
+    return {
+      date: isoDate(date),
+      day: date.getUTCDate(),
+      inMonth: date.getUTCMonth() === month.getUTCMonth(),
+    };
+  });
+  return <div className="adminv2-mini-calendar" aria-label="Administration calendar context">
+    <div className="adminv2-calendar-title">
+      <strong>{monthTitle}</strong>
+      <div className="adminv2-calendar-controls">
+        <button type="button" aria-label="Previous month" onClick={() => setMonthOffset((x) => x - 1)}>‹</button>
+        <button type="button" aria-label="Show current month" onClick={() => { setMonthOffset(0); setSelectedDay(todayIso); }}>Today</button>
+        <button type="button" aria-label="Next month" onClick={() => setMonthOffset((x) => x + 1)}>›</button>
+      </div>
+    </div>
+    <div className="adminv2-calendar-weekdays" aria-hidden="true">
+      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day}>{day}</span>)}
+    </div>
+    <div className="adminv2-calendar-days" role="group" aria-label={monthTitle}>
+      {days.map((day) => <button type="button"
+        key={day.date}
+        className={["adminv2-calendar-day", day.inMonth ? "" : "is-outside", day.date === selectedDay ? "is-selected" : "", day.date === todayIso ? "is-today" : ""].filter(Boolean).join(" ")}
+        aria-label={day.date}
+        aria-pressed={day.date === selectedDay}
+        onClick={() => { setSelectedDay(day.date); if(!day.inMonth) setMonthOffset((x) => x + (day.date < isoDate(month) ? -1 : 1)); }}
+      >
+        <span>{day.day}</span>{meetingDays.has(day.date) && <i aria-hidden="true" />}
+      </button>)}
+    </div>
+    <div className="adminv2-calendar-selection" role="status">
+      <strong>{new Intl.DateTimeFormat("en-GB", {weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(selectedDay+"T00:00:00Z"))}</strong>
+      <span>{!withinLoadedWindow
+        ? "This calendar previews at most six upcoming meetings within the next 14 days."
+        : selectedMeetings.length
+          ? `${selectedMeetings.length} recorded meeting${selectedMeetings.length === 1 ? "" : "s"}`
+          : "No meeting is shown for this date in the limited upcoming preview."}</span>
+    </div>
+  </div>;
 }
 
 function Count({ value, tone = "neutral" }) {
@@ -75,7 +134,7 @@ function UnitRow({ unit, onInvite }) {
   const meta = unit.head
     ? `${unit.head.full_name} · ${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`
     : pending
-      ? `Invitation sent to ${unit.pending.email} · ${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`
+      ? `Account invitation pending for ${unit.pending.email} · ${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`
       : `${unit.done7} finished output${unit.done7 === 1 ? "" : "s"} in the last 7 days`;
 
   return <div className="adminv2-unit-row">
@@ -111,6 +170,7 @@ export default function AdminOverviewV2({
   watch = [],
   meetings = [],
   employeeRoster = [],
+  pendingInvitations = [],
   payrollReadiness = null,
   canManagePeople,
   canUsePayroll = false,
@@ -125,12 +185,12 @@ export default function AdminOverviewV2({
   onOpenReports,
   onOpenFinance,
   onOpenPeople,
+  onOpenInvitations,
   onOpenProtectedHR,
   onOpenPayroll,
   onOpenProjects,
   onOpenStrategy,
   onOpenAttendance,
-  onInviteUnit,
   onLeaveDecision,
 }) {
   const decisionCount = alerts.length + leaveQueue.length + checks.length;
@@ -138,7 +198,6 @@ export default function AdminOverviewV2({
   const setupCount = (office ? 0 : 1) + headlessUnits.length;
   const deliveryAttention = watch.length + blockers.length;
   const reportingGap = reporting?.missing?.length || 0;
-  const rosterOnlyCount = employeeRoster.filter((person) => person.identity_state === "roster_only").length;
   const identityReviewCount = employeeRoster.filter((person) => person.identity_state === "needs_review").length;
   const peopleAttention = employeeRoster.filter((person) =>
     person.identity_state === "needs_review"
@@ -151,7 +210,55 @@ export default function AdminOverviewV2({
       + Number(payrollReadiness.payment_missing_count || 0)
       + Number(payrollReadiness.identity_review_count || 0)
     : 0;
-  const totalAttention = decisionCount + setupCount + peopleAttention + payrollAttention;
+  const onboardingAttention = pendingInvitations.length;
+  const expiredInvitationCount = pendingInvitations.filter((invitation) =>
+    invitation.expires_at && Date.parse(invitation.expires_at) <= Date.now()).length;
+  const reportingAttention = reportingGap;
+  const totalAttention = decisionCount + onboardingAttention + peopleAttention + payrollAttention + deliveryAttention + reportingAttention;
+  const adminFirstName = String(me?.full_name || "").trim().split(/\s+/)[0] || "there";
+  const accraHour = Number(new Intl.DateTimeFormat("en-GB", { timeZone:"Africa/Accra", hour:"2-digit", hourCycle:"h23" }).format(new Date()));
+  const greeting = accraHour < 12 ? "Good morning" : accraHour < 17 ? "Good afternoon" : "Good evening";
+  const nextMeetings = [...meetings]
+    .filter((meeting) => meeting.starts_at && new Date(meeting.starts_at).getTime() >= Date.now())
+    .sort((left, right) => new Date(left.starts_at) - new Date(right.starts_at))
+    .slice(0, 3);
+  // Suggested next step is a navigation aid only: no automatic approval,
+  // invented urgency, work ranking or additional authority is created.
+  const suggestedAction = leaveQueue.length
+    ? {
+      eyebrow: "Leave decision waiting",
+      title: `${leaveQueue[0].requester?.full_name || "Team member"} · ${leaveQueue[0].kind} leave`,
+      detail: "Open Time & Leave to review the recorded request and supporting context.",
+      action: onOpenAttendance,
+      label: "Review request",
+    }
+    : checks.length
+      ? {
+        eyebrow: "Operational check",
+        title: `${checks.length} check${checks.length === 1 ? "" : "s"} waiting for review`,
+        detail: "Open the workflow queue; decisions remain subject to the existing CEAC approval rules.",
+        action: onOpenWorkflows,
+        label: "Review checks",
+      }
+      : pendingInvitations.length && canManagePeople
+        ? {
+          eyebrow: "Onboarding",
+          title: `${pendingInvitations.length} Staff invitation${pendingInvitations.length === 1 ? "" : "s"} need follow-up`,
+          detail: expiredInvitationCount
+            ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Review before resending.`
+            : "Continue account onboarding through the authorised People & Access workspace.",
+          action: onOpenInvitations,
+          label: "Open invitations",
+        }
+        : mine.length
+          ? {
+            eyebrow: "Your work",
+            title: mine[0].title || "Open work item",
+            detail: `Recorded work · ${dueLabel(mine[0].due_at)}`,
+            action: () => onOpenItem?.(mine[0].id),
+            label: "Open work",
+          }
+          : null;
   const objectiveTotal = Number(delivery?.objectives || 0);
   const objectiveItems = [
     ["Met", delivery?.met || 0],
@@ -168,20 +275,49 @@ export default function AdminOverviewV2({
 
   return <div className="body admin-home">
     <div className="adminv2">
-      <header className="adminv2-intro">
-        <div className="adminv2-context"><span>Administration &amp; HR</span><time>{dateLabel}</time></div>
-        <div className="adminv2-intro-row">
-          <div>
-            <h1>Administration</h1>
-            <p>{totalAttention
-              ? `${totalAttention} recorded item${totalAttention === 1 ? "" : "s"} need Administration attention or configuration.`
-              : "No Administration decision or configuration gap is waiting right now."}</p>
+      <header className="adminv2-intro adminv2-hero" role="region" aria-label="Administration daily briefing">
+        <div className="adminv2-hero-main">
+          <div className="adminv2-context"><span>Administration &amp; HR</span><time>{dateLabel}</time></div>
+          <div className="adminv2-intro-row">
+            <div className="adminv2-hero-title">
+              <span className="adminv2-eyebrow">Your CEAC workspace</span>
+              <h1>{greeting}, {adminFirstName}<span className="adminv2-greeting-mark">.</span></h1>
+              <p>{loading
+                ? "Loading your recorded Administration priorities…"
+                : loadFailed
+                  ? "The latest Administration priorities could not be verified. Retry the connection before making decisions."
+                  : totalAttention
+                    ? `You have ${totalAttention} recorded item${totalAttention === 1 ? "" : "s"} to review. Start with what needs a decision, then move the work forward.`
+                    : "Your decision inbox is clear. Keep the people, work and organisation moving forward."}</p>
+            </div>
           </div>
           <div className="adminv2-intro-actions">
-            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People</Button> : null}
-            <Button icon="control" onClick={onOpenSettings}>Control Center</Button>
+            <a className="adminv2-hero-link" href="#admin-operational-inbox">Review your inbox <CeacIcon name="chevronRight" size="meta" decorative /></a>
+            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>People &amp; Access</Button> : null}
+            <Button icon="control" variant="secondary" onClick={onOpenSettings}>Control Center</Button>
           </div>
         </div>
+        <aside className="adminv2-hero-agenda" aria-label="Upcoming commitments">
+          <AdminCalendarRail meetings={meetings} />
+          <div className="adminv2-agenda-heading">
+            <span><CeacIcon name="calendar" size="row" decorative /> Coming up</span>
+            <button type="button" onClick={() => onScheduleMeeting?.({ scope: "organisation", organisation: true })} className="adminv2-agenda-add">Schedule <CeacIcon name="chevronRight" size="meta" decorative /></button>
+          </div>
+          {loadFailed ? <div className="adminv2-agenda-empty" role="status">Current meeting information could not be verified.</div>
+            : loading ? <div className="adminv2-agenda-empty">Loading your schedule…</div> : nextMeetings.length
+            ? <div className="adminv2-agenda-list">
+              {nextMeetings.map((meeting) => <button type="button" key={meeting.id} className="adminv2-agenda-item" onClick={() => onOpenMeeting?.(meeting.id)}>
+                <span className="adminv2-agenda-date">{formatDate(meeting.starts_at, {weekday:"short",hour:"2-digit",minute:"2-digit"})}</span>
+                <strong>{meeting.title}</strong>
+                <CeacIcon name="chevronRight" size="meta" decorative />
+              </button>)}
+            </div>
+            : <div className="adminv2-agenda-empty">No upcoming meetings were returned in this limited 14-day preview.</div>}
+          {!loading && !loadFailed ? <div className="adminv2-agenda-foot">
+            <span><strong>{pendingInvitations.length}</strong> invitations need follow-up</span>
+            <span><strong>{leaveQueue.length}</strong> leave decisions</span>
+          </div> : null}
+        </aside>
       </header>
 
       {loadFailed ? <StatePanel
@@ -201,12 +337,28 @@ export default function AdminOverviewV2({
       </div> : null}
 
       {!loading && !loadFailed ? <main className="adminv2-main">
+        <section className="adminv2-focus-strip" aria-label="Next useful Administration step">
+          <div className="adminv2-focus-summary">
+            <span className="adminv2-focus-icon"><CeacIcon name={suggestedAction ? "notification" : "checkCircle"} size="feature" decorative /></span>
+            <div>
+              <span className="adminv2-focus-eyebrow">{suggestedAction?.eyebrow || "Decision inbox clear"}</span>
+              <h2>{suggestedAction?.title || "You are up to date on recorded Administration decisions."}</h2>
+              <p>{suggestedAction?.detail || "Keep an eye on your people, work and the next recorded commitments."}</p>
+            </div>
+            {suggestedAction?.action ? <Button icon="arrowRight" onClick={suggestedAction.action}>{suggestedAction.label}</Button> : null}
+          </div>
+          <div className="adminv2-focus-metrics" aria-label="Recorded organisation context">
+            <span><strong>{employeeRoster.length}</strong><small>Employees recorded</small></span>
+            <span><strong>{reporting ? `${reporting.submitted}/${reporting.total}` : "—"}</strong><small>Reports submitted</small></span>
+          </div>
+        </section>
         <section className="adminv2-command-grid" aria-label="Administration actions and setup">
           <DataPanel
             className="adminv2-panel adminv2-inbox"
+            id="admin-operational-inbox"
             eyebrow="Operational inbox"
             title="Needs Administration"
-            supporting="Decisions and checks that require Administration authority. Unit-level daily management stays with managers."
+            supporting="Decisions, onboarding follow-up and checks that require Administration authority. Unit-level daily management stays with managers."
             action={<Count value={decisionCount} tone={decisionCount ? "attention" : "success"} />}
           >
             {decisionCount === 0 ? <Quiet>Nothing currently requires an Administration decision.</Quiet> : null}
@@ -218,6 +370,15 @@ export default function AdminOverviewV2({
               status="Open checks"
               statusTone="warning"
               onClick={onOpenWorkflows}
+            /> : null}
+
+            {pendingInvitations.length && canManagePeople ? <AdminActionRow
+              icon="people"
+              title={`Staff invitations to review · ${pendingInvitations.length}`}
+              meta={expiredInvitationCount ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Check before resending.` : "Activation is outstanding. Reconcile existing identities rather than inviting again."}
+              status="Onboarding"
+              statusTone="action"
+              onClick={onOpenInvitations}
             /> : null}
 
             {leaveQueue.map((request) => <AdminActionRow
@@ -244,7 +405,8 @@ export default function AdminOverviewV2({
           </DataPanel>
 
           <div className="adminv2-mobile-actions" aria-label="Administration shortcuts">
-            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People</Button> : null}
+            <a className="adminv2-hero-link" href="#admin-operational-inbox">Review your inbox <CeacIcon name="chevronRight" size="meta" decorative /></a>
+            {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People &amp; Access</Button> : null}
             <Button icon="control" onClick={onOpenSettings}>Control Center</Button>
           </div>
 
@@ -257,12 +419,12 @@ export default function AdminOverviewV2({
           >
             <div className="adminv2-stat-grid is-four">
               <StatTile label="Employees" value={employeeRoster.length} supporting="Roster records" icon="people" tone="action" onClick={canManagePeople ? onOpenPeople : undefined} />
-              <StatTile label="Roster-only" value={rosterOnlyCount} supporting="No fabricated login" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Invitations to review" value={pendingInvitations.length} supporting={expiredInvitationCount ? `${expiredInvitationCount} expired` : "Awaiting activation"} icon="notification" tone={pendingInvitations.length ? "action" : "neutral"} onClick={canManagePeople ? onOpenInvitations : undefined} />
               <StatTile label="Identity review" value={identityReviewCount} supporting="Needs confirmation" icon="warning" tone={identityReviewCount ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
               <StatTile label="Needs attention" value={peopleAttention} supporting="Recorded gaps" icon="notification" tone={peopleAttention ? "warning" : "neutral"} onClick={canManagePeople ? onOpenPeople : undefined} />
             </div>
             <div className="adminv2-panel-foot">
-              {canManagePeople ? <Button variant="quiet" size="compact" onClick={onOpenPeople}>Open People</Button> : null}
+              {canManagePeople ? <Button variant="quiet" size="compact" onClick={onOpenPeople}>Open People &amp; Access</Button> : null}
               {canAccessProtectedHR ? <Button variant="quiet" size="compact" onClick={onOpenProtectedHR}>Protected HR</Button> : null}
             </div>
           </DataPanel>
@@ -276,10 +438,10 @@ export default function AdminOverviewV2({
             supporting="Recorded sessions and confirmed leave are operational context only. No work session is not an absence and never creates a Payroll deduction."
           >
             <div className="adminv2-stat-grid is-four">
-              <StatTile label="Working now" value={today?.working || 0} supporting="Current sessions" icon="people" tone="success" onClick={onOpenAttendance} />
+              <StatTile label="Open work sessions" value={today?.working || 0} supporting="Not verified live presence" icon="people" tone="neutral" onClick={onOpenAttendance} />
               <StatTile label="Approved leave" value={today?.leave || 0} supporting="Today" icon="time" tone="action" onClick={onOpenAttendance} />
               <StatTile label="No session" value={today?.notStarted || 0} supporting="Not absence" icon="pending" tone="neutral" onClick={onOpenAttendance} />
-              <StatTile label="People on record" value={today?.headcount || 0} supporting="Active people" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
+              <StatTile label="Active accounts" value={today?.headcount || 0} supporting="Login profiles, not the full employee roster" icon="people" tone="neutral" onClick={canManagePeople ? onOpenPeople : undefined} />
             </div>
           </DataPanel>
           <DataPanel
@@ -325,44 +487,23 @@ export default function AdminOverviewV2({
           </DataPanel>
 
           <DataPanel
-            className="adminv2-panel adminv2-setup"
-            eyebrow="Organisation setup"
-            title="Organisation configuration"
-            supporting="Recorded office and Unit Head configuration. Invitations always begin as Staff and job titles never grant authority."
+            className="adminv2-panel adminv2-config-bridge"
+            eyebrow="Durable configuration"
+            title="Control Center"
+            supporting="Organisation structure, office configuration, authority and system settings live in one deliberate configuration workspace — not on the operational Overview."
             action={<Count value={setupCount} tone={setupCount ? "attention" : "success"} />}
           >
-            {!office ? <SetupRow
-              icon="location"
-              title="Set the office location"
-              meta="Attendance cannot distinguish the office from another work location until this is configured."
-              status="Not configured"
-              statusTone="warning"
-              actionLabel="Open Settings"
-              onAction={onOpenSettings}
-            /> : null}
-
-            {headlessUnits.map((unit) => unit.pending ? <SetupRow
-              key={unit.id}
-              icon="people"
-              title={unit.name}
-              meta={`Invitation sent to ${unit.pending.email}. Unit Head authority is assigned only after activation.`}
-              status="Invitation pending"
-              statusTone="action"
-              actionLabel="Open Units"
-              onAction={onOpenUnits}
-            /> : <SetupRow
-              key={unit.id}
-              icon="people"
-              title={unit.name}
-              meta="No Unit Head is recorded. Invite a Staff account or assign an active unit member from Units."
-              status="No Unit Head"
-              statusTone="warning"
-              actionLabel="Invite staff"
-              onAction={() => onInviteUnit?.(unit)}
-            />)}
-
-            {setupCount === 0 ? <Quiet icon="settings">Primary office and Unit Head configuration are recorded.</Quiet> : null}
-            <div className="adminv2-panel-foot"><Button variant="quiet" size="compact" onClick={onOpenUnits}>Open all units</Button></div>
+            <div className="adminv2-config-summary">
+              <CeacIcon name={setupCount ? "warning" : "checkCircle"} size="feature" decorative />
+              <div>
+                <strong>{setupCount ? `${setupCount} organisation configuration item${setupCount === 1 ? "" : "s"} need review` : "Core organisation configuration is recorded"}</strong>
+                <span>{setupCount ? "Review the authoritative settings in Control Center." : "Use Control Center when a durable organisation setting needs to change."}</span>
+              </div>
+            </div>
+            <div className="adminv2-panel-foot">
+              <Button variant="quiet" size="compact" onClick={onOpenSettings}>Open Control Center</Button>
+              <Button variant="quiet" size="compact" onClick={onOpenUnits}>Units</Button>
+            </div>
           </DataPanel>
         </section>
 
@@ -432,7 +573,7 @@ export default function AdminOverviewV2({
               status={meeting.provider === "zoom" ? "Zoom" : "Meeting"}
               statusTone="action"
               onClick={() => onOpenMeeting?.(meeting.id)}
-            />) : <Quiet icon="calendar">No upcoming meeting is recorded in the next 14 days.</Quiet>}
+            />) : <Quiet icon="calendar">No upcoming meeting appears in this limited 14-day preview.</Quiet>}
           </DataPanel>
 
           {mine.length ? <DataPanel
@@ -452,15 +593,6 @@ export default function AdminOverviewV2({
             />)}
           </DataPanel> : null}
 
-          <DataPanel
-            className="adminv2-panel adminv2-units"
-            eyebrow="Organisation"
-            title="Units"
-            supporting="Alphabetical factual context. Outputs and alerts are not a ranking."
-            action={<Button variant="quiet" size="compact" onClick={onOpenUnits}>Open all units</Button>}
-          >
-            {units.length ? units.map((unit) => <UnitRow key={unit.id} unit={unit} onInvite={onInviteUnit} />) : <Quiet icon="organisation">No units are recorded.</Quiet>}
-          </DataPanel>
         </section>
       </main> : null}
     </div>

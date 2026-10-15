@@ -6,6 +6,11 @@ tests=(
   rls_smoke.sql
   admin_hr_security_gate.sql
   platform_kernel_gate.sql
+  report_draft_tenant_integrity_gate.sql
+  report_evidence_tenant_integrity_gate.sql
+  report_evidence_browser_write_gate.sql
+  report_row_tenant_invariant_gate.sql
+  unit_budget_tenant_boundary_gate.sql
   security_definer_surface_gate.sql
   privileged_mfa_aal2_gate.sql
   s6_hot_path_security_performance_gate.sql
@@ -13,6 +18,12 @@ tests=(
   employment_history_gate.sql
   platform_audit_gate.sql
   capability_authority_gate.sql
+  capability_delegation_expiry_gate.sql
+  security_jml_authority_gate.sql
+  security_joiner_authority_gate.sql
+  security_mover_authority_gate.sql
+  security_invitation_reopen_gate.sql
+  security_invitation_resend_scope_gate.sql
   event_framework_gate.sql
   workflow_engine_gate.sql
   policy_rules_gate.sql
@@ -28,6 +39,7 @@ tests=(
   performance_development_stage7_gate.sql
   learning_stage8_gate.sql
   workforce_management_stage9_gate.sql
+  go_live_annual_leave_policy_gate.sql
   assets_devices_stage10_gate.sql
   compliance_policy_stage11_gate.sql
   integrations_stage12_gate.sql
@@ -40,8 +52,14 @@ tests=(
   operational_clarity_files_gate.sql
   onboarding_access_presence_gate.sql
   attendance_phase2_gate.sql
+  attendance_phase6_integrity_gate.sql
   compliance_phase3_gate.sql
   notification_work_state_gate.sql
+  technical_support_v1_gate.sql
+  support_access_approval_execution_gate.sql
+  support_membership_end_reason_gate.sql
+  support_private_case_evidence_gate.sql
+  private_personal_recurrence_gate.sql
 )
 
 for test_file in "${tests[@]}"; do

@@ -19,6 +19,7 @@ const roles = [
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
     primary: [
       ["home", "Today"],
@@ -31,6 +32,7 @@ const roles = [
       ["staff-calendar", "Calendar"],
       ["messages", "Messages"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
   },
   {
@@ -50,6 +52,7 @@ const roles = [
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
     primary: [
       ["home", "Overview"],
@@ -65,6 +68,7 @@ const roles = [
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
   },
   {
@@ -79,9 +83,10 @@ const roles = [
     },
     destinations: [
       ["home", "Overview"],
-      ["people", "People"],
+      ["people", "People & Access"],
       ["work", "Work"],
       ["attendance", "Time & Leave"],
+      ["admin-calendar", "Calendar"],
       ["finance", "Finance"],
       ["payroll", "Payroll"],
       ["reporting", "Reports"],
@@ -89,21 +94,24 @@ const roles = [
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
     primary: [
       ["home", "Overview"],
-      ["people", "People"],
+      ["people", "People & Access"],
       ["attendance", "Time & Leave"],
       ["finance", "Finance"],
     ],
     secondary: [
       ["work", "Work"],
+      ["admin-calendar", "Calendar"],
       ["payroll", "Payroll"],
       ["reporting", "Reports"],
       ["settings", "Control Center"],
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
   },
   {
@@ -117,27 +125,31 @@ const roles = [
       ["strategy", "Ministry"],
       ["delivery", "Portfolio"],
       ["exec-organisation", "Organisation"],
+      ["exec-calendar", "Calendar"],
       ["exec-finance", "Finance"],
       ["payroll", "Payroll"],
       ["exec-reports", "Reports"],
       ["messages", "Messages"],
       ["me", "My Hub"],
-      ["account", "Your account"],
+      ["account", "Account"],
+      ["technical-help", "Get technical help"],
     ],
     primary: [
       ["home", "Overview"],
       ["work", "Work"],
       ["strategy", "Ministry"],
-      ["delivery", "Portfolio"],
     ],
     secondary: [
+      ["delivery", "Portfolio"],
       ["exec-organisation", "Organisation"],
+      ["exec-calendar", "Calendar"],
       ["exec-finance", "Finance"],
       ["payroll", "Payroll"],
       ["exec-reports", "Reports"],
       ["messages", "Messages"],
       ["me", "My Hub"],
-      ["account", "Your account"],
+      ["account", "Account"],
+      ["technical-help", "Get technical help"],
     ],
   },
 ];
@@ -232,7 +244,7 @@ test("Stage 4D mobile primary and More destinations remain reachable and role-sp
 
     const mobileNav = page.locator(".ev2s-mobile-nav");
     await expect(mobileNav).toBeVisible();
-    await expect(mobileNav.getByRole("button")).toHaveCount(5);
+    await expect(mobileNav.getByRole("button")).toHaveCount(role.key === "executive" ? 4 : 5);
 
     const visiblePrimary = await mobileNav.locator("button span").allTextContents();
     expect(visiblePrimary.map((label) => label.trim()), role.key).toEqual([
@@ -255,7 +267,7 @@ test("Stage 4D mobile primary and More destinations remain reachable and role-sp
 
     const secondaryLabels = await drawer.locator(".ev2s-more-group button span").allTextContents();
     expect(secondaryLabels.map((label) => label.trim()), role.key).toEqual(
-      role.secondary.map(([, label]) => label)
+      [...role.secondary.map(([, label]) => label), "CEAC Guide"]
     );
 
     await page.screenshot({

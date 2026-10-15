@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ChevronUp,
   Church,
+  CircleHelp,
   CircleUserRound,
   ClipboardCheck,
   Clock,
@@ -92,6 +93,7 @@ export const CEAC_ICONS = Object.freeze({
   account: CircleUserRound,
   settings: Settings,
   control: SlidersHorizontal,
+  help: CircleHelp,
 
   search: Search,
   create: Plus,

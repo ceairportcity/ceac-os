@@ -35,8 +35,8 @@ test("Stage 10 Family E4 preserves Executive finance authority and factual seman
   expect(executive).not.toContain(".update(");
   expect(executive).not.toContain(".delete(");
   expect(executive).toContain('"Not recorded"');
-  expect(executive).toContain("Approved requests remain distinct from actual spend");
-  expect(executive).toContain("Recorded spend is not a bank balance");
+  expect(executive).toContain("Requests remain distinct from actual spend");
+  expect(executive).toContain("recorded spend is not a bank balance");
   expect(executive).toContain("ev2-finance-executive");
   expect(executive).not.toContain("exec-bars");
   expect(executive).not.toContain("premium-exec-page");

@@ -57,7 +57,7 @@ jobs:
           supabase start
           mv /tmp/ceac-migrations/*.sql supabase/migrations/
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/replay/legacy-live-artifacts.sql
-          supabase migration up --local
+          bash scripts/ci/replay-approved-bundle-migrations.sh
 
       - name: Seed local organisation and bootstrap invitation
         if: steps.classify.outputs.run_account_security == 'true'
@@ -97,6 +97,10 @@ jobs:
       - name: Test invited account lifecycle
         if: steps.classify.outputs.run_account_security == 'true'
         run: node scripts/test-account-security.mjs
+
+      - name: Test real CEAC invitation RPC acceptance
+        if: steps.classify.outputs.run_account_security == 'true'
+        run: node scripts/test-real-invitation-rpc.mjs
 
       - name: Record unaffected account-security boundary
         if: steps.classify.outputs.run_account_security != 'true'

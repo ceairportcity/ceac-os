@@ -94,6 +94,7 @@ export default function SignIn() {
     <div className="auth-help">
       <span>Account access is issued by CEAC Administration.</span>
       <span>Your password is handled by the secure authentication service, not stored in this interface.</span>
+      <span>If you cannot sign in, use password recovery or contact CEAC Administration through its existing approved contact route. Do not share your password or authenticator code.</span>
     </div>
   </AuthFrame>;
 }

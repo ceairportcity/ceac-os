@@ -46,6 +46,7 @@ export default function GlobalSearch({
   mobile = false,
   me,
   isAdmin = false,
+  isExec = false,
   navigation = [],
   quickItems = [],
   onNavigate,
@@ -77,10 +78,31 @@ export default function GlobalSearch({
     }
     setLoading(true);
     setError(null);
+    setRecordGroups([]);
     const timer = window.setTimeout(async () => {
       try {
         const { searchCeacRecords } = await import("../../lib/globalSearch");
-        const groups = await searchCeacRecords({ query: cleaned, me, isAdmin });
+        const groups = await searchCeacRecords({
+          query: cleaned, me, isAdmin,
+          onPartial: (partialGroups, issue) => {
+            if (cancelled) return;
+            if (issue?.error) {
+              const category = issue.source === "organisation" ? "Organisation" : "Work";
+              setError(`${category} search could not be verified. ${issue.error}`);
+              return;
+            }
+            // Concurrent partial catalogues are independently authorised. A
+            // slower Work response must not erase an already-arrived Unit, nor
+            // may a Unit response erase the Work results before final settle.
+            if (partialGroups.some((group) => group.items.length)) {
+              setRecordGroups((current) => {
+                const byKey = new Map(current.map((group) => [group.key, group]));
+                for (const group of partialGroups) byKey.set(group.key, group);
+                return [...byKey.values()];
+              });
+            }
+          },
+        });
         if (!cancelled) setRecordGroups(groups);
       } catch (searchError) {
         if (!cancelled) {
@@ -163,8 +185,8 @@ export default function GlobalSearch({
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search CEAC…"
-            aria-label="Search CEAC"
+            placeholder={isExec ? "Search across CEAC OS..." : "Search CEAC…"}
+            aria-label={isExec ? "Search across CEAC OS" : "Search CEAC"}
           />
         </div>
         {results}
@@ -182,8 +204,8 @@ export default function GlobalSearch({
         setQuery(event.target.value);
         setOpen(true);
       }}
-      placeholder="Search CEAC…"
-      aria-label="Search CEAC"
+      placeholder={isExec ? "Search across CEAC OS..." : "Search CEAC…"}
+      aria-label={isExec ? "Search across CEAC OS" : "Search CEAC"}
       aria-expanded={open}
     />
     <kbd>⌘ K</kbd>

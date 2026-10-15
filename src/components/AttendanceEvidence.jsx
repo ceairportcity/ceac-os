@@ -2,6 +2,7 @@ import {useEffect,useState} from 'react';
 import {supabase} from '../lib/supabase';
 import {attendanceDate,startEvidence} from '../lib/attendance';
 import {humanError} from '../lib/productLanguage';
+import {isMissingAttendanceEvidenceStageSchema} from '../lib/stage1SchemaCompatibility';
 import {FieldGroup,LoadingState,ProductNotice,Sheet} from './bits';
 import {WorkforceSection,WorkforceEmpty,WorkforceRecordRow,WorkforceFactGrid} from '../experience-v2/workforce-family/WorkforceFamilyV2';
 
@@ -27,11 +28,30 @@ function LocationPlot({rows}) {
 }
 
 export default function AttendanceEvidence({me}) {
-  const [date,setDate]=useState(attendanceDate()),[rows,setRows]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(null),[notice,setNotice]=useState(null),[busy,setBusy]=useState(false);
+  const [date,setDate]=useState(attendanceDate()),[rows,setRows]=useState([]),[corroboration,setCorroboration]=useState([]),[integrity,setIntegrity]=useState(null),[attendanceStageReady,setAttendanceStageReady]=useState(true),[ownOpenSession,setOwnOpenSession]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(null),[notice,setNotice]=useState(null),[busy,setBusy]=useState(false);
   const [sheet,setSheet]=useState(false),[kind,setKind]=useState('late_arrival'),[starts,setStarts]=useState(''),[returns,setReturns]=useState(''),[reason,setReason]=useState(''),[note,setNote]=useState('');
   const [decision,setDecision]=useState(null),[decisionNote,setDecisionNote]=useState('');
-  useEffect(()=>{let live=true;setLoading(true);supabase.rpc('attendance_day_evidence',{p_date:date}).then(({data,error:e})=>{if(!live)return;setRows(data||[]);setError(e?humanError(e,'Attendance evidence could not load.'):null);setLoading(false);});return()=>{live=false;};},[me.id,date]);
-  async function reload(){const {data,error:e}=await supabase.rpc('attendance_day_evidence',{p_date:date});if(e)throw e;setRows(data||[]);}
+  const [codeSheet,setCodeSheet]=useState(false),[officeCode,setOfficeCode]=useState('');
+  useEffect(()=>{let live=true;setLoading(true);loadEvidence().then(()=>{if(live)setLoading(false);}).catch(e=>{if(live){setError(humanError(e,'Attendance evidence could not load.'));setLoading(false);}});return()=>{live=false;};},[me.id,date]);
+  async function loadEvidence(){
+    const [evidenceResult,corroborationResult,integrityResult,sessionResult]=await Promise.all([
+      supabase.rpc('attendance_day_evidence',{p_date:date}),
+      supabase.rpc('attendance_corroboration_for_day',{p_date:date}),
+      supabase.rpc('attendance_integrity_status'),
+      supabase.from('work_sessions').select('id,place,office_location_id,started_at,ended_at').eq('profile_id',me.id).is('ended_at',null).order('started_at',{ascending:false}).limit(1).maybeSingle(),
+    ]);
+    const requiredError=evidenceResult.error||sessionResult.error;
+    if(requiredError)throw requiredError;
+    const optionalErrors=[corroborationResult.error,integrityResult.error].filter(Boolean);
+    const pendingOnly=optionalErrors.every(isMissingAttendanceEvidenceStageSchema);
+    if(optionalErrors.length&&!pendingOnly)throw optionalErrors[0];
+    setRows(evidenceResult.data||[]);
+    setCorroboration(corroborationResult.error?[]:(corroborationResult.data||[]));
+    setIntegrity(integrityResult.error?null:(integrityResult.data||null));
+    setAttendanceStageReady(optionalErrors.length===0);
+    setOwnOpenSession(sessionResult.data||null);
+  }
+  async function reload(){await loadEvidence();}
   async function mutate(name,args,message){
     setBusy(true);setError(null);setNotice(null);
     try {
@@ -41,27 +61,58 @@ export default function AttendanceEvidence({me}) {
     } catch(e) {setError(humanError(e,'The attendance change could not be recorded.'));}
     finally {setBusy(false);}
   }
-  function submit(){mutate('attendance_create_notice',{p_kind:kind,p_starts_at:starts?`${starts}:00Z`:null,p_expected_return_at:returns?`${returns}:00Z`:null,p_reason:kind==='medical_absence'?null:reason.trim(),p_note:kind==='medical_absence'?null:note.trim()},'Attendance notice recorded. Its response history is preserved.');}
+  async function verifyOfficeCode(){
+    const openSession=ownOpenSession;
+    if(!openSession||openSession.place!=='office'||!integrity?.front_desk_code_enabled)return;
+    setBusy(true);setError(null);setNotice(null);
+    try {
+      const {data,error:e}=await supabase.rpc('attendance_verify_office_code',{p_code:officeCode.trim(),p_session_id:openSession.id});
+      if(e)throw e;
+      setCodeSheet(false);setOfficeCode('');
+      if(data?.verified){
+        setNotice(data.message||'Office corroboration recorded.');
+        try {await reload();} catch {setError('Office corroboration was recorded, but evidence could not refresh.');}
+      } else {
+        setError(data?.message||'That code was not verified. No attendance conclusion was created.');
+      }
+    } catch(e) {setError(humanError(e,'Office corroboration could not be recorded.'));}
+    finally {setBusy(false);}
+  }
+    function submit(){mutate('attendance_create_notice',{p_kind:kind,p_starts_at:starts?`${starts}:00Z`:null,p_expected_return_at:returns?`${returns}:00Z`:null,p_reason:kind==='medical_absence'?null:reason.trim(),p_note:kind==='medical_absence'?null:note.trim()},'Attendance notice recorded. Its response history is preserved.');}
   const mine=rows.find(r=>r.profile_id===me.id);
+  const canVerifyOffice=Boolean(integrity?.front_desk_code_enabled&&ownOpenSession?.place==='office'&&ownOpenSession?.office_location_id);
   return <WorkforceSection title="Today’s work location evidence" description="Expected hours, presence and authorised context are separate facts. Location checks happen only while CEAC is open in the foreground; they do not prove productivity.">
     <div className="workforce-setup-actions">
       <FieldGroup label="Evidence date"><input aria-label="Attendance evidence date" className="field" type="date" value={date} onChange={e=>setDate(e.target.value)}/></FieldGroup>
       <button className="btn btn-ghost btn-sm" disabled={busy} onClick={()=>reload().catch(e=>setError(humanError(e,'Evidence could not refresh.')))}>Refresh evidence</button>
       {mine&&<button className="btn btn-sm" onClick={()=>{setKind('late_arrival');setStarts(attendanceDate()+'T'+new Date().toISOString().slice(11,16));setReturns('');setReason('');setNote('');setSheet(true);}}>Record attendance notice</button>}
+      {integrity?.front_desk_code_enabled && ownOpenSession?.place==='office' && !ownOpenSession?.office_location_id && <p className="screen-note">This older session has no registered duty location. End it and start work at an authorised office or programme venue before verifying that location's code.</p>}
+      {canVerifyOffice&&<button className="btn btn-ghost btn-sm" onClick={()=>{setOfficeCode('');setCodeSheet(true);}}>Verify office presence</button>}
     </div>
     {error&&<ProductNotice tone="error" title="Attendance evidence unavailable">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Attendance updated">{notice}</ProductNotice>}
+    {!attendanceStageReady&&<ProductNotice tone="attention" title="Additional corroboration comes after migration acceptance">Existing attendance evidence and notices remain available. Office-code verification and additional corroborating signals are not being used until their migrations pass restored-data acceptance; CEAC OS will not infer a result.</ProductNotice>}
     {loading?<LoadingState label="Loading attendance evidence…"/>:<>
       <LocationPlot rows={rows}/>
-      {rows.map(row=>{const start=startEvidence(row,date),location=row.latest_location,currentLeave=row.approved_leave?.filter(l=>l.state==='current')||[],upcoming=row.approved_leave?.filter(l=>l.state==='upcoming')||[];
+      {rows.map(row=>{const noAttendanceVolunteer=row.employment_type==='volunteer'&&['no_attendance','not_recorded'].includes(row.working_pattern?.kind||'not_recorded'),start=noAttendanceVolunteer?{label:'No attendance obligation',verified:null}:startEvidence(row,date),location=row.latest_location,currentLeave=row.approved_leave?.filter(l=>l.state==='current')||[],upcoming=row.approved_leave?.filter(l=>l.state==='upcoming')||[];
+        const rowCorroboration=corroboration.filter(item=>item.profile_id===row.profile_id);
+        // Required on-site codes are attributed to a particular work session.
+        // A matching code for another session, person or programme cannot
+        // satisfy this session's evidence requirement.
+        const onSiteSessions=(row.sessions||[]).filter(item=>item.place==='office');
+        const onSiteCodeSessionIds=new Set(rowCorroboration.filter(item=>item.evidence_type==='front_desk_code'&&item.result==='verified').map(item=>item.work_session_id));
+        const onSiteCodeCount=onSiteSessions.filter(item=>onSiteCodeSessionIds.has(item.id)).length;
+        const latestCorroboration=rowCorroboration[0]||null;
         return <div key={row.employee_id||row.profile_id}>
           <WorkforceRecordRow icon="person" title={row.name} meta={start.label} note={'Last verified location: '+(location?stamp(location.captured_at)+' · '+(location.geofence==='inside'?'inside office area':location.geofence==='outside'?'outside office area':'location recorded')+(location.accuracy_m!=null?' · accuracy ±'+Math.round(location.accuracy_m)+' m':''):'Not recorded')+' · Last CEAC activity: '+stamp(row.last_activity_at)+(row.sessions?.some(s=>s.end_location_status==='not_verified')?' · End location not verified':'')}/>
           <WorkforceFactGrid items={[
-            {label:'Expected today',value:row.expected_today===true?'Session expected':row.expected_today===false?(row.day_type||'No session expected'):'Schedule not configured'},
-            {label:'Expected hours',value:row.expected_start&&row.expected_end?row.expected_start.slice(0,5)+'–'+row.expected_end.slice(0,5):'Not recorded'},
+            {label:'Expected today',value:noAttendanceVolunteer?'No attendance obligation':row.expected_today===true?'Session expected':row.expected_today===false?(row.day_type||'No session expected'):'Schedule not configured'},
+            {label:'Expected hours',value:noAttendanceVolunteer?'Not applicable':row.expected_start&&row.expected_end?row.expected_start.slice(0,5)+'–'+row.expected_end.slice(0,5):'Not recorded'},
             {label:'First recorded start',value:time(row.sessions?.[0]?.started_at)},
-            {label:'Verified office start',value:time(start.verified)},
+            {label:'Location-verified office start',value:noAttendanceVolunteer?'Not required':time(start.verified)},
+            {label:'On-site code evidence',value:noAttendanceVolunteer?'Not required':!onSiteSessions.length?'No office session':!attendanceStageReady?'Awaiting approved attendance migration':onSiteCodeCount===onSiteSessions.length?'Code corroboration recorded':`${onSiteCodeCount} of ${onSiteSessions.length} office sessions corroborated — follow up required`},
             {label:'Session state',value:row.sessions?.some(s=>!s.ended_at)?'Open':row.sessions?.length?'Ended':'No session recorded'},
+            {label:'Corroboration',value:latestCorroboration?(latestCorroboration.result==='verified'?'Recorded · '+latestCorroboration.source_label:'Not verified · '+latestCorroboration.source_label):'No additional signal recorded'},
           ]}/>
           {currentLeave.length>0&&<p className="screen-note">Approved leave · {currentLeave.map(l=>l.start_date+'–'+l.end_date).join(', ')}</p>}
           {upcoming.length>0&&<p className="screen-note">Upcoming approved leave · {upcoming.map(l=>l.start_date+'–'+l.end_date).join(', ')}</p>}
@@ -75,10 +126,17 @@ export default function AttendanceEvidence({me}) {
             {row.profile_id===me.id&&n.kind==='temporary_permission'&&!n.returned_at&&Date.parse(n.starts_at)<=Date.now()&&<button className="btn btn-ghost btn-sm" disabled={busy} onClick={()=>mutate('attendance_record_return',{p_work_item_id:n.id},'Return recorded as a self report. It is separate from verified location.')}>Record my return</button>}
           </details>)}
           {!!row.checkpoints?.length&&<details className="row"><summary>Presence check history · {row.checkpoints.length}</summary>{row.checkpoints.map(c=><p className="screen-note" key={c.id}>{c.type==='pre_close'?'Before scheduled close':'Foreground check'} · {stamp(c.received_at)} · {c.captured_at?'Location recorded · '+c.geofence.replaceAll('_',' '):'Location not verified'}{c.failure?' · '+c.failure:''}</p>)}</details>}
+          {!!rowCorroboration.length&&<details className="row"><summary>Corroborating evidence · {rowCorroboration.length}</summary><p className="screen-note">Additional signals support review only. They do not prove presence or create attendance, pay or disciplinary conclusions.</p>{rowCorroboration.map(item=><p className="screen-note" key={item.id}>{item.source_label} · {item.result==='verified'?'corroborated':'not verified'} · {stamp(item.received_at)}</p>)}</details>}
         </div>;})}
       {!rows.length&&<WorkforceEmpty compact title="No location records in scope" description="Only authorised employee evidence appears here."/>}
     </>}
-    {sheet&&<Sheet onClose={()=>!busy&&setSheet(false)}><div className="h2">Record attendance notice</div>
+    {codeSheet&&<Sheet onClose={()=>!busy&&setCodeSheet(false)}><div className="h2">Verify office presence</div>
+      <p className="screen-note">Enter the current short-lived front-desk code. A match is corroborating evidence only and does not replace GPS/geofence evidence or create automatic attendance, pay or disciplinary effects.</p>
+      {error&&<ProductNotice tone="error" title="Office verification">{error}</ProductNotice>}
+      <FieldGroup label="Office presence code"><input className="field" aria-label="Office presence code" value={officeCode} maxLength={6} autoCapitalize="characters" onChange={e=>setOfficeCode(e.target.value.toUpperCase())} placeholder="6-character code"/></FieldGroup>
+      <button className="btn" disabled={busy||officeCode.trim().length!==6} onClick={verifyOfficeCode}>{busy?'Verifying…':'Record corroboration'}</button>
+    </Sheet>}
+        {sheet&&<Sheet onClose={()=>!busy&&setSheet(false)}><div className="h2">Record attendance notice</div>
       {error&&<ProductNotice tone="error" title="Notice not recorded">{error}</ProductNotice>}
       <FieldGroup label="Notice type"><select aria-label="Attendance notice type" className="field" value={kind} onChange={e=>{setKind(e.target.value);setReason('');setNote('');setReturns('');}}>{Object.entries(KINDS).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></FieldGroup>
       <p className="screen-note">{kind==='medical_absence'?'Record dates and operational status only. Send medical details through Protected HR.':kind==='emergency_absence'?'Communicate now, even if advance approval was impossible. This is an attributable notice.':'The recorded unit manager receives this request. Decisions remain attributable.'}</p>

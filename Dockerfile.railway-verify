@@ -1,0 +1,51 @@
+# PRIVATE, disposable, NON-PRODUCTION CI equivalent on Railway.
+# The image can only build when EVERY explicitly checked step succeeds.
+# This is a PARTIAL Level A gate; SQL/RLS, MFA, Playwright and Level C
+# remain unverified until independently executed on clean Supabase.
+FROM node:22.16.0-bookworm AS verify
+WORKDIR /src
+ENV CI=true
+RUN mkdir /gate
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund && echo 'dependencies PASS' >> /gate/verified.txt
+COPY . .
+RUN node scripts/ci/check-github-actions-pinning.mjs && echo 'supply_chain PASS' >> /gate/verified.txt
+RUN bash -n .devcontainer/setup-ceac-test-tooling.sh .devcontainer/launch-automatic-verification.sh .devcontainer/ceac-private-runner.sh scripts/ci/run-independent-release-gate.sh && echo 'codespaces_harness_syntax PASS' >> /gate/verified.txt
+RUN node scripts/ci/check-visual-fidelity-contract.mjs && echo 'visual_source PASS' >> /gate/verified.txt
+RUN node scripts/ci/check-production-migration-ledger.mjs && echo 'migration_ledger PASS' >> /gate/verified.txt
+RUN node --test tests/integration-runtime.test.mjs tests/onboarding-foundation.test.mjs tests/attendance.test.mjs tests/mfa-foundation.test.mjs && echo 'unit_tests PASS' >> /gate/verified.txt
+RUN npm audit --audit-level=high && echo 'dependency_audit PASS' >> /gate/verified.txt
+# Deterministic file/architecture contracts. This Playwright subset uses NO browser,
+# NO live Supabase, and NO user data. Full browser shards remain NOT_VERIFIED.
+RUN npm install --no-save --package-lock=false @playwright/test@1.55.0 && \
+    npx playwright test \
+      tests/experience-v2-icons.spec.js \
+      tests/experience-v2-components.spec.js \
+      tests/experience-v2-data-components.spec.js \
+      tests/experience-v2-gallery.spec.js \
+      tests/fpg8-reconciliation-contract.spec.js && \
+    echo 'source_contracts PASS' >> /gate/verified.txt
+# These three browser checks use a loopback Vite server and deliberately
+# fake Supabase URL. They must never read or write customer data.
+RUN npx playwright install --with-deps chromium
+RUN set -eu; \
+  VITE_SUPABASE_URL=http://127.0.0.1:54321 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_private_test_only npm run dev -- --host 127.0.0.1 > /tmp/ceac-vite.log 2>&1 & \
+  app_pid=$!; \
+  trap 'kill "$app_pid" 2>/dev/null || true' EXIT; \
+  ready=0; \
+  for i in $(seq 1 45); do if curl -fsS http://127.0.0.1:5173/ >/dev/null 2>&1; then ready=1; break; fi; sleep 1; done; \
+  if [ "$ready" != 1 ]; then cat /tmp/ceac-vite.log; exit 1; fi; \
+  npx playwright test tests/railway-private-unauthenticated.spec.js --workers=1 && \
+  echo 'browser_signed_out PASS' >> /gate/verified.txt
+RUN npm run build && echo 'production_build PASS' >> /gate/verified.txt
+RUN sha256sum package-lock.json > /gate/package-lock.sha256 && \
+    printf '%s\n' 'database_replay NOT_VERIFIED' 'sql_rls NOT_VERIFIED' 'account_mfa NOT_VERIFIED' 'browser_shards NOT_VERIFIED' 'visual_level_c NOT_VERIFIED' 'independent_review NOT_VERIFIED' > /gate/outstanding.txt && \
+    test "$(wc -l < /gate/verified.txt)" -eq 10
+
+# The runtime contains evidence only, NEVER source, database keys or app server.
+FROM node:22.16.0-bookworm-slim
+WORKDIR /gate
+COPY --from=verify /gate/verified.txt /gate/verified.txt
+COPY --from=verify /gate/outstanding.txt /gate/outstanding.txt
+COPY --from=verify /gate/package-lock.sha256 /gate/package-lock.sha256
+CMD ["sh","-c","echo CEAC_PRIVATE_VERIFY_ARTIFACT_BEGIN; cat /gate/verified.txt /gate/outstanding.txt /gate/package-lock.sha256; echo CEAC_PRIVATE_VERIFY_ARTIFACT_END; sleep 15"]

@@ -46,7 +46,7 @@ test.describe("Premium redesign R0 shell", () => {
 
   test("Administration desktop shell hides architecture clutter", async ({ browser }) => {
     const { context, page } = await openAs(browser, "admin@ceac.local.test");
-    for (const label of ["Overview","People","Work","Time & Leave","Finance","Reports","Control Center"]) {
+    for (const label of ["Overview","People & Access","Work","Time & Leave","Finance","Reports","Control Center"]) {
       await expect(page.locator(".ev2s-sidebar").getByRole("button", { name:label, exact:true })).toBeVisible();
     }
     for (const label of ["Events","Workflows","Authority","Employee lifecycle","Protected HR","Integrations"]) {

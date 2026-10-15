@@ -17,8 +17,8 @@ begin
   end if;
 
   select count(*) into n from public.capability_definitions;
-  if n<>17 then
-    raise exception 'Capability authority gate failure: expected 17 canonical capabilities after Phase 3 announcement reconciliation, found %.',n;
+  if n<>23 then
+    raise exception 'Capability authority gate failure: expected 23 canonical capabilities including bounded Technical Support, found %.',n;
   end if;
 
   if not exists(
@@ -84,13 +84,13 @@ $authority_privileges$;
 do $authority_rpc_privileges$
 begin
   if has_function_privilege('anon','public.app_has_capability(text,uuid)','EXECUTE')
-     or has_function_privilege('anon','public.grant_capability(uuid,text,uuid,text)','EXECUTE')
+     or has_function_privilege('anon','public.grant_capability(uuid,text,uuid,text,timestamp with time zone)','EXECUTE')
      or has_function_privilege('anon','public.revoke_capability(uuid,text)','EXECUTE') then
     raise exception 'Capability authority gate failure: anon can execute authority functions.';
   end if;
 
   if not has_function_privilege('authenticated','public.app_has_capability(text,uuid)','EXECUTE')
-     or not has_function_privilege('authenticated','public.grant_capability(uuid,text,uuid,text)','EXECUTE')
+     or not has_function_privilege('authenticated','public.grant_capability(uuid,text,uuid,text,timestamp with time zone)','EXECUTE')
      or not has_function_privilege('authenticated','public.revoke_capability(uuid,text)','EXECUTE') then
     raise exception 'Capability authority gate failure: reviewed authority functions are unavailable.';
   end if;

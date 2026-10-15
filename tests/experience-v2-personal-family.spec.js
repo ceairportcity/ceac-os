@@ -191,8 +191,8 @@ test("Stage 10 Family G3 keeps personal leave inside established workforce autho
   expect(me).toContain('p_action: "cancelled_by_employee"');
   expect(me).toContain("Manager and Administration decisions remain in Time & Leave.");
   expect(me).toContain("Open Time & Leave");
-  expect(me).toContain("CEAC OS will not invent leave entitlement or remaining-day figures.");
-  expect(me).toContain("It does not guess working-day totals, entitlement or payroll consequences here.");
+  expect(me).toContain("CEAC OS will not invent an annual leave balance.");
+  expect(me).toContain("It never turns leave or attendance into a Payroll deduction automatically.");
   expect(me).toContain('disabled={busy || !startDate || !endDate || endDate < startDate}');
   expect(me).not.toContain("manager_approved");
   expect(me).not.toContain("admin_approved");
@@ -249,7 +249,7 @@ test("Stage 10 Family G3 leave request uses the V2 guided modal without inventin
   await expect(page.getByRole("button", { name: "Sick", exact: true })).toBeVisible();
   await expect(page.getByLabel("Leave starts", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Leave ends", { exact: true })).toBeVisible();
-  await expect(page.getByText(/does not guess working-day totals, entitlement or payroll consequences/i)).toBeVisible();
+  await expect(page.getByText(/counts working days from your attributable workforce schedule when that schedule is complete/i)).toBeVisible();
   await expect(page.getByText(/That is .* day/i)).toHaveCount(0);
 
   await page.screenshot({
@@ -629,7 +629,7 @@ test("Stage 10 Family H3 keeps Executive Organisation read-only leadership conte
   const organisation = readFileSync("src/screens/ExecutiveOrganisation.jsx", "utf8");
   expect(organisation).toContain('supabase.from("units")');
   expect(organisation).toContain('supabase.from("unit_memberships")');
-  expect(organisation).toContain("Administration remains responsible for changes.");
+  expect(organisation).toContain("Administration remains responsible for structural changes.");
   expect(organisation).toContain("Needs attention");
   expect(organisation).toContain("leadership gap");
   expect(organisation).not.toContain(".insert(");

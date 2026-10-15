@@ -66,8 +66,13 @@ declare
   v_first uuid;
   v_second uuid;
   v_summary jsonb;
+  v_before jsonb;
   v_count integer;
 begin
+  -- The gate may run after a permitted browser acceptance test already wrote
+  -- protected fixture history. Assert exactly the records this transaction
+  -- creates, not that the account had no earlier history.
+  v_before:=public.hr_protected_summary('31000000-0000-4000-8000-000000000001');
   v_first:=public.hr_protected_record(
     '31000000-0000-4000-8000-000000000001','identifier',
     '{"identifier_type":"Fixture ID","identifier_value":"FIXTURE-001"}'::jsonb,
@@ -118,10 +123,10 @@ begin
     raise exception 'Protected HR gate failure: replacement identifier is incorrect.';
   end if;
 
-  if jsonb_array_length(v_summary->'identifiers')<>2
-     or jsonb_array_length(v_summary->'employment_terms')<>1
-     or jsonb_array_length(v_summary->'compensation')<>1
-     or jsonb_array_length(v_summary->'payment_details')<>1 then
+  if jsonb_array_length(v_summary->'identifiers')<>jsonb_array_length(v_before->'identifiers')+2
+     or jsonb_array_length(v_summary->'employment_terms')<>jsonb_array_length(v_before->'employment_terms')+1
+     or jsonb_array_length(v_summary->'compensation')<>jsonb_array_length(v_before->'compensation')+1
+     or jsonb_array_length(v_summary->'payment_details')<>jsonb_array_length(v_before->'payment_details')+1 then
     raise exception 'Protected HR gate failure: protected summary did not return the recorded history.';
   end if;
 

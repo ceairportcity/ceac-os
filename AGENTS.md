@@ -1,3 +1,49 @@
+# 15 OCT 2026 OWNER OVERRIDE — R3/R4 VISUAL TARGETS APPROVED; TEMPORARILY KEEP REPOSITORY PUBLIC
+
+**FIRST READ, newer than the 14 Oct header below:** The owner expressly approved updating only Administration and Executive visual RGB fingerprints to the newer approved R3/R4 role-home screenshots, retaining the strict mean RGB threshold of 6. Decision and exact evidence are recorded in [docs/final-product/PRODUCT_OWNER_DECISIONS.md](docs/final-product/PRODUCT_OWNER_DECISIONS.md). Do not alter Staff/Manager targets, weaken the Quality Gate or treat a visual rebaseline as automatic product acceptance. The owner separately instructed **leave `ceairportcity/ceac-os` PUBLIC for now**; this specifically supersedes the older immediate-return-to-PRIVATE timing, but is not a permanent public-source policy. Preserve confidentiality, source/data/security controls and the obligation to return PRIVATE when the owner next directs. All production migrations, main integration, Vercel deployment and Supabase transfer still require separate release GO. Continue safe exact-head verification on the current candidate.
+
+---
+
+# 14 OCT 2026 OWNER OVERRIDE — TEMPORARY PUBLIC CI; RESTORE PRIVATE IMMEDIATELY AFTER USE
+
+**FIRST READ:** [docs/continuity/CEAC_TEMPORARY_PUBLIC_CI_OWNER_DECISION_2026-10-14.md](docs/continuity/CEAC_TEMPORARY_PUBLIC_CI_OWNER_DECISION_2026-10-14.md). The owner temporarily authorised PUBLIC visibility for `ceairportcity/ceac-os` to allow free GitHub-hosted CI. This is a **strictly expiring exception** to prior private-only/no-public-runner language, not a permanent change. **The instant final necessary CI evidence is captured—or public runners prove unusable—restore the repository to PRIVATE and verify its visibility. Do not wait for payment, production release or deferred Stage 2.** While public, do not commit secrets, production dumps, employee/HR data or private artefacts. Retain all RLS/privacy/security and release-GO controls. CE Airport City stays canonical; the owner prioritises transfer of the **existing** Supabase project's ownership to CE Airport City, while Google OAuth/universal MFA and other Stage 2 work remain deferred. One writer per branch; preserve live production and uncommitted work.
+
+---
+
+# 14 OCT 2026 OWNER-LOCKED NEXT BUNDLE — FIRST READ OVERRIDE
+
+**Read [docs/continuity/CEAC_LOCKED_NEXT_RELEASE_EXECUTION_2026-10-14.md](docs/continuity/CEAC_LOCKED_NEXT_RELEASE_EXECUTION_2026-10-14.md) immediately after this header.** Owner approved the next **one-bundle** Volunteer + Technical Support + attendance-integrity + HR/workforce/Payroll/work-acceptance completion and a four-stage S0–S3 execution. Stage 1 is **already deployed live** from PR #63 SHA `1b0a4fbb3acb2db5efb407d8c39b6a8e909dfe38` on original 119-migration Supabase. Google OAuth, universal MFA/AAL2, and comprehensive Auth/Storage recovery move to separate Stage 2 (provisional November), without waiving interim RLS/privacy and migration safety. Earlier Google-first/no-production-before-MFA wording and old production-status snapshots **are superseded on scope/sequence/status**. Preserve all accepted security, protected HR/payroll, source code and real data. One build integration branch, no premature SQL/merge/deploy; final owner GO for a migration-bearing production release. Read current canonical state and avoid overwriting uncommitted Codespace changes.
+
+---
+
+# 13 OCT 2026 OWNER UPDATE — TINYFISH RECOVERY ONLY; FIRST READ
+
+**Latest owner override to the 12 October "TinyFish unavailable" rule:** TinyFish has been replenished and its connected wallet verified as positive on 13 October. One **bounded** browser-assisted recovery of Work's existing CEAC Codespace is now permitted **after the owner signs into the GitHub account that owns that Codespace using a secure TinyFish profile setup**. No browser profile currently records a GitHub sign-in, so do not run metered authenticated automation until sign-in is confirmed. Never ask for a password/OTP in chat or copy credentials into PRs.
+
+**Sequence:** inspect Codespaces listing and verify original workspace/repository/branch/HEAD and exact uncommitted Google OAuth/identity/TOTP files **read-only**; do not reset, checkout, discard, stash, overwrite or expose credentials/employee data. Once verified, preserve unpublished work through a reviewable, privacy-safe recovery branch/snapshot, avoiding secrets, without changing existing working files. Recover first, then determine what Work already completed and which release gates remain. Never use this tool for a blind production deployment or run unrestricted QA.
+
+**Credit protection:** Check wallet before each automation. Cap initial run at ≤35 agent steps and ≤10 minutes; stop on authentication, workspace ownership, spend or Codespace access failures rather than retry. No top-ups or auto-reload. Monitor wallet after each run and cap the recovery effort at $1 without fresh owner approval. Existing production and PR #50 application source remain untouched; this exception does not constitute owner release GO. The full [dual-mode execution contract](docs/continuity/CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md) remains mandatory.
+
+---
+
+# BINDING FIRST READ — FINISH CEAC MIGRATION WITH DUAL CHAT/WORK EXECUTION (12 OCT 2026)
+
+**Before interpreting any older "active phase", running tools, editing source, or asking the owner for another plan, read [CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md](docs/continuity/CEAC_MIGRATION_FINISH_DUAL_MODE_EXECUTION_2026-10-12.md).** This is the latest owner-approved operating objective and division of labour. The outcome is the fully **improved** CEAC application migrated from the old GitHub account to private `ceairportcity/ceac-os`, with existing Vercel/Supabase production preserved, functioning real HR and other role access, and Google-only HR-approved identities with universal TOTP/AAL2 in the same release. Preserve all approved design, features, data and security. No rollback to the unimproved old app.
+
+**When Work is unavailable:** Chat uses only actually connected GitHub, read-only Supabase, permissioned read-only Vercel and genuinely available local analysis/test tools for separate, bounded, verifiable work. **TinyFish credits are exhausted: DO NOT USE TinyFish or substitute paid providers.** Do not edit Work-owned authentication/MFA/identity files, overwrite unpushed Work state, commit directly into its source branch, change `main`/production, or start repeated CI/Codespace/provider loops. Document proof and leave reviewable results for Work to integrate. When Work returns, it must recover uncommitted work first and continue from the latest actual state.
+
+**Authority:** This first-read operating objective overrides stale *process/sequence* text further down, but does not waive owner product contracts, RLS/privacy, data recoverability, reviewed releases or explicit production GO. The linked contract defines exact responsibilities, available tools, start/stop conditions, evidence and existing live checkpoint facts.
+
+---
+
+# CEAC CURRENT ENGINEERING WORKFLOW — READ THIS BEFORE LEGACY PHASE HEADINGS
+
+**Process authority (proposed, documentation-only, 11 October 2026):** Read [docs/continuity/CEAC_ENGINEERING_OPERATING_PLAYBOOK.md](docs/continuity/CEAC_ENGINEERING_OPERATING_PLAYBOOK.md) and [docs/continuity/CEAC_LIVE_HANDOVER.md](docs/continuity/CEAC_LIVE_HANDOVER.md) FIRST in every new CEAC engineering chat/session. Revalidate actual GitHub PR/branch HEADs before using the handover's dated values. Those files govern **working methods, proven tools, coordination, evidence, and handoff**; binding product scope still comes from the latest documented owner decisions and accepted contracts. The process notes override this file's superseded *workflow/active phase* statements where they conflict, but NEVER waive privacy, RLS, MFA, payroll/HR, testing or visual acceptance requirements.
+
+**Persistence is mandatory:** when a tool works, fails, or a procedure is improved, commit the reproducible method, real evidence, cost/credential constraints, branch SHA, blocker, next action and lessons to the playbook/live handover on a safe operations/docs branch before ending. Keep product PR #47, security PR #48 and frozen release PR #44 isolated; no production changes or unverified GO.
+
+---
+
 # POST-ONBOARDING OPERATIONAL REFINEMENT IS ACTIVE
 
 The product owner authorised the 6 October 2026 post-onboarding programme. Read `docs/continuity/CEAC_POST_ONBOARDING_MASTER_IMPROVEMENT_REGISTER_2026-10-06.md`, `docs/continuity/CEAC_OPERATIONAL_REFINEMENT_SEQUENCE_2026-10-06.md` and the current phase acceptance/contract before writes. Phase 2 Attendance, Working Patterns & Permissions is complete at protected main `a482ab602bacb511c18436e256dd932526f14fdd`; its final documentation closure is `97d2b4a7a3220a7764f5eaa3e43c8d31672374b0`. Phase 3 Compliance Operating Surface is complete at protected main `4179b71ed8757ece726c4282363edaacc8b158b6`, production migration `20261006121001_113_compliance_operating_surface`, under `docs/continuity/CEAC_COMPLIANCE_PHASE3_ACCEPTANCE_2026-10-06.md`. Phase 4 Notification & Work-State Communication is NEXT and has not started. Do not reopen accepted Phase 2/3 work or silently broaden Compliance authority. Existing accepted domain, security, privacy, audit and visual contracts below remain binding. Unexplained absence, disciplinary cases, Pastor override, financial consequences, employee scoring, automated dress monitoring and background surveillance remain outside accepted scope. GitHub is canonical; one writer; reconcile forward.
@@ -308,7 +354,8 @@ canonical — never derive a code from the initials of a unit name.
 ## Blocked, awaiting answers from CEAC — do not guess
 
 - **Payroll**: which allowances and deductions beyond SSNIT and PAYE.
-- **Leave entitlement by contract type**: one org-wide figure today.
+
+Annual-leave entitlement/accrual is no longer blocked: the 7 October 2026 owner lock confirms 24 working days per leave year, accruing quarterly at 6 working days per completed quarter with joiner pro-rating and the year-end rules in `docs/final-product/LEAVE_RULES_v1.md`.
 
 ## Continuing without Claude
 

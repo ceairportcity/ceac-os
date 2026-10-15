@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { test, expect } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 
@@ -84,7 +85,7 @@ test("Stage 4B desktop shell exposes only authorised production destinations", a
   const sidebar = page.locator(".ev2s-sidebar");
   await expect(sidebar).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Overview", exact: true })).toBeVisible();
-  await expect(sidebar.getByRole("button", { name: "People", exact: true })).toBeVisible();
+  await expect(sidebar.getByRole("button", { name: "People & Access", exact: true })).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Time & Leave", exact: true })).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Control Center", exact: true })).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Primitives", exact: true })).toHaveCount(0);
@@ -132,29 +133,24 @@ test("Stage 4B create menu exposes only role-authorised shortcuts", async ({ pag
   await expect(menu.getByRole("menuitem", { name: "Message room", exact: true })).toBeVisible();
 });
 
-test("OCR2 Executive Create exposes authorised leadership actions", async ({ page }) => {
+test("OCR2 Executive creation is reachable through the approved Work, Ministry and Announcements destinations", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
+  await expect(page.getByRole("button", { name: "Create", exact: true })).toBeHidden();
 
-  const create = page.getByRole("button", { name: "Create", exact: true });
-  await create.click();
-  let menu = page.getByRole("menu");
-  await expect(menu.getByRole("menuitem", { name: "Give out work", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Ministry objective", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Announcement", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Meeting", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Message room", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Project", exact: true })).toHaveCount(0);
+  await page.goto("/?tab=work");
+  await expect(page.getByRole("heading", { name: "Work", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Give out work", exact: true }).first()).toBeVisible();
 
-  await menu.getByRole("menuitem", { name: "Ministry objective", exact: true }).click();
+  await page.goto("/?tab=strategy");
+  await expect(page.getByRole("heading", { name: "Ministry", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "New Ministry Objective", exact: true }).click();
   let dialog = page.getByRole("dialog", { name: "New ministry objective" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel("Strategy parent direction")).toBeVisible();
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
 
-  await create.click();
-  menu = page.getByRole("menu");
-  await menu.getByRole("menuitem", { name: "Announcement", exact: true }).click();
+  await page.goto("/?tab=announcements");
+  await page.getByRole("button", { name: "New announcement", exact: true }).click();
   dialog = page.getByRole("dialog", { name: "New announcement" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("Attachments", { exact: true })).toBeVisible();
@@ -168,14 +164,22 @@ test("OCR3 authorised Administration Create exposes Announcement while Staff rem
   await expect(page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true })).toBeVisible();
 });
 
-test("OCR6C Executive Create Message chooses an authorised Sub-team before communicating", async ({ page }) => {
+test("OCR6C Executive Messages chooses an authorised Sub-team before communicating", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  await page.getByRole("menu").getByRole("menuitem", { name: "Message room", exact: true }).click();
+  await page.goto("/?tab=messages");
   await expect(page).toHaveURL(/tab=messages/);
   await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
-  await expect(page.getByRole("tab", { name: "Rooms", exact: true })).toHaveAttribute("aria-selected", "true");
+  // Wait for the lazy-loaded Messages route and its session-scoped data to
+  // settle before exercising its segmented control. A shell mount alone is
+  // not a loaded Messages page and can otherwise race a route replacement.
+  const messages = page.locator(".inbox-page");
+  await expect(messages.getByRole("heading", { name: "Messages", exact: true })).toBeVisible({ timeout: 15000 });
+  await expect(messages.getByText("Loading Messages…", { exact: true })).toBeHidden({ timeout: 15000 });
+  const roomsTab = messages.getByRole("tab", { name: "Rooms", exact: true });
+  await expect(roomsTab).toBeVisible();
+  await roomsTab.click();
+  await expect(roomsTab).toHaveAttribute("aria-selected", "true");
   const roomDirectory = page.locator(".ev2c-data-panel").filter({ hasText: "Organisation Rooms" }).first();
   await expect(roomDirectory).toBeVisible();
   await expect(page.getByText("This directory does not create direct messages.", { exact: false })).toBeVisible();
@@ -199,8 +203,12 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
 
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  await page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true }).click();
+  // The approved Executive shell has no generic Create popup.
+  // Publishing remains available from its authorised Announcements surface.
+  await expect(page.getByRole("button", { name: "Create", exact: true })).toBeHidden();
+  await page.goto("/?tab=announcements");
+  await expect(page.getByRole("heading", { name: "Announcements", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "New announcement", exact: true }).click();
   let dialog = page.getByRole("dialog", { name: "New announcement" });
   await dialog.locator("#announcement-title").fill(announcementTitle);
   await dialog.locator("#announcement-body").fill("Operational Clarity final workflow acceptance.");
@@ -221,9 +229,11 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   await dialog.getByRole("button", { name: "Create ministry direction", exact: true }).click();
   await expect(page.getByText(directionTitle, { exact: true })).toBeVisible();
 
-  await page.goto("/");
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  await page.getByRole("menu").getByRole("menuitem", { name: "Ministry objective", exact: true }).click();
+  // The ministry-specific composer enforces the same parent-direction
+  // authority, without reintroducing the retired global Create button.
+  await page.goto("/?tab=strategy");
+  await page.getByRole("heading", { name: "Ministry", exact: true }).waitFor();
+  await page.getByRole("button", { name: "New Ministry Objective", exact: true }).click();
   dialog = page.getByRole("dialog", { name: "New ministry objective" });
   await dialog.getByLabel("Strategy parent direction").selectOption({ label: directionTitle });
   await dialog.getByLabel("Strategy name").fill(objectiveTitle);
@@ -246,6 +256,29 @@ test("OCR3 Room Composer exposes private media attachment control", async ({ pag
 
 test("OCR4 Global Search returns grouped authorised records and opens Project and Work", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
+
+  // Prove the same Manager identity has the exact source row under real RLS
+  // before starting the browser's sole authoritative auth session. A separate
+  // preflight sign-in after browser login can invalidate its session in some
+  // GoTrue configurations, making a correct search appear unauthorised.
+  // The global search must never silently convert an authorisation/SQL failure
+  // into a misleading empty result; diagnostics do not spoof any API response.
+  const authorised = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+    auth:{persistSession:false},
+  });
+  const managerAuth = await authorised.auth.signInWithPassword({
+    email:"manager@ceac.local.test", password:process.env.ROLE_FIXTURE_PASSWORD,
+  });
+  expect(managerAuth.error, "Manager browser fixture must also authenticate for exact RLS preflight").toBeNull();
+  const verifiedWork = await authorised.from("work_items").select("id,title")
+    .eq("id","26000000-0000-4000-8000-000000000011");
+  expect(verifiedWork.error, "Manager-authorised source Work search must not be silently denied").toBeNull();
+  expect(verifiedWork.data, "Manager should see its own unit's seeded predecessor work").toHaveLength(1);
+  // Close the isolated preflight session before starting browser authentication.
+  const preflightClosed = await authorised.auth.signOut({ scope: "local" });
+  expect(preflightClosed.error).toBeNull();
+
+
   await signIn(page, "manager@ceac.local.test");
 
   const search = page.getByPlaceholder("Search CEAC…");
@@ -262,6 +295,16 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
   await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
   const searchAgain = page.getByPlaceholder("Search CEAC…");
   await searchAgain.fill("Stage 5 predecessor work");
+  // The same browser session must read every Work column required by Search.
+  const browserWork = await page.evaluate(async () => {
+    const { supabase } = await import("/src/lib/supabase.js");
+    const { data, error } = await supabase.from("work_items")
+      .select("id,ref,title,status,project_id")
+      .eq("id", "26000000-0000-4000-8000-000000000011");
+    return { rows: data?.length || 0, error: error?.message || null };
+  });
+  expect(browserWork.error, "Browser-authenticated Work lookup must not fail silently").toBeNull();
+  expect(browserWork.rows, "Browser should see the Work row under real RLS").toBe(1);
   const work = page.getByRole("dialog", { name: "Search CEAC results" }).locator('.ev2s-search-group[aria-label="Work"]');
   await expect(work.getByRole("button", { name: /Stage 5 predecessor work/ })).toBeVisible();
   await work.getByRole("button", { name: /Stage 5 predecessor work/ }).click();
@@ -281,8 +324,8 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
   await expect(page.getByRole("heading", { name: "Staff Fixture", exact: true })).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole("tablist", { name: "Employee record sections" })).toBeVisible();
 
-  await page.goto("/?tab=home");
-  await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
+  await page.locator(".ev2s-sidebar").getByRole("button", { name: "Overview", exact: true }).click();
+  await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });
   search = page.getByPlaceholder("Search CEAC…");
   await search.fill("Test Unit A");
   results = page.getByRole("dialog", { name: "Search CEAC results" });
@@ -308,6 +351,39 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
   await expect(announcement).toBeVisible();
   await announcement.click();
   await expect(page.getByText("OCR6 searchable announcement record", { exact: true })).toBeVisible({ timeout: 15000 });
+});
+
+test("OCR6C Organisation search remains available while an unrelated authorised catalogue is pending", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await signIn(page, "admin@ceac.local.test");
+  await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });
+
+  // The local seed supplies Test Unit A and the Administration identity in
+  // the same organisation. Hold only the optional meeting-catalogue HTTP
+  // response: Organisation still must resolve from its own real RLS query.
+  let releaseMeetings;
+  const heldMeetings = new Promise((resolve) => { releaseMeetings = resolve; });
+  await page.route("**/rest/v1/meeting_sessions?*", async (route) => {
+    await heldMeetings;
+    // The application may cancel a superseded search request while the
+    // optional catalogue is held. Do not resolve a canceled route twice.
+    try {
+      await route.continue();
+    } catch (error) {
+      // A superseded optional request may already have been canceled.
+      if (!String(error).includes("already handled")) throw error;
+    }
+  });
+  try {
+    await page.getByPlaceholder("Search CEAC…").fill("Test Unit A");
+    const results = page.getByRole("dialog", { name: "Search CEAC results" });
+    await expect(results.locator('.ev2s-search-group[aria-label="Organisation"]')
+      .getByRole("button", { name: /Test Unit A/ })).toBeVisible({ timeout: 15000 });
+    await expect(results.getByText(/Organisation search could not be verified/i)).toBeHidden();
+  } finally {
+    releaseMeetings?.();
+    await page.unroute("**/rest/v1/meeting_sessions?*");
+  }
 });
 
 test("OCR6C Project Files upload is searchable and opens through a signed private URL", async ({ page }) => {

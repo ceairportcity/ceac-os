@@ -117,6 +117,9 @@ for(const [role,config] of Object.entries(roleRoutes)){
   routeGroups.forEach((routes,index)=>{
     const suffix=routeGroups.length>1 ? " "+(index+1) : "";
     test(role+" visual inventory"+suffix,async({page})=>{
+      // Full role sweeps navigate 10–26 routes; preserve every assertion while
+      // giving complete authenticated loading/rendering the necessary time.
+      test.setTimeout(Math.max(90000, routes.length * 7500));
       await page.setViewportSize({width:1440,height:960});
       await signIn(page,config.email,config.app);
       const tinyText=await inspectRoutes(page,role,config,routes);
@@ -124,6 +127,7 @@ for(const [role,config] of Object.entries(roleRoutes)){
     });
 
     test(role+" mobile route sweep"+suffix,async({page})=>{
+      test.setTimeout(Math.max(90000, routes.length * 7500));
       await page.setViewportSize({width:390,height:844});
       await signIn(page,config.email,config.app);
       await inspectMobileRoutes(page,role,config,routes);

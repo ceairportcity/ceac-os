@@ -92,18 +92,20 @@ The leave model must preserve:
 - exceptions;
 - corrections/reversals/history.
 
-Still unresolved and MUST NOT be invented:
-- exact annual-leave entitlement quantity;
-- exact sick-leave entitlement quantity;
-- maternity/paternity quantities;
-- study-leave quantity/rules;
-- whether entitlement is granted at the start of the year or accrued monthly;
-- carry-over quantity/expiry;
-- unpaid-leave treatment;
-- unpaid-leave Payroll formula;
-- any automatic Payroll consequence of absence/leave.
+Superseded by the binding 7 October 2026 go-live decisions in `docs/final-product/PRODUCT_OWNER_DECISIONS.md` and `docs/final-product/LEAVE_RULES_v1.md`:
+- annual leave is 24 working days per leave year;
+- accrual is quarterly at 6 working days per completed quarter;
+- joiners are pro-rated within the quarter;
+- ordinary unused annual leave expires at the end of the applicable leave year with no routine automatic carry-forward, while legally/contractually protected exceptions and approved cross-year leave must be preserved;
+- approved unpaid leave and unauthorised absence are distinct states;
+- attendance evidence may trigger human review but never an automatic disciplinary or Payroll consequence;
+- Manager, Compliance and Administration/HR participate as applicable, with Group Pastor/CEO final authority for disciplinary or salary-deduction consequences.
 
-Until confirmed, the UI must show truthful unconfigured/unknown policy states rather than assumed numbers.
+Still unresolved and MUST NOT be invented:
+- exact sick-leave entitlement quantity/rules beyond its separation from annual leave;
+- maternity/paternity quantities and detailed eligibility;
+- study-leave quantity/rules;
+- any automatic Payroll consequence of absence/leave (automatic consequences remain prohibited).
 
 ## 4. Literal visual-reference rules
 

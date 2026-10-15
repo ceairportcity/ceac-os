@@ -224,7 +224,11 @@ test("Stage 12C legacy Sheet keeps focus and Escape behaviour under reduced moti
   );
   await page.goto("/?tab=calendar");
 
-  const trigger = page.getByRole("button", { name:"View All", exact:true });
+  // A reduced-motion filter sheet only belongs to the settled Manager Calendar,
+  // not a similarly named control elsewhere while the route is still loading.
+  await expect(page.locator(".ev2cal-toolbar")).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(".ev2cal-role-layout")).toBeVisible({ timeout: 15000 });
+  const trigger = page.locator(".ev2cal-toolbar").getByRole("button", { name:"View All", exact:true });
   await trigger.click();
 
   const dialog = page.getByRole("dialog");

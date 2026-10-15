@@ -48,7 +48,9 @@ test("Stage 10 Family B2 Staff Team uses the shared People family without author
   expect(screen).not.toContain("team-section-toggle");
   expect(css).toContain(".ev2-people-page");
   expect(css).not.toContain("!important");
-  expect(main).toContain('import "./experience-v2/people-family/people-family.css";');
+  // People styles travel with the lazy People route; the sign-in shell stays lean.
+  expect(main).not.toContain('import "./experience-v2/people-family/people-family.css";');
+  expect(shared).toContain('import "./people-family.css";');
 });
 
 for (const viewport of [
@@ -130,7 +132,7 @@ test("Stage 10 Family B3 Manager Team preserves factual unit scope without scori
   expect(screen).toContain('rpc("swap_sub_team_positions"');
   expect(screen).toContain('rpc("save_unit_resource"');
   expect(screen).toContain('rpc("set_unit_resource_active"');
-  expect(screen).toContain("They are not a score or judgement about a person.");
+  expect(screen).toContain("Volunteer is an engagement type, not a new CEAC role or authority level.");
   expect(screen).not.toMatch(/productivity score|performance score|ranking/i);
   expect(css).toContain(".ev2p-evidence-person");
   expect(css).not.toContain("!important");
@@ -145,9 +147,9 @@ for (const viewport of [
   test(`Stage 10 Family B3 Manager Team composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openManagerTeam(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "Your team", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "People & volunteers", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /Unit Room/ })).toBeVisible();
-    await expect(page.getByText("People", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("People & volunteers", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Work lanes", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Team setup", exact: true })).toBeVisible();
 
@@ -370,7 +372,7 @@ for (const viewport of [
   test(`Stage 10 Family B5A Administration People directory composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openAdminPeople(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "People", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "People & Access", exact: true })).toBeVisible();
     await expect(page.getByLabel("Find a person")).toBeVisible();
     await expect(page.getByRole("tab", { name: "Directory", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Organisation", exact: true })).toBeVisible();
@@ -467,6 +469,11 @@ test("Stage 10 Family B5B Administration employee workspace preserves employment
   expect(screen).toContain('personTab === "history"');
   expect(screen).toContain('personTab === "protected"');
   expect(screen).toContain('title="Time & Leave"');
+  expect(screen).toContain('["access","Access"]');
+  expect(screen).toContain('rpc("admin_access_invitations")');
+  expect(screen).toContain('title="Access & responsibilities"');
+  expect(screen).toContain("Job title never grants application authority.");
+  expect(screen).toContain("Offboard / deactivate access");
 
   expect(screen).toContain("These records are not a productivity score, ranking, pay input or disciplinary conclusion.");
   expect(screen).toContain('rpc("hr_employee_protected_summary"');
@@ -476,7 +483,9 @@ test("Stage 10 Family B5B Administration employee workspace preserves employment
   expect(screen).toContain("p_replaces_id: form.replacesId || null");
   expect(screen).toContain('setProtectedEditor({ type:"compensation", record:compensation })');
   expect(screen).not.toContain("function ProtectedHrSheet");
-  expect(screen).toContain('listOperationalFilesForContexts("employee_photo"');
+  // A permission-verified roster loads before optional, asynchronously signed
+  // private employee photos. Allow formatting whitespace, never a public URL.
+  expect(screen).toMatch(/listOperationalFilesForContexts\(\s*"employee_photo",\s*rosterRows\.map\(/);
   expect(screen).toContain('listOperationalFiles("employee_document"');
   expect(screen).toContain('contextType: kind === "photo" ? "employee_photo" : "employee_document"');
   expect(screen).toContain('aria-label="Employee photo"');
@@ -506,13 +515,20 @@ for (const viewport of [
     await expect(page.getByRole("heading", { name: "Staff Fixture", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Identity & employment state", exact: true })).toBeVisible();
     await expect(page.getByLabel("Employee photo", { exact: true })).toBeVisible();
-    for (const tab of ["Overview","Employment","Work","Time & Leave","Documents","History","Protected HR"]) {
+    for (const tab of ["Overview","Access","Employment","Work","Time & Leave","Documents","History","Protected HR"]) {
       await expect(page.getByRole("tab", { name: tab, exact: true })).toBeVisible();
     }
     if (viewport.width > 760) await expect(page.locator(".ev2p-admin-master-list")).toBeVisible();
     else await expect(page.locator(".ev2p-admin-master-list")).toBeHidden();
 
     await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Access", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Access & responsibilities", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Manage responsibilities", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Offboard / deactivate access", exact: true })).toBeVisible();
+    await expect(page.getByText(/Job title never grants application authority/i)).toBeVisible();
+
     await page.getByRole("tab", { name: "Employment", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Employment record", exact: true })).toBeVisible();
 
@@ -617,7 +633,7 @@ for (const viewport of [
   test(`Stage 10 Family B5C Administration People acceptance matrix at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openAdminPeople(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "People", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "People & Access", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
     const row = page.locator(".fpg-people-roster-row").filter({ hasText: "Staff Fixture" }).first();
@@ -675,7 +691,7 @@ test("VF3C Manager Team and Person workspace locks factual command composition",
   const person = readFileSync("src/screens/PersonDetail.jsx", "utf8");
   const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
 
-  expect(team).toContain("They are not a score or judgement about a person.");
+  expect(team).toContain("Volunteer is an engagement type, not a new CEAC role or authority level.");
   expect(team).toContain("PeopleEvidencePerson");
   expect(person).toContain('className="ev2p-person-layout"');
   expect(person).toContain('className="ev2p-person-context-rail"');
@@ -718,4 +734,17 @@ test("VF4B Administration People and employee workspace lock operations-console 
   expect(css).toContain("grid-template-columns: minmax(15.5rem, 18rem) minmax(0, 1fr)");
   expect(css).toContain(".ev2-people-admin > .ev2p-section");
   expect(css).not.toContain("!important");
+});
+
+
+test("Phase 5C person access hands off to the controlled lifecycle instead of directly mutating access", () => {
+  const app = readFileSync("src/App.jsx", "utf8");
+  const lifecycle = readFileSync("src/screens/AdminLifecycle.jsx", "utf8");
+  const access = readFileSync("src/components/PeopleAccess.jsx", "utf8");
+
+  expect(app).toContain("function openLifecycle(profileId = null");
+  expect(app).toContain("initialProfileId={lifecycleIntent?.profileId || null}");
+  expect(lifecycle).toContain("Completing offboarding is the authoritative path that deactivates operational access.");
+  expect(lifecycle).toContain("setCreateOpen(true)");
+  expect(access).toContain('onLifecycle(form.person, "offboarding")');
 });
