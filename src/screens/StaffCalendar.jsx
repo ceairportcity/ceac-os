@@ -269,6 +269,18 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     setNotice("Private note saved.");await load();
   }
 
+  async function deleteDayNote(){
+    if(busy || !window.confirm("Delete your private journal for this day?"))return;
+    const row=dayNotes.find(note=>note.note_date===selectedDate&&note.note_kind==="daily");
+    if(!row){setNoteDraft("");return;}
+    setBusy(true);setError(null);
+    const {error:failure}=await supabase.from("personal_day_notes")
+      .delete().eq("id",row.id).eq("profile_id",me.id);
+    setBusy(false);
+    if(failure){setError(humanError(failure,"Your private journal could not be deleted."));return;}
+    setNoteDraft("");setNotice("Private journal deleted.");await load();
+  }
+
   const first=new Date(cursor.getFullYear(),cursor.getMonth(),1);
   const gridStart=startOfWeek(first);
   const days=useMemo(()=>Array.from({length:42},(_,i)=>addDays(gridStart,i)),[cursor.getFullYear(),cursor.getMonth()]);
@@ -307,7 +319,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       description={personalPlanningReady?"Shared CEAC commitments and your private planning in one calendar. Private events, tasks and notes stay visible only to you.":"Shared CEAC Work, meetings, approved leave and ministry commitments on the existing production database."}
       status={statusLabel}
       statusTone="action"
-      action={personalPlanningReady?<Button onClick={()=>openComposer("event")}>+ Add</Button>:null}
+      action={<Button disabled={!personalPlanningReady || loading} onClick={()=>openComposer("event")}>+ Add</Button>}
     />
 
     {scopeControl}
@@ -353,7 +365,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
               {selectedWork.map(event=><button key={event.id} type="button" className="phase6-day-shared-row" onClick={()=>open(event)}>
                 <span className="phase6-day-kind is-work">work</span><span><strong>{event.title}</strong><small>{event.meta}</small></span>
               </button>)}
-              {selectedPrivate.map(task=><div key={task.id} className="phase6-private-task-card"><label className={task.completed_at?"phase6-private-task is-complete":"phase6-private-task"}><input type="checkbox" checked={Boolean(task.completed_at)} disabled={busy} onChange={()=>togglePersonalTask(task)}/><span><strong>{task.title}</strong><small>{[task.planned_time?timeLabel(task.planned_time):"Private personal task",task.reminder_at?"reminder set":null,task.linked_work_item_id?"linked CEAC Work":task.linked_project_id?"linked Project":null].filter(Boolean).join(" · ")}</small></span><em>Private</em></label>{checklistFor(task.id).length>0&&<div className="phase6-task-checklist">{checklistFor(task.id).map(row=><label key={row.id}><input type="checkbox" checked={Boolean(row.completed_at)} disabled={busy} onChange={()=>toggleChecklist(row)}/><span>{row.title}</span></label>)}</div>}</div>)}
+              {selectedPrivate.map(task=><div key={task.id} className="phase6-private-task-card"><label className={task.completed_at?"phase6-private-task is-complete":"phase6-private-task"}><input type="checkbox" checked={Boolean(task.completed_at)} disabled={busy} onChange={()=>togglePersonalTask(task)}/><span><strong>{task.title}</strong><small>{[task.planned_time?timeLabel(task.planned_time):"Private personal task",task.reminder_at?"reminder set":null,task.linked_work_item_id?"linked CEAC Work":task.linked_project_id?"linked Project":null].filter(Boolean).join(" · ")}</small></span><em>Private</em></label>{checklistFor(task.id).length>0&&<div className="phase6-task-checklist">{checklistFor(task.id).map(row=><label key={row.id}><input type="checkbox" checked={Boolean(row.completed_at)} disabled={busy} onChange={()=>toggleChecklist(row)}/><span>{row.title}</span></label>)}</div>}<div className="phase6-private-task-actions"><Button variant="quiet" size="sm" disabled={busy} onClick={()=>setEditingPrivateItem({kind:"task",...task})}>Edit / delete</Button></div></div>)}
               {!selectedPrivate.length&&!selectedWork.length?<p className="phase6-day-empty">No task is planned or due on this day.</p>:null}
               {personalPlanningReady&&<div className="phase6-private-task-compose">
                 <input className="field" aria-label="New private task" placeholder="Add a private task" value={taskTitle} onChange={event=>setTaskTitle(event.target.value)} />
@@ -369,22 +381,26 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
             {overduePrivate.length>0&&<section className="phase6-day-block" aria-label="Overdue private tasks">
               <div className="phase6-day-block-head"><h3>Overdue private tasks</h3><span>{overduePrivate.length}{overduePrivate.length===500?"+":""}</span></div>
               <p className="screen-note">Missed recurring or individual tasks stay overdue until you complete or delete them. No instance is automatically marked done.</p>
-              {overduePrivate.map(task=><label key={task.id} className="phase6-private-task">
-                <input type="checkbox" checked={false} disabled={busy} onChange={()=>togglePersonalTask(task)}/>
-                <span><strong>{task.title}</strong><small>Overdue since {task.plan_date}{task.series_id?" · repeating task":""}</small></span>
-              </label>)}
+              {overduePrivate.map(task=><div key={task.id} className="phase6-private-task-card">
+                <label className="phase6-private-task">
+                  <input type="checkbox" checked={false} disabled={busy} onChange={()=>togglePersonalTask(task)}/>
+                  <span><strong>{task.title}</strong><small>Overdue since {task.plan_date}{task.series_id?" · repeating task":""}</small></span>
+                </label>
+                <Button variant="quiet" size="sm" disabled={busy} onClick={()=>setEditingPrivateItem({kind:"task",...task})}>Edit / delete</Button>
+              </div>)}
             </section>}
             <section className="phase6-day-block phase6-unscheduled-block">
               <div className="phase6-day-block-head"><h3>Unscheduled tasks</h3><span>{unscheduledPrivate.length}</span></div>
               {unscheduledPrivate.length?unscheduledPrivate.map(task=><div key={task.id} className="phase6-unscheduled-task">
                 <span><strong>{task.title}</strong><small>Private · no calendar date yet</small></span>
                 <Button variant="quiet" size="sm" disabled={busy} onClick={()=>schedulePersonalTask(task)}>Add to {shortDate(selectedDate)}</Button>
+                <Button variant="quiet" size="sm" disabled={busy} onClick={()=>setEditingPrivateItem({kind:"task",...task})}>Edit / delete</Button>
               </div>):<p className="phase6-day-empty">No private tasks are waiting for a date.</p>}
             </section>
           </div>:<div className="phase6-day-note-view">
-            {personalPlanningReady?<article className="phase6-note-card is-journal"><div className="phase6-note-card-head"><span>Journal</span><div><strong>Daily journal</strong><small>Private · {shortDate(selectedDate)}</small></div></div><textarea className="field phase6-day-note-editor" aria-label="Private day notes" rows={8} value={noteDraft} onChange={event=>setNoteDraft(event.target.value)} placeholder="Write private planning notes for this day…" /><div className="phase6-day-note-actions"><span>{noteDraft.length.toLocaleString()} / 12,000</span><Button disabled={busy||noteDraft.length>12000} onClick={saveDayNote}>{busy?"Saving…":"Save journal"}</Button></div></article>:<p className="phase6-day-empty">Private journal notes are not available in Stage 1.</p>}
+            {personalPlanningReady?<article className="phase6-note-card is-journal"><div className="phase6-note-card-head"><span>Journal</span><div><strong>Daily journal</strong><small>Private · {shortDate(selectedDate)}</small></div></div><textarea className="field phase6-day-note-editor" aria-label="Private day notes" rows={8} value={noteDraft} onChange={event=>setNoteDraft(event.target.value)} placeholder="Write private planning notes for this day…" /><div className="phase6-day-note-actions"><span>{noteDraft.length.toLocaleString()} / 12,000</span><Button disabled={busy||noteDraft.length>12000} onClick={saveDayNote}>{busy?"Saving…":"Save journal"}</Button><Button variant="quiet" size="sm" disabled={busy} onClick={deleteDayNote}>Delete journal</Button></div></article>:<p className="phase6-day-empty">Private journal notes require the approved private-planning migration.</p>}
             {selectedMeetingNotes.map(note=><button key={note.id} type="button" className="phase6-note-card is-meeting" onClick={()=>openMeeting?.(note.meeting_id)}><div className="phase6-note-card-head"><span>Meeting</span><div><strong>{note.meeting?.title||"Meeting note"}</strong><small>Linked meeting note · authoritative in Meeting</small></div></div><p>{note.body}</p></button>)}
-            {generalNotes.map(note=><article key={note.id} className={`phase6-note-card is-${note.note_kind}`}><div className="phase6-note-card-head"><span>{note.note_kind==="personal"?"Personal":"General"}</span><div><strong>{note.title||(note.note_kind==="personal"?"Personal note":"General note")}</strong><small>Private note{note.reminder_at?" · reminder set":""}</small></div></div><p>{note.body||"No note text recorded."}</p></article>)}
+            {generalNotes.map(note=><article key={note.id} className={`phase6-note-card is-${note.note_kind}`}><div className="phase6-note-card-head"><span>{note.note_kind==="personal"?"Personal":"General"}</span><div><strong>{note.title||(note.note_kind==="personal"?"Personal note":"General note")}</strong><small>Private note{note.reminder_at?" · reminder set":""}</small></div></div><p>{note.body||"No note text recorded."}</p><Button variant="quiet" size="sm" disabled={busy} onClick={()=>setEditingPrivateItem({kind:"note",...note})}>Edit / delete</Button></article>)}
           </div>}
         </aside>
       </div>
@@ -392,6 +408,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       <div className="phase6-calendar-coming-up"><CalendarAgenda eyebrow="Shared commitments" title="Coming up" description="Upcoming Work, meetings, approved leave and ministry commitments. Private planning stays in your day workspace." events={upcoming} emptyTitle="Nothing coming up" emptyDescription="Nothing shared is recorded in this view."/></div>
     </>}
 
+    {editingPrivateItem&&personalPlanningReady&&<PersonalPlanningEditor key={editingPrivateItem.id} me={me} item={editingPrivateItem} onClose={()=>setEditingPrivateItem(null)} onChanged={load}/>}
     {composer&&personalPlanningReady&&<Sheet onClose={()=>!busy&&setComposer(null)}>
       <div className="phase6-planning-composer">
         <div><span className="eyebrow">Private planning</span><div className="h2">Add to my workspace</div><p className="screen-note">Personal Events, Tasks and Notes stay private. Use CEAC Work or Meetings when an organisational record is required.</p></div>
