@@ -68,7 +68,7 @@ for (const viewport of [
   test(`Stage 8 Executive Overview composes cleanly at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openExecutive(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.locator(".executivev2-hero h2")).toContainText("Good morning");
+    await expect(page.locator(".executivev2-hero h2")).toContainText(/Good (morning|afternoon|evening), Executive Fixture/);
     await expect(page.locator(".executivev2-kpis")).toBeVisible();
     await expect(page.locator(".executivev2-attention")).toBeVisible();
     if (viewport.width > 720) {
@@ -107,7 +107,7 @@ for (const viewport of [
 test("VF5A Executive briefing keeps the approved compact mockup hierarchy on mobile", async ({ browser }) => {
   const { context, page } = await openExecutive(browser, { width: 390, height: 844 });
 
-  await expect(page.locator(".executivev2-hero h2")).toContainText("Good morning");
+  await expect(page.locator(".executivev2-hero h2")).toContainText(/Good (morning|afternoon|evening), Executive Fixture/);
   const kpis = page.locator(".executivev2-kpis");
   await expect(kpis).toBeVisible();
   await expect(kpis.locator(".executivev2-kpi")).toHaveCount(4);

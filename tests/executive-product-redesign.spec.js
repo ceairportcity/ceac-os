@@ -135,7 +135,7 @@ test("Executive Overview reproduces the locked desktop composition", async ({ pa
   await expect(page.getByRole("button", { name: "Open updates", exact: true })).toBeVisible();
   await expect(page.getByLabel("Quick create")).toBeHidden();
   await expect(page.getByLabel("Current date and time in Accra")).toBeHidden();
-  await expect(page.locator(".executivev2-hero h2")).toContainText("Good morning");
+  await expect(page.locator(".executivev2-hero h2")).toContainText(/Good (morning|afternoon|evening), Executive Fixture/);
   await expect(page.locator(".executivev2-kpi")).toHaveCount(4);
   await expect(page.locator(".executivev2-reference-grid > .executivev2-reference-panel")).toHaveCount(3);
   await expect(page.locator(".executivev2-lower-grid > .executivev2-reference-panel")).toHaveCount(2);
