@@ -71,7 +71,16 @@ async function openAdminControlCenter(browser, viewport) {
   await page.getByPlaceholder("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
+  // A rendered shell is not proof its Auth session persisted across a direct
+  // route load. Check the real existing local session, without signing in a
+  // second client or bypassing role access.
+  await expect.poll(async () => page.evaluate(async () => {
+    const { supabase } = await import("/src/lib/supabase.js");
+    const { data, error } = await supabase.auth.getSession();
+    return !error && Boolean(data?.session?.access_token);
+  }), { timeout: 15000 }).toBe(true);
   await page.goto("/?tab=settings");
+  await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
   await expect(page.locator(".ev2-control-center")).toBeVisible({ timeout: 15000 });
   return { context, page };
 }

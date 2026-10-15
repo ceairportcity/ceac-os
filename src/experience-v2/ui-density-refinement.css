@@ -18,17 +18,9 @@
     flex: 0 0 auto;
     width: auto;
     min-width: 148px;
-    max-width: 100%;
     min-height: 42px;
     padding: 10px 18px;
-    margin: 0;
     font-size: 14px;
-    line-height: 1.35;
-    white-space: normal;
   }
 }
-@media (max-width: 767px) {
-  .phase6-manager-people-toolbar .phase6-add-volunteer {
-    min-height: 44px;
-  }
-}
+.phase6-add-volunteer { min-height: 44px; }
