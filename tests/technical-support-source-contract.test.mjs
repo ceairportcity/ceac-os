@@ -115,7 +115,7 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 144, "expected reviewed 119-history + 11-pending + 13 security migration source tree");
+  assert.equal(migrations.length, 151, "expected exact integrated one-bundle migration source inventory (151); reconcile this gate on any approved migration change");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
   const pending = [
