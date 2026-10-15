@@ -1,5 +1,7 @@
 # CEAC OS — Owner decision: strictly temporary public GitHub CI window
 
+> **15 October 2026 subsequent owner override (supersedes automatic visibility-restoration timing below):** The owner explicitly directed **leave GitHub PUBLIC for now**, after approving the newer R3/R4 Administration/Executive visual references. Keep the repository public until the owner directs a change; do not interpret this as permanent approval or expose credentials, sensitive HR data or other private material. Reconfirm visibility when subsequently asked and restore PRIVATE when the owner authorises/instructs it. All production and protected-main operations remain separately GO-gated. This newer direction takes precedence over the immediate-private language in this 14 Oct document. See the 15 Oct first-read update in `AGENTS.md` and `docs/final-product/PRODUCT_OWNER_DECISIONS.md`.
+
 **Owner-authorised: 14 October 2026. Highest-priority visibility/CI operating override until explicitly superseded.** This is an exception only to older instructions that required `ceairportcity/ceac-os` to remain private at all times or barred public runners. It does **not** override source-of-truth, one-writer, RLS, privacy, audit, payroll, real-data, acceptance, rollback or final owner production-GO controls.
 
 ## Current verified state and purpose
