@@ -949,7 +949,8 @@ test("Stage 5 Delivery manages programmes, milestones, dependencies and project 
     await expect(page.getByRole("heading", { name: "Major projects", exact: true })).toBeVisible();
     await expect(page.getByText("Stage 4 Browser Project", { exact: true }).first()).toBeVisible();
     // Owner-approved Executive copy still requires explicit, never inferred, project health.
-    await expect(page.getByText("Health appears only when it is explicitly recorded.")).toBeVisible();
+    await expect(page.getByText(/Health appears only when it is explicitly recorded/)).toBeVisible();
+    await expect(page.getByText(/does not generate a hidden project score/)).toBeVisible();
     await page.getByRole("button", { name: "Open operational details", exact: true }).click();
     await expect(page.locator(".row-t").filter({ hasText: /^Acceptance Unit A Programme$/ }).first()).toBeVisible();
     await context.close();
