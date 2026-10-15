@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { test, expect } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 
@@ -266,6 +267,22 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
   await projects.getByRole("button", { name: /Stage 4 Browser Project/ }).click();
   await expect(page).toHaveURL(/tab=projects.*project=25000000-0000-4000-8000-000000000011/);
   await expect(page.locator(".ev2-project-workspace")).toBeVisible({ timeout: 15000 });
+
+  // Prove the Manager can read the exact source row under real local RLS.
+  // The global search must never silently convert an authorisation/SQL failure
+  // into a misleading empty result; diagnostics do not spoof any API response.
+  const authorised = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+    auth:{persistSession:false},
+  });
+  const managerAuth = await authorised.auth.signInWithPassword({
+    email:"manager@ceac.local.test", password:process.env.ROLE_FIXTURE_PASSWORD,
+  });
+  expect(managerAuth.error, "Manager browser fixture must also authenticate for exact RLS preflight").toBeNull();
+  const verifiedWork = await authorised.from("work_items").select("id,title")
+    .eq("id","26000000-0000-4000-8000-000000000011");
+  expect(verifiedWork.error, "Manager-authorised source Work search must not be silently denied").toBeNull();
+  expect(verifiedWork.data, "Manager should see its own unit's seeded predecessor work").toHaveLength(1);
+  await authorised.auth.signOut();
 
   await page.goto("/?tab=home");
   await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
