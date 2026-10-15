@@ -877,4 +877,3 @@ grant execute on function public.prepare_staff_invitation_resend(uuid)
 
 comment on function public.prepare_staff_invitation_resend(uuid) is
   'Renews an existing invitation only after resolving the caller organisation and selecting the invitation inside that organisation; cross-organisation rows are never locked for browser resend attempts.';
-
