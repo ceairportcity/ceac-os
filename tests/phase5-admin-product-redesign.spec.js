@@ -47,7 +47,7 @@ for (const viewport of [
     const { context, page } = await signInAdmin(browser, { width: viewport.width, height: viewport.height });
     // Enter through the authorised Administration action after capability resolution.
     // This verifies the actual user path rather than a direct reload before permissions settle.
-    const openPeople = page.locator(".adminv2-intro-actions").getByRole("button", { name: "People & Access", exact: true });
+    const openPeople = page.getByRole("button", { name: /^(?:Open )?People & Access$/ }).first();
     await expect(openPeople).toBeVisible({ timeout: 15000 });
     await openPeople.click();
     await expect(page.locator(".ev2-people-admin")).toBeVisible({ timeout: 15000 });
@@ -82,7 +82,7 @@ test("Phase 5 person access opens the same employee in controlled offboarding", 
   const { context, page } = await signInAdmin(browser, { width: 390, height: 844 });
   // Enter through the authorised Administration action after capability resolution.
   // This verifies the actual user path rather than a direct reload before permissions settle.
-  const openPeople = page.locator(".adminv2-intro-actions").getByRole("button", { name: "People & Access", exact: true });
+  const openPeople = page.getByRole("button", { name: /^(?:Open )?People & Access$/ }).first();
   await expect(openPeople).toBeVisible({ timeout: 15000 });
   await openPeople.click();
   await expect(page.locator(".ev2-people-admin")).toBeVisible({ timeout: 15000 });
