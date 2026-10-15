@@ -613,6 +613,35 @@ test("OCR6C Unit Rooms carry attributable communication and private media betwee
     // Distinguish an upload or registration failure from a private signed-URL/render failure.
     // Both conditions are mandatory; never treat message delivery alone as media success.
     await expect(page.locator(".room-error")).toHaveCount(0);
+
+    // Prove registration, link visibility and private Storage signing with a
+    // separate signed-in MANAGER, not a service-role bypass. Missing media must
+    // not be called successful merely because message text was delivered.
+    const { createClient } = await import("@supabase/supabase-js");
+    const managerClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+      auth: { persistSession:false, autoRefreshToken:false },
+    });
+    const mediaAuth = await managerClient.auth.signInWithPassword({
+      email:"manager@ceac.local.test", password:rolePassword,
+    });
+    expect(mediaAuth.error, "Private media must be independently readable with Manager's own credentials").toBeNull();
+    const roomMessage = await managerClient.from("room_messages").select("id,room_id")
+      .eq("body", message).order("created_at", { ascending:false }).limit(1).single();
+    expect(roomMessage.error, "Uploaded media's Room message must be RLS-readable").toBeNull();
+    const link = await managerClient.from("operational_file_links")
+      .select("id,context_id,file:operational_files!inner(id,filename,storage_bucket,storage_path,mime_type,state)")
+      .eq("context_type","room_message").eq("context_id",roomMessage.data.id)
+      .limit(10);
+    expect(link.error, "Manager's RLS-scoped media link lookup must succeed").toBeNull();
+    const image = (link.data || []).find((row)=>row.file?.filename===filename);
+    expect(image, "Media registration/link must persist and be readable after Send").toBeTruthy();
+    expect(image.file.state, "Private uploaded media must be finalised").toBe("active");
+    const signed = await managerClient.storage.from(image.file.storage_bucket)
+      .createSignedUrl(image.file.storage_path, 300, { download:false });
+    expect(signed.error, "Signed private Room media URL must be permitted for the Manager").toBeNull();
+    expect(signed.data?.signedUrl, "Signed private media link must not be empty").toBeTruthy();
+    await managerClient.auth.signOut({ scope:"local" });
+
     await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
   }
@@ -1622,24 +1651,13 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await expect(page.getByText(/does not convert a missing or different record/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Corrections", exact: true }).click();
-    await page.getByRole("button", { name: "Record correction", exact: true }).click();
-    dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Correction person").selectOption("31000000-0000-4000-8000-000000000001");
-    await dialog.getByLabel("Corrected context").fill("Acceptance corrected workforce context");
-    await dialog.getByLabel("Correction reason").fill(correctionReason);
-    await dialog.getByRole("button", { name: "Record correction", exact: true }).click();
-    await expect(page.getByText("Attendance context correction recorded.", { exact: true })).toBeVisible();
-
-    const correctionRow = page.locator(".row").filter({ hasText: correctionReason }).first();
-    await expect(correctionRow).toBeVisible();
-    page.once("dialog", (prompt) => prompt.accept("Acceptance reversal reason"));
-    await correctionRow.getByRole("button", { name: "Reverse correction", exact: true }).click();
-    await expect(page.getByText("Attendance correction reversal recorded.", { exact: true })).toBeVisible();
-
-    await page.reload();
-    await go(page, "Workforce");
-    await page.getByRole("tab", { name: "Corrections", exact: true }).click();
-    await expect(page.locator(".row").filter({ hasText: correctionReason }).first()).toContainText("reversed");
+    const correctionWorkflow=page.locator(".ev2wf-correction-workflow");
+    await expect(correctionWorkflow.getByRole("heading",{name:"Missed check-in and attendance corrections"})).toBeVisible();
+    await expect(correctionWorkflow.getByText(/manager approves the correction; HR audits approved corrections afterward/i)).toBeVisible();
+    // Legacy direct HR modification/reversal is prohibited. Dedicated browser
+    // approval test separately verifies Staff request → Manager decision → HR audit.
+    await expect(page.getByRole("button",{name:"Record correction",exact:true})).toHaveCount(0);
+    await expect(page.getByRole("button",{name:"Reverse correction",exact:true})).toHaveCount(0);
 
     await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
     await page.getByRole("button", { name: "Configure leave policy", exact: true }).click();
