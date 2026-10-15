@@ -56,7 +56,7 @@ create or replace function public.performance_employee_release_visible(
 )
 returns boolean
 language sql stable security definer set search_path=''
-as $
+as $$
   select coalesce(exists(
     select 1 from public.appraisals a
     join public.performance_review_release_requests d
@@ -64,10 +64,9 @@ as $
     where a.id=p_appraisal_id
       and a.org_id=public.app_org_id()
       and a.profile_id=auth.uid()
-      and a.status in ('shared','closed')
       and d.state='approved' and d.decided_at>=p_entry_created_at
   ),false);
-$;
+$$;
 revoke all on function public.performance_employee_release_visible(uuid,timestamptz)
   from public,anon;
 grant execute on function public.performance_employee_release_visible(uuid,timestamptz)
@@ -138,8 +137,8 @@ begin
   end if;
   select * into v_review from public.appraisals
   where id=p_appraisal_id and org_id=v_org for update;
-  if v_review.id is null or v_review.manager_id is distinct from v_actor then
-    raise exception 'Only the assigned reviewer may request release.' using errcode='42501';
+  if v_review.id is null or v_review.manager_id is distinct from v_actor or v_review.status='closed' then
+    raise exception 'Only the current reviewer of an open review may request release.' using errcode='42501';
   end if;
   select * into v_assessment from public.appraisal_entries
   where appraisal_id=v_review.id and org_id=v_org and entry_type='manager_assessment'
@@ -201,7 +200,8 @@ begin
   end if;
   select * into v_review from public.appraisals
   where id=v_request.appraisal_id and org_id=v_org for update;
-  if v_review.id is null or (v_ok and v_review.manager_id is distinct from v_request.requested_by) then
+  if v_review.id is null or v_review.status='closed' or v_actor=v_request.requested_by
+     or (v_ok and v_review.manager_id is distinct from v_request.requested_by) then
     raise exception 'The assigned reviewer changed. Request a fresh review.' using errcode='42501';
   end if;
   select id into v_latest from public.appraisal_entries
@@ -241,3 +241,24 @@ end;
 $$;
 revoke all on function public.share_performance_review(uuid) from public,anon;
 grant execute on function public.share_performance_review(uuid) to authenticated;
+
+-- HR metadata access and private development narrative visibility.
+drop policy if exists stage7_appraisals_read on public.appraisals;
+create policy stage7_appraisals_read on public.appraisals for select to authenticated
+using (
+  org_id=public.app_org_id() and (
+    profile_id=auth.uid() or manager_id=auth.uid()
+    or public.app_has_capability('performance.admin',null)
+    or (public.app_is_admin() and public.app_has_capability('people.manage',null))
+  )
+);
+drop policy if exists stage7_development_read on public.development_plan_versions;
+create policy stage7_development_read on public.development_plan_versions for select to authenticated
+using (
+  org_id=public.app_org_id() and (
+    manager_id=auth.uid()
+    or (public.app_is_admin() and public.app_has_capability('people.manage',null))
+    or (profile_id=auth.uid()
+      and public.performance_employee_release_visible(appraisal_id,created_at))
+  )
+);

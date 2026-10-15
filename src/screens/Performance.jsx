@@ -218,7 +218,7 @@ export default function Performance({ me }) {
       if (failed) throw failed.error;
       const releaseResult = hrReleaseAdmin
         ? await supabase.from("performance_review_release_requests")
-            .select("id,requested_assessment_id,request_reason,requested_at,state")
+            .select("id,requested_assessment_id,requested_by,request_reason,requested_at,state")
             .eq("org_id",me.org_id).eq("appraisal_id",caseId).eq("state","pending")
         : { data:[],error:null };
       if (requestSerial !== caseRequestSerial.current) return;
@@ -341,6 +341,10 @@ export default function Performance({ me }) {
 
   async function decideHRRelease(approved) {
     if (!hrReleaseAdmin || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
+    if (currentReleaseRequest.requested_by === me.id) {
+      setError("An independent HR officer must authorise assessment publication.");
+      return;
+    }
     const confirmed = await rpc("performance_hr_decide_release", {
       p_request_id:currentReleaseRequest.id,
       p_approve:approved,
@@ -596,9 +600,9 @@ export default function Performance({ me }) {
                 <textarea className="field" rows="2" aria-label="HR assessment publication decision reason"
                   value={releaseDecisionNote} onChange={(event)=>setReleaseDecisionNote(event.target.value)} />
               </FieldGroup>
-              <button className="btn btn-sm" disabled={busy || releaseDecisionNote.trim().length < 8}
+              <button className="btn btn-sm" disabled={busy || currentReleaseRequest.requested_by === me.id || releaseDecisionNote.trim().length < 8}
                 onClick={()=>decideHRRelease(true)}>HR approve publication</button>
-              <button className="btn btn-ghost btn-sm" disabled={busy || releaseDecisionNote.trim().length < 8}
+              <button className="btn btn-ghost btn-sm" disabled={busy || currentReleaseRequest.requested_by === me.id || releaseDecisionNote.trim().length < 8}
                 onClick={()=>decideHRRelease(false)}>HR decline with reason</button>
             </>}
           </div>}
