@@ -19,7 +19,9 @@ test("People Time & Leave exposes actual HR-authorised seven-day editor", () => 
 });
 
 test("the People edit saves attributable versioned schedule and never silently rewrites history", () => {
-  assert.match(editor, /supabase\.rpc\("workforce_record_pattern"/);
+  assert.match(editor, /employeeId \? "workforce_record_roster_pattern" : "workforce_record_pattern"/);
+  assert.match(editor, /p_employee_id:employeeId/);
+  assert.match(editor, /p_profile_id:profileId,p_unit_id:unitId \|\| null/);
   assert.match(editor, /p_supersedes_id:previous\?\.id \|\| null/);
   assert.match(editor, /p_reason:reason\.trim\(\)/);
   assert.match(editor, /p_effective_from:startDate/);

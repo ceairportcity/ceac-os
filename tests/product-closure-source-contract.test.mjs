@@ -12,6 +12,7 @@ const support = file("src/screens/TechnicalSupport.jsx");
 const app = file("src/App.jsx");
 const people = file("src/screens/People.jsx");
 const workforce = file("src/screens/Workforce.jsx");
+const attendanceCorrectionWorkflow = file("src/components/AttendanceCorrectionWorkflow.jsx");
 const compensation = file("src/lib/protectedCompensation.js");
 const notificationBrowser = file("tests/notification-work-state-phase4.spec.js");
 
@@ -218,7 +219,12 @@ test("Attendance writes are unavailable while required current evidence has fail
   assert.match(workforce, /const unavailable=requiredDatasets\.filter\(\(dataset\)=>datasetErrors\[dataset\]\)/);
   assert.match(workforce, /if\(unavailable\.length\)\{/);
   assert.match(workforce, /Required Workforce records are currently unavailable/);
-  assert.match(workforce, /"Attendance context correction recorded\.",\["corrections"\]/);
+  assert.match(workforce, /<AttendanceCorrectionWorkflow me=\{me\} \/>/);
+  assert.match(attendanceCorrectionWorkflow, /if \(writeLock\.current \|\| !ready \|\| unavailable\) return/);
+  for (const rpc of ["attendance_request_correction","attendance_manager_decide_correction","attendance_hr_audit_correction"]) {
+    assert.match(attendanceCorrectionWorkflow, new RegExp('supabase\\.rpc\\("'+rpc+'"'));
+  }
+  assert.match(attendanceCorrectionWorkflow, /No original work session was changed/);
   assert.match(workforce, /"Leave decision recorded\.",\["leave","leave history"\]/);
   assert.match(workforce, /"Confirmed leave policy activated\.",\["leave policies","leave policy rules"\]/);
 });
