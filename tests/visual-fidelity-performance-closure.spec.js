@@ -18,11 +18,13 @@ const budgets = {
   // retain narrow regression headroom rather than exempting the new product CSS.
   coreCssRaw: 534 * KIB,
   coreCssGzip: 80 * KIB,
-  // The owner-approved Executive redesign and the subsequently approved Guide and
-  // Technical Support routes are isolated. The integrated candidate measures
-  // 614.82 KiB aggregate while core CSS remains below its existing 534 KiB guard;
-  // retain only 1.18 KiB aggregate regression headroom.
-  allCssRaw: 616 * KIB,
+  // The owner-approved Executive design and minimum 12px readable helper
+  // typography add a measured 526 bytes beyond the former 616 KiB aggregate
+  // ceiling (exact integrated CI: 631310 bytes on 15 Oct 2026).
+  // The narrowly revised 617 KiB ceiling leaves only 498 bytes headroom;
+  // core CSS, route CSS, JS chunks and vendor budgets remain unchanged.
+  // This is an explicit accessibility-driven measurement, not a blanket waiver.
+  allCssRaw: 617 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;
