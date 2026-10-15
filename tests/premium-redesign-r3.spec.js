@@ -130,7 +130,10 @@ test.describe("Premium redesign R3 Administration",()=>{
     const grid=page.locator(".ev2-office-settings .office-settings-grid");
     await expect(grid).toBeVisible();
     const sections=grid.locator(":scope > .office-settings-card");
-    expect(await sections.count()).toBeGreaterThanOrEqual(4);
+    // Organisation Settings is loaded asynchronously after the route appears.
+    // Keep the accepted minimum of four real configuration cards, but wait
+    // for their actual rendered state instead of sampling the DOM too early.
+    await expect.poll(() => sections.count(), { timeout: 15000 }).toBeGreaterThanOrEqual(4);
     const shadows=await sections.evaluateAll((nodes)=>nodes.map((node)=>getComputedStyle(node).boxShadow));
     for(const shadow of shadows) expect(shadow).toBe("none");
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
