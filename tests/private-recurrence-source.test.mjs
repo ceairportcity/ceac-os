@@ -16,7 +16,7 @@ test("recurrence is an owner-private, unprivileged and idempotent database surfa
   assert.match(migration,/profile_id=auth\.uid\(\) and org_id=public\.app_org_id\(\)/);
   assert.match(migration,/personal_materialize_task_series/);
   assert.match(migration,/security invoker/g);
-  assert.doesNotMatch(migration,/security definer/i);
+  assert.doesNotMatch(migration.split("\n").filter(line=>!line.trimStart().startsWith("--")).join("\n"), /security definer/i, "new recurring RPCs must not run with elevated privileges");
   assert.match(migration,/on conflict \(series_id,plan_date\).*where series_id is not null/s);
   assert.match(migration,/get diagnostics v_rows=row_count/);
   assert.match(migration,/personal_task_series_owner_guard/);
