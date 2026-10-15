@@ -223,8 +223,11 @@ test("Stage 12C legacy Sheet keeps focus and Escape behaviour under reduced moti
     "reduce",
   );
   await page.goto("/?tab=calendar");
+  // Verify that the actual Manager Calendar has hydrated before opening a sheet.
+  await expect(page.locator(".ev2cal-manager-page")).toBeVisible({ timeout:15000 });
+  await expect(page.locator(".ev2cal-role-layout")).toBeVisible({ timeout:15000 });
 
-  const trigger = page.getByRole("button", { name:"View All", exact:true });
+  const trigger = page.locator(".ev2cal-toolbar").getByRole("button", { name:"View All", exact:true });
   await trigger.click();
 
   const dialog = page.getByRole("dialog");
