@@ -40,7 +40,7 @@ Live production has **119 applied versions** with exact name agreement against *
 
 **No version in this table has been applied to production by the assurance work.** Review of source syntax and existing database counts is not migration execution.
 
- 
+
 
 ## 3. Other live privileged-RPC authority review
 
