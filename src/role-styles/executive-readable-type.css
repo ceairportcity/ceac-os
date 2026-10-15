@@ -1,0 +1,19 @@
+/* Additive readability correction. Preserves the literal owner-approved
+   Executive stylesheet blob and established geometry, palette and hierarchy.
+   Text may never render below the CEAC 12px minimum; no forced overrides. */
+.exec-redesign-head > div > span,
+.ev2-work-executive .ev2w-eyebrow,
+.ev2-finance-executive .ev2fin-eyebrow,
+.ev2-reporting-executive .ev2rep-eyebrow,
+.ev2-executive-ministry .eyebrow,
+.exec-redesign-row-meta,
+.executive-app .inbox-page .premium-page-head .eyebrow,
+.executive-app .inbox-page .exec-redesign-shared-head .eyebrow,
+.executive-app .ev2-personal-page .ev2pf-header .ev2pf-eyebrow {
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .executive-app .fpg-payroll-table td:nth-child(n+2):nth-child(-n+5)::before {
+    font-size: 12px;
+  }
+}
