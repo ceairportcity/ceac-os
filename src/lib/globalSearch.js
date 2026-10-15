@@ -94,6 +94,13 @@ export async function searchCeacRecords({ query, me, isAdmin = false }) {
 
   const [workResult, projectResult, strategyResult, profileResult, unitResult, subTeamResult, meetingResult, announcementResult, roomResult, fileResult, rosterResult] = await Promise.all(tasks);
 
+  // Never convert an RLS/query failure into the misleading "No matching"
+  // response. Work search is a core authorised action; fail visibly, with a
+  // bounded non-sensitive error code and no private database payload.
+  if (workResult?.error) {
+    const code = String(workResult.error.code || "query_error").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 32);
+    throw new Error(`Work search could not load (${code}). Retry or contact Technical Support.`);
+  }
   const work = safeData(workResult).map((row) => ({
     kind: "work",
     id: row.id,

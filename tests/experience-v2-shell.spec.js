@@ -278,8 +278,14 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
     email:"manager@ceac.local.test", password:process.env.ROLE_FIXTURE_PASSWORD,
   });
   expect(managerAuth.error, "Manager browser fixture must also authenticate for exact RLS preflight").toBeNull();
-  const verifiedWork = await authorised.from("work_items").select("id,title")
-    .eq("id","26000000-0000-4000-8000-000000000011");
+  // Match the *actual Global Search query*, not a weaker id-only read.
+  // This ensures a missing work result is attributable to row/SQL visibility
+  // rather than being silently hidden by the broader search component.
+  const verifiedWork = await authorised.from("work_items")
+    .select("id,ref,title,status,project_id")
+    .eq("org_id","10000000-0000-4000-8000-000000000010")
+    .ilike("title","%Stage 5 predecessor work%")
+    .limit(6);
   expect(verifiedWork.error, "Manager-authorised source Work search must not be silently denied").toBeNull();
   expect(verifiedWork.data, "Manager should see its own unit's seeded predecessor work").toHaveLength(1);
   // The Node preflight is a second Supabase session for the same manager.
@@ -294,7 +300,12 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
   const searchAgain = page.getByPlaceholder("Search CEAC…");
   await searchAgain.fill("Stage 5 predecessor work");
   const work = page.getByRole("dialog", { name: "Search CEAC results" }).locator('.ev2s-search-group[aria-label="Work"]');
-  await expect(work.getByRole("button", { name: /Stage 5 predecessor work/ })).toBeVisible();
+  // Keep the complete authorised search path under test. Surface the
+  // user-visible query state on failure rather than weakening this assertion.
+  await expect(work.getByRole("button", { name: /Stage 5 predecessor work/ }),
+    "Expected an authorised Work result; search state: " +
+      (await page.locator(".ev2s-search-state").allTextContents()).join(" | ")
+  ).toBeVisible();
   await work.getByRole("button", { name: /Stage 5 predecessor work/ }).click();
   await expect(page.locator(".ev2-work-detail")).toBeVisible({ timeout: 15000 });
 });
