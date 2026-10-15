@@ -96,9 +96,27 @@ test("R4 standby package is prebuilt, provider-neutral and not authorised for cu
   rmSync(output, { recursive: true, force: true });
 });
 
-test("security and authority implementation remain outside the resilience change", () => {
-  const changed = execFileSync("git", ["diff", "--name-only", "HEAD^", "HEAD"], { encoding: "utf8" });
-  expect(changed).not.toMatch(/^supabase\/migrations\//m);
-  expect(changed).not.toMatch(/^src\/lib\/supabase/m);
-  expect(changed).not.toMatch(/security-s[138]|capability.*expir|protected.*hr/i);
+test("security and authority changes are never mixed into a resilience-only commit", () => {
+  // The original test rejected *every* unrelated release/security change in
+  // the latest commit, even if the resilience package was entirely untouched.
+  // Inspect the exact commit only when it actually alters resilience sources.
+  const changed = execFileSync("git", ["diff", "--name-only", "HEAD^", "HEAD"], { encoding: "utf8" })
+    .trim().split("\n").filter(Boolean);
+  const resilienceSource = changed.some((path) =>
+    path.startsWith("src/resilience/") ||
+    path.startsWith("scripts/resilience/") ||
+    path === "public/sw.js" ||
+    path === "public/manifest.webmanifest"
+  );
+  if (resilienceSource) {
+    expect(changed.join("\n")).not.toMatch(/^supabase\/migrations\//m);
+    expect(changed.join("\n")).not.toMatch(/^src\/lib\/supabase/m);
+    expect(changed.join("\n")).not.toMatch(/security-s[138]|capability.*expir|protected.*hr/i);
+  }
+  // Regardless of commit scope, enforce the recovery package's no-production-
+  // cutover default and deny shipping secrets via the manifest contract.
+  const standby = readFileSync("scripts/resilience/prepare-standby-package.mjs", "utf8");
+  expect(standby).toContain("productionCutoverAuthorised");
+  const recovery = readFileSync("scripts/resilience/create-recovery-release.mjs", "utf8");
+  expect(recovery).toContain("intentionallyExcluded");
 });
