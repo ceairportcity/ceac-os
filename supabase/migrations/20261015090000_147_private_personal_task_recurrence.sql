@@ -47,7 +47,13 @@ before update on public.personal_task_series for each row
 execute function public.personal_day_task_touch();
 
 alter table public.personal_day_tasks
-  add column series_id uuid references public.personal_task_series(id) on delete set null;
+  add column series_id uuid references public.personal_task_series(id) on delete set null,
+  add column dismissed_at timestamptz;
+
+-- Dismissing an occurrence is a soft deletion: the owner no longer sees it,
+-- but the unique series/date key remains so future generation cannot resurrect it.
+comment on column public.personal_day_tasks.dismissed_at is
+  'Owner-deleted occurrence marker. Materialisation must never restore deleted instances.';
 
 -- Occurrences share their owner's task surface and RLS; a unique index makes
 -- repeated materialisation idempotent even under concurrent requests.
