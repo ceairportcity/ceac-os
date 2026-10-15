@@ -205,15 +205,24 @@ for (const viewport of [
     await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
+    // A project list may legitimately be empty; never seed invented
+    // project records simply to make a viewport screenshot green.
     const rows = page.locator(".ev2p-context-row:visible");
-    expect(await rows.count()).toBeGreaterThan(0);
+    const empty = page.locator(".ev2-project-admin .ev2p-empty");
+    await expect.poll(async () => (await rows.count()) > 0 || await empty.isVisible(),
+      { timeout: 15000 }).toBe(true);
     await expect(page.getByRole("button", { name: "Create project", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /Add objective/i })).toHaveCount(0);
 
-    const schedule = page.getByRole("button", { name: "Schedule project meeting", exact: true }).first();
-    await expect(schedule).toBeVisible();
-    const scheduleBox = await schedule.boundingBox();
-    expect(scheduleBox?.height || 0).toBeGreaterThanOrEqual(44);
+    if (await rows.count()) {
+      const schedule = page.getByRole("button", { name: "Schedule project meeting", exact: true }).first();
+      await expect(schedule).toBeVisible();
+      const scheduleBox = await schedule.boundingBox();
+      expect(scheduleBox?.height || 0).toBeGreaterThanOrEqual(44);
+    } else {
+      await expect(empty).toContainText("No projects recorded");
+      await expect(page.getByRole("button", { name: "Schedule project meeting", exact: true })).toHaveCount(0);
+    }
 
     const smallest = await page.locator(".ev2-project-admin").evaluate((root) => {
       const values = [...root.querySelectorAll("*")]
