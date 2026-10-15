@@ -153,6 +153,9 @@ test("VF6B cross-role finance surfaces use one flat factual grammar", async ({ b
   ]) {
     const admin = await openAdminFinance(browser, { width: viewport.width, height: viewport.height });
     const activeTab = admin.page.locator(".ev2fin-tabs button.is-active");
+    // Wait for the active finance tab to finish rendering before measuring its CSS.
+    // A detached or not-yet-rendered element can return empty computed styles.
+    await expect(activeTab).toBeVisible();
     const activeStyle = await activeTab.evaluate((node) => ({
       radius: getComputedStyle(node).borderRadius,
       shadow: getComputedStyle(node).boxShadow,
