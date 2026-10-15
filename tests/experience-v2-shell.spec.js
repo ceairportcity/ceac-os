@@ -282,7 +282,8 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
     .eq("id","26000000-0000-4000-8000-000000000011");
   expect(verifiedWork.error, "Manager-authorised source Work search must not be silently denied").toBeNull();
   expect(verifiedWork.data, "Manager should see its own unit's seeded predecessor work").toHaveLength(1);
-  await authorised.auth.signOut();
+  // A secondary SQL/RLS probe must not globally revoke the distinct browser session.
+  await authorised.auth.signOut({ scope: "local" });
 
   await page.goto("/?tab=home");
   await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
