@@ -55,6 +55,12 @@ const databaseOrSecurityChanged = files.some(
     /auth|security|session/i.test(file),
 );
 const levelBRequested = /\[level-b\]/i.test(subject);
+// Any edited Playwright acceptance test requires its exact-head browser and SQL
+// evidence. Treating a finance-only (or other single-scope) .spec.js diff as
+// Level A produces a misleading green Quality Gate with all browser jobs skipped.
+const browserAcceptanceChanged = files.some((file) =>
+  file.startsWith("tests/") && /\.spec\.[cm]?[jt]sx?$/i.test(file)
+);
 
 const scopeRules = [
   ["vf9b", /visual-fidelity-css-cascade-closure\.spec\.js$/i],
@@ -86,6 +92,7 @@ const broadProductChange = !documentationOnly && scope === "full";
 const levelB =
   fullBundleAcceptance ||
   levelBRequested ||
+  browserAcceptanceChanged ||
   (!documentationOnly &&
     (eventName === "workflow_dispatch" ||
       workflowOrHarnessChanged ||
@@ -106,6 +113,7 @@ const outputs = {
           /auth|security|session/i.test(file),
       ),
   ),
+  browser_acceptance_changed: String(browserAcceptanceChanged),
   changed_count: String(files.length),
 };
 
