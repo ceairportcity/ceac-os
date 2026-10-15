@@ -106,7 +106,7 @@ for (const viewport of [
       // A single reachable mobile inbox shortcut replaces the hidden desktop
       // hero controls; do not show duplicate, cramped primary actions.
       await expect(page.locator(".adminv2-intro-actions")).toBeHidden();
-      await expect(page.locator(".adminv2-hero-link")).toBeVisible();
+      await expect(page.locator(".adminv2-mobile-actions .adminv2-hero-link")).toBeVisible();
       await expect(page.locator(".adminv2-mobile-actions")).toBeVisible();
 
       const inboxBox = await page.locator(".adminv2-inbox").boundingBox();

@@ -202,7 +202,12 @@ test("VF6B cross-role finance surfaces use one flat factual grammar", async ({ b
     await expect(executivePage.locator(".executive-app")).toBeVisible({ timeout: 15000 });
     await executivePage.goto("/?tab=exec-finance");
     await expect(executivePage.locator(".ev2-finance-executive")).toBeVisible({ timeout: 15000 });
-    expect(await executivePage.locator(".ev2fin-authority").evaluate((node) => getComputedStyle(node).boxShadow)).toBe("none");
+    // A lazy route may remount as the Finance request queue resolves. Check
+    // the attached rendered panel once its styles have settled, not a
+    // transient detached node returning an empty computed-style string.
+    await expect.poll(() => executivePage.locator(".ev2-finance-executive .ev2fin-authority").evaluate(
+      (node) => getComputedStyle(node).boxShadow
+    ), { timeout: 15000 }).toBe("none");
     await executivePage.screenshot({ path: `test-artifacts/vf6b-executive-finance-${viewport.name}.png`, fullPage: true });
     await executiveContext.close();
   }
