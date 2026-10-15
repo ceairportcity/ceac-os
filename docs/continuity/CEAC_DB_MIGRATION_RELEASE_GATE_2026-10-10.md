@@ -5,9 +5,9 @@
 
 # CEAC OS — production database migration safety gate
 
-**Audit date:** 2026-10-10 UTC. **Outcome:** READ-ONLY BASELINE VERIFIED; MIGRATION RELEASE BLOCKED.  
-**Production project:** `efjljhftsesssumtshvp` (Supabase Free, PostgreSQL 17.6, EU West).  
-**Candidate:** draft PR #27, originally `386e59086fa79e1d27b28c42677d2252877cf0e0`; re-fetch exact SHA before any action.  
+**Audit date:** 2026-10-10 UTC. **Outcome:** READ-ONLY BASELINE VERIFIED; MIGRATION RELEASE BLOCKED.
+**Production project:** `efjljhftsesssumtshvp` (Supabase Free, PostgreSQL 17.6, EU West).
+**Candidate:** draft PR #27, originally `386e59086fa79e1d27b28c42677d2252877cf0e0`; re-fetch exact SHA before any action.
 **This branch:** backup-preparation evidence only. It does not merge candidate code, apply SQL, access protected staff records, or start production cutover.
 
 ## Verified read-only production baseline
