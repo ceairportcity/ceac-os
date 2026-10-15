@@ -325,7 +325,7 @@ export default function Delivery({ me, initialProjectId = null }) {
     <ProjectPageHeader
       eyebrow={executiveSurface ? "Strategic portfolio" : "Work Management 2.0"}
       title={executiveSurface ? "Portfolio" : "Delivery"}
-      description={executiveSurface ? "View ministry programmes and strategic initiatives. Health appears only when explicitly recorded; CEAC OS does not generate a hidden project score." : "Programmes, portfolios, milestones, dependencies, risks and issues. Health is an explicit management state; CEAC OS does not generate a hidden project score."}
+      description={executiveSurface ? "View ministry programmes and strategic initiatives. Health appears only when it is explicitly recorded; CEAC OS does not generate a hidden project score." : "Programmes, portfolios, milestones, dependencies, risks and issues. Health is an explicit management state; CEAC OS does not generate a hidden project score."}
     />
 
     {error&&<ProductNotice tone="error" title="Delivery">{error}</ProductNotice>}
