@@ -175,7 +175,36 @@ test.describe("CEAC visual regression", () => {
         const expected = visualHomeBaselines[role];
         expect(actual.width).toBe(expected.width);
         expect(actual.height).toBe(expected.height);
-        const error = meanAbsoluteError(roleContentRegion(actual.rgb), roleContentRegion(expected.rgb));
+        const actualContent = roleContentRegion(actual.rgb);
+        const expectedContent = roleContentRegion(expected.rgb);
+        const error = meanAbsoluteError(actualContent, expectedContent);
+        // Diagnostic evidence, not a rebaseline or a relaxed visual guard.
+        // On failure preserve the exact changed coarse-grid cells so an
+        // engineer can compare the approved mockup and the rendered screenshot.
+        if (error > 6) {
+          const changes = [];
+          for (let i = 0; i < actualContent.length; i += 3) {
+            const actualRgb = actualContent.slice(i, i + 3);
+            const expectedRgb = expectedContent.slice(i, i + 3);
+            const delta = actualRgb.map((value, c) => Math.abs(value - expectedRgb[c]));
+            changes.push({
+              gridX: 2 + ((i / 3) % (GRID_W - 2)),
+              gridY: 1 + Math.floor((i / 3) / (GRID_W - 2)),
+              expectedRgb, actualRgb,
+              meanError: Math.round((delta[0] + delta[1] + delta[2]) / 3 * 100) / 100,
+            });
+          }
+          changes.sort((a, b) => b.meanError - a.meanError);
+          const evidence = JSON.stringify({
+            role, baselineThreshold: 6, overallMeanError: error,
+            screenshot: `test-artifacts/visual-home-${role}-desktop-1440.png`,
+            differences: changes.slice(0, 20),
+          }, null, 2);
+          console.error(`CEAC visual baseline evidence: ${evidence}`);
+          await test.info().attach(`visual-difference-${role}.json`, {
+            body: Buffer.from(evidence), contentType: "application/json",
+          });
+        }
         expect(error, `${role} role-content fingerprint drifted (mean RGB error ${error.toFixed(2)})`).toBeLessThanOrEqual(6);
       }
 
