@@ -14,6 +14,13 @@ function safeData(result) {
   return result?.error ? [] : (result?.data || []);
 }
 
+// Surface authorised Work lookup failures without exposing private SQL details,
+ // table text, or database exception messages in the browser.
+function safeWorkSearchFailure(error) {
+  const code = String(error?.code || "query_error").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 32) || "query_error";
+  return `Work lookup failed (${code}). Retry or contact Technical Support.`;
+}
+
 function group(key, label, items) {
   return { key, label, items: items.filter(Boolean).slice(0, LIMIT) };
 }
@@ -99,7 +106,7 @@ export async function searchCeacRecords({ query, me, isAdmin = false, onPartial 
   if (typeof onPartial === "function") {
     void workPromise.then((result) => {
       if (result?.error) {
-        onPartial([], { source: "work", error: result.error.message });
+        onPartial([], { source: "work", error: safeWorkSearchFailure(result.error) });
         return;
       }
       const rows = safeData(result).map((row) => ({
@@ -108,11 +115,11 @@ export async function searchCeacRecords({ query, me, isAdmin = false, onPartial 
         icon: "work",
       }));
       onPartial(rows.length ? [group("work", "Work", rows)] : []);
-    }).catch((error) => onPartial([], { source: "work", error: error?.message || "Work lookup failed." }));
+    }).catch((error) => onPartial([], { source: "work", error: safeWorkSearchFailure(error) }));
   }
 
   const [workResult, projectResult, strategyResult, profileResult, unitResult, subTeamResult, meetingResult, announcementResult, roomResult, fileResult, rosterResult] = await Promise.all(tasks);
-  if (workResult?.error) throw new Error("Work search could not be verified: " + workResult.error.message);
+  if (workResult?.error) throw new Error("Work search could not be verified: " + safeWorkSearchFailure(workResult.error));
 
   const work = safeData(workResult).map((row) => ({
     kind: "work",
