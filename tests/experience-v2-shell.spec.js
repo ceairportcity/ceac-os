@@ -256,19 +256,11 @@ test("OCR3 Room Composer exposes private media attachment control", async ({ pag
 
 test("OCR4 Global Search returns grouped authorised records and opens Project and Work", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
-  await signIn(page, "manager@ceac.local.test");
 
-  const search = page.getByPlaceholder("Search CEAC…");
-  await search.fill("Stage 4 Browser Project");
-  const results = page.getByRole("dialog", { name: "Search CEAC results" });
-  await expect(results).toBeVisible();
-  const projects = results.locator('.ev2s-search-group[aria-label="Projects"]');
-  await expect(projects.getByRole("button", { name: /Stage 4 Browser Project/ })).toBeVisible();
-  await projects.getByRole("button", { name: /Stage 4 Browser Project/ }).click();
-  await expect(page).toHaveURL(/tab=projects.*project=25000000-0000-4000-8000-000000000011/);
-  await expect(page.locator(".ev2-project-workspace")).toBeVisible({ timeout: 15000 });
-
-  // Prove the Manager can read the exact source row under real local RLS.
+  // Prove the same Manager identity has the exact source row under real RLS
+  // before starting the browser's sole authoritative auth session. A separate
+  // preflight sign-in after browser login can invalidate its session in some
+  // GoTrue configurations, making a correct search appear unauthorised.
   // The global search must never silently convert an authorisation/SQL failure
   // into a misleading empty result; diagnostics do not spoof any API response.
   const authorised = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
@@ -282,12 +274,22 @@ test("OCR4 Global Search returns grouped authorised records and opens Project an
     .eq("id","26000000-0000-4000-8000-000000000011");
   expect(verifiedWork.error, "Manager-authorised source Work search must not be silently denied").toBeNull();
   expect(verifiedWork.data, "Manager should see its own unit's seeded predecessor work").toHaveLength(1);
-  // The Node preflight is a second Supabase session for the same manager.
-  // A default global sign-out revokes the browser's refresh token and makes
-  // the subsequent navigation appear unauthorised. Close ONLY the preflight
-  // session; the browser session must remain live for the exact RLS journey.
+  // Close the isolated preflight session before starting browser authentication.
   const preflightClosed = await authorised.auth.signOut({ scope: "local" });
   expect(preflightClosed.error).toBeNull();
+
+
+  await signIn(page, "manager@ceac.local.test");
+
+  const search = page.getByPlaceholder("Search CEAC…");
+  await search.fill("Stage 4 Browser Project");
+  const results = page.getByRole("dialog", { name: "Search CEAC results" });
+  await expect(results).toBeVisible();
+  const projects = results.locator('.ev2s-search-group[aria-label="Projects"]');
+  await expect(projects.getByRole("button", { name: /Stage 4 Browser Project/ })).toBeVisible();
+  await projects.getByRole("button", { name: /Stage 4 Browser Project/ }).click();
+  await expect(page).toHaveURL(/tab=projects.*project=25000000-0000-4000-8000-000000000011/);
+  await expect(page.locator(".ev2-project-workspace")).toBeVisible({ timeout: 15000 });
 
   await page.goto("/?tab=home");
   await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
