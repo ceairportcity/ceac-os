@@ -1,5 +1,15 @@
 # Product Owner Decisions
 
+## 15 October 2026 — Owner-approved Administration / Executive visual reference correction
+
+The owner expressly approved replacing the **outdated Administration and Executive coarse visual fingerprints** with the newer approved **R3 Administration** and **R4 Executive** home designs. This is a targeted visual-reference decision only; the quality threshold must **remain mean RGB error <= 6**. Preserve all Staff / Manager baselines, functional checks, existing role/privacy protections and the actual R3/R4 layout. Do not conceal screenshot mismatches, skip visual tests, or use arbitrary current-state screenshots as a new design policy.
+
+Exact evidence for the approved reference refresh: GitHub Actions Quality Gate [38757642699](https://github.com/ceairportcity/ceac-os/actions/runs/38757642699), exact source `ce0811498f1387914fb0cdc7db56f8b62f7a5daa`, artifact `quality-gate-browser-shard-4` (ID `11985296355`); use `redesign-r3-admin-overview.png` and `redesign-r4-executive-overview.png`, crop their **1440px-wide captured top 960px** to the precise fingerprint viewport. Compare new coarse fingerprints against the actual `visual-home-administration-desktop-1440.png` and `visual-home-executive-desktop-1440.png` from the **same** run. The old baselines failed 17.47 and 7.40; the approved design evidence matches the current renders in that viewport (only a small Administration clock difference). This owner decision authorises updating those two reference arrays but does NOT itself constitute Level B/C acceptance, production GO, or permission to merge main/deploy.
+
+The owner also expressly instructed **leave `ceairportcity/ceac-os` PUBLIC for now**. This temporarily supersedes the previous automatic-immediate-PRIVATE timing. It is not permanent public-repository authorisation: retain the security safeguards, do not expose credentials/HR material, and seek/obey the owner's later instruction to restore PRIVATE. No production SQL, deployment, ownership transfer, or protected-main merge is authorised by either decision.
+
+---
+
 ## Binding first-release authentication decision — 12 October 2026
 
 **Owner override of the earlier privileged-only MFA scope, pending implementation and full isolated acceptance.** CEAC first release must use **Google-only interactive sign-in for exact HR/Administration-authorised Google email identities** and require a CEAC-controlled, verified **TOTP authenticator MFA session (Supabase AAL2) for every enabled account**, including Staff, Managers, Administrators, Executives, Volunteers and Technical Support. Google Workspace is a future option and is **not** required to exist before go-live. No arbitrary Google user, uninvited email, unverified identity, title, or provider metadata may grant CEAC membership or permissions.
