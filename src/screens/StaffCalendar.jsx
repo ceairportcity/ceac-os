@@ -4,6 +4,7 @@ import { FieldGroup, LoadingState, ProductNotice, Sheet } from "../components/bi
 import { Button } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
 import PersonalRecurringTaskComposer from "../components/PersonalRecurringTaskComposer";
+import PersonalPlanningEditor from "../components/PersonalPlanningEditor";
 import { isMissingPersonalPlanningSchema } from "../lib/stage1SchemaCompatibility";
 import {
   CalendarAgenda,
@@ -67,6 +68,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const [filter,setFilter]=useState("all");
   const [personalPlanningReady,setPersonalPlanningReady]=useState(true);
   const [recurrenceReady,setRecurrenceReady]=useState(true);
+  const [editingPrivateItem,setEditingPrivateItem]=useState(null);
 
   useEffect(()=>{load();},[me.id,me.unit_id,cursor.getFullYear(),cursor.getMonth()]);
   useEffect(()=>{
@@ -113,11 +115,11 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         }
       }
       let [tasks,unscheduledTasks,notes,privateEvents,overdueTasks]=await Promise.all([
-        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at").eq("profile_id",me.id).gte("plan_date",fromDay).lt("plan_date",toDay).order("plan_date").order("planned_time",{ascending:true,nullsFirst:false}),
-        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at").eq("profile_id",me.id).is("plan_date",null).is("completed_at",null).order("created_at",{ascending:false}).limit(30),
+        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at,series_id,dismissed_at").eq("profile_id",me.id).is("dismissed_at",null).gte("plan_date",fromDay).lt("plan_date",toDay).order("plan_date").order("planned_time",{ascending:true,nullsFirst:false}),
+        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at,series_id,dismissed_at").eq("profile_id",me.id).is("plan_date",null).is("completed_at",null).is("dismissed_at",null).order("created_at",{ascending:false}).limit(30),
         supabase.from("personal_day_notes").select("id,note_date,note_kind,title,body,reminder_at,updated_at").eq("profile_id",me.id).or(`note_date.is.null,and(note_date.gte.${fromDay},note_date.lt.${toDay})`).order("updated_at",{ascending:false}),
         supabase.from("personal_calendar_events").select("id,title,details,starts_at,ends_at,location,reminder_at").eq("profile_id",me.id).gte("starts_at",from).lt("starts_at",to).order("starts_at"),
-        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at,series_id").eq("profile_id",me.id).lt("plan_date",accraDay(new Date())).is("completed_at",null).order("plan_date",{ascending:false}).limit(500),
+        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at,series_id,dismissed_at,series_id").eq("profile_id",me.id).lt("plan_date",accraDay(new Date())).is("completed_at",null).is("dismissed_at",null).order("plan_date",{ascending:false}).limit(500),
       ]);
       const personalError=[tasks.error,unscheduledTasks.error,notes.error,privateEvents.error,overdueTasks.error].find(Boolean);
       if(personalError){
@@ -148,7 +150,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       (ministry.data||[]).filter(row=>row.scope==="church"||row.unit_id===me.unit_id).forEach(row=>rows.push({id:`ministry-${row.id}`,kind:"ministry",date:accraDay(row.starts_at),title:`${row.cancelled?"Cancelled · ":""}${row.title}`,meta:`${row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.location?` · ${row.location}`:""}`,sortAt:row.starts_at,time:row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
       (leave.data||[]).forEach(row=>{let d=new Date(`${row.start_date}T00:00:00`),end=new Date(`${row.end_date}T00:00:00`);while(d<=end){rows.push({id:`leave-${row.id}-${dayKey(d)}`,kind:"leave",date:dayKey(d),title:`${row.kind} leave`,meta:"All day · Approved",sortAt:`${dayKey(d)}T00:00:00Z`,time:"All day"});d=addDays(d,1);}});
       privateTasks.filter(task=>task.plan_date).forEach(task=>rows.push({id:`personal-task-${task.id}`,kind:"personal",personalType:"task",date:task.plan_date,title:task.title,meta:task.planned_time?timeLabel(task.planned_time):"Private task",taskId:task.id,completed:Boolean(task.completed_at)}));
-      (privateEvents.data||[]).forEach(event=>rows.push({id:`personal-event-${event.id}`,kind:"personal",personalType:"event",date:accraDay(event.starts_at),title:event.title,meta:`${new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${event.ends_at?`–${new Date(event.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}${event.location?` · ${event.location}`:""}`,privateEventId:event.id,sortAt:event.starts_at,time:new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
+      (privateEvents.data||[]).forEach(event=>rows.push({id:`personal-event-${event.id}`,kind:"personal",personalType:"event",date:accraDay(event.starts_at),title:event.title,meta:`${new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${event.ends_at?`–${new Date(event.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}${event.location?` · ${event.location}`:""}`,privateEventId:event.id,raw:event,sortAt:event.starts_at,time:new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
       const projects=new Map();
       (work.data||[]).forEach(item=>{if(item.projects?.id)projects.set(item.projects.id,item.projects.name);});
       setWorkOptions(work.data||[]);
@@ -183,8 +185,8 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     setBusy(true);setError(null);setNotice(null);
     try{
       if(composerType==="event"){
-        const startsAt=new Date(`${composeDate}T${composeStart}:00`).toISOString();
-        const endsAt=composeEnd?new Date(`${composeDate}T${composeEnd}:00`).toISOString():null;
+        const startsAt=new Date(`${composeDate}T${composeStart}:00Z`).toISOString();
+        const endsAt=composeEnd?new Date(`${composeDate}T${composeEnd}:00Z`).toISOString():null;
         const {error:e}=await supabase.from("personal_calendar_events").insert({
           org_id:me.org_id,profile_id:me.id,title:composeTitle.trim(),details:composeDetails.trim()||null,
           starts_at:startsAt,ends_at:endsAt,location:composeLocation.trim()||null,
@@ -271,14 +273,14 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const gridStart=startOfWeek(first);
   const days=useMemo(()=>Array.from({length:42},(_,i)=>addDays(gridStart,i)),[cursor.getFullYear(),cursor.getMonth()]);
   const visible=filter==="all"?events:events.filter(e=>e.kind===filter);
-  const open=(event)=>event.itemId?openItem?.(event.itemId):event.meetingId?openMeeting?.(event.meetingId):null;
+  const open=(event)=>event.itemId?openItem?.(event.itemId):event.meetingId?openMeeting?.(event.meetingId):event.privateEventId?setEditingPrivateItem({kind:"event",...event.raw}):null;
   const displayEvent=(event,includeDate=false)=>({
     ...event,
     icon:event.kind==="meeting"?"meeting":event.kind==="work"?"work":event.kind==="personal"?"check":event.kind==="ministry"?"ministry":"time",
     meta:`${includeDate?new Date(`${event.date}T12:00:00`).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" · ":""}${event.meta||""}`,
     status:event.kind==="leave"?"Approved":event.kind==="meeting"?"Meeting":event.kind==="work"?"Due":event.kind==="personal"?(event.completed?"Done":"Private"):"Ministry",
     statusTone:event.kind==="leave"?"success":event.kind==="meeting"?"action":event.kind==="personal"&&event.completed?"success":"neutral",
-    onClick:event.itemId||event.meetingId?()=>open(event):undefined,
+    onClick:event.itemId||event.meetingId||event.privateEventId?()=>open(event):undefined,
   });
 
   const selectedShared=events.filter(event=>event.date===selectedDate&&event.kind!=="personal");
@@ -343,7 +345,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
           {dayTab==="schedule"?<div className="phase6-day-task-view phase6-day-schedule-view">
             <section className="phase6-day-block">
               <div className="phase6-day-block-head"><h3>Schedule</h3><span>{selectedSchedule.length}</span></div>
-              {selectedSchedule.length?<div className="phase6-schedule-rail">{selectedSchedule.map(event=><div key={event.id} className={`phase6-schedule-row is-${event.kind}`}><time>{event.time||"—"}</time><span className="phase6-schedule-line" aria-hidden="true"/><button type="button" onClick={()=>open(event)} disabled={!event.itemId&&!event.meetingId}><span className={`phase6-day-kind is-${event.kind}`}>{event.personalType==="event"?"private event":event.kind}</span><span><strong>{event.title}</strong><small>{event.meta||"Recorded CEAC commitment"}</small></span></button></div>)}</div>:<p className="phase6-day-empty">No shared or private schedule item is recorded for this day.</p>}
+              {selectedSchedule.length?<div className="phase6-schedule-rail">{selectedSchedule.map(event=><div key={event.id} className={`phase6-schedule-row is-${event.kind}`}><time>{event.time||"—"}</time><span className="phase6-schedule-line" aria-hidden="true"/><button type="button" onClick={()=>open(event)} disabled={!event.itemId&&!event.meetingId&&!event.privateEventId}><span className={`phase6-day-kind is-${event.kind}`}>{event.personalType==="event"?"private event":event.kind}</span><span><strong>{event.title}</strong><small>{event.meta||"Recorded CEAC commitment"}</small></span></button></div>)}</div>:<p className="phase6-day-empty">No shared or private schedule item is recorded for this day.</p>}
             </section>
           </div>:dayTab==="tasks"?<div className="phase6-day-task-view">
             <section className="phase6-day-block">
