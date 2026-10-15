@@ -265,10 +265,13 @@ test("Stage 4D mobile primary and More destinations remain reachable and role-sp
     let drawer = page.getByRole("dialog", { name: "More" });
     await expect(drawer).toBeVisible();
 
-    const secondaryLabels = await drawer.locator(".ev2s-more-group button span").allTextContents();
+    // CEAC Guide is a separately labelled Help action, not another
+    // primary/secondary destination. Keep exact role navigation assertions.
+    const secondaryLabels = await drawer.locator(".ev2s-more-group:not([aria-label='Help']) button span").allTextContents();
     expect(secondaryLabels.map((label) => label.trim()), role.key).toEqual(
       role.secondary.map(([, label]) => label)
     );
+    await expect(drawer.getByRole("button", { name: "CEAC Guide", exact: true })).toBeVisible();
 
     await page.screenshot({
       path: `test-artifacts/redesign-r7-stage4d-${role.key}-mobile-more.png`,
