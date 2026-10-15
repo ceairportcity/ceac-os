@@ -324,8 +324,8 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
   await expect(page.getByRole("heading", { name: "Staff Fixture", exact: true })).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole("tablist", { name: "Employee record sections" })).toBeVisible();
 
-  await page.goto("/?tab=home");
-  await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
+  await page.locator(".ev2s-sidebar").getByRole("button", { name: "Overview", exact: true }).click();
+  await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });
   search = page.getByPlaceholder("Search CEAC…");
   await search.fill("Test Unit A");
   results = page.getByRole("dialog", { name: "Search CEAC results" });
