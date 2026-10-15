@@ -124,7 +124,8 @@ test("Staff and Manager complete the real work loop, including return and approv
     await page.getByRole("button", { name: "Start work", exact: true }).click();
     const startDialog = page.getByRole("dialog");
     await expect(startDialog).toBeFocused();
-    await startDialog.getByRole("button", { name: "At the office" }).click();
+    await startDialog.getByRole("button", { name: "At an authorised office or programme location" }).click();
+    await startDialog.getByRole("combobox", { name: "Authorised duty location" }).selectOption({ label: "Acceptance office" });
     await startDialog.getByRole("button", { name: "Start work", exact: true }).click();
     await expect(page.getByRole("button", { name: "End work" })).toBeVisible();
 
@@ -181,7 +182,8 @@ test("Staff and Manager complete the real work loop, including return and approv
       await go(page, "Home");
       await page.getByRole("button", { name: "Start work", exact: true }).click();
       const dialog = page.getByRole("dialog");
-      await dialog.getByRole("button", { name: "At the office" }).click();
+      await dialog.getByRole("button", { name: "At an authorised office or programme location" }).click();
+      await dialog.getByRole("combobox", { name: "Authorised duty location" }).selectOption({ label: "Acceptance office" });
       await dialog.getByRole("button", { name: "Start work", exact: true }).click();
       await expect(page.getByRole("button", { name: "End work" })).toBeVisible();
       await go(page, "Work");

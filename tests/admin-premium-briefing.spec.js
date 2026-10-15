@@ -18,7 +18,7 @@ for (const viewport of [
     await expect(page.locator(".office-app")).toBeVisible({timeout:15000});
     await page.goto("/?tab=home");
 
-    const hero = page.getByRole("banner", {name:"Administration daily briefing"});
+    const hero = page.locator(".adminv2-hero[aria-label=\"Administration daily briefing\"]");
     await expect(hero).toBeVisible({timeout:15000});
     await expect(hero.getByRole("heading", { name:/Good morning|Good afternoon|Good evening/ })).toBeVisible();
     await expect(hero.getByRole("complementary", { name:"Upcoming commitments" })).toBeVisible();

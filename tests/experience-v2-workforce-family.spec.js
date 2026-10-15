@@ -52,7 +52,6 @@ test("Stage 10 Family D2 preserves Stage 9 Workforce authority while establishin
   for (const rpc of [
     "workforce_record_day_type",
     "workforce_record_schedule",
-    "workforce_record_attendance_correction",
     "workforce_leave_action",
     "workforce_record_leave_policy",
   ]) {
@@ -61,6 +60,9 @@ test("Stage 10 Family D2 preserves Stage 9 Workforce authority while establishin
 
   expect(workforce).toContain('caps.includes("workforce.manage")');
   expect(workforce).toContain('caps.includes("attendance.correct")');
+  expect(workforce).toContain('import AttendanceCorrectionWorkflow from "../components/AttendanceCorrectionWorkflow"');
+  expect(workforce).toContain('<AttendanceCorrectionWorkflow me={me} />');
+  expect(workforce).not.toContain('supabase.rpc("workforce_record_attendance_correction"');
   expect(workforce).toContain("No session recorded");
   expect(workforce).toContain("not an absence judgement");
   expect(workforce).toContain("ev2-workforce-staff");

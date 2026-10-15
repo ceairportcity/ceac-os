@@ -53,7 +53,7 @@ for (const viewport of [
 
     await expect(page.getByRole("tab", { name: "Today", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Leave", exact: true })).toBeVisible();
-    await expect(page.getByText("Annual, Sick, Maternity, Paternity and Study leave are available", { exact: false }).first()).toBeVisible();
+    await expect(page.getByText("Annual, Sick, Maternity, Paternity and Study requests follow Manager approval", { exact: false }).first()).toBeVisible();
     await expect(page.getByRole("tab", { name: "Corrections", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Schedules & policy", exact: true })).toHaveCount(0);
 

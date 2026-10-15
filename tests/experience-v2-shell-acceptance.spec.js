@@ -19,6 +19,7 @@ const roles = [
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
     primary: [
       ["home", "Today"],
@@ -31,6 +32,7 @@ const roles = [
       ["staff-calendar", "Calendar"],
       ["messages", "Messages"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
   },
   {
@@ -50,6 +52,7 @@ const roles = [
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
     primary: [
       ["home", "Overview"],
@@ -65,6 +68,7 @@ const roles = [
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
   },
   {
@@ -90,6 +94,7 @@ const roles = [
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
     primary: [
       ["home", "Overview"],
@@ -106,6 +111,7 @@ const roles = [
       ["messages", "Messages"],
       ["me", "My Hub"],
       ["account", "Your account"],
+      ["technical-help", "Get technical help"],
     ],
   },
   {
@@ -125,23 +131,25 @@ const roles = [
       ["exec-reports", "Reports"],
       ["messages", "Messages"],
       ["me", "My Hub"],
-      ["account", "Your account"],
+      ["account", "Account"],
+      ["technical-help", "Get technical help"],
     ],
     primary: [
       ["home", "Overview"],
       ["work", "Work"],
       ["strategy", "Ministry"],
-      ["delivery", "Portfolio"],
+      ["exec-calendar", "Calendar"],
     ],
     secondary: [
       ["exec-organisation", "Organisation"],
-      ["exec-calendar", "Calendar"],
+      ["delivery", "Portfolio"],
       ["exec-finance", "Finance"],
       ["payroll", "Payroll"],
       ["exec-reports", "Reports"],
       ["messages", "Messages"],
       ["me", "My Hub"],
-      ["account", "Your account"],
+      ["account", "Account"],
+      ["technical-help", "Get technical help"],
     ],
   },
 ];
