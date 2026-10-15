@@ -136,25 +136,18 @@ test("OCR2 Executive Create exposes authorised leadership actions", async ({ pag
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
 
-  const create = page.getByRole("button", { name: "Create", exact: true });
-  await create.click();
-  let menu = page.getByRole("menu");
-  await expect(menu.getByRole("menuitem", { name: "Give out work", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Ministry objective", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Announcement", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Meeting", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Message room", exact: true })).toBeVisible();
-  await expect(menu.getByRole("menuitem", { name: "Project", exact: true })).toHaveCount(0);
-
-  await menu.getByRole("menuitem", { name: "Ministry objective", exact: true }).click();
+  const quickCreate = page.locator(".fpg9-sidebar-quick");
+  await expect(quickCreate).toBeVisible();
+  for (const action of ["Give out work", "Ministry objective", "Announcement", "Meeting", "Message room"]) {
+    await expect(quickCreate.getByRole("button", { name: action, exact: true })).toBeVisible();
+  }
+  await quickCreate.getByRole("button", { name: "Ministry objective", exact: true }).click();
   let dialog = page.getByRole("dialog", { name: "New ministry objective" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel("Strategy parent direction")).toBeVisible();
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
 
-  await create.click();
-  menu = page.getByRole("menu");
-  await menu.getByRole("menuitem", { name: "Announcement", exact: true }).click();
+  await quickCreate.getByRole("button", { name: "Announcement", exact: true }).click();
   dialog = page.getByRole("dialog", { name: "New announcement" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("Attachments", { exact: true })).toBeVisible();

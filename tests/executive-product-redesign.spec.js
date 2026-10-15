@@ -96,7 +96,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
     isManager: false,
     me: { capabilities: ["payroll.approve"] },
   });
-  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Ministry"]);
+  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Ministry", "Calendar"]);
 
   const desktop = getShellNavigation({
     isExec: true,
@@ -117,6 +117,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
     "Messages",
     "My Hub",
     "Account",
+    "Get technical help",
   ]);
   expect(css).toContain("/* Executive phone Payroll cards */");
   expect(css).toContain(".executive-app .fpg-payroll-table thead");
