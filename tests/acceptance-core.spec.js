@@ -1364,6 +1364,32 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     await context.close();
   }
 
+  // The Staff must not see the unreleased Manager narrative after the request.
+  {
+    const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
+    await go(page, "Me");
+    await page.getByRole("button", { name: /Reviews & development/ }).click();
+    await expect(page.getByText(reflectionText, { exact: true })).toBeVisible();
+    await expect(page.getByText(assessmentText, { exact: true })).toHaveCount(0);
+    await expect(page.getByText(conversationText, { exact: true })).toHaveCount(0);
+    await context.close();
+  }
+
+  // Only an independently signed-in HR administrator may publish the version.
+  {
+    const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
+    await go(page, "Performance & development");
+    const staffCase = page.locator(".performance-case-row").filter({ hasText: "Staff Fixture" });
+    await expect(staffCase).toBeVisible();
+    await staffCase.click();
+    const approve = page.getByRole("button", { name: "HR approve publication", exact: true });
+    await expect(approve).toBeVisible();
+    await page.getByLabel("HR assessment publication decision reason").fill("Independent HR approves this factual review for staff publication.");
+    await approve.click();
+    await expect(page.getByText("HR approved publication of this manager assessment version.", { exact: true })).toBeVisible();
+    await context.close();
+  }
+
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Me");
