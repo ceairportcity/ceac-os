@@ -244,7 +244,9 @@ test("Stage 4D mobile primary and More destinations remain reachable and role-sp
 
     const mobileNav = page.locator(".ev2s-mobile-nav");
     await expect(mobileNav).toBeVisible();
-    await expect(mobileNav.getByRole("button")).toHaveCount(5);
+    // All roles have a More control. The Executive's approved dock has
+    // three direct destinations plus More (four total), not five.
+    await expect(mobileNav.getByRole("button")).toHaveCount(role.key === "executive" ? 4 : 5);
 
     const visiblePrimary = await mobileNav.locator("button span").allTextContents();
     expect(visiblePrimary.map((label) => label.trim()), role.key).toEqual([

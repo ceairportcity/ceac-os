@@ -194,8 +194,12 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
 
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  await page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true }).click();
+  // The approved Executive shell has no generic Create popup.
+  // Publishing remains available from its authorised Announcements surface.
+  await expect(page.getByRole("button", { name: "Create", exact: true })).toBeHidden();
+  await page.goto("/?tab=announcements");
+  await expect(page.getByRole("heading", { name: "Announcements", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "New announcement", exact: true }).click();
   let dialog = page.getByRole("dialog", { name: "New announcement" });
   await dialog.locator("#announcement-title").fill(announcementTitle);
   await dialog.locator("#announcement-body").fill("Operational Clarity final workflow acceptance.");
@@ -216,9 +220,11 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   await dialog.getByRole("button", { name: "Create ministry direction", exact: true }).click();
   await expect(page.getByText(directionTitle, { exact: true })).toBeVisible();
 
-  await page.goto("/");
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  await page.getByRole("menu").getByRole("menuitem", { name: "Ministry objective", exact: true }).click();
+  // The ministry-specific composer enforces the same parent-direction
+  // authority, without reintroducing the retired global Create button.
+  await page.goto("/?tab=strategy");
+  await page.getByRole("heading", { name: "Ministry", exact: true }).waitFor();
+  await page.getByRole("button", { name: "New Ministry Objective", exact: true }).click();
   dialog = page.getByRole("dialog", { name: "New ministry objective" });
   await dialog.getByLabel("Strategy parent direction").selectOption({ label: directionTitle });
   await dialog.getByLabel("Strategy name").fill(objectiveTitle);
