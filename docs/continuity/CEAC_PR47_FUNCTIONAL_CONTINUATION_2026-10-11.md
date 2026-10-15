@@ -1,8 +1,8 @@
 # CEAC OS — PR #47 Product Functional Continuation and Independent Source Evidence
-**Date:** 11 October 2026  
-**Scope:** product implementation ONLY; release and production unchanged  
-**Source branch:** `chatgpt/product-admin-attendance-integrity-20261011`  
-**Verified pre-checkpoint implementation HEAD:** `eb437978b32da2f20c6f960f3f28d1d46ff6295f`  
+**Date:** 11 October 2026
+**Scope:** product implementation ONLY; release and production unchanged
+**Source branch:** `chatgpt/product-admin-attendance-integrity-20261011`
+**Verified pre-checkpoint implementation HEAD:** `eb437978b32da2f20c6f960f3f28d1d46ff6295f`
 **Base:** frozen review PR #44 at `e00f13873409e4cc16ec1493b60b71d5cde1114a`.
 
 ## Implemented in this continuation
@@ -45,8 +45,8 @@
 
 ## Further independently reviewed fixes — Administration, Workforce, invitations and support
 
-**Exact application HEAD before this documentation update:** `92925d6ffb250b33e511f788642469cc09307c78`.  
-**Release PR #44 frozen:** `e00f13873409e4cc16ec1493b60b71d5cde1114a`.  
+**Exact application HEAD before this documentation update:** `92925d6ffb250b33e511f788642469cc09307c78`.
+**Release PR #44 frozen:** `e00f13873409e4cc16ec1493b60b71d5cde1114a`.
 **Production main unchanged:** `827fbe7391467dd13d6e411527416402a252993c`.
 
 - All **24 direct Administration reads** have an explicit `org_id = me.org_id` PostgREST condition. The 12 Workforce direct reads have the same guard, independently cross-checked against the existing read-only production table catalogue: every table has an `org_id` column. RPC-level tenancy still requires independent release verification.
