@@ -182,9 +182,10 @@ $phase6_reviewed_surface$;
 -- Every signed-in callable definer RPC must visibly bind itself to the caller
 -- directly or through an approved authority/visibility helper.
 do $rpc_authority$
-declare n integer;
+declare n integer; v_unbound text;
 begin
-  select count(*) into n
+  select count(*), string_agg(p.oid::regprocedure::text, ', ' order by p.oid::regprocedure::text)
+  into n, v_unbound
   from pg_proc p
   join pg_namespace ns on ns.oid=p.pronamespace
   where ns.nspname='public'
@@ -198,7 +199,7 @@ begin
     and pg_get_functiondef(p.oid) not ilike '%app_my_units%'
     and pg_get_functiondef(p.oid) not ilike '%app_led_sub_teams%';
   if n<>0 then
-    raise exception 'Security gate failure: % authenticated SECURITY DEFINER RPC(s) lack an approved actor/authority binding.',n;
+    raise exception 'Security gate failure: % authenticated SECURITY DEFINER RPC(s) lack an approved actor/authority binding: %',n,coalesce(v_unbound,'unknown');
   end if;
 end
 $rpc_authority$;
