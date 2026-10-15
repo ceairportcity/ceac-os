@@ -247,48 +247,109 @@ $stage9_manager$;
 
 reset role;
 
--- Administration records and reverses attendance correction without rewriting work_sessions.
+-- Attendance correction is a separate evidence overlay, NEVER a direct
+-- Administration/reversal write. Staff requests, the assigned Manager decides
+-- and a distinct authorised HR actor subsequently audits. Original work
+-- sessions and provenance are preserved.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+
+do $stage9_staff_correction_request$
+declare
+  v_request uuid;
+begin
+  if has_function_privilege(
+    'authenticated',
+    'public.workforce_record_attendance_correction(uuid,date,uuid,text,jsonb,jsonb,text,uuid)',
+    'EXECUTE'
+  ) then
+    raise exception 'Stage 9 gate failure: retired direct attendance correction RPC remains callable.';
+  end if;
+  v_request:=public.attendance_request_correction(
+    '31000000-0000-4000-8000-000000000001',current_date,
+    'context_note',
+    jsonb_build_object('context','Missing attendance context requires manager review'),
+    'Stage 9 attendance evidence correction request',null
+  );
+  if v_request is null then
+    raise exception 'Stage 9 gate failure: staff correction request was not recorded.';
+  end if;
+  perform set_config('ceac.stage9_correction_request_id',v_request::text,true);
+end
+$stage9_staff_correction_request$;
+
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+
+do $stage9_manager_correction_decision$
+declare
+  v_request uuid:=nullif(current_setting('ceac.stage9_correction_request_id',true),'')::uuid;
+  v_before integer;
+  v_after integer;
+  v_result jsonb;
+begin
+  select count(*) into v_before from public.work_sessions
+  where profile_id='31000000-0000-4000-8000-000000000001';
+  v_result:=public.attendance_manager_decide_correction(
+    v_request,true,'Assigned manager confirmed the attendance context and approved the overlay.'
+  );
+  if v_result->>'request_id' is distinct from v_request::text
+     or v_result->>'approved' is distinct from 'true'
+     or v_result->>'hr_audit_pending' is distinct from 'true'
+     or nullif(v_result->>'correction_id','') is null then
+    raise exception 'Stage 9 gate failure: authorised Manager decision was not verified.';
+  end if;
+  select count(*) into v_after from public.work_sessions
+  where profile_id='31000000-0000-4000-8000-000000000001';
+  if v_after<>v_before then
+    raise exception 'Stage 9 gate failure: Manager attendance correction changed original work-session rows.';
+  end if;
+end
+$stage9_manager_correction_decision$;
+
+reset role;
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
 
-do $stage9_attendance$
+do $stage9_hr_correction_audit$
 declare
+  v_request uuid:=nullif(current_setting('ceac.stage9_correction_request_id',true),'')::uuid;
+  v_audit uuid;
   v_before integer;
   v_after integer;
-  v_corr uuid;
-  v_rev uuid;
 begin
-  select count(*) into v_before
-  from public.work_sessions
+  select count(*) into v_before from public.work_sessions
   where profile_id='31000000-0000-4000-8000-000000000001';
-
-  v_corr:=public.workforce_record_attendance_correction(
-    '31000000-0000-4000-8000-000000000001',
-    current_date,null,'context_note','{}'::jsonb,
-    jsonb_build_object('context','Recorded context corrected by Administration'),
-    'Stage 9 attendance correction',null
+  v_audit:=public.attendance_hr_audit_correction(
+    v_request,'confirmed','HR independently reviewed the manager correction and retained factual history.'
   );
-
-  v_rev:=public.workforce_record_attendance_correction(
-    '31000000-0000-4000-8000-000000000001',
-    current_date,null,'reversal','{}'::jsonb,'{}'::jsonb,
-    'Stage 9 attendance correction reversal',v_corr
-  );
-
-  if not exists(select 1 from public.attendance_corrections where id=v_corr and correction_type='context_note')
-     or not exists(select 1 from public.attendance_corrections where id=v_rev and reverses_id=v_corr and correction_type='reversal') then
-    raise exception 'Stage 9 gate failure: append-only attendance correction reversal history is incomplete.';
+  if v_audit is null then
+    raise exception 'Stage 9 gate failure: HR audit was not recorded.';
   end if;
-
-  select count(*) into v_after
-  from public.work_sessions
+  if not exists(
+    select 1 from public.attendance_correction_requests q
+    join public.attendance_corrections c on c.id=q.correction_id
+    join public.attendance_correction_audits a on a.request_id=q.id
+    where q.id=v_request and q.status='manager_approved'
+      and q.profile_id='31000000-0000-4000-8000-000000000001'
+      and q.requested_by='31000000-0000-4000-8000-000000000001'
+      and q.decided_by='31000000-0000-4000-8000-000000000002'
+      and a.id=v_audit and a.outcome='confirmed'
+      and a.audited_by='31000000-0000-4000-8000-000000000003'
+      and c.correction_type='context_note' and c.recorded_by=q.decided_by
+  ) then
+    raise exception 'Stage 9 gate failure: staff request / Manager correction / HR audit evidence is incomplete.';
+  end if;
+  select count(*) into v_after from public.work_sessions
   where profile_id='31000000-0000-4000-8000-000000000001';
-
   if v_after<>v_before then
-    raise exception 'Stage 9 gate failure: attendance correction rewrote work session evidence.';
+    raise exception 'Stage 9 gate failure: HR attendance audit rewrote original work-session evidence.';
   end if;
 end
-$stage9_attendance$;
+$stage9_hr_correction_audit$;
 
 do $stage9_policy$
 declare
