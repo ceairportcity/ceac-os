@@ -117,7 +117,11 @@ end $$;
 -- tenant isolation, privacy, append-only history, concurrency and no anon access.
 -- S2 migration 114 reduced the reviewed authenticated surface to 132.
 -- Phase 6C explicitly reviews 136 signed-in-callable functions. The go-live annual leave policy keeps the public workforce_request_leave RPC but shifts it to a narrow SECURITY INVOKER wrapper, reducing this exact count to 135. No new definer privilege is granted.
--- The net +4 are needed for the locked front-desk attendance corroboration and
+-- The current integrated bundle adds 12 reviewed authenticated definer
+-- RPC/predicate interfaces across migrations 140-146 while revoking the
+-- legacy direct attendance-correction RPC, resulting in exactly 146.
+-- A separate exact signature check rejects substitutions or additions.
+-- The historical net +4 were needed for front-desk attendance corroboration and
 -- authorised per-person/manager evidence views. Two legacy office-code RPCs
 -- were already removed by migration 124; migration 125 safely revokes grants
 -- only on historical variants where their definitions remain.
@@ -133,8 +137,8 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n>135 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface grew beyond the reviewed 135-function ceiling to %.',n;
+  if n<>146 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface differs from the reviewed 146-function exact release surface to %.',n;
   end if;
 end $$;
 

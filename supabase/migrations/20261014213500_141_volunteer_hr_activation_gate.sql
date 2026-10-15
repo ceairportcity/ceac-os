@@ -46,7 +46,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path=''
-as $
+as $$
 begin
   if old.engagement_type='volunteer'
      and new.invited_at is not distinct from old.invited_at
@@ -66,7 +66,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 revoke all on function public.volunteer_approved_invitation_guard() from public,anon,authenticated;
 drop trigger if exists volunteer_approved_invitation_guard on public.pending_invitations;
 create trigger volunteer_approved_invitation_guard
@@ -77,7 +77,7 @@ for each row execute function public.volunteer_approved_invitation_guard();
 -- must not send an activation link before HR has approved the request.
 create or replace function public.volunteer_request_invitation(
   p_email text, p_full_name text, p_unit_id uuid, p_working_pattern jsonb
-) returns jsonb language plpgsql security definer set search_path='' as $
+) returns jsonb language plpgsql security definer set search_path='' as $$
 declare v_invite public.pending_invitations;
 begin
   if auth.uid() is null or public.app_org_id() is null then
@@ -100,7 +100,7 @@ begin
     jsonb_build_object('unit_id',v_invite.unit_id,'awaiting_hr',true));
   return jsonb_build_object('invitation_id',v_invite.id,'awaiting_hr',true);
 end;
-$;
+$$;
 revoke all on function public.volunteer_request_invitation(text,text,uuid,jsonb) from public,anon;
 grant execute on function public.volunteer_request_invitation(text,text,uuid,jsonb) to authenticated;
 
