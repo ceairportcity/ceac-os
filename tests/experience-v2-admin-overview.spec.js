@@ -103,7 +103,10 @@ for (const viewport of [
       );
       for (const height of compactHeights) expect(height).toBeGreaterThanOrEqual(44);
 
-      await expect(page.locator(".adminv2-intro-actions")).toBeHidden();
+      // Premium Admin mobile keeps its primary hero action visibly reachable,
+      // while compact shortcuts remain a separate navigation surface.
+      await expect(page.locator(".adminv2-intro-actions")).toBeVisible();
+      await expect(page.locator(".adminv2-hero-link")).toBeVisible();
       await expect(page.locator(".adminv2-mobile-actions")).toBeVisible();
 
       const inboxBox = await page.locator(".adminv2-inbox").boundingBox();

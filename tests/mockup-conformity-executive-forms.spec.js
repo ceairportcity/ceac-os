@@ -11,10 +11,19 @@ async function signInExecutive(page) {
   await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
 }
 
+// The owner-approved Executive shell has no global Create button. The three
+// locked narrow composers remain available at their authorised destinations.
 async function openCreate(page, label) {
-  const quickCreate = page.locator(".fpg9-sidebar-quick");
-  await expect(quickCreate).toBeVisible();
-  await quickCreate.getByRole("button", { name: label, exact: true }).click();
+  const routes = {
+    "Give out work": ["work", "Give out work"],
+    "Ministry objective": ["strategy", "New Ministry Objective"],
+    Announcement: ["announcements", "New announcement"],
+  };
+  const route = routes[label];
+  if (!route) throw new Error("No approved Executive destination for " + label);
+  await page.goto("/?tab=" + route[0]);
+  await expect(page.locator(".executive-app")).toBeVisible();
+  await page.getByRole("button", { name: route[1], exact: true }).first().click();
 }
 
 test.describe.configure({ mode: "serial" });

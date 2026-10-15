@@ -132,22 +132,24 @@ test("Stage 4B create menu exposes only role-authorised shortcuts", async ({ pag
   await expect(menu.getByRole("menuitem", { name: "Message room", exact: true })).toBeVisible();
 });
 
-test("OCR2 Executive Create exposes authorised leadership actions", async ({ page }) => {
+test("OCR2 Executive creation is reachable through the approved Work, Ministry and Announcements destinations", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
+  await expect(page.getByRole("button", { name: "Create", exact: true })).toBeHidden();
 
-  const quickCreate = page.locator(".fpg9-sidebar-quick");
-  await expect(quickCreate).toBeVisible();
-  for (const action of ["Give out work", "Ministry objective", "Announcement", "Meeting", "Message room"]) {
-    await expect(quickCreate.getByRole("button", { name: action, exact: true })).toBeVisible();
-  }
-  await quickCreate.getByRole("button", { name: "Ministry objective", exact: true }).click();
+  await page.goto("/?tab=work");
+  await expect(page.getByRole("heading", { name: "Work", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Give out work", exact: true }).first()).toBeVisible();
+
+  await page.goto("/?tab=strategy");
+  await expect(page.getByRole("heading", { name: "Ministry", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "New Ministry Objective", exact: true }).click();
   let dialog = page.getByRole("dialog", { name: "New ministry objective" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel("Strategy parent direction")).toBeVisible();
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
 
-  await quickCreate.getByRole("button", { name: "Announcement", exact: true }).click();
+  await page.goto("/?tab=announcements");
+  await page.getByRole("button", { name: "New announcement", exact: true }).click();
   dialog = page.getByRole("dialog", { name: "New announcement" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("Attachments", { exact: true })).toBeVisible();
@@ -161,13 +163,13 @@ test("OCR3 authorised Administration Create exposes Announcement while Staff rem
   await expect(page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true })).toBeVisible();
 });
 
-test("OCR6C Executive Create Message chooses an authorised Sub-team before communicating", async ({ page }) => {
+test("OCR6C Executive Messages chooses an authorised Sub-team before communicating", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  await page.getByRole("menu").getByRole("menuitem", { name: "Message room", exact: true }).click();
+  await page.goto("/?tab=messages");
   await expect(page).toHaveURL(/tab=messages/);
   await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
+  await page.getByRole("tab", { name: "Rooms", exact: true }).click();
   await expect(page.getByRole("tab", { name: "Rooms", exact: true })).toHaveAttribute("aria-selected", "true");
   const roomDirectory = page.locator(".ev2c-data-panel").filter({ hasText: "Organisation Rooms" }).first();
   await expect(roomDirectory).toBeVisible();

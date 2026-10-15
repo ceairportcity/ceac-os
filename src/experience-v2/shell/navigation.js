@@ -65,7 +65,9 @@ const MOBILE_PRIMARY_KEYS = Object.freeze({
   staff: Object.freeze(["home", "work", "team", "me"]),
   manager: Object.freeze(["home", "work", "team", "projects"]),
   admin: Object.freeze(["home", "people", "attendance", "finance"]),
-  executive: Object.freeze(["home", "work", "strategy", "exec-calendar"]),
+  // Owner-approved mobile dock is Overview / Work / Ministry / More.
+  // Calendar stays available in the More drawer, never as a fifth item.
+  executive: Object.freeze(["home", "work", "strategy"]),
 });
 
 const ROLE_QUICK_ACTIONS = Object.freeze({

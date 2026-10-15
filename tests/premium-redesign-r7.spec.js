@@ -30,9 +30,17 @@ test.describe("Premium redesign R7 closure", () => {
       await expect(page.locator(".ev2s-sidebar")).toBeVisible();
       await expect(page.locator(".ev2s-topbar")).toBeVisible();
       await expect(page.locator(".ev2s-sidebar-nav")).toBeVisible();
-      await expect(page.locator(".fpg9-sidebar-quick")).toBeVisible();
-      await expect(page.getByRole("button", { name: "Create", exact: true })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Open messages", exact: true })).toBeVisible();
+      if (label === "Executive") {
+        // The literal approved Executive shell uses its destination-specific
+        // creation surfaces and a notifications control, not legacy quick create.
+        await expect(page.locator(".fpg9-sidebar-quick")).toBeHidden();
+        await expect(page.getByRole("button", { name: "Create", exact: true })).toBeHidden();
+        await expect(page.getByRole("button", { name: "Open updates", exact: true })).toBeVisible();
+      } else {
+        await expect(page.locator(".fpg9-sidebar-quick")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Create", exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Open messages", exact: true })).toBeVisible();
+      }
 
       if (label === "Staff") {
         await expect(page.locator(".staffv2")).toBeVisible();
