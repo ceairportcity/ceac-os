@@ -73,7 +73,7 @@ export function WorkTabs({ items, value, onChange, ariaLabel, compact = false })
             onClick={() => onChange(key)}
           >
             <span>{label}</span>
-            {Number.isFinite(count) ? <b aria-label={`${count} items`}>{count}</b> : null}
+            {Number.isFinite(count) ? <b aria-hidden="true" title={`${count} items`}>{count}</b> : null}
           </button>
         );
       })}

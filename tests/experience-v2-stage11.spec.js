@@ -121,19 +121,27 @@ test("Stage 11B chart proof keeps chart and table equivalent and keyboard reacha
   await context.close();
 });
 
-test("Stage 11B Executive ministry movement uses the shared factual chart when comparable records exist", async ({ browser }) => {
+test("Stage 11B Executive activity remains attributable and does not invent movement when evidence is absent", async ({ browser }) => {
   const { context, page } = await login(browser, "exec@ceac.local.test", ".executive-app", { width: 1366, height: 768 });
   await page.goto("/?tab=home");
-  await expect(page.locator(".executivev2-greeting h1")).toContainText("Good morning");
+  await expect(page.locator(".executivev2-hero h2")).toContainText(/Good morning|Good afternoon|Good evening/);
 
-  const movement = page.locator(".executivev2-movement");
-  await expect(movement).toBeVisible();
-  const movementDetails = movement.locator(".executivev2-movement-details");
-  if (await movementDetails.count()) {
-    await movementDetails.locator("summary").click();
-    const charts = movementDetails.locator(".ev2dv-chart");
-    await expect(charts.first()).toBeVisible();
-    await expect(charts.first().getByRole("button", { name: /Show .* as table/ })).toBeVisible();
+  // Owner-approved Executive Overview renders attributable activity, not a
+  // synthetic movement score or an empty chart. If no authorised records
+  // exist, the explicit evidence-empty state must be visible.
+  const activity = page.locator(".executivev2-activity");
+  await expect(activity).toBeVisible();
+  await expect(activity.getByRole("heading", { name: "Recent activity" })).toBeVisible();
+  const records = activity.locator(".executivev2-activity-item");
+  const empty = activity.getByText("No recent attributable activity is visible.", { exact: true });
+  await expect.poll(async () =>
+    (await records.count()) > 0 || await empty.isVisible()
+  ).toBe(true);
+  if (await records.count()) {
+    await expect(activity.locator(".executivev2-activity-context")).toBeVisible();
+  } else {
+    await expect(empty).toBeVisible();
+    await expect(activity.locator(".ev2dv-chart")).toHaveCount(0);
   }
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

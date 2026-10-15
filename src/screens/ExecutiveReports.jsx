@@ -101,7 +101,7 @@ export default function ExecutiveReports({ me }) {
       <ReportingPageHeader
         eyebrow="Executive insight"
         title="Reports"
-        description="View submissions, reporting coverage and key recorded reports. Administration controls periods and configuration; coverage is not a performance score."
+        description="View submissions, reporting coverage and key recorded reports. Administration controls periods and report configuration; coverage is not a performance score."
         statusLabel={statusLabel}
         statusTone={error ? "danger" : "neutral"}
       />

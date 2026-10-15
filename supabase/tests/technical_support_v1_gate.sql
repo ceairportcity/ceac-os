@@ -152,13 +152,43 @@ $gate$;
 INSERT INTO public.organisations(id,name,short_code)
 VALUES('10000000-0000-4000-8000-000000000020','CEAC Support Tenant B','CEACSB');
 
-ALTER TABLE auth.users DISABLE TRIGGER on_auth_user_created;
+-- auth.users is owned by Supabase Auth, not the local Postgres test client.
+-- Never disable auth triggers or bypass the real invitation/activation
+-- boundary to create a cross-organisation test identity.
+INSERT INTO public.units(id,org_id,name,code) VALUES (
+  '20000000-0000-4000-8000-000000000020',
+  '10000000-0000-4000-8000-000000000020',
+  'Tenant B Unit','CEACSB'
+);
+INSERT INTO public.pending_invitations(
+  id,org_id,email,full_name,unit_id,role,invited_by,expires_at
+) VALUES (
+  '40000000-0000-4000-8000-000000000020',
+  '10000000-0000-4000-8000-000000000020',
+  'tenant-b@ceac.local.test',
+  'Tenant B Reporter',
+  '20000000-0000-4000-8000-000000000020',
+  'staff',
+  '31000000-0000-4000-8000-000000000003',
+  now()+interval '1 day'
+);
+-- The normal handle_new_user() trigger creates the Tenant B profile and
+-- membership in the disposable transaction using the authorised invitation.
 INSERT INTO auth.users(id,email,email_confirmed_at,raw_user_meta_data) VALUES
 ('31000000-0000-4000-8000-000000000011','tenant-b@ceac.local.test',now(),'{}');
-ALTER TABLE auth.users ENABLE TRIGGER on_auth_user_created;
-
-INSERT INTO public.profiles(id,org_id,full_name,email,is_admin,is_exec,active) VALUES
-('31000000-0000-4000-8000-000000000011','10000000-0000-4000-8000-000000000020','Tenant B Reporter','tenant-b@ceac.local.test',false,false,true);
+DO $tenant_b_invitation_integrity$
+BEGIN
+  IF NOT EXISTS(
+    SELECT 1 FROM public.profiles p JOIN public.unit_memberships m
+      ON m.profile_id=p.id AND m.org_id=p.org_id
+    WHERE p.id='31000000-0000-4000-8000-000000000011'
+      AND p.org_id='10000000-0000-4000-8000-000000000020'
+      AND m.unit_id='20000000-0000-4000-8000-000000000020'
+  ) THEN
+    RAISE EXCEPTION 'Technical Support gate: Tenant B invitation did not establish a correctly scoped account.';
+  END IF;
+END
+$tenant_b_invitation_integrity$;
 
 INSERT INTO public.support_team_memberships(
   org_id,profile_id,role,added_by,reason,associated_unit_id

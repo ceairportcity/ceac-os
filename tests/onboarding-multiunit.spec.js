@@ -46,7 +46,16 @@ test('one Manager account keeps two headships across switching and reload', asyn
     expect(ended.error).toBeNull();
     // Keep the isolated unit inactive so its referenced audit/history remains intact.
     const closed=await service.from('units').update({active:false}).in('id',[unit,first]); expect(closed.error).toBeNull();
-    expect((await service.from('profiles').update({active:false}).eq('id',manager)).error).toBeNull();
+    // The strengthened identity trigger rejects service-role deactivation without
+    // an attributable CEAC actor. Do not bypass the protection just to erase
+    // a disposable test account; prove the denial and preserve history.
+    const unattributed = await service.from('profiles')
+      .update({active:false}).eq('id',manager);
+    expect(unattributed.error?.code).toBe('42501');
+    const preserved = await service.from('profiles')
+      .select('id,active').eq('id',manager).single();
+    expect(preserved.error).toBeNull();
+    expect(preserved.data.active).toBe(true);
     await admin.auth.signOut();
   }
 });

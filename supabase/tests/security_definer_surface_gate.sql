@@ -5,7 +5,7 @@ begin;
 -- Current release exact authenticated SECURITY DEFINER allowlist.
 -- Source migration versions 140-146 add 12 reviewed caller/tenant-bound
 -- interfaces and revoke legacy direct attendance correction EXECUTE (-1).
--- Expected = prior 135 + 12 - 1 = 146, and every signature remains pinned.
+-- Expected = prior 135 + 12 - 2 = 145, with both obsolete grants revoked.
 -- A count-only ceiling can be bypassed by replacing one reviewed RPC with a
 -- different one. This table therefore locks the exact reviewed signatures.
 
@@ -144,8 +144,7 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.send_room_message(p_room_id uuid, p_body text, p_reply_to_id uuid, p_refs jsonb, p_mention_ids uuid[])'),
   ('public.set_routine_paused(p_work_item_id uuid, p_paused boolean, p_reason text)'),
   ('public.set_unit_resource_active(p_resource_id uuid, p_active boolean)'),
-  ('public.share_performance_review(p_appraisal_id uuid)'),
-  ('public.submit_work_for_review(p_work_item_id uuid, p_session_id uuid, p_note text, p_link text)'),
+   ('public.submit_work_for_review(p_work_item_id uuid, p_session_id uuid, p_note text, p_link text)'),
   ('public.swap_sub_team_positions(p_first_id uuid, p_second_id uuid)'),
   ('public.unit_budget_position(p_unit_id uuid, p_year integer)'),
   ('public.update_announcement(p_announcement_id uuid, p_title text, p_body text, p_priority text, p_requires_acknowledgement boolean, p_expires_at timestamp with time zone, p_all_org boolean, p_unit_ids uuid[], p_roles text[])'),
@@ -208,7 +207,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>146 or v_expected<>146 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>145 or v_expected<>145 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
@@ -220,7 +219,8 @@ begin
   if has_function_privilege('authenticated','public.app_can_write_operational_context(text,uuid)','EXECUTE')
      or has_function_privilege('authenticated','public.cancel_ministry_event(uuid,text)','EXECUTE')
      or has_function_privilege('authenticated','public.link_work_items(uuid,uuid,text)','EXECUTE')
-     or has_function_privilege('authenticated','public.guard_last_authority()','EXECUTE') then
+     or has_function_privilege('authenticated','public.guard_last_authority()','EXECUTE')
+     or has_function_privilege('authenticated','public.share_performance_review(uuid)','EXECUTE') then
     raise exception 'S2 gate failure: an internal/dead RPC remains directly executable by authenticated.';
   end if;
 

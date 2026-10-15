@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
+const App = lazy(() => import("./App"));
 import ExperienceV2MotionProvider from "./experience-v2/ExperienceV2MotionProvider";
 import "./styles.css";
 import "./premium.css";
@@ -29,7 +29,9 @@ const PwaStatus = lazy(() => import("./resilience/PwaStatus"));
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ExperienceV2MotionProvider>
-      <App />
+      <Suspense fallback={<div className="route-fallback" role="status" aria-live="polite" aria-busy="true">Opening CEAC OS…</div>}>
+        <App />
+      </Suspense>
       <Suspense fallback={null}>
         <PwaStatus />
       </Suspense>

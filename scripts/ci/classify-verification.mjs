@@ -4,6 +4,8 @@ import { appendFileSync } from "node:fs";
 const base = process.env.VERIFICATION_BASE_SHA || "HEAD^";
 const head = process.env.VERIFICATION_HEAD_SHA || "HEAD";
 const eventName = process.env.VERIFICATION_EVENT_NAME || "local";
+const headRef = process.env.VERIFICATION_HEAD_REF || "";
+const fullBundleAcceptance = headRef === "chatgpt/ceac-complete-source-verification-20261015";
 
 function git(...args) {
   return execFileSync("git", args, { encoding: "utf8" }).trim();
@@ -82,6 +84,7 @@ const scope =
 
 const broadProductChange = !documentationOnly && scope === "full";
 const levelB =
+  fullBundleAcceptance ||
   levelBRequested ||
   (!documentationOnly &&
     (eventName === "workflow_dispatch" ||

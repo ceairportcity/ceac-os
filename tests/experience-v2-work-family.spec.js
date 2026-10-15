@@ -302,7 +302,10 @@ for (const viewport of [
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
       const tabs = page.locator(".ev2w-tabs").first().getByRole("tab");
-      expect(await tabs.count()).toBeGreaterThanOrEqual(3);
+      await expect.poll(() => tabs.count(), { message: role.key + " Work source tabs must be rendered" }).toBeGreaterThanOrEqual(3);
+      for (const tab of role.tabs.slice(0, 3)) {
+        await expect(page.getByRole("tab", { name: tab, exact: true }).first()).toBeVisible();
+      }
 
       const smallest = await page.locator(".ev2-work-page").evaluate((root) => {
         const values = [...root.querySelectorAll("*")]

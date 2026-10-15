@@ -115,7 +115,8 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 151, "expected exact integrated one-bundle migration source inventory (151); reconcile this gate on any approved migration change");
+  assert.equal(migrations.length, 152, "expected exact integrated one-bundle migration source inventory (152), including approved private recurrence; reconcile this gate on any approved migration change");
+  assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
   const pending = [
@@ -149,8 +150,11 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
   // The one-bundle change records 12 additional guarded RPC/predicate surfaces
-  // and removes the obsolete direct attendance-correction grant (135+12-1=146).
-  assert.match(mfa, /callable_count<>146/);
+  // and removes obsolete direct attendance-correction and performance-share grants.
+  // Fail closed at 145: do not turn a rejected Manager-only publication into an
+  // authenticated SECURITY DEFINER API.
+  assert.match(mfa, /callable_count<>145/);
+  assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);
 });

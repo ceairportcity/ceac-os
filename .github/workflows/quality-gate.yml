@@ -35,6 +35,7 @@ jobs:
           VERIFICATION_BASE_SHA: ${{ github.event.before || github.event.pull_request.base.sha }}
           VERIFICATION_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           VERIFICATION_EVENT_NAME: ${{ github.event_name }}
+          VERIFICATION_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: node scripts/ci/classify-verification.mjs
 
   documentation-integrity:
@@ -97,6 +98,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 2
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:

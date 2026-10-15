@@ -77,7 +77,7 @@ const ROLES = [
       { key:"exec-reports", label:"Reports" },
       { key:"messages", label:"Messages" },
       { key:"me", label:"My Hub" },
-      { key:"account", label:"Your account" },
+      { key:"account", label:"Account" },
     ],
   },
 ];

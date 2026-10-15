@@ -1,0 +1,36 @@
+# CEAC OS — Owner decision: strictly temporary public GitHub CI window
+
+**Owner-authorised: 14 October 2026. Highest-priority visibility/CI operating override until explicitly superseded.** This is an exception only to older instructions that required `ceairportcity/ceac-os` to remain private at all times or barred public runners. It does **not** override source-of-truth, one-writer, RLS, privacy, audit, payroll, real-data, acceptance, rollback or final owner production-GO controls.
+
+## Current verified state and purpose
+
+- The canonical GitHub repository is `ceairportcity/ceac-os`, observed **PUBLIC** on 14 October 2026. This is **temporary**, owner-directed, strictly to allow GitHub-hosted public-repository CI/verification for the pending integrated release without paying for private runner capacity. Public visibility is not the new normal or a standing permission for future releases.
+- The original `thestandardinst-star/ceac-os` is accessible again and remains a separate historical/recovery source, **not** a reason to roll the canonical repo or existing production back. Avoid destructive mirroring, resets, force-pushes and source divergence.
+- Existing Vercel production project/domain and live Supabase project `efjljhftsesssumtshvp` remain unchanged unless separately authorised. No new production project/database.
+- Earlier CI/Migration Replay/Account Security/Quality Gate runs failed with **zero executed job steps**. Public visibility may allow standard GitHub-hosted runners, but this is only a hypothesis until a *new* workflow actually obtains a runner and executes tests. Never mark a zero-step failure, skipped deployment or nominal status green as a test pass.
+
+## Initial post-public runner evidence (documentation-only; not release acceptance)
+
+- **Verified 14 October 2026:** after owner changed canonical GitHub visibility to PUBLIC, both policy PR #76 and PR #77 triggered GitHub Actions that **received runners and executed steps**. PR #77 CI run `38647663550`, job `116138436279`: checkout, supply-chain/source-of-truth and documentation checks **executed and succeeded**. This supports public-runner access working.
+- PR #77 Migration Replay run `38647663347`, job `116138435419`: checkout/scope classification executed and succeeded; **Supabase CLI, local database startup and all migration-replay steps were SKIPPED because the PR changes documentation only**. PR #77 Vite build/dependency install/browser were also SKIPPED.
+- Therefore these green runs **do not** prove the final application build, database replay, live authentication, RLS, cross-role behaviour or production readiness. The bounded public-CI window remains justified only for the genuinely required integrated-candidate test runs. Immediately restore PRIVATE when those are completed and recorded or if no longer needed.
+
+## Strict expiry: restore PRIVATE at the earliest safe point
+
+1. Run only the required, bounded CI / migration rehearsal / account-security / acceptance workflows needed to verify the approved final integrated candidate. Record exact commit, workflow/run IDs, executed steps, results and any blockers. Never loosen RLS/security or manufacture green checks.
+2. **Immediately after the last necessary CI run has finished and its evidence has been captured, restore `ceairportcity/ceac-os` to PRIVATE.** If GitHub-hosted public runners cannot execute or verification is moved to another runner, close the public window **immediately**; do not leave it public waiting for an unrelated fix.
+3. **Do not postpone the privacy restoration for production deployment, Supabase ownership work, Google sign-in, further feature requests, November Stage 2 or a paid GitHub plan.** Return it to private even on GitHub Free. If a later build needs CI again, seek explicit fresh owner authorisation before reopening visibility.
+4. Repo visibility must be checked at the start and close of each CEAC engineering chat. While public, every handoff must explicitly state **"PUBLIC — TEMPORARY; RESTORE PRIVATE AS SOON AS FINAL CI EVIDENCE IS CAPTURED"** and identify what exact verification still requires public access. When there is no justified public-runner task remaining, treat restoring private as the immediate next action, not a future recommendation.
+5. When repository administration tooling cannot change visibility, tell the owner to use `https://github.com/ceairportcity/ceac-os/settings` → General → Danger Zone → Change repository visibility → Private, and confirm the final visibility via GitHub repository metadata. **Do not claim it is private until verified.** If capable and separately authorised, perform and verify the change.
+6. A temporary public period can expose source and historical commits permanently to copies/forks. Re-privatising does not recall those copies. Never commit credentials, tokens, service-role keys, personnel records, private HR/payroll data, security recovery material, production dumps or sensitive test artefacts. Audit the exposed history and CI logs for secrets and take appropriate key rotation/remediation action if any are found. Do not rewrite history without express owner approval.
+
+## Concurrent ownership and scope decisions
+
+- Keep **CE Airport City canonical**. The Standard Institute is an independent historical/recovery source and possible CI fallback only if verified. Do not switch primary GitHub code or production back.
+- Owner now prioritises **administrative ownership of the existing Supabase CEAC project by CE Airport City**. Verify appropriate owner access, a genuine destination organisation, current project's ID, transfer requirements, recoverability and continuity before any owner-confirmed transfer. A direct existing-project transfer is preferred to recreating or copying production. This permission/ownership work is independent from GitHub visibility.
+- **Google-only authentication, universal MFA/AAL2 and the rest of the deferred Stage 2 remain deferred**. Do not silently activate them or turn them into requirements of the currently approved one-bundle product release.
+- The previous one-bundle S0–S3 release gate still applies; this public CI exception changes only the runner/visibility constraint, not the requirement for a fully verified release with explicit production GO.
+
+## Handoff / action for every agent
+
+FIRST READ the highest owner overrides in `AGENTS.md`, this document and the latest one-bundle execution contract on the actual working branch. Inspect live repository visibility, branch/HEAD, integration candidate, pending migration manifest and last executed CI evidence, not older reports. Continue implementation/test execution; keep production unchanged absent final owner authorisation. **Never end a release-verification session leaving the repo public without recording the precise remaining CI need and immediate PRIVATE restoration trigger.**

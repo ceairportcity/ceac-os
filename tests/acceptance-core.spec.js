@@ -87,6 +87,9 @@ async function go(page, name) {
   await page.goto(target);
   await expect(page.locator(".app")).toBeVisible({ timeout: 15000 });
   await waitForRouteReady(page);
+  // Lazy destinations may mount after the fallback briefly disappears. The
+  // next layout measurement must examine the actual authorised route body.
+  await expect(page.locator(".app-content .body").first()).toBeVisible({ timeout:15000 });
 }
 
 async function assignTask(page, title, step = null) {
@@ -124,7 +127,8 @@ test("Staff and Manager complete the real work loop, including return and approv
     await page.getByRole("button", { name: "Start work", exact: true }).click();
     const startDialog = page.getByRole("dialog");
     await expect(startDialog).toBeFocused();
-    await startDialog.getByRole("button", { name: "At the office" }).click();
+    await startDialog.getByRole("button", { name: "At an authorised office or programme location" }).click();
+    await startDialog.getByRole("combobox", { name: "Authorised duty location" }).selectOption({ label: "Acceptance office" });
     await startDialog.getByRole("button", { name: "Start work", exact: true }).click();
     await expect(page.getByRole("button", { name: "End work" })).toBeVisible();
 
@@ -181,7 +185,8 @@ test("Staff and Manager complete the real work loop, including return and approv
       await go(page, "Home");
       await page.getByRole("button", { name: "Start work", exact: true }).click();
       const dialog = page.getByRole("dialog");
-      await dialog.getByRole("button", { name: "At the office" }).click();
+      await dialog.getByRole("button", { name: "At an authorised office or programme location" }).click();
+      await dialog.getByRole("combobox", { name: "Authorised duty location" }).selectOption({ label: "Acceptance office" });
       await dialog.getByRole("button", { name: "Start work", exact: true }).click();
       await expect(page.getByRole("button", { name: "End work" })).toBeVisible();
       await go(page, "Work");
@@ -720,7 +725,8 @@ test("Administration can combine multiple units into one meeting audience", asyn
 
   const { context, page } = await openAs(browser, "admin@ceac.local.test");
   await go(page, "Home");
-  await page.getByRole("button", { name: "Schedule", exact: true }).click();
+  await page.getByRole("complementary", { name: "Upcoming commitments" })
+    .getByRole("button", { name: "Schedule", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByPlaceholder("What is this meeting for?").fill(title);
   await dialog.locator('input[type="datetime-local"]').first().fill(localValue);
@@ -738,19 +744,25 @@ test("Administration can combine multiple units into one meeting audience", asyn
 test("Manager primary surfaces stay usable across supported phone widths", async ({ browser }) => {
   test.setTimeout(120000);
   const widths = [320, 360, 375, 390, 414, 430];
-  const destinations = ["Home", "Work", "Team", "Projects", "Calendar", "Strategy", "Delivery", "Workload", "Assets & devices", "Performance & development", "Learning", "Finance", "Reports"];
+  // Manager mobile acceptance must exercise the routes the Manager is
+  // actually authorised to visit; admin/Executive-only destinations stay denied.
+  const destinations = ["Home", "Work", "Team", "Projects", "Time & Leave", "Calendar", "Finance", "Reports"];
 
   for (const width of widths) {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width, height: 844 });
     for (const destination of destinations) {
       await go(page, destination);
       await expect(page.locator(".body")).toBeVisible();
-      const dimensions = await page.evaluate(() => ({
-        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        bodyWidth: document.querySelector(".body")?.getBoundingClientRect().width || 0,
-      }));
-      expect(dimensions.overflow, `Manager / ${destination} overflowed at ${width}px`).toBeLessThanOrEqual(1);
-      expect(dimensions.bodyWidth, `Manager / ${destination} collapsed at ${width}px`).toBeGreaterThan(250);
+      // Navigation transitions can briefly unmount the prior route.
+      // Assert the final page width (not a vanished intermediate element)
+      // while preserving the original >250px and overflow requirements.
+      await expect.poll(() => page.evaluate(() =>
+        document.querySelector(".app-content .body")?.getBoundingClientRect().width || 0
+      ), { message: `Manager / ${destination} collapsed at ${width}px`, timeout: 15000 }).toBeGreaterThan(250);
+      const overflow = await page.evaluate(() =>
+        document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(overflow, `Manager / ${destination} overflowed at ${width}px`).toBeLessThanOrEqual(1);
     }
     await context.close();
   }
@@ -938,7 +950,8 @@ test("Stage 5 Delivery manages programmes, milestones, dependencies and project 
     await expect(page.getByRole("heading", { name: "Major projects", exact: true })).toBeVisible();
     await expect(page.getByText("Stage 4 Browser Project", { exact: true }).first()).toBeVisible();
     // Owner-approved Executive copy still requires explicit, never inferred, project health.
-    await expect(page.getByText("Health appears only when it is explicitly recorded.")).toBeVisible();
+    await expect(page.getByText(/Health appears only when it is explicitly recorded/)).toBeVisible();
+    await expect(page.getByText(/does not generate a hidden project score/)).toBeVisible();
     await page.getByRole("button", { name: "Open operational details", exact: true }).click();
     await expect(page.locator(".row-t").filter({ hasText: /^Acceptance Unit A Programme$/ }).first()).toBeVisible();
     await context.close();
@@ -1306,8 +1319,14 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     await page.getByRole("button", { name: "Record feedback", exact: true }).click();
     await expect(page.getByText("Visible feedback recorded.", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Mark as shared", exact: true }).click();
-    await expect(page.getByText("Review marked shared.", { exact: true })).toBeVisible();
+    // Publication is HR-only. The Manager requests an exact-version release
+    // instead of bypassing HR through the retired Mark-as-shared shortcut.
+    await page.getByLabel("Performance release request reason").fill("Manager completed a factual review and requests independent HR publication.");
+    await page.getByRole("button", { name: "Submit release request to HR", exact: true }).click();
+    await expect(page.getByText(
+      "The manager's assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.",
+      { exact: true }
+    )).toBeVisible();
 
     await page.reload();
     const reloadedCase = page.locator(".performance-case-row").filter({ hasText: "Staff Fixture" });
@@ -1346,6 +1365,35 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     await page.unroute("**/rest/v1/feedback_notes?*");
 
     await page.screenshot({ path: "test-artifacts/stage7-performance-manager.png", fullPage: true });
+    await context.close();
+  }
+
+  // A pending Manager request is never employee-visible before HR signs
+  // the decision, even though the employee can still see their own feedback.
+  {
+    const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
+    await go(page, "Me");
+    await page.getByRole("button", { name: /Reviews & development/ }).click();
+    await expect(page.getByText(assessmentText, { exact: true })).toHaveCount(0);
+    await expect(page.getByText(conversationText, { exact: true })).toHaveCount(0);
+    await context.close();
+  }
+
+  {
+    const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
+    await go(page, "Performance & development");
+    const staffCase = page.locator(".performance-case-row").filter({ hasText: "Staff Fixture" }).first();
+    await expect(staffCase).toBeVisible({ timeout: 15000 });
+    await staffCase.click();
+    const approve = page.getByRole("button", { name: "HR approve publication", exact: true });
+    await expect(approve).toBeVisible({ timeout: 15000 });
+    await page.getByLabel("HR assessment publication decision reason").fill(
+      "HR independently reviewed the manager narrative and approved this version for employee publication."
+    );
+    await approve.click();
+    await expect(page.getByText(
+      "HR approved publication of this manager assessment version.", { exact: true }
+    )).toBeVisible();
     await context.close();
   }
 
@@ -1574,24 +1622,13 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await expect(page.getByText(/does not convert a missing or different record/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Corrections", exact: true }).click();
-    await page.getByRole("button", { name: "Record correction", exact: true }).click();
-    dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Correction person").selectOption("31000000-0000-4000-8000-000000000001");
-    await dialog.getByLabel("Corrected context").fill("Acceptance corrected workforce context");
-    await dialog.getByLabel("Correction reason").fill(correctionReason);
-    await dialog.getByRole("button", { name: "Record correction", exact: true }).click();
-    await expect(page.getByText("Attendance context correction recorded.", { exact: true })).toBeVisible();
-
-    const correctionRow = page.locator(".row").filter({ hasText: correctionReason }).first();
-    await expect(correctionRow).toBeVisible();
-    page.once("dialog", (prompt) => prompt.accept("Acceptance reversal reason"));
-    await correctionRow.getByRole("button", { name: "Reverse correction", exact: true }).click();
-    await expect(page.getByText("Attendance correction reversal recorded.", { exact: true })).toBeVisible();
-
-    await page.reload();
-    await go(page, "Workforce");
-    await page.getByRole("tab", { name: "Corrections", exact: true }).click();
-    await expect(page.locator(".row").filter({ hasText: correctionReason }).first()).toContainText("reversed");
+    const correctionWorkflow=page.locator(".ev2wf-correction-workflow");
+    await expect(correctionWorkflow.getByRole("heading",{name:"Missed check-in and attendance corrections"})).toBeVisible();
+    await expect(correctionWorkflow.getByText(/manager approves the correction; HR audits approved corrections afterward/i)).toBeVisible();
+    // Legacy direct HR modification/reversal is prohibited. Dedicated browser
+    // approval test separately verifies Staff request → Manager decision → HR audit.
+    await expect(page.getByRole("button",{name:"Record correction",exact:true})).toHaveCount(0);
+    await expect(page.getByRole("button",{name:"Reverse correction",exact:true})).toHaveCount(0);
 
     await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
     await page.getByRole("button", { name: "Configure leave policy", exact: true }).click();
@@ -2027,7 +2064,8 @@ test("Administration surfaces use policy-safe HR states and real employee record
   test.setTimeout(150000);
   const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
 
-  await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
+  await expect(page.locator(".adminv2-hero-title h1")).toContainText(/Good morning|Good afternoon|Good evening/);
+  await expect(page.locator(".adminv2-context")).toContainText("Administration & HR");
   await expect(page.getByText("Needs Administration", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Finance & reporting", exact: true })).toBeVisible();
   await expect(page.getByText("Delivery signals", { exact: true })).toBeVisible();

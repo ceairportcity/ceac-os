@@ -249,7 +249,7 @@ test("Stage 10 Family G3 leave request uses the V2 guided modal without inventin
   await expect(page.getByRole("button", { name: "Sick", exact: true })).toBeVisible();
   await expect(page.getByLabel("Leave starts", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Leave ends", { exact: true })).toBeVisible();
-  await expect(page.getByText(/does not guess working-day totals, entitlement or payroll consequences/i)).toBeVisible();
+  await expect(page.getByText(/counts working days from your attributable workforce schedule when that schedule is complete/i)).toBeVisible();
   await expect(page.getByText(/That is .* day/i)).toHaveCount(0);
 
   await page.screenshot({

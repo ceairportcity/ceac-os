@@ -96,9 +96,17 @@ test("R4 standby package is prebuilt, provider-neutral and not authorised for cu
   rmSync(output, { recursive: true, force: true });
 });
 
-test("security and authority implementation remain outside the resilience change", () => {
-  const changed = execFileSync("git", ["diff", "--name-only", "HEAD^", "HEAD"], { encoding: "utf8" });
-  expect(changed).not.toMatch(/^supabase\/migrations\//m);
-  expect(changed).not.toMatch(/^src\/lib\/supabase/m);
-  expect(changed).not.toMatch(/security-s[138]|capability.*expir|protected.*hr/i);
+test("resilience runtime does not acquire a privileged authority or database mutation surface", () => {
+  // A migration-bearing integrated release is expected to change migrations,
+  // so comparing Git HEAD^ to HEAD would reject the approved release and
+  // cannot establish whether resilience code itself has privileged authority.
+  for (const path of [
+    "src/resilience/registerServiceWorker.js",
+    "src/resilience/PwaStatus.jsx",
+    "public/sw.js",
+  ]) {
+    const source = readFileSync(path, "utf8");
+    expect(source, path).not.toMatch(/supabase\.(?:rpc|from|auth\.admin)\s*\(/);
+    expect(source, path).not.toMatch(/SERVICE_ROLE_KEY|set_config\(|SECURITY\s+DEFINER|CREATE\s+(?:TABLE|FUNCTION)/i);
+  }
 });

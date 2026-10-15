@@ -79,7 +79,8 @@ for (const viewport of [
   test(`Stage 7 Administration Overview composes cleanly at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openAdmin(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "Administration", exact: true })).toBeVisible();
+    await expect(page.locator(".adminv2-hero-title h1")).toContainText(/Good morning|Good afternoon|Good evening/);
+    await expect(page.locator(".adminv2-context")).toContainText("Administration & HR");
     await expect(page.locator(".adminv2-inbox")).toBeVisible();
     await expect(page.locator(".adminv2-people")).toBeVisible();
     await expect(page.locator(".adminv2-reporting")).toBeVisible();
@@ -102,7 +103,10 @@ for (const viewport of [
       );
       for (const height of compactHeights) expect(height).toBeGreaterThanOrEqual(44);
 
+      // A single reachable mobile inbox shortcut replaces the hidden desktop
+      // hero controls; do not show duplicate, cramped primary actions.
       await expect(page.locator(".adminv2-intro-actions")).toBeHidden();
+      await expect(page.locator(".adminv2-mobile-actions .adminv2-hero-link")).toBeVisible();
       await expect(page.locator(".adminv2-mobile-actions")).toBeVisible();
 
       const inboxBox = await page.locator(".adminv2-inbox").boundingBox();

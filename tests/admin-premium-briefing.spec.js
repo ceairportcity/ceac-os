@@ -18,13 +18,16 @@ for (const viewport of [
     await expect(page.locator(".office-app")).toBeVisible({timeout:15000});
     await page.goto("/?tab=home");
 
-    const hero = page.getByRole("banner", {name:"Administration daily briefing"});
+    const hero = page.locator(".adminv2-hero[aria-label=\"Administration daily briefing\"]");
     await expect(hero).toBeVisible({timeout:15000});
     await expect(hero.getByRole("heading", { name:/Good morning|Good afternoon|Good evening/ })).toBeVisible();
     await expect(hero.getByRole("complementary", { name:"Upcoming commitments" })).toBeVisible();
     await expect(hero.locator(".adminv2-mini-calendar")).toBeVisible();
     await expect(hero.getByRole("button", { name:"Next month" })).toBeVisible();
-    await expect(hero.getByRole("link", {name:/Review your inbox/})).toBeVisible();
+    const inboxLink = viewport.width <= 599
+      ? page.locator(".adminv2-mobile-actions").getByRole("link", {name:/Review your inbox/})
+      : hero.getByRole("link", {name:/Review your inbox/});
+    await expect(inboxLink).toBeVisible();
     await expect(page.locator(".adminv2-inbox")).toBeVisible({timeout:15000});
     await expect(page.getByRole("region", {name:"Next useful Administration step"})).toBeVisible();
     await expect(page.locator(".adminv2-focus-metrics")).toBeVisible();
@@ -35,7 +38,7 @@ for (const viewport of [
 
     await hero.getByRole("button", { name:"Next month" }).click();
     await hero.getByRole("button", { name:"Show current month" }).click();
-    await hero.getByRole("link", { name:/Review your inbox/ }).click();
+    await inboxLink.click();
     await expect(page).toHaveURL(/#admin-operational-inbox/);
     await expect(page.locator("#admin-operational-inbox")).toBeVisible();
     await context.close();

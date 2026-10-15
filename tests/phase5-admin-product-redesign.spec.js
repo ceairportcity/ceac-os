@@ -45,7 +45,11 @@ for (const viewport of [
 ]) {
   test(`Phase 5 People & Access is usable at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await signInAdmin(browser, { width: viewport.width, height: viewport.height });
-    await page.goto("/?tab=people");
+    // Enter through the authorised Administration action after capability resolution.
+    // This verifies the actual user path rather than a direct reload before permissions settle.
+    const openPeople = page.getByRole("button", { name: /^(?:Open )?People & Access$/ }).first();
+    await expect(openPeople).toBeVisible({ timeout: 15000 });
+    await openPeople.click();
     await expect(page.locator(".ev2-people-admin")).toBeVisible({ timeout: 15000 });
 
     await page.getByRole("tab", { name: "Access", exact: true }).click();
@@ -76,7 +80,11 @@ for (const viewport of [
 test("Phase 5 person access opens the same employee in controlled offboarding", async ({ browser }) => {
   test.setTimeout(90_000);
   const { context, page } = await signInAdmin(browser, { width: 390, height: 844 });
-  await page.goto("/?tab=people");
+  // Enter through the authorised Administration action after capability resolution.
+  // This verifies the actual user path rather than a direct reload before permissions settle.
+  const openPeople = page.getByRole("button", { name: /^(?:Open )?People & Access$/ }).first();
+  await expect(openPeople).toBeVisible({ timeout: 15000 });
+  await openPeople.click();
   await expect(page.locator(".ev2-people-admin")).toBeVisible({ timeout: 15000 });
 
   const row = page.locator(".fpg-people-roster-row").filter({ hasText: "Staff Fixture" }).first();
