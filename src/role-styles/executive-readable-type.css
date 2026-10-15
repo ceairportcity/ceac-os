@@ -17,3 +17,7 @@
     font-size: 12px;
   }
 }
+
+/* Default <small> is 80% of its parent, producing unreadable 10px labels.
+   Lift rendered operational helper text to the owner-locked 12px minimum. */
+.executive-app .executivev2 small { font-size: 12px; }
