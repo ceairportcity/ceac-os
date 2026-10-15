@@ -63,7 +63,7 @@ $definer_search_path$;
 -- Foundation 111 adds seven reviewed RPCs: responsibility, work-lane membership,
 -- invitation revoke/list/resend, and self-bound end-location and continuation evidence.
 -- onboarding_access_presence_gate.sql covers authority and evidence failures.
--- S2 migration 114 revokes direct authenticated execution from one internal helper and two unused RPCs, reducing the reviewed surface from 135 to 132. Phase 6C adds four necessary caller-bound attendance RPCs and the exact 136-signature reviewed allowlist is enforced by security_definer_surface_gate.sql. The go-live leave migration moves workforce_request_leave to a SECURITY INVOKER public wrapper with private audited implementation, decreasing callable public definers to 135. Platform Kernel must preserve this smaller exact count and reject drift; see CEAC_GO_LIVE_DEFINER_SURFACE_RECONCILIATION_2026-10-10.md.
+-- Historical go-live Stage 1 reduced the reviewed callable surface to 135. The owner-approved next integrated one-bundle release adds 12 scoped interfaces but revokes the legacy direct attendance-correction and direct performance-publication grants: exact current release surface = 135 + 12 - 2 = 145. Platform Kernel, strict signature allowlist and privileged MFA gate must agree; no anonymous function access is authorised.
 -- Phase 2 migration 112 adds six reviewed RPCs: capability-bound daily pattern
 -- versions, self-bound notices/returns/checkpoints, manager-bound responses and
 -- a sanitised evidence read. attendance_phase2_gate.sql tests their identities,
@@ -78,8 +78,8 @@ begin
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
 
-  if n<>135 then
-    raise exception 'Platform Kernel gate failure: expected 135 explicitly reviewed authenticated SECURITY DEFINER functions after go-live wrapper reduction, found %.',n;
+  if n<>145 then
+    raise exception 'Platform Kernel gate failure: expected exactly 145 reviewed authenticated SECURITY DEFINER functions in the integrated one-bundle release, found %.',n;
   end if;
 
   if to_regprocedure('public.my_sessions()') is null
