@@ -57,10 +57,12 @@ begin
   -- The post-S2 baseline was 132. Reviewed Phase 6C attendance adds four
   -- caller-bound RPCs, with exact signature/authority checks enforced by
   -- security_definer_surface_gate.sql and attendance_phase6_integrity_gate.sql.
+  -- Reviewed migrations 140-146 add 12 new caller-scoped interfaces and
+  -- revoke one legacy direct correction grant, for exact release count 146.
   -- Keep this MFA gate strict on the reviewed final count; neither AAL2 nor
   -- verified-factor authority checks below are relaxed.
-  if callable_count<>135 then
-    raise exception 'S1 MFA gate failure: authenticated SECURITY DEFINER count differs from the reviewed go-live total of 135; found %.',callable_count;
+  if callable_count<>146 then
+    raise exception 'S1 MFA gate failure: authenticated SECURITY DEFINER count differs from the reviewed integrated release total of 146; found %.',callable_count;
   end if;
 
   select count(*) into anon_count

@@ -2,7 +2,10 @@
 
 begin;
 
--- S2 exact authenticated SECURITY DEFINER allowlist.
+-- Current release exact authenticated SECURITY DEFINER allowlist.
+-- Source migration versions 140-146 add 12 reviewed caller/tenant-bound
+-- interfaces and revoke legacy direct attendance correction EXECUTE (-1).
+-- Expected = prior 135 + 12 - 1 = 146, and every signature remains pinned.
 -- A count-only ceiling can be bypassed by replacing one reviewed RPC with a
 -- different one. This table therefore locks the exact reviewed signatures.
 
@@ -43,14 +46,18 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.asset_return(p_asset_id uuid, p_location text, p_condition_note text, p_reason text)'),
   ('public.assign_performance_reviewer(p_appraisal_id uuid, p_reviewer_id uuid, p_reason text)'),
   ('public.assign_unit_head(p_unit_id uuid, p_profile_id uuid)'),
-  ('public.attendance_create_notice(p_kind text, p_starts_at timestamp with time zone, p_expected_return_at timestamp with time zone, p_reason text, p_note text)'),
   ('public.attendance_corroboration_for_day(p_date date)'),
+  ('public.attendance_create_notice(p_kind text, p_starts_at timestamp with time zone, p_expected_return_at timestamp with time zone, p_reason text, p_note text)'),
+  ('public.attendance_day_evidence(p_date date)'),
+  ('public.attendance_hr_audit_correction(p_request_id uuid, p_outcome text, p_note text)'),
   ('public.attendance_integrity_status()'),
+  ('public.attendance_manager_decide_correction(p_request_id uuid, p_approve boolean, p_note text)'),
+  ('public.attendance_record_return(p_work_item_id uuid)'),
+  ('public.attendance_request_correction(p_profile_id uuid, p_work_date date, p_correction_type text, p_context jsonb, p_reason text, p_session_id uuid)'),
+  ('public.attendance_respond_notice(p_work_item_id uuid, p_outcome text, p_note text)'),
+  ('public.attendance_set_office_code(p_enabled boolean, p_ttl_minutes integer, p_office_location_id uuid)'),
   ('public.attendance_set_office_code(p_enabled boolean, p_ttl_minutes integer)'),
   ('public.attendance_verify_office_code(p_code text, p_session_id uuid)'),
-  ('public.attendance_day_evidence(p_date date)'),
-  ('public.attendance_record_return(p_work_item_id uuid)'),
-  ('public.attendance_respond_notice(p_work_item_id uuid, p_outcome text, p_note text)'),
   ('public.change_routine_schedule(p_work_item_id uuid, p_effective_from date, p_schedule_kind text, p_weekdays smallint[], p_day_of_month integer, p_ends_on date)'),
   ('public.close_announcement(p_announcement_id uuid)'),
   ('public.close_performance_review_cycle(p_cycle_id uuid, p_reason text)'),
@@ -71,8 +78,8 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.create_task_with_checklist(p_unit_id uuid, p_assignee_id uuid, p_title text, p_expected_outcome text, p_sub_team_id uuid, p_project_id uuid, p_objective_id uuid, p_phase_id uuid, p_purpose text, p_instructions text, p_due_at timestamp with time zone, p_origin text, p_visibility text, p_steps text[])'),
   ('public.create_typed_work(p_kind text, p_unit_id uuid, p_title text, p_assignee_id uuid, p_sub_team_id uuid, p_project_id uuid, p_phase_id uuid, p_objective_id uuid, p_responsibility_id uuid, p_purpose text, p_expected_outcome text, p_due_at timestamp with time zone, p_visibility text, p_confidential boolean, p_details jsonb)'),
   ('public.decide_finance_request(p_request_id uuid, p_decision text, p_note text)'),
-  ('public.end_work_session(p_session_id uuid)'),
   ('public.end_work_session_with_location(p_session_id uuid, p_lat double precision, p_lng double precision, p_accuracy_m double precision, p_captured_at timestamp with time zone, p_device_time timestamp with time zone, p_failure text)'),
+  ('public.end_work_session(p_session_id uuid)'),
   ('public.finalize_operational_file(p_file_id uuid)'),
   ('public.follow_up_blocker(p_blocker_id uuid)'),
   ('public.follow_up_work_review(p_work_item_id uuid)'),
@@ -100,6 +107,9 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.payroll_run_detail(p_run_id uuid)'),
   ('public.payroll_set_line(p_run_id uuid, p_profile_id uuid, p_line_id uuid, p_category text, p_direction text, p_label text, p_amount_minor bigint, p_note text)'),
   ('public.payroll_submit_run(p_run_id uuid, p_note text)'),
+  ('public.performance_employee_release_visible(p_appraisal_id uuid, p_entry_created_at timestamp with time zone)'),
+  ('public.performance_hr_decide_release(p_request_id uuid, p_approve boolean, p_reason text)'),
+  ('public.performance_request_release(p_appraisal_id uuid, p_reason text)'),
   ('public.prepare_staff_invitation_resend(p_invitation_id uuid)'),
   ('public.project_close_readiness(p_project_id uuid)'),
   ('public.provide_request_clarification(p_work_item_id uuid, p_note text)'),
@@ -140,11 +150,15 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.unit_budget_position(p_unit_id uuid, p_year integer)'),
   ('public.update_announcement(p_announcement_id uuid, p_title text, p_body text, p_priority text, p_requires_acknowledgement boolean, p_expires_at timestamp with time zone, p_all_org boolean, p_unit_ids uuid[], p_roles text[])'),
   ('public.update_my_personal_details(p_preferred_name text, p_phone text, p_birthday date, p_emergency_contact_name text, p_emergency_contact_phone text, p_emergency_contact_relationship text, p_address_text text, p_social_handles jsonb)'),
+  ('public.volunteer_approve_invitation(p_invitation_id uuid, p_reason text)'),
+  ('public.volunteer_reimbursement_request(p_kind text, p_amount_minor bigint, p_activity_context text, p_reason text)'),
+  ('public.volunteer_reimbursement_review(p_request_id uuid, p_action text, p_note text)'),
+  ('public.volunteer_request_invitation(p_email text, p_full_name text, p_unit_id uuid, p_working_pattern jsonb)'),
   ('public.workforce_leave_action(p_leave_request_id uuid, p_action text, p_reason text)'),
-  ('public.workforce_record_attendance_correction(p_profile_id uuid, p_work_date date, p_work_session_id uuid, p_correction_type text, p_before_context jsonb, p_after_context jsonb, p_reason text, p_reverses_id uuid)'),
   ('public.workforce_record_day_type(p_id uuid, p_name text, p_description text, p_session_expected boolean, p_leave_overlay_allowed boolean, p_active boolean)'),
   ('public.workforce_record_leave_policy(p_name text, p_effective_from date, p_effective_to date, p_source_reference text, p_reason text, p_rules jsonb, p_activate boolean, p_supersedes_id uuid)'),
   ('public.workforce_record_pattern(p_profile_id uuid, p_unit_id uuid, p_effective_from date, p_effective_to date, p_day_map jsonb, p_clock_map jsonb, p_reason text, p_supersedes_id uuid)'),
+  ('public.workforce_record_roster_pattern(p_employee_id uuid, p_effective_from date, p_effective_to date, p_day_map jsonb, p_clock_map jsonb, p_reason text, p_supersedes_id uuid)'),
   ('public.workforce_record_schedule(p_profile_id uuid, p_unit_id uuid, p_effective_from date, p_effective_to date, p_source text, p_day_map jsonb, p_expected_start time without time zone, p_expected_end time without time zone, p_reason text, p_supersedes_id uuid)');
 
 do $allowlist$
@@ -194,7 +208,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>135 or v_expected<>135 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>146 or v_expected<>146 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
