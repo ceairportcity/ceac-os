@@ -366,7 +366,9 @@ test("OCR6C Organisation search remains available while an unrelated authorised 
   const heldMeetings = new Promise((resolve) => { releaseMeetings = resolve; });
   await page.route("**/rest/v1/meeting_sessions?*", async (route) => {
     await heldMeetings;
-    await route.continue();
+    // The application may cancel a superseded search request while the
+    // optional catalogue is held. Do not resolve a canceled route twice.
+    if (!route.isInterceptResolutionHandled()) await route.continue();
   });
   try {
     await page.getByPlaceholder("Search CEAC…").fill("Test Unit A");
