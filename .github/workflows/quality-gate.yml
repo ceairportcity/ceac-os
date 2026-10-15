@@ -130,8 +130,11 @@ jobs:
           cat /tmp/ceac-vite.log
           exit 1
 
+      # Each shard shares one synthetic GoTrue/HR/workflow dataset.
+      # Cross-file parallel workers can sign out or modify the same test identities.
+      # Keep the four shards parallel, but each shard's acceptance journey serial.
       - name: Run Playwright role smoke tests
-        run: npx playwright test --shard=${{ matrix.shard }}/4
+        run: npx playwright test --shard=${{ matrix.shard }}/4 --workers=1
 
       - name: Upload shard evidence
         if: always()
