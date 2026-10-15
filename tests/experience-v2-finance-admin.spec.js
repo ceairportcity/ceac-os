@@ -153,19 +153,11 @@ test("VF6B cross-role finance surfaces use one flat factual grammar", async ({ b
   ]) {
     const admin = await openAdminFinance(browser, { width: viewport.width, height: viewport.height });
     const activeTab = admin.page.locator(".ev2fin-tabs button.is-active");
-    // Chromium may serialise the four radius longhands as an empty CSS
-    // shorthand even when every corner is exactly zero. Assert all corners
-    // directly; the approved flat-tab geometry is not relaxed.
-    const activeStyle = await activeTab.evaluate((node) => {
-      const css = getComputedStyle(node);
-      return {
-        corners: [css.borderTopLeftRadius, css.borderTopRightRadius,
-          css.borderBottomRightRadius, css.borderBottomLeftRadius],
-        shadow: css.boxShadow,
-      };
-    });
-    expect(activeStyle.corners).toEqual(["0px", "0px", "0px", "0px"]);
-    expect(activeStyle.shadow).toBe("none");
+    // Computed geometry can briefly be blank during SPA navigation and the
+    // route CSS chunk's initial paint. Await the *exact* approved flat style
+    // rather than treating a transient empty CSSOM read as a design failure.
+    await expect(activeTab).toHaveCSS("border-radius", "0px");
+    await expect(activeTab).toHaveCSS("box-shadow", "none");
 
     const overview = admin.page.locator(".ev2fin-admin-overview-grid");
     const layout = await overview.evaluate((node) => ({
