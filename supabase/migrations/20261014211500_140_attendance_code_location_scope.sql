@@ -108,6 +108,12 @@ declare
   v_org uuid:=public.app_org_id();
   v_primary uuid;
 begin
+  -- Direct browser RPC wrapper must verify the signed-in actor itself;
+  -- organisation scope alone is insufficient for a SECURITY DEFINER entry.
+  if auth.uid() is null or v_org is null then
+    raise exception 'An authenticated CEAC identity is required to change attendance codes.'
+      using errcode='42501';
+  end if;
   if coalesce(p_enabled,false) then
     select id into v_primary from public.office_locations
     where org_id=v_org and is_primary

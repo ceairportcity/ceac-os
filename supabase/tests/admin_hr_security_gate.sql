@@ -119,7 +119,8 @@ end $$;
 -- Phase 6C explicitly reviews 136 signed-in-callable functions. The go-live annual leave policy keeps the public workforce_request_leave RPC but shifts it to a narrow SECURITY INVOKER wrapper, reducing this exact count to 135. No new definer privilege is granted.
 -- The current integrated bundle adds 12 reviewed authenticated definer
 -- RPC/predicate interfaces across migrations 140-146 while revoking the
--- legacy direct attendance-correction RPC, resulting in exactly 146.
+-- legacy direct attendance-correction and unsafe direct performance-share RPC
+-- grants, resulting in exactly 145 authenticated SECURITY DEFINER functions.
 -- A separate exact signature check rejects substitutions or additions.
 -- The historical net +4 were needed for front-desk attendance corroboration and
 -- authorised per-person/manager evidence views. Two legacy office-code RPCs
@@ -137,8 +138,8 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n<>146 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface differs from the reviewed 146-function exact release surface to %.',n;
+  if n<>145 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface differs from the reviewed 145-function exact release surface to %.',n;
   end if;
 end $$;
 

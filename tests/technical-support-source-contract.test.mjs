@@ -149,8 +149,11 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
   // The one-bundle change records 12 additional guarded RPC/predicate surfaces
-  // and removes the obsolete direct attendance-correction grant (135+12-1=146).
-  assert.match(mfa, /callable_count<>146/);
+  // and removes obsolete direct attendance-correction and performance-share grants.
+  // Fail closed at 145: do not turn a rejected Manager-only publication into an
+  // authenticated SECURITY DEFINER API.
+  assert.match(mfa, /callable_count<>145/);
+  assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);
 });

@@ -239,8 +239,9 @@ begin
     using errcode='42501';
 end;
 $$;
-revoke all on function public.share_performance_review(uuid) from public,anon;
-grant execute on function public.share_performance_review(uuid) to authenticated;
+-- Legacy direct publication is retired, including its authenticated EXECUTE grant.
+-- Managers must request release and HR must authorise via the new RPC path.
+revoke all on function public.share_performance_review(uuid) from public,anon,authenticated;
 
 -- HR metadata access and private development narrative visibility.
 drop policy if exists stage7_appraisals_read on public.appraisals;
