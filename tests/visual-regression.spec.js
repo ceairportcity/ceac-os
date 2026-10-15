@@ -1,4 +1,5 @@
 import zlib from "node:zlib";
+import { mkdirSync } from "node:fs";
 import { test, expect } from "@playwright/test";
 import { visualHomeBaselines } from "./visual-home-baselines.js";
 
@@ -155,7 +156,13 @@ test.describe("CEAC visual regression", () => {
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(250);
 
-      const screenshot = await page.screenshot();
+      // Preserve the actual synthetic-role rendering for comparison against
+      // owner-approved V2 designs. Do not silently rebaseline or relax the
+      // existing Admin/Executive colour/layout regression threshold.
+      mkdirSync("test-artifacts", { recursive: true });
+      const screenshot = await page.screenshot({
+        path: `test-artifacts/visual-home-${role}-desktop-1440.png`,
+      });
       if (role === "manager") {
         await expect(page.locator(".fpg9-home-hero")).toBeVisible();
         await expect(page.locator(".fpg9-home-reference")).toBeVisible();

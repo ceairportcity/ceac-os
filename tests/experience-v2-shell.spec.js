@@ -169,8 +169,16 @@ test("OCR6C Executive Messages chooses an authorised Sub-team before communicati
   await page.goto("/?tab=messages");
   await expect(page).toHaveURL(/tab=messages/);
   await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
-  await page.getByRole("tab", { name: "Rooms", exact: true }).click();
-  await expect(page.getByRole("tab", { name: "Rooms", exact: true })).toHaveAttribute("aria-selected", "true");
+  // Wait for the lazy-loaded Messages route and its session-scoped data to
+  // settle before exercising its segmented control. A shell mount alone is
+  // not a loaded Messages page and can otherwise race a route replacement.
+  const messages = page.locator(".inbox-page");
+  await expect(messages.getByRole("heading", { name: "Messages", exact: true })).toBeVisible({ timeout: 15000 });
+  await expect(messages.getByText("Loading Messages…", { exact: true })).toBeHidden({ timeout: 15000 });
+  const roomsTab = messages.getByRole("tab", { name: "Rooms", exact: true });
+  await expect(roomsTab).toBeVisible();
+  await roomsTab.click();
+  await expect(roomsTab).toHaveAttribute("aria-selected", "true");
   const roomDirectory = page.locator(".ev2c-data-panel").filter({ hasText: "Organisation Rooms" }).first();
   await expect(roomDirectory).toBeVisible();
   await expect(page.getByText("This directory does not create direct messages.", { exact: false })).toBeVisible();
