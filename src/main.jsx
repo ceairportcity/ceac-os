@@ -23,6 +23,7 @@ import "./experience-v2/personal-family/personal-family.css";
 import "./experience-v2/data-viz/data-viz.css";
 import "./experience-v2/integrations/integrations.css";
 import "./resilience/pwa-status.css";
+import "./experience-v2/ui-density-refinement.css";
 
 const PwaStatus = lazy(() => import("./resilience/PwaStatus"));
 

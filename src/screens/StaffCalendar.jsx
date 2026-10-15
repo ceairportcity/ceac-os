@@ -278,7 +278,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       description={personalPlanningReady?"Shared CEAC commitments and your private planning in one calendar. Private events, tasks and notes stay visible only to you.":"Shared CEAC Work, meetings, approved leave and ministry commitments on the existing production database."}
       status={statusLabel}
       statusTone="action"
-      action={personalPlanningReady?<Button onClick={()=>openComposer("event")}>+ Add</Button>:null}
+      action={<Button disabled={!personalPlanningReady} title={!personalPlanningReady ? "Private planning requires the pending database migration" : "Add a private event, task or note"} onClick={()=>openComposer("event")}>+ Add</Button>}
     />
 
     {scopeControl}
