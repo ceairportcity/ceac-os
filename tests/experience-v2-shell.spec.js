@@ -356,8 +356,7 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
 test("OCR6C Organisation search remains available while an unrelated authorised catalogue is pending", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "admin@ceac.local.test");
-  await page.goto("/?tab=home");
-  await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });
 
   // The local seed supplies Test Unit A and the Administration identity in
   // the same organisation. Hold only the optional meeting-catalogue HTTP
@@ -368,7 +367,12 @@ test("OCR6C Organisation search remains available while an unrelated authorised 
     await heldMeetings;
     // The application may cancel a superseded search request while the
     // optional catalogue is held. Do not resolve a canceled route twice.
-    if (!route.isInterceptResolutionHandled()) await route.continue();
+    try {
+      await route.continue();
+    } catch (error) {
+      // A superseded optional request may already have been canceled.
+      if (!String(error).includes("already handled")) throw error;
+    }
   });
   try {
     await page.getByPlaceholder("Search CEAC…").fill("Test Unit A");
