@@ -740,7 +740,9 @@ test("Administration can combine multiple units into one meeting audience", asyn
 test("Manager primary surfaces stay usable across supported phone widths", async ({ browser }) => {
   test.setTimeout(120000);
   const widths = [320, 360, 375, 390, 414, 430];
-  const destinations = ["Home", "Work", "Team", "Projects", "Calendar", "Strategy", "Delivery", "Workload", "Assets & devices", "Performance & development", "Learning", "Finance", "Reports"];
+  // Manager mobile acceptance must exercise the routes the Manager is
+  // actually authorised to visit; admin/Executive-only destinations stay denied.
+  const destinations = ["Home", "Work", "Team", "Projects", "Time & Leave", "Calendar", "Finance", "Reports"];
 
   for (const width of widths) {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width, height: 844 });

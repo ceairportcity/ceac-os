@@ -12,10 +12,9 @@ async function signInExecutive(page) {
 }
 
 async function openCreate(page, label) {
-  await page.getByRole("button", { name: "Create", exact: true }).click();
-  const menu = page.getByRole("menu");
-  await expect(menu).toBeVisible();
-  await menu.getByRole("menuitem", { name: label, exact: true }).click();
+  const quickCreate = page.locator(".fpg9-sidebar-quick");
+  await expect(quickCreate).toBeVisible();
+  await quickCreate.getByRole("button", { name: label, exact: true }).click();
 }
 
 test.describe.configure({ mode: "serial" });

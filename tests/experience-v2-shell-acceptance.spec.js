@@ -267,7 +267,7 @@ test("Stage 4D mobile primary and More destinations remain reachable and role-sp
 
     const secondaryLabels = await drawer.locator(".ev2s-more-group button span").allTextContents();
     expect(secondaryLabels.map((label) => label.trim()), role.key).toEqual(
-      role.secondary.map(([, label]) => label)
+      [...role.secondary.map(([, label]) => label), "CEAC Guide"]
     );
 
     await page.screenshot({

@@ -760,6 +760,10 @@ button.adminv2-action-main {
   .adminv2-mobile-actions { display: none; }
 }
 @media (max-width: 599px) {
+  /* Keep the original mobile shortcut panel visible; the tablet hero actions
+     are intentionally hidden on phone widths to prevent duplicate controls. */
+  .adminv2-hero .adminv2-intro-actions { display: none; }
+  .adminv2-mobile-actions { display: grid; }
   .adminv2-hero { border-radius: .85rem; }
   .adminv2-hero-main { padding: 1.4rem 1.15rem; gap: 1.5rem; min-height: 17rem; }
   .adminv2-hero .adminv2-hero-title h1 { font-size: clamp(1.85rem, 7.5vw, 2.5rem); }
