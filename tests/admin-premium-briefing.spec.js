@@ -24,7 +24,15 @@ for (const viewport of [
     await expect(hero.getByRole("complementary", { name:"Upcoming commitments" })).toBeVisible();
     await expect(hero.locator(".adminv2-mini-calendar")).toBeVisible();
     await expect(hero.getByRole("button", { name:"Next month" })).toBeVisible();
-    await expect(hero.getByRole("link", {name:/Review your inbox/})).toBeVisible();
+    // Phone deliberately uses one shortcut panel instead of duplicating hero controls.
+    // Desktop/tablet retain the visible hero link.
+    if (viewport.width <= 599) {
+      await expect(hero.getByRole("link", {name:/Review your inbox/})).toBeHidden();
+      await expect(page.locator(".adminv2-mobile-actions")).toBeVisible();
+      await expect(page.locator(".adminv2-mobile-actions").getByRole("button", { name: /People & Access/ })).toBeVisible();
+    } else {
+      await expect(hero.getByRole("link", {name:/Review your inbox/})).toBeVisible();
+    }
     await expect(page.locator(".adminv2-inbox")).toBeVisible({timeout:15000});
     await expect(page.getByRole("region", {name:"Next useful Administration step"})).toBeVisible();
     await expect(page.locator(".adminv2-focus-metrics")).toBeVisible();
@@ -35,8 +43,14 @@ for (const viewport of [
 
     await hero.getByRole("button", { name:"Next month" }).click();
     await hero.getByRole("button", { name:"Show current month" }).click();
-    await hero.getByRole("link", { name:/Review your inbox/ }).click();
-    await expect(page).toHaveURL(/#admin-operational-inbox/);
+    if (viewport.width <= 599) {
+      // The inbox itself precedes the phone shortcut panel, so it remains
+      // reachable without exposing a hidden duplicate link.
+      await page.locator("#admin-operational-inbox").scrollIntoViewIfNeeded();
+    } else {
+      await hero.getByRole("link", { name:/Review your inbox/ }).click();
+      await expect(page).toHaveURL(/#admin-operational-inbox/);
+    }
     await expect(page.locator("#admin-operational-inbox")).toBeVisible();
     await context.close();
   });

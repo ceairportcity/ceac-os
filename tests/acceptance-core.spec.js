@@ -749,12 +749,16 @@ test("Manager primary surfaces stay usable across supported phone widths", async
     for (const destination of destinations) {
       await go(page, destination);
       await expect(page.locator(".body")).toBeVisible();
-      const dimensions = await page.evaluate(() => ({
-        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        bodyWidth: document.querySelector(".body")?.getBoundingClientRect().width || 0,
-      }));
-      expect(dimensions.overflow, `Manager / ${destination} overflowed at ${width}px`).toBeLessThanOrEqual(1);
-      expect(dimensions.bodyWidth, `Manager / ${destination} collapsed at ${width}px`).toBeGreaterThan(250);
+      // RouteTransition and React.lazy may briefly unmount a previous route.
+      // Assert the final layout AFTER its replacement is fully presented;
+      // preserve the original no-overflow and minimum usable-width limits.
+      await expect.poll(() => page.evaluate(() =>
+        document.querySelector(".body")?.getBoundingClientRect().width || 0
+      ), { message: `Manager / ${destination} collapsed at ${width}px`, timeout: 15000 }).toBeGreaterThan(250);
+      const overflow = await page.evaluate(() =>
+        document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(overflow, `Manager / ${destination} overflowed at ${width}px`).toBeLessThanOrEqual(1);
     }
     await context.close();
   }

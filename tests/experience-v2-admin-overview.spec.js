@@ -105,9 +105,10 @@ for (const viewport of [
 
       // Premium Admin mobile keeps its primary hero action visibly reachable,
       // while compact shortcuts remain a separate navigation surface.
-      await expect(page.locator(".adminv2-intro-actions")).toBeVisible();
-      await expect(page.locator(".adminv2-hero-link")).toBeVisible();
+      await expect(page.locator(".adminv2-intro-actions")).toBeHidden();
+      await expect(page.locator(".adminv2-hero-link")).toBeHidden();
       await expect(page.locator(".adminv2-mobile-actions")).toBeVisible();
+      await expect(page.locator(".adminv2-mobile-actions").getByRole("button", { name:/People & Access/ })).toBeVisible();
 
       const inboxBox = await page.locator(".adminv2-inbox").boundingBox();
       const shortcutsBox = await page.locator(".adminv2-mobile-actions").boundingBox();

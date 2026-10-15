@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { test, expect } from "@playwright/test";
-import { getMobilePrimaryNavigation, getShellNavigation } from "../src/experience-v2/shell/navigation.js";
+import { getMobilePrimaryNavigation, getSecondaryNavigation, getShellNavigation } from "../src/experience-v2/shell/navigation.js";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 const reference = "docs/design/executive-redesign/CEAC_EXECUTIVE_PANEL_APPROVED_REFERENCE.webp";
@@ -96,7 +96,14 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
     isManager: false,
     me: { capabilities: ["payroll.approve"] },
   });
-  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Ministry", "Calendar"]);
+  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Ministry"]);
+  // Owner-approved dock: the fourth control is the "More" drawer. Calendar
+  // stays reachable there rather than silently occupying a fifth dock slot.
+  const secondary = getSecondaryNavigation({
+    isExec: true, isAdmin: false, isManager: false,
+    me: { capabilities: ["payroll.approve"] },
+  });
+  expect(secondary.map((item) => item.label)).toContain("Calendar");
 
   const desktop = getShellNavigation({
     isExec: true,
