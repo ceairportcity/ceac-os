@@ -13,6 +13,8 @@ export function isMissingPersonalPlanningSchema(error) {
     "personal_day_task_checklist",
     "personal_day_notes",
     "personal_calendar_events",
+    "personal_task_series",
+    "personal_materialize_task_series",
   ].some((name) => text(error).includes(name));
 }
 
