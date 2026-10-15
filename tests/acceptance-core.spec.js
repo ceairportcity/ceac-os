@@ -749,7 +749,9 @@ test("Manager primary surfaces stay usable across supported phone widths", async
       await expect(page.locator(".body")).toBeVisible();
       const dimensions = await page.evaluate(() => ({
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        bodyWidth: document.querySelector(".body")?.getBoundingClientRect().width || 0,
+        // Test actual app content width, not a display:contents .body wrapper
+        // whose 0px box does not imply the page has collapsed.
+        bodyWidth: document.querySelector(".app-content")?.getBoundingClientRect().width || 0,
       }));
       expect(dimensions.overflow, `Manager / ${destination} overflowed at ${width}px`).toBeLessThanOrEqual(1);
       expect(dimensions.bodyWidth, `Manager / ${destination} collapsed at ${width}px`).toBeGreaterThan(250);

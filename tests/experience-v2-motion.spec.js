@@ -33,9 +33,12 @@ test("Experience V2 motion constants stay semantic and restrained", async () => 
 test("Experience V2 motion provider wraps the app without changing legacy screens", async () => {
   const main = fs.readFileSync("src/main.jsx", "utf8");
   const providerImport = main.indexOf('import ExperienceV2MotionProvider from "./experience-v2/ExperienceV2MotionProvider";');
-  const appImport = main.indexOf('import App from "./App";');
+  // Main application is intentionally lazy to preserve the measured root
+  // bundle budget. MotionConfig still wraps the lazy app under Suspense.
+  const appImport = main.indexOf('const App = lazy(() => import("./App"));');
   expect(appImport).toBeGreaterThanOrEqual(0);
-  expect(providerImport).toBeGreaterThan(appImport);
+  expect(providerImport).toBeGreaterThanOrEqual(0);
+  expect(main.indexOf("<ExperienceV2MotionProvider>")).toBeLessThan(main.indexOf("<App />"));
   expect(main).toContain("<ExperienceV2MotionProvider>");
   expect(main).toContain("<App />");
   expect(main).toContain("</ExperienceV2MotionProvider>");
