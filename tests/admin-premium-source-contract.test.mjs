@@ -90,3 +90,18 @@ test("no fabricated clear inbox state while loading or after a failed read", () 
   assert.match(overview, /!loading && !loadFailed \? <div className="adminv2-agenda-foot"/);
   assert.match(overview, /loading\s*\? "Loading your recorded/);
 });
+
+test("People & Access publishes verified HR roster before optional private employee photos", () => {
+  const people = readFileSync("src/screens/People.jsx", "utf8");
+  const verifiedAt = people.indexOf("setVerifiedRosterScope(scopeKey);");
+  const visibleAt = people.indexOf("setRows(rosterRows);");
+  const loadingFinishedAt = people.indexOf("setLoading(false);", visibleAt);
+  const mediaFetchAt = people.indexOf("const photoGroups = await listOperationalFilesForContexts(", visibleAt);
+  assert.ok(verifiedAt > 0 && visibleAt > verifiedAt);
+  assert.ok(loadingFinishedAt > visibleAt && mediaFetchAt > loadingFinishedAt,
+    "Optional signed photos must not block permission-verified People & Access");
+  assert.match(people, /if \(generation === rosterGeneration\.current\) setRows\(hydratedRows\)/);
+  assert.match(people, /if \(generation !== rosterGeneration\.current\) return false/);
+  assert.match(people, /catch \{\s*return entry;\s*\}/);
+  assert.doesNotMatch(people, /getPublicUrl\(/);
+});
