@@ -629,7 +629,7 @@ button.adminv2-action-main {
   align-items: center;
   justify-content: center;
   gap: .5rem;
-  min-height: 2.45rem;
+  min-height: 44px;
   padding: .55rem .85rem;
   border-radius: .6rem;
   background: var(--admin-blue);
