@@ -87,6 +87,9 @@ async function go(page, name) {
   await page.goto(target);
   await expect(page.locator(".app")).toBeVisible({ timeout: 15000 });
   await waitForRouteReady(page);
+  // Lazy destinations may mount after the fallback briefly disappears. The
+  // next layout measurement must examine the actual authorised route body.
+  await expect(page.locator(".app-content .body").first()).toBeVisible({ timeout:15000 });
 }
 
 async function assignTask(page, title, step = null) {

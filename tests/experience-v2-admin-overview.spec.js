@@ -103,9 +103,9 @@ for (const viewport of [
       );
       for (const height of compactHeights) expect(height).toBeGreaterThanOrEqual(44);
 
-      // Premium Admin mobile keeps its primary hero action visibly reachable,
-      // while compact shortcuts remain a separate navigation surface.
-      await expect(page.locator(".adminv2-intro-actions")).toBeVisible();
+      // A single reachable mobile inbox shortcut replaces the hidden desktop
+      // hero controls; do not show duplicate, cramped primary actions.
+      await expect(page.locator(".adminv2-intro-actions")).toBeHidden();
       await expect(page.locator(".adminv2-hero-link")).toBeVisible();
       await expect(page.locator(".adminv2-mobile-actions")).toBeVisible();
 
