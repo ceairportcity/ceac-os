@@ -3,8 +3,8 @@
 -- migration rehearsal or visual acceptance. Do not run pending migrations from this file.
 -- Intentionally returns aggregate counts/booleans only; no personal/HR records.
 -- The next-bundle release manifest retains 24 pending non-MFA source versions
--- and adds 140–146 for venue attendance, HR volunteer activation,
--- individual work schedules and manager/HR attendance correction: 31 versions.
+-- and adds 140–147 for attendance, HR/volunteer, work schedules,
+-- manager/HR decisions and owner-private recurring planning: 32 versions.
 -- Google/AAL2 version 20261012172718 belongs to Stage 2, NOT this release.
 -- Reconcile again against the live migration ledger before cutover.
 WITH expected_pending(version) AS (
@@ -18,7 +18,8 @@ WITH expected_pending(version) AS (
     ('20261011183000'),('20261011190000'),('20261011193000'),
     ('20261011195500'),('20261011201000'),('20261012041000'),
     ('20261014211500'),('20261014213500'),
-    ('20261014220000'),('20261014223000'),('20261014224500'),('20261014231500'),('20261014233000')
+    ('20261014220000'),('20261014223000'),('20261014224500'),('20261014231500'),('20261014233000'),
+    ('20261015090000')
 )
 SELECT
   current_timestamp AS inspected_at,
