@@ -615,7 +615,7 @@ button.adminv2-action-main {
 
 .adminv2-hero .adminv2-intro-actions { gap: .7rem; }
 .adminv2-hero .adminv2-intro-actions .ev2c-button {
-  min-height: 2.45rem;
+  min-height: 44px;
   background: rgba(255,255,255,.91);
   border-color: #d3deed;
   color: #243e5d;

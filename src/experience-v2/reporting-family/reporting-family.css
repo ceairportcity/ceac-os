@@ -48,7 +48,7 @@
 .ev2rep-empty p{margin:var(--ev2-space-1) 0 0;color:var(--ev2-text-secondary);font-size:var(--ev2-type-supporting);line-height:1.45}
 .ev2rep-footnote{max-width:82ch;margin:var(--ev2-space-5) 0 0;color:var(--ev2-text-tertiary);font-size:var(--ev2-type-supporting);line-height:1.5}
 .ev2rep-actions{display:flex;flex-wrap:wrap;gap:var(--ev2-space-2);margin-top:var(--ev2-space-4)}
-.ev2rep-actions .btn,.ev2rep-actions .ev2c-button{min-height:var(--ev2-control-min)}
+.ev2rep-actions .btn,.ev2rep-actions .ev2c-button{min-height:44px}
 .ev2rep-live-state,.ev2rep-frozen-state{margin-top:var(--ev2-space-3);padding:var(--ev2-space-4);border:1px solid var(--ev2-line);border-radius:var(--ev2-radius-card);background:var(--ev2-surface-soft);color:var(--ev2-text-secondary);font-size:var(--ev2-type-supporting);line-height:1.5}
 .ev2rep-frozen-state{border-color:var(--ev2-success);background:var(--ev2-success-soft)}
 .ev2rep-frozen-state strong,.ev2rep-live-state strong{display:block;margin-bottom:var(--ev2-space-1);color:var(--ev2-text);font-size:var(--ev2-type-row-mobile)}
