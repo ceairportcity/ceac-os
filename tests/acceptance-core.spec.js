@@ -1319,8 +1319,10 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     await page.getByRole("button", { name: "Record feedback", exact: true }).click();
     await expect(page.getByText("Visible feedback recorded.", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Mark as shared", exact: true }).click();
-    await expect(page.getByText("Review marked shared.", { exact: true })).toBeVisible();
+    // A Manager may request review publication; only independent HR can approve it.
+    await page.getByLabel("Performance release request reason").fill("Manager requests independent HR publication after the recorded factual review.");
+    await page.getByRole("button", { name: "Submit release request to HR", exact: true }).click();
+    await expect(page.getByText("The manager\'s assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.", { exact: true })).toBeVisible();
 
     await page.reload();
     const reloadedCase = page.locator(".performance-case-row").filter({ hasText: "Staff Fixture" });
