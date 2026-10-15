@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice, Sheet } from "../components/bits";
 import { Button } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
+import PersonalRecurringTaskComposer from "../components/PersonalRecurringTaskComposer";
 import { isMissingPersonalPlanningSchema } from "../lib/stage1SchemaCompatibility";
 import {
   CalendarAgenda,
@@ -65,6 +66,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const [notice,setNotice]=useState(null);
   const [filter,setFilter]=useState("all");
   const [personalPlanningReady,setPersonalPlanningReady]=useState(true);
+  const [recurrenceReady,setRecurrenceReady]=useState(true);
 
   useEffect(()=>{load();},[me.id,me.unit_id,cursor.getFullYear(),cursor.getMonth()]);
   useEffect(()=>{
@@ -88,19 +90,43 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         supabase.from("leave_requests").select("id,kind,start_date,end_date,status").eq("profile_id",me.id).eq("status","approved").order("start_date"),
       ]);
       const sharedError=[work.error,meetings.error,ministry.error,leave.error].find(Boolean);if(sharedError)throw sharedError;
-      let [tasks,unscheduledTasks,notes,privateEvents]=await Promise.all([
+      // Materialise only this signed-in person's schedule under owner-only RLS.
+      // A missing recurrence migration never invents personal instances.
+      const series=await supabase.from("personal_task_series")
+        .select("id").eq("org_id",me.org_id).eq("profile_id",me.id).eq("is_active",true);
+      if(series.error){
+        if(!isMissingPersonalPlanningSchema(series.error))throw series.error;
+        setRecurrenceReady(false);
+      }else{
+        setRecurrenceReady(true);
+        const maxHorizon=new Date();
+        maxHorizon.setUTCDate(maxHorizon.getUTCDate()+369);
+        const through=toDay<dayKey(maxHorizon)?toDay:dayKey(maxHorizon);
+        for(const item of series.data||[]){
+          const generated=await supabase.rpc("personal_materialize_task_series",{
+            p_series_id:item.id,p_through_date:through,
+          });
+          if(generated.error){
+            if(isMissingPersonalPlanningSchema(generated.error)){setRecurrenceReady(false);break;}
+            throw generated.error;
+          }
+        }
+      }
+      let [tasks,unscheduledTasks,notes,privateEvents,overdueTasks]=await Promise.all([
         supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at").eq("profile_id",me.id).gte("plan_date",fromDay).lt("plan_date",toDay).order("plan_date").order("planned_time",{ascending:true,nullsFirst:false}),
         supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at").eq("profile_id",me.id).is("plan_date",null).is("completed_at",null).order("created_at",{ascending:false}).limit(30),
         supabase.from("personal_day_notes").select("id,note_date,note_kind,title,body,reminder_at,updated_at").eq("profile_id",me.id).or(`note_date.is.null,and(note_date.gte.${fromDay},note_date.lt.${toDay})`).order("updated_at",{ascending:false}),
         supabase.from("personal_calendar_events").select("id,title,details,starts_at,ends_at,location,reminder_at").eq("profile_id",me.id).gte("starts_at",from).lt("starts_at",to).order("starts_at"),
+        supabase.from("personal_day_tasks").select("id,plan_date,title,details,planned_time,reminder_at,linked_work_item_id,linked_project_id,completed_at,created_at,series_id").eq("profile_id",me.id).lt("plan_date",accraDay(new Date())).is("completed_at",null).order("plan_date",{ascending:false}).limit(500),
       ]);
-      const personalError=[tasks.error,unscheduledTasks.error,notes.error,privateEvents.error].find(Boolean);
+      const personalError=[tasks.error,unscheduledTasks.error,notes.error,privateEvents.error,overdueTasks.error].find(Boolean);
       if(personalError){
         if(!isMissingPersonalPlanningSchema(personalError))throw personalError;
-        tasks={data:[],error:null};unscheduledTasks={data:[],error:null};notes={data:[],error:null};privateEvents={data:[],error:null};
+        tasks={data:[],error:null};unscheduledTasks={data:[],error:null};notes={data:[],error:null};privateEvents={data:[],error:null};overdueTasks={data:[],error:null};
+        setRecurrenceReady(false);
         setPersonalPlanningReady(false);
       }else setPersonalPlanningReady(true);
-      const privateTasks=[...(tasks.data||[]),...(unscheduledTasks.data||[])];
+      const privateTasks=[...new Map([...(tasks.data||[]),...(unscheduledTasks.data||[]),...(overdueTasks.data||[])].map(item=>[item.id,item])).values()];
       const meetingRows=(meetings.data||[]).filter(row=>row.status!=="cancelled");
       const [checklists,privateMeetingNotes]=await Promise.all([
         privateTasks.length
@@ -259,6 +285,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const selectedPrivateEvents=events.filter(event=>event.date===selectedDate&&event.kind==="personal"&&event.personalType==="event");
   const selectedPrivate=personalTasks.filter(task=>task.plan_date===selectedDate);
   const unscheduledPrivate=personalTasks.filter(task=>task.plan_date==null&&!task.completed_at);
+  const overduePrivate=personalTasks.filter(task=>task.plan_date&&task.plan_date<accraDay(new Date())&&!task.completed_at);
   const selectedWork=selectedShared.filter(event=>event.kind==="work");
   const selectedSchedule=[...selectedShared.filter(event=>event.kind!=="work"),...selectedPrivateEvents].sort((a,b)=>String(a.sortAt||a.date).localeCompare(String(b.sortAt||b.date)));
   const selectedMeetingNotes=meetingNotes.filter(note=>note.meeting&&accraDay(note.meeting.starts_at)===selectedDate&&note.body?.trim());
@@ -283,7 +310,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
 
     {scopeControl}
     <CalendarFilters value={filter} onChange={setFilter} items={personalPlanningReady?FILTER_ITEMS:FILTER_ITEMS.filter(item=>item.value!=="personal")} ariaLabel="Calendar filters" />
-    {!personalPlanningReady&&<ProductNotice tone="attention" title="Private planning comes in Stage 2">Shared calendar commitments remain available. Private calendar events, tasks and notes need the separately rehearsed planning migration and are not being written to this production database.</ProductNotice>}
+    {!personalPlanningReady&&<ProductNotice tone="attention" title="Private planning requires the approved bundle migrations">Shared calendar commitments remain available. Private calendar events, tasks, notes and recurrence need the rehearsed owner-private planning migrations. Until applied and accepted, they are not operational on this database.</ProductNotice>}
     {error&&<ProductNotice tone="error" title="Could not load Calendar">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Calendar">{notice}</ProductNotice>}
 
@@ -336,6 +363,15 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
               </div>}
             </section>
 
+            {personalPlanningReady&&<PersonalRecurringTaskComposer me={me} selectedDate={selectedDate} ready={recurrenceReady} onChanged={load}/>}
+            {overduePrivate.length>0&&<section className="phase6-day-block" aria-label="Overdue private tasks">
+              <div className="phase6-day-block-head"><h3>Overdue private tasks</h3><span>{overduePrivate.length}{overduePrivate.length===500?"+":""}</span></div>
+              <p className="screen-note">Missed recurring or individual tasks stay overdue until you complete or delete them. No instance is automatically marked done.</p>
+              {overduePrivate.map(task=><label key={task.id} className="phase6-private-task">
+                <input type="checkbox" checked={false} disabled={busy} onChange={()=>togglePersonalTask(task)}/>
+                <span><strong>{task.title}</strong><small>Overdue since {task.plan_date}{task.series_id?" · repeating task":""}</small></span>
+              </label>)}
+            </section>}
             <section className="phase6-day-block phase6-unscheduled-block">
               <div className="phase6-day-block-head"><h3>Unscheduled tasks</h3><span>{unscheduledPrivate.length}</span></div>
               {unscheduledPrivate.length?unscheduledPrivate.map(task=><div key={task.id} className="phase6-unscheduled-task">
