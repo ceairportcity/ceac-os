@@ -6,7 +6,7 @@ const sql=read("supabase/migrations/20261016180000_151_stage2_human_appraisal_ra
 test("Stage 2 ratings extend existing HR appraisal cases, never form second engine",()=>{
  assert.match(sql,/REFERENCES public\.appraisals\(id\)/);
  assert.match(sql,/assessment_entry_id uuid NOT NULL UNIQUE REFERENCES public\.appraisal_entries/);
- assert.match(sql,/REFERENCES public\.appraisal_cycles/);
+ assert.match(sql,/FROM public\.appraisals a JOIN public\.appraisal_cycles c/);
  assert.match(sql,/CREATE TRIGGER stage2_require_quarterly_ratings_for_release/);
  assert.match(sql,/ON public\.performance_review_release_requests/);
  assert.doesNotMatch(sql,/CREATE OR REPLACE FUNCTION public\.performance_hr_decide_release/);
@@ -26,7 +26,7 @@ test("RLS and triggers independently reject self review, unapproved employee vie
  assert.match(sql,/state='approved'/);
  assert.match(sql,/CREATE POLICY stage2_appraisal_human_rating_insert/);
  assert.match(sql,/a\.manager_id<>a\.profile_id/);
- assert.match(sql,/NEW\.profile_id=auth\.uid\(\)/);
+ assert.match(sql,/v_review\.profile_id=auth\.uid\(\)/);
  assert.match(sql,/NEW\.created_at:=clock_timestamp\(\)/);
  assert.match(sql,/REVOKE ALL ON public\.appraisal_human_rating_versions FROM PUBLIC,anon,authenticated/);
  assert.match(sql,/GRANT SELECT,INSERT ON public\.appraisal_human_rating_versions TO authenticated/);
