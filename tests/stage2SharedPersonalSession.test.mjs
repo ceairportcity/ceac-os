@@ -7,10 +7,13 @@ const read = (path) => readFileSync(path,"utf8");
 test("Manager and Administration Overviews own Start/End Work, not team attendance mutations",()=>{
  const manager=read("src/experience-v2/manager-overview/ManagerOverviewV2.jsx");
  const admin=read("src/experience-v2/admin-overview/AdminOverviewV2.jsx");
- for(const [role,component] of [["Manager",manager],["Administration",admin]]){
+ const exec=read("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx");
+ const execScreen=read("src/screens/ExecutiveHome.jsx");
+ for(const [role,component] of [["Manager",manager],["Administration",admin],["Executive",exec]]){
    assert.match(component,/import EmployeeWorkSession from/,`${role} must share its own authorised session controls`);
    assert.match(component,/<EmployeeWorkSession me=\{me\} \/>/,`${role} missing personal attendance on Overview`);
  }
+ assert.match(execScreen,/me=\{me\}/,"Executive must pass the signed employee identity, not an organisation-wide roster");
  const clock=read("src/components/EmployeeWorkSession.jsx");
  assert.match(clock,/openSession\(me\.org_id, me\.id\)/);
  assert.match(clock,/startWork\(me\.org_id,me\.id,place/);
