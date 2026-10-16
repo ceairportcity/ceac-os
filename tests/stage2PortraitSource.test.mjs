@@ -25,8 +25,10 @@ test("signed portraits remain scoped to user-submitted real faces, no broad publ
   const avatar = source("src/components/PersonAvatar.jsx");
   const project = source("src/components/Stage2ProjectOverview.jsx");
   assert.match(hook, /VITE_STAGE2_UNIVERSAL_AAL2/);
-  assert.match(hook, /from\("profile_portraits"\)/);
-  assert.match(hook, /\.createSignedUrl\(item\.object_path, 900\)/);
+  const batched = source("src/lib/profilePortraits.js");
+  assert.match(hook, /signedProjectPortraits\(ids\)/);
+  assert.match(batched, /from\("profile_portraits"\)/);
+  assert.match(batched, /\.createSignedUrls\(paths, 3600\)/);
   assert.match(hook, /setUrls\(\{\}\)/);
   assert.match(project, /useProjectPortraits\(project\)/);
   assert.match(project, /<PersonAvatar/);
