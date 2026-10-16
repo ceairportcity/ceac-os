@@ -1,3 +1,4 @@
+import DailyScenicPhoto from "../../components/DailyScenicPhoto";
 import { useState } from "react";
 import {
   Button,
@@ -275,7 +276,7 @@ export default function AdminOverviewV2({
 
   return <div className="body admin-home">
     <div className="adminv2">
-      <header className="adminv2-intro adminv2-hero" role="region" aria-label="Administration daily briefing">
+      <header className="adminv2-intro adminv2-hero s2-landscape-hero" role="region" aria-label="Administration daily briefing"><DailyScenicPhoto />
         <div className="adminv2-hero-main">
           <div className="adminv2-context"><span>Administration &amp; HR</span><time>{dateLabel}</time></div>
           <div className="adminv2-intro-row">

@@ -576,6 +576,10 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           <VoiceInput compact onResult={handleVoice} label="Speak your instruction" />
         </div>
 
+        <label className="reference-recurring-toggle" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", margin: "12px 0", border: "1px solid #dce7f3", borderRadius: 9, background: "#f8fbff" }}>
+          <input type="checkbox" aria-label="Repeat this responsibility" checked={false} onChange={(event) => { if (event.target.checked) { setKind("routine"); setRoutineStart(due ? due.slice(0, 10) : routineStart); } }} />
+          <span><strong>Repeat this responsibility</strong><small style={{ display: "block", color: "#72839a" }}>Daily, weekly, monthly or selected days. Set the schedule once.</small></span>
+        </label>
         <FieldGroup label="What needs doing *" className="reference-primary-field">
           <input className="field" aria-label="Work to complete" placeholder="e.g. Prepare the October service report" value={title} onChange={(e) => setTitle(e.target.value)} />
         </FieldGroup>
@@ -723,6 +727,10 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <label className="small">Target resolution (optional)<input className="field" type="date" value={caseTargetOn} onChange={(e) => setCaseTargetOn(e.target.value)} /></label>
           </>}
           {kind === "routine" && <>
+            <label className="reference-recurring-toggle" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", marginBottom: 12, borderRadius: 9, background: "#f8fbff" }}>
+              <input type="checkbox" aria-label="Repeat this responsibility" checked onChange={(event) => { if (!event.target.checked) setKind("task"); }} />
+              <span><strong>Repeat this responsibility</strong><small style={{ display: "block", color: "#72839a" }}>Untick to return to a one-off task.</small></span>
+            </label>
             <FieldGroup label="Repeating responsibility"><input className="field" placeholder="What repeats?" value={title} onChange={(e) => setTitle(e.target.value)} /></FieldGroup>
             <AssistiveTextarea className="field" rows={3} placeholder="Why this routine matters (optional)" value={purpose} onChange={(e) => setPurpose(e.target.value)} />
             <AssistiveTextarea className="field" rows={3} placeholder="What a good occurrence records or produces (optional)" value={expectedOutcome} onChange={(e) => setExpectedOutcome(e.target.value)} />

@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { dateOnly, dueLabel } from "../lib/time";
 import { Pill, Sheet, statusPill, ProductNotice, LoadingState } from "../components/bits";
 import ManagerProjectClose from "./ManagerProjectClose";
+import Stage2ProjectOverview from "../components/Stage2ProjectOverview";
 import ProjectParticipantRegister from "../components/ProjectParticipantRegister";
 import { OperationalFileList } from "../components/OperationalFiles";
 import { humanError } from "../lib/productLanguage";
@@ -349,21 +350,18 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       />
 
       {area === "overview" && <section className="project-workspace-area">
-        <div className="project-overview-grid">
-          <div className="card">
-            <div className="row-t">{detail.units?.name || "Lead unit not recorded"}</div>
-            <div className="row-m">Lead unit</div>
-            <div className="row-note">{detail.starts_on ? dateOnly(`${detail.starts_on}T00:00:00`) : "No start date"} → {detail.ends_on ? dateOnly(`${detail.ends_on}T00:00:00`) : "No end date"}</div>
-            <div className="row-note">Participating: {detail.participants.filter((row) => row.role === "participating").map((row) => row.units?.name).filter(Boolean).join(", ") || "No additional unit recorded"}</div>
-            <div className="row-note">Assigned people: {team.join(", ") || "No work holder recorded"}</div>
-          </div>
-          <div className="card project-overview-summary">
-            <div><strong>{detail.objectives.length}</strong><span>objectives</span></div>
-            <div><strong>{detail.work.filter((item) => !["completed","self_certified","cancelled"].includes(item.status)).length}</strong><span>open work</span></div>
-            <div><strong>{detail.work.filter((item) => ["completed","self_certified"].includes(item.status)).length}</strong><span>completed work</span></div>
-          </div>
-        </div>
+        <Stage2ProjectOverview
+          key={detail.id}
+          project={detail}
+          openWork={openItem}
+          addWork={() => goAssign?.({ projectId: detail.id })}
+          showWork={() => setArea("work")}
+          canAssign={detail.canManageObjectives}
+        />
 
+        <details className="s2-project-context-disclosure">
+          <summary>Operational phases and unit cost</summary>
+          <div>
         {(detail.kind !== "project" || detail.phases.length > 0) && <>
           <div className="sec"><span>Operational phases</span><span>{detail.phases.length}</span></div>
           {detail.phases.map((phase) => <div className="row" key={phase.id}><div className="row-t">{phase.name}</div><div className="row-m">{phase.starts_on ? dateOnly(`${phase.starts_on}T00:00:00`) : "No start date"} → {phase.ends_on ? dateOnly(`${phase.ends_on}T00:00:00`) : "No end date"}</div>{phase.closed_at && <div className="row-note">Closed {dateOnly(phase.closed_at)}</div>}</div>)}
@@ -373,6 +371,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         <div className="sec"><span>Your unit cost · read only</span></div>
         <p className="screen-note">Currencies are shown separately. No conversion is applied.</p>
         <div style={{ marginTop: 8 }}><CostSummary rows={detail.costs} /></div>
+          </div>
+        </details>
       </section>}
 
       {area === "work" && <section className="project-workspace-area fpg-project-work">
