@@ -156,9 +156,12 @@ test("VF5C Executive Reports is coverage-first with factual named filing status"
     await expect(page.getByText("submitted units", { exact: true })).toBeVisible();
     await expect(page.getByText("drafts", { exact: true })).toBeVisible();
     await expect(page.getByText("waiting", { exact: true })).toBeVisible();
-    await expect(page.getByText("Media", { exact: true })).toBeVisible();
-    await expect(page.getByText("Technical", { exact: true })).toBeVisible();
-    await expect(page.getByText("First Timers", { exact: true })).toBeVisible();
+    // Issued reporting units must appear in the actual unit-status register;
+    // their names may legitimately appear again in the Executive evidence brief.
+    const unitRows = page.locator(".ev2-reporting-executive .ev2rep-row");
+    for (const unitName of ["Media", "Technical", "First Timers"]) {
+      await expect(unitRows.getByText(unitName, { exact: true })).toBeVisible();
+    }
     await expect(page.getByText("Filed", { exact: true })).toBeVisible();
     await expect(page.getByText("Started", { exact: true })).toBeVisible();
     await expect(page.getByText("Waiting", { exact: true })).toBeVisible();

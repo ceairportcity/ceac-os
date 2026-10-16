@@ -159,3 +159,7 @@
   font-size:12px!important;
 }
 .s2-project .s2-project-stat-card>span:first-child{font-size:12px!important}
+
+/* Reconciled PR #117 accessible Projects typography: real project people,
+   departments and milestones must remain readable at 320px and desktop. */
+.s2-project :is(.s2-project-person strong,.s2-project-units strong,.s2-project-aside dt,.s2-project-aside dd,.s2-project-aside section p,.s2-project-aside li,.s2-project-avatar,.s2-project-more,.s2-project-unit-chip){font-size:12px!important}

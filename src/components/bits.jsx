@@ -135,7 +135,7 @@ export function Sheet({ children, onClose }) {
           key="sheet-backdrop"
           className="sheet-bg"
           onClick={requestClose}
-          initial={{ opacity: 0 }}
+          initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={backdropTransition}
@@ -147,7 +147,7 @@ export function Sheet({ children, onClose }) {
           role="dialog"
           aria-modal="true"
           tabIndex={-1}
-          initial={{ opacity: 0 }}
+          initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={panelTransition}
