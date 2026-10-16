@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { dateOnly } from "../lib/time";
 import { Sheet, ProductNotice } from "../components/bits";
 import { Button, Skeleton, StatePanel } from "../experience-v2/components";
@@ -310,6 +311,8 @@ export default function Reports({ me }) {
         description="Open reporting periods, see named filing follow-up, and inspect unit narratives. Administration owns reporting periods; Managers file within their authorised scope."
         statusLabel={statusLabel}
       />
+
+      <QuarterlyReviewEventControl me={me} />
 
       {msg && !sheet ? <ProductNotice tone="error" title="Reporting update">{msg}</ProductNotice> : null}
 
