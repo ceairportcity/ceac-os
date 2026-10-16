@@ -62,6 +62,7 @@ tests=(
   support_private_case_evidence_gate.sql
   private_personal_recurrence_gate.sql
   stage2_private_portrait_totp_gate.sql
+  stage2_p6_human_appraisal_gate.sql
 )
 
 for test_file in "${tests[@]}"; do
