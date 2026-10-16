@@ -41,7 +41,10 @@ export default function StructuredHumanReview({ appraisal, cycle, assessment, ev
     }
     const load = async () => {
       try {
-        const result = await supabase.from("appraisal_human_rating_versions")
+        const ratingSource = me?.id === appraisal.profile_id
+          ? "stage2_employee_published_rating_versions"
+          : "appraisal_human_rating_versions";
+        const result = await supabase.from(ratingSource)
           .select("id,assessment_entry_id,rubric_version,category_ratings,overall_rating,overall_narrative,strengths,challenges,next_actions,reviewer_id,profile_id,cadence,created_at")
           .eq("appraisal_id", appraisal.id)
           .order("created_at", { ascending:false })
@@ -104,7 +107,9 @@ export default function StructuredHumanReview({ appraisal, cycle, assessment, ev
     </header>
     {status === "loading" && <p role="status">Verifying the protected rating record…</p>}
     {error && <p role="alert" className="s2-rubric-error">{error}</p>}
-    {status === "ready" && !newest && <p className="s2-rubric-empty">No structured rating has been recorded. A quarterly review cannot be submitted for HR publication until the complete human rubric is recorded.</p>}
+    {status === "ready" && !newest && <p className="s2-rubric-empty">{me?.id === appraisal.profile_id
+      ? "No independently HR-published structured Manager rating is available for this review."
+      : "No structured rating has been recorded. A quarterly review cannot be submitted for HR publication until the complete human rubric is recorded."}</p>}
     {newest && <div className="s2-rubric-summary">
       <div><strong>Latest authorised version</strong><small>{new Date(newest.created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}</small></div>
       <p><strong>Manager-selected overall judgment:</strong> {newest.overall_rating} · {newest.overall_narrative}</p>
