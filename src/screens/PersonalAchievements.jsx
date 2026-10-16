@@ -80,7 +80,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
         <p>Your attributed work and recorded evidence. Factual reporting is separate from confidential Manager appraisal.</p>
       </div>
       <div className="s2-achievement-actions">
-        <button type="button" className="s2-achievement-back" onClick={back}>Back to work</button>
+        <button type="button" className="s2-achievement-back" onClick={back}>Back to My Hub</button>
         <button type="button" className="s2-achievement-print" disabled={busy||!!error||!completeLoad} onClick={print}>
           Print / Save as PDF
         </button>
