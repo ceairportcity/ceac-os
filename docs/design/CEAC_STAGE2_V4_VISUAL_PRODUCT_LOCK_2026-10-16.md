@@ -31,3 +31,16 @@ This is NOT a shell-only redesign. Treat V4 as the literal master of the **light
 
 ## 4. Execution authority and handoff
 This lock supplements `docs/continuity/CEAC_STAGE2_UNIFIED_EXECUTION_CONTRACT_2026-10-16.md`, `docs/product/CEAC_OS_GLOBAL_WORK_EXECUTION_AND_EXPERIENCE_CONTRACT_2026-10-16.md` and the Stage 2 universal MFA policy. Any contradictory earlier 'redesign source of truth' or different dark/teal mockup is superseded **for Stage 2 visuals only**. Preserve previously accepted security/data controls, project logic, role authority, the existing Supabase+Vercel and the temporary PUBLIC repo policy. Next chat starts from draft PR #115 and this exact HTML; do not silently narrow the job to Gabriel.
+
+## 5. Exact screenshot binary assets ARE checked in — final release of this visual lock
+
+The FOUR reviewed, **public-safe, lossless PNG screenshots below are actually included** on this same draft PR (synthetic names only). Each is derived from the exact canonical white/blue HTML and is **not** a manually redrawn approximation. The historical pre-redaction hash list above is just provenance; do not confuse those identities with these privacy-safe binary fixtures.
+
+| Canonical role scenario | Committed screenshot path | PNG Git blob SHA | SHA-256 |
+|---|---|---|---|
+| Salaried Manager Overview / Start-End attendance | [Overview](stage2-v4/CEAC_STAGE2_V4_OVERVIEW.png) | `25b659c530ce6c4b335b38b4a90aa6c1082217e8` | `bee73302eb13114456312a6b8ad2fa27ec1c4086703c92c6cdb315cf73d9d74f` |
+| Work execution register + selected responsibility inspector | [Work](stage2-v4/CEAC_STAGE2_V4_WORK.png) | `b3decb44158f92a272b53f608547fb58d73800ea` | `79b65a3d556793e2f505beef613be0698b03e261882bfac72aa086358e5b3667` |
+| Projects/portfolio navigation and details | [Projects](stage2-v4/CEAC_STAGE2_V4_PROJECTS.png) | `c5aff1e2c0fc1ab909276cea65c47c368dc17235` | `a8087b5d699fb3f77fa9ee504c70744746bcee8a5ec3896ed9ea91baba132b02` |
+| Responsive Work page on phone | [Mobile](stage2-v4/CEAC_STAGE2_V4_MOBILE.png) | `e505c36b9601e1c8e396e72acf4316d0a2a1739f` | `aa65fd4f3005012b3a15a5f9709a67e1effdc69f2faa04d28fab27fc2f0932c9` |
+
+**Screenshot implementation rule:** Use these **literal actual committed images** and the canonical interactive HTML as first-stage binding exact references. Preserve their page hierarchy, spacing, colour, content density, status semantics, task/detail structure, buttons and responsive handling in implementation. Identity names/sample values are demonstration-only and must NEVER override real data or authorisation. Match visuals at these reference viewport sizes with deterministic font, zoom, content and browser. Author and obtain owner approval of the missing V4-conforming HR/Admin/Executive/etc full-screen references before they become new literal acceptance targets. Binary fixtures + complete role coverage must BOTH pass; do not stop after making Gabriel match.
