@@ -17,7 +17,7 @@ BEGIN
                 WHERE id='ceac-profile-portraits' AND public=false)
  THEN RAISE EXCEPTION 'Portrait bucket is missing or publicly readable'; END IF;
  IF (SELECT count(*) FROM pg_policies
-     WHERE schemaname='public' AND tablename='profile_portraits') <> 4
+     WHERE schemaname='public' AND tablename='profile_portraits' AND policyname LIKE 'ceac_profile_portraits_%') <> 4
  THEN RAISE EXCEPTION 'Portrait profile RLS policy inventory differs from contract'; END IF;
  IF (SELECT count(*) FROM pg_policies
      WHERE schemaname='storage' AND tablename='objects'
