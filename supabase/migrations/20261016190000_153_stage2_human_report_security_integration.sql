@@ -38,7 +38,7 @@ CREATE VIEW public.stage2_employee_published_human_ratings
 WITH (security_barrier=true)
 AS
 SELECT
-  r.id,r.appraisal_id,r.assessment_entry_id,r.profile_id,r.cadence,
+  r.id,r.appraisal_id,r.assessment_entry_id,r.profile_id,r.reviewer_id,r.cadence,
   r.rubric_version,r.category_ratings,r.overall_rating,
   r.overall_narrative,r.strengths,r.challenges,r.next_actions,r.created_at
 FROM public.appraisal_human_rating_versions r
