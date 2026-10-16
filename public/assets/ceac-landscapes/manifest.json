@@ -1,0 +1,107 @@
+{
+  "source": "Unsplash free stock photography",
+  "licence": "https://unsplash.com/license",
+  "checkedOn": "2026-10-16",
+  "images": [
+    {
+      "src": "/assets/ceac-landscapes/scene-01.webp",
+      "alt": "Alpine lake beside a forested mountain",
+      "photographer": "Luca Bravo",
+      "sourceUrl": "https://unsplash.com/photos/banff-national-park-canada-oV4bR3YoR_s",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "b3e49638880ed90e45b19aade931bfaaf3b26e3b10020da848ae5153e911831f",
+      "bytes": 317938
+    },
+    {
+      "src": "/assets/ceac-landscapes/scene-02.webp",
+      "alt": "Mountain and forest reflected in an alpine lake",
+      "photographer": "Luca Bravo",
+      "sourceUrl": "https://unsplash.com/photos/landscape-photography-of-green-leafed-trees-near-body-of-water-HK-lMcoBnMM",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "46e4648997faedb08b304c51ffa1e567d08e07e59e7907392bdf4dc5175a51aa",
+      "bytes": 419258
+    },
+    {
+      "src": "/assets/ceac-landscapes/scene-03.webp",
+      "alt": "Alpine lake beneath clear sky and mountains",
+      "photographer": "Annie Spratt",
+      "sourceUrl": "https://unsplash.com/photos/alpine-lake-reflecting-mountains-under-clear-blue-sky-4vGDNyXH8n0",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "5c7cc5631044cc5d630bb37220ee7fe489cb1128334eb0c75cf55610f9e06907",
+      "bytes": 316842
+    },
+    {
+      "src": "/assets/ceac-landscapes/scene-04.webp",
+      "alt": "Misty pine forest and mountain silhouettes",
+      "photographer": "SOHAM BANERJEE",
+      "sourceUrl": "https://unsplash.com/photos/misty-forest-landscape-with-tall-trees-and-mountains-y-kS36V97xY",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "1572a563d7d5966a9a45a7f8ab454b153c787a6d0709d0956eed88bf5b4d1e73",
+      "bytes": 181676
+    },
+    {
+      "src": "/assets/ceac-landscapes/scene-05.webp",
+      "alt": "Norwegian fjord with mountains and calm water",
+      "photographer": "Cyprien Da Silva",
+      "sourceUrl": "https://unsplash.com/photos/majestic-fjord-landscape-with-mountains-and-a-calm-bay-tiUuDib4laU",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "9d16f4cff4577f2c54877662dcf6ef57c4eb13ba5345ca6b2f60e414fa29ece8",
+      "bytes": 414078
+    },
+    {
+      "src": "/assets/ceac-landscapes/scene-06.webp",
+      "alt": "Fjord framed by autumn mountain cliffs",
+      "photographer": "Atefe Pirzade",
+      "sourceUrl": "https://unsplash.com/photos/majestic-fjord-with-autumn-foliage-on-mountainside-cliffs-Yv_BX0kPF-g",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "03d0a9fab5a6603598a3168468a355db072d19dd0f510dab0daf98a109bf397f",
+      "bytes": 220784
+    },
+    {
+      "src": "/assets/ceac-landscapes/scene-07.webp",
+      "alt": "Sunlight through a misty forest",
+      "photographer": "Jonny Gios",
+      "sourceUrl": "https://unsplash.com/photos/misty-forest-landscape-with-silhouetted-trees-mvby_QPxVxg",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "b9ba3df7df707131805cca237b2e81fcffb2671bb462d4e7c2d924d17c8da247",
+      "bytes": 126774
+    },
+    {
+      "src": "/assets/ceac-landscapes/scene-08.webp",
+      "alt": "Minimal rocky mountain landscape around a lake",
+      "photographer": "Annie Spratt",
+      "sourceUrl": "https://unsplash.com/photos/a-mountain-range-with-a-lake-in-the-middle-of-it-sSjkww9cKeQ",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "d36f5e0fa44617d632282fe3549ee1cefbf7500a6093b8ec7fc4a4abe32d5857",
+      "bytes": 334368
+    },
+    {
+      "src": "/assets/ceac-landscapes/scene-09.webp",
+      "alt": "Norwegian fjord with forests and dramatic cloud cover",
+      "photographer": "Wander & Wonder Collective",
+      "sourceUrl": "https://unsplash.com/photos/a-serene-fjord-with-steep-majestic-mountains-under-dramatic-clouds-q6IK1sTW8vs",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "2afbd188a994e2d2a42901d0c5d2cd0adf6f16ec1520ce7eef533baef848c719",
+      "bytes": 113452
+    },
+    {
+      "src": "/assets/ceac-landscapes/scene-10.webp",
+      "alt": "Snowy mountains and forest at sunset",
+      "photographer": "Luca Bravo",
+      "sourceUrl": "https://unsplash.com/photos/landscape-photography-of-mountains-1RqXSxGfb0M",
+      "licenseUrl": "https://unsplash.com/license",
+      "verifiedOn": "2026-10-16",
+      "sha256": "0a7264693e9b192ebfec9070b58e4055e442cd2c6e7275302a72078771c78b35",
+      "bytes": 127448
+    }
+  ]
+}
