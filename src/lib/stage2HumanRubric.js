@@ -7,7 +7,7 @@
 export const HUMAN_RUBRIC_CATEGORIES = Object.freeze([
   { key: "delivery", label: "Delivery of responsibilities" },
   { key: "quality", label: "Quality of work" },
-  { key: "ownership", label: "Ownership and reliability" },
+  { key: "reliability", label: "Ownership and reliability" },
   { key: "initiative", label: "Initiative and problem-solving" },
   { key: "collaboration", label: "Collaboration and contribution" },
 ]);
@@ -48,8 +48,8 @@ export function blankHumanRubric() {
  */
 export function validateHumanRubric(payload, { cadence = "quarterly", allowNoMonthlyRatings = true } = {}) {
   const errors = [];
-  if (!["monthly", "quarterly"].includes(cadence)) errors.push("Unsupported review cadence");
-  if (cadence === "monthly" && allowNoMonthlyRatings && (payload == null || payload === "")) {
+  if (!["monthly", "quarterly", "month", "quarter"].includes(cadence)) errors.push("Unsupported review cadence");
+  if ((cadence === "monthly" || cadence === "month") && allowNoMonthlyRatings && (payload == null || payload === "")) {
     return { valid: errors.length === 0, errors, payload: null };
   }
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
@@ -113,5 +113,5 @@ export function validateHumanRubric(payload, { cadence = "quarterly", allowNoMon
 /** No AI-generated appraisal and no reviewer's self-approval. */
 export function canHumanReview({ reviewerId, employeeId, caseReviewerId, caseOpen, cadence }) {
   return Boolean(reviewerId && employeeId && reviewerId !== employeeId &&
-    reviewerId === caseReviewerId && caseOpen && ["monthly","quarterly"].includes(cadence));
+    reviewerId === caseReviewerId && caseOpen && ["monthly","quarterly","month","quarter"].includes(cadence));
 }
