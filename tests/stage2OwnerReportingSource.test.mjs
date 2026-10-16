@@ -23,7 +23,8 @@ test("factual report explicitly rejects invented historical snapshot, payroll or
  const code=file("src/lib/stage2PerformanceFacts.js");
  const html=file("src/components/PersonalAchievements.jsx");
  assert.match(code,/live-current-state-not-period-end-snapshot/);
- assert.match(code,/new Map\(records\.filter/);
+ assert.match(code,/new Map\(\)/);
+ assert.match(code,/!indexed\.has\(row\.id\)/);
  assert.match(code,/new Set\(periodTasks\.map/);
  assert.match(code,/first_time_approved === true/);
  assert.match(code,/onTimeRatio:due\.length \?/);
