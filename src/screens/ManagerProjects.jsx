@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { dateOnly, dueLabel } from "../lib/time";
 import { Pill, Sheet, statusPill, ProductNotice, LoadingState } from "../components/bits";
 import ManagerProjectClose from "./ManagerProjectClose";
+import Stage2ProjectOverview from "../components/Stage2ProjectOverview";
 import ProjectParticipantRegister from "../components/ProjectParticipantRegister";
 import { OperationalFileList } from "../components/OperationalFiles";
 import { humanError } from "../lib/productLanguage";
@@ -349,20 +350,14 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       />
 
       {area === "overview" && <section className="project-workspace-area">
-        <div className="project-overview-grid">
-          <div className="card">
-            <div className="row-t">{detail.units?.name || "Lead unit not recorded"}</div>
-            <div className="row-m">Lead unit</div>
-            <div className="row-note">{detail.starts_on ? dateOnly(`${detail.starts_on}T00:00:00`) : "No start date"} → {detail.ends_on ? dateOnly(`${detail.ends_on}T00:00:00`) : "No end date"}</div>
-            <div className="row-note">Participating: {detail.participants.filter((row) => row.role === "participating").map((row) => row.units?.name).filter(Boolean).join(", ") || "No additional unit recorded"}</div>
-            <div className="row-note">Assigned people: {team.join(", ") || "No work holder recorded"}</div>
-          </div>
-          <div className="card project-overview-summary">
-            <div><strong>{detail.objectives.length}</strong><span>objectives</span></div>
-            <div><strong>{detail.work.filter((item) => !["completed","self_certified","cancelled"].includes(item.status)).length}</strong><span>open work</span></div>
-            <div><strong>{detail.work.filter((item) => ["completed","self_certified"].includes(item.status)).length}</strong><span>completed work</span></div>
-          </div>
-        </div>
+        <Stage2ProjectOverview
+          key={detail.id}
+          project={detail}
+          openWork={openItem}
+          addWork={() => goAssign?.({ projectId: detail.id })}
+          showWork={() => setArea("work")}
+          canAssign={detail.canManageObjectives}
+        />
 
         {(detail.kind !== "project" || detail.phases.length > 0) && <>
           <div className="sec"><span>Operational phases</span><span>{detail.phases.length}</span></div>
