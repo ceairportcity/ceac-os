@@ -54,7 +54,7 @@ export default function PersonalAchievements({ me, onOpenWork }) {
   },[me.id]);
 
   const summary=useMemo(()=>truncated?null:personalAchievementSummary(rows,range,{projectId:projectId||null,generatedAt}),[rows,range,projectId,generatedAt,truncated]);
-  const view=useMemo()=>summary?.work.filter(x=>
+  const view=useMemo(()=>summary?.work.filter(x=>
     (x.title||"").toLocaleLowerCase().includes(query.toLocaleLowerCase()) ||
     (x.ref||"").toLocaleLowerCase().includes(query.toLocaleLowerCase()))||[],[summary,query]);
   const c=summary?.counts;
