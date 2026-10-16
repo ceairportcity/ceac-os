@@ -27,3 +27,4 @@ jobs:
       - uses: ./.github/actions/setup-ceac-test-environment
       - name: Full isolated SQL authority, all-role MFA and RLS replay
         run: bash scripts/ci/run-sql-security-gates.sh
+# Retest the preserved S3 fingerprint with reviewed, explicit Stage 2 RLS helper.
