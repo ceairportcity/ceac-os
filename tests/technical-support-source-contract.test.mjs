@@ -7,6 +7,8 @@ import { join } from "node:path";
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 const backend = read("supabase/migrations/20261011130000_133_technical_support_v1_backend.sql");
 const hardening = read("supabase/migrations/20261011183000_134_technical_support_authority_hardening.sql");
+const invokerRepair = read("supabase/migrations/20261016100000_148_support_invoker_projection.sql");
+const invokerGate = read("supabase/tests/support_invoker_projection_gate.sql");
 const proposedGate = read("supabase/tests/technical_support_v1_gate.sql");
 const app = read("src/App.jsx");
 const navigation = read("src/experience-v2/shell/navigation.js");
@@ -46,6 +48,20 @@ test("independent review hardening preserves membership history and safe reporte
   assert.doesNotMatch(safeView, /affected_profile_id\s*(?:,|FROM)/i);
   assert.match(supportHelp, /from\("support_case_safe_status"\)/);
   assert.doesNotMatch(supportHelp, /from\("support_cases"\)\s*\.select/);
+});
+
+test("new Support status projection remains invoker, narrow and reporter-scoped", () => {
+  assert.match(invokerRepair, /create or replace function private\.support_case_safe_status_rows\(\)/i);
+  assert.match(invokerRepair, /set search_path = ''/);
+  assert.match(invokerRepair, /sc\.org_id = public\.app_org_id\(\)/);
+  assert.match(invokerRepair, /sc\.reported_by = auth\.uid\(\) or sc\.affected_profile_id = auth\.uid\(\)/);
+  assert.match(invokerRepair, /public\.app_identity_confirmed\(\)/);
+  assert.match(invokerRepair, /security_invoker = true, security_barrier = true/);
+  assert.match(invokerRepair, /revoke all on function private\.support_case_safe_status_rows\(\)/i);
+  assert.match(invokerRepair, /grant select on public\.support_case_safe_status to authenticated/i);
+  assert.doesNotMatch(invokerRepair, /grant\s+select\s+on\s+public\.support_cases\s+to\s+authenticated/i);
+  assert.match(invokerGate, /security_invoker=true/);
+  assert.match(invokerGate, /ROLLBACK;/);
 });
 
 test("case records and immutable audit history are deny-by-default", () => {
@@ -115,7 +131,8 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 152, "expected exact integrated one-bundle migration source inventory (152), including approved private recurrence; reconcile this gate on any approved migration change");
+  assert.equal(migrations.length, 153, "expected 152 approved Stage 1 files plus the reviewed forward-only Support view migration");
+  assert.ok(migrations.includes("20261016100000_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
