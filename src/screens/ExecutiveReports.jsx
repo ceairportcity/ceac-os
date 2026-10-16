@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import Stage2ExecutiveOutcomeBrief from "../components/Stage2ExecutiveOutcomeBrief";
 import { Skeleton, StatePanel } from "../experience-v2/components";
 import {
   ReportingEvidenceCard,
@@ -219,6 +220,8 @@ export default function ExecutiveReports({ me }) {
               )}
             </ReportingSection>
           </div>
+
+          <Stage2ExecutiveOutcomeBrief me={me} period={period} units={units} />
 
           <ReportingFootnote>
             Executive Reports is read-only. Filing coverage describes reporting status only; CEAC OS does not infer unit performance, staff performance, achievement, score or ranking from it.
