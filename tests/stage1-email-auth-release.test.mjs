@@ -35,7 +35,11 @@ test("Stage 1 does not activate the Google-only universal gate", () => {
 });
 
 test("Stage 1 retains the applied privileged-only TOTP and AAL2 gate", () => {
-  assert.match(app, /<PrivilegedMfaGate me=\{me\} onVerified=\{boot\}>/);
+  // Stage 1 is still the default without the explicit P9/Auth cutover flag.
+  // The future universal TOTP gate must never activate by merely loading Stage 2 source.
+  assert.match(app, /const ActiveMfaGate = import\.meta\.env\.VITE_STAGE2_UNIVERSAL_AAL2 === "true"/);
+  assert.match(app, /\? Stage2UniversalMfaGate : PrivilegedMfaGate/);
+  assert.match(app, /<ActiveMfaGate me=\{me\} onVerified=\{boot\}>/);
   assert.match(privilegedGate, /privileged_mfa_required/);
   assert.match(privilegedGate, /isPrivilegedIdentity\(me\)/);
   assert.match(privilegedGate, /getAuthenticatorAssuranceLevel/);
