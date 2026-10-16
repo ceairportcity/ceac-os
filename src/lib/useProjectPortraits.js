@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "./supabase";
+import { signedProjectPortraits } from "./profilePortraits";
 
 /**
  * Authorised, short-lived staff portrait URLs.
@@ -24,16 +24,8 @@ export function useProjectPortraits(project) {
     if (!enabled || !idKey) return () => { alive = false; };
     async function load() {
       try {
-        const { data, error } = await supabase.from("profile_portraits")
-          .select("profile_id,object_path").in("profile_id", ids);
-        if (error) return;
-        const pairs = await Promise.all((data || []).map(async (item) => {
-          const result = await supabase.storage.from("ceac-profile-portraits")
-            .createSignedUrl(item.object_path, 900);
-          return result.error || !result.data?.signedUrl ? null
-            : [item.profile_id, result.data.signedUrl];
-        }));
-        if (alive) setUrls(Object.fromEntries(pairs.filter(Boolean)));
+        const signed = await signedProjectPortraits(ids);
+        if (alive) setUrls(signed);
       } catch {
         if (alive) setUrls({});
       }
