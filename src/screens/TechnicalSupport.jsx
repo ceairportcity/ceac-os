@@ -348,7 +348,7 @@ export default function TechnicalSupport({ me, go }) {
         </button>)}
       </nav>
 
-      {selected ? <CaseDetails key={selected.id} item={selected} busy={busy} error={actionError}
+      {selected && workspace !== "help-desk" ? <CaseDetails key={selected.id} item={selected} busy={busy} error={actionError}
         me={me} myId={me.id} orgId={me.org_id} onClaim={claimCase} onRelease={releaseCase}
         onClose={() => { setSelectedId(null); setActionError(null); }} onRefresh={refreshCases} onUpdate={updateCase} /> : <>
         {workspace === "home" && <div className="s2-support-home">
@@ -373,7 +373,8 @@ export default function TechnicalSupport({ me, go }) {
           </aside>
           </div>
         </div>}
-        {workspace === "help-desk" && <section className="ceac-support-main">
+        {workspace === "help-desk" && <div className={selected ? "s2-support-split has-inspector" : "s2-support-split"}>
+          <section className="ceac-support-main">
           <div className="ceac-support-section-head"><div><h2>Help people work</h2>
             <p className="screen-note">Only cases authorised for the support queue are listed.</p></div>
             <div className="ceac-support-section-actions">
@@ -402,7 +403,13 @@ export default function TechnicalSupport({ me, go }) {
           </p>
           <SupportRows cases={deskCases} onSelect={setSelectedId}
             empty={cases.length ? "No loaded cases match these filters." : "No support cases have been recorded."} />
-        </section>}
+          </section>
+          {selected && <aside className="s2-support-inspector" aria-label="Selected Technical Support case">
+            <CaseDetails key={selected.id} item={selected} busy={busy} error={actionError}
+              me={me} myId={me.id} orgId={me.org_id} onClaim={claimCase} onRelease={releaseCase}
+              onClose={() => { setSelectedId(null); setActionError(null); }} onRefresh={refreshCases} onUpdate={updateCase} />
+          </aside>}
+        </div>}
         {workspace === "people-access" && <section className="ceac-support-main">
           <h2>People & Access</h2>
           <p className="screen-note">Investigate account and approved access requests without inspecting confidential employee or payroll information.</p>
