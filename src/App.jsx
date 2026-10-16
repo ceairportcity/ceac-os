@@ -390,7 +390,7 @@ export default function App() {
       createRequest={createIntent === "ministry_objective" ? "ministry_objective" : null}
       onCreateHandled={() => setCreateIntent(null)}
     />;
-    if (tab === "delivery" && canUseDelivery) return <Delivery me={me} initialProjectId={projectId} />;
+    if (tab === "delivery" && canUseDelivery) return <Delivery me={me} initialProjectId={projectId} openItem={openItem} />;
     if (tab === "workload" && canUseWorkload) return <ResourceWorkload me={me} />;
     if (tab === "performance" && canUsePerformance) return <Performance me={me} />;
     if (tab === "learning" && canUseLearning) return <Learning me={me} />;
