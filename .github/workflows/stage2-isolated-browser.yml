@@ -37,7 +37,7 @@ jobs:
           cat /tmp/ceac-stage2-vite.log
           exit 1
       - name: Stage 2 approved-role interactive and responsive checks
-        run: npx playwright test tests/stage2-approved-role-workspaces.spec.js --workers=1
+        run: npx playwright test tests/stage2-approved-role-workspaces.spec.js tests/stage2-recurring-work.spec.js --workers=1
       - name: Preserve rendered acceptance screenshots and failures
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
