@@ -16,8 +16,8 @@ AS $security$
       SELECT 1 FROM jsonb_array_elements(
         CASE WHEN jsonb_typeof(auth.jwt()->'amr') = 'array'
           THEN auth.jwt()->'amr' ELSE '[]'::jsonb END
-      ) AS method_claim
-      WHERE method_claim->>'method' = 'totp'
+      ) AS method_claim(entry)
+      WHERE method_claim.entry->>'method' = 'totp'
     );
 $security$;
 REVOKE ALL ON FUNCTION public.app_portrait_totp_aal2() FROM PUBLIC, anon;
