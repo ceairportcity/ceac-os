@@ -46,3 +46,4 @@ jobs:
           path: test-artifacts/
           if-no-files-found: ignore
           retention-days: 7
+# Exact-head rerun after responsive-selector fix and integrated Projects refinements.
