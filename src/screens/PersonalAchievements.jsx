@@ -23,7 +23,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
   const [retryToken,setRetryToken] = useState(0);
   const [error,setError] = useState("");
   const [completeLoad,setCompleteLoad] = useState(false);
-  const safePeriod = /^\\d{4}-(0[1-9]|1[0-2])$/.test(period||"") ? period : today.slice(0,7);
+  const safePeriod = /^\d{4}-(0[1-9]|1[0-2])$/.test(period||"") ? period : today.slice(0,7);
   const range = useMemo(() => reportingRange(cadence, safePeriod+"-01"),[cadence,safePeriod]);
   const preview = useMemo(() => individualAchievementFacts({
     works, submissions, range, projectId:projectId||null
