@@ -30,7 +30,7 @@ async function openAs(browser, email, viewport = { width: 1440, height: 900 }) {
   await page.getByPlaceholder("Work email").fill(email);
   await page.getByPlaceholder("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.locator(".ev2s-sidebar")).toBeVisible({ timeout: 20000 });
+  await expect(page.locator(viewport.width < 760 ? ".ev2s-mobile-topbar" : ".ev2s-sidebar")).toBeVisible({ timeout: 20000 });
   return { context, page };
 }
 
@@ -47,7 +47,7 @@ test("manager projects preserve one integrated workspace with real photo and tas
     await expect(workspace.locator(".s2-project-panel", { hasText: "Project team" })).toBeVisible();
     await expect(workspace.getByText("Departments involved")).toBeVisible();
     await expect(workspace.getByText("Project tasks", { exact: true })).toBeVisible();
-    await expect(workspace.getByRole("complementary", { name: "About this project" })).toBeVisible();
+    await expect(workspace.locator(".s2-project-aside")).toBeVisible();
     await expect(workspace.locator(".fpg-project-tree")).toBeHidden();
     await expect(workspace.locator(".fpg-project-facts")).toBeHidden();
     const img = workspace.locator(".s2-scenic-photo img");
