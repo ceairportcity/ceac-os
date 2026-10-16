@@ -112,6 +112,63 @@ BEGIN
 END
 $factor_deny$;
 
+-- Stage 2 migration 154: the RLS restriction alone is insufficient because
+-- SECURITY DEFINER RPCs can bypass it. Assert the SAME AAL1 denial through
+-- each reviewed server-side identity/RPC boundary, not merely table SELECT.
+DO $rpc_source_inventory$
+DECLARE name text;
+BEGIN
+ FOREACH name IN ARRAY ARRAY[
+   'app_org_id','app_identity_confirmed','app_privileged_aal_allowed',
+   'app_can_read_announcement','my_sessions','my_account_activity',
+   'update_my_personal_details'
+ ] LOOP
+   IF NOT EXISTS(
+     SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+     WHERE n.nspname='public' AND p.proname=name
+       AND pg_get_functiondef(p.oid) LIKE '%public.app_stage2_universal_aal_allowed()%'
+   ) THEN
+     RAISE EXCEPTION 'Stage 2 RPC universal TOTP guard missing from function %',name;
+   END IF;
+ END LOOP;
+END
+$rpc_source_inventory$;
+
+SELECT set_config('request.jwt.claims',
+ '{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1","amr":[{"method":"password"}]}', true);
+DO $rpc_aal1_deny$
+DECLARE denied boolean := false;
+BEGIN
+ IF public.app_org_id() IS NOT NULL OR public.app_identity_confirmed()
+    OR public.app_privileged_aal_allowed() OR public.app_is_admin()
+    OR public.app_is_exec() OR EXISTS(SELECT 1 FROM public.app_my_units())
+    OR EXISTS(SELECT 1 FROM public.my_sessions())
+    OR EXISTS(SELECT 1 FROM public.my_account_activity(10)) THEN
+    RAISE EXCEPTION 'An AAL1 signed-in employee bypassed Stage 2 security-definer RPC controls';
+ END IF;
+ BEGIN
+   PERFORM public.update_my_personal_details(
+     'Not a verified login',NULL,NULL,NULL,NULL,NULL,NULL,'{}'::jsonb
+   );
+ EXCEPTION WHEN insufficient_privilege THEN denied:=true;
+ END;
+ IF NOT denied THEN
+   RAISE EXCEPTION 'Stage 2 AAL1 can invoke a privileged personal-data mutating RPC';
+ END IF;
+END
+$rpc_aal1_deny$;
+
+SELECT set_config('request.jwt.claims',
+ '{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2","amr":[{"method":"password"},{"method":"totp"}]}', true);
+DO $rpc_totp_allow$
+BEGIN
+ IF public.app_org_id() IS DISTINCT FROM '10000000-0000-4000-8000-000000000010'::uuid
+    OR NOT public.app_identity_confirmed() THEN
+    RAISE EXCEPTION 'Signed AAL2/TOTP account cannot use its ordinary signed-in RPC identity';
+ END IF;
+END
+$rpc_totp_allow$;
+
 RESET ROLE;
 ROLLBACK;
-SELECT 'CEAC Stage 2 universal all-role signed TOTP AAL2 RLS gate PASSED' AS result;
+SELECT 'CEAC Stage 2 universal all-role signed TOTP AAL2 RLS + RPC gate PASSED' AS result;
