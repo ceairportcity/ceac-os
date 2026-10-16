@@ -79,9 +79,10 @@ test("weekly assigned routine is created once and appears on staff's future Work
     await expect(scheduled).toBeVisible({timeout:20000});
     const visible = await scheduled.innerText();
     expect(visible, "Staff routine projection did not contain created master (including possible RLS/error feedback)").toContain(title);
-    await expect(scheduled.getByText(title, {exact:true}).first()).toBeVisible();
-    await expect(scheduled.locator(`time[datetime="${nextSaturday}"]`)).toBeVisible();
-    await expect(scheduled.locator(`time[datetime="${followingSaturday}"]`)).toBeVisible();
+    const ownRoutine = scheduled.locator(".s2-assigned-routine-list > button").filter({hasText:title});
+    await expect(ownRoutine).toHaveCount(2);
+    await expect(ownRoutine.locator(`time[datetime="${nextSaturday}"]`)).toBeVisible();
+    await expect(ownRoutine.locator(`time[datetime="${followingSaturday}"]`)).toBeVisible();
     await expect(scheduled.getByText("Scheduled", {exact:true}).first()).toBeVisible();
     await staff.page.screenshot({path:"test-artifacts/stage2-recurring-staff-weekly-work.png",fullPage:true});
   } finally { await staff.context.close(); }
