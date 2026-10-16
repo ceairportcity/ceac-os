@@ -120,7 +120,7 @@ end $$;
 -- The current integrated bundle adds 12 reviewed authenticated definer
 -- RPC/predicate interfaces across migrations 140-146 while revoking the
 -- legacy direct attendance-correction and unsafe direct performance-share RPC
--- grants, resulting in exactly 145 authenticated SECURITY DEFINER functions.
+-- grants, resulting in 145 Stage 1 authenticated SECURITY DEFINER functions plus one independently reviewed Stage 2 TOTP policy helper.
 -- A separate exact signature check rejects substitutions or additions.
 -- The historical net +4 were needed for front-desk attendance corroboration and
 -- authorised per-person/manager evidence views. Two legacy office-code RPCs
@@ -138,8 +138,8 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n<>145 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface differs from the reviewed 145-function exact release surface to %.',n;
+  if n<>146 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface differs from the reviewed 146-function Stage 2 surface to %.',n;
   end if;
 end $$;
 
