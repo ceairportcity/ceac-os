@@ -25,3 +25,4 @@ jobs:
       - name: Stage 2 Vite production build (no deployment)
         run: npm run build
 # Checkpoint: corrected Stage 1 compatibility tests and integrated Executive Projects path.
+# Stage 2 source/build acceptance for new real Work routines and project milestones.
