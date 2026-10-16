@@ -133,9 +133,11 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
   const stagedPortraitMigration = "20261016164000_149_private_portrait_media_stage2.sql";
   assert.ok(migrations.includes(stagedPortraitMigration), "Stage 2 private portrait migration must remain available for isolated replay");
-  assert.equal(migrations.filter((file) => file !== stagedPortraitMigration).length, 153,
+  const p6RatingsMigration = "20261016172000_151_human_structured_ratings_p6.sql";
+  assert.ok(migrations.includes(p6RatingsMigration), "Owner-locked Stage 2 P6 human ratings migration must be staged");
+  assert.equal(migrations.filter((file) => file !== stagedPortraitMigration && file !== p6RatingsMigration).length, 153,
     "Stage 1's reviewed 153-file migration baseline must not change when Stage 2 is staged");
-  assert.equal(migrations.length, 154, "expect exactly one additional Stage 2 portrait migration");
+  assert.equal(migrations.length, 155, "expect Stage 2 portrait and immutable human ratings migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
