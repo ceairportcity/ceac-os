@@ -58,3 +58,10 @@
   .s2-achievement .s2-achievement-evidence article,.s2-achievement .s2-achievement-panel,.s2-achievement .s2-achievement-metrics article{break-inside:avoid}
   body:has(.s2-achievement) .ev2s-sidebar,body:has(.s2-achievement) .ev2s-topbar,body:has(.s2-achievement) .ev2s-mobile-nav,body:has(.s2-achievement) .ev2s-mobile-topbar{display:none!important}
 }
+
+/* Print only the authorised personal report, never adjacent shell, drawer or HR context. */
+@media print{
+  body:has(.s2-achievement) *{visibility:hidden!important}
+  .s2-achievement,.s2-achievement *{visibility:visible!important}
+  .s2-achievement{position:absolute!important;top:0!important;left:0!important;overflow:visible!important}
+}
