@@ -16,7 +16,7 @@ const sample = () => ({
 });
 test("only the five approved categories and human rating scale exist", () => {
   assert.deepEqual(HUMAN_RUBRIC_CATEGORIES.map(x=>x.key),
-    ["delivery","quality","ownership","initiative","collaboration"]);
+    ["delivery","quality","reliability","initiative","collaboration"]);
   assert.deepEqual(HUMAN_RATING_OPTIONS.map(x=>x.value),
     ["1","2","3","4","5","N/O"]);
 });
