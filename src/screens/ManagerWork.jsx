@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ManagerRoutineOccurrences from "../components/ManagerRoutineOccurrences";
 import { supabase } from "../lib/supabase";
 import { dueLabel, isOverdue } from "../lib/time";
 import { ProductNotice, LoadingState } from "../components/bits";
@@ -133,6 +134,8 @@ export default function ManagerWork({ me, openItem, goAssign }) {
         onAction={view === "given" || view === "routines" ? () => goAssign?.() : undefined}
       />
     )}
+
+    {!loading && !error && view === "routines" && <ManagerRoutineOccurrences me={me} openItem={openItem} />}
 
     {view === "given" && <WorkFootnote>
       This view uses the recorded assigner on the current work item. A complete multi-step delegation chain requires explicit assignment-history records; CEAC OS does not invent that history.
