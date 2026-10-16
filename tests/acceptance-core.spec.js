@@ -450,7 +450,17 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   const staff = await openAs(browser, "staff@ceac.local.test");
   await go(staff.page, "Work");
   for (const item of created.filter((entry) => entry.kind !== "Request")) {
-    await expect(staff.page.getByText(item.title, { exact: true })).toBeVisible();
+    if (item.kind === "Routine") {
+      // Recurrence occurrences legitimately repeat the master title. Validate
+      // the canonical referenced Work row rather than matching any occurrence.
+      const master = staff.page.locator(".ev2w-row")
+        .filter({ has: staff.page.locator(".ev2w-row-main > strong").getByText(item.title, { exact: true }) })
+        .filter({ hasText: /\b[A-Z]{2,}-\d+\b/ });
+      await expect(master).toHaveCount(1);
+      await expect(master).toBeVisible();
+    } else {
+      await expect(staff.page.getByText(item.title, { exact: true })).toBeVisible();
+    }
   }
   await staff.context.close();
 });
