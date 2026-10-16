@@ -133,9 +133,11 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
   const stagedPortraitMigration = "20261016164000_149_private_portrait_media_stage2.sql";
   assert.ok(migrations.includes(stagedPortraitMigration), "Stage 2 private portrait migration must remain available for isolated replay");
-  assert.equal(migrations.filter((file) => file !== stagedPortraitMigration).length, 153,
-    "Stage 1's reviewed 153-file migration baseline must not change when Stage 2 is staged");
-  assert.equal(migrations.length, 154, "expect exactly one additional Stage 2 portrait migration");
+  const stagedAppraisalMigration = "20261016180000_151_stage2_human_appraisal_ratings.sql";
+  assert.ok(migrations.includes(stagedAppraisalMigration), "Owner-approved quarterly Manager ratings migration missing");
+  assert.equal(migrations.filter((file) => ![stagedPortraitMigration,stagedAppraisalMigration].includes(file)).length, 153,
+    "Stage 1's 153 reviewed migrations remain identical; Stage 2 adds two pending, separately staged migrations");
+  assert.equal(migrations.length, 155, "expected 153 Stage 1 plus two Stage 2 pending migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
