@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/stage2-unified-acceptance.yml
       - supabase/tests/platform_kernel_gate.sql
+      - supabase/tests/experience_stage6_finance_gate.sql
       - supabase/migrations/20261016210000_154_stage2_universal_rpc_auth_gate.sql
       - supabase/tests/stage2_universal_totp_all_roles_gate.sql
       - tests/stage2SharedPersonalSession.test.mjs
