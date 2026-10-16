@@ -70,6 +70,14 @@ for (const viewport of [
 
     await expect(page.locator(".executivev2-hero h2")).toContainText(/Good (morning|afternoon|evening), Executive Fixture/);
     await expect(page.locator(".executivev2-kpis")).toBeVisible();
+    // Functional Start/End Work must remain unobstructed by KPI cards.
+    const sessionBox = await page.locator(".executivev2 > .s2-own-work-session").boundingBox();
+    const kpiBox = await page.locator(".executivev2-kpis").boundingBox();
+    expect(sessionBox, "Executive attendance card must render").toBeTruthy();
+    expect(kpiBox, "Executive KPI row must render").toBeTruthy();
+    expect(kpiBox.y, "KPI cards must begin below employee attendance").toBeGreaterThanOrEqual(
+      sessionBox.y + sessionBox.height - 1,
+    );
     await expect(page.locator(".executivev2-attention")).toBeVisible();
     if (viewport.width > 720) {
       await expect(page.locator(".executivev2-direction")).toBeVisible();

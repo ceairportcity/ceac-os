@@ -82,6 +82,12 @@
 .executivev2-loading,
 .executivev2-main { display: grid; gap: 14px; }
 
+/* Stage 2 Start/End Work sits between hero and the KPI overview.
+   Do not let the legacy -54px hero overlap cover this real employee control. */
+.executivev2 > .s2-own-work-session ~ .executivev2-main .executivev2-kpis {
+  margin-top: 0;
+}
+
 .executivev2-kpis {
   position: relative;
   z-index: 2;
