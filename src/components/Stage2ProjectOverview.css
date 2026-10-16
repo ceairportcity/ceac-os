@@ -152,3 +152,10 @@
 .s2-project-milestones li::before{content:"";position:absolute;left:-6px;top:2px;width:9px;height:9px;border:2px solid #b8cae2;border-radius:50%;background:#fff}
 .s2-project-milestones li.is-complete::before{border-color:#2ab07c;background:#2ab07c}
 .s2-project-milestones li strong{font-size:11px;color:#2d4b6c}
+
+/* Stage 2 accessibility floor: all readable metadata and table actions must
+   pass the existing 12px minimum at 320px as well as desktop densities. */
+.s2-project :is(small,th,td,input,select,button,.s2-project-unit-chip,.s2-project-task,.s2-project-milestones li strong,.s2-project-panel h3){
+  font-size:12px!important;
+}
+.s2-project .s2-project-stat-card>span:first-child{font-size:12px!important}
