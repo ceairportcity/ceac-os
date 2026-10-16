@@ -77,7 +77,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
             <td><span className={finished.has(item.status) ? "s2-project-done" : "s2-project-pending"}>{String(item.status || "Not recorded").replaceAll("_"," ")}</span></td>
           </tr>)}</tbody></table></div>
           {!visible.length && <p className="s2-project-empty">No recorded tasks match this view.</p>}
-          {work.length > tasks.length && <button className="s2-project-more" onClick={showWork}>View all project work →</button>}
+          {showWork && work.length > tasks.length && <button className="s2-project-more" onClick={showWork}>View all project work →</button>}
         </section>
       </div>
       <aside className="s2-project-panel s2-project-aside">
