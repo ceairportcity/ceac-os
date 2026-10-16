@@ -450,7 +450,9 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   const staff = await openAs(browser, "staff@ceac.local.test");
   await go(staff.page, "Work");
   for (const item of created.filter((entry) => entry.kind !== "Request")) {
-    await expect(staff.page.getByText(item.title, { exact: true })).toBeVisible();
+    // Recurrence also renders forthcoming occurrences. Verify the official Work row,
+    // rather than ambiguously matching preview dates in a separate section.
+    await expect(staff.page.locator(".ev2w-row").getByText(item.title, { exact: true })).toBeVisible();
   }
   await staff.context.close();
 });

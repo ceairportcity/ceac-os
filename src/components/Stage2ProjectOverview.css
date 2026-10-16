@@ -159,3 +159,7 @@
   font-size:12px!important;
 }
 .s2-project .s2-project-stat-card>span:first-child{font-size:12px!important}
+
+/* Stage 2 project accessibility: keep every visible project datum at >=12px.
+   Preserve larger heading, percentage and button typography. */
+.s2-project :is(.s2-project-person strong,.s2-project-units strong,.s2-project-aside dt,.s2-project-aside dd,.s2-project-aside section p,.s2-project-aside li,.s2-project-avatar,.s2-project-more,.s2-project-unit-chip){font-size:12px!important}
