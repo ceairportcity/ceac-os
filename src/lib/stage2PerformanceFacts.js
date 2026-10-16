@@ -108,6 +108,7 @@ export function validateHumanAppraisal({periodKind, reviewerId, employeeId, cate
     if(!VALID_RATINGS.includes(String(rating.rating))) errors.push(`${item.label}: invalid rating`);
     if(!String(rating.reason||"").trim()) errors.push(`${item.label}: explanation required`);
     if(!Array.isArray(rating.evidenceIds)) errors.push(`${item.label}: evidence selection must be explicit`);
+    else if(String(rating.rating)!=="N/O" && rating.evidenceIds.length===0) errors.push(`${item.label}: verified source references required for a numeric observation`);
   }
   if(required || overall?.rating) {
     if(!VALID_RATINGS.includes(String(overall?.rating||""))) errors.push("Human-selected overall rating required");
