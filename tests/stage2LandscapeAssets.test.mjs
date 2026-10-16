@@ -11,8 +11,10 @@ test("ten genuine downloaded photographs have complete provenance and exact hash
   const srcs = new Set();
   for (const image of manifest.images) {
     assert.match(image.src, /^\/assets\/ceac-landscapes\/scene-\d\d\.webp$/);
-    assert.ok(image.sourceUrl.startsWith("https://unsplash.com/photos/"));
-    assert.equal(image.licenseUrl, "https://unsplash.com/license");
+    const unsplash = image.sourceUrl.startsWith("https://unsplash.com/photos/");
+    const commons = image.sourceUrl.startsWith("https://commons.wikimedia.org/wiki/File:");
+    assert.ok(unsplash || commons, "Photo must originate from a verified official source");
+    assert.equal(image.licenseUrl, commons ? "https://creativecommons.org/publicdomain/zero/1.0/" : "https://unsplash.com/license");
     assert.ok(image.photographer?.trim());
     assert.ok(image.alt?.trim());
     const bytes = readFileSync(join("public", image.src));
