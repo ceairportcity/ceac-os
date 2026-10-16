@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
 import { humanError } from "../lib/productLanguage";
 import { Skeleton, StatePanel } from "../experience-v2/components";
 import {
@@ -19,12 +20,16 @@ export default function ExecutiveReports({ me }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [view, setView] = useState("all");
+  const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[]});
+  const [outcomeError,setOutcomeError] = useState(null);
 
   useEffect(() => { load(); }, [me.org_id]);
 
   async function load() {
     setLoading(true);
     setError(null);
+    setOutcomeError(null);
+    setOutcomeSources({issued:[],objectives:[],milestones:[]});
     try {
       const [periodResult, unitResult] = await Promise.all([
         supabase.from("report_periods")
@@ -62,6 +67,22 @@ export default function ExecutiveReports({ me }) {
         }
       });
       setReports(Object.values(latest));
+      // Fetch only already issued organisational reports for Executive briefing.
+      // Never retrieve draft narrative or employee HR assessment content.
+      const [issued,objectives,milestones] = await Promise.all([
+        supabase.from("reports").select("id,unit_id,version,status,submitted_at,narrative,challenges")
+          .eq("period_id",periodResult.data.id).eq("scope","unit").neq("status","draft").limit(501),
+        supabase.from("objectives").select("id,name,status,project_id,unit_id,target_value,achieved_value,target_unit")
+          .eq("org_id",me.org_id).limit(501),
+        supabase.from("project_milestones").select("id,name,status,project_id,target_on,completed_at")
+          .eq("org_id",me.org_id).limit(501),
+      ]);
+      const detailsError=[issued,objectives,milestones].find(x=>x.error || (x.data||[]).length>500);
+      if(detailsError) {
+        setOutcomeError("Leadership evidence could not be verified completely. Detailed totals are withheld.");
+      } else {
+        setOutcomeSources({issued:issued.data||[],objectives:objectives.data||[],milestones:milestones.data||[]});
+      }
     } catch (loadError) {
       setError(humanError(loadError, "Reports could not be loaded."));
     } finally {
@@ -219,6 +240,10 @@ export default function ExecutiveReports({ me }) {
               )}
             </ReportingSection>
           </div>
+
+          <ExecutiveOutcomeBrief period={period} units={units}
+            issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
+            milestones={outcomeSources.milestones} readError={outcomeError} />
 
           <ReportingFootnote>
             Executive Reports is read-only. Filing coverage describes reporting status only; CEAC OS does not infer unit performance, staff performance, achievement, score or ranking from it.
