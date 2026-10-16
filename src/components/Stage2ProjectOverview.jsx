@@ -55,7 +55,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
       <div><span>Next due task</span><strong className="s2-project-date">{when(next?.due_at)}</strong><small>{next?.title || "No upcoming due date"}</small></div>
     </section>
     <div className="s2-project-layout">
-      <div className="s2-project-primary">
+      <div className="s2-project-content">
         <section className="s2-project-panel">
           <header><h2>Project team</h2><small>{people.length} recorded assignees</small></header>
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>
