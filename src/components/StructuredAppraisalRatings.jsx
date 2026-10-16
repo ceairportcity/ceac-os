@@ -15,6 +15,7 @@ const isUnavailable=(error)=>["42P01","PGRST205","42703"].includes(error?.code);
 export default function StructuredAppraisalRatings({me,review,cycle,evidence,assessment,isReviewer,isHR,onSaved}){
  const cadence=cycle?.stage2_cadence;
  const [rows,setRows]=useState([]);
+ const [reload,setReload]=useState(0);
  const [loading,setLoading]=useState(true);
  const [unavailable,setUnavailable]=useState(false);
  const [error,setError]=useState("");
@@ -53,7 +54,7 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
      finally{if(active)setLoading(false);}
    })();
    return()=>{active=false};
- },[review.id,me.id,isHR]);
+ },[review.id,me.id,isHR,reload]);
 
  const recorded=rows.find(x=>x.assessment_entry_id===assessment?.id);
  const ratingDraft=HUMAN_RUBRIC.some(d=>categories[d.key].rating);
@@ -79,7 +80,8 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
     });
     if(result.error)throw result.error;
     setOpen(false);
-    await onSaved?.();
+    setReload(n=>n+1);
+   await onSaved?.();
   }catch(e){setError(e?.message||"The protected Manager ratings could not be recorded.");}
   finally{setBusy(false);}
  }
