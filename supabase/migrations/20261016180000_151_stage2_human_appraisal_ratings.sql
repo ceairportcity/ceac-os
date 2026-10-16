@@ -27,6 +27,62 @@ CREATE TRIGGER stage2_classify_new_appraisal_cycle
 BEFORE INSERT ON public.appraisal_cycles FOR EACH ROW
 EXECUTE FUNCTION public.stage2_classify_new_appraisal_cycle();
 
+-- A documented independent HR exception may account for employee absence
+-- or response unavailability. It NEVER invents a reflection or reviewer rating.
+CREATE TABLE public.appraisal_review_exceptions (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ org_id uuid NOT NULL REFERENCES public.organisations(id) ON DELETE RESTRICT,
+ appraisal_id uuid NOT NULL REFERENCES public.appraisals(id) ON DELETE RESTRICT,
+ reason_kind text NOT NULL CHECK(reason_kind IN ('employee_nonresponse','reviewer_absence','reviewer_conflict')),
+ reason text NOT NULL CHECK(length(btrim(reason)) BETWEEN 12 AND 2000),
+ authorised_by uuid NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ UNIQUE(appraisal_id,reason_kind)
+);
+ALTER TABLE public.appraisal_review_exceptions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.appraisal_review_exceptions FROM PUBLIC,anon,authenticated;
+GRANT SELECT,INSERT ON public.appraisal_review_exceptions TO authenticated;
+CREATE POLICY stage2_appraisal_review_exception_read
+ ON public.appraisal_review_exceptions FOR SELECT TO authenticated
+ USING(org_id=public.app_org_id()
+   AND (public.app_is_admin() AND public.app_has_capability('people.manage',NULL)
+     OR EXISTS(SELECT 1 FROM public.appraisals a
+       WHERE a.id=appraisal_id AND a.org_id=appraisal_review_exceptions.org_id
+         AND a.manager_id=auth.uid())));
+CREATE POLICY stage2_appraisal_review_exception_write
+ ON public.appraisal_review_exceptions FOR INSERT TO authenticated
+ WITH CHECK(org_id=public.app_org_id()
+   AND authorised_by=auth.uid()
+   AND public.app_is_admin()
+   AND public.app_has_capability('people.manage',NULL)
+   AND EXISTS(SELECT 1 FROM public.appraisals a
+     WHERE a.id=appraisal_id AND a.org_id=appraisal_review_exceptions.org_id
+       AND a.status NOT IN ('shared','closed')
+       AND a.profile_id<>auth.uid()));
+CREATE FUNCTION public.stage2_validate_appraisal_hr_exception()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $exception$
+BEGIN
+ IF NEW.authorised_by IS DISTINCT FROM auth.uid()
+    OR NOT public.app_is_admin()
+    OR NOT public.app_has_capability('people.manage',NULL)
+    OR NOT EXISTS(SELECT 1 FROM public.appraisals a
+      WHERE a.id=NEW.appraisal_id AND a.org_id=NEW.org_id
+        AND a.status NOT IN ('shared','closed') AND a.profile_id<>auth.uid())
+ THEN RAISE EXCEPTION 'Independent HR authority is required for an attributable review exception.'
+   USING ERRCODE='42501'; END IF;
+ NEW.created_at:=clock_timestamp();
+ INSERT INTO public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
+ VALUES(NEW.org_id,NEW.authorised_by,'appraisal_review_exception_recorded',
+ 'appraisal',NEW.appraisal_id,jsonb_build_object('kind',NEW.reason_kind,'reason',NEW.reason));
+ RETURN NEW;
+END;
+$exception$;
+REVOKE ALL ON FUNCTION public.stage2_validate_appraisal_hr_exception() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER stage2_validate_appraisal_hr_exception
+ BEFORE INSERT ON public.appraisal_review_exceptions FOR EACH ROW
+ EXECUTE FUNCTION public.stage2_validate_appraisal_hr_exception();
+
 CREATE TABLE public.appraisal_human_rating_versions (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  org_id uuid NOT NULL REFERENCES public.organisations(id) ON DELETE RESTRICT,
@@ -179,10 +235,15 @@ BEGIN
   SELECT 1 FROM public.appraisal_entries ent
   WHERE ent.appraisal_id=v_review.id AND ent.org_id=v_review.org_id
     AND ent.entry_type='employee_reflection' AND ent.created_by=v_review.profile_id
+ ) AND NOT EXISTS (
+  SELECT 1 FROM public.appraisal_review_exceptions exc
+  WHERE exc.appraisal_id=v_review.id AND exc.org_id=v_review.org_id
+    AND exc.reason_kind='employee_nonresponse'
  ) THEN
    RAISE EXCEPTION 'Quarterly review requires a genuine employee reflection or independently authorised exception.'
    USING ERRCODE='42501';
  END IF;
+ NEW.created_at:=clock_timestamp();
  RETURN NEW;
 END;
 $validate$;
