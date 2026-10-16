@@ -1,4 +1,4 @@
-name: CEAC Stage 2 one-shot native source and build verification
+name: CEAC Stage 2 exact-head retest after source contract repairs
 on:
   push:
     branches:
