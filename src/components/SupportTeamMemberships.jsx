@@ -24,6 +24,10 @@ export default function SupportTeamMemberships({ me, people, units }) {
   const generation = useRef(0);
   const busyRef = useRef(false);
   const scope = `${me.org_id}:${me.id}`;
+  // The owner-approved Technical Support unit is now distinct from its parent.
+  // Default to the Support unit, but never infer case authority from placement.
+  const supportUnit = units.find((unit) => unit.name.trim().toLowerCase() === "technical support") || null;
+  const effectiveUnitId = unitId || supportUnit?.id || "";
   const visible = scopeRead === scope ? rows : [];
   const unavailable = !loading && !verifiedLoad;
 
@@ -61,8 +65,8 @@ export default function SupportTeamMemberships({ me, people, units }) {
 
   async function save(type) {
     if (busyRef.current || busy || loading || !verifiedLoad || scopeRead !== scope) return;
-    if (type === "add" && (!selected || !unitId || reason.trim().length < 8)) {
-      setError("Choose an existing active person, the associated Media & Technical unit and a reason of at least 8 characters."); return;
+    if (type === "add" && (!selected || !effectiveUnitId || reason.trim().length < 8)) {
+      setError("Choose an active CEAC person, an associated organisational unit and a reason of at least 8 characters."); return;
     }
     if (type === "end" && (!ending || endReason.trim().length < 8)) {
       setError("Record why this Technical Support membership is ending."); return;
@@ -76,7 +80,7 @@ export default function SupportTeamMemberships({ me, people, units }) {
           throw new Error("This person already has an active Technical Support membership.");
         }
         res = await supabase.from("support_team_memberships").insert({
-          org_id: me.org_id, profile_id: selected, associated_unit_id: unitId,
+          org_id: me.org_id, profile_id: selected, associated_unit_id: effectiveUnitId,
           role, added_by: me.id, reason: reason.trim(), active: true,
         }).select("id,profile_id,active").single();
       } else {
@@ -126,11 +130,11 @@ export default function SupportTeamMemberships({ me, people, units }) {
           <option value="lead">Support Lead</option>
         </select>
       </label>
-      <label>Media & Technical association (context only)
-        <select className="field" value={unitId} disabled={busy || loading || unavailable}
+      <label>Associated organisational unit (context only)
+        <select className="field" value={effectiveUnitId} disabled={busy || loading || unavailable}
           onChange={(e) => { setUnitId(e.target.value); setError(null); }}>
           <option value="">Choose the authorised associated unit</option>
-          {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+          {[...units].sort((a,b) => a.id === supportUnit?.id ? -1 : b.id === supportUnit?.id ? 1 : a.name.localeCompare(b.name)).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
         </select>
       </label>
       <label>Reason for team membership
@@ -139,8 +143,8 @@ export default function SupportTeamMemberships({ me, people, units }) {
           placeholder="Record who authorised this placement and why." />
       </label>
     </div>
-    <p className="screen-note">Adding a member does not automatically grant case, integration, recovery, HR or Payroll authority. Any Support capability requires the separate approved authority process and privileged MFA where applicable.</p>
-    <Button disabled={busy || loading || !verifiedLoad || !selected || !unitId || reason.trim().length < 8}
+    <p className="screen-note">Technical Support is a dedicated unit within Media &amp; Technical. Record membership here, then use Authority to grant the separate organisation-wide Technical Support cases capability with an attributable reason. Neither a Support Unit Head title nor membership alone grants case, HR, Payroll, integration or recovery authority. Privileged MFA remains subject to the approved release configuration.</p>
+    <Button disabled={busy || loading || !verifiedLoad || !selected || !effectiveUnitId || reason.trim().length < 8}
       onClick={() => save("add")}>Record Support membership</Button>
     <h3>Current team</h3>
     {active.length === 0 && !loading && verifiedLoad && <p className="screen-note">No active Support memberships in the authorised records.</p>}

@@ -10,6 +10,7 @@ const sqlGate = read("supabase/tests/support_membership_end_reason_gate.sql");
 const sqlRunner = read("scripts/ci/run-sql-security-gates.sh");
 const component = read("src/components/SupportTeamMemberships.jsx");
 const people = read("src/components/PeopleAccess.jsx");
+const authority = read("src/screens/AdminAuthority.jsx");
 
 test("forward 136 adds a separate history-backed end reason without deleting membership history",()=>{
   assert.match(migration,/ALTER TABLE public\.support_team_memberships ADD COLUMN end_reason text/);
@@ -36,6 +37,17 @@ test("People Administration UI uses only audited membership transitions",()=>{
   assert.match(component,/No Support capability or business authority was granted/);
   assert.doesNotMatch(component,/\.from\("capability_grants"\)\.(?:insert|update|delete)/);
   assert.doesNotMatch(component,/\.from\("employment_records"\)/);
+});
+
+test("dedicated Technical Support unit onboarding uses a valid organisation-wide case authority",()=>{
+  assert.match(component, /unit\.name\.trim\(\)\.toLowerCase\(\) === "technical support"/);
+  assert.match(component, /const effectiveUnitId = unitId \|\| supportUnit\?\.id \|\| ""/);
+  assert.match(component, /associated_unit_id: effectiveUnitId/);
+  assert.match(component, /value=\{effectiveUnitId\}/);
+  assert.doesNotMatch(component, /Media & Technical association \(context only\)/);
+  assert.match(authority, /"support\.case\.manage"\]\)/);
+  assert.match(authority, /both an active Support membership recorded by People Administration/);
+  assert.doesNotMatch(component, /\.rpc\("grant_capability"/);
 });
 
 test("isolated SQL gate verifies distinct exit reason and support-power removal",()=>{
