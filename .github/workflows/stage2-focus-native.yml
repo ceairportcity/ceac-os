@@ -24,3 +24,4 @@ jobs:
         run: npm run verify:source
       - name: Stage 2 Vite production build (no deployment)
         run: npm run build
+# Checkpoint: corrected Stage 1 compatibility tests and integrated Executive Projects path.
