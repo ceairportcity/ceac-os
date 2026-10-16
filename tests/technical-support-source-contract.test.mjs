@@ -7,7 +7,7 @@ import { join } from "node:path";
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 const backend = read("supabase/migrations/20261011130000_133_technical_support_v1_backend.sql");
 const hardening = read("supabase/migrations/20261011183000_134_technical_support_authority_hardening.sql");
-const invokerRepair = read("supabase/migrations/20261016100000_148_support_invoker_projection.sql");
+const invokerRepair = read("supabase/migrations/20261016090159_148_support_invoker_projection.sql");
 const invokerGate = read("supabase/tests/support_invoker_projection_gate.sql");
 const proposedGate = read("supabase/tests/technical_support_v1_gate.sql");
 const app = read("src/App.jsx");
@@ -132,7 +132,7 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
   assert.equal(migrations.length, 153, "expected 152 approved Stage 1 files plus the reviewed forward-only Support view migration");
-  assert.ok(migrations.includes("20261016100000_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
+  assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
   assert.ok(migrations.includes(s3), "S3 migration is missing");
