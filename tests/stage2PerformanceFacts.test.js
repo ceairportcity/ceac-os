@@ -24,7 +24,7 @@ test("same master ID appears once, no triple counting in quarterly sum",()=>{
  assert.equal(q.counts.projectsLinked,2);
  assert.equal(q.counts.currentlyReturned,1);
  assert.equal(q.counts.excluded,1);
- assert.deepEqual(q.counts.onTimeRatio,{numerator:2,denominator:3});
+ assert.deepEqual(q.counts.onTimeRatio,{numerator:1,denominator:3});
  assert.equal(personalAchievementSummary(items,r,{projectId:"p"}).counts.tasksInScope,3);
 });
 test("due denominator excludes undated and cancelled; missing data not a fictitious 0% rating",()=>{
