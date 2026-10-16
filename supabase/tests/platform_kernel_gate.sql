@@ -142,13 +142,27 @@ begin
     raise exception 'Platform Kernel gate failure: record_ministry_number does not match reviewed scheduleless unit authority.';
   end if;
 
+  -- Permissive INSERT/UPDATE/DELETE/ALL policies would reopen direct
+  -- ministry-number writes. Stage 2's RESTRICTIVE ALL TOTP policy only
+  -- narrows existing permissions; it cannot grant a write by itself.
   if exists (
     select 1 from pg_policies
     where schemaname='public'
       and tablename in ('recurring_operations','operation_occurrences')
       and cmd in ('INSERT','UPDATE','DELETE','ALL')
+      and permissive='PERMISSIVE'
   ) then
-    raise exception 'Platform Kernel gate failure: direct ministry-table writes were reopened.';
+    raise exception 'Platform Kernel gate failure: permissive direct ministry-table writes were reopened.';
+  end if;
+  if (select count(*) from pg_policies
+      where schemaname='public'
+        and tablename in ('recurring_operations','operation_occurrences')
+        and policyname='stage2_universal_totp_gate'
+        and permissive='RESTRICTIVE'
+        and cmd='ALL'
+        and qual like '%app_stage2_universal_aal_allowed%'
+        and with_check like '%app_stage2_universal_aal_allowed%')<>2 then
+    raise exception 'Platform Kernel gate failure: Stage 2 restrictive TOTP protection missing from both ministry tables.';
   end if;
 
   if has_function_privilege('authenticated','public.app_can_publish_announcements()','EXECUTE')
