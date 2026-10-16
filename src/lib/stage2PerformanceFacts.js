@@ -44,7 +44,7 @@ export function personalAchievementSummary(records, range, { projectId = null, g
   const due = scoped.filter(x=>inPeriod(accraDate(x.due_at),range));
   const completed = scoped.filter(x=>CLOSED.has(x.status) && inPeriod(accraDate(x.completed_at),range));
   const onTime = due.filter(x=>CLOSED.has(x.status) && x.completed_at &&
-     accraDate(x.completed_at) <= accraDate(x.due_at));
+     new Date(x.completed_at).getTime() <= new Date(x.due_at).getTime());
   const assessed = completed.filter(x=>x.first_time_approved === true);
   const selfCertified = completed.filter(x=>x.status === "self_certified");
   const uniqueProjects = [...new Set(periodTasks.map(x=>x.project_id).filter(Boolean))];
