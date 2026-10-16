@@ -84,3 +84,63 @@
 .s2-project-units>div>span:nth-child(6n+6){background:#e9f8f6}
 @media(max-width:1100px){.s2-project-metrics>.s2-project-stat-card:nth-child(-n+2){border-bottom:1px solid #e2eaf5}}
 @media(max-width:600px){.s2-project-metrics{gap:8px}.s2-project-metrics>.s2-project-stat-card{padding:12px;min-height:105px}.s2-project-progress-ring{width:56px;height:56px}.s2-project-progress-ring::before{inset:6px}.s2-project-progress-line{gap:8px}.s2-project-task-facts strong{font-size:21px}}
+
+/* The approved Projects mockup has only one global CEAC sidebar. Remove the
+   obsolete second dark projects rail on the Overview; all other work tabs
+   retain their phase/navigation affordances in a matching LIGHT palette. */
+.manager-projects.s2-owner-approved-projects.fpg-project-gold{
+  display:block;
+  grid-template-columns:minmax(0,1fr);
+  max-width:none;
+  min-height:0;
+  overflow:visible;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.manager-projects.s2-owner-approved-projects>.fpg-project-tree,
+.manager-projects.s2-owner-approved-projects .fpg-project-facts{display:none}
+.manager-projects.s2-owner-approved-projects>.fpg-project-main{
+  padding:0 5px 32px;
+  background:transparent;
+}
+.manager-projects.s2-owner-approved-projects .ev2p-back{margin:0 0 6px}
+.manager-projects.s2-owner-approved-projects .ev2p-workspace-header{
+  margin-bottom:12px;
+  box-shadow:none;
+}
+.manager-projects.s2-owner-approved-projects .ev2p-tabs{
+  background:transparent;border-color:#e0e9f4;
+  margin:4px 0 14px;
+}
+.manager-projects.s2-owner-approved-projects .ev2p-tabs button{
+  color:#5e7794;border-color:transparent;
+}
+.manager-projects.s2-owner-approved-projects .ev2p-tabs button[aria-selected="true"]{
+  color:#126bdc;border-color:#126bdc;
+}
+.manager-projects.s2-owner-approved-projects .project-workspace-area{padding:0;background:transparent}
+.manager-projects.s2-project-workflow.fpg-project-gold{
+  --fpg-rail:#f5f9fd;
+  --fpg-rail-soft:#ecf4fb;
+  --fpg-accent:#1574e7;
+  border-color:#e3ebf6;
+  box-shadow:none;
+}
+.manager-projects.s2-project-workflow .fpg-project-tree{border-right:1px solid #e5edf5;color:#2f4a68}
+.manager-projects.s2-project-workflow .fpg-project-tree-brand{color:#213e60}
+.manager-projects.s2-project-workflow .fpg-project-tree-brand b{color:#547998;border-color:#d8e5f5}
+.manager-projects.s2-project-workflow .fpg-project-tree-list button{color:#4d6782}
+.manager-projects.s2-project-workflow .fpg-project-tree-list button:hover,
+.manager-projects.s2-project-workflow .fpg-project-tree-list button.is-selected{background:#e7f1ff;color:#0e65c6}
+.manager-projects.s2-project-workflow .fpg-project-tree-list small{color:#738ba6}
+.manager-projects.s2-project-workflow .fpg-project-tree-stages{border-top-color:#e0eaf5}
+.manager-projects.s2-project-workflow .fpg-project-tree-stages>span{color:#7188a3}
+.manager-projects.s2-project-workflow .fpg-project-tree-stages button{color:#486582}
+.manager-projects.s2-project-workflow .fpg-project-tree-stages button i{background:#97b8da}
+@media(max-width:640px){
+  .manager-projects.s2-owner-approved-projects>.fpg-project-main{padding:0 0 24px}
+  .manager-projects.s2-owner-approved-projects .ev2p-workspace-header{border-radius:10px}
+  .manager-projects.s2-owner-approved-projects .ev2p-tabs{overflow-x:auto}
+}
