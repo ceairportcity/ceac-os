@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Stage2ProjectReader from "../components/Stage2ProjectReader";
 import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
 import { LoadingState, ProductNotice } from "../components/bits";
@@ -11,8 +12,9 @@ import {
   ProjectSummary,
 } from "../experience-v2/project-family/ProjectFamilyV2";
 
-export default function AdminProjects({ me, scheduleMeeting }) {
+export default function AdminProjects({ me, scheduleMeeting, openItem }) {
   const [projects,setProjects]=useState([]);
+  const [selectedProjectId,setSelectedProjectId]=useState(null);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
 
@@ -40,6 +42,8 @@ export default function AdminProjects({ me, scheduleMeeting }) {
   }
 
   if(loading) return <div className="body admin-projects ev2-project-page ev2-project-admin"><LoadingState label="Loading organisation projects…" /></div>;
+
+  if (selectedProjectId) return <Stage2ProjectReader projectId={selectedProjectId} openItem={openItem} onBack={() => setSelectedProjectId(null)} />;
 
   const active=projects.filter((project)=>project.status==="active");
   const planned=projects.filter((project)=>project.status==="planned");
@@ -93,6 +97,9 @@ export default function AdminProjects({ me, scheduleMeeting }) {
           status={project.status}
           facts={facts}
           actions={[{
+            label:"Open project",
+            onClick:()=>setSelectedProjectId(project.id),
+          },{
             label:"Schedule project meeting",
             onClick:()=>scheduleMeeting?.({scope:"project",projectId:project.id,title:project.name+" meeting"}),
           }]}
