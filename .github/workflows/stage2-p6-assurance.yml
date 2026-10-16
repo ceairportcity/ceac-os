@@ -1,0 +1,33 @@
+name: CEAC Stage 2 P6 independently reviewed quarterly reporting acceptance
+on:
+  push:
+    branches:
+      - chatgpt/stage2-p6-assurance-20261016
+    paths:
+      - .github/workflows/stage2-p6-assurance.yml
+permissions:
+  contents: read
+jobs:
+  isolated-source-build-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ROLE_FIXTURE_PASSWORD: Local-role-fixture-2026!
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci
+      - name: All exact-head native source tests
+        run: npm run verify:source
+      - name: Exact-head Vite production bundle build, NOT a deployment
+        run: npm run build
+      - name: Replay ALL unapplied and approved historical migration sources in disposable local Supabase
+        uses: ./.github/actions/setup-ceac-test-environment
+      - name: Run entire existing SQL/RLS/security suite plus new quarterly human ratings / HR gate
+        run: bash scripts/ci/run-sql-security-gates.sh
