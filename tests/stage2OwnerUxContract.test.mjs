@@ -102,3 +102,16 @@ test("project portrait inputs cannot substitute stock faces for actual staff", (
   assert.match(manager, /className="s2-project-context-disclosure"/);
   assert.match(manager, /CostSummary rows=\{detail.costs\}/);
 });
+
+test("stage 2 universal MFA is staged behind explicit cutover, Stage 1 unchanged", () => {
+  const app = file("src/App.jsx");
+  const gate = file("src/components/Stage2UniversalMfaGate.jsx");
+  assert.match(app, /VITE_STAGE2_UNIVERSAL_AAL2/);
+  assert.match(app, /Stage2UniversalMfaGate/);
+  assert.match(app, /PrivilegedMfaGate/);
+  assert.match(gate, /\.getClaims\(\)/);
+  assert.match(gate, /decideUniversalTotpAccess/);
+  assert.match(gate, /onAuthStateChange/);
+  assert.match(gate, /getAuthenticatorAssuranceLevel/);
+  assert.doesNotMatch(gate, /ceac_google_mfa_eligible|signInWithOAuth/);
+});
