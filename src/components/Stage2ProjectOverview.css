@@ -8,7 +8,7 @@
 .s2-project-metrics strong{font-size:27px;line-height:1.2;letter-spacing:-.045em;color:#123b69}
 .s2-project-metrics .s2-project-date{font-size:15px;letter-spacing:normal;margin:6px 0}
 .s2-project-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,320px);gap:13px;align-items:start}
-.s2-project-layout>main{min-width:0;display:grid;gap:13px}
+.s2-project-layout>.s2-project-primary{min-width:0;display:grid;gap:13px}
 .s2-project-panel{background:#fff;border:1px solid #e4edf7;border-radius:12px;padding:19px;min-width:0;box-shadow:0 8px 28px rgba(24,49,90,.025)}
 .s2-project-panel>header,.s2-project-units>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
 .s2-project-panel h2,.s2-project-panel h3{font-size:14px;font-weight:750;letter-spacing:-.015em;margin:0;color:#172d4e}
