@@ -1,4 +1,5 @@
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
+import EmployeeWorkSession from "../../components/EmployeeWorkSession";
 import { useState } from "react";
 import {
   Button,
@@ -320,6 +321,7 @@ export default function AdminOverviewV2({
           </div> : null}
         </aside>
       </header>
+      <EmployeeWorkSession me={me} />
 
       {loadFailed ? <StatePanel
         state="error"
