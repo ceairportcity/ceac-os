@@ -1,3 +1,13 @@
+## 16 October 2026 — Owner-locked cross-role Work and whole-application design programme (planning authority only)
+
+The owner directed a complete redesign **across every CEAC OS panel and its information hierarchy, functionality, interaction and reading surfaces**, not just Support Unit Head, Work screen or common shell. The owner expressly wants the whole conversation's requirements preserved and the programme segmented for execution from a different chat. The canonical detailed contract is `docs/product/CEAC_OS_GLOBAL_WORK_EXECUTION_AND_EXPERIENCE_CONTRACT_2026-10-16.md`; all-role evidence inventory and handover in `docs/design/CEAC_GLOBAL_EXPERIENCE_ROUTE_MATRIX_2026-10-16.md` and `docs/continuity/CEAC_GLOBAL_WORK_REDESIGN_NEXT_CHAT_2026-10-16.md`.
+
+Binding owner choices: employee and every salaried Manager personally Start/End Work from **Overview** and can work remote/office/authorised field with individual HR-authorised remote attendance; no staff-mode workaround or time double count; can create and maintain own duties, minute activity logs, objectives and links/relinks to authorised existing projects; preserve approved Give Out Work form; managers create lawful unit projects alone and may **optionally** assess each supervised participant on close without blocking closure; factual self-reports do not auto-certify KPIs; HR appraisal confidentiality/independent release preserved; Executive and HR information architecture/reporting MUST be improved as direct consumers of the same verified Work/Project data, without double-count or self-evaluation. All panels, forms, mobile states and role permissions are in scope.
+
+Design policy: Owner **rejects** the two prior HTML concept candidates as final masters, rejects Work-tab attendance Start, generic pill rows/giant black Today header and generic SaaS clone. The existing white Manager Project/Task table/rail/drawer is the strong structural reference; Executive premium palette/iconography remains distinctive (not to be pasted throughout product), existing Calendar appreciated. First S0 audit then connected S1 full-role desktop/mobile visual proposals for explicit owner approval; only then incremental implementation. This decision is NOT itself approval of any UI mockup, database migration, merged application code or production release. Preserve all earlier approved gold-standard screens until their replacement is explicitly approved; strict existing RGB <=6 controls remain.
+
+---
+
 # Product Owner Decisions
 
 ## 15 October 2026 — Owner-approved Administration / Executive visual reference correction

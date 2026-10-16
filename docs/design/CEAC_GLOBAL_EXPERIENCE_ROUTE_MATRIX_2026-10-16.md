@@ -1,0 +1,42 @@
+# CEAC OS — Whole-app design and data-flow coverage matrix (owner-locked 16 Oct 2026)
+**Companion to:** `docs/product/CEAC_OS_GLOBAL_WORK_EXECUTION_AND_EXPERIENCE_CONTRACT_2026-10-16.md`. This is a **starter inventory from inspected source**; the executor MUST generate the full route-and-modal inventory from current GitHub HEAD and actual runtime in S0. No CHECKED or ACCEPTED marks may be inferred from listing here.
+
+## 1. Surface owners / critical current sources / coverage evidence required
+| Family and audience | Known relevant source files (verify after HEAD refresh) | Required experience and proof |
+|---|---|---|
+| All role shells / global components | `src/App.jsx`; `src/experience-v2/shell/{navigation.js,ShellV2.jsx,shell.css}`; `src/experience-v2/components/*`; `src/experience-v2.css`; `src/styles.css` | Navigation appropriate to role; true dropdown/accordion; accessibility; consistent table, status, search, drawer, error/empty states; usable desktop/mobile. Preserve distinct Exec. |
+| Staff Overview / actual attendance | `src/screens/Home.jsx`; `src/experience-v2/staff-today/StaffTodayV2.jsx`; `src/lib/session.js`; `src/lib/attendance.js` | Start/end office/remote/field on Overview, verified evidence, reconciliation, no fabricated history; personal work preview. |
+| Manager & multi-unit Overview | `src/screens/ManagerHome.jsx`; `src/experience-v2/manager-overview/*`; `src/App.jsx` | Personal Start/End without switching role, same person/session under every unit, meaningful task attention, personal and management contexts, excellent hierarchy. |
+| Administration & HR Overview/people | `src/screens/{AdminHome,People,PersonDetail,AdminLifecycle,AdminPolicies,AdminProtectedHR,ControlCenter,Workforce,Attendance}.jsx`; `src/experience-v2/people-family/*`; `src/experience-v2/workforce-family/*` | Schedules, approved remote-work classification, attendance evidence and correction, personal work, employee workflow, protected records, no inferred pay; controls fit real authorisation. |
+| Executive Overview & Ministry | `src/screens/{ExecutiveHome,Goals,Strategy,Delivery,ExecutiveOrganisation}.jsx`; `src/experience-v2/executive-overview/*`; `src/role-styles/executive-redesign.css` | Preserve distinct identity and accepted RGB reference; real ministry direction, objective→portfolio/project→unit/person contribution lineage and truthful evidence drilldown. |
+| Work across all roles | `src/screens/{Work,ManagerWork,AdminWork,ExecutiveWork,Assign,Item,Room,Meeting}.jsx`; `src/experience-v2/work-family/*`; `src/experience-v2/components/*` | Same domain: self-work and delegated work, project picker/relink, personal activity, files, expected outcomes, valid review; shared components, NOT four divergent products. |
+| Manager & cross-unit Projects | `src/screens/{ManagerProjects,AdminProjects,ManagerProjectClose}.jsx`; `src/experience-v2/project-family/*`; `src/components/ProjectParticipantRegister.jsx` | Preserve accepted FPG Project gold structure; searchable projects, own-unit create authority, phases/objectives, team collaboration, project close, optional individual assessments, evidence snapshots. |
+| HR Performance/Appraisals | `src/screens/Performance.jsx`; `src/screens/{PersonDetail,AdminProtectedHR}.jsx` | Existing appraisal cycles, evidence packs, protected narrative, reviewer assignment, employee response and HR-controlled release; link closed projects and people correctly. |
+| Executive and Manager Reports | `src/screens/{ExecutiveReports,ManagerReports,Reports,Record,Delivery}.jsx`; `src/experience-v2/reporting-family/*` | Actual verified vs merely recorded, period/unit/project/employee drilldown, provenance, gap/no-data and no KPI inflation; export only as authorised. |
+| Technical Support | `src/screens/TechnicalSupport.jsx`; `src/role-styles/technical-support.css` plus shared Manager/Work/Overview | Manager personal workspace and attendance + separate case scope, audited lead/member authority; no accidental authority elevation or sensitive HR leakage. |
+| Payroll/Finance/employee time | `src/screens/{AdminPayroll,ExecutiveFinance,Finance,ManagerFinance,Cost,OfficeSettings}.jsx` | Validated attendance context may inform HR; approved salary source independent of timers; role-specific controls, no extra broad financial access, currency separation. |
+| Calendar, personal work, meetings | `src/screens/{StaffCalendar,ManagerCalendar,AdminCalendar,Meeting,Me}.jsx` plus Calendar family | Keep owner-approved Calendar experience; private personal Calendar remains private and distinct from organisational self-created work, recurrence and session reconciliation. |
+| Volunteer, learning, communications, shared | `src/screens/{Team,StaffTeam,Learning,Inbox,Announcements,ResourceWorkload,TechnicalHelp,AccountActivity,Guide}.jsx` | Role-appropriate personal activity and permissions where relevant; no salaried entitlement for volunteers, no unrelated UI regression. |
+
+## 2. Explicit whole-journey traceability index
+| Owner requirement | Stage(s) | Required multi-surface acceptance |
+|---|---|---|
+| Start/end everywhere **on Overview** | S1,S3,S8 | Staff, Manager, Support Unit Head, dual-unit Manager, salaried Admin/Exec as applicable; Office/Remote/Field; no Work-tab start control |
+| Formal authorised remote attendance | S2,S3,S6,S8 | HR schedule + evidence + reports + existing attendance corrections; no automatic pay/punitive outcomes |
+| Self-created work/tasks and dated action log | S2,S4,S6,S8 | Staff, Manager, Admin, Executive Work; reviewers see correct organisational history |
+| Select existing authorised project at creation or link/relink later | S2,S4,S5,S8 | Work form, search picker, project register, objective, contributor, audit, cross-unit privacy |
+| Preserve Give Out Work exact form structure/work kinds | S1,S4,S8 | Staff-friendly assigned work origin, Manager original forms, file evidence and reviews |
+| Unit Head creates own authorised projects alone | S2,S5,S8 | Manager Projects, unit-scope RPC, project search; no team-membership prerequisite |
+| Individual employee contribution & verification; no output double count | S2,S5,S6,S8 | Work → Manager Project → HR evidence → Executive Ministry/Reports |
+| Optional manager assessment per participant on close | S2,S5,S6,S8 | Project close, unit reports, person appraisal evidence, HR release and employee response |
+| Manager personal time/history survives switch | S3,S4,S8 | Dual-unit Manager overview, shared session, own Work, team/project authority |
+| Full premium hierarchy—not rounded control styling only | S0,S1,S7,S8 | Every family, panel, drawer, form, table, nested detail, empty/error/mobility |
+| Executive distinct style; Project gold structural reference | S1,S7,S8 | R4 Executive approved reference unchanged until owner approves successor; FPG Project gold preserved or explicitly superseded |
+| HR/Executive read information actually improves | S2,S6,S7,S8 | Per-person/period/initiative activity, verified outcomes, decisions, report drilldown, privacy denial tests |
+| Personal Calendar vs organisational work privacy | S2,S4,S7,S8 | Never leak private recurring/calendar tasks into manager/HR/Exec reporting |
+| Compensated employee vs unsalaried volunteer | S2,S3,S6,S8 | Attendance/payroll/HR role scoping and no salary inferred for volunteer |
+| Real end-to-end approval before production | S0–S8 | Owner-approved mocks → exact-source UI/SQL/role tests → full QA → separate GO → live verification |
+
+## 3. Audit method and evidence files
+For each discovered route and subview, append (not fabricate): `route, roles, permitted actions, current screenshot desktop/mobile, accepted visual source ID, new approved visual ID, design gap, data owners, underlying table/RPC and RLS assertion, tests, status, last tested SHA, reviewer signoff`. Maintain a small machine-readable route coverage map in later work (not prematurely guessed here), and an exact-SHA acceptance ledger in the stage PR.
+Audit priority: current approved gold-standard ManagerProjects worktable/drawer; current source-divergent WorkTabs and 4 role implementations; Staff attendance control isolated in Home vs Manager overview; Admin/Exec reporting, Performance and project close divergence. Cover nested routes and project drawers; never count 'screen loads' alone as feature complete.
