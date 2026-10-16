@@ -1,0 +1,22 @@
+name: Stage 2 Source Review (one branch checkpoint)
+on:
+  push:
+    branches:
+      - chatgpt/stage2-owner-approved-projects-photo-routines-20261016
+    paths:
+      - .github/workflows/stage2-source-review.yml
+permissions:
+  contents: read
+jobs:
+  source-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run verify:source
+      - run: npm run build
