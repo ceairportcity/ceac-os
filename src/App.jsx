@@ -466,7 +466,7 @@ export default function App() {
     if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} />;
     if (tab === "settings" && isAdmin) return <ControlCenter me={me} go={go} />;
     if (tab === "office-settings" && isAdmin) return <OfficeSettings me={me} openWorkforce={() => go("attendance")} />;
-    return <MeScreen me={me} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
+    return <MeScreen me={me} onOpenWork={openItem} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
   }
 
   const appModeClass = isExec ? "executive-app" : isUnitManager ? "manager-app" : (!isAdmin ? "staff-app" : "office-app");
