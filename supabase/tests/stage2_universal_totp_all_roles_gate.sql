@@ -36,7 +36,7 @@ SELECT set_config('request.jwt.claims',
  '{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1","amr":[{"method":"password"}]}', true);
 DO $default_off$
 BEGIN
- IF public.app_org_id()<>'10000000-0000-4000-8000-000000000010'::uuid THEN
+ IF NOT public.app_stage2_universal_aal_allowed() THEN
    RAISE EXCEPTION 'Stage 1 default-off identity lost organisation';
  END IF;
  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id=auth.uid()) THEN
@@ -65,7 +65,7 @@ SELECT set_config('request.jwt.claims',
  '{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1","amr":[{"method":"password"}]}', true);
 DO $aal1_deny$
 BEGIN
- IF public.app_org_id() IS NOT NULL
+ IF public.app_stage2_universal_aal_allowed()
  OR EXISTS (SELECT 1 FROM public.profiles)
  OR EXISTS (SELECT 1 FROM public.work_items)
  OR EXISTS (SELECT 1 FROM public.organisations)
@@ -78,7 +78,7 @@ SELECT set_config('request.jwt.claims',
  '{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2","amr":[{"method":"password"},{"method":"phone"}]}', true);
 DO $phone_deny$
 BEGIN
- IF public.app_org_id() IS NOT NULL OR EXISTS (SELECT 1 FROM public.profiles)
+ IF public.app_stage2_universal_aal_allowed() OR EXISTS (SELECT 1 FROM public.profiles)
  THEN RAISE EXCEPTION 'Non-TOTP AAL2 bypassed authenticator app requirement'; END IF;
 END
 $phone_deny$;
@@ -87,7 +87,7 @@ SELECT set_config('request.jwt.claims',
  '{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2","amr":[{"method":"password"},{"method":"totp"}]}', true);
 DO $totp_allow$
 BEGIN
- IF public.app_org_id()<>'10000000-0000-4000-8000-000000000010'::uuid
+ IF NOT public.app_stage2_universal_aal_allowed()
  OR NOT EXISTS (SELECT 1 FROM public.profiles WHERE id=auth.uid())
  THEN RAISE EXCEPTION 'Verified TOTP AAL2 Staff was not restored to normal role access'; END IF;
 END
@@ -98,7 +98,7 @@ SELECT set_config('request.jwt.claims',
  '{"sub":"31000000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2","amr":[{"method":"totp"}]}', true);
 DO $factor_deny$
 BEGIN
- IF public.app_org_id() IS NOT NULL OR EXISTS(SELECT 1 FROM public.profiles)
+ IF public.app_stage2_universal_aal_allowed() OR EXISTS(SELECT 1 FROM public.profiles)
  THEN RAISE EXCEPTION 'No verified TOTP factor but universal MFA passed'; END IF;
 END
 $factor_deny$;
