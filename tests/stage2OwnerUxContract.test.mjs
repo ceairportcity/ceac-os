@@ -88,3 +88,17 @@ test("Administration project drilldown reads through existing authenticated RLS 
   assert.doesNotMatch(reader, /\.insert\(|\.update\(|\.delete\(/);
   assert.match(reader, /No private project data was displayed/);
 });
+
+test("project portrait inputs cannot substitute stock faces for actual staff", () => {
+  const avatar = file("src/components/PersonAvatar.jsx");
+  const project = file("src/components/Stage2ProjectOverview.jsx");
+  assert.match(avatar, /permittedPortraitUrl/);
+  assert.match(avatar, /VITE_SUPABASE_URL/);
+  assert.match(avatar, /referrerPolicy="no-referrer"/);
+  assert.match(avatar, /initials\(name\)/);
+  assert.match(project, /<PersonAvatar/);
+  assert.match(project, /photoUrls/);
+  const manager = file("src/screens/ManagerProjects.jsx");
+  assert.match(manager, /className="s2-project-context-disclosure"/);
+  assert.match(manager, /CostSummary rows=\{detail.costs\}/);
+});
