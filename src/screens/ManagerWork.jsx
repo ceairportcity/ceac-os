@@ -60,14 +60,23 @@ export default function ManagerWork({ me, openItem, goAssign }) {
   const activeMine = useMemo(() => mine.filter((item) => !COMPLETE.has(item.status)), [mine]);
   const activeGiven = useMemo(() => given.filter((item) => !COMPLETE.has(item.status)), [given]);
   const activeTeam = useMemo(() => team.filter((item) => !COMPLETE.has(item.status)), [team]);
+  const routines = useMemo(() => {
+    const indexed = new Map();
+    // These are real authorised Work records. Preserve one row per routine ID.
+    for (const item of [...mine, ...given, ...team]) {
+      if (item.kind === "routine" && !COMPLETE.has(item.status)) indexed.set(item.id, item);
+    }
+    return [...indexed.values()].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  }, [mine, given, team]);
   const views = [
     ["given", "Given out", activeGiven.length],
     ["reviews", "Needs review", reviews.length],
     ["team", "Team work", activeTeam.length],
     ["mine", "My work", activeMine.length],
+    ["routines", "Routines", routines.length],
   ];
-  const rows = view === "given" ? activeGiven : view === "team" ? activeTeam : activeMine;
-  const groupTitle = view === "given" ? "Work you gave out" : view === "team" ? "Active team work" : "Your open work";
+  const rows = view === "given" ? activeGiven : view === "team" ? activeTeam : view === "routines" ? routines : activeMine;
+  const groupTitle = view === "given" ? "Work you gave out" : view === "team" ? "Active team work" : view === "routines" ? "Repeating responsibilities" : "Your open work";
 
   return <div className="body manager-work premium-manager-page ev2-work-page ev2-work-manager">
     <WorkPageHeader
@@ -109,7 +118,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
             kind={item.kind}
             context={item.projects?.name}
             owner={view !== "mine" ? (item.profiles?.full_name || "Unassigned") : null}
-            due={dueLabel(item.due_at)}
+            due={item.kind === "routine" ? "Scheduled routine" : dueLabel(item.due_at)}
             status={item.status}
             recordedAt={item.created_at}
             actionLabel={item.status === "not_started" ? "New assignment" : item.status === "returned" ? "Needs correction" : null}
@@ -118,10 +127,10 @@ export default function ManagerWork({ me, openItem, goAssign }) {
           />)}
         </WorkGroup>
       ) : <WorkEmpty
-        title={view === "given" ? "No delegated work is open" : view === "team" ? "No other team work is open" : "Nothing is waiting in your own work"}
-        description={view === "given" ? "Use Give out work when you delegate something." : view === "team" ? "Active work carried by your unit will appear here." : "Your personal responsibilities will appear here."}
-        actionLabel={view === "given" ? "Give out work" : undefined}
-        onAction={view === "given" ? () => goAssign?.() : undefined}
+        title={view === "routines" ? "No repeating responsibilities recorded" : view === "given" ? "No delegated work is open" : view === "team" ? "No other team work is open" : "Nothing is waiting in your own work"}
+        description={view === "routines" ? "Create a repeating responsibility in Give out work. Its dated history stays in the routine record." : view === "given" ? "Use Give out work when you delegate something." : view === "team" ? "Active work carried by your unit will appear here." : "Your personal responsibilities will appear here."}
+        actionLabel={view === "given" || view === "routines" ? "Give out work" : undefined}
+        onAction={view === "given" || view === "routines" ? () => goAssign?.() : undefined}
       />
     )}
 
