@@ -11,6 +11,12 @@ on:
       - supabase/tests/stage2_universal_totp_all_roles_gate.sql
       - tests/stage2SharedPersonalSession.test.mjs
       - tests/technical-support-source-contract.test.mjs
+      - src/components/EmployeeWorkSession.jsx
+      - src/experience-v2/manager-overview/ManagerOverviewV2.jsx
+      - src/experience-v2/admin-overview/AdminOverviewV2.jsx
+      - src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx
+      - src/screens/ExecutiveHome.jsx
+      - package.json
 permissions:
   contents: read
 jobs:
