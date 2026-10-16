@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Avatar } from "../experience-v2/components";
+import StructuredHumanReview from "../components/StructuredHumanReview";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 
 const CATEGORY_LABELS = {
@@ -512,10 +513,10 @@ export default function Performance({ me }) {
             {entries.filter((entry) => entry.entry_type === "employee_reflection").map((entry) => <div key={entry.id}><strong>{entry.body}</strong><span>{new Date(entry.created_at).toLocaleString("en-GB")}</span></div>)}
           </details>}
 
-          <div className="performance-section-head"><div><span className="eyebrow">Reviewer narrative</span><h3>Manager assessment</h3></div></div>
+          <div className="performance-section-head"><div><span className="eyebrow">Reviewer narrative</span><h3>Manager assessment narrative</h3></div></div>
           {currentAssessment && <div className="card performance-narrative"><p>{currentAssessment.body}</p><small>{currentAssessment.author?.full_name || "Reviewer"} · {new Date(currentAssessment.created_at).toLocaleString("en-GB")}</small></div>}
           {isReviewer && <>
-            <FieldGroup label={currentAssessment ? "Record a revised assessment" : "Manager assessment"} hint="Narrative judgement only. Do not add a score, rank or invented percentage.">
+            <FieldGroup label={currentAssessment ? "Record a revised assessment" : "Manager assessment"} hint="Describe observed delivery and evidence here. Quarterly structured ratings, when enabled, are independently chosen below—not machine-generated.">
               <textarea className="field" aria-label="Manager assessment" rows="5" value={assessment} onChange={(event) => setAssessment(event.target.value)} />
             </FieldGroup>
             <button className="btn wide-auto" disabled={busy || assessment.trim().length < 3} onClick={() => recordEntry("manager_assessment", assessment, currentAssessment, currentAssessment ? "Assessment revision recorded." : "Manager assessment recorded.")}>{currentAssessment ? "Record assessment revision" : "Record assessment"}</button>
@@ -525,6 +526,9 @@ export default function Performance({ me }) {
             <summary>Assessment history · {entries.filter((entry) => entry.entry_type === "manager_assessment").length} versions</summary>
             {entries.filter((entry) => entry.entry_type === "manager_assessment").map((entry) => <div key={entry.id}><strong>{entry.body}</strong><span>{entry.author?.full_name || "Reviewer"} · {new Date(entry.created_at).toLocaleString("en-GB")}</span></div>)}
           </details>}
+
+          <StructuredHumanReview key={selectedCase.id} appraisal={selectedCase} cycle={selectedCycle}
+            assessment={currentAssessment} evidence={evidence} me={me} />
 
           <div className="performance-section-head"><div><span className="eyebrow">Human review</span><h3>Review conversation</h3></div></div>
           {currentConversation && <div className="card performance-narrative"><p>{currentConversation.body}</p><small>{currentConversation.author?.full_name || "Reviewer"} · {new Date(currentConversation.created_at).toLocaleString("en-GB")}</small></div>}
