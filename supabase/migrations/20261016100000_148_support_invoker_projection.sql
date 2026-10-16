@@ -79,10 +79,9 @@ begin
         where table_schema='public' and table_name='support_case_safe_status')<>11
   then raise exception 'The Help Desk projection column contract changed.'; end if;
 
-  if (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-      where n.nspname='public' and p.prosecdef
-        and has_function_privilege('authenticated',p.oid,'EXECUTE'))<>145
-  then raise exception 'Reviewed 145 privileged public RPC signatures changed unexpectedly.'; end if;
+  -- The exact public function allowlist is asserted by the independent
+  -- security_definer_surface_gate.sql after full fixture setup. A migration
+  -- must not hardcode environment-specific test role grants/counts.
 
   if exists (select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
       where n.nspname='public' and p.prosecdef
