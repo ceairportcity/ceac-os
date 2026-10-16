@@ -735,13 +735,13 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <AssistiveTextarea className="field" rows={3} placeholder="Why this routine matters (optional)" value={purpose} onChange={(e) => setPurpose(e.target.value)} />
             <AssistiveTextarea className="field" rows={3} placeholder="What a good occurrence records or produces (optional)" value={expectedOutcome} onChange={(e) => setExpectedOutcome(e.target.value)} />
             <div className="sec"><span>Schedule</span></div>
-            <select className="field" value={routineSchedule} onChange={(e) => setRoutineSchedule(e.target.value)}>
+            <select className="field" aria-label="Repeat frequency" value={routineSchedule} onChange={(e) => setRoutineSchedule(e.target.value)}>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="weekdays">Selected weekdays</option>
               <option value="monthly">Monthly</option>
             </select>
-            {routineSchedule === "weekly" && <select className="field" value={routineWeeklyDay} onChange={(e) => setRoutineWeeklyDay(e.target.value)}>
+            {routineSchedule === "weekly" && <select className="field" aria-label="Repeat weekday" value={routineWeeklyDay} onChange={(e) => setRoutineWeeklyDay(e.target.value)}>
               {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day, index) => <option key={day} value={index + 1}>{day}</option>)}
             </select>}
             {routineSchedule === "weekdays" && <div className="card small" style={{ marginTop: 10 }}>
