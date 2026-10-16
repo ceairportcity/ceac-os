@@ -32,6 +32,7 @@ const Workforce = lazy(() => import("./screens/Workforce"));
 const Cost = lazy(() => import("./screens/Cost"));
 const Finance = lazy(() => import("./screens/Finance"));
 const Reports = lazy(() => import("./screens/Reports"));
+const PersonalAchievements = lazy(() => import("./screens/PersonalAchievements"));
 const ExecutiveHome = lazy(() => import("./screens/ExecutiveHome"));
 const ExecutiveWork = lazy(() => import("./screens/ExecutiveWork"));
 const ExecutiveOrganisation = lazy(() => import("./screens/ExecutiveOrganisation"));
@@ -374,6 +375,7 @@ export default function App() {
   function pageForTab() {
     if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
+    if (tab === "achievements") return <PersonalAchievements me={me} back={() => go("work")} openItem={openItem} />;
     if (tab === "technical-help") return <TechnicalHelp key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "technical-support") return canManageSupport
       ? <TechnicalSupport key={`${me.org_id}:${me.id}`} me={me} go={go} />
@@ -559,6 +561,9 @@ export default function App() {
             {me.legacyAuthorityVerified
               ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."
               : "Preview compatibility: the database upgrade is not installed and server permission verification was incomplete. Privileged capabilities are disabled here. Use production for normal work."}
+          </div>}
+          {tab === "work" && !overlay && <div className="s2-achievement-entry">
+            <button type="button" onClick={() => go("achievements")}>My achievements · Monthly / Quarterly / Projects →</button>
           </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
