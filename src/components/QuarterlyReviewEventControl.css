@@ -1,6 +1,6 @@
 .s2-quarter-events{margin:18px 0;padding:17px;border:1px solid #e1ebf7;border-radius:12px;background:#fff;color:#25486b}
 .s2-quarter-events>header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
-.s2-quarter-events header span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#3473b4;font-weight:750}
+.s2-quarter-events header span{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#3473b4;font-weight:750}
 .s2-quarter-events h2{font-size:17px;color:#174476;margin:4px 0}
 .s2-quarter-events p{font-size:12px;line-height:1.5;color:#6a829c;margin:5px 0}
 .s2-quarter-events-action{border:0;border-radius:7px;background:#206ad3;padding:9px 12px;color:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
