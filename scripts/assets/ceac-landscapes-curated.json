@@ -1,0 +1,87 @@
+{
+  "checkedOn": "2026-10-16",
+  "licenseUrl": "https://unsplash.com/license",
+  "verification": "Each listed Unsplash photo page explicitly stated 'Free to use under the Unsplash License' at source review. These are real photographs and not Unsplash+ assets.",
+  "images": [
+    {
+      "id": "01",
+      "photoId": "photo-1473283147055-e39c51463929",
+      "photographer": "Luca Bravo",
+      "sourceUrl": "https://unsplash.com/photos/banff-national-park-canada-oV4bR3YoR_s",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Alpine lake beside a forested mountain"
+    },
+    {
+      "id": "02",
+      "photoId": "photo-1489945745670-d03bda2e87ac",
+      "photographer": "Luca Bravo",
+      "sourceUrl": "https://unsplash.com/photos/landscape-photography-of-green-leafed-trees-near-body-of-water-HK-lMcoBnMM",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Mountain and forest reflected in an alpine lake"
+    },
+    {
+      "id": "03",
+      "photoId": "photo-1783099994258-73d9d6b013f3",
+      "photographer": "Annie Spratt",
+      "sourceUrl": "https://unsplash.com/photos/alpine-lake-reflecting-mountains-under-clear-blue-sky-4vGDNyXH8n0",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Alpine lake beneath clear sky and mountains"
+    },
+    {
+      "id": "04",
+      "photoId": "photo-1767352140599-dc445eb6b50e",
+      "photographer": "SOHAM BANERJEE",
+      "sourceUrl": "https://unsplash.com/photos/misty-forest-landscape-with-tall-trees-and-mountains-y-kS36V97xY",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Misty pine forest and mountain silhouettes"
+    },
+    {
+      "id": "05",
+      "photoId": "photo-1767453385270-6375b198e61a",
+      "photographer": "Cyprien Da Silva",
+      "sourceUrl": "https://unsplash.com/photos/majestic-fjord-landscape-with-mountains-and-a-calm-bay-tiUuDib4laU",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Norwegian fjord with mountains and calm water"
+    },
+    {
+      "id": "06",
+      "photoId": "photo-1767467941734-82ed75495fd4",
+      "photographer": "Atefe Pirzade",
+      "sourceUrl": "https://unsplash.com/photos/majestic-fjord-with-autumn-foliage-on-mountainside-cliffs-Yv_BX0kPF-g",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Fjord framed by autumn mountain cliffs"
+    },
+    {
+      "id": "07",
+      "photoId": "photo-1759434188758-194121b6169b",
+      "photographer": "Jonny Gios",
+      "sourceUrl": "https://unsplash.com/photos/misty-forest-landscape-with-silhouetted-trees-mvby_QPxVxg",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Sunlight through a misty forest"
+    },
+    {
+      "id": "08",
+      "photoId": "photo-1708162664866-a5a2fa693c6c",
+      "photographer": "Annie Spratt",
+      "sourceUrl": "https://unsplash.com/photos/a-mountain-range-with-a-lake-in-the-middle-of-it-sSjkww9cKeQ",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Minimal rocky mountain landscape around a lake"
+    },
+    {
+      "id": "09",
+      "photoId": "photo-1777160191500-c86e28985fa4",
+      "photographer": "Wander & Wonder Collective",
+      "sourceUrl": "https://unsplash.com/photos/a-serene-fjord-with-steep-majestic-mountains-under-dramatic-clouds-q6IK1sTW8vs",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Norwegian fjord with forests and dramatic cloud cover"
+    },
+    {
+      "id": "10",
+      "photoId": "photo-1515019915774-f4887104b715",
+      "photographer": "Luca Bravo",
+      "sourceUrl": "https://unsplash.com/photos/landscape-photography-of-mountains-1RqXSxGfb0M",
+      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Snowy mountains and forest at sunset"
+    }
+  ]
+}
