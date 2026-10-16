@@ -32,3 +32,4 @@ jobs:
       - name: Run entire existing SQL/RLS/security suite plus new quarterly human ratings / HR gate
         run: bash scripts/ci/run-sql-security-gates.sh
 # Exact-head replay after dedup contract correction; no hosted infrastructure changes.
+# Exact-head replay after repaired My Achievements filter, all source and isolated SQL checks.
