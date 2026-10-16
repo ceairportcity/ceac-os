@@ -133,7 +133,7 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
   const stagedPortraitMigration = "20261016164000_149_private_portrait_media_stage2.sql";
   assert.ok(migrations.includes(stagedPortraitMigration), "Stage 2 private portrait migration must remain available for isolated replay");
-  assert.equal(migrations.filter((file) => file !== stagedPortraitMigration).length, 153,
+  assert.equal(migrations.filter((file) => file !== stagedPortraitMigration && file !== "20261016170000_150_universal_totp_all_roles_stage2.sql").length, 153,
     "Stage 1's reviewed 153-file migration baseline must not change when Stage 2 is staged");
   assert.ok(migrations.includes("20261016170000_150_universal_totp_all_roles_stage2.sql"), "Stage 2 universal TOTP policy migration missing");
   assert.equal(migrations.length, 155, "expect two separate, default-off Stage 2 security migrations");
@@ -175,7 +175,8 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   // and removes obsolete direct attendance-correction and performance-share grants.
   // Fail closed at 145: do not turn a rejected Manager-only publication into an
   // authenticated SECURITY DEFINER API.
-  assert.match(mfa, /callable_count<>145/);
+  assert.match(mfa, /callable_count<>146/);
+  assert.match(mfa, /Stage 2 TOTP RLS guard/);
   assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);
