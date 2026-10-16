@@ -1,0 +1,37 @@
+name: Stage 2 licensed landscape assets (one-time feature branch)
+on:
+  push:
+    branches:
+      - chatgpt/stage2-owner-approved-projects-photo-routines-20261016
+    paths:
+      - scripts/assets/ceac-landscapes-curated.json
+      - scripts/assets/fetch-ceac-landscapes.mjs
+      - .github/workflows/stage2-landscapes.yml
+permissions:
+  contents: write
+jobs:
+  ingest-verified-photographs:
+    if: github.repository == 'ceairportcity/ceac-os'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download and validate approved real stock photographs
+        run: node scripts/assets/fetch-ceac-landscapes.mjs
+      - name: Commit immutable photo assets to this Stage 2 branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/assets/ceac-landscapes/
+          if git diff --cached --quiet; then
+            echo "Verified assets unchanged."
+            exit 0
+          fi
+          git commit -m "assets(stage2): add ten free-stock landscape WebPs with provenance [skip ci]"
+          git push origin HEAD:chatgpt/stage2-owner-approved-projects-photo-routines-20261016
