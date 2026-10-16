@@ -60,7 +60,18 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
     return () => { active = false; };
   }, [me.id,today]);
 
-  const upcoming = rows.filter((item) => item.state !== "recorded");
+  // A frequently repeating routine must not crowd out another person's
+  // assigned Saturday/Sunday responsibility. Display a bounded independent
+  // preview for EVERY assigned routine, with missed work still visible.
+  const byRoutine = new Map();
+  for (const item of rows.filter((row) => row.state !== "recorded")) {
+    const bucket = byRoutine.get(item.operationId) || { past: [], future: [] };
+    (item.state === "unrecorded_past" ? bucket.past : bucket.future).push(item);
+    byRoutine.set(item.operationId, bucket);
+  }
+  const upcoming = [...byRoutine.values()].flatMap(({ past, future }) => [
+    ...past.slice(-2), ...future.slice(0, 3),
+  ]).sort((a,b) => a.date.localeCompare(b.date) || a.routine.name.localeCompare(b.routine.name));
   if (!loading && !error && !rows.length) return null;
   return <section className="s2-assigned-routines" aria-label="My scheduled recurring work">
     <header><h2>Recurring responsibilities</h2><small>Past 14 days · Next 14 days</small></header>
@@ -68,7 +79,7 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
     {loading && <p role="status">Checking your scheduled responsibilities…</p>}
     {error && <p role="alert">{error}</p>}
     {!loading && !error && <div className="s2-assigned-routine-list">
-      {upcoming.slice(0,12).map((item) => <button key={item.operationId+":"+item.date}
+      {upcoming.map((item) => <button key={item.operationId+":"+item.date}
         type="button" onClick={() => onOpen?.(item.routine.work_item_id)}
         disabled={!item.routine.work_item_id}>
         <time dateTime={item.date}>{item.date}</time>
