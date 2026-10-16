@@ -8,6 +8,12 @@ import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
 import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
 import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
+import Stage2UniversalMfaGate from "./components/Stage2UniversalMfaGate";
+
+// Stage 2 activates only after the independently approved server/Auth AAL2 cutover.
+// Never infer cutover authority from a frontend preview or design approval.
+const ActiveMfaGate = import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true"
+  ? Stage2UniversalMfaGate : PrivilegedMfaGate;
 
 const Home = lazy(() => import("./screens/Home"));
 const Work = lazy(() => import("./screens/Work"));
@@ -448,7 +454,7 @@ export default function App() {
                   : `tab:${tab}`;
 
   return (
-    <PrivilegedMfaGate me={me} onVerified={boot}>
+    <ActiveMfaGate me={me} onVerified={boot}>
     <div className={`app ${appModeClass}`}>
       {isExec ? <Suspense fallback={null}><ExecutiveRedesignStyles /></Suspense> : null}
       <SideNav
@@ -550,5 +556,5 @@ export default function App() {
         {!overlay && <Tabs tab={tab} setTab={go} isManager={isUnitManager} isExec={isExec} isAdmin={isAdmin} me={me} onGuide={() => openGuide(false)} />}
       </div>
     </div>
-    </PrivilegedMfaGate>);
+    </ActiveMfaGate>);
 }
