@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import PersonAvatar from "./PersonAvatar";
+import { useProjectPortraits } from "../lib/useProjectPortraits";
 import "./Stage2ProjectOverview.css";
 
 const finished = new Set(["completed", "self_certified"]);
@@ -15,6 +16,8 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [unit, setUnit] = useState("all");
+  const signedPortraits = useProjectPortraits(project);
+  const visiblePortraits = { ...signedPortraits, ...photoUrls };
   const work = project.work || [];
   const tasks = work.filter((row) => row.kind === "task");
   const completed = tasks.filter((row) => finished.has(row.status));
@@ -83,7 +86,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         <section className="s2-project-panel">
           <header><h2>Project team</h2><small>{people.length} recorded assignees</small></header>
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>
-            <PersonAvatar name={person.name} photoUrl={photoUrls[person.id]} /><span><strong>{person.name}</strong><small>{person.count} assigned work item{person.count === 1 ? "" : "s"}</small></span>
+            <PersonAvatar name={person.name} photoUrl={visiblePortraits[person.id]} /><span><strong>{person.name}</strong><small>{person.count} assigned work item{person.count === 1 ? "" : "s"}</small></span>
           </div>)}{!people.length && <p>No named assignees recorded yet.</p>}</div>
           <div className="s2-project-units"><header><h3>Departments involved</h3></header><div>{units.map((row) => <span key={row.id}><strong>{row.name}</strong><small>{row.lead ? "Lead" : "Participating"}</small></span>)}</div></div>
         </section>
@@ -97,7 +100,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
           <div className="s2-project-table-scroll"><table><thead><tr><th>Task</th><th>Assigned to</th><th>Due</th><th>Status</th></tr></thead>
           <tbody>{visible.map((item) => <tr key={item.id}>
             <td><button className="s2-project-task" onClick={() => openWork?.(item.id)}>{item.title}<small>{item.ref}</small></button></td>
-            <td>{item.profiles?.full_name ? <span className="s2-project-personcell"><PersonAvatar name={item.profiles.full_name} photoUrl={photoUrls[item.assignee_id]} size={25} />{item.profiles.full_name}</span> : "Unassigned"}</td><td>{when(item.due_at)}</td>
+            <td>{item.profiles?.full_name ? <span className="s2-project-personcell"><PersonAvatar name={item.profiles.full_name} photoUrl={visiblePortraits[item.assignee_id]} size={25} />{item.profiles.full_name}</span> : "Unassigned"}</td><td>{when(item.due_at)}</td>
             <td><span className={finished.has(item.status) ? "s2-project-done" : "s2-project-pending"}>{String(item.status || "Not recorded").replaceAll("_"," ")}</span></td>
           </tr>)}</tbody></table></div>
           {!visible.length && <p className="s2-project-empty">No recorded tasks match this view.</p>}
