@@ -28,3 +28,4 @@ jobs:
       - name: Rehearse existing plus Stage 2 P6 migrations and RLS/quarterly HR release negatives in disposable local Supabase
         run: bash scripts/ci/run-sql-security-gates.sh
 # Recheck after native source pass and repaired Vite reporting-component syntax.
+# Exact-head one-candidate replay: migrations 149–153, all-role TOTP and HR publication RLS.
