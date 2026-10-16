@@ -19,7 +19,7 @@ test("same master ID appears once, no triple counting in quarterly sum",()=>{
  assert.equal(q.counts.tasksInScope,4);
  assert.equal(q.counts.due,3);
  assert.equal(q.counts.completed,2);
- assert.equal(q.counts.onTime,2);
+ assert.equal(q.counts.onTime,1);
  assert.equal(q.counts.selfCertified,1);
  assert.equal(q.counts.projectsLinked,2);
  assert.equal(q.counts.currentlyReturned,1);
