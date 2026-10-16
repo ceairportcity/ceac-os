@@ -138,8 +138,8 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n<>145 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface differs from the reviewed 145-function exact release surface to %.',n;
+  if n<>146 then
+    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface differs from the reviewed Stage 1 145 plus Stage 2 one documented universal TOTP RLS predicate (146) to %.',n;
   end if;
 end $$;
 
