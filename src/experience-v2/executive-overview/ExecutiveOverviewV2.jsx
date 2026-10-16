@@ -1,4 +1,5 @@
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
+import EmployeeWorkSession from "../../components/EmployeeWorkSession";
 import {
   Skeleton,
   StatePanel,
@@ -137,6 +138,7 @@ function ActivityItem({ row }) {
 }
 
 export default function ExecutiveOverviewV2({
+  me,
   executiveName,
   executiveDate,
   loading,
@@ -214,6 +216,8 @@ export default function ExecutiveOverviewV2({
         </div>
         <time>{executiveDate}</time>
       </header>
+
+      {me?.id && <EmployeeWorkSession me={me} />}
 
       {error ? <StatePanel
         state="error"
