@@ -27,3 +27,4 @@ jobs:
       - uses: ./.github/actions/setup-ceac-test-environment
       - name: Rehearse existing plus Stage 2 P6 migrations and RLS/quarterly HR release negatives in disposable local Supabase
         run: bash scripts/ci/run-sql-security-gates.sh
+# Recheck after native source pass and repaired Vite reporting-component syntax.
