@@ -10,7 +10,7 @@ CREATE TABLE public.profile_portraits (
   object_path text NOT NULL UNIQUE,
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT portrait_path_format CHECK (
-    object_path ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}/[0-9a-f-]{36}\\.webp$'
+    object_path ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}/[0-9a-f-]{36}\.webp$'
     AND split_part(object_path, '/', 1) = org_id::text
     AND split_part(object_path, '/', 2) = profile_id::text
   )
@@ -78,7 +78,7 @@ FOR INSERT TO authenticated WITH CHECK (
   AND (auth.jwt()->>'aal') = 'aal2'
   AND (storage.foldername(name))[1] = public.app_org_id()::text
   AND (storage.foldername(name))[2] = auth.uid()::text
-  AND name ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}/[0-9a-f-]{36}\\.webp$'
+  AND name ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}/[0-9a-f-]{36}\.webp$'
   AND EXISTS (SELECT 1 FROM public.profiles owner
     WHERE owner.id=auth.uid() AND owner.org_id=public.app_org_id() AND owner.active)
 );
