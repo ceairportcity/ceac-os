@@ -1,0 +1,17 @@
+/* One shared photographic Overview banner, using exactly ten local licensed stock photos. */
+.s2-landscape-hero{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(105deg,#eaf5ff 0%,#f3fbff 50%,#fff 100%)!important;border:1px solid #dce9f7;border-radius:14px;min-height:136px}
+.s2-landscape-hero>.s2-scenic-photo{position:absolute;inset:0 0 0 auto;width:55%;z-index:-1;pointer-events:none;overflow:hidden}
+.s2-scenic-photo img{width:100%;height:100%;display:block;object-fit:cover;object-position:center;filter:saturate(.94)}
+.s2-landscape-hero>.s2-scenic-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to right,#eef7ff 0%,rgba(238,247,255,.83) 16%,rgba(238,247,255,.1) 64%,transparent 100%)}
+.s2-landscape-hero h1,.s2-landscape-hero h2{color:#142b48}
+.s2-landscape-hero .fpg9-home-impact{color:#29466d;background:rgba(255,255,255,.85);border-color:rgba(216,231,248,.9);box-shadow:0 5px 22px rgba(20,70,120,.08)}
+.s2-landscape-hero .fpg9-home-impact small{color:#647c96}
+.s2-landscape-hero.staffv2-intro,.s2-landscape-hero.executivev2-hero{padding:22px 26px}
+.s2-landscape-hero.staffv2-intro{gap:6px}
+.s2-landscape-hero.adminv2-hero>.adminv2-hero-agenda{background:rgba(255,255,255,.90)}
+@media(max-width:640px){
+ .s2-landscape-hero{border-radius:10px;min-height:115px}
+ .s2-landscape-hero>.s2-scenic-photo{width:64%;opacity:.65}
+ .s2-landscape-hero>.s2-scenic-photo::after{background:linear-gradient(to right,#eef7ff 0%,rgba(238,247,255,.87) 35%,rgba(238,247,255,.1) 100%)}
+ .s2-landscape-hero h1,.s2-landscape-hero h2{color:#142b48}
+}
