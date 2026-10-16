@@ -285,3 +285,13 @@ test("People & Access invalidates confidential roster state across identity chan
   assert.match(peopleAccess, /generation === loadGeneration\.current/);
   assert.match(peopleAccess, /People & Access could not load verified records/);
 });
+
+test("Stage 2 Technical Support case metadata meets the 12px readability floor on desktop and phone", () => {
+  const css = read("src/role-styles/technical-support-stage2.css");
+  const pixelFontSizes = [...css.matchAll(/font-size:\s*([\d.]+)px/g)].map((match) => Number(match[1]));
+  assert.ok(pixelFontSizes.length >= 10, "technical case, summary and responsive text rules are present");
+  assert.ok(pixelFontSizes.every((size) => size >= 12),
+    `Technical Support contains unreadable CSS font sizes: ${pixelFontSizes.filter((size) => size < 12)}`);
+  assert.match(css, /@media\(max-width:590px\)/);
+  assert.match(css, /\.s2-support-summary small\{font-size:12px/);
+});

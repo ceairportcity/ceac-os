@@ -11,7 +11,7 @@
 .ceac-support-page .s2-support-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #e1eaf5;border-radius:12px;background:#fff;overflow:hidden}
 .ceac-support-page .s2-support-summary>div{padding:15px 18px;display:grid;gap:2px;min-width:0;border-right:1px solid #e8eef7}
 .ceac-support-page .s2-support-summary>div:last-child{border-right:none}
-.ceac-support-page .s2-support-summary span,.ceac-support-page .s2-support-summary small{font-size:11px;color:#8093ab}
+.ceac-support-page .s2-support-summary span,.ceac-support-page .s2-support-summary small{font-size:12px;color:#8093ab}
 .ceac-support-page .s2-support-summary strong{font-size:25px;line-height:1.2;color:#1757a4;letter-spacing:-.035em}
 .ceac-support-page .ceac-support-layout{gap:12px;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr)}
 .ceac-support-page .ceac-support-layout>.ceac-support-main,.ceac-support-page .ceac-support-layout>.ceac-support-side,.ceac-support-page section.ceac-support-main,.ceac-support-page .ceac-support-detail{border:1px solid #e2eaf4;border-radius:12px;background:#fff;padding:19px;box-shadow:0 6px 22px rgba(37,70,110,.025)}
@@ -19,11 +19,11 @@
 .ceac-support-page .ceac-support-rows{border-color:#e7edf5}
 .ceac-support-page .ceac-support-row{border-color:#e7edf5;gap:10px}
 .ceac-support-page .ceac-support-row strong{font-size:12px;color:#244565}
-.ceac-support-page .ceac-support-row small{color:#8498af;font-size:11px}
-.ceac-support-page .ceac-support-state{display:inline-block;background:#eaf4ff;color:#226bb9;font-size:11px;border-radius:6px;padding:4px 7px;white-space:normal}
+.ceac-support-page .ceac-support-row small{color:#8498af;font-size:12px}
+.ceac-support-page .ceac-support-state{display:inline-block;background:#eaf4ff;color:#226bb9;font-size:12px;border-radius:6px;padding:4px 7px;white-space:normal}
 .ceac-support-page .ceac-support-desk-filters input,.ceac-support-page .ceac-support-desk-filters select{border:1px solid #dce7f4;border-radius:8px}
 @media(max-width:800px){.ceac-support-page .ceac-support-layout{grid-template-columns:1fr}}
-@media(max-width:590px){.ceac-support-page .s2-support-heading{padding:16px}.ceac-support-page .s2-support-summary>div{padding:11px}.ceac-support-page .s2-support-summary strong{font-size:20px}.ceac-support-page .s2-support-summary span,.ceac-support-page .s2-support-summary small{font-size:10px}.ceac-support-page .ceac-support-layout>.ceac-support-main,.ceac-support-page .ceac-support-layout>.ceac-support-side,.ceac-support-page section.ceac-support-main{padding:14px}.ceac-support-page .ceac-support-nav{margin-inline:-8px;border-radius:0}}
+@media(max-width:590px){.ceac-support-page .s2-support-heading{padding:16px}.ceac-support-page .s2-support-summary>div{padding:11px}.ceac-support-page .s2-support-summary strong{font-size:20px}.ceac-support-page .s2-support-summary span,.ceac-support-page .s2-support-summary small{font-size:12px}.ceac-support-page .ceac-support-layout>.ceac-support-main,.ceac-support-page .ceac-support-layout>.ceac-support-side,.ceac-support-page section.ceac-support-main{padding:14px}.ceac-support-page .ceac-support-nav{margin-inline:-8px;border-radius:0}}
 
 /* Approved V4-style selected-case inspector: retain the actual Help Desk
    queue while a manager or technician works on one authorised case. */
