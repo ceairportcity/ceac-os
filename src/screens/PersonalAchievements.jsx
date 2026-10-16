@@ -20,9 +20,11 @@ export default function PersonalAchievements({ me, back, openItem }) {
   const [works,setWorks] = useState([]);
   const [submissions,setSubmissions] = useState([]);
   const [busy,setBusy] = useState(true);
+  const [retryToken,setRetryToken] = useState(0);
   const [error,setError] = useState("");
   const [completeLoad,setCompleteLoad] = useState(false);
-  const range = useMemo(() => reportingRange(cadence, period+"-01"),[cadence,period]);
+  const safePeriod = /^\\d{4}-(0[1-9]|1[0-2])$/.test(period||"") ? period : today.slice(0,7);
+  const range = useMemo(() => reportingRange(cadence, safePeriod+"-01"),[cadence,safePeriod]);
   const preview = useMemo(() => individualAchievementFacts({
     works, submissions, range, projectId:projectId||null
   }),[works,submissions,range,projectId]);
@@ -68,7 +70,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
       finally{if(alive)setBusy(false);}
     })();
     return()=>{alive=false;};
-  },[me.id,range.start,range.end]);
+  },[me.id,range.start,range.end,retryToken]);
 
   const print = () => { if(completeLoad && !error && !busy) window.print(); };
   return <main className="body s2-achievement report-print" aria-label="My achievements">
@@ -102,7 +104,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
       <span>Subject: {me.full_name||me.name||"My authorised CEAC account"} · Generated {niceDay(today)}</span>
     </div>
     {busy && <p role="status">Verifying attributable work and supporting evidence…</p>}
-    {error && <section role="alert" className="s2-achievement-error">{error}<button onClick={()=>setPeriod((p)=>p)}>Retry by changing the reporting month</button></section>}
+    {error && <section role="alert" className="s2-achievement-error">{error}<button type="button" onClick={()=>setRetryToken((v)=>v+1)}>Retry records</button></section>}
     {!busy && !error && completeLoad && <>
       <div className="s2-achievement-metrics" aria-label="Factual indicators">
         {[
