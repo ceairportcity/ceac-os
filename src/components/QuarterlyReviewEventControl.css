@@ -1,0 +1,20 @@
+.s2-quarter-events{margin:18px 0;padding:17px;border:1px solid #e1ebf7;border-radius:12px;background:#fff;color:#25486b}
+.s2-quarter-events>header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.s2-quarter-events header span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#3473b4;font-weight:750}
+.s2-quarter-events h2{font-size:17px;color:#174476;margin:4px 0}
+.s2-quarter-events p{font-size:12px;line-height:1.5;color:#6a829c;margin:5px 0}
+.s2-quarter-events-action{border:0;border-radius:7px;background:#206ad3;padding:9px 12px;color:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.s2-quarter-events-action:disabled{opacity:.5;cursor:not-allowed}
+.s2-quarter-events-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:15px 0;padding:15px;border:1px solid #e1ebf7;border-radius:9px;background:#fafdff}
+.s2-quarter-events-form>label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:#3c5a79}
+.s2-quarter-events-form input,.s2-quarter-events-form select,.s2-quarter-events-form textarea{border:1px solid #d4e5f5;border-radius:7px;background:#fff;color:#294669;padding:8px;font:inherit;min-width:0;width:100%}
+.s2-quarter-events-form .s2-quarter-events-wide{grid-column:1/-1}
+.s2-quarter-events-form>button{justify-self:start}
+.s2-quarter-events-range{align-self:center}
+.s2-quarter-events-list{display:grid;gap:9px;margin:12px 0}
+.s2-quarter-events-list article{padding:12px;border:1px solid #e6edf7;border-radius:8px}
+.s2-quarter-events-list strong{font-size:13px;color:#225382}
+.s2-quarter-events-list small,.s2-quarter-events-list span{display:block;font-size:12px;color:#7590aa;margin:5px 0}
+.s2-quarter-events-error{background:#fff1eb;padding:10px;color:#995d3b!important}
+@media(max-width:560px){.s2-quarter-events>header{flex-direction:column}.s2-quarter-events{padding:12px}.s2-quarter-events-form{grid-template-columns:1fr}.s2-quarter-events-form .s2-quarter-events-wide{grid-column:auto}}
+@media print{.s2-quarter-events-form,.s2-quarter-events-action{display:none!important}}
