@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ProfilePortraitEditor from "../components/ProfilePortraitEditor";
+import PersonalAchievements from "../components/PersonalAchievements";
 import { supabase } from "../lib/supabase";
 import { ProductNotice } from "../components/bits";
 import { dateOnly } from "../lib/time";
@@ -35,7 +36,7 @@ const EMPTY_DETAILS = {
   social_handles: {},
 };
 
-export default function Me({ me, openGoal, openRecord, openPerformance, openWorkforce, openLearning, openAssets, openCompliance }) {
+export default function Me({ me, openGoal, openRecord, openPerformance, openWorkforce, openLearning, openAssets, openCompliance, onOpenWork }) {
   const [profile, setProfile] = useState(me);
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [leavePolicyRules, setLeavePolicyRules] = useState([]);
@@ -48,6 +49,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [profileForm, setProfileForm] = useState({ preferred_name: "", phone: "", birthday: "", emergency_contact_name: "", emergency_contact_phone: "", emergency_contact_relationship: "", address_text: "", instagram: "", linkedin: "" });
   const [area, setArea] = useState("goals");
+  const [showAchievements,setShowAchievements] = useState(false);
   const [sheet, setSheet] = useState(null);
   const [kind, setKind] = useState("annual");
   const [startDate, setStartDate] = useState("");
@@ -362,12 +364,15 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
 
     <PersonalDestinationGrid>
       <PersonalDestinationCard title="Work history" description="Completed work, feedback and recorded activity by month." ariaLabel="My work history" onClick={() => openRecord?.()} />
+      <PersonalDestinationCard title="My achievements" description="Personal monthly and quarterly work contribution reports and PDF." ariaLabel="Open my achievements" onClick={() => setShowAchievements(value => !value)} />
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Development" description="Your review evidence, reflection, feedback and development plan." ariaLabel="Reviews & development" onClick={() => openPerformance?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Time & leave" description="Open your wider Time & Leave workspace. Leave requests and confirmed policy context remain visible in the Leave tab below." ariaLabel="My workforce context" onClick={() => openWorkforce?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Learning" description="Assigned learning, resources and factual completion history." ariaLabel="Learning" onClick={() => openLearning?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Equipment" description="CEAC equipment currently in your custody and your recorded custody history." ariaLabel="My assets" onClick={() => openAssets?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Policies & requirements" description="Policies that apply to you, acknowledgements, evidence and exceptions." ariaLabel="My compliance" onClick={() => openCompliance?.()} /> : null}
     </PersonalDestinationGrid>
+
+    {showAchievements && <PersonalAchievements me={me} onOpenWork={onOpenWork} />}
 
     <PersonalTabs value={area} onChange={setArea} />
 
