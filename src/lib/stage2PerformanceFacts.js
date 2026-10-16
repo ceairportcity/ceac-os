@@ -31,7 +31,13 @@ export function reportRange(year, kind, index) {
   };
 }
 const inPeriod = (date,range) => Boolean(date && date >= range.start && date <= range.end);
-const distinct = (records) => [...new Map(records.filter(x=>x && x.id).map(x=>[x.id,x])).values()];
+const distinct = (records) => {
+  const indexed = new Map();
+  for (const row of records) {
+    if (row?.id && !indexed.has(row.id)) indexed.set(row.id,row);
+  }
+  return [...indexed.values()];
+};
 
 export function personalAchievementSummary(records, range, { projectId = null, generatedAt = new Date().toISOString() } = {}) {
   if (!range || !DATE.test(range.start) || !DATE.test(range.end) || range.end < range.start)
