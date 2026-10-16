@@ -31,8 +31,8 @@ export function useProjectPortraits(project) {
       }
     }
     load();
-    // Supabase signed media expires after 15 minutes; refresh before expiry.
-    const ticker = setInterval(load, 12 * 60 * 1000);
+    // Signed project portraits expire after one hour; refresh before expiry.
+    const ticker = setInterval(load, 50 * 60 * 1000);
     return () => { alive = false; clearInterval(ticker); };
   }, [enabled, idKey, project?.id]);
 
