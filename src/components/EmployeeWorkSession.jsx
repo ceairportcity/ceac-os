@@ -55,7 +55,7 @@ export default function EmployeeWorkSession({ me }) {
       try {
         const [locationResult,workResult] = await Promise.all([
           supabase.from("office_locations").select("id,name")
-            .eq("org_id",me.org_id).eq("active",true).order("name"),
+            .eq("org_id",me.org_id).order("name"),
           supabase.from("work_items").select("id,ref,title").eq("assignee_id",me.id)
             .in("status",["not_started","in_progress","returned"])
             .order("created_at",{ascending:false}).limit(100),
