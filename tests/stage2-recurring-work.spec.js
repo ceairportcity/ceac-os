@@ -50,11 +50,35 @@ test("weekly assigned routine is created once and appears on staff's future Work
     await expect(manager.page.getByRole("heading",{name:"Work sent"})).toBeVisible({timeout:20000});
   } finally { await manager.context.close(); }
 
+  // Verify that the manager really created one authoritative routine for Staff,
+  // rather than allowing a blank successful UI to hide a missing assignment.
+  const service = (await import("@supabase/supabase-js")).createClient(
+    process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken:false, persistSession:false } }
+  );
+  const created = await service.from("work_items")
+    .select("id,title,kind,status,visibility,assignee_id,unit_id").eq("title",title);
+  expect(created.error, created.error?.message).toBeNull();
+  expect(created.data?.length,"manager did not create exactly one Work master").toBe(1);
+  const actualWork = created.data[0];
+  expect(actualWork.kind).toBe("routine");
+  expect(actualWork.assignee_id).toBe("31000000-0000-4000-8000-000000000001");
+  const recurring = await service.from("recurring_operations")
+    .select("id,name,work_item_id,active,paused_at,schedule_kind,starts_on,weekdays")
+    .eq("work_item_id",actualWork.id);
+  expect(recurring.error, recurring.error?.message).toBeNull();
+  expect(recurring.data?.length,"routine master missing").toBe(1);
+  expect(recurring.data[0].schedule_kind).toBe("weekly");
+  expect(recurring.data[0].weekdays).toEqual([6]);
+  expect(recurring.data[0].starts_on).toBe(nextSaturday);
+
   const staff = await auth(browser,"staff@ceac.local.test");
   try {
     await staff.page.goto(BASE + "/?tab=work");
     const scheduled = staff.page.getByRole("region",{name:"My scheduled recurring work"});
     await expect(scheduled).toBeVisible({timeout:20000});
+    const visible = await scheduled.innerText();
+    expect(visible, "Staff routine projection did not contain created master (including possible RLS/error feedback)").toContain(title);
     await expect(scheduled.getByText(title, {exact:true}).first()).toBeVisible();
     await expect(scheduled.locator(`time[datetime="${nextSaturday}"]`)).toBeVisible();
     await expect(scheduled.locator(`time[datetime="${followingSaturday}"]`)).toBeVisible();
