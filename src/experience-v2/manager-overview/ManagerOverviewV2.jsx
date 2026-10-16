@@ -1,4 +1,5 @@
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
+import EmployeeWorkSession from "../../components/EmployeeWorkSession";
 import "./manager-overview.css";
 import {
   Button,
@@ -286,6 +287,7 @@ export default function ManagerOverviewV2({
           </div>
         </div>
       </header>
+      <EmployeeWorkSession me={me} />
 
       {loadFailed ? <StatePanel
         state="error"
