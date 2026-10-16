@@ -55,7 +55,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
       <div><span>Next due task</span><strong className="s2-project-date">{when(next?.due_at)}</strong><small>{next?.title || "No upcoming due date"}</small></div>
     </section>
     <div className="s2-project-layout">
-      <main>
+      <div className="s2-project-primary">
         <section className="s2-project-panel">
           <header><h2>Project team</h2><small>{people.length} recorded assignees</small></header>
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>
@@ -79,7 +79,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
           {!visible.length && <p className="s2-project-empty">No recorded tasks match this view.</p>}
           {work.length > tasks.length && <button className="s2-project-more" onClick={showWork}>View all project work →</button>}
         </section>
-      </main>
+      </div>
       <aside className="s2-project-panel s2-project-aside">
         <header><h2>About this project</h2></header>
         <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Lead unit</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>End date</dt><dd>{when(project.ends_on)}</dd></div></dl>
