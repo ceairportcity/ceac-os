@@ -4,9 +4,13 @@ import { openSession, startWork, endWork, reconcileWorkSession } from "../lib/se
 import { Sheet } from "./bits";
 import "./EmployeeWorkSession.css";
 
-const ghanaDay = (value) => new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit",
-}).format(new Date(value));
+const ghanaDay = (value) => {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Accra",year:"numeric",month:"2-digit",day:"2-digit",
+  }).formatToParts(new Date(value));
+  const get = (type) => parts.find((part) => part.type === type)?.value;
+  return `${get("year")}-${get("month")}-${get("day")}`;
+};
 
 /**
  * Manager/Administration employee's OWN operational Start/End Work action.
@@ -29,23 +33,25 @@ export default function EmployeeWorkSession({ me }) {
   const [endedAt, setEndedAt] = useState("");
   const [correctionReason, setCorrectionReason] = useState("");
   const [ready, setReady] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [recheck, setRecheck] = useState(0);
   const stale = useMemo(() => Boolean(session?.started_at &&
     ghanaDay(session.last_confirmed_at || session.started_at) < ghanaDay(new Date())),
     [session]);
 
   useEffect(() => {
     let alive = true;
-    setSession(null); setError(""); setLoading(true); setReady(false);
+    setSession(null); setError(""); setLoading(true); setReady(false); setVerified(false);
     (async () => {
       try {
         const current = await openSession(me.org_id, me.id);
-        if (alive) setSession(current);
+        if (alive) { setSession(current); setVerified(true); }
       } catch {
         if (alive) setError("Your work session could not be verified. Start and End Work are unavailable until it is checked.");
       } finally { if (alive) setLoading(false); }
     })();
     return () => { alive = false; };
-  }, [me.org_id,me.id]);
+  }, [me.org_id,me.id,recheck]);
 
   useEffect(() => {
     if (!editor) return;
@@ -121,11 +127,11 @@ export default function EmployeeWorkSession({ me }) {
       {session
         ? stale?<button type="button" onClick={()=>setRecover(true)} disabled={busy||loading}>Review earlier session</button>
           :<button type="button" onClick={stop} disabled={busy||loading}>{busy?"Ending…":"End work"}</button>
-        :<button type="button" onClick={()=>{setError("");setEditor(true);}} disabled={busy||loading||Boolean(error)}>
+        :<button type="button" onClick={()=>{setError("");setEditor(true);}} disabled={busy||loading||!verified}>
           Start work
         </button>}
     </div>
-    {error&&<p className="s2-own-work-session-error" role="alert">{error}</p>}
+    {error&&<p className="s2-own-work-session-error" role="alert">{error}{!verified&&<button type="button" onClick={()=>setRecheck((v)=>v+1)} disabled={loading}>Retry session verification</button>}</p>}
     {editor&&<Sheet onClose={()=>!busy&&setEditor(false)}>
       <h2>Start your work session</h2>
       <p>Choose your actual working location. Location evidence is checked when you begin. The system does not continuously track your position.</p>
