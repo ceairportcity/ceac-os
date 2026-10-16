@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
+import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { humanError } from "../lib/productLanguage";
 import { Skeleton, StatePanel } from "../experience-v2/components";
 import {
@@ -126,6 +127,8 @@ export default function ExecutiveReports({ me }) {
         statusLabel={statusLabel}
         statusTone={error ? "danger" : "neutral"}
       />
+
+      <QuarterlyReviewEventControl me={me} />
 
       {loading ? (
         <div className="ev2rep-loading" aria-label="Loading reports" aria-busy="true">
