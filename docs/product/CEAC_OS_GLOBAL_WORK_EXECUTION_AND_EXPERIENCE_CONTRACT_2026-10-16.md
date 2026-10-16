@@ -1,3 +1,5 @@
+> **16 OCTOBER OWNER INTEGRATION OVERRIDE — STAGE 2:** This complete whole-app Work/design specification is a **functional and visual requirements sub-contract of the SINGLE STAGE 2 build**, together with universal authenticator-app TOTP + secure, persistent AAL2 sessions. **Google-only sign-in is explicitly cancelled.** Read `docs/continuity/CEAC_STAGE2_UNIFIED_EXECUTION_CONTRACT_2026-10-16.md` and `docs/security/CEAC_STAGE2_AUTH_SESSION_POLICY_2026-10-16.md` first. All original Work, Project, attendance, Staff, Manager, HR, Exec and visual requirements below remain binding; its S0–S8 stages are mapped into unified Stage 2 P0–P9, not a separate later release. No production GO by approving this documentation.
+
 # CEAC OS — Owner-locked application-wide Work, contribution, attendance and experience redesign
 **Owner decision:** 16 October 2026 · **Status:** Binding requirements and implementation plan; NOT approved UI reference, completed work, database migration, or production release.
 **Canonical implementation source:** this document plus the route matrix and handover below, at the live GitHub HEAD.

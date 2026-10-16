@@ -1,3 +1,5 @@
+> **Latest owner decision:** This matrix is the role/route acceptance ledger for **integrated Stage 2** (complete whole-app Work+design and universal TOTP MFA). See `docs/continuity/CEAC_STAGE2_UNIFIED_EXECUTION_CONTRACT_2026-10-16.md`. In every role include login/enrol/challenge/recovery/AAL2 and persistent sessions, **without Google-only requirement**. Existing listed UI routes remain within scope.
+
 # CEAC OS — Whole-app design and data-flow coverage matrix (owner-locked 16 Oct 2026)
 **Companion to:** `docs/product/CEAC_OS_GLOBAL_WORK_EXECUTION_AND_EXPERIENCE_CONTRACT_2026-10-16.md`. This is a **starter inventory from inspected source**; the executor MUST generate the full route-and-modal inventory from current GitHub HEAD and actual runtime in S0. No CHECKED or ACCEPTED marks may be inferred from listing here.
 
@@ -40,3 +42,13 @@
 ## 3. Audit method and evidence files
 For each discovered route and subview, append (not fabricate): `route, roles, permitted actions, current screenshot desktop/mobile, accepted visual source ID, new approved visual ID, design gap, data owners, underlying table/RPC and RLS assertion, tests, status, last tested SHA, reviewer signoff`. Maintain a small machine-readable route coverage map in later work (not prematurely guessed here), and an exact-SHA acceptance ledger in the stage PR.
 Audit priority: current approved gold-standard ManagerProjects worktable/drawer; current source-divergent WorkTabs and 4 role implementations; Staff attendance control isolated in Home vs Manager overview; Admin/Exec reporting, Performance and project close divergence. Cover nested routes and project drawers; never count 'screen loads' alone as feature complete.
+
+## 4. Stage 2 authentication and session inclusion — required on EVERY panel
+| Auth read/write source | Stage 2 acceptance |
+|---|---|
+| `src/screens/SignIn.jsx`, `src/components/AccountMfaSetup.jsx`, `src/components/{MandatoryMfaGate,PrivilegedMfaGate}.jsx`, `src/lib/{mfaPolicy,authRedirect}.js` | Email/password invitation-only; TOTP enrol/challenge all roles; platform-attested AAL2; no Google-only eligibility or untrusted redirects; resume verified session on refresh. |
+| `supabase/migrations/20261012172718_google_oauth_aal2_enforcement.sql`, current Auth hooks, actual migration ledger, protected RLS/RPC/Storage/Edge | Determine which provider predicates are active. Forward-only corrections, not modified applied history; AAL1 deny across ALL domains, AAL2 with role scope; revoked/unenrolled blocked. |
+| All Staff, Manager, Support, HR, Admin, Executive, Volunteer Overview/Work/HR/Exec/Project routes | Fresh new session demands TOTP; same verified session survives reload, refresh, tab/unit switch and brief inactivity. New device/logout must re-challenge; any short logout-grace requires separate security approval. |
+| Auth recovery and termination | Verified loss/replacement, last-admin continuity, revoked identity, HR JML, audited recovery and no MFA bypass. |
+
+**Stage alignment:** Original global contract S0–S8 remains complete. Stage 2 now sequences all requirements through P0–P9 including integrated Auth and consumes the same tested Work→Manager→HR→Executive information graph.
