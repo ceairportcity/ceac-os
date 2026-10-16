@@ -1,10 +1,12 @@
 name: CEAC Stage 2 unified source, build and isolated security acceptance
 on:
+  workflow_dispatch:
   push:
     branches:
       - chatgpt/stage2-unified-integration-20261016
     paths:
       - .github/workflows/stage2-unified-acceptance.yml
+      - supabase/tests/platform_kernel_gate.sql
 permissions:
   contents: read
 jobs:
