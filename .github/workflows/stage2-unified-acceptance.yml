@@ -1,0 +1,33 @@
+name: CEAC Stage 2 unified source, build and isolated security acceptance
+on:
+  push:
+    branches:
+      - chatgpt/stage2-unified-integration-20261016
+    paths:
+      - .github/workflows/stage2-unified-acceptance.yml
+permissions:
+  contents: read
+jobs:
+  unified-source-sql:
+    if: github.repository == 'ceairportcity/ceac-os'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      ROLE_FIXTURE_PASSWORD: Local-role-fixture-2026!
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Complete native source-level regression
+        run: npm run verify:source
+      - name: Exact-code Vite production bundle (no deployment)
+        run: npm run build
+      - name: Start disposable local Supabase fixture only
+        uses: ./.github/actions/setup-ceac-test-environment
+      - name: Complete forward-only migration replay and SQL/RLS security gates
+        run: bash scripts/ci/run-sql-security-gates.sh
