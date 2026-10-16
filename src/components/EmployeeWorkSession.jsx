@@ -98,8 +98,12 @@ export default function EmployeeWorkSession({ me }) {
     if (!session?.id || busy) return;
     setBusy(true);setError("");
     try {
-      const current = await reconcileWorkSession(session.id,"continue");
-      setSession(current);setRecover(false);
+      await reconcileWorkSession(session.id,"continue");
+      // RPC may return a void/acknowledgement rather than a work_sessions row.
+      // Re-read the owner-scoped authoritative open session before rendering.
+      const verified = await openSession(me.org_id,me.id);
+      if (!verified) throw new Error("Your continued session could not be verified.");
+      setSession(verified);setRecover(false);
     } catch (e) { setError(e?.message || "Your earlier session requires review."); }
     finally { setBusy(false); }
   }
