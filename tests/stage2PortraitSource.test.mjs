@@ -10,7 +10,7 @@ test("portrait storage is private and read/write policies require verified TOTP 
   assert.match(sql, /ALTER TABLE public\.profile_portraits ENABLE ROW LEVEL SECURITY/);
   assert.match(sql, /CREATE FUNCTION public\.app_portrait_totp_aal2\(\)/);
   assert.match(sql, /auth\.jwt\(\)->>'aal'\) = 'aal2'/);
-  assert.match(sql, /method_claim->>'method' = 'totp'/);
+  assert.match(sql, /method_claim\.entry->>'method' = 'totp'/);
   assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.app_portrait_totp_aal2\(\) TO authenticated/);
   assert.match(sql, /VALUES \('ceac-profile-portraits','ceac-profile-portraits',false/);
   assert.match(sql, /allowed_mime_types=ARRAY\['image\/webp'\]/);
