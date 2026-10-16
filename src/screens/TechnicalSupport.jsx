@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import SupportAccessCaseActions from "../components/SupportAccessCaseActions";
+import DailyScenicPhoto from "../components/DailyScenicPhoto";
 import { OperationalFileList } from "../components/OperationalFiles";
 import {
   canManageSupport, SUPPORT_WORKSPACES, SERVICE_NAMES, SUPPORT_GUIDES,
@@ -325,7 +326,7 @@ export default function TechnicalSupport({ me, go }) {
   }
 
   return <main className="body ceac-support-page ceac-support-operations">
-    <header className="ceac-support-heading s2-support-heading">
+    <header className="ceac-support-heading s2-support-heading s2-landscape-hero"><DailyScenicPhoto />
       <p className="ceac-support-eyebrow">Media & Technical · Autonomous service team</p>
       <h1>Technical Support</h1>
       <p>Help people use CEAC, maintain approved access and escalate service issues. This workspace does not grant HR, payroll, leave or general administrative permissions.</p>
