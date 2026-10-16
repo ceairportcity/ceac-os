@@ -1,3 +1,4 @@
+import DailyScenicPhoto from "../../components/DailyScenicPhoto";
 import {
   ActionFocusCard,
   Button,
@@ -215,7 +216,7 @@ export default function StaffTodayV2({
   return (
     <div className="body staff-home">
       <div className="staffv2">
-        <header className="staffv2-intro">
+        <header className="staffv2-intro s2-landscape-hero"><DailyScenicPhoto />
           <div className="staffv2-context">
             <span>{me.unit_name}</span>
             <time>{todayLabel}</time>
