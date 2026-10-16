@@ -9,9 +9,11 @@ import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
 import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
 import Stage2UniversalMfaGate from "./components/Stage2UniversalMfaGate";
+import { decideUniversalTotpAccess } from "./lib/Stage2UniversalMfaPolicy";
 
 // Stage 2 activates only after the independently approved server/Auth AAL2 cutover.
 // Never infer cutover authority from a frontend preview or design approval.
+const UNIVERSAL_TOTP_CUTOVER = import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true";
 const ActiveMfaGate = import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true"
   ? Stage2UniversalMfaGate : PrivilegedMfaGate;
 
@@ -124,11 +126,15 @@ export default function App() {
   const [lifecycleIntent, setLifecycleIntent] = useState(null);
   const [announcementFocusId, setAnnouncementFocusId] = useState(null);
   const [session, setSession] = useState(null);
+  const [hasPendingMfaSession, setHasPendingMfaSession] = useState(false);
   useForegroundPresence(me, session);
 
   useEffect(() => {
     boot();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => boot());
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      if (UNIVERSAL_TOTP_CUTOVER) setTimeout(() => boot(), 0);
+      else boot();
+    });
     const onPopState = () => applyRoute(routeFromLocation());
     window.addEventListener("popstate", onPopState);
     return () => {
@@ -140,6 +146,31 @@ export default function App() {
   async function boot() {
     setBootError(null);
     try {
+      // Stage 2 protects ordinary profile reads at AAL1; Auth verification
+      // must precede any access to the RLS-protected employee profile.
+      if (UNIVERSAL_TOTP_CUTOVER) {
+        const result = await supabase.auth.getSession();
+        if (result.error) throw result.error;
+        const authSession = result.data?.session || null;
+        setHasPendingMfaSession(Boolean(authSession));
+        if (authSession) {
+          const [assurance, factors, claims] = await Promise.all([
+            supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+            supabase.auth.mfa.listFactors(),
+            supabase.auth.getClaims(),
+          ]);
+          const failure = [assurance.error, factors.error, claims.error].find(Boolean);
+          if (failure) throw failure;
+          const access = decideUniversalTotpAccess({
+            session: authSession, assurance: assurance.data,
+            factors: factors.data, claims: claims.data?.claims,
+          });
+          if (access.state !== "allow") {
+            setMe(null); setSession(null);
+            return;
+          }
+        }
+      }
       const m = await loadMe();
       setMe(m);
       if (m) setSession(await openSession(m.org_id, m.id));
@@ -294,6 +325,9 @@ export default function App() {
     <div className="auth-message error">{bootError}</div>
     <button className="auth-primary" onClick={boot}><span>Try again</span><span aria-hidden="true">→</span></button>
   </AuthFrame>;
+  if (!me && UNIVERSAL_TOTP_CUTOVER && hasPendingMfaSession) return <Stage2UniversalMfaGate onVerified={boot}>
+    <div className="auth-boot">Opening your verified CEAC workspace…</div>
+  </Stage2UniversalMfaGate>;
   if (!me) return <SignIn />;
 
   const isAdmin = Boolean(me.is_admin);
