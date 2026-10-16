@@ -18,6 +18,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const work = project.work || [];
   const tasks = work.filter((row) => row.kind === "task");
   const completed = tasks.filter((row) => finished.has(row.status));
+  const completionRate = tasks.length ? Math.round(100 * completed.length / tasks.length) : null;
   const open = tasks.filter((row) => !inactive.has(row.status));
   const overdue = open.filter((row) => row.due_at && new Date(row.due_at) < new Date());
   const next = open.filter((row) => row.due_at && new Date(row.due_at) >= new Date()).sort((a,b) => new Date(a.due_at) - new Date(b.due_at))[0];
@@ -50,10 +51,32 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const recent = work.filter((item) => item.created_at).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 4);
   return <div className="s2-project">
     <section className="s2-project-metrics" aria-label="Recorded project metrics">
-      <div><span>Task completion</span><strong>{tasks.length ? Math.round(completed.length * 100 / tasks.length) + "%" : "—"}</strong><small>{completed.length} of {tasks.length} completed</small></div>
-      <div><span>Open tasks</span><strong>{open.length}</strong><small>{overdue.length} overdue</small></div>
-      <div><span>Departments</span><strong>{units.length}</strong><small>Including lead unit</small></div>
-      <div><span>Next due task</span><strong className="s2-project-date">{when(next?.due_at)}</strong><small>{next?.title || "No upcoming due date"}</small></div>
+      <div className="s2-project-stat-card s2-project-progress-card">
+        <span>Task completion</span>
+        <div className="s2-project-progress-line">
+          <span className="s2-project-progress-ring" style={{ "--s2-percent": completionRate ?? 0 }} aria-hidden="true">
+            <strong>{completionRate === null ? "—" : completionRate + "%"}</strong>
+          </span>
+          <small>{completed.length} of {tasks.length} tasks complete</small>
+        </div>
+      </div>
+      <div className="s2-project-stat-card">
+        <span>Tasks</span>
+        <div className="s2-project-task-facts">
+          <strong>{completed.length}<small>Completed</small></strong>
+          <strong>{open.length}<small>Open</small></strong>
+          <strong className="is-overdue">{overdue.length}<small>Overdue</small></strong>
+        </div>
+      </div>
+      <div className="s2-project-stat-card">
+        <span>Participating departments</span>
+        <strong>{units.length}</strong><small>Including the lead department</small>
+      </div>
+      <div className="s2-project-stat-card">
+        <span>Next key date</span>
+        <strong className="s2-project-date">{when(next?.due_at)}</strong>
+        <small>{next?.title || "No upcoming due date"}</small>
+      </div>
     </section>
     <div className="s2-project-layout">
       <div className="s2-project-content">
