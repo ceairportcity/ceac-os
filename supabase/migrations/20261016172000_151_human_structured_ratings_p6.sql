@@ -66,6 +66,10 @@ BEGIN
  RETURN cnt=5;
 END
 $validate$;
+-- The INSERT CHECK executes as authenticated; grant only this pure validator,
+-- never the SECURITY DEFINER reviewer/HR-trigger helpers.
+REVOKE ALL ON FUNCTION public.stage2_rating_payload_valid(jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.stage2_rating_payload_valid(jsonb) TO authenticated;
 
 ALTER TABLE public.appraisal_structured_ratings ADD CONSTRAINT appraisal_structured_ratings_valid
 CHECK(public.stage2_rating_payload_valid(categories)
