@@ -169,5 +169,66 @@ BEGIN
  RAISE EXCEPTION 'Correct quarterly rating did not reach existing HR release queue'; END IF;
 END
 $pending$;
+-- The employee must not see the HR request, unpublished human ratings
+-- or direct table row. After INDEPENDENT HR publication, the narrowly scoped
+-- view must show ONLY the matched approved assessment version.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+DO $employee_pending_view$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.stage2_employee_published_human_ratings) THEN
+  RAISE EXCEPTION 'Employee read the pending unpublished Manager rating from projection';
+ END IF;
+END
+$employee_pending_view$;
+RESET ROLE;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+DO $independent_hr$
+DECLARE v_request uuid;
+BEGIN
+ SELECT id INTO v_request
+ FROM public.performance_review_release_requests
+ WHERE appraisal_id='53000000-0000-4000-8000-000000000082' AND state='pending';
+ IF v_request IS NULL THEN RAISE EXCEPTION 'No pending quarterly HR request'; END IF;
+ PERFORM public.performance_hr_decide_release(v_request,true,
+  'HR independently examined the actual evidence and recorded appraisal content.');
+END
+$independent_hr$;
+RESET ROLE;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+DO $employee_approved$
+BEGIN
+ IF (SELECT count(*) FROM public.stage2_employee_published_human_ratings
+  WHERE appraisal_id='53000000-0000-4000-8000-000000000082')<>1 THEN
+  RAISE EXCEPTION 'Employee cannot read the single exact HR-approved rating version';
+ END IF;
+ IF EXISTS(SELECT 1 FROM public.performance_review_release_requests) THEN
+  RAISE EXCEPTION 'HR private independent publication request leaked to employee';
+ END IF;
+END
+$employee_approved$;
+RESET ROLE;
+
+-- Re-enabling universal MFA inside this rollback-only fixture must close the
+-- view's explicit AAL1 view-owner bypass before server/provider cutover.
+UPDATE public.organisations SET universal_totp_required=true
+WHERE id='10000000-0000-4000-8000-000000000010';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+SELECT set_config('request.jwt.claims',
+ '{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1","amr":[{"method":"password"}]}',true);
+DO $mfa_no_published_view_bypass$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.stage2_employee_published_human_ratings) THEN
+  RAISE EXCEPTION 'AAL1 user bypassed universal authenticator gate through protected HR published view';
+ END IF;
+END
+$mfa_no_published_view_bypass$;
+RESET ROLE;
+
 ROLLBACK;
-SELECT 'Stage 2 human quarterly rating, privacy and HR release gate PASSED' AS result;
+SELECT 'Stage 2 human quarterly rating, independent HR publication and AAL2 privacy gate PASSED' AS result;
