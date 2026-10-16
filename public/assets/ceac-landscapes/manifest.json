@@ -1,6 +1,6 @@
 {
-  "source": "Unsplash free stock photography",
-  "licence": "https://unsplash.com/license",
+  "source": "Nine Unsplash-licensed genuine stock landscapes; one Commons-verified CC0 photograph",
+  "licence": "Per-image licenseUrl (Unsplash License and CC0)",
   "checkedOn": "2026-10-16",
   "images": [
     {
@@ -25,13 +25,13 @@
     },
     {
       "src": "/assets/ceac-landscapes/scene-03.webp",
-      "alt": "Alpine lake beneath clear sky and mountains",
-      "photographer": "Annie Spratt",
-      "sourceUrl": "https://unsplash.com/photos/alpine-lake-reflecting-mountains-under-clear-blue-sky-4vGDNyXH8n0",
-      "licenseUrl": "https://unsplash.com/license",
+      "alt": "Panoramic Lake Bohinj with forested mountains reflected in calm water",
+      "photographer": "Aleš Krivec",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lake_Bohinj_2013_(3).jpg",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "verifiedOn": "2026-10-16",
-      "sha256": "5c7cc5631044cc5d630bb37220ee7fe489cb1128334eb0c75cf55610f9e06907",
-      "bytes": 316842
+      "sha256": "f389646f980fc953d4ba18fa791a6282f920caba64ff1151b13dfc77ae3a7b35",
+      "bytes": 132410
     },
     {
       "src": "/assets/ceac-landscapes/scene-04.webp",

@@ -1,6 +1,4 @@
-// Derived from the locally committed, hash-verified Unsplash stock assets.
-// The underlying source/photographer/license/sha checks remain in public/assets/ceac-landscapes/manifest.json.
-// Do not replace with AI-generated, hotlinked, or unlicensed photographs.
+// Real locally stored CEAC stock photography. Provenance/hashes in public/assets/ceac-landscapes/manifest.json.
 export const ceacLandscapeCatalog = Object.freeze([
   {
     "src": "/assets/ceac-landscapes/scene-01.webp",
@@ -18,10 +16,10 @@ export const ceacLandscapeCatalog = Object.freeze([
   },
   {
     "src": "/assets/ceac-landscapes/scene-03.webp",
-    "alt": "Alpine lake beneath clear sky and mountains",
-    "photographer": "Annie Spratt",
-    "sourceUrl": "https://unsplash.com/photos/alpine-lake-reflecting-mountains-under-clear-blue-sky-4vGDNyXH8n0",
-    "licenseUrl": "https://unsplash.com/license"
+    "alt": "Panoramic Lake Bohinj with forested mountains reflected in calm water",
+    "photographer": "Aleš Krivec",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lake_Bohinj_2013_(3).jpg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
   },
   {
     "src": "/assets/ceac-landscapes/scene-04.webp",
