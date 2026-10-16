@@ -33,3 +33,4 @@ jobs:
         run: bash scripts/ci/run-sql-security-gates.sh
 # Exact-head replay after dedup contract correction; no hosted infrastructure changes.
 # Exact-head replay after repaired My Achievements filter, all source and isolated SQL checks.
+# Exact-head final replay includes pure-authenticated rubric CHECK grant and Executive evidence reader.
