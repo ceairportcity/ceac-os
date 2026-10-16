@@ -6,6 +6,15 @@ BEGIN;
 DO $contract$
 DECLARE v_policy_count integer;
 BEGIN
+ IF to_regprocedure('public.app_stage2_universal_aal_allowed()') IS NULL
+   OR has_function_privilege('anon','public.app_stage2_universal_aal_allowed()','EXECUTE')
+   OR NOT has_function_privilege('authenticated','public.app_stage2_universal_aal_allowed()','EXECUTE')
+ THEN RAISE EXCEPTION 'Universal TOTP helper missing or has unsafe grants'; END IF;
+ IF pg_get_functiondef('public.app_stage2_universal_aal_allowed()'::regprocedure)
+      NOT ILIKE '%auth.mfa_factors%'
+   OR pg_get_functiondef('public.app_stage2_universal_aal_allowed()'::regprocedure)
+      NOT ILIKE '%totp%'
+ THEN RAISE EXCEPTION 'Universal TOTP helper does not verify enrolled factor and signed authenticator method'; END IF;
  IF NOT EXISTS (
   SELECT 1 FROM information_schema.columns WHERE table_schema='public'
     AND table_name='organisations' AND column_name='universal_totp_required'
