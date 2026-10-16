@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Avatar } from "../experience-v2/components";
+import Stage2HumanRatings from "../components/Stage2HumanRatings";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 
 const CATEGORY_LABELS = {
@@ -526,6 +527,10 @@ export default function Performance({ me }) {
             {entries.filter((entry) => entry.entry_type === "manager_assessment").map((entry) => <div key={entry.id}><strong>{entry.body}</strong><span>{entry.author?.full_name || "Reviewer"} · {new Date(entry.created_at).toLocaleString("en-GB")}</span></div>)}
           </details>}
 
+          <Stage2HumanRatings me={me} appraisal={selectedCase} cycle={selectedCycle}
+            assessment={currentAssessment} evidence={evidence} isReviewer={isReviewer}
+            onSaved={() => loadCase(selectedCase.id)} />
+
           <div className="performance-section-head"><div><span className="eyebrow">Human review</span><h3>Review conversation</h3></div></div>
           {currentConversation && <div className="card performance-narrative"><p>{currentConversation.body}</p><small>{currentConversation.author?.full_name || "Reviewer"} · {new Date(currentConversation.created_at).toLocaleString("en-GB")}</small></div>}
           {isReviewer && <>
@@ -610,6 +615,7 @@ export default function Performance({ me }) {
           {isReviewer && selectedCase.status !== "closed" && <div className="performance-share-bar">
             <div><strong>Request HR release</strong><span>Your assessment remains restricted to the assigned reviewer and authorised HR until HR approves its formal publication. New revisions require their own release approval.</span></div>
             {!currentAssessment && <p className="screen-note">Record your assessment before requesting HR publication.</p>}
+            <p className="screen-note">Quarterly release requires all five individually reasoned human ratings, an independently selected overall judgement, and employee reflection or approved HR exception. Monthly structured ratings are optional. Database rules reject incomplete requests.</p>
             <FieldGroup label="Reason to release this assessment">
               <textarea className="field" rows="2" value={releaseReason} onChange={(event) => setReleaseReason(event.target.value)} aria-label="Performance release request reason" />
             </FieldGroup>
