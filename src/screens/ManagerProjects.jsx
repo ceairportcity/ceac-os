@@ -293,7 +293,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     const objectiveById = new Map(detail.objectives.map((objective) => [objective.id, objective]));
     const phaseById = new Map(detail.phases.map((phase) => [phase.id, phase]));
     const selectedDescription = selectedWork?.purpose || selectedWork?.instructions || selectedWork?.expected_outcome || null;
-    return <div className="manager-projects ev2-project-page ev2-project-workspace fpg-project-gold">
+    return <div className={`manager-projects ev2-project-page ev2-project-workspace fpg-project-gold ${area === "overview" ? "s2-owner-approved-projects" : "s2-project-workflow"}`}>
       <aside className="fpg-project-tree" aria-label="Projects and stages">
         <div className="fpg-project-tree-brand"><span>Projects</span><b>{projects.length}</b></div>
         <div className="fpg-project-tree-list">
