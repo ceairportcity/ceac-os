@@ -1,3 +1,5 @@
+> **16 OCT 2026 NEWEST V4 WHOLE-PRODUCT VISUAL LOCK:** `docs/design/stage2-v4/CEAC_STAGE2_V4_CANONICAL_INTERACTIVE.html` and `docs/design/CEAC_STAGE2_V4_VISUAL_PRODUCT_LOCK_2026-10-16.md` are the *binding current light white/blue* design, replacing old V1/V2/V3/dark-Teal V4 directions. No Staff/Manager/Support/Admin/HR/Executive surface, nested form/table/report, or mobile may ship with a materially different design. Owner must approve V4-conforming extensions for screens not depicted by original prototype. Visual sign-off doesn't waive functionality, all-role MFA/RLS, Stage 2 P0–P9, or separate production release GO.
+
 > **Latest owner decision:** This matrix is the role/route acceptance ledger for **integrated Stage 2** (complete whole-app Work+design and universal TOTP MFA). See `docs/continuity/CEAC_STAGE2_UNIFIED_EXECUTION_CONTRACT_2026-10-16.md`. In every role include login/enrol/challenge/recovery/AAL2 and persistent sessions, **without Google-only requirement**. Existing listed UI routes remain within scope.
 
 # CEAC OS — Whole-app design and data-flow coverage matrix (owner-locked 16 Oct 2026)
