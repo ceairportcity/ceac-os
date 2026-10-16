@@ -74,3 +74,17 @@ test("Stage 2 does not substitute Google-only identity for existing password sig
   assert.match(policy, /Google-only sign-in is CANCELLED/);
   assert.match(policy, /Supabase AAL2/);
 });
+
+test("Administration project drilldown reads through existing authenticated RLS and remains read only", () => {
+  const admin = file("src/screens/AdminProjects.jsx");
+  const reader = file("src/components/Stage2ProjectReader.jsx");
+  const app = file("src/App.jsx");
+  assert.match(admin, /Stage2ProjectReader/);
+  assert.match(admin, /label:"Open project"/);
+  assert.match(app, /<AdminProjects me=\{me\} scheduleMeeting=\{startMeeting\} openItem=\{openItem\}/);
+  assert.match(reader, /\.from\("work_items"\)/);
+  assert.match(reader, /\.neq\("visibility", "private"\)/);
+  assert.match(reader, /canAssign=\{false\}/);
+  assert.doesNotMatch(reader, /\.insert\(|\.update\(|\.delete\(/);
+  assert.match(reader, /No private project data was displayed/);
+});
