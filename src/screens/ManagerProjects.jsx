@@ -359,6 +359,9 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           canAssign={detail.canManageObjectives}
         />
 
+        <details className="s2-project-context-disclosure">
+          <summary>Operational phases and unit cost</summary>
+          <div>
         {(detail.kind !== "project" || detail.phases.length > 0) && <>
           <div className="sec"><span>Operational phases</span><span>{detail.phases.length}</span></div>
           {detail.phases.map((phase) => <div className="row" key={phase.id}><div className="row-t">{phase.name}</div><div className="row-m">{phase.starts_on ? dateOnly(`${phase.starts_on}T00:00:00`) : "No start date"} → {phase.ends_on ? dateOnly(`${phase.ends_on}T00:00:00`) : "No end date"}</div>{phase.closed_at && <div className="row-note">Closed {dateOnly(phase.closed_at)}</div>}</div>)}
@@ -368,6 +371,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         <div className="sec"><span>Your unit cost · read only</span></div>
         <p className="screen-note">Currencies are shown separately. No conversion is applied.</p>
         <div style={{ marginTop: 8 }}><CostSummary rows={detail.costs} /></div>
+          </div>
+        </details>
       </section>}
 
       {area === "work" && <section className="project-workspace-area fpg-project-work">
