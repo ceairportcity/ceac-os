@@ -197,7 +197,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         .select("id, org_id, kind, name, purpose, starts_on, ends_on, follow_up_ends_on, status, lead_unit_id, units!projects_lead_unit_id_fkey(name)")
         .eq("id", projectId).single();
       if (projectResult.error) throw new Error(`Project: ${projectResult.error.message}`);
-      const [participantResult, phaseResult, objectiveResult, workResult, budgetResult, spendResult] = await Promise.all([
+      const [participantResult, phaseResult, objectiveResult, workResult, budgetResult, spendResult, milestoneResult] = await Promise.all([
         supabase.from("project_units")
           .select("project_id, unit_id, role, units!project_units_unit_id_fkey(name)").eq("project_id", projectId),
         supabase.from("project_phases").select("id, name, position, starts_on, ends_on, closed_at")
@@ -212,6 +212,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           .eq("project_id", projectId).eq("unit_id", me.unit_id),
         supabase.from("spend_lines").select("id, currency, amount_minor, reverses_id, spent_on, description")
           .eq("project_id", projectId).eq("unit_id", me.unit_id),
+        supabase.from("project_milestones").select("id,name,status,target_on,completed_at")
+          .eq("project_id", projectId).order("target_on", { ascending: true, nullsFirst: false }),
       ]);
       const participants = requireResult(participantResult, "Participating units");
       if (projectResult.data.lead_unit_id !== me.unit_id && !participants.some((row) => row.unit_id === me.unit_id)) throw new Error("This project is not part of your current unit.");
@@ -222,6 +224,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       const spend = requireResult(spendResult, "Project spend");
       setDetail({
         ...projectResult.data, participants, phases, objectives, work,
+        milestones: milestoneResult.error ? null : milestoneResult.data || [],
         costs: costRows(budgets, spend),
         canManageProject: projectResult.data.lead_unit_id === me.unit_id,
         canManageObjectives: participants.some((row) => row.unit_id === me.unit_id) || projectResult.data.lead_unit_id === me.unit_id,
@@ -293,7 +296,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     const objectiveById = new Map(detail.objectives.map((objective) => [objective.id, objective]));
     const phaseById = new Map(detail.phases.map((phase) => [phase.id, phase]));
     const selectedDescription = selectedWork?.purpose || selectedWork?.instructions || selectedWork?.expected_outcome || null;
-    return <div className="manager-projects ev2-project-page ev2-project-workspace fpg-project-gold">
+    return <div className={`manager-projects ev2-project-page ev2-project-workspace fpg-project-gold ${area === "overview" ? "s2-owner-approved-projects" : "s2-project-workflow"}`}>
       <aside className="fpg-project-tree" aria-label="Projects and stages">
         <div className="fpg-project-tree-brand"><span>Projects</span><b>{projects.length}</b></div>
         <div className="fpg-project-tree-list">

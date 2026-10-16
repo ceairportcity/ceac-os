@@ -115,3 +115,17 @@ test("stage 2 universal MFA is staged behind explicit cutover, Stage 1 unchanged
   assert.match(gate, /getAuthenticatorAssuranceLevel/);
   assert.doesNotMatch(gate, /ceac_google_mfa_eligible|signInWithOAuth/);
 });
+
+test("Executive and Administration open the same authorised Projects workspace, without granting write authority", () => {
+  const delivery = file("src/screens/Delivery.jsx");
+  const admin = file("src/screens/AdminProjects.jsx");
+  const reader = file("src/components/Stage2ProjectReader.jsx");
+  const app = file("src/App.jsx");
+  assert.match(delivery, /Stage2ProjectReader/);
+  assert.match(delivery, /label:"Open project"/);
+  assert.match(delivery, /inspectProjectId/);
+  assert.match(admin, /Stage2ProjectReader/);
+  assert.match(reader, /canAssign=\{false\}/);
+  assert.match(reader, /\.neq\("visibility", "private"\)/);
+  assert.match(app, /<Delivery me=\{me\} initialProjectId=\{projectId\} openItem=\{openItem\}/);
+});

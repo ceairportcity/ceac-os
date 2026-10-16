@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import PersonAvatar from "./PersonAvatar";
-import { signedProjectPortraits } from "../lib/profilePortraits";
+import { useProjectPortraits } from "../lib/useProjectPortraits";
 import "./Stage2ProjectOverview.css";
 
 const finished = new Set(["completed", "self_certified"]);
@@ -16,28 +16,12 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [unit, setUnit] = useState("all");
+  const signedPortraits = useProjectPortraits(project);
+  const visiblePortraits = { ...signedPortraits, ...photoUrls };
   const work = project.work || [];
-  const portraitIds = [...new Set(work.map((item) => item.assignee_id).filter(Boolean))].sort().join("|");
-  const [signedPhotos, setSignedPhotos] = useState({});
-  useEffect(() => {
-    let active = true;
-    const refresh = async () => {
-      try {
-        const photos = await signedProjectPortraits(portraitIds ? portraitIds.split("|") : []);
-        if (active) setSignedPhotos(photos);
-      } catch {
-        // Stage 2 portrait schema may not yet be migrated. Use initials, never stock faces.
-        if (active) setSignedPhotos({});
-      }
-    };
-    setSignedPhotos({});
-    void refresh();
-    const timer = setInterval(refresh, 50 * 60 * 1000);
-    return () => { active = false; clearInterval(timer); };
-  }, [project.id, portraitIds]);
-  const portraits = { ...photoUrls, ...signedPhotos };
   const tasks = work.filter((row) => row.kind === "task");
   const completed = tasks.filter((row) => finished.has(row.status));
+  const completionRate = tasks.length ? Math.round(100 * completed.length / tasks.length) : null;
   const open = tasks.filter((row) => !inactive.has(row.status));
   const overdue = open.filter((row) => row.due_at && new Date(row.due_at) < new Date());
   const next = open.filter((row) => row.due_at && new Date(row.due_at) >= new Date()).sort((a,b) => new Date(a.due_at) - new Date(b.due_at))[0];
@@ -70,17 +54,39 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const recent = work.filter((item) => item.created_at).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 4);
   return <div className="s2-project">
     <section className="s2-project-metrics" aria-label="Recorded project metrics">
-      <div><span>Task completion</span><strong>{tasks.length ? Math.round(completed.length * 100 / tasks.length) + "%" : "—"}</strong><small>{completed.length} of {tasks.length} completed</small></div>
-      <div><span>Open tasks</span><strong>{open.length}</strong><small>{overdue.length} overdue</small></div>
-      <div><span>Departments</span><strong>{units.length}</strong><small>Including lead unit</small></div>
-      <div><span>Next due task</span><strong className="s2-project-date">{when(next?.due_at)}</strong><small>{next?.title || "No upcoming due date"}</small></div>
+      <div className="s2-project-stat-card s2-project-progress-card">
+        <span>Task completion</span>
+        <div className="s2-project-progress-line">
+          <span className="s2-project-progress-ring" style={{ "--s2-percent": completionRate ?? 0 }} aria-hidden="true">
+            <strong>{completionRate === null ? "—" : completionRate + "%"}</strong>
+          </span>
+          <small>{completed.length} of {tasks.length} tasks complete</small>
+        </div>
+      </div>
+      <div className="s2-project-stat-card">
+        <span>Tasks</span>
+        <div className="s2-project-task-facts">
+          <strong>{completed.length}<small>Completed</small></strong>
+          <strong>{open.length}<small>Open</small></strong>
+          <strong className="is-overdue">{overdue.length}<small>Overdue</small></strong>
+        </div>
+      </div>
+      <div className="s2-project-stat-card">
+        <span>Participating departments</span>
+        <strong>{units.length}</strong><small>Including the lead department</small>
+      </div>
+      <div className="s2-project-stat-card">
+        <span>Next key date</span>
+        <strong className="s2-project-date">{when(next?.due_at)}</strong>
+        <small>{next?.title || "No upcoming due date"}</small>
+      </div>
     </section>
     <div className="s2-project-layout">
       <div className="s2-project-content">
         <section className="s2-project-panel">
           <header><h2>Project team</h2><small>{people.length} recorded assignees</small></header>
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>
-            <PersonAvatar name={person.name} photoUrl={portraits[person.id]} /><span><strong>{person.name}</strong><small>{person.count} assigned work item{person.count === 1 ? "" : "s"}</small></span>
+            <PersonAvatar name={person.name} photoUrl={visiblePortraits[person.id]} /><span><strong>{person.name}</strong><small>{person.count} assigned work item{person.count === 1 ? "" : "s"}</small></span>
           </div>)}{!people.length && <p>No named assignees recorded yet.</p>}</div>
           <div className="s2-project-units"><header><h3>Departments involved</h3></header><div>{units.map((row) => <span key={row.id}><strong>{row.name}</strong><small>{row.lead ? "Lead" : "Participating"}</small></span>)}</div></div>
         </section>
@@ -91,10 +97,11 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
             <select aria-label="Task status" value={filter} onChange={(e) => setFilter(e.target.value)}><option value="all">All tasks</option><option value="active">Active</option><option value="finished">Finished</option></select>
             <select aria-label="Department" value={unit} onChange={(e) => setUnit(e.target.value)}><option value="all">All departments</option>{units.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
           </div>
-          <div className="s2-project-table-scroll"><table><thead><tr><th>Task</th><th>Assigned to</th><th>Due</th><th>Status</th></tr></thead>
+          <div className="s2-project-table-scroll"><table><thead><tr><th>Task</th><th>Department</th><th>Assigned to</th><th>Due</th><th>Status</th></tr></thead>
           <tbody>{visible.map((item) => <tr key={item.id}>
             <td><button className="s2-project-task" onClick={() => openWork?.(item.id)}>{item.title}<small>{item.ref}</small></button></td>
-            <td>{item.profiles?.full_name ? <span className="s2-project-personcell"><PersonAvatar name={item.profiles.full_name} photoUrl={portraits[item.assignee_id]} size={25} />{item.profiles.full_name}</span> : "Unassigned"}</td><td>{when(item.due_at)}</td>
+            <td><span className="s2-project-unit-chip">{units.find((dept) => dept.id === item.unit_id)?.name || (item.unit_id === project.lead_unit_id ? project.units?.name || "Lead unit" : "Not recorded")}</span></td>
+            <td>{item.profiles?.full_name ? <span className="s2-project-personcell"><PersonAvatar name={item.profiles.full_name} photoUrl={visiblePortraits[item.assignee_id]} size={25} />{item.profiles.full_name}</span> : "Unassigned"}</td><td>{when(item.due_at)}</td>
             <td><span className={finished.has(item.status) ? "s2-project-done" : "s2-project-pending"}>{String(item.status || "Not recorded").replaceAll("_"," ")}</span></td>
           </tr>)}</tbody></table></div>
           {!visible.length && <p className="s2-project-empty">No recorded tasks match this view.</p>}
@@ -105,7 +112,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         <header><h2>About this project</h2></header>
         <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Lead unit</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>End date</dt><dd>{when(project.ends_on)}</dd></div></dl>
         {project.purpose && <section><h3>Description</h3><p>{project.purpose}</p></section>}
-        <section><h3>Project phases</h3>{project.phases?.length ? <ol>{project.phases.map((phase) => <li key={phase.id}><strong>{phase.name}</strong><small>{phase.closed_at ? "Closed " + when(phase.closed_at) : phase.ends_on ? "Due " + when(phase.ends_on) : "Date not recorded"}</small></li>)}</ol> : <p>No phases recorded.</p>}</section>
+        <section><h3>Key milestones</h3>{project.milestones === null ? <p>Milestone records are unavailable to this view.</p> : project.milestones?.length ? <ol className="s2-project-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.status === "achieved" ? "is-complete" : ""}><strong>{milestone.name}</strong><small>{String(milestone.status || "Not recorded").replaceAll("_", " ")} · {milestone.completed_at ? "Completed " + when(milestone.completed_at) : milestone.target_on ? "Target " + when(milestone.target_on) : "No recorded date"}</small></li>)}</ol> : <p>No milestones recorded.</p>}</section>
         <section><h3>Recently created work</h3>{recent.length ? <ol>{recent.map((item) => <li key={item.id}><button onClick={() => openWork?.(item.id)}>{item.title}</button><small>{when(item.created_at)}</small></li>)}</ol> : <p>No work records yet.</p>}</section>
       </aside>
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ProfilePortraitEditor from "../components/ProfilePortraitEditor";
 import { supabase } from "../lib/supabase";
 import { ProductNotice } from "../components/bits";
 import { dateOnly } from "../lib/time";
@@ -475,6 +476,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       description="Ordinary profile information only. Official employment/access records remain Administration-owned."
       action={<Button variant="secondary" size="sm" onClick={openProfile} disabled={hasProfileReadError}>Edit personal details</Button>}
     >
+      {import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true" && <ProfilePortraitEditor me={me} />}
       {datasetErrors.profile ? <div className="ev2pf-partial-error"><StatePanel state="error" title="Ordinary profile could not be loaded" description={datasetErrors.profile} actionLabel="Try again" onAction={load} icon="error" /></div>
         : <PersonalDetailGrid items={profileItems} />}
       {datasetErrors.details ? <div className="ev2pf-partial-error"><StatePanel state="error" title="Private contact details could not be loaded" description="Editing is disabled so unseen emergency-contact or address information cannot be overwritten with blanks." actionLabel="Try again" onAction={load} icon="error" /></div> : null}

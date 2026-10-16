@@ -25,7 +25,7 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack }) {
           .select("id,kind,name,purpose,status,starts_on,ends_on,lead_unit_id,units!projects_lead_unit_id_fkey(name)")
           .eq("id", projectId).single();
         if (projectResult.error) throw projectResult.error;
-        const [participation, phases, work] = await Promise.all([
+        const [participation, phases, work, milestones] = await Promise.all([
           supabase.from("project_units")
             .select("project_id,unit_id,role,units!project_units_unit_id_fkey(name)")
             .eq("project_id", projectId),
@@ -35,6 +35,8 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack }) {
             .select("id,ref,title,kind,status,created_at,due_at,unit_id,assignee_id,profiles!work_items_assignee_id_fkey(full_name)")
             .eq("project_id", projectId).neq("visibility", "private")
             .order("due_at", { ascending: true, nullsFirst: false }),
+          supabase.from("project_milestones").select("id,name,status,target_on,completed_at")
+            .eq("project_id", projectId).order("target_on", { ascending: true, nullsFirst: false }),
         ]);
         const failed = [participation.error, phases.error, work.error].find(Boolean);
         if (failed) throw failed;
@@ -43,6 +45,7 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack }) {
           participants: participation.data || [],
           phases: phases.data || [],
           work: work.data || [],
+          milestones: milestones.error ? null : milestones.data || [],
         });
       } catch {
         if (current) setError("This project's authorised overview could not be verified. No private project data was displayed.");

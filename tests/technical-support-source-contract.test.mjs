@@ -131,7 +131,11 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 153, "expected 152 approved Stage 1 files plus the reviewed forward-only Support view migration");
+  const stagedPortraitMigration = "20261016164000_149_private_portrait_media_stage2.sql";
+  assert.ok(migrations.includes(stagedPortraitMigration), "Stage 2 private portrait migration must remain available for isolated replay");
+  assert.equal(migrations.filter((file) => file !== stagedPortraitMigration).length, 153,
+    "Stage 1's reviewed 153-file migration baseline must not change when Stage 2 is staged");
+  assert.equal(migrations.length, 154, "expect exactly one additional Stage 2 portrait migration");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";

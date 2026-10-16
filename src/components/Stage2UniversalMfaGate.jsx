@@ -37,10 +37,12 @@ export default function Stage2UniversalMfaGate({ children, onVerified }) {
         claims: claimsResult.data?.claims,
       });
       setState(decision.state);
+      return decision.state;
     } catch (failure) {
       if (currentGeneration !== generation.current) return;
       setError(failure?.message || "Your authenticator session could not be verified.");
       setState("error");
+      return "error";
     }
   }, []);
 
@@ -68,8 +70,8 @@ export default function Stage2UniversalMfaGate({ children, onVerified }) {
   >
     {error && <p className="auth-message error" role="alert">{error}</p>}
     {(state === "enroll" || state === "challenge") && <AccountMfaSetup onVerified={async () => {
-      await refresh();
-      await onVerified?.();
+      const verifiedState = await refresh();
+      if (verifiedState === "allow") await onVerified?.();
     }} />}
     {state === "error" && <button className="auth-primary" type="button" onClick={() => refresh()}>Retry verification</button>}
     <button className="btn secondary" type="button" onClick={() => supabase.auth.signOut()}>Sign out</button>

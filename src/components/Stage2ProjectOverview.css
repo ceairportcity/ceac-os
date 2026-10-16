@@ -60,3 +60,106 @@
 .s2-project-context-disclosure>summary::after{content:"+";float:right;font-size:17px;line-height:1}
 .s2-project-context-disclosure[open]>summary::after{content:"−"}
 .s2-project-context-disclosure>div{padding:0 16px 16px}
+
+/* Owner-approved Projects mockup: compact individually bordered summary cards,
+   one shared people/departments area and one factual task list. */
+.s2-project-metrics{gap:12px;border:0;border-radius:0;background:transparent;overflow:visible}
+.s2-project-metrics>.s2-project-stat-card{padding:15px 18px;border:1px solid #e2eaf5;border-radius:11px;background:#fff;min-height:105px;box-shadow:0 5px 18px rgba(35,72,112,.025)}
+.s2-project-metrics>.s2-project-stat-card:last-child{border-right:1px solid #e2eaf5}
+.s2-project-metrics>.s2-project-stat-card>span:first-child{font-weight:750;color:#263d5b;font-size:12px}
+.s2-project-progress-line{display:flex;gap:14px;align-items:center;min-height:62px;margin-top:7px}
+.s2-project-progress-ring{display:grid;place-items:center;position:relative;flex:none;width:66px;height:66px;border-radius:50%;background:conic-gradient(#1477ee calc(var(--s2-percent,0) * 1%), #e4eaf2 0);overflow:visible}
+.s2-project-progress-ring::before{content:"";position:absolute;inset:7px;border-radius:50%;background:white}
+.s2-project-progress-ring strong{z-index:1;font-size:15px;color:#174d9b;letter-spacing:normal}
+.s2-project-task-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:12px}
+.s2-project-task-facts strong{display:flex;flex-direction:column;font-size:24px;color:#173b67;letter-spacing:-.03em}
+.s2-project-task-facts strong small{font-size:10px;letter-spacing:normal;line-height:1.45;font-weight:500}
+.s2-project-task-facts .is-overdue{color:#d44347}
+.s2-project-stat-card>.s2-project-date{margin-top:10px;white-space:nowrap}
+.s2-project-units>div>span:nth-child(6n+1){background:#fceef2}
+.s2-project-units>div>span:nth-child(6n+2){background:#eaf3ff}
+.s2-project-units>div>span:nth-child(6n+3){background:#e8f7f1}
+.s2-project-units>div>span:nth-child(6n+4){background:#f2edff}
+.s2-project-units>div>span:nth-child(6n+5){background:#fff3e8}
+.s2-project-units>div>span:nth-child(6n+6){background:#e9f8f6}
+@media(max-width:1100px){.s2-project-metrics>.s2-project-stat-card:nth-child(-n+2){border-bottom:1px solid #e2eaf5}}
+@media(max-width:600px){.s2-project-metrics{gap:8px}.s2-project-metrics>.s2-project-stat-card{padding:12px;min-height:105px}.s2-project-progress-ring{width:56px;height:56px}.s2-project-progress-ring::before{inset:6px}.s2-project-progress-line{gap:8px}.s2-project-task-facts strong{font-size:21px}}
+
+/* The approved Projects mockup has only one global CEAC sidebar. Remove the
+   obsolete second dark projects rail on the Overview; all other work tabs
+   retain their phase/navigation affordances in a matching LIGHT palette. */
+.manager-projects.s2-owner-approved-projects.fpg-project-gold{
+  display:block;
+  grid-template-columns:minmax(0,1fr);
+  max-width:none!important;
+  min-height:0;
+  overflow:visible;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.manager-projects.s2-owner-approved-projects>.fpg-project-tree,
+.manager-projects.s2-owner-approved-projects .fpg-project-facts{display:none}
+.manager-projects.s2-owner-approved-projects>.fpg-project-main{
+  padding:0 5px 32px;
+  background:transparent;
+}
+.manager-projects.s2-owner-approved-projects .ev2p-back{margin:0 0 6px}
+.manager-projects.s2-owner-approved-projects .ev2p-workspace-header{
+  margin-bottom:12px;
+  box-shadow:none;
+}
+.manager-projects.s2-owner-approved-projects .ev2p-tabs{
+  background:transparent;border-color:#e0e9f4;
+  margin:4px 0 14px;
+}
+.manager-projects.s2-owner-approved-projects .ev2p-tabs button{
+  color:#5e7794;border-color:transparent;
+}
+.manager-projects.s2-owner-approved-projects .ev2p-tabs button[aria-selected="true"]{
+  color:#126bdc;border-color:#126bdc;
+}
+.manager-projects.s2-owner-approved-projects .project-workspace-area{padding:0;background:transparent}
+.manager-projects.s2-project-workflow.fpg-project-gold{
+  --fpg-rail:#f5f9fd;
+  --fpg-rail-soft:#ecf4fb;
+  --fpg-accent:#1574e7;
+  border-color:#e3ebf6;
+  box-shadow:none;
+}
+.manager-projects.s2-project-workflow .fpg-project-tree{border-right:1px solid #e5edf5;color:#2f4a68}
+.manager-projects.s2-project-workflow .fpg-project-tree-brand{color:#213e60}
+.manager-projects.s2-project-workflow .fpg-project-tree-brand b{color:#547998;border-color:#d8e5f5}
+.manager-projects.s2-project-workflow .fpg-project-tree-list button{color:#4d6782}
+.manager-projects.s2-project-workflow .fpg-project-tree-list button:hover,
+.manager-projects.s2-project-workflow .fpg-project-tree-list button.is-selected{background:#e7f1ff;color:#0e65c6}
+.manager-projects.s2-project-workflow .fpg-project-tree-list small{color:#738ba6}
+.manager-projects.s2-project-workflow .fpg-project-tree-stages{border-top-color:#e0eaf5}
+.manager-projects.s2-project-workflow .fpg-project-tree-stages>span{color:#7188a3}
+.manager-projects.s2-project-workflow .fpg-project-tree-stages button{color:#486582}
+.manager-projects.s2-project-workflow .fpg-project-tree-stages button i{background:#97b8da}
+@media(max-width:640px){
+  .manager-projects.s2-owner-approved-projects>.fpg-project-main{padding:0 0 24px}
+  .manager-projects.s2-owner-approved-projects .ev2p-workspace-header{border-radius:10px}
+  .manager-projects.s2-owner-approved-projects .ev2p-tabs{overflow-x:auto}
+}
+
+.s2-project-unit-chip{display:inline-block;border-radius:5px;padding:4px 7px;background:#e9f2ff;color:#2365b3;font-size:11px;white-space:nowrap;max-width:155px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.s2-project-milestones{list-style:none;padding:0!important}
+.s2-project-milestones li{position:relative;border-left:2px solid #e3eaf4;margin-left:7px;padding:0 0 12px 17px}
+.s2-project-milestones li:last-child{border-left-color:transparent}
+.s2-project-milestones li::before{content:"";position:absolute;left:-6px;top:2px;width:9px;height:9px;border:2px solid #b8cae2;border-radius:50%;background:#fff}
+.s2-project-milestones li.is-complete::before{border-color:#2ab07c;background:#2ab07c}
+.s2-project-milestones li strong{font-size:11px;color:#2d4b6c}
+
+/* Stage 2 accessibility floor: all readable metadata and table actions must
+   pass the existing 12px minimum at 320px as well as desktop densities. */
+.s2-project :is(small,th,td,input,select,button,.s2-project-unit-chip,.s2-project-task,.s2-project-milestones li strong,.s2-project-panel h3){
+  font-size:12px!important;
+}
+.s2-project .s2-project-stat-card>span:first-child{font-size:12px!important}
+
+/* Stage 2 project accessibility: keep every visible project datum at >=12px.
+   Preserve larger heading, percentage and button typography. */
+.s2-project :is(.s2-project-person strong,.s2-project-units strong,.s2-project-aside dt,.s2-project-aside dd,.s2-project-aside section p,.s2-project-aside li,.s2-project-avatar,.s2-project-more,.s2-project-unit-chip){font-size:12px!important}

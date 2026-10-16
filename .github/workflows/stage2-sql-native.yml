@@ -1,0 +1,27 @@
+name: CEAC Stage 2 isolated migration and RLS verification (no production)
+on:
+  push:
+    branches:
+      - chatgpt/stage2-integrated-qa-contract-20261016
+    paths:
+      - .github/workflows/stage2-sql-native.yml
+permissions:
+  contents: read
+jobs:
+  isolated-sql-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    env:
+      ROLE_FIXTURE_PASSWORD: Local-role-fixture-2026!
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: ./.github/actions/setup-ceac-test-environment
+      - name: Registered rollback-only SQL security gates (including Stage 2 portrait)
+        run: bash scripts/ci/run-sql-security-gates.sh

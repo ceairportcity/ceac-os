@@ -24,3 +24,15 @@
 .ceac-support-page .ceac-support-desk-filters input,.ceac-support-page .ceac-support-desk-filters select{border:1px solid #dce7f4;border-radius:8px}
 @media(max-width:800px){.ceac-support-page .ceac-support-layout{grid-template-columns:1fr}}
 @media(max-width:590px){.ceac-support-page .s2-support-heading{padding:16px}.ceac-support-page .s2-support-summary>div{padding:11px}.ceac-support-page .s2-support-summary strong{font-size:20px}.ceac-support-page .s2-support-summary span,.ceac-support-page .s2-support-summary small{font-size:10px}.ceac-support-page .ceac-support-layout>.ceac-support-main,.ceac-support-page .ceac-support-layout>.ceac-support-side,.ceac-support-page section.ceac-support-main{padding:14px}.ceac-support-page .ceac-support-nav{margin-inline:-8px;border-radius:0}}
+
+/* Approved V4-style selected-case inspector: retain the actual Help Desk
+   queue while a manager or technician works on one authorised case. */
+.ceac-support-page .s2-support-split{min-width:0;display:block}
+.ceac-support-page .s2-support-split.has-inspector{display:grid;grid-template-columns:minmax(0,1fr) minmax(350px,42%);gap:13px;align-items:start}
+.ceac-support-page .s2-support-split>.ceac-support-main{min-width:0;border:1px solid #e2eaf4;border-radius:12px;padding:19px;background:#fff}
+.ceac-support-page .s2-support-inspector{min-width:0;position:sticky;top:74px;max-height:calc(100dvh - 88px);overflow:auto;overscroll-behavior:contain;border:1px solid #e2eaf4;border-radius:12px;background:#fff}
+.ceac-support-page .s2-support-inspector>.ceac-support-detail{box-shadow:none;border:0;border-radius:0;margin:0}
+.ceac-support-page .s2-support-inspector .ceac-support-detail-top h2{font-size:17px}
+.ceac-support-page .s2-support-inspector .ceac-support-section-actions{flex-wrap:wrap}
+@media(max-width:1120px){.ceac-support-page .s2-support-split.has-inspector{grid-template-columns:1fr}.ceac-support-page .s2-support-inspector{position:static;max-height:none;overflow:visible}}
+@media(max-width:590px){.ceac-support-page .s2-support-split>.ceac-support-main{padding:14px}}
