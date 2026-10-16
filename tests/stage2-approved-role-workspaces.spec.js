@@ -144,3 +144,33 @@ test("Technical Support manager receives premium support workflow without HR/Fin
     await page.screenshot({ path: "test-artifacts/stage2-technical-support-manager.png", fullPage: true });
   } finally { await context.close(); }
 });
+
+test("Technical Support staff sees their permitted case workflow, not manager/HR authority", async ({ browser }) => {
+  assertLocalEnvironment();
+  const staffId = "31000000-0000-4000-8000-000000000001";
+  const unitA = "20000000-0000-4000-8000-000000000011";
+  const service = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } });
+  const membership = await service.from("support_team_memberships").insert({
+    org_id: org, profile_id: staffId, role: "member", added_by: admin,
+    reason: "Stage 2 disposable staff Support visual acceptance", associated_unit_id: unitA,
+  });
+  expect(membership.error, membership.error?.message).toBeNull();
+  const grant = await service.from("capability_grants").insert({
+    org_id: org, profile_id: staffId, capability: "support.case.manage",
+    granted_by: admin, grant_reason: "Stage 2 disposable Support staff acceptance",
+  });
+  expect(grant.error, grant.error?.message).toBeNull();
+  const { context, page } = await openAs(browser, "staff@ceac.local.test");
+  try {
+    await page.goto(root + "/?tab=technical-support");
+    await expect(page.locator(".ceac-support-page")).toBeVisible({ timeout: 20000 });
+    await expect(page.locator(".s2-support-heading .s2-scenic-photo img")).toBeVisible();
+    const nav = page.locator(".ev2s-sidebar-nav");
+    await expect(nav.getByRole("button", { name: "People & Access", exact:true })).toHaveCount(0);
+    await expect(nav.getByRole("button", { name: "Finance", exact:true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Help Desk", exact:true }).click();
+    await expect(page.locator(".s2-support-split")).toBeVisible();
+    await page.screenshot({ path: "test-artifacts/stage2-technical-support-staff.png", fullPage: true });
+  } finally { await context.close(); }
+});
