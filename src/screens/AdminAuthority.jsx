@@ -4,7 +4,7 @@ import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer, DataPanel, MotionDisclosure, QueueRow, RecordRow, StatePanel, StatusBadge } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
 
-const ORG_ONLY = new Set(["authority.manage","hr_private.access","payroll.prepare","payroll.approve","audit.view"]);
+const ORG_ONLY = new Set(["authority.manage","hr_private.access","payroll.prepare","payroll.approve","audit.view","support.case.manage"]);
 
 function stamp(value) {
   if (!value) return "—";
@@ -170,6 +170,7 @@ export default function AdminAuthority({ me, refreshMe }) {
         </select>
       </FieldGroup>
       {definition && <p className="small" style={{ lineHeight: 1.5 }}>{definition.description}</p>}
+      {capability === "support.case.manage" && <p className="screen-note">Technical Support case access requires both an active Support membership recorded by People Administration and this separately approved, organisation-wide capability. Unit Head status alone is not sufficient. This grant cannot confer HR, Payroll or broader Administration authority.</p>}
       <FieldGroup label="Scope">
         <select className="field" aria-label="Capability scope" value={scopeUnitId} disabled={ORG_ONLY.has(capability)} onChange={(event) => setScopeUnitId(event.target.value)}>
           <option value="">Organisation-wide</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
