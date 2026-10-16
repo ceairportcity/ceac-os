@@ -375,7 +375,7 @@ export default function App() {
   function pageForTab() {
     if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
-    if (tab === "achievements") return <PersonalAchievements me={me} back={() => go("work")} openItem={openItem} />;
+    if (tab === "achievements") return <PersonalAchievements me={me} back={() => go("me")} openItem={openItem} />;
     if (tab === "technical-help") return <TechnicalHelp key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "technical-support") return canManageSupport
       ? <TechnicalSupport key={`${me.org_id}:${me.id}`} me={me} go={go} />
@@ -466,7 +466,7 @@ export default function App() {
     if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} />;
     if (tab === "settings" && isAdmin) return <ControlCenter me={me} go={go} />;
     if (tab === "office-settings" && isAdmin) return <OfficeSettings me={me} openWorkforce={() => go("attendance")} />;
-    return <MeScreen me={me} onOpenWork={openItem} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
+    return <MeScreen me={me} onOpenWork={openItem} onOpenAchievements={() => go("achievements")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
   }
 
   const appModeClass = isExec ? "executive-app" : isUnitManager ? "manager-app" : (!isAdmin ? "staff-app" : "office-app");
