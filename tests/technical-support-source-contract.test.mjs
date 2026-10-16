@@ -141,13 +141,14 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
     stagedAppraisalMigration,
     "20261016183000_152_quarterly_ministry_review_events.sql",
     "20261016190000_153_stage2_human_report_security_integration.sql",
+    "20261016210000_154_stage2_universal_rpc_auth_gate.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
   }
   assert.equal(migrations.filter((file) => !stagedIntegratedSecurity.includes(file)).length, 153,
-    "Stage 1's 153 reviewed migrations remain identical; five additional Stage 2 migrations are pending");
-  assert.equal(migrations.length, 158, "expected 153 reviewed Stage 1 plus five integrated Stage 2 staged migrations");
+    "Stage 1's 153 reviewed migrations remain identical; six additional Stage 2 migrations are pending");
+  assert.equal(migrations.length, 159, "expected 153 reviewed Stage 1 plus six integrated Stage 2 staged migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
@@ -192,7 +193,7 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
 });
 
 
-test("later migrations may not redefine S3 authority functions", () => {
+test("S3 security function overrides are forbidden except the exact Stage 2 TOTP identity guards", () => {
   const folder = "supabase/migrations";
   const s3Filename = "20261007083250_118_capability_delegation_expiry.sql";
   const pending = readdirSync(folder).filter((file) =>
@@ -208,8 +209,13 @@ test("later migrations may not redefine S3 authority functions", () => {
   assert.ok(s3Functions.has("grant_capability"));
   for (const migration of pending) {
     for (const functionName of extractDefinitions(read(join(folder, migration)))) {
-      assert.equal(s3Functions.has(functionName), false,
+      if (!s3Functions.has(functionName)) continue;
+      const approvedFile = "20261016210000_154_stage2_universal_rpc_auth_gate.sql";
+      const approvedFunctions = new Set(["app_org_id","app_identity_confirmed","app_privileged_aal_allowed"]);
+      assert.ok(migration === approvedFile && approvedFunctions.has(functionName),
         migration + " illegally replaces/overrides S3 security function " + functionName);
+      assert.match(read(join(folder,migration)), /public\.app_stage2_universal_aal_allowed\(\)/,
+        "Only the new verified-TOTP AAL2 prerequisite may extend an S3 authority function");
     }
   }
 });
