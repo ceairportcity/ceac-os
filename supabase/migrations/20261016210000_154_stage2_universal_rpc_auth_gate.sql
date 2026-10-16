@@ -14,7 +14,7 @@ CREATE OR REPLACE FUNCTION public.app_can_read_announcement(p_announcement_id uu
 AS $function$
   select public.app_stage2_universal_aal_allowed()
     and private.can_read_announcement(p_announcement_id);
-$function$
+$function$;
 
 -- Existing app_identity_confirmed: preserve callable signature, grants and original business predicates.
 CREATE OR REPLACE FUNCTION public.app_identity_confirmed()
@@ -32,7 +32,7 @@ AS $function$
       and u.email_confirmed_at is not null
       and public.app_stage2_universal_aal_allowed()
   );
-$function$
+$function$;
 
 -- Existing app_org_id: preserve callable signature, grants and original business predicates.
 CREATE OR REPLACE FUNCTION public.app_org_id()
@@ -48,7 +48,7 @@ AS $function$
     and p.active
     and u.email_confirmed_at is not null
     and public.app_stage2_universal_aal_allowed();
-$function$
+$function$;
 
 -- Existing app_privileged_aal_allowed: preserve callable signature, grants and original business predicates.
 CREATE OR REPLACE FUNCTION public.app_privileged_aal_allowed()
@@ -81,7 +81,7 @@ AS $function$
       and p.active
       and u.email_confirmed_at is not null
   ),false);
-$function$
+$function$;
 
 -- Existing my_account_activity: preserve callable signature, grants and original business predicates.
 CREATE OR REPLACE FUNCTION public.my_account_activity(p_limit integer DEFAULT 50)
@@ -99,7 +99,7 @@ AS $function$
      and public.app_stage2_universal_aal_allowed()
    order by e.created_at desc
    limit greatest(1, least(coalesce(p_limit, 50), 200));
-$function$
+$function$;
 
 -- Existing my_sessions: preserve callable signature, grants and original business predicates.
 CREATE OR REPLACE FUNCTION public.my_sessions()
@@ -116,7 +116,7 @@ AS $function$
    where s.user_id = auth.uid()
      and public.app_stage2_universal_aal_allowed()
    order by coalesce(s.refreshed_at, s.updated_at, s.created_at) desc;
-$function$
+$function$;
 
 -- Existing update_my_personal_details: preserve callable signature, grants and original business predicates.
 CREATE OR REPLACE FUNCTION public.update_my_personal_details(p_preferred_name text, p_phone text, p_birthday date, p_emergency_contact_name text, p_emergency_contact_phone text, p_emergency_contact_relationship text, p_address_text text, p_social_handles jsonb DEFAULT '{}'::jsonb)
@@ -219,4 +219,4 @@ begin
     values(v_org,auth.uid(),auth.uid(),v_changed);
   end if;
 end;
-$function$
+$function$;
