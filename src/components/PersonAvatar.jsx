@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./PersonAvatar.css";
 
 /**
  * Authorised CEAC staff avatar. Stock faces are NEVER substitutes for an
