@@ -12,7 +12,7 @@ export function ghanaCalendarDate(instant = new Date()) {
 }
 export function dailyLandscapeIndex(ghanaDate, count = 10, anchorDate = '2026-10-16') {
   const parse = value => {
-    if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) throw new Error('Expected YYYY-MM-DD');
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error('Expected YYYY-MM-DD');
     const parsed = new Date(value + 'T00:00:00Z');
     if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) throw new Error('Invalid calendar date');
     return parsed.getTime();
