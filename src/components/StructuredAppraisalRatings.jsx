@@ -37,7 +37,9 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
    (async()=>{
      try{
        const [ratingResult,exceptionsResult]=await Promise.all([
-         supabase.from("appraisal_human_rating_versions")
+         supabase.from(me.id === review.profile_id
+           ? "stage2_employee_published_human_ratings"
+           : "appraisal_human_rating_versions")
            .select("id,appraisal_id,assessment_entry_id,profile_id,reviewer_id,cadence,rubric_version,category_ratings,overall_rating,overall_narrative,strengths,challenges,next_actions,created_at")
            .eq("appraisal_id",review.id).order("created_at",{ascending:false}),
          isHR?supabase.from("appraisal_review_exceptions")
