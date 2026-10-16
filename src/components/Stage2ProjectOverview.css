@@ -91,7 +91,7 @@
 .manager-projects.s2-owner-approved-projects.fpg-project-gold{
   display:block;
   grid-template-columns:minmax(0,1fr);
-  max-width:none;
+  max-width:none!important;
   min-height:0;
   overflow:visible;
   border:0;
