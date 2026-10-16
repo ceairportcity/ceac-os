@@ -12,7 +12,7 @@ import "./StructuredHumanReview.css";
  * The parent owns HR release and employee response.
  */
 export default function StructuredHumanReview({ appraisal, cycle, assessment, evidence, me }) {
-  const cadence = cycle?.review_cadence;
+  const cadence = cycle?.stage2_cadence;
   const enabled = import.meta.env.VITE_STAGE2_STRUCTURED_RUBRIC === "true";
   const [draft, setDraft] = useState(blankHumanRubric);
   const [versions, setVersions] = useState([]);
@@ -35,14 +35,14 @@ export default function StructuredHumanReview({ appraisal, cycle, assessment, ev
     let alive = true;
     setVersions([]); setDraft(blankHumanRubric()); setError(""); setStatus("loading");
     setShowForm(false);
-    if (!enabled || !appraisal?.id || !["quarterly","monthly"].includes(cadence)) {
+    if (!enabled || !appraisal?.id || !["quarter","month"].includes(cadence)) {
       setStatus("disabled");
       return () => { alive = false; };
     }
     const load = async () => {
       try {
         const result = await supabase.from("appraisal_human_rating_versions")
-          .select("id,assessment_entry_id,rubric_version,category_ratings,overall_rating,overall_narrative,strengths,challenges,improvement_actions,next_responsibilities,created_by,created_at")
+          .select("id,assessment_entry_id,rubric_version,category_ratings,overall_rating,overall_narrative,strengths,challenges,next_actions,reviewer_id,profile_id,cadence,created_at")
           .eq("appraisal_id", appraisal.id)
           .order("created_at", { ascending:false })
           .order("id", { ascending:false }).limit(30);
@@ -71,16 +71,16 @@ export default function StructuredHumanReview({ appraisal, cycle, assessment, ev
       const result = await supabase.from("appraisal_human_rating_versions")
         .insert({
           org_id:appraisal.org_id, appraisal_id:appraisal.id,
-          assessment_entry_id:assessment.id,created_by:me.id,rubric_version:1,
-          category_ratings:body.categories,
+          assessment_entry_id:assessment.id,profile_id:appraisal.profile_id,
+          reviewer_id:me.id,cadence,rubric_version:1,
+          category_ratings:Object.fromEntries(body.categories.map(({category,rating,explanation,evidenceIds}) =>
+            [category,{rating,reason:explanation,evidenceIds}])),
           overall_rating:body.overallRating,
           overall_narrative:body.overallNarrative,
           strengths:body.strengths,challenges:body.challenges,
-          improvement_actions:body.improvementActions,
-          next_responsibilities:body.nextResponsibilities,
-          supersedes_id:newest?.id || null,
+          next_actions:`Improvement actions: ${body.improvementActions}\nNext responsibilities: ${body.nextResponsibilities}`,
         })
-        .select("id,assessment_entry_id,rubric_version,category_ratings,overall_rating,overall_narrative,strengths,challenges,improvement_actions,next_responsibilities,created_by,created_at")
+        .select("id,assessment_entry_id,rubric_version,category_ratings,overall_rating,overall_narrative,strengths,challenges,next_actions,reviewer_id,profile_id,cadence,created_at")
         .single();
       if (result.error) throw result.error;
       setVersions((rows) => [result.data, ...rows]);
@@ -94,11 +94,11 @@ export default function StructuredHumanReview({ appraisal, cycle, assessment, ev
   if (!enabled || !["monthly","quarterly"].includes(cadence)) return null;
   return <section className="s2-human-rubric" aria-label="Human-entered performance review">
     <header>
-      <div><span>Human assessment · {cadence === "quarterly" ? "Required quarterly review" : "Optional monthly review"}</span>
+      <div><span>Human assessment · {cadence === "quarter" ? "Required quarterly review" : "Optional monthly review"}</span>
         <h3>Structured Manager ratings</h3>
         <p>Only the assigned authorised reviewer chooses ratings. The system does not calculate an overall score.</p>
       </div>
-      {allowedToWrite && status === "ready" && assessment && <button type="button" onClick={() => setShowForm((v) => !v)}>
+      {allowedToWrite && status === "ready" && assessment && newest?.assessment_entry_id !== assessment.id && <button type="button" onClick={() => setShowForm((v) => !v)}>
         {showForm ? "Close draft" : newest ? "Record revised ratings" : "Enter ratings"}
       </button>}
     </header>
@@ -108,19 +108,19 @@ export default function StructuredHumanReview({ appraisal, cycle, assessment, ev
     {newest && <div className="s2-rubric-summary">
       <div><strong>Latest authorised version</strong><small>{new Date(newest.created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}</small></div>
       <p><strong>Manager-selected overall judgment:</strong> {newest.overall_rating} · {newest.overall_narrative}</p>
-      <div className="s2-rubric-ratings">{(newest.category_ratings || []).map((row) =>
-        <article key={row.category}><span>{HUMAN_RUBRIC_CATEGORIES.find(x=>x.key===row.category)?.label || row.category}</span>
-          <strong>{row.rating}</strong><small>{row.explanation}</small>
+      <div className="s2-rubric-ratings">{Object.entries(newest.category_ratings || {}).map(([category,row]) =>
+        <article key={category}><span>{HUMAN_RUBRIC_CATEGORIES.find(x=>x.key===category)?.label || category}</span>
+          <strong>{row.rating}</strong><small>{row.reason}</small>
           <small>{row.evidenceIds?.length || 0} recorded evidence reference(s)</small></article>)}</div>
       <details><summary>Reviewer’s recorded development guidance</summary>
         <p><b>Strengths:</b> {newest.strengths}</p>
         <p><b>Challenges:</b> {newest.challenges}</p>
-        <p><b>Improvement:</b> {newest.improvement_actions}</p>
-        <p><b>Next responsibilities:</b> {newest.next_responsibilities}</p>
+        <p><b>Agreed next actions and responsibilities:</b> {newest.next_actions}</p>
       </details>
     </div>}
     {allowedToWrite && !assessment && <p className="s2-rubric-empty">Record the Manager narrative above before entering a structured judgment.</p>}
-    {showForm && allowedToWrite && assessment && <div className="s2-rubric-composer">
+    {allowedToWrite && assessment && newest?.assessment_entry_id === assessment.id && <p className="s2-rubric-empty">To revise published or pending ratings, first record a revised Manager assessment above. Rating history remains immutable.</p>}
+    {showForm && allowedToWrite && assessment && newest?.assessment_entry_id !== assessment.id && <div className="s2-rubric-composer">
       {HUMAN_RUBRIC_CATEGORIES.map(({key,label}) => {
         const row = draft.categories.find((v) => v.category === key);
         return <fieldset key={key}><legend>{label}</legend>
