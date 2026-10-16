@@ -139,8 +139,11 @@ SELECT set_config('request.jwt.claims',
 DO $rpc_aal1_deny$
 DECLARE denied boolean := false;
 BEGIN
- IF public.app_org_id() IS NOT NULL OR public.app_identity_confirmed()
-    OR public.app_privileged_aal_allowed() OR public.app_is_admin()
+ -- Two internal S3 identity helpers are deliberately inaccessible to browsers.
+ IF has_function_privilege('authenticated','public.app_identity_confirmed()','EXECUTE')
+    OR has_function_privilege('authenticated','public.app_privileged_aal_allowed()','EXECUTE')
+ THEN RAISE EXCEPTION 'Protected internal S3 authority helper was made browser-callable'; END IF;
+ IF public.app_org_id() IS NOT NULL OR public.app_is_admin()
     OR public.app_is_exec() OR EXISTS(SELECT 1 FROM public.app_my_units())
     OR EXISTS(SELECT 1 FROM public.my_sessions())
     OR EXISTS(SELECT 1 FROM public.my_account_activity(10)) THEN
@@ -163,7 +166,7 @@ SELECT set_config('request.jwt.claims',
 DO $rpc_totp_allow$
 BEGIN
  IF public.app_org_id() IS DISTINCT FROM '10000000-0000-4000-8000-000000000010'::uuid
-    OR NOT public.app_identity_confirmed() THEN
+    OR NOT public.app_stage2_universal_aal_allowed() THEN
     RAISE EXCEPTION 'Signed AAL2/TOTP account cannot use its ordinary signed-in RPC identity';
  END IF;
 END
