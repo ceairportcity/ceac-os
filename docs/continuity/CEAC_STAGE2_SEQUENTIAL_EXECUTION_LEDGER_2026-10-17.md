@@ -54,6 +54,64 @@ At inspected PR #118 SHA `63f877e5c4a4ef748e71e4e8f84427a4d053786c`, `src/App.js
 
 Classification above is for audit convenience, not authoritative permission mapping; access is set by actual role/capability conditions in `src/App.jsx`, `src/experience-v2/shell/navigation.js`, underlying RPC/RLS/Storage, and runtime. **P0 remains IN PROGRESS** until every listed and dynamic/nested route has the role, state, writer/reader, affected backend policy, visual reference and positive/negative test mapped and reconciled with `docs/design/CEAC_GLOBAL_EXPERIENCE_ROUTE_MATRIX_2026-10-16.md`. Specifically retain a solo Manager versus multi-unit Manager split, Support-head authority versus department membership, and Compliance reviewer access without leaking protected HR narratives.
 
+## 3B. Exact root-route and shell-authority reconciliation (P0 source audit)
+
+Source: `src/App.jsx` and `src/experience-v2/shell/navigation.js` at reviewed PR #118 head `8a681d41186d95e8c2a6f0652a68a12e3511ae7e`. The first column enumerates all **47 explicit tab equality branches** in the former; `me` is an additional default My Hub route handled by fallback rather than an explicit equality branch. Navigation labels are from the four built-in role destination sets. They are **not** proof of safe access: JSX guards and capabilities are UX gates only; RLS/RPC/Storage and exact browser role tests must be checked independently. Technical Support is an additional capability-based destination, not a fifth employment role.
+
+| Route key | Render condition in `App.jsx` | Present in default shell navigation | Primary stage to verify |
+| --- | --- | --- | --- |
+| `guide` | `authenticated/render branch` | nested/conditional | P0/P7 |
+| `account` | `authenticated/render branch` | nested/conditional | P2 |
+| `achievements` | `authenticated/render branch` | nested/conditional | P6 |
+| `technical-help` | `authenticated/render branch` | nested/conditional | P0/P7 |
+| `technical-support` | `authenticated/render branch` | nested/conditional | P0/P7 |
+| `primitives` | `isAdmin` | nested/conditional | P0/P7 |
+| `home` | `authenticated/render branch` | nested/conditional | P3 |
+| `team` | `authenticated/render branch` | nested/conditional | P0/P7 |
+| `work` | `authenticated/render branch` | nested/conditional | P4 |
+| `staff-calendar` | `isStaff` | nested/conditional | P4 |
+| `messages` | `authenticated/render branch` | nested/conditional | P0/P7 |
+| `projects` | `isUnitManager` | nested/conditional | P5 |
+| `calendar` | `isUnitManager` | nested/conditional | P4 |
+| `manager-finance` | `isUnitManager` | nested/conditional | P0/P7 |
+| `manager-reports` | `isUnitManager` | nested/conditional | P6 |
+| `exec-organisation` | `isExec` | nested/conditional | P0/P7 |
+| `exec-finance` | `isExec` | nested/conditional | P0/P7 |
+| `exec-reports` | `isExec` | nested/conditional | P6 |
+| `record` | `authenticated/render branch` | nested/conditional | P6 |
+| `announcements` | `authenticated/render branch` | nested/conditional | P0/P7 |
+| `strategy` | `authenticated/render branch` | nested/conditional | P5 |
+| `delivery` | `canUseDelivery` | nested/conditional | P5 |
+| `workload` | `canUseWorkload` | nested/conditional | P0/P7 |
+| `performance` | `canUsePerformance` | nested/conditional | P6 |
+| `learning` | `canUseLearning` | nested/conditional | P0/P7 |
+| `assets` | `canUseAssets` | nested/conditional | P0/P7 |
+| `compliance` | `canUseCompliance` | nested/conditional | P6 |
+| `cost` | `isAdmin` | nested/conditional | P0/P7 |
+| `finance` | `isAdmin` | nested/conditional | P0/P7 |
+| `reporting` | `isAdmin` | nested/conditional | P6 |
+| `attendance` | `canUseWorkforce` | nested/conditional | P3 |
+| `people` | `canManagePeople` | nested/conditional | P0/P7 |
+| `lifecycle` | `canManagePeople` | nested/conditional | P0/P7 |
+| `protected-hr` | `canAccessProtectedHR` | nested/conditional | P6 |
+| `payroll` | `canUsePayroll` | nested/conditional | P0/P7 |
+| `units` | `isAdmin` | nested/conditional | P0/P7 |
+| `admin-projects` | `isAdmin` | nested/conditional | P5 |
+| `admin-calendar` | `isAdmin` | nested/conditional | P4 |
+| `exec-calendar` | `isExec` | nested/conditional | P4 |
+| `audit` | `canViewAudit` | nested/conditional | P0/P7 |
+| `events` | `canViewAudit` | nested/conditional | P0/P7 |
+| `workflows` | `canUseWorkflows` | nested/conditional | P0/P7 |
+| `policies` | `canManageAuthority` | nested/conditional | P0/P7 |
+| `integrations` | `canManageIntegrations` | nested/conditional | P0/P7 |
+| `authority` | `canManageAuthority` | nested/conditional | P0/P7 |
+| `settings` | `isAdmin` | nested/conditional | P0/P7 |
+| `office-settings` | `isAdmin` | nested/conditional | P0/P7 |
+
+**P0 mandatory next reconciliation:** map each of the 47 routes plus the `me` fallback, deep-linked project/item/meeting/room and private drawers/forms to authorised readers and writers, backend table/RPC/Storage checks, and stage-specific positive/negative tests (all roles, solo/multi-unit, Support capability, HR/Compliance). This table is audited **source presence only**; it is not completed route-level acceptance and does not close P0 or P7.
+
+**Production Auth/Storage live preflight, read-only on 17 October 2026:** The original Supabase project has no `authenticator` role `pgrst.db_pre_request` setting and zero `storage` policies with names starting `CEAC Google AAL2` at the inspected live baseline. This only establishes current production absence of legacy Google-only restrictions; it does not certify the safety of replaying historical pending migrations or Stage 2 provider-neutral enforcement. No production database write occurred.
+
 ## 4. Mandatory acceptance entry format and execution continuity
 
 For each stage, preserve an entry:
