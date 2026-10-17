@@ -13,7 +13,6 @@ export function decideUniversalTotpAccess({ session, assurance, factors, claims 
   }
   const totp = Array.isArray(factors?.totp)
     ? factors.totp.find((factor) => factor?.status === "verified" && factor.factor_type === "totp")
-      || factors.totp.find((factor) => factor?.status === "verified")
     : null;
   if (!totp) return { state: "enroll", reason: "verified_totp_required" };
 

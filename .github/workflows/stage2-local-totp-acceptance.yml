@@ -11,6 +11,9 @@ on:
       - scripts/ci/test-local-totp-aal2.mjs
       - scripts/ci/prepare-local-totp-mfa.mjs
       - tests/account-mfa-local-only.spec.js
+      - src/lib/Stage2UniversalMfaPolicy.js
+      - src/components/Stage2UniversalMfaGate.jsx
+      - tests/stage2UniversalMfaPolicy.test.js
 permissions:
   contents: read
 jobs:

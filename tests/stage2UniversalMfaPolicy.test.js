@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { decideUniversalTotpAccess, shouldRecheckUniversalTotp } from "../src/lib/Stage2UniversalMfaPolicy.js";
 
 const user = { id: "53e591aa-e33c-4bca-94f0-4f5b6d5e7319" };
@@ -41,4 +42,22 @@ test("token refresh triggers verification without inventing a new login or grace
   assert.equal(shouldRecheckUniversalTotp("SIGNED_IN"), true);
   assert.equal(shouldRecheckUniversalTotp("MFA_CHALLENGE_VERIFIED"), true);
   assert.equal(shouldRecheckUniversalTotp("PASSWORD_RECOVERY"), false);
+});
+
+test("non-TOTP entries inside the TOTP factor collection cannot stand in for a verified authenticator", () => {
+  const wrongFactor = { id: "phone-incorrectly-categorised", factor_type: "phone", status: "verified" };
+  assert.equal(judge("aal2", ["password", "totp"], { totp: [wrongFactor] }).state, "enroll");
+  assert.equal(judge("aal1", ["password"], { totp: [wrongFactor] }).state, "enroll");
+  assert.equal(judge("aal2", ["password", "totp"], { totp: [wrongFactor, factor] }).state, "allow");
+  assert.equal(judge("aal2", ["password", "totp"], { totp: [{ ...factor, status: "unverified" }] }).state, "enroll");
+});
+
+test("token refresh and sign out invalidate previously visible workspace before any asynchronous Auth call", () => {
+  const gate = readFileSync(new URL("../src/components/Stage2UniversalMfaGate.jsx", import.meta.url), "utf8");
+  assert.match(gate, /const refresh = useCallback\(async \(\) => \{/);
+  assert.match(gate, /const currentGeneration = \+\+generation\.current;\s*\/\/[^\n]*\n[^\n]*\n\s*setState\("checking"\);/);
+  assert.match(gate, /onAuthStateChange\(\(event\) => \{[\s\S]*?\+\+generation\.current;[\s\S]*?setState\("checking"\);[\s\S]*?setTimeout\(\(\) => refresh\(\), 0\);/);
+  assert.doesNotMatch(gate, /preserveAllowed/, "an unchecked refreshed JWT may not inherit the old allow state");
+  assert.match(gate, /if \(currentGeneration !== generation\.current\) return;/);
+  assert.match(gate, /if \(state === "allow"\) return children;/);
 });

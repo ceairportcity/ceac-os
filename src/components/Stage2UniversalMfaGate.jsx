@@ -14,9 +14,11 @@ export default function Stage2UniversalMfaGate({ children, onVerified }) {
   const [error, setError] = useState(null);
   const generation = useRef(0);
 
-  const refresh = useCallback(async ({ preserveAllowed = false } = {}) => {
+  const refresh = useCallback(async () => {
     const currentGeneration = ++generation.current;
-    if (!preserveAllowed) setState("checking");
+    // Never keep showing previously authorised workspace content while the
+    // latest provider token, TOTP factor and assurance level are unverified.
+    setState("checking");
     setError(null);
     try {
       // Fetch a verified JWT (getClaims), not untrusted user metadata.
@@ -50,9 +52,14 @@ export default function Stage2UniversalMfaGate({ children, onVerified }) {
     refresh();
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (!shouldRecheckUniversalTotp(event)) return;
+      // Revoke the previous visual "allow" immediately, including for sign-out
+      // and token refresh. Never keep stale protected content on the screen.
+      ++generation.current; // Ignore any earlier in-flight verification result.
+      setState("checking");
+      setError(null);
       // Supabase warns against awaiting auth calls inside its auth-state callback.
       // Defer the verification out of the auth-state lock.
-      setTimeout(() => refresh({ preserveAllowed: event === "TOKEN_REFRESHED" }), 0);
+      setTimeout(() => refresh(), 0);
     });
     return () => {
       ++generation.current;
