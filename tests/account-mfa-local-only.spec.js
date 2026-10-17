@@ -143,6 +143,42 @@ test("universal Stage 2 gate enforces TOTP on initial and new-browser sign-in wi
     await nextPage.getByRole("button",{name:"Verify authenticator"}).click();
     await expect(nextPage.locator(".app")).toBeVisible({timeout:15000});
 
+    // A stale AAL2 workspace lookup must never restore the previous actor
+    // after a real sign-out. Hold one protected session read over token refresh,
+    // sign out, then let the old request complete against disposable GoTrue.
+    let intercepted = false;
+    let resumeOldRead;
+    const pendingRead = new Promise((resolve) => { resumeOldRead = resolve; });
+    let finishedOldRead;
+    const oldReadFinished = new Promise((resolve) => { finishedOldRead = resolve; });
+    await page.route("**/rest/v1/work_sessions*", async (route) => {
+      if (!intercepted) {
+        intercepted = true;
+        await pendingRead;
+      }
+      try { await route.continue(); } catch {
+        // Sign-out can abort the old browser request; it must not restore UI.
+      } finally {
+        finishedOldRead();
+      }
+    });
+    await page.evaluate(async () => {
+      const { supabase } = await import("/src/lib/supabase.js");
+      const result = await supabase.auth.refreshSession();
+      if (result.error) throw result.error;
+    });
+    await expect.poll(() => intercepted, { timeout: 15000 }).toBe(true);
+    const signedOut = await page.evaluate(async () => {
+      const { supabase } = await import("/src/lib/supabase.js");
+      return supabase.auth.signOut();
+    });
+    expect(signedOut.error).toBeNull();
+    await expect(page.getByPlaceholder("Work email")).toBeVisible({ timeout: 15000 });
+    resumeOldRead();
+    await oldReadFinished;
+    await expect(page.locator(".app")).toHaveCount(0);
+    await expect(page.getByPlaceholder("Work email")).toBeVisible();
+
     expect(blockedFirst,"First device attempted an external MFA request").toEqual([]);
     expect(blockedSecond,"Fresh second device attempted an external MFA request").toEqual([]);
   } finally {
