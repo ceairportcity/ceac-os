@@ -34,6 +34,28 @@ async function openAs(browser, email, viewport = { width: 1440, height: 900 }) {
   return { context, page };
 }
 
+
+async function assertSupportMobileHelpDesk(page, actor) {
+  // Mobile Technical Support is a different view of the SAME RLS-authorised
+  // cases, never a second case engine or a role-authority bypass.
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(page.locator(".ceac-support-page .s2-support-split")).toBeVisible();
+    const navButtons = page.locator(".ceac-support-nav button:visible");
+    const heights = await navButtons.evaluateAll((nodes) =>
+      nodes.map((node) => node.getBoundingClientRect().height));
+    expect(heights.length, actor + " Support navigation actions").toBeGreaterThan(0);
+    expect(Math.min(...heights), actor + " Support navigation touch height at " + width).toBeGreaterThanOrEqual(44);
+    const overflow = await page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, actor + " Support Help Desk horizontal overflow at " + width).toBeLessThanOrEqual(1);
+    await page.screenshot({
+      path: `test-artifacts/stage2-technical-support-${actor}-phone-${width}.png`,
+      fullPage: true,
+    });
+  }
+}
+
 test("manager projects preserve one integrated workspace with real photo and task data", async ({ browser }) => {
   assertLocalEnvironment();
   const { context, page } = await openAs(browser, "manager@ceac.local.test");
@@ -142,6 +164,7 @@ test("Technical Support manager receives premium support workflow without HR/Fin
     await page.getByRole("button", { name: "Help Desk", exact: true }).click();
     await expect(page.locator(".s2-support-split")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/stage2-technical-support-manager.png", fullPage: true });
+    await assertSupportMobileHelpDesk(page, "manager");
   } finally { await context.close(); }
 });
 
@@ -172,5 +195,6 @@ test("Technical Support staff sees their permitted case workflow, not manager/HR
     await page.getByRole("button", { name: "Help Desk", exact:true }).click();
     await expect(page.locator(".s2-support-split")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/stage2-technical-support-staff.png", fullPage: true });
+    await assertSupportMobileHelpDesk(page, "staff");
   } finally { await context.close(); }
 });
