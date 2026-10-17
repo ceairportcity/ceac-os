@@ -92,7 +92,9 @@ function reports(){
  panel("Integrity and failure states",'<p><strong>Evidence status is explicit.</strong> If period Work sessions cannot load, a visible error must replace any apparent zero-result summary.</p><div class="mutedbox">Use “Preview evidence failure” above to inspect the explicit fail-closed UI; do not display metrics when source evidence is unavailable.</div><p class="form-note">The current app still has a failing browser test for this state; this design cannot conceal that defect.</p>')+'</div>';
 }
 function people(){
- return heading("People & access","People details and invitations are separate from HR-private narratives and payroll records.",btn("Invite authorised member","invite","primary"))
+ const mayInviteInPreview=role==="admin";
+ const actions=mayInviteInPreview?btn("Review member invitation","invite","primary"):"";
+ return heading(mayInviteInPreview?"People & access":"My team","People details and invitations are separate from HR-private narratives, payroll and Support records.",actions)
  +'<div class="two">'+panel("Authorised roster",record("Sample staff member A","Unit One · active employment record","Open")+record("Sample volunteer member B","Volunteer · nonsalaried","Open")+record("Sample unit manager C","Two unit headships · one account","Open"))+
  panel("Privacy boundaries",'<p>Role, unit membership and capability grants are verified independently. Employment access does not automatically permit protected HR record, salary or Support case administration.</p><div class="mutedbox">Confidential personnel fields never appear in a general People list.</div>')+'</div>';
 }
@@ -238,6 +240,13 @@ function drawer(kind){
  content='<div class="no-real-data">Employee-only response demonstration; no real HR case is opened or acknowledged.</div>'+
  '<label>Evidence or clarification<textarea required name="employeeResponse" rows="4" placeholder="Respond to the published rating in your own words"></textarea></label>'+
  '<p>Submitting a response does not revise the Manager rating, independently approve the review or expose protected HR narrative.</p>';
+ }else if(kind==="invite" && role==="admin"){
+ content='<div class="no-real-data">Illustrative invitation only. Organisation membership and email delivery require independently authorised real operations.</div>'+
+ '<label>Invitee display name<input required name="inviteeName" placeholder="Sample staff or volunteer"></label>'+
+ '<label>Invitation email<input type="email" name="inviteeEmail" required placeholder="example@invalid.test"></label>'+
+ '<label>Participation type<select required name="participantType"><option>Employee</option><option>Nonsalaried Volunteer</option></select></label>'+
+ '<label>Approved unit<select name="invitationUnit"><option>Unit One · demonstration</option><option>Unit Two · demonstration</option></select></label>'+
+ '<p>A Volunteer is not automatically an employee and has no implied payroll, HR, Support or management grants. Invite-only Auth and actual unit authority must be proven at P2/P8.</p>';
  }else if(kind==="rating"){
  content='<p>Human-entered, evidence-based assessment only. Quarterly REQUIRED, monthly OPTIONAL.</p><label>Rating dimension<select><option>Professional execution</option><option>Responsibility and cooperation</option></select></label><label>Human rating<select><option value="">Choose 1–5 or N/O</option>'+["1","2","3","4","5","N/O"].map(x=>'<option>'+x+'</option>').join("")+'</select></label><label>Required explanation<textarea rows="3" placeholder="Explain the observed performance"></textarea></label><label>Source evidence reference<input placeholder="Link a permitted record, not a private secret"></label><label>Independent overall narrative<textarea rows="3"></textarea></label>';
  }else if(kind==="compliance-review"){
@@ -285,6 +294,7 @@ document.addEventListener("click",function(event){
  if(action==="report-loading" || action==="report-empty"){reportEvidencePhase=action==="report-loading"?"loading":"empty";reportEvidenceReady=true;drawNav();return;}
  if(action==="project-close" && role!=="manager")return;
  if(action==="calendar-meeting" && !["manager","admin","executive"].includes(role))return;
+ if(action==="invite" && role!=="admin")return;
  if(action==="appraisal-published" && page==="myreview"){personalReviewPhase="published";drawNav();return;}
  if(action==="appraisal-unpublished" && page==="myreview"){personalReviewPhase="unpublished";drawNav();return;}
  if(action==="employee-response" && (page!=="myreview"||personalReviewPhase!=="published"))return;

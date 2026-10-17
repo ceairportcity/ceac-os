@@ -247,3 +247,25 @@ test("P1 employee only sees HR-issued appraisal after simulated publication and 
   await page.locator("#navigation").getByRole("button",{name:"My appraisal"}).click();
   await expect(page.getByRole("heading",{name:"Awaiting HR publication"})).toBeVisible();
 });
+test("P1 Manager Team preview cannot grant invitation access; Administration invite respects employee/volunteer distinction",async({page})=>{
+  await page.route("**/*",r=>r.abort("blockedbyclient"));
+  await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+  const picker=page.getByRole("combobox",{name:"Preview role"});
+  await picker.selectOption("manager");
+  await page.locator("#navigation").getByRole("button",{name:"Team"}).click();
+  await expect(page.getByRole("heading",{name:"My team"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Review member invitation"})).toHaveCount(0);
+  await picker.selectOption("admin");
+  await page.locator("#navigation").getByRole("button",{name:"People & access"}).click();
+  await page.getByRole("button",{name:"Review member invitation"}).click();
+  const drawer=page.getByRole("dialog");
+  await expect(drawer.getByLabel("Invitation email")).toBeVisible();
+  await drawer.getByLabel("Invitee display name").fill("Sample invited member");
+  await drawer.getByLabel("Invitation email").fill("test@example.invalid");
+  await drawer.getByLabel("Participation type").selectOption({label:"Nonsalaried Volunteer"});
+  await drawer.getByRole("button",{name:"Review sample action"}).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator("#announcement")).toContainText("No real data was saved or submitted.");
+  await picker.selectOption("manager");
+  await expect(page.getByRole("button",{name:"Review member invitation"})).toHaveCount(0);
+});

@@ -145,3 +145,13 @@ test("P1 personal appraisal is synthetic employee-owned, HR-published and not a 
     assert.doesNotMatch(getMenu(role),/\["myreview","My appraisal"\]/);
   assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
 });
+test("P1 Administration-only invite design keeps nonsalaried Volunteer and HR boundaries explicit",()=>{
+  for(const str of [
+    'const mayInviteInPreview=role==="admin"',
+    'kind==="invite" && role==="admin"',
+    'action==="invite" && role!=="admin"',
+    'name="inviteeEmail"','name="participantType"',
+    'Nonsalaried Volunteer','has no implied payroll'
+  ]) assert.ok(html.includes(str),"missing invitation boundary "+str);
+  assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
+});
