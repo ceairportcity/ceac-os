@@ -185,3 +185,16 @@ test("P1 scenic Overview review follows owner direction rather than withdrawn da
   assert.ok(overview.includes("Sample activity only"), "preview must not report invented actual work");
   assert.ok(!css.includes("rgba(17,48,90,.87)"), "old dark hero must not be the approval candidate");
 });
+
+test("P1 Work candidate preserves the exact owner-selected register/inspector desktop and phone family",()=>{
+ const css=html.slice(html.indexOf("<style>"),html.indexOf("</style>"));
+ const work=html.slice(html.indexOf("function work(){"),html.indexOf("function projects(){"));
+ for(const token of ["s2w-grid","Responsibilities","Given out","Created by me","In progress","Waiting & review","Completed","s2w-table-head","Selected responsibility","Activity record","s2w-next"]) {
+  assert.ok(work.includes(token),"missing owner-approved Work visual family element "+token);
+ }
+ assert.ok(css.includes(".s2w-grid{display:grid;grid-template-columns:minmax(0,2.7fr)"),"desktop Work register/inspector should reflect approved proportions");
+ assert.ok(css.includes("@media(max-width:520px){.s2w-register"),"390px Work must stack inspector after register");
+ assert.ok(work.includes("Sample draft, not saved"),"synthetic task cannot claim committed real data");
+ assert.ok(work.includes('role==="manager"'),"delegation preview needs explicit eligible role");
+ assert.doesNotMatch(work,/Start (work|session)/i,"Start work must remain on Overview, not Work");
+});

@@ -324,3 +324,26 @@ test("P1 scenic Overview matches approved information hierarchy with real role d
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
   expect(overflow,"scenic Overview must not overflow phone width").toBeLessThanOrEqual(1);
 });
+
+test("P1 Work owner-selected desktop register and phone inspector retain only local draft data",async({page})=>{
+ await page.route("**/*",route=>route.abort("blockedbyclient"));
+ await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+ const role=page.getByRole("combobox",{name:"Preview role"});
+ await role.selectOption("manager");
+ await page.locator("#navigation").getByRole("button",{name:"Work & delegations"}).click();
+ await expect(page.locator(".s2w-register").getByRole("heading",{name:"Responsibilities"})).toBeVisible();
+ await expect(page.locator(".s2w-inspector").getByRole("heading",{name:"Selected responsibility"})).toBeVisible();
+ await expect(page.getByText("Waiting & review",{exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Give out work"})).toBeVisible();
+ await page.getByRole("button",{name:"Given out",exact:true}).click();
+ await expect(page.getByText("Follow up with unit team")).toBeVisible();
+ await page.getByRole("button",{name:"My work",exact:true}).click();
+ await page.setViewportSize({width:390,height:844});
+ await expect(page.locator(".s2w-register")).toBeVisible();
+ await expect(page.locator(".s2w-inspector")).toBeVisible();
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+ expect(overflow,"owner Work phone register should not overflow horizontally").toBeLessThanOrEqual(1);
+ await role.selectOption("staff");
+ await page.locator("#navigation").getByRole("button",{name:"My work"}).click();
+ await expect(page.getByRole("button",{name:"Give out work"})).toHaveCount(0);
+});

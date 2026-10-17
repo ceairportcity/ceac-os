@@ -30,6 +30,37 @@ main{min-width:0}.top{height:72px;background:#fff;border-bottom:1px solid var(--
 .s2ov-lower{display:grid;grid-template-columns:minmax(0,2fr) minmax(255px,.95fr);gap:13px}.s2ov-lower>.panel{min-height:210px}.s2ov-lower .list-row{gap:10px}
 .s2ov-inspector{display:grid;gap:10px}.s2ov-inspector>strong{font-size:17px;color:#163d67}.s2ov-inspector>p{font-size:12px}
 .s2ov-unit .strip{margin:0 0 10px;padding:0 0 10px}
+
+/* Exact owner-selected Work desktop/390px composition: structured register + right inspector. */
+.s2w-grid{display:grid;grid-template-columns:minmax(0,2.7fr) minmax(260px,1fr);gap:13px;align-items:start}
+.s2w-grid>.s2w-register,.s2w-grid>.s2w-inspector{min-width:0}
+.s2w-register .panel{position:relative;padding:21px 0 14px;overflow:hidden}
+.s2w-register .panel>h2{margin:0 22px 12px;font-size:18px}
+.s2w-count{position:absolute;right:21px;top:26px;color:#8396ab;font-size:11px}
+.s2w-tabs{display:flex;align-items:center;gap:21px;overflow-x:auto;border-bottom:1px solid #e1eaf4;margin:0 20px;padding-bottom:1px;scrollbar-width:thin}
+.s2w-tabs button{appearance:none;flex:none;border:0;border-bottom:2px solid transparent;padding:8px 0 12px;background:none;color:#788da5;font-weight:650;font-size:12px;white-space:nowrap}
+.s2w-tabs button.active{color:#1269dc;border-bottom-color:#1685ee}
+.s2w-table-head,.s2w-row{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(110px,1.25fr) 82px minmax(110px,.9fr);align-items:center;gap:8px;padding:11px 20px;text-align:left}
+.s2w-table-head{background:#f6f9fc;color:#778da6;font-weight:750;text-transform:uppercase;font-size:10px;letter-spacing:.7px}
+.s2w-row{width:100%;border:0;border-top:1px solid #eef2f7;background:#fff;color:#294262;font-size:12px;min-height:61px}
+.s2w-row:hover,.s2w-row:focus-visible{background:#edf5ff}
+.s2w-row .s2w-name{display:grid;gap:4px;min-width:0}
+.s2w-row .s2w-name strong{font-size:12px;white-space:normal;color:#173c64}
+.s2w-row small{color:#95a3af;font-size:11px}
+.s2w-row .s2w-project,.s2w-row .s2w-due{font-size:11px;color:#657b90}
+.s2w-state{font-size:11px;color:#637689}
+.s2w-state:before{content:"";display:inline-block;vertical-align:middle;background:#318ef0;width:5px;height:5px;border-radius:50%;margin-right:7px}
+.s2w-state.waiting:before{background:#d99736}.s2w-state.review:before{background:#7766eb}.s2w-state.done:before{background:#18a875}.s2w-state.draft:before{background:#99aabd}
+.s2w-group{display:flex;align-items:center;gap:9px;border-top:1px solid #ecf1f7;padding:12px 20px;color:#2b485f;font-size:11px;font-weight:650}.s2w-group>span{color:#9eacbc;font-weight:400}
+.s2w-register .panel>.form-note{padding:0 20px;margin:12px 0 0}
+.s2w-inspector .panel{padding:20px}.s2w-inspector .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:#7393b1}.s2w-details{display:grid;gap:10px}.s2w-details h3{margin:0;font-size:17px;color:#193f67}.s2w-details>p{font-size:12px;color:#7c8fa1;margin:0}
+.s2w-detail-metrics{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px 0;gap:11px}
+.s2w-detail-metrics div{display:grid;gap:6px}.s2w-detail-metrics span{font-size:10px;color:#8ca0b1}.s2w-detail-metrics strong{font-size:12px;color:#2d4760}
+.s2w-next{background:#edf5ff;border-left:3px solid #1484ee;padding:11px;font-size:12px}.s2w-next p{margin:6px 0 0;color:#59748f;font-size:11px}
+.s2w-timeline{margin:0;padding:0 0 0 18px;display:grid;gap:15px}.s2w-timeline li{color:#284860;font-size:12px}.s2w-timeline li::marker{color:#9bbeb4}.s2w-timeline li strong,.s2w-timeline li small{display:block}.s2w-timeline li small{color:#98a8b7;font-size:11px;margin-top:4px}.s2w-details>.btn{width:100%}
+@media(max-width:920px){.s2w-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:520px){.s2w-register .panel{padding-top:16px}.s2w-count{top:19px}.s2w-tabs{gap:18px}.s2w-table-head,.s2w-row{grid-template-columns:minmax(0,1.5fr) minmax(93px,.75fr);gap:9px;padding:11px 13px}.s2w-table-head span:nth-child(2),.s2w-table-head span:nth-child(3),.s2w-project,.s2w-due{display:none}.s2w-register .panel>h2{margin-left:14px}.s2w-state{font-size:10px}.s2w-group{padding-left:13px}.s2w-register .panel>.form-note{padding:0 14px}.s2w-inspector .panel{padding:19px}}
+
 @media(max-width:1240px){.s2ov-four{grid-template-columns:repeat(2,minmax(0,1fr))}.s2ov-four>.panel{min-height:185px}}
 @media(max-width:740px){.s2ov-lower{grid-template-columns:minmax(0,1fr)}.s2ov-hero{min-height:126px;padding:16px 18px}.s2ov-title{width:86%}.s2ov-photo{width:68%;opacity:.72}.s2ov-photo strong{display:none}}
 @media(max-width:520px){.s2ov-four{grid-template-columns:minmax(0,1fr)}.s2ov-title{width:100%}.s2ov-photo{width:100%;opacity:.16}.s2ov-four>.panel{min-height:unset}.s2ov-lower{gap:12px}.s2ov-hero{min-height:138px}.s2ov-title h1{font-size:27px}}
@@ -92,12 +123,38 @@ function overview(){
  return '<div class="s2ov-workspace">'+banner+'<div class="s2ov-four">'+attendance+focus+project+activity+'</div>'+unit+'<div class="s2ov-lower">'+register+inspector+'</div></div>';
 }
 function work(){
- const manager=role==="manager"||role==="admin";
- const actions=btn("Add my work","add-work","primary")+(manager?btn("Give out work","give-work"):"");
- const filters='<div class="strip">'+["mine","created","assigned","given","review","complete"].map(v=>'<button class="btn '+(v===workFilter?'ghost':'')+'" data-filter="'+v+'">'+({mine:"My work",created:"Created by me",assigned:"Assigned to me",given:"Given out",review:"For review",complete:"Completed"}[v])+'</button>').join("")+'</div>';
- return heading("Work","Self-created, assigned and delegated work remain attributable to real owners. Link activities to Projects and Objectives at creation or later.",actions)
- +'<div class="two">'+panel("Work register",filters+draftWorkSamples.filter(draft=>draft.role===role && (role!=="manager"||draft.unit===demoUnit)).map(draft=>record(escapePreview(draft.title),escapePreview("Design-only "+draft.kind+" · "+draft.project),"Sample draft, not saved")).join("")+record("Prepare weekly operating notes","Project: Workstream Alpha · Objective: Quarterly readiness","In progress")+record("Review handover checklist","Created by unit head · 3 dated actions","For review")+record("Document support resolution","Restricted to assigned Support member","Assigned"))+
- panel("Selected responsibility",'<div class="eyebrow">Item detail / source evidence</div><h2>Prepare weekly operating notes</h2><p>Owner · Demonstration Staff | Project · Workstream Alpha</p><div class="rule"></div><strong>Activity history</strong>'+record("Update made","Evidence reference · demonstration only","Today")+record("Review requested","Authorised reviewer decision pending","Pending")+btn("Open action form","inspect","primary")+'<p class="form-note">No score or completion is fabricated without verified source and reviewer.</p>')+'</div>';
+ // P1 owner-confirmed Work desktop + phone reference; sample only, not an implementation of a server write.
+ const manager=role==="manager";
+ const actions=(manager?btn("Give out work","give-work"):"")+btn("Add my work","add-work","primary");
+ const statusLabels={progress:"In progress",waiting:"Waiting",review:"In review",done:"Completed",draft:"Sample draft, not saved"};
+ const examples=[
+  {title:"Prepare weekly operating notes",ref:"DEMO-01 · Created by me",project:"Operating readiness",due:"Today",status:"progress",origin:"self"},
+  {title:"Review handover checklist",ref:"DEMO-02 · Assigned to me",project:"Team coordination",due:"Tomorrow",status:"waiting",origin:"assigned"},
+  {title:"Document support resolution",ref:"DEMO-03 · Assigned to me",project:"Support readiness",due:"23 Oct",status:"review",origin:"assigned"},
+  {title:"Complete archived user access notes",ref:"DEMO-04 · Created by me",project:"Operating readiness",due:"15 Oct",status:"done",origin:"self"}
+ ];
+ if(manager)examples.push({title:"Follow up with unit team",ref:"DEMO-05 · Given out",project:"Team coordination",due:"23 Oct",status:"waiting",origin:"given"});
+ const drafts=draftWorkSamples.filter(draft=>draft.role===role && (role!=="manager"||draft.unit===demoUnit)).map((draft,i)=>({
+  title:draft.title,ref:"Sample draft, not saved",project:draft.project||"Unlinked",due:"Draft",
+  status:"draft",origin:draft.kind==="delegation"?"given":"self"
+ }));
+ const eligible=(row)=>workFilter==="mine"?row.origin!=="given":
+  workFilter==="created"?row.origin==="self":
+  workFilter==="assigned"?row.origin==="assigned":
+  workFilter==="given"?row.origin==="given":
+  workFilter==="review"?row.status==="review":
+  workFilter==="complete"?row.status==="done":true;
+ const visible=[...drafts,...examples].filter(eligible);
+ const rowHtml=(r)=>'<button type="button" class="s2w-row" data-action="inspect" data-item="'+escapePreview(r.title)+'"><span class="s2w-name"><strong>'+escapePreview(r.title)+'</strong><small>'+escapePreview(r.ref)+'</small></span><span class="s2w-project">'+escapePreview(r.project)+'</span><span class="s2w-due">'+escapePreview(r.due)+'</span><span class="s2w-state '+r.status+'">'+escapePreview(statusLabels[r.status])+'</span></button>';
+ const group=(title,rows)=>!rows.length?"":'<div class="s2w-group"><strong>'+escapePreview(title)+'</strong><span>'+rows.length+' sample items</span></div>'+rows.map(rowHtml).join("");
+ const groups=group("In progress",visible.filter(r=>r.status==="progress"||r.status==="draft"))
+ +group("Waiting & review",visible.filter(r=>r.status==="waiting"||r.status==="review"))
+ +group("Completed",visible.filter(r=>r.status==="done"));
+ const filters='<div class="s2w-tabs" aria-label="Responsibility views">'+["mine","created","assigned","given","review","complete"].map(v=>'<button type="button" class="'+(v===workFilter?'active':'')+'" aria-pressed="'+(v===workFilter?'true':'false')+'" data-filter="'+v+'">'+({mine:"My work",created:"Created by me",assigned:"Assigned to me",given:"Given out",review:"For review",complete:"Completed"}[v])+'</button>').join("")+'</div>';
+ const register=panel("Responsibilities",'<div class="s2w-count">'+visible.length+' sample records</div>'+filters+'<div class="s2w-table-head"><span>Responsibility</span><span>Project</span><span>Due</span><span>Status</span></div><div class="s2w-records">'+(groups||'<div class="empty">No sample responsibilities in this view. Select another tab.</div>')+'</div><p class="form-note">Concept data only; no actions, project outcomes or employee scores are certified.</p>');
+ const details=panel("Selected responsibility",'<div class="s2w-details"><div class="eyebrow">Sample responsibility · DEMO-01</div><h3>Prepare weekly operating notes</h3><p>Operating readiness · Created by me</p><div class="s2w-detail-metrics"><div><span>Work status</span><strong>In progress · sample</strong></div><div><span>Actions completed</span><strong>2 illustrative actions</strong></div></div><div class="s2w-next"><strong>Next action</strong><p>Confirm the next authorised evidence source before submitting work.</p></div><div class="eyebrow">Activity record · illustrative</div><ol class="s2w-timeline"><li><strong>Prepared work outline</strong><small>Sample activity · no actual hours</small></li><li><strong>Linked project objective</strong><small>Sample source reference, not a verified achievement</small></li></ol>'+btn("Inspect sample activity","inspect","primary")+'<p class="form-note">An actual activity requires authorised actor, timestamp, review and project scope. This panel saves nothing.</p></div>');
+ return heading("Work","Plan, record and finish responsibilities; keep each contribution linked to its authorised project.",actions)
+  +'<div class="s2w-grid"><div class="s2w-register">'+register+'</div><div class="s2w-inspector">'+details+'</div></div>';
 }
 function projects(){
  const canAuthor=role==="manager";
