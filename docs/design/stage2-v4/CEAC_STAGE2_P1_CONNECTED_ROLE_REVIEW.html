@@ -80,6 +80,9 @@ main{min-width:0}.top{height:72px;background:#fff;border-bottom:1px solid var(--
 .s2pr-taskrow strong{font-size:11px;color:#1e4266}.s2pr-taskrow span{color:#6b8199}
 .s2pr-about{display:grid;gap:11px;border-bottom:1px solid var(--line);padding-bottom:17px}
 .s2pr-about>div{display:flex;justify-content:space-between;gap:9px;font-size:11px}.s2pr-about span{color:#718da9}.s2pr-about strong{text-align:right;color:#1c4567}
+.s2hr-review .strip{align-items:start}.s2hr-steps{padding-left:22px;display:grid;gap:12px;font-size:12px;color:#49647e}
+.s2hr-review .no-real-data{margin:12px 0;line-height:1.6}
+@media(max-width:520px){.s2hr-review{grid-template-columns:minmax(0,1fr)}.s2hr-review .strip{gap:11px;flex-direction:column}}
 .s2pr-timeline{font-size:11px;color:#4a6884;margin:0;padding-left:20px;display:grid;gap:12px}
 @media(max-width:1120px){.s2pr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2pr-main{grid-template-columns:1fr}.s2pr-photo strong{display:none}}
 @media(max-width:520px){.s2pr-hero{padding:16px;min-height:175px}.s2pr-headline{max-width:100%}.s2pr-headline h1{font-size:19px}.s2pr-photo{width:100%;opacity:.17}.s2pr-keyline{gap:7px}.s2pr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2pr-metric{padding:12px}.s2pr-columns,.s2pr-taskrow{grid-template-columns:minmax(0,1.3fr) minmax(80px,.8fr)}.s2pr-columns span:nth-child(2),.s2pr-taskrow span:nth-child(2){display:none}}
@@ -118,7 +121,7 @@ const roleNav={
 const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",finance:"Budget and approved expenditure, separate from confidential payroll",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
 let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false,reportEvidenceReady=true,demoUnit="Unit One",reportEvidencePhase="ready";
 const draftWorkSamples=[];
-let authPreviewStep="setup",personalReviewPhase="unpublished",projectPreviewTab="overview";
+let authPreviewStep="setup",personalReviewPhase="unpublished",projectPreviewTab="overview",hrPreviewPhase="draft";
 function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
 const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
 function panel(title,body){return '<section class="panel"><h2>'+title+'</h2>'+body+'</section>';}
@@ -234,9 +237,31 @@ function people(){
  panel("Privacy boundaries",'<p>Role, unit membership and capability grants are verified independently. Employment access does not automatically permit protected HR record, salary or Support case administration.</p><div class="mutedbox">Confidential personnel fields never appear in a general People list.</div>')+'</div>';
 }
 function hr(){
- return heading("Protected HR","Employee-protected records require an explicit HR grant, independent from People administration.",btn("Review source record","inspect"))
- +'<div class="two">'+panel("Protected record summary",'<div class="eyebrow">Restricted demonstration surface</div>'+record("Review packet A","Evidence versions · employee response private","Awaiting HR")+record("Protected schedule exception","HR-approved record version","Review"))+
- panel("Independent release control",'<p>Manager-entered ratings, evidence and narrative are submitted for independent HR verification. Publication and employee response are recorded as separate events.</p><div class="mutedbox">A People manager cannot infer or access an HR-private narrative from this preview.</div>')+'</div>';
+ // Synthetic P1 HR material exception. No actual employee, HR authorisation or publication is provided.
+ if(role!=="admin")return heading("Protected HR","Protected records are unavailable to this review persona.")+
+   panel("Access withheld",'<p role="alert">Only an independently authorised HR reviewer may open protected personnel records.</p>');
+ const state=hrPreviewPhase==="issued"?"Issued · sample":hrPreviewPhase==="missing"?"Source evidence unavailable":"Awaiting independent HR verification";
+ const status=hrPreviewPhase==="issued"?
+  '<div class="no-real-data">Demonstration HR-issued state only. No real assessment was published, employee identity resolved, or Staff view unlocked.</div>':
+  hrPreviewPhase==="missing"?
+  '<div class="no-real-data" role="alert">Required rating evidence could not be loaded. Withhold publication and any apparent approved result. Failed source reads cannot be treated as zero-result reviews.</div>':
+  '<div class="no-real-data">Sample Manager-submitted packet awaits independent HR review and evidence verification before an assessment may be issued.</div>';
+ const actions=btn("Preview missing evidence","hr-missing")+
+  btn("Return to HR draft","hr-draft")+
+  (hrPreviewPhase==="draft"?btn("Review HR publication","hr-release","primary"):"");
+ const packet=panel("Protected review packet",
+   '<div class="eyebrow">Protected HR · '+state+'</div>'+status+
+   '<div class="strip"><div><span>Human rating source</span><br><strong>Manager-authored; not system-calculated</strong></div>'+
+   '<div><span>Evidence status</span><br><strong>'+(hrPreviewPhase==="missing"?"Missing required source":hrPreviewPhase==="issued"?"Sample reviewer-verified":"Review outstanding")+'</strong></div></div>'+
+   '<p>Quarterly 1–5 or N/O ratings require dimension explanations, evidence references and independent overall narrative. Monthly human ratings are optional.</p>');
+ const release=panel("Independent HR release and employee response",
+   '<ol class="s2hr-steps"><li>Manager enters human ratings, required explanations and evidence.</li>'+
+   '<li>Different authorised HR reviewer checks the applicable assessment version, person, evidence and issue scope.</li>'+
+   '<li>HR issues only reviewed material; employee can then see only their own issued assessment.</li>'+
+   '<li>Employee submits their own response, separately from HR and Compliance; it cannot silently change the rating.</li></ol>'+
+   '<p class="form-note">People, Manager, Support and Executive access never grants protected HR publication. These sample transitions are browser-local.</p>');
+ return heading("Protected HR","Protected employee assessments require independent evidence review, issue and employee response.",actions)+
+  '<div class="two s2hr-review">'+packet+release+'</div>';
 }
 function ratings(){
  return heading(role==="manager"?"Team appraisals":"Quarterly review oversight","Manager-entered structured human evaluation is required each quarter. Monthly ratings are optional; source metrics remain factual.",role==="manager"?btn("Open rating entry","rating","primary"):"")
@@ -375,6 +400,13 @@ function drawer(kind){
  content='<div class="no-real-data">Employee-only response demonstration; no real HR case is opened or acknowledged.</div>'+
  '<label>Evidence or clarification<textarea required name="employeeResponse" rows="4" placeholder="Respond to the published rating in your own words"></textarea></label>'+
  '<p>Submitting a response does not revise the Manager rating, independently approve the review or expose protected HR narrative.</p>';
+ }else if(kind==="hr-release" && role==="admin" && page==="hr" && hrPreviewPhase==="draft"){
+ content='<div class="no-real-data">HR publication review is synthetic, without real employee data, permission changes or published records.</div>'+
+ '<label>Manager-submitted rating version<input value="Sample submitted v1 — pending HR verification" readonly></label>'+
+ '<label>Verified source evidence reference<input name="hrEvidence" required placeholder="Authorised evidence identifier"></label>'+
+ '<label>Independent HR release explanation<textarea name="hrReleaseExplanation" rows="3" required placeholder="Explain the independently checked evidence"></textarea></label>'+
+ '<label>Publication scope<select name="hrReleaseScope" required><option value="">Choose restricted recipient</option><option value="own">Only the assessed employee · demonstration</option></select></label>'+
+ '<p>A real publication requires a different authorised HR reviewer, fresh AAL2, source verification, current assessment version and an audited server transaction.</p>';
  }else if(kind==="invite" && role==="admin"){
  content='<div class="no-real-data">Illustrative invitation only. Organisation membership and email delivery require independently authorised real operations.</div>'+
  '<label>Invitee display name<input required name="inviteeName" placeholder="Sample staff or volunteer"></label>'+
@@ -439,6 +471,9 @@ document.addEventListener("click",function(event){
  if(action==="appraisal-published" && page==="myreview"){personalReviewPhase="published";drawNav();return;}
  if(action==="appraisal-unpublished" && page==="myreview"){personalReviewPhase="unpublished";drawNav();return;}
  if(action==="employee-response" && (page!=="myreview"||personalReviewPhase!=="published"))return;
+ if(action==="hr-release" && (role!=="admin"||page!=="hr"||hrPreviewPhase!=="draft"))return;
+ if(action==="hr-missing" && role==="admin" && page==="hr"){hrPreviewPhase="missing";drawNav();return;}
+ if(action==="hr-draft" && role==="admin" && page==="hr"){hrPreviewPhase="draft";drawNav();return;}
  if(action==="report-unavailable"){reportEvidenceReady=false;reportEvidencePhase="ready";drawNav();return;}
  if(["auth-step-setup","auth-step-challenge","auth-step-recovery"].includes(action) && page==="auth"){
   authPreviewStep=action.slice("auth-step-".length);drawNav();document.getElementById("announcement").textContent="Design-only authentication journey: "+authPreviewStep+". No factor was changed.";return;
@@ -451,6 +486,13 @@ document.addEventListener("submit",function(event){
  if(event.target.id!=="previewform")return;event.preventDefault();
  const kind=event.target.dataset.kind;
  if(kind==="employee-response" && page==="myreview" && personalReviewPhase==="published"){personalReviewPhase="responded";drawNav();}
+ if(kind==="hr-release" && role==="admin" && page==="hr" && hrPreviewPhase==="draft"){
+  const data=new FormData(event.target);
+  const evidence=String(data.get("hrEvidence")||"").trim();
+  const reason=String(data.get("hrReleaseExplanation")||"").trim();
+  if(!evidence||!reason||data.get("hrReleaseScope")!=="own")return;
+  hrPreviewPhase="issued";drawNav();
+ }
  if(kind==="add-work"||kind==="give-work"){
   const data=new FormData(event.target);
   const title=String(data.get("draftTitle")||"").trim();
@@ -464,6 +506,6 @@ document.addEventListener("submit",function(event){
  document.getElementById("announcement").textContent="A local-only design draft was reviewed. No real data was saved or submitted.";
 });
 document.addEventListener("keydown",function(event){if(event.key==="Escape")document.getElementById("modal").innerHTML="";});
-document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";authPreviewStep="setup";personalReviewPhase="unpublished";projectPreviewTab="overview";drawNav();});
+document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";authPreviewStep="setup";personalReviewPhase="unpublished";projectPreviewTab="overview";hrPreviewPhase="draft";drawNav();});
 drawNav();
 </script></body></html>

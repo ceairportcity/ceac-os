@@ -235,3 +235,15 @@ test("P1 Projects family tabs are keyboard-operable connected sample views, not 
  assert.ok(projects.includes("readonly?'<p>Read-only view"),"restricted project settings must not leak authoring UI");
  assert.ok(projects.includes("Preview only; no private files are exposed"),"files tab may not assume Storage grant");
 });
+test("P1 protected HR issue preview keeps evidence failure separate and mandates independent publication fields",()=>{
+ const section=html.slice(html.indexOf("function hr(){"),html.indexOf("function ratings(){"));
+ for(const token of ["hrPreviewPhase","Awaiting independent HR verification","Source evidence unavailable","Review HR publication","Only HR","Return to HR draft"].filter(x=>x!=="Only HR")) {
+  assert.ok(section.includes(token),"Missing protected HR design state: "+token);
+ }
+ for(const token of ['name="hrEvidence" required','name="hrReleaseExplanation"','name="hrReleaseScope" required',
+  'if(action==="hr-release" && (role!=="admin"||page!=="hr"||hrPreviewPhase!=="draft"))return;',
+  'if(!evidence||!reason||data.get("hrReleaseScope")!=="own")return;']) {
+  assert.ok(html.includes(token),"Missing independent HR publication safeguard: "+token);
+ }
+ assert.ok(html.includes('hrPreviewPhase="draft";drawNav();'),"switching simulated roles must clear HR issue state");
+});
