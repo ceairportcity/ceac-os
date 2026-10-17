@@ -158,10 +158,10 @@ test("P0 route and shell inventory preserves authorised role navigation, not acc
   const navSource = nav.split("const ROLE_DESTINATIONS = Object.freeze({")[1]
     ?.split("const MOBILE_PRIMARY_KEYS")[0];
   assert.ok(navSource, "canonical role destinations must exist");
-  const renderedTabs = new Set([...app.matchAll(/if\\s*\\(tab\\s*===\\s*"([^"]+)"/g)].map((match) => match[1]));
+  const renderedTabs = new Set([...app.matchAll(/if\s*\(tab\s*===\s*"([^"]+)"/g)].map((match) => match[1]));
   assert.ok(renderedTabs.size >= 47, "P0 root-route inventory lost a tab branch");
   const roleMap = {};
-  for (const match of navSource.matchAll(/(?:^|\\n)\\s*(staff|manager|admin|executive): Object\\.freeze\\(\\[([\\s\\S]*?)\\]\\),/g)) {
+  for (const match of navSource.matchAll(/(?:^|\n)\s*(staff|manager|admin|executive): Object\.freeze\(\[([\s\S]*?)\]\),/g)) {
     roleMap[match[1]] = [...match[2].matchAll(/key: "([^"]+)"/g)].map((entry) => entry[1]);
   }
   assert.deepEqual(Object.keys(roleMap).sort(), ["admin", "executive", "manager", "staff"]);
@@ -176,10 +176,10 @@ test("P0 route and shell inventory preserves authorised role navigation, not acc
         role + " shell points to a missing tab branch: " + key);
     }
   }
-  assert.match(nav, /capabilities\\.has\\("support\\.case\\.manage"\\)/);
-  assert.match(app, /const canManageSupport = hasCapability\\("support\\.case\\.manage"\\)/);
-  assert.match(app, /if \\(tab === "technical-support"\\) return canManageSupport/);
-  assert.match(nav, /capability: "people\\.manage"/);
-  assert.match(nav, /capability: "payroll\\.prepare"/);
-  assert.match(nav, /capability: "payroll\\.approve"/);
+  assert.match(nav, /capabilities\.has\("support\.case\.manage"\)/);
+  assert.match(app, /const canManageSupport = hasCapability\("support\.case\.manage"\)/);
+  assert.match(app, /if \(tab === "technical-support"\) return canManageSupport/);
+  assert.match(nav, /capability: "people\.manage"/);
+  assert.match(nav, /capability: "payroll\.prepare"/);
+  assert.match(nav, /capability: "payroll\.approve"/);
 });
