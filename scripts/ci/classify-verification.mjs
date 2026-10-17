@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
+import { isIsolatedP1PreviewChange } from "./p1-design-preview-scope.mjs";
 
 const base = process.env.VERIFICATION_BASE_SHA || "HEAD^";
 const head = process.env.VERIFICATION_HEAD_SHA || "HEAD";
@@ -25,11 +26,23 @@ function changedFiles() {
   }
 }
 
-const files = changedFiles();
+const prFiles = changedFiles();
 const subject = git("log", "-1", "--format=%s", head);
+// GitHub PR base...HEAD spans the entire existing Stage 2 PR. Only a
+// single, explicit synthetic P1 preview tip is eligible for the narrow
+// Level A path. Broader PR scope remains due at stage/P8 acceptance.
+let tipFiles = [];
+try {
+  tipFiles = git("diff", "--name-only", `${head}^`, head).split("\n").map(f=>f.trim()).filter(Boolean);
+} catch {
+  tipFiles = [];
+}
+const p1DesignOnly = isIsolatedP1PreviewChange({ eventName, subject, tipFiles });
+const files = p1DesignOnly ? tipFiles : prFiles;
 
 const documentationOnly =
   files.length > 0 &&
+  !p1DesignOnly &&
   files.every(
     (file) =>
       file === "AGENTS.md" ||
@@ -58,7 +71,7 @@ const levelBRequested = /\[level-b\]/i.test(subject);
 // Any edited Playwright acceptance test requires its exact-head browser and SQL
 // evidence. Treating a finance-only (or other single-scope) .spec.js diff as
 // Level A produces a misleading green Quality Gate with all browser jobs skipped.
-const browserAcceptanceChanged = files.some((file) =>
+const browserAcceptanceChanged = !p1DesignOnly && files.some((file) =>
   file.startsWith("tests/") && /\.spec\.[cm]?[jt]sx?$/i.test(file)
 );
 
@@ -82,7 +95,7 @@ const matchedScopes = scopeRules
   .filter(([, pattern]) => files.some((file) => pattern.test(file)))
   .map(([scope]) => scope);
 const scope =
-  documentationOnly
+  p1DesignOnly ? "p1-design" : documentationOnly
     ? "docs"
     : workflowOrHarnessChanged || databaseOrSecurityChanged || matchedScopes.length !== 1
       ? "full"
@@ -100,6 +113,7 @@ const levelB =
       broadProductChange));
 
 const outputs = {
+  p1_design_only: String(p1DesignOnly),
   documentation_only: String(documentationOnly),
   level_b: String(levelB),
   scope,
@@ -133,6 +147,9 @@ console.log(
       ...outputs,
       subject,
       files,
+      pr_diff_count: prFiles.length,
+      tip_commit_files: tipFiles,
+      note: p1DesignOnly ? "FOCUSED SYNTHETIC DESIGN PREVIEW ONLY — never P1/P7/P8 acceptance" : "normal verification boundary",
     },
     null,
     2,

@@ -4,6 +4,9 @@ set -euo pipefail
 scope="${1:-full}"
 
 case "$scope" in
+  p1-design)
+    tests=(tests/stage2-p1-connected-review.spec.js)
+    ;;
   vf9b)
     tests=(
       tests/visual-fidelity-css-cascade-closure.spec.js
