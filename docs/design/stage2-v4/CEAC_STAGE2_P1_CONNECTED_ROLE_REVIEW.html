@@ -31,7 +31,7 @@ const roleNav={
  staff:[["overview","Overview"],["work","My work"],["projects","Projects"],["achievements","My achievements"],["auth","Account security"]],
  manager:[["overview","Overview"],["work","Work & delegations"],["projects","Projects"],["reports","Manager reporting"],["people","Team"],["auth","Account security"]],
  support:[["support","Support desk"],["overview","My overview"],["work","My work"],["auth","Account security"]],
- admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["projects","Projects"],["auth","Account security"]],
+ admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["compliance","Compliance"],["payroll","Payroll"],["projects","Projects"],["auth","Account security"]],
  executive:[["overview","Executive overview"],["strategy","Strategy & outcomes"],["reports","Quarterly evidence"],["projects","Projects"],["auth","Account security"]],
  volunteer:[["overview","My fellowship"],["work","Assigned activities"],["projects","Projects"],["auth","Account security"]]
 };
@@ -95,6 +95,32 @@ function support(){
  +'<div class="two">'+panel("Assigned cases",record("Display room issue","Unit reporter sees restricted progress","Assigned")+record("Conference audio","Evidence logged; service owner checking","In progress")+record("Asset network access","Awaiting verified resolution","Open"))+
  panel("Case action and audit",'<p>Only assigned Support members with the current Support capability can modify a case. Each update is revision-checked and auditable.</p><div class="mutedbox">Reporter-safe status excludes internal notes, other reporters and unrelated staff records.</div>')+'</div>';
 }
+function complianceP1(){
+ return heading("Compliance & evidence","Independent policy checks are never a substitute for the Manager's human appraisal or a private HR record.",btn("Inspect policy exception","compliance-review","primary"))+
+ '<div class="three">'+panel("Current policy revision",'<div class="metric">v3</div><div class="subtle">Synthetic annual policy review</div>')+
+ panel("Open exception",'<div class="metric warn">1</div><div class="subtle">Needs independent verification</div>')+
+ panel("Acknowledgement coverage",'<div class="metric">4/5</div><div class="subtle">Sample acknowledgement records</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Compliance workbench",
+ record("Sample unit acknowledgement","Policy v3 · employee response awaited","Pending")+
+ record("Attendance evidence exception","Restricted inspection; do not modify attendance source","Needs review")+
+ record("Quarterly evidence reconciliation","Manager submitted factual record; separate Compliance note","Reviewed"))+
+ panel("Separation of duties",'<p><strong>Compliance observations are source-linked and independently reviewed.</strong> They must not become automatically assigned Manager appraisal scores or reveal protected HR notes.</p>'+
+ '<div class="mutedbox">The actual application must enforce evidence-version history, current policy applicability, staff-visible acknowledgement only, and role-scoped access to each exception.</div>'+
+ '<div class="no-real-data">All records in this preview are synthetic. No policy status has been changed.</div>')+'</div>';
+}
+function payrollP1(){
+ return heading("Protected payroll operations","Payroll preparation and approval require different capabilities; records are isolated from general People, Work and Support views.",btn("Inspect sample pay run","payroll-detail","primary"))+
+ '<div class="three">'+panel("Cycle status",'<div class="metric">Draft</div><div class="subtle">Sample salary month, no actual payment</div>')+
+ panel("Prepared lines",'<div class="metric">3</div><div class="subtle">Restricted synthetic records</div>')+
+ panel("Approver release",'<div class="metric">—</div><div class="subtle">Not approved or sent</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Payroll workflow",
+ record("Prepare employee lines","Payroll.prepare grant required · versioned ledger","Draft")+
+ record("Independent approval","Payroll.approve; preparer cannot approve own draft","Not started")+
+ record("Correction and audit trail","Separate revision with reason and authorised approval","Locked"))+
+ panel("Confidentiality and controls",'<p>General employee profiles, personal attendance and calculated task hours cannot automatically become payable payroll amounts. Protected salary lines remain absent from other roles.</p>'+
+ '<div class="mutedbox">Draft → submitted → independently approved → finalised. Each step requires server-authorised actor, audit event and reviewed source. A rejected or failed query must not show an empty approved run.</div>'+
+ '<div class="no-real-data">No compensation value, identity or real salary data exists in this prototype.</div>')+'</div>';
+}
 function strategy(){
  return heading("Strategic outcomes","Ministry direction → authorised projects → verified outputs. No duplicated contribution totals.",btn("Inspect evidence","inspect"))
  +'<div class="three">'+panel("Objectives",'<div class="metric">3</div><div class="subtle">Demonstration ministry directions</div>')+panel("Connected projects",'<div class="metric">5</div><div class="subtle">Related to stated objectives</div>')+panel("Verified outcomes",'<div class="metric">2</div><div class="subtle">Confirmed and attributed once</div>')+'</div>'+
@@ -112,7 +138,7 @@ function achievements(){
  panel("Private evidence",'<p>Your own material is distinct from Manager and HR-private assessments. Reports are source-linked and represent the selected time period accurately.</p>')+'</div>';
 }
 function screen(){
- const views={overview,work,projects,reports,people,hr,ratings,support,strategy,auth,achievements};
+ const views={overview,work,projects,reports,people,hr,ratings,compliance:complianceP1,payroll:payrollP1,support,strategy,auth,achievements};
  return (views[page]||overview)();
 }
 function drawNav(){
@@ -127,6 +153,17 @@ function drawer(kind){
  content='<label>Work title<input required placeholder="Specific outcome to deliver"></label><label>Project/objective link<select><option value="">No link yet — relink later</option><option>Workstream Alpha / Operating readiness</option><option>Workstream Beta / People development</option></select></label><label>Assignee<select><option>'+(kind==="add-work"?"Myself":"Eligible unit colleague")+'</option></select></label><label>Evidence or activity notes<textarea rows="4" placeholder="Describe the work and intended proof"></textarea></label>';
  }else if(kind==="rating"){
  content='<p>Human-entered, evidence-based assessment only. Quarterly REQUIRED, monthly OPTIONAL.</p><label>Rating dimension<select><option>Professional execution</option><option>Responsibility and cooperation</option></select></label><label>Human rating<select><option value="">Choose 1–5 or N/O</option>'+["1","2","3","4","5","N/O"].map(x=>'<option>'+x+'</option>').join("")+'</select></label><label>Required explanation<textarea rows="3" placeholder="Explain the observed performance"></textarea></label><label>Source evidence reference<input placeholder="Link a permitted record, not a private secret"></label><label>Independent overall narrative<textarea rows="3"></textarea></label>';
+ }else if(kind==="compliance-review"){
+ content='<div class="no-real-data">Design-only Compliance evidence preview; no real records are accessible.</div>'+
+ '<label>Applicable policy version<input value="v3 / demonstration only" readonly></label>'+
+ '<label>Independent observation<textarea rows="3" required placeholder="Source-linked factual observation"></textarea></label>'+
+ '<label>Permitted evidence reference<input required placeholder="Existing authorised evidence ID"></label>'+
+ '<p>Only the actual permitted Compliance reviewer can submit this through independently authorised backend policies.</p>';
+ }else if(kind==="payroll-detail"){
+ content='<div class="no-real-data">Synthetic payroll detail. A general Administrator or Support agent must not gain payroll authority from this screen.</div>'+
+ '<label>Pay run version<input value="Draft v1 / synthetic" readonly></label>'+
+ '<label>Correction reason<textarea rows="3" placeholder="Required for approved correction"></textarea></label>'+
+ '<p>Preparation and approval are different capabilities and require independent action logs. No salary or payout data exists in this preview.</p>';
  }else if(kind==="totp"){
  content='<div class="no-real-data">This is a UI demonstration, not a real authenticator seed or recovery pathway.</div><label>Challenge code<input inputmode="numeric" maxlength="6" placeholder="000000 (example only)"></label><p>Actual verified AAL2 and the Supabase factor check are required before any protected operation.</p>';
  }else{
