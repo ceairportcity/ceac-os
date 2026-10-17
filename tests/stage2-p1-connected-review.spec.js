@@ -84,4 +84,21 @@ test("P1 Finance and Quarterly event previews preserve separation and local-only
   await rolePicker.selectOption("volunteer");
   await expect(navigation.getByRole("button", { name: /Quarterly|Finance|Payroll/ })).toHaveCount(0);
 });
+test("P1 Manager and Executive previews hide metrics on evidence-load failure", async ({ page }) => {
+  await page.route("**/*", (route) => route.abort("blockedbyclient"));
+  await page.setContent(prototype, { waitUntil: "domcontentloaded" });
+  const role = page.getByRole("combobox", { name: "Preview role" });
+  for (const persona of ["manager","executive"]) {
+    await role.selectOption(persona);
+    await page.locator("#navigation").getByRole("button", { name: persona === "manager" ? "Manager reporting" : "Quarterly evidence" }).click();
+    await expect(page.getByRole("heading", { name: persona === "manager" ? "Manager period report" : "Executive evidence review" })).toBeVisible();
+    await expect(page.getByText("Period coverage", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Preview evidence failure" }).click();
+    await expect(page.getByRole("alert").getByText("Report evidence could not be loaded")).toBeVisible();
+    await expect(page.getByText("Period coverage", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Verified work outputs", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Restore sample evidence" }).click();
+    await expect(page.getByText("Period coverage", { exact: true })).toBeVisible();
+  }
+});
 

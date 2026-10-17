@@ -58,4 +58,14 @@ test("P1 Finance is isolated from Payroll; Administration and Executive share on
     "No event or report is published",
   ]) assert.ok(html.includes(fragment), "missing Finance/quarterly review design contract: " + fragment);
 });
+test("P1 report evidence failure state is visibly fail-closed rather than showing fabricated metrics", () => {
+  for (const phrase of [
+    "reportEvidenceReady=true",
+    'action==="report-unavailable"',
+    'action==="report-ready"',
+    'role="alert">Report evidence could not be loaded',
+    "Period statistics, completion counts and review evidence are withheld",
+    'btn("Preview evidence failure","report-unavailable")',
+  ]) assert.ok(html.includes(phrase), "missing fail-closed evidence preview: " + phrase);
+});
 
