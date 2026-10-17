@@ -56,7 +56,24 @@ jobs:
         env:
           CEAC_LOCAL_TOTP_UI: '1'
         run: npx playwright test tests/account-mfa-local-only.spec.js --workers=1
-      - name: Verify all fixture roles have genuine AAL2, persistent session and fresh-login server denial
+      - name: Start disposable integration Edge function with explicit in-function Auth checks
+        run: |
+          # The local function checks each real user bearer itself. This
+          # no-verify-jwt gateway bypass is isolated to loopback CI ONLY.
+          supabase functions serve integration-runtime --no-verify-jwt > /tmp/ceac-isolated-edge.log 2>&1 &
+          for i in {1..50}; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -H 'Content-Type: application/json' \
+              -X POST --data '{"action":"health.telegram"}' \
+              http://127.0.0.1:54321/functions/v1/integration-runtime || true)
+            if [[ "$code" == "401" ]]; then exit 0; fi
+            sleep 1
+          done
+          tail -n 80 /tmp/ceac-isolated-edge.log
+          exit 1
+      - name: Verify all fixture roles, genuine Edge/Auth/AAL2, Storage and recovery boundaries
+        env:
+          CEAC_LOCAL_EDGE_URL: http://127.0.0.1:54321/functions/v1/integration-runtime
         run: node scripts/ci/test-stage2-all-role-totp-local.mjs
       - name: Upload local-only browser evidence
         if: always()

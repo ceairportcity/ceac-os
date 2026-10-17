@@ -12,6 +12,9 @@ for (const name of ["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_ID", "SUPABASE_DB
 const { SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, ROLE_FIXTURE_PASSWORD } = process.env;
 assert.ok(SUPABASE_ANON_KEY && SUPABASE_SERVICE_ROLE_KEY && ROLE_FIXTURE_PASSWORD, "Missing disposable test fixtures");
 assert.notEqual(SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY);
+const edgeUrl = "http://127.0.0.1:54321/functions/v1/integration-runtime";
+assert.equal(process.env.CEAC_LOCAL_EDGE_URL, edgeUrl,
+  "The genuine local Edge endpoint must be started by isolated acceptance CI");
 const orgId = "10000000-0000-4000-8000-000000000010";
 const roleEmails = [
   ["Manager", "manager@ceac.local.test"],
@@ -70,6 +73,28 @@ async function signIn(client, email) {
   if (result.error) throw result.error;
   assert.ok(result.data.session?.access_token, "Real password session missing");
 }
+// Send real provider bearer tokens directly to the local Edge HTTP endpoint.
+// The function uses its own Supabase Auth + policy checks, not a JS mock.
+async function edgeStatus(client, action = "health.telegram") {
+  let bearer = "";
+  if (client) {
+    const session = await client.auth.getSession();
+    if (session.error) throw session.error;
+    bearer = session.data.session?.access_token || "";
+    assert.ok(bearer, "Local Edge probe requires a genuine user JWT");
+  }
+  const response = await fetch(edgeUrl, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: "Bearer " + bearer } : {}),
+    },
+    body: JSON.stringify({ action }),
+  });
+  return response.status;
+}
+
 async function orgIdentity(client, label) {
   const response = await client.rpc("app_org_id");
   if (response.error) throw new Error(label + " app_org_id failed: " + response.error.message);
@@ -132,6 +157,22 @@ try {
     assert.equal((await ownProfileRows(sessions[i], label + " verified AAL2")).length, 1,
       label + " signed TOTP must restore its own protected REST profile read");
   }
+
+  // Real Edge Function runtime, local disposable GoTrue tokens and service
+  // capability decisions: a verified Admin reaches only the authorised
+  // health lookup, whereas anonymous, fresh AAL1 and unprivileged AAL2 cannot.
+  assert.equal(await edgeStatus(null), 401,
+    "Anonymous calls must fail at the actual integration Edge function");
+  assert.equal(await edgeStatus(sessions[2]), 404,
+    "Verified TOTP/AAL2 Administration can reach the empty provider health lookup");
+  assert.equal(await edgeStatus(sessions[0]), 403,
+    "AAL2/TOTP does not confer integration.manage authority to a Manager");
+  const freshAdmin = create(SUPABASE_ANON_KEY);
+  sessions.push(freshAdmin);
+  await signIn(freshAdmin, roleEmails[2][1]);
+  await sessionLevel(freshAdmin, "fresh Admin Edge call", "aal1");
+  assert.equal(await edgeStatus(freshAdmin), 403,
+    "A password-only Admin bearer cannot invoke the privileged Edge action");
 
   // Exercise the ACTUAL Storage API with provider-signed sessions, not merely
   // SQL inspection. The fixture is a tiny synthetic private WebP written only
