@@ -78,3 +78,14 @@ test("P1 selected-Manager-unit demonstration is isolated from membership or Auth
   ]) assert.ok(html.includes(expected),"missing isolated Manager unit design: "+expected);
   assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
 });
+test("P1 period status differentiates not-yet-loaded, no-filed-evidence and failed source read",()=>{
+  for(const key of [
+    'reportEvidencePhase="ready"','data-evidence-phase',
+    'Loading source evidence','No filed period evidence',
+    'action==="report-loading" || action==="report-empty"',
+    'btn("Preview loading","report-loading")',
+    'btn("Preview empty period","report-empty")'
+  ]) assert.ok(html.includes(key),"missing source evidence status "+key);
+  assert.match(html,/if\(!reportEvidenceReady\)return/);
+  assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
+});

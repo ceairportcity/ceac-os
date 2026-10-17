@@ -39,7 +39,7 @@ const roleNav={
  volunteer:[["overview","My fellowship"],["work","Assigned activities"],["projects","Projects"],["auth","Account security"]]
 };
 const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",finance:"Budget and approved expenditure, separate from confidential payroll",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
-let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false,reportEvidenceReady=true,demoUnit="Unit One";
+let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false,reportEvidenceReady=true,demoUnit="Unit One",reportEvidencePhase="ready";
 function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
 const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
 function panel(title,body){return '<section class="panel"><h2>'+title+'</h2>'+body+'</section>';}
@@ -73,9 +73,16 @@ function projects(){
 }
 function reports(){
  const executive=role==="executive";
+ if(reportEvidencePhase!=="ready"){
+  const state=reportEvidencePhase==="loading"
+   ? ["Loading source evidence","Selected-period source records are not ready. Do not display apparent verified metrics."]
+   : ["No filed period evidence","This sample period has no filed evidence. That does not prove a zero-output result."];
+  return heading(executive?"Executive evidence review":"Manager period report","Review honest loading and empty source-evidence states.",btn("Restore sample evidence","report-ready","primary"))
+    +'<section class="panel" role="status" aria-live="polite" data-evidence-phase="'+reportEvidencePhase+'"><h2>'+state[0]+'</h2><p>'+state[1]+'</p><div class="no-real-data">Synthetic reference only. No real period query has been made.</div></section>';
+ }
  if(!reportEvidenceReady)return heading(executive?"Executive evidence review":"Manager period report","Source evidence is unavailable. Show an explicit error rather than treating failed queries as zero results.",btn("Restore sample evidence","report-ready","primary"))+
  panel("Report evidence unavailable",'<div class="no-real-data" role="alert">Report evidence could not be loaded</div><p>Period statistics, completion counts and review evidence are withheld until the real data source is restored. Retry is a separate permission-checked action in the actual application.</p>');
- return heading(executive?"Executive evidence review":"Manager period report","Source-linked period reporting, not automatically generated performance ratings.",btn("Preview evidence failure","report-unavailable")+btn("View sample source links","inspect"))
+ return heading(executive?"Executive evidence review":"Manager period report","Source-linked period reporting, not automatically generated performance ratings.",btn("Preview loading","report-loading")+btn("Preview empty period","report-empty")+btn("Preview evidence failure","report-unavailable")+btn("View sample source links","inspect"))
  +'<div class="three">'+panel("Period coverage",'<div class="metric">3/4</div><div class="subtle">Sample units with filed facts</div>')+panel("Verified work outputs",'<div class="metric">6</div><div class="subtle">Reviewer-acknowledged demonstrations</div>')+panel("Human-entered rating",'<div class="metric">—</div><div class="subtle">Never calculated from system KPIs</div>')+'</div>'+
  '<div class="two section-space">'+panel("Evidence ledger",record("Accepted deliverable","Source work item · evidence attachment","Verified")+record("Open responsibility","Dated activity; not complete","Open")+record("Returned work","Rework requested by authorised reviewer","Returned"))+
  panel("Integrity and failure states",'<p><strong>Evidence status is explicit.</strong> If period Work sessions cannot load, a visible error must replace any apparent zero-result summary.</p><div class="mutedbox">Use “Preview evidence failure” above to inspect the explicit fail-closed UI; do not display metrics when source evidence is unavailable.</div><p class="form-note">The current app still has a failing browser test for this state; this design cannot conceal that defect.</p>')+'</div>';
@@ -219,16 +226,17 @@ document.addEventListener("click",function(event){
  if(action==="attendance"){working=!working;drawNav();document.getElementById("announcement").textContent="Sample session state changed in this browser only.";return;}
  if(action==="switch-demo-unit" && role==="manager"){
   demoUnit=demoUnit==="Unit One"?"Unit Two":"Unit One";
-  selected="Workstream Alpha";workFilter="mine";reportEvidenceReady=true;
+  selected="Workstream Alpha";workFilter="mine";reportEvidenceReady=true;reportEvidencePhase="ready";
   drawNav();document.getElementById("announcement").textContent="Sample unit context switched. No real permissions changed.";return;
  }
- if(action==="report-unavailable"){reportEvidenceReady=false;drawNav();return;}
- if(action==="report-ready"){reportEvidenceReady=true;drawNav();return;}
+ if(action==="report-loading" || action==="report-empty"){reportEvidencePhase=action==="report-loading"?"loading":"empty";reportEvidenceReady=true;drawNav();return;}
+ if(action==="report-unavailable"){reportEvidenceReady=false;reportEvidencePhase="ready";drawNav();return;}
+ if(action==="report-ready"){reportEvidenceReady=true;reportEvidencePhase="ready";drawNav();return;}
  selected=control.dataset.item||"Sample authorised record";
  drawer(action);
 });
 document.addEventListener("submit",function(event){if(event.target.id!=="previewform")return;event.preventDefault();document.getElementById("modal").innerHTML="";document.getElementById("announcement").textContent="Demonstration reviewed. No real data was saved or submitted.";});
 document.addEventListener("keydown",function(event){if(event.key==="Escape")document.getElementById("modal").innerHTML="";});
-document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;demoUnit="Unit One";drawNav();});
+document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";drawNav();});
 drawNav();
 </script></body></html>

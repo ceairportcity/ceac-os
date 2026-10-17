@@ -56,3 +56,9 @@ The Manager and Executive reporting previews now include an explicit locally sim
 The connected V4 prototype now supports a visibly selected Unit One/Unit Two **synthetic Manager headship** switch. This is an illustrative interaction, not a claim that the real user changed organisational membership. Switching the simulated unit resets the selected preview record and work filter; the general Staff, Volunteer and other role demos cannot acquire new capabilities through the Manager's UI. A companion Playwright test checks this separation, and a source-contract test verifies no backend, Auth or network calls are introduced.
 
 The actual P3–P8 app must independently verify allowed multi-unit manager headships, stale response cancellation, RLS/RPC/Storage authorisation and no privacy leakage. This design remains unapproved until the owner reviews full desktop/mobile reference screens; **P1 stays IN PROGRESS** and production is untouched.
+
+## Reporting design: distinguish loading, no filed evidence and source failure
+
+The P1 Manager and Executive preview now offers **separate synthetic loading, unfiled-period and failed-source-read states**. Each removes the success metrics rather than treating an unfinished query, absent filing or failed request as a verified zero, published result or human-entered rating. The existing fail-closed **Report evidence could not be loaded** design and restoration action remain preserved.
+
+These are local-only design samples with a direct browser test. They are not a fix for the outstanding P6 production Manager report error-state defect, and do not change Auth, RLS, payroll or any real data. Owner approval is still required for connected full role/phone references, including the latest revised Projects PNG. **P1 IN PROGRESS; no premature P2–P9 progression.**
