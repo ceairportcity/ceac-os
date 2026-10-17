@@ -1,0 +1,52 @@
+{
+  "title": "CEAC Stage 2 owner-confirmed original screenshot identity manifest",
+  "updated_on": "2026-10-17",
+  "applicable_pr": 118,
+  "source_of_truth": "docs/design/CEAC_STAGE2_VISUAL_REFERENCE_CORRECTION_2026-10-17.md",
+  "user_originals_not_public_assets": true,
+  "note": "Owner-supplied original binary images may have employee or staff identifiers. Do not add to temporarily public GitHub. Source screenshot hash and explicit approval status provide provenance, not execution acceptance.",
+  "references": {
+    "work_desktop": {
+      "original_sha256": "c84f9ab01a43be444ac7e2364555a0bfe3cbf63dd3117c6d9001fda94192406b",
+      "width": 1536,
+      "height": 1105,
+      "approval_scope": "owner_confirmed_original_work_design",
+      "verified_against_recorded_2026_10_16_sha256": true,
+      "original_binary_verified_in_repo": false
+    },
+    "work_mobile": {
+      "original_sha256": "e53d92014cf2f4852402730db95f6dcf2772c095bdd9917ffc72f861d1408555",
+      "width": 390,
+      "height": 1971,
+      "approval_scope": "owner_confirmed_original_work_mobile_design",
+      "verified_against_recorded_2026_10_16_sha256": true,
+      "original_binary_verified_in_repo": false
+    },
+    "overview_scenic": {
+      "original_sha256": "315c6260aa7994e339841b4ca26e78004b041a294209b197c016b9f55c13324e",
+      "approval_scope": "design_direction_not_full_p1_signoff",
+      "owner_confirmed_in_chat": true,
+      "original_binary_verified_in_repo": false,
+      "photo_rotation_rule": "10 verified commercial-use landscape photographs, deterministic one-per-Africa/Accra-day"
+    },
+    "projects_revised": {
+      "original_sha256": "66918f3e3d35fe7a6adf36a85eb90b14c0f719fc8f88fed378d538a47518a559",
+      "width": 1536,
+      "height": 1024,
+      "approval_scope": "2026_10_16_newer_collaborative_projects_direction",
+      "original_binary_verified_in_repo": false
+    }
+  },
+  "retired_active_paths": [
+    "docs/design/stage2-v4/CEAC_STAGE2_V4_OVERVIEW.png",
+    "docs/design/stage2-v4/CEAC_STAGE2_V4_PROJECTS.png"
+  ],
+  "historical_candidates_not_owner_approvals": [
+    "docs/design/stage2-v4/CEAC_STAGE2_V4_CANONICAL_INTERACTIVE.html",
+    "docs/design/stage2-v4/CEAC_STAGE2_V4_WORK.png",
+    "docs/design/stage2-v4/CEAC_STAGE2_V4_MOBILE.png",
+    "docs/design/stage2-v4/CEAC_STAGE2_P1_CONNECTED_ROLE_REVIEW.html"
+  ],
+  "p1_status": "in_progress",
+  "production_go": false
+}

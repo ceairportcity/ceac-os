@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 
 const file = (path) => readFileSync(path, "utf8");
 
@@ -519,4 +519,37 @@ test("P1 connected V4 role demo stays synthetic, responsive and mechanically int
   assert.match(get("modal").innerHTML, /No actual changes will be saved/);
   events["document:click"]({ target: { closest: () => ({ dataset: { action: "close" } }) } });
   assert.equal(get("modal").innerHTML, "");
+});
+
+test("Stage 2 visual source authority is verified and withdrawn graphics cannot return as approved fixtures", () => {
+  const approval = JSON.parse(file("docs/design/stage2-v4/CEAC_STAGE2_OWNER_SELECTED_SCREEN_PROVENANCE_2026-10-17.json"));
+  const refs = approval.references;
+  assert.equal(refs.work_desktop.original_sha256, "c84f9ab01a43be444ac7e2364555a0bfe3cbf63dd3117c6d9001fda94192406b");
+  assert.equal(refs.work_mobile.original_sha256, "e53d92014cf2f4852402730db95f6dcf2772c095bdd9917ffc72f861d1408555");
+  assert.equal(refs.overview_scenic.original_sha256, "315c6260aa7994e339841b4ca26e78004b041a294209b197c016b9f55c13324e");
+  assert.equal(refs.overview_scenic.approval_scope, "design_direction_not_full_p1_signoff");
+  assert.equal(refs.projects_revised.original_sha256, "66918f3e3d35fe7a6adf36a85eb90b14c0f719fc8f88fed378d538a47518a559");
+  assert.equal(refs.projects_revised.original_binary_verified_in_repo, false);
+  for (const retired of approval.retired_active_paths) {
+    assert.equal(existsSync(retired), false, "Owner-rejected or superseded bitmap must not exist at HEAD: " + retired);
+  }
+  const candidate = file("docs/design/stage2-v4/CEAC_STAGE2_V4_CANONICAL_INTERACTIVE.html");
+  assert.match(candidate, /Owner rejected this Overview design/);
+  assert.match(candidate, /Projects visual was superseded by the product owner/);
+  assert.match(candidate, /#page-overview > :not\(\.withdrawn-overview\)\{display:none !important;\}/);
+  assert.match(candidate, /#page-projects > :not\(\.owner-withdrawn-projects\)\{display:none !important;\}/);
+  const correction = file("docs/design/CEAC_STAGE2_VISUAL_REFERENCE_CORRECTION_2026-10-17.md");
+  for (const hash of [refs.work_desktop.original_sha256, refs.work_mobile.original_sha256, refs.overview_scenic.original_sha256, refs.projects_revised.original_sha256]) {
+    assert.ok(correction.includes(hash), "Owner visual register must retain identity: " + hash);
+  }
+  for (const path of [
+    "AGENTS.md",
+    "docs/final-product/PRODUCT_OWNER_DECISIONS.md",
+    "docs/design/CEAC_STAGE2_V4_VISUAL_PRODUCT_LOCK_2026-10-16.md",
+    "docs/design/CEAC_STAGE2_P1_FINITE_FAMILY_REVIEW_2026-10-17.md",
+    "docs/design/CEAC_STAGE2_P1_ROUTE_REFERENCE_COVERAGE_MATRIX_2026-10-17.md",
+    "docs/continuity/CEAC_STAGE2_UNIFIED_EXECUTION_CONTRACT_2026-10-16.md"
+  ]) {
+    assert.match(file(path), /CEAC_STAGE2_VISUAL_REFERENCE_CORRECTION_2026-10-17\.md/, "Critical first-read contract must link current source authority: " + path);
+  }
 });
