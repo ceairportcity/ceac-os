@@ -117,3 +117,15 @@ test("Stage 2 Auth bootstrap invalidates stale identity and personal session res
   assert.match(source, /catch \(error\) \{\s*if \(!isCurrent\(\)\) return;/);
   assert.match(source, /finally \{\s*if \(isCurrent\(\)\) setReady\(true\);/);
 });
+
+test("identity-changing Auth events synchronously hide stale Stage 2 workspace before reloading", () => {
+  const source = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+  const match = source.match(/onAuthStateChange\(\(event\) => \{([\s\S]*?)\n    \}\);/);
+  assert.ok(match, "Stage 2 must inspect provider Auth event types");
+  assert.match(match[1], /\["SIGNED_OUT", "SIGNED_IN", "PASSWORD_RECOVERY", "USER_UPDATED"\]\.includes\(event\)/);
+  const reset = match[1].indexOf("setReady(false)");
+  assert.ok(reset > 0 && match[1].indexOf("setMe(null)", reset) > reset
+    && match[1].indexOf("setSession(null)", reset) > reset);
+  assert.ok(match[1].indexOf("setSession(null)", reset) < match[1].indexOf("setTimeout(() => boot(), 0)"),
+    "Old actor's workspace must disappear before delayed Auth reload");
+});

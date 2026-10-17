@@ -134,9 +134,21 @@ export default function App() {
 
   useEffect(() => {
     boot();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      if (UNIVERSAL_TOTP_CUTOVER) setTimeout(() => boot(), 0);
-      else boot();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (UNIVERSAL_TOTP_CUTOVER) {
+        // Identity-changing Auth events must immediately hide the previous
+        // actor's protected workspace, before any asynchronous profile read.
+        // Routine token refreshes retain their legitimate workspace while
+        // the separate universal MFA gate rechecks signed assurance.
+        if (["SIGNED_OUT", "SIGNED_IN", "PASSWORD_RECOVERY", "USER_UPDATED"].includes(event)) {
+          ++bootEpoch.current;
+          setReady(false);
+          setMe(null);
+          setSession(null);
+        }
+        // Do not await provider calls within Supabase's Auth callback lock.
+        setTimeout(() => boot(), 0);
+      } else boot();
     });
     const onPopState = () => applyRoute(routeFromLocation());
     window.addEventListener("popstate", onPopState);
