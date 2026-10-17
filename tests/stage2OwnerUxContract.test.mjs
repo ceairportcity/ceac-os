@@ -415,3 +415,23 @@ test("P0 route census continuously matches JSX branches, actual screens and dire
   assert.ok(byRoute["protected-hr"].some((s) => /hr_employee_protected_record/.test(s)));
   assert.ok(census.includes("| " + String.fromCharCode(96) + "me" + String.fromCharCode(96) + " (fallback) |"));
 });
+test("P0 executable census captures all mapped screen and direct data sources without claiming RLS acceptance", async () => {
+  const { collectP0SourceInventory } = await import("../scripts/stage2/p0-source-inventory.mjs");
+  const audit = collectP0SourceInventory();
+  assert.equal(audit.status, "SOURCE_INVENTORY_ONLY");
+  assert.equal(audit.routeCount, 47);
+  assert.deepEqual(audit.roleNavigationCounts, { staff: 8, manager: 11, admin: 12, executive: 12 });
+  assert.equal(audit.overlays.length, 9);
+  assert.ok(audit.routes.every((r) => r.components.length > 0
+    && r.components.every((c) => c.path.startsWith("src/screens/"))));
+  const byTab = Object.fromEntries(audit.routes.map((route) => [route.tab, route]));
+  assert.deepEqual(byTab.home.components.map((c) => c.component),
+    ["Home", "ManagerHome", "AdminHome", "ExecutiveHome"]);
+  assert.deepEqual(byTab.work.components.map((c) => c.component),
+    ["Work", "ManagerWork", "AdminWork", "ExecutiveWork"]);
+  assert.ok(byTab.work.components.some((c) => c.directTables.includes("work_items")));
+  assert.ok(byTab["manager-reports"].components.some((c) => c.directTables.includes("work_sessions")));
+  assert.ok(byTab["protected-hr"].rootGuard.includes("canAccessProtectedHR"));
+  assert.ok(byTab["payroll"].rootGuard.includes("canUsePayroll"));
+  assert.ok(byTab["technical-support"].components.some((c) => c.directTables.includes("support_case_events")));
+});

@@ -86,3 +86,9 @@ For each stage, preserve an entry:
 - **Decision:** `ACCEPTED` with evidence and move to next stage, or `IN PROGRESS`/`BLOCKED` and remain; never self-approve an unreviewed owner design choice or make up acceptance
 
 Complete each available stage without interrupting at routine milestones merely to report. Keep only one active build lane and never broaden a stage into unrelated later-stage features. A tool/time/usage interruption should leave a precise latest-HEAD handover and clean state, not new competing branches or abandoned partial modifications. No final P9 release before independent owner GO.
+
+## 3D. Recovery-only Codespaces (P0 read-only preservation check, 17 Oct)
+
+A read-only signed-in GitHub Codespaces listing identified **four stopped CEAC OS Codespaces**: one on protected `main` with GitHub's **No changes** indicator, and **three historical-branch Codespaces** with GitHub's explicit **uncommitted changes** indicators. The dirty workspaces are on the older Technical Support review and independent release-gate branches, **not** on the sole Stage 2 PR #118 integration branch. None was started, reset, opened for terminal edits, deleted, billed for resumed compute or otherwise modified. **Contents of the three dirty workspaces have NOT been inspected**; do not claim those changes have been merged, reviewed or are safe to discard. The owner-preserved uncommitted source must be checked before any future work that could supersede its functional or security fixes. Do not silently overwrite this state during P1–P9.
+
+A new local P0 read-only scanner validates root tab, role-nav, screen module and direct table/RPC references without granting authority; its tests may only support **source inventory**, not full negative server or browser acceptance. This document remains P0 IN PROGRESS until latest exact-SHA acceptance evidence is recorded.
