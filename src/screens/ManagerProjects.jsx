@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { dateOnly, dueLabel } from "../lib/time";
@@ -101,8 +101,18 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [workFilter, setWorkFilter] = useState("all");
   const [phaseFilter, setPhaseFilter] = useState("all");
+  // A unit switch must invalidate old async reads as well as their visible data.
+  const scope = [me.org_id, me.id, me.unit_id].join(":");
+  const listRequestRef = useRef(0);
+  const detailRequestRef = useRef(0);
+  const proposalRequestRef = useRef(0);
+  const [listScope, setListScope] = useState(null);
+  const [detailScope, setDetailScope] = useState(null);
+  const [proposalScope, setProposalScope] = useState(null);
+  const visibleProposals = proposalScope === scope ? proposals : [];
 
-  useEffect(() => { loadList(); loadProposals(); }, [me.id, me.unit_id]);
+
+  useEffect(() => { loadList(); loadProposals(); }, [me.id, me.unit_id, me.org_id]);
   useEffect(() => { setSelectedId(initialProjectId); }, [initialProjectId]);
   useEffect(() => {
     if (!selectedId) { setArea("overview"); return; }
@@ -112,19 +122,23 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
   useEffect(() => {
     if (selectedId) sessionStorage.setItem(`ceac-project-area:${me.id}:${selectedId}`, area);
   }, [selectedId, me.id, area]);
-  useEffect(() => { if (selectedId) loadDetail(selectedId); else setDetail(null); }, [selectedId, me.unit_id]);
+  useEffect(() => { if (selectedId) loadDetail(selectedId); else { detailRequestRef.current += 1; setDetail(null); setDetailScope(null); } }, [selectedId, me.unit_id, me.id, me.org_id]);
   useEffect(() => { setSelectedWorkId(null); setWorkFilter("all"); setPhaseFilter("all"); }, [selectedId]);
 
   async function loadProposals() {
+    const request = ++proposalRequestRef.current;
+    const requestScope = scope;
     const result = await supabase.from("project_proposals")
       .select("id,name,purpose,starts_on,ends_on,state,project_id,review_note,created_at,proposed_by,profiles!project_proposals_proposed_by_fkey(full_name)")
       .eq("unit_id", me.unit_id)
       .order("created_at", { ascending: false });
+    if (request !== proposalRequestRef.current) return;
     if (result.error) {
       if (!String(result.error.message || "").includes("project_proposals")) setError(humanError(result.error, "Project proposals could not be loaded."));
       return;
     }
     setProposals(result.data || []);
+    setProposalScope(requestScope);
   }
 
   async function decideProposal(proposal, decision) {
@@ -146,6 +160,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
   }
 
   async function loadList() {
+    const request = ++listRequestRef.current;
+    const requestScope = scope;
     setLoadingList(true);
     setError(null);
     try {
@@ -158,10 +174,17 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       ]);
       const visibleProjects = requireResult(projectResult, "Projects");
       if (capabilityResult.error) throw new Error(`Project capability: ${capabilityResult.error.message}`);
-      setCanCreate(Boolean(capabilityResult.data));
-      setUnits(requireResult(unitResult, "Units"));
+      const availableUnits = requireResult(unitResult, "Units");
       const ids = visibleProjects.map((project) => project.id);
-      if (!ids.length) { setProjects([]); setLoadingList(false); return; }
+      if (!ids.length) {
+        if (request === listRequestRef.current) {
+          setProjects([]);
+          setCanCreate(Boolean(capabilityResult.data));
+          setUnits(availableUnits);
+          setListScope(requestScope);
+        }
+        return;
+      }
       const [unitResultRows, objectiveResult, workResult, budgetResult, spendResult] = await Promise.all([
         supabase.from("project_units").select("project_id, unit_id, role").in("project_id", ids),
         supabase.from("objectives").select("id, project_id, status").in("project_id", ids),
@@ -175,7 +198,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       const budgets = requireResult(budgetResult, "Project budgets");
       const spend = requireResult(spendResult, "Project spend");
       const currentUnitProjects = visibleProjects.filter((project) => project.lead_unit_id === me.unit_id || projectUnits.some((row) => row.project_id === project.id && row.unit_id === me.unit_id));
-      setProjects(currentUnitProjects.map((project) => {
+      const nextProjects = currentUnitProjects.map((project) => {
         const tasks = work.filter((item) => item.project_id === project.id && item.kind === "task");
         return {
           ...project,
@@ -185,13 +208,21 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           completedTasks: tasks.filter((task) => ["completed", "self_certified"].includes(task.status)).length,
           costs: costRows(budgets.filter((row) => row.project_id === project.id), spend.filter((row) => row.project_id === project.id)),
         };
-      }));
-    } catch (err) { setError(humanError(err, "Projects could not be loaded.")); }
-    finally { setLoadingList(false); }
+      });
+      if (request === listRequestRef.current) {
+        setProjects(nextProjects);
+        setCanCreate(Boolean(capabilityResult.data));
+        setUnits(availableUnits);
+        setListScope(requestScope);
+      }
+    } catch (err) { if (request === listRequestRef.current) setError(humanError(err, "Projects could not be loaded.")); }
+    finally { if (request === listRequestRef.current) setLoadingList(false); }
   }
 
   async function loadDetail(projectId) {
-    setError(null); setDetail(null);
+    const request = ++detailRequestRef.current;
+    const requestScope = scope;
+    setError(null); setDetail(null); setDetailScope(null);
     try {
       const projectResult = await supabase.from("projects")
         .select("id, org_id, kind, name, purpose, starts_on, ends_on, follow_up_ends_on, status, lead_unit_id, units!projects_lead_unit_id_fkey(name)")
@@ -222,6 +253,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       const work = requireResult(workResult, "Project work");
       const budgets = requireResult(budgetResult, "Project budgets");
       const spend = requireResult(spendResult, "Project spend");
+      if (request !== detailRequestRef.current) return;
       setDetail({
         ...projectResult.data, participants, phases, objectives, work,
         milestones: milestoneResult.error ? null : milestoneResult.data || [],
@@ -229,7 +261,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         canManageProject: projectResult.data.lead_unit_id === me.unit_id,
         canManageObjectives: participants.some((row) => row.unit_id === me.unit_id) || projectResult.data.lead_unit_id === me.unit_id,
       });
-    } catch (err) { setError(humanError(err, "Project detail could not be loaded.")); }
+      setDetailScope(requestScope);
+    } catch (err) { if (request === detailRequestRef.current) setError(humanError(err, "Project detail could not be loaded.")); }
   }
 
   async function createProject(form) {
@@ -282,8 +315,10 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     finally { setBusy(false); }
   }
 
+  if (listScope !== scope) return <div className="body manager-projects ev2-project-page"><LoadingState label="Loading authorised unit projects…" /></div>;
+
   if (selectedId) {
-    if (!detail) return <div className="body manager-projects ev2-project-page ev2-project-workspace"><button className="back" onClick={() => initialProjectId && back ? back() : setSelectedId(null)}>← Projects</button>{error ? <ProductNotice tone="error" title="Could not open project">{error}</ProductNotice> : <LoadingState label="Loading project…" />}</div>;
+    if (!detail || detail.id !== selectedId || detailScope !== scope) return <div className="body manager-projects ev2-project-page ev2-project-workspace"><button className="back" onClick={() => initialProjectId && back ? back() : setSelectedId(null)}>← Projects</button>{error ? <ProductNotice tone="error" title="Could not open project">{error}</ProductNotice> : <LoadingState label="Loading project…" />}</div>;
     const team = [...new Set(detail.work.map((item) => item.profiles?.full_name).filter(Boolean))];
     const unattached = detail.work.filter((item) => !item.objective_id);
     const selectedWork = detail.work.find((item) => item.id === selectedWorkId) || null;
@@ -505,13 +540,13 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       onAction={canCreate ? () => setSheet({ type: "project" }) : undefined}
     />
     {error && <ProductNotice tone="error" title="Could not complete that">{error}</ProductNotice>}
-    {proposals.filter((proposal) => proposal.state === "submitted").length > 0 && <section className="ev2p-proposals">
+    {visibleProposals.filter((proposal) => proposal.state === "submitted").length > 0 && <section className="ev2p-proposals">
       <ProjectSectionHeader
         eyebrow="Needs confirmation"
         title="Project proposals"
-        count={proposals.filter((proposal) => proposal.state === "submitted").length}
+        count={visibleProposals.filter((proposal) => proposal.state === "submitted").length}
       />
-      {proposals.filter((proposal) => proposal.state === "submitted").map((proposal) => <ProjectAttentionCard
+      {visibleProposals.filter((proposal) => proposal.state === "submitted").map((proposal) => <ProjectAttentionCard
         key={proposal.id}
         eyebrow="Staff proposal"
         title={proposal.name}

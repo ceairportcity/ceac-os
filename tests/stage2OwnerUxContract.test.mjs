@@ -129,3 +129,13 @@ test("Executive and Administration open the same authorised Projects workspace, 
   assert.match(reader, /\.neq\("visibility", "private"\)/);
   assert.match(app, /<Delivery me=\{me\} initialProjectId=\{projectId\} openItem=\{openItem\}/);
 });
+
+test("switching units or selected projects invalidates previous Project responses and actions", () => {
+  const screen = file("src/screens/ManagerProjects.jsx");
+  for (const guard of ["listRequestRef.current", "detailRequestRef.current", "proposalRequestRef.current",
+    "request !== detailRequestRef.current", "listScope !== scope",
+    "detail.id !== selectedId || detailScope !== scope", "proposalScope === scope ? proposals : []"]) {
+    assert.ok(screen.includes(guard), "missing current-role/project guard: " + guard);
+  }
+  assert.doesNotMatch(screen, /\{proposals\.filter\(/);
+});
