@@ -336,7 +336,7 @@ try {
     .update({ active: false }).eq("id", soleAuthorityId);
   assert.ok(blockedSelfDeactivation.error,
     "A signed-in AAL2 administrator may not deactivate the organisation's last authority holder");
-  assert.match(blockedSelfDeactivation.error.message, /last person who can manage authority/i,
+  assert.match(blockedSelfDeactivation.error.message, /last (?:person who can manage authority|permanent authority manager)/i,
     "Denial must come from the last-authority invariant, not an unrelated RLS or connectivity failure");
   const stillActive = await service.from("profiles")
     .select("active").eq("id", soleAuthorityId).single();
