@@ -154,3 +154,23 @@ test("P1 local Work and project-link draft remains scope-isolated and never save
   await page.locator("#navigation").getByRole("button",{name:"Assigned activities"}).click();
   await expect(page.getByText("Sample reviewed unit deliverable")).toHaveCount(0);
 });
+test("P1 Auth setup, challenge and recovery previews never claim real assurance",async({page})=>{
+  await page.route("**/*",r=>r.abort("blockedbyclient"));
+  await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+  const picker=page.getByRole("combobox",{name:"Preview role"});
+  await picker.selectOption("staff");
+  await page.locator("#navigation").getByRole("button",{name:"Account security"}).click();
+  await expect(page.getByRole("heading",{name:"Enrol a supported authenticator"})).toBeVisible();
+  await page.getByRole("button",{name:"Preview challenge"}).click();
+  await expect(page.getByRole("heading",{name:"Confirm authenticator challenge"})).toBeVisible();
+  await expect(page.getByText("Protected action withheld pending real proof.",{exact:false})).toBeVisible();
+  await page.getByRole("button",{name:"Preview recovery"}).click();
+  await expect(page.getByRole("heading",{name:"Recover protected access"})).toBeVisible();
+  await page.getByRole("button",{name:"Inspect challenge form"}).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByText("This is a UI demonstration, not a real authenticator seed or recovery pathway.")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await picker.selectOption("volunteer");
+  await page.locator("#navigation").getByRole("button",{name:"Account security"}).click();
+  await expect(page.getByRole("heading",{name:"Enrol a supported authenticator"})).toBeVisible();
+});

@@ -41,6 +41,7 @@ const roleNav={
 const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",finance:"Budget and approved expenditure, separate from confidential payroll",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
 let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false,reportEvidenceReady=true,demoUnit="Unit One",reportEvidencePhase="ready";
 const draftWorkSamples=[];
+let authPreviewStep="setup";
 function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
 const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
 function panel(title,body){return '<section class="panel"><h2>'+title+'</h2>'+body+'</section>';}
@@ -164,9 +165,15 @@ function strategy(){
  panel("Executive information protection",'<p>Visible leadership reporting contains authorised, aggregated facts only. Protected employee appraisal explanations and HR-private content are excluded by policy.</p>')+'</div>';
 }
 function auth(){
- return heading("Account security · TOTP","Invitation/password remains supported. Actual universal authenticator TOTP protection is gated until a separately approved server cutover.",btn("View enrolment preview","totp","primary"))
- +'<div class="two">'+panel("Authenticator setup and challenge",'<div class="eyebrow">Demo path · no live QR or secret</div><h2>Enrol a supported authenticator</h2><p>Use a real verified factor only in the actual protected application. This candidate contains no enrolment URI, recovery code or usable token.</p><div class="mutedbox">AAL1 → setup-only → verified TOTP challenge → true AAL2 → authorised app access.</div>')+
- panel("Recovery and continuity",'<p>Recovery must verify identity and current active invitation or employment status. Do not lock out the last privileged administrator or silently revoke existing Stage 1 sessions before operational approval.</p><div class="no-real-data">No actual Supabase Auth, email or database integration exists in this design preview.</div>')+'</div>';
+ const step={
+  setup:["Enrol a supported authenticator","The actual app must display a user-specific QR code and verification step only in an authorised AAL1 setup session. This preview never generates a secret or enrollment URI."],
+  challenge:["Confirm authenticator challenge","After a real new sign-in, the actual server must verify an enrolled TOTP factor and session AAL2 before any protected table, RPC, Storage or Edge action."],
+  recovery:["Recover protected access","A lost-factor request requires verified identity, audited privileged approval and last-administrator continuity. This example cannot reset or bypass a factor."]
+ }[authPreviewStep];
+ const controls=btn("Preview setup","auth-step-setup")+btn("Preview challenge","auth-step-challenge")+btn("Preview recovery","auth-step-recovery");
+ return heading("Account security · TOTP","Invited email/password remains supported. Universal authenticator enforcement requires a separate approved backend cutover.",controls)
+ +'<div class="two">'+panel("Authentication journey · "+authPreviewStep,'<div class="eyebrow">Design-only · no seed, no credential validation</div><h2>'+step[0]+'</h2><p>'+step[1]+'</p><div class="mutedbox">AAL1 setup-only → verified TOTP enrollment → fresh challenge → actual AAL2 or access denied.</div>'+btn("Inspect challenge form","totp","primary"))
+ +panel("Recovery & access boundaries",'<p>Only real secure backend evidence may establish AAL2, factor revocation or a recovery approval. Staff, Manager, Support, HR, Executive and Volunteer permissions remain independent from this visual demonstration.</p><div class="no-real-data">No actual Supabase Auth, email, QR secret, account reset or database call exists here. Protected action withheld pending real proof.</div>')+'</div>';
 }
 function achievements(){
  return heading("My achievements","Human-readable proof of actual individual contributions, not an AI-generated performance score.")+
@@ -233,6 +240,9 @@ document.addEventListener("click",function(event){
  }
  if(action==="report-loading" || action==="report-empty"){reportEvidencePhase=action==="report-loading"?"loading":"empty";reportEvidenceReady=true;drawNav();return;}
  if(action==="report-unavailable"){reportEvidenceReady=false;reportEvidencePhase="ready";drawNav();return;}
+ if(["auth-step-setup","auth-step-challenge","auth-step-recovery"].includes(action) && page==="auth"){
+  authPreviewStep=action.slice("auth-step-".length);drawNav();document.getElementById("announcement").textContent="Design-only authentication journey: "+authPreviewStep+". No factor was changed.";return;
+ }
  if(action==="report-ready"){reportEvidenceReady=true;reportEvidencePhase="ready";drawNav();return;}
  selected=control.dataset.item||"Sample authorised record";
  drawer(action);
@@ -251,6 +261,6 @@ document.addEventListener("submit",function(event){
  document.getElementById("announcement").textContent="A local-only design draft was reviewed. No real data was saved or submitted.";
 });
 document.addEventListener("keydown",function(event){if(event.key==="Escape")document.getElementById("modal").innerHTML="";});
-document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";drawNav();});
+document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";authPreviewStep="setup";drawNav();});
 drawNav();
 </script></body></html>

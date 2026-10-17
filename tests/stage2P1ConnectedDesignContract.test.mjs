@@ -97,3 +97,10 @@ test("P1 connected Work draft is local-only, unit-scoped and escapes user-provid
     'Sample draft, not saved']) assert.ok(html.includes(v),"missing P1 Work draft scenario: "+v);
   assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
 });
+test("P1 Auth step review never substitutes a synthetic TOTP for verified AAL2",()=>{
+  for(const v of ['let authPreviewStep="setup"','auth-step-setup','auth-step-challenge',
+   'auth-step-recovery','authPreviewStep=action.slice','No actual Supabase Auth',
+   'Protected action withheld pending real proof','cannot reset or bypass a factor'])
+    assert.ok(html.includes(v),"missing Auth design boundary: "+v);
+  assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
+});
