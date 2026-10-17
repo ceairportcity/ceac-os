@@ -62,3 +62,9 @@ The actual P3–P8 app must independently verify allowed multi-unit manager head
 The P1 Manager and Executive preview now offers **separate synthetic loading, unfiled-period and failed-source-read states**. Each removes the success metrics rather than treating an unfinished query, absent filing or failed request as a verified zero, published result or human-entered rating. The existing fail-closed **Report evidence could not be loaded** design and restoration action remain preserved.
 
 These are local-only design samples with a direct browser test. They are not a fix for the outstanding P6 production Manager report error-state defect, and do not change Auth, RLS, payroll or any real data. Owner approval is still required for connected full role/phone references, including the latest revised Projects PNG. **P1 IN PROGRESS; no premature P2–P9 progression.**
+
+## Connected Work draft and project-link review scenario
+
+The P1 prototype can now simulate a **local, unpersisted Work draft** from either Add my work or Give out work. The proposed title, optional project/objective link and assignee are entered through an illustrative form; a reviewed sample appears in the Work register marked **Sample draft, not saved**. Rendered user-entered titles and link labels are HTML-escaped. Drafts are isolated by demonstration persona and (for Managers) selected sample unit; switching to Unit Two or Volunteer does not expose Unit One's unsaved draft. Browser/source integrity tests cover the connected preview and prohibit all network/Auth/database calls.
+
+This is **not** real Work creation, evidence-file upload, recipient delivery, review approval, source attribution or manager task authority. All final Work forms, evidence/activity inspect/edit/relink states and 390px/mobile P1 owner reference approvals remain outstanding. P1 stays in progress; preserved P2–P7 code and live production are unchanged.

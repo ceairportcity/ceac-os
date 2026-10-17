@@ -40,9 +40,11 @@ const roleNav={
 };
 const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",finance:"Budget and approved expenditure, separate from confidential payroll",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
 let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false,reportEvidenceReady=true,demoUnit="Unit One",reportEvidencePhase="ready";
+const draftWorkSamples=[];
 function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
 const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
 function panel(title,body){return '<section class="panel"><h2>'+title+'</h2>'+body+'</section>';}
+const escapePreview=(value)=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const record=(name,detail,status)=>'<button type="button" class="list-row" data-action="inspect" data-item="'+name+'"><div><strong>'+name+'</strong><span>'+detail+'</span></div><span class="status">'+status+'</span></button>';
 function overview(){
  const salaried=role!=="volunteer";
@@ -61,7 +63,7 @@ function work(){
  const actions=btn("Add my work","add-work","primary")+(manager?btn("Give out work","give-work"):"");
  const filters='<div class="strip">'+["mine","created","assigned","given","review","complete"].map(v=>'<button class="btn '+(v===workFilter?'ghost':'')+'" data-filter="'+v+'">'+({mine:"My work",created:"Created by me",assigned:"Assigned to me",given:"Given out",review:"For review",complete:"Completed"}[v])+'</button>').join("")+'</div>';
  return heading("Work","Self-created, assigned and delegated work remain attributable to real owners. Link activities to Projects and Objectives at creation or later.",actions)
- +'<div class="two">'+panel("Work register",filters+record("Prepare weekly operating notes","Project: Workstream Alpha · Objective: Quarterly readiness","In progress")+record("Review handover checklist","Created by unit head · 3 dated actions","For review")+record("Document support resolution","Restricted to assigned Support member","Assigned"))+
+ +'<div class="two">'+panel("Work register",filters+draftWorkSamples.filter(draft=>draft.role===role && (role!=="manager"||draft.unit===demoUnit)).map(draft=>record(escapePreview(draft.title),escapePreview("Design-only "+draft.kind+" · "+draft.project),"Sample draft, not saved")).join("")+record("Prepare weekly operating notes","Project: Workstream Alpha · Objective: Quarterly readiness","In progress")+record("Review handover checklist","Created by unit head · 3 dated actions","For review")+record("Document support resolution","Restricted to assigned Support member","Assigned"))+
  panel("Selected responsibility",'<div class="eyebrow">Item detail / source evidence</div><h2>Prepare weekly operating notes</h2><p>Owner · Demonstration Staff | Project · Workstream Alpha</p><div class="rule"></div><strong>Activity history</strong>'+record("Update made","Evidence reference · demonstration only","Today")+record("Review requested","Authorised reviewer decision pending","Pending")+btn("Open action form","inspect","primary")+'<p class="form-note">No score or completion is fabricated without verified source and reviewer.</p>')+'</div>';
 }
 function projects(){
@@ -184,7 +186,7 @@ function drawNav(){
 function drawer(kind){
  let content="";
  if(kind==="add-work"||kind==="give-work"){
- content='<label>Work title<input required placeholder="Specific outcome to deliver"></label><label>Project/objective link<select><option value="">No link yet — relink later</option><option>Workstream Alpha / Operating readiness</option><option>Workstream Beta / People development</option></select></label><label>Assignee<select><option>'+(kind==="add-work"?"Myself":"Eligible unit colleague")+'</option></select></label><label>Evidence or activity notes<textarea rows="4" placeholder="Describe the work and intended proof"></textarea></label>';
+ content='<label>Work title<input name="draftTitle" required placeholder="Specific outcome to deliver"></label><label>Project/objective link<select name="draftProject"><option value="">No link yet — relink later</option><option>Workstream Alpha / Operating readiness</option><option>Workstream Beta / People development</option></select></label><label>Assignee<select name="draftAssignee"><option>'+(kind==="add-work"?"Myself":"Eligible unit colleague")+'</option></select></label><label>Evidence or activity notes<textarea name="draftNotes" rows="4" placeholder="Describe the work and intended proof"></textarea></label>';
  }else if(kind==="rating"){
  content='<p>Human-entered, evidence-based assessment only. Quarterly REQUIRED, monthly OPTIONAL.</p><label>Rating dimension<select><option>Professional execution</option><option>Responsibility and cooperation</option></select></label><label>Human rating<select><option value="">Choose 1–5 or N/O</option>'+["1","2","3","4","5","N/O"].map(x=>'<option>'+x+'</option>').join("")+'</select></label><label>Required explanation<textarea rows="3" placeholder="Explain the observed performance"></textarea></label><label>Source evidence reference<input placeholder="Link a permitted record, not a private secret"></label><label>Independent overall narrative<textarea rows="3"></textarea></label>';
  }else if(kind==="compliance-review"){
@@ -214,7 +216,7 @@ function drawer(kind){
  }else{
  content='<p>Selected record: '+selected+'</p><p>Any attempt to read or write this record must be permitted by the real server-side RLS, RPC and role policy.</p><label>Review note<textarea rows="4" placeholder="Demonstration entry only"></textarea></label>';
  }
- document.getElementById("modal").innerHTML='<div class="drawer-backdrop"><section class="drawer" role="dialog" aria-modal="true" aria-label="Design workflow preview"><header><div><div class="eyebrow">Interactive P1 prototype · synthetic</div><h2>'+({ "add-work":"Add my work","give-work":"Give out work",rating:"Structured human rating",totp:"Authenticator challenge"}[kind]||"Review record")+'</h2></div>'+btn("Close","close")+'</header><div class="no-real-data">No actual changes will be saved. The owner must approve this full flow before literal design acceptance.</div><form id="previewform">'+content+'<footer>'+btn("Cancel","close")+ '<button class="btn primary" type="submit">Review sample action</button></footer></form></section></div>';
+ document.getElementById("modal").innerHTML='<div class="drawer-backdrop"><section class="drawer" role="dialog" aria-modal="true" aria-label="Design workflow preview"><header><div><div class="eyebrow">Interactive P1 prototype · synthetic</div><h2>'+({ "add-work":"Add my work","give-work":"Give out work",rating:"Structured human rating",totp:"Authenticator challenge"}[kind]||"Review record")+'</h2></div>'+btn("Close","close")+'</header><div class="no-real-data">No actual changes will be saved. The owner must approve this full flow before literal design acceptance.</div><form id="previewform" data-kind="'+kind+'">'+content+'<footer>'+btn("Cancel","close")+ '<button class="btn primary" type="submit">Review sample action</button></footer></form></section></div>';
  const first=document.querySelector(".drawer input,.drawer select,.drawer textarea,.drawer button");if(first)first.focus();
 }
 document.addEventListener("click",function(event){
@@ -235,7 +237,19 @@ document.addEventListener("click",function(event){
  selected=control.dataset.item||"Sample authorised record";
  drawer(action);
 });
-document.addEventListener("submit",function(event){if(event.target.id!=="previewform")return;event.preventDefault();document.getElementById("modal").innerHTML="";document.getElementById("announcement").textContent="Demonstration reviewed. No real data was saved or submitted.";});
+document.addEventListener("submit",function(event){
+ if(event.target.id!=="previewform")return;event.preventDefault();
+ const kind=event.target.dataset.kind;
+ if(kind==="add-work"||kind==="give-work"){
+  const data=new FormData(event.target);
+  const title=String(data.get("draftTitle")||"").trim();
+  if(!title)return;
+  draftWorkSamples.unshift({title,role,unit:demoUnit,kind:kind==="give-work"?"delegation":"own work",project:String(data.get("draftProject")||"Unlinked")||"Unlinked"});
+  page="work";drawNav();
+ }
+ document.getElementById("modal").innerHTML="";
+ document.getElementById("announcement").textContent="A local-only design draft was reviewed. No real data was saved or submitted.";
+});
 document.addEventListener("keydown",function(event){if(event.key==="Escape")document.getElementById("modal").innerHTML="";});
 document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";drawNav();});
 drawNav();

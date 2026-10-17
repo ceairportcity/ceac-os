@@ -89,3 +89,11 @@ test("P1 period status differentiates not-yet-loaded, no-filed-evidence and fail
   assert.match(html,/if\(!reportEvidenceReady\)return/);
   assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
 });
+test("P1 connected Work draft is local-only, unit-scoped and escapes user-provided preview text",()=>{
+  for(const v of ['const draftWorkSamples=[]','escapePreview','name="draftTitle"',
+    'name="draftProject"','name="draftAssignee"','name="draftNotes"',
+    'new FormData(event.target)','draftWorkSamples.unshift',
+    'draft.role===role && (role!=="manager"||draft.unit===demoUnit)',
+    'Sample draft, not saved']) assert.ok(html.includes(v),"missing P1 Work draft scenario: "+v);
+  assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
+});

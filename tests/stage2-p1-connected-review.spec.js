@@ -133,3 +133,24 @@ test("P1 period reporting preview distinguishes loading, unfiled evidence, and r
   await expect(page.getByRole("alert")).toHaveText("Report evidence could not be loaded");
   await expect(page.getByText("Verified work outputs",{exact:true})).toHaveCount(0);
 });
+test("P1 local Work and project-link draft remains scope-isolated and never saved",async({page})=>{
+  await page.route("**/*",route=>route.abort("blockedbyclient"));
+  await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+  const role=page.getByRole("combobox",{name:"Preview role"});
+  await role.selectOption("manager");
+  await page.locator("#navigation").getByRole("button",{name:"Work & delegations"}).click();
+  await page.getByRole("button",{name:"Give out work"}).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("textbox",{name:"Work title"}).fill("Sample reviewed unit deliverable");
+  await page.getByLabel("Project/objective link").selectOption({label:"Workstream Alpha / Operating readiness"});
+  await page.getByRole("button",{name:"Review sample action"}).click();
+  await expect(page.getByText("Sample reviewed unit deliverable")).toBeVisible();
+  await expect(page.getByText("Sample draft, not saved")).toBeVisible();
+  await page.locator("#navigation").getByRole("button",{name:"Overview"}).click();
+  await page.getByRole("button",{name:"Switch sample unit"}).click();
+  await page.locator("#navigation").getByRole("button",{name:"Work & delegations"}).click();
+  await expect(page.getByText("Sample reviewed unit deliverable")).toHaveCount(0);
+  await role.selectOption("volunteer");
+  await page.locator("#navigation").getByRole("button",{name:"Assigned activities"}).click();
+  await expect(page.getByText("Sample reviewed unit deliverable")).toHaveCount(0);
+});
