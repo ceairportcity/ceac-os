@@ -68,6 +68,19 @@ async function orgIdentity(client, label) {
   return response.data;
 }
 
+// Exercise PostgREST/RLS with the *actual* provider-issued session, not only
+// a SECURITY DEFINER RPC. During the local cutover an AAL1 bearer must not
+// read its own otherwise-authorised profile; verified AAL2 must retain it.
+async function ownProfileRows(client, label) {
+  const auth = await client.auth.getUser();
+  if (auth.error) throw auth.error;
+  const id = auth.data.user?.id;
+  assert.ok(id, label + " Auth identity missing");
+  const response = await client.from("profiles").select("id").eq("id", id);
+  if (response.error) throw new Error(label + " profiles REST/RLS probe failed: " + response.error.message);
+  return response.data;
+}
+
 try {
   const initial = await service.from("organisations")
     .select("universal_totp_required").eq("id", orgId).single();
@@ -105,8 +118,11 @@ try {
   if (enabled.error) throw enabled.error;
   switched = true;
   for (let i = 0; i < sessions.length; i += 1) {
-    assert.equal(await orgIdentity(sessions[i], roleEmails[i][0] + " AAL2"), orgId,
-      roleEmails[i][0] + " signed TOTP must restore only its own org authority");
+    const label = roleEmails[i][0];
+    assert.equal(await orgIdentity(sessions[i], label + " AAL2"), orgId,
+      label + " signed TOTP must restore only its own org authority");
+    assert.equal((await ownProfileRows(sessions[i], label + " verified AAL2")).length, 1,
+      label + " signed TOTP must restore its own protected REST profile read");
   }
 
   // A separate password login remains AAL1, even after prior verified sessions.
@@ -119,8 +135,10 @@ try {
     assert.equal(assurance.nextLevel, "aal2", label + " must require another authenticator challenge");
     assert.equal(await orgIdentity(newLogin, label + " unverified login"), null,
       label + " AAL1 must not get existing SECURITY DEFINER org authority");
+    assert.deepEqual(await ownProfileRows(newLogin, label + " unverified AAL1"), [],
+      label + " fresh AAL1 login must not read even its own profile via REST/RLS");
   }
-  console.log("PASS local-only real provider TOTP, AAL2, refresh continuity and AAL1 RPC denial: Staff + 6 role/organisation fixtures.");
+  console.log("PASS local-only real provider TOTP, AAL2, refresh continuity and AAL1 RPC/REST denial: Staff + 6 role/organisation fixtures.");
 } finally {
   if (switched) {
     const reset = await service.from("organisations").update({ universal_totp_required: false }).eq("id", orgId);
