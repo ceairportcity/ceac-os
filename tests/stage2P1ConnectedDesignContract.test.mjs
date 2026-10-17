@@ -36,3 +36,26 @@ test("P1 extension retains canonical light-blue palette and responsive layout", 
   ]) assert.ok(html.includes(token), "missing V4 source token: " + token);
   assert.match(html, /<meta name="viewport" content="width=device-width,initial-scale=1">/);
 });
+test("P1 Finance is isolated from Payroll; Administration and Executive share only synthetic quarterly event design", () => {
+  const finance = getMenu("finance");
+  assert.match(finance, /\["finance","Finance controls"\]/);
+  assert.doesNotMatch(finance, /\["payroll",/);
+  for (const role of ["staff","manager","support","admin","executive","volunteer","compliance","payroll"]) {
+    assert.doesNotMatch(getMenu(role), /\["finance",/);
+  }
+  for (const role of ["admin","executive"]) {
+    assert.match(getMenu(role), /\["quarterly","Quarterly event"\]/);
+  }
+  for (const role of ["staff","manager","support","volunteer","compliance","payroll","finance"]) {
+    assert.doesNotMatch(getMenu(role), /\["quarterly",/);
+  }
+  for (const fragment of [
+    "function financeP1()", "function quarterlyP1()",
+    "finance:financeP1,quarterly:quarterlyP1",
+    'kind==="finance-request"', 'kind==="quarterly-event"',
+    "A failed read must show an error",
+    "Quarterly required, never auto-calculated",
+    "No event or report is published",
+  ]) assert.ok(html.includes(fragment), "missing Finance/quarterly review design contract: " + fragment);
+});
+

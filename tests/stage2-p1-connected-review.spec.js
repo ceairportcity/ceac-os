@@ -58,3 +58,30 @@ test("P1 restricted preview surfaces are usable at phone viewport without activa
   await page.getByRole("combobox", { name: "Preview role" }).selectOption("payroll");
   await expect(page.getByRole("heading", { name: "Protected payroll operations" })).toBeVisible();
 });
+test("P1 Finance and Quarterly event previews preserve separation and local-only interactions", async ({ page }) => {
+  await page.route("**/*", (route) => route.abort("blockedbyclient"));
+  await page.setContent(prototype, { waitUntil: "domcontentloaded" });
+  const rolePicker = page.getByRole("combobox", { name: "Preview role" });
+  const navigation = page.locator("#navigation");
+  await rolePicker.selectOption("finance");
+  await expect(page.getByRole("heading", { name: "Finance controls & source evidence" })).toBeVisible();
+  await expect(navigation.getByRole("button", { name: /Payroll|Quarterly/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Inspect finance request" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByText("Synthetic finance request inspection only")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  for (const role of ["admin", "executive"]) {
+    await rolePicker.selectOption(role);
+    await navigation.getByRole("button", { name: "Quarterly event" }).click();
+    await expect(page.getByRole("heading", { name: "Quarterly review event" })).toBeVisible();
+    await page.getByRole("button", { name: "Review event setup" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByText("Quarterly review event design only")).toBeVisible();
+    await page.getByRole("button", { name: "Close" }).click();
+  }
+  await rolePicker.selectOption("volunteer");
+  await expect(navigation.getByRole("button", { name: /Quarterly|Finance|Payroll/ })).toHaveCount(0);
+});
+

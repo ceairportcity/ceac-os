@@ -22,7 +22,7 @@ table{width:100%;border-collapse:collapse;text-align:left}th{font-size:11px;colo
 </style></head><body>
 <div class="app"><aside><div class="brand"><div class="brandmark" aria-hidden="true">CEAC</div> CEAC OS</div><div class="eyebrow">Workspace</div><nav id="navigation" aria-label="Role preview destinations"></nav><div class="sidefoot">P1 connected design candidate, not owner-approved. Sample only; no live data.</div></aside>
 <main><div class="top"><strong id="breadcrumbs">CEAC OS / Overview</strong><div class="top-right"><label for="role">Preview as</label><select id="role" aria-label="Preview role">
-<option value="staff">Staff</option><option value="manager">Manager · single/multi-unit</option><option value="support">Technical Support capability</option><option value="admin">Administration / HR</option><option value="compliance">Compliance Officer · restricted panel</option><option value="payroll">Payroll-authorised officer · restricted panel</option><option value="executive">Executive</option><option value="volunteer">Volunteer · nonsalaried</option></select></div></div>
+<option value="staff">Staff</option><option value="manager">Manager · single/multi-unit</option><option value="support">Technical Support capability</option><option value="admin">Administration / HR</option><option value="compliance">Compliance Officer · restricted panel</option><option value="payroll">Payroll-authorised officer · restricted panel</option><option value="executive">Executive</option><option value="finance">Finance-authorised officer · restricted panel</option><option value="volunteer">Volunteer · nonsalaried</option></select></div></div>
 <div class="content"><div class="notice"><strong>Owner review candidate, NOT application acceptance.</strong> This standalone design uses synthetic examples. Buttons operate locally only. Role switching is a visual review aid, never security authorisation. Exact revised Projects PNG and remaining role states still require approval.</div>
 <section id="screen" aria-live="polite"></section></div></main></div><div id="modal"></div><div class="sr" role="status" aria-live="polite" id="announcement"></div>
 <script>
@@ -31,13 +31,14 @@ const roleNav={
  staff:[["overview","Overview"],["work","My work"],["projects","Projects"],["achievements","My achievements"],["auth","Account security"]],
  manager:[["overview","Overview"],["work","Work & delegations"],["projects","Projects"],["reports","Manager reporting"],["people","Team"],["auth","Account security"]],
  support:[["support","Support desk"],["overview","My overview"],["work","My work"],["auth","Account security"]],
- admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["projects","Projects"],["auth","Account security"]],
+ admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["quarterly","Quarterly event"],["projects","Projects"],["auth","Account security"]],
  compliance:[["compliance","Independent Compliance desk"],["auth","Account security"]],
  payroll:[["payroll","Payroll preparation and approval"],["auth","Account security"]],
- executive:[["overview","Executive overview"],["strategy","Strategy & outcomes"],["reports","Quarterly evidence"],["projects","Projects"],["auth","Account security"]],
+ finance:[["finance","Finance controls"],["auth","Account security"]],
+ executive:[["overview","Executive overview"],["strategy","Strategy & outcomes"],["reports","Quarterly evidence"],["quarterly","Quarterly event"],["projects","Projects"],["auth","Account security"]],
  volunteer:[["overview","My fellowship"],["work","Assigned activities"],["projects","Projects"],["auth","Account security"]]
 };
-const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
+const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",finance:"Budget and approved expenditure, separate from confidential payroll",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
 let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false;
 function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
 const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
@@ -123,6 +124,28 @@ function payrollP1(){
  '<div class="mutedbox">Draft → submitted → independently approved → finalised. Each step requires server-authorised actor, audit event and reviewed source. A rejected or failed query must not show an empty approved run.</div>'+
  '<div class="no-real-data">No compensation value, identity or real salary data exists in this prototype.</div>')+'</div>';
 }
+function financeP1(){
+ return heading("Finance controls & source evidence","Budget, authorised expenditure and financial requests are separate from protected payroll and employment data.",btn("Inspect finance request","finance-request","primary"))+
+ '<div class="three">'+panel("Budget allocation",'<div class="metric">Plan</div><div class="subtle">Synthetic current period</div>')+
+ panel("Approval pending",'<div class="metric warn">1</div><div class="subtle">Awaiting designated approver</div>')+
+ panel("Payroll information",'<div class="metric">Restricted</div><div class="subtle">Not part of this Finance view</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Operating evidence",
+ record("Sample facilities request","Budget line · source invoice reference","Submitted")+
+ record("Project support expenditure","Unit project allocation; not yet approved","Review")+
+ record("Recorded correction","Versioned adjustment with audit event","Closed"))+
+ panel("Separate authorisation",'<p>Unit Managers may see only their permitted budgets and finance requests; authorised Finance officers review scoped expenditure. Payroll line items, bank details and HR-private explanations must never appear in general Finance.</p><div class="mutedbox">Every request must show its real source, approver and period. A failed read must show an error rather than a fabricated zero or approved balance.</div><div class="no-real-data">Synthetic budget names only; no actual amounts or live integration.</div>')+'</div>';
+}
+function quarterlyP1(){
+ return heading("Quarterly review event","Administration or Executive can prepare the formal quarterly ministry review, but only with the actual authorised initiator and approved evidence.",btn("Review event setup","quarterly-event","primary"))+
+ '<div class="three">'+panel("Review period",'<div class="metric">Q4</div><div class="subtle">Synthetic planning period</div>')+
+ panel("Evidence readiness",'<div class="metric">3/4</div><div class="subtle">Demo submissions with source evidence</div>')+
+ panel("Human ratings",'<div class="metric">Separate</div><div class="subtle">Quarterly required, never auto-calculated</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Presentation and evidence",
+ record("Unit accomplishment brief","Work/project source references, no double count","Prepared")+
+ record("Independent Compliance notes","Published facts only; restricted detail hidden","Pending")+
+ record("Manager-entered human appraisal","Required narrative and evidence, protected HR review","Restricted"))+
+ panel("Review issue controls",'<p>Allow only the specifically authorised Administration or Executive initiator to create review events. HR publication and individual response are independent protected actions, not an automatic result of starting an event.</p><div class="mutedbox">Show period selection, owner, source-linked reports, correct coverage and an explicit unavailable-data state before any official issue or print export.</div><div class="no-real-data">This is a design proposal. No event or report is published.</div>')+'</div>';
+}
 function strategy(){
  return heading("Strategic outcomes","Ministry direction → authorised projects → verified outputs. No duplicated contribution totals.",btn("Inspect evidence","inspect"))
  +'<div class="three">'+panel("Objectives",'<div class="metric">3</div><div class="subtle">Demonstration ministry directions</div>')+panel("Connected projects",'<div class="metric">5</div><div class="subtle">Related to stated objectives</div>')+panel("Verified outcomes",'<div class="metric">2</div><div class="subtle">Confirmed and attributed once</div>')+'</div>'+
@@ -140,7 +163,7 @@ function achievements(){
  panel("Private evidence",'<p>Your own material is distinct from Manager and HR-private assessments. Reports are source-linked and represent the selected time period accurately.</p>')+'</div>';
 }
 function screen(){
- const views={overview,work,projects,reports,people,hr,ratings,compliance:complianceP1,payroll:payrollP1,support,strategy,auth,achievements};
+ const views={overview,work,projects,reports,people,hr,ratings,compliance:complianceP1,payroll:payrollP1,finance:financeP1,quarterly:quarterlyP1,support,strategy,auth,achievements};
  return (views[page]||overview)();
 }
 function drawNav(){
@@ -166,6 +189,17 @@ function drawer(kind){
  '<label>Pay run version<input value="Draft v1 / synthetic" readonly></label>'+
  '<label>Correction reason<textarea rows="3" placeholder="Required for approved correction"></textarea></label>'+
  '<p>Preparation and approval are different capabilities and require independent action logs. No salary or payout data exists in this preview.</p>';
+ }else if(kind==="finance-request"){
+ content='<div class="no-real-data">Synthetic finance request inspection only. No monetary values or payroll details are loaded.</div>'+
+ '<label>Source invoice reference<input required placeholder="Authorised record reference"></label>'+
+ '<label>Independent approval note<textarea rows="3" placeholder="Factual approval evidence"></textarea></label>'+
+ '<p>The real application must verify acting unit, budget and approver through RLS and authorised RPCs.</p>';
+ }else if(kind==="quarterly-event"){
+ content='<div class="no-real-data">Quarterly review event design only — no live publication.</div>'+
+ '<label>Review period<select><option>Q4 / sample year</option><option>Q3 / sample year</option></select></label>'+
+ '<label>Event owner<input required placeholder="Authorised Administration / Executive initiator"></label>'+
+ '<label>Evidence readiness<select><option>Review outstanding evidence</option><option>Mark source links for verification</option></select></label>'+
+ '<p>Starting a quarterly event does not approve HR ratings, expose private narratives or issue Executive conclusions.</p>';
  }else if(kind==="totp"){
  content='<div class="no-real-data">This is a UI demonstration, not a real authenticator seed or recovery pathway.</div><label>Challenge code<input inputmode="numeric" maxlength="6" placeholder="000000 (example only)"></label><p>Actual verified AAL2 and the Supabase factor check are required before any protected operation.</p>';
  }else{

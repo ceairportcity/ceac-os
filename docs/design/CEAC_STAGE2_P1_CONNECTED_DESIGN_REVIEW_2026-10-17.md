@@ -38,3 +38,11 @@ The connected white/light-blue V4 review candidate now has two separate capabili
 **Capability review correction:** Compliance and Payroll now have dedicated review personas with disjoint navigation, rather than appearing as default privileges of the Administration demo. Final role/capability assignments still require owner-specific acceptance and real server-side enforcement.
 
 **P1 remains IN PROGRESS.** The exact newer owner-approved Projects PNG and the unreviewed full role/mobile/nested form/error/print fixtures are still required before acceptance. Do not silently rebaseline visual thresholds or activate later stages.
+
+## Additional connected P1 role and period designs — Finance and quarterly review
+
+The synthetic V4 candidate now exposes **Finance-authorised officer** as a separate demonstration role with a budget/request overview that excludes Payroll, protected HR records and bank information. This preview is not a universal Finance capability grant; real Finance and Manager budget authorisation remain server-enforced under P6/P8.
+
+Administration and Executive preview roles now share a connected **Quarterly review event** design with period selection, source-linked accomplishments, Compliance status and separate protected human appraisal. The preview explicitly distinguishes authorised event initiation from Manager rating entry, independent HR publication, employee response, and presentation-ready Executive reporting. The sample event form does not issue an event, change any employee record, or generate an automatically inferred score.
+
+These additions are **P1 design candidates only**, with synthetic data and local-only forms. Owner review and full-route desktop/mobile literal references remain outstanding, including the exact revised approved Projects PNG. All prior stage gates and production release protections remain unchanged.
