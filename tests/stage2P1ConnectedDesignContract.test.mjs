@@ -117,3 +117,16 @@ test("P1 project close is Manager-only synthetic design requiring evidence and a
   ]) assert.ok(html.includes(fragment),"missing P1 project-close guard: "+fragment);
   assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
 });
+test("P1 private Calendar review never grants organisation meeting access by menu alone",()=>{
+  for(const v of [
+    'function calendarP1()','calendar:calendarP1','kind==="calendar-private"',
+    'kind==="calendar-meeting" && (role==="manager"||role==="admin"||role==="executive")',
+    'action==="calendar-meeting" && !["manager","admin","executive"].includes(role)',
+    'Private day events','Only me'
+  ]) assert.ok(html.includes(v),"missing Calendar design boundary "+v);
+  for(const role of ["staff","manager","support","admin","executive"])
+    assert.match(getMenu(role),/\["calendar","My calendar"\]/);
+  for(const role of ["volunteer","compliance","payroll","finance"])
+    assert.doesNotMatch(getMenu(role),/\["calendar","My calendar"\]/);
+  assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
+});

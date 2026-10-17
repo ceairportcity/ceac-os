@@ -201,3 +201,27 @@ test("P1 project-close evidence drawer is authoring-only for Manager and never c
   await expect(page.locator("#announcement")).toContainText("No real data was saved or submitted.");
   expect(errors).toEqual([]);
 });
+test("P1 Calendar and Meeting review remain owner-private and scope-specific at phone viewport",async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.route("**/*",r=>r.abort("blockedbyclient"));
+  await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+  const picker=page.getByRole("combobox",{name:"Preview role"});
+  const nav=page.locator("#navigation");
+  for(const persona of ["staff","support"]){
+    await picker.selectOption(persona);
+    await nav.getByRole("button",{name:"My calendar"}).click();
+    await expect(page.getByRole("heading",{name:"My calendar"})).toBeVisible();
+    await expect(page.getByRole("button",{name:"Review unit meeting setup"})).toHaveCount(0);
+    await page.getByRole("button",{name:"Review my private event"}).click();
+    await expect(page.getByRole("dialog").getByLabel("Privacy")).toHaveValue("Only me");
+    await page.keyboard.press("Escape");
+  }
+  for(const persona of ["manager","admin","executive"]){
+    await picker.selectOption(persona);
+    await nav.getByRole("button",{name:"My calendar"}).click();
+    await page.getByRole("button",{name:"Review unit meeting setup"}).click();
+    await expect(page.getByRole("dialog").getByLabel("Meeting audience")).toBeVisible();
+    await page.keyboard.press("Escape");
+  }
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
