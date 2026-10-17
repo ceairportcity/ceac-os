@@ -25,3 +25,14 @@ The checked-in [connected standalone V4 review candidate](stage2-v4/CEAC_STAGE2_
 **Architecture and threat-boundary constraints:** Navigation is not permission. The actual implementation must separately enforce role/capability, unit/organisation scoping, authenticated identity, AAL2 only after approved cutover, Storage read/write restriction, support case privacy, HR-private evidence, employee response and sourced factual reporting. An interactive prototype cannot prove any of those. All demos use invented safe placeholders, not live employee data.
 
 **Acceptance rule:** Explicit owner review must cover connected desktop and phone references across **all 47 root application routes and the eight nested overlay forms**, plus loading/empty/error states and print where applicable. The exact newer owner-approved Projects PNG is still missing from verified assets, so no superseded bitmap may be promoted. Do not claim P1 complete or quietly rebaseline approved RGB <=6/CSS limits because this review candidate renders.
+
+## P1 Compliance and protected Payroll connected-flow extensions (engineering review)
+
+The connected white/light-blue V4 review candidate now has two additional Administration-only local preview tabs: Compliance and Payroll. These are design scenarios, NOT production permissions or owner acceptance.
+
+- Compliance displays a policy version, acknowledgement coverage, source-linked exceptions and a synthetic independent-review drawer. Independent Compliance review must not become Manager human ratings or expose HR-private narratives. Actual policy applicability, revision history, negative RLS/RPC tests and role authority remain for P6/P8.
+- Payroll displays preparation, separate submission/independent approval, correction and audit stages. Payroll preparation and approval require distinct backend capabilities and should not automatically use attendance/task hours to calculate pay. Actual pay-run versioning, self-approval rejection and salary privacy remain P6/P8.
+- Only the Administration preview menu contains these two destinations. Switching the local prototype role replaces the navigation. That is not server-side permission enforcement. All sample data is synthetic; no salary, personal identifiers, write calls or actual security secrets are present.
+- A companion source integrity test covers the exact role menus, view and drawer wiring, V4 tokens and no live network/auth writes. A test pass is source/design integrity evidence only, not complete owner-approved 47-route/mobile/overlay parity.
+
+**P1 remains IN PROGRESS.** The exact newer owner-approved Projects PNG and the unreviewed full role/mobile/nested form/error/print fixtures are still required before acceptance. Do not silently rebaseline visual thresholds or activate later stages.
