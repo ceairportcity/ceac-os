@@ -34,10 +34,10 @@ export async function readBoundedActionBody(request) {
       if (done) break;
       bytes += value.byteLength;
       if (bytes > MAX_INTEGRATION_BODY_BYTES) {
-        // An attacker-controlled upload stream may never settle cancellation.
-        // Reject immediately; best-effort stream cancellation is not an auth
-        // or request-rejection dependency.
-        void reader.cancel().catch(() => {});
+        // Reject immediately without cancelling the request stream. In the
+        // local Edge HTTP gateway, a cancelled request body may prevent a
+        // response from being sent, causing a 150s upstream 504 instead of
+        // the application's intended 400. Never read more than the fixed cap.
         return null;
       }
       raw += decoder.decode(value, { stream: true });

@@ -132,7 +132,7 @@ test("public integration Edge request rejects oversized and malformed bodies bef
     "Unauthenticated Edge requests may not be read by an unbounded parser");
 });
 
-test("oversized Edge JSON denial never waits for a stalled request-stream cancellation", async () => {
+test("oversized Edge JSON denies without cancelling or waiting for the upload stream", async () => {
   let cancelCalled = false;
   let released = false;
   // Synthetic request stream whose cancellation never settles. If the Edge
@@ -155,6 +155,6 @@ test("oversized Edge JSON denial never waits for a stalled request-stream cancel
     new Promise((resolve) => setTimeout(() => resolve("stalled"), 180)),
   ]);
   assert.equal(verdict, null, "Oversized unauthenticated body must be denied without awaiting cancel");
-  assert.equal(cancelCalled, true);
+  assert.equal(cancelCalled, false, "The Edge body guard must not cancel an upstream local gateway stream");
   assert.equal(released, true);
 });
