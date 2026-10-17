@@ -204,3 +204,10 @@ test("P1 local give-work draft uses the Given out filter without pretending it w
   assert.match(html, /workFilter==="given"\?row\.origin==="given"/);
   assert.match(html, /workFilter==="mine"\?row\.origin!=="given"/);
 });
+
+test("P1 reviewed draft separates truthful provenance from not-saved status once",()=>{
+ const work=html.slice(html.indexOf("function work(){"),html.indexOf("function projects(){"));
+ assert.ok(work.includes('ref:"Preview only · "+(draft.kind==="delegation"?"Given out":"Created by me")'));
+ assert.ok(work.includes('draft:"Sample draft, not saved"'));
+ assert.ok(!work.includes('ref:"Sample draft, not saved"'),"draft metadata must not duplicate state label");
+});

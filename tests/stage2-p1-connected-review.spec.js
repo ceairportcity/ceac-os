@@ -146,7 +146,7 @@ test("P1 local Work and project-link draft remains scope-isolated and never save
   await page.getByRole("button",{name:"Review sample action"}).click();
   await expect(page.getByText("Sample reviewed unit deliverable")).toBeVisible();
   await expect(page.getByRole("button",{name:"Given out",exact:true})).toHaveAttribute("aria-pressed","true");
-  await expect(page.getByText("Sample draft, not saved")).toBeVisible();
+  await expect(page.locator(".s2w-state.draft",{hasText:"Sample draft, not saved"})).toBeVisible();
   await page.locator("#navigation").getByRole("button",{name:"Overview"}).click();
   await page.getByRole("button",{name:"Switch sample unit"}).click();
   await page.locator("#navigation").getByRole("button",{name:"Work & delegations"}).click();

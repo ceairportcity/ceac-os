@@ -135,7 +135,7 @@ function work(){
  ];
  if(manager)examples.push({title:"Follow up with unit team",ref:"DEMO-05 · Given out",project:"Team coordination",due:"23 Oct",status:"waiting",origin:"given"});
  const drafts=draftWorkSamples.filter(draft=>draft.role===role && (role!=="manager"||draft.unit===demoUnit)).map((draft,i)=>({
-  title:draft.title,ref:"Sample draft, not saved",project:draft.project||"Unlinked",due:"Draft",
+  title:draft.title,ref:"Preview only · "+(draft.kind==="delegation"?"Given out":"Created by me"),project:draft.project||"Unlinked",due:"Draft",
   status:"draft",origin:draft.kind==="delegation"?"given":"self"
  }));
  const eligible=(row)=>workFilter==="mine"?row.origin!=="given":
