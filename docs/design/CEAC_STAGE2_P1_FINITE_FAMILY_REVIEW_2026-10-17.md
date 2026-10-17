@@ -34,7 +34,7 @@ Also audit the **default `me` My Hub fallback**, invite/activate/reset-password,
 ## What remains fully mandatory
 Existing P0 acceptance stays closed. P2 invited email/password + verified TOTP, true AAL2, recovery and negative Auth/Storage/Edge/RLS; P3–P6 functioning role-specific journeys; P7 exact V4 integration and strict RGB <=6 with unchanged CSS budget; P8 full exact-SHA browser, migration, a11y/security/role/print and source checks; P9 separate owner GO. **No rejected defects or skipped tests become a pass due to P1 reuse.** The known Manager Reports fail-closed UI and visual/css failures remain open in P6/P7.
 
-## Owner decision still required
+## Owner method decision — RESOLVED; material designs still require review
 **RESOLVED — YES, 17 October 2026.** Product owner expressly approved the family-and-exception method; binding decision and limits are recorded in [formal decision](CEAC_STAGE2_P1_OWNER_APPROVED_FAMILY_METHOD_2026-10-17.md). **Remaining owner review:** actual material-exception screen references and the revised Projects binary, not reconsidering this method. P1 status IN PROGRESS.
 
 ## Mandatory CI verification boundary — proportionate P1 preview only
@@ -44,3 +44,33 @@ The current [CI source](../../.github/workflows/ci.yml), [classifier](../../scri
 **Narrow operating improvement:** Only a last commit tagged `[p1-design]`, only on `pull_request`, and with an exact allowlist of standalone *synthetic P1 prototype/doc/source/browser-test files* may take `p1-design` Level A. The standard `npm ci`, `npm run verify:source`, audit, production build, dedicated P1 source test and targeted P1 Playwright browser test still execute at that SHA. The classifier's original full PR range remains used for all other cases. A request containing `[level-b]` fails the exception and forces Level B. New tests prove any App, SQL, Auth/MFA, general acceptance test, CSS, visual baseline or CI workflow change fails closed to the normal rule. No production or protected data is used by the standalone demo.
 
 **What this does NOT do:** It does not remove the standard full Quality Gate, its SQL/RLS/role/browser/visual shards, account-security checks, migration replay, or exact-SHA full P1 acceptance/P7/P8 certification. Focused gate success means **P1 preview changed safely**, NOT Stage 2 security/functionality passes. Full exact-SHA gate is mandatory when a stage closes (use explicit `[level-b]` verification commit/request), whenever relevant real product/security sources change, and at P8. Neither skipped nor cancelled checks are PASS. Stage 2 production remains unchanged.
+
+## Single finite P1 owner review sheet — connected existing assets, not another design programme
+
+**Purpose:** One review of **material design exceptions only** using the existing approved V4 white/light-blue direction, four checked-in public-safe references and connected role-aware HTML. Every inherited route is mapped in the ten-family table above. This review sheet is a **decision register**, not a new mockup or a claim of blanket screen acceptance. **Method approved; material exception screens not yet collectively approved.**
+
+**Review in this order:** [original approved V4](stage2-v4/CEAC_STAGE2_V4_CANONICAL_INTERACTIVE.html) → [connected P1 role review](stage2-v4/CEAC_STAGE2_P1_CONNECTED_ROLE_REVIEW.html) → the checked-in [Overview](stage2-v4/CEAC_STAGE2_V4_OVERVIEW.png), [Work](stage2-v4/CEAC_STAGE2_V4_WORK.png), [historical public-safe Projects](stage2-v4/CEAC_STAGE2_V4_PROJECTS.png), and [Mobile](stage2-v4/CEAC_STAGE2_V4_MOBILE.png). The original image set establishes only its historically approved direction; the later revised Projects PNG still needs the *actual* owner-approved binary, not a reconstructed replacement.
+
+| Existing V4 family | Evidence currently available | Material exception to review in one owner session | Design verdict |
+| --- | --- | --- | --- |
+| Overview / attendance | Canonical Overview, phone and connected role demos | Staff/Manager/Support/Admin/Executive start-end and correct authority; differentiated role priority | **PENDING distinct scenario sign-off** |
+| Work / routine responsibilities | Canonical Work inspector; connected self/delegated draft, recurrence preview | Delegation, manager review, evidence attachments, activity proof and duplicate-safe recurring work | **PENDING distinct scenario sign-off** |
+| Projects / contributions | Canonical Projects plus sample Manager-only closure drawer | Exact revised owner-approved Projects PNG, project evidence/close, cross-unit attribution once | **BLOCKED: exact newer source binary** |
+| People / Admin / protected HR | Connected people directory, Staff Team, invitation and personal appraisal preview | Protected HR editor, private employee record, publication, employee response, volunteer vs employee | **PENDING protected-flow sign-off** |
+| Support / Compliance | Separate Support, Compliance reviewer role demos | Case reporter vs authorised handler, privacy and independent Compliance review | **PENDING restricted-flow sign-off** |
+| Finance / Payroll | Connected Finance and restricted Payroll samples | Separate payroll preparation/approval, correction, private salary boundaries and Executive read scopes | **PENDING restricted-flow sign-off** |
+| Reporting / achievements / appraisal | Connected source report ready/loading/empty/error, personal achievements and quarterly sample | Manager fail-closed report state, quarterly human ratings with reasons, optional monthly, HR issue/response | **PENDING information-hierarchy sign-off** |
+| Executive intelligence | Executive V4-compatible role concept and source outcome dashboard | Leadership-specific hierarchy, non-duplicated facts, no employee confidential narrative leaks | **PENDING distinct Executive sign-off** |
+| Calendar / meetings / communication | Private Calendar and separate meeting preview, reusable Room/message patterns | Own-only personal notes, correct unit/organisation scheduling and project room membership | **PENDING scoped-interaction sign-off** |
+| Authentication / TOTP / integration | Account setup/challenge/recovery preview, current invite role separation | Real AAL1→verified TOTP→AAL2 journey, safe lost-factor recovery, integration worker isolation | **PENDING sensitive-flow sign-off** |
+
+The existing UI preview uses only **demonstration data**. A visible button, a synthetic local form and a plausible report are **not** a completed app feature. The accepted P0 [source/authority census](../continuity/CEAC_STAGE2_P0_ROUTE_DATA_AUTHORITY_CENSUS_2026-10-17.md) is the backend reader/writer map; actual P2–P8 tests still prove tenant, role, Storage, Auth/Edge and privacy enforcement. Existing complete Staff, Manager, HR, Technical Support, Compliance, Executive and Volunteer scope is preserved.
+
+### Concrete P1 close conditions — no new quota
+- Owner confirms the **single consolidated V4 family/exception review**, approving or requesting precise changes to the materially different flows above. The family reuse *method* has already been approved; **do not ask for it again**.
+- Restore or securely inspect the **exact** latest approved Projects PNG to verify SHA-256 `66918f3e3d35fe7a6adf36a85eb90b14c0f719fc8f88fed378d538a47518a559`. Do not put a private original into the temporarily public repository. Only an owner-authorised exact asset or an owner-approved different visual reference can close this provenance gap.
+- Map the eight nested overlays and `me` fallback to these accepted family layouts and material exceptions; every actual route and phone state still undergoes P7/P8 implementation and functional/security/accessibility acceptance even if mockup reuse is approved.
+- Review current threat and backend boundaries without inventing a second P1 feature engine; keep current TOTP/session, HR, Payroll, Support and cross-unit contracts intact.
+- When these finite items are truly accepted, write the acceptance record with exact SHA, hashes, permitted inherited patterns, explicitly signed exceptions and tests; **advance to P2 immediately**. P1 is **IN PROGRESS** until then, not blocked on another arbitrary prototype flourish.
+
+**Do not resume a 47-screenshot programme.** The two actionable owner matters are the **one consolidated exception design review** and **exact Projects fixture recovery**, not repetitive sign-off for inherited V4 patterns.
