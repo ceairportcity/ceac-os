@@ -225,3 +225,193 @@ test("P0 deep-link overlay precedence and sensitive route UI boundaries are expl
   assert.match(app, /<ActiveMfaGate me=\{me\} onVerified=\{boot\}>/);
   assert.match(app, /VITE_STAGE2_UNIVERSAL_AAL2 === "true"/);
 });
+
+test("P0 route census continuously matches JSX branches, actual screens and direct backend scope", () => {
+  const app = file("src/App.jsx");
+  const census = file("docs/continuity/CEAC_STAGE2_P0_ROUTE_DATA_AUTHORITY_CENSUS_2026-10-17.md");
+  const matrix = Object.freeze({
+  "guide": [
+    "Guide"
+  ],
+  "account": [
+    "AccountActivity"
+  ],
+  "achievements": [
+    "PersonalAchievements"
+  ],
+  "technical-help": [
+    "TechnicalHelp"
+  ],
+  "technical-support": [
+    "TechnicalSupport"
+  ],
+  "primitives": [
+    "DesignPrimitives"
+  ],
+  "home": [
+    "Home",
+    "ManagerHome",
+    "AdminHome",
+    "ExecutiveHome"
+  ],
+  "team": [
+    "Team",
+    "StaffTeam"
+  ],
+  "work": [
+    "Work",
+    "ManagerWork",
+    "AdminWork",
+    "ExecutiveWork"
+  ],
+  "staff-calendar": [
+    "StaffCalendar"
+  ],
+  "messages": [
+    "Inbox"
+  ],
+  "projects": [
+    "ManagerProjects"
+  ],
+  "calendar": [
+    "ManagerCalendar"
+  ],
+  "manager-finance": [
+    "ManagerFinance"
+  ],
+  "manager-reports": [
+    "ManagerReports"
+  ],
+  "exec-organisation": [
+    "ExecutiveOrganisation"
+  ],
+  "exec-finance": [
+    "ExecutiveFinance"
+  ],
+  "exec-reports": [
+    "ExecutiveReports"
+  ],
+  "record": [
+    "Record"
+  ],
+  "announcements": [
+    "Announcements"
+  ],
+  "strategy": [
+    "Strategy"
+  ],
+  "delivery": [
+    "Delivery"
+  ],
+  "workload": [
+    "ResourceWorkload"
+  ],
+  "performance": [
+    "Performance"
+  ],
+  "learning": [
+    "Learning"
+  ],
+  "assets": [
+    "Assets"
+  ],
+  "compliance": [
+    "Compliance"
+  ],
+  "cost": [
+    "Cost"
+  ],
+  "finance": [
+    "Finance"
+  ],
+  "reporting": [
+    "Reports"
+  ],
+  "attendance": [
+    "Workforce"
+  ],
+  "people": [
+    "People"
+  ],
+  "lifecycle": [
+    "AdminLifecycle"
+  ],
+  "protected-hr": [
+    "AdminProtectedHR"
+  ],
+  "payroll": [
+    "AdminPayroll"
+  ],
+  "units": [
+    "Units"
+  ],
+  "admin-projects": [
+    "AdminProjects"
+  ],
+  "admin-calendar": [
+    "AdminCalendar"
+  ],
+  "exec-calendar": [
+    "AdminCalendar"
+  ],
+  "audit": [
+    "AdminAudit"
+  ],
+  "events": [
+    "AdminEvents"
+  ],
+  "workflows": [
+    "AdminWorkflows"
+  ],
+  "policies": [
+    "AdminPolicies"
+  ],
+  "integrations": [
+    "AdminIntegrations"
+  ],
+  "authority": [
+    "AdminAuthority"
+  ],
+  "settings": [
+    "ControlCenter"
+  ],
+  "office-settings": [
+    "OfficeSettings"
+  ]
+});
+  const start = app.indexOf("function pageForTab() {");
+  const end = app.indexOf("const appModeClass", start);
+  assert.ok(start >= 0 && end > start, "route dispatch no longer has its audited bounds");
+  const dispatch = app.slice(start, end);
+  const branchMatches = [...dispatch.matchAll(/if\s*\(tab === "([^"]+)"(?:\s*&&\s*([^)]+))?\)/g)];
+  assert.equal(branchMatches.length, 47);
+  const actualKeys = branchMatches.map((m) => m[1]);
+  assert.equal(new Set(actualKeys).size, 47);
+  assert.deepEqual(actualKeys.slice().sort(), Object.keys(matrix).sort());
+
+  const lazyModules = new Map(
+    [...app.matchAll(/const ([A-Z][A-Za-z0-9]*) = lazy\(\(\) => import\("\.\/screens\/([^"]+)"\)\);/g)]
+      .map((m) => [m[1], m[2]]),
+  );
+  const byRoute = {};
+  for (let i = 0; i < branchMatches.length; i++) {
+    const route = branchMatches[i][1];
+    const section = dispatch.slice(branchMatches[i].index, branchMatches[i + 1]?.index || dispatch.length);
+    assert.ok(census.includes("| " + String.fromCharCode(96) + route + String.fromCharCode(96) + " |"),
+      "P0 census missing explicit root route " + route);
+    byRoute[route] = [];
+    for (const component of matrix[route]) {
+      const moduleName = lazyModules.get(component);
+      assert.ok(moduleName, "P0 route " + route + " has no lazy-loaded screen " + component);
+      assert.ok(section.includes("<" + component), "P0 route " + route + " no longer mounts " + component);
+      const source = file("src/screens/" + moduleName + ".jsx");
+      byRoute[route].push(source);
+    }
+  }
+  assert.ok(byRoute.work.some((s) => /\.from\("work_items"\)/.test(s)));
+  assert.ok(byRoute.projects.some((s) => /\.from\("projects"\)/.test(s)));
+  assert.ok(byRoute["manager-reports"].some((s) => /\.from\("work_sessions"\)/.test(s)));
+  assert.ok(byRoute["technical-support"].some((s) => /support_case_events/.test(s)));
+  assert.ok(byRoute["protected-hr"].some((s) => /hr_employee_protected_record/.test(s)));
+  assert.ok(census.includes("| " + String.fromCharCode(96) + "me" + String.fromCharCode(96) + " (fallback) |"));
+});
