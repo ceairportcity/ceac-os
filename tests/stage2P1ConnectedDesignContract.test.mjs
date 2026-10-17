@@ -168,3 +168,20 @@ test("P1 Manager owns human-rating entry; Administration has separate review ove
   assert.match(html,/name="ratingExplanation" rows="3" required/);
   assert.match(html,/name="ratingEvidence" required/);
 });
+
+
+test("P1 scenic Overview review follows owner direction rather than withdrawn dark or plain layout", () => {
+  const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"));
+  const overview = html.slice(html.indexOf("function overview(){"), html.indexOf("function work(){"));
+  assert.ok(overview.includes("s2ov-hero"), "review must use correct scenic overview family");
+  assert.ok(overview.includes("s2ov-photo"), "scenic photo must be placed at upper right");
+  for (const section of ["My work session", "Today's focus", "My projects", "Today's activity", "My work", "Selected responsibility"]) {
+    assert.ok(overview.includes(section), "owner-selected Overview family missing section: " + section);
+  }
+  assert.ok(css.includes(".s2ov-photo{"), "hero photo composition missing");
+  assert.ok(css.includes(".s2ov-four{"), "four summary-card layout missing");
+  assert.ok(css.includes("@media(max-width:520px){.s2ov-four"), "phone hierarchy missing");
+  assert.ok(overview.includes('role!=="volunteer"'), "volunteer must not inherit employee work-time control");
+  assert.ok(overview.includes("Sample activity only"), "preview must not report invented actual work");
+  assert.ok(!css.includes("rgba(17,48,90,.87)"), "old dark hero must not be the approval candidate");
+});

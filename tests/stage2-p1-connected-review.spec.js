@@ -301,3 +301,26 @@ test("P1 human rating preview requires Manager authority, rating, reason and evi
   await role.selectOption("volunteer");
   await expect(nav.getByRole("button",{name:/appraisal|Quarterly reviews|Team appraisals/i})).toHaveCount(0);
 });
+
+test("P1 scenic Overview matches approved information hierarchy with real role distinctions at desktop and phone",async({page})=>{
+  await page.route("**/*",route=>route.abort("blockedbyclient"));
+  await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+  const role=page.getByRole("combobox",{name:"Preview role"});
+  await role.selectOption("manager");
+  await expect(page.locator(".s2ov-hero").getByRole("heading",{name:"Overview"})).toBeVisible();
+  await expect(page.locator(".s2ov-four > .panel")).toHaveCount(4);
+  await expect(page.locator(".s2ov-lower > .panel")).toHaveCount(2);
+  await expect(page.getByRole("heading",{name:"My work session"})).toBeVisible();
+  await page.getByRole("button",{name:"Start sample session"}).click();
+  await expect(page.getByRole("button",{name:"End sample session"})).toBeVisible();
+  await expect(page.getByText("Session started — sample")).toBeVisible();
+  await role.selectOption("volunteer");
+  await expect(page.getByRole("heading",{name:"My work session"})).toHaveCount(0);
+  await expect(page.getByRole("button",{name:"Start sample session"})).toHaveCount(0);
+  await expect(page.getByRole("heading",{name:"My volunteering"})).toBeVisible();
+  await page.setViewportSize({width:390,height:844});
+  await role.selectOption("manager");
+  await expect(page.locator(".s2ov-hero")).toBeVisible();
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+  expect(overflow,"scenic Overview must not overflow phone width").toBeLessThanOrEqual(1);
+});
