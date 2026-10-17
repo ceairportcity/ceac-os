@@ -67,6 +67,8 @@ Every row below must be covered by a verified applicable V4 family pattern at re
 
 **Historical direct-screen audit totals:** 47 explicit tabs, 28 with related synthetic concepts and 19 without direct equivalents; `me` lacks an individual full-screen acceptance. All 47 are now assigned once to ten reuse families, so **19 missing direct mockups do not automatically mean 19 more mockups must be created**. Family/exception owner acceptance remains incomplete; do NOT count a four-image historical V4 bundle as approved. The confirmed original Work desktop/phone and scenic Overview DIRECTION are individually approved; the later revised Projects exact binary is not yet verified.
 
+**P1 state/permission architecture:** the [finite 10-family access and state map](CEAC_STAGE2_P1_FAMILY_ACCESS_AND_STATE_CONTRACT_2026-10-17.md) explicitly assigns source data boundaries, positive/negative authority and loading/empty/failure/denied patterns, without requiring 47 duplicate mockups. These are P1 design-level requirements, not passed RLS/browser tests.
+
 ## 3. Mandatory nested, permission and alternate-state review
 The root table above intentionally excludes **all eight** separate mounted overlays, each requiring a reviewed reusable desktop/mobile family or a separately approved material exception:
 1. Work Item evidence, reviewer decisions, return/reopen and private files

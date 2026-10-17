@@ -14,7 +14,7 @@
 
 **Connected simulated flows:** Staff Overview/session and Work; Manager Work assignment, Projects, factual reporting and Team; scoped Technical Support; Administration People/HR/private ratings; Executive strategic outcomes/quarterly evidence; volunteer nonsalaried participation; provider-neutral TOTP setup/challenge/recovery. Local view switching, overlay forms and a demo attendance state are illustrative; no Supabase, Auth, privileged data, live writes, external JS or worker secrets.
 
-**Known P1 outstanding acceptance blockers:** latest owner-approved revised Projects PNG exact binary not in verified source; incomplete full-page references for all 47 app routes and additional nested/mobile flows; no current screenshot parity or owner review of these new layouts. Do not mark P1 accepted, or attempt visible production redesign, based on this document alone. Continue extending and getting owner approval for each missing reference.
+**Known P1 outstanding acceptance blockers:** latest owner-approved revised Projects PNG exact binary not in verified source; incomplete representative desktop/mobile family acceptance and owner review of material role/privacy/interaction exceptions using the owner-approved 10-family inheritance method, plus exact later Projects binary. All 47 routes and eight overlays retain full later functional/security coverage, **not 47 new bespoke mockups**. Do not mark P1 accepted or deploy a synthetic preview.
 
 **Stage lock:** P0 inventory accepted in preceding parent commit, P1 now active. Previously implemented P2–P7 code is preserved unmodified. Actual report error state, CSS size and Staff/Executive RGB regression remain P6/P7 defects; do not relax evidence, invent employee ratings or grant new authority.
 
@@ -34,7 +34,7 @@ The checked-in [connected standalone V4 review candidate](stage2-v4/CEAC_STAGE2_
 
 **Architecture and threat-boundary constraints:** Navigation is not permission. The actual implementation must separately enforce role/capability, unit/organisation scoping, authenticated identity, AAL2 only after approved cutover, Storage read/write restriction, support case privacy, HR-private evidence, employee response and sourced factual reporting. An interactive prototype cannot prove any of those. All demos use invented safe placeholders, not live employee data.
 
-**Acceptance rule:** Explicit owner review must cover connected desktop and phone references across **all 47 root application routes and the eight nested overlay forms**, plus loading/empty/error states and print where applicable. The exact newer owner-approved Projects PNG is still missing from verified assets, so no superseded bitmap may be promoted. Do not claim P1 complete or quietly rebaseline approved RGB <=6/CSS limits because this review candidate renders.
+**Acceptance rule (10-family owner-approved method):** Every one of the 47 root routes, `me` fallback and eight overlays inherits an owner-accepted representative desktop/phone family/state pattern or an explicitly approved material role/privacy/interaction exception; later P7/P8 checks exercise all routes. Do not invent a 47-bespoke-mockup approval quota. The exact newer owner-approved Projects PNG is still missing from verified assets, so no superseded bitmap may be promoted. Do not claim P1 complete or quietly rebaseline approved RGB <=6/CSS limits because this review candidate renders.
 
 ## P1 Compliance and protected Payroll connected-flow extensions (engineering review)
 
