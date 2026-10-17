@@ -155,3 +155,16 @@ test("P1 Administration-only invite design keeps nonsalaried Volunteer and HR bo
   ]) assert.ok(html.includes(str),"missing invitation boundary "+str);
   assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
 });
+
+test("P1 Manager owns human-rating entry; Administration has separate review oversight",()=>{
+  assert.match(getMenu("manager"),/\["ratings","Team appraisals"\]/);
+  assert.match(getMenu("admin"),/\["ratings","Quarterly reviews"\]/);
+  for(const role of ["staff","support","executive","compliance","payroll","finance","volunteer"])
+    assert.doesNotMatch(getMenu(role),/\["ratings",/);
+  assert.match(html,/role==="manager"\?btn\("Open rating entry","rating","primary"\):""/);
+  assert.match(html,/kind==="rating" && role==="manager"/);
+  assert.match(html,/action==="rating" && role!=="manager"/);
+  assert.match(html,/name="humanRating" required/);
+  assert.match(html,/name="ratingExplanation" rows="3" required/);
+  assert.match(html,/name="ratingEvidence" required/);
+});

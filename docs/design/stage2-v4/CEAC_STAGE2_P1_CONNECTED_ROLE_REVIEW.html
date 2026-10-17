@@ -29,7 +29,7 @@ table{width:100%;border-collapse:collapse;text-align:left}th{font-size:11px;colo
 "use strict";
 const roleNav={
  staff:[["overview","Overview"],["work","My work"],["projects","Projects"],["achievements","My achievements"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
- manager:[["overview","Overview"],["work","Work & delegations"],["projects","Projects"],["reports","Manager reporting"],["people","Team"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
+ manager:[["overview","Overview"],["work","Work & delegations"],["projects","Projects"],["reports","Manager reporting"],["ratings","Team appraisals"],["people","Team"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
  support:[["support","Support desk"],["overview","My overview"],["work","My work"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
  admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["quarterly","Quarterly event"],["projects","Projects"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
  compliance:[["compliance","Independent Compliance desk"],["auth","Account security"]],
@@ -104,7 +104,7 @@ function hr(){
  panel("Independent release control",'<p>Manager-entered ratings, evidence and narrative are submitted for independent HR verification. Publication and employee response are recorded as separate events.</p><div class="mutedbox">A People manager cannot infer or access an HR-private narrative from this preview.</div>')+'</div>';
 }
 function ratings(){
- return heading("Quarterly appraisal","Structured human-entered evaluation is required each quarter. Monthly ratings are optional; system metrics remain factual.",btn("Open rating entry","rating","primary"))
+ return heading(role==="manager"?"Team appraisals":"Quarterly review oversight","Manager-entered structured human evaluation is required each quarter. Monthly ratings are optional; source metrics remain factual.",role==="manager"?btn("Open rating entry","rating","primary"):"")
  +'<div class="two">'+panel("Quarterly review cycle",record("Sample staff member A","Reviewer explanation and linked evidence required","Draft")+record("Sample staff member B","Awaiting Manager narrative","Incomplete"))+
  panel("Review separation",'<p>Rate documented dimensions on 1–5 or N/O, explain each rating, cite appropriate evidence and write an independent overall narrative. Never transform automated counts into the human rating.</p><div class="mutedbox">HR publication and employee acknowledgement are separate protected stages.</div>')+'</div>';
 }
@@ -247,8 +247,8 @@ function drawer(kind){
  '<label>Participation type<select required name="participantType"><option>Employee</option><option>Nonsalaried Volunteer</option></select></label>'+
  '<label>Approved unit<select name="invitationUnit"><option>Unit One · demonstration</option><option>Unit Two · demonstration</option></select></label>'+
  '<p>A Volunteer is not automatically an employee and has no implied payroll, HR, Support or management grants. Invite-only Auth and actual unit authority must be proven at P2/P8.</p>';
- }else if(kind==="rating"){
- content='<p>Human-entered, evidence-based assessment only. Quarterly REQUIRED, monthly OPTIONAL.</p><label>Rating dimension<select><option>Professional execution</option><option>Responsibility and cooperation</option></select></label><label>Human rating<select><option value="">Choose 1–5 or N/O</option>'+["1","2","3","4","5","N/O"].map(x=>'<option>'+x+'</option>').join("")+'</select></label><label>Required explanation<textarea rows="3" placeholder="Explain the observed performance"></textarea></label><label>Source evidence reference<input placeholder="Link a permitted record, not a private secret"></label><label>Independent overall narrative<textarea rows="3"></textarea></label>';
+ }else if(kind==="rating" && role==="manager"){
+ content='<p>Human-entered, evidence-based assessment only. Quarterly REQUIRED, monthly OPTIONAL.</p><label>Rating dimension<select><option>Professional execution</option><option>Responsibility and cooperation</option></select></label><label>Human rating<select name="humanRating" required><option value="">Choose 1–5 or N/O</option>'+["1","2","3","4","5","N/O"].map(x=>'<option>'+x+'</option>').join("")+'</select></label><label>Required explanation<textarea name="ratingExplanation" rows="3" required placeholder="Explain the observed performance"></textarea></label><label>Source evidence reference<input name="ratingEvidence" required placeholder="Link a permitted record, not a private secret"></label><label>Independent overall narrative<textarea rows="3"></textarea></label>';
  }else if(kind==="compliance-review"){
  content='<div class="no-real-data">Design-only Compliance evidence preview; no real records are accessible.</div>'+
  '<label>Applicable policy version<input value="v3 / demonstration only" readonly></label>'+
@@ -293,6 +293,7 @@ document.addEventListener("click",function(event){
  }
  if(action==="report-loading" || action==="report-empty"){reportEvidencePhase=action==="report-loading"?"loading":"empty";reportEvidenceReady=true;drawNav();return;}
  if(action==="project-close" && role!=="manager")return;
+ if(action==="rating" && role!=="manager")return;
  if(action==="calendar-meeting" && !["manager","admin","executive"].includes(role))return;
  if(action==="invite" && role!=="admin")return;
  if(action==="appraisal-published" && page==="myreview"){personalReviewPhase="published";drawNav();return;}

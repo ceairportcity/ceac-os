@@ -269,3 +269,35 @@ test("P1 Manager Team preview cannot grant invitation access; Administration inv
   await picker.selectOption("manager");
   await expect(page.getByRole("button",{name:"Review member invitation"})).toHaveCount(0);
 });
+
+test("P1 human rating preview requires Manager authority, rating, reason and evidence",async({page})=>{
+  await page.route("**/*",route=>route.abort("blockedbyclient"));
+  await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+  const role=page.getByRole("combobox",{name:"Preview role"});
+  const nav=page.locator("#navigation");
+  await role.selectOption("admin");
+  await nav.getByRole("button",{name:"Quarterly reviews"}).click();
+  await expect(page.getByRole("heading",{name:"Quarterly review oversight"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Open rating entry"})).toHaveCount(0);
+  await role.selectOption("manager");
+  await nav.getByRole("button",{name:"Team appraisals"}).click();
+  await expect(page.getByRole("heading",{name:"Team appraisals"})).toBeVisible();
+  await page.getByRole("button",{name:"Open rating entry"}).click();
+  const dialog=page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button",{name:"Review sample action"}).click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel("Human rating")).toBeInvalid();
+  await dialog.getByLabel("Human rating").selectOption("3");
+  await dialog.getByRole("button",{name:"Review sample action"}).click();
+  await expect(dialog.getByLabel("Required explanation")).toBeInvalid();
+  await dialog.getByLabel("Required explanation").fill("Sample observed execution with reviewer context");
+  await dialog.getByRole("button",{name:"Review sample action"}).click();
+  await expect(dialog.getByLabel("Source evidence reference")).toBeInvalid();
+  await dialog.getByLabel("Source evidence reference").fill("SYNTHETIC-EVIDENCE-1");
+  await dialog.getByRole("button",{name:"Review sample action"}).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator("#announcement")).toContainText("No real data was saved or submitted");
+  await role.selectOption("volunteer");
+  await expect(nav.getByRole("button",{name:/appraisal|Quarterly reviews|Team appraisals/i})).toHaveCount(0);
+});
