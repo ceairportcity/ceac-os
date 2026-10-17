@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CEAC OS — Stage 2 P1 connected role design review</title>
+<meta name="color-scheme" content="light">
+<style>
+:root{--bg:#f5f8fc;--surface:#fff;--nav:#fff;--ink:#122440;--muted:#63758e;--soft:#8fa0b4;--line:#e7edf4;--line2:#dce6f1;--blue:#1368ed;--blue2:#0c56cb;--bluewash:#edf5ff;--green:#0b9c75;--greenwash:#eaf9f2;--amber:#bd7c17;--red:#df4356;--shadow:0 12px 35px rgba(24,49,90,.038);--round:12px}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #9bc5ff;outline-offset:2px}input,select,textarea{border:1px solid var(--line2);border-radius:7px;min-height:40px;background:white;color:var(--ink);padding:8px 10px;width:100%}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.app{min-height:100vh;display:grid;grid-template-columns:230px minmax(0,1fr)}aside{background:white;border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:24px;min-width:0}
+.brand{font-size:16px;font-weight:800;letter-spacing:-.4px;display:flex;gap:11px;align-items:center}.brandmark{background:#123b76;color:white;display:grid;place-items:center;width:37px;height:37px;border-radius:9px;font-size:11px}.eyebrow{text-transform:uppercase;letter-spacing:1.2px;font-weight:750;color:var(--soft);font-size:10px}
+nav{display:flex;flex-direction:column;gap:3px}nav button{background:transparent;border:0;text-align:left;border-radius:7px;padding:10px 12px;color:#556a85;display:flex;align-items:center;justify-content:space-between}nav button[aria-current="page"]{background:var(--bluewash);color:#0b59c3;font-weight:700;border-left:3px solid var(--blue);padding-left:9px}nav button:hover{background:#f5f8fc}aside small{color:var(--muted)}.sidefoot{margin-top:auto;padding:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+main{min-width:0}.top{height:72px;background:#fff;border-bottom:1px solid var(--line);padding:0 30px;display:flex;align-items:center;gap:14px;justify-content:space-between}.top strong{font-size:16px}.top-right{display:flex;align-items:center;gap:10px}.top label{font-size:11px;color:var(--muted)}.top select{width:195px;font-size:12px;min-height:36px}
+.content{padding:29px 32px 55px;max-width:1500px;margin:auto}.notice{font-size:12px;border:1px solid #cad9f0;background:#eef5ff;padding:10px 14px;border-radius:8px;color:#285286;margin-bottom:20px}.headline{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:23px}.headline h1{font-size:25px;line-height:1.15;letter-spacing:-.7px;margin:5px 0}.headline p{margin:7px 0 0;color:var(--muted);max-width:700px}
+.btn{border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:7px;padding:9px 14px;min-height:38px;font-weight:650}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn:hover{filter:brightness(.97)}.btn.ghost{background:var(--bluewash);color:var(--blue2);border-color:transparent}.btn.danger{color:#bc2f44}.actions{display:flex;flex-wrap:wrap;gap:8px}.two{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr);gap:18px}.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.panel{background:white;border:1px solid var(--line);border-radius:var(--round);padding:19px;min-width:0;box-shadow:var(--shadow)}.panel h2{font-size:15px;margin:0 0 15px}.panel p{color:var(--muted)}
+.metric{font-size:27px;font-weight:750;letter-spacing:-1px}.subtle{font-size:12px;color:var(--muted)}.green{color:var(--green)}.blue{color:var(--blue)}.warn{color:var(--amber)}
+.hero{position:relative;overflow:hidden;min-height:190px;background:linear-gradient(100deg,rgba(17,48,90,.87),rgba(28,80,134,.44)),url("../../../public/assets/ceac-landscapes/scene-01.webp") center/cover;border-radius:11px;color:white;padding:24px;margin-bottom:18px;display:flex;flex-direction:column;justify-content:space-between}.hero h2{font-size:23px;max-width:500px;margin:0}.hero p{color:#e9f4ff;max-width:550px;margin:7px 0}.hero .eyebrow{color:#d9eafd}
+table{width:100%;border-collapse:collapse;text-align:left}th{font-size:11px;color:var(--muted);font-weight:750;text-transform:uppercase;letter-spacing:.5px;background:#f9fbfd}td,th{border-bottom:1px solid var(--line);padding:12px 9px;vertical-align:top}tr:last-child td{border-bottom:0}.status{font-size:11px;color:#216278;font-weight:650}.field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:#425a75}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-grid .full{grid-column:1/-1}.form-note{color:var(--muted);font-size:12px}.list-row{width:100%;display:flex;gap:10px;justify-content:space-between;align-items:center;text-align:left;border:0;background:white;padding:14px 0;border-bottom:1px solid var(--line);color:inherit}.list-row:last-child{border-bottom:0}.list-row:hover{color:var(--blue2)}.list-row strong{display:block}.list-row span{font-size:12px;color:var(--muted)}.strip{display:flex;gap:20px;flex-wrap:wrap;padding:13px 0;border-bottom:1px solid var(--line);margin-bottom:14px}.strip strong{font-size:13px}.strip span{font-size:12px;color:var(--muted)}.section-space{margin-top:18px}.rule{height:1px;background:var(--line);margin:20px 0}.chip{font-size:11px;border:1px solid var(--line2);background:#f7faff;border-radius:6px;padding:4px 7px;color:#446187}.empty{padding:26px;text-align:center;border:1px dashed var(--line2);border-radius:8px;color:var(--muted)}.drawer-backdrop{position:fixed;inset:0;background:#152b4468;display:flex;justify-content:flex-end;z-index:50}.drawer{height:100%;background:white;width:min(550px,100%);padding:28px;overflow:auto;box-shadow:-9px 0 30px #1c314a22}.drawer header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px}.drawer h2{margin:0;font-size:22px}.drawer label{display:flex;flex-direction:column;gap:7px;margin:12px 0;font-size:12px;font-weight:650}.drawer footer{position:sticky;bottom:0;background:white;padding:15px 0;display:flex;gap:8px}.no-real-data{font-size:11px;color:#8b4a08;background:#fff9ec;border:1px solid #f4e7c9;padding:9px;border-radius:7px}.mutedbox{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:14px}.review-line{padding:13px 0;border-bottom:1px solid var(--line)}.review-line:last-child{border-bottom:0}.small-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.roundup{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.roundup .metric{font-size:21px}.link{border:0;background:none;color:var(--blue2);font-weight:700;padding:5px 0;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:960px){.app{grid-template-columns:1fr}aside{padding:11px 14px;border-right:0;border-bottom:1px solid var(--line);gap:9px}aside nav{flex-direction:row;overflow:auto}aside nav button{white-space:nowrap;min-width:max-content}aside .sidefoot,aside .eyebrow{display:none}.top{height:auto;min-height:65px;padding:12px 18px}.content{padding:21px 18px 48px}.two{grid-template-columns:1fr}}
+@media(max-width:520px){.brand{font-size:14px}.top{align-items:flex-start;flex-direction:column;gap:8px}.top-right{width:100%;justify-content:space-between}.top select{width:min(220px,58vw)}.content{padding:16px 12px 34px}.headline{align-items:flex-start;flex-direction:column}.headline h1{font-size:23px}.three,.form-grid,.small-grid{grid-template-columns:1fr}.panel{padding:15px}.hero{min-height:210px}.actions .btn{flex:1}table{font-size:12px}td,th{padding:9px 5px}.drawer{padding:20px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+@media print{aside,.top,.notice,.btn,.drawer-backdrop{display:none!important}.app{display:block}.panel{box-shadow:none}}
+</style></head><body>
+<div class="app"><aside><div class="brand"><div class="brandmark" aria-hidden="true">CEAC</div> CEAC OS</div><div class="eyebrow">Workspace</div><nav id="navigation" aria-label="Role preview destinations"></nav><div class="sidefoot">P1 connected design candidate, not owner-approved. Sample only; no live data.</div></aside>
+<main><div class="top"><strong id="breadcrumbs">CEAC OS / Overview</strong><div class="top-right"><label for="role">Preview as</label><select id="role" aria-label="Preview role">
+<option value="staff">Staff</option><option value="manager">Manager · single/multi-unit</option><option value="support">Technical Support capability</option><option value="admin">Administration / HR</option><option value="executive">Executive</option><option value="volunteer">Volunteer · nonsalaried</option></select></div></div>
+<div class="content"><div class="notice"><strong>Owner review candidate, NOT application acceptance.</strong> This standalone design uses synthetic examples. Buttons operate locally only. Role switching is a visual review aid, never security authorisation. Exact revised Projects PNG and remaining role states still require approval.</div>
+<section id="screen" aria-live="polite"></section></div></main></div><div id="modal"></div><div class="sr" role="status" aria-live="polite" id="announcement"></div>
+<script>
+"use strict";
+const roleNav={
+ staff:[["overview","Overview"],["work","My work"],["projects","Projects"],["achievements","My achievements"],["auth","Account security"]],
+ manager:[["overview","Overview"],["work","Work & delegations"],["projects","Projects"],["reports","Manager reporting"],["people","Team"],["auth","Account security"]],
+ support:[["support","Support desk"],["overview","My overview"],["work","My work"],["auth","Account security"]],
+ admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["projects","Projects"],["auth","Account security"]],
+ executive:[["overview","Executive overview"],["strategy","Strategy & outcomes"],["reports","Quarterly evidence"],["projects","Projects"],["auth","Account security"]],
+ volunteer:[["overview","My fellowship"],["work","Assigned activities"],["projects","Projects"],["auth","Account security"]]
+};
+const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
+let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false;
+function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
+const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
+function panel(title,body){return '<section class="panel"><h2>'+title+'</h2>'+body+'</section>';}
+const record=(name,detail,status)=>'<button type="button" class="list-row" data-action="inspect" data-item="'+name+'"><div><strong>'+name+'</strong><span>'+detail+'</span></div><span class="status">'+status+'</span></button>';
+function overview(){
+ const salaried=role!=="volunteer";
+ const label=role==="executive"?"Ministry overview":role==="admin"?"Administration overview":role==="volunteer"?"Volunteer overview":"Good morning";
+ const sub=role==="volunteer"?"Your authorised ministry activities, without employment attendance or pay calculations.":"A clear view of your personal work, schedules and factual execution.";
+ const banner='<section class="hero"><div class="eyebrow">CEAC Airport City · demonstration</div><div><h2>'+label+'</h2><p>'+sub+'</p></div></section>';
+ const attendance=salaried?panel("My work session",'<p>Personal start/end record. Office, Remote or Field requires the actual authorised schedule and location rule.</p><div class="strip"><div><span>Today</span><br><strong>'+(working?"Session started — sample":"Not started — sample")+'</strong></div><div><span>Selected context</span><br><strong>Office · demonstration</strong></div></div>'+btn(working?"End sample session":"Start sample session","attendance","primary")+'<p class="form-note">The actual application writes verified sessions; this prototype never creates attendance.</p>'):panel("My volunteering",'<p>Track eligible participation and assigned activities. This is not employment time or payroll.</p>'+record("Sunday welcome team","Next planned activity","Planned"));
+ const priorities=role==="executive"?panel("Decision and evidence queue",record("Quarterly ministry review","Evidence pending independent verification","Review")+record("Cross-unit delivery","Shared project counted once","Source-linked")):
+ role==="admin"?panel("Administration attention",record("Employment record updates","Protected HR action requires separate grant","Restricted")+record("Leave schedules","Manager/HR-authorised records only","Pending")):
+ role==="support"?panel("My Technical Support cases",record("Room display issue","Case assigned to authorised Support member","Needs you")+record("Ticket follow-up","Reporter sees only safe status","Open")):
+ panel("My priorities",record("Prepare weekly operating notes","Assigned work · due Friday","In progress")+record("Complete checklist review","Evidence link required for completion","To review"));
+ return banner+'<div class="three">'+panel("Assigned work",'<div class="metric">4</div><div class="subtle">Sample work items, not a live KPI</div>')+panel("Verified completions",'<div class="metric">2</div><div class="subtle">Demonstration · reviewer acknowledged</div>')+panel("Awaiting review",'<div class="metric">1</div><div class="subtle">No inferred human performance score</div>')+'</div><div class="two section-space">'+attendance+priorities+'</div>';
+}
+function work(){
+ const manager=role==="manager"||role==="admin";
+ const actions=btn("Add my work","add-work","primary")+(manager?btn("Give out work","give-work"):"");
+ const filters='<div class="strip">'+["mine","created","assigned","given","review","complete"].map(v=>'<button class="btn '+(v===workFilter?'ghost':'')+'" data-filter="'+v+'">'+({mine:"My work",created:"Created by me",assigned:"Assigned to me",given:"Given out",review:"For review",complete:"Completed"}[v])+'</button>').join("")+'</div>';
+ return heading("Work","Self-created, assigned and delegated work remain attributable to real owners. Link activities to Projects and Objectives at creation or later.",actions)
+ +'<div class="two">'+panel("Work register",filters+record("Prepare weekly operating notes","Project: Workstream Alpha · Objective: Quarterly readiness","In progress")+record("Review handover checklist","Created by unit head · 3 dated actions","For review")+record("Document support resolution","Restricted to assigned Support member","Assigned"))+
+ panel("Selected responsibility",'<div class="eyebrow">Item detail / source evidence</div><h2>Prepare weekly operating notes</h2><p>Owner · Demonstration Staff | Project · Workstream Alpha</p><div class="rule"></div><strong>Activity history</strong>'+record("Update made","Evidence reference · demonstration only","Today")+record("Review requested","Authorised reviewer decision pending","Pending")+btn("Open action form","inspect","primary")+'<p class="form-note">No score or completion is fabricated without verified source and reviewer.</p>')+'</div>';
+}
+function projects(){
+ const readonly=role==="admin"||role==="executive"||role==="volunteer";
+ const actions=readonly?btn("Read-only project evidence","inspect"):btn("Request project","new-project","primary");
+ return heading("Projects","Objective, phase, shared participant and verifiable contribution views. Shared outcomes are counted once.",actions)
+ +'<div class="two">'+panel("Portfolio",record("Workstream Alpha","Two participating units · Active · 3 milestones","Open")+record("Workstream Beta","One unit · Evidence under review","Review")+record("Workstream Gamma","Proposed · authorised unit approval required","Draft"))+
+ panel("Workstream Alpha · detail",'<div class="strip"><div><span>Objective</span><br><strong>Improve operating readiness</strong></div><div><span>Milestones</span><br><strong>3 planned</strong></div></div><h2>Participants and attribution</h2><p>Contributing units: Unit One and Unit Two. Personal work remains individually attributable; shared outcomes appear once.</p><div class="mutedbox"><strong>'+ (readonly?"Read-only view":"Manager authoring controls") +'</strong><p>'+(readonly?"No editing of plans, finances or personnel is granted by this screen.":"Project changes require the right unit authority and server approval.")+'</p></div><p class="form-note">The previously approved revised Projects screenshot binary is still required before literal design acceptance.</p>')+'</div>';
+}
+function reports(){
+ const executive=role==="executive";
+ return heading(executive?"Executive evidence review":"Manager period report","Source-linked period reporting, not automatically generated performance ratings.",btn("View sample source links","inspect"))
+ +'<div class="three">'+panel("Period coverage",'<div class="metric">3/4</div><div class="subtle">Sample units with filed facts</div>')+panel("Verified work outputs",'<div class="metric">6</div><div class="subtle">Reviewer-acknowledged demonstrations</div>')+panel("Human-entered rating",'<div class="metric">—</div><div class="subtle">Never calculated from system KPIs</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Evidence ledger",record("Accepted deliverable","Source work item · evidence attachment","Verified")+record("Open responsibility","Dated activity; not complete","Open")+record("Returned work","Rework requested by authorised reviewer","Returned"))+
+ panel("Integrity and failure states",'<p><strong>Evidence status is explicit.</strong> If period Work sessions cannot load, a visible error must replace any apparent zero-result summary.</p><div class="mutedbox">Report evidence could not be loaded — demonstration of required fail-closed error state.</div><p class="form-note">The current app still has a failing browser test for this state; this design cannot conceal that defect.</p>')+'</div>';
+}
+function people(){
+ return heading("People & access","People details and invitations are separate from HR-private narratives and payroll records.",btn("Invite authorised member","invite","primary"))
+ +'<div class="two">'+panel("Authorised roster",record("Sample staff member A","Unit One · active employment record","Open")+record("Sample volunteer member B","Volunteer · nonsalaried","Open")+record("Sample unit manager C","Two unit headships · one account","Open"))+
+ panel("Privacy boundaries",'<p>Role, unit membership and capability grants are verified independently. Employment access does not automatically permit protected HR record, salary or Support case administration.</p><div class="mutedbox">Confidential personnel fields never appear in a general People list.</div>')+'</div>';
+}
+function hr(){
+ return heading("Protected HR","Employee-protected records require an explicit HR grant, independent from People administration.",btn("Review source record","inspect"))
+ +'<div class="two">'+panel("Protected record summary",'<div class="eyebrow">Restricted demonstration surface</div>'+record("Review packet A","Evidence versions · employee response private","Awaiting HR")+record("Protected schedule exception","HR-approved record version","Review"))+
+ panel("Independent release control",'<p>Manager-entered ratings, evidence and narrative are submitted for independent HR verification. Publication and employee response are recorded as separate events.</p><div class="mutedbox">A People manager cannot infer or access an HR-private narrative from this preview.</div>')+'</div>';
+}
+function ratings(){
+ return heading("Quarterly appraisal","Structured human-entered evaluation is required each quarter. Monthly ratings are optional; system metrics remain factual.",btn("Open rating entry","rating","primary"))
+ +'<div class="two">'+panel("Quarterly review cycle",record("Sample staff member A","Reviewer explanation and linked evidence required","Draft")+record("Sample staff member B","Awaiting Manager narrative","Incomplete"))+
+ panel("Review separation",'<p>Rate documented dimensions on 1–5 or N/O, explain each rating, cite appropriate evidence and write an independent overall narrative. Never transform automated counts into the human rating.</p><div class="mutedbox">HR publication and employee acknowledgement are separate protected stages.</div>')+'</div>';
+}
+function support(){
+ return heading("Technical Support desk","A distinct capability-authorised queue. It does not grant payroll, general Administration or protected HR access.",btn("Report a technical issue","support-issue","primary"))
+ +'<div class="two">'+panel("Assigned cases",record("Display room issue","Unit reporter sees restricted progress","Assigned")+record("Conference audio","Evidence logged; service owner checking","In progress")+record("Asset network access","Awaiting verified resolution","Open"))+
+ panel("Case action and audit",'<p>Only assigned Support members with the current Support capability can modify a case. Each update is revision-checked and auditable.</p><div class="mutedbox">Reporter-safe status excludes internal notes, other reporters and unrelated staff records.</div>')+'</div>';
+}
+function strategy(){
+ return heading("Strategic outcomes","Ministry direction → authorised projects → verified outputs. No duplicated contribution totals.",btn("Inspect evidence","inspect"))
+ +'<div class="three">'+panel("Objectives",'<div class="metric">3</div><div class="subtle">Demonstration ministry directions</div>')+panel("Connected projects",'<div class="metric">5</div><div class="subtle">Related to stated objectives</div>')+panel("Verified outcomes",'<div class="metric">2</div><div class="subtle">Confirmed and attributed once</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Delivery hierarchy",record("Capacity & readiness","Objective → Workstream Alpha → evidence","Current")+record("People development","Objective → learning records","Review"))+
+ panel("Executive information protection",'<p>Visible leadership reporting contains authorised, aggregated facts only. Protected employee appraisal explanations and HR-private content are excluded by policy.</p>')+'</div>';
+}
+function auth(){
+ return heading("Account security · TOTP","Invitation/password remains supported. Actual universal authenticator TOTP protection is gated until a separately approved server cutover.",btn("View enrolment preview","totp","primary"))
+ +'<div class="two">'+panel("Authenticator setup and challenge",'<div class="eyebrow">Demo path · no live QR or secret</div><h2>Enrol a supported authenticator</h2><p>Use a real verified factor only in the actual protected application. This candidate contains no enrolment URI, recovery code or usable token.</p><div class="mutedbox">AAL1 → setup-only → verified TOTP challenge → true AAL2 → authorised app access.</div>')+
+ panel("Recovery and continuity",'<p>Recovery must verify identity and current active invitation or employment status. Do not lock out the last privileged administrator or silently revoke existing Stage 1 sessions before operational approval.</p><div class="no-real-data">No actual Supabase Auth, email or database integration exists in this design preview.</div>')+'</div>';
+}
+function achievements(){
+ return heading("My achievements","Human-readable proof of actual individual contributions, not an AI-generated performance score.")+
+ '<div class="two">'+panel("Verified outcomes",record("Weekly checklist delivered","Source evidence and reviewer receipt","Verified")+record("Training activity","Completed action, still awaiting source review","Pending"))+
+ panel("Private evidence",'<p>Your own material is distinct from Manager and HR-private assessments. Reports are source-linked and represent the selected time period accurately.</p>')+'</div>';
+}
+function screen(){
+ const views={overview,work,projects,reports,people,hr,ratings,support,strategy,auth,achievements};
+ return (views[page]||overview)();
+}
+function drawNav(){
+ const dest=roleNav[role]; if(!dest.some(row=>row[0]===page))page=dest[0][0];
+ document.getElementById("navigation").innerHTML=dest.map(row=>'<button type="button" data-page="'+row[0]+'" aria-current="'+(page===row[0]?"page":"false")+'">'+row[1]+'</button>').join("");
+ document.getElementById("breadcrumbs").textContent="CEAC OS / "+dest.find(row=>row[0]===page)[1];
+ document.getElementById("screen").innerHTML=screen();
+}
+function drawer(kind){
+ let content="";
+ if(kind==="add-work"||kind==="give-work"){
+ content='<label>Work title<input required placeholder="Specific outcome to deliver"></label><label>Project/objective link<select><option value="">No link yet — relink later</option><option>Workstream Alpha / Operating readiness</option><option>Workstream Beta / People development</option></select></label><label>Assignee<select><option>'+(kind==="add-work"?"Myself":"Eligible unit colleague")+'</option></select></label><label>Evidence or activity notes<textarea rows="4" placeholder="Describe the work and intended proof"></textarea></label>';
+ }else if(kind==="rating"){
+ content='<p>Human-entered, evidence-based assessment only. Quarterly REQUIRED, monthly OPTIONAL.</p><label>Rating dimension<select><option>Professional execution</option><option>Responsibility and cooperation</option></select></label><label>Human rating<select><option value="">Choose 1–5 or N/O</option>'+["1","2","3","4","5","N/O"].map(x=>'<option>'+x+'</option>').join("")+'</select></label><label>Required explanation<textarea rows="3" placeholder="Explain the observed performance"></textarea></label><label>Source evidence reference<input placeholder="Link a permitted record, not a private secret"></label><label>Independent overall narrative<textarea rows="3"></textarea></label>';
+ }else if(kind==="totp"){
+ content='<div class="no-real-data">This is a UI demonstration, not a real authenticator seed or recovery pathway.</div><label>Challenge code<input inputmode="numeric" maxlength="6" placeholder="000000 (example only)"></label><p>Actual verified AAL2 and the Supabase factor check are required before any protected operation.</p>';
+ }else{
+ content='<p>Selected record: '+selected+'</p><p>Any attempt to read or write this record must be permitted by the real server-side RLS, RPC and role policy.</p><label>Review note<textarea rows="4" placeholder="Demonstration entry only"></textarea></label>';
+ }
+ document.getElementById("modal").innerHTML='<div class="drawer-backdrop"><section class="drawer" role="dialog" aria-modal="true" aria-label="Design workflow preview"><header><div><div class="eyebrow">Interactive P1 prototype · synthetic</div><h2>'+({ "add-work":"Add my work","give-work":"Give out work",rating:"Structured human rating",totp:"Authenticator challenge"}[kind]||"Review record")+'</h2></div>'+btn("Close","close")+'</header><div class="no-real-data">No actual changes will be saved. The owner must approve this full flow before literal design acceptance.</div><form id="previewform">'+content+'<footer>'+btn("Cancel","close")+ '<button class="btn primary" type="submit">Review sample action</button></footer></form></section></div>';
+ const first=document.querySelector(".drawer input,.drawer select,.drawer textarea,.drawer button");if(first)first.focus();
+}
+document.addEventListener("click",function(event){
+ const control=event.target.closest("[data-page],[data-action],[data-filter]");if(!control)return;
+ if(control.dataset.page){page=control.dataset.page;workFilter="mine";drawNav();window.scrollTo(0,0);return;}
+ if(control.dataset.filter){workFilter=control.dataset.filter;drawNav();return;}
+ const action=control.dataset.action;
+ if(action==="close"){document.getElementById("modal").innerHTML="";return;}
+ if(action==="attendance"){working=!working;drawNav();document.getElementById("announcement").textContent="Sample session state changed in this browser only.";return;}
+ selected=control.dataset.item||"Sample authorised record";
+ drawer(action);
+});
+document.addEventListener("submit",function(event){if(event.target.id!=="previewform")return;event.preventDefault();document.getElementById("modal").innerHTML="";document.getElementById("announcement").textContent="Demonstration reviewed. No real data was saved or submitted.";});
+document.addEventListener("keydown",function(event){if(event.key==="Escape")document.getElementById("modal").innerHTML="";});
+document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;drawNav();});
+drawNav();
+</script></body></html>
