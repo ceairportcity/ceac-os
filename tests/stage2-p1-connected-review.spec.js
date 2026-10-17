@@ -225,3 +225,25 @@ test("P1 Calendar and Meeting review remain owner-private and scope-specific at 
   }
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
+test("P1 employee only sees HR-issued appraisal after simulated publication and may review own response",async({page})=>{
+  await page.route("**/*",r=>r.abort("blockedbyclient"));
+  await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+  const picker=page.getByRole("combobox",{name:"Preview role"});
+  await picker.selectOption("staff");
+  await page.locator("#navigation").getByRole("button",{name:"My appraisal"}).click();
+  await expect(page.getByRole("heading",{name:"Awaiting HR publication"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Review my response"})).toHaveCount(0);
+  await page.getByRole("button",{name:"Preview HR-issued review"}).click();
+  await expect(page.getByRole("heading",{name:"Published review · demonstration"})).toBeVisible();
+  await page.getByRole("button",{name:"Review my response"}).click();
+  await expect(page.getByRole("dialog").getByLabel("Evidence or clarification")).toBeVisible();
+  await page.getByRole("dialog").getByLabel("Evidence or clarification").fill("Sample employee explanation");
+  await page.getByRole("dialog").getByRole("button",{name:"Review sample action"}).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("Sample response recorded locally, not submitted")).toBeVisible();
+  await picker.selectOption("volunteer");
+  await expect(page.locator("#navigation").getByRole("button",{name:"My appraisal"})).toHaveCount(0);
+  await picker.selectOption("manager");
+  await page.locator("#navigation").getByRole("button",{name:"My appraisal"}).click();
+  await expect(page.getByRole("heading",{name:"Awaiting HR publication"})).toBeVisible();
+});

@@ -130,3 +130,18 @@ test("P1 private Calendar review never grants organisation meeting access by men
     assert.doesNotMatch(getMenu(role),/\["calendar","My calendar"\]/);
   assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
 });
+test("P1 personal appraisal is synthetic employee-owned, HR-published and not a computed KPI",()=>{
+  for(const v of [
+    'function personalReviewP1()','myreview:personalReviewP1',
+    'personalReviewPhase="unpublished"','appraisal-published',
+    'appraisal-unpublished',
+    'kind==="employee-response" && page==="myreview" && personalReviewPhase==="published"',
+    'Sample response recorded locally, not submitted',
+    'System-generated work counts cannot replace the human review'
+  ]) assert.ok(html.includes(v),"missing employee review boundary "+v);
+  for(const role of ["staff","manager","support","admin","executive"])
+    assert.match(getMenu(role),/\["myreview","My appraisal"\]/);
+  for(const role of ["volunteer","compliance","payroll","finance"])
+    assert.doesNotMatch(getMenu(role),/\["myreview","My appraisal"\]/);
+  assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
+});

@@ -28,20 +28,20 @@ table{width:100%;border-collapse:collapse;text-align:left}th{font-size:11px;colo
 <script>
 "use strict";
 const roleNav={
- staff:[["overview","Overview"],["work","My work"],["projects","Projects"],["achievements","My achievements"],["calendar","My calendar"],["auth","Account security"]],
- manager:[["overview","Overview"],["work","Work & delegations"],["projects","Projects"],["reports","Manager reporting"],["people","Team"],["calendar","My calendar"],["auth","Account security"]],
- support:[["support","Support desk"],["overview","My overview"],["work","My work"],["calendar","My calendar"],["auth","Account security"]],
- admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["quarterly","Quarterly event"],["projects","Projects"],["calendar","My calendar"],["auth","Account security"]],
+ staff:[["overview","Overview"],["work","My work"],["projects","Projects"],["achievements","My achievements"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
+ manager:[["overview","Overview"],["work","Work & delegations"],["projects","Projects"],["reports","Manager reporting"],["people","Team"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
+ support:[["support","Support desk"],["overview","My overview"],["work","My work"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
+ admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["quarterly","Quarterly event"],["projects","Projects"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
  compliance:[["compliance","Independent Compliance desk"],["auth","Account security"]],
  payroll:[["payroll","Payroll preparation and approval"],["auth","Account security"]],
  finance:[["finance","Finance controls"],["auth","Account security"]],
- executive:[["overview","Executive overview"],["strategy","Strategy & outcomes"],["reports","Quarterly evidence"],["quarterly","Quarterly event"],["projects","Projects"],["calendar","My calendar"],["auth","Account security"]],
+ executive:[["overview","Executive overview"],["strategy","Strategy & outcomes"],["reports","Quarterly evidence"],["quarterly","Quarterly event"],["projects","Projects"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
  volunteer:[["overview","My fellowship"],["work","Assigned activities"],["projects","Projects"],["auth","Account security"]]
 };
 const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",finance:"Budget and approved expenditure, separate from confidential payroll",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
 let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false,reportEvidenceReady=true,demoUnit="Unit One",reportEvidencePhase="ready";
 const draftWorkSamples=[];
-let authPreviewStep="setup";
+let authPreviewStep="setup",personalReviewPhase="unpublished";
 function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
 const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
 function panel(title,body){return '<section class="panel"><h2>'+title+'</h2>'+body+'</section>';}
@@ -184,13 +184,26 @@ function auth(){
  +'<div class="two">'+panel("Authentication journey · "+authPreviewStep,'<div class="eyebrow">Design-only · no seed, no credential validation</div><h2>'+step[0]+'</h2><p>'+step[1]+'</p><div class="mutedbox">AAL1 setup-only → verified TOTP enrollment → fresh challenge → actual AAL2 or access denied.</div>'+btn("Inspect challenge form","totp","primary"))
  +panel("Recovery & access boundaries",'<p>Only real secure backend evidence may establish AAL2, factor revocation or a recovery approval. Staff, Manager, Support, HR, Executive and Volunteer permissions remain independent from this visual demonstration.</p><div class="no-real-data">No actual Supabase Auth, email, QR secret, account reset or database call exists here. Protected action withheld pending real proof.</div>')+'</div>';
 }
+function personalReviewP1(){
+ const options=btn("Preview HR-issued review","appraisal-published","primary")+btn("Reset publication preview","appraisal-unpublished");
+ const published=personalReviewPhase!=="unpublished";
+ const issued=published?panel("Published review · demonstration",
+  '<div class="no-real-data">Synthetic HR-issued assessment only; no employee-specific private information or real rating is loaded.</div>'+
+  '<p>Human-entered dimension rating and required explanation must be connected to permitted evidence and independent HR publication. System-generated work counts cannot replace the human review.</p>'+
+  '<p>Employee response stage: '+(personalReviewPhase==="responded"?"Sample response recorded locally, not submitted":"Awaiting employee review")+'</p>'+
+  (personalReviewPhase==="responded"?"":btn("Review my response","employee-response","primary"))):
+  panel("Awaiting HR publication",'<div class="no-real-data">No assessment has been issued to this synthetic persona. Do not display scores, private HR narrative or pretend a required quarterly review is complete.</div>');
+ return heading("My appraisal","Quarterly-required structured human ratings are distinct from system-calculated indicators. Monthly reviews are optional.",options)
+ +'<div class="two">'+issued+
+ panel("Review rights and acknowledgement",'<p>Only the employee may view their own issued assessment and provide their own attributable response. Manager assessment, independent HR publication and Compliance evidence are separate approvals.</p><p>Unpublished protected HR notes remain unavailable. Nonsalaried Volunteers have no employment appraisal in this preview.</p>')+'</div>';
+}
 function achievements(){
  return heading("My achievements","Human-readable proof of actual individual contributions, not an AI-generated performance score.")+
  '<div class="two">'+panel("Verified outcomes",record("Weekly checklist delivered","Source evidence and reviewer receipt","Verified")+record("Training activity","Completed action, still awaiting source review","Pending"))+
  panel("Private evidence",'<p>Your own material is distinct from Manager and HR-private assessments. Reports are source-linked and represent the selected time period accurately.</p>')+'</div>';
 }
 function screen(){
- const views={overview,work,projects,reports,people,hr,ratings,compliance:complianceP1,payroll:payrollP1,finance:financeP1,quarterly:quarterlyP1,support,strategy,calendar:calendarP1,auth,achievements};
+ const views={overview,work,projects,reports,people,hr,ratings,compliance:complianceP1,payroll:payrollP1,finance:financeP1,quarterly:quarterlyP1,support,strategy,calendar:calendarP1,auth,achievements,myreview:personalReviewP1};
  return (views[page]||overview)();
 }
 function drawNav(){
@@ -221,6 +234,10 @@ function drawer(kind){
  '<label>Meeting audience<select required name="meetingAudience"><option value="">Choose scope</option><option>Current authorised unit</option><option>Authorised organisation participants</option></select></label>'+
  '<label>Agenda and source work<textarea required name="meetingAgenda" rows="3" placeholder="Only permitted work/project references"></textarea></label>'+
  '<p>A general Staff or Support persona cannot infer authority to schedule organisation-wide meetings.</p>';
+ }else if(kind==="employee-response" && page==="myreview" && personalReviewPhase==="published"){
+ content='<div class="no-real-data">Employee-only response demonstration; no real HR case is opened or acknowledged.</div>'+
+ '<label>Evidence or clarification<textarea required name="employeeResponse" rows="4" placeholder="Respond to the published rating in your own words"></textarea></label>'+
+ '<p>Submitting a response does not revise the Manager rating, independently approve the review or expose protected HR narrative.</p>';
  }else if(kind==="rating"){
  content='<p>Human-entered, evidence-based assessment only. Quarterly REQUIRED, monthly OPTIONAL.</p><label>Rating dimension<select><option>Professional execution</option><option>Responsibility and cooperation</option></select></label><label>Human rating<select><option value="">Choose 1–5 or N/O</option>'+["1","2","3","4","5","N/O"].map(x=>'<option>'+x+'</option>').join("")+'</select></label><label>Required explanation<textarea rows="3" placeholder="Explain the observed performance"></textarea></label><label>Source evidence reference<input placeholder="Link a permitted record, not a private secret"></label><label>Independent overall narrative<textarea rows="3"></textarea></label>';
  }else if(kind==="compliance-review"){
@@ -268,6 +285,9 @@ document.addEventListener("click",function(event){
  if(action==="report-loading" || action==="report-empty"){reportEvidencePhase=action==="report-loading"?"loading":"empty";reportEvidenceReady=true;drawNav();return;}
  if(action==="project-close" && role!=="manager")return;
  if(action==="calendar-meeting" && !["manager","admin","executive"].includes(role))return;
+ if(action==="appraisal-published" && page==="myreview"){personalReviewPhase="published";drawNav();return;}
+ if(action==="appraisal-unpublished" && page==="myreview"){personalReviewPhase="unpublished";drawNav();return;}
+ if(action==="employee-response" && (page!=="myreview"||personalReviewPhase!=="published"))return;
  if(action==="report-unavailable"){reportEvidenceReady=false;reportEvidencePhase="ready";drawNav();return;}
  if(["auth-step-setup","auth-step-challenge","auth-step-recovery"].includes(action) && page==="auth"){
   authPreviewStep=action.slice("auth-step-".length);drawNav();document.getElementById("announcement").textContent="Design-only authentication journey: "+authPreviewStep+". No factor was changed.";return;
@@ -279,6 +299,7 @@ document.addEventListener("click",function(event){
 document.addEventListener("submit",function(event){
  if(event.target.id!=="previewform")return;event.preventDefault();
  const kind=event.target.dataset.kind;
+ if(kind==="employee-response" && page==="myreview" && personalReviewPhase==="published"){personalReviewPhase="responded";drawNav();}
  if(kind==="add-work"||kind==="give-work"){
   const data=new FormData(event.target);
   const title=String(data.get("draftTitle")||"").trim();
@@ -290,6 +311,6 @@ document.addEventListener("submit",function(event){
  document.getElementById("announcement").textContent="A local-only design draft was reviewed. No real data was saved or submitted.";
 });
 document.addEventListener("keydown",function(event){if(event.key==="Escape")document.getElementById("modal").innerHTML="";});
-document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";authPreviewStep="setup";drawNav();});
+document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";authPreviewStep="setup";personalReviewPhase="unpublished";drawNav();});
 drawNav();
 </script></body></html>
