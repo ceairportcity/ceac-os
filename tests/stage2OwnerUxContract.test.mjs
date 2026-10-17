@@ -183,3 +183,45 @@ test("P0 route and shell inventory preserves authorised role navigation, not acc
   assert.match(nav, /capability: "payroll\.prepare"/);
   assert.match(nav, /capability: "payroll\.approve"/);
 });
+test("P0 deep-link overlay precedence and sensitive route UI boundaries are explicit", () => {
+  const app = file("src/App.jsx");
+  const overlayOrder = [
+    "itemId ? <Item",
+    ": assigning ? <Assign",
+    ": projectId && isUnitManager ? <ManagerProjects",
+    ": goalId ? <Goals",
+    ": person && isManager ? <PersonDetail",
+    ": roomContext ? <Room",
+    ": meetingDraft ? <MeetingScheduler",
+    ": meetingId ? <Meeting",
+    ": pageForTab()",
+  ];
+  let previous = -1;
+  for (const branch of overlayOrder) {
+    const position = app.indexOf(branch, previous + 1);
+    assert.ok(position > previous, "deep-link priority changed or lost: " + branch);
+    previous = position;
+  }
+
+  // Query strings are navigation inputs, never a security role or grant.
+  for (const key of ["tab", "item", "project", "meeting", "roomKind", "room"]) {
+    assert.ok(app.includes('params.get("' + key + '")'),
+      "missing audited deep-link query field: " + key);
+  }
+  for (const kind of ["unit", "sub_team", "project"]) {
+    assert.ok(app.includes('roomKind === "' + kind + '"'),
+      "room kind must remain explicitly enumerated: " + kind);
+  }
+  assert.match(app, /if \(authPath === "\/activate" \|\| authPath === "\/reset-password"\)/);
+  assert.match(app, /if \(tab === "technical-support"\) return canManageSupport/);
+  assert.match(app, /if \(tab === "protected-hr" && canAccessProtectedHR\)/);
+  assert.match(app, /if \(tab === "payroll" && canUsePayroll\)/);
+  assert.match(app, /if \(tab === "people" && canManagePeople\)/);
+  assert.match(app, /if \(tab === "manager-reports" && isUnitManager\)/);
+  assert.match(app, /if \(tab === "exec-reports" && isExec\)/);
+  assert.match(app, /if \(tab === "integrations" && canManageIntegrations\)/);
+  assert.match(app, /if \(tab === "authority" && canManageAuthority\)/);
+  assert.match(app, /if \(tab === "attendance" && canUseWorkforce\)/);
+  assert.match(app, /<ActiveMfaGate me=\{me\} onVerified=\{boot\}>/);
+  assert.match(app, /VITE_STAGE2_UNIVERSAL_AAL2 === "true"/);
+});
