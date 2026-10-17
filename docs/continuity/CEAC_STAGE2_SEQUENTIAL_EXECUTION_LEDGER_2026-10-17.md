@@ -114,6 +114,18 @@ Sources: `src/App.jsx` and `src/experience-v2/shell/navigation.js` at audited SH
 
 **Live baseline read-only preflight:** Original Supabase production shows `authenticator` `pgrst.db_pre_request` unset and zero existing `storage` policies named `CEAC Google AAL2%`. This is NOT a proof that pending Google-only migration replay is safe between  historical and corrective versions, nor TOTP production activation. No live write occurred.
 
+## 3C. Read-only production security-advisor triage (P0; **no live changes**)
+
+Supabase security-advisor snapshot from the original project on 17 October 2026 reported three categories:
+
+| Advisory | Count | Actual access assessment / Stage 2 action |
+| --- | ---: | --- |
+| [RLS enabled with no policies](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) | 16 INFO | Read-only inspection of all 16 corresponding `hr_private` and `public` relations confirmed **no `authenticated` SELECT/INSERT or `anon` SELECT table grants**. The absent client grants plus RLS default-deny are consistent with intentional protected server-only tables, **not evidence of a data leak**. Preserve this boundary and test any intentionally privileged RPC interaction; do not add blanket policies to silence the lint. |
+| [Authenticated SECURITY DEFINER RPC execute](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable) | 145 WARN | Corresponds to the previously reviewed **exact 145-entry Stage 1 authenticated allowlist**; no arbitrary revocation/permission widening. Stage 2 planned allowlist is exactly 146 after the reviewed universal-TOTP helper. Continue exact signature/authority/negative RLS testing; advisor count alone does **not** prove each RPC is safe. |
+| [Leaked-password protection disabled](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) | 1 WARN | A real existing hosted Auth protection gap to assess at **P2**. Determine supported feature/plan and verify safe enablement and account recovery before any controlled Auth configuration change; **do not mutate live Auth without the separate appropriate production GO**. |
+
+The counts above are direct read-only tool results, not comprehensive Stage 2 certification. A current-state production risk inventory is not permission to change production, weaken RLS, or mark P0 accepted. For P0 closure: link these findings to the exact Stage 1 authority contract, P2 plan and future explicit P9 operations. No person-level data was retrieved.
+
 ## 4. Mandatory acceptance entry format and execution continuity
 
 For each stage, preserve an entry:
