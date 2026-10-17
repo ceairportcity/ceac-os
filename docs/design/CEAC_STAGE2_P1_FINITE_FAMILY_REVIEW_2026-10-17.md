@@ -75,6 +75,30 @@ The existing UI preview uses only **demonstration data**. A visible button, a sy
 
 **Do not resume a 47-screenshot programme.** The two actionable owner matters are the **one consolidated exception design review** and **exact Projects fixture recovery**, not repetitive sign-off for inherited V4 patterns.
 
+## Finite route-inheritance and nested-flow closeout — inspected 17 October 2026
+
+**No 47-mockup quota.** The ten-family table above maps all **47 actual root tabs exactly once**; this table additionally accounts for the `me` fallback, all **eight** mounted overlays and essential non-tab security/print states. Route-to-family membership is a source/design inventory. **Neither a visible demo nor this mapping is proof of complete function, access security or owner design approval.** Use the already checked-in canonical V4 and connected role review rather than creating parallel prototypes.
+
+| Source surface | Assigned existing V4 family | Reuse disposition and source truth | Material P1 design decision / later engineering gate |
+| --- | --- | --- | --- |
+| `me` (My Hub fallback) | Overview + People/HR personal profile pattern | **INHERITS PENDING REVIEW:** personal overview/profile shell; fallback is not another independently designed product | Personal-only identity/achievement privacy; P7/P8 real role and mobile coverage |
+| Work Item overlay — `src/screens/Item.jsx` | Work execution | **CONNECTED CANDIDATE:** existing inspector/evidence/return pattern | Material reviewer decisions, evidence protection, return/reopen and wrong-reviewer denial; P4/P8 |
+| Give out / Assign — `src/screens/Assign.jsx` | Work execution | **CONNECTED CANDIDATE:** reuse approved Work form and connected Manager delegation | Material cross-unit assignment, eligible assignee/project-objective picker/relink, review and negative-authority proof; P4/P8 |
+| Manager project detail — `src/screens/ManagerProjects.jsx` | Projects and contributions | **MATERIAL EXCEPTION:** reuse project inspector but require distinct close/attribution evidence | Exact newer Projects binary pending; versioned close, cross-unit authority and shared result counted once; P5/P8 |
+| Goals overlay — `src/screens/Goals.jsx` | Work and Projects | **INHERITS PENDING REVIEW:** personal form/detail and owner-only status patterns | Personal-only records need negative access tests, not another bespoke dashboard; P4/P8 |
+| Person Detail — `src/screens/PersonDetail.jsx` | People, Administration and protected HR | **MATERIAL EXCEPTION:** people detail template with genuinely restricted employment information | Employee vs volunteer, direct-report boundary and protected HR release separation; P6/P8 |
+| Room — `src/screens/Room.jsx` | Calendar, meetings and communication | **INHERITS WITH MATERIAL PERMISSION EXCEPTION:** thread/message layout | Unit/project/subteam membership and private content denial; P4/P8 |
+| Meeting Scheduler — `src/components/MeetingScheduler.jsx` | Calendar, meetings and communication | **CONNECTED CANDIDATE:** reuse existing scoped meeting form | Material organisation vs unit scheduling rights/allowed invitees; P4/P8 |
+| Meeting deep link — `src/screens/Meeting.jsx` | Calendar, meetings and communication | **INHERITS WITH MATERIAL PERMISSION EXCEPTION:** event details, notes and actions | Participant-only data, private personal notes and foreign meeting denial; P4/P8 |
+| Invite/activate/reset-password, authenticator setup/challenge/recovery | Authentication, TOTP and integration | **MATERIAL EXCEPTION:** connected role-aware reference exists, real hosted Auth not demonstrated | Actual AAL1→TOTP→server AAL2, lost-factor recovery, audit/offboarding and session continuity; P2/P8 |
+| Period report preview/print/PDF, appraisal publication and response | Reporting, achievements and appraisal + protected HR | **MATERIAL EXCEPTION:** connected report and personal HR issue/response patterns already exist | Fail-closed loading/empty/error, protected HR release and employee response; P6/P8 |
+
+**Known accepted visual authority:** canonical V4 HTML and its historical approved Overview, Work and Mobile source identity; the older Projects reference remains historical direction only, not the exact revised Projects approval. Connected synthetic references, ten-family mapping and privacy warnings remain *candidate* evidence. The P0 source/reader/writer and negative-stage contract is [already mapped](../continuity/CEAC_STAGE2_P0_ROUTE_DATA_AUTHORITY_CENSUS_2026-10-17.md); do not duplicate backend architecture in an illustration. Existing P2–P7 modules remain untouched.
+
+**Single owner decision for P1 exit:** review the ten families against their materially distinct scenarios above and in the preceding ten-row sheet, approve or list exact requested amendments. Separately deliver the revised Projects PNG with **exact** SHA-256 `66918f3e3d35fe7a6adf36a85eb90b14c0f719fc8f88fed378d538a47518a559` through an authorised private channel, **or** explicitly select a different reference identity for subsequent approval. Neither decision is presumed given. Representative desktop and 390/320px responsive interaction evidence and actual stage-specific acceptance must still be recorded; family inheritance does not waive role-specific journeys.
+
+**Stopping rule:** once all material exceptions and exact assets are signed, verify the true P1 boundary at a frozen SHA, record the accepted hashes/roles/inheritance and open P2 immediately. Do not continue cosmetically extending the mock application or repeat fully accepted P0 inventory work.
+
 ## Exact Projects image provenance — read-only recovery check (17 October 2026)
 
 The revised approved Projects PNG is still missing at required SHA-256 `66918f3e3d35fe7a6adf36a85eb90b14c0f719fc8f88fed378d538a47518a559`. Actual original PNG bytes from three existing file-library candidates were hashed; none matches:
