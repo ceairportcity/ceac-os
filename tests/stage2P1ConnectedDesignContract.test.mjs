@@ -247,3 +247,15 @@ test("P1 protected HR issue preview keeps evidence failure separate and mandates
  }
  assert.ok(html.includes('hrPreviewPhase="draft";drawNav();'),"switching simulated roles must clear HR issue state");
 });
+
+test("P1 design preview denies forged sensitive actions independently of hidden navigation buttons",()=>{
+ const fragment=html.slice(html.indexOf("function previewActionAllowed(action){"),html.indexOf("function drawer(kind){"));
+ for(const item of ["payroll-detail","finance-request","compliance-review","support-issue","hr-release","project-close","invite","rating","employee-response","attendance","totp"]) {
+  assert.ok(fragment.includes('"'+item+'"'),"Missing role/page check for "+item);
+ }
+ assert.ok(fragment.includes('!roleNav[role].some(entry=>entry[0]===page)'),"role must have the current destination");
+ assert.ok(html.includes('if(!previewActionAllowed(kind))return;'),"direct drawer call must fail closed");
+ assert.ok(html.includes('if(!previewActionAllowed(action)){'),"event action must fail closed");
+ assert.ok(fragment.includes('personalReviewPhase!=="published"'),"no response to unissued appraisal");
+ assert.ok(fragment.includes('hrPreviewPhase!=="draft"'),"no HR release after synthetic issue or failed read");
+});

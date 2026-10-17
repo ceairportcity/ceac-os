@@ -426,3 +426,37 @@ test("P1 protected HR review rejects missing evidence and keeps employee disclos
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
  expect(overflow,"protected HR preview must fit a 390px screen").toBeLessThanOrEqual(1);
 });
+
+test("P1 sensitive preview actions fail closed against forged controls while permitted roles retain own flows",async({page})=>{
+ await page.route("**/*",route=>route.abort("blockedbyclient"));
+ await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+ const role=page.getByRole("combobox",{name:"Preview role"});
+ await role.selectOption("staff");
+ for(const action of ["payroll-detail","finance-request","compliance-review","support-issue","hr-release","invite","rating","project-close","give-work","quarterly-event"]){
+  await page.evaluate(value=>{
+   const button=document.createElement("button");button.dataset.action=value;button.textContent="Forged preview action";
+   document.body.append(button);button.click();button.remove();
+  },action);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+ }
+ await expect(page.locator("#announcement")).toContainText("Preview action withheld");
+ await role.selectOption("volunteer");
+ await page.evaluate(()=>{
+  const button=document.createElement("button");button.dataset.action="attendance";
+  document.body.append(button);button.click();button.remove();
+ });
+ await expect(page.getByRole("button",{name:"Start sample session"})).toHaveCount(0);
+ await expect(page.getByRole("dialog")).toHaveCount(0);
+ await role.selectOption("compliance");
+ await page.locator("#navigation").getByRole("button",{name:"Independent Compliance desk"}).click();
+ await page.getByRole("button",{name:"Inspect policy exception"}).click();
+ await expect(page.getByRole("dialog",{name:"Design workflow preview"})).toBeVisible();
+ await page.getByRole("button",{name:"Close"}).click();
+ await role.selectOption("payroll");
+ await page.getByRole("button",{name:"Inspect sample pay run"}).click();
+ await expect(page.getByRole("dialog",{name:"Design workflow preview"})).toBeVisible();
+ await page.getByRole("button",{name:"Close"}).click();
+ await role.selectOption("finance");
+ await page.getByRole("button",{name:"Inspect finance request"}).click();
+ await expect(page.getByRole("dialog",{name:"Design workflow preview"})).toBeVisible();
+});

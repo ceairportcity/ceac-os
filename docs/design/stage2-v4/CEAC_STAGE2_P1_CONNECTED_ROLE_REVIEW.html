@@ -374,7 +374,48 @@ function drawNav(){
  document.getElementById("breadcrumbs").textContent="CEAC OS / "+dest.find(row=>row[0]===page)[1];
  document.getElementById("screen").innerHTML=screen();
 }
+// Only synthetic previews. Real CEAC permissions must still be checked independently on Auth AAL2,
+// server RLS/RPC, Storage and Edge. These guards stop misleading cross-role design interactions.
+function previewActionAllowed(action){
+ const rules={
+  "attendance":["overview",["staff","manager","support","admin","executive"]],
+  "add-work":["work",["staff","manager","support","volunteer"]],
+  "give-work":["work",["manager"]],
+  "new-project":["projects",["manager"]],
+  "project-close":["projects",["manager"]],
+  "rating":["ratings",["manager"]],
+  "invite":["people",["admin"]],
+  "hr-missing":["hr",["admin"]],
+  "hr-draft":["hr",["admin"]],
+  "hr-release":["hr",["admin"]],
+  "compliance-review":["compliance",["compliance"]],
+  "support-issue":["support",["support"]],
+  "payroll-detail":["payroll",["payroll"]],
+  "finance-request":["finance",["finance"]],
+  "quarterly-event":["quarterly",["admin","executive"]],
+  "calendar-private":["calendar",["staff","manager","support","admin","executive"]],
+  "calendar-meeting":["calendar",["manager","admin","executive"]],
+  "employee-response":["myreview",["staff","manager","support","admin","executive"]],
+  "appraisal-published":["myreview",["staff","manager","support","admin","executive"]],
+  "appraisal-unpublished":["myreview",["staff","manager","support","admin","executive"]],
+  "report-loading":["reports",["manager","executive"]],
+  "report-empty":["reports",["manager","executive"]],
+  "report-unavailable":["reports",["manager","executive"]],
+  "report-ready":["reports",["manager","executive"]],
+  "auth-step-setup":["auth",["staff","manager","support","admin","compliance","payroll","finance","executive","volunteer"]],
+  "auth-step-challenge":["auth",["staff","manager","support","admin","compliance","payroll","finance","executive","volunteer"]],
+  "auth-step-recovery":["auth",["staff","manager","support","admin","compliance","payroll","finance","executive","volunteer"]],
+  "totp":["auth",["staff","manager","support","admin","compliance","payroll","finance","executive","volunteer"]]
+ };
+ const rule=rules[action];
+ if(!rule)return true;
+ if(page!==rule[0] || !rule[1].includes(role) || !roleNav[role].some(entry=>entry[0]===page))return false;
+ if(action==="hr-release" && hrPreviewPhase!=="draft")return false;
+ if(action==="employee-response" && personalReviewPhase!=="published")return false;
+ return true;
+}
 function drawer(kind){
+ if(!previewActionAllowed(kind))return;
  let content="";
  if(kind==="add-work"||kind==="give-work"){
  content='<label>Work title<input name="draftTitle" required placeholder="Specific outcome to deliver"></label><label>Project/objective link<select name="draftProject"><option value="">No link yet — relink later</option><option>Workstream Alpha / Operating readiness</option><option>Workstream Beta / People development</option></select></label><label>Assignee<select name="draftAssignee"><option>'+(kind==="add-work"?"Myself":"Eligible unit colleague")+'</option></select></label><label>Evidence or activity notes<textarea name="draftNotes" rows="4" placeholder="Describe the work and intended proof"></textarea></label>';
@@ -456,6 +497,10 @@ document.addEventListener("click",function(event){
  }
  if(control.dataset.filter){workFilter=control.dataset.filter;drawNav();return;}
  const action=control.dataset.action;
+ if(!previewActionAllowed(action)){
+  document.getElementById("announcement").textContent="Preview action withheld: this sample role and page do not authorise the requested workflow. No data was accessed.";
+  return;
+ }
  if(action==="close"){document.getElementById("modal").innerHTML="";return;}
  if(action==="attendance"){working=!working;drawNav();document.getElementById("announcement").textContent="Sample session state changed in this browser only.";return;}
  if(action==="switch-demo-unit" && role==="manager"){
