@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  hasVerifiedTotpAal2, readBoundedActionBody, MAX_INTEGRATION_BODY_BYTES,
+  hasVerifiedTotpAal2, readBoundedActionBody, MAX_INTEGRATION_BODY_BYTES, MAX_INTEGRATION_DRAIN_BYTES,
 } from "../supabase/functions/integration-runtime/mfa.mjs";
 import {
   classifyTelegramFailure,
@@ -157,4 +157,43 @@ test("oversized Edge JSON denies without cancelling or waiting for the upload st
   assert.equal(verdict, null, "Oversized unauthenticated body must be denied without awaiting cancel");
   assert.equal(cancelCalled, false, "The Edge body guard must not cancel an upstream local gateway stream");
   assert.equal(released, true);
+});
+
+// The isolated Edge HTTP gateway can hang when an oversized POST is rejected
+// without consuming a modest already-declared request body. Drain only that
+// bounded body to EOF; do not buffer it, cancel the stream, or accept its action.
+test("small declared oversize Edge POST drains to EOF before rejecting without dispatch", async () => {
+  const length = MAX_INTEGRATION_BODY_BYTES + 25;
+  let reads = 0;
+  let released = false;
+  let cancelled = false;
+  const request = {
+    headers: new Headers({ "Content-Length": String(length) }),
+    body: {
+      getReader: () => ({
+        async read() {
+          reads += 1;
+          return reads === 1
+            ? { done: false, value: new Uint8Array(length) }
+            : { done: true, value: undefined };
+        },
+        cancel() { cancelled = true; throw new Error("Must not cancel gateway request"); },
+        releaseLock() { released = true; },
+      }),
+    },
+  };
+  assert.equal(await readBoundedActionBody(request), null);
+  assert.equal(reads, 2, "Gateway request should reach EOF for a modest declared oversize body");
+  assert.equal(released, true);
+  assert.equal(cancelled, false);
+});
+
+test("huge declared oversize Edge POST rejects without reading an unbounded stream", async () => {
+  let touched = false;
+  const request = {
+    headers: new Headers({ "Content-Length": String(MAX_INTEGRATION_DRAIN_BYTES + 1) }),
+    body: { getReader() { touched = true; throw new Error("Do not drain huge payload"); } },
+  };
+  assert.equal(await readBoundedActionBody(request), null);
+  assert.equal(touched, false);
 });

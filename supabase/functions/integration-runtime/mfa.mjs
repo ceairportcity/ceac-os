@@ -17,10 +17,39 @@ export function hasVerifiedTotpAal2(claims, expectedUserId) {
  * NULL means invalid or oversized; {} means empty valid payload.
  */
 export const MAX_INTEGRATION_BODY_BYTES = 32 * 1024;
+// Bound even the discard path: never buffer or consume an arbitrarily large
+// unauthenticated request simply to satisfy an Edge gateway.
+export const MAX_INTEGRATION_DRAIN_BYTES = 64 * 1024;
+
+async function discardSmallDeclaredOversize(body) {
+  if (!body) return;
+  const reader = body.getReader();
+  let discarded = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      discarded += value.byteLength;
+      if (discarded > MAX_INTEGRATION_DRAIN_BYTES) break;
+    }
+  } catch {
+    // The request is invalid regardless of a broken or disconnected stream.
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 export async function readBoundedActionBody(request) {
   const declared = request.headers.get("content-length");
   if (declared && /^\d+$/.test(declared) && Number(declared) > MAX_INTEGRATION_BODY_BYTES) {
+    // Local Supabase Edge gateways can hold a response open until the request
+    // body reaches EOF. On modest, explicitly size-declared oversized JSON,
+    // discard a bounded number of bytes (never accumulating/parsing data) so
+    // the invalid request receives its intended 400 rather than a 150s 504.
+    // Huge/unbounded streams still reject immediately without an unsafe drain.
+    if (Number(declared) <= MAX_INTEGRATION_DRAIN_BYTES) {
+      await discardSmallDeclaredOversize(request.body);
+    }
     return null;
   }
   if (!request.body) return {};
