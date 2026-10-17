@@ -13,6 +13,7 @@ on:
       - tests/account-mfa-local-only.spec.js
       - src/lib/Stage2UniversalMfaPolicy.js
       - src/components/Stage2UniversalMfaGate.jsx
+      - src/components/AccountMfaSetup.jsx
       - tests/stage2UniversalMfaPolicy.test.js
 permissions:
   contents: read
@@ -44,14 +45,14 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Start local-only CEAC UI
         run: |
-          npm run dev -- --host 127.0.0.1 > /tmp/ceac-local-mfa-vite.log 2>&1 &
+          VITE_STAGE2_UNIVERSAL_AAL2=true npm run dev -- --host 127.0.0.1 > /tmp/ceac-local-mfa-vite.log 2>&1 &
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:5173 > /dev/null; then exit 0; fi
             sleep 1
           done
           cat /tmp/ceac-local-mfa-vite.log
           exit 1
-      - name: Verify browser authenticator wrong-code rejection and Staff AAL2 refresh
+      - name: Verify universal TOTP gate: wrong code, backup factor, refresh and fresh device
         env:
           CEAC_LOCAL_TOTP_UI: '1'
         run: npx playwright test tests/account-mfa-local-only.spec.js --workers=1

@@ -138,7 +138,62 @@ try {
     assert.deepEqual(await ownProfileRows(newLogin, label + " unverified AAL1"), [],
       label + " fresh AAL1 login must not read even its own profile via REST/RLS");
   }
-  console.log("PASS local-only real provider TOTP, AAL2, refresh continuity and AAL1 RPC/REST denial: Staff + 6 role/organisation fixtures.");
+
+  // Disposable lost-factor recovery acceptance. A verified factor removal via
+  // the provider ADMIN API must require service authority, invalidate existing
+  // sessions, and NEVER make a password-only AAL1 session an authorised user.
+  // The privileged provider operation below is a test fixture, NOT an
+  // application's publicly callable recovery endpoint or a human approval.
+  const recoverySubject = sessions[1]; // fixed second-unit Manager fixture
+  const recoveryIdentity = await recoverySubject.auth.getUser();
+  if (recoveryIdentity.error) throw recoveryIdentity.error;
+  const recoveryUserId = recoveryIdentity.data.user?.id;
+  assert.ok(recoveryUserId, "Local recovery test identity missing");
+  const factorsBefore = await recoverySubject.auth.mfa.listFactors();
+  if (factorsBefore.error) throw factorsBefore.error;
+  const previousFactor = factorsBefore.data.totp?.find((item) =>
+    item.factor_type === "totp" && item.status === "verified");
+  assert.ok(previousFactor?.id, "Recovery test requires an existing verified authenticator");
+  const publicDelete = await recoverySubject.auth.admin.mfa.deleteFactor({
+    userId: recoveryUserId, id: previousFactor.id,
+  });
+  assert.ok(publicDelete.error, "Browser-authorised user may not call Auth Admin to remove MFA");
+
+  const removed = await service.auth.admin.mfa.deleteFactor({
+    userId: recoveryUserId, id: previousFactor.id,
+  });
+  if (removed.error) throw removed.error;
+
+  const oldAccess = await recoverySubject.rpc("app_org_id");
+  assert.ok(oldAccess.error || oldAccess.data == null,
+    "Verified-factor revocation must revoke or deny the old AAL2 bearer");
+
+  const replacementSession = create(SUPABASE_ANON_KEY);
+  sessions.push(replacementSession);
+  await signIn(replacementSession, roleEmails[1][1]);
+  const afterRemoval = await sessionLevel(replacementSession, "Recovered Manager fresh login", "aal1");
+  assert.equal(afterRemoval.nextLevel, "aal1",
+    "A deleted TOTP factor cannot silently continue to demand its stale factor ID");
+  assert.equal(await orgIdentity(replacementSession, "AAL1 after factor reset"), null);
+  assert.deepEqual(await ownProfileRows(replacementSession, "AAL1 after factor reset"), []);
+
+  const newFactor = await replacementSession.auth.mfa.enroll({
+    factorType: "totp", friendlyName: "CEAC isolated recovered authenticator",
+  });
+  if (newFactor.error) throw newFactor.error;
+  assert.ok(newFactor.data.id && newFactor.data.totp?.secret);
+  const challenge = await replacementSession.auth.mfa.challenge({ factorId: newFactor.data.id });
+  if (challenge.error) throw challenge.error;
+  const recovered = await replacementSession.auth.mfa.verify({
+    factorId: newFactor.data.id, challengeId: challenge.data.id,
+    code: codeFor(newFactor.data.totp.secret),
+  });
+  if (recovered.error) throw recovered.error;
+  await sessionLevel(replacementSession, "Recovered Manager newly verified authenticator", "aal2");
+  assert.equal(await orgIdentity(replacementSession, "Recovered Manager AAL2"), orgId);
+  assert.equal((await ownProfileRows(replacementSession, "Recovered Manager own profile")).length, 1);
+
+  console.log("PASS local-only real provider TOTP, AAL2, refresh, AAL1 denial and admin-only lost-factor reset/re-enrollment: Staff + 6 role/organisation fixtures.");
 } finally {
   if (switched) {
     const reset = await service.from("organisations").update({ universal_totp_required: false }).eq("id", orgId);

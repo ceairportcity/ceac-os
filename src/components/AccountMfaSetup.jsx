@@ -133,11 +133,14 @@ export default function AccountMfaSetup({ onVerified }) {
     }
   }
 
-      const enrolled = factors.length > 0;
+  const enrolled = factors.length > 0;
   const needsStepUp = enrolled && level !== "aal2";
+  // A verified AAL2 user may enrol one independent backup authenticator
+  // BEFORE losing the primary. Password-only sessions cannot add a backup.
+  const canAddBackup = enrolled && level === "aal2" && factors.length < 2;
 return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
       <p className="screen-note">
-      An authenticator app adds a second check when you sign in to a privileged CEAC workspace.
+      An authenticator app provides the required second check for your CEAC account.
       Set this up for your own account only. Never share setup keys or verification codes.
     </p>
     {loading && <p role="status" aria-busy="true">Checking your authenticator...</p>}
@@ -157,10 +160,18 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
       finally { setBusy(false); }
     }}>Retry authenticator status</button>}
 
-    {!loading && statusReady && !enrolled && !setup &&
-      <button type="button" className="btn wide-auto" onClick={startEnrollment} disabled={busy}>
-        {busy ? "Preparing..." : "Set up authenticator"}
-      </button>}
+    {!loading && statusReady && !setup && (!enrolled || canAddBackup) &&
+      <>
+        {canAddBackup && <p className="screen-note">
+          Add a separate backup authenticator while your current verified session is active.
+          It can help if your primary device is lost. If both authenticators are unavailable,
+          request an independently verified recovery from authorised CEAC Administration.
+          A password reset alone cannot replace the required authenticator.
+        </p>}
+        <button type="button" className="btn wide-auto" onClick={startEnrollment} disabled={busy}>
+          {busy ? "Preparing..." : canAddBackup ? "Add backup authenticator" : "Set up authenticator"}
+        </button>
+      </>}
 
     {setup && <div className="ev2pf-mfa-enrollment">
       <p>Open your authenticator app and add a new account using this QR code.</p>
