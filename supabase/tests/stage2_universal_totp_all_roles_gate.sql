@@ -32,6 +32,33 @@ BEGIN
      AND policyname='stage2_universal_totp_storage_gate'
      AND permissive='RESTRICTIVE'
  ) THEN RAISE EXCEPTION 'Universal TOTP Storage guard missing'; END IF;
+ IF EXISTS (
+   SELECT 1 FROM pg_roles pr
+   CROSS JOIN LATERAL unnest(pr.rolconfig) AS conf
+   WHERE pr.rolname='authenticator'
+     AND conf='pgrst.db_pre_request=public.ceac_require_google_aal2'
+ ) THEN
+   RAISE EXCEPTION 'Legacy Google-only pre-request hook survived provider-neutral reconciliation';
+ END IF;
+ IF EXISTS (
+   SELECT 1 FROM pg_policies WHERE schemaname='storage'
+     AND ((tablename='objects' AND policyname IN (
+       'CEAC Google AAL2 read objects','CEAC Google AAL2 insert objects',
+       'CEAC Google AAL2 update objects','CEAC Google AAL2 delete objects'
+     )) OR (tablename='buckets' AND policyname='CEAC Google AAL2 read buckets'))
+ ) THEN
+   RAISE EXCEPTION 'Legacy restrictive Google-only Storage policy survived';
+ END IF;
+ IF NOT EXISTS (
+   SELECT 1 FROM pg_policies WHERE schemaname='storage'
+     AND tablename='buckets'
+     AND policyname='stage2_universal_totp_bucket_gate'
+     AND permissive='RESTRICTIVE'
+     AND cmd='SELECT'
+     AND roles @> ARRAY['authenticated'::name]
+ ) THEN
+   RAISE EXCEPTION 'Provider-neutral restrictive Storage bucket gate missing';
+ END IF;
  IF (SELECT universal_totp_required FROM public.organisations
        WHERE id='10000000-0000-4000-8000-000000000010') THEN
    RAISE EXCEPTION 'Stage 2 migration improperly enabled production-shaped MFA flag';
