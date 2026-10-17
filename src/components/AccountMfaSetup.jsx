@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { verifiedMfaFactors } from "../lib/mfaPolicy";
 import { humanError } from "../lib/productLanguage";
+import { hasSignedTotpAssurance } from "../lib/Stage2UniversalMfaPolicy";
 
 // This surface only manages the signed-in person's own Auth factors.
 // Neither the service-role credential nor any colleague's MFA secrets belong here.
@@ -11,7 +12,7 @@ export default function AccountMfaSetup({ onVerified }) {
   const [busy, setBusy] = useState(false);
   const [factors, setFactors] = useState([]);
   const [selectedFactorId, setSelectedFactorId] = useState(null);
-  const [level, setLevel] = useState("aal1");
+  const [totpAssured, setTotpAssured] = useState(false);
   const [setup, setSetup] = useState(null);
   const [code, setCode] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -30,14 +31,21 @@ export default function AccountMfaSetup({ onVerified }) {
   }
 
   async function refresh() {
-    const [factorResult, assuranceResult] = await Promise.all([
+    // Deny backup-factor actions while fresh provider assurance is unresolved.
+    setStatusReady(false);
+    setTotpAssured(false);
+    const [factorResult, assuranceResult, claimsResult] = await Promise.all([
       supabase.auth.mfa.listFactors(),
       supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+      supabase.auth.getClaims(),
     ]);
-    if (factorResult.error) throw factorResult.error;
-    if (assuranceResult.error) throw assuranceResult.error;
+    for (const result of [factorResult, assuranceResult, claimsResult]) {
+      if (result.error) throw result.error;
+    }
     recordVerifiedFactors(factorResult.data);
-    setLevel(assuranceResult.data?.currentLevel || "aal1");
+    setTotpAssured(hasSignedTotpAssurance({
+      assurance: assuranceResult.data, claims: claimsResult.data?.claims,
+    }));
     setStatusReady(true);
   }
 
@@ -45,15 +53,19 @@ export default function AccountMfaSetup({ onVerified }) {
     let active = true;
     (async () => {
       try {
-        const [factorResult, assuranceResult] = await Promise.all([
+        const [factorResult, assuranceResult, claimsResult] = await Promise.all([
           supabase.auth.mfa.listFactors(),
           supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+          supabase.auth.getClaims(),
         ]);
         if (!active) return;
-        if (factorResult.error) throw factorResult.error;
-        if (assuranceResult.error) throw assuranceResult.error;
+        for (const result of [factorResult, assuranceResult, claimsResult]) {
+          if (result.error) throw result.error;
+        }
         recordVerifiedFactors(factorResult.data);
-        setLevel(assuranceResult.data?.currentLevel || "aal1");
+        setTotpAssured(hasSignedTotpAssurance({
+          assurance: assuranceResult.data, claims: claimsResult.data?.claims,
+        }));
         setStatusReady(true);
       } catch (err) {
         if (active) setError(humanError(err, "Authenticator status could not be loaded."));
@@ -65,7 +77,7 @@ export default function AccountMfaSetup({ onVerified }) {
   }, []);
 
   async function startEnrollment() {
-    if (busy || setup || (factors.length > 0 && level !== "aal2")) return;
+    if (busy || !statusReady || setup || (factors.length > 0 && !totpAssured)) return;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -146,10 +158,11 @@ export default function AccountMfaSetup({ onVerified }) {
   }
 
   const enrolled = factors.length > 0;
-  const needsStepUp = enrolled && level !== "aal2";
-  // A verified AAL2 user may enrol one independent backup authenticator
-  // BEFORE losing the primary. Password-only sessions cannot add a backup.
-  const canAddBackup = enrolled && level === "aal2" && factors.length < 2;
+  // Supabase AAL2 from a different MFA method does not satisfy CEAC TOTP.
+  // Its verified TOTP challenge MUST remain visible, and it cannot enrol a
+  // backup authenticator until the current signed session proves TOTP.
+  const needsStepUp = enrolled && !totpAssured;
+  const canAddBackup = enrolled && totpAssured && factors.length < 2;
 return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
       <p className="screen-note">
       An authenticator app provides the required second check for your CEAC account.
@@ -157,13 +170,19 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
     </p>
     {loading && <p role="status" aria-busy="true">Checking your authenticator...</p>}
     {!loading && statusReady && !error && <p role="status">
-      {level === "aal2"
+      {totpAssured
         ? "This session has verified two-step access."
         : enrolled
           ? "An authenticator is registered. Verify a code to strengthen this session."
           : "No verified authenticator is registered for this account."}
     </p>}
-    {error && <div className="flag flag-brick" role="alert">{error}</div>}
+    {!loading && statusReady && needsStepUp && <p className="screen-note">
+      If your authenticator devices are unavailable, request an independently verified
+      account recovery through established CEAC Administration channels.
+      A password reset cannot bypass the required TOTP check.
+      Never share your password or authenticator codes.
+    </p>}
+    {error && <div className="flag flag-brick" role="alert">{error}</div>
     {notice && <p role="status" className="pill p-green">{notice}</p>}
     {/* Auth token refresh can remount this account screen, discarding a brief
         success toast. Persist the factual backup status via the provider list

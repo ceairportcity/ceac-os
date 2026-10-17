@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { decideUniversalTotpAccess, shouldRecheckUniversalTotp } from "../src/lib/Stage2UniversalMfaPolicy.js";
+import { decideUniversalTotpAccess, shouldRecheckUniversalTotp, hasSignedTotpAssurance } from "../src/lib/Stage2UniversalMfaPolicy.js";
 
 const user = { id: "53e591aa-e33c-4bca-94f0-4f5b6d5e7319" };
 const session = { user };
@@ -68,7 +68,10 @@ test("verified backup authenticator can be selected without granting an unverifi
   assert.match(source, /aria-label="Authenticator device"/);
   assert.match(source, /factor\.id === selectedFactorId/);
   assert.match(source, /CEAC backup authenticator/);
-  assert.match(source, /factors\.length > 0 && level !== "aal2"/);
+  assert.ok(source.includes("factors.length > 0 && !totpAssured"));
+  assert.ok(source.includes("hasSignedTotpAssurance("));
+  assert.match(source, /const needsStepUp = enrolled && !totpAssured;/);
+  assert.ok(source.includes("const canAddBackup = enrolled && totpAssured && factors.length < 2;"));
   assert.match(source, /setSelectedFactorId\(event\.target\.value\)/);
 });
 
@@ -88,4 +91,18 @@ test("password recovery is subject to the same fail-closed recheck as sign-in", 
   assert.equal(judge("aal1", ["recovery"]).state, "challenge");
   assert.equal(judge("aal1", ["recovery"], { totp: [] }).state, "enroll");
   assert.equal(judge("aal2", ["recovery", "totp"]).state, "allow");
+});
+
+test("non-TOTP AAL2 keeps the challenge visible and cannot unlock backup enrollment", () => {
+  const assurance = { currentLevel: "aal2" };
+  assert.equal(hasSignedTotpAssurance({ assurance, claims: claims("aal2", ["phone"]) }), false);
+  assert.equal(hasSignedTotpAssurance({ assurance, claims: claims("aal2", ["otp"]) }), false);
+  assert.equal(hasSignedTotpAssurance({ assurance, claims: claims("aal2", ["totp"]) }), true);
+  assert.equal(hasSignedTotpAssurance({ assurance: { currentLevel: "aal1" }, claims: claims("aal2", ["totp"]) }), false);
+  assert.equal(hasSignedTotpAssurance({ assurance, claims: { ...claims("aal2", ["totp"]), role: "service_role" } }), false);
+  const source = readFileSync(new URL("../src/components/AccountMfaSetup.jsx", import.meta.url), "utf8");
+  assert.ok(source.includes("supabase.auth.getClaims()"),
+    "Authenticator UI must check signed session claims, not the assurance label alone");
+  assert.match(source, /const needsStepUp = enrolled && !totpAssured;/);
+  assert.match(source, /A password reset cannot bypass the required TOTP check/);
 });

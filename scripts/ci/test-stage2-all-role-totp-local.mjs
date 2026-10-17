@@ -158,6 +158,22 @@ try {
       label + " signed TOTP must restore its own protected REST profile read");
   }
 
+  // Prove the real local Edge HTTP entry rejects malformed or oversized
+  // unauthenticated JSON BEFORE the "worker" dispatcher can examine a key.
+  // Pure source tests alone do not prove the deployed Deno HTTP behaviour.
+  for (const [label, payload] of [
+    ["non-object JSON", '["worker"]'],
+    ["oversized worker payload", JSON.stringify({ action: "worker", data: "x".repeat(32 * 1024) })],
+  ]) {
+    const response = await fetch(edgeUrl, {
+      method: "POST",
+      headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: payload,
+    });
+    assert.equal(response.status, 400,
+      label + " must be rejected by the actual local Edge JSON guard, not worker authentication");
+  }
+
   // Real Edge Function runtime, local disposable GoTrue tokens and service
   // capability decisions: a verified Admin reaches only the authorised
   // health lookup, whereas anonymous, fresh AAL1 and unprivileged AAL2 cannot.
@@ -320,6 +336,8 @@ try {
     .update({ active: false }).eq("id", soleAuthorityId);
   assert.ok(blockedSelfDeactivation.error,
     "A signed-in AAL2 administrator may not deactivate the organisation's last authority holder");
+  assert.match(blockedSelfDeactivation.error.message, /last person who can manage authority/i,
+    "Denial must come from the last-authority invariant, not an unrelated RLS or connectivity failure");
   const stillActive = await service.from("profiles")
     .select("active").eq("id", soleAuthorityId).single();
   if (stillActive.error) throw stillActive.error;

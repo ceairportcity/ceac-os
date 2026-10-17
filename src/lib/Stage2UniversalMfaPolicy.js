@@ -6,6 +6,16 @@
  * Supabase JWT fields: aal and amr[].method (including 'totp').
  * Claims MUST come from a verified token, not user-editable metadata.
  */
+// Only verified provider claims from auth.getClaims() may be supplied.
+// Raw decoded JWTs, user metadata or an AAL2 number alone are not authority.
+export function hasSignedTotpAssurance({ assurance, claims } = {}) {
+  return assurance?.currentLevel === "aal2"
+    && claims?.role === "authenticated"
+    && claims?.aal === "aal2"
+    && Array.isArray(claims?.amr)
+    && claims.amr.some((entry) => entry?.method === "totp");
+}
+
 export function decideUniversalTotpAccess({ session, assurance, factors, claims } = {}) {
   if (!session?.user?.id) return { state: "signed_out", reason: "session_required" };
   if (!claims || claims.sub !== session.user.id || claims.role !== "authenticated") {
@@ -16,9 +26,7 @@ export function decideUniversalTotpAccess({ session, assurance, factors, claims 
     : null;
   if (!totp) return { state: "enroll", reason: "verified_totp_required" };
 
-  const methods = Array.isArray(claims.amr) ? claims.amr : [];
-  const usedTotp = methods.some((entry) => entry && entry.method === "totp");
-  if (assurance?.currentLevel === "aal2" && claims.aal === "aal2" && usedTotp) {
+  if (hasSignedTotpAssurance({ assurance, claims })) {
     return { state: "allow", reason: "verified_totp_aal2", factor: null };
   }
   return { state: "challenge", reason: "fresh_totp_challenge_required", factor: totp };
