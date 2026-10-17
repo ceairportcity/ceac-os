@@ -373,6 +373,9 @@ export default function App() {
   }
 
   function pageForTab() {
+    // Unit Managers can lead several units. Remount current-unit content on
+    // a headship switch so previous-unit drafts and request state cannot leak.
+    const managerScopeKey = `${me.org_id}:${me.id}:${me.unit_id || "none"}`;
     if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
     if (tab === "achievements") return <PersonalAchievements me={me} back={() => go("me")} openItem={openItem} />;
@@ -384,16 +387,16 @@ export default function App() {
     if (tab === "home") {
       if (me.is_exec) return <ExecutiveHome me={me} openMeeting={openMeeting} scheduleMeeting={startMeeting} go={go} />;
       if (me.is_admin) return <AdminHome key={`${me.org_id}:${me.id}`} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} openSettings={() => go("settings")} openUnits={() => go("units")} openPeopleAccess={openPeopleAccess} go={go} />;
-      if (isManager) return <ManagerHome me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
+      if (isManager) return <ManagerHome key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
       return <Home me={me} session={session} setSession={setSession} openItem={openItem} openMeeting={openMeeting} openRoom={openRoom} openWork={() => go("work")} openMe={() => go("me")} openAnnouncements={() => go("announcements")} openTeam={() => go("team")} openCalendar={() => go("staff-calendar")} />;
     }
     if (tab === "team") return isManager
-      ? <Team me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
+      ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
       : <StaffTeam me={me} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />;
     if (tab === "work") {
       if (isExec) return <ExecutiveWork me={me} openItem={openItem} goAssign={startAssignment} />;
       if (isAdmin) return <AdminWork me={me} openItem={openItem} goAssign={startAssignment} />;
-      if (isUnitManager) return <ManagerWork me={me} openItem={openItem} goAssign={startAssignment} />;
+      if (isUnitManager) return <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
       return <Work me={me} isManager={false} openItem={openItem} />;
     }
     if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} />;
@@ -405,10 +408,10 @@ export default function App() {
       initialView={createIntent === "message_room" ? "rooms" : null}
       onInitialViewHandled={() => setCreateIntent(null)}
     />;
-    if (tab === "projects" && isUnitManager) return <ManagerProjects me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
-    if (tab === "calendar" && isUnitManager) return <ManagerCalendar me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
-    if (tab === "manager-finance" && isUnitManager) return <ManagerFinance me={me} openProject={openProject} />;
-    if (tab === "manager-reports" && isUnitManager) return <ManagerReports me={me} openItem={openItem} openProject={openProject} />;
+    if (tab === "projects" && isUnitManager) return <ManagerProjects key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
+    if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
+    if (tab === "manager-finance" && isUnitManager) return <ManagerFinance key={managerScopeKey} me={me} openProject={openProject} />;
+    if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} />;
     if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation me={me} />;
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
     if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} />;
@@ -582,7 +585,7 @@ export default function App() {
                 initialSourceRoomId={assigning.sourceRoomId}
                 initialSourceMessageId={assigning.sourceMessageId}
                 back={() => setAssigning(null)} />
-            : projectId && isUnitManager ? <ManagerProjects me={me} initialProjectId={projectId} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(id, reference) => openRoom({ kind: "project", projectId: id, reference })} back={closeUrlOverlay} />
+            : projectId && isUnitManager ? <ManagerProjects key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${projectId}`} me={me} initialProjectId={projectId} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(id, reference) => openRoom({ kind: "project", projectId: id, reference })} back={closeUrlOverlay} />
             : goalId ? <Goals id={goalId} me={me} back={() => setGoalId(null)} />
             : person && isManager ? <PersonDetail me={me} profileId={person.id} focus={person.focus} openItem={openItem} openProject={openProject} back={() => setPerson(null)} />
             : roomContext ? <Room me={me} context={roomContext} back={closeRoom} openItem={openItem} openProject={openProject} scheduleMeeting={startMeeting} openAnnouncements={() => go("announcements")} onRoomChange={openRoom} startWorkFromMessage={isManager ? startAssignment : null} />

@@ -34,7 +34,12 @@ test('one Manager account keeps two headships across switching and reload', asyn
     await expect(switcher.locator('option')).toHaveCount(2);
     await switcher.selectOption(unit); await expect(switcher).toHaveValue(unit);
     await page.reload(); await expect(page.getByRole('combobox',{name:'Current unit'}).first()).toHaveValue(unit);
+    // The Report panel must refresh as a new unit-scoped surface, not reuse
+    // evidence or authoring state from the previous Manager headship.
+    await page.goto('/?tab=manager-reports');
+    await expect(page.locator('.ev2-reporting-manager .ev2rep-eyebrow')).toHaveText('Foundation second responsibility');
     await page.getByRole('combobox',{name:'Current unit'}).first().selectOption(first);
+    await expect(page.locator('.ev2-reporting-manager .ev2rep-eyebrow')).toHaveText('Foundation first responsibility');
     await expect(page.locator('.manager-app')).toBeVisible();
     const memberships=await service.from('unit_memberships').select('unit_id,role').eq('profile_id',manager).eq('role','manager');
     expect(memberships.data).toHaveLength(2);

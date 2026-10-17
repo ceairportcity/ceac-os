@@ -139,3 +139,14 @@ test("switching units or selected projects invalidates previous Project response
   }
   assert.doesNotMatch(screen, /\{proposals\.filter\(/);
 });
+
+test("all Manager unit-scoped panels discard previous headship state", () => {
+  const app = file("src/App.jsx");
+  assert.ok(app.includes('const managerScopeKey = `${me.org_id}:${me.id}:${me.unit_id || "none"}`;'));
+  for (const name of ["ManagerHome", "ManagerWork", "ManagerProjects",
+    "ManagerCalendar", "ManagerFinance", "ManagerReports", "Team"]) {
+    assert.ok(app.includes(`<${name} key={managerScopeKey}`),
+      `unit-scoped route does not remount on switching: ${name}`);
+  }
+  assert.ok(app.includes('<ManagerProjects key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${projectId}`}'));
+});
