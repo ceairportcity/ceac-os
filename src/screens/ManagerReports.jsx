@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { isIssuedUnitReport } from "../lib/ministryReportingFacts";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { Sheet, ProductNotice, FieldGroup } from "../components/bits";
@@ -82,6 +83,8 @@ export default function ManagerReports({ me, openItem }) {
   const [loadFailed, setLoadFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [periodRowsState, setPeriodRowsState] = useState("loading");
+  const historyRequestRef = useRef(0);
 
   useEffect(() => { loadBase(); }, [me.id, me.unit_id]);
 
@@ -138,8 +141,12 @@ export default function ManagerReports({ me, openItem }) {
     if (!range || !memberIds.length) {
       setSessions([]);
       setSubmissions([]);
+      setPeriodRowsState("ready");
       return;
     }
+    setSessions([]);
+    setSubmissions([]);
+    setPeriodRowsState("loading");
     let cancelled = false;
     async function loadPeriodRows() {
       const start = new Date(range.start + "T00:00:00");
@@ -166,18 +173,20 @@ export default function ManagerReports({ me, openItem }) {
       if (cancelled) return;
       const periodError = sessionResult.error || submissionResult.error;
       if (periodError) {
+        setPeriodRowsState("error");
         setError(periodError.message);
         return;
       }
       setSessions(sessionResult.data || []);
       setSubmissions(submissionResult.data || []);
+      setPeriodRowsState("ready");
     }
     loadPeriodRows();
     return () => { cancelled = true; };
   }, [range?.start, range?.end, mode, projectId, memberIds.join(","), work]);
 
   const evidence = useMemo(() => {
-    if (!range) return null;
+    if (!range || periodRowsState !== "ready") return null;
     const projectFilter = mode === "project" ? (row) => row.project_id === projectId : () => true;
     const relevantWork = work.filter(projectFilter);
     const completed = relevantWork.filter((row) => ["task", "deliverable"].includes(row.kind) && COMPLETE.has(row.status) && within(localDate(row.completed_at), range.start, range.end));
@@ -190,7 +199,7 @@ export default function ManagerReports({ me, openItem }) {
     const activeProjects = projects.filter((project) => relevantWork.some((row) => row.project_id === project.id));
     const relevantObjectives = objectives.filter((objective) => mode !== "project" || objective.project_id === projectId);
     return { relevantWork, completed, due, overdue, periodSubmissions, periodSessions, attendanceDays, activeProjects, relevantObjectives };
-  }, [range, mode, projectId, work, submissions, sessions, projects, objectives]);
+  }, [range, mode, projectId, work, submissions, sessions, projects, objectives, periodRowsState]);
 
   const daily = useMemo(() => {
     if (!range || !evidence) return [];
@@ -238,6 +247,7 @@ export default function ManagerReports({ me, openItem }) {
   const scope = mode === "project" ? "project" : "unit";
 
   useEffect(() => {
+    historyRequestRef.current += 1;
     setSelectedReportId(null);
     setReportRefs([]);
     setHistory([]);
@@ -247,6 +257,7 @@ export default function ManagerReports({ me, openItem }) {
 
   async function loadHistory(preferDraft = true) {
     if (!matchingPeriod) return;
+    const request = ++historyRequestRef.current;
     let query = supabase.from("reports")
       .select("id,period_id,scope,unit_id,project_id,narrative,challenges,status,version,correction_reason,supersedes_report_id,evidence,submitted_at,submitted_by")
       .eq("period_id", matchingPeriod.id)
@@ -255,11 +266,12 @@ export default function ManagerReports({ me, openItem }) {
       .order("version", { ascending: false });
     query = scope === "project" ? query.eq("project_id", projectId) : query.is("project_id", null);
     const result = await query;
+    if (request !== historyRequestRef.current) return;
     if (result.error) { setError(result.error.message); return; }
     const rows = result.data || [];
     setHistory(rows);
     const draft = rows.find((row) => row.status === "draft");
-    const latestSubmitted = rows.find((row) => row.status === "submitted");
+    const latestSubmitted = rows.find(isIssuedUnitReport);
     if (preferDraft && draft) {
       setSelectedReportId(null);
       setNarrative(draft.narrative || "");
@@ -291,7 +303,7 @@ export default function ManagerReports({ me, openItem }) {
   }
 
   const draft = history.find((row) => row.status === "draft") || null;
-  const latestSubmitted = history.find((row) => row.status === "submitted") || null;
+  const latestSubmitted = history.find(isIssuedUnitReport) || null;
   const frozenReport = selectedReportId ? history.find((row) => row.id === selectedReportId) || null : (!draft ? latestSubmitted : null);
   const frozen = frozenReport?.evidence || null;
   const viewingFrozen = Boolean(frozenReport && frozen);
@@ -327,6 +339,7 @@ export default function ManagerReports({ me, openItem }) {
   }
 
   async function saveDraft(showNotice = true) {
+    if (!evidence) throw new Error("Report evidence is still being verified. Please retry after it loads.");
     if (!matchingPeriod || matchingPeriod.status !== "open") throw new Error("Administration must open this reporting period before you can save a report.");
     const result = await supabase.rpc("save_report_draft", {
       p_period_id: matchingPeriod.id,
@@ -436,7 +449,7 @@ export default function ManagerReports({ me, openItem }) {
         ? "Period closed"
         : "Live preview";
 
-  if (loading) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
+  if (loading || (range && periodRowsState === "loading")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
     <ReportingPageHeader
       eyebrow={me.unit_name}
       title="Reports"
@@ -449,7 +462,7 @@ export default function ManagerReports({ me, openItem }) {
     </div>
   </div>;
 
-  if (loadFailed) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
+  if (loadFailed || (range && periodRowsState === "error")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
     <ReportingPageHeader
       eyebrow={me.unit_name}
       title="Reports"

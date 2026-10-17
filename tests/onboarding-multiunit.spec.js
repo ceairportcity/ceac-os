@@ -39,6 +39,9 @@ test('one Manager account keeps two headships across switching and reload', asyn
     await page.goto('/?tab=manager-reports');
     await expect(page.locator('.ev2-reporting-manager .ev2rep-eyebrow')).toHaveText('Foundation second responsibility');
     await page.getByRole('combobox',{name:'Current unit'}).first().selectOption(first);
+    // A headship switch correctly returns to Overview, not to stale Reports.
+    await expect(page).toHaveURL(/tab=home/);
+    await page.goto('/?tab=manager-reports');
     await expect(page.locator('.ev2-reporting-manager .ev2rep-eyebrow')).toHaveText('Foundation first responsibility');
     await expect(page.locator('.manager-app')).toBeVisible();
     const memberships=await service.from('unit_memberships').select('unit_id,role').eq('profile_id',manager).eq('role','manager');

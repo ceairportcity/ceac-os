@@ -52,3 +52,15 @@ test("personal print/export hides the rest of the application, including protect
  assert.match(css,/\.s2-achievement,\.s2-achievement \*\{visibility:visible!important\}/);
  assert.match(css,/@page\{size:A4/);
 });
+
+test("Manager reports verify period evidence and issued versions before showing actionable numbers",()=>{
+ const screen=file("src/screens/ManagerReports.jsx");
+ assert.match(screen,/const \[periodRowsState, setPeriodRowsState\]/);
+ assert.match(screen,/periodRowsState !== "ready"/);
+ assert.match(screen,/periodRowsState === "error"/);
+ assert.match(screen,/historyRequestRef\.current/);
+ assert.match(screen,/import \{ isIssuedUnitReport \} from/);
+ assert.match(screen,/history\.find\(isIssuedUnitReport\)/);
+ assert.match(screen,/rows\.find\(isIssuedUnitReport\)/);
+ assert.match(screen,/Report evidence is still being verified/);
+});
