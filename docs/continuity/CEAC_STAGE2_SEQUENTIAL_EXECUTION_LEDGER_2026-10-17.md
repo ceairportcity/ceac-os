@@ -1,5 +1,8 @@
 # CEAC OS Stage 2 — sequential P0–P9 execution and acceptance ledger
 
+> **17 OCT OWNER EFFICIENCY CORRECTION — P0 ACCEPTED, P1 ACTIVE.** See [P1 finite family/exception review and exact proposed method decision](../design/CEAC_STAGE2_P1_FINITE_FAMILY_REVIEW_2026-10-17.md). Existing V4, role privacy and all 47-route/8-overlay coverage remain mandatory. The owner's requested switch to ten-family sign-off **is proposed and NOT an approved change to existing route-specific sign-off**; obtain explicit method decision before P1 closure. One coherent review package, no endless P1 bespoke mockups; targeted synthetic P1 test cycles are allowed without replacing required stage acceptance or P8 certification. P2–P9 unchanged, production preserved.
+
+
 **Owner execution directive, 17 October 2026. Status: implementation-control source, NOT a production release approval.**
 
 ## 1. Non-negotiable transition and authority
