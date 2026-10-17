@@ -10,7 +10,7 @@
 - **Root app inventory:** `src/App.jsx` at inspected source SHA `9739c96bf328ba168ca1583e23e685ea42e0a9c0`, 47 root tab conditions plus the default `me` screen and eight mounted nested overlays. App source and demo navigation are different domains; a prototype page named Projects does not establish real Projects route/form parity.
 
 ## 2. Exact root-tab audit
-Every row below needs a real applicable-role desktop and 390px phone reference, full working state references (including loading, empty, error and denied), and an explicit review decision. A related **synthetic concept** is not a complete matched route. Generic colour tokens do not count as route-specific acceptance.
+Every row below must be covered by a verified applicable V4 family pattern at representative desktop/phone sizes or an explicitly reviewed material exception. Loading, empty, error, denied and responsive states can inherit a pattern only if its real behaviour, permissions and visual hierarchy are equivalent. This historical direct-screen comparison is **not a 47-bespoke-mockup quota**; see the complete ten-family assignment in the finite review. Synthetic overlap alone does not establish acceptance.
 
 | App root tab | Default role navigation | Current P1 demo overlap | Owner-specific approved reference? |
 | --- | --- | --- | --- |
@@ -63,10 +63,10 @@ Every row below needs a real applicable-role desktop and 390px phone reference, 
 | `office-settings` | conditional, submenu or deep link | No direct P1 full-route reference | No |
 | `me` default fallback | Staff, Manager, Admin, Executive | No complete profile/account fallback reference | No |
 
-**Audit totals:** 47 explicit tabs. 28 have at least a related demonstration concept; 19 lack a direct comparable page, and the `me` fallback has no fully accepted replacement. **0 of the added P1 pages are certified as complete route-specific accepted screens**; this does not revoke the existing four approved *canonical* V4 screenshot references.
+**Historical direct-screen audit totals:** 47 explicit tabs, 28 with related synthetic concepts and 19 without direct equivalents; `me` lacks an individual full-screen acceptance. All 47 are now assigned once to ten reuse families, so **19 missing direct mockups do not automatically mean 19 more mockups must be created**. Family/exception owner acceptance remains incomplete; four previously approved canonical V4 screenshot references remain valid.
 
 ## 3. Mandatory nested, permission and alternate-state review
-The root table above intentionally excludes **all eight** separate mounted overlays, which also need owner-ready desktop/mobile review:
+The root table above intentionally excludes **all eight** separate mounted overlays, each requiring a reviewed reusable desktop/mobile family or a separately approved material exception:
 1. Work Item evidence, reviewer decisions, return/reopen and private files
 2. Assignment: give out work, searchable project/objective linking and later relinking
 3. Unit Manager project deep link, participation/phase/milestone and close
@@ -80,8 +80,8 @@ Also cover login/invitation/password, authenticator TOTP AAL1 setup/challenge/AA
 
 ## 4. Review decision gate
 - `REFERENCE-CANDIDATE` only: code/interactive design exists but owner-specific approval is missing.
-- `REFERENCE-REVIEWED`: recorded actual owner acceptance of exact role/page/state/viewport and fixture hash.
+- `REFERENCE-REVIEWED`: recorded owner acceptance of the applicable visual family and distinct exceptions, with representative role/state/viewport evidence, fixture hashes and explicit inherited-route mapping.
 - `IMPLEMENTED-ACCEPTED`: later P7 functional, server-authority and strict visual parity verified at one exact source SHA.
-- `P1 ACCEPTED` only after full required cross-role desktop/mobile & nested design references and backend/threat contracts, with owner sign-off where mandatory. Missing latest Projects bitmap is an explicit unresolved blocker.
+- `P1 ACCEPTED` only after accepted family references for all 47 routes, `me` and eight overlays; the actual material exceptions, responsive/role/backend/threat contracts and exact revised Projects fixture are resolved and recorded. Method approval alone does not close P1.
 
 **No fabricated visual screenshot sign-off, no weakened RGB <=6 or CSS budget, no automatic progression to P2 and no Stage2 production changes.**
