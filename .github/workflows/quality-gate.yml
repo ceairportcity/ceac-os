@@ -20,6 +20,7 @@ jobs:
     outputs:
       documentation_only: ${{ steps.classify.outputs.documentation_only }}
       level_b: ${{ steps.classify.outputs.level_b }}
+      run_security_contracts: ${{ steps.classify.outputs.run_security_contracts }}
       scope: ${{ steps.classify.outputs.scope }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -57,7 +58,7 @@ jobs:
   security-contracts:
     name: Level B SQL and authority contracts
     needs: classify
-    if: needs.classify.outputs.level_b == 'true'
+    if: needs.classify.outputs.run_security_contracts == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -310,6 +311,7 @@ jobs:
         env:
           DOCUMENTATION_ONLY: ${{ needs.classify.outputs.documentation_only }}
           LEVEL_B: ${{ needs.classify.outputs.level_b }}
+          SECURITY_REQUIRED: ${{ needs.classify.outputs.run_security_contracts }}
           DOCUMENTATION_RESULT: ${{ needs.documentation-integrity.result }}
           SECURITY_RESULT: ${{ needs.security-contracts.result }}
           BROWSER_RESULT: ${{ needs.browser-shard.result }}
@@ -323,6 +325,10 @@ jobs:
             [[ "$BROWSER_RESULT" == "success" ]]
             [[ "$EVIDENCE_RESULT" == "success" ]]
             echo "Level B complete acceptance gate passed."
+          elif [[ "$SECURITY_REQUIRED" == "true" ]]; then
+            # Interim P2 source checks are NOT full browser/P8 acceptance.
+            [[ "$SECURITY_RESULT" == "success" ]]
+            echo "Focused Edge SQL/authority checks passed; browser/P8 not run."
           elif [[ "$DOCUMENTATION_ONLY" == "true" ]]; then
             [[ "$DOCUMENTATION_RESULT" == "success" ]]
             echo "Documentation-only integrity gate passed."

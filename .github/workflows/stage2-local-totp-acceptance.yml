@@ -15,6 +15,9 @@ on:
       - src/components/Stage2UniversalMfaGate.jsx
       - src/components/AccountMfaSetup.jsx
       - tests/stage2UniversalMfaPolicy.test.js
+      - supabase/functions/integration-runtime/index.ts
+      - supabase/functions/integration-runtime/mfa.mjs
+      - tests/integration-runtime.test.mjs
 permissions:
   contents: read
 jobs:
