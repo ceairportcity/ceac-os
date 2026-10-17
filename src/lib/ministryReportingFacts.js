@@ -3,6 +3,30 @@
  * objectives and milestones. No arbitrary weights, staff scores or currency sums.
  */
 const final = status => status === "submitted" || status === "confirmed";
+export const isIssuedUnitReport = report => Boolean(report && final(report.status));
+
+// A submitted unit report remains the current published evidence while its
+// author prepares a later DRAFT correction. Show the latest draft only when
+// the unit has never submitted an issued report. Unknown/returned states are
+// never silently counted as successful filing.
+export function latestUnitReportStatus(reports = []) {
+ const issued = new Map(), drafts = new Map();
+ for (const report of reports) {
+  if (!report?.unit_id) continue;
+  const bucket = isIssuedUnitReport(report) ? issued :
+    report.status === "draft" ? drafts : null;
+  if (!bucket) continue;
+  const key = String(report.unit_id), prior = bucket.get(key);
+  const version = Number(report.version ?? 0), previous = Number(prior?.version ?? 0);
+  if (!prior || version > previous ||
+      (version === previous && String(report.submitted_at || "") > String(prior.submitted_at || "")))
+    bucket.set(key, report);
+ }
+ const result = {};
+ for (const key of new Set([...issued.keys(), ...drafts.keys()]))
+  result[key] = issued.get(key) || drafts.get(key);
+ return result;
+}
 export function ministryPeriodEvidence({unitReports=[],objectives=[],milestones=[],activeUnitIds=[]}={}){
  const latest=new Map();
  for(const report of unitReports){

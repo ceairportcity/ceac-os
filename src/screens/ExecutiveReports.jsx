@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
+import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { humanError } from "../lib/productLanguage";
 import { Skeleton, StatePanel } from "../experience-v2/components";
@@ -61,13 +62,7 @@ export default function ExecutiveReports({ me }) {
         .eq("scope", "unit");
       if (reportResult.error) throw reportResult.error;
 
-      const latest = {};
-      (reportResult.data || []).forEach((report) => {
-        if (!latest[report.unit_id] || Number(report.version) > Number(latest[report.unit_id].version)) {
-          latest[report.unit_id] = report;
-        }
-      });
-      setReports(Object.values(latest));
+      setReports(Object.values(latestUnitReportStatus(reportResult.data || [])));
       // Fetch only already issued organisational reports for Executive briefing.
       // Never retrieve draft narrative or employee HR assessment content.
       const [issued,objectives,milestones] = await Promise.all([
@@ -91,16 +86,16 @@ export default function ExecutiveReports({ me }) {
     }
   }
 
-  const filed = useMemo(() => reports.filter((report) => report.status !== "draft"), [reports]);
+  const filed = useMemo(() => reports.filter(isIssuedUnitReport), [reports]);
   const drafting = useMemo(() => reports.filter((report) => report.status === "draft"), [reports]);
   const waiting = useMemo(
-    () => units.filter((unit) => !reports.some((report) => report.unit_id === unit.id && report.status !== "draft")),
+    () => units.filter((unit) => !reports.some((report) => report.unit_id === unit.id && isIssuedUnitReport(report))),
     [units, reports],
   );
   const unitStatusRows = useMemo(
     () => units.map((unit) => {
       const report = reports.find((row) => row.unit_id === unit.id);
-      const state = report && report.status !== "draft" ? "submitted" : report?.status === "draft" ? "draft" : "waiting";
+      const state = isIssuedUnitReport(report) ? "submitted" : report?.status === "draft" ? "draft" : "waiting";
       return { unit, report, state };
     }),
     [units, reports],

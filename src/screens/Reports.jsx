@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { dateOnly } from "../lib/time";
+import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
 import { Sheet, ProductNotice } from "../components/bits";
 import { Button, Skeleton, StatePanel } from "../experience-v2/components";
 import {
@@ -128,11 +129,7 @@ export default function Reports({ me }) {
 
   function latestFor(periodId) {
     const inPeriod = reports.filter((report) => report.period_id === periodId && report.scope === "unit");
-    const byUnit = {};
-    inPeriod.forEach((report) => {
-      if (!byUnit[report.unit_id] || report.version > byUnit[report.unit_id].version) byUnit[report.unit_id] = report;
-    });
-    return byUnit;
+    return latestUnitReportStatus(inPeriod);
   }
 
   const statusLabel = loading
@@ -191,7 +188,7 @@ export default function Reports({ me }) {
       return null;
     }
     const byUnit = latestFor(open);
-    const filed = units.filter((unit) => byUnit[unit.id] && byUnit[unit.id].status !== "draft");
+    const filed = units.filter((unit) => isIssuedUnitReport(byUnit[unit.id]));
     const drafting = units.filter((unit) => byUnit[unit.id] && byUnit[unit.id].status === "draft");
     const missing = units.filter((unit) => !byUnit[unit.id]);
     const challengesRecorded = filed.filter((unit) => byUnit[unit.id]?.challenges).length;
@@ -342,7 +339,7 @@ export default function Reports({ me }) {
           <div className="ev2rep-list">
             {periods.map((period) => {
               const byUnit = latestFor(period.id);
-              const filed = units.filter((unit) => byUnit[unit.id] && byUnit[unit.id].status !== "draft").length;
+              const filed = units.filter((unit) => isIssuedUnitReport(byUnit[unit.id])).length;
               const drafting = units.filter((unit) => byUnit[unit.id] && byUnit[unit.id].status === "draft").length;
               const missing = units.filter((unit) => !byUnit[unit.id]).length;
               return (

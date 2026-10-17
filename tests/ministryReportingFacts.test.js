@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {ministryPeriodEvidence} from "../src/lib/ministryReportingFacts.js";
+import {ministryPeriodEvidence, latestUnitReportStatus, isIssuedUnitReport} from "../src/lib/ministryReportingFacts.js";
 test("two departments contributing fifty books never create a 100-book organisational outcome",()=>{
  const x=ministryPeriodEvidence({
   unitReports:[{unit_id:"a",version:1,status:"submitted",narrative:"Made 50 books"},{unit_id:"b",version:1,status:"submitted",narrative:"Helped deliver 50 books"},{unit_id:"a",version:2,status:"draft",narrative:"Private pending new revision"}],
@@ -27,4 +27,31 @@ test("latest issued version wins, drafts excluded, no synthetic scores",()=>{
  assert.equal(x.filedReports[0].narrative,"Revised");
  assert.deepEqual(x.filing.missing,["b"]);
  assert.equal(x.rating,undefined);
+});
+
+test("Administration and Executive keep an issued version visible during a later unsubmitted correction",()=>{
+ const latest=latestUnitReportStatus([
+  {unit_id:"media",version:2,status:"submitted",narrative:"The issued record"},
+  {unit_id:"media",version:3,status:"draft",narrative:"Not published"},
+  {unit_id:"tech",version:1,status:"draft",narrative:"Not yet submitted"},
+  {unit_id:"training",version:7,status:"returned",narrative:"Not issued"},
+  {unit_id:"media",version:1,status:"confirmed",narrative:"Earlier approved"},
+ ]);
+ assert.equal(latest.media.version,2,"new draft cannot hide prior issued evidence");
+ assert.equal(latest.media.narrative,"The issued record");
+ assert.equal(latest.tech.status,"draft");
+ assert.equal(latest.training,undefined,"returned is not submitted");
+ assert.equal(isIssuedUnitReport(latest.media),true);
+ assert.equal(isIssuedUnitReport(latest.tech),false);
+ assert.deepEqual(Object.keys(latest).sort(),["media","tech"]);
+});
+test("same-version report revisions prefer the latest issued timestamp and never count unknown statuses",()=>{
+ const latest=latestUnitReportStatus([
+  {unit_id:"a",version:5,status:"submitted",submitted_at:"2026-09-02T09:00:00Z",narrative:"old"},
+  {unit_id:"a",version:5,status:"confirmed",submitted_at:"2026-09-03T10:00:00Z",narrative:"new"},
+  {unit_id:"a",version:6,status:"draft",narrative:"unreleased"},
+  {unit_id:"b",version:1,status:"cancelled",narrative:"invalid"},
+ ]);
+ assert.equal(latest.a.narrative,"new");
+ assert.equal(latest.b,undefined);
 });
