@@ -400,6 +400,23 @@ try {
       assert.ok(deniedLink.error && !deniedLink.data,
         label + " fresh AAL1 must not mint a signed private Storage URL");
     }
+    if (label === "Staff") {
+      // Even after a previously verified session on this same Auth client,
+      // explicit sign-out must clear its bearer; re-sign-in is a fresh AAL1
+      // session, never a remembered TOTP-approved session.
+      const signedOut = await newLogin.auth.signOut();
+      if (signedOut.error) throw signedOut.error;
+      const afterSignOut = await newLogin.auth.getSession();
+      if (afterSignOut.error) throw afterSignOut.error;
+      assert.equal(afterSignOut.data.session, null,
+        "Explicit sign-out must remove the local signed-in session");
+      await signIn(newLogin, email);
+      await sessionLevel(newLogin, "Staff login after explicit sign-out", "aal1");
+      assert.equal(await orgIdentity(newLogin, "Staff post-logout AAL1"), null,
+        "Same-device sign-out and password login must not inherit verified TOTP");
+      assert.deepEqual(await ownProfileRows(newLogin, "Staff post-logout AAL1"), [],
+        "Fresh post-logout AAL1 must remain blocked by actual profile RLS");
+    }
   }
 
   // Real-provider P2 last-authority negative test. The isolated fixture has
@@ -468,6 +485,16 @@ try {
   const oldAccess = await recoverySubject.rpc("app_org_id");
   assert.ok(oldAccess.error || oldAccess.data == null,
     "Verified-factor revocation must revoke or deny the old AAL2 bearer");
+  assert.ok([401, 403].includes(await edgeStatus(recoverySubject)),
+    "Removed authenticator must not leave a privileged Edge bearer usable");
+  const revokedFactorDownload = await recoverySubject.storage
+    .from(portraitBucket).download(portraitObject);
+  assert.ok(revokedFactorDownload.error && !revokedFactorDownload.data,
+    "A removed TOTP factor must not retain direct private Storage reads");
+  const revokedFactorLink = await recoverySubject.storage
+    .from(portraitBucket).createSignedUrl(portraitObject, 60);
+  assert.ok(revokedFactorLink.error && !revokedFactorLink.data?.signedUrl,
+    "A removed TOTP factor must not mint new private Storage URLs");
 
   const replacementSession = create(SUPABASE_ANON_KEY);
   sessions.push(replacementSession);
