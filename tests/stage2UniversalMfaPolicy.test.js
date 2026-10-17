@@ -61,3 +61,12 @@ test("token refresh and sign out invalidate previously visible workspace before 
   assert.match(gate, /if \(currentGeneration !== generation\.current\) return;/);
   assert.match(gate, /if \(state === "allow"\) return children;/);
 });
+
+test("verified backup authenticator can be selected without granting an unverified factor", () => {
+  const source = readFileSync(new URL("../src/components/AccountMfaSetup.jsx", import.meta.url), "utf8");
+  assert.match(source, /aria-label="Authenticator device"/);
+  assert.match(source, /factor\.id === selectedFactorId/);
+  assert.match(source, /CEAC backup authenticator/);
+  assert.match(source, /factors\.length > 0 && level !== "aal2"/);
+  assert.match(source, /setSelectedFactorId\(event\.target\.value\)/);
+});

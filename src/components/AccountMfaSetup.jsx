@@ -10,12 +10,24 @@ export default function AccountMfaSetup({ onVerified }) {
   const [statusReady, setStatusReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [factors, setFactors] = useState([]);
+  const [selectedFactorId, setSelectedFactorId] = useState(null);
   const [level, setLevel] = useState("aal1");
   const [setup, setSetup] = useState(null);
   const [code, setCode] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
+
+
+  // A backup factor is a separate verified provider factor. Keep the user's
+  // selection only while it remains present in the provider's own factor list.
+  function recordVerifiedFactors(data) {
+    const active = verifiedMfaFactors(data || {})
+      .filter((factor) => factor.factor_type === "totp");
+    setFactors(active);
+    setSelectedFactorId((previous) =>
+      active.some((factor) => factor.id === previous) ? previous : active[0]?.id || null);
+  }
 
   async function refresh() {
     const [factorResult, assuranceResult] = await Promise.all([
@@ -24,8 +36,7 @@ export default function AccountMfaSetup({ onVerified }) {
     ]);
     if (factorResult.error) throw factorResult.error;
     if (assuranceResult.error) throw assuranceResult.error;
-    setFactors(verifiedMfaFactors(factorResult.data || {})
-      .filter((factor) => factor.factor_type === "totp"));
+    recordVerifiedFactors(factorResult.data);
     setLevel(assuranceResult.data?.currentLevel || "aal1");
     setStatusReady(true);
   }
@@ -41,8 +52,7 @@ export default function AccountMfaSetup({ onVerified }) {
         if (!active) return;
         if (factorResult.error) throw factorResult.error;
         if (assuranceResult.error) throw assuranceResult.error;
-        setFactors(verifiedMfaFactors(factorResult.data || {})
-          .filter((factor) => factor.factor_type === "totp"));
+        recordVerifiedFactors(factorResult.data);
         setLevel(assuranceResult.data?.currentLevel || "aal1");
         setStatusReady(true);
       } catch (err) {
@@ -55,14 +65,14 @@ export default function AccountMfaSetup({ onVerified }) {
   }, []);
 
   async function startEnrollment() {
-    if (busy || setup) return;
+    if (busy || setup || (factors.length > 0 && level !== "aal2")) return;
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
       const { data, error: failure } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "CEAC authenticator",
+        friendlyName: factors.length ? "CEAC backup authenticator" : "CEAC authenticator",
       });
       if (failure) throw failure;
       if (!data?.id || !data?.totp) throw new Error("Authenticator setup was not returned.");
@@ -88,7 +98,9 @@ export default function AccountMfaSetup({ onVerified }) {
       setError("Enter the six-digit code shown by your authenticator app.");
       return;
     }
-    const factorId = setup?.id || factors[0]?.id;
+    const factorId = setup?.id || (
+      factors.some((factor) => factor.id === selectedFactorId) ? selectedFactorId : factors[0]?.id
+    );
     if (!factorId) {
       setError("Set up an authenticator before verifying a code.");
       return;
@@ -187,6 +199,28 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
 
     {!loading && statusReady && (setup || needsStepUp) &&
       <div className="auth-form">
+        {needsStepUp && factors.length > 1 &&
+          <label className="auth-field">
+            <span>Authenticator device</span>
+            <select
+              aria-label="Authenticator device"
+              value={selectedFactorId || factors[0]?.id || ""}
+              onChange={(event) => {
+                setSelectedFactorId(event.target.value);
+                setCode("");
+                setError(null);
+              }}
+              disabled={busy}
+            >
+              {factors.map((factor, index) =>
+                <option key={factor.id} value={factor.id}>
+                  {factor.friendly_name === "CEAC backup authenticator"
+                    ? "Backup authenticator"
+                    : factor.friendly_name || `Authenticator ${index + 1}`}
+                </option>
+              )}
+            </select>
+          </label>}
         <label className="auth-field">
           <span>Six-digit authenticator code</span>
           <input

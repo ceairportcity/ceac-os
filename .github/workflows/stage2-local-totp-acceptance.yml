@@ -52,7 +52,7 @@ jobs:
           done
           cat /tmp/ceac-local-mfa-vite.log
           exit 1
-      - name: Verify universal TOTP gate: wrong code, backup factor, refresh and fresh device
+      - name: "Verify universal TOTP gate: wrong code, backup factor, refresh and fresh device"
         env:
           CEAC_LOCAL_TOTP_UI: '1'
         run: npx playwright test tests/account-mfa-local-only.spec.js --workers=1

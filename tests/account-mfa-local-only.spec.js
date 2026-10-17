@@ -120,6 +120,9 @@ test("universal Stage 2 gate enforces TOTP on initial and new-browser sign-in wi
     await passwordSignIn(nextPage, "staff@ceac.local.test");
     await expect(nextPage.getByRole("heading",{name:"Verify your authenticator"})).toBeVisible({timeout:15000});
     await expect(nextPage.locator(".app")).toHaveCount(0);
+    const factorChoice = nextPage.getByRole("combobox", { name: "Authenticator device" });
+    await expect(factorChoice).toBeVisible();
+    await factorChoice.selectOption({ label: "Backup authenticator" });
     // The independent backup factor works even without the primary device.
     await nextPage.getByRole("textbox",{name:"Authenticator verification code"}).fill(currentCode(backupSecret));
     await nextPage.getByRole("button",{name:"Verify authenticator"}).click();
