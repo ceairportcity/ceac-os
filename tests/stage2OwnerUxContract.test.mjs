@@ -461,3 +461,62 @@ test("P0 nested overlays trace the exact eight source modules and their direct d
   assert.ok(byName["personal-goal"].directTables.includes("personal_goals"));
   assert.ok(byName.meeting.directTables.includes("meeting_private_notes"));
 });
+
+test("P1 connected V4 role demo stays synthetic, responsive and mechanically interactive", async () => {
+  const { Script, runInNewContext } = await import("node:vm");
+  const html = file("docs/design/stage2-v4/CEAC_STAGE2_P1_CONNECTED_ROLE_REVIEW.html");
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(script, "standalone P1 preview lost its interactive source");
+  new Script(script, { filename: "p1-connected-role-review.inline.js" });
+  for (const visualToken of ["--bg:#f5f8fc", "--surface:#fff", "--nav:#fff",
+    "--ink:#122440", "--blue:#1368ed", "--line:#e7edf4", "@media(max-width:520px)"]) {
+    assert.ok(html.includes(visualToken), "approved V4 token or mobile rule missing: " + visualToken);
+  }
+  for (const role of ["staff", "manager", "support", "admin", "executive", "volunteer"]) {
+    assert.ok(html.includes('<option value="' + role + '">'), "role preview missing: " + role);
+  }
+  assert.match(html, /Owner review candidate, NOT application acceptance/);
+  assert.match(html, /No actual changes will be saved/);
+  assert.doesNotMatch(html, /<script[^>]+src=|XMLHttpRequest|fetch\(|WebSocket\(/);
+  const events = {};
+  const elements = new Map();
+  const get = (id) => {
+    if (!elements.has(id)) elements.set(id, {
+      value: "staff", innerHTML: "", textContent: "",
+      addEventListener: (type, fn) => { events[id + ":" + type] = fn; },
+    });
+    return elements.get(id);
+  };
+  const document = {
+    getElementById: get, querySelector: () => null,
+    addEventListener: (type, fn) => { events["document:" + type] = fn; },
+  };
+  runInNewContext(script, { document, window: { scrollTo() {} } }, { timeout: 2000 });
+  assert.match(get("navigation").innerHTML, /My work/);
+  assert.match(get("screen").innerHTML, /My work session/);
+  const switchRole = (role) => {
+    get("role").value = role;
+    events["role:change"]({ target: get("role") });
+  };
+  switchRole("admin");
+  assert.match(get("navigation").innerHTML, /Protected HR/);
+  assert.match(get("screen").innerHTML, /Administration overview/);
+  switchRole("executive");
+  assert.match(get("navigation").innerHTML, /Strategy &amp; outcomes|Strategy & outcomes/);
+  assert.doesNotMatch(get("navigation").innerHTML, /Protected HR/);
+  switchRole("volunteer");
+  assert.match(get("screen").innerHTML, /without employment attendance/);
+  assert.doesNotMatch(get("navigation").innerHTML, /Payroll/);
+  switchRole("manager");
+  events["document:click"]({ target: {
+    closest: () => ({ dataset: { page: "work" } }),
+  } });
+  assert.match(get("screen").innerHTML, /Give out work/);
+  events["document:click"]({ target: {
+    closest: () => ({ dataset: { action: "give-work" } }),
+  } });
+  assert.match(get("modal").innerHTML, /Give out work/);
+  assert.match(get("modal").innerHTML, /No actual changes will be saved/);
+  events["document:click"]({ target: { closest: () => ({ dataset: { action: "close" } }) } });
+  assert.equal(get("modal").innerHTML, "");
+});
