@@ -302,6 +302,42 @@ try {
     }
   }
 
+  // Real-provider P2 last-authority negative test. The isolated fixture has
+  // exactly one holder of authority.manage; even an authenticated AAL2 Admin
+  // must not be allowed to deactivate that last holder, including themselves.
+  // Check the atomic rollback, not just an error message. All checks remain
+  // against disposable local GoTrue/PostgREST, never hosted production.
+  const soleAuthorityId = "31000000-0000-4000-8000-000000000003";
+  const liveAuthority = await service.from("capability_grants")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .eq("capability", "authority.manage")
+    .is("revoked_at", null);
+  if (liveAuthority.error) throw liveAuthority.error;
+  assert.equal(liveAuthority.count, 1,
+    "Isolated fixture must have exactly one authority holder for the fail-closed check");
+  const blockedSelfDeactivation = await sessions[2].from("profiles")
+    .update({ active: false }).eq("id", soleAuthorityId);
+  assert.ok(blockedSelfDeactivation.error,
+    "A signed-in AAL2 administrator may not deactivate the organisation's last authority holder");
+  const stillActive = await service.from("profiles")
+    .select("active").eq("id", soleAuthorityId).single();
+  if (stillActive.error) throw stillActive.error;
+  assert.equal(stillActive.data.active, true,
+    "Denied last-holder deactivation must leave the administrator active");
+  const remainingAuthority = await service.from("capability_grants")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .eq("profile_id", soleAuthorityId)
+    .eq("capability", "authority.manage")
+    .is("revoked_at", null);
+  if (remainingAuthority.error) throw remainingAuthority.error;
+  assert.equal(remainingAuthority.count, 1,
+    "Denied last-holder deactivation must atomically preserve authority.manage");
+  assert.equal(await orgIdentity(sessions[2], "preserved last authority holder"), orgId);
+  assert.equal(await edgeStatus(sessions[2]), 404,
+    "Denied last-holder deactivation must not lock out verified integration Administration");
+
   // Disposable lost-factor recovery acceptance. A verified factor removal via
   // the provider ADMIN API must require service authority, invalidate existing
   // sessions, and NEVER make a password-only AAL1 session an authorised user.
@@ -356,7 +392,7 @@ try {
   assert.equal(await orgIdentity(replacementSession, "Recovered Manager AAL2"), orgId);
   assert.equal((await ownProfileRows(replacementSession, "Recovered Manager own profile")).length, 1);
 
-  console.log("PASS local-only real provider TOTP, AAL2, refresh, RPC/REST/Storage cross-org + deactivation denial and admin-only recovery: Staff + 6 role fixtures.");
+  console.log("PASS local-only real provider TOTP, AAL2, refresh, last-authority lockdown prevention, RPC/REST/Storage cross-org + deactivation denial and admin-only recovery: Staff + 6 role fixtures.");
 } finally {
   // Never reactivate a deactivated role fixture: the real trigger has
   // intentionally revoked grants and memberships. Delete only the disposable
