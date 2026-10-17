@@ -198,6 +198,6 @@ test("P1 project-close evidence drawer is authoring-only for Manager and never c
   await drawer.getByLabel("Contributing unit attribution").fill("Unit One and Unit Two synthetic contributions");
   await drawer.getByRole("button",{name:"Review sample action"}).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.getByText("No actual changes were saved or submitted.",{exact:false})).toBeVisible();
+  await expect(page.locator("#announcement")).toContainText("No real data was saved or submitted.");
   expect(errors).toEqual([]);
 });
