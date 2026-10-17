@@ -80,9 +80,24 @@ test("weekly assigned routine is created once and appears on staff's future Work
     const visible = await scheduled.innerText();
     expect(visible, "Staff routine projection did not contain created master (including possible RLS/error feedback)").toContain(title);
     const ownRoutine = scheduled.locator(".s2-assigned-routine-list > button").filter({hasText:title});
-    await expect(ownRoutine).toHaveCount(2);
-    await expect(ownRoutine.locator(`time[datetime="${nextSaturday}"]`)).toBeVisible();
-    await expect(ownRoutine.locator(`time[datetime="${followingSaturday}"]`)).toBeVisible();
+    // The staff preview includes the current Saturday and the next 14 days,
+    // inclusive. When a routine starts ON Saturday, that valid window contains
+    // three Saturdays (today, +7, +14), not two. Check each scheduled DATE
+    // exactly once; counting only two would reject a correct projection.
+    const expectedDates = [nextSaturday, followingSaturday];
+    if (daysToSaturday === 0) {
+      const thirdSaturday = new Date(followingSaturday + "T12:00:00Z");
+      thirdSaturday.setUTCDate(thirdSaturday.getUTCDate() + 7);
+      expectedDates.push(thirdSaturday.toISOString().slice(0, 10));
+    }
+    await expect(ownRoutine).toHaveCount(expectedDates.length);
+    for (const date of expectedDates) {
+      await expect(ownRoutine.locator(`time[datetime="${date}"]`)).toHaveCount(1);
+    }
+    const projectedDates = await ownRoutine.locator("time").evaluateAll(
+      (nodes) => nodes.map((node) => node.getAttribute("datetime"))
+    );
+    expect(projectedDates, "one occurrence per day, no duplicate Work item").toEqual(expectedDates);
     await expect(scheduled.getByText("Scheduled", {exact:true}).first()).toBeVisible();
     await staff.page.screenshot({path:"test-artifacts/stage2-recurring-staff-weekly-work.png",fullPage:true});
   } finally { await staff.context.close(); }
