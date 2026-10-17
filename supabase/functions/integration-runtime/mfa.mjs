@@ -41,7 +41,12 @@ async function discardSmallDeclaredOversize(body) {
 
 export async function readBoundedActionBody(request) {
   const declared = request.headers.get("content-length");
-  if (declared && /^\d+$/.test(declared) && Number(declared) > MAX_INTEGRATION_BODY_BYTES) {
+  // A malformed, negative, fractional, exponent or unsafe-integer length is
+  // not a trustworthy size hint. Reject it before reading an unauthenticated
+  // stream; otherwise a forged value could bypass the declared-size guard.
+  if (declared !== null && (!/^\d+$/.test(declared)
+    || !Number.isSafeInteger(Number(declared)))) return null;
+  if (declared !== null && Number(declared) > MAX_INTEGRATION_BODY_BYTES) {
     // Local Supabase Edge gateways can hold a response open until the request
     // body reaches EOF. On modest, explicitly size-declared oversized JSON,
     // discard a bounded number of bytes (never accumulating/parsing data) so

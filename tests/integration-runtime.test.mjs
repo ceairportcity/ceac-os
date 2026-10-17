@@ -197,3 +197,15 @@ test("huge declared oversize Edge POST rejects without reading an unbounded stre
   assert.equal(await readBoundedActionBody(request), null);
   assert.equal(touched, false);
 });
+
+test("malformed and unsafe declared Edge lengths fail closed without reading the body", async () => {
+  for (const length of ["-1", "1.5", "1e8", "NaN", "9007199254740993"]) {
+    let touched = false;
+    const request = {
+      headers: new Headers({ "Content-Length": length }),
+      body: { getReader() { touched = true; throw new Error("Must not read invalid-length body"); } },
+    };
+    assert.equal(await readBoundedActionBody(request), null, length);
+    assert.equal(touched, false, length);
+  }
+});
