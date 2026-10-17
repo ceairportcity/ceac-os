@@ -68,4 +68,13 @@ test("P1 report evidence failure state is visibly fail-closed rather than showin
     'btn("Preview evidence failure","report-unavailable")',
   ]) assert.ok(html.includes(phrase), "missing fail-closed evidence preview: " + phrase);
 });
-
+test("P1 selected-Manager-unit demonstration is isolated from membership or Auth permissions", () => {
+  for(const expected of [
+    'demoUnit="Unit One"',
+    'role==="manager"?',
+    'Selected unit: ',
+    'action==="switch-demo-unit" && role==="manager"',
+    'No real permissions changed',
+  ]) assert.ok(html.includes(expected),"missing isolated Manager unit design: "+expected);
+  assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
+});

@@ -101,4 +101,18 @@ test("P1 Manager and Executive previews hide metrics on evidence-load failure", 
     await expect(page.getByText("Period coverage", { exact: true })).toBeVisible();
   }
 });
-
+test("P1 Manager unit switching shows selected simulated headship without leaking role privileges", async ({ page }) => {
+  await page.route("**/*", r => r.abort("blockedbyclient"));
+  await page.setContent(prototype, {waitUntil: "domcontentloaded"});
+  const picker=page.getByRole("combobox",{name:"Preview role"});
+  await picker.selectOption("manager");
+  await expect(page.getByText("Selected unit: Unit One")).toBeVisible();
+  await page.getByRole("button",{name:"Switch sample unit"}).click();
+  await expect(page.getByText("Selected unit: Unit Two")).toBeVisible();
+  await expect(page.locator("#navigation").getByRole("button",{name:/Payroll|Compliance/})).toHaveCount(0);
+  await picker.selectOption("volunteer");
+  await expect(page.getByText("Selected unit: Unit Two")).toHaveCount(0);
+  await expect(page.getByRole("button",{name:"Switch sample unit"})).toHaveCount(0);
+  await picker.selectOption("manager");
+  await expect(page.getByText("Selected unit: Unit One")).toBeVisible();
+});

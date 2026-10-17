@@ -50,3 +50,9 @@ These additions are **P1 design candidates only**, with synthetic data and local
 ## P1 connected reporting error-state review
 
 The Manager and Executive reporting previews now include an explicit locally simulated **evidence load failure**. Switching into this state replaces all visible summary metrics and evidence rows with a clear error and a separate restore-demo action, rather than showing apparently real zero/completed values while a required source query failed. This is a design demonstration, not a fix to the outstanding P6 Manager reporting app defect. A dedicated Playwright source-preview scenario checks both roles, the error announcement and the absence of factual metrics during failure. Actual application P6/P8 tests remain mandatory; do not mark them passed from this P1 HTML.
+
+## Multi-unit Manager selection — connected P1 review-only state
+
+The connected V4 prototype now supports a visibly selected Unit One/Unit Two **synthetic Manager headship** switch. This is an illustrative interaction, not a claim that the real user changed organisational membership. Switching the simulated unit resets the selected preview record and work filter; the general Staff, Volunteer and other role demos cannot acquire new capabilities through the Manager's UI. A companion Playwright test checks this separation, and a source-contract test verifies no backend, Auth or network calls are introduced.
+
+The actual P3–P8 app must independently verify allowed multi-unit manager headships, stale response cancellation, RLS/RPC/Storage authorisation and no privacy leakage. This design remains unapproved until the owner reviews full desktop/mobile reference screens; **P1 stays IN PROGRESS** and production is untouched.
