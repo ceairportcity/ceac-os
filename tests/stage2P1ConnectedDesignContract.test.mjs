@@ -198,3 +198,9 @@ test("P1 Work candidate preserves the exact owner-selected register/inspector de
  assert.ok(work.includes('role==="manager"'),"delegation preview needs explicit eligible role");
  assert.doesNotMatch(work,/Start (work|session)/i,"Start work must remain on Overview, not Work");
 });
+
+test("P1 local give-work draft uses the Given out filter without pretending it was assigned to self",()=>{
+  assert.match(html, /workFilter=kind==="give-work"\?"given":"mine"/);
+  assert.match(html, /workFilter==="given"\?row\.origin==="given"/);
+  assert.match(html, /workFilter==="mine"\?row\.origin!=="given"/);
+});

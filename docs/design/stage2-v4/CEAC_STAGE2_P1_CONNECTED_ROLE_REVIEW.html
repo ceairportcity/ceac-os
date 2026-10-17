@@ -405,6 +405,8 @@ document.addEventListener("submit",function(event){
   const title=String(data.get("draftTitle")||"").trim();
   if(!title)return;
   draftWorkSamples.unshift({title,role,unit:demoUnit,kind:kind==="give-work"?"delegation":"own work",project:String(data.get("draftProject")||"Unlinked")||"Unlinked"});
+  // A delegation belongs to Given out, not My work. Show its newly reviewed local sample in the correct register.
+  workFilter=kind==="give-work"?"given":"mine";
   page="work";drawNav();
  }
  document.getElementById("modal").innerHTML="";
