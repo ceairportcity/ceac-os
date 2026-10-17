@@ -27,6 +27,9 @@ const create = (key) => createClient(SUPABASE_URL, key, {
 const service = create(SUPABASE_SERVICE_ROLE_KEY);
 const sessions = [];
 let switched = false;
+let portraitFixtureCreated = false;
+const portraitBucket = "ceac-profile-portraits";
+const portraitObject = `${orgId}/31000000-0000-4000-8000-000000000001/51000000-0000-4000-8000-000000000099.webp`;
 
 function fromBase32(secret) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -125,6 +128,25 @@ try {
       label + " signed TOTP must restore its own protected REST profile read");
   }
 
+  // Exercise the ACTUAL Storage API with provider-signed sessions, not merely
+  // SQL inspection. The fixture is a tiny synthetic private WebP written only
+  // by a local disposable service client and deleted in finally.
+  const fixtureBytes = Buffer.from("UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA", "base64");
+  const uploaded = await service.storage.from(portraitBucket).upload(
+    portraitObject, fixtureBytes, { contentType: "image/webp", upsert: false },
+  );
+  if (uploaded.error) throw new Error("Disposable private portrait fixture failed: " + uploaded.error.message);
+  portraitFixtureCreated = true;
+  const verifiedDownload = await sessions[0].storage.from(portraitBucket).download(portraitObject);
+  if (verifiedDownload.error || !verifiedDownload.data) throw new Error(
+    "Signed AAL2/TOTP Manager could not fetch the same-org private Storage fixture: " +
+    (verifiedDownload.error?.message || "missing data"));
+  assert.deepEqual(Buffer.from(await verifiedDownload.data.arrayBuffer()), fixtureBytes,
+    "The authorised Storage API must return only the inserted fixture bytes");
+  const anonymousDownload = await create(SUPABASE_ANON_KEY)
+    .storage.from(portraitBucket).download(portraitObject);
+  assert.ok(anonymousDownload.error && !anonymousDownload.data,
+    "Anonymous session must not download private portrait from Storage");
   // A separate password login remains AAL1, even after prior verified sessions.
   // Staff was enrolled by the real browser ceremony immediately before this test.
   for (const [label, email] of [["Staff", "staff@ceac.local.test"], ...roleEmails]) {
@@ -137,6 +159,12 @@ try {
       label + " AAL1 must not get existing SECURITY DEFINER org authority");
     assert.deepEqual(await ownProfileRows(newLogin, label + " unverified AAL1"), [],
       label + " fresh AAL1 login must not read even its own profile via REST/RLS");
+    // Real Storage signed-download must be blocked before a fresh TOTP challenge.
+    if (label === "Staff" || label === "Manager") {
+      const deniedDownload = await newLogin.storage.from(portraitBucket).download(portraitObject);
+      assert.ok(deniedDownload.error && !deniedDownload.data,
+        label + " fresh AAL1 must be denied direct private Storage access");
+    }
   }
 
   // Disposable lost-factor recovery acceptance. A verified factor removal via
@@ -193,8 +221,12 @@ try {
   assert.equal(await orgIdentity(replacementSession, "Recovered Manager AAL2"), orgId);
   assert.equal((await ownProfileRows(replacementSession, "Recovered Manager own profile")).length, 1);
 
-  console.log("PASS local-only real provider TOTP, AAL2, refresh, AAL1 denial and admin-only lost-factor reset/re-enrollment: Staff + 6 role/organisation fixtures.");
+  console.log("PASS local-only real provider TOTP, AAL2, refresh, RPC/REST/Storage denial and admin-only recovery: Staff + 6 role/organisation fixtures.");
 } finally {
+  if (portraitFixtureCreated) {
+    const removedFixture = await service.storage.from(portraitBucket).remove([portraitObject]);
+    if (removedFixture.error) throw new Error("Disposable private portrait fixture cleanup failed: " + removedFixture.error.message);
+  }
   if (switched) {
     const reset = await service.from("organisations").update({ universal_totp_required: false }).eq("id", orgId);
     if (reset.error) throw new Error("Could not restore disposable local MFA flag: " + reset.error.message);

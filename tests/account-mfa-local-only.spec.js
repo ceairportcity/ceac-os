@@ -106,8 +106,18 @@ test("universal Stage 2 gate enforces TOTP on initial and new-browser sign-in wi
     expect(backupSecret).toBeTruthy();
     await page.getByRole("textbox",{name:"Authenticator verification code"}).fill(currentCode(backupSecret));
     await page.getByRole("button",{name:"Verify authenticator"}).click();
-    await expect(page.getByText("This session has verified two-step access.")).toBeVisible();
+    // The AAL2 status above was already visible for the primary factor.
+    // Wait for proof that this NEW backup enrollment actually succeeded.
+    await expect(page.getByText("Authenticator verified for this session.", {exact:true})).toBeVisible();
+    await expect(page.locator(".ev2pf-mfa-enrollment")).toHaveCount(0);
     await expect(page.getByRole("button",{name:"Add backup authenticator"})).toHaveCount(0);
+    const ownerFactors = await page.evaluate(async () => {
+      const { supabase } = await import("/src/lib/supabase.js");
+      const result = await supabase.auth.mfa.listFactors();
+      if (result.error) throw new Error("Could not verify two authenticators with local Auth provider");
+      return (result.data?.totp || []).filter((item) => item.status === "verified").length;
+    });
+    expect(ownerFactors, "Backup enrollment must create TWO verified provider TOTP factors").toBe(2);
 
     // Ordinary reload reuses the verified AAL2 session; it must not request a
     // new code merely because the browser refreshed or the app navigated.
