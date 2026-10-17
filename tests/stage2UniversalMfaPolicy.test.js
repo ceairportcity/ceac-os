@@ -70,3 +70,11 @@ test("verified backup authenticator can be selected without granting an unverifi
   assert.match(source, /factors\.length > 0 && level !== "aal2"/);
   assert.match(source, /setSelectedFactorId\(event\.target\.value\)/);
 });
+
+test("verified backup confirmation survives the authentication gate remount", () => {
+  const source = readFileSync(new URL("../src/components/AccountMfaSetup.jsx", import.meta.url), "utf8");
+  assert.match(source, /statusReady && factors\.length > 1/);
+  assert.match(source, /A backup authenticator is verified for this account/);
+  assert.doesNotMatch(source, /localStorage\.setItem\(["'](?:mfa|aal2)/i,
+    "UI confirmation may not become an MFA authority flag");
+});

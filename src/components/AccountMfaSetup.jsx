@@ -165,6 +165,11 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
     </p>}
     {error && <div className="flag flag-brick" role="alert">{error}</div>}
     {notice && <p role="status" className="pill p-green">{notice}</p>}
+    {/* Auth token refresh can remount this account screen, discarding a brief
+        success toast. Persist the factual backup status via the provider list
+        instead of client storage or a remembered AAL2 flag. */}
+    {!loading && statusReady && factors.length > 1 &&
+      <p role="status">A backup authenticator is verified for this account.</p>}
 
     {!loading && !statusReady && <button type="button" className="btn btn-ghost" disabled={busy} onClick={async () => {
       setBusy(true); setError(null);

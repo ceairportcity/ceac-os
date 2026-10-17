@@ -106,18 +106,23 @@ test("universal Stage 2 gate enforces TOTP on initial and new-browser sign-in wi
     expect(backupSecret).toBeTruthy();
     await page.getByRole("textbox",{name:"Authenticator verification code"}).fill(currentCode(backupSecret));
     await page.getByRole("button",{name:"Verify authenticator"}).click();
-    // The AAL2 status above was already visible for the primary factor.
-    // Wait for proof that this NEW backup enrollment actually succeeded.
-    await expect(page.getByText("Authenticator verified for this session.", {exact:true})).toBeVisible();
-    await expect(page.locator(".ev2pf-mfa-enrollment")).toHaveCount(0);
-    await expect(page.getByRole("button",{name:"Add backup authenticator"})).toHaveCount(0);
-    const ownerFactors = await page.evaluate(async () => {
+    // The universal AAL2 gate intentionally unmounts the account screen during
+    // Auth token re-verification. A short-lived success toast is not durable.
+    // Require the real local Auth provider to report both verified factors.
+    await expect.poll(async () => page.evaluate(async () => {
       const { supabase } = await import("/src/lib/supabase.js");
       const result = await supabase.auth.mfa.listFactors();
-      if (result.error) throw new Error("Could not verify two authenticators with local Auth provider");
-      return (result.data?.totp || []).filter((item) => item.status === "verified").length;
-    });
-    expect(ownerFactors, "Backup enrollment must create TWO verified provider TOTP factors").toBe(2);
+      if (result.error) throw new Error("Could not read local provider TOTP inventory");
+      return (result.data?.totp || []).filter((factor) =>
+        factor.factor_type === "totp" && factor.status === "verified").length;
+    }), {
+      message: "Backup enrollment must create TWO verified provider TOTP factors",
+      timeout: 15000,
+      intervals: [250, 500, 1000],
+    }).toBe(2);
+    // This status comes from the provider inventory, so it survives remount.
+    await expect(page.getByText("A backup authenticator is verified for this account.")).toBeVisible();
+    await expect(page.getByRole("button",{name:"Add backup authenticator"})).toHaveCount(0);
 
     // Ordinary reload reuses the verified AAL2 session; it must not request a
     // new code merely because the browser refreshed or the app navigated.

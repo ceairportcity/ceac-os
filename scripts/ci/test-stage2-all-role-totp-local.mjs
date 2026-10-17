@@ -143,10 +143,18 @@ try {
     (verifiedDownload.error?.message || "missing data"));
   assert.deepEqual(Buffer.from(await verifiedDownload.data.arrayBuffer()), fixtureBytes,
     "The authorised Storage API must return only the inserted fixture bytes");
+  const verifiedLink = await sessions[0].storage.from(portraitBucket)
+    .createSignedUrl(portraitObject, 60);
+  assert.ok(!verifiedLink.error && verifiedLink.data?.signedUrl,
+    "Verified AAL2/TOTP member must be allowed to create a brief own-org private URL");
   const anonymousDownload = await create(SUPABASE_ANON_KEY)
     .storage.from(portraitBucket).download(portraitObject);
   assert.ok(anonymousDownload.error && !anonymousDownload.data,
     "Anonymous session must not download private portrait from Storage");
+  const anonymousLink = await create(SUPABASE_ANON_KEY).storage.from(portraitBucket)
+    .createSignedUrl(portraitObject, 60);
+  assert.ok(anonymousLink.error && !anonymousLink.data,
+    "Anonymous user must not mint a signed private Storage URL");
   // A separate password login remains AAL1, even after prior verified sessions.
   // Staff was enrolled by the real browser ceremony immediately before this test.
   for (const [label, email] of [["Staff", "staff@ceac.local.test"], ...roleEmails]) {
@@ -164,6 +172,10 @@ try {
       const deniedDownload = await newLogin.storage.from(portraitBucket).download(portraitObject);
       assert.ok(deniedDownload.error && !deniedDownload.data,
         label + " fresh AAL1 must be denied direct private Storage access");
+      const deniedLink = await newLogin.storage.from(portraitBucket)
+        .createSignedUrl(portraitObject, 60);
+      assert.ok(deniedLink.error && !deniedLink.data,
+        label + " fresh AAL1 must not mint a signed private Storage URL");
     }
   }
 
