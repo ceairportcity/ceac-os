@@ -1,0 +1,70 @@
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { LoadingState, ProductNotice } from "./bits";
+import Stage2ProjectOverview from "./Stage2ProjectOverview";
+import { ProjectWorkspaceHeader } from "../experience-v2/project-family/ProjectFamilyV2";
+
+/**
+ * Stage 2 factual, read-only cross-role project inspector.
+ * PostgREST and database RLS determine visible records. This never upgrades
+ * access, estimates unavailable cross-unit numbers, or shows private work.
+ */
+export default function Stage2ProjectReader({ projectId, openItem, onBack }) {
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let current = true;
+    setLoading(true);
+    setProject(null);
+    setError(null);
+    (async () => {
+      try {
+        const projectResult = await supabase.from("projects")
+          .select("id,kind,name,purpose,status,starts_on,ends_on,lead_unit_id,units!projects_lead_unit_id_fkey(name)")
+          .eq("id", projectId).single();
+        if (projectResult.error) throw projectResult.error;
+        const [participation, phases, work, milestones] = await Promise.all([
+          supabase.from("project_units")
+            .select("project_id,unit_id,role,units!project_units_unit_id_fkey(name)")
+            .eq("project_id", projectId),
+          supabase.from("project_phases").select("id,name,ends_on,closed_at")
+            .eq("project_id", projectId).order("position"),
+          supabase.from("work_items")
+            .select("id,ref,title,kind,status,created_at,due_at,unit_id,assignee_id,profiles!work_items_assignee_id_fkey(full_name)")
+            .eq("project_id", projectId).neq("visibility", "private")
+            .order("due_at", { ascending: true, nullsFirst: false }),
+          supabase.from("project_milestones").select("id,name,status,target_on,completed_at")
+            .eq("project_id", projectId).order("target_on", { ascending: true, nullsFirst: false }),
+        ]);
+        const failed = [participation.error, phases.error, work.error].find(Boolean);
+        if (failed) throw failed;
+        if (current) setProject({
+          ...projectResult.data,
+          participants: participation.data || [],
+          phases: phases.data || [],
+          work: work.data || [],
+          milestones: milestones.error ? null : milestones.data || [],
+        });
+      } catch {
+        if (current) setError("This project's authorised overview could not be verified. No private project data was displayed.");
+      } finally {
+        if (current) setLoading(false);
+      }
+    })();
+    return () => { current = false; };
+  }, [projectId]);
+
+  return <div className="ev2-project-page ev2-project-workspace s2-project-reader">
+    {loading && <LoadingState label="Loading authorised project details…" />}
+    {error && <ProductNotice tone="error" title="Project details unavailable">{error}</ProductNotice>}
+    {project && <>
+      <ProjectWorkspaceHeader kind={project.kind} title={project.name} purpose={project.purpose}
+        status={project.status} context={project.units?.name || "Lead unit not recorded"} onBack={onBack} />
+      <p className="screen-note">Read-only project context. Figures reflect only project records your account is authorised to read.</p>
+      <Stage2ProjectOverview key={project.id} project={project} openWork={openItem} canAssign={false} />
+    </>}
+    {!project && (loading || error) && <button type="button" className="btn btn-ghost" onClick={onBack}>Back to projects</button>}
+  </div>;
+}

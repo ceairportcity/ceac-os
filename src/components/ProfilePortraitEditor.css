@@ -1,0 +1,12 @@
+.s2-profile-photo-editor{display:flex;align-items:flex-start;gap:15px;padding:16px 0;border-bottom:1px solid #e6edf5;margin-bottom:15px}
+.s2-profile-photo-copy{min-width:0;flex:1}
+.s2-profile-photo-copy strong{color:#18365a;font-size:13px;font-weight:750}
+.s2-profile-photo-copy p{font-size:12px;line-height:1.5;color:#6b7f95;max-width:60ch;margin:4px 0 10px}
+.s2-profile-photo-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.s2-profile-photo-actions>label,.s2-profile-photo-actions>button{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:7px;border:1px solid #cfe2f6;background:#ecf5ff;color:#1265c6;font-size:12px;font-weight:700;cursor:pointer}
+.s2-profile-photo-actions>label input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.s2-profile-photo-actions>label:focus-within{outline:2px solid #287de8;outline-offset:3px}
+.s2-profile-photo-actions>button{background:white;color:#526881;border-color:#e0e7ef}
+.s2-profile-photo-actions>label.is-disabled,.s2-profile-photo-actions>button:disabled{opacity:.5;cursor:not-allowed}
+.s2-profile-photo-copy .s2-profile-photo-notice{font-size:11px;color:#375d7c;margin:8px 0 0}
+@media(max-width:480px){.s2-profile-photo-editor{gap:12px;padding:13px 0}.s2-profile-photo-copy p{font-size:11px}}

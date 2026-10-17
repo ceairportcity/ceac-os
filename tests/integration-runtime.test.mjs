@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { hasVerifiedTotpAal2 } from "../supabase/functions/integration-runtime/mfa.mjs";
 import {
   classifyTelegramFailure,
   safeNotificationText,
@@ -69,4 +71,35 @@ test("Telegram errors are classified for safe retry behaviour", () => {
   assert.deepEqual(classifyTelegramFailure(400, { description: "Bad Request: chat not found" }), {
     category: "destination", retryable: false, safeMessage: "Telegram could not use the configured chat destination.",
   });
+});
+
+test("integration Edge requires signed same-user AAL2 and TOTP method", () => {
+  const userId = "synthetic-ceac-user";
+  const valid = { sub: userId, role: "authenticated", aal: "aal2", amr: [{ method: "password" }, { method: "totp" }] };
+  assert.equal(hasVerifiedTotpAal2(valid, userId), true);
+  for (const claims of [
+    undefined,
+    { ...valid, sub: "different-user" },
+    { ...valid, role: "service_role" },
+    { ...valid, aal: "aal1" },
+    { ...valid, amr: [{ method: "password" }] },
+    { ...valid, amr: [{ method: "phone" }] },
+    { ...valid, amr: "totp" },
+    { ...valid, amr: [] },
+  ]) {
+    assert.equal(hasVerifiedTotpAal2(claims, userId), false);
+  }
+  assert.equal(hasVerifiedTotpAal2(valid, ""), false);
+});
+
+test("integration Edge policy check precedes privileged capability handling", () => {
+  const source = readFileSync(new URL("../supabase/functions/integration-runtime/index.ts", import.meta.url), "utf8");
+  const policyRead = source.indexOf('.select("universal_totp_required")');
+  const signedClaimCheck = source.indexOf("hasVerifiedTotpAal2(verifiedToken?.claims, authData.user.id)");
+  const capabilityRead = source.indexOf('client.rpc("app_has_capability"');
+  assert.ok(policyRead > source.indexOf("async function userContext("));
+  assert.ok(signedClaimCheck > policyRead && capabilityRead > signedClaimCheck);
+  assert.match(source, /client\.auth\.getClaims\(accessToken\)/);
+  assert.match(source, /orgPolicyError \|\| typeof orgPolicy\?\.universal_totp_required !== "boolean"/);
+  assert.match(source, /if \(orgPolicy\.universal_totp_required\)/);
 });

@@ -241,3 +241,8 @@
     padding: var(--ev2-space-4);
   }
 }
+
+/* Preserve the approved 12px operational readability floor for visible
+   governance labels in Administration and Executive reports without reducing
+   larger headings or loosening the browser accessibility tests. */
+.ev2-reporting-admin,.ev2-reporting-executive{--ev2-type-label:12px}

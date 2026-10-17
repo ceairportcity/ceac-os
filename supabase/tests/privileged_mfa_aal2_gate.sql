@@ -61,8 +61,8 @@ begin
   -- revoke obsolete direct correction and performance-share grants: 145.
   -- Keep this MFA gate strict on the reviewed final count; neither AAL2 nor
   -- verified-factor authority checks below are relaxed.
-  if callable_count<>145 then
-    raise exception 'S1 MFA gate failure: authenticated SECURITY DEFINER count differs from the reviewed integrated release total of 145; found %.',callable_count;
+  if callable_count<>146 then
+    raise exception 'S1 MFA gate failure: authenticated SECURITY DEFINER count differs from the reviewed Stage 1 145 plus Stage 2 one verified-TOTP helper (146); found %.',callable_count;
   end if;
 
   select count(*) into anon_count

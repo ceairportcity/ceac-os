@@ -131,7 +131,26 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
   assert.equal(new Set(versions).size, versions.length, "duplicate migration version");
-  assert.equal(migrations.length, 153, "expected 152 approved Stage 1 files plus the reviewed forward-only Support view migration");
+  const stagedPortraitMigration = "20261016164000_149_private_portrait_media_stage2.sql";
+  assert.ok(migrations.includes(stagedPortraitMigration), "Stage 2 private portrait migration must remain available for isolated replay");
+  const stagedAppraisalMigration = "20261016180000_151_stage2_human_appraisal_ratings.sql";
+  assert.ok(migrations.includes(stagedAppraisalMigration), "Owner-approved quarterly Manager ratings migration missing");
+  const stagedIntegratedSecurity = [
+    stagedPortraitMigration,
+    "20261016170000_150_universal_totp_all_roles_stage2.sql",
+    stagedAppraisalMigration,
+    "20261016183000_152_quarterly_ministry_review_events.sql",
+    "20261016190000_153_stage2_human_report_security_integration.sql",
+    "20261016210000_154_stage2_universal_rpc_auth_gate.sql",
+    "20261016220000_155_stage2_published_human_rating_timestamp_integrity.sql",
+    "20261017010000_156_stage2_provider_neutral_auth_storage_reconciliation.sql",
+  ];
+  for (const migration of stagedIntegratedSecurity) {
+    assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
+  }
+  assert.equal(migrations.filter((file) => !stagedIntegratedSecurity.includes(file)).length, 153,
+    "Stage 1's 153 reviewed migrations remain identical; eight additional Stage 2 migrations are pending");
+  assert.equal(migrations.length, 161, "expected 153 reviewed Stage 1 plus eight integrated Stage 2 staged migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
@@ -168,16 +187,15 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /technical_support_v1_gate\.sql/);
   // The one-bundle change records 12 additional guarded RPC/predicate surfaces
   // and removes obsolete direct attendance-correction and performance-share grants.
-  // Fail closed at 145: do not turn a rejected Manager-only publication into an
-  // authenticated SECURITY DEFINER API.
-  assert.match(mfa, /callable_count<>145/);
+  // Fail closed at 146 (145 approved original + one approved universal TOTP helper); no rejected Manager publication or extra definer.
+  assert.match(mfa, /callable_count<>146/);
   assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);
 });
 
 
-test("later migrations may not redefine S3 authority functions", () => {
+test("S3 security function overrides are forbidden except the exact Stage 2 TOTP identity guards", () => {
   const folder = "supabase/migrations";
   const s3Filename = "20261007083250_118_capability_delegation_expiry.sql";
   const pending = readdirSync(folder).filter((file) =>
@@ -193,8 +211,13 @@ test("later migrations may not redefine S3 authority functions", () => {
   assert.ok(s3Functions.has("grant_capability"));
   for (const migration of pending) {
     for (const functionName of extractDefinitions(read(join(folder, migration)))) {
-      assert.equal(s3Functions.has(functionName), false,
+      if (!s3Functions.has(functionName)) continue;
+      const approvedFile = "20261016210000_154_stage2_universal_rpc_auth_gate.sql";
+      const approvedFunctions = new Set(["app_org_id","app_identity_confirmed","app_privileged_aal_allowed"]);
+      assert.ok(migration === approvedFile && approvedFunctions.has(functionName),
         migration + " illegally replaces/overrides S3 security function " + functionName);
+      assert.match(read(join(folder,migration)), /public\.app_stage2_universal_aal_allowed\(\)/,
+        "Only the new verified-TOTP AAL2 prerequisite may extend an S3 authority function");
     }
   }
 });
@@ -262,4 +285,14 @@ test("People & Access invalidates confidential roster state across identity chan
   assert.match(peopleAccess, /if \(generation !== loadGeneration\.current\) return false/);
   assert.match(peopleAccess, /generation === loadGeneration\.current/);
   assert.match(peopleAccess, /People & Access could not load verified records/);
+});
+
+test("Stage 2 Technical Support case metadata meets the 12px readability floor on desktop and phone", () => {
+  const css = read("src/role-styles/technical-support-stage2.css");
+  const pixelFontSizes = [...css.matchAll(/font-size:\s*([\d.]+)px/g)].map((match) => Number(match[1]));
+  assert.ok(pixelFontSizes.length >= 10, "technical case, summary and responsive text rules are present");
+  assert.ok(pixelFontSizes.every((size) => size >= 12),
+    `Technical Support contains unreadable CSS font sizes: ${pixelFontSizes.filter((size) => size < 12)}`);
+  assert.match(css, /@media\(max-width:590px\)/);
+  assert.match(css, /\.s2-support-summary small\{font-size:12px/);
 });

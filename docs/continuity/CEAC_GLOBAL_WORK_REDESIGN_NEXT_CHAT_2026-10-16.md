@@ -1,3 +1,5 @@
+> **CURRENT EXECUTION BRANCH (supersedes only older PR-number/branch sequencing below):** Stage 2 implementation is consolidated in draft PR #118, branch `chatgpt/stage2-unified-integration-20261016`. PR #115 is the requirements parent; #116/#117 are preserved historical integration sources. Continue P0–P8 on this single current HEAD with one writer. The owner-approved reporting/appraisal scope and all production-release GO boundaries below remain binding. Do not create another competing implementation or treat older instructions to start from #117 as current.
+
 # CEAC OS — CONTINUE STAGE 2 FROM LIVE IMPLEMENTATION AND NEW OWNER-LOCKED REPORTING DECISION
 **Copy this to the executing chat after confirming the docs commit is visible.** This is an execution directive, not a production release GO.
 1. Inspect current live GitHub `ceairportcity/ceac-os`: latest `main`, docs PR #115, implementation PR #116 and **newest active child PR #117**, any later PRs/branches, exact heads and CI. NEVER resume from an older source checkpoint; do NOT overwrite other agents' uncommitted work, force-push/revert or base solely on stale chat notes.

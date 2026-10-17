@@ -150,3 +150,23 @@ for (const viewport of [
     await context.close();
   });
 }
+
+test("Stage 2 Manager reporting fails closed when period work sessions cannot be loaded", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  try {
+    await page.goto("/");
+    await page.getByPlaceholder("Work email").fill("manager@ceac.local.test");
+    await page.getByPlaceholder("Password").fill(password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
+    await page.route("**/rest/v1/work_sessions*", (route) => route.fulfill({
+      status: 500, contentType: "application/json",
+      body: JSON.stringify({ message: "synthetic period work-session read failed" }),
+    }));
+    await page.goto("/?tab=manager-reports");
+    await expect(page.getByText("Report evidence could not be loaded", { exact: true })).toBeVisible({ timeout: 20000 });
+    await expect(page.locator(".ev2rep-evidence")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Submit report", exact: true })).toHaveCount(0);
+  } finally { await context.close(); }
+});

@@ -14,7 +14,7 @@ const roles = [
     key: "manager",
     email: "manager@ceac.local.test",
     app: ".manager-app",
-    tabs: ["Given out", "Needs review", "Team work", "My work"],
+    tabs: ["Given out", "Needs review", "Team work", "My work", "Routines"],
   },
   {
     key: "administration",
@@ -99,7 +99,9 @@ for (const viewport of [
             return rect.width > 0 && rect.height > 0;
           }).length,
         }));
-        expect(managerTabs.visibleTabs).toBe(4);
+        // Stage 2 adds an authorised fifth Routines destination without
+        // hiding the original Manager tabs or introducing horizontal overflow.
+        expect(managerTabs.visibleTabs).toBe(role.tabs.length);
         expect(managerTabs.scrollWidth - managerTabs.clientWidth).toBeLessThanOrEqual(1);
       }
 

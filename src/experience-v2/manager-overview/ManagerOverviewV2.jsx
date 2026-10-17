@@ -1,3 +1,5 @@
+import DailyScenicPhoto from "../../components/DailyScenicPhoto";
+import EmployeeWorkSession from "../../components/EmployeeWorkSession";
 import "./manager-overview.css";
 import {
   Button,
@@ -269,7 +271,7 @@ export default function ManagerOverviewV2({
 
   return <div className="body manager-home">
     <div className="managerv2">
-      <header className="fpg9-home-hero">
+      <header className="fpg9-home-hero s2-landscape-hero"><DailyScenicPhoto />
         <div className="fpg9-home-hero-copy">
           <div className="fpg9-home-context"><span>{me.unit_name}</span><time>{dateLabel}</time></div>
           <h1>{greeting}, {me.full_name.split(" ")[0]} <span aria-hidden="true">👋</span></h1>
@@ -285,6 +287,7 @@ export default function ManagerOverviewV2({
           </div>
         </div>
       </header>
+      <EmployeeWorkSession me={me} />
 
       {loadFailed ? <StatePanel
         state="error"

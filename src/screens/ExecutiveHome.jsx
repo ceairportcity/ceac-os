@@ -191,6 +191,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
   }, [ministryOperations,ministryOccurrences]);
 
   return <ExecutiveOverviewV2
+    me={me}
     executiveName={me.full_name || "Group Pastor"}
     executiveDate={executiveDate}
     loading={loading}

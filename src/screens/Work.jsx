@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import AssignedRoutineOccurrences from "../components/AssignedRoutineOccurrences";
 import { dueLabel } from "../lib/time";
 import { humanError } from "../lib/productLanguage";
 import { Sheet, FieldGroup, ProductNotice, LoadingState } from "../components/bits";
@@ -377,6 +378,8 @@ export default function Work({ me, isManager = false, openItem }) {
         </div>)}
       </div>
     </details>}
+
+    {mode === "assigned" && !loading && !loadError && <AssignedRoutineOccurrences me={me} onOpen={openItem} />}
 
     <WorkTabs
       items={STATUS_FILTERS}

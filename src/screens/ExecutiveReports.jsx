@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
+import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
+import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { humanError } from "../lib/productLanguage";
 import { Skeleton, StatePanel } from "../experience-v2/components";
 import {
@@ -19,12 +22,16 @@ export default function ExecutiveReports({ me }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [view, setView] = useState("all");
+  const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[]});
+  const [outcomeError,setOutcomeError] = useState(null);
 
   useEffect(() => { load(); }, [me.org_id]);
 
   async function load() {
     setLoading(true);
     setError(null);
+    setOutcomeError(null);
+    setOutcomeSources({issued:[],objectives:[],milestones:[]});
     try {
       const [periodResult, unitResult] = await Promise.all([
         supabase.from("report_periods")
@@ -55,13 +62,23 @@ export default function ExecutiveReports({ me }) {
         .eq("scope", "unit");
       if (reportResult.error) throw reportResult.error;
 
-      const latest = {};
-      (reportResult.data || []).forEach((report) => {
-        if (!latest[report.unit_id] || Number(report.version) > Number(latest[report.unit_id].version)) {
-          latest[report.unit_id] = report;
-        }
-      });
-      setReports(Object.values(latest));
+      setReports(Object.values(latestUnitReportStatus(reportResult.data || [])));
+      // Fetch only already issued organisational reports for Executive briefing.
+      // Never retrieve draft narrative or employee HR assessment content.
+      const [issued,objectives,milestones] = await Promise.all([
+        supabase.from("reports").select("id,unit_id,version,status,submitted_at,narrative,challenges")
+          .eq("period_id",periodResult.data.id).eq("scope","unit").in("status",["submitted","confirmed"]).limit(501),
+        supabase.from("objectives").select("id,name,status,project_id,unit_id,target_value,achieved_value,target_unit")
+          .eq("org_id",me.org_id).limit(501),
+        supabase.from("project_milestones").select("id,name,status,project_id,target_on,completed_at")
+          .eq("org_id",me.org_id).limit(501),
+      ]);
+      const detailsError=[issued,objectives,milestones].find(x=>x.error || (x.data||[]).length>500);
+      if(detailsError) {
+        setOutcomeError("Leadership evidence could not be verified completely. Detailed totals are withheld.");
+      } else {
+        setOutcomeSources({issued:issued.data||[],objectives:objectives.data||[],milestones:milestones.data||[]});
+      }
     } catch (loadError) {
       setError(humanError(loadError, "Reports could not be loaded."));
     } finally {
@@ -69,16 +86,16 @@ export default function ExecutiveReports({ me }) {
     }
   }
 
-  const filed = useMemo(() => reports.filter((report) => report.status !== "draft"), [reports]);
+  const filed = useMemo(() => reports.filter(isIssuedUnitReport), [reports]);
   const drafting = useMemo(() => reports.filter((report) => report.status === "draft"), [reports]);
   const waiting = useMemo(
-    () => units.filter((unit) => !reports.some((report) => report.unit_id === unit.id && report.status !== "draft")),
+    () => units.filter((unit) => !reports.some((report) => report.unit_id === unit.id && isIssuedUnitReport(report))),
     [units, reports],
   );
   const unitStatusRows = useMemo(
     () => units.map((unit) => {
       const report = reports.find((row) => row.unit_id === unit.id);
-      const state = report && report.status !== "draft" ? "submitted" : report?.status === "draft" ? "draft" : "waiting";
+      const state = isIssuedUnitReport(report) ? "submitted" : report?.status === "draft" ? "draft" : "waiting";
       return { unit, report, state };
     }),
     [units, reports],
@@ -105,6 +122,8 @@ export default function ExecutiveReports({ me }) {
         statusLabel={statusLabel}
         statusTone={error ? "danger" : "neutral"}
       />
+
+      <QuarterlyReviewEventControl me={me} />
 
       {loading ? (
         <div className="ev2rep-loading" aria-label="Loading reports" aria-busy="true">
@@ -219,6 +238,10 @@ export default function ExecutiveReports({ me }) {
               )}
             </ReportingSection>
           </div>
+
+          <ExecutiveOutcomeBrief period={period} units={units}
+            issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
+            milestones={outcomeSources.milestones} readError={outcomeError} />
 
           <ReportingFootnote>
             Executive Reports is read-only. Filing coverage describes reporting status only; CEAC OS does not infer unit performance, staff performance, achievement, score or ranking from it.

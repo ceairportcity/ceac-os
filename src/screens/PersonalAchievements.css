@@ -1,0 +1,67 @@
+/* Stage 2 V4 print-facing personal evidence; all data sourced from signed-in account. */
+.s2-achievement{max-width:1480px;margin:0 auto;color:#173254}
+.s2-achievement-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:10px 0 19px}
+.s2-achievement-eyebrow{color:#2273cb;font-size:12px;font-weight:760;letter-spacing:.1em}
+.s2-achievement-heading h1{margin:5px 0 6px;font-size:clamp(26px,3vw,34px);letter-spacing:-.04em;font-weight:760}
+.s2-achievement-heading p{margin:0;max-width:73ch;font-size:13px;color:#7388a2}
+.s2-achievement-actions{display:flex;gap:8px;align-items:center}
+.s2-achievement-actions button{border:1px solid #d4e3f4;border-radius:9px;min-height:39px;padding:9px 13px;font-size:12px;background:#fff;color:#2564a5;cursor:pointer;white-space:nowrap}
+.s2-achievement-actions .s2-achievement-print{border-color:#126ede;background:#126ede;color:white;font-weight:650}
+.s2-achievement-actions button:disabled{opacity:.55;cursor:not-allowed}
+.s2-achievement-filters{display:grid;grid-template-columns:140px 155px minmax(170px,1fr) minmax(185px,1.15fr);gap:10px;margin-bottom:15px;border:1px solid #e3eaf4;border-radius:12px;background:#fff;padding:16px}
+.s2-achievement-filters label{display:grid;gap:6px;color:#647b98;font-size:12px;font-weight:650;min-width:0}
+.s2-achievement-filters input,.s2-achievement-filters select{display:block;width:100%;min-width:0;min-height:39px;padding:8px 10px;border:1px solid #d8e4f2;border-radius:7px;background:white;color:#1d3e63;font-size:12px}
+.s2-achievement-print-head{display:grid;gap:4px;margin:2px 0 13px;color:#7790aa;font-size:12px}
+.s2-achievement-print-head strong{font-size:14px;color:#1f466f}
+.s2-achievement-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.s2-achievement-metrics article{display:flex;flex-direction:column;gap:7px;background:#fff;border:1px solid #e2ebf5;border-radius:11px;padding:15px;min-height:124px}
+.s2-achievement-metrics span{font-size:12px;color:#657f9b}
+.s2-achievement-metrics strong{font-size:28px;line-height:1.1;font-weight:720;color:#1667c7}
+.s2-achievement-metrics small{font-size:12px;color:#8497a9;line-height:1.4}
+.s2-achievement-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(255px,.9fr);align-items:start;gap:12px}
+.s2-achievement-panel{background:#fff;border:1px solid #e2eaf6;border-radius:12px;padding:17px 17px 20px;min-width:0}
+.s2-achievement-panel header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.s2-achievement-panel h2{font-size:15px;font-weight:760;color:#25486c;margin:0}
+.s2-achievement-panel header span{color:#8294ab;font-size:12px}
+.s2-achievement-table-scroll{max-width:100%;overflow-x:auto}
+.s2-achievement table{border-collapse:collapse;width:100%;min-width:600px;text-align:left}
+.s2-achievement th{padding:10px 8px;font-size:12px;color:#7891a9;background:#f6f9fc;font-weight:650;white-space:nowrap}
+.s2-achievement td{padding:12px 8px;border-top:1px solid #eef2f7;color:#3f5772;line-height:1.45;font-size:12px;vertical-align:top}
+.s2-achievement td button{padding:0;text-align:left;color:#185ba2;background:none;border:0;cursor:pointer;font-size:12px;font-weight:680}
+.s2-achievement td button small{display:block;margin-top:4px;color:#8ba0b6;font-weight:450;font-size:12px}
+.s2-achievement-insights dl{display:grid;gap:8px;margin:0}
+.s2-achievement-insights dl div{display:flex;justify-content:space-between;border-bottom:1px solid #e8eef5;padding:6px 0;gap:8px}
+.s2-achievement-insights dt{font-size:12px;color:#667e96}
+.s2-achievement-insights dd{font-size:13px;color:#1a508a;font-weight:740;margin:0}
+.s2-achievement-insights h3{font-size:12px;margin:18px 0 5px;color:#2c5a8b}
+.s2-achievement-insights p{margin:0;font-size:12px;color:#7990a8;line-height:1.5}
+.s2-achievement-evidence{margin-top:12px}
+.s2-achievement-evidence article{display:grid;grid-template-columns:115px 145px 1fr;gap:10px;border-top:1px solid #e8eef5;padding:13px 0;align-items:start}
+.s2-achievement-evidence article time,.s2-achievement-evidence article span{font-size:12px;color:#7290a9}
+.s2-achievement-evidence article p{font-size:12px;color:#324f6a;line-height:1.5;margin:0;white-space:pre-wrap}
+.s2-achievement-disclaimer{font-size:12px;color:#7890a8;line-height:1.55;margin:12px 0 30px}
+.s2-achievement-empty{color:#8396a9;font-size:12px;padding:12px}
+.s2-achievement-error{border:1px solid #edcec9;background:#fff7f6;color:#923d33;padding:15px;font-size:12px;margin-bottom:14px}
+.s2-achievement-error button{display:block;border:none;background:none;color:#9c3434;text-decoration:underline;margin-top:8px}
+@media(max-width:1000px){.s2-achievement-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2-achievement-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.s2-achievement-heading{align-items:flex-start;flex-direction:column}.s2-achievement-layout{grid-template-columns:1fr}.s2-achievement-evidence article{grid-template-columns:1fr 1fr}.s2-achievement-evidence article p{grid-column:1/-1}}
+@media(max-width:440px){.s2-achievement-heading h1{font-size:27px}.s2-achievement-filters{grid-template-columns:1fr}.s2-achievement-actions{width:100%}.s2-achievement-actions button{flex:1}.s2-achievement-metrics{gap:7px}.s2-achievement-metrics article{padding:12px;min-height:117px}.s2-achievement-metrics strong{font-size:22px}}
+@media print{
+  @page{size:A4 portrait;margin:12mm}
+  .s2-achievement{width:100%;max-width:100%;padding:0!important;font-family:Arial,sans-serif;color:#173254;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .s2-achievement .s2-achievement-actions,.s2-achievement .s2-achievement-filters{display:none!important}
+  .s2-achievement .s2-achievement-layout{display:block}
+  .s2-achievement .s2-achievement-insights{margin-top:10px}
+  .s2-achievement .s2-achievement-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .s2-achievement .s2-achievement-table-scroll{overflow:visible}
+  .s2-achievement .s2-achievement-table-scroll table{min-width:0}
+  .s2-achievement .s2-achievement-evidence article,.s2-achievement .s2-achievement-panel,.s2-achievement .s2-achievement-metrics article{break-inside:avoid}
+  body:has(.s2-achievement) .ev2s-sidebar,body:has(.s2-achievement) .ev2s-topbar,body:has(.s2-achievement) .ev2s-mobile-nav,body:has(.s2-achievement) .ev2s-mobile-topbar{display:none!important}
+}
+
+/* Print only the authorised personal report, never adjacent shell, drawer or HR context. */
+@media print{
+  body:has(.s2-achievement) *{visibility:hidden!important}
+  .s2-achievement,.s2-achievement *{visibility:visible!important}
+  .s2-achievement{position:absolute!important;top:0!important;left:0!important;overflow:visible!important}
+}

@@ -40,7 +40,8 @@ export default function Announcements({ me, back, createRequest = false, onCreat
   }, [initialAnnouncementId, rows, selected]);
   useEffect(() => {
     if (createRequest && canPublish) {
-      setForm(blankForm());
+      // A delayed create intent must not erase a draft already being typed.
+      setForm((current) => current ?? blankForm());
       onCreateHandled?.();
     }
   }, [createRequest, canPublish]);
@@ -221,16 +222,16 @@ export default function Announcements({ me, back, createRequest = false, onCreat
     >
       <label className="label" htmlFor="announcement-title">Title *</label>
       <div className="assistive-inline">
-        <input id="announcement-title" className="field" placeholder="e.g. Sunday Service Update" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+        <input id="announcement-title" className="field" placeholder="e.g. Sunday Service Update" value={form.title} onChange={(event) => { const value = event.target.value; setForm((current) => ({ ...current, title: value })); }} />
         <VoiceInput compact label="Speak announcement title" onResult={(text) => setForm((current) => ({ ...current, title: current.title ? current.title + " " + text : text }))} />
       </div>
 
       <div className="reference-audience">
         <span className="label">Audience *</span>
         <div className="reference-audience-pills">
-          <button type="button" className={form.audienceMode === "everyone" ? "is-active" : ""} onClick={() => setForm({ ...form, audienceMode: "everyone", allOrg: true, unitIds: [], roles: [] })}>Everyone</button>
-          <button type="button" className={form.audienceMode === "departments" ? "is-active" : ""} onClick={() => setForm({ ...form, audienceMode: "departments", allOrg: false, roles: [] })}>Select departments</button>
-          <button type="button" className={form.audienceMode === "roles" ? "is-active" : ""} onClick={() => setForm({ ...form, audienceMode: "roles", allOrg: false, unitIds: [] })}>Select roles</button>
+          <button type="button" className={form.audienceMode === "everyone" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "everyone", allOrg: true, unitIds: [], roles: [] }))}>Everyone</button>
+          <button type="button" className={form.audienceMode === "departments" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "departments", allOrg: false, roles: [] }))}>Select departments</button>
+          <button type="button" className={form.audienceMode === "roles" ? "is-active" : ""} onClick={() => setForm((current) => ({ ...current, audienceMode: "roles", allOrg: false, unitIds: [] }))}>Select roles</button>
         </div>
         {form.audienceMode === "departments" && <div className="reference-audience-options">
           {units.map((unit) => <label className="reference-chip-check" key={unit.id}><input type="checkbox" checked={form.unitIds.includes(unit.id)} onChange={() => toggleList("unitIds", unit.id)} /><span>{unit.name}</span></label>)}
@@ -242,19 +243,19 @@ export default function Announcements({ me, back, createRequest = false, onCreat
 
       <label className="label" htmlFor="announcement-body">Message *</label>
       <div className="reference-message-box">
-        <textarea id="announcement-body" className="field" rows={7} placeholder="Write your announcement…" value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} />
+        <textarea id="announcement-body" className="field" rows={7} placeholder="Write your announcement…" value={form.body} onChange={(event) => { const value = event.target.value; setForm((current) => ({ ...current, body: value })); }} />
         <VoiceInput compact label="Speak announcement message" onResult={(text) => setForm((current) => ({ ...current, body: current.body ? current.body + " " + text : text }))} />
       </div>
 
       <details className="reference-disclosure">
         <summary><span>Attachments</span><span>+ Add file · {(form.files || []).length}</span></summary>
         <div className="reference-disclosure-body">
-          <PendingFilePicker files={form.files || []} onChange={(files) => setForm({ ...form, files })} label="Attach files" disabled={busy} />
+          <PendingFilePicker files={form.files || []} onChange={(files) => setForm((current) => ({ ...current, files }))} label="Attach files" disabled={busy} />
         </div>
       </details>
 
       <FieldGroup label="Available until (optional)">
-        <input id="announcement-expiry" className="field" type="datetime-local" value={form.expiresAt} onChange={(event) => setForm({ ...form, expiresAt: event.target.value })} />
+        <input id="announcement-expiry" className="field" type="datetime-local" value={form.expiresAt} onChange={(event) => { const value = event.target.value; setForm((current) => ({ ...current, expiresAt: value })); }} />
         <span className="field-hint">The announcement remains a draft until it is explicitly published.</span>
       </FieldGroup>
 
@@ -262,13 +263,13 @@ export default function Announcements({ me, back, createRequest = false, onCreat
         <summary><span>More options</span><span>+</span></summary>
         <div className="reference-disclosure-body">
           <FieldGroup label="Priority">
-            <select id="announcement-priority" className="field" value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })}>
+            <select id="announcement-priority" className="field" value={form.priority} onChange={(event) => { const value = event.target.value; setForm((current) => ({ ...current, priority: value })); }}>
               <option value="normal">Normal</option>
               <option value="important">Important</option>
               <option value="urgent">Urgent</option>
             </select>
           </FieldGroup>
-          <label className="reference-check"><input type="checkbox" checked={form.requiresAck} onChange={(event) => setForm({ ...form, requiresAck: event.target.checked })} /><span>Require acknowledgement</span></label>
+          <label className="reference-check"><input type="checkbox" checked={form.requiresAck} onChange={(event) => { const checked = event.target.checked; setForm((current) => ({ ...current, requiresAck: checked })); }} /><span>Require acknowledgement</span></label>
         </div>
       </details>
     </ComposerDrawer>}

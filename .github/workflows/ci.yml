@@ -62,6 +62,10 @@ jobs:
         if: steps.classify.outputs.documentation_only != 'true'
         run: npm run verify:source
 
+      - name: Validate P1 preview integrity and safe CI classification
+        if: steps.classify.outputs.documentation_only != 'true'
+        run: node --test tests/stage2P1ConnectedDesignContract.test.mjs tests/p1DesignPreviewScope.test.mjs
+
       - name: Dependency security audit
         if: steps.classify.outputs.documentation_only != 'true'
         run: npm audit --audit-level=high

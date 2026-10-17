@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import ProjectParticipantRegister from "../components/ProjectParticipantRegister";
+import Stage2ProjectReader from "../components/Stage2ProjectReader";
 import {
   ProjectContextRow,
   ProjectEmpty,
@@ -23,7 +24,7 @@ function label(list, value) {
 function human(value = "") {
   return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase());
 }
-export default function Delivery({ me, initialProjectId = null }) {
+export default function Delivery({ me, initialProjectId = null, openItem }) {
   const [projects,setProjects]=useState([]);
   const [groups,setGroups]=useState([]);
   const [groupLinks,setGroupLinks]=useState([]);
@@ -38,6 +39,7 @@ export default function Delivery({ me, initialProjectId = null }) {
   const [strategyLinks,setStrategyLinks]=useState([]);
   const [strategyNodes,setStrategyNodes]=useState([]);
   const [selectedProjectId,setSelectedProjectId]=useState("");
+  const [inspectProjectId,setInspectProjectId]=useState(null);
   const [showOperations,setShowOperations]=useState(false);
   const [sheet,setSheet]=useState(null);
   const [busy,setBusy]=useState(false);
@@ -321,6 +323,10 @@ export default function Delivery({ me, initialProjectId = null }) {
     return explicitHealth||seriousOpenItem;
   });
 
+  if (executiveSurface && inspectProjectId) return <div className="body ev2-project-page ev2-project-delivery is-executive">
+    <Stage2ProjectReader key={inspectProjectId} projectId={inspectProjectId} openItem={openItem} onBack={() => setInspectProjectId(null)} />
+  </div>;
+
   return <div className={"body ev2-project-page ev2-project-delivery"+(executiveSurface?" is-executive":"")}>
     <ProjectPageHeader
       eyebrow={executiveSurface ? "Strategic portfolio" : "Work Management 2.0"}
@@ -356,7 +362,7 @@ export default function Delivery({ me, initialProjectId = null }) {
               {label:"Open risks / issues",value:openRegister.length},
               {label:"High / critical",value:openRegister.filter((row)=>["high","critical"].includes(row.severity)).length},
             ]}
-            actions={[{label:"Operational details",onClick:()=>{setSelectedProjectId(project.id);setShowOperations(true);}}]}
+            actions={[{label:"Open project",onClick:()=>setInspectProjectId(project.id)},{label:"Operational details",onClick:()=>{setSelectedProjectId(project.id);setShowOperations(true);}}]}
           />;
         })}
       </div>:<ProjectEmpty title="No recorded project attention" description="No visible project currently has Watch, At risk, Blocked, or a high / critical open register item." />}
@@ -386,7 +392,7 @@ export default function Delivery({ me, initialProjectId = null }) {
               {label:"Open milestones",value:openMilestones},
               {label:"Decision",value:needsDecision?"Review":"None recorded"},
             ]}
-            actions={[{label:"Operational details",onClick:()=>{setSelectedProjectId(project.id);setShowOperations(true);}}]}
+            actions={[{label:"Open project",onClick:()=>setInspectProjectId(project.id)},{label:"Operational details",onClick:()=>{setSelectedProjectId(project.id);setShowOperations(true);}}]}
           />;
         })}
       </div> : <ProjectEmpty title="No projects recorded" description="Authorised project records will appear here." />}

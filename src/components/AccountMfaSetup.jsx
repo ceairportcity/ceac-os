@@ -10,12 +10,24 @@ export default function AccountMfaSetup({ onVerified }) {
   const [statusReady, setStatusReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [factors, setFactors] = useState([]);
+  const [selectedFactorId, setSelectedFactorId] = useState(null);
   const [level, setLevel] = useState("aal1");
   const [setup, setSetup] = useState(null);
   const [code, setCode] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
+
+
+  // A backup factor is a separate verified provider factor. Keep the user's
+  // selection only while it remains present in the provider's own factor list.
+  function recordVerifiedFactors(data) {
+    const active = verifiedMfaFactors(data || {})
+      .filter((factor) => factor.factor_type === "totp");
+    setFactors(active);
+    setSelectedFactorId((previous) =>
+      active.some((factor) => factor.id === previous) ? previous : active[0]?.id || null);
+  }
 
   async function refresh() {
     const [factorResult, assuranceResult] = await Promise.all([
@@ -24,8 +36,7 @@ export default function AccountMfaSetup({ onVerified }) {
     ]);
     if (factorResult.error) throw factorResult.error;
     if (assuranceResult.error) throw assuranceResult.error;
-    setFactors(verifiedMfaFactors(factorResult.data || {})
-      .filter((factor) => factor.factor_type === "totp"));
+    recordVerifiedFactors(factorResult.data);
     setLevel(assuranceResult.data?.currentLevel || "aal1");
     setStatusReady(true);
   }
@@ -41,8 +52,7 @@ export default function AccountMfaSetup({ onVerified }) {
         if (!active) return;
         if (factorResult.error) throw factorResult.error;
         if (assuranceResult.error) throw assuranceResult.error;
-        setFactors(verifiedMfaFactors(factorResult.data || {})
-          .filter((factor) => factor.factor_type === "totp"));
+        recordVerifiedFactors(factorResult.data);
         setLevel(assuranceResult.data?.currentLevel || "aal1");
         setStatusReady(true);
       } catch (err) {
@@ -55,14 +65,14 @@ export default function AccountMfaSetup({ onVerified }) {
   }, []);
 
   async function startEnrollment() {
-    if (busy || setup) return;
+    if (busy || setup || (factors.length > 0 && level !== "aal2")) return;
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
       const { data, error: failure } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "CEAC authenticator",
+        friendlyName: factors.length ? "CEAC backup authenticator" : "CEAC authenticator",
       });
       if (failure) throw failure;
       if (!data?.id || !data?.totp) throw new Error("Authenticator setup was not returned.");
@@ -88,7 +98,9 @@ export default function AccountMfaSetup({ onVerified }) {
       setError("Enter the six-digit code shown by your authenticator app.");
       return;
     }
-    const factorId = setup?.id || factors[0]?.id;
+    const factorId = setup?.id || (
+      factors.some((factor) => factor.id === selectedFactorId) ? selectedFactorId : factors[0]?.id
+    );
     if (!factorId) {
       setError("Set up an authenticator before verifying a code.");
       return;
@@ -133,11 +145,14 @@ export default function AccountMfaSetup({ onVerified }) {
     }
   }
 
-      const enrolled = factors.length > 0;
+  const enrolled = factors.length > 0;
   const needsStepUp = enrolled && level !== "aal2";
+  // A verified AAL2 user may enrol one independent backup authenticator
+  // BEFORE losing the primary. Password-only sessions cannot add a backup.
+  const canAddBackup = enrolled && level === "aal2" && factors.length < 2;
 return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
       <p className="screen-note">
-      An authenticator app adds a second check when you sign in to a privileged CEAC workspace.
+      An authenticator app provides the required second check for your CEAC account.
       Set this up for your own account only. Never share setup keys or verification codes.
     </p>
     {loading && <p role="status" aria-busy="true">Checking your authenticator...</p>}
@@ -150,6 +165,11 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
     </p>}
     {error && <div className="flag flag-brick" role="alert">{error}</div>}
     {notice && <p role="status" className="pill p-green">{notice}</p>}
+    {/* Auth token refresh can remount this account screen, discarding a brief
+        success toast. Persist the factual backup status via the provider list
+        instead of client storage or a remembered AAL2 flag. */}
+    {!loading && statusReady && factors.length > 1 &&
+      <p role="status">A backup authenticator is verified for this account.</p>}
 
     {!loading && !statusReady && <button type="button" className="btn btn-ghost" disabled={busy} onClick={async () => {
       setBusy(true); setError(null);
@@ -157,10 +177,18 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
       finally { setBusy(false); }
     }}>Retry authenticator status</button>}
 
-    {!loading && statusReady && !enrolled && !setup &&
-      <button type="button" className="btn wide-auto" onClick={startEnrollment} disabled={busy}>
-        {busy ? "Preparing..." : "Set up authenticator"}
-      </button>}
+    {!loading && statusReady && !setup && (!enrolled || canAddBackup) &&
+      <>
+        {canAddBackup && <p className="screen-note">
+          Add a separate backup authenticator while your current verified session is active.
+          It can help if your primary device is lost. If both authenticators are unavailable,
+          request an independently verified recovery from authorised CEAC Administration.
+          A password reset alone cannot replace the required authenticator.
+        </p>}
+        <button type="button" className="btn wide-auto" onClick={startEnrollment} disabled={busy}>
+          {busy ? "Preparing..." : canAddBackup ? "Add backup authenticator" : "Set up authenticator"}
+        </button>
+      </>}
 
     {setup && <div className="ev2pf-mfa-enrollment">
       <p>Open your authenticator app and add a new account using this QR code.</p>
@@ -176,6 +204,28 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
 
     {!loading && statusReady && (setup || needsStepUp) &&
       <div className="auth-form">
+        {needsStepUp && factors.length > 1 &&
+          <label className="auth-field">
+            <span>Authenticator device</span>
+            <select
+              aria-label="Authenticator device"
+              value={selectedFactorId || factors[0]?.id || ""}
+              onChange={(event) => {
+                setSelectedFactorId(event.target.value);
+                setCode("");
+                setError(null);
+              }}
+              disabled={busy}
+            >
+              {factors.map((factor, index) =>
+                <option key={factor.id} value={factor.id}>
+                  {factor.friendly_name === "CEAC backup authenticator"
+                    ? "Backup authenticator"
+                    : factor.friendly_name || `Authenticator ${index + 1}`}
+                </option>
+              )}
+            </select>
+          </label>}
         <label className="auth-field">
           <span>Six-digit authenticator code</span>
           <input

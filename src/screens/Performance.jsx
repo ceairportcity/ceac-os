@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import StructuredAppraisalRatings from "../components/StructuredAppraisalRatings";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Avatar } from "../experience-v2/components";
@@ -526,7 +527,11 @@ export default function Performance({ me }) {
             {entries.filter((entry) => entry.entry_type === "manager_assessment").map((entry) => <div key={entry.id}><strong>{entry.body}</strong><span>{entry.author?.full_name || "Reviewer"} · {new Date(entry.created_at).toLocaleString("en-GB")}</span></div>)}
           </details>}
 
-          <div className="performance-section-head"><div><span className="eyebrow">Human review</span><h3>Review conversation</h3></div></div>
+          <StructuredAppraisalRatings key={selectedCase.id} me={me} review={selectedCase} cycle={selectedCycle}
+             evidence={evidence} assessment={currentAssessment} isReviewer={isReviewer}
+             isHR={hrReleaseAdmin} onSaved={() => loadCase(selectedCase.id)} />
+
+           <div className="performance-section-head"><div><span className="eyebrow">Human review</span><h3>Review conversation</h3></div></div>
           {currentConversation && <div className="card performance-narrative"><p>{currentConversation.body}</p><small>{currentConversation.author?.full_name || "Reviewer"} · {new Date(currentConversation.created_at).toLocaleString("en-GB")}</small></div>}
           {isReviewer && <>
             <FieldGroup label={currentConversation ? "Revise conversation record" : "What was discussed and agreed?"}>

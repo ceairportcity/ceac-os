@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CEAC OS — Stage 2 P1 connected role design review</title>
+<meta name="color-scheme" content="light">
+<style>
+:root{--bg:#f5f8fc;--surface:#fff;--nav:#fff;--ink:#122440;--muted:#63758e;--soft:#8fa0b4;--line:#e7edf4;--line2:#dce6f1;--blue:#1368ed;--blue2:#0c56cb;--bluewash:#edf5ff;--green:#0b9c75;--greenwash:#eaf9f2;--amber:#bd7c17;--red:#df4356;--shadow:0 12px 35px rgba(24,49,90,.038);--round:12px}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #9bc5ff;outline-offset:2px}input,select,textarea{border:1px solid var(--line2);border-radius:7px;min-height:40px;background:white;color:var(--ink);padding:8px 10px;width:100%}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.app{min-height:100vh;display:grid;grid-template-columns:230px minmax(0,1fr)}aside{background:white;border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:24px;min-width:0}
+.brand{font-size:16px;font-weight:800;letter-spacing:-.4px;display:flex;gap:11px;align-items:center}.brandmark{background:#123b76;color:white;display:grid;place-items:center;width:37px;height:37px;border-radius:9px;font-size:11px}.eyebrow{text-transform:uppercase;letter-spacing:1.2px;font-weight:750;color:var(--soft);font-size:10px}
+nav{display:flex;flex-direction:column;gap:3px}nav button{background:transparent;border:0;text-align:left;border-radius:7px;padding:10px 12px;color:#556a85;display:flex;align-items:center;justify-content:space-between}nav button[aria-current="page"]{background:var(--bluewash);color:#0b59c3;font-weight:700;border-left:3px solid var(--blue);padding-left:9px}nav button:hover{background:#f5f8fc}aside small{color:var(--muted)}.sidefoot{margin-top:auto;padding:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+main{min-width:0}.top{height:72px;background:#fff;border-bottom:1px solid var(--line);padding:0 30px;display:flex;align-items:center;gap:14px;justify-content:space-between}.top strong{font-size:16px}.top-right{display:flex;align-items:center;gap:10px}.top label{font-size:11px;color:var(--muted)}.top select{width:195px;font-size:12px;min-height:36px}
+.content{padding:29px 32px 55px;max-width:1500px;margin:auto}.notice{font-size:12px;border:1px solid #cad9f0;background:#eef5ff;padding:10px 14px;border-radius:8px;color:#285286;margin-bottom:20px}.headline{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:23px}.headline h1{font-size:25px;line-height:1.15;letter-spacing:-.7px;margin:5px 0}.headline p{margin:7px 0 0;color:var(--muted);max-width:700px}
+.btn{border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:7px;padding:9px 14px;min-height:38px;font-weight:650}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn:hover{filter:brightness(.97)}.btn.ghost{background:var(--bluewash);color:var(--blue2);border-color:transparent}.btn.danger{color:#bc2f44}.actions{display:flex;flex-wrap:wrap;gap:8px}.two{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr);gap:18px}.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.panel{background:white;border:1px solid var(--line);border-radius:var(--round);padding:19px;min-width:0;box-shadow:var(--shadow)}.panel h2{font-size:15px;margin:0 0 15px}.panel p{color:var(--muted)}
+.metric{font-size:27px;font-weight:750;letter-spacing:-1px}.subtle{font-size:12px;color:var(--muted)}.green{color:var(--green)}.blue{color:var(--blue)}.warn{color:var(--amber)}
+/* P1 reviewed-direction candidate: bright photo in upper-right, not the withdrawn dark or plain Overview. */
+.s2ov-workspace{display:grid;gap:14px}
+.s2ov-hero{position:relative;isolation:isolate;min-height:126px;border-radius:12px;overflow:hidden;background:#f3f9ff;border:1px solid #e0ebf6;padding:17px 23px;display:flex;align-items:center}
+.s2ov-title{position:relative;z-index:1;width:72%;max-width:750px}.s2ov-title .eyebrow{color:#678eac}.s2ov-title h1{font-size:28px;line-height:1.1;margin:5px 0;color:#183b61;letter-spacing:-.75px}.s2ov-title p{font-size:13px;color:#506d89;margin:4px 0;max-width:540px}
+.s2ov-role-heading{font-size:13px;color:#245d92;margin:8px 0 0;font-weight:700}
+.s2ov-photo{position:absolute;z-index:0;inset:0 0 0 auto;width:52%;background:linear-gradient(90deg,#f3f9ff 0%,rgba(243,249,255,.85) 20%,rgba(243,249,255,.1) 69%),url("../../../public/assets/ceac-landscapes/scene-01.webp") center/cover}
+.s2ov-photo strong{position:absolute;right:20px;top:20px;max-width:165px;text-align:right;color:#153451;font-size:12px;line-height:1.3;text-shadow:0 1px 8px #ffffffcc}
+.s2ov-four{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:-3px}
+.s2ov-four>.panel{min-height:215px;padding:18px 16px}.s2ov-four>.panel h2{font-size:14px;margin-bottom:12px}
+.s2ov-four .list-row{padding:9px 0;font-size:12px}.s2ov-four .list-row span{font-size:11px}
+.s2ov-four .form-note{font-size:11px;margin:8px 0 0}
+.s2ov-session{display:flex;flex-direction:column;align-items:flex-start;gap:10px}.s2ov-session>strong{font-size:17px;color:#163d67}.s2ov-session-location{background:#f2f7fd;border:1px solid #dfecf9;border-radius:7px;font-size:11px;color:#416584;padding:7px 9px}.s2ov-session .btn{width:100%}
+.s2ov-project-lines{display:flex;flex-direction:column;gap:15px}.s2ov-project-lines>div{display:flex;flex-direction:column;gap:7px;font-size:12px}.s2ov-meter{height:7px;border-radius:10px;background:#eaf1fa;overflow:hidden}.s2ov-meter i{display:block;height:100%;background:#1685e7;border-radius:10px}.s2ov-project-lines>div:nth-child(2) .s2ov-meter i{background:#1eb590}
+.s2ov-activity-bars{height:97px;border-bottom:1px solid #d8e5f5;display:flex;align-items:flex-end;gap:8px;padding:6px 3px 0}.s2ov-activity-bars i{flex:1;background:linear-gradient(180deg,#75b9f3,#2589dd);border-radius:2px 2px 0 0;min-height:3px}
+.s2ov-lower{display:grid;grid-template-columns:minmax(0,2fr) minmax(255px,.95fr);gap:13px}.s2ov-lower>.panel{min-height:210px}.s2ov-lower .list-row{gap:10px}
+.s2ov-inspector{display:grid;gap:10px}.s2ov-inspector>strong{font-size:17px;color:#163d67}.s2ov-inspector>p{font-size:12px}
+.s2ov-unit .strip{margin:0 0 10px;padding:0 0 10px}
+
+/* Exact owner-selected Work desktop/390px composition: structured register + right inspector. */
+.s2w-grid{display:grid;grid-template-columns:minmax(0,2.7fr) minmax(260px,1fr);gap:13px;align-items:start}
+.s2w-grid>.s2w-register,.s2w-grid>.s2w-inspector{min-width:0}
+.s2w-register .panel{position:relative;padding:21px 0 14px;overflow:hidden}
+.s2w-register .panel>h2{margin:0 22px 12px;font-size:18px}
+.s2w-count{position:absolute;right:21px;top:26px;color:#8396ab;font-size:11px}
+.s2w-tabs{display:flex;align-items:center;gap:21px;overflow-x:auto;border-bottom:1px solid #e1eaf4;margin:0 20px;padding-bottom:1px;scrollbar-width:thin}
+.s2w-tabs button{appearance:none;flex:none;border:0;border-bottom:2px solid transparent;padding:8px 0 12px;background:none;color:#788da5;font-weight:650;font-size:12px;white-space:nowrap}
+.s2w-tabs button.active{color:#1269dc;border-bottom-color:#1685ee}
+.s2w-table-head,.s2w-row{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(110px,1.25fr) 82px minmax(110px,.9fr);align-items:center;gap:8px;padding:11px 20px;text-align:left}
+.s2w-table-head{background:#f6f9fc;color:#778da6;font-weight:750;text-transform:uppercase;font-size:10px;letter-spacing:.7px}
+.s2w-row{width:100%;border:0;border-top:1px solid #eef2f7;background:#fff;color:#294262;font-size:12px;min-height:61px}
+.s2w-row:hover,.s2w-row:focus-visible{background:#edf5ff}
+.s2w-row .s2w-name{display:grid;gap:4px;min-width:0}
+.s2w-row .s2w-name strong{font-size:12px;white-space:normal;color:#173c64}
+.s2w-row small{color:#95a3af;font-size:11px}
+.s2w-row .s2w-project,.s2w-row .s2w-due{font-size:11px;color:#657b90}
+.s2w-state{font-size:11px;color:#637689}
+.s2w-state:before{content:"";display:inline-block;vertical-align:middle;background:#318ef0;width:5px;height:5px;border-radius:50%;margin-right:7px}
+.s2w-state.waiting:before{background:#d99736}.s2w-state.review:before{background:#7766eb}.s2w-state.done:before{background:#18a875}.s2w-state.draft:before{background:#99aabd}
+.s2w-group{display:flex;align-items:center;gap:9px;border-top:1px solid #ecf1f7;padding:12px 20px;color:#2b485f;font-size:11px;font-weight:650}.s2w-group>span{color:#9eacbc;font-weight:400}
+.s2w-register .panel>.form-note{padding:0 20px;margin:12px 0 0}
+.s2w-inspector .panel{padding:20px}.s2w-inspector .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:#7393b1}.s2w-details{display:grid;gap:10px}.s2w-details h3{margin:0;font-size:17px;color:#193f67}.s2w-details>p{font-size:12px;color:#7c8fa1;margin:0}
+.s2w-detail-metrics{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px 0;gap:11px}
+.s2w-detail-metrics div{display:grid;gap:6px}.s2w-detail-metrics span{font-size:10px;color:#8ca0b1}.s2w-detail-metrics strong{font-size:12px;color:#2d4760}
+.s2w-next{background:#edf5ff;border-left:3px solid #1484ee;padding:11px;font-size:12px}.s2w-next p{margin:6px 0 0;color:#59748f;font-size:11px}
+.s2w-timeline{margin:0;padding:0 0 0 18px;display:grid;gap:15px}.s2w-timeline li{color:#284860;font-size:12px}.s2w-timeline li::marker{color:#9bbeb4}.s2w-timeline li strong,.s2w-timeline li small{display:block}.s2w-timeline li small{color:#98a8b7;font-size:11px;margin-top:4px}.s2w-details>.btn{width:100%}
+
+/* Selected Projects hierarchy: one collaborative workspace with ONE team/department area + task table and inspector */
+.s2pr-workspace{display:grid;gap:12px}
+.s2pr-workspace>.headline{margin-bottom:2px}
+.s2pr-hero{border:1px solid #e0ecf7;border-radius:11px;background:#f3f9ff;position:relative;overflow:hidden;padding:20px 24px;min-height:161px;display:flex;align-items:center}
+.s2pr-headline{z-index:1;position:relative;max-width:75%}.s2pr-headline h1{font-size:22px;color:#193e66;margin:8px 0;letter-spacing:-.5px}.s2pr-headline p{margin:0;color:#56738e;max-width:540px}
+.s2pr-label{font-size:10px;background:#daf4e6;color:#117a56;padding:6px 9px;border-radius:8px;letter-spacing:0;vertical-align:middle;white-space:nowrap}
+.s2pr-keyline{display:flex;gap:14px;flex-wrap:wrap;margin-top:17px;font-size:11px;color:#426588}
+.s2pr-photo{position:absolute;inset:0 0 0 auto;width:55%;background:linear-gradient(90deg,#f3f9ff 0%,rgba(243,249,255,.8) 30%,rgba(243,249,255,.08) 95%),url("../../../public/assets/ceac-landscapes/scene-01.webp") center/cover}
+.s2pr-photo strong{position:absolute;right:25px;top:22px;color:#173957;line-height:1.35;font-size:15px;text-align:right}
+.s2pr-tabs{display:flex;align-items:center;gap:22px;overflow-x:auto;border-bottom:1px solid var(--line2);padding:1px 10px;scrollbar-width:thin}
+.s2pr-tabs button{display:block;flex:none;white-space:nowrap;font-size:12px;padding:9px 0;color:#5d7690;border:0;border-bottom:2px solid transparent;background:none}.s2pr-tabs button[aria-selected="true"]{font-weight:750;color:#116ceb;border-bottom:2px solid #197ef0}
+.s2pr-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.s2pr-metric{border:1px solid var(--line);border-radius:9px;background:white;min-width:0;padding:15px}
+.s2pr-metric h3{font-size:12px;margin:0 0 14px;color:#223f64}.s2pr-metric>div{display:flex;flex-direction:column;gap:6px}.s2pr-metric strong{font-size:16px;color:#17446f}.s2pr-metric small{font-size:11px;color:#738a9e}
+.s2pr-main{display:grid;grid-template-columns:minmax(0,2.5fr) minmax(245px,.9fr);gap:12px;align-items:start}.s2pr-left{display:grid;gap:12px;min-width:0}.s2pr-right{min-width:0}
+.s2pr-small-title{font-size:13px;margin:18px 0 10px}.s2pr-team{display:flex;gap:9px;flex-wrap:wrap}.s2pr-team span,.s2pr-departments span{border-radius:7px;background:#f1f7fd;color:#2d5681;font-size:11px;padding:10px 12px}
+.s2pr-departments{display:flex;gap:8px;flex-wrap:wrap}.s2pr-taskpanel{padding:16px 0}.s2pr-taskpanel h2,.s2pr-taskpanel>.form-note{margin:0 17px 8px}.s2pr-taskpanel>.form-note{padding-bottom:8px}
+.s2pr-columns,.s2pr-taskrow{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(110px,1fr) minmax(90px,.7fr);gap:8px;padding:11px 16px;border-bottom:1px solid #eaf0f8;align-items:center;font-size:11px}
+.s2pr-columns{background:#f5f8fc;color:#6c8aa3;font-size:10px;text-transform:uppercase;font-weight:700}
+.s2pr-taskrow strong{font-size:11px;color:#1e4266}.s2pr-taskrow span{color:#6b8199}
+.s2pr-about{display:grid;gap:11px;border-bottom:1px solid var(--line);padding-bottom:17px}
+.s2pr-about>div{display:flex;justify-content:space-between;gap:9px;font-size:11px}.s2pr-about span{color:#718da9}.s2pr-about strong{text-align:right;color:#1c4567}
+.s2hr-review .strip{align-items:start}.s2hr-steps{padding-left:22px;display:grid;gap:12px;font-size:12px;color:#49647e}
+.s2hr-review .no-real-data{margin:12px 0;line-height:1.6}
+@media(max-width:520px){.s2hr-review{grid-template-columns:minmax(0,1fr)}.s2hr-review .strip{gap:11px;flex-direction:column}}
+.s2pr-timeline{font-size:11px;color:#4a6884;margin:0;padding-left:20px;display:grid;gap:12px}
+@media(max-width:1120px){.s2pr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2pr-main{grid-template-columns:1fr}.s2pr-photo strong{display:none}}
+@media(max-width:520px){.s2pr-hero{padding:16px;min-height:175px}.s2pr-headline{max-width:100%}.s2pr-headline h1{font-size:19px}.s2pr-photo{width:100%;opacity:.17}.s2pr-keyline{gap:7px}.s2pr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2pr-metric{padding:12px}.s2pr-columns,.s2pr-taskrow{grid-template-columns:minmax(0,1.3fr) minmax(80px,.8fr)}.s2pr-columns span:nth-child(2),.s2pr-taskrow span:nth-child(2){display:none}}
+
+@media(max-width:920px){.s2w-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:520px){.s2w-register .panel{padding-top:16px}.s2w-count{top:19px}.s2w-tabs{gap:18px}.s2w-table-head,.s2w-row{grid-template-columns:minmax(0,1.5fr) minmax(93px,.75fr);gap:9px;padding:11px 13px}.s2w-table-head span:nth-child(2),.s2w-table-head span:nth-child(3),.s2w-project,.s2w-due{display:none}.s2w-register .panel>h2{margin-left:14px}.s2w-state{font-size:10px}.s2w-group{padding-left:13px}.s2w-register .panel>.form-note{padding:0 14px}.s2w-inspector .panel{padding:19px}}
+
+@media(max-width:1240px){.s2ov-four{grid-template-columns:repeat(2,minmax(0,1fr))}.s2ov-four>.panel{min-height:185px}}
+@media(max-width:740px){.s2ov-lower{grid-template-columns:minmax(0,1fr)}.s2ov-hero{min-height:126px;padding:16px 18px}.s2ov-title{width:86%}.s2ov-photo{width:68%;opacity:.72}.s2ov-photo strong{display:none}}
+@media(max-width:520px){.s2ov-four{grid-template-columns:minmax(0,1fr)}.s2ov-title{width:100%}.s2ov-photo{width:100%;opacity:.16}.s2ov-four>.panel{min-height:unset}.s2ov-lower{gap:12px}.s2ov-hero{min-height:138px}.s2ov-title h1{font-size:27px}}
+
+table{width:100%;border-collapse:collapse;text-align:left}th{font-size:11px;color:var(--muted);font-weight:750;text-transform:uppercase;letter-spacing:.5px;background:#f9fbfd}td,th{border-bottom:1px solid var(--line);padding:12px 9px;vertical-align:top}tr:last-child td{border-bottom:0}.status{font-size:11px;color:#216278;font-weight:650}.field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:#425a75}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-grid .full{grid-column:1/-1}.form-note{color:var(--muted);font-size:12px}.list-row{width:100%;display:flex;gap:10px;justify-content:space-between;align-items:center;text-align:left;border:0;background:white;padding:14px 0;border-bottom:1px solid var(--line);color:inherit}.list-row:last-child{border-bottom:0}.list-row:hover{color:var(--blue2)}.list-row strong{display:block}.list-row span{font-size:12px;color:var(--muted)}.strip{display:flex;gap:20px;flex-wrap:wrap;padding:13px 0;border-bottom:1px solid var(--line);margin-bottom:14px}.strip strong{font-size:13px}.strip span{font-size:12px;color:var(--muted)}.section-space{margin-top:18px}.rule{height:1px;background:var(--line);margin:20px 0}.chip{font-size:11px;border:1px solid var(--line2);background:#f7faff;border-radius:6px;padding:4px 7px;color:#446187}.empty{padding:26px;text-align:center;border:1px dashed var(--line2);border-radius:8px;color:var(--muted)}.drawer-backdrop{position:fixed;inset:0;background:#152b4468;display:flex;justify-content:flex-end;z-index:50}.drawer{height:100%;background:white;width:min(550px,100%);padding:28px;overflow:auto;box-shadow:-9px 0 30px #1c314a22}.drawer header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px}.drawer h2{margin:0;font-size:22px}.drawer label{display:flex;flex-direction:column;gap:7px;margin:12px 0;font-size:12px;font-weight:650}.drawer footer{position:sticky;bottom:0;background:white;padding:15px 0;display:flex;gap:8px}.no-real-data{font-size:11px;color:#8b4a08;background:#fff9ec;border:1px solid #f4e7c9;padding:9px;border-radius:7px}.mutedbox{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:14px}.review-line{padding:13px 0;border-bottom:1px solid var(--line)}.review-line:last-child{border-bottom:0}.small-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.roundup{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.roundup .metric{font-size:21px}.link{border:0;background:none;color:var(--blue2);font-weight:700;padding:5px 0;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:960px){.app{grid-template-columns:1fr}aside{padding:11px 14px;border-right:0;border-bottom:1px solid var(--line);gap:9px}aside nav{flex-direction:row;overflow:auto}aside nav button{white-space:nowrap;min-width:max-content}aside .sidefoot,aside .eyebrow{display:none}.top{height:auto;min-height:65px;padding:12px 18px}.content{padding:21px 18px 48px}.two{grid-template-columns:1fr}}
+@media(max-width:520px){.brand{font-size:14px}.top{align-items:flex-start;flex-direction:column;gap:8px}.top-right{width:100%;justify-content:space-between}.top select{width:min(220px,58vw)}.content{padding:16px 12px 34px}.headline{align-items:flex-start;flex-direction:column}.headline h1{font-size:23px}.three,.form-grid,.small-grid{grid-template-columns:1fr}.panel{padding:15px}.hero{min-height:210px}.actions .btn{flex:1}table{font-size:12px}td,th{padding:9px 5px}.drawer{padding:20px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+@media print{aside,.top,.notice,.btn,.drawer-backdrop{display:none!important}.app{display:block}.panel{box-shadow:none}}
+</style></head><body>
+<div class="app"><aside><div class="brand"><div class="brandmark" aria-hidden="true">CEAC</div> CEAC OS</div><div class="eyebrow">Workspace</div><nav id="navigation" aria-label="Role preview destinations"></nav><div class="sidefoot">P1 connected design candidate, not owner-approved. Sample only; no live data.</div></aside>
+<main><div class="top"><strong id="breadcrumbs">CEAC OS / Overview</strong><div class="top-right"><label for="role">Preview as</label><select id="role" aria-label="Preview role">
+<option value="staff">Staff</option><option value="manager">Manager · single/multi-unit</option><option value="support">Technical Support capability</option><option value="admin">Administration / HR</option><option value="compliance">Compliance Officer · restricted panel</option><option value="payroll">Payroll-authorised officer · restricted panel</option><option value="executive">Executive</option><option value="finance">Finance-authorised officer · restricted panel</option><option value="volunteer">Volunteer · nonsalaried</option></select></div></div>
+<div class="content"><div class="notice"><strong>Owner review candidate, NOT application acceptance.</strong> This standalone design uses synthetic examples. Buttons operate locally only. Role switching is a visual review aid, never security authorisation. Exact revised Projects PNG and remaining role states still require approval.</div>
+<section id="screen" aria-live="polite"></section></div></main></div><div id="modal"></div><div class="sr" role="status" aria-live="polite" id="announcement"></div>
+<script>
+"use strict";
+const roleNav={
+ staff:[["overview","Overview"],["work","My work"],["projects","Projects"],["achievements","My achievements"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
+ manager:[["overview","Overview"],["work","Work & delegations"],["projects","Projects"],["reports","Manager reporting"],["ratings","Team appraisals"],["people","Team"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
+ support:[["support","Support desk"],["overview","My overview"],["work","My work"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
+ admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["quarterly","Quarterly event"],["projects","Projects"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
+ compliance:[["compliance","Independent Compliance desk"],["auth","Account security"]],
+ payroll:[["payroll","Payroll preparation and approval"],["auth","Account security"]],
+ finance:[["finance","Finance controls"],["auth","Account security"]],
+ executive:[["overview","Executive overview"],["strategy","Strategy & outcomes"],["reports","Quarterly evidence"],["quarterly","Quarterly event"],["projects","Projects"],["calendar","My calendar"],["myreview","My appraisal"],["auth","Account security"]],
+ volunteer:[["overview","My fellowship"],["work","Assigned activities"],["projects","Projects"],["auth","Account security"]]
+};
+const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",finance:"Budget and approved expenditure, separate from confidential payroll",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
+let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false,reportEvidenceReady=true,demoUnit="Unit One",reportEvidencePhase="ready";
+const draftWorkSamples=[];
+let authPreviewStep="setup",personalReviewPhase="unpublished",projectPreviewTab="overview",hrPreviewPhase="draft";
+function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
+const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
+function panel(title,body){return '<section class="panel"><h2>'+title+'</h2>'+body+'</section>';}
+const escapePreview=(value)=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const record=(name,detail,status)=>'<button type="button" class="list-row" data-action="inspect" data-item="'+name+'"><div><strong>'+name+'</strong><span>'+detail+'</span></div><span class="status">'+status+'</span></button>';
+function overview(){
+ // P1 visual candidate uses the OWNER-CONFIRMED scenic Overview information architecture.
+ // Demo-only: neither calculated figures nor the controls below are production data/authority.
+ const salaried=role!=="volunteer";
+ const label=role==="executive"?"Ministry overview":role==="admin"?"Administration overview":role==="volunteer"?"Volunteer overview":"Good morning";
+ const sub=role==="volunteer"?"Authorised ministry activities, without employment attendance or pay.":"Your workspace, authorised attendance, key responsibilities and progress at a glance.";
+ const banner='<header class="s2ov-hero"><div class="s2ov-title"><div class="eyebrow">CEAC Airport City / '+escapePreview(role.replaceAll("-"," "))+' workspace</div><h1>Overview</h1><p>'+sub+'</p><h2 class="s2ov-role-heading">'+label+'</h2></div><div class="s2ov-photo" aria-hidden="true"><strong>Supporting People<br>Enabling Ministry</strong></div></header>';
+ const attendance=salaried?
+  panel("My work session",'<div class="s2ov-session"><strong>'+(working?"Session started — sample":"Not started — sample")+'</strong><span class="subtle">Actual attendance needs verified HR schedule, location and session authority.</span><div class="s2ov-session-location">Office · Remote · Field — authorised only</div>'+btn(working?"End sample session":"Start sample session","attendance","primary")+'</div><p class="form-note">Local demo only; no session is recorded or credited.</p>'):
+  panel("My volunteering",'<div class="s2ov-session"><strong>Participation only</strong><span class="subtle">No employment hours, salary or attendance inferred.</span></div>'+record("Sunday welcome team","Authorised sample activity","Planned"));
+ const focus=role==="executive"?
+  panel("Today's focus",record("Quarterly ministry review","Source evidence pending independent verification","Review")+record("Cross-unit delivery","Shared project output counted once","Open")):
+  role==="admin"?
+  panel("Today's focus",record("Employment record requests","Protected records need explicit HR scope","Restricted")+record("Leave schedules","Approved office/remote schedules only","Pending")):
+  role==="support"?
+  panel("Today's focus",record("Room display issue","Authorised Support member assignment","Needs you")+record("Ticket follow-up","Reporter sees permitted status only","Open")):
+  panel("Today's focus",record("Prepare weekly operating notes","Sample responsibility; no certified KPI","In progress")+record("Complete checklist review","Source evidence required","To review"));
+ const project=panel("My projects",'<div class="s2ov-project-lines"><div><span>Operating readiness · sample</span><span class="s2ov-meter"><i style="width:48%"></i></span></div><div><span>Team coordination · sample</span><span class="s2ov-meter"><i style="width:26%"></i></span></div></div><p class="form-note">Illustrative bars, not calculated project attainment or published evidence.</p>');
+ const activity=panel("Today's activity",'<div class="s2ov-activity-bars" aria-label="Illustrative activity graphic, not verified work hours"><i style="height:29%"></i><i style="height:46%"></i><i style="height:75%"></i><i style="height:54%"></i><i style="height:61%"></i><i style="height:39%"></i><i style="height:69%"></i></div><p class="form-note">Sample activity only; session totals and outcomes are not inferred.</p>');
+ const unit=role==="manager"?'<section class="panel s2ov-unit" aria-label="Manager unit-context design preview"><div class="strip"><strong>Selected unit: '+demoUnit+'</strong><span>Sample multi-unit headship, not an actual permission change</span></div>'+btn("Switch sample unit","switch-demo-unit")+'<p class="form-note">Every unit switch must be checked against real server membership.</p></section>':"";
+ const register=panel("My work",'<p class="form-note">Sample work register and details follow the selected desktop and phone Work family; this overview does not replace the Work screen.</p>'+record("Prepare operating notes","Operating readiness · due today","In progress")+record("Review checklist","Team coordination · evidence needed","Waiting")+record("Complete unit briefing","No verified result inferred","For review"));
+ const inspector=panel("Selected responsibility",'<div class="s2ov-inspector"><strong>Prepare operating notes</strong><span class="subtle">Sample only · personal responsibility</span><div class="strip"><span>Next action</span><strong>Confirm reviewed source</strong></div><p>Evidence and completed actions stay connected to a real responsibility and authorised project.</p><p class="form-note">Open the Work preview to inspect real interaction requirements; this card does not save data.</p></div>');
+ return '<div class="s2ov-workspace">'+banner+'<div class="s2ov-four">'+attendance+focus+project+activity+'</div>'+unit+'<div class="s2ov-lower">'+register+inspector+'</div></div>';
+}
+function work(){
+ // P1 owner-confirmed Work desktop + phone reference; sample only, not an implementation of a server write.
+ const manager=role==="manager";
+ const actions=(manager?btn("Give out work","give-work"):"")+btn("Add my work","add-work","primary");
+ const statusLabels={progress:"In progress",waiting:"Waiting",review:"In review",done:"Completed",draft:"Sample draft, not saved"};
+ const examples=[
+  {title:"Prepare weekly operating notes",ref:"DEMO-01 · Created by me",project:"Operating readiness",due:"Today",status:"progress",origin:"self"},
+  {title:"Review handover checklist",ref:"DEMO-02 · Assigned to me",project:"Team coordination",due:"Tomorrow",status:"waiting",origin:"assigned"},
+  {title:"Document support resolution",ref:"DEMO-03 · Assigned to me",project:"Support readiness",due:"23 Oct",status:"review",origin:"assigned"},
+  {title:"Complete archived user access notes",ref:"DEMO-04 · Created by me",project:"Operating readiness",due:"15 Oct",status:"done",origin:"self"}
+ ];
+ if(manager)examples.push({title:"Follow up with unit team",ref:"DEMO-05 · Given out",project:"Team coordination",due:"23 Oct",status:"waiting",origin:"given"});
+ const drafts=draftWorkSamples.filter(draft=>draft.role===role && (role!=="manager"||draft.unit===demoUnit)).map((draft,i)=>({
+  title:draft.title,ref:"Preview only · "+(draft.kind==="delegation"?"Given out":"Created by me"),project:draft.project||"Unlinked",due:"Draft",
+  status:"draft",origin:draft.kind==="delegation"?"given":"self"
+ }));
+ const eligible=(row)=>workFilter==="mine"?row.origin!=="given":
+  workFilter==="created"?row.origin==="self":
+  workFilter==="assigned"?row.origin==="assigned":
+  workFilter==="given"?row.origin==="given":
+  workFilter==="review"?row.status==="review":
+  workFilter==="complete"?row.status==="done":true;
+ const visible=[...drafts,...examples].filter(eligible);
+ const rowHtml=(r)=>'<button type="button" class="s2w-row" data-action="inspect" data-item="'+escapePreview(r.title)+'"><span class="s2w-name"><strong>'+escapePreview(r.title)+'</strong><small>'+escapePreview(r.ref)+'</small></span><span class="s2w-project">'+escapePreview(r.project)+'</span><span class="s2w-due">'+escapePreview(r.due)+'</span><span class="s2w-state '+r.status+'">'+escapePreview(statusLabels[r.status])+'</span></button>';
+ const group=(title,rows)=>!rows.length?"":'<div class="s2w-group"><strong>'+escapePreview(title)+'</strong><span>'+rows.length+' sample items</span></div>'+rows.map(rowHtml).join("");
+ const groups=group("In progress",visible.filter(r=>r.status==="progress"||r.status==="draft"))
+ +group("Waiting & review",visible.filter(r=>r.status==="waiting"||r.status==="review"))
+ +group("Completed",visible.filter(r=>r.status==="done"));
+ const filters='<div class="s2w-tabs" aria-label="Responsibility views">'+["mine","created","assigned","given","review","complete"].map(v=>'<button type="button" class="'+(v===workFilter?'active':'')+'" aria-pressed="'+(v===workFilter?'true':'false')+'" data-filter="'+v+'">'+({mine:"My work",created:"Created by me",assigned:"Assigned to me",given:"Given out",review:"For review",complete:"Completed"}[v])+'</button>').join("")+'</div>';
+ const register=panel("Responsibilities",'<div class="s2w-count">'+visible.length+' sample records</div>'+filters+'<div class="s2w-table-head"><span>Responsibility</span><span>Project</span><span>Due</span><span>Status</span></div><div class="s2w-records">'+(groups||'<div class="empty">No sample responsibilities in this view. Select another tab.</div>')+'</div><p class="form-note">Concept data only; no actions, project outcomes or employee scores are certified.</p>');
+ const details=panel("Selected responsibility",'<div class="s2w-details"><div class="eyebrow">Sample responsibility · DEMO-01</div><h3>Prepare weekly operating notes</h3><p>Operating readiness · Created by me</p><div class="s2w-detail-metrics"><div><span>Work status</span><strong>In progress · sample</strong></div><div><span>Actions completed</span><strong>2 illustrative actions</strong></div></div><div class="s2w-next"><strong>Next action</strong><p>Confirm the next authorised evidence source before submitting work.</p></div><div class="eyebrow">Activity record · illustrative</div><ol class="s2w-timeline"><li><strong>Prepared work outline</strong><small>Sample activity · no actual hours</small></li><li><strong>Linked project objective</strong><small>Sample source reference, not a verified achievement</small></li></ol>'+btn("Inspect sample activity","inspect","primary")+'<p class="form-note">An actual activity requires authorised actor, timestamp, review and project scope. This panel saves nothing.</p></div>');
+ return heading("Work","Plan, record and finish responsibilities; keep each contribution linked to its authorised project.",actions)
+  +'<div class="s2w-grid"><div class="s2w-register">'+register+'</div><div class="s2w-inspector">'+details+'</div></div>';
+}
+function projects(){
+ // P1 Projects SCREEN FAMILY, using the exact owner-selected collaborative layout hierarchy.
+ // Synthetic identity-safe records: do not derive completion, paid hours, confidential people or current progress.
+ const canAuthor=role==="manager";
+ const readonly=!canAuthor;
+ const actions=readonly?btn("Read-only project evidence","inspect"):btn("Request project","new-project","primary")+btn("Preview project closure","project-close");
+ const title='<header class="s2pr-hero"><div class="s2pr-headline"><span class="eyebrow">Projects / Sample project workspace</span><h1>Sunday service and outreach <span class="s2pr-label">Sample · On track</span></h1><p>Plan shared work and inspect project evidence across authorised teams and departments.</p><div class="s2pr-keyline"><span>Jun–Dec · sample dates</span><span>6 example departments</span><span>Illustrative tasks and evidence</span></div></div><div class="s2pr-photo" aria-hidden="true"><strong>People<br>Work<br>Ministry</strong></div></header>';
+ const projectTabs=[["overview","Overview"],["tasks","Tasks"],["team","Team"],["departments","Departments"],["activity","Activity"],["files","Files"],["settings","Settings"]];
+ const tabs='<div class="s2pr-tabs" role="tablist" aria-label="Project family sections">'+projectTabs.map(([id,label])=>'<button type="button" role="tab" data-project-tab="'+id+'" aria-selected="'+(projectPreviewTab===id)+'" aria-controls="s2pr-tab-panel">'+label+'</button>').join("")+'</div>';
+ const metric=(name,number,detail)=>'<section class="s2pr-metric"><h3>'+name+'</h3><div><strong>'+number+'</strong><small>'+detail+'</small></div></section>';
+ const metrics='<div class="s2pr-metrics">'+metric("Project progress","Illustrative","No verified completion percentage")+metric("Tasks","4 sample","Not real commitments")+metric("Departments","3 sample","Names and access scoped")+metric("Next key date","Demo date","No schedule asserted")+'</div>';
+ const participants=panel("Project team and departments",'<p class="form-note">Sample member roles — no person or unit is granted access by this preview.</p><div class="s2pr-team"><span>Project lead</span><span>Media coordinator</span><span>Logistics coordinator</span><span>Support contributor</span></div><h3 class="s2pr-small-title">Departments involved</h3><div class="s2pr-departments"><span>Media · sample</span><span>Logistics · sample</span><span>Technical Support · sample</span></div>');
+ const tasks='<section class="panel s2pr-taskpanel"><h2>Recent tasks</h2><p class="form-note">Single source-linked task table. Each responsibility remains assigned to one accountable actor.</p><div class="s2pr-table"><div class="s2pr-columns"><span>Task</span><span>Department</span><span>Status</span></div>'+
+  [['Prepare service materials','Media','For review'],['Verify equipment readiness','Technical Support','In progress'],['Confirm delivery','Logistics','Waiting'],['Compile event feedback','Media','Proposed']].map(item=>'<div class="s2pr-taskrow"><strong>'+item[0]+'</strong><span>'+item[1]+'</span><span>'+item[2]+'</span></div>').join('')+'</div></section>';
+ const inspector=panel("About this project",'<div class="s2pr-about"><div><span>Project status</span><strong>Illustrative; unverified</strong></div><div><span>Responsible unit</span><strong>Server-scoped in real app</strong></div><div><span>Shared impact</span><strong>Count once after evidence review</strong></div></div><h3 class="s2pr-small-title">Key milestones</h3><ol class="s2pr-timeline"><li>Project scope reviewed · sample</li><li>Responsibilities allocated · sample</li><li>Evidence and closure pending</li></ol><h3 class="s2pr-small-title">Recent activity</h3><p class="form-note">Only authorised, attributable updates may appear in the real application.</p><div class="mutedbox"><strong>'+(readonly?'Read-only view':'Manager authoring controls')+'</strong><p>'+(readonly?'No editing, closure or personnel permission is granted by this preview.':'Actual project edits and closures require verified selected-unit headship, evidence and reviewer approval.')+'</p></div>');
+ const detailPane='<div class="s2pr-right">'+inspector+'</div>';
+ const samplePanels={
+  overview:participants+tasks,
+  tasks:tasks,
+  team:participants,
+  departments:participants,
+  activity:panel("Recent activity",record("Planned setup notes","Demonstration only; no actual author or timestamp is asserted","Sample")+record("Proposed follow-up","No project outcome or work hours are credited","Pending")),
+  files:panel("Project files",record("Project briefing","Synthetic document entry; not an accessible Storage object","Sample")+record("Event checklist","Preview only; no private files are exposed","Draft")),
+  settings:panel("Project settings",readonly?'<p>Read-only view. You cannot edit, close, change project members or see restricted settings in this preview.</p>':'<p>Manager authoring preview only. Real project changes, member grants and closure require selected-unit headship, server scope, evidence and reviewer approval.</p>')
+ };
+ const body=samplePanels[projectPreviewTab]||samplePanels.overview;
+ return '<div class="s2pr-workspace">'+heading("Projects","Coordinated project work, responsible participants and reviewable evidence.",actions)+title+tabs+'<section role="tabpanel" aria-label="'+projectTabs.find(([id])=>id===projectPreviewTab)[1]+' project preview" id="s2pr-tab-panel">'+(projectPreviewTab==="overview"?metrics:"")+'<div class="s2pr-main"><div class="s2pr-left">'+body+'</div>'+detailPane+'</div></section><p class="form-note">Exact selected original privately archived; these records are sample only. This review does not implement or certify real project permissions, cross-unit closes or numbers.</p></div>';
+}
+function reports(){
+ const executive=role==="executive";
+ if(reportEvidencePhase!=="ready"){
+  const state=reportEvidencePhase==="loading"
+   ? ["Loading source evidence","Selected-period source records are not ready. Do not display apparent verified metrics."]
+   : ["No filed period evidence","This sample period has no filed evidence. That does not prove a zero-output result."];
+  return heading(executive?"Executive evidence review":"Manager period report","Review honest loading and empty source-evidence states.",btn("Restore sample evidence","report-ready","primary"))
+    +'<section class="panel" role="status" aria-live="polite" data-evidence-phase="'+reportEvidencePhase+'"><h2>'+state[0]+'</h2><p>'+state[1]+'</p><div class="no-real-data">Synthetic reference only. No real period query has been made.</div></section>';
+ }
+ if(!reportEvidenceReady)return heading(executive?"Executive evidence review":"Manager period report","Source evidence is unavailable. Show an explicit error rather than treating failed queries as zero results.",btn("Restore sample evidence","report-ready","primary"))+
+ panel("Report evidence unavailable",'<div class="no-real-data" role="alert">Report evidence could not be loaded</div><p>Period statistics, completion counts and review evidence are withheld until the real data source is restored. Retry is a separate permission-checked action in the actual application.</p>');
+ return heading(executive?"Executive evidence review":"Manager period report","Source-linked period reporting, not automatically generated performance ratings.",btn("Preview loading","report-loading")+btn("Preview empty period","report-empty")+btn("Preview evidence failure","report-unavailable")+btn("View sample source links","inspect"))
+ +'<div class="three">'+panel("Period coverage",'<div class="metric">3/4</div><div class="subtle">Sample units with filed facts</div>')+panel("Verified work outputs",'<div class="metric">6</div><div class="subtle">Reviewer-acknowledged demonstrations</div>')+panel("Human-entered rating",'<div class="metric">—</div><div class="subtle">Never calculated from system KPIs</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Evidence ledger",record("Accepted deliverable","Source work item · evidence attachment","Verified")+record("Open responsibility","Dated activity; not complete","Open")+record("Returned work","Rework requested by authorised reviewer","Returned"))+
+ panel("Integrity and failure states",'<p><strong>Evidence status is explicit.</strong> If period Work sessions cannot load, a visible error must replace any apparent zero-result summary.</p><div class="mutedbox">Use “Preview evidence failure” above to inspect the explicit fail-closed UI; do not display metrics when source evidence is unavailable.</div><p class="form-note">The current app still has a failing browser test for this state; this design cannot conceal that defect.</p>')+'</div>';
+}
+function people(){
+ const mayInviteInPreview=role==="admin";
+ const actions=mayInviteInPreview?btn("Review member invitation","invite","primary"):"";
+ return heading(mayInviteInPreview?"People & access":"My team","People details and invitations are separate from HR-private narratives, payroll and Support records.",actions)
+ +'<div class="two">'+panel("Authorised roster",record("Sample staff member A","Unit One · active employment record","Open")+record("Sample volunteer member B","Volunteer · nonsalaried","Open")+record("Sample unit manager C","Two unit headships · one account","Open"))+
+ panel("Privacy boundaries",'<p>Role, unit membership and capability grants are verified independently. Employment access does not automatically permit protected HR record, salary or Support case administration.</p><div class="mutedbox">Confidential personnel fields never appear in a general People list.</div>')+'</div>';
+}
+function hr(){
+ // Synthetic P1 HR material exception. No actual employee, HR authorisation or publication is provided.
+ if(role!=="admin")return heading("Protected HR","Protected records are unavailable to this review persona.")+
+   panel("Access withheld",'<p role="alert">Only an independently authorised HR reviewer may open protected personnel records.</p>');
+ const state=hrPreviewPhase==="issued"?"Issued · sample":hrPreviewPhase==="missing"?"Source evidence unavailable":"Awaiting independent HR verification";
+ const status=hrPreviewPhase==="issued"?
+  '<div class="no-real-data">Demonstration HR-issued state only. No real assessment was published, employee identity resolved, or Staff view unlocked.</div>':
+  hrPreviewPhase==="missing"?
+  '<div class="no-real-data" role="alert">Required rating evidence could not be loaded. Withhold publication and any apparent approved result. Failed source reads cannot be treated as zero-result reviews.</div>':
+  '<div class="no-real-data">Sample Manager-submitted packet awaits independent HR review and evidence verification before an assessment may be issued.</div>';
+ const actions=btn("Preview missing evidence","hr-missing")+
+  btn("Return to HR draft","hr-draft")+
+  (hrPreviewPhase==="draft"?btn("Review HR publication","hr-release","primary"):"");
+ const packet=panel("Protected review packet",
+   '<div class="eyebrow">Protected HR · '+state+'</div>'+status+
+   '<div class="strip"><div><span>Human rating source</span><br><strong>Manager-authored; not system-calculated</strong></div>'+
+   '<div><span>Evidence status</span><br><strong>'+(hrPreviewPhase==="missing"?"Missing required source":hrPreviewPhase==="issued"?"Sample reviewer-verified":"Review outstanding")+'</strong></div></div>'+
+   '<p>Quarterly 1–5 or N/O ratings require dimension explanations, evidence references and independent overall narrative. Monthly human ratings are optional.</p>');
+ const release=panel("Independent HR release and employee response",
+   '<ol class="s2hr-steps"><li>Manager enters human ratings, required explanations and evidence.</li>'+
+   '<li>Different authorised HR reviewer checks the applicable assessment version, person, evidence and issue scope.</li>'+
+   '<li>HR issues only reviewed material; employee can then see only their own issued assessment.</li>'+
+   '<li>Employee submits their own response, separately from HR and Compliance; it cannot silently change the rating.</li></ol>'+
+   '<p class="form-note">People, Manager, Support and Executive access never grants protected HR publication. These sample transitions are browser-local.</p>');
+ return heading("Protected HR","Protected employee assessments require independent evidence review, issue and employee response.",actions)+
+  '<div class="two s2hr-review">'+packet+release+'</div>';
+}
+function ratings(){
+ return heading(role==="manager"?"Team appraisals":"Quarterly review oversight","Manager-entered structured human evaluation is required each quarter. Monthly ratings are optional; source metrics remain factual.",role==="manager"?btn("Open rating entry","rating","primary"):"")
+ +'<div class="two">'+panel("Quarterly review cycle",record("Sample staff member A","Reviewer explanation and linked evidence required","Draft")+record("Sample staff member B","Awaiting Manager narrative","Incomplete"))+
+ panel("Review separation",'<p>Rate documented dimensions on 1–5 or N/O, explain each rating, cite appropriate evidence and write an independent overall narrative. Never transform automated counts into the human rating.</p><div class="mutedbox">HR publication and employee acknowledgement are separate protected stages.</div>')+'</div>';
+}
+function support(){
+ return heading("Technical Support desk","A distinct capability-authorised queue. It does not grant payroll, general Administration or protected HR access.",btn("Report a technical issue","support-issue","primary"))
+ +'<div class="two">'+panel("Assigned cases",record("Display room issue","Unit reporter sees restricted progress","Assigned")+record("Conference audio","Evidence logged; service owner checking","In progress")+record("Asset network access","Awaiting verified resolution","Open"))+
+ panel("Case action and audit",'<p>Only assigned Support members with the current Support capability can modify a case. Each update is revision-checked and auditable.</p><div class="mutedbox">Reporter-safe status excludes internal notes, other reporters and unrelated staff records.</div>')+'</div>';
+}
+function complianceP1(){
+ return heading("Compliance & evidence","Independent policy checks are never a substitute for the Manager's human appraisal or a private HR record.",btn("Inspect policy exception","compliance-review","primary"))+
+ '<div class="three">'+panel("Current policy revision",'<div class="metric">v3</div><div class="subtle">Synthetic annual policy review</div>')+
+ panel("Open exception",'<div class="metric warn">1</div><div class="subtle">Needs independent verification</div>')+
+ panel("Acknowledgement coverage",'<div class="metric">4/5</div><div class="subtle">Sample acknowledgement records</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Compliance workbench",
+ record("Sample unit acknowledgement","Policy v3 · employee response awaited","Pending")+
+ record("Attendance evidence exception","Restricted inspection; do not modify attendance source","Needs review")+
+ record("Quarterly evidence reconciliation","Manager submitted factual record; separate Compliance note","Reviewed"))+
+ panel("Separation of duties",'<p><strong>Compliance observations are source-linked and independently reviewed.</strong> They must not become automatically assigned Manager appraisal scores or reveal protected HR notes.</p>'+
+ '<div class="mutedbox">The actual application must enforce evidence-version history, current policy applicability, staff-visible acknowledgement only, and role-scoped access to each exception.</div>'+
+ '<div class="no-real-data">All records in this preview are synthetic. No policy status has been changed.</div>')+'</div>';
+}
+function payrollP1(){
+ return heading("Protected payroll operations","Payroll preparation and approval require different capabilities; records are isolated from general People, Work and Support views.",btn("Inspect sample pay run","payroll-detail","primary"))+
+ '<div class="three">'+panel("Cycle status",'<div class="metric">Draft</div><div class="subtle">Sample salary month, no actual payment</div>')+
+ panel("Prepared lines",'<div class="metric">3</div><div class="subtle">Restricted synthetic records</div>')+
+ panel("Approver release",'<div class="metric">—</div><div class="subtle">Not approved or sent</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Payroll workflow",
+ record("Prepare employee lines","Payroll.prepare grant required · versioned ledger","Draft")+
+ record("Independent approval","Payroll.approve; preparer cannot approve own draft","Not started")+
+ record("Correction and audit trail","Separate revision with reason and authorised approval","Locked"))+
+ panel("Confidentiality and controls",'<p>General employee profiles, personal attendance and calculated task hours cannot automatically become payable payroll amounts. Protected salary lines remain absent from other roles.</p>'+
+ '<div class="mutedbox">Draft → submitted → independently approved → finalised. Each step requires server-authorised actor, audit event and reviewed source. A rejected or failed query must not show an empty approved run.</div>'+
+ '<div class="no-real-data">No compensation value, identity or real salary data exists in this prototype.</div>')+'</div>';
+}
+function financeP1(){
+ return heading("Finance controls & source evidence","Budget, authorised expenditure and financial requests are separate from protected payroll and employment data.",btn("Inspect finance request","finance-request","primary"))+
+ '<div class="three">'+panel("Budget allocation",'<div class="metric">Plan</div><div class="subtle">Synthetic current period</div>')+
+ panel("Approval pending",'<div class="metric warn">1</div><div class="subtle">Awaiting designated approver</div>')+
+ panel("Payroll information",'<div class="metric">Restricted</div><div class="subtle">Not part of this Finance view</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Operating evidence",
+ record("Sample facilities request","Budget line · source invoice reference","Submitted")+
+ record("Project support expenditure","Unit project allocation; not yet approved","Review")+
+ record("Recorded correction","Versioned adjustment with audit event","Closed"))+
+ panel("Separate authorisation",'<p>Unit Managers may see only their permitted budgets and finance requests; authorised Finance officers review scoped expenditure. Payroll line items, bank details and HR-private explanations must never appear in general Finance.</p><div class="mutedbox">Every request must show its real source, approver and period. A failed read must show an error rather than a fabricated zero or approved balance.</div><div class="no-real-data">Synthetic budget names only; no actual amounts or live integration.</div>')+'</div>';
+}
+function quarterlyP1(){
+ return heading("Quarterly review event","Administration or Executive can prepare the formal quarterly ministry review, but only with the actual authorised initiator and approved evidence.",btn("Review event setup","quarterly-event","primary"))+
+ '<div class="three">'+panel("Review period",'<div class="metric">Q4</div><div class="subtle">Synthetic planning period</div>')+
+ panel("Evidence readiness",'<div class="metric">3/4</div><div class="subtle">Demo submissions with source evidence</div>')+
+ panel("Human ratings",'<div class="metric">Separate</div><div class="subtle">Quarterly required, never auto-calculated</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Presentation and evidence",
+ record("Unit accomplishment brief","Work/project source references, no double count","Prepared")+
+ record("Independent Compliance notes","Published facts only; restricted detail hidden","Pending")+
+ record("Manager-entered human appraisal","Required narrative and evidence, protected HR review","Restricted"))+
+ panel("Review issue controls",'<p>Allow only the specifically authorised Administration or Executive initiator to create review events. HR publication and individual response are independent protected actions, not an automatic result of starting an event.</p><div class="mutedbox">Show period selection, owner, source-linked reports, correct coverage and an explicit unavailable-data state before any official issue or print export.</div><div class="no-real-data">This is a design proposal. No event or report is published.</div>')+'</div>';
+}
+function calendarP1(){
+ const canReviewMeeting=role==="manager"||role==="admin"||role==="executive";
+ const actions=btn("Review my private event","calendar-private","primary")+(canReviewMeeting?btn("Review unit meeting setup","calendar-meeting"):"");
+ return heading("My calendar","Private planning stays with its owner; shared meeting schedules require separately authorised unit or organisation scope.",actions)
+ +'<div class="two">'+panel("Private personal plan",record("Sample personal preparation","Only mine · not a manager KPI","Private")+record("Review a task reminder","Owner only · no reporting aggregation","Due tomorrow"))
+ +panel("Authorised meeting schedule",record("Sample project coordination","Permitted participants only · Room permission separate","Upcoming")+
+ '<p class="form-note">Private day events, private notes and confidential attachments are excluded from cross-role reporting and project team access.</p>')+'</div>';
+}
+function strategy(){
+ return heading("Strategic outcomes","Ministry direction → authorised projects → verified outputs. No duplicated contribution totals.",btn("Inspect evidence","inspect"))
+ +'<div class="three">'+panel("Objectives",'<div class="metric">3</div><div class="subtle">Demonstration ministry directions</div>')+panel("Connected projects",'<div class="metric">5</div><div class="subtle">Related to stated objectives</div>')+panel("Verified outcomes",'<div class="metric">2</div><div class="subtle">Confirmed and attributed once</div>')+'</div>'+
+ '<div class="two section-space">'+panel("Delivery hierarchy",record("Capacity & readiness","Objective → Workstream Alpha → evidence","Current")+record("People development","Objective → learning records","Review"))+
+ panel("Executive information protection",'<p>Visible leadership reporting contains authorised, aggregated facts only. Protected employee appraisal explanations and HR-private content are excluded by policy.</p>')+'</div>';
+}
+function auth(){
+ const step={
+  setup:["Enrol a supported authenticator","The actual app must display a user-specific QR code and verification step only in an authorised AAL1 setup session. This preview never generates a secret or enrollment URI."],
+  challenge:["Confirm authenticator challenge","After a real new sign-in, the actual server must verify an enrolled TOTP factor and session AAL2 before any protected table, RPC, Storage or Edge action."],
+  recovery:["Recover protected access","A lost-factor request requires verified identity, audited privileged approval and last-administrator continuity. This example cannot reset or bypass a factor."]
+ }[authPreviewStep];
+ const controls=btn("Preview setup","auth-step-setup")+btn("Preview challenge","auth-step-challenge")+btn("Preview recovery","auth-step-recovery");
+ return heading("Account security · TOTP","Invited email/password remains supported. Universal authenticator enforcement requires a separate approved backend cutover.",controls)
+ +'<div class="two">'+panel("Authentication journey · "+authPreviewStep,'<div class="eyebrow">Design-only · no seed, no credential validation</div><h2>'+step[0]+'</h2><p>'+step[1]+'</p><div class="mutedbox">AAL1 setup-only → verified TOTP enrollment → fresh challenge → actual AAL2 or access denied.</div>'+btn("Inspect challenge form","totp","primary"))
+ +panel("Recovery & access boundaries",'<p>Only real secure backend evidence may establish AAL2, factor revocation or a recovery approval. Staff, Manager, Support, HR, Executive and Volunteer permissions remain independent from this visual demonstration.</p><div class="no-real-data">No actual Supabase Auth, email, QR secret, account reset or database call exists here. Protected action withheld pending real proof.</div>')+'</div>';
+}
+function personalReviewP1(){
+ const options=btn("Preview HR-issued review","appraisal-published","primary")+btn("Reset publication preview","appraisal-unpublished");
+ const published=personalReviewPhase!=="unpublished";
+ const issued=published?panel("Published review · demonstration",
+  '<div class="no-real-data">Synthetic HR-issued assessment only; no employee-specific private information or real rating is loaded.</div>'+
+  '<p>Human-entered dimension rating and required explanation must be connected to permitted evidence and independent HR publication. System-generated work counts cannot replace the human review.</p>'+
+  '<p>Employee response stage: '+(personalReviewPhase==="responded"?"Sample response recorded locally, not submitted":"Awaiting employee review")+'</p>'+
+  (personalReviewPhase==="responded"?"":btn("Review my response","employee-response","primary"))):
+  panel("Awaiting HR publication",'<div class="no-real-data">No assessment has been issued to this synthetic persona. Do not display scores, private HR narrative or pretend a required quarterly review is complete.</div>');
+ return heading("My appraisal","Quarterly-required structured human ratings are distinct from system-calculated indicators. Monthly reviews are optional.",options)
+ +'<div class="two">'+issued+
+ panel("Review rights and acknowledgement",'<p>Only the employee may view their own issued assessment and provide their own attributable response. Manager assessment, independent HR publication and Compliance evidence are separate approvals.</p><p>Unpublished protected HR notes remain unavailable. Nonsalaried Volunteers have no employment appraisal in this preview.</p>')+'</div>';
+}
+function achievements(){
+ return heading("My achievements","Human-readable proof of actual individual contributions, not an AI-generated performance score.")+
+ '<div class="two">'+panel("Verified outcomes",record("Weekly checklist delivered","Source evidence and reviewer receipt","Verified")+record("Training activity","Completed action, still awaiting source review","Pending"))+
+ panel("Private evidence",'<p>Your own material is distinct from Manager and HR-private assessments. Reports are source-linked and represent the selected time period accurately.</p>')+'</div>';
+}
+function screen(){
+ const views={overview,work,projects,reports,people,hr,ratings,compliance:complianceP1,payroll:payrollP1,finance:financeP1,quarterly:quarterlyP1,support,strategy,calendar:calendarP1,auth,achievements,myreview:personalReviewP1};
+ return (views[page]||overview)();
+}
+function drawNav(){
+ const dest=roleNav[role]; if(!dest.some(row=>row[0]===page))page=dest[0][0];
+ document.getElementById("navigation").innerHTML=dest.map(row=>'<button type="button" data-page="'+row[0]+'" aria-current="'+(page===row[0]?"page":"false")+'">'+row[1]+'</button>').join("");
+ document.getElementById("breadcrumbs").textContent="CEAC OS / "+dest.find(row=>row[0]===page)[1];
+ document.getElementById("screen").innerHTML=screen();
+}
+// Only synthetic previews. Real CEAC permissions must still be checked independently on Auth AAL2,
+// server RLS/RPC, Storage and Edge. These guards stop misleading cross-role design interactions.
+function previewActionAllowed(action){
+ const rules={
+  "attendance":["overview",["staff","manager","support","admin","executive"]],
+  "add-work":["work",["staff","manager","support","volunteer"]],
+  "give-work":["work",["manager"]],
+  "new-project":["projects",["manager"]],
+  "project-close":["projects",["manager"]],
+  "rating":["ratings",["manager"]],
+  "invite":["people",["admin"]],
+  "hr-missing":["hr",["admin"]],
+  "hr-draft":["hr",["admin"]],
+  "hr-release":["hr",["admin"]],
+  "compliance-review":["compliance",["compliance"]],
+  "support-issue":["support",["support"]],
+  "payroll-detail":["payroll",["payroll"]],
+  "finance-request":["finance",["finance"]],
+  "quarterly-event":["quarterly",["admin","executive"]],
+  "calendar-private":["calendar",["staff","manager","support","admin","executive"]],
+  "calendar-meeting":["calendar",["manager","admin","executive"]],
+  "employee-response":["myreview",["staff","manager","support","admin","executive"]],
+  "appraisal-published":["myreview",["staff","manager","support","admin","executive"]],
+  "appraisal-unpublished":["myreview",["staff","manager","support","admin","executive"]],
+  "report-loading":["reports",["manager","executive"]],
+  "report-empty":["reports",["manager","executive"]],
+  "report-unavailable":["reports",["manager","executive"]],
+  "report-ready":["reports",["manager","executive"]],
+  "auth-step-setup":["auth",["staff","manager","support","admin","compliance","payroll","finance","executive","volunteer"]],
+  "auth-step-challenge":["auth",["staff","manager","support","admin","compliance","payroll","finance","executive","volunteer"]],
+  "auth-step-recovery":["auth",["staff","manager","support","admin","compliance","payroll","finance","executive","volunteer"]],
+  "totp":["auth",["staff","manager","support","admin","compliance","payroll","finance","executive","volunteer"]]
+ };
+ const rule=rules[action];
+ if(!rule)return true;
+ if(page!==rule[0] || !rule[1].includes(role) || !roleNav[role].some(entry=>entry[0]===page))return false;
+ if(action==="hr-release" && hrPreviewPhase!=="draft")return false;
+ if(action==="employee-response" && personalReviewPhase!=="published")return false;
+ return true;
+}
+function drawer(kind){
+ if(!previewActionAllowed(kind))return;
+ let content="";
+ if(kind==="add-work"||kind==="give-work"){
+ content='<label>Work title<input name="draftTitle" required placeholder="Specific outcome to deliver"></label><label>Project/objective link<select name="draftProject"><option value="">No link yet — relink later</option><option>Workstream Alpha / Operating readiness</option><option>Workstream Beta / People development</option></select></label><label>Assignee<select name="draftAssignee"><option>'+(kind==="add-work"?"Myself":"Eligible unit colleague")+'</option></select></label><label>Evidence or activity notes<textarea name="draftNotes" rows="4" placeholder="Describe the work and intended proof"></textarea></label>';
+ }else if(kind==="project-close" && role==="manager"){
+ content='<div class="no-real-data">This is a candidate project-close review, not an authorised closure. Selected demo unit: '+escapePreview(demoUnit)+'</div>'+
+ '<label>Project<input value="Workstream Alpha / demonstration" readonly></label>'+
+ '<label>Evidence readiness<select required name="projectReadiness"><option value="">Select sample status</option><option>Verified source evidence ready</option><option>Open reviewer issues — do not close</option></select></label>'+
+ '<label>Source evidence reference<input required name="projectEvidence" placeholder="Authorised milestone / result reference"></label>'+
+ '<label>Contributing unit attribution<textarea required name="projectAttribution" rows="3" placeholder="Record verified Unit One and Unit Two contributions once"></textarea></label>'+
+ '<p>Closing requires independent versioned approval, verified unit authority, no duplicated shared outcomes and no unreviewed payroll/HR narrative.</p>';
+ }else if(kind==="calendar-private"){
+ content='<div class="no-real-data">This entry belongs to the current synthetic calendar persona and never becomes an employee KPI or team announcement.</div>'+
+ '<label>Personal event title<input required name="privateTitle" placeholder="Private task or appointment"></label>'+
+ '<label>Privacy<select name="privateVisibility"><option>Only me</option></select></label>'+
+ '<label>Own notes<textarea rows="3" placeholder="Never shown to another role"></textarea></label>';
+ }else if(kind==="calendar-meeting" && (role==="manager"||role==="admin"||role==="executive")){
+ content='<div class="no-real-data">Synthetic meeting setup; unit, participants and room access must be checked by the actual server.</div>'+
+ '<label>Meeting title<input required name="meetingTitle" placeholder="Sample purpose and outcome"></label>'+
+ '<label>Meeting audience<select required name="meetingAudience"><option value="">Choose scope</option><option>Current authorised unit</option><option>Authorised organisation participants</option></select></label>'+
+ '<label>Agenda and source work<textarea required name="meetingAgenda" rows="3" placeholder="Only permitted work/project references"></textarea></label>'+
+ '<p>A general Staff or Support persona cannot infer authority to schedule organisation-wide meetings.</p>';
+ }else if(kind==="employee-response" && page==="myreview" && personalReviewPhase==="published"){
+ content='<div class="no-real-data">Employee-only response demonstration; no real HR case is opened or acknowledged.</div>'+
+ '<label>Evidence or clarification<textarea required name="employeeResponse" rows="4" placeholder="Respond to the published rating in your own words"></textarea></label>'+
+ '<p>Submitting a response does not revise the Manager rating, independently approve the review or expose protected HR narrative.</p>';
+ }else if(kind==="hr-release" && role==="admin" && page==="hr" && hrPreviewPhase==="draft"){
+ content='<div class="no-real-data">HR publication review is synthetic, without real employee data, permission changes or published records.</div>'+
+ '<label>Manager-submitted rating version<input value="Sample submitted v1 — pending HR verification" readonly></label>'+
+ '<label>Verified source evidence reference<input name="hrEvidence" required placeholder="Authorised evidence identifier"></label>'+
+ '<label>Independent HR release explanation<textarea name="hrReleaseExplanation" rows="3" required placeholder="Explain the independently checked evidence"></textarea></label>'+
+ '<label>Publication scope<select name="hrReleaseScope" required><option value="">Choose restricted recipient</option><option value="own">Only the assessed employee · demonstration</option></select></label>'+
+ '<p>A real publication requires a different authorised HR reviewer, fresh AAL2, source verification, current assessment version and an audited server transaction.</p>';
+ }else if(kind==="invite" && role==="admin"){
+ content='<div class="no-real-data">Illustrative invitation only. Organisation membership and email delivery require independently authorised real operations.</div>'+
+ '<label>Invitee display name<input required name="inviteeName" placeholder="Sample staff or volunteer"></label>'+
+ '<label>Invitation email<input type="email" name="inviteeEmail" required placeholder="example@invalid.test"></label>'+
+ '<label>Participation type<select required name="participantType"><option>Employee</option><option>Nonsalaried Volunteer</option></select></label>'+
+ '<label>Approved unit<select name="invitationUnit"><option>Unit One · demonstration</option><option>Unit Two · demonstration</option></select></label>'+
+ '<p>A Volunteer is not automatically an employee and has no implied payroll, HR, Support or management grants. Invite-only Auth and actual unit authority must be proven at P2/P8.</p>';
+ }else if(kind==="rating" && role==="manager"){
+ content='<p>Human-entered, evidence-based assessment only. Quarterly REQUIRED, monthly OPTIONAL.</p><label>Rating dimension<select><option>Professional execution</option><option>Responsibility and cooperation</option></select></label><label>Human rating<select name="humanRating" required><option value="">Choose 1–5 or N/O</option>'+["1","2","3","4","5","N/O"].map(x=>'<option>'+x+'</option>').join("")+'</select></label><label>Required explanation<textarea name="ratingExplanation" rows="3" required placeholder="Explain the observed performance"></textarea></label><label>Source evidence reference<input name="ratingEvidence" required placeholder="Link a permitted record, not a private secret"></label><label>Independent overall narrative<textarea rows="3"></textarea></label>';
+ }else if(kind==="compliance-review"){
+ content='<div class="no-real-data">Design-only Compliance evidence preview; no real records are accessible.</div>'+
+ '<label>Applicable policy version<input value="v3 / demonstration only" readonly></label>'+
+ '<label>Independent observation<textarea rows="3" required placeholder="Source-linked factual observation"></textarea></label>'+
+ '<label>Permitted evidence reference<input required placeholder="Existing authorised evidence ID"></label>'+
+ '<p>Only the actual permitted Compliance reviewer can submit this through independently authorised backend policies.</p>';
+ }else if(kind==="payroll-detail"){
+ content='<div class="no-real-data">Synthetic payroll detail. A general Administrator or Support agent must not gain payroll authority from this screen.</div>'+
+ '<label>Pay run version<input value="Draft v1 / synthetic" readonly></label>'+
+ '<label>Correction reason<textarea rows="3" placeholder="Required for approved correction"></textarea></label>'+
+ '<p>Preparation and approval are different capabilities and require independent action logs. No salary or payout data exists in this preview.</p>';
+ }else if(kind==="finance-request"){
+ content='<div class="no-real-data">Synthetic finance request inspection only. No monetary values or payroll details are loaded.</div>'+
+ '<label>Source invoice reference<input required placeholder="Authorised record reference"></label>'+
+ '<label>Independent approval note<textarea rows="3" placeholder="Factual approval evidence"></textarea></label>'+
+ '<p>The real application must verify acting unit, budget and approver through RLS and authorised RPCs.</p>';
+ }else if(kind==="quarterly-event"){
+ content='<div class="no-real-data">Quarterly review event design only — no live publication.</div>'+
+ '<label>Review period<select><option>Q4 / sample year</option><option>Q3 / sample year</option></select></label>'+
+ '<label>Event owner<input required placeholder="Authorised Administration / Executive initiator"></label>'+
+ '<label>Evidence readiness<select><option>Review outstanding evidence</option><option>Mark source links for verification</option></select></label>'+
+ '<p>Starting a quarterly event does not approve HR ratings, expose private narratives or issue Executive conclusions.</p>';
+ }else if(kind==="totp"){
+ content='<div class="no-real-data">This is a UI demonstration, not a real authenticator seed or recovery pathway.</div><label>Challenge code<input inputmode="numeric" maxlength="6" placeholder="000000 (example only)"></label><p>Actual verified AAL2 and the Supabase factor check are required before any protected operation.</p>';
+ }else{
+ content='<p>Selected record: '+selected+'</p><p>Any attempt to read or write this record must be permitted by the real server-side RLS, RPC and role policy.</p><label>Review note<textarea rows="4" placeholder="Demonstration entry only"></textarea></label>';
+ }
+ document.getElementById("modal").innerHTML='<div class="drawer-backdrop"><section class="drawer" role="dialog" aria-modal="true" aria-label="Design workflow preview"><header><div><div class="eyebrow">Interactive P1 prototype · synthetic</div><h2>'+({ "add-work":"Add my work","give-work":"Give out work","project-close":"Project closure evidence review",rating:"Structured human rating",totp:"Authenticator challenge"}[kind]||"Review record")+'</h2></div>'+btn("Close","close")+'</header><div class="no-real-data">No actual changes will be saved. The owner must approve this full flow before literal design acceptance.</div><form id="previewform" data-kind="'+kind+'">'+content+'<footer>'+btn("Cancel","close")+ '<button class="btn primary" type="submit">Review sample action</button></footer></form></section></div>';
+ const first=document.querySelector(".drawer input,.drawer select,.drawer textarea,.drawer button");if(first)first.focus();
+}
+document.addEventListener("click",function(event){
+ const control=event.target.closest("[data-page],[data-action],[data-filter],[data-project-tab]");if(!control)return;
+ if(control.dataset.page){page=control.dataset.page;workFilter="mine";projectPreviewTab="overview";drawNav();window.scrollTo(0,0);return;}
+ if(control.dataset.projectTab && page==="projects"){
+  const validTabs=["overview","tasks","team","departments","activity","files","settings"];
+  if(validTabs.includes(control.dataset.projectTab)){projectPreviewTab=control.dataset.projectTab;drawNav();}
+  return;
+ }
+ if(control.dataset.filter){workFilter=control.dataset.filter;drawNav();return;}
+ const action=control.dataset.action;
+ if(!previewActionAllowed(action)){
+  document.getElementById("announcement").textContent="Preview action withheld: this sample role and page do not authorise the requested workflow. No data was accessed.";
+  return;
+ }
+ if(action==="close"){document.getElementById("modal").innerHTML="";return;}
+ if(action==="attendance"){working=!working;drawNav();document.getElementById("announcement").textContent="Sample session state changed in this browser only.";return;}
+ if(action==="switch-demo-unit" && role==="manager"){
+  demoUnit=demoUnit==="Unit One"?"Unit Two":"Unit One";
+  selected="Workstream Alpha";workFilter="mine";reportEvidenceReady=true;reportEvidencePhase="ready";
+  drawNav();document.getElementById("announcement").textContent="Sample unit context switched. No real permissions changed.";return;
+ }
+ if(action==="report-loading" || action==="report-empty"){reportEvidencePhase=action==="report-loading"?"loading":"empty";reportEvidenceReady=true;drawNav();return;}
+ if(action==="project-close" && role!=="manager")return;
+ if(action==="rating" && role!=="manager")return;
+ if(action==="calendar-meeting" && !["manager","admin","executive"].includes(role))return;
+ if(action==="invite" && role!=="admin")return;
+ if(action==="appraisal-published" && page==="myreview"){personalReviewPhase="published";drawNav();return;}
+ if(action==="appraisal-unpublished" && page==="myreview"){personalReviewPhase="unpublished";drawNav();return;}
+ if(action==="employee-response" && (page!=="myreview"||personalReviewPhase!=="published"))return;
+ if(action==="hr-release" && (role!=="admin"||page!=="hr"||hrPreviewPhase!=="draft"))return;
+ if(action==="hr-missing" && role==="admin" && page==="hr"){hrPreviewPhase="missing";drawNav();return;}
+ if(action==="hr-draft" && role==="admin" && page==="hr"){hrPreviewPhase="draft";drawNav();return;}
+ if(action==="report-unavailable"){reportEvidenceReady=false;reportEvidencePhase="ready";drawNav();return;}
+ if(["auth-step-setup","auth-step-challenge","auth-step-recovery"].includes(action) && page==="auth"){
+  authPreviewStep=action.slice("auth-step-".length);drawNav();document.getElementById("announcement").textContent="Design-only authentication journey: "+authPreviewStep+". No factor was changed.";return;
+ }
+ if(action==="report-ready"){reportEvidenceReady=true;reportEvidencePhase="ready";drawNav();return;}
+ selected=control.dataset.item||"Sample authorised record";
+ drawer(action);
+});
+document.addEventListener("submit",function(event){
+ if(event.target.id!=="previewform")return;event.preventDefault();
+ const kind=event.target.dataset.kind;
+ if(kind==="employee-response" && page==="myreview" && personalReviewPhase==="published"){personalReviewPhase="responded";drawNav();}
+ if(kind==="hr-release" && role==="admin" && page==="hr" && hrPreviewPhase==="draft"){
+  const data=new FormData(event.target);
+  const evidence=String(data.get("hrEvidence")||"").trim();
+  const reason=String(data.get("hrReleaseExplanation")||"").trim();
+  if(!evidence||!reason||data.get("hrReleaseScope")!=="own")return;
+  hrPreviewPhase="issued";drawNav();
+ }
+ if(kind==="add-work"||kind==="give-work"){
+  const data=new FormData(event.target);
+  const title=String(data.get("draftTitle")||"").trim();
+  if(!title)return;
+  draftWorkSamples.unshift({title,role,unit:demoUnit,kind:kind==="give-work"?"delegation":"own work",project:String(data.get("draftProject")||"Unlinked")||"Unlinked"});
+  // A delegation belongs to Given out, not My work. Show its newly reviewed local sample in the correct register.
+  workFilter=kind==="give-work"?"given":"mine";
+  page="work";drawNav();
+ }
+ document.getElementById("modal").innerHTML="";
+ document.getElementById("announcement").textContent="A local-only design draft was reviewed. No real data was saved or submitted.";
+});
+document.addEventListener("keydown",function(event){if(event.key==="Escape")document.getElementById("modal").innerHTML="";});
+document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";authPreviewStep="setup";personalReviewPhase="unpublished";projectPreviewTab="overview";hrPreviewPhase="draft";drawNav();});
+drawNav();
+</script></body></html>
