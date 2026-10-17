@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { decideUniversalTotpAccess, shouldRecheckUniversalTotp, hasSignedTotpAssurance } from "../src/lib/Stage2UniversalMfaPolicy.js";
+import { assertStage2SupabaseTarget } from "../src/lib/stage2SupabaseTarget.js";
 
 const user = { id: "53e591aa-e33c-4bca-94f0-4f5b6d5e7319" };
 const session = { user };
@@ -128,4 +129,43 @@ test("identity-changing Auth events synchronously hide stale Stage 2 workspace b
     && match[1].indexOf("setSession(null)", reset) > reset);
   assert.ok(match[1].indexOf("setSession(null)", reset) < match[1].indexOf("setTimeout(() => boot(), 0)"),
     "Old actor's workspace must disappear before delayed Auth reload");
+});
+
+// P2 release safety: an accidentally enabled Stage 2 MFA preview may not
+// silently reuse the Stage 1 live fallback Supabase project or publishable key.
+test("Stage 2 cutover requires an explicit isolated Supabase endpoint", () => {
+  const options = {
+    enabled: true,
+    configuredUrl: "http://127.0.0.1:54321",
+    configuredKey: "synthetic-local-publishable-key",
+    stage1Url: "https://efjljhftsesssumtshvp.supabase.co",
+  };
+  assert.doesNotThrow(() => assertStage2SupabaseTarget(options));
+  assert.doesNotThrow(() => assertStage2SupabaseTarget({
+    ...options, configuredUrl: "https://separate-ceac-staging.supabase.co",
+  }));
+  for (const partial of [
+    { configuredUrl: "" },
+    { configuredKey: "" },
+    { configuredUrl: "https://efjljhftsesssumtshvp.supabase.co" },
+    { configuredUrl: "https://EFJLJHFTSESSSUMTSHVP.supabase.co/" },
+    { configuredUrl: "http://separate-ceac-staging.supabase.co" },
+    { configuredUrl: "https://separate-ceac-staging.supabase.co.attacker.invalid" },
+    { configuredUrl: "https://separate-ceac-staging.supabase.co/other-api" },
+  ]) assert.throws(() => assertStage2SupabaseTarget({ ...options, ...partial }),
+    /Stage 2/, JSON.stringify(partial));
+  assert.doesNotThrow(() => assertStage2SupabaseTarget({
+    ...options, enabled: false, configuredUrl: "", configuredKey: "",
+  }), "Stage 1 fallback must remain unchanged when the Stage 2 flag is disabled");
+});
+
+test("the actual shared Supabase client checks Stage 2 target before createClient", () => {
+  const source = readFileSync(new URL("../src/lib/supabase.js", import.meta.url), "utf8");
+  const guard = source.indexOf("assertStage2SupabaseTarget({");
+  const client = source.indexOf("export const supabase = createClient(");
+  assert.ok(guard > -1 && client > guard, "Stage 2 isolation must block construction of an unsafe client");
+  assert.match(source, /enabled: import\.meta\.env\.VITE_STAGE2_UNIVERSAL_AAL2 === "true"/);
+  assert.match(source, /configuredUrl: import\.meta\.env\.VITE_SUPABASE_URL/);
+  assert.match(source, /configuredKey: import\.meta\.env\.VITE_SUPABASE_PUBLISHABLE_KEY/);
+  assert.match(source, /stage1Url: fallbackSupabaseUrl/);
 });
