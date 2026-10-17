@@ -1,0 +1,17 @@
+# CEAC Stage 2 P1 — owner-approved reusable design-family acceptance method
+**Decision: APPROVED by the product owner in this conversation on 17 October 2026. Applies to the existing single integration PR #118.**
+The owner expressly directed: “go ahead, use the most efficient means of execution” in response to the proposed replacement of per-route bespoke mockup sign-off. This authorises **family-and-material-exception design acceptance** as defined in the [finite P1 coverage package](CEAC_STAGE2_P1_FINITE_FAMILY_REVIEW_2026-10-17.md). It does **not** approve the unreviewed material-exception mockups themselves, mark P1 done or authorise P2 transition/production.
+
+## Binding substitution — narrow
+Previously the V4 contract required a separately owner-approved bespoke desktop and phone visual for **each** of 47 root routes, all nested forms and every loading, empty, error and device variation. **That duplication requirement is superseded**:
+- Every real route, applicable role, eight nested overlays, default `me` and important state must be **covered and mapped** to an owner-approved, tested reusable V4 visual/interaction pattern, **or** an independently reviewed material exception. Actual role-level access and feature function remain required.
+- Each shared **design family** must demonstrate enough connected desktop+phone examples to prove the reusable pattern; common forms, tables, drawer states, error/loading patterns and responsive rules may be inherited if verified applicable. No artificial per-route screenshot quota.
+- **Separate explicit review remains required for materially distinct screens** and sensitive workflows, including restricted HR/Payroll, Compliance independence, Executive intelligence, Support reporter-vs-handler, Manager Work/Project close, attendance, factual vs human appraisal/employee response, provider-neutral TOTP/recovery, and privacy/permission exceptions.
+- Missing exact owner-approved revised Projects PNG (SHA-256 `66918f3e3d35fe7a6adf36a85eb90b14c0f719fc8f88fed378d538a47518a559`) remains missing. The older committed public-safe image is *not* a substitute. Preserve required visual identity without adding private employee imagery to PUBLIC GitHub.
+- Once reference patterns and material exceptions are reviewed, one package and one recorded owner design sign-off can close P1, with exact SHA and fixture hashes. Until then **P1 IN PROGRESS**.
+- Full functionality, safe/accessible navigation, screen and role tests, responsive parity, strict RGB <=6, unchanged CSS budget and independent Auth/RLS/SQL/Storage/Edge negative checks are mandatory at P2–P8 (full P8 exact-SHA acceptance). No skipping/turning canceled tests green.
+
+## Delivery and testing sequence
+Stop speculative extra prototype variations for inherited routes now. Finish only genuinely absent reference patterns and material exceptions; do not invent or duplicate an App implementation in a mockup. Focused synthetic P1 check path may be used only under its strict source-verified allowlist; `[level-b]` explicitly triggers full mandatory gate. The Stage 2 functional implementation already in PR #118 remains preserved for sequential P2→P8 review after genuinely accepted P1; P9 production requires a separate owner GO.
+
+**This is acceptance-method approval only — not design-screenshot approval, account/user grant, security bypass, production release, schema/CI waiver or P1 acceptance.**

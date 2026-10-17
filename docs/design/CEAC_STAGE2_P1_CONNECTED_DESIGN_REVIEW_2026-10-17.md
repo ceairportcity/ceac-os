@@ -1,3 +1,5 @@
+> **OWNER-APPROVED P1 METHOD, 17 OCT 2026 (SUPERSEDES PRIOR BESPOKE-PER-ROUTE MOCKUP QUOTA):** The product owner explicitly approved family-and-material-exception sign-off. See [formal decision](CEAC_STAGE2_P1_OWNER_APPROVED_FAMILY_METHOD_2026-10-17.md) and the finite ten-family review. Complete coverage of 47 routes, default `me`, eight overlays and all role/mobile/permission states remains required, but individually duplicated desktop/phone mockups for a route *inheriting a verified approved pattern* are no longer required. **Material exceptions still require explicit owner visual approval; P1 is NOT accepted.** P2–P9 security, product and release gates remain unchanged.
+
 # CEAC Stage 2 P1 — connected role design review candidate
 
 **Engineering review only, not owner sign-off and not an app release.** Source SHA will be the enclosing commit. The prototype [opens as a standalone HTML design](stage2-v4/CEAC_STAGE2_P1_CONNECTED_ROLE_REVIEW.html) and keeps the canonical white/light-blue Stage 2 V4 design's palette, density, navigation and responsive structure.
