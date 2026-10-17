@@ -106,3 +106,14 @@ test("non-TOTP AAL2 keeps the challenge visible and cannot unlock backup enrollm
   assert.match(source, /const needsStepUp = enrolled && !totpAssured;/);
   assert.match(source, /A password reset cannot bypass the required TOTP check/);
 });
+
+test("Stage 2 Auth bootstrap invalidates stale identity and personal session results", () => {
+  const source = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+  assert.match(source, /const bootEpoch = useRef\(0\);/);
+  assert.match(source, /const requestEpoch = \+\+bootEpoch\.current;/);
+  assert.match(source, /const isCurrent = \(\) => requestEpoch === bootEpoch\.current;/);
+  assert.match(source, /if \(!authSession\) \{[\s\S]*?setMe\(null\);[\s\S]*?setSession\(null\);[\s\S]*?return;/);
+  assert.match(source, /const m = await loadMe\(\);\s*if \(!isCurrent\(\)\) return;\s*const currentSession = m \? await openSession\(m\.org_id, m\.id\) : null;\s*if \(!isCurrent\(\)\) return;\s*[\s\S]*?setMe\(m\);\s*setSession\(currentSession\);/);
+  assert.match(source, /catch \(error\) \{\s*if \(!isCurrent\(\)\) return;/);
+  assert.match(source, /finally \{\s*if \(isCurrent\(\)\) setReady\(true\);/);
+});

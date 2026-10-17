@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
@@ -128,6 +128,8 @@ export default function App() {
   const [announcementFocusId, setAnnouncementFocusId] = useState(null);
   const [session, setSession] = useState(null);
   const [hasPendingMfaSession, setHasPendingMfaSession] = useState(false);
+  // Invalidate slow responses from a previous sign-in, token refresh or logout.
+  const bootEpoch = useRef(0);
   useForegroundPresence(me, session);
 
   useEffect(() => {
@@ -139,49 +141,63 @@ export default function App() {
     const onPopState = () => applyRoute(routeFromLocation());
     window.addEventListener("popstate", onPopState);
     return () => {
+      ++bootEpoch.current;
       sub.subscription.unsubscribe();
       window.removeEventListener("popstate", onPopState);
     };
   }, []);
 
   async function boot() {
+    const requestEpoch = ++bootEpoch.current;
+    const isCurrent = () => requestEpoch === bootEpoch.current;
     setBootError(null);
     try {
       // Stage 2 protects ordinary profile reads at AAL1; Auth verification
       // must precede any access to the RLS-protected employee profile.
       if (UNIVERSAL_TOTP_CUTOVER) {
         const result = await supabase.auth.getSession();
+        if (!isCurrent()) return;
         if (result.error) throw result.error;
         const authSession = result.data?.session || null;
         setHasPendingMfaSession(Boolean(authSession));
-        if (authSession) {
-          const [assurance, factors, claims] = await Promise.all([
-            supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
-            supabase.auth.mfa.listFactors(),
-            supabase.auth.getClaims(),
-          ]);
-          const failure = [assurance.error, factors.error, claims.error].find(Boolean);
-          if (failure) throw failure;
-          const access = decideUniversalTotpAccess({
-            session: authSession, assurance: assurance.data,
-            factors: factors.data, claims: claims.data?.claims,
-          });
-          if (access.state !== "allow") {
-            setMe(null); setSession(null);
-            return;
-          }
+        if (!authSession) {
+          // A delayed profile lookup from a previous session must not restore
+          // an old role or personal-work session after sign-out.
+          setMe(null);
+          setSession(null);
+          return;
+        }
+        const [assurance, factors, claims] = await Promise.all([
+          supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+          supabase.auth.mfa.listFactors(),
+          supabase.auth.getClaims(),
+        ]);
+        if (!isCurrent()) return;
+        const failure = [assurance.error, factors.error, claims.error].find(Boolean);
+        if (failure) throw failure;
+        const access = decideUniversalTotpAccess({
+          session: authSession, assurance: assurance.data,
+          factors: factors.data, claims: claims.data?.claims,
+        });
+        if (access.state !== "allow") {
+          setMe(null); setSession(null);
+          return;
         }
       }
       const m = await loadMe();
+      if (!isCurrent()) return;
+      const currentSession = m ? await openSession(m.org_id, m.id) : null;
+      if (!isCurrent()) return;
+      // Publish identity and attendance together, never from stale async work.
       setMe(m);
-      if (m) setSession(await openSession(m.org_id, m.id));
-      else setSession(null);
+      setSession(currentSession);
     } catch (error) {
+      if (!isCurrent()) return;
       setMe(null);
       setSession(null);
       setBootError(error.message || "CEAC could not load your account.");
     } finally {
-      setReady(true);
+      if (isCurrent()) setReady(true);
     }
   }
 
