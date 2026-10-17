@@ -225,3 +225,13 @@ test("P1 selected collaborative Projects family retains shared team, one task ta
  assert.ok(project.includes("readonly?btn("),"non-manager project close must remain denied");
  assert.doesNotMatch(project,/Gabriel Johnson|Nana Ama|Kwame Mensah/,"owner screenshot sample names must not be published into synthetic preview");
 });
+
+test("P1 Projects family tabs are keyboard-operable connected sample views, not dead labels",()=>{
+ const projects=html.slice(html.indexOf("function projects(){"),html.indexOf("function reports(){"));
+ for(const term of ["data-project-tab","role=\"tab\"","aria-selected","aria-controls","projectPreviewTab","samplePanels","role=\"tabpanel\"","Project files","Project settings"]){
+  assert.ok(projects.includes(term),"missing Projects connected tab behavior: "+term);
+ }
+ assert.ok(html.includes('validTabs.includes(control.dataset.projectTab)'),"tab action must only allow declared project tabs");
+ assert.ok(projects.includes("readonly?'<p>Read-only view"),"restricted project settings must not leak authoring UI");
+ assert.ok(projects.includes("Preview only; no private files are exposed"),"files tab may not assume Storage grant");
+});

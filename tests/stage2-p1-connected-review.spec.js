@@ -368,3 +368,29 @@ test("P1 selected Projects collaborative family is phone safe and supports only 
  await expect(page.getByRole("button",{name:"Preview project closure"})).toHaveCount(0);
  await expect(page.getByText("Read-only view")).toBeVisible();
 });
+
+test("P1 Projects connected tabs navigate sample views without granting hidden project authority",async({page})=>{
+ await page.route("**/*",r=>r.abort("blockedbyclient"));
+ await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+ const role=page.getByRole("combobox",{name:"Preview role"});
+ await role.selectOption("manager");
+ await page.locator("#navigation").getByRole("button",{name:"Projects"}).click();
+ const tabs=page.getByRole("tablist",{name:"Project family sections"});
+ await expect(tabs.getByRole("tab",{name:"Overview"})).toHaveAttribute("aria-selected","true");
+ await tabs.getByRole("tab",{name:"Files"}).click();
+ await expect(page.getByRole("tabpanel",{name:"Files project preview"})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Project files"})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Recent tasks"})).toHaveCount(0);
+ await tabs.getByRole("tab",{name:"Tasks"}).click();
+ await expect(page.getByRole("heading",{name:"Recent tasks"})).toBeVisible();
+ await tabs.getByRole("tab",{name:"Settings"}).click();
+ await expect(page.getByText("Manager authoring preview only.",{exact:false})).toBeVisible();
+ await role.selectOption("staff");
+ await page.locator("#navigation").getByRole("button",{name:"Projects"}).click();
+ await tabs.getByRole("tab",{name:"Settings"}).click();
+ await expect(page.getByText("Read-only view. You cannot edit",{exact:false})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Preview project closure"})).toHaveCount(0);
+ await page.setViewportSize({width:390,height:844});
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+ expect(overflow,"Projects tabs should remain phone-safe").toBeLessThanOrEqual(1);
+});

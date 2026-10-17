@@ -69,7 +69,7 @@ main{min-width:0}.top{height:72px;background:#fff;border-bottom:1px solid var(--
 .s2pr-photo{position:absolute;inset:0 0 0 auto;width:55%;background:linear-gradient(90deg,#f3f9ff 0%,rgba(243,249,255,.8) 30%,rgba(243,249,255,.08) 95%),url("../../../public/assets/ceac-landscapes/scene-01.webp") center/cover}
 .s2pr-photo strong{position:absolute;right:25px;top:22px;color:#173957;line-height:1.35;font-size:15px;text-align:right}
 .s2pr-tabs{display:flex;align-items:center;gap:22px;overflow-x:auto;border-bottom:1px solid var(--line2);padding:1px 10px;scrollbar-width:thin}
-.s2pr-tabs span{display:block;white-space:nowrap;font-size:12px;padding:9px 0;color:#5d7690}.s2pr-tabs .active{font-weight:750;color:#116ceb;border-bottom:2px solid #197ef0}
+.s2pr-tabs button{display:block;flex:none;white-space:nowrap;font-size:12px;padding:9px 0;color:#5d7690;border:0;border-bottom:2px solid transparent;background:none}.s2pr-tabs button[aria-selected="true"]{font-weight:750;color:#116ceb;border-bottom:2px solid #197ef0}
 .s2pr-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.s2pr-metric{border:1px solid var(--line);border-radius:9px;background:white;min-width:0;padding:15px}
 .s2pr-metric h3{font-size:12px;margin:0 0 14px;color:#223f64}.s2pr-metric>div{display:flex;flex-direction:column;gap:6px}.s2pr-metric strong{font-size:16px;color:#17446f}.s2pr-metric small{font-size:11px;color:#738a9e}
 .s2pr-main{display:grid;grid-template-columns:minmax(0,2.5fr) minmax(245px,.9fr);gap:12px;align-items:start}.s2pr-left{display:grid;gap:12px;min-width:0}.s2pr-right{min-width:0}
@@ -118,7 +118,7 @@ const roleNav={
 const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",finance:"Budget and approved expenditure, separate from confidential payroll",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
 let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false,reportEvidenceReady=true,demoUnit="Unit One",reportEvidencePhase="ready";
 const draftWorkSamples=[];
-let authPreviewStep="setup",personalReviewPhase="unpublished";
+let authPreviewStep="setup",personalReviewPhase="unpublished",projectPreviewTab="overview";
 function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
 const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
 function panel(title,body){return '<section class="panel"><h2>'+title+'</h2>'+body+'</section>';}
@@ -189,14 +189,26 @@ function projects(){
  const readonly=!canAuthor;
  const actions=readonly?btn("Read-only project evidence","inspect"):btn("Request project","new-project","primary")+btn("Preview project closure","project-close");
  const title='<header class="s2pr-hero"><div class="s2pr-headline"><span class="eyebrow">Projects / Sample project workspace</span><h1>Sunday service and outreach <span class="s2pr-label">Sample · On track</span></h1><p>Plan shared work and inspect project evidence across authorised teams and departments.</p><div class="s2pr-keyline"><span>Jun–Dec · sample dates</span><span>6 example departments</span><span>Illustrative tasks and evidence</span></div></div><div class="s2pr-photo" aria-hidden="true"><strong>People<br>Work<br>Ministry</strong></div></header>';
- const tabs='<div class="s2pr-tabs" aria-label="Project family sections"><span class="active">Overview</span><span>Tasks</span><span>Team</span><span>Departments</span><span>Activity</span><span>Files</span><span>Settings · permission controlled</span></div>';
+ const projectTabs=[["overview","Overview"],["tasks","Tasks"],["team","Team"],["departments","Departments"],["activity","Activity"],["files","Files"],["settings","Settings"]];
+ const tabs='<div class="s2pr-tabs" role="tablist" aria-label="Project family sections">'+projectTabs.map(([id,label])=>'<button type="button" role="tab" data-project-tab="'+id+'" aria-selected="'+(projectPreviewTab===id)+'" aria-controls="s2pr-tab-panel">'+label+'</button>').join("")+'</div>';
  const metric=(name,number,detail)=>'<section class="s2pr-metric"><h3>'+name+'</h3><div><strong>'+number+'</strong><small>'+detail+'</small></div></section>';
  const metrics='<div class="s2pr-metrics">'+metric("Project progress","Illustrative","No verified completion percentage")+metric("Tasks","4 sample","Not real commitments")+metric("Departments","3 sample","Names and access scoped")+metric("Next key date","Demo date","No schedule asserted")+'</div>';
  const participants=panel("Project team and departments",'<p class="form-note">Sample member roles — no person or unit is granted access by this preview.</p><div class="s2pr-team"><span>Project lead</span><span>Media coordinator</span><span>Logistics coordinator</span><span>Support contributor</span></div><h3 class="s2pr-small-title">Departments involved</h3><div class="s2pr-departments"><span>Media · sample</span><span>Logistics · sample</span><span>Technical Support · sample</span></div>');
  const tasks='<section class="panel s2pr-taskpanel"><h2>Recent tasks</h2><p class="form-note">Single source-linked task table. Each responsibility remains assigned to one accountable actor.</p><div class="s2pr-table"><div class="s2pr-columns"><span>Task</span><span>Department</span><span>Status</span></div>'+
   [['Prepare service materials','Media','For review'],['Verify equipment readiness','Technical Support','In progress'],['Confirm delivery','Logistics','Waiting'],['Compile event feedback','Media','Proposed']].map(item=>'<div class="s2pr-taskrow"><strong>'+item[0]+'</strong><span>'+item[1]+'</span><span>'+item[2]+'</span></div>').join('')+'</div></section>';
  const inspector=panel("About this project",'<div class="s2pr-about"><div><span>Project status</span><strong>Illustrative; unverified</strong></div><div><span>Responsible unit</span><strong>Server-scoped in real app</strong></div><div><span>Shared impact</span><strong>Count once after evidence review</strong></div></div><h3 class="s2pr-small-title">Key milestones</h3><ol class="s2pr-timeline"><li>Project scope reviewed · sample</li><li>Responsibilities allocated · sample</li><li>Evidence and closure pending</li></ol><h3 class="s2pr-small-title">Recent activity</h3><p class="form-note">Only authorised, attributable updates may appear in the real application.</p><div class="mutedbox"><strong>'+(readonly?'Read-only view':'Manager authoring controls')+'</strong><p>'+(readonly?'No editing, closure or personnel permission is granted by this preview.':'Actual project edits and closures require verified selected-unit headship, evidence and reviewer approval.')+'</p></div>');
- return '<div class="s2pr-workspace">'+heading("Projects","Coordinated project work, responsible participants and reviewable evidence.",actions)+title+tabs+metrics+'<div class="s2pr-main"><div class="s2pr-left">'+participants+tasks+'</div><div class="s2pr-right">'+inspector+'</div></div><p class="form-note">Exact selected original privately archived; these records are sample only. This review does not implement or certify real project permissions, cross-unit closes or numbers.</p></div>';
+ const detailPane='<div class="s2pr-right">'+inspector+'</div>';
+ const samplePanels={
+  overview:participants+tasks,
+  tasks:tasks,
+  team:participants,
+  departments:participants,
+  activity:panel("Recent activity",record("Planned setup notes","Demonstration only; no actual author or timestamp is asserted","Sample")+record("Proposed follow-up","No project outcome or work hours are credited","Pending")),
+  files:panel("Project files",record("Project briefing","Synthetic document entry; not an accessible Storage object","Sample")+record("Event checklist","Preview only; no private files are exposed","Draft")),
+  settings:panel("Project settings",readonly?'<p>Read-only view. You cannot edit, close, change project members or see restricted settings in this preview.</p>':'<p>Manager authoring preview only. Real project changes, member grants and closure require selected-unit headship, server scope, evidence and reviewer approval.</p>')
+ };
+ const body=samplePanels[projectPreviewTab]||samplePanels.overview;
+ return '<div class="s2pr-workspace">'+heading("Projects","Coordinated project work, responsible participants and reviewable evidence.",actions)+title+tabs+'<section role="tabpanel" aria-label="'+projectTabs.find(([id])=>id===projectPreviewTab)[1]+' project preview" id="s2pr-tab-panel">'+(projectPreviewTab==="overview"?metrics:"")+'<div class="s2pr-main"><div class="s2pr-left">'+body+'</div>'+detailPane+'</div></section><p class="form-note">Exact selected original privately archived; these records are sample only. This review does not implement or certify real project permissions, cross-unit closes or numbers.</p></div>';
 }
 function reports(){
  const executive=role==="executive";
@@ -403,8 +415,13 @@ function drawer(kind){
  const first=document.querySelector(".drawer input,.drawer select,.drawer textarea,.drawer button");if(first)first.focus();
 }
 document.addEventListener("click",function(event){
- const control=event.target.closest("[data-page],[data-action],[data-filter]");if(!control)return;
- if(control.dataset.page){page=control.dataset.page;workFilter="mine";drawNav();window.scrollTo(0,0);return;}
+ const control=event.target.closest("[data-page],[data-action],[data-filter],[data-project-tab]");if(!control)return;
+ if(control.dataset.page){page=control.dataset.page;workFilter="mine";projectPreviewTab="overview";drawNav();window.scrollTo(0,0);return;}
+ if(control.dataset.projectTab && page==="projects"){
+  const validTabs=["overview","tasks","team","departments","activity","files","settings"];
+  if(validTabs.includes(control.dataset.projectTab)){projectPreviewTab=control.dataset.projectTab;drawNav();}
+  return;
+ }
  if(control.dataset.filter){workFilter=control.dataset.filter;drawNav();return;}
  const action=control.dataset.action;
  if(action==="close"){document.getElementById("modal").innerHTML="";return;}
@@ -447,6 +464,6 @@ document.addEventListener("submit",function(event){
  document.getElementById("announcement").textContent="A local-only design draft was reviewed. No real data was saved or submitted.";
 });
 document.addEventListener("keydown",function(event){if(event.key==="Escape")document.getElementById("modal").innerHTML="";});
-document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";authPreviewStep="setup";personalReviewPhase="unpublished";drawNav();});
+document.getElementById("role").addEventListener("change",function(event){role=event.target.value;page=roleNav[role][0][0];working=false;reportEvidenceReady=true;reportEvidencePhase="ready";demoUnit="Unit One";authPreviewStep="setup";personalReviewPhase="unpublished";projectPreviewTab="overview";drawNav();});
 drawNav();
 </script></body></html>
