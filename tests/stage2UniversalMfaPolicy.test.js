@@ -41,7 +41,8 @@ test("token refresh triggers verification without inventing a new login or grace
   assert.equal(shouldRecheckUniversalTotp("TOKEN_REFRESHED"), true);
   assert.equal(shouldRecheckUniversalTotp("SIGNED_IN"), true);
   assert.equal(shouldRecheckUniversalTotp("MFA_CHALLENGE_VERIFIED"), true);
-  assert.equal(shouldRecheckUniversalTotp("PASSWORD_RECOVERY"), false);
+  assert.equal(shouldRecheckUniversalTotp("PASSWORD_RECOVERY"), true,
+    "A password-recovery session cannot inherit previously authorised workspace visibility");
 });
 
 test("non-TOTP entries inside the TOTP factor collection cannot stand in for a verified authenticator", () => {
@@ -77,4 +78,14 @@ test("verified backup confirmation survives the authentication gate remount", ()
   assert.match(source, /A backup authenticator is verified for this account/);
   assert.doesNotMatch(source, /localStorage\.setItem\(["'](?:mfa|aal2)/i,
     "UI confirmation may not become an MFA authority flag");
+});
+
+// Password reset links can establish a fresh provider session. The UI gate
+// must clear earlier assurance immediately; only a fresh signed TOTP/AAL2
+// result can restore the workspace.
+test("password recovery is subject to the same fail-closed recheck as sign-in", () => {
+  assert.equal(shouldRecheckUniversalTotp("PASSWORD_RECOVERY"), true);
+  assert.equal(judge("aal1", ["recovery"]).state, "challenge");
+  assert.equal(judge("aal1", ["recovery"], { totp: [] }).state, "enroll");
+  assert.equal(judge("aal2", ["recovery", "totp"]).state, "allow");
 });

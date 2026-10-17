@@ -28,8 +28,13 @@ const service = create(SUPABASE_SERVICE_ROLE_KEY);
 const sessions = [];
 let switched = false;
 let portraitFixtureCreated = false;
+let foreignPortraitFixtureCreated = false;
+let managerDeactivated = false;
+const managerId = "31000000-0000-4000-8000-000000000002";
 const portraitBucket = "ceac-profile-portraits";
 const portraitObject = `${orgId}/31000000-0000-4000-8000-000000000001/51000000-0000-4000-8000-000000000099.webp`;
+const foreignPortraitObject =
+  "10000000-0000-4000-8000-000000000099/31000000-0000-4000-8000-000000000099/51000000-0000-4000-8000-000000000098.webp";
 
 function fromBase32(secret) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -147,6 +152,45 @@ try {
     .createSignedUrl(portraitObject, 60);
   assert.ok(!verifiedLink.error && verifiedLink.data?.signedUrl,
     "Verified AAL2/TOTP member must be allowed to create a brief own-org private URL");
+  // A valid signed TOTP/AAL2 bearer still cannot access another organisation's
+  // private object. Create a synthetic foreign-path fixture ONLY with the local
+  // disposable service key; never copy any real staff image or use hosted APIs.
+  const foreignUpload = await service.storage.from(portraitBucket).upload(
+    foreignPortraitObject, fixtureBytes, { contentType: "image/webp", upsert: false },
+  );
+  if (foreignUpload.error) throw new Error("Foreign-org private test fixture failed: " + foreignUpload.error.message);
+  foreignPortraitFixtureCreated = true;
+  const foreignDownload = await sessions[0].storage.from(portraitBucket).download(foreignPortraitObject);
+  assert.ok(foreignDownload.error && !foreignDownload.data,
+    "Valid AAL2/TOTP session must not download a foreign-org portrait");
+  const foreignLink = await sessions[0].storage.from(portraitBucket).createSignedUrl(foreignPortraitObject, 60);
+  assert.ok(foreignLink.error && !foreignLink.data?.signedUrl,
+    "Valid AAL2/TOTP session must not issue a signed foreign-org private URL");
+
+  // Invalidate a previously authorised actor at the source of truth, without
+  // changing Auth JWTs. The old bearer must lose direct REST/RPC/Storage reads.
+  const deactivated = await service.from("profiles")
+    .update({ active: false }).eq("id", managerId).select("id,active").single();
+  if (deactivated.error) throw deactivated.error;
+  assert.equal(deactivated.data.active, false);
+  managerDeactivated = true;
+  assert.equal(await orgIdentity(sessions[0], "deactivated Manager"), null,
+    "A former AAL2 bearer must lose organisation authority after profile deactivation");
+  assert.deepEqual(await ownProfileRows(sessions[0], "deactivated Manager"), [],
+    "A former AAL2 bearer must not read even its own profile after deactivation");
+  const deactivatedDownload = await sessions[0].storage.from(portraitBucket).download(portraitObject);
+  assert.ok(deactivatedDownload.error && !deactivatedDownload.data,
+    "Deactivated Manager must lose real Storage access despite a previously signed AAL2 bearer");
+  const deactivatedLink = await sessions[0].storage.from(portraitBucket).createSignedUrl(portraitObject, 60);
+  assert.ok(deactivatedLink.error && !deactivatedLink.data?.signedUrl,
+    "Deactivated Manager must not issue new signed Storage URLs");
+  const reactivated = await service.from("profiles")
+    .update({ active: true }).eq("id", managerId).select("id,active").single();
+  if (reactivated.error) throw reactivated.error;
+  assert.equal(reactivated.data.active, true);
+  managerDeactivated = false;
+  assert.equal(await orgIdentity(sessions[0], "reactivated Manager"), orgId,
+    "The test fixture must restore legitimate AAL2 authority after reactivation");
   const anonymousDownload = await create(SUPABASE_ANON_KEY)
     .storage.from(portraitBucket).download(portraitObject);
   assert.ok(anonymousDownload.error && !anonymousDownload.data,
@@ -233,8 +277,17 @@ try {
   assert.equal(await orgIdentity(replacementSession, "Recovered Manager AAL2"), orgId);
   assert.equal((await ownProfileRows(replacementSession, "Recovered Manager own profile")).length, 1);
 
-  console.log("PASS local-only real provider TOTP, AAL2, refresh, RPC/REST/Storage denial and admin-only recovery: Staff + 6 role/organisation fixtures.");
+  console.log("PASS local-only real provider TOTP, AAL2, refresh, RPC/REST/Storage cross-org + deactivation denial and admin-only recovery: Staff + 6 role fixtures.");
 } finally {
+  if (managerDeactivated) {
+    const resetManager = await service.from("profiles")
+      .update({ active: true }).eq("id", managerId);
+    if (resetManager.error) throw new Error("Could not restore disposable Manager profile: " + resetManager.error.message);
+  }
+  if (foreignPortraitFixtureCreated) {
+    const removedForeign = await service.storage.from(portraitBucket).remove([foreignPortraitObject]);
+    if (removedForeign.error) throw new Error("Disposable foreign-org portrait cleanup failed: " + removedForeign.error.message);
+  }
   if (portraitFixtureCreated) {
     const removedFixture = await service.storage.from(portraitBucket).remove([portraitObject]);
     if (removedFixture.error) throw new Error("Disposable private portrait fixture cleanup failed: " + removedFixture.error.message);

@@ -26,9 +26,11 @@ export function decideUniversalTotpAccess({ session, assurance, factors, claims 
 
 /**
  * A new login/device requires TOTP. A verified AAL2 session may continue
- * normally through token refresh; no client-side "skip MFA" clock exists.
+ * normally through token refresh; a password-recovery session is a new
+ * Auth context that MUST be rechecked before any protected workspace renders.
+ * No client-side "skip MFA" clock exists.
  */
 export function shouldRecheckUniversalTotp(authEvent) {
-  return ["SIGNED_IN", "SIGNED_OUT", "MFA_CHALLENGE_VERIFIED", "USER_UPDATED", "TOKEN_REFRESHED"]
+  return ["SIGNED_IN", "SIGNED_OUT", "MFA_CHALLENGE_VERIFIED", "USER_UPDATED", "TOKEN_REFRESHED", "PASSWORD_RECOVERY"]
     .includes(authEvent);
 }
