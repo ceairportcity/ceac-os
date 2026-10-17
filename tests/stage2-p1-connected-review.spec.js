@@ -252,7 +252,7 @@ test("P1 Manager Team preview cannot grant invitation access; Administration inv
   await page.setContent(prototype,{waitUntil:"domcontentloaded"});
   const picker=page.getByRole("combobox",{name:"Preview role"});
   await picker.selectOption("manager");
-  await page.locator("#navigation").getByRole("button",{name:"Team"}).click();
+  await page.locator("#navigation").getByRole("button",{name:"Team",exact:true}).click();
   await expect(page.getByRole("heading",{name:"My team"})).toBeVisible();
   await expect(page.getByRole("button",{name:"Review member invitation"})).toHaveCount(0);
   await picker.selectOption("admin");
@@ -287,13 +287,13 @@ test("P1 human rating preview requires Manager authority, rating, reason and evi
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button",{name:"Review sample action"}).click();
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByLabel("Human rating")).toBeInvalid();
+  expect(await dialog.getByLabel("Human rating").evaluate(el=>el.checkValidity())).toBe(false);
   await dialog.getByLabel("Human rating").selectOption("3");
   await dialog.getByRole("button",{name:"Review sample action"}).click();
-  await expect(dialog.getByLabel("Required explanation")).toBeInvalid();
+  expect(await dialog.getByLabel("Required explanation").evaluate(el=>el.checkValidity())).toBe(false);
   await dialog.getByLabel("Required explanation").fill("Sample observed execution with reviewer context");
   await dialog.getByRole("button",{name:"Review sample action"}).click();
-  await expect(dialog.getByLabel("Source evidence reference")).toBeInvalid();
+  expect(await dialog.getByLabel("Source evidence reference").evaluate(el=>el.checkValidity())).toBe(false);
   await dialog.getByLabel("Source evidence reference").fill("SYNTHETIC-EVIDENCE-1");
   await dialog.getByRole("button",{name:"Review sample action"}).click();
   await expect(dialog).toHaveCount(0);
