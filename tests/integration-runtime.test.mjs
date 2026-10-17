@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { hasVerifiedTotpAal2 } from "../supabase/functions/integration-runtime/mfa.mjs";
+import {
+  hasVerifiedTotpAal2, readBoundedActionBody, MAX_INTEGRATION_BODY_BYTES,
+} from "../supabase/functions/integration-runtime/mfa.mjs";
 import {
   classifyTelegramFailure,
   safeNotificationText,
@@ -102,4 +104,30 @@ test("integration Edge policy check precedes privileged capability handling", ()
   assert.match(source, /client\.auth\.getClaims\(accessToken\)/);
   assert.match(source, /orgPolicyError \|\| typeof orgPolicy\?\.universal_totp_required !== "boolean"/);
   assert.match(source, /if \(orgPolicy\.universal_totp_required\)/);
+});
+
+test("public integration Edge request rejects oversized and malformed bodies before authority dispatch", async () => {
+  const request = (body, headers = {}) => new Request("https://isolated.test/functions/v1/integration-runtime", {
+    method: "POST", headers, body,
+  });
+  assert.deepEqual(await readBoundedActionBody(request('{"action":"health.telegram"}')),
+    { action: "health.telegram" });
+  assert.deepEqual(await readBoundedActionBody(request("")), {});
+  assert.equal(await readBoundedActionBody(request("{invalid-json")), null);
+  assert.equal(await readBoundedActionBody(request('["worker"]')), null);
+  assert.equal(await readBoundedActionBody(request('"worker"')), null);
+  assert.equal(await readBoundedActionBody(request("null")), null);
+  assert.deepEqual(await readBoundedActionBody(request(
+    JSON.stringify({ a: "x".repeat(MAX_INTEGRATION_BODY_BYTES - 8) }),
+  )).then((value) => value?.a?.length), MAX_INTEGRATION_BODY_BYTES - 8);
+  assert.equal(await readBoundedActionBody(request("x".repeat(MAX_INTEGRATION_BODY_BYTES + 1))), null);
+  assert.equal(await readBoundedActionBody(request('{"action":"worker"}', {
+    "Content-Length": String(MAX_INTEGRATION_BODY_BYTES + 1),
+  })), null);
+
+  const edgeSource = readFileSync(new URL("../supabase/functions/integration-runtime/index.ts", import.meta.url), "utf8");
+  assert.ok(edgeSource.includes("await readBoundedActionBody(req)"));
+  assert.ok(edgeSource.includes('if (!body) return json({ error: "Invalid or oversized integration request." }, 400)'));
+  assert.equal(edgeSource.includes("await req.json()"), false,
+    "Unauthenticated Edge requests may not be read by an unbounded parser");
 });

@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { safeNotificationText, telegramGetMe, telegramSendMessage } from "./telegram.mjs";
-import { hasVerifiedTotpAal2 } from "./mfa.mjs";
+import { hasVerifiedTotpAal2, readBoundedActionBody } from "./mfa.mjs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -351,9 +351,13 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "POST required." }, 405);
 
-  let body: any = {};
-  try { body = await req.json(); } catch {}
-  const action = String(body?.action || "");
+  // The worker-key route and browser routes share this public Edge entry.
+  // Bound unauthenticated body reads before parsing any JSON or dispatching
+  // privileged actions. The platform gateway's own size limit is not a
+  // substitute for this application-level check.
+  const body = await readBoundedActionBody(req);
+  if (!body) return json({ error: "Invalid or oversized integration request." }, 400);
+  const action = String(body.action || "");
 
   try {
     if (action === "connect.telegram") return await connectTelegram(req, body);
