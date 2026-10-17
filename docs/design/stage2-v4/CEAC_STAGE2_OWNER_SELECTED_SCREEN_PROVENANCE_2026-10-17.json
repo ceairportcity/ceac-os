@@ -4,7 +4,7 @@
   "applicable_pr": 118,
   "source_of_truth": "docs/design/CEAC_STAGE2_VISUAL_REFERENCE_CORRECTION_2026-10-17.md",
   "user_originals_not_public_assets": true,
-  "note": "Owner-supplied original binary images may have employee or staff identifiers. Do not add to temporarily public GitHub. Source screenshot hash and explicit approval status provide provenance, not execution acceptance.",
+  "note": "Owner-confirmed original design images may contain identifying mockup details. Preserve private originals outside temporarily public GitHub. The exact revised Projects original was recovered and privately verified; no literal app screenshot parity/P1 owner sign-off claimed.",
   "references": {
     "work_desktop": {
       "original_sha256": "c84f9ab01a43be444ac7e2364555a0bfe3cbf63dd3117c6d9001fda94192406b",
@@ -34,7 +34,12 @@
       "width": 1536,
       "height": 1024,
       "approval_scope": "2026_10_16_newer_collaborative_projects_direction",
-      "original_binary_verified_in_repo": false
+      "original_binary_verified_in_repo": false,
+      "original_binary_verified_in_private_library": true,
+      "private_library_path": "/CEAC OS/Stage 2 Approved Visual References/Projects_Revised_Exact_Owner_Approved_2026-10-16.png",
+      "private_archived_sha256_verified": true,
+      "original_library_filename": "CEAC OS Sunday Service Dashboard.png",
+      "privacy_note": "Original screenshot includes named sample portraits; preserve privately, never publish unchanged in temporarily public repo."
     }
   },
   "retired_active_paths": [
