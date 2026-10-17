@@ -211,3 +211,17 @@ test("P1 reviewed draft separates truthful provenance from not-saved status once
  assert.ok(work.includes('draft:"Sample draft, not saved"'));
  assert.ok(!work.includes('ref:"Sample draft, not saved"'),"draft metadata must not duplicate state label");
 });
+
+test("P1 selected collaborative Projects family retains shared team, one task table and inspector without private names",()=>{
+ const project=html.slice(html.indexOf("function projects(){"),html.indexOf("function reports(){"));
+ const css=html.slice(html.indexOf("<style>"),html.indexOf("</style>"));
+ for(const token of ["s2pr-hero","s2pr-photo","s2pr-metrics","s2pr-team","Departments involved","s2pr-taskpanel","Recent tasks","s2pr-right","About this project","Key milestones","Recent activity","Read-only view"]) {
+  assert.ok(project.includes(token),"missing selected Projects visual feature: "+token);
+ }
+ assert.equal(project.split("panel(\"Project team and departments\"").length-1,1);
+ assert.equal(project.split("panel(\"About this project\"").length-1,1);
+ assert.ok(css.includes("@media(max-width:520px){.s2pr-hero"),"phone Projects cards/inspector missing");
+ assert.match(project,/const canAuthor=role===\"manager\"/);
+ assert.ok(project.includes("readonly?btn("),"non-manager project close must remain denied");
+ assert.doesNotMatch(project,/Gabriel Johnson|Nana Ama|Kwame Mensah/,"owner screenshot sample names must not be published into synthetic preview");
+});

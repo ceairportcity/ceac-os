@@ -58,6 +58,32 @@ main{min-width:0}.top{height:72px;background:#fff;border-bottom:1px solid var(--
 .s2w-detail-metrics div{display:grid;gap:6px}.s2w-detail-metrics span{font-size:10px;color:#8ca0b1}.s2w-detail-metrics strong{font-size:12px;color:#2d4760}
 .s2w-next{background:#edf5ff;border-left:3px solid #1484ee;padding:11px;font-size:12px}.s2w-next p{margin:6px 0 0;color:#59748f;font-size:11px}
 .s2w-timeline{margin:0;padding:0 0 0 18px;display:grid;gap:15px}.s2w-timeline li{color:#284860;font-size:12px}.s2w-timeline li::marker{color:#9bbeb4}.s2w-timeline li strong,.s2w-timeline li small{display:block}.s2w-timeline li small{color:#98a8b7;font-size:11px;margin-top:4px}.s2w-details>.btn{width:100%}
+
+/* Selected Projects hierarchy: one collaborative workspace with ONE team/department area + task table and inspector */
+.s2pr-workspace{display:grid;gap:12px}
+.s2pr-workspace>.headline{margin-bottom:2px}
+.s2pr-hero{border:1px solid #e0ecf7;border-radius:11px;background:#f3f9ff;position:relative;overflow:hidden;padding:20px 24px;min-height:161px;display:flex;align-items:center}
+.s2pr-headline{z-index:1;position:relative;max-width:75%}.s2pr-headline h1{font-size:22px;color:#193e66;margin:8px 0;letter-spacing:-.5px}.s2pr-headline p{margin:0;color:#56738e;max-width:540px}
+.s2pr-label{font-size:10px;background:#daf4e6;color:#117a56;padding:6px 9px;border-radius:8px;letter-spacing:0;vertical-align:middle;white-space:nowrap}
+.s2pr-keyline{display:flex;gap:14px;flex-wrap:wrap;margin-top:17px;font-size:11px;color:#426588}
+.s2pr-photo{position:absolute;inset:0 0 0 auto;width:55%;background:linear-gradient(90deg,#f3f9ff 0%,rgba(243,249,255,.8) 30%,rgba(243,249,255,.08) 95%),url("../../../public/assets/ceac-landscapes/scene-01.webp") center/cover}
+.s2pr-photo strong{position:absolute;right:25px;top:22px;color:#173957;line-height:1.35;font-size:15px;text-align:right}
+.s2pr-tabs{display:flex;align-items:center;gap:22px;overflow-x:auto;border-bottom:1px solid var(--line2);padding:1px 10px;scrollbar-width:thin}
+.s2pr-tabs span{display:block;white-space:nowrap;font-size:12px;padding:9px 0;color:#5d7690}.s2pr-tabs .active{font-weight:750;color:#116ceb;border-bottom:2px solid #197ef0}
+.s2pr-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.s2pr-metric{border:1px solid var(--line);border-radius:9px;background:white;min-width:0;padding:15px}
+.s2pr-metric h3{font-size:12px;margin:0 0 14px;color:#223f64}.s2pr-metric>div{display:flex;flex-direction:column;gap:6px}.s2pr-metric strong{font-size:16px;color:#17446f}.s2pr-metric small{font-size:11px;color:#738a9e}
+.s2pr-main{display:grid;grid-template-columns:minmax(0,2.5fr) minmax(245px,.9fr);gap:12px;align-items:start}.s2pr-left{display:grid;gap:12px;min-width:0}.s2pr-right{min-width:0}
+.s2pr-small-title{font-size:13px;margin:18px 0 10px}.s2pr-team{display:flex;gap:9px;flex-wrap:wrap}.s2pr-team span,.s2pr-departments span{border-radius:7px;background:#f1f7fd;color:#2d5681;font-size:11px;padding:10px 12px}
+.s2pr-departments{display:flex;gap:8px;flex-wrap:wrap}.s2pr-taskpanel{padding:16px 0}.s2pr-taskpanel h2,.s2pr-taskpanel>.form-note{margin:0 17px 8px}.s2pr-taskpanel>.form-note{padding-bottom:8px}
+.s2pr-columns,.s2pr-taskrow{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(110px,1fr) minmax(90px,.7fr);gap:8px;padding:11px 16px;border-bottom:1px solid #eaf0f8;align-items:center;font-size:11px}
+.s2pr-columns{background:#f5f8fc;color:#6c8aa3;font-size:10px;text-transform:uppercase;font-weight:700}
+.s2pr-taskrow strong{font-size:11px;color:#1e4266}.s2pr-taskrow span{color:#6b8199}
+.s2pr-about{display:grid;gap:11px;border-bottom:1px solid var(--line);padding-bottom:17px}
+.s2pr-about>div{display:flex;justify-content:space-between;gap:9px;font-size:11px}.s2pr-about span{color:#718da9}.s2pr-about strong{text-align:right;color:#1c4567}
+.s2pr-timeline{font-size:11px;color:#4a6884;margin:0;padding-left:20px;display:grid;gap:12px}
+@media(max-width:1120px){.s2pr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2pr-main{grid-template-columns:1fr}.s2pr-photo strong{display:none}}
+@media(max-width:520px){.s2pr-hero{padding:16px;min-height:175px}.s2pr-headline{max-width:100%}.s2pr-headline h1{font-size:19px}.s2pr-photo{width:100%;opacity:.17}.s2pr-keyline{gap:7px}.s2pr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2pr-metric{padding:12px}.s2pr-columns,.s2pr-taskrow{grid-template-columns:minmax(0,1.3fr) minmax(80px,.8fr)}.s2pr-columns span:nth-child(2),.s2pr-taskrow span:nth-child(2){display:none}}
+
 @media(max-width:920px){.s2w-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:520px){.s2w-register .panel{padding-top:16px}.s2w-count{top:19px}.s2w-tabs{gap:18px}.s2w-table-head,.s2w-row{grid-template-columns:minmax(0,1.5fr) minmax(93px,.75fr);gap:9px;padding:11px 13px}.s2w-table-head span:nth-child(2),.s2w-table-head span:nth-child(3),.s2w-project,.s2w-due{display:none}.s2w-register .panel>h2{margin-left:14px}.s2w-state{font-size:10px}.s2w-group{padding-left:13px}.s2w-register .panel>.form-note{padding:0 14px}.s2w-inspector .panel{padding:19px}}
 
@@ -157,12 +183,20 @@ function work(){
   +'<div class="s2w-grid"><div class="s2w-register">'+register+'</div><div class="s2w-inspector">'+details+'</div></div>';
 }
 function projects(){
+ // P1 Projects SCREEN FAMILY, using the exact owner-selected collaborative layout hierarchy.
+ // Synthetic identity-safe records: do not derive completion, paid hours, confidential people or current progress.
  const canAuthor=role==="manager";
  const readonly=!canAuthor;
  const actions=readonly?btn("Read-only project evidence","inspect"):btn("Request project","new-project","primary")+btn("Preview project closure","project-close");
- return heading("Projects","Objective, phase, shared participant and verifiable contribution views. Shared outcomes are counted once.",actions)
- +'<div class="two">'+panel("Portfolio",record("Workstream Alpha","Two participating units · Active · 3 milestones","Open")+record("Workstream Beta","One unit · Evidence under review","Review")+record("Workstream Gamma","Proposed · authorised unit approval required","Draft"))+
- panel("Workstream Alpha · detail",'<div class="strip"><div><span>Objective</span><br><strong>Improve operating readiness</strong></div><div><span>Milestones</span><br><strong>3 planned</strong></div></div><h2>Participants and attribution</h2><p>Contributing units: Unit One and Unit Two. Personal work remains individually attributable; shared outcomes appear once.</p><div class="mutedbox"><strong>'+ (readonly?"Read-only view":"Manager authoring controls") +'</strong><p>'+(readonly?"No editing of plans, finances or personnel is granted by this screen.":"Project changes and closures require the verified selected-unit authority, reviewed evidence and server approval.")+'</p></div><p class="form-note">The previously approved revised Projects screenshot binary is still required before literal design acceptance.</p>')+'</div>';
+ const title='<header class="s2pr-hero"><div class="s2pr-headline"><span class="eyebrow">Projects / Sample project workspace</span><h1>Sunday service and outreach <span class="s2pr-label">Sample · On track</span></h1><p>Plan shared work and inspect project evidence across authorised teams and departments.</p><div class="s2pr-keyline"><span>Jun–Dec · sample dates</span><span>6 example departments</span><span>Illustrative tasks and evidence</span></div></div><div class="s2pr-photo" aria-hidden="true"><strong>People<br>Work<br>Ministry</strong></div></header>';
+ const tabs='<div class="s2pr-tabs" aria-label="Project family sections"><span class="active">Overview</span><span>Tasks</span><span>Team</span><span>Departments</span><span>Activity</span><span>Files</span><span>Settings · permission controlled</span></div>';
+ const metric=(name,number,detail)=>'<section class="s2pr-metric"><h3>'+name+'</h3><div><strong>'+number+'</strong><small>'+detail+'</small></div></section>';
+ const metrics='<div class="s2pr-metrics">'+metric("Project progress","Illustrative","No verified completion percentage")+metric("Tasks","4 sample","Not real commitments")+metric("Departments","3 sample","Names and access scoped")+metric("Next key date","Demo date","No schedule asserted")+'</div>';
+ const participants=panel("Project team and departments",'<p class="form-note">Sample member roles — no person or unit is granted access by this preview.</p><div class="s2pr-team"><span>Project lead</span><span>Media coordinator</span><span>Logistics coordinator</span><span>Support contributor</span></div><h3 class="s2pr-small-title">Departments involved</h3><div class="s2pr-departments"><span>Media · sample</span><span>Logistics · sample</span><span>Technical Support · sample</span></div>');
+ const tasks='<section class="panel s2pr-taskpanel"><h2>Recent tasks</h2><p class="form-note">Single source-linked task table. Each responsibility remains assigned to one accountable actor.</p><div class="s2pr-table"><div class="s2pr-columns"><span>Task</span><span>Department</span><span>Status</span></div>'+
+  [['Prepare service materials','Media','For review'],['Verify equipment readiness','Technical Support','In progress'],['Confirm delivery','Logistics','Waiting'],['Compile event feedback','Media','Proposed']].map(item=>'<div class="s2pr-taskrow"><strong>'+item[0]+'</strong><span>'+item[1]+'</span><span>'+item[2]+'</span></div>').join('')+'</div></section>';
+ const inspector=panel("About this project",'<div class="s2pr-about"><div><span>Project status</span><strong>Illustrative; unverified</strong></div><div><span>Responsible unit</span><strong>Server-scoped in real app</strong></div><div><span>Shared impact</span><strong>Count once after evidence review</strong></div></div><h3 class="s2pr-small-title">Key milestones</h3><ol class="s2pr-timeline"><li>Project scope reviewed · sample</li><li>Responsibilities allocated · sample</li><li>Evidence and closure pending</li></ol><h3 class="s2pr-small-title">Recent activity</h3><p class="form-note">Only authorised, attributable updates may appear in the real application.</p><div class="mutedbox"><strong>'+(readonly?'Read-only view':'Manager authoring controls')+'</strong><p>'+(readonly?'No editing, closure or personnel permission is granted by this preview.':'Actual project edits and closures require verified selected-unit headship, evidence and reviewer approval.')+'</p></div>');
+ return '<div class="s2pr-workspace">'+heading("Projects","Coordinated project work, responsible participants and reviewable evidence.",actions)+title+tabs+metrics+'<div class="s2pr-main"><div class="s2pr-left">'+participants+tasks+'</div><div class="s2pr-right">'+inspector+'</div></div><p class="form-note">Exact selected original privately archived; these records are sample only. This review does not implement or certify real project permissions, cross-unit closes or numbers.</p></div>';
 }
 function reports(){
  const executive=role==="executive";

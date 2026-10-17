@@ -348,3 +348,23 @@ test("P1 Work owner-selected desktop register and phone inspector retain only lo
  await page.locator("#navigation").getByRole("button",{name:"My work"}).click();
  await expect(page.getByRole("button",{name:"Give out work"})).toHaveCount(0);
 });
+
+test("P1 selected Projects collaborative family is phone safe and supports only Manager closure preview",async({page})=>{
+ await page.route("**/*",r=>r.abort("blockedbyclient"));
+ await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+ const role=page.getByRole("combobox",{name:"Preview role"});
+ await role.selectOption("manager");
+ await page.locator("#navigation").getByRole("button",{name:"Projects"}).click();
+ await expect(page.locator(".s2pr-metric")).toHaveCount(4);
+ await expect(page.locator(".s2pr-taskrow")).toHaveCount(4);
+ await expect(page.getByRole("heading",{name:"Project team and departments"})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"About this project"})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Preview project closure"})).toBeVisible();
+ await page.setViewportSize({width:390,height:844});
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+ expect(overflow,"selected Projects family must not overflow 390px phone").toBeLessThanOrEqual(1);
+ await role.selectOption("staff");
+ await page.locator("#navigation").getByRole("button",{name:"Projects"}).click();
+ await expect(page.getByRole("button",{name:"Preview project closure"})).toHaveCount(0);
+ await expect(page.getByText("Read-only view")).toBeVisible();
+});
