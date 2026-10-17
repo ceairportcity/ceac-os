@@ -315,7 +315,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     finally { setBusy(false); }
   }
 
-  if (listScope !== scope) return <div className="body manager-projects ev2-project-page"><LoadingState label="Loading authorised unit projects…" /></div>;
+  if (listScope !== scope) return <div className="body manager-projects ev2-project-page">{!loadingList && error ? <ProductNotice tone="error" title="Could not load this unit’s projects">{error}</ProductNotice> : <LoadingState label="Loading authorised unit projects…" />}</div>;
 
   if (selectedId) {
     if (!detail || detail.id !== selectedId || detailScope !== scope) return <div className="body manager-projects ev2-project-page ev2-project-workspace"><button className="back" onClick={() => initialProjectId && back ? back() : setSelectedId(null)}>← Projects</button>{error ? <ProductNotice tone="error" title="Could not open project">{error}</ProductNotice> : <LoadingState label="Loading project…" />}</div>;
