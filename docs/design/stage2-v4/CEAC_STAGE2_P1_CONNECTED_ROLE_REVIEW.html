@@ -22,7 +22,7 @@ table{width:100%;border-collapse:collapse;text-align:left}th{font-size:11px;colo
 </style></head><body>
 <div class="app"><aside><div class="brand"><div class="brandmark" aria-hidden="true">CEAC</div> CEAC OS</div><div class="eyebrow">Workspace</div><nav id="navigation" aria-label="Role preview destinations"></nav><div class="sidefoot">P1 connected design candidate, not owner-approved. Sample only; no live data.</div></aside>
 <main><div class="top"><strong id="breadcrumbs">CEAC OS / Overview</strong><div class="top-right"><label for="role">Preview as</label><select id="role" aria-label="Preview role">
-<option value="staff">Staff</option><option value="manager">Manager · single/multi-unit</option><option value="support">Technical Support capability</option><option value="admin">Administration / HR</option><option value="executive">Executive</option><option value="volunteer">Volunteer · nonsalaried</option></select></div></div>
+<option value="staff">Staff</option><option value="manager">Manager · single/multi-unit</option><option value="support">Technical Support capability</option><option value="admin">Administration / HR</option><option value="compliance">Compliance Officer · restricted panel</option><option value="payroll">Payroll-authorised officer · restricted panel</option><option value="executive">Executive</option><option value="volunteer">Volunteer · nonsalaried</option></select></div></div>
 <div class="content"><div class="notice"><strong>Owner review candidate, NOT application acceptance.</strong> This standalone design uses synthetic examples. Buttons operate locally only. Role switching is a visual review aid, never security authorisation. Exact revised Projects PNG and remaining role states still require approval.</div>
 <section id="screen" aria-live="polite"></section></div></main></div><div id="modal"></div><div class="sr" role="status" aria-live="polite" id="announcement"></div>
 <script>
@@ -31,11 +31,13 @@ const roleNav={
  staff:[["overview","Overview"],["work","My work"],["projects","Projects"],["achievements","My achievements"],["auth","Account security"]],
  manager:[["overview","Overview"],["work","Work & delegations"],["projects","Projects"],["reports","Manager reporting"],["people","Team"],["auth","Account security"]],
  support:[["support","Support desk"],["overview","My overview"],["work","My work"],["auth","Account security"]],
- admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["compliance","Compliance"],["payroll","Payroll"],["projects","Projects"],["auth","Account security"]],
+ admin:[["overview","Administration"],["people","People & access"],["hr","Protected HR"],["ratings","Quarterly reviews"],["projects","Projects"],["auth","Account security"]],
+ compliance:[["compliance","Independent Compliance desk"],["auth","Account security"]],
+ payroll:[["payroll","Payroll preparation and approval"],["auth","Account security"]],
  executive:[["overview","Executive overview"],["strategy","Strategy & outcomes"],["reports","Quarterly evidence"],["projects","Projects"],["auth","Account security"]],
  volunteer:[["overview","My fellowship"],["work","Assigned activities"],["projects","Projects"],["auth","Account security"]]
 };
-const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
+const summaries={staff:"Your work and verified activity",manager:"Your units, people and approved execution",support:"A restricted Support capability view",admin:"People administration and protected records",compliance:"Independent evidence and policy reviews, separate from HR",payroll:"Restricted payroll authority, separate from general Administration",executive:"Verified ministry direction and outcomes",volunteer:"Your volunteer commitments, separate from payroll"};
 let role="staff",page="overview",workFilter="mine",selected="Workstream Alpha",working=false;
 function heading(title,sub,buttons=""){return '<div class="headline"><div><div class="eyebrow">Stage 2 / '+role.replace("-"," ")+'</div><h1>'+title+'</h1><p>'+sub+'</p></div><div class="actions">'+buttons+'</div></div>';}
 const btn=(name,action,variant="")=>'<button class="btn '+variant+'" data-action="'+action+'">'+name+'</button>';
