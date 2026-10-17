@@ -10,6 +10,7 @@ on:
       - scripts/ci/test-stage2-all-role-totp-local.mjs
       - scripts/ci/test-local-totp-aal2.mjs
       - scripts/ci/prepare-local-totp-mfa.mjs
+      - tests/account-mfa-local-only.spec.js
 permissions:
   contents: read
 jobs:
