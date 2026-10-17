@@ -23,6 +23,8 @@ const roleEmails = [
   ["Executive", "exec@ceac.local.test"],
   ["Other-unit Staff", "other@ceac.local.test"],
   ["Volunteer", "sameunit@ceac.local.test"],
+  ["Technical Support", "support@ceac.local.test"],
+  ["Independent Compliance", "compliance@ceac.local.test"],
 ];
 const create = (key) => createClient(SUPABASE_URL, key, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
@@ -120,6 +122,64 @@ try {
   if (initial.error) throw initial.error;
   assert.equal(initial.data.universal_totp_required, false, "Local-only owner cutover must start OFF");
 
+  // P2 all-role coverage: add precisely two supplementary, invite-backed
+  // actors in THIS disposable local acceptance process, not the shared
+  // seven-user browser seed. Do not create new roles by setting is_admin
+  // or attaching privileged unit leadership to Technical Support/Compliance.
+  const additionalActors = [
+    {
+      id: "31000000-0000-4000-8000-000000000008",
+      email: "support@ceac.local.test",
+      name: "Synthetic Technical Support",
+      capability: "support.case.manage",
+    },
+    {
+      id: "31000000-0000-4000-8000-000000000009",
+      email: "compliance@ceac.local.test",
+      name: "Synthetic Independent Compliance",
+      capability: "compliance.manage",
+    },
+  ];
+  for (const actor of additionalActors) {
+    const invitation = await service.from("pending_invitations").insert({
+      org_id: orgId,
+      email: actor.email,
+      full_name: actor.name,
+      unit_id: "20000000-0000-4000-8000-000000000011",
+      role: "staff",
+      invited_by: null,
+      expires_at: new Date(Date.now() + 3_600_000).toISOString(),
+    });
+    if (invitation.error) throw invitation.error;
+    const created = await service.auth.admin.createUser({
+      id: actor.id, email: actor.email, password: ROLE_FIXTURE_PASSWORD,
+      email_confirm: true,
+    });
+    if (created.error) throw created.error;
+    assert.equal(created.data.user?.id, actor.id,
+      "Local supplementary actor must retain its exact invited Auth identity");
+    if (actor.capability === "support.case.manage") {
+      // Support power requires BOTH a distinct active Support membership and
+      // an independently approved capability; being Staff/IT is insufficient.
+      const membership = await service.from("support_team_memberships").insert({
+        org_id: orgId, profile_id: actor.id, role: "member", active: true,
+        added_by: "31000000-0000-4000-8000-000000000003",
+        reason: "Synthetic isolated all-role MFA acceptance",
+        associated_unit_id: "20000000-0000-4000-8000-000000000011",
+      });
+      if (membership.error) throw membership.error;
+    }
+    const grant = await service.from("capability_grants").insert({
+      org_id: orgId,
+      profile_id: actor.id,
+      capability: actor.capability,
+      scope_unit_id: null,
+      granted_by: "31000000-0000-4000-8000-000000000003",
+      grant_reason: "Synthetic isolated P2 role-specific authority acceptance",
+    });
+    if (grant.error) throw grant.error;
+  }
+
   for (const [label, email] of roleEmails) {
     const client = create(SUPABASE_ANON_KEY);
     sessions.push(client);
@@ -156,6 +216,30 @@ try {
       label + " signed TOTP must restore only its own org authority");
     assert.equal((await ownProfileRows(sessions[i], label + " verified AAL2")).length, 1,
       label + " signed TOTP must restore its own protected REST profile read");
+  }
+
+  // Both specialist functions must satisfy the same real provider AAL2 gate,
+  // without acquiring each other's mandate or broader Administration power.
+  async function capabilityOf(client, capability) {
+    const result = await client.rpc("app_has_capability", {
+      p_capability: capability, p_unit_id: null,
+    });
+    if (result.error) throw result.error;
+    return result.data;
+  }
+  for (const [index, allowed, denied] of [
+    [6, "support.case.manage", "compliance.manage"],
+    [7, "compliance.manage", "support.case.manage"],
+  ]) {
+    const client = sessions[index];
+    assert.equal(await capabilityOf(client, allowed), true,
+      roleEmails[index][0] + " must keep its own explicitly granted scope after TOTP");
+    for (const capability of [denied, "integration.manage", "hr_private.access", "payroll.prepare", "authority.manage"]) {
+      assert.equal(await capabilityOf(client, capability), false,
+        roleEmails[index][0] + " must not inherit unrelated " + capability);
+    }
+    assert.equal(await edgeStatus(client), 403,
+      "A valid specialist AAL2 bearer cannot manage integration provider secrets");
   }
 
   // Prove the real local Edge HTTP entry rejects malformed or oversized
@@ -410,7 +494,7 @@ try {
   assert.equal(await orgIdentity(replacementSession, "Recovered Manager AAL2"), orgId);
   assert.equal((await ownProfileRows(replacementSession, "Recovered Manager own profile")).length, 1);
 
-  console.log("PASS local-only real provider TOTP, AAL2, refresh, last-authority lockdown prevention, RPC/REST/Storage cross-org + deactivation denial and admin-only recovery: Staff + 6 role fixtures.");
+  console.log("PASS local-only real provider TOTP, AAL2, refresh, last-authority lockdown prevention, RPC/REST/Storage cross-org + deactivation denial and admin-only recovery: Staff + 8 role fixtures including separate Support and Compliance.");
 } finally {
   // Never reactivate a deactivated role fixture: the real trigger has
   // intentionally revoked grants and memberships. Delete only the disposable
