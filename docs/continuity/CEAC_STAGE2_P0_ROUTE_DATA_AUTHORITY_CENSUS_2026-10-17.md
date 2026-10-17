@@ -114,3 +114,20 @@ The exact checked-in [white/light-blue V4 canonical interactive HTML](../design/
 **Job evidence:** [full Level B suite SHA `4abbd390`](https://github.com/ceairportcity/ceac-os/actions/runs/39009924808) finished with browser shards 1 and 2 PASS, 3 FAIL (184 pass, 1 fail), 4 FAIL (181 pass, 4 fail); SQL authority PASS, aggregate role-and-RLS FAIL, evidence merge SKIPPED. On subsequent documentation-only SHA `051df51cd6b1e678a12ae5a4bac210c287663920`, CI, Migration Replay, Account Security and the **documentation contract** completed successfully; the Quality Gate skipped all Level B SQL/browser shards. Passing that summary is **not** evidence that earlier browser defects cleared.
 
 **P0 closure condition:** Each numbered route's responsible owner (shown in section 1), special nested overlay (section 2), related source/SQL contract (section 3) and acceptance test above must be reviewed for missing negative paths. The current census closes the *inventory discovery portion* of P0 only. Still unresolved: complete action/drawer-to-policy negative coverage for less-common routes, recoverable unpublished Codespace-only changes (not accessible with this read-only GitHub/API inspection), and dependent owner decisions. These limitations may be tracked as explicit P1/P2 or P8 obligations only if the newest binding owner contract permits; do not silently waive P0 acceptance.
+
+## 7. Eight nested overlay/source authority surfaces — executable P0 inventory
+
+The existing `scripts/stage2/p0-source-inventory.mjs` now enumerates **every conditional nested overlay** independently of the 47 root tabs and extracts its direct `.from(...)`, `.rpc(...)` and direct mutation call references. The test `P0 nested overlays trace the exact eight source modules and their direct data authority` fails closed if any of these source locations disappears without review. This does not prove an RPC is authorised; cross-user/organisation negative probes remain stage-specific.
+
+| Overlay | Direct source | Sensitive data/API examples | Required later-stage evidence |
+| --- | --- | --- | --- |
+| Item | `src/screens/Item.jsx` | `work_items`, `submissions`, `app_can_review_item`, `approve_work_submission` | Assignee, reviewer, returned-work and other-org denial (P4/P8) |
+| Give out / Assign | `src/screens/Assign.jsx` | `work_items`, `project_phases`, `create_task_with_checklist`, `create_typed_work` | Cross-unit assignment and invalid project link denial (P4/P8) |
+| Manager project deep link | `src/screens/ManagerProjects.jsx` | `project_units`, `projects`, `create_project_with_participants` | Correct headship, stale-switch and private project checks (P5/P8) |
+| Personal Goals | `src/screens/Goals.jsx` | `personal_goals`, `goal_steps` | Owner-only goal reads/writes (P4/P8) |
+| Manager person detail | `src/screens/PersonDetail.jsx` | `employment_records`, `work_sessions`, `record_performance_feedback` | Wrong-unit employee/volunteer/HR boundary (P6/P8) |
+| Room | `src/screens/Room.jsx` | `room_messages`, `room_reads`, `send_room_message` | Unit/project/subteam membership & foreign-room denial (P4/P8) |
+| Meeting draft | `src/components/MeetingScheduler.jsx` | `schedule_meeting`, `unit_memberships` | Organisation versus unit meeting-creation authority (P4/P8) |
+| Meeting deep link | `src/screens/Meeting.jsx` | `meeting_private_notes`, `meeting_work_links` | Private note, foreign meeting and participant changes denied (P4/P8) |
+
+P0 documents their **source and responsible future acceptance**, not an approval to access private material. Preserve server RLS, auth/MFA and restricted role boundaries unchanged.

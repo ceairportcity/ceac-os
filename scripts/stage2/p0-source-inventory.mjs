@@ -215,7 +215,33 @@ export function collectP0SourceInventory(root = process.cwd()) {
       proof: "SOURCE_ONLY; server RLS/RPC/Storage and role browser negatives are separate",
     };
   });
-  const overlays = OVERLAY_ORDER.map(([name, marker]) => ({ name, marker, offset: app.indexOf(marker) }));
+  // Overlay sources are separate from the root tabs: audit each mounted editor/screen.
+  const OVERLAY_COMPONENT = Object.freeze({
+    item: "Item", assign: "Assign", "manager-project": "ManagerProjects",
+    "personal-goal": "Goals", "manager-person": "PersonDetail",
+    room: "Room", "meeting-draft": "MeetingScheduler", meeting: "Meeting",
+  });
+  const allLazyImports = new Map([...app.matchAll(
+    /const ([A-Z][A-Za-z0-9]*) = lazy\(\(\) => import\("(\.\/(?:screens|components)\/[^"]+)"\)\);/g,
+  )].map((entry) => [entry[1], entry[2]]));
+  const overlays = OVERLAY_ORDER.map(([name, marker]) => {
+    const offset = app.indexOf(marker);
+    if (name === "fallback") return { name, marker, offset, sourceEvidence: "root route fallback" };
+    const component = OVERLAY_COMPONENT[name];
+    const module = allLazyImports.get(component);
+    if (!module || !app.includes("<" + component)) {
+      throw new Error("P0 nested overlay source changed: " + name + " / " + component);
+    }
+    const path = "src/" + module.slice(2) + ".jsx";
+    const source = read(path);
+    return {
+      name, marker, offset, component, path,
+      directTables: [...new Set([...source.matchAll(/\.from\(\s*["']([^"']+)["']/g)].map((v) => v[1]))].sort(),
+      directRpcs: [...new Set([...source.matchAll(/\.rpc\(\s*["']([^"']+)["']/g)].map((v) => v[1]))].sort(),
+      directWriteCall: /\.(?:insert|update|delete|upsert)\(/.test(source),
+      proof: "SOURCE_ONLY; overlay parameters never grant read/write authority",
+    };
+  });
   if (overlays.some((v) => v.offset < 0)
       || overlays.some((v, i) => i > 0 && v.offset <= overlays[i - 1].offset)) {
     throw new Error("P0 overlay order or fallback changed");

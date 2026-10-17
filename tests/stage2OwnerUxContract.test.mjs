@@ -435,3 +435,29 @@ test("P0 executable census captures all mapped screen and direct data sources wi
   assert.ok(byTab["payroll"].rootGuard.includes("canUsePayroll"));
   assert.ok(byTab["technical-support"].components.some((c) => c.directTables.includes("support_case_events")));
 });
+
+test("P0 nested overlays trace the exact eight source modules and their direct data authority", async () => {
+  const { collectP0SourceInventory } = await import("../scripts/stage2/p0-source-inventory.mjs");
+  const { overlays } = collectP0SourceInventory();
+  assert.deepEqual(overlays.map(({ name }) => name), [
+    "item", "assign", "manager-project", "personal-goal", "manager-person",
+    "room", "meeting-draft", "meeting", "fallback",
+  ]);
+  const active = overlays.filter((entry) => entry.name !== "fallback");
+  assert.equal(active.length, 8);
+  for (const overlay of active) {
+    assert.match(overlay.path, /^src\/(?:screens|components)\/[A-Za-z0-9]+\.jsx$/);
+    assert.ok(typeof overlay.directWriteCall === "boolean");
+    assert.equal(overlay.proof.startsWith("SOURCE_ONLY"), true);
+    assert.ok(Array.isArray(overlay.directRpcs) && Array.isArray(overlay.directTables));
+  }
+  const byName = Object.fromEntries(active.map((row) => [row.name, row]));
+  assert.equal(byName["meeting-draft"].path, "src/components/MeetingScheduler.jsx");
+  assert.ok(byName["meeting-draft"].directRpcs.includes("schedule_meeting"));
+  assert.ok(byName.item.directTables.includes("work_items"));
+  assert.ok(byName.item.directRpcs.includes("approve_work_submission"));
+  assert.ok(byName.room.directRpcs.includes("send_room_message"));
+  assert.ok(byName["manager-person"].directTables.includes("employment_records"));
+  assert.ok(byName["personal-goal"].directTables.includes("personal_goals"));
+  assert.ok(byName.meeting.directTables.includes("meeting_private_notes"));
+});
