@@ -41,9 +41,9 @@ export default function Reports({ me }) {
     setLoadFailed(false);
     setMsg(null);
     const [periodResult, reportResult, unitResult] = await Promise.all([
-      supabase.from("report_periods").select("*").order("starts_on", { ascending: false }).limit(40),
-      supabase.from("reports").select("id, period_id, scope, unit_id, project_id, status, version, narrative, challenges, submitted_at, submitted_by, evidence"),
-      supabase.from("units").select("id, name").eq("active", true).order("name"),
+      supabase.from("report_periods").select("*").eq("org_id",me.org_id).order("starts_on", { ascending: false }).limit(40),
+      supabase.from("reports").select("id, period_id, scope, unit_id, project_id, status, version, narrative, challenges, submitted_at, submitted_by, evidence").eq("org_id",me.org_id).eq("scope","unit"),
+      supabase.from("units").select("id, name").eq("org_id",me.org_id).eq("active", true).order("name"),
     ]);
     const loadError = periodResult.error || reportResult.error || unitResult.error;
     if (loadError) {

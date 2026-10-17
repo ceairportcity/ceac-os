@@ -67,7 +67,7 @@ export default function ExecutiveReports({ me }) {
       // Never retrieve draft narrative or employee HR assessment content.
       const [issued,objectives,milestones] = await Promise.all([
         supabase.from("reports").select("id,unit_id,version,status,submitted_at,narrative,challenges")
-          .eq("period_id",periodResult.data.id).eq("scope","unit").neq("status","draft").limit(501),
+          .eq("period_id",periodResult.data.id).eq("scope","unit").in("status",["submitted","confirmed"]).limit(501),
         supabase.from("objectives").select("id,name,status,project_id,unit_id,target_value,achieved_value,target_unit")
           .eq("org_id",me.org_id).limit(501),
         supabase.from("project_milestones").select("id,name,status,project_id,target_on,completed_at")

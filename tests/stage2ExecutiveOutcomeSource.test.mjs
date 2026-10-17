@@ -6,7 +6,7 @@ test("Executive briefing only receives explicitly issued organisational reports,
  const screen=read("src/screens/ExecutiveReports.jsx");
  const view=read("src/components/ExecutiveOutcomeBrief.jsx");
  assert.match(screen,/\.from\("reports"\)\.select\("id,unit_id,version,status,submitted_at,narrative,challenges"\)/);
- assert.match(screen,/\.neq\("status","draft"\)/);
+ assert.match(screen,/\.in\("status",\["submitted","confirmed"\]\)/, "leadership fetch must never request draft or returned narrative");
  assert.match(screen,/\.from\("objectives"\)/);
  assert.match(screen,/\.from\("project_milestones"\)/);
  assert.match(screen,/\.length>500/);
