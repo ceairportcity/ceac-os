@@ -55,10 +55,10 @@ BEGIN
    SELECT 1 FROM pg_policies
    WHERE schemaname IN ('public','storage')
      AND (
-       coalesce(qual,'') ~* 'ceac_session_is_google(_aal2)?[[:space:]]*\\('
-       OR coalesce(with_check,'') ~* 'ceac_session_is_google(_aal2)?[[:space:]]*\\('
-       OR coalesce(qual,'') ~* 'ceac_google_mfa_eligible[[:space:]]*\\('
-       OR coalesce(with_check,'') ~* 'ceac_google_mfa_eligible[[:space:]]*\\('
+       coalesce(qual,'') ~* 'ceac_session_is_google(_aal2)?[[:space:]]*[(]'
+       OR coalesce(with_check,'') ~* 'ceac_session_is_google(_aal2)?[[:space:]]*[(]'
+       OR coalesce(qual,'') ~* 'ceac_google_mfa_eligible[[:space:]]*[(]'
+       OR coalesce(with_check,'') ~* 'ceac_google_mfa_eligible[[:space:]]*[(]'
      )
  ) THEN
    RAISE EXCEPTION 'A Google-only public/Storage RLS predicate survived Stage 2 provider-neutral reconciliation';
