@@ -182,7 +182,7 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
       A password reset cannot bypass the required TOTP check.
       Never share your password or authenticator codes.
     </p>}
-    {error && <div className="flag flag-brick" role="alert">{error}</div>
+    {error && <div className="flag flag-brick" role="alert">{error}</div>}
     {notice && <p role="status" className="pill p-green">{notice}</p>}
     {/* Auth token refresh can remount this account screen, discarding a brief
         success toast. Persist the factual backup status via the provider list
