@@ -174,3 +174,30 @@ test("P1 Auth setup, challenge and recovery previews never claim real assurance"
   await page.locator("#navigation").getByRole("button",{name:"Account security"}).click();
   await expect(page.getByRole("heading",{name:"Enrol a supported authenticator"})).toBeVisible();
 });
+test("P1 project-close evidence drawer is authoring-only for Manager and never closes a real project",async({page})=>{
+  const errors=[];page.on("pageerror",e=>errors.push(e.message));
+  await page.route("**/*",r=>r.abort("blockedbyclient"));
+  await page.setContent(prototype,{waitUntil:"domcontentloaded"});
+  const role=page.getByRole("combobox",{name:"Preview role"});
+  for(const persona of ["staff","admin","executive","volunteer"]){
+    await role.selectOption(persona);
+    await page.locator("#navigation").getByRole("button",{name:"Projects"}).click();
+    await expect(page.getByRole("button",{name:"Preview project closure"})).toHaveCount(0);
+    await expect(page.getByText("Read-only view")).toBeVisible();
+  }
+  await role.selectOption("manager");
+  await page.locator("#navigation").getByRole("button",{name:"Projects"}).click();
+  await page.getByRole("button",{name:"Preview project closure"}).click();
+  const drawer=page.getByRole("dialog");
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByRole("heading",{name:"Project closure evidence review"})).toBeVisible();
+  await expect(drawer.getByLabel("Source evidence reference")).toBeVisible();
+  await expect(drawer.getByLabel("Contributing unit attribution")).toBeVisible();
+  await drawer.getByLabel("Evidence readiness").selectOption({label:"Verified source evidence ready"});
+  await drawer.getByLabel("Source evidence reference").fill("Synthetic evidence ref A");
+  await drawer.getByLabel("Contributing unit attribution").fill("Unit One and Unit Two synthetic contributions");
+  await drawer.getByRole("button",{name:"Review sample action"}).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("No actual changes were saved or submitted.",{exact:false})).toBeVisible();
+  expect(errors).toEqual([]);
+});

@@ -104,3 +104,16 @@ test("P1 Auth step review never substitutes a synthetic TOTP for verified AAL2",
     assert.ok(html.includes(v),"missing Auth design boundary: "+v);
   assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
 });
+test("P1 project close is Manager-only synthetic design requiring evidence and attribution",()=>{
+  for(const fragment of [
+    'const canAuthor=role==="manager"',
+    'Preview project closure',
+    'kind==="project-close" && role==="manager"',
+    'action==="project-close" && role!=="manager"',
+    'name="projectReadiness"',
+    'name="projectEvidence"',
+    'name="projectAttribution"',
+    'no duplicated shared outcomes'
+  ]) assert.ok(html.includes(fragment),"missing P1 project-close guard: "+fragment);
+  assert.doesNotMatch(html,/(?:fetch\s*\(|\.from\s*\(|\.rpc\s*\(|supabase\.auth|service_role)/);
+});

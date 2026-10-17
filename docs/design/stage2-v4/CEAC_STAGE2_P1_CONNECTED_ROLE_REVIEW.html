@@ -68,11 +68,12 @@ function work(){
  panel("Selected responsibility",'<div class="eyebrow">Item detail / source evidence</div><h2>Prepare weekly operating notes</h2><p>Owner · Demonstration Staff | Project · Workstream Alpha</p><div class="rule"></div><strong>Activity history</strong>'+record("Update made","Evidence reference · demonstration only","Today")+record("Review requested","Authorised reviewer decision pending","Pending")+btn("Open action form","inspect","primary")+'<p class="form-note">No score or completion is fabricated without verified source and reviewer.</p>')+'</div>';
 }
 function projects(){
- const readonly=role==="admin"||role==="executive"||role==="volunteer";
- const actions=readonly?btn("Read-only project evidence","inspect"):btn("Request project","new-project","primary");
+ const canAuthor=role==="manager";
+ const readonly=!canAuthor;
+ const actions=readonly?btn("Read-only project evidence","inspect"):btn("Request project","new-project","primary")+btn("Preview project closure","project-close");
  return heading("Projects","Objective, phase, shared participant and verifiable contribution views. Shared outcomes are counted once.",actions)
  +'<div class="two">'+panel("Portfolio",record("Workstream Alpha","Two participating units · Active · 3 milestones","Open")+record("Workstream Beta","One unit · Evidence under review","Review")+record("Workstream Gamma","Proposed · authorised unit approval required","Draft"))+
- panel("Workstream Alpha · detail",'<div class="strip"><div><span>Objective</span><br><strong>Improve operating readiness</strong></div><div><span>Milestones</span><br><strong>3 planned</strong></div></div><h2>Participants and attribution</h2><p>Contributing units: Unit One and Unit Two. Personal work remains individually attributable; shared outcomes appear once.</p><div class="mutedbox"><strong>'+ (readonly?"Read-only view":"Manager authoring controls") +'</strong><p>'+(readonly?"No editing of plans, finances or personnel is granted by this screen.":"Project changes require the right unit authority and server approval.")+'</p></div><p class="form-note">The previously approved revised Projects screenshot binary is still required before literal design acceptance.</p>')+'</div>';
+ panel("Workstream Alpha · detail",'<div class="strip"><div><span>Objective</span><br><strong>Improve operating readiness</strong></div><div><span>Milestones</span><br><strong>3 planned</strong></div></div><h2>Participants and attribution</h2><p>Contributing units: Unit One and Unit Two. Personal work remains individually attributable; shared outcomes appear once.</p><div class="mutedbox"><strong>'+ (readonly?"Read-only view":"Manager authoring controls") +'</strong><p>'+(readonly?"No editing of plans, finances or personnel is granted by this screen.":"Project changes and closures require the verified selected-unit authority, reviewed evidence and server approval.")+'</p></div><p class="form-note">The previously approved revised Projects screenshot binary is still required before literal design acceptance.</p>')+'</div>';
 }
 function reports(){
  const executive=role==="executive";
@@ -194,6 +195,13 @@ function drawer(kind){
  let content="";
  if(kind==="add-work"||kind==="give-work"){
  content='<label>Work title<input name="draftTitle" required placeholder="Specific outcome to deliver"></label><label>Project/objective link<select name="draftProject"><option value="">No link yet — relink later</option><option>Workstream Alpha / Operating readiness</option><option>Workstream Beta / People development</option></select></label><label>Assignee<select name="draftAssignee"><option>'+(kind==="add-work"?"Myself":"Eligible unit colleague")+'</option></select></label><label>Evidence or activity notes<textarea name="draftNotes" rows="4" placeholder="Describe the work and intended proof"></textarea></label>';
+ }else if(kind==="project-close" && role==="manager"){
+ content='<div class="no-real-data">This is a candidate project-close review, not an authorised closure. Selected demo unit: '+escapePreview(demoUnit)+'</div>'+
+ '<label>Project<input value="Workstream Alpha / demonstration" readonly></label>'+
+ '<label>Evidence readiness<select required name="projectReadiness"><option value="">Select sample status</option><option>Verified source evidence ready</option><option>Open reviewer issues — do not close</option></select></label>'+
+ '<label>Source evidence reference<input required name="projectEvidence" placeholder="Authorised milestone / result reference"></label>'+
+ '<label>Contributing unit attribution<textarea required name="projectAttribution" rows="3" placeholder="Record verified Unit One and Unit Two contributions once"></textarea></label>'+
+ '<p>Closing requires independent versioned approval, verified unit authority, no duplicated shared outcomes and no unreviewed payroll/HR narrative.</p>';
  }else if(kind==="rating"){
  content='<p>Human-entered, evidence-based assessment only. Quarterly REQUIRED, monthly OPTIONAL.</p><label>Rating dimension<select><option>Professional execution</option><option>Responsibility and cooperation</option></select></label><label>Human rating<select><option value="">Choose 1–5 or N/O</option>'+["1","2","3","4","5","N/O"].map(x=>'<option>'+x+'</option>').join("")+'</select></label><label>Required explanation<textarea rows="3" placeholder="Explain the observed performance"></textarea></label><label>Source evidence reference<input placeholder="Link a permitted record, not a private secret"></label><label>Independent overall narrative<textarea rows="3"></textarea></label>';
  }else if(kind==="compliance-review"){
@@ -223,7 +231,7 @@ function drawer(kind){
  }else{
  content='<p>Selected record: '+selected+'</p><p>Any attempt to read or write this record must be permitted by the real server-side RLS, RPC and role policy.</p><label>Review note<textarea rows="4" placeholder="Demonstration entry only"></textarea></label>';
  }
- document.getElementById("modal").innerHTML='<div class="drawer-backdrop"><section class="drawer" role="dialog" aria-modal="true" aria-label="Design workflow preview"><header><div><div class="eyebrow">Interactive P1 prototype · synthetic</div><h2>'+({ "add-work":"Add my work","give-work":"Give out work",rating:"Structured human rating",totp:"Authenticator challenge"}[kind]||"Review record")+'</h2></div>'+btn("Close","close")+'</header><div class="no-real-data">No actual changes will be saved. The owner must approve this full flow before literal design acceptance.</div><form id="previewform" data-kind="'+kind+'">'+content+'<footer>'+btn("Cancel","close")+ '<button class="btn primary" type="submit">Review sample action</button></footer></form></section></div>';
+ document.getElementById("modal").innerHTML='<div class="drawer-backdrop"><section class="drawer" role="dialog" aria-modal="true" aria-label="Design workflow preview"><header><div><div class="eyebrow">Interactive P1 prototype · synthetic</div><h2>'+({ "add-work":"Add my work","give-work":"Give out work","project-close":"Project closure evidence review",rating:"Structured human rating",totp:"Authenticator challenge"}[kind]||"Review record")+'</h2></div>'+btn("Close","close")+'</header><div class="no-real-data">No actual changes will be saved. The owner must approve this full flow before literal design acceptance.</div><form id="previewform" data-kind="'+kind+'">'+content+'<footer>'+btn("Cancel","close")+ '<button class="btn primary" type="submit">Review sample action</button></footer></form></section></div>';
  const first=document.querySelector(".drawer input,.drawer select,.drawer textarea,.drawer button");if(first)first.focus();
 }
 document.addEventListener("click",function(event){
@@ -239,6 +247,7 @@ document.addEventListener("click",function(event){
   drawNav();document.getElementById("announcement").textContent="Sample unit context switched. No real permissions changed.";return;
  }
  if(action==="report-loading" || action==="report-empty"){reportEvidencePhase=action==="report-loading"?"loading":"empty";reportEvidenceReady=true;drawNav();return;}
+ if(action==="project-close" && role!=="manager")return;
  if(action==="report-unavailable"){reportEvidenceReady=false;reportEvidencePhase="ready";drawNav();return;}
  if(["auth-step-setup","auth-step-challenge","auth-step-recovery"].includes(action) && page==="auth"){
   authPreviewStep=action.slice("auth-step-".length);drawNav();document.getElementById("announcement").textContent="Design-only authentication journey: "+authPreviewStep+". No factor was changed.";return;
