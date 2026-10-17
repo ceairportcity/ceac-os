@@ -34,7 +34,10 @@ export async function readBoundedActionBody(request) {
       if (done) break;
       bytes += value.byteLength;
       if (bytes > MAX_INTEGRATION_BODY_BYTES) {
-        await reader.cancel();
+        // An attacker-controlled upload stream may never settle cancellation.
+        // Reject immediately; best-effort stream cancellation is not an auth
+        // or request-rejection dependency.
+        void reader.cancel().catch(() => {});
         return null;
       }
       raw += decoder.decode(value, { stream: true });
