@@ -32,8 +32,8 @@ const sessions = [];
 let switched = false;
 let portraitFixtureCreated = false;
 let foreignPortraitFixtureCreated = false;
-let managerDeactivated = false;
-const managerId = "31000000-0000-4000-8000-000000000002";
+let revokedFixtureUserId = null;
+let revokedFixtureInvitationId = null;
 const portraitBucket = "ceac-profile-portraits";
 const portraitObject = `${orgId}/31000000-0000-4000-8000-000000000001/51000000-0000-4000-8000-000000000099.webp`;
 const foreignPortraitObject =
@@ -208,30 +208,68 @@ try {
   assert.ok(foreignLink.error && !foreignLink.data?.signedUrl,
     "Valid AAL2/TOTP session must not issue a signed foreign-org private URL");
 
-  // Invalidate a previously authorised actor at the source of truth, without
-  // changing Auth JWTs. The old bearer must lose direct REST/RPC/Storage reads.
-  const deactivated = await service.from("profiles")
-    .update({ active: false }).eq("id", managerId).select("id,active").single();
+  // A profile deactivation must be caused by a REAL signed-in authorised
+  // Administration actor. A service-role update is correctly rejected by
+  // close_profile_authority_on_deactivation() and must never be bypassed.
+  // Use a one-time invite-only Staff identity so its revoked memberships and
+  // permissions are not restored by merely switching active back to true.
+  const revokedEmail = "revocation-probe@ceac.local.test";
+  const invited = await service.from("pending_invitations").insert({
+    org_id: orgId,
+    email: revokedEmail,
+    full_name: "Disposable Security Revocation",
+    unit_id: "20000000-0000-4000-8000-000000000011",
+    role: "staff",
+    invited_by: null,
+    expires_at: new Date(Date.now() + 3_600_000).toISOString(),
+  }).select("id").single();
+  if (invited.error) throw invited.error;
+  revokedFixtureInvitationId = invited.data.id;
+  const created = await service.auth.admin.createUser({
+    email: revokedEmail, password: ROLE_FIXTURE_PASSWORD, email_confirm: true,
+  });
+  if (created.error) throw created.error;
+  revokedFixtureUserId = created.data.user?.id;
+  assert.ok(revokedFixtureUserId, "Disposable invite-only revocation identity missing");
+
+  const revokedSession = create(SUPABASE_ANON_KEY);
+  sessions.push(revokedSession);
+  await signIn(revokedSession, revokedEmail);
+  const initialFactor = await revokedSession.auth.mfa.enroll({
+    factorType: "totp", friendlyName: "Disposable security revocation",
+  });
+  if (initialFactor.error) throw initialFactor.error;
+  const firstChallenge = await revokedSession.auth.mfa.challenge({ factorId: initialFactor.data.id });
+  if (firstChallenge.error) throw firstChallenge.error;
+  const firstVerification = await revokedSession.auth.mfa.verify({
+    factorId: initialFactor.data.id,
+    challengeId: firstChallenge.data.id,
+    code: codeFor(initialFactor.data.totp.secret),
+  });
+  if (firstVerification.error) throw firstVerification.error;
+  await sessionLevel(revokedSession, "revocation actor before deactivation", "aal2");
+  assert.equal(await orgIdentity(revokedSession, "active disposable actor"), orgId);
+  assert.equal((await ownProfileRows(revokedSession, "active disposable actor")).length, 1);
+
+  const deactivated = await sessions[2].from("profiles")
+    .update({ active: false }).eq("id", revokedFixtureUserId);
   if (deactivated.error) throw deactivated.error;
-  assert.equal(deactivated.data.active, false);
-  managerDeactivated = true;
-  assert.equal(await orgIdentity(sessions[0], "deactivated Manager"), null,
-    "A former AAL2 bearer must lose organisation authority after profile deactivation");
-  assert.deepEqual(await ownProfileRows(sessions[0], "deactivated Manager"), [],
-    "A former AAL2 bearer must not read even its own profile after deactivation");
-  const deactivatedDownload = await sessions[0].storage.from(portraitBucket).download(portraitObject);
+  const inactive = await service.from("profiles")
+    .select("active").eq("id", revokedFixtureUserId).single();
+  if (inactive.error) throw inactive.error;
+  assert.equal(inactive.data.active, false,
+    "A real signed-in AAL2 Admin must be able to deactivate the disposable Staff account");
+  assert.equal(await orgIdentity(revokedSession, "deactivated Staff with old AAL2"), null,
+    "A former verified AAL2 bearer must lose organisation authority after deactivation");
+  assert.deepEqual(await ownProfileRows(revokedSession, "deactivated Staff with old AAL2"), [],
+    "Deactivated AAL2 bearer must not read even its own profile via REST");
+  const deactivatedDownload = await revokedSession.storage.from(portraitBucket).download(portraitObject);
   assert.ok(deactivatedDownload.error && !deactivatedDownload.data,
-    "Deactivated Manager must lose real Storage access despite a previously signed AAL2 bearer");
-  const deactivatedLink = await sessions[0].storage.from(portraitBucket).createSignedUrl(portraitObject, 60);
+    "Deactivated Staff must lose direct Storage even with an old valid AAL2 JWT");
+  const deactivatedLink = await revokedSession.storage.from(portraitBucket).createSignedUrl(portraitObject, 60);
   assert.ok(deactivatedLink.error && !deactivatedLink.data?.signedUrl,
-    "Deactivated Manager must not issue new signed Storage URLs");
-  const reactivated = await service.from("profiles")
-    .update({ active: true }).eq("id", managerId).select("id,active").single();
-  if (reactivated.error) throw reactivated.error;
-  assert.equal(reactivated.data.active, true);
-  managerDeactivated = false;
-  assert.equal(await orgIdentity(sessions[0], "reactivated Manager"), orgId,
-    "The test fixture must restore legitimate AAL2 authority after reactivation");
+    "Deactivated Staff must not mint new signed Storage URLs");
+
   const anonymousDownload = await create(SUPABASE_ANON_KEY)
     .storage.from(portraitBucket).download(portraitObject);
   assert.ok(anonymousDownload.error && !anonymousDownload.data,
@@ -320,10 +358,17 @@ try {
 
   console.log("PASS local-only real provider TOTP, AAL2, refresh, RPC/REST/Storage cross-org + deactivation denial and admin-only recovery: Staff + 6 role fixtures.");
 } finally {
-  if (managerDeactivated) {
-    const resetManager = await service.from("profiles")
-      .update({ active: true }).eq("id", managerId);
-    if (resetManager.error) throw new Error("Could not restore disposable Manager profile: " + resetManager.error.message);
+  // Never reactivate a deactivated role fixture: the real trigger has
+  // intentionally revoked grants and memberships. Delete only the disposable
+  // invited identity and invitation; preserve all seven primary test actors.
+  if (revokedFixtureUserId) {
+    const deleted = await service.auth.admin.deleteUser(revokedFixtureUserId);
+    if (deleted.error) throw new Error("Could not remove disposable revoked Auth user: " + deleted.error.message);
+  }
+  if (revokedFixtureInvitationId) {
+    const removedInvite = await service.from("pending_invitations")
+      .delete().eq("id", revokedFixtureInvitationId);
+    if (removedInvite.error) throw new Error("Could not remove disposable revocation invitation: " + removedInvite.error.message);
   }
   if (foreignPortraitFixtureCreated) {
     const removedForeign = await service.storage.from(portraitBucket).remove([foreignPortraitObject]);
