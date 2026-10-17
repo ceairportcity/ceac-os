@@ -1,0 +1,63 @@
+name: CEAC Stage 2 real local TOTP and AAL2 acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - chatgpt/stage2-unified-integration-20261016
+    paths:
+      - .github/workflows/stage2-local-totp-acceptance.yml
+      - .github/actions/setup-ceac-test-environment/action.yml
+      - scripts/ci/test-stage2-all-role-totp-local.mjs
+      - scripts/ci/test-local-totp-aal2.mjs
+      - scripts/ci/prepare-local-totp-mfa.mjs
+permissions:
+  contents: read
+jobs:
+  isolated-real-provider:
+    if: github.repository == 'ceairportcity/ceac-os'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ROLE_FIXTURE_PASSWORD: Local-role-fixture-2026!
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start disposable Supabase with local-only authenticator enabled
+        uses: ./.github/actions/setup-ceac-test-environment
+        with:
+          enable_local_totp: 'true'
+      - name: Prove real provider AAL1 to verified authenticator AAL2
+        run: node scripts/ci/test-local-totp-aal2.mjs
+      - name: Install isolated browser runner
+        run: |
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start local-only CEAC UI
+        run: |
+          npm run dev -- --host 127.0.0.1 > /tmp/ceac-local-mfa-vite.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:5173 > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/ceac-local-mfa-vite.log
+          exit 1
+      - name: Verify browser authenticator wrong-code rejection and Staff AAL2 refresh
+        env:
+          CEAC_LOCAL_TOTP_UI: '1'
+        run: npx playwright test tests/account-mfa-local-only.spec.js --workers=1
+      - name: Verify all fixture roles have genuine AAL2, persistent session and fresh-login server denial
+        run: node scripts/ci/test-stage2-all-role-totp-local.mjs
+      - name: Upload local-only browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: stage2-real-local-totp-evidence
+          path: test-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
