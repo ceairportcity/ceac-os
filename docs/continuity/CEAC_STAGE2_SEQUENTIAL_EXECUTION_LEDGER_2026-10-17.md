@@ -54,65 +54,13 @@ At inspected PR #118 SHA `63f877e5c4a4ef748e71e4e8f84427a4d053786c`, `src/App.js
 
 Classification above is for audit convenience, not authoritative permission mapping; access is set by actual role/capability conditions in `src/App.jsx`, `src/experience-v2/shell/navigation.js`, underlying RPC/RLS/Storage, and runtime. **P0 remains IN PROGRESS** until every listed and dynamic/nested route has the role, state, writer/reader, affected backend policy, visual reference and positive/negative test mapped and reconciled with `docs/design/CEAC_GLOBAL_EXPERIENCE_ROUTE_MATRIX_2026-10-16.md`. Specifically retain a solo Manager versus multi-unit Manager split, Support-head authority versus department membership, and Compliance reviewer access without leaking protected HR narratives.
 
-## 3B. Exact root-route and shell-authority reconciliation (P0 source audit)
+## 3B. Exact root, overlay, authority and backend reader/writer census — corrected P0 evidence
 
-Sources: `src/App.jsx` and `src/experience-v2/shell/navigation.js` at audited SHA `76af0e00fd15a5231b3604793f6693fa62c3da9b`. The matrix covers **47 explicit tab render branches** plus the separate `me` fallback described below. The shell lists four role sets; Technical Support is a capability-gated workspace, **not a fifth employment role**. A shell entry is not an authorisation guarantee: server/RLS, private Storage and feature-level runtime checks require distinct negative evidence.
+The authoritative complete [P0 route/overlay/data-authority census](CEAC_STAGE2_P0_ROUTE_DATA_AUTHORITY_CENSUS_2026-10-17.md) enumerates **47 root tab branches**, the `me` fallback, **eight** nested overlay priority conditions, both account setup/recovery URLs, the four role-navigation inventories and **nine** directly inspected cross-role backend families. It replaces the corrupted route-guard strings from the initial snapshot. **Do not interpret existence of a visible UI route, role navigation key, Storage policy or a privileged RPC grant as evidence of server-side authorisation.**
 
-| Route | App render guard | Default role-shell entries | Stage |
-| --- | --- | --- | --- |
-| `guide` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `account` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | staff, manager, admin, executive | P2 |
-| `achievements` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | nested, deep-linked or capability-conditional | P6 |
-| `technical-help` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `technical-support` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `primitives` | `\\|i\\|s\\|A\\|d\\|m\\|i\\|n\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `home` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | staff, manager, admin, executive | P3 |
-| `team` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | staff, manager | P0/P7 |
-| `work` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | staff, manager, admin, executive | P4 |
-| `staff-calendar` | `\\|i\\|s\\|S\\|t\\|a\\|f\\|f\\|` | staff | P4 |
-| `messages` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | staff, manager, admin, executive | P0/P7 |
-| `projects` | `\\|i\\|s\\|U\\|n\\|i\\|t\\|M\\|a\\|n\\|a\\|g\\|e\\|r\\|` | manager | P5 |
-| `calendar` | `\\|i\\|s\\|U\\|n\\|i\\|t\\|M\\|a\\|n\\|a\\|g\\|e\\|r\\|` | manager | P4 |
-| `manager-finance` | `\\|i\\|s\\|U\\|n\\|i\\|t\\|M\\|a\\|n\\|a\\|g\\|e\\|r\\|` | manager | P0/P7 |
-| `manager-reports` | `\\|i\\|s\\|U\\|n\\|i\\|t\\|M\\|a\\|n\\|a\\|g\\|e\\|r\\|` | manager | P6 |
-| `exec-organisation` | `\\|i\\|s\\|E\\|x\\|e\\|c\\|` | executive | P0/P7 |
-| `exec-finance` | `\\|i\\|s\\|E\\|x\\|e\\|c\\|` | executive | P0/P7 |
-| `exec-reports` | `\\|i\\|s\\|E\\|x\\|e\\|c\\|` | executive | P6 |
-| `record` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | nested, deep-linked or capability-conditional | P6 |
-| `announcements` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `strategy` | `\\|a\\|u\\|t\\|h\\|e\\|n\\|t\\|i\\|c\\|a\\|t\\|e\\|d\\|/\\|r\\|e\\|n\\|d\\|e\\|r\\| \\|b\\|r\\|a\\|n\\|c\\|h\\|` | executive | P5 |
-| `delivery` | `\\|c\\|a\\|n\\|U\\|s\\|e\\|D\\|e\\|l\\|i\\|v\\|e\\|r\\|y\\|` | executive | P5 |
-| `workload` | `\\|c\\|a\\|n\\|U\\|s\\|e\\|W\\|o\\|r\\|k\\|l\\|o\\|a\\|d\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `performance` | `\\|c\\|a\\|n\\|U\\|s\\|e\\|P\\|e\\|r\\|f\\|o\\|r\\|m\\|a\\|n\\|c\\|e\\|` | nested, deep-linked or capability-conditional | P6 |
-| `learning` | `\\|c\\|a\\|n\\|U\\|s\\|e\\|L\\|e\\|a\\|r\\|n\\|i\\|n\\|g\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `assets` | `\\|c\\|a\\|n\\|U\\|s\\|e\\|A\\|s\\|s\\|e\\|t\\|s\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `compliance` | `\\|c\\|a\\|n\\|U\\|s\\|e\\|C\\|o\\|m\\|p\\|l\\|i\\|a\\|n\\|c\\|e\\|` | nested, deep-linked or capability-conditional | P6 |
-| `cost` | `\\|i\\|s\\|A\\|d\\|m\\|i\\|n\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `finance` | `\\|i\\|s\\|A\\|d\\|m\\|i\\|n\\|` | admin | P0/P7 |
-| `reporting` | `\\|i\\|s\\|A\\|d\\|m\\|i\\|n\\|` | admin | P6 |
-| `attendance` | `\\|c\\|a\\|n\\|U\\|s\\|e\\|W\\|o\\|r\\|k\\|f\\|o\\|r\\|c\\|e\\|` | staff, manager, admin | P3 |
-| `people` | `\\|c\\|a\\|n\\|M\\|a\\|n\\|a\\|g\\|e\\|P\\|e\\|o\\|p\\|l\\|e\\|` | admin | P0/P7 |
-| `lifecycle` | `\\|c\\|a\\|n\\|M\\|a\\|n\\|a\\|g\\|e\\|P\\|e\\|o\\|p\\|l\\|e\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `protected-hr` | `\\|c\\|a\\|n\\|A\\|c\\|c\\|e\\|s\\|s\\|P\\|r\\|o\\|t\\|e\\|c\\|t\\|e\\|d\\|H\\|R\\|` | nested, deep-linked or capability-conditional | P6 |
-| `payroll` | `\\|c\\|a\\|n\\|U\\|s\\|e\\|P\\|a\\|y\\|r\\|o\\|l\\|l\\|` | admin, executive | P0/P7 |
-| `units` | `\\|i\\|s\\|A\\|d\\|m\\|i\\|n\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `admin-projects` | `\\|i\\|s\\|A\\|d\\|m\\|i\\|n\\|` | nested, deep-linked or capability-conditional | P5 |
-| `admin-calendar` | `\\|i\\|s\\|A\\|d\\|m\\|i\\|n\\|` | admin | P4 |
-| `exec-calendar` | `\\|i\\|s\\|E\\|x\\|e\\|c\\|` | executive | P4 |
-| `audit` | `\\|c\\|a\\|n\\|V\\|i\\|e\\|w\\|A\\|u\\|d\\|i\\|t\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `events` | `\\|c\\|a\\|n\\|V\\|i\\|e\\|w\\|A\\|u\\|d\\|i\\|t\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `workflows` | `\\|c\\|a\\|n\\|U\\|s\\|e\\|W\\|o\\|r\\|k\\|f\\|l\\|o\\|w\\|s\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `policies` | `\\|c\\|a\\|n\\|M\\|a\\|n\\|a\\|g\\|e\\|A\\|u\\|t\\|h\\|o\\|r\\|i\\|t\\|y\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `integrations` | `\\|c\\|a\\|n\\|M\\|a\\|n\\|a\\|g\\|e\\|I\\|n\\|t\\|e\\|g\\|r\\|a\\|t\\|i\\|o\\|n\\|s\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `authority` | `\\|c\\|a\\|n\\|M\\|a\\|n\\|a\\|g\\|e\\|A\\|u\\|t\\|h\\|o\\|r\\|i\\|t\\|y\\|` | nested, deep-linked or capability-conditional | P0/P7 |
-| `settings` | `\\|i\\|s\\|A\\|d\\|m\\|i\\|n\\|` | admin | P0/P7 |
-| `office-settings` | `\\|i\\|s\\|A\\|d\\|m\\|i\\|n\\|` | nested, deep-linked or capability-conditional | P0/P7 |
+The role-path source gate now checks real navigation resolution and capability-scoped Support/People/Payroll entries; source CI passed at `4abbd390922a655d05c3cf2a6f7794f5a98ceca6`. P0 still needs to link nested button actions and their actual negative RLS tests and reconcile recovery-only edits; it remains **IN PROGRESS**, not accepted.
 
-`me` is the My Hub fallback, shared across all four role-shell lists but **not** a literal `if (tab === "me")` branch. Each shell also offers `technical-help`; `technical-support` appears only when `support.case.manage` is granted. Shell includes capability-scoped entries such as `people` and `payroll` only with the specified grant. Nav source role destination counts (including common help) were separately verified: {"staff":8,"manager":11,"admin":12,"executive":12} base items. No broader permissions are inferred from this source inventory.
-
-**P0 remains IN PROGRESS:** reconcile every route and nested item/project/meeting/room/modal across Staff, solo/multi-unit Manager, Support, Administration/HR, Compliance, Executive, Finance and Volunteer. Connect authorised writers/readers to backend RPC/RLS/Storage, tests, approved design screenshots, and navigation/routing negative cases. No unsupported claim that all 47 branches have full functional acceptance.
-
-**Live baseline read-only preflight:** Original Supabase production shows `authenticator` `pgrst.db_pre_request` unset and zero existing `storage` policies named `CEAC Google AAL2%`. This is NOT a proof that pending Google-only migration replay is safe between  historical and corrective versions, nor TOTP production activation. No live write occurred.
+**New safe read-only production constraints recorded at P0:** 11 active profiles, **0 verified TOTP factors**, 2 active signed identities lacking Auth email confirmation, 5 existing limited `storage.objects` policies, no active Google-only pre-request hook or Storage policies, and 0 unaudited `public` tables without enabled RLS in the inspected catalog. These are release-dependency counts only, not user identities or authorisation verdicts. The Stage 2 cutover must preserve the existing valid Staff/Manager sessions until proper P9 authorisation and safe P2 enrollment/recovery work.
 
 ## 3C. Read-only production security-advisor triage (P0; **no live changes**)
 
