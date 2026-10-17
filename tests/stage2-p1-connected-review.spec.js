@@ -94,7 +94,7 @@ test("P1 Manager and Executive previews hide metrics on evidence-load failure", 
     await expect(page.getByRole("heading", { name: persona === "manager" ? "Manager period report" : "Executive evidence review" })).toBeVisible();
     await expect(page.getByText("Period coverage", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Preview evidence failure" }).click();
-    await expect(page.getByRole("alert").getByText("Report evidence could not be loaded")).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveText("Report evidence could not be loaded");
     await expect(page.getByText("Period coverage", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Verified work outputs", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "Restore sample evidence" }).click();
