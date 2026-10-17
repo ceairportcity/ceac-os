@@ -56,6 +56,23 @@ test("self-only authenticator enrollment rejects a wrong code then grants AAL2",
       const target = new URL(route.request().url());
       const allowed = target.protocol === "http:" && target.hostname === "127.0.0.1"
         && (target.port === "5173" || target.port === "54321");
+      // The application requests public Google Fonts stylesheets, but this
+      // isolated Auth/AAL2 acceptance must never contact an external host.
+      // Fulfill only that fixed passive stylesheet locally (with no external
+      // CSS imports); all other outbound requests remain blocked and recorded.
+      const offlineFontStylesheet =
+        target.protocol === "https:" &&
+        target.hostname === "fonts.googleapis.com" &&
+        target.pathname === "/css2" &&
+        route.request().resourceType() === "stylesheet" &&
+        target.searchParams.has("family");
+      if (offlineFontStylesheet) {
+        return route.fulfill({
+          status: 200,
+          contentType: "text/css",
+          body: "/* deterministic local-only MFA browser font fixture */",
+        });
+      }
       if (!allowed) {
         disallowedRequests.push(target.origin);
         return route.abort("blockedbyclient");
