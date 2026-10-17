@@ -77,9 +77,10 @@ test("weekly assigned routine is created once and appears on staff's future Work
     await staff.page.goto(BASE + "/?tab=work");
     const scheduled = staff.page.getByRole("region",{name:"My scheduled recurring work"});
     await expect(scheduled).toBeVisible({timeout:20000});
-    const visible = await scheduled.innerText();
-    expect(visible, "Staff routine projection did not contain created master (including possible RLS/error feedback)").toContain(title);
+    // The region mounts with a loading notice before the RLS-backed reads
+    // finish. Await the named real occurrence rather than reading the shell.
     const ownRoutine = scheduled.locator(".s2-assigned-routine-list > button").filter({hasText:title});
+    await expect(ownRoutine.first(), "Staff routine projection did not contain created master").toBeVisible({timeout:20000});
     // The staff preview includes the current Saturday and the next 14 days,
     // inclusive. When a routine starts ON Saturday, that valid window contains
     // three Saturdays (today, +7, +14), not two. Check each scheduled DATE

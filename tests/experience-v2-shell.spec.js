@@ -341,7 +341,10 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
   const dialog = page.getByRole("dialog", { name: "New announcement" });
   await dialog.locator("#announcement-title").fill("OCR6 Search Announcement");
   await dialog.locator("#announcement-body").fill("OCR6 searchable announcement record");
-  await dialog.getByRole("button", { name: "Save draft", exact: true }).click();
+  // A functional draft must be validated and enabled after two field edits.
+  const saveDraft = dialog.getByRole("button", { name: "Save draft", exact: true });
+  await expect(saveDraft).toBeEnabled();
+  await saveDraft.click();
   await expect(dialog).toBeHidden();
 
   await page.getByPlaceholder("Search CEAC…").fill("OCR6 Search Announcement");
