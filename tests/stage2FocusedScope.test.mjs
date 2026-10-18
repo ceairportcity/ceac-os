@@ -36,3 +36,47 @@ test("manual/full acceptance, test-only, mixed stages and non-PR changes stay fu
   assert.equal(judge("[p3-attendance] dispatch", [p3], "workflow_dispatch"), null);
   assert.equal(judge("[p3-attendance] empty", []), null);
 });
+
+
+test("P6 personal read-only reporting may use exact-head source and browser assurance", () => {
+ const screen="src/screens/PersonalAchievements.jsx";
+ assert.equal(judge("[p6-personal] bounded report", [screen, "tests/stage2OwnerReportingSource.test.mjs"]), "personal");
+ assert.equal(judge("[p6-personal] verify provider errors", [screen, "tests/experience-v2-personal-achievements.spec.js"]), "personal");
+ assert.equal(judge("[p6-personal] report implementation", [screen]), "personal");
+ for (const unsafe of [
+   "src/lib/stage2AchievementMetrics.js",
+   "src/screens/ManagerReports.jsx",
+   "src/components/StructuredAppraisalRatings.jsx",
+   "src/screens/AdminProtectedHR.jsx",
+   "src/lib/supabase.js",
+   "tests/visual-regression.spec.js",
+   "tests/experience-v2-reports-manager.spec.js",
+   "scripts/ci/run-level-a-browser.sh",
+ ]) assert.equal(judge("[p6-personal] unsafe", [screen,unsafe]),null,unsafe);
+ assert.equal(judge("[p6-personal] test only",["tests/stage2OwnerReportingSource.test.mjs"]),null);
+});
+test("P7 focused CSS stays in one People component and cannot change global visuals or baselines", () => {
+ const peopleCss="src/experience-v2/people-family/people-family.css";
+ assert.equal(judge("[p7-people-css] remove dead people styles",[peopleCss]),"p7-people");
+ for (const unsafe of [
+   "src/styles.css",
+   "src/experience-v2/shell/shell.css",
+   "src/experience-v2/calendar/calendar.css",
+   "src/role-styles/executive-redesign.css",
+   "tests/visual-home-baselines.js",
+   "tests/visual-regression.spec.js",
+   "tests/visual-fidelity-performance-closure.spec.js",
+   "supabase/migrations/20261017010000_156_stage2_provider_neutral_auth_storage_reconciliation.sql",
+   "docs/design/CEAC_STAGE2_V4_VISUAL_PRODUCT_LOCK_2026-10-16.md",
+   ".github/workflows/ci.yml",
+ ]) assert.equal(judge("[p7-people-css] bypass?",[peopleCss,unsafe]),null,unsafe);
+ assert.equal(judge("[p7-people-css] [level-b] final acceptance",[peopleCss]),null);
+ assert.equal(judge("[p7-people-css] no source",[]),null);
+});
+test("focused classification never bypasses security/full release or mixed change boundaries",()=>{
+ const source="src/screens/PersonalAchievements.jsx";
+ assert.equal(judge("[p6-personal] [p7-people-css] mixed",[source]),null);
+ assert.equal(judge("[p6-personal] [level-b] stage close",[source]),null);
+ assert.equal(judge("[p6-personal] dispatch",[source],"workflow_dispatch"),null);
+ assert.equal(judge("[p6-personal] push",[source],"push"),null);
+});

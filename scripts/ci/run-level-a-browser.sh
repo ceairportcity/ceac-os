@@ -55,6 +55,15 @@ case "$scope" in
   personal)
     tests=(tests/experience-v2-personal-*.spec.js tests/role-routing.spec.js)
     ;;
+  p7-people)
+    # Targeted People component fidelity plus immutable aggregate CSS budget.
+    # Full visual screenshots and 4-shard acceptance stay mandatory at P7/P8.
+    tests=(
+      tests/experience-v2-people-family.spec.js
+      tests/visual-fidelity-performance-closure.spec.js
+      tests/role-routing.spec.js
+    )
+    ;;
   shell)
     tests=(
       tests/experience-v2-components.spec.js
