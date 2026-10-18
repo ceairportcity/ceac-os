@@ -221,3 +221,30 @@ test("P6 Administration unit-coverage report refuses truncated reads while ident
  assert.match(admin,/reportAccraDate\(now\)/);
  assert.doesNotMatch(admin,/new Date\(now\.getFullYear\(\), now\.getMonth\(\)/);
 });
+
+test("P6 Compliance read surfaces reject partial successful history and never fabricate zero evidence",()=>{
+ const screen=file("src/screens/Compliance.jsx");
+ for(const name of ["compliance_policy_versions","compliance_policy_applicability","compliance_requirements","compliance_acknowledgements","compliance_evidence_versions","compliance_exception_versions"])
+   assert.match(screen,new RegExp('supabase\\.from\\("'+name+'"\\)\\.select\\([\\s\\S]*?\\{count:"exact"\\}\\)'),name);
+ assert.match(screen,/const complete=\(result\)=>!result\.error&&Array\.isArray\(result\.data\)/);
+ assert.match(screen,/result\.count===result\.data\.length/);
+ assert.match(screen,/if\(!results\.every\(complete\)\)/);
+ assert.match(screen,/const actorScope=me\.org_id\+":"\+me\.id/);
+ assert.match(screen,/actorRef\.current===expectedActor&&readSequence\.current===request/);
+ assert.match(screen,/setVerifiedActor\(expectedActor\)/);
+ assert.match(screen,/if\(!isVerified\)return <div className="body">/);
+ assert.match(screen,/Retry Compliance verification/);
+ assert.match(screen,/if\(e\|\|!Array\.isArray\(data\)\)/);
+ assert.match(screen,/const reverified=await load\(\)/);
+ assert.match(screen,/if\(!reverified\)/);
+});
+
+test("P6 Compliance attendance never publishes an old operator's evidence after a new identity or date",()=>{
+ const screen=file("src/screens/Compliance.jsx");
+ assert.match(screen,/const overviewReadSequence=useRef\(0\)/);
+ assert.match(screen,/overviewReadSequence\.current===request/);
+ assert.match(screen,/if\(current\(\)\)setAttendanceRows\(data\)/);
+ assert.match(screen,/if\(current\(\)\)setOverviewLoading\(false\)/);
+ assert.match(screen,/overviewReadSequence\.current\+=1/);
+ assert.match(screen,/\[me\.id,me\.org_id,canManage,overviewDate\]/);
+});

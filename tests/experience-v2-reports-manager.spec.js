@@ -88,9 +88,14 @@ test("Stage 10 Family F2 keeps no-period Manager reporting as an explicit live p
   await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
 
   await page.route("**/rest/v1/report_periods*", async (route) => {
+    // A successful PostgREST count=exact response includes Content-Range.
+    // Without it the provider correctly reports count=null, which the
+    // strengthened Manager dashboard must treat as UNVERIFIED, not zero.
+    expect(route.request().headers().prefer || "").toContain("count=exact");
     await route.fulfill({
       status: 200,
       contentType: "application/json",
+      headers: { "content-range": "*/0" },
       body: JSON.stringify([]),
     });
   });
