@@ -62,7 +62,7 @@ test("private recurrence writes require current-actor verified series and close 
   assert.match(recurrence,/refreshSequence\.current === requestedRead/);
   assert.match(recurrence,/if \(!isLatest\(\)\) return false/);
   assert.match(recurrence,/return \(\) => \{ refreshSequence\.current \+= 1; \}/);
-  assert.match(recurrence,/currentIdentity\.current !== requestedIdentity/);
+  assert.match(recurrence,/const isLatest = \(\) => currentIdentity\.current === requestedIdentity/);
   assert.match(recurrence,/const seriesVerified = ready && !loading && verifiedIdentity === identity/);
   assert.match(recurrence,/if \(!seriesVerified \|\| loading \|\| busy/);
   assert.match(recurrence,/setShowForm\(false\); setEditing\(null\); setList\(\[\]\); setVerifiedIdentity\(null\)/);
