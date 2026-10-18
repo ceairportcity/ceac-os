@@ -404,4 +404,3 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
   .executivev2-kpi { grid-template-columns: 32px minmax(0,1fr); }
   .executivev2-kpi-icon { width: 32px; height: 32px; }
 }
-
