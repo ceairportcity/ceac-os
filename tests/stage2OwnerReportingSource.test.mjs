@@ -86,3 +86,16 @@ test("P6 quarterly review cannot duplicate a scheduled quarter after provider re
  assert.match(source,/Retry quarterly schedule verification/);
  assert.match(source,/onClick=\{\(\)=>setReload\(n=>n\+1\)\}/);
 });
+
+test("P6 checks the exact selected quarter independently of the 16-row schedule preview",()=>{
+ const source=file("src/components/QuarterlyReviewEventControl.jsx");
+ const migration=file("supabase/migrations/20261016183000_152_quarterly_ministry_review_events.sql");
+ assert.match(source,/\.order\("starts_on",\{ascending:false\}\)\.limit\(16\)/);
+ assert.match(source,/const exactQuarter=await supabase\.from\("quarterly_ministry_review_events"\)/);
+ assert.match(source,/\.select\("id"\)\.eq\("org_id",me\.org_id\)/);
+ assert.match(source,/\.eq\("starts_on",range\.start\)\.eq\("ends_on",range\.end\)\.limit\(1\)/);
+ assert.match(source,/exactQuarter\.error\|\|!Array\.isArray\(exactQuarter\.data\)/);
+ assert.match(source,/if\(exactQuarter\.data\.length\)/);
+ assert.ok(source.indexOf("const exactQuarter=")<source.indexOf('const result=await supabase.from("quarterly_ministry_review_events").insert('));
+ assert.match(migration,/UNIQUE\(org_id,starts_on,ends_on\)/);
+});

@@ -57,6 +57,16 @@ export default function QuarterlyReviewEventControl({me}){
   creationPending.current=true;
   setBusy(true);setError("");
   try{
+   // The summary lists only the newest 16 events; a selected older quarter
+   // must be checked independently before proposing an append-only insert.
+   // The database UNIQUE(org_id,starts_on,ends_on) remains the race guard.
+   const exactQuarter=await supabase.from("quarterly_ministry_review_events")
+     .select("id").eq("org_id",me.org_id)
+     .eq("starts_on",range.start).eq("ends_on",range.end).limit(1);
+   if(exactQuarter.error||!Array.isArray(exactQuarter.data))
+     throw new Error("The selected quarter could not be verified. Refresh the review schedule before trying again.");
+   if(exactQuarter.data.length)
+     throw new Error("This quarter already has an official review event. No duplicate was created.");
    const result=await supabase.from("quarterly_ministry_review_events").insert({
      org_id:me.org_id,starts_on:range.start,ends_on:range.end,
      meeting_on:meetingOn,unit_submission_due_on:dueOn,title:title.trim(),
