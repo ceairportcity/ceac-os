@@ -39,8 +39,12 @@ test('one Manager account keeps two headships across switching and reload', asyn
     await page.goto('/?tab=manager-reports');
     await expect(page.locator('.ev2-reporting-manager .ev2rep-eyebrow')).toHaveText('Foundation second responsibility');
     await page.getByRole('combobox',{name:'Current unit'}).first().selectOption(first);
-    // A headship switch correctly returns to Overview, not to stale Reports.
-    await expect(page).toHaveURL(/tab=home/);
+    // Canonical Overview is the root URL without a tab query parameter.
+    // A headship switch must clear the old unit's reporting view and show
+    // the newly selected Manager's own Overview, not only change a URL.
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole('combobox',{name:'Current unit'}).first()).toHaveValue(first);
+    await expect(page.locator('.manager-app .managerv2-main')).toBeVisible();
     await page.goto('/?tab=manager-reports');
     await expect(page.locator('.ev2-reporting-manager .ev2rep-eyebrow')).toHaveText('Foundation first responsibility');
     await expect(page.locator('.manager-app')).toBeVisible();
