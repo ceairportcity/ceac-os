@@ -50,7 +50,7 @@ case "$scope" in
     tests=(tests/experience-v2-work-family.spec.js tests/role-routing.spec.js)
     ;;
   reports)
-    tests=(tests/premium-redesign-r7.spec.js tests/role-routing.spec.js)
+    tests=(tests/experience-v2-reports-manager.spec.js tests/role-routing.spec.js)
     ;;
   personal)
     tests=(tests/experience-v2-personal-*.spec.js tests/role-routing.spec.js)

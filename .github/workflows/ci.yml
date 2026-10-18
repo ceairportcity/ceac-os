@@ -62,9 +62,9 @@ jobs:
         if: steps.classify.outputs.documentation_only != 'true'
         run: npm run verify:source
 
-      - name: Validate focused preview and Edge-security CI classification
+      - name: Validate focused Stage 2 CI classification and release safety
         if: steps.classify.outputs.documentation_only != 'true'
-        run: node --test tests/stage2P1ConnectedDesignContract.test.mjs tests/p1DesignPreviewScope.test.mjs tests/p2EdgeScope.test.mjs
+        run: node --test tests/stage2P1ConnectedDesignContract.test.mjs tests/p1DesignPreviewScope.test.mjs tests/p2EdgeScope.test.mjs tests/stage2FocusedScope.test.mjs
 
       - name: Dependency security audit
         if: steps.classify.outputs.documentation_only != 'true'
