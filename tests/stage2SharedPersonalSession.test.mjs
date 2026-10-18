@@ -98,3 +98,10 @@ test("P3 start verifies server-confirmed open session before showing In progress
  assert.match(start, /!created\?\.id \|\| current\?\.id !== created\.id/);
  assert.match(start, /setSession\(current\);setVerified\(true\);setEditor\(false\)/);
 });
+
+test("P3 own-work status never shows a confirmed running or absent session after failed verification", () => {
+ const component = read("src/components/EmployeeWorkSession.jsx");
+ assert.match(component, /loading\?"Checking your existing session…":!verified/);
+ assert.match(component, /Work session status unavailable · verification required/);
+ assert.match(component, /disabled=\{busy\|\|loading\|\|!verified\}/);
+});

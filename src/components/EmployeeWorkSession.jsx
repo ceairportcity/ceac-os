@@ -167,10 +167,12 @@ export default function EmployeeWorkSession({ me }) {
   return <section className="s2-own-work-session" aria-label="My work session">
     <div className="s2-own-work-session-info">
       <strong>My work session</strong>
-      <span>{loading?"Checking your existing session…":session
-        ? stale?"Earlier work session requires reconciliation"
-          : "In progress · started "+new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"}).format(new Date(session.started_at))
-        :"Not started"}
+      <span>{loading?"Checking your existing session…":!verified
+        ? "Work session status unavailable · verification required"
+        : session
+          ? stale?"Earlier work session requires reconciliation"
+            : "In progress · started "+new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"}).format(new Date(session.started_at))
+          :"Not started"}
       </span>
       <small>Recorded working time is operational evidence, not automatic attendance approval, overtime or payroll.</small>
     </div>

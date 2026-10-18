@@ -167,9 +167,20 @@ test("Administration does not turn failed work-session reads into zero attendanc
     await page.getByPlaceholder("Password").fill(password);
     await page.getByRole("button",{name:"Sign in"}).click();
     await expect(page.locator(".office-app")).toBeVisible({timeout:15000});
-    await page.route("**/rest/v1/work_sessions*",route=>route.fulfill({
-      status:503,contentType:"application/json",body:JSON.stringify({message:"synthetic session evidence unavailable"}),
-    }));
+    // App bootstrap also reads this person's own currently-open work session.
+    // Only fail the Workforce multi-employee evidence request; otherwise this
+    // test blocks app sign-in before the Workforce error state can render.
+    await page.route("**/rest/v1/work_sessions*",async route=>{
+      const fields = new URL(route.request().url()).searchParams.get("select") || "";
+      if (fields.includes("end_location_status") && fields.includes("profile_id")) {
+        await route.fulfill({
+          status:503,contentType:"application/json",
+          body:JSON.stringify({message:"synthetic session evidence unavailable"}),
+        });
+      } else {
+        await route.continue();
+      }
+    });
     await page.goto("/?tab=attendance");
     await expect(page.locator(".ev2-workforce-admin")).toBeVisible({timeout:15000});
     await expect(page.getByText("Session evidence unavailable").first()).toBeVisible({timeout:20000});
