@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isIssuedUnitReport } from "../lib/ministryReportingFacts";
+import {
+  reportDateKey as dateKey,
+  reportDateOnly as parseDateOnly,
+  addReportDays as addDays,
+  reportAccraDate as localDate,
+  reportWeekRange as weekRange,
+  reportMonthRange as monthRange,
+} from "../lib/ghanaReportingDates";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { Sheet, ProductNotice, FieldGroup } from "../components/bits";
@@ -18,25 +26,10 @@ import {
   ReportingFootnote,
 } from "../experience-v2/reporting-family/ReportingFamilyV2";
 
-const pad = (value) => String(value).padStart(2, "0");
-const dateKey = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-const parseDateOnly = (value) => { const [y, m, d] = String(value).slice(0, 10).split("-").map(Number); return new Date(y, m - 1, d); };
-const addDays = (date, days) => { const next = new Date(date); next.setDate(next.getDate() + days); return next; };
-const localDate = (value) => value ? dateKey(new Date(value)) : null;
+// Managers may open CEAC from any country, but reporting days and periods
+// always follow the Africa/Accra calendar, never device-local midnight.
 const within = (value, start, end) => Boolean(value && value >= start && value <= end);
 const COMPLETE = new Set(["completed", "self_certified"]);
-
-function weekRange(now = new Date()) {
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-  return { start: dateKey(start), end: dateKey(addDays(start, 6)), label: "This week" };
-}
-
-function monthRange(now = new Date()) {
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return { start: dateKey(start), end: dateKey(end), label: now.toLocaleDateString("en-GB", { month: "long", year: "numeric" }) };
-}
 
 function countBy(rows, key) {
   const out = {};
@@ -85,6 +78,24 @@ export default function ManagerReports({ me, openItem }) {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [periodRowsState, setPeriodRowsState] = useState("loading");
   const historyRequestRef = useRef(0);
+  // The live report must also change calendar day when a manager leaves this
+  // screen open across Ghana midnight (or returns to a sleeping laptop).
+  const [reportDay, setReportDay] = useState(() => dateKey(new Date()));
+  useEffect(() => {
+    const refreshDay = () => setReportDay((day) => {
+      const today = dateKey(new Date());
+      return today === day ? day : today;
+    });
+    const onVisible = () => { if (!document.hidden) refreshDay(); };
+    const interval = window.setInterval(refreshDay, 60_000);
+    window.addEventListener("focus", refreshDay);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshDay);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   useEffect(() => { loadBase(); }, [me.id, me.unit_id]);
 
@@ -113,7 +124,7 @@ export default function ManagerReports({ me, openItem }) {
     setLoading(false);
   }
 
-  const baseRange = useMemo(() => mode === "week" ? weekRange() : mode === "month" ? monthRange() : null, [mode]);
+  const baseRange = useMemo(() => mode === "week" ? weekRange(parseDateOnly(reportDay)) : mode === "month" ? monthRange(parseDateOnly(reportDay)) : null, [mode, reportDay]);
   const kindPeriods = useMemo(() => periods.filter((period) => period.kind === mode), [periods, mode]);
 
   const matchingPeriod = useMemo(() => {
@@ -370,7 +381,7 @@ export default function ManagerReports({ me, openItem }) {
       label: labelFor(row),
     }));
     add("completed", "work_item", evidence.completed, (row) => `${row.ref} · ${row.title}`);
-    add("submissions", "submission", evidence.periodSubmissions, (row) => `${row.profiles?.full_name || "Team member"} · ${new Date(row.submitted_at).toLocaleString("en-GB")}`);
+    add("submissions", "submission", evidence.periodSubmissions, (row) => `${row.profiles?.full_name || "Team member"} · ${new Date(row.submitted_at).toLocaleString("en-GB", { timeZone: "Africa/Accra" })}`);
     add("overdue", "work_item", evidence.overdue, (row) => `${row.ref} · ${row.title}`);
     add("attendance_days", "work_session", evidence.attendanceDays, (row) => `${row.profiles?.full_name || "Team member"} · ${localDate(row.started_at)}`);
     daily.forEach((day) => add(day.section, "work_item", day.rows, (row) => `${row.ref} · ${row.title}`));
