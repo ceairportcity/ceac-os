@@ -639,3 +639,21 @@ test("P7 retired legacy navigation CSS is not emitted after the unified V2 shell
    }
  }
 });
+
+
+test("P7 removes obsolete Home CSS without deleting the surviving Ministry, Announcements and V2 Manager surfaces",()=>{
+ const css=file("src/styles.css");
+ const staff=file("src/experience-v2/staff-today/StaffTodayV2.jsx");
+ const manager=file("src/experience-v2/manager-overview/ManagerOverviewV2.jsx");
+ const ministry=file("src/components/MinistryNumbers.jsx");
+ const announcements=file("src/screens/Announcements.jsx");
+ assert.doesNotMatch(css,/\.staff-app \.staff-home-dashboard\s*>/);
+ assert.doesNotMatch(css,/\.staff-app \.home-panel-priority\s*\{/);
+ assert.doesNotMatch(css,/\.manager-app \.home-panel-projects\s*\{/);
+ assert.match(css,/\.home-panel-secondary/);
+ assert.match(css,/\.home-tone-info/);
+ assert.match(ministry,/home-panel-secondary/);
+ assert.match(announcements,/home-tone-info/);
+ assert.match(staff,/className="staffv2-/);
+ assert.match(manager,/home-hero/);
+});
