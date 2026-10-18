@@ -76,3 +76,15 @@ test("end and historic close recheck the server rather than trusting a void RPC"
  assert.match(clock,/setVerified\(false\);[\s\S]*?Retry session verification/);
  assert.match(clock,/onClick=\{stop\} disabled=\{busy\|\|loading\|\|!verified\}/);
 });
+
+test("P3 stale-session continuation fails closed on different or still-stale row", () => {
+ const source = read("src/components/EmployeeWorkSession.jsx");
+ const continued = source.match(/async function continueOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
+ assert.ok(continued, "Continuation control must exist");
+ assert.match(continued, /const current = await openSession\(me\.org_id,me\.id\)/);
+ assert.match(continued, /!current \|\| current\.id !== session\.id/,
+   "Reconciliation may not silently select another open session");
+ assert.match(continued, /ghanaDay\(current\.last_confirmed_at \|\| current\.started_at\) < ghanaDay\(Date\.now\(\)\)/,
+   "Continuation must confirm the server refreshed the stale timestamp");
+ assert.match(continued, /setSession\(current\);setVerified\(true\);setRecover\(false\)/);
+});

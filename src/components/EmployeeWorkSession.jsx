@@ -130,9 +130,16 @@ export default function EmployeeWorkSession({ me }) {
       await reconcileWorkSession(session.id,"continue");
       // RPC may return a void/acknowledgement rather than a work_sessions row.
       // Re-read the owner-scoped authoritative open session before rendering.
-      const verified = await openSession(me.org_id,me.id);
-      if (!verified) throw new Error("Your continued session could not be verified.");
-      setSession(verified);setRecover(false);
+      const current = await openSession(me.org_id,me.id);
+      if (!current || current.id !== session.id) {
+        throw new Error("Your earlier work session identity could not be verified. Retry before making further changes.");
+      }
+      // A successful RPC alone is not evidence that the stale-session
+      // reconciliation actually refreshed the authoritative server timestamp.
+      if (ghanaDay(current.last_confirmed_at || current.started_at) < ghanaDay(Date.now())) {
+        throw new Error("Your earlier work session is still stale. Retry verification before ending work.");
+      }
+      setSession(current);setVerified(true);setRecover(false);
     } catch (e) {
       setVerified(false);
       setError(e?.message || "Your earlier session requires verification.");
