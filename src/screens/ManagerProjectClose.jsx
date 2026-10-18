@@ -68,7 +68,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
     try {
       const [closeResult, reopenResult] = await Promise.all([
         supabase.from("project_closes")
-          .select("id,scope,unit_id,version,status,deliverables_note,challenges,do_differently,submitted_at")
+          .select("id,scope,unit_id,version,status,deliverables_note,challenges,do_differently,submitted_at", { count: "exact" })
           .eq("project_id", project.id)
           .order("version", { ascending: false }),
         supabase.from("activity_events")
@@ -80,6 +80,10 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
           .limit(1),
       ]);
       if (closeResult.error || reopenResult.error) throw (closeResult.error || reopenResult.error);
+      if (typeof closeResult.count !== "number"
+        || closeResult.count !== (closeResult.data || []).length) {
+        throw new Error("Project close history was truncated. No close authority can be verified.");
+      }
       let verifiedReadiness = [];
       if (isLead) {
         const readyResult = await supabase.rpc("project_close_readiness", { p_project_id: project.id });

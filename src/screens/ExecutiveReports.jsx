@@ -60,22 +60,30 @@ export default function ExecutiveReports({ me }) {
           .limit(1)
           .maybeSingle(),
         supabase.from("units")
-          .select("id,name")
+          .select("id,name", { count: "exact" })
           .eq("org_id", me.org_id)
           .eq("active", true)
           .order("name"),
       ]);
       if (periodResult.error || unitResult.error) throw periodResult.error || unitResult.error;
+      if (typeof unitResult.count !== "number"
+        || unitResult.count !== (unitResult.data || []).length) {
+        throw new Error("Active unit reporting context is incomplete. No filing totals can be verified.");
+      }
 
       let nextReports = [];
       let nextOutcomeError = null;
       let nextSources = {issued:[],objectives:[],milestones:[]};
       if (periodResult.data) {
         const reportResult = await supabase.from("reports")
-          .select("unit_id,status,version,submitted_at")
+          .select("unit_id,status,version,submitted_at", { count: "exact" })
           .eq("period_id", periodResult.data.id)
           .eq("scope", "unit");
         if (reportResult.error) throw reportResult.error;
+        if (typeof reportResult.count !== "number"
+          || reportResult.count !== (reportResult.data || []).length) {
+          throw new Error("Period report history is incomplete. Filing totals are withheld.");
+        }
         nextReports = Object.values(latestUnitReportStatus(reportResult.data || []));
         // Only issued organisational reports; no draft narrative or HR ratings.
         const [issued,objectives,milestones] = await Promise.all([

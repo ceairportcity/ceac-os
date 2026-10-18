@@ -44,3 +44,13 @@ test("Executive report data is committed only for the currently signed actor and
  assert.match(screen,/\{contextPending \? \(/);
  assert.match(screen,/setOutcomeError\(nextOutcomeError\)/);
 });
+
+test("Executive filing counts fail closed on silent database result truncation", () => {
+ const screen=read("src/screens/ExecutiveReports.jsx");
+ assert.match(screen,/\.select\("id,name", \{ count: "exact" \}\)/);
+ assert.match(screen,/\.select\("unit_id,status,version,submitted_at", \{ count: "exact" \}\)/);
+ assert.match(screen,/unitResult\.count !== \(unitResult\.data \|\| \[\]\)\.length/);
+ assert.match(screen,/reportResult\.count !== \(reportResult\.data \|\| \[\]\)\.length/);
+ assert.match(screen,/No filing totals can be verified/);
+ assert.match(screen,/Filing totals are withheld/);
+});

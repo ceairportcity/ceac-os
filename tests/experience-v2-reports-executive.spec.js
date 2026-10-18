@@ -136,12 +136,14 @@ test("VF5C Executive Reports is coverage-first with factual named filing status"
       });
     });
     await page.route("**/rest/v1/units*", async (route) => {
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(units) });
+      await route.fulfill({ status: 200, contentType: "application/json",
+        headers: { "content-range": "0-2/3" }, body: JSON.stringify(units) });
     });
     await page.route("**/rest/v1/reports*", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
+        headers: { "content-range": "0-1/2" },
         body: JSON.stringify([
           { unit_id: units[0].id, status: "submitted", version: 2, submitted_at: "2026-10-01T08:30:00Z" },
           { unit_id: units[1].id, status: "draft", version: 1, submitted_at: null },
@@ -198,4 +200,30 @@ test("VF5C Executive Reports is coverage-first with factual named filing status"
     });
     await context.close();
   }
+});
+
+test("Executive Reports refuses partially returned unit rows instead of inventing missing coverage", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.goto("/");
+  await page.getByPlaceholder("Work email").fill("exec@ceac.local.test");
+  await page.getByPlaceholder("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
+  await page.route("**/rest/v1/report_periods*", route => route.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({ id: "00000000-0000-4000-8000-000000000701", label: "September 2026", status: "open",
+      starts_on: "2026-09-01", ends_on: "2026-09-30" }),
+  }));
+  await page.route("**/rest/v1/units*", route => route.fulfill({
+    status: 200, contentType: "application/json",
+    headers: { "content-range": "0-1/3" },
+    body: JSON.stringify([{ id: "00000000-0000-4000-8000-000000000702", name: "Media" },
+      { id: "00000000-0000-4000-8000-000000000703", name: "Technical" }]),
+  }));
+  await page.goto("/?tab=exec-reports");
+  await expect(page.getByText("Reporting context could not be loaded", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try again", exact: true })).toBeVisible();
+  await expect(page.getByText("0 of", { exact: false })).toHaveCount(0);
+  await context.close();
 });

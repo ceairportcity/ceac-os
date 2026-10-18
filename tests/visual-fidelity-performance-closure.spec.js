@@ -72,10 +72,19 @@ test("VF9C production bundle preserves measured route and vendor budgets", async
   const coreCssGzip = gzipSync(readFileSync(coreCss.path)).byteLength;
   expect(coreCss.raw, "core CSS raw regression budget").toBeLessThanOrEqual(budgets.coreCssRaw);
   expect(coreCssGzip, "core CSS gzip regression budget").toBeLessThanOrEqual(budgets.coreCssGzip);
-  expect(
-    css.reduce((sum, asset) => sum + asset.raw, 0),
-    "aggregate CSS regression budget",
-  ).toBeLessThanOrEqual(budgets.allCssRaw);
+  const totalCssRaw = css.reduce((sum, asset) => sum + asset.raw, 0);
+  if (totalCssRaw > budgets.allCssRaw) {
+    // Preserve the immutable budget and print each actual emitted asset so the
+    // P7 optimisation targets redundant CSS, not approved layout controls.
+    const bySize = [...css].sort((a, b) => b.raw - a.raw);
+    console.log("CEAC CSS over-budget emitted-asset evidence:", JSON.stringify({
+      totalRaw: totalCssRaw,
+      approvedMax: budgets.allCssRaw,
+      excess: totalCssRaw - budgets.allCssRaw,
+      assets: bySize.map(({ name, raw }) => ({ name, raw })),
+    }));
+  }
+  expect(totalCssRaw, "aggregate CSS regression budget").toBeLessThanOrEqual(budgets.allCssRaw);
 
   const executiveCssSourceRaw = statSync("src/experience-v2/executive-overview/executive-overview.css").size;
   expect(

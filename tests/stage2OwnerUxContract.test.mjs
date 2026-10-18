@@ -584,6 +584,13 @@ test("P5 project-close history requires a current actor-owned verified read", ()
   assert.match(project, /setCloses\(\[\]\); setReadiness\(\[\]\); setLastReopenedAt\(null\)/);
 });
 
+test("P5 project close history cannot hide truncated submitted versions", () => {
+ const project = file("src/screens/ManagerProjectClose.jsx");
+ assert.match(project,/\.select\("id,scope,unit_id,version,status,deliverables_note,challenges,do_differently,submitted_at", \{ count: "exact" \}\)/);
+ assert.match(project,/closeResult\.count !== \(closeResult\.data \|\| \[\]\)\.length/);
+ assert.match(project,/Project close history was truncated/);
+});
+
 test("P5 versioned project close, reopen and unit returns cannot double-dispatch", () => {
   const project = file("src/screens/ManagerProjectClose.jsx");
   assert.match(project, /const closeMutationPending = useRef\(false\)/);
