@@ -88,3 +88,13 @@ test("P3 stale-session continuation fails closed on different or still-stale row
    "Continuation must confirm the server refreshed the stale timestamp");
  assert.match(continued, /setSession\(current\);setVerified\(true\);setRecover\(false\)/);
 });
+
+test("P3 start verifies server-confirmed open session before showing In progress", () => {
+ const source = read("src/components/EmployeeWorkSession.jsx");
+ const start = source.match(/async function begin\(\) \{([\s\S]*?)\n  \}/)?.[1];
+ assert.ok(start);
+ assert.match(start, /const created = await startWork\(me\.org_id,me\.id,place/);
+ assert.match(start, /const current = await openSession\(me\.org_id, me\.id\)/);
+ assert.match(start, /!created\?\.id \|\| current\?\.id !== created\.id/);
+ assert.match(start, /setSession\(current\);setVerified\(true\);setEditor\(false\)/);
+});

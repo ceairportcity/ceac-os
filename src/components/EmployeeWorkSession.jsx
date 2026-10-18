@@ -98,7 +98,13 @@ export default function EmployeeWorkSession({ me }) {
     setBusy(true);setError("");
     try {
       const created = await startWork(me.org_id,me.id,place,place==="elsewhere"?workId:null,place==="office"?locationId:null);
-      setSession(created);setEditor(false);setReady(false);
+      // PostgREST insert acknowledgement is not enough to mark the user's
+      // personal clock as running. Recheck the current tenant-scoped row.
+      const current = await openSession(me.org_id, me.id);
+      if (!created?.id || current?.id !== created.id) {
+        throw new Error("Your work start could not be verified. Check the current session before trying again.");
+      }
+      setSession(current);setVerified(true);setEditor(false);setReady(false);
     } catch (e) { setError(e?.message || "The work session could not be started."); }
     finally { setBusy(false); }
   }
