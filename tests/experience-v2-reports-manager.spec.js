@@ -160,11 +160,24 @@ test("Stage 2 Manager reporting fails closed when period work sessions cannot be
     await page.getByPlaceholder("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
-    await page.route("**/rest/v1/work_sessions*", (route) => route.fulfill({
-      status: 500, contentType: "application/json",
-      body: JSON.stringify({ message: "synthetic period work-session read failed" }),
-    }));
+    // Scope this simulated outage to the Manager report's period dataset.
+    // The router's own per-user openSession read shares this endpoint, and
+    // must remain available so the report page can render its failure state.
+    let failedPeriodRead = false;
+    await page.route("**/rest/v1/work_sessions*", async (route) => {
+      const fields = new URL(route.request().url()).searchParams.get("select") || "";
+      if (fields.includes("end_reason") && fields.includes("profile_id")) {
+        failedPeriodRead = true;
+        await route.fulfill({
+          status: 500, contentType: "application/json",
+          body: JSON.stringify({ message: "synthetic period work-session read failed" }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
     await page.goto("/?tab=manager-reports");
+    await expect.poll(() => failedPeriodRead, { timeout: 20000 }).toBe(true);
     await expect(page.getByText("Report evidence could not be loaded", { exact: true })).toBeVisible({ timeout: 20000 });
     await expect(page.locator(".ev2rep-evidence")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Submit report", exact: true })).toHaveCount(0);

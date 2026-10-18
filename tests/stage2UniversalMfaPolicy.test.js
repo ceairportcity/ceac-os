@@ -185,3 +185,13 @@ test("Account TOTP assurance must match the currently verified provider user", (
     "Do not report MFA success before signed, same-actor AAL2/TOTP refresh");
   assert.match(source, /await onVerified\?\.\(\);/);
 });
+
+test("Stage 2 lost-factor guidance names the sole Administration/HR recovery authority", () => {
+  const ui = readFileSync(new URL("../src/components/AccountMfaSetup.jsx", import.meta.url), "utf8");
+  const policy = readFileSync(new URL("../docs/security/CEAC_STAGE2_AUTH_SESSION_POLICY_2026-10-16.md", import.meta.url), "utf8");
+  assert.match(ui, /account recovery through CEAC Administration\/HR/);
+  assert.match(ui, /recovery from CEAC Administration\/HR/);
+  assert.match(policy, /Administration\/HR is the sole CEAC in-app authority/);
+  assert.match(policy, /No helpdesk bypass, password-only recovery, self-approved reset/);
+  assert.match(policy, /sole HR administrator losing all factors/);
+});

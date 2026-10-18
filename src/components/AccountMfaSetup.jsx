@@ -194,8 +194,8 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
           : "No verified authenticator is registered for this account."}
     </p>}
     {!loading && statusReady && needsStepUp && <p className="screen-note">
-      If your authenticator devices are unavailable, request an independently verified
-      account recovery through established CEAC Administration channels.
+      If your authenticator devices are unavailable, request independently verified
+      account recovery through CEAC Administration/HR.
       A password reset cannot bypass the required TOTP check.
       Never share your password or authenticator codes.
     </p>}
@@ -218,7 +218,7 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
         {canAddBackup && <p className="screen-note">
           Add a separate backup authenticator while your current verified session is active.
           It can help if your primary device is lost. If both authenticators are unavailable,
-          request an independently verified recovery from authorised CEAC Administration.
+          request independently verified recovery from CEAC Administration/HR.
           A password reset alone cannot replace the required authenticator.
         </p>}
         <button type="button" className="btn wide-auto" onClick={startEnrollment} disabled={busy}>
