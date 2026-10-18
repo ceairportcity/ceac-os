@@ -567,3 +567,17 @@ test("P4 personal work creation blocks duplicate clicks and verifies the actual 
   assert.match(work, /confirmation\.data\.visibility !== createVisibility/);
   assert.match(work, /Check your work list before creating another task/);
 });
+
+test("P5 versioned project close, reopen and unit returns cannot double-dispatch", () => {
+  const project = file("src/screens/ManagerProjectClose.jsx");
+  assert.match(project, /const closeMutationPending = useRef\(false\)/);
+  for (const method of ["submitClose", "closeProject", "reopenProject"]) {
+    const body = project.match(new RegExp("async function " + method + "\\(\\) \\{([\\s\\S]*?)\\n  \\}"))?.[1];
+    assert.ok(body, method + " must be present");
+    assert.match(body, /if \(busy \|\| closeMutationPending\.current\) return/);
+    assert.match(body, /closeMutationPending\.current = true/);
+    assert.match(body, /closeMutationPending\.current = false/);
+  }
+  assert.doesNotMatch(project, /No partial close was saved/,
+    "Network ambiguity must not be misrepresented as a guaranteed rollback");
+});

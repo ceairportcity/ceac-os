@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { Pill, Sheet } from "../components/bits";
@@ -29,6 +29,8 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   const [reopenReason, setReopenReason] = useState("");
   const [historyClose, setHistoryClose] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Versioned project-close mutations must not dispatch twice in one render.
+  const closeMutationPending = useRef(false);
   const [error, setError] = useState(null);
 
   const isLead = project.lead_unit_id === me.unit_id;
@@ -148,7 +150,9 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   const noDeliverable = selectedDeliverables.length === 0 && !deliverablesNote.trim();
 
   async function submitClose() {
+    if (busy || closeMutationPending.current) return;
     if (missingObjective || noDeliverable || !challenges.trim() || !doDifferently.trim()) return;
+    closeMutationPending.current = true;
     setBusy(true); setError(null);
     try {
       const objectivePayload = currentObjectives.map((objective) => ({
@@ -189,18 +193,23 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       await load();
       if (onRefresh) await onRefresh();
     } catch (err) {
-      setError(err.message || "The project return could not be submitted. No partial close was saved.");
+      // A network error after a server commit can leave the outcome
+      // uncertain; do not assert that no version was saved.
+      setError(err.message || "The project return could not be confirmed. Refresh the project-close history before trying again.");
     } finally {
+      closeMutationPending.current = false;
       setBusy(false);
     }
   }
 
   async function closeProject() {
+    if (busy || closeMutationPending.current) return;
     if (!overallCloseCurrentCycle) {
       setLifecycle(null);
       setError("Submit a new overall close for this reopened project before closing it again.");
       return;
     }
+    closeMutationPending.current = true;
     setBusy(true); setError(null);
     try {
       const { error: closeError } = await supabase.rpc("close_project", { p_project_id: project.id });
@@ -209,8 +218,9 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       await load();
       if (onRefresh) await onRefresh();
     } catch (err) {
-      setError(err.message || "The project could not be closed.");
+      setError(err.message || "The project close result is uncertain. Refresh its status before repeating the action.");
     } finally {
+      closeMutationPending.current = false;
       setBusy(false);
     }
   }
@@ -247,7 +257,9 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   }
 
   async function reopenProject() {
+    if (busy || closeMutationPending.current) return;
     if (!reopenReason.trim()) return;
+    closeMutationPending.current = true;
     setBusy(true); setError(null);
     try {
       const { error: reopenError } = await supabase.rpc("reopen_project", {
@@ -260,8 +272,9 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       await load();
       if (onRefresh) await onRefresh();
     } catch (err) {
-      setError(err.message || "The project could not be reopened.");
+      setError(err.message || "The project reopen result is uncertain. Refresh its status before repeating the action.");
     } finally {
+      closeMutationPending.current = false;
       setBusy(false);
     }
   }
