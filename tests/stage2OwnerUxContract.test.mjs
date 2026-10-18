@@ -553,3 +553,17 @@ test("Stage 2 visual source authority is verified and withdrawn graphics cannot 
     assert.match(file(path), /CEAC_STAGE2_VISUAL_REFERENCE_CORRECTION_2026-10-17\.md/, "Critical first-read contract must link current source authority: " + path);
   }
 });
+
+test("P4 personal work creation blocks duplicate clicks and verifies the actual owned row", () => {
+  const work = file("src/screens/Work.jsx");
+  assert.match(work, /const ownCreatePending = useRef\(false\)/);
+  assert.match(work, /if \(busy \|\| ownCreatePending\.current\) return/);
+  assert.match(work, /ownCreatePending\.current = true/);
+  assert.match(work, /ownCreatePending\.current = false/);
+  assert.match(work, /typeof created\?\.ref !== "string"/);
+  assert.match(work, /\.eq\("ref", created\.ref\)\.eq\("org_id", me\.org_id\)/);
+  assert.match(work, /\.eq\("assignee_id", me\.id\)\.maybeSingle\(\)/);
+  assert.match(work, /confirmation\.data\.origin !== "self_created"/);
+  assert.match(work, /confirmation\.data\.visibility !== createVisibility/);
+  assert.match(work, /Check your work list before creating another task/);
+});
