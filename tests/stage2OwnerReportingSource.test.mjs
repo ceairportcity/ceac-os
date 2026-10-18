@@ -66,7 +66,7 @@ test("Manager reports verify period evidence and issued versions before showing 
 });
 
 test("P6 quarterly review scheduling prevents duplicate writes and requires server-confirmed event",()=>{
- const source=read("src/components/QuarterlyReviewEventControl.jsx");
+ const source=file("src/components/QuarterlyReviewEventControl.jsx");
  assert.match(source,/const creationPending=useRef\(false\)/);
  assert.match(source,/!allowed\|\|busy\|\|creationPending\.current/);
  assert.match(source,/creationPending\.current=true/);

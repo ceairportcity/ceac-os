@@ -847,3 +847,13 @@
     padding-inline: 13px;
   }
 }
+
+/* P7 approved R4 laptop baseline: Executive shell has a measured
+   210px rail / 54px command bar. Scope to Executive desktop only;
+   do not change Admin, Staff, Manager, phone or tablet geometry. */
+@media (min-width: 1025px) {
+  .executive-app {
+    --ev2s-sidebar-width: 13.125rem;
+    --ev2s-topbar-height: 3.375rem;
+  }
+}

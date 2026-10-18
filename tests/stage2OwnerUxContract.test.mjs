@@ -581,3 +581,17 @@ test("P5 versioned project close, reopen and unit returns cannot double-dispatch
   assert.doesNotMatch(project, /No partial close was saved/,
     "Network ambiguity must not be misrepresented as a guaranteed rollback");
 });
+
+test("P7 approved Executive R4 laptop shell dimensions stay role-scoped", () => {
+ const shared = file("src/experience-v2/shell/shell.css");
+ const executive = file("src/role-styles/executive-redesign.css");
+ const home = file("src/experience-v2/executive-overview/executive-overview.css");
+ const refs = file("tests/visual-home-baselines.js");
+ assert.match(shared,/--ev2s-sidebar-width: 13\.75rem/);
+ assert.match(executive,/@media \(min-width: 1025px\) \{\s*\.executive-app \{/);
+ assert.match(executive,/--ev2s-sidebar-width: 13\.125rem/);
+ assert.match(executive,/--ev2s-topbar-height: 3\.375rem/);
+ assert.match(home,/\.executive-app \.executivev2-hero\.s2-landscape-hero \{ min-height: 136px/);
+ assert.match(home,/\.executive-app \.executivev2 > \.s2-own-work-session/);
+ assert.match(refs,/Visual regression threshold <=6 stays strictly unchanged/);
+});
