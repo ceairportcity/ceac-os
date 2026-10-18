@@ -65,3 +65,14 @@ test("a still-open work session becomes stale when the Accra day advances", () =
  assert.match(clock, /\[session, clockNow\]/);
  assert.match(clock, /clearInterval\(timer\)/);
 });
+
+test("end and historic close recheck the server rather than trusting a void RPC", () => {
+ const clock=read("src/components/EmployeeWorkSession.jsx");
+ assert.match(clock,/async function verifyClosedSession\(closedId\)/);
+ assert.match(clock,/const current = await openSession\(me\.org_id, me\.id\)/);
+ assert.match(clock,/if \(current\?\.id === closedId\)/);
+ assert.match(clock,/await endWork\(session\.id\);\s*await verifyClosedSession\(session\.id\)/);
+ assert.match(clock,/await reconcileWorkSession\(session\.id,"close",[\s\S]*?await verifyClosedSession\(session\.id\)/);
+ assert.match(clock,/setVerified\(false\);[\s\S]*?Retry session verification/);
+ assert.match(clock,/onClick=\{stop\} disabled=\{busy\|\|loading\|\|!verified\}/);
+});

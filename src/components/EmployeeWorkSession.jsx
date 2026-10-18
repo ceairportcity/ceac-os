@@ -102,15 +102,29 @@ export default function EmployeeWorkSession({ me }) {
     } catch (e) { setError(e?.message || "The work session could not be started."); }
     finally { setBusy(false); }
   }
+  async function verifyClosedSession(closedId) {
+    // An RPC acknowledgement alone does not establish that the user's work
+    // session is now closed. Read the authoritative, tenant-scoped current row.
+    const current = await openSession(me.org_id, me.id);
+    if (current?.id === closedId) {
+      throw new Error("The work session still appears open. Retry verification before continuing.");
+    }
+    setSession(current);
+    setVerified(true);
+  }
   async function stop() {
-    if (!session?.id || busy || stale) return;
+    if (!session?.id || busy || stale || !verified) return;
     setBusy(true);setError("");
-    try { await endWork(session.id);setSession(null); }
-    catch(e) { setError(e?.message || "The work session could not be ended."); }
-    finally { setBusy(false); }
+    try {
+      await endWork(session.id);
+      await verifyClosedSession(session.id);
+    } catch(e) {
+      setVerified(false);
+      setError(e?.message || "Your work session end could not be verified. Retry session verification.");
+    } finally { setBusy(false); }
   }
   async function continueOld() {
-    if (!session?.id || busy) return;
+    if (!session?.id || busy || !verified) return;
     setBusy(true);setError("");
     try {
       await reconcileWorkSession(session.id,"continue");
@@ -119,17 +133,22 @@ export default function EmployeeWorkSession({ me }) {
       const verified = await openSession(me.org_id,me.id);
       if (!verified) throw new Error("Your continued session could not be verified.");
       setSession(verified);setRecover(false);
-    } catch (e) { setError(e?.message || "Your earlier session requires review."); }
-    finally { setBusy(false); }
+    } catch (e) {
+      setVerified(false);
+      setError(e?.message || "Your earlier session requires verification.");
+    } finally { setBusy(false); }
   }
   async function closeOld() {
-    if (!session?.id || !endedAt || busy) return;
+    if (!session?.id || !endedAt || busy || !verified) return;
     setBusy(true);setError("");
     try {
       await reconcileWorkSession(session.id,"close",new Date(endedAt).toISOString(),correctionReason.trim()||null);
-      setSession(null);setRecover(false);setEndedAt("");setCorrectionReason("");
-    } catch(e) { setError(e?.message || "The historical correction could not be saved."); }
-    finally { setBusy(false); }
+      await verifyClosedSession(session.id);
+      setRecover(false);setEndedAt("");setCorrectionReason("");
+    } catch(e) {
+      setVerified(false);
+      setError(e?.message || "The historical correction could not be verified. Retry session verification.");
+    } finally { setBusy(false); }
   }
 
   return <section className="s2-own-work-session" aria-label="My work session">
@@ -144,8 +163,8 @@ export default function EmployeeWorkSession({ me }) {
     </div>
     <div className="s2-own-work-session-buttons">
       {session
-        ? stale?<button type="button" onClick={()=>setRecover(true)} disabled={busy||loading}>Review earlier session</button>
-          :<button type="button" onClick={stop} disabled={busy||loading}>{busy?"Ending…":"End work"}</button>
+        ? stale?<button type="button" onClick={()=>setRecover(true)} disabled={busy||loading||!verified}>Review earlier session</button>
+          :<button type="button" onClick={stop} disabled={busy||loading||!verified}>{busy?"Ending…":"End work"}</button>
         :<button type="button" onClick={()=>{setError("");setEditor(true);}} disabled={busy||loading||!verified}>
           Start work
         </button>}
@@ -177,10 +196,10 @@ export default function EmployeeWorkSession({ me }) {
     {recover&&<Sheet onClose={()=>!busy&&setRecover(false)}>
       <h2>Review your earlier session</h2>
       <p>The original start and any corrections remain recorded. Do not invent an end time.</p>
-      <button type="button" onClick={continueOld} disabled={busy}>Continue recorded session</button>
+      <button type="button" onClick={continueOld} disabled={busy||!verified}>Continue recorded session</button>
       <label>Actual end time <input type="datetime-local" value={endedAt} onChange={e=>setEndedAt(e.target.value)}/></label>
       <label>Explanation for correction <textarea rows={3} value={correctionReason} onChange={e=>setCorrectionReason(e.target.value)}/></label>
-      <button type="button" onClick={closeOld} disabled={busy||!endedAt}>Close at actual time</button>
+      <button type="button" onClick={closeOld} disabled={busy||!endedAt||!verified}>Close at actual time</button>
       {error&&<p role="alert">{error}</p>}
     </Sheet>}
   </section>;
