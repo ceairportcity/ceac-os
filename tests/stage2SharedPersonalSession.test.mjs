@@ -119,3 +119,13 @@ test("P3 uncertain Start Work and history reconciliation require an explicit rec
  assert.match(closed, /setVerified\(false\); setRecover\(false\)/);
  assert.match(screen, /Retry session verification/);
 });
+
+test("P3 Manager and Admin Workforce do not fabricate zero session evidence on failed reads", () => {
+ const source = read("src/screens/Workforce.jsx");
+ assert.match(source, /const sessionReadFailed=Boolean\(datasetErrors\.sessions\)/);
+ assert.equal((source.match(/meta=\{sessionReadFailed\?"Evidence unavailable":sessions\.length\+" records"\}/g) || []).length, 2);
+ assert.equal((source.match(/meta=\{sessionReadFailed\?"Evidence unavailable":flaggedSessions\.length\+" records"\}/g) || []).length, 2);
+ assert.equal((source.match(/!sessions\.length&&!sessionReadFailed&&<WorkforceEmpty/g) || []).length, 2);
+ assert.equal((source.match(/!flaggedSessions\.length&&!sessionReadFailed&&<WorkforceEmpty/g) || []).length, 2);
+ assert.match(source, /sessionReadFailed\?"session evidence unavailable":facts\.first/);
+});

@@ -184,7 +184,15 @@ test("Administration does not turn failed work-session reads into zero attendanc
     await page.goto("/?tab=attendance");
     await expect(page.locator(".ev2-workforce-admin")).toBeVisible({timeout:15000});
     await expect(page.getByText("Session evidence unavailable").first()).toBeVisible({timeout:20000});
-    await expect(page.getByText("No session recorded",{exact:true})).toHaveCount(0);
+    // Judge the real Administration Today record states, not unrelated copy
+    // on a page with other descriptive "No session" explanations.
+    const statusRows = page.locator(".ev2-workforce-admin .workforce-person .ev2wf-row-state");
+    const count = await statusRows.count();
+    expect(count).toBeGreaterThan(0);
+    // Verified leave may still be shown independently when session reads fail.
+    // No row may claim a missing work session from unavailable evidence.
+    await expect(statusRows.getByText("Session evidence unavailable",{exact:true}).first()).toBeVisible();
+    await expect(statusRows.getByText("No session recorded",{exact:true})).toHaveCount(0);
     await expect(page.getByRole("button",{name:"Retry Workforce data"})).toBeVisible();
   } finally {await context.close();}
 });

@@ -672,7 +672,7 @@ export default function Workforce({ me }) {
               icon="person"
               eyebrow={row.units?.name||"Managed unit"}
               title={row.profiles?.full_name||"Employee"}
-              meta={(dayType?.name||"Schedule not configured")+" · "+time+(facts.first?" · first recorded "+clock(facts.first.started_at):" · no session recorded")}
+              meta={(dayType?.name||"Schedule not configured")+" · "+time+(sessionReadFailed?" · session evidence unavailable":facts.first?" · first recorded "+clock(facts.first.started_at):" · no session recorded")}
               note={ctx.detail}
               statusLabel={ctx.label}
               statusTone={ctx.tone}
@@ -747,7 +747,7 @@ export default function Workforce({ me }) {
                 icon="person"
                 eyebrow={person.units?.name||"Managed unit"}
                 title={person.profiles?.full_name||"Employee"}
-                meta={(dayType?.name||"Schedule not configured")+" · "+time+(facts.first?" · first recorded "+clock(facts.first.started_at):" · no session recorded")}
+                meta={(dayType?.name||"Schedule not configured")+" · "+time+(sessionReadFailed?" · session evidence unavailable":facts.first?" · first recorded "+clock(facts.first.started_at):" · no session recorded")}
                 statusLabel={ctx.label}
                 statusTone={ctx.tone}
               />;
@@ -758,7 +758,7 @@ export default function Workforce({ me }) {
         })}
       </>}
 
-      {tab==="sessions"&&<WorkforceSection title="Recorded sessions" description="Last 31 days of factual activity in your authorised managed-unit scope. Session history is not payroll time or a performance score." meta={sessions.length+" records"}>
+      {tab==="sessions"&&<WorkforceSection title="Recorded sessions" description="Last 31 days of factual activity in your authorised managed-unit scope. Session history is not payroll time or a performance score." meta={sessionReadFailed?"Evidence unavailable":sessions.length+" records"}>
         {sessions.slice(0,160).map((session)=>{
           const person=peopleById[session.profile_id];
           const diff=recordedDifferences(session);
@@ -772,7 +772,8 @@ export default function Workforce({ me }) {
             note={(session.place||"Place not recorded")+(diff.length||sessionCorrections.length?" · "+diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s"):"")}
           />;
         })}
-        {!sessions.length&&<WorkforceEmpty compact title="No sessions recorded in this period" description="Nothing is inferred from the absence of session rows."/>}
+        {!sessions.length&&!sessionReadFailed&&<WorkforceEmpty compact title="No sessions recorded in this period" description="Nothing is inferred from the absence of session rows."/>}
+        {sessionReadFailed&&<WorkforceEmpty compact title="Session evidence unavailable" description="Work-session records could not be verified. Retry Workforce data."/>}
       </WorkforceSection>}
 
       {tab==="differences"&&<>
@@ -788,14 +789,14 @@ export default function Workforce({ me }) {
               eyebrow={row.units?.name||"Managed unit"}
               title={row.profiles?.full_name||"Employee"}
               meta={"Scheduled: "+(dayType?.name||"not configured")+(schedule?.expected_start?" · "+String(schedule.expected_start).slice(0,5):"")+(schedule?.expected_end?"–"+String(schedule.expected_end).slice(0,5):"")}
-              note={"Recorded: "+(facts.first?clock(facts.first.started_at):"no session")+(facts.lastEnd?" → "+clock(facts.lastEnd):facts.rows.length?" · no final end":"")}
+              note={"Recorded: "+(sessionReadFailed?"session evidence unavailable":facts.first?clock(facts.first.started_at):"no session")+(sessionReadFailed?"":facts.lastEnd?" → "+clock(facts.lastEnd):facts.rows.length?" · no final end":"")}
               statusLabel={ctx.label}
               statusTone={ctx.tone}
             />;
           })}
           {!people.length&&<WorkforceEmpty compact title="No workforce records in managed scope" description="Only authorised managed-unit records are available here."/>}
         </WorkforceSection>
-        <WorkforceSection title="Recorded session differences" description="Descriptive evidence only; no lateness, absence, underwork or performance conclusion is generated." meta={flaggedSessions.length+" records"}>
+        <WorkforceSection title="Recorded session differences" description="Descriptive evidence only; no lateness, absence, underwork or performance conclusion is generated." meta={sessionReadFailed?"Evidence unavailable":flaggedSessions.length+" records"}>
           {flaggedSessions.map(({session,differences})=><WorkforceRecordRow
             key={session.id}
             icon="warning"
@@ -806,7 +807,7 @@ export default function Workforce({ me }) {
             statusLabel="Recorded difference"
             statusTone="amber"
           />)}
-          {!flaggedSessions.length&&<WorkforceEmpty compact title="No recorded session differences" description="Nothing in the last 31 days matches the factual difference checks."/>}
+          {!flaggedSessions.length&&!sessionReadFailed&&<WorkforceEmpty compact title="No recorded session differences" description="Nothing in the last 31 days matches the factual difference checks."/>}
         </WorkforceSection>
       </>}
 
@@ -1038,7 +1039,7 @@ export default function Workforce({ me }) {
         </WorkforceSection>
       </>}
 
-      {tab==="sessions"&&<WorkforceSection title="Recorded sessions · last 31 days" description="Session history is factual activity context. It is not a performance score and it is not used as payroll time." meta={sessions.length+" records"}>
+      {tab==="sessions"&&<WorkforceSection title="Recorded sessions · last 31 days" description="Session history is factual activity context. It is not a performance score and it is not used as payroll time." meta={sessionReadFailed?"Evidence unavailable":sessions.length+" records"}>
         {sessions.slice(0,160).map((session)=>{
           const person=peopleById[session.profile_id];
           const diff=recordedDifferences(session);
@@ -1053,7 +1054,8 @@ export default function Workforce({ me }) {
             note={(diff.length||sessionCorrections.length)?diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s"):null}
           />;
         })}
-        {!sessions.length&&<WorkforceEmpty compact title="No sessions recorded in this period" description="Nothing is inferred from the absence of session rows."/>}
+        {!sessions.length&&!sessionReadFailed&&<WorkforceEmpty compact title="No sessions recorded in this period" description="Nothing is inferred from the absence of session rows."/>}
+        {sessionReadFailed&&<WorkforceEmpty compact title="Session evidence unavailable" description="Work-session records could not be verified. Retry Workforce data."/>}
       </WorkforceSection>}
 
       {tab==="differences"&&<>
@@ -1071,14 +1073,14 @@ export default function Workforce({ me }) {
               eyebrow={row.units?.name||"Unit not recorded"}
               title={row.profiles?.full_name||"Employee"}
               meta={"Scheduled: "+(dayType?.name||"not configured")+(schedule?.expected_start?" · "+String(schedule.expected_start).slice(0,5):"")+(schedule?.expected_end?"–"+String(schedule.expected_end).slice(0,5):"")}
-              note={"Recorded: "+(facts.first?clock(facts.first.started_at):"no session")+(facts.lastEnd?" → "+clock(facts.lastEnd):facts.rows.length?" · no final end":"")}
+              note={"Recorded: "+(sessionReadFailed?"session evidence unavailable":facts.first?clock(facts.first.started_at):"no session")+(sessionReadFailed?"":facts.lastEnd?" → "+clock(facts.lastEnd):facts.rows.length?" · no final end":"")}
               statusLabel={ctx.label}
               statusTone={ctx.tone}
             />;
           })}
         </WorkforceSection>
         {!office&&<ProductNotice tone="info" title="Office point not configured">Location-based differences stay unavailable until a primary office point exists. Other factual differences still appear.</ProductNotice>}
-        <WorkforceSection title="Recorded session differences" description="Factual evidence only; no automated lateness, absence, underwork or performance conclusion is generated." meta={flaggedSessions.length+" records"}>
+        <WorkforceSection title="Recorded session differences" description="Factual evidence only; no automated lateness, absence, underwork or performance conclusion is generated." meta={sessionReadFailed?"Evidence unavailable":flaggedSessions.length+" records"}>
           {flaggedSessions.map(({session,differences})=><WorkforceRecordRow
             key={session.id}
             icon="warning"
@@ -1089,7 +1091,7 @@ export default function Workforce({ me }) {
             statusLabel="Recorded difference"
             statusTone="amber"
           />)}
-          {!flaggedSessions.length&&<WorkforceEmpty compact title="No recorded session differences" description="Nothing in the last 31 days matches the factual difference checks."/>}
+          {!flaggedSessions.length&&!sessionReadFailed&&<WorkforceEmpty compact title="No recorded session differences" description="Nothing in the last 31 days matches the factual difference checks."/>}
         </WorkforceSection>
       </>}
 
