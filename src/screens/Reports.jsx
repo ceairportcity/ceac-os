@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { dateOnly } from "../lib/time";
+import { reportAccraDate, reportDateOnly, reportWeekRange, reportMonthRange } from "../lib/ghanaReportingDates";
 import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
 import { Sheet, ProductNotice } from "../components/bits";
 import { Button, Skeleton, StatePanel } from "../experience-v2/components";
@@ -26,6 +27,7 @@ export default function Reports({ me }) {
   const [sheet, setSheet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [periodCount, setPeriodCount] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
 
@@ -40,51 +42,58 @@ export default function Reports({ me }) {
     setLoading(true);
     setLoadFailed(false);
     setMsg(null);
-    const [periodResult, reportResult, unitResult] = await Promise.all([
-      supabase.from("report_periods").select("*").eq("org_id",me.org_id).order("starts_on", { ascending: false }).limit(40),
-      supabase.from("reports").select("id, period_id, scope, unit_id, project_id, status, version, narrative, challenges, submitted_at, submitted_by, evidence").eq("org_id",me.org_id).eq("scope","unit"),
-      supabase.from("units").select("id, name").eq("org_id",me.org_id).eq("active", true).order("name"),
-    ]);
-    const loadError = periodResult.error || reportResult.error || unitResult.error;
-    if (loadError) {
+    try {
+      const [periodResult, reportResult, unitResult] = await Promise.all([
+        // This page deliberately shows only the most recent 40 periods;
+        // its label makes that partial history explicit.
+        supabase.from("report_periods").select("*",{count:"exact"}).eq("org_id",me.org_id).order("starts_on", { ascending: false }).limit(40),
+        supabase.from("reports").select("id, period_id, scope, unit_id, project_id, status, version, narrative, challenges, submitted_at, submitted_by, evidence",{count:"exact"}).eq("org_id",me.org_id).eq("scope","unit"),
+        supabase.from("units").select("id, name",{count:"exact"}).eq("org_id",me.org_id).eq("active", true).order("name"),
+      ]);
+      const exact = (response) => !response.error && Array.isArray(response.data)
+        && typeof response.count === "number";
+      if (![periodResult,reportResult,unitResult].every(exact) ||
+          periodResult.data.length > periodResult.count ||
+          reportResult.data.length !== reportResult.count ||
+          unitResult.data.length !== unitResult.count)
+        throw new Error("Administrative reporting evidence could not be verified in full.");
+      setPeriods(periodResult.data);
+      setPeriodCount(periodResult.count);
+      setReports(reportResult.data);
+      setUnits(unitResult.data);
+    } catch {
       setLoadFailed(true);
-      setMsg(loadError.message);
+      setPeriodCount(null);
+      setPeriods([]); setReports([]); setUnits([]);
+      setMsg("Administrative reporting evidence is incomplete or unavailable. Retry before inspecting filing coverage.");
+    } finally {
       setLoading(false);
-      return;
     }
-    setPeriods(periodResult.data || []);
-    setReports(reportResult.data || []);
-    setUnits(unitResult.data || []);
-    setLoading(false);
   }
 
   function prefill(nextKind) {
     setKind(nextKind);
+    // Reporting periods are Ghana civil dates, not the operator's device TZ.
     const now = new Date();
     if (nextKind === "week") {
-      const d = new Date(now);
-      const day = (d.getDay() + 6) % 7;
-      const mon = new Date(d); mon.setDate(d.getDate() - day);
-      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-      const wk = Math.ceil((((mon - new Date(mon.getFullYear(), 0, 1)) / 86400000) + 1) / 7);
-      setStarts(mon.toISOString().slice(0, 10));
-      setEnds(sun.toISOString().slice(0, 10));
-      setLabel("Week " + wk + " — " + mon.toLocaleDateString("en-GB", { day: "numeric", month: "short" })
-        + " – " + sun.toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
+      const range = reportWeekRange(now);
+      const mon = reportDateOnly(range.start);
+      const sun = reportDateOnly(range.end);
+      const first = new Date(Date.UTC(mon.getUTCFullYear(),0,1));
+      const wk = Math.ceil((Math.floor((mon.getTime()-first.getTime())/86400000)+1)/7);
+      setStarts(range.start); setEnds(range.end);
+      const labelDay = (date) => date.toLocaleDateString("en-GB", {
+        timeZone:"Africa/Accra", day:"numeric", month:"short",
+      });
+      setLabel("Week " + wk + " — " + labelDay(mon) + " – " + labelDay(sun));
     } else if (nextKind === "month") {
-      const first = new Date(now.getFullYear(), now.getMonth(), 1);
-      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      setStarts(first.toISOString().slice(0, 10));
-      setEnds(last.toISOString().slice(0, 10));
-      setLabel(first.toLocaleDateString("en-GB", { month: "long", year: "numeric" }));
+      const range = reportMonthRange(now);
+      setStarts(range.start); setEnds(range.end); setLabel(range.label);
     } else if (nextKind === "year") {
-      setStarts(now.getFullYear() + "-01-01");
-      setEnds(now.getFullYear() + "-12-31");
-      setLabel(String(now.getFullYear()));
+      const year = reportAccraDate(now).slice(0,4);
+      setStarts(year + "-01-01"); setEnds(year + "-12-31"); setLabel(year);
     } else {
-      setStarts("");
-      setEnds("");
-      setLabel("");
+      setStarts(""); setEnds(""); setLabel("");
     }
   }
 
@@ -137,7 +146,9 @@ export default function Reports({ me }) {
     : loadFailed
       ? "Records unavailable"
       : periods.length
-        ? `${periods.length} ${periods.length === 1 ? "period" : "periods"} recorded`
+        ? periodCount > periods.length
+          ? `Showing the latest ${periods.length} of ${periodCount} reporting periods`
+          : `${periods.length} ${periods.length === 1 ? "period" : "periods"} recorded`
         : "No periods recorded";
 
   if (loading) {

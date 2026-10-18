@@ -159,3 +159,65 @@ test("P6 personal reporting hides raw provider diagnostics, validates dates and 
  assert.match(source,/Too many records to verify accurately\. Contact Administration for a verified report/);
  assert.doesNotMatch(source,/Narrow the report period or contact Administration/);
 });
+
+
+test("P6 manager evidence refuses truncated 2xx dataset reads and uses Ghana civil boundaries",()=>{
+ const source=file("src/screens/ManagerReports.jsx");
+ for(const table of ["projects","report_periods","work_items","unit_memberships","objectives","work_sessions","submissions"])
+   assert.match(source,new RegExp('supabase\\.from\\("'+table+'"\\)[\\s\\S]*?\\{ count:"exact" \\}'),table);
+ assert.match(source,/\[projectResult,periodResult,workResult,memberResult,objectiveResult\]\.every\(fullyRead\)/);
+ assert.match(source,/result\.count === result\.data\.length/);
+ assert.match(source,/\[sessionResult, submissionResult\]\.every\(complete\)/);
+ assert.match(source,/Promise\.resolve\(\{ data: \[\], error: null, count: 0 \}\)/);
+ assert.match(source,/new Date\(range\.start \+ "T00:00:00Z"\)/);
+ assert.match(source,/new Date\(range\.end \+ "T00:00:00Z"\)/);
+ assert.match(source,/void loadPeriodRows\(\)\.catch/);
+ assert.match(source,/setPeriodRowsState\("error"\)/);
+ assert.match(source,/deadlineOverdue\(row\.due_at, reportAsOf\)/);
+ assert.match(source,/setReportAsOf\(Date\.now\(\)\)/);
+ assert.doesNotMatch(source,/new Date\(row\.due_at\) < new Date\(\)/);
+});
+
+test("P6 manager report version history and evidence links cannot silently truncate a successful provider response",()=>{
+ const screen=file("src/screens/ManagerReports.jsx");
+ assert.match(screen,/\.select\("id,period_id,scope,unit_id,[^\n]*\{ count:"exact" \}\)/);
+ assert.match(screen,/result\.count !== result\.data\.length/);
+ assert.match(screen,/setHistoryVerified\(true\)/);
+ assert.match(screen,/setHistoryVerified\(false\)/);
+ assert.match(screen,/\.select\("id,report_id,section,object_type,object_id,label", \{ count:"exact" \}\)/);
+ assert.match(screen,/const request = \+\+refsReadSequence\.current/);
+ assert.match(screen,/request !== refsReadSequence\.current/);
+ assert.match(screen,/setRefsVerified\(false\)/);
+ assert.match(screen,/setRefsVerified\(true\)/);
+ assert.match(screen,/if \(!evidence \|\| !historyVerified\) return/);
+ assert.match(screen,/if \(\(matchingPeriod && !historyVerified\) \|\| \(viewingFrozen && !refsVerified\)\) return/);
+ assert.match(screen,/disabled=\{busy \|\| !historyVerified\} onClick=\{submitReport\}/);
+});
+
+test("P6 manager source failures give an explicit retry route instead of unresolved promises or write access",()=>{
+ const screen=file("src/screens/ManagerReports.jsx");
+ assert.match(screen,/void loadBase\(\)\.catch/);
+ assert.match(screen,/void loadHistory\(\)\.catch/);
+ assert.match(screen,/Report history not yet verified/);
+ assert.match(screen,/Retry report history/);
+ assert.match(screen,/submitted versions, edits/i);
+ assert.match(screen,/\[me\.id, me\.unit_id, me\.org_id\]/);
+});
+
+test("P6 Administration unit-coverage report refuses truncated reads while identifying its intentional 40-period window",()=>{
+ const admin=file("src/screens/Reports.jsx");
+ assert.match(admin,/report_periods"\)\.select\("\*",\{count:"exact"\}\)/);
+ assert.match(admin,/\.limit\(40\)/);
+ assert.match(admin,/reports"\)\.select\("[^\n]+,\{count:"exact"\}\)/);
+ assert.match(admin,/units"\)\.select\("id, name",\{count:"exact"\}\)/);
+ assert.match(admin,/reportResult\.data\.length !== reportResult\.count/);
+ assert.match(admin,/unitResult\.data\.length !== unitResult\.count/);
+ assert.match(admin,/periodResult\.data\.length > periodResult\.count/);
+ assert.match(admin,/setLoadFailed\(true\)/);
+ assert.match(admin,/setReports\(\[\]\); setUnits\(\[\]\)/);
+ assert.match(admin,/Showing the latest \$\{periods\.length\} of \$\{periodCount\} reporting periods/);
+ assert.match(admin,/reportWeekRange\(now\)/);
+ assert.match(admin,/reportMonthRange\(now\)/);
+ assert.match(admin,/reportAccraDate\(now\)/);
+ assert.doesNotMatch(admin,/new Date\(now\.getFullYear\(\), now\.getMonth\(\)/);
+});
