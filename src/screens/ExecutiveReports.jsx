@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
 import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
@@ -25,11 +25,30 @@ export default function ExecutiveReports({ me }) {
   const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[]});
   const [outcomeError,setOutcomeError] = useState(null);
 
-  useEffect(() => { load(); }, [me.org_id]);
+  // An old Executive report response must never populate a newly signed-in
+  // actor's coverage/briefing after a cross-org or same-org identity change.
+  const identity = me.org_id + ":" + me.id;
+  const loadedActor = useRef(identity);
+  loadedActor.current = identity;
+  const requestSequence = useRef(0);
+  const [readyActor, setReadyActor] = useState(null);
+  const [failedActor, setFailedActor] = useState(null);
+  // A failed CURRENT actor must see an error/retry, not perpetual loading.
+  // An earlier actor's success OR error must not surface after identity change.
+  const contextPending = loading || (readyActor !== identity && failedActor !== identity);
+  const contextError = error && failedActor === identity;
+
+  useEffect(() => {
+    void load();
+    return () => { requestSequence.current += 1; };
+  }, [me.org_id, me.id]);
 
   async function load() {
-    setLoading(true);
-    setError(null);
+    const expected = identity;
+    const request = ++requestSequence.current;
+    const current = () => loadedActor.current === expected && requestSequence.current === request;
+    setLoading(true); setReadyActor(null); setFailedActor(null); setError(null);
+    setPeriod(null); setUnits([]); setReports([]);
     setOutcomeError(null);
     setOutcomeSources({issued:[],objectives:[],milestones:[]});
     try {
@@ -48,41 +67,47 @@ export default function ExecutiveReports({ me }) {
       ]);
       if (periodResult.error || unitResult.error) throw periodResult.error || unitResult.error;
 
+      let nextReports = [];
+      let nextOutcomeError = null;
+      let nextSources = {issued:[],objectives:[],milestones:[]};
+      if (periodResult.data) {
+        const reportResult = await supabase.from("reports")
+          .select("unit_id,status,version,submitted_at")
+          .eq("period_id", periodResult.data.id)
+          .eq("scope", "unit");
+        if (reportResult.error) throw reportResult.error;
+        nextReports = Object.values(latestUnitReportStatus(reportResult.data || []));
+        // Only issued organisational reports; no draft narrative or HR ratings.
+        const [issued,objectives,milestones] = await Promise.all([
+          supabase.from("reports").select("id,unit_id,version,status,submitted_at,narrative,challenges")
+            .eq("period_id",periodResult.data.id).eq("scope","unit").in("status",["submitted","confirmed"]).limit(501),
+          supabase.from("objectives").select("id,name,status,project_id,unit_id,target_value,achieved_value,target_unit")
+            .eq("org_id",me.org_id).limit(501),
+          supabase.from("project_milestones").select("id,name,status,project_id,target_on,completed_at")
+            .eq("org_id",me.org_id).limit(501),
+        ]);
+        const detailsError=[issued,objectives,milestones].find(x=>x.error || (x.data||[]).length>500);
+        if (detailsError) {
+          nextOutcomeError="Leadership evidence could not be verified completely. Detailed totals are withheld.";
+        } else {
+          nextSources={issued:issued.data||[],objectives:objectives.data||[],milestones:milestones.data||[]};
+        }
+      }
+      if (!current()) return;
+      // Commit coherent reporting evidence only after every required read.
       setPeriod(periodResult.data || null);
       setUnits(unitResult.data || []);
-
-      if (!periodResult.data) {
-        setReports([]);
-        return;
-      }
-
-      const reportResult = await supabase.from("reports")
-        .select("unit_id,status,version,submitted_at")
-        .eq("period_id", periodResult.data.id)
-        .eq("scope", "unit");
-      if (reportResult.error) throw reportResult.error;
-
-      setReports(Object.values(latestUnitReportStatus(reportResult.data || [])));
-      // Fetch only already issued organisational reports for Executive briefing.
-      // Never retrieve draft narrative or employee HR assessment content.
-      const [issued,objectives,milestones] = await Promise.all([
-        supabase.from("reports").select("id,unit_id,version,status,submitted_at,narrative,challenges")
-          .eq("period_id",periodResult.data.id).eq("scope","unit").in("status",["submitted","confirmed"]).limit(501),
-        supabase.from("objectives").select("id,name,status,project_id,unit_id,target_value,achieved_value,target_unit")
-          .eq("org_id",me.org_id).limit(501),
-        supabase.from("project_milestones").select("id,name,status,project_id,target_on,completed_at")
-          .eq("org_id",me.org_id).limit(501),
-      ]);
-      const detailsError=[issued,objectives,milestones].find(x=>x.error || (x.data||[]).length>500);
-      if(detailsError) {
-        setOutcomeError("Leadership evidence could not be verified completely. Detailed totals are withheld.");
-      } else {
-        setOutcomeSources({issued:issued.data||[],objectives:objectives.data||[],milestones:milestones.data||[]});
-      }
+      setReports(nextReports);
+      setOutcomeError(nextOutcomeError);
+      setOutcomeSources(nextSources);
+      setReadyActor(expected);
     } catch (loadError) {
-      setError(humanError(loadError, "Reports could not be loaded."));
+      if (current()) {
+        setError(humanError(loadError, "Reports could not be loaded."));
+        setFailedActor(expected);
+      }
     } finally {
-      setLoading(false);
+      if (current()) setLoading(false);
     }
   }
 
@@ -105,9 +130,9 @@ export default function ExecutiveReports({ me }) {
     [unitStatusRows, view],
   );
 
-  const statusLabel = loading
+  const statusLabel = contextPending
     ? "Loading records"
-    : error
+    : contextError
       ? "Context unavailable"
       : period
         ? period.status === "open" ? "Latest period open" : "Latest period closed"
@@ -120,17 +145,17 @@ export default function ExecutiveReports({ me }) {
         title="Reports"
         description="View submissions, reporting coverage and key recorded reports. Administration controls periods and report configuration; coverage is not a performance score."
         statusLabel={statusLabel}
-        statusTone={error ? "danger" : "neutral"}
+        statusTone={contextError ? "danger" : "neutral"}
       />
 
       <QuarterlyReviewEventControl me={me} />
 
-      {loading ? (
+      {contextPending ? (
         <div className="ev2rep-loading" aria-label="Loading reports" aria-busy="true">
           <Skeleton variant="block" height="7rem" />
           <Skeleton variant="block" height="12rem" />
         </div>
-      ) : error ? (
+      ) : contextError ? (
         <div className="ev2rep-state">
           <StatePanel
             state="error"

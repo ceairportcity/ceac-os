@@ -32,6 +32,13 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   // Versioned project-close mutations must not dispatch twice in one render.
   const closeMutationPending = useRef(false);
   const [error, setError] = useState(null);
+  const projectScope = [project.id, me.org_id, me.id, me.unit_id].join(":");
+  const currentProjectScope = useRef(projectScope);
+  currentProjectScope.current = projectScope;
+  const closeReadSequence = useRef(0);
+  const [verifiedScope, setVerifiedScope] = useState(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(true);
+  const closeEvidenceVerified = verifiedScope === projectScope && !evidenceLoading;
 
   const isLead = project.lead_unit_id === me.unit_id;
   const ownObjectives = objectives.filter((row) => row.unit_id === me.unit_id);
@@ -45,33 +52,54 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
     !lastReopenedAt || new Date(overallClose.submitted_at).getTime() > new Date(lastReopenedAt).getTime()
   );
 
-  useEffect(() => { load(); }, [project.id, me.unit_id]);
+  useEffect(() => {
+    setSheet(null); setLifecycle(null); setHistoryClose(null);
+    void load();
+    return () => { closeReadSequence.current += 1; };
+  }, [project.id, me.org_id, me.id, me.unit_id]);
 
   async function load() {
-    setError(null);
-    const [closeResult, reopenResult] = await Promise.all([
-      supabase.from("project_closes")
-        .select("id,scope,unit_id,version,status,deliverables_note,challenges,do_differently,submitted_at")
-        .eq("project_id", project.id)
-        .order("version", { ascending: false }),
-      supabase.from("activity_events")
-        .select("at")
-        .eq("object_type", "project")
-        .eq("object_id", project.id)
-        .eq("verb", "reopened")
-        .order("at", { ascending: false })
-        .limit(1),
-    ]);
-    if (closeResult.error) { setError(closeResult.error.message); return; }
-    if (reopenResult.error) { setError(reopenResult.error.message); return; }
-    setCloses(closeResult.data || []);
-    setLastReopenedAt(reopenResult.data?.[0]?.at || null);
-    if (isLead) {
-      const readyResult = await supabase.rpc("project_close_readiness", { p_project_id: project.id });
-      if (readyResult.error) { setError(readyResult.error.message); return; }
-      setReadiness(readyResult.data || []);
-    } else {
-      setReadiness([]);
+    const requestedScope = projectScope;
+    const requestedRead = ++closeReadSequence.current;
+    const stillCurrent = () => currentProjectScope.current === requestedScope
+      && closeReadSequence.current === requestedRead;
+    setVerifiedScope(null); setEvidenceLoading(true); setError(null);
+    setCloses([]); setReadiness([]); setLastReopenedAt(null);
+    try {
+      const [closeResult, reopenResult] = await Promise.all([
+        supabase.from("project_closes")
+          .select("id,scope,unit_id,version,status,deliverables_note,challenges,do_differently,submitted_at")
+          .eq("project_id", project.id)
+          .order("version", { ascending: false }),
+        supabase.from("activity_events")
+          .select("at")
+          .eq("object_type", "project")
+          .eq("object_id", project.id)
+          .eq("verb", "reopened")
+          .order("at", { ascending: false })
+          .limit(1),
+      ]);
+      if (closeResult.error || reopenResult.error) throw (closeResult.error || reopenResult.error);
+      let verifiedReadiness = [];
+      if (isLead) {
+        const readyResult = await supabase.rpc("project_close_readiness", { p_project_id: project.id });
+        if (readyResult.error) throw readyResult.error;
+        verifiedReadiness = readyResult.data || [];
+      }
+      if (!stillCurrent()) return false;
+      setCloses(closeResult.data || []);
+      setLastReopenedAt(reopenResult.data?.[0]?.at || null);
+      setReadiness(verifiedReadiness);
+      setVerifiedScope(requestedScope);
+      return true;
+    } catch {
+      if (stillCurrent()) {
+        setCloses([]); setReadiness([]); setLastReopenedAt(null);
+        setError("Project close history or readiness could not be verified. Retry before recording a close.");
+      }
+      return false;
+    } finally {
+      if (stillCurrent()) setEvidenceLoading(false);
     }
   }
 
@@ -102,6 +130,8 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   }
 
   async function openClose(scope) {
+    if (!closeEvidenceVerified) return;
+    const requestedScope = projectScope;
     setError(null);
     const relevantObjectives = scope === "overall" ? objectives : ownObjectives;
     const prefilled = {};
@@ -122,6 +152,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
     } else {
       setOverallCosts([]);
     }
+    if (currentProjectScope.current !== requestedScope) return;
     setSheet({ scope });
   }
 
@@ -151,6 +182,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
 
   async function submitClose() {
     if (busy || closeMutationPending.current) return;
+    if (!closeEvidenceVerified) return;
     if (missingObjective || noDeliverable || !challenges.trim() || !doDifferently.trim()) return;
     closeMutationPending.current = true;
     setBusy(true); setError(null);
@@ -204,6 +236,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
 
   async function closeProject() {
     if (busy || closeMutationPending.current) return;
+    if (!closeEvidenceVerified) return;
     if (!overallCloseCurrentCycle) {
       setLifecycle(null);
       setError("Submit a new overall close for this reopened project before closing it again.");
@@ -226,6 +259,8 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   }
 
   async function openCloseHistory(close) {
+    if (!closeEvidenceVerified) return;
+    const requestedScope = projectScope;
     setBusy(true); setError(null);
     try {
       const [objectiveResult, deliverableResult, costResult] = await Promise.all([
@@ -243,6 +278,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       ]);
       const first = [objectiveResult.error, deliverableResult.error, costResult.error].find(Boolean);
       if (first) throw first;
+      if (currentProjectScope.current !== requestedScope) return;
       setHistoryClose({
         ...close,
         objectives: objectiveResult.data || [],
@@ -258,6 +294,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
 
   async function reopenProject() {
     if (busy || closeMutationPending.current) return;
+    if (!closeEvidenceVerified) return;
     if (!reopenReason.trim()) return;
     closeMutationPending.current = true;
     setBusy(true); setError(null);
@@ -278,6 +315,14 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       setBusy(false);
     }
   }
+
+  if (!closeEvidenceVerified) return <section aria-label="Project close verification">
+    <div className="sec"><span>Project close</span></div>
+    {evidenceLoading ? <p role="status">Verifying project close history and authority…</p>
+      : <p role="alert">{error || "Project close history is not verified."}</p>}
+    <button type="button" className="btn btn-ghost btn-sm"
+      disabled={evidenceLoading || busy} onClick={() => void load()}>Retry project-close verification</button>
+  </section>;
 
   return <>
     <div className="sec"><span>Project close</span></div>

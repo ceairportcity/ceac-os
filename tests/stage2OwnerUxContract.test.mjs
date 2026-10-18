@@ -568,6 +568,22 @@ test("P4 personal work creation blocks duplicate clicks and verifies the actual 
   assert.match(work, /Check your work list before creating another task/);
 });
 
+test("P5 project-close history requires a current actor-owned verified read", () => {
+  const project = file("src/screens/ManagerProjectClose.jsx");
+  assert.match(project, /const projectScope = \[project\.id, me\.org_id, me\.id, me\.unit_id\]\.join\(":"\)/);
+  assert.match(project, /currentProjectScope\.current !== requestedScope/);
+  assert.match(project, /const closeReadSequence = useRef\(0\)/);
+  assert.match(project, /const requestedRead = \+\+closeReadSequence\.current/);
+  assert.match(project, /closeReadSequence\.current === requestedRead/);
+  assert.match(project, /if \(!stillCurrent\(\)\) return false/);
+  assert.match(project, /const closeEvidenceVerified = verifiedScope === projectScope && !evidenceLoading/);
+  assert.match(project, /if \(closeResult\.error \|\| reopenResult\.error\) throw/);
+  assert.match(project, /if \(readyResult\.error\) throw readyResult\.error/);
+  assert.match(project, /if \(!closeEvidenceVerified\) return/);
+  assert.match(project, /Retry project-close verification/);
+  assert.match(project, /setCloses\(\[\]\); setReadiness\(\[\]\); setLastReopenedAt\(null\)/);
+});
+
 test("P5 versioned project close, reopen and unit returns cannot double-dispatch", () => {
   const project = file("src/screens/ManagerProjectClose.jsx");
   assert.match(project, /const closeMutationPending = useRef\(false\)/);
