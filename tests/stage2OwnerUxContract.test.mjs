@@ -588,10 +588,11 @@ test("P7 approved Executive R4 laptop shell dimensions stay role-scoped", () => 
  const home = file("src/experience-v2/executive-overview/executive-overview.css");
  const refs = file("tests/visual-home-baselines.js");
  assert.match(shared,/--ev2s-sidebar-width: 13\.75rem/);
- assert.match(home,/@media \(min-width: 1025px\) \{\s*\.executive-app \{/);
- assert.match(home,/--ev2s-sidebar-width: 13\.125rem/);
- assert.match(home,/--ev2s-topbar-height: 3\.375rem/);
- assert.match(home,/\.executive-app \.executivev2-hero\.s2-landscape-hero \{ min-height: 136px/);
- assert.match(home,/\.executive-app \.executivev2 > \.s2-own-work-session/);
+ assert.match(executive,/@media \(min-width: 1025px\) \{\s*\.executive-app \{/);
+ assert.match(executive,/--ev2s-sidebar-width: 13\.125rem/);
+ assert.match(executive,/--ev2s-topbar-height: 3\.375rem/);
+ assert.match(executive,/\.executive-app \.executivev2-hero\.s2-landscape-hero \{ min-height: 136px/);
+ assert.match(executive,/\.executive-app \.executivev2 > \.s2-own-work-session/);
+ assert.doesNotMatch(home,/\.(staff-app|manager-app|office-app|executive-app)\b/);
  assert.match(refs,/Visual regression threshold <=6 stays strictly unchanged/);
 });
