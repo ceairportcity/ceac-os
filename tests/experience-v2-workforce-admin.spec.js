@@ -157,3 +157,23 @@ for (const viewport of [
     await context.close();
   });
 }
+
+test("Administration does not turn failed work-session reads into zero attendance", async ({ browser }) => {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  const page=await context.newPage();
+  try {
+    await page.goto("/");
+    await page.getByPlaceholder("Work email").fill("admin@ceac.local.test");
+    await page.getByPlaceholder("Password").fill(password);
+    await page.getByRole("button",{name:"Sign in"}).click();
+    await expect(page.locator(".office-app")).toBeVisible({timeout:15000});
+    await page.route("**/rest/v1/work_sessions*",route=>route.fulfill({
+      status:503,contentType:"application/json",body:JSON.stringify({message:"synthetic session evidence unavailable"}),
+    }));
+    await page.goto("/?tab=attendance");
+    await expect(page.locator(".ev2-workforce-admin")).toBeVisible({timeout:15000});
+    await expect(page.getByText("Session evidence unavailable").first()).toBeVisible({timeout:20000});
+    await expect(page.getByText("No session recorded",{exact:true})).toHaveCount(0);
+    await expect(page.getByRole("button",{name:"Retry Workforce data"})).toBeVisible();
+  } finally {await context.close();}
+});

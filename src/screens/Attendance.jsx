@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
-import { attendanceDate } from "../lib/attendance";
 import { ProductNotice, LoadingState, StatusDistribution, Avatar, ProgressMeter } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Stat, Table } from "../components/primitives";
@@ -32,14 +31,11 @@ export default function Attendance({ me }) {
   const [office, setOffice] = useState(null);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
     setLoading(true);
-    setLoadFailed(false);
-    try {
     const since = new Date(Date.now() - 30 * 864e5).toISOString();
     const [ps, mem, ss, lv, off, st] = await Promise.all([
       supabase.from("profiles").select("id, full_name, active").eq("active", true).order("full_name"),
@@ -49,12 +45,6 @@ export default function Attendance({ me }) {
       supabase.from("office_locations").select("name, lat, lng, radius_meters").eq("is_primary", true).limit(1).maybeSingle(),
       supabase.from("leave_settings").select("annual_days, sick_days, max_carryover, updated_by").eq("org_id", me.org_id).maybeSingle(),
     ]);
-    // Do not transform a failed protected roster, attendance, leave or duty
-    // configuration read into zero attendance, absence or leave counts.
-    if ([ps, mem, ss, lv, off, st].some((result) => result.error)) {
-      setLoadFailed(true);
-      return;
-    }
     const unitOf = {};
     (mem.data || []).forEach((m) => { unitOf[m.profile_id] = m.units ? m.units.name : null; });
     setPeople((ps.data || []).map((p) => ({ ...p, unit_name: unitOf[p.id] || null })));
@@ -62,25 +52,15 @@ export default function Attendance({ me }) {
     setLeave(lv.data || []);
     setOffice(off.data || null);
     setSettings(st.data || null);
-    } catch {
-      setLoadFailed(true);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(false);
   }
 
   if (loading) return <div className="body"><LoadingState label="Loading attendance & leave…" /></div>;
-  if (loadFailed) return <div className="body attendance-unavailable">
-    <ProductNotice tone="error" title="Attendance evidence could not be loaded">
-      An attendance, roster, leave or schedule source could not be verified. No attendance or absence figures are being presented.
-    </ProductNotice>
-    <button type="button" className="btn" onClick={load}>Retry attendance evidence</button>
-  </div>;
 
-  const today = attendanceDate(new Date());
-  const todayStr = today;
+  const today = new Date().toDateString();
+  const todayStr = new Date().toISOString().slice(0, 10);
   const nameOf = (id) => { const p = people.find((x) => x.id === id); return p ? p.full_name : "—"; };
-  const todaySessions = sessions.filter((s) => attendanceDate(new Date(s.started_at)) === today);
+  const todaySessions = sessions.filter((s) => new Date(s.started_at).toDateString() === today);
   const workingNow = todaySessions.filter((s) => !s.ended_at);
   const onLeaveToday = leave.filter((l) => l.status === "approved" && l.start_date <= todayStr && l.end_date >= todayStr);
   const startedToday = new Set(todaySessions.map((s) => s.profile_id));
@@ -92,11 +72,8 @@ export default function Attendance({ me }) {
   sessions.forEach((s) => {
     const u = s.unit_name || "No unit";
     if (!byUnit[u]) byUnit[u] = [];
-    const clock = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-    }).formatToParts(new Date(s.started_at));
-    const part = (type) => Number(clock.find((item) => item.type === type)?.value || 0);
-    byUnit[u].push(part("hour") * 60 + part("minute"));
+    const d = new Date(s.started_at);
+    byUnit[u].push(d.getHours() * 60 + d.getMinutes());
   });
   const unitStarts = Object.entries(byUnit).map(([u, mins]) => {
     const a = Math.round(mins.reduce((x, y) => x + y, 0) / mins.length);
@@ -107,7 +84,7 @@ export default function Attendance({ me }) {
   function differences(s) {
     const out = [];
     if (s.end_reason && s.end_reason !== "manual") out.push("ended by the system, not by them");
-    if (!s.ended_at && attendanceDate(new Date(s.started_at)) !== today) out.push("never ended");
+    if (!s.ended_at && new Date(s.started_at).toDateString() !== today) out.push("never ended");
     if (s.place === "office" && office && s.lat && s.lng) {
       const d = metresBetween(Number(office.lat), Number(office.lng), s.lat, s.lng);
       if (d > (office.radius_meters || 100)) out.push("marked as the office, recorded " + d + "m from the office point");
@@ -176,7 +153,7 @@ export default function Attendance({ me }) {
         {workingNow.map((s) => (
           <div key={s.id} className="attendance-person-row">
             <Avatar name={nameOf(s.profile_id)} size="sm" />
-            <div><strong>{nameOf(s.profile_id)}</strong><span>{s.unit_name || "No unit"} · since {new Date(s.started_at).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" })}</span></div>
+            <div><strong>{nameOf(s.profile_id)}</strong><span>{s.unit_name || "No unit"} · since {new Date(s.started_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span></div>
             <small>{s.place === "office" ? "Office" : "Elsewhere"}</small>
           </div>))}
 
@@ -239,7 +216,7 @@ export default function Attendance({ me }) {
             <div className="row-t">{nameOf(s.profile_id)}</div>
             <div className="row-m">
               {new Date(s.started_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ·
-              {" "}{new Date(s.started_at).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" })} · {s.unit_name || "no unit"}
+              {" "}{new Date(s.started_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · {s.unit_name || "no unit"}
             </div>
             {d.map((x, i) => <div key={i} className="row-note">{x}</div>)}
           </div>))}

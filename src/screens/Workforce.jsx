@@ -172,6 +172,8 @@ export default function Workforce({ me }) {
   }
 
   const today=isoDay(new Date());
+  // Source failures are unknown evidence, never proof of zero attendance.
+  const sessionReadFailed=Boolean(datasetErrors.sessions);
   const peopleById=Object.fromEntries(people.map((p)=>[p.profile_id,p]));
   const dayTypesById=Object.fromEntries(dayTypes.map((d)=>[d.id,d]));
   const activePolicy=policies.find((p)=>p.state==="active")||null;
@@ -204,6 +206,7 @@ export default function Workforce({ me }) {
   function contextFor(profileId,date=today){
     const leaveRow=approvedLeave(profileId,date);
     if(leaveRow) return {label:"Approved leave",tone:"blue",detail:human(leaveRow.kind)+" leave"};
+    if(sessionReadFailed) return {label:"Session evidence unavailable",tone:"amber",detail:"Work-session data could not be verified. Retry Workforce data; no attendance conclusion is shown."};
     const rows=sessionsOn(profileId,date);
     if(rows.length) return {label:"Session recorded",tone:"green",detail:rows.length+" recorded session"+(rows.length===1?"":"s")};
     const dayType=currentDayType(profileId,date);
@@ -459,8 +462,8 @@ export default function Workforce({ me }) {
           <WorkforceFactGrid items={[
             {label:"Day type",value:personDayType?.name||"Not configured"},
             {label:"Configured time",value:configuredTime},
-            {label:"First recorded session",value:personFacts.first?clock(personFacts.first.started_at):"None recorded"},
-            {label:"Final recorded end",value:personFacts.lastEnd?clock(personFacts.lastEnd):personFacts.rows.length?"No final end recorded":"None recorded"},
+            {label:"First recorded session",value:sessionReadFailed?"Unavailable":personFacts.first?clock(personFacts.first.started_at):"None recorded"},
+            {label:"Final recorded end",value:sessionReadFailed?"Unavailable":personFacts.lastEnd?clock(personFacts.lastEnd):personFacts.rows.length?"No final end recorded":"None recorded"},
             {label:"Approved leave",value:personLeaveToday?human(personLeaveToday.kind):"None recorded"},
             {label:"Effective corrections",value:String(todayCorrections.length)},
           ]}/>
@@ -476,8 +479,8 @@ export default function Workforce({ me }) {
           <WorkforceRecordRow
             icon="record"
             eyebrow="Recorded activity"
-            title={personFacts.first?"Session recorded":"No session recorded"}
-            meta={personFacts.first?(clock(personFacts.first.started_at)+(personFacts.lastEnd?" → "+clock(personFacts.lastEnd):" · no final end recorded")):"No work-session row is recorded for today."}
+            title={sessionReadFailed?"Session evidence unavailable":personFacts.first?"Session recorded":"No session recorded"}
+            meta={sessionReadFailed?"Work-session data unavailable; retry verification.":personFacts.first?(clock(personFacts.first.started_at)+(personFacts.lastEnd?" → "+clock(personFacts.lastEnd):" · no final end recorded")):"No work-session row is recorded for today."}
             statusLabel={personContext.label}
             statusTone={personContext.tone}
           />
@@ -499,7 +502,7 @@ export default function Workforce({ me }) {
             icon="calendar"
             eyebrow={niceDay(date)}
             title={dayType?.name||"Schedule not configured"}
-            meta={time+(facts.first?" · first recorded "+clock(facts.first.started_at):" · no session recorded")}
+            meta={time+(sessionReadFailed?" · session evidence unavailable":facts.first?" · first recorded "+clock(facts.first.started_at):" · no session recorded")}
             note={eventNote}
             statusLabel={ctx.label}
             statusTone={ctx.tone}
@@ -520,7 +523,8 @@ export default function Workforce({ me }) {
             note={(diff.length||sessionCorrections.length)?(diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s")):null}
           />;
         })}
-        {!personSessions.length&&<WorkforceEmpty compact title="No sessions recorded in this period" description="Nothing is inferred from the absence of session rows."/>}
+        {!personSessions.length&&!sessionReadFailed&&<WorkforceEmpty compact title="No sessions recorded in this period" description="Nothing is inferred from the absence of session rows."/>}
+        {sessionReadFailed&&<WorkforceEmpty compact title="Session evidence unavailable" description="Work-session records could not be verified. Retry Workforce data."/>}
       </WorkforceSection>}
 
       {tab==="differences"&&<>
@@ -534,8 +538,8 @@ export default function Workforce({ me }) {
           <WorkforceRecordRow
             icon="record"
             eyebrow="Recorded"
-            title={personFacts.first?"Session recorded":"No session recorded"}
-            meta={personFacts.first?(clock(personFacts.first.started_at)+(personFacts.lastEnd?" → "+clock(personFacts.lastEnd):" · no final end recorded")):"No session row is recorded for today."}
+            title={sessionReadFailed?"Session evidence unavailable":personFacts.first?"Session recorded":"No session recorded"}
+            meta={sessionReadFailed?"Work-session data unavailable; retry verification.":personFacts.first?(clock(personFacts.first.started_at)+(personFacts.lastEnd?" → "+clock(personFacts.lastEnd):" · no final end recorded")):"No session row is recorded for today."}
             statusLabel={personContext.label}
             statusTone={personContext.tone}
           />
@@ -962,7 +966,7 @@ export default function Workforce({ me }) {
               eyebrow={dayType?.name||"Schedule not configured"}
               title={row.profiles?.full_name||"Employee"}
               meta={(row.units?.name||"Unit not recorded")+" · "+(row.profiles?.job_title||"Position not recorded")+" · "+time}
-              note={(facts.first?"First recorded "+clock(facts.first.started_at):"No session recorded")+" · "+ctx.detail}
+              note={(sessionReadFailed?"Session evidence unavailable":facts.first?"First recorded "+clock(facts.first.started_at):"No session recorded")+" · "+ctx.detail}
               statusLabel={ctx.label}
               statusTone={ctx.tone}
             />;
@@ -1295,7 +1299,7 @@ export default function Workforce({ me }) {
     </>}
 
     {tab==="sessions"&&<>
-      <div className="sec"><span>Recorded sessions · last 31 days</span><span>{sessions.length}</span></div>
+      <div className="sec"><span>Recorded sessions · last 31 days</span><span>{sessionReadFailed?"Unavailable":sessions.length}</span></div>
       <p className="screen-note">Session history is factual activity context. It is not a performance score and it is not used as payroll time.</p>
       {sessions.slice(0,160).map((session)=>{
         const person=peopleById[session.profile_id];
@@ -1307,7 +1311,8 @@ export default function Workforce({ me }) {
           {(diff.length>0||sessionCorrections.length>0)&&<div className="row-note">{diff.length} recorded difference{diff.length===1?"":"s"} · {sessionCorrections.length} effective correction{sessionCorrections.length===1?"":"s"}</div>}
         </div>;
       })}
-      {!sessions.length&&<EmptyState compact title="No sessions recorded in this period">Nothing is inferred from the absence of session rows.</EmptyState>}
+      {!sessions.length&&!sessionReadFailed&&<EmptyState compact title="No sessions recorded in this period">Nothing is inferred from the absence of session rows.</EmptyState>}
+      {sessionReadFailed&&<EmptyState compact title="Session evidence unavailable">Work-session records could not be verified. Retry Workforce data.</EmptyState>}
     </>}
 
     {tab==="differences"&&<>
