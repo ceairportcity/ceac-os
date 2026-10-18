@@ -75,3 +75,14 @@ test("P6 quarterly review scheduling prevents duplicate writes and requires serv
  assert.match(source,/old\.filter\(row=>row\.id!==result\.data\.id\)/);
  assert.match(source,/Check the schedule before trying again/);
 });
+
+test("P6 quarterly review cannot duplicate a scheduled quarter after provider read or write uncertainty",()=>{
+ const source=file("src/components/QuarterlyReviewEventControl.jsx");
+ assert.match(source,/const recordsVerified=!loading&&!unavailable&&!error/);
+ assert.match(source,/const alreadyScheduled=rows\.some\(row=>row\.starts_on===range\.start&&row\.ends_on===range\.end\)/);
+ assert.match(source,/!creationPending\.current\|\|!recordsVerified\|\|alreadyScheduled|creationPending\.current\|\|!recordsVerified\|\|alreadyScheduled/);
+ assert.match(source,/\{open&&recordsVerified&&<form/);
+ assert.match(source,/disabled=\{busy\|\|!recordsVerified\|\|alreadyScheduled/);
+ assert.match(source,/Retry quarterly schedule verification/);
+ assert.match(source,/onClick=\{\(\)=>setReload\(n=>n\+1\)\}/);
+});

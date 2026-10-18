@@ -16,6 +16,7 @@ export default function QuarterlyReviewEventControl({me}){
  const [meetingOn,setMeetingOn]=useState("");
  const [dueOn,setDueOn]=useState("");
  const [rows,setRows]=useState([]);
+ const [reload,setReload]=useState(0);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  // A schedule insert must not fire twice before React re-renders busy.
@@ -27,6 +28,10 @@ export default function QuarterlyReviewEventControl({me}){
    ((me.capabilities||[]).includes("performance.admin")||
     (me.capability_grants||[]).some(g=>g.capability==="performance.admin"&&!g.scope_unit_id)));
  const range=reportRange(year,"quarter",quarter);
+ // An inaccessible quarter ledger is not proof a review was never opened.
+ // Recheck authoritative rows after uncertain inserts before another write.
+ const recordsVerified=!loading&&!unavailable&&!error;
+ const alreadyScheduled=rows.some(row=>row.starts_on===range.start&&row.ends_on===range.end);
 
  useEffect(()=>{
   let valid=true;
@@ -45,10 +50,10 @@ export default function QuarterlyReviewEventControl({me}){
    finally{if(valid)setLoading(false);}
   })();
   return()=>{valid=false;};
- },[me.id,me.org_id]);
+ },[me.id,me.org_id,reload]);
 
  async function create(){
-  if(!allowed||busy||creationPending.current||!meetingOn||!dueOn||meetingOn<range.end||dueOn<range.start||dueOn>meetingOn||title.trim().length<5||purpose.trim().length<12)return;
+  if(!allowed||busy||creationPending.current||!recordsVerified||alreadyScheduled||!meetingOn||!dueOn||meetingOn<range.end||dueOn<range.start||dueOn>meetingOn||title.trim().length<5||purpose.trim().length<12)return;
   creationPending.current=true;
   setBusy(true);setError("");
   try{
@@ -70,12 +75,13 @@ export default function QuarterlyReviewEventControl({me}){
  return <section className="s2-quarter-events" aria-label="Quarterly leadership review schedule">
    <header><div><span>Governance</span><h2>Quarterly ministry review</h2>
      <p>Executive or authorised Administration opens the official leadership review. HR retains independent control of employee appraisals and publication.</p></div>
-     {!unavailable&&<button type="button" className="s2-quarter-events-action" onClick={()=>setOpen(v=>!v)}>{open?"Close":"Schedule quarterly review"}</button>}
+     {recordsVerified&&<button type="button" className="s2-quarter-events-action" onClick={()=>setOpen(v=>!v)}>{open?"Close":"Schedule quarterly review"}</button>}
    </header>
    {loading&&<p role="status">Checking review events…</p>}
    {unavailable&&<p>Quarterly review scheduling awaits the approved Stage 2 migration. No meeting has been created.</p>}
    {error&&<p role="alert" className="s2-quarter-events-error">{error}</p>}
-   {open&&!unavailable&&<form className="s2-quarter-events-form" onSubmit={e=>{e.preventDefault();create();}}>
+   {!loading&&(unavailable||error)&&<button type="button" className="s2-quarter-events-action" disabled={busy||creationPending.current} onClick={()=>setReload(n=>n+1)}>Retry quarterly schedule verification</button>}
+   {open&&recordsVerified&&<form className="s2-quarter-events-form" onSubmit={e=>{e.preventDefault();create();}}>
      <label>Year <input type="number" min="2000" max="2200" value={year} onChange={e=>setYear(Number(e.target.value))} required /></label>
      <label>Quarter <select value={quarter} onChange={e=>setQuarter(Number(e.target.value))}>{[1,2,3,4].map(q=><option value={q} key={q}>Q{q}</option>)}</select></label>
      <p className="s2-quarter-events-range">{range.start} to {range.end} · Africa/Accra</p>
@@ -83,8 +89,9 @@ export default function QuarterlyReviewEventControl({me}){
      <label>Department submission deadline <input type="date" min={range.start} max={meetingOn||undefined} value={dueOn} onChange={e=>setDueOn(e.target.value)} required /></label>
      <label className="s2-quarter-events-wide">Meeting title <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Quarterly ministry performance review" required /></label>
      <label className="s2-quarter-events-wide">Purpose and expected decisions <textarea rows={3} value={purpose} onChange={e=>setPurpose(e.target.value)} required /></label>
+     {alreadyScheduled&&<p className="s2-quarter-events-wide" role="status">This quarter already has an official review event. Check the schedule before opening another.</p>}
      <p className="s2-quarter-events-wide">Scheduling does not invent submitted departmental results, employee scores, completed HR cases or verified outcomes. It does not automatically publish appraisals.</p>
-     <button type="submit" className="s2-quarter-events-action" disabled={busy||!meetingOn||!dueOn||dueOn<range.start||dueOn>meetingOn||meetingOn<range.end||title.trim().length<5||purpose.trim().length<12}>{busy?"Scheduling…":"Open quarterly review"}</button>
+     <button type="submit" className="s2-quarter-events-action" disabled={busy||!recordsVerified||alreadyScheduled||!meetingOn||!dueOn||dueOn<range.start||dueOn>meetingOn||meetingOn<range.end||title.trim().length<5||purpose.trim().length<12}>{busy?"Scheduling…":"Open quarterly review"}</button>
    </form>}
    {!loading&&!unavailable&&!error&&<div className="s2-quarter-events-list">
     {!rows.length&&<p>No quarterly ministry review event has been scheduled.</p>}
