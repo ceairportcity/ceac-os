@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import {attendanceDate,dailyClocks,startEvidence,presenceCheckpoint} from '../src/lib/attendance.js';
 import {getForegroundPosition} from '../src/lib/locationEvidence.js';
@@ -38,4 +39,14 @@ test('pre-close uses each recorded end time and never invents a close or grace r
   assert.equal(presenceCheckpoint({expected_today:false,expected_end:'14:30:00'},session,new Date('2026-10-06T13:30:00Z')).type,'periodic');
   assert.equal(presenceCheckpoint(row,{ended_at:'closed'}),null);
   assert.equal(attendanceDate(new Date('2026-10-06T00:00:00Z')),'2026-10-06');
+});
+
+test('Administration attendance never treats a failed query as an absent employee',()=>{
+  const source = readFileSync(new URL('../src/screens/Attendance.jsx', import.meta.url), 'utf8');
+  assert.match(source,/const \[loadFailed, setLoadFailed\] = useState\(false\)/);
+  assert.match(source,/\[ps, mem, ss, lv, off, st\]\.some\(\(result\) => result\.error\)/);
+  assert.match(source,/if \(loadFailed\) return <div className="body attendance-unavailable">/);
+  assert.match(source,/Attendance evidence could not be loaded/);
+  assert.match(source,/No attendance or absence figures are being presented/);
+  assert.match(source,/onClick=\{load\}>Retry attendance evidence/);
 });

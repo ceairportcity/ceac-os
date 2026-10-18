@@ -35,9 +35,24 @@ export default function EmployeeWorkSession({ me }) {
   const [ready, setReady] = useState(false);
   const [verified, setVerified] = useState(false);
   const [recheck, setRecheck] = useState(0);
+  // A work session open across Ghana midnight becomes stale even when the
+  // Overview stays mounted for hours. Refresh this calculation without
+  // fetching or mutating HR attendance, and recheck on tab/focus return.
+  const [clockNow, setClockNow] = useState(() => Date.now());
+  useEffect(() => {
+    const updateClock = () => setClockNow(Date.now());
+    const timer = setInterval(updateClock, 60_000);
+    window.addEventListener("focus", updateClock);
+    document.addEventListener("visibilitychange", updateClock);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", updateClock);
+      document.removeEventListener("visibilitychange", updateClock);
+    };
+  }, []);
   const stale = useMemo(() => Boolean(session?.started_at &&
-    ghanaDay(session.last_confirmed_at || session.started_at) < ghanaDay(new Date())),
-    [session]);
+    ghanaDay(session.last_confirmed_at || session.started_at) < ghanaDay(clockNow)),
+    [session, clockNow]);
 
   useEffect(() => {
     let alive = true;

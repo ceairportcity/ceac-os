@@ -46,3 +46,22 @@ test("existing staff's approved session API is reused with geolocation evidence"
  assert.match(session,/rpc\("end_work_session_with_location"/);
  assert.match(session,/rpc\("reconcile_work_session"/);
 });
+
+test("P2/P3 shared personal session lookup scopes BOTH org and current actor", () => {
+ const session = read("src/lib/session.js");
+ const open = session.match(/export async function openSession\(orgId, userId\) \{([\s\S]*?)\n\}/)?.[1];
+ assert.ok(open, "Authoritative personal session lookup must exist");
+ assert.match(open, /\.eq\("org_id", orgId\)\.eq\("profile_id", userId\)\.is\("ended_at", null\)/);
+ assert.match(open, /if \(error\) throw error;/,
+   "A failed tenant-scoped read may not be interpreted as no active session");
+});
+
+test("a still-open work session becomes stale when the Accra day advances", () => {
+ const clock = read("src/components/EmployeeWorkSession.jsx");
+ assert.match(clock, /const \[clockNow, setClockNow\] = useState\(\(\) => Date\.now\(\)\)/);
+ assert.match(clock, /setInterval\(updateClock, 60_000\)/);
+ assert.match(clock, /addEventListener\("visibilitychange", updateClock\)/);
+ assert.match(clock, /ghanaDay\(clockNow\)/);
+ assert.match(clock, /\[session, clockNow\]/);
+ assert.match(clock, /clearInterval\(timer\)/);
+});

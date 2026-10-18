@@ -3,7 +3,9 @@ import { getPositionOnce } from "./locationEvidence";
 export async function openSession(orgId, userId) {
   const { data, error } = await supabase.from("work_sessions")
     .select("id, started_at, last_confirmed_at, place, work_item_id")
-    .eq("profile_id", userId).is("ended_at", null)
+    // The current employee can have historical records across CEAC units,
+    // but this lookup must never bridge organisation boundaries.
+    .eq("org_id", orgId).eq("profile_id", userId).is("ended_at", null)
     .order("started_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw error;
   return data || null;

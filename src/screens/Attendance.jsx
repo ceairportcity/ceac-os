@@ -31,11 +31,14 @@ export default function Attendance({ me }) {
   const [office, setOffice] = useState(null);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
     setLoading(true);
+    setLoadFailed(false);
+    try {
     const since = new Date(Date.now() - 30 * 864e5).toISOString();
     const [ps, mem, ss, lv, off, st] = await Promise.all([
       supabase.from("profiles").select("id, full_name, active").eq("active", true).order("full_name"),
@@ -45,6 +48,12 @@ export default function Attendance({ me }) {
       supabase.from("office_locations").select("name, lat, lng, radius_meters").eq("is_primary", true).limit(1).maybeSingle(),
       supabase.from("leave_settings").select("annual_days, sick_days, max_carryover, updated_by").eq("org_id", me.org_id).maybeSingle(),
     ]);
+    // Do not transform a failed protected roster, attendance, leave or duty
+    // configuration read into zero attendance, absence or leave counts.
+    if ([ps, mem, ss, lv, off, st].some((result) => result.error)) {
+      setLoadFailed(true);
+      return;
+    }
     const unitOf = {};
     (mem.data || []).forEach((m) => { unitOf[m.profile_id] = m.units ? m.units.name : null; });
     setPeople((ps.data || []).map((p) => ({ ...p, unit_name: unitOf[p.id] || null })));
@@ -52,10 +61,20 @@ export default function Attendance({ me }) {
     setLeave(lv.data || []);
     setOffice(off.data || null);
     setSettings(st.data || null);
-    setLoading(false);
+    } catch {
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (loading) return <div className="body"><LoadingState label="Loading attendance & leave…" /></div>;
+  if (loadFailed) return <div className="body attendance-unavailable">
+    <ProductNotice tone="error" title="Attendance evidence could not be loaded">
+      An attendance, roster, leave or schedule source could not be verified. No attendance or absence figures are being presented.
+    </ProductNotice>
+    <button type="button" className="btn" onClick={load}>Retry attendance evidence</button>
+  </div>;
 
   const today = new Date().toDateString();
   const todayStr = new Date().toISOString().slice(0, 10);
