@@ -170,3 +170,12 @@ test("Stage 2 Manager reporting fails closed when period work sessions cannot be
     await expect(page.getByRole("button", { name: "Submit report", exact: true })).toHaveCount(0);
   } finally { await context.close(); }
 });
+
+test("Manager period attendance includes the Manager and respects tenant scope", () => {
+  const manager = readFileSync("src/screens/ManagerReports.jsx", "utf8");
+  expect(manager).toContain('setMemberIds([...new Set([me.id,');
+  expect(manager).toContain('.eq("org_id", me.org_id)');
+  expect(manager).toContain('.in("profile_id", memberIds)');
+  // The original browser regression must still fail if the session evidence
+  // request returns an error; do not substitute mock counts or hide the test.
+});

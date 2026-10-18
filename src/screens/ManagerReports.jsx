@@ -104,7 +104,10 @@ export default function ManagerReports({ me, openItem }) {
     setWork(workResult.data || []);
     setObjectives(objectiveResult.data || []);
 
-    setMemberIds((memberResult.data || []).map((row) => row.profile_id));
+    // A salaried Manager also has their OWN attendance and achievements.
+    // Do not suppress the period-session evidence read merely because the
+    // selected unit currently has no other roster members.
+    setMemberIds([...new Set([me.id, ...(memberResult.data || []).map((row) => row.profile_id)].filter(Boolean))]);
     setSessions([]);
     setSubmissions([]);
     setLoading(false);
@@ -159,6 +162,7 @@ export default function ManagerReports({ me, openItem }) {
       const [sessionResult, submissionResult] = await Promise.all([
         supabase.from("work_sessions")
           .select("id,profile_id,work_item_id,started_at,ended_at,end_reason,profiles!work_sessions_profile_id_fkey(full_name)")
+          .eq("org_id", me.org_id)
           .in("profile_id", memberIds)
           .gte("started_at", start.toISOString())
           .lt("started_at", endExclusive.toISOString()),
