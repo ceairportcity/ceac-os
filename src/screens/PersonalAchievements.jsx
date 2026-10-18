@@ -3,9 +3,15 @@ import { supabase } from "../lib/supabase";
 import { ghanaDate, reportingRange, individualAchievementFacts } from "../lib/stage2AchievementMetrics";
 import "./PersonalAchievements.css";
 
-const niceDay = (date) => date ? new Intl.DateTimeFormat("en-GB",
-  { timeZone:"Africa/Accra",year:"numeric",month:"short",day:"numeric" })
-  .format(date.length === 10 ? new Date(date+"T12:00:00Z") : new Date(date)) : "Not recorded";
+const niceDay = (date) => {
+  if (!date) return "Not recorded";
+  const parsed = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    ? new Date(date+"T12:00:00Z") : new Date(date);
+  if (!Number.isFinite(parsed.getTime())) return "Unverified date";
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone:"Africa/Accra",year:"numeric",month:"short",day:"numeric"
+  }).format(parsed);
+};
 const status = (state) => String(state||"Not recorded").replaceAll("_"," ");
 const longMonth = (value) => new Intl.DateTimeFormat("en-GB", { month:"long",year:"numeric",timeZone:"Africa/Accra" })
   .format(new Date(value+"-15T12:00:00Z"));
@@ -44,6 +50,9 @@ export default function PersonalAchievements({ me, back, openItem }) {
   const contributions = preview.contributions.filter((w) => !search ||
     [w.title,w.ref,w.projects?.name].some((v) => String(v||"").toLocaleLowerCase().includes(search.toLocaleLowerCase())));
 
+  // A new employee must not inherit another employee's project filter.
+  useEffect(() => { setProjectId(""); }, [me.id]);
+
   // Live overdue indicators must advance after Ghana midnight and timestamped
   // deadlines without requiring a new sign-in or reloading confidential data.
   useEffect(() => {
@@ -72,7 +81,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
         found.push(...res.data);
         if(res.data.length<500)return found;
       }
-      throw new Error("Too many records to verify accurately. Narrow the report period or contact Administration.");
+      throw new Error("Too many records to verify accurately. Contact Administration for a verified report.");
     };
     (async()=>{
       setBusy(true);setError("");setCompleteLoad(false);setLoadedKey("");setWorks([]);setSubmissions([]);
@@ -89,7 +98,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
             .order("submitted_at",{ascending:false}).order("id",{ascending:false})),
         ]);
         if(alive){setWorks(work);setSubmissions(proof);setLoadedKey(reportKey);setCompleteLoad(true);}
-      }catch(e){if(alive)setError("Report source records could not be verified. "+String(e.message||"Please retry."));}
+      }catch(e){if(alive)setError("Report source records could not be verified. Retry records or contact Administration.");}
       finally{if(alive)setBusy(false);}
     })();
     return()=>{alive=false;};

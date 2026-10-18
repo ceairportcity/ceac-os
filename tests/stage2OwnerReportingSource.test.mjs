@@ -147,3 +147,15 @@ test("P6 self-only reports suppress old employee/period totals, project names an
  assert.match(screen,/\{verifiedLoad&&projects\.map/);
  assert.match(screen,/\{verifiedLoad && <>/);
 });
+
+
+test("P6 personal reporting hides raw provider diagnostics, validates dates and resets employee-specific project filters",()=>{
+ const source=file("src/screens/PersonalAchievements.jsx");
+ assert.match(source,/if \(!Number\.isFinite\(parsed\.getTime\(\)\)\) return "Unverified date"/);
+ assert.match(source,/typeof date === "string"/);
+ assert.match(source,/setProjectId\(""\); \}, \[me\.id\]/);
+ assert.match(source,/Report source records could not be verified\. Retry records or contact Administration\./);
+ assert.doesNotMatch(source,/String\(e\.message\|\|"Please retry\."\)/);
+ assert.match(source,/Too many records to verify accurately\. Contact Administration for a verified report/);
+ assert.doesNotMatch(source,/Narrow the report period or contact Administration/);
+});
