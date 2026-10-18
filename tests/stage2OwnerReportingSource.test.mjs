@@ -99,3 +99,13 @@ test("P6 checks the exact selected quarter independently of the 16-row schedule 
  assert.ok(source.indexOf("const exactQuarter=")<source.indexOf('const result=await supabase.from("quarterly_ministry_review_events").insert('));
  assert.match(migration,/UNIQUE\(org_id,starts_on,ends_on\)/);
 });
+
+test("P6 self-report pagination breaks timestamp ties consistently and fails closed on incomplete evidence",()=>{
+ const screen=file("src/screens/PersonalAchievements.jsx");
+ assert.match(screen,/\.eq\("assignee_id",me\.id\)\.order\("created_at",\{ascending:false\}\)\.order\("id",\{ascending:false\}\)/);
+ assert.match(screen,/\.eq\("profile_id",me\.id\)[\s\S]*?\.order\("submitted_at",\{ascending:false\}\)\.order\("id",\{ascending:false\}\)/);
+ assert.match(screen,/\.range\(offset,offset\+499\)/);
+ assert.match(screen,/Too many records to verify accurately/);
+ assert.match(screen,/setCompleteLoad\(false\)/);
+ assert.match(screen,/disabled=\{busy\|\|!!error\|\|!completeLoad\}/);
+});

@@ -57,13 +57,13 @@ export default function PersonalAchievements({ me, back, openItem }) {
         const [work,proof]=await Promise.all([
           fetchAll(()=>supabase.from("work_items")
             .select("id,ref,title,kind,status,created_at,completed_at,original_due_at,due_at,reschedule_count,first_time_approved,origin,visibility,project_id,projects(name)")
-            .eq("assignee_id",me.id).order("created_at",{ascending:false})),
+            .eq("assignee_id",me.id).order("created_at",{ascending:false}).order("id",{ascending:false})),
           fetchAll(()=>supabase.from("submissions")
             .select("id,work_item_id,profile_id,note,submitted_at")
             .eq("profile_id",me.id)
             .gte("submitted_at",range.start+"T00:00:00+00:00")
             .lt("submitted_at",new Date(new Date(range.end+"T00:00:00Z").getTime()+86400000).toISOString())
-            .order("submitted_at",{ascending:false})),
+            .order("submitted_at",{ascending:false}).order("id",{ascending:false})),
         ]);
         if(alive){setWorks(work);setSubmissions(proof);setCompleteLoad(true);}
       }catch(e){if(alive)setError("Report source records could not be verified. "+String(e.message||"Please retry."));}
