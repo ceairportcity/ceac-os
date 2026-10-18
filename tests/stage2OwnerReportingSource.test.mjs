@@ -64,3 +64,14 @@ test("Manager reports verify period evidence and issued versions before showing 
  assert.match(screen,/rows\.find\(isIssuedUnitReport\)/);
  assert.match(screen,/Report evidence is still being verified/);
 });
+
+test("P6 quarterly review scheduling prevents duplicate writes and requires server-confirmed event",()=>{
+ const source=read("src/components/QuarterlyReviewEventControl.jsx");
+ assert.match(source,/const creationPending=useRef\(false\)/);
+ assert.match(source,/!allowed\|\|busy\|\|creationPending\.current/);
+ assert.match(source,/creationPending\.current=true/);
+ assert.match(source,/creationPending\.current=false/);
+ assert.match(source,/!result\.data\?\.id\|\|result\.data\.starts_on!==range\.start/);
+ assert.match(source,/old\.filter\(row=>row\.id!==result\.data\.id\)/);
+ assert.match(source,/Check the schedule before trying again/);
+});

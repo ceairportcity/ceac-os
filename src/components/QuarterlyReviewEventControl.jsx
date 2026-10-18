@@ -1,4 +1,4 @@
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {supabase} from "../lib/supabase";
 import {reportRange,accraDate} from "../lib/stage2PerformanceFacts";
 import "./QuarterlyReviewEventControl.css";
@@ -18,6 +18,8 @@ export default function QuarterlyReviewEventControl({me}){
  const [rows,setRows]=useState([]);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
+ // A schedule insert must not fire twice before React re-renders busy.
+ const creationPending=useRef(false);
  const [error,setError]=useState("");
  const [unavailable,setUnavailable]=useState(false);
  const [open,setOpen]=useState(false);
@@ -46,7 +48,8 @@ export default function QuarterlyReviewEventControl({me}){
  },[me.id,me.org_id]);
 
  async function create(){
-  if(!allowed||busy||!meetingOn||!dueOn||meetingOn<range.end||dueOn<range.start||dueOn>meetingOn||title.trim().length<5||purpose.trim().length<12)return;
+  if(!allowed||busy||creationPending.current||!meetingOn||!dueOn||meetingOn<range.end||dueOn<range.start||dueOn>meetingOn||title.trim().length<5||purpose.trim().length<12)return;
+  creationPending.current=true;
   setBusy(true);setError("");
   try{
    const result=await supabase.from("quarterly_ministry_review_events").insert({
@@ -55,10 +58,12 @@ export default function QuarterlyReviewEventControl({me}){
      purpose:purpose.trim(),initiated_by:me.id,
    }).select("id,title,purpose,starts_on,ends_on,meeting_on,unit_submission_due_on,state,initiated_at").single();
    if(result.error)throw result.error;
-   setRows(old=>[result.data,...old].sort((a,b)=>String(b.starts_on).localeCompare(String(a.starts_on))));
+   if(!result.data?.id||result.data.starts_on!==range.start||result.data.ends_on!==range.end)
+     throw new Error("The quarterly review creation could not be verified. Recheck the schedule before submitting again.");
+   setRows(old=>[result.data,...old.filter(row=>row.id!==result.data.id)].sort((a,b)=>String(b.starts_on).localeCompare(String(a.starts_on))));
    setOpen(false);setTitle("");setPurpose("");setMeetingOn("");setDueOn("");
-  }catch(e){setError(e?.message||"The quarterly review could not be opened.");}
-  finally{setBusy(false);}
+  }catch(e){setError(e?.message||"The quarterly review creation is uncertain. Check the schedule before trying again.");}
+  finally{creationPending.current=false;setBusy(false);}
  }
 
  if(!allowed)return null;
