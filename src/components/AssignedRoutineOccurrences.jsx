@@ -19,40 +19,59 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const today = ghanaCalendarDate();
+  const [today,setToday] = useState(()=>ghanaCalendarDate());
+  // Ghana midnight changes overdue/scheduled status even if this tab stays open.
+  useEffect(() => {
+    const refresh = () => {
+      const next = ghanaCalendarDate();
+      setToday(current=>current===next?current:next);
+    };
+    window.addEventListener("focus",refresh);
+    document.addEventListener("visibilitychange",refresh);
+    const timer = window.setInterval(refresh,60000);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus",refresh);
+      document.removeEventListener("visibilitychange",refresh);
+    };
+  },[]);
+  const identity = me.org_id+":"+me.id;
+  const [verifiedIdentity,setVerifiedIdentity]=useState("");
+  const ready = !loading && !error && verifiedIdentity===identity;
 
   useEffect(() => {
     let active = true;
     (async () => {
-      setLoading(true); setError(""); setRows([]);
+      setLoading(true); setError(""); setRows([]); setVerifiedIdentity("");
       try {
         const source = await supabase.from("work_items")
-          .select("id,title,assignee_id")
+          .select("id,title,assignee_id",{count:"exact"})
           .eq("assignee_id", me.id).eq("kind", "routine").eq("visibility", "unit")
           .in("status", ["not_started","in_progress","returned"]);
-        if (source.error) throw source.error;
-        const templates = source.data || [];
-        if (!templates.length) { if (active) setRows([]); return; }
+        if (source.error || !Array.isArray(source.data) || typeof source.count!=="number" || source.count!==source.data.length)
+          throw new Error("Assigned work rows are incomplete");
+        const templates = source.data;
+        if (!templates.length) { if (active) { setRows([]); setVerifiedIdentity(identity); } return; }
         const result = await supabase.from("recurring_operations")
-          .select("id,name,work_item_id,active,paused_at,starts_on,ends_on,schedule_kind,weekdays,day_of_month")
+          .select("id,name,work_item_id,active,paused_at,starts_on,ends_on,schedule_kind,weekdays,day_of_month",{count:"exact"})
           .in("work_item_id", templates.map((x) => x.id)).eq("active", true);
-        if (result.error) throw result.error;
-        const routines = result.data || [];
-        if (!routines.length) { if (active) setRows([]); return; }
+        if (result.error || !Array.isArray(result.data) || typeof result.count!=="number" || result.count!==result.data.length)
+          throw new Error("Assigned routine rows are incomplete");
+        const routines = result.data;
+        if (!routines.length) { if (active) { setRows([]); setVerifiedIdentity(identity); } return; }
         const history = await supabase.from("operation_occurrences")
-          .select("id,operation_id,occurred_on")
+          .select("id,operation_id,occurred_on",{count:"exact"})
           .in("operation_id", routines.map((x) => x.id))
           .gte("occurred_on", plusDays(today,-14)).lte("occurred_on", plusDays(today,14));
-        if (history.error) throw history.error;
+        if (history.error || !Array.isArray(history.data) || typeof history.count!=="number" || history.count!==history.data.length)
+          throw new Error("Assigned routine history is incomplete");
         const projected = routines.flatMap((routine) => {
           if (routine.paused_at) return [];
-          try {
-            return projectedRoutineDates(routine, history.data || [], {
-              fromDate: plusDays(today,-14), throughDate: plusDays(today,14), today,
-            }).map((item) => ({ ...item, routine }));
-          } catch { return []; }
+          return projectedRoutineDates(routine, history.data, {
+            fromDate: plusDays(today,-14), throughDate: plusDays(today,14), today,
+          }).map((item) => ({ ...item, routine }));
         }).sort((a,b) => a.date.localeCompare(b.date) || a.routine.name.localeCompare(b.routine.name));
-        if (active) setRows(projected);
+        if (active) { setRows(projected); setVerifiedIdentity(identity); }
       } catch {
         if (active) setError("Your assigned routine schedule could not be verified. Recorded work remains available.");
       } finally { if (active) setLoading(false); }
@@ -72,13 +91,13 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
   const upcoming = [...byRoutine.values()].flatMap(({ past, future }) => [
     ...past.slice(-2), ...future.slice(0, 3),
   ]).sort((a,b) => a.date.localeCompare(b.date) || a.routine.name.localeCompare(b.routine.name));
-  if (!loading && !error && !rows.length) return null;
+  if (ready && !rows.length) return null;
   return <section className="s2-assigned-routines" aria-label="My scheduled recurring work">
     <header><h2>Recurring responsibilities</h2><small>Past 14 days · Next 14 days</small></header>
     <p>Assigned once by your manager. Each scheduled date has its own completion record; missed dates remain visible.</p>
-    {loading && <p role="status">Checking your scheduled responsibilities…</p>}
+    {(loading || verifiedIdentity!==identity && !error) && <p role="status">Checking your scheduled responsibilities…</p>}
     {error && <p role="alert">{error}</p>}
-    {!loading && !error && <div className="s2-assigned-routine-list">
+    {ready && <div className="s2-assigned-routine-list">
       {upcoming.map((item) => <button key={item.operationId+":"+item.date}
         type="button" onClick={() => onOpen?.(item.routine.work_item_id)}
         disabled={!item.routine.work_item_id}>

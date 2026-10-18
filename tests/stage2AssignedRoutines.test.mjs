@@ -28,3 +28,26 @@ test("existing routine completion remains on the accountable official work recor
   assert.match(planner, /unrecorded_past/);
   assert.doesNotMatch(planner, /status:"completed"|state:"completed"/);
 });
+
+test("P4 assigned/Manager recurring work rejects incomplete provider pages and avoids stale cross-user schedule exposure",()=>{
+  const assigned=source("src/components/AssignedRoutineOccurrences.jsx");
+  const manager=source("src/components/ManagerRoutineOccurrences.jsx");
+  for(const view of [assigned,manager]){
+    assert.match(view,/count:"exact"/);
+    assert.match(view,/typeof \w+\.count!=="number"|typeof operationCount!=="number"/);
+    assert.match(view,/verifiedIdentity===identity/);
+    assert.match(view,/setVerifiedIdentity\(""\)/);
+    assert.match(view,/document\.addEventListener\("visibilitychange",refresh\)/);
+    assert.match(view,/window\.setInterval\(refresh,60000\)/);
+    assert.match(view,/window\.clearInterval\(timer\)/);
+  }
+  assert.match(assigned,/source\.count!==source\.data\.length/);
+  assert.match(assigned,/result\.count!==result\.data\.length/);
+  assert.match(assigned,/history\.count!==history\.data\.length/);
+  assert.doesNotMatch(assigned,/catch \{ return \[\]; \}/);
+  assert.match(manager,/operationCount!==operations\.length/);
+  assert.match(manager,/result\.count!==result\.data\.length/);
+  assert.match(manager,/series\.filter\(\(operation\)=>!operation\.paused_at\)/);
+  assert.match(manager,/const items = !ready \? \[\] :/);
+  assert.doesNotMatch(manager,/catch \{\s*return \[\];\s*\}/);
+});
