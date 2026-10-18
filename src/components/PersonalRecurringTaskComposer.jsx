@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Button } from "../experience-v2/components";
 
@@ -32,23 +32,48 @@ export default function PersonalRecurringTaskComposer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  // Private series are visible/actionable only after a verified read for the
+  // currently authenticated actor, never a previous user's stale response.
+  const identity = me.org_id + ":" + me.id;
+  const currentIdentity = useRef(identity);
+  currentIdentity.current = identity;
+  const [verifiedIdentity, setVerifiedIdentity] = useState(null);
+  const seriesVerified = ready && !loading && verifiedIdentity === identity;
 
   async function refresh() {
-    if (!ready) return;
-    setLoading(true);
-    const { data, error: failure } = await supabase.from("personal_task_series")
-      .select("id,title,details,start_date,planned_time,cadence,interval_count,custom_unit,ends_when,end_date,occurrence_limit,is_active")
-      .eq("org_id", me.org_id).eq("profile_id", me.id)
-      .order("created_at", { ascending: false });
-    if (failure) setError("Private recurring tasks could not be read. Please refresh before changing the series.");
-    else { setList(data || []); setError(""); }
-    setLoading(false);
+    const requestedIdentity = identity;
+    if (!ready) { setVerifiedIdentity(null); setList([]); return false; }
+    setLoading(true); setVerifiedIdentity(null);
+    try {
+      const { data, error: failure } = await supabase.from("personal_task_series")
+        .select("id,title,details,start_date,planned_time,cadence,interval_count,custom_unit,ends_when,end_date,occurrence_limit,is_active")
+        .eq("org_id", me.org_id).eq("profile_id", me.id)
+        .order("created_at", { ascending: false });
+      if (currentIdentity.current !== requestedIdentity) return false;
+      if (failure) throw failure;
+      setList(data || []); setError("");
+      setVerifiedIdentity(requestedIdentity);
+      return true;
+    } catch {
+      if (currentIdentity.current === requestedIdentity) {
+        setList([]); setNotice("");
+        setError("Private recurring tasks could not be verified. Refresh before changing a series.");
+        setVerifiedIdentity(null);
+      }
+      return false;
+    } finally {
+      if (currentIdentity.current === requestedIdentity) setLoading(false);
+    }
   }
 
-  useEffect(() => { setList([]); setShowForm(false); setEditing(null); void refresh(); },
+  useEffect(() => {
+    setList([]); setShowForm(false); setEditing(null); setVerifiedIdentity(null);
+    void refresh();
+  },
     [me.id, me.org_id, ready]);
 
   function startNew() {
+    if (!seriesVerified || busy) return;
     setEditing(null);
     setForm(newForm(selectedDate));
     setError("");
@@ -56,6 +81,7 @@ export default function PersonalRecurringTaskComposer({
     setShowForm(true);
   }
   function edit(series) {
+    if (!seriesVerified || busy) return;
     setEditing(series.id);
     setForm({
       title: series.title, details: series.details || "",
@@ -73,7 +99,7 @@ export default function PersonalRecurringTaskComposer({
     const title = form.title.trim();
     const count = Number(form.interval_count);
     const afterCount = Number(form.occurrence_limit);
-    if (!ready || busy || !title || title.length > 220
+    if (!seriesVerified || loading || busy || !title || title.length > 220
       || (editing === null && (
         !form.start_date || !Number.isInteger(count) || count < 1 || count > 365
         || (form.ends_when === "on_date" && (!form.end_date || form.end_date < form.start_date))
@@ -111,12 +137,15 @@ export default function PersonalRecurringTaskComposer({
       setShowForm(false); setEditing(null);
       await refresh(); await onChanged?.();
     } catch {
-      setError("The recurring task action could not be confirmed. Refresh before retrying.");
+      // An insert may have committed before materialisation/read-back failed.
+      // Close the composer and demand a verified reread, not duplicate Create.
+      setShowForm(false); setEditing(null); setList([]); setVerifiedIdentity(null);
+      setError("The recurring task action could not be confirmed. Verify your existing series before trying again.");
     } finally { setBusy(false); }
   }
 
   async function changeStatus(series, remove = false) {
-    if (busy) return;
+    if (busy || !seriesVerified || loading) return;
     if (remove && !window.confirm(
       "Delete this repetition and all future incomplete instances? Past completed tasks will be preserved."
     )) return;
@@ -146,7 +175,8 @@ export default function PersonalRecurringTaskComposer({
       }
       await refresh(); await onChanged?.();
     } catch {
-      setError("The repetition change could not be confirmed. Refresh before retrying.");
+      setList([]); setVerifiedIdentity(null);
+      setError("The repetition change could not be confirmed. Verify your existing series before trying again.");
     } finally { setBusy(false); }
   }
 
@@ -158,14 +188,15 @@ export default function PersonalRecurringTaskComposer({
   return <section className="phase6-day-block" aria-label="Private recurring tasks">
     <div className="phase6-day-block-head">
       <h3>Repeating tasks</h3>
-      <Button variant="secondary" size="sm" disabled={busy} onClick={startNew}>New repetition</Button>
+      <Button variant="secondary" size="sm" disabled={busy||!seriesVerified} onClick={startNew}>New repetition</Button>
     </div>
     <p className="screen-note">Only you can see these tasks. A missed instance stays overdue; changing a template never silently alters recorded completed tasks.</p>
     {error && <p role="alert">{error}</p>}
     {notice && <p role="status">{notice}</p>}
     {loading && <p role="status">Loading your private repetitions…</p>}
-    {!loading && list.length === 0 && <p className="phase6-day-empty">No repeating private tasks recorded yet.</p>}
-    {list.map(series => <div className="phase6-private-task-card" key={series.id}>
+    {ready && !loading && !seriesVerified && <Button variant="secondary" size="sm" disabled={busy} onClick={() => void refresh()}>Verify private series</Button>}
+    {seriesVerified && list.length === 0 && <p className="phase6-day-empty">No repeating private tasks recorded yet.</p>}
+    {(seriesVerified ? list : []).map(series => <div className="phase6-private-task-card" key={series.id}>
       <strong>{series.title}</strong>
       <small>{series.cadence === "custom" ? `Every ${series.interval_count} ${series.custom_unit}` : cadenceOptions.find(option => option[0] === series.cadence)?.[1]}
         {" · "}Starts {series.start_date}
@@ -181,7 +212,7 @@ export default function PersonalRecurringTaskComposer({
       </div>
     </div>)}
 
-    {showForm && <div className="phase6-private-task-compose">
+    {showForm && seriesVerified && <div className="phase6-private-task-compose">
       <h4>{editing ? "Edit repeating task details" : "Create private repetition"}</h4>
       <label>Task title
         <input className="field" aria-label="Recurring task title" maxLength={220}
@@ -241,7 +272,7 @@ export default function PersonalRecurringTaskComposer({
       {editing && <p className="screen-note">Existing instances, including completed ones, keep their history. To change the schedule, pause this series and start a new repetition.</p>}
       <div className="phase6-private-task-actions">
         <Button disabled={busy} variant="secondary" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
-        <Button disabled={busy || !form.title.trim()} size="sm" onClick={save}>
+        <Button disabled={busy || !seriesVerified || !form.title.trim()} size="sm" onClick={save}>
           {busy ? "Saving…" : editing ? "Save details" : "Start repetition"}
         </Button>
       </div>

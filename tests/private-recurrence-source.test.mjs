@@ -51,6 +51,16 @@ test("private calendar supports the complete approved recurrence and edit/remove
   assert.match(compatibility,/personal_materialize_task_series/);
 });
 
+test("private recurrence writes require current-actor verified series and close uncertain create",()=>{
+  assert.match(recurrence,/const currentIdentity = useRef\(identity\)/);
+  assert.match(recurrence,/currentIdentity\.current !== requestedIdentity/);
+  assert.match(recurrence,/const seriesVerified = ready && !loading && verifiedIdentity === identity/);
+  assert.match(recurrence,/if \(!seriesVerified \|\| loading \|\| busy/);
+  assert.match(recurrence,/setShowForm\(false\); setEditing\(null\); setList\(\[\]\); setVerifiedIdentity\(null\)/);
+  assert.match(recurrence,/\(seriesVerified \? list : \[\]\)\.map/);
+  assert.match(recurrence,/Verify private series/);
+});
+
 test("one-bundle manifest includes recurrence, never silently activates Stage 2 Google/AAL2",()=>{
   const list=manifest.slice(manifest.indexOf("WITH expected_pending"),manifest.indexOf("SELECT\n"));
   const versions=[...list.matchAll(/'([0-9]{14})'/g)].map(match=>match[1]);
