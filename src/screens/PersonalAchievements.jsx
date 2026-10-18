@@ -12,7 +12,8 @@ const longMonth = (value) => new Intl.DateTimeFormat("en-GB", { month:"long",yea
 
 /** Self-only factual print view. No private HR entries are ever loaded into this route. */
 export default function PersonalAchievements({ me, back, openItem }) {
-  const today = ghanaDate(new Date());
+  const [asOf,setAsOf] = useState(()=>Date.now());
+  const today = ghanaDate(new Date(asOf));
   const [cadence,setCadence] = useState("monthly");
   const [period,setPeriod] = useState(today.slice(0,7));
   const [projectId,setProjectId] = useState("");
@@ -23,11 +24,16 @@ export default function PersonalAchievements({ me, back, openItem }) {
   const [retryToken,setRetryToken] = useState(0);
   const [error,setError] = useState("");
   const [completeLoad,setCompleteLoad] = useState(false);
+  const [loadedKey,setLoadedKey] = useState("");
   const safePeriod = /^\d{4}-(0[1-9]|1[0-2])$/.test(period||"") ? period : today.slice(0,7);
   const range = useMemo(() => reportingRange(cadence, safePeriod+"-01"),[cadence,safePeriod]);
+  // A previous employee or period must never briefly display as the new report
+  // while the new authorised source read has not yet completed.
+  const reportKey = `${me.id}:${range.start}:${range.end}`;
+  const verifiedLoad = completeLoad && loadedKey===reportKey && !busy && !error;
   const preview = useMemo(() => individualAchievementFacts({
-    works, submissions, range, projectId:projectId||null
-  }),[works,submissions,range,projectId]);
+    works, submissions, range, projectId:projectId||null, asOf:new Date(asOf)
+  }),[works,submissions,range,projectId,asOf]);
   const projects = useMemo(() => {
     const seen=new Map();
     for(const row of works) if(row.project_id) seen.set(row.project_id,{
@@ -37,6 +43,20 @@ export default function PersonalAchievements({ me, back, openItem }) {
   },[works]);
   const contributions = preview.contributions.filter((w) => !search ||
     [w.title,w.ref,w.projects?.name].some((v) => String(v||"").toLocaleLowerCase().includes(search.toLocaleLowerCase())));
+
+  // Live overdue indicators must advance after Ghana midnight and timestamped
+  // deadlines without requiring a new sign-in or reloading confidential data.
+  useEffect(() => {
+    const refresh=()=>setAsOf(Date.now());
+    window.addEventListener("focus",refresh);
+    document.addEventListener("visibilitychange",refresh);
+    const interval=window.setInterval(refresh,60000);
+    return()=>{
+      window.clearInterval(interval);
+      window.removeEventListener("focus",refresh);
+      document.removeEventListener("visibilitychange",refresh);
+    };
+  },[]);
 
   useEffect(() => {
     let alive=true;
@@ -55,7 +75,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
       throw new Error("Too many records to verify accurately. Narrow the report period or contact Administration.");
     };
     (async()=>{
-      setBusy(true);setError("");setCompleteLoad(false);setWorks([]);setSubmissions([]);
+      setBusy(true);setError("");setCompleteLoad(false);setLoadedKey("");setWorks([]);setSubmissions([]);
       try{
         const [work,proof]=await Promise.all([
           fetchAll(()=>supabase.from("work_items")
@@ -68,14 +88,14 @@ export default function PersonalAchievements({ me, back, openItem }) {
             .lt("submitted_at",new Date(new Date(range.end+"T00:00:00Z").getTime()+86400000).toISOString())
             .order("submitted_at",{ascending:false}).order("id",{ascending:false})),
         ]);
-        if(alive){setWorks(work);setSubmissions(proof);setCompleteLoad(true);}
+        if(alive){setWorks(work);setSubmissions(proof);setLoadedKey(reportKey);setCompleteLoad(true);}
       }catch(e){if(alive)setError("Report source records could not be verified. "+String(e.message||"Please retry."));}
       finally{if(alive)setBusy(false);}
     })();
     return()=>{alive=false;};
   },[me.id,range.start,range.end,retryToken]);
 
-  const print = () => { if(completeLoad && !error && !busy) window.print(); };
+  const print = () => { if(verifiedLoad) window.print(); };
   return <main className="body s2-achievement report-print" aria-label="My achievements">
     <header className="s2-achievement-heading">
       <div><span className="s2-achievement-eyebrow">MY WORK / PERSONAL ACHIEVEMENTS</span>
@@ -84,7 +104,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
       </div>
       <div className="s2-achievement-actions">
         <button type="button" className="s2-achievement-back" onClick={back}>Back to My Hub</button>
-        <button type="button" className="s2-achievement-print" disabled={busy||!!error||!completeLoad} onClick={print}>
+        <button type="button" className="s2-achievement-print" disabled={!verifiedLoad} onClick={print}>
           Print / Save as PDF
         </button>
       </div>
@@ -93,22 +113,23 @@ export default function PersonalAchievements({ me, back, openItem }) {
       <label>Period <select value={cadence} onChange={(e)=>setCadence(e.target.value)}>
         <option value="monthly">Monthly</option><option value="quarterly">Quarterly</option>
       </select></label>
-      <label>Month <input aria-label="Reporting month" type="month" value={period} onChange={(e)=>setPeriod(e.target.value)}
+      <label>Month <input aria-label="Reporting month" type="month" value={safePeriod} onChange={(e)=>setPeriod(e.target.value)}
         min="2000-01" max="2099-12"/></label>
       <label>Project <select value={projectId} onChange={(e)=>setProjectId(e.target.value)}>
         <option value="">All my linked projects & work</option>
-        {projects.map((p)=><option key={p.id} value={p.id}>{p.name}</option>)}
+        {verifiedLoad&&projects.map((p)=><option key={p.id} value={p.id}>{p.name}</option>)}
       </select></label>
       <label>Find contribution <input type="search" placeholder="Title, reference or project" value={search} onChange={(e)=>setSearch(e.target.value)}/></label>
     </section>
     <div className="s2-achievement-print-head">
-      <strong>{cadence==="monthly"?longMonth(period):range.label} · Personal achievement</strong>
+      <strong>{cadence==="monthly"?longMonth(safePeriod):range.label} · Personal achievement</strong>
       <span>Ghana calendar · {range.start} to {range.end} · Live, not an issued snapshot</span>
       <span>Subject: {me.full_name||me.name||"My authorised CEAC account"} · Generated {niceDay(today)}</span>
     </div>
     {busy && <p role="status">Verifying attributable work and supporting evidence…</p>}
     {error && <section role="alert" className="s2-achievement-error">{error}<button type="button" onClick={()=>setRetryToken((v)=>v+1)}>Retry records</button></section>}
-    {!busy && !error && completeLoad && <>
+    {!busy && !error && !verifiedLoad && <p role="status">Verifying the selected reporting period…</p>}
+    {verifiedLoad && <>
       <div className="s2-achievement-metrics" aria-label="Factual indicators">
         {[
           ["Completed in period",preview.completed.length+"", "Self-certified "+preview.selfCertified.length+" · completed "+preview.completedReviewed.length],

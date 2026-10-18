@@ -107,7 +107,7 @@ test("P6 self-report pagination breaks timestamp ties consistently and fails clo
  assert.match(screen,/\.range\(offset,offset\+499\)/);
  assert.match(screen,/Too many records to verify accurately/);
  assert.match(screen,/setCompleteLoad\(false\)/);
- assert.match(screen,/disabled=\{busy\|\|!!error\|\|!completeLoad\}/);
+ assert.match(screen,/disabled=\{!verifiedLoad\}/);
 });
 
 test("P6 personal achievements refuses missing or malformed successful provider pages",()=>{
@@ -116,5 +116,34 @@ test("P6 personal achievements refuses missing or malformed successful provider 
  assert.match(source,/found\.push\(\.\.\.res\.data\)/);
  assert.doesNotMatch(source,/found\.push\(\.\.\.\(res\.data\|\|\[\]\)\)/);
  assert.match(source,/if\(alive\)setError\("Report source records could not be verified/);
- assert.match(source,/disabled=\{busy\|\|!!error\|\|!completeLoad\}/);
+ assert.match(source,/disabled=\{!verifiedLoad\}/);
+});
+
+
+test("P6 personal report maintains an honest Ghana as-of clock and safe month across long sessions",()=>{
+ const screen=file("src/screens/PersonalAchievements.jsx");
+ assert.match(screen,/const \[asOf,setAsOf\] = useState\(\(\)=>Date\.now\(\)\)/);
+ assert.match(screen,/const today = ghanaDate\(new Date\(asOf\)\)/);
+ assert.match(screen,/asOf:new Date\(asOf\)/);
+ assert.match(screen,/\[works,submissions,range,projectId,asOf\]/);
+ assert.match(screen,/window\.setInterval\(refresh,60000\)/);
+ assert.match(screen,/document\.addEventListener\("visibilitychange",refresh\)/);
+ assert.match(screen,/window\.addEventListener\("focus",refresh\)/);
+ assert.match(screen,/window\.clearInterval\(interval\)/);
+ assert.match(screen,/value=\{safePeriod\}/);
+ assert.match(screen,/longMonth\(safePeriod\)/);
+ assert.doesNotMatch(screen,/longMonth\(period\)/);
+});
+
+
+test("P6 self-only reports suppress old employee/period totals, project names and print access during a changed source read",()=>{
+ const screen=file("src/screens/PersonalAchievements.jsx");
+ assert.match(screen,/const reportKey = /);
+ assert.match(screen,/loadedKey===reportKey && !busy && !error/);
+ assert.match(screen,/setLoadedKey\(""\)/);
+ assert.match(screen,/setLoadedKey\(reportKey\)/);
+ assert.match(screen,/const print = \(\) => \{ if\(verifiedLoad\) window\.print\(\); \}/);
+ assert.match(screen,/disabled=\{!verifiedLoad\}/);
+ assert.match(screen,/\{verifiedLoad&&projects\.map/);
+ assert.match(screen,/\{verifiedLoad && <>/);
 });
