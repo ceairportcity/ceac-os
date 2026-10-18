@@ -8,8 +8,13 @@
  */
 // Only verified provider claims from auth.getClaims() may be supplied.
 // Raw decoded JWTs, user metadata or an AAL2 number alone are not authority.
-export function hasSignedTotpAssurance({ assurance, claims } = {}) {
-  return assurance?.currentLevel === "aal2"
+export function hasSignedTotpAssurance({ assurance, claims, expectedUserId } = {}) {
+  // When used by the Account factor manager, only the CURRENT provider
+  // identity may authorise adding/replacing a backup authenticator.
+  // Other access gates additionally bind signed claims to their session.
+  return (expectedUserId === undefined ||
+      (typeof expectedUserId === "string" && expectedUserId.length > 0 && claims?.sub === expectedUserId))
+    && assurance?.currentLevel === "aal2"
     && claims?.role === "authenticated"
     && claims?.aal === "aal2"
     && Array.isArray(claims?.amr)

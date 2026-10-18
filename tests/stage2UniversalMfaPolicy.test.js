@@ -169,3 +169,19 @@ test("the actual shared Supabase client checks Stage 2 target before createClien
   assert.match(source, /configuredKey: import\.meta\.env\.VITE_SUPABASE_PUBLISHABLE_KEY/);
   assert.match(source, /stage1Url: fallbackSupabaseUrl/);
 });
+
+test("Account TOTP assurance must match the currently verified provider user", () => {
+  const assurance = { currentLevel: "aal2" };
+  const signed = claims("aal2", ["password", "totp"]);
+  assert.equal(hasSignedTotpAssurance({assurance, claims: signed, expectedUserId: user.id}), true);
+  for (const expectedUserId of ["", "different-employee", null, 42]) {
+    assert.equal(hasSignedTotpAssurance({assurance, claims: signed, expectedUserId}), false);
+  }
+  const source = readFileSync(new URL("../src/components/AccountMfaSetup.jsx", import.meta.url), "utf8");
+  assert.match(source, /supabase\.auth\.getUser\(\)/);
+  assert.match(source, /claimsResult\.data\?\.claims\?\.sub !== userId/);
+  assert.match(source, /expectedUserId: userId/);
+  assert.match(source, /const assured = await refresh\(\);\s*if \(!assured\) \{/,
+    "Do not report MFA success before signed, same-actor AAL2/TOTP refresh");
+  assert.match(source, /await onVerified\?\.\(\);/);
+});

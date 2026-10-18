@@ -34,37 +34,51 @@ export default function AccountMfaSetup({ onVerified }) {
     // Deny backup-factor actions while fresh provider assurance is unresolved.
     setStatusReady(false);
     setTotpAssured(false);
-    const [factorResult, assuranceResult, claimsResult] = await Promise.all([
+    const [factorResult, assuranceResult, claimsResult, userResult] = await Promise.all([
       supabase.auth.mfa.listFactors(),
       supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
       supabase.auth.getClaims(),
+      supabase.auth.getUser(),
     ]);
-    for (const result of [factorResult, assuranceResult, claimsResult]) {
+    for (const result of [factorResult, assuranceResult, claimsResult, userResult]) {
       if (result.error) throw result.error;
     }
-    recordVerifiedFactors(factorResult.data);
-    setTotpAssured(hasSignedTotpAssurance({
+    const userId = userResult.data?.user?.id;
+    if (!userId || claimsResult.data?.claims?.sub !== userId) {
+      throw new Error("Your current authenticator identity could not be verified.");
+    }
+    const assured = hasSignedTotpAssurance({
       assurance: assuranceResult.data, claims: claimsResult.data?.claims,
-    }));
+      expectedUserId: userId,
+    });
+    recordVerifiedFactors(factorResult.data);
+    setTotpAssured(assured);
     setStatusReady(true);
+    return assured;
   }
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [factorResult, assuranceResult, claimsResult] = await Promise.all([
+        const [factorResult, assuranceResult, claimsResult, userResult] = await Promise.all([
           supabase.auth.mfa.listFactors(),
           supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
           supabase.auth.getClaims(),
+          supabase.auth.getUser(),
         ]);
         if (!active) return;
-        for (const result of [factorResult, assuranceResult, claimsResult]) {
+        for (const result of [factorResult, assuranceResult, claimsResult, userResult]) {
           if (result.error) throw result.error;
+        }
+        const userId = userResult.data?.user?.id;
+        if (!userId || claimsResult.data?.claims?.sub !== userId) {
+          throw new Error("Your current authenticator identity could not be verified.");
         }
         recordVerifiedFactors(factorResult.data);
         setTotpAssured(hasSignedTotpAssurance({
           assurance: assuranceResult.data, claims: claimsResult.data?.claims,
+          expectedUserId: userId,
         }));
         setStatusReady(true);
       } catch (err) {
@@ -129,9 +143,12 @@ export default function AccountMfaSetup({ onVerified }) {
       setCode("");
       setSetup(null);
       setShowKey(false);
-      await refresh();
-            onVerified?.();
-            setNotice("Authenticator verified for this session.");
+      const assured = await refresh();
+      if (!assured) {
+        throw new Error("Your authenticator code was accepted but this session has not yet reached verified TOTP/AAL2. Retry verification.");
+      }
+      await onVerified?.();
+      setNotice("Authenticator verified for this session.");
     } catch (err) {
       setError(humanError(err, "That code could not be verified. Check your authenticator and try again."));
     } finally {
