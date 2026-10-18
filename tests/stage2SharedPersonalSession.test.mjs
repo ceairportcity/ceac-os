@@ -105,3 +105,17 @@ test("P3 own-work status never shows a confirmed running or absent session after
  assert.match(component, /Work session status unavailable · verification required/);
  assert.match(component, /disabled=\{busy\|\|loading\|\|!verified\}/);
 });
+
+test("P3 uncertain Start Work and history reconciliation require an explicit recheck before another write", () => {
+ const screen = read("src/components/EmployeeWorkSession.jsx");
+ const begin = screen.match(/async function begin\(\) \{([\s\S]*?)\n  \}/)?.[1];
+ const continued = screen.match(/async function continueOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
+ const closed = screen.match(/async function closeOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
+ assert.ok(begin && continued && closed);
+ assert.match(begin, /if \(busy \|\| !ready \|\| !verified\) return/);
+ assert.match(begin, /setVerified\(false\); setEditor\(false\); setReady\(false\)/);
+ assert.match(screen, /disabled=\{busy\|\|!ready\|\|!verified\|\|\(place/);
+ assert.match(continued, /setVerified\(false\); setRecover\(false\)/);
+ assert.match(closed, /setVerified\(false\); setRecover\(false\)/);
+ assert.match(screen, /Retry session verification/);
+});

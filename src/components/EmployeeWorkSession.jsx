@@ -92,7 +92,7 @@ export default function EmployeeWorkSession({ me }) {
   }, [editor,me.org_id,me.id]);
 
   async function begin() {
-    if (busy || !ready) return;
+    if (busy || !ready || !verified) return;
     if (place === "office" && !locationId) { setError("Choose an authorised duty location."); return; }
     if (place === "elsewhere" && !workId) { setError("Choose one of your own assigned responsibilities."); return; }
     setBusy(true);setError("");
@@ -105,8 +105,14 @@ export default function EmployeeWorkSession({ me }) {
         throw new Error("Your work start could not be verified. Check the current session before trying again.");
       }
       setSession(current);setVerified(true);setEditor(false);setReady(false);
-    } catch (e) { setError(e?.message || "The work session could not be started."); }
-    finally { setBusy(false); }
+    } catch (e) {
+      // startWork may have already created the server row before a network
+      // error or an uncertain re-read. Never permit a duplicate Start until
+      // the authoritative tenant-/actor-scoped session has been rechecked.
+      setVerified(false); setEditor(false); setReady(false);
+      setError((e?.message || "The work session could not be started.") +
+        " Verify your current session before trying again.");
+    } finally { setBusy(false); }
   }
   async function verifyClosedSession(closedId) {
     // An RPC acknowledgement alone does not establish that the user's work
@@ -147,7 +153,7 @@ export default function EmployeeWorkSession({ me }) {
       }
       setSession(current);setVerified(true);setRecover(false);
     } catch (e) {
-      setVerified(false);
+      setVerified(false); setRecover(false);
       setError(e?.message || "Your earlier session requires verification.");
     } finally { setBusy(false); }
   }
@@ -159,7 +165,7 @@ export default function EmployeeWorkSession({ me }) {
       await verifyClosedSession(session.id);
       setRecover(false);setEndedAt("");setCorrectionReason("");
     } catch(e) {
-      setVerified(false);
+      setVerified(false); setRecover(false);
       setError(e?.message || "The historical correction could not be verified. Retry session verification.");
     } finally { setBusy(false); }
   }
@@ -204,7 +210,7 @@ export default function EmployeeWorkSession({ me }) {
         </select>
       </label>}
       {error&&<p role="alert">{error}</p>}
-      <button type="button" className="btn" disabled={busy||!ready||(place==="office"?!locationId:!workId)} onClick={begin}>
+      <button type="button" className="btn" disabled={busy||!ready||!verified||(place==="office"?!locationId:!workId)} onClick={begin}>
         {busy?"Verifying location…":"Start work"}
       </button>
     </Sheet>}
