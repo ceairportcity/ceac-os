@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   ghanaDate, reportingRange, individualAchievementFacts, distinctVerifiedProjectOutcomes,
+  completedByDeadline, deadlineOverdue,
 } from "../src/lib/stage2AchievementMetrics.js";
 
 const range=reportingRange("quarterly","2026-08-15");
@@ -47,4 +48,29 @@ test("monthly and quarterly contribution includes same actual submission only on
   assert.equal(q.submissions.length,1); assert.equal(q.contributions.length,1);
   assert.equal(m.contributions.length,1); assert.equal(q.completed.length,0);
   assert.equal(q.ratings,undefined); assert.equal(q.score,undefined);
+});
+
+test("date-only personal deadlines include the full Ghana day; timed deadlines remain exact",()=>{
+  const range=reportingRange("monthly","2026-10-18");
+  const works=[
+    {id:"same-day",status:"completed",due_at:"2026-10-18",completed_at:"2026-10-18T23:59:59Z"},
+    {id:"next-day",status:"completed",due_at:"2026-10-18",completed_at:"2026-10-19T00:00:00Z"},
+    {id:"timed-on-time",status:"completed",due_at:"2026-10-18T14:00:00Z",completed_at:"2026-10-18T14:00:00Z"},
+    {id:"timed-late",status:"completed",due_at:"2026-10-18T14:00:00Z",completed_at:"2026-10-18T14:00:01Z"},
+    {id:"open-today",status:"in_progress",due_at:"2026-10-18"},
+    {id:"open-yesterday",status:"in_progress",due_at:"2026-10-17"},
+    {id:"open-timed",status:"in_progress",due_at:"2026-10-18T14:00:00Z"},
+  ];
+  const midday=individualAchievementFacts({works,range,asOf:"2026-10-18T14:00:01Z"});
+  assert.deepEqual(midday.finishedOnTime.map(x=>x.id),["same-day","timed-on-time"]);
+  assert.deepEqual(midday.overdueNow.map(x=>x.id),["open-yesterday","open-timed"]);
+  const afterMidnight=individualAchievementFacts({works,range,asOf:"2026-10-19T00:00:01Z"});
+  assert.deepEqual(afterMidnight.overdueNow.map(x=>x.id),["open-today","open-yesterday","open-timed"]);
+  assert.equal(completedByDeadline("2026-10-18T23:59:59Z","2026-10-18"),true);
+  assert.equal(completedByDeadline("2026-10-19T00:00:00Z","2026-10-18"),false);
+  assert.equal(completedByDeadline("2026-10-18T14:00:01Z","2026-10-18T14:00:00Z"),false);
+  assert.equal(deadlineOverdue("2026-10-18","2026-10-18T23:59:59Z"),false);
+  assert.equal(deadlineOverdue("2026-10-18","2026-10-19T00:00:00Z"),true);
+  assert.equal(completedByDeadline("invalid","2026-10-18"),false);
+  assert.equal(deadlineOverdue("not-a-date","2026-10-19T00:00:00Z"),false);
 });

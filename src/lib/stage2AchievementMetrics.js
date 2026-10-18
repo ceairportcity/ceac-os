@@ -34,6 +34,25 @@ export function during(value, range) {
   const day = ghanaDate(value);
   return Boolean(day && range && day >= range.start && day <= range.end);
 }
+// A date-only deadline covers the entire Ghana calendar day. A deadline with
+// a clock remains exact. Never invent an overdue or on-time finding at 00:00.
+const isDateOnlyDeadline = (value) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+export function completedByDeadline(completedAt, dueAt) {
+  if (!completedAt || !dueAt) return false;
+  const completed = new Date(completedAt);
+  if (!Number.isFinite(completed.getTime())) return false;
+  if (isDateOnlyDeadline(dueAt)) return ghanaDate(completed) <= dueAt;
+  const deadline = new Date(dueAt);
+  return Number.isFinite(deadline.getTime()) && completed.getTime() <= deadline.getTime();
+}
+export function deadlineOverdue(dueAt, asOf) {
+  if (!dueAt) return false;
+  const now = asOf instanceof Date ? asOf : new Date(asOf);
+  if (!Number.isFinite(now.getTime())) return false;
+  if (isDateOnlyDeadline(dueAt)) return ghanaDate(now) > dueAt;
+  const deadline = new Date(dueAt);
+  return Number.isFinite(deadline.getTime()) && deadline.getTime() < now.getTime();
+}
 /** All user-visible 'as-of' states describe NOW unless a frozen authorised snapshot is supplied. */
 export function individualAchievementFacts({ works = [], submissions = [], range, projectId = null, asOf = new Date() }) {
   if (!range?.start || !range?.end || range.start > range.end) throw new Error("Invalid reporting range.");
@@ -49,7 +68,7 @@ export function individualAchievementFacts({ works = [], submissions = [], range
   const due = candidate.filter((w) => !OMIT.has(w.status) && during(w.due_at, range));
   const cancelled = candidate.filter((w) => OMIT.has(w.status) && during(w.due_at, range));
   const finishedOnTime = due.filter((w) =>
-    COMPLETE.has(w.status) && w.completed_at && new Date(w.completed_at) <= new Date(w.due_at) &&
+    COMPLETE.has(w.status) && completedByDeadline(w.completed_at, w.due_at) &&
     Number(w.reschedule_count || 0) === 0);
   const unknownDueVersion = due.filter((w) => Number(w.reschedule_count || 0) > 0);
   const open = candidate.filter((w) => !OMIT.has(w.status) && !COMPLETE.has(w.status));
@@ -63,7 +82,7 @@ export function individualAchievementFacts({ works = [], submissions = [], range
     // Never label this partial coverage as an authoritative on-time percentage.
     onTimeDisplay: unknownDueVersion.length ? "Not verified — deadline revisions require history" :
       due.length ? `${finishedOnTime.length} of ${due.length} (current deadline; history not verified)` : "No dated commitments",
-    open, overdueNow: open.filter((w) => w.due_at && new Date(w.due_at) < now),
+    open, overdueNow: open.filter((w) => deadlineOverdue(w.due_at, now)),
     returned: open.filter((w) => w.status === "returned"),
     waiting: open.filter((w) => w.status === "waiting_on"),
     inReview: open.filter((w) => w.status === "in_review"),
