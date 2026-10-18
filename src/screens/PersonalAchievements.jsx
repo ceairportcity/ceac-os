@@ -46,8 +46,11 @@ export default function PersonalAchievements({ me, back, openItem }) {
       for(let offset=0;offset<10000;offset+=500) {
         const res=await build().range(offset,offset+499);
         if(res.error) throw res.error;
-        found.push(...(res.data||[]));
-        if((res.data||[]).length<500)return found;
+        // A 2xx provider response without a verified array is not proof that
+        // the employee had zero work or evidence in this reporting period.
+        if(!Array.isArray(res.data)) throw new Error("The report source returned incomplete records.");
+        found.push(...res.data);
+        if(res.data.length<500)return found;
       }
       throw new Error("Too many records to verify accurately. Narrow the report period or contact Administration.");
     };

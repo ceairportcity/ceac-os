@@ -109,3 +109,12 @@ test("P6 self-report pagination breaks timestamp ties consistently and fails clo
  assert.match(screen,/setCompleteLoad\(false\)/);
  assert.match(screen,/disabled=\{busy\|\|!!error\|\|!completeLoad\}/);
 });
+
+test("P6 personal achievements refuses missing or malformed successful provider pages",()=>{
+ const source=file("src/screens/PersonalAchievements.jsx");
+ assert.match(source,/if\(!Array\.isArray\(res\.data\)\) throw new Error\("The report source returned incomplete records\."\)/);
+ assert.match(source,/found\.push\(\.\.\.res\.data\)/);
+ assert.doesNotMatch(source,/found\.push\(\.\.\.\(res\.data\|\|\[\]\)\)/);
+ assert.match(source,/if\(alive\)setError\("Report source records could not be verified/);
+ assert.match(source,/disabled=\{busy\|\|!!error\|\|!completeLoad\}/);
+});
