@@ -50,3 +50,13 @@ test('Administration attendance never treats a failed query as an absent employe
   assert.match(source,/No attendance or absence figures are being presented/);
   assert.match(source,/onClick=\{load\}>Retry attendance evidence/);
 });
+
+test('Administration attendance uses the Accra work-day, even for remote viewers',()=>{
+  const screen = readFileSync(new URL('../src/screens/Attendance.jsx', import.meta.url), 'utf8');
+  assert.match(screen, /const today = attendanceDate\(new Date\(\)\)/);
+  assert.match(screen, /attendanceDate\(new Date\(s\.started_at\)\) === today/);
+  assert.match(screen, /!s\.ended_at && attendanceDate\(new Date\(s\.started_at\)\) !== today/);
+  assert.match(screen, /timeZone: "Africa\/Accra"/);
+  assert.doesNotMatch(screen, /\.toDateString\(\) === today|\.toDateString\(\) !== today/);
+  assert.equal(attendanceDate(new Date('2026-10-18T00:30:00Z')), '2026-10-18');
+});
