@@ -27,25 +27,30 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack }) {
         if (projectResult.error) throw projectResult.error;
         const [participation, phases, work, milestones] = await Promise.all([
           supabase.from("project_units")
-            .select("project_id,unit_id,role,units!project_units_unit_id_fkey(name)")
+            .select("project_id,unit_id,role,units!project_units_unit_id_fkey(name)", { count:"exact" })
             .eq("project_id", projectId),
-          supabase.from("project_phases").select("id,name,ends_on,closed_at")
+          supabase.from("project_phases").select("id,name,ends_on,closed_at", { count:"exact" })
             .eq("project_id", projectId).order("position"),
           supabase.from("work_items")
-            .select("id,ref,title,kind,status,created_at,due_at,unit_id,assignee_id,profiles!work_items_assignee_id_fkey(full_name)")
+            .select("id,ref,title,kind,status,created_at,due_at,unit_id,assignee_id,profiles!work_items_assignee_id_fkey(full_name)", { count:"exact" })
             .eq("project_id", projectId).neq("visibility", "private")
             .order("due_at", { ascending: true, nullsFirst: false }),
-          supabase.from("project_milestones").select("id,name,status,target_on,completed_at")
+          supabase.from("project_milestones").select("id,name,status,target_on,completed_at", { count:"exact" })
             .eq("project_id", projectId).order("target_on", { ascending: true, nullsFirst: false }),
         ]);
-        const failed = [participation.error, phases.error, work.error].find(Boolean);
-        if (failed) throw failed;
+        // Provider defaults can truncate a successful 2xx page. Never describe
+        // partial authorised tasks/teams as complete project statistics.
+        const fullyRead = (result) => !result.error && Array.isArray(result.data)
+          && typeof result.count === "number" && result.count === result.data.length;
+        if (![participation,phases,work].every(fullyRead))
+          throw new Error("The authorised project records were incomplete.");
+        const milestonesVerified = fullyRead(milestones);
         if (current) setProject({
           ...projectResult.data,
-          participants: participation.data || [],
-          phases: phases.data || [],
-          work: work.data || [],
-          milestones: milestones.error ? null : milestones.data || [],
+          participants: participation.data,
+          phases: phases.data,
+          work: work.data,
+          milestones: milestonesVerified ? milestones.data : null,
         });
       } catch {
         if (current) setError("This project's authorised overview could not be verified. No private project data was displayed.");

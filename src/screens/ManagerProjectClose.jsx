@@ -79,7 +79,8 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
           .order("at", { ascending: false })
           .limit(1),
       ]);
-      if (closeResult.error || reopenResult.error) throw (closeResult.error || reopenResult.error);
+      if (closeResult.error || reopenResult.error || !Array.isArray(reopenResult.data))
+        throw (closeResult.error || reopenResult.error || new Error("Project reopen history is incomplete."));
       if (typeof closeResult.count !== "number"
         || closeResult.count !== (closeResult.data || []).length) {
         throw new Error("Project close history was truncated. No close authority can be verified.");
@@ -88,7 +89,8 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       if (isLead) {
         const readyResult = await supabase.rpc("project_close_readiness", { p_project_id: project.id });
         if (readyResult.error) throw readyResult.error;
-        verifiedReadiness = readyResult.data || [];
+        if (!Array.isArray(readyResult.data)) throw new Error("Project readiness evidence is incomplete.");
+        verifiedReadiness = readyResult.data;
       }
       if (!stillCurrent()) return false;
       setCloses(closeResult.data || []);
@@ -118,11 +120,13 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
     const submittedUnits = [...latestByUnit.values()];
     if (!submittedUnits.length) { setOverallCosts([]); return []; }
     const costResult = await supabase.from("project_close_costs")
-      .select("close_id,currency,planned_amount_minor,actual_amount_minor")
+      .select("close_id,currency,planned_amount_minor,actual_amount_minor", { count: "exact" })
       .in("close_id", submittedUnits.map((row) => row.id));
-    if (costResult.error) throw costResult.error;
+    if (costResult.error || !Array.isArray(costResult.data) ||
+      typeof costResult.count !== "number" || costResult.count !== costResult.data.length)
+      throw new Error("Overall project cost snapshots could not be verified.");
     const grouped = new Map();
-    (costResult.data || []).forEach((row) => {
+    costResult.data.forEach((row) => {
       const current = grouped.get(row.currency) || { currency: row.currency, planned: 0, actual: 0 };
       current.planned += Number(row.planned_amount_minor);
       current.actual += Number(row.actual_amount_minor);
@@ -265,29 +269,31 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   async function openCloseHistory(close) {
     if (!closeEvidenceVerified) return;
     const requestedScope = projectScope;
-    setBusy(true); setError(null);
+    setHistoryClose(null); setBusy(true); setError(null);
     try {
       const [objectiveResult, deliverableResult, costResult] = await Promise.all([
         supabase.from("project_close_objectives")
-          .select("objective_id,outcome,note,objectives(ref,name)")
+          .select("objective_id,outcome,note,objectives(ref,name)", { count: "exact" })
           .eq("close_id", close.id),
         supabase.from("project_close_deliverables")
-          .select("id,description,work_item_id,submission_id")
+          .select("id,description,work_item_id,submission_id", { count: "exact" })
           .eq("close_id", close.id)
           .order("position"),
         supabase.from("project_close_costs")
-          .select("currency,planned_amount_minor,actual_amount_minor")
+          .select("currency,planned_amount_minor,actual_amount_minor", { count: "exact" })
           .eq("close_id", close.id)
           .order("currency"),
       ]);
-      const first = [objectiveResult.error, deliverableResult.error, costResult.error].find(Boolean);
-      if (first) throw first;
+      const complete = (result) => !result.error && Array.isArray(result.data)
+        && typeof result.count === "number" && result.count === result.data.length;
+      if (![objectiveResult, deliverableResult, costResult].every(complete))
+        throw new Error("The selected close version was incomplete.");
       if (currentProjectScope.current !== requestedScope) return;
       setHistoryClose({
         ...close,
-        objectives: objectiveResult.data || [],
-        deliverables: deliverableResult.data || [],
-        costs: costResult.data || [],
+        objectives: objectiveResult.data,
+        deliverables: deliverableResult.data,
+        costs: costResult.data,
       });
     } catch (err) {
       setError(err.message || "That close version could not be loaded.");

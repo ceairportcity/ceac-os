@@ -78,7 +78,7 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
       }
     })();
     return () => { alive = false; };
-  }, [unitKey, today]);
+  }, [unitKey, today, me.id, me.org_id]);
 
   const items = !ready ? [] : series.filter((operation)=>!operation.paused_at).flatMap((operation) =>
     projectedRoutineDates(operation, history, {

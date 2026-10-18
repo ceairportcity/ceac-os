@@ -77,7 +77,7 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
       } finally { if (active) setLoading(false); }
     })();
     return () => { active = false; };
-  }, [me.id,today]);
+  }, [me.id,me.org_id,today]);
 
   // A frequently repeating routine must not crowd out another person's
   // assigned Saturday/Sunday responsibility. Display a bounded independent

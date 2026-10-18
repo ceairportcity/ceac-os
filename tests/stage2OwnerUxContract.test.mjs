@@ -620,3 +620,22 @@ test("P7 approved Executive R4 laptop shell dimensions stay role-scoped", () => 
  assert.doesNotMatch(home,/\.(staff-app|manager-app|office-app|executive-app)\b/);
  assert.match(refs,/Visual regression threshold <=6 stays strictly unchanged/);
 });
+
+
+test("P7 retired legacy navigation CSS is not emitted after the unified V2 shell migration",()=>{
+ const app=file("src/App.jsx");
+ const shell=file("src/experience-v2/shell/ShellV2.jsx");
+ assert.match(app,/<SideNav/);
+ assert.match(shell,/className="ev2s-sidebar"/);
+ assert.match(shell,/className="ev2s-topbar"/);
+ const legacy=/(?<![\w-])\.(side|mobile-topbar|bottom-nav|desktop-topbar|app-workspace|mobile-unit-switch|mobile-more-item)(?![\w-])/;
+ for(const path of ["src/styles.css","src/premium-parity.css"]){
+   const css=file(path);
+   for(const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)){
+     const selector=rule[1].replace(/\/\*[\s\S]*?\*\//g,"").trim();
+     const parts=selector.split(",").map(x=>x.trim()).filter(Boolean);
+     assert.ok(!parts.length || selector.startsWith("@") || /:not\(|:where\(|:has\(/.test(selector) || !parts.every(x=>legacy.test(x)),
+       "Dead standalone pre-V2 navigation style in "+path+": "+selector.slice(0,120));
+   }
+ }
+});

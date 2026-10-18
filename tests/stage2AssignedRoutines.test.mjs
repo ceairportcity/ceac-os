@@ -51,3 +51,10 @@ test("P4 assigned/Manager recurring work rejects incomplete provider pages and a
   assert.match(manager,/const items = !ready \? \[\] :/);
   assert.doesNotMatch(manager,/catch \{\s*return \[\];\s*\}/);
 });
+
+test("P4 confirmed schedule reads refresh when the person or organisation changes even if unit assignments do not",()=>{
+  const assigned=source("src/components/AssignedRoutineOccurrences.jsx");
+  const manager=source("src/components/ManagerRoutineOccurrences.jsx");
+  assert.match(assigned,/\[me\.id,me\.org_id,today\]/);
+  assert.match(manager,/\[unitKey, today, me\.id, me\.org_id\]/);
+});

@@ -82,7 +82,6 @@ input,textarea,select{font:inherit;color:inherit}
 .metric span{display:block;font-size:12px;color:var(--ink-faint);margin-top:3px}
 .module-list{display:flex;flex-wrap:wrap;gap:7px}
 .module-list span{font-size:12px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line-soft);border-radius:20px;padding:5px 11px}
-.side{display:none}
 .home-panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 1px 0 rgba(44,51,46,.02)}
 .home-panel>.row:last-child,.home-drill>.row:last-child{margin-bottom:0}
 .home-tone-info{border-color:#CCDDE6 !important;background:var(--blue-soft) !important}
@@ -96,13 +95,6 @@ input,textarea,select{font:inherit;color:inherit}
 }
 @media (min-width:820px){
   .app{max-width:1200px !important;flex-direction:row !important;align-items:stretch !important}
-  .side{display:block !important;width:236px;flex:none;border-right:1px solid var(--line);padding:26px 0;position:sticky;top:0;height:100vh;background:var(--card);overflow-y:auto}
-  .side .brand{padding:0 20px 20px;font-size:15px;font-weight:700;letter-spacing:-.01em}
-  .side .brand span{display:block;font-size:12px;font-weight:400;color:var(--ink-faint);margin-top:3px}
-  .side nav button{display:block;width:100%;text-align:left;padding:9px 20px;font-size:14px;color:var(--ink-soft);position:relative}
-  .side nav button.on{color:var(--ink);font-weight:600;background:var(--paper)}
-  .side nav button.on:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green)}
-  .side .who{margin-top:22px;padding:14px 20px 0;font-size:12px;color:var(--ink-faint);border-top:1px solid var(--line-soft)}
   .tabs{display:none !important}
   .body{padding:0 34px 60px;max-width:960px;flex:1}
   .h1{font-size:30px}
@@ -171,9 +163,6 @@ input,textarea,select{font:inherit;color:inherit}
 }
 .staff-app .sheet-bg,.manager-app .sheet-bg{background:rgba(31,42,36,.42);backdrop-filter:blur(2px)}
 .staff-app .sheet,.manager-app .sheet{box-shadow:0 -18px 50px rgba(30,40,34,.16)}
-.staff-app .mobile-unit-switch select,.manager-app .mobile-unit-switch select{
-  min-height:42px;border-radius:10px;background:rgba(255,255,255,.96)
-}
 
 /* Staff stays personal, light and phone-first. */
 .staff-app .body{max-width:620px;width:100%;margin:0 auto}
@@ -240,7 +229,6 @@ input,textarea,select{font:inherit;color:inherit}
     box-shadow:0 4px 15px rgba(35,45,39,.055);
   }
   .staff-app .btn:not(:disabled):hover,.manager-app .btn:not(:disabled):hover{filter:brightness(.97)}
-  .manager-app .side nav button:hover{background:#F7F8F5;color:var(--ink)}
 }
 
 @media (max-width:819px){
@@ -259,25 +247,6 @@ input,textarea,select{font:inherit;color:inherit}
   .staff-app,.manager-app{background:var(--paper)}
   .staff-app .body{max-width:760px;padding-left:42px;padding-right:42px}
   .manager-app .body{max-width:1000px;padding:0 42px 72px}
-  .manager-app .side,.staff-app .side{
-    width:248px;
-    padding:30px 14px 24px;
-    background:#FCFCFA;
-    border-right:1px solid #DBDED8;
-  }
-  .manager-app .side .brand,.staff-app .side .brand{padding:0 12px 24px;font-size:16px}
-  .manager-app .side nav,.staff-app .side nav{display:grid;gap:3px}
-  .manager-app .side nav button,.staff-app .side nav button{
-    border-radius:8px;
-    padding:10px 12px;
-    color:#626C65;
-  }
-  .manager-app .side nav button.on,.staff-app .side nav button.on{
-    background:#EEF2EE;
-    color:var(--green);
-  }
-  .manager-app .side nav button.on:before,.staff-app .side nav button.on:before{display:none}
-  .manager-app .side .who,.staff-app .side .who{margin:24px 10px 0;padding:16px 2px 0}
   .manager-app .home-dashboard{gap:18px}
   .manager-app .home-panel{padding:20px}
   .manager-app .home-panel-priority{grid-column:1/-1}
@@ -883,30 +852,6 @@ textarea{width:100%}
 /* Desktop Staff shell uses the selected charcoal/light direction. */
 @media (min-width:820px){
   .staff-app{max-width:1280px!important;background:var(--staff-workspace)}
-  .staff-app .side{
-    width:250px;background:var(--staff-shell);border-right:0;color:#fff;
-    padding:30px 16px 24px;box-shadow:8px 0 30px rgba(18,29,37,.06)
-  }
-  .staff-app .side .brand{color:#F7FAFB;padding:0 12px 25px;font-size:17px;letter-spacing:-.015em}
-  .staff-app .side .brand span{color:#AEBAC2;margin-top:5px}
-  .staff-app .side nav{display:grid;gap:4px}
-  .staff-app .side nav button{
-    display:flex;align-items:center;gap:11px;min-height:42px;padding:9px 12px;
-    border-radius:10px;color:#B8C2C9
-  }
-  .staff-app .side nav button span{min-width:0}
-  .staff-app .side nav button.on{
-    background:rgba(229,244,242,.11);color:#E8FAF7
-  }
-  .staff-app .side nav button.on .ui-icon{color:#55C4BA}
-  .staff-app .side nav button:hover{background:rgba(255,255,255,.055);color:#F7FAFB}
-  .staff-app .side .who{
-    margin:28px 10px 0;padding:17px 2px 0;border-top:1px solid rgba(255,255,255,.10);color:#AEBAC2
-  }
-  .staff-app .side select{
-    background:var(--staff-shell-raised)!important;color:#EAF0F3!important;
-    border-color:rgba(255,255,255,.12)!important
-  }
   .staff-app .body{max-width:820px;padding-left:48px;padding-right:48px}
   .staff-app .staff-home-dashboard{max-width:760px}
   .staff-app .staff-work-status,.staff-app .staff-quick-actions{max-width:760px}
@@ -1167,15 +1112,7 @@ textarea{width:100%}
 .staff-app .p-amber{background:var(--staff-warning-soft);color:var(--staff-warning)}
 .staff-app .p-brick{background:var(--staff-danger-soft);color:var(--staff-danger)}
 .staff-app .p-grey{background:#EEF2F3;color:#677680}
-
-/* Mobile operating shell */
-.mobile-topbar{display:none}
 @media (max-width:819px){
-  .staff-app .mobile-topbar{
-    display:flex;align-items:center;justify-content:space-between;gap:12px;
-    min-height:70px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
-    color:#F7FAFB;background:var(--staff-shell)
-  }
 }
 
 /* Staff Home — command surface */
@@ -1315,30 +1252,6 @@ textarea{width:100%}
   .staff-app{
     max-width:1440px;margin:0 auto;display:flex;min-height:100vh;min-height:100dvh;
     background:var(--staff-workspace)
-  }
-  .staff-app .mobile-topbar{display:none!important}
-  .staff-app .side{
-    display:block;flex:none;width:252px;min-height:100vh;min-height:100dvh;
-    padding:30px 16px 24px;background:var(--staff-shell);border-right:0;color:#fff;
-    box-shadow:8px 0 28px rgba(16,28,36,.055)
-  }
-  .staff-app .side .brand{padding:0 12px 26px;color:#F7FAFB;font-size:16px}
-  .staff-app .side .brand span{color:#9DABB4}
-  .staff-app .side nav{display:grid;gap:4px}
-  .staff-app .side nav button{
-    display:flex;align-items:center;gap:11px;min-height:42px;padding:9px 12px;
-    border-radius:10px;color:#AEBBC3
-  }
-  .staff-app .side nav button.on{background:rgba(255,255,255,.075);color:#F2F8FA}
-  .staff-app .side nav button.on .ui-icon{color:#57C9BE}
-  .staff-app .side nav button:hover{background:rgba(255,255,255,.05);color:#F7FAFB}
-  .staff-app .side .who{
-    margin:28px 10px 0;padding:17px 2px 0;border-top:1px solid rgba(255,255,255,.10);
-    color:#96A6AF
-  }
-  .staff-app .side select{
-    background:var(--staff-shell-raised)!important;color:#E7EFF2!important;
-    border-color:rgba(255,255,255,.10)!important
   }
   .staff-app .body{
     max-width:980px;margin:0;padding:0 48px 72px;background:var(--staff-workspace)
@@ -1581,11 +1494,6 @@ textarea{width:100%}
 
 /* Mobile manager shell */
 @media (max-width:819px){
-  .manager-app .mobile-topbar{
-    display:flex;align-items:center;justify-content:space-between;gap:12px;
-    min-height:70px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
-    color:#F7FAFB;background:var(--manager-shell)
-  }
   .manager-app .mobile-topbar-mark{
     display:grid;place-items:center;width:34px;height:34px;border-radius:10px;
     background:linear-gradient(145deg,#30B5A9,#0D7F77);color:#fff;
@@ -1716,28 +1624,6 @@ textarea{width:100%}
 /* Desktop command centre */
 @media (min-width:820px){
   .manager-app{max-width:1480px;margin:0 auto;display:flex;min-height:100vh;min-height:100dvh}
-  .manager-app .mobile-topbar{display:none!important}
-  .manager-app .side{
-    display:block;flex:none;width:258px;min-height:100vh;min-height:100dvh;
-    padding:30px 16px 24px;background:var(--manager-shell);border-right:0;color:#fff;
-    box-shadow:8px 0 28px rgba(16,28,36,.055)
-  }
-  .manager-app .side .brand{padding:0 12px 26px;color:#F7FAFB;font-size:16px}
-  .manager-app .side .brand span{color:#9DABB4}
-  .manager-app .side nav{display:grid;gap:4px}
-  .manager-app .side nav button{
-    display:flex;align-items:center;gap:11px;min-height:42px;padding:9px 12px;border-radius:10px;color:#AEBBC3
-  }
-  .manager-app .side nav button.on{background:rgba(255,255,255,.075);color:#F2F8FA}
-  .manager-app .side nav button.on .ui-icon{color:#57C9BE}
-  .manager-app .side nav button:hover{background:rgba(255,255,255,.05);color:#F7FAFB}
-  .manager-app .side .who{
-    margin:28px 10px 0;padding:17px 2px 0;border-top:1px solid rgba(255,255,255,.10);color:#96A6AF
-  }
-  .manager-app .side select{
-    background:var(--manager-shell-raised)!important;color:#E7EFF2!important;
-    border-color:rgba(255,255,255,.10)!important
-  }
   .manager-app .body{max-width:1180px;margin:0;padding:0 48px 74px;background:var(--manager-workspace)}
   .manager-home .manager-command-surface{
     margin:28px 0 0;padding:30px;border-radius:22px;
@@ -1904,10 +1790,6 @@ textarea{width:100%}
 .office-app .field:focus,.executive-app .field:focus{border-color:#63B8B1;box-shadow:0 0 0 4px rgba(17,140,131,.10)}
 
 @media (max-width:819px){
-  .office-app .mobile-topbar,.executive-app .mobile-topbar{
-    display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:70px;
-    padding:calc(10px + env(safe-area-inset-top)) 16px 10px;color:#F7FAFB;background:var(--office-shell)
-  }
   .office-app .mobile-topbar-mark,.executive-app .mobile-topbar-mark{
     display:grid;place-items:center;width:34px;height:34px;border-radius:10px;
     background:linear-gradient(145deg,#30B5A9,#0D7F77);color:#fff;
@@ -1986,24 +1868,6 @@ textarea{width:100%}
 /* Desktop shell for Administration and Executive */
 @media (min-width:820px){
   .office-app,.executive-app{max-width:1500px;margin:0 auto;display:flex;min-height:100vh;min-height:100dvh}
-  .office-app .mobile-topbar,.executive-app .mobile-topbar{display:none!important}
-  .office-app .side,.executive-app .side{
-    display:block;flex:none;width:264px;min-height:100vh;min-height:100dvh;
-    padding:30px 16px 24px;background:var(--office-shell);border-right:0;color:#fff;
-    box-shadow:8px 0 28px rgba(16,28,36,.055)
-  }
-  .office-app .side .brand,.executive-app .side .brand{padding:0 12px 26px;color:#F7FAFB;font-size:16px}
-  .office-app .side .brand span,.executive-app .side .brand span{color:#9DABB4}
-  .office-app .side nav,.executive-app .side nav{display:grid;gap:4px}
-  .office-app .side nav button,.executive-app .side nav button{
-    display:flex;align-items:center;gap:11px;min-height:42px;padding:9px 12px;border-radius:10px;color:#AEBBC3
-  }
-  .office-app .side nav button.on,.executive-app .side nav button.on{background:rgba(255,255,255,.075);color:#F2F8FA}
-  .office-app .side nav button.on .ui-icon,.executive-app .side nav button.on .ui-icon{color:#57C9BE}
-  .office-app .side nav button:hover,.executive-app .side nav button:hover{background:rgba(255,255,255,.05);color:#F7FAFB}
-  .office-app .side .who,.executive-app .side .who{
-    margin:28px 10px 0;padding:17px 2px 0;border-top:1px solid rgba(255,255,255,.10);color:#96A6AF
-  }
   .office-app .body,.executive-app .body{max-width:1200px;margin:0;padding:0 48px 74px;background:var(--office-workspace)}
   .admin-home .admin-command-surface,.executive-home .executive-command-surface{
     margin:28px 0 0;padding:30px;border-radius:22px;box-shadow:0 18px 48px rgba(24,38,47,.12)
@@ -2874,29 +2738,11 @@ button.office-config-card:active{background:#EEF5F4}
 @media(max-width:560px){
   .admin-page-title-row,.admin-unit-title-row{align-items:flex-start;flex-direction:column}
 }
-
-
-/* Product Intelligence shell foundation — 21 Sep 2026 */
-.app-workspace{display:flex;flex:1;min-width:0;min-height:100vh;min-height:100dvh;flex-direction:column}
 .app-content{display:flex;flex:1;min-width:0;flex-direction:column}
-.side .brand{display:flex;align-items:center;gap:11px}
-.side .brand-mark{
-  display:grid!important;place-items:center;flex:none;width:34px;height:34px;border-radius:10px;
-  background:linear-gradient(145deg,#30B5A9,#0D7F77);color:#fff!important;
-  font-size:15px!important;font-weight:760!important;margin:0!important;
-  box-shadow:inset 0 1px rgba(255,255,255,.25),0 8px 20px rgba(4,20,26,.16)
-}
-.side .brand-copy{display:flex!important;flex-direction:column;min-width:0;margin:0!important}
-.side .brand-copy strong{font-size:14px;line-height:1.1;color:inherit}
-.side .brand-copy small{margin-top:3px;font-size:10.5px;line-height:1.2;color:var(--ink-faint);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .side-unit-switch{width:calc(100% - 24px);margin:0 12px 18px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink);font-size:12px}
 .side-nav-group{display:grid;gap:3px;margin-top:14px}
 .side-nav-group:first-child{margin-top:0}
 .side-nav-label{padding:0 20px 5px;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint)}
-.side .who{display:flex;flex-direction:column;gap:2px}
-.side .who span{font-weight:600}
-.side .who small{font-size:10px;color:var(--ink-faint)}
-.mobile-more-item.on{background:var(--green-soft);color:var(--green)}
 
 @media (max-width:819px){
   .app,.app-workspace,.app-content{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
@@ -2904,17 +2750,8 @@ button.office-config-card:active{background:#EEF5F4}
 }
 
 @media (min-width:820px){
-  .app-workspace{background:var(--paper)}
   .app-content{min-height:calc(100dvh - 66px)}
-  .side nav{display:grid!important;gap:0!important}
   .side-nav-label{padding-left:12px;padding-right:12px;color:#748690}
-  .office-app .side .brand,.executive-app .side .brand{padding:0 12px 20px}
-  .office-app .side .brand-copy small,.executive-app .side .brand-copy small{color:#9DABB4}
-  .office-app .side .who small,.executive-app .side .who small{color:#71838E}
-  .office-app .desktop-topbar,.executive-app .desktop-topbar{
-    padding-left:48px;padding-right:48px;background:rgba(248,250,250,.94);border-bottom-color:#E2E8EA
-  }
-  .office-app .app-workspace,.executive-app .app-workspace{background:var(--office-workspace)}
 }
 
 

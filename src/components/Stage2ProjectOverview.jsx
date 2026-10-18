@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { deadlineOverdue } from "../lib/stage2AchievementMetrics";
 import PersonAvatar from "./PersonAvatar";
 import { useProjectPortraits } from "../lib/useProjectPortraits";
 import "./Stage2ProjectOverview.css";
@@ -16,6 +17,20 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [unit, setUnit] = useState("all");
+  const [asOf, setAsOf] = useState(() => Date.now());
+  // Project due dates (including date-only promises) must follow the Ghana
+  // civil day without marking an entire still-valid deadline day overdue.
+  useEffect(() => {
+    const refresh = () => setAsOf(Date.now());
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const timer = window.setInterval(refresh, 60000);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, []);
   const signedPortraits = useProjectPortraits(project);
   const visiblePortraits = { ...signedPortraits, ...photoUrls };
   const work = project.work || [];
@@ -23,8 +38,9 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const completed = tasks.filter((row) => finished.has(row.status));
   const completionRate = tasks.length ? Math.round(100 * completed.length / tasks.length) : null;
   const open = tasks.filter((row) => !inactive.has(row.status));
-  const overdue = open.filter((row) => row.due_at && new Date(row.due_at) < new Date());
-  const next = open.filter((row) => row.due_at && new Date(row.due_at) >= new Date()).sort((a,b) => new Date(a.due_at) - new Date(b.due_at))[0];
+  const overdue = open.filter((row) => deadlineOverdue(row.due_at, asOf));
+  const next = open.filter((row) => row.due_at && !deadlineOverdue(row.due_at, asOf))
+    .sort((a,b) => new Date(a.due_at) - new Date(b.due_at))[0];
 
   const units = useMemo(() => {
     const found = new Map();
@@ -55,7 +71,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   return <div className="s2-project">
     <section className="s2-project-metrics" aria-label="Recorded project metrics">
       <div className="s2-project-stat-card s2-project-progress-card">
-        <span>Task completion</span>
+        <span>Visible task completion</span>
         <div className="s2-project-progress-line">
           <span className="s2-project-progress-ring" style={{ "--s2-percent": completionRate ?? 0 }} aria-hidden="true">
             <strong>{completionRate === null ? "—" : completionRate + "%"}</strong>
@@ -72,7 +88,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         </div>
       </div>
       <div className="s2-project-stat-card">
-        <span>Participating departments</span>
+        <span>Visible participating departments</span>
         <strong>{units.length}</strong><small>Including the lead department</small>
       </div>
       <div className="s2-project-stat-card">
