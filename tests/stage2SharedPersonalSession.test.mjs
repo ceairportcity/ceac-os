@@ -77,6 +77,17 @@ test("end and historic close recheck the server rather than trusting a void RPC"
  assert.match(clock,/onClick=\{stop\} disabled=\{busy\|\|loading\|\|!verified\}/);
 });
 
+test("End Work requires the exact authorised session row to have an end timestamp", () => {
+ const source=read("src/components/EmployeeWorkSession.jsx");
+ const body=source.match(/async function verifyClosedSession\(closedId\) \{([\s\S]*?)\n  \}/)?.[1];
+ assert.ok(body);
+ assert.match(body,/supabase\.from\("work_sessions"\)/);
+ assert.match(body,/\.select\("id,ended_at"\)/);
+ assert.match(body,/\.eq\("org_id", me\.org_id\)\s*\.eq\("profile_id", me\.id\)\s*\.eq\("id", closedId\)/);
+ assert.match(body,/closeReadError \|\| !closed\?\.ended_at/);
+ assert.match(body,/const current = await openSession\(me\.org_id, me\.id\)/);
+});
+
 test("P3 stale-session continuation fails closed on different or still-stale row", () => {
  const source = read("src/components/EmployeeWorkSession.jsx");
  const continued = source.match(/async function continueOld\(\) \{([\s\S]*?)\n  \}/)?.[1];

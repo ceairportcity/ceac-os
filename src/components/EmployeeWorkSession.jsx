@@ -115,8 +115,17 @@ export default function EmployeeWorkSession({ me }) {
     } finally { setBusy(false); }
   }
   async function verifyClosedSession(closedId) {
-    // An RPC acknowledgement alone does not establish that the user's work
-    // session is now closed. Read the authoritative, tenant-scoped current row.
+    // An open-session lookup cannot prove the SPECIFIC session was closed:
+    // a second open row could otherwise hide an unclosed original.
+    const { data: closed, error: closeReadError } = await supabase.from("work_sessions")
+      .select("id,ended_at")
+      .eq("org_id", me.org_id)
+      .eq("profile_id", me.id)
+      .eq("id", closedId)
+      .maybeSingle();
+    if (closeReadError || !closed?.ended_at) {
+      throw new Error("The session end time could not be verified. Retry session verification.");
+    }
     const current = await openSession(me.org_id, me.id);
     if (current?.id === closedId) {
       throw new Error("The work session still appears open. Retry verification before continuing.");
