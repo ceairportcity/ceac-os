@@ -56,6 +56,16 @@ test("P2/P3 shared personal session lookup scopes BOTH org and current actor", (
    "A failed tenant-scoped read may not be interpreted as no active session");
 });
 
+test("P3 open-session lookup rejects more than one concurrent actor-owned session", () => {
+ const source=read("src/lib/session.js");
+ const open=source.match(/export async function openSession\(orgId, userId\) \{([\s\S]*?)\n\}/)?.[1];
+ assert.ok(open);
+ assert.match(open,/\.eq\("org_id", orgId\)\.eq\("profile_id", userId\)\.is\("ended_at", null\)/);
+ assert.match(open,/\.limit\(2\)\.maybeSingle\(\)/,
+   "Requesting one row would conceal duplicate active sessions; two must fail closed");
+ assert.match(open,/if \(error\) throw error;/);
+});
+
 test("a still-open work session becomes stale when the Accra day advances", () => {
  const clock = read("src/components/EmployeeWorkSession.jsx");
  assert.match(clock, /const \[clockNow, setClockNow\] = useState\(\(\) => Date\.now\(\)\)/);

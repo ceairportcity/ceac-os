@@ -37,38 +37,46 @@ export default function PersonalRecurringTaskComposer({
   const identity = me.org_id + ":" + me.id;
   const currentIdentity = useRef(identity);
   currentIdentity.current = identity;
+  const refreshSequence = useRef(0);
   const [verifiedIdentity, setVerifiedIdentity] = useState(null);
   const seriesVerified = ready && !loading && verifiedIdentity === identity;
 
   async function refresh() {
     const requestedIdentity = identity;
+    const requestedRead = ++refreshSequence.current;
+    const isLatest = () => currentIdentity.current === requestedIdentity
+      && refreshSequence.current === requestedRead;
     if (!ready) { setVerifiedIdentity(null); setList([]); return false; }
     setLoading(true); setVerifiedIdentity(null);
     try {
-      const { data, error: failure } = await supabase.from("personal_task_series")
-        .select("id,title,details,start_date,planned_time,cadence,interval_count,custom_unit,ends_when,end_date,occurrence_limit,is_active")
+      const { data, error: failure, count } = await supabase.from("personal_task_series")
+        .select("id,title,details,start_date,planned_time,cadence,interval_count,custom_unit,ends_when,end_date,occurrence_limit,is_active", { count: "exact" })
         .eq("org_id", me.org_id).eq("profile_id", me.id)
         .order("created_at", { ascending: false });
-      if (currentIdentity.current !== requestedIdentity) return false;
+      if (!isLatest()) return false;
       if (failure) throw failure;
+      if (typeof count !== "number" || count !== (data || []).length) {
+        throw new Error("Private recurring-task history is incomplete. No series changes are allowed.");
+      }
       setList(data || []); setError("");
       setVerifiedIdentity(requestedIdentity);
       return true;
     } catch {
-      if (currentIdentity.current === requestedIdentity) {
+      if (isLatest()) {
         setList([]); setNotice("");
         setError("Private recurring tasks could not be verified. Refresh before changing a series.");
         setVerifiedIdentity(null);
       }
       return false;
     } finally {
-      if (currentIdentity.current === requestedIdentity) setLoading(false);
+      if (isLatest()) setLoading(false);
     }
   }
 
   useEffect(() => {
     setList([]); setShowForm(false); setEditing(null); setVerifiedIdentity(null);
     void refresh();
+    return () => { refreshSequence.current += 1; };
   },
     [me.id, me.org_id, ready]);
 
@@ -112,7 +120,7 @@ export default function PersonalRecurringTaskComposer({
         // existing and completed occurrences are never silently rewritten.
         const { error: failure } = await supabase.from("personal_task_series")
           .update({ title, details: form.details.trim() || null, planned_time: form.planned_time || null })
-          .eq("id", editing).eq("profile_id", me.id);
+          .eq("id", editing).eq("org_id", me.org_id).eq("profile_id", me.id);
         if (failure) throw failure;
         setNotice("Series details updated. Recorded occurrences are unchanged. Stop this series and create a new one to change its schedule.");
       } else {
@@ -153,17 +161,17 @@ export default function PersonalRecurringTaskComposer({
     try {
       if (remove) {
         const { error: futureFailure } = await supabase.from("personal_day_tasks")
-          .delete().eq("profile_id", me.id).eq("series_id", series.id)
+          .delete().eq("org_id", me.org_id).eq("profile_id", me.id).eq("series_id", series.id)
           .gte("plan_date", dayInAccra()).is("completed_at", null);
         if (futureFailure) throw futureFailure;
         const { error: removeFailure } = await supabase.from("personal_task_series")
-          .delete().eq("id", series.id).eq("profile_id", me.id);
+          .delete().eq("id", series.id).eq("org_id", me.org_id).eq("profile_id", me.id);
         if (removeFailure) throw removeFailure;
         setNotice("Repetition deleted. Earlier recorded instances remain intact.");
       } else {
         const { error: failure } = await supabase.from("personal_task_series")
           .update({ is_active: !series.is_active })
-          .eq("id", series.id).eq("profile_id", me.id);
+          .eq("id", series.id).eq("org_id", me.org_id).eq("profile_id", me.id);
         if (failure) throw failure;
         setNotice(series.is_active ? "Repetition paused; recorded instances remain." : "Repetition resumed.");
         if (!series.is_active) {

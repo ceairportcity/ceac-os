@@ -53,6 +53,15 @@ test("private calendar supports the complete approved recurrence and edit/remove
 
 test("private recurrence writes require current-actor verified series and close uncertain create",()=>{
   assert.match(recurrence,/const currentIdentity = useRef\(identity\)/);
+  assert.match(recurrence,/const refreshSequence = useRef\(0\)/);
+  assert.match(recurrence,/\{ count: "exact" \}/);
+  assert.match(recurrence,/typeof count !== "number" \|\| count !== \(data \|\| \[\]\)\.length/);
+  assert.match(recurrence,/\.eq\("org_id", me\.org_id\)\.eq\("profile_id", me\.id\)/);
+
+  assert.match(recurrence,/const requestedRead = \+\+refreshSequence\.current/);
+  assert.match(recurrence,/refreshSequence\.current === requestedRead/);
+  assert.match(recurrence,/if \(!isLatest\(\)\) return false/);
+  assert.match(recurrence,/return \(\) => \{ refreshSequence\.current \+= 1; \}/);
   assert.match(recurrence,/currentIdentity\.current !== requestedIdentity/);
   assert.match(recurrence,/const seriesVerified = ready && !loading && verifiedIdentity === identity/);
   assert.match(recurrence,/if \(!seriesVerified \|\| loading \|\| busy/);

@@ -6,7 +6,10 @@ export async function openSession(orgId, userId) {
     // The current employee can have historical records across CEAC units,
     // but this lookup must never bridge organisation boundaries.
     .eq("org_id", orgId).eq("profile_id", userId).is("ended_at", null)
-    .order("started_at", { ascending: false }).limit(1).maybeSingle();
+    // Fetch two rows so duplicate simultaneous sessions are rejected rather
+    // than silently selecting one. maybeSingle reports multiple rows as an
+    // error, and callers then withhold all Start/End controls until verified.
+    .order("started_at", { ascending: false }).limit(2).maybeSingle();
   if (error) throw error;
   return data || null;
 }
