@@ -74,9 +74,14 @@
   font-size: 12px;
 }
 .executivev2-hero time {
-  color: #3f4050;
+  /* The date remains legible over any of the ten approved scenic photos. */
+  color: #142b48;
   font-size: 12px;
   white-space: nowrap;
+  background: rgba(255,255,255,.94);
+  border: 1px solid #dce9f7;
+  border-radius: 6px;
+  padding: 5px 9px;
 }
 
 .executivev2-loading,
