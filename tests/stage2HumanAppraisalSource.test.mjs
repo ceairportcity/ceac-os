@@ -53,3 +53,20 @@ test("rollback-only adversarial SQL gate is registered",()=>{
  assert.match(sqlGate,/Quarterly release without ratings was accepted/);
  assert.match(runner,/stage2_human_appraisal_ratings_gate\.sql/);
 });
+
+test("P6 sensitive human ratings and HR exceptions cannot duplicate or misstate uncertain writes",()=>{
+ const editor=read("src/components/StructuredAppraisalRatings.jsx");
+ assert.match(editor,/const ratingMutationPending=useRef\(false\)/);
+ for(const method of ["save","saveException"]){
+   const body=editor.match(new RegExp("async function "+method+"\\(\\)\\{([\\s\\S]*?)\\n \\}"))?.[1];
+   assert.ok(body,method+" must exist");
+   assert.match(body,/ratingMutationPending\.current/);
+   assert.match(body,/ratingMutationPending\.current=true/);
+   assert.match(body,/ratingMutationPending\.current=false/);
+   assert.match(body,/finally\{/);
+ }
+ assert.match(editor,/Ratings were recorded, but refreshing the review failed/);
+ assert.match(editor,/The HR exception was recorded, but refreshing the review failed/);
+ assert.match(editor,/Recheck the exception history before trying again/);
+ assert.doesNotMatch(editor,/setBusy\(false\);\s*if\(result\.error\)/);
+});

@@ -1,4 +1,4 @@
-import { useEffect,useState } from "react";
+import { useEffect,useRef,useState } from "react";
 import {supabase} from "../lib/supabase";
 import {HUMAN_RUBRIC,VALID_RATINGS,validateHumanAppraisal} from "../lib/stage2PerformanceFacts";
 import "./StructuredAppraisalRatings.css";
@@ -20,6 +20,8 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
  const [unavailable,setUnavailable]=useState(false);
  const [error,setError]=useState("");
  const [busy,setBusy]=useState(false);
+ // Append-only confidential ratings/HR exceptions may not double-submit.
+ const ratingMutationPending=useRef(false);
  const [open,setOpen]=useState(false);
  const [categories,setCategories]=useState(initial);
  const [overall,setOverall]=useState("");
@@ -69,8 +71,10 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
  const ratingOptions=VALID_RATINGS.map(value=><option key={value} value={value}>{value} · {ratingLabel(value)}</option>);
 
  async function save(){
-  if(!canEdit||!assessment?.id||!ratingDraft||!validation.valid)return;
+  if(busy||ratingMutationPending.current||!canEdit||!assessment?.id||!ratingDraft||!validation.valid)return;
+  ratingMutationPending.current=true;
   setBusy(true);setError("");
+  let recorded=false;
   try{
     const result=await supabase.from("appraisal_human_rating_versions").insert({
       org_id:me.org_id,appraisal_id:review.id,assessment_entry_id:assessment.id,
@@ -81,24 +85,42 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
       strengths:strengths.trim()||null,challenges:challenges.trim()||null,next_actions:actions.trim()||null,
     });
     if(result.error)throw result.error;
+    recorded=true;
     setOpen(false);
     setReload(n=>n+1);
-   await onSaved?.();
-  }catch(e){setError(e?.message||"The protected Manager ratings could not be recorded.");}
-  finally{setBusy(false);}
+    await onSaved?.();
+  }catch(e){
+    setError(recorded
+      ? "Ratings were recorded, but refreshing the review failed. Reopen the review before changing anything."
+      : "The protected ratings could not be confirmed. Check recorded versions before trying again.");
+  }finally{
+    ratingMutationPending.current=false;
+    setBusy(false);
+  }
  }
  async function saveException(){
-   if(!isHR||!exceptionKind||exceptionReason.trim().length<12||busy)return;
+   if(busy||ratingMutationPending.current||!isHR||!exceptionKind||exceptionReason.trim().length<12)return;
+   ratingMutationPending.current=true;
    setBusy(true);setError("");
-   const result=await supabase.from("appraisal_review_exceptions").insert({
-     org_id:me.org_id,appraisal_id:review.id,reason_kind:exceptionKind,
-     reason:exceptionReason.trim(),authorised_by:me.id,
-   });
-   setBusy(false);
-   if(result.error){setError(result.error.message);return;}
-   setExceptions(old=>[...old,{id:exceptionKind,reason_kind:exceptionKind,reason:exceptionReason}]);
-   setExceptionKind("");setExceptionReason("");
-   await onSaved?.();
+   let recorded=false;
+   try{
+     const result=await supabase.from("appraisal_review_exceptions").insert({
+       org_id:me.org_id,appraisal_id:review.id,reason_kind:exceptionKind,
+       reason:exceptionReason.trim(),authorised_by:me.id,
+     });
+     if(result.error)throw result.error;
+     recorded=true;
+     setExceptions(old=>[...old,{id:exceptionKind,reason_kind:exceptionKind,reason:exceptionReason}]);
+     setExceptionKind("");setExceptionReason("");
+     await onSaved?.();
+   }catch(e){
+     setError(recorded
+       ? "The HR exception was recorded, but refreshing the review failed."
+       : "The HR exception could not be confirmed. Recheck the exception history before trying again.");
+   }finally{
+     ratingMutationPending.current=false;
+     setBusy(false);
+   }
  }
 
  return <section className="s2-rating-section" aria-label="Human-entered Manager appraisal ratings">
