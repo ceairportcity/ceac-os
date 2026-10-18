@@ -70,3 +70,15 @@ test("P6 sensitive human ratings and HR exceptions cannot duplicate or misstate 
  assert.match(editor,/Recheck the exception history before trying again/);
  assert.doesNotMatch(editor,/setBusy\(false\);\s*if\(result\.error\)/);
 });
+
+test("P6 protected human rating and HR exception writes fail closed on unavailable history",()=>{
+ const source=read("src/components/StructuredAppraisalRatings.jsx");
+ assert.match(source,/const versionsVerified=!loading&&!unavailable&&!error/);
+ assert.match(source,/const canEdit=versionsVerified&&isReviewer/);
+ assert.match(source,/if\(busy\|\|ratingMutationPending\.current\|\|!versionsVerified\|\|!isHR/);
+ assert.match(source,/\{versionsVerified&&isHR&&cadence==="quarter"/);
+ assert.match(source,/disabled=\{busy\|\|!versionsVerified\|\|!exceptionKind/);
+ assert.match(source,/Retry protected review verification/);
+ assert.match(source,/onClick=\{\(\)=>setReload\(n=>n\+1\)\}/);
+ assert.match(source,/const recorded=rows\.find\(x=>x\.assessment_entry_id===assessment\?\.id\)/);
+});

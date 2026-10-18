@@ -65,7 +65,9 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
  const form={periodKind:cadence,employeeId:review.profile_id,reviewerId:me.id,
    categories,overall:{rating:overall},narrative,strengths,challenges,actions};
  const validation=validateHumanAppraisal(form);
- const canEdit=isReviewer&&review.manager_id===me.id&&review.profile_id!==me.id &&
+ // Unavailable confidential history is unknown, never proof no rating exists.
+ const versionsVerified=!loading&&!unavailable&&!error;
+ const canEdit=versionsVerified&&isReviewer&&review.manager_id===me.id&&review.profile_id!==me.id &&
    !["closed","shared"].includes(review.status) && (cadence==="month"||cadence==="quarter") && !recorded;
  const selection=evidence.filter(x=>x.id);
  const ratingOptions=VALID_RATINGS.map(value=><option key={value} value={value}>{value} · {ratingLabel(value)}</option>);
@@ -99,7 +101,7 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
   }
  }
  async function saveException(){
-   if(busy||ratingMutationPending.current||!isHR||!exceptionKind||exceptionReason.trim().length<12)return;
+   if(busy||ratingMutationPending.current||!versionsVerified||!isHR||!exceptionKind||exceptionReason.trim().length<12)return;
    ratingMutationPending.current=true;
    setBusy(true);setError("");
    let recorded=false;
@@ -131,6 +133,7 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
   {loading&&<p role="status">Checking protected review versions…</p>}
   {unavailable&&<p role="status">Structured ratings await the approved Stage 2 database migration. Existing confidential appraisal records remain unchanged.</p>}
   {error&&<p role="alert" className="s2-rating-error">{error}</p>}
+  {!loading&&(unavailable||error)&&<button type="button" className="btn btn-ghost btn-sm" disabled={busy||ratingMutationPending.current} onClick={()=>setReload(n=>n+1)}>Retry protected review verification</button>}
   {!loading&&!unavailable&&!error&&!rows.length&&<p>No human-entered structured ratings are available to your account for this review.</p>}
   {recorded&&<div className="s2-rating-summary">
     <div className="s2-rating-overall"><span>Reviewer-selected overall</span><strong>{recorded.overall_rating||"Not entered"}</strong><small>{recorded.overall_narrative||"Monthly overall rating not entered"}</small></div>
@@ -164,14 +167,14 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
     {!validation.valid&&<p className="s2-rating-hint" role="status">{validation.errors.slice(0,4).join(" · ")}</p>}
     <button className="btn" type="button" disabled={busy||!assessment||!ratingDraft||!validation.valid} onClick={save}>{busy?"Saving…":"Record human ratings"}</button>
   </div>}
-  {isHR&&cadence==="quarter"&&!["closed","shared"].includes(review.status)&&<details className="s2-rating-hr-exception">
+  {versionsVerified&&isHR&&cadence==="quarter"&&!["closed","shared"].includes(review.status)&&<details className="s2-rating-hr-exception">
     <summary>Independent HR review exception</summary><p>Used only for attributable non-response or reviewer absence/conflict. This never creates a false employee response or rating.</p>
     {exceptions.map(x=><p key={x.id}><strong>{x.reason_kind.replaceAll("_"," ")}:</strong> {x.reason}</p>)}
     <label>Exception reason <select value={exceptionKind} onChange={e=>setExceptionKind(e.target.value)}>
       <option value="">Select</option><option value="employee_nonresponse">Employee non-response</option><option value="reviewer_absence">Reviewer absence</option><option value="reviewer_conflict">Reviewer conflict</option>
     </select></label>
     <label>Attributable HR explanation <textarea rows={3} value={exceptionReason} onChange={e=>setExceptionReason(e.target.value)} /></label>
-    <button className="btn btn-ghost" type="button" disabled={busy||!exceptionKind||exceptionReason.trim().length<12} onClick={saveException}>Record HR exception</button>
+    <button className="btn btn-ghost" type="button" disabled={busy||!versionsVerified||!exceptionKind||exceptionReason.trim().length<12} onClick={saveException}>Record HR exception</button>
   </details>}
  </section>;
 }
