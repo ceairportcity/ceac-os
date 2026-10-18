@@ -657,3 +657,23 @@ test("P7 removes obsolete Home CSS without deleting the surviving Ministry, Anno
  assert.match(staff,/className="staffv2-/);
  assert.match(manager,/home-hero/);
 });
+
+
+test("P7 retired Staff and Manager command-dashboard CSS is removed without erasing the approved V2 shells",()=>{
+  const staff=file("src/experience-v2/staff-today/StaffTodayV2.jsx");
+  const manager=file("src/experience-v2/manager-overview/ManagerOverviewV2.jsx");
+  assert.match(staff,/staffv2/);
+  assert.match(manager,/managerv2/);
+  assert.match(file("src/experience-v2/admin-overview/AdminOverviewV2.jsx"),/adminv2/);
+  assert.match(file("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx"),/executivev2/);
+  for (const path of ["src/styles.css","src/premium-parity.css"]) {
+    const css=file(path);
+    const retired=/\.(?:manager-command(?:-[\w-]+)?|admin-command(?:-[\w-]+)?|executive-command(?:-[\w-]+)?|admin-pulse(?:-[\w-]+)?|staff-command-surface|staff-work-status(?:-[\w-]+)?|staff-quick-(?:actions?|icon)|staff-status-action)(?![\w-])/;
+    for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const selector=rule[1].replace(/\/\*[\s\S]*?\*\//g,"").trim();
+      const parts=selector.split(",").map(x=>x.trim()).filter(Boolean);
+      assert.ok(!parts.length || selector.startsWith("@") || parts.some(x=>x.includes("@")) || !parts.every(x=>retired.test(x)),
+        "Old dashboard-only selector remains in "+path+": "+selector.slice(0,120));
+    }
+  }
+});

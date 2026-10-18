@@ -161,22 +161,8 @@ body{color:var(--ceac-text)}
 }
 
 @media(min-width:981px){
-  .manager-command-action{
-    position:absolute!important;
-    right:306px!important;
-    top:18px!important;
-    z-index:5!important;
-  }
-  .manager-command-head{padding-right:405px!important}
 }
 @media(max-width:980px){
-  .manager-command-action{
-    position:relative!important;
-    right:auto!important;
-    top:auto!important;
-    margin-top:12px!important;
-  }
-  .manager-command-head{padding-right:0!important}
 }
 
 /* Laptop density correction — 25 Sep 2026
@@ -217,14 +203,6 @@ body{color:var(--ceac-text)}
   .executive-app .executive-home>.screen-note{
     margin-right:0!important;
   }
-
-  .manager-command-action{
-    position:relative!important;
-    right:auto!important;
-    top:auto!important;
-    margin-top:12px!important;
-  }
-  .manager-command-head{padding-right:0!important}
 
   /* Restore a normal laptop reading size without changing the visual system. */
   .row-t{font-size:13px!important}
