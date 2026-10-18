@@ -585,14 +585,15 @@ test("P5 versioned project close, reopen and unit returns cannot double-dispatch
 test("P7 approved Executive R4 laptop shell dimensions stay role-scoped", () => {
  const shared = file("src/experience-v2/shell/shell.css");
  const executive = file("src/role-styles/executive-redesign.css");
+ const geometry = file("src/role-styles/executive-r4-geometry.css");
  const home = file("src/experience-v2/executive-overview/executive-overview.css");
  const refs = file("tests/visual-home-baselines.js");
  assert.match(shared,/--ev2s-sidebar-width: 13\.75rem/);
- assert.match(executive,/@media \(min-width: 1025px\) \{\s*\.executive-app \{/);
- assert.match(executive,/--ev2s-sidebar-width: 13\.125rem/);
- assert.match(executive,/--ev2s-topbar-height: 3\.375rem/);
- assert.match(executive,/\.executive-app \.executivev2-hero\.s2-landscape-hero \{ min-height: 136px/);
- assert.match(executive,/\.executive-app \.executivev2 > \.s2-own-work-session/);
+ assert.match(geometry,/@media \(min-width: 1025px\) \{\s*\.executive-app \{/);
+ assert.match(geometry,/--ev2s-sidebar-width: 13\.125rem/);
+ assert.match(geometry,/--ev2s-topbar-height: 3\.375rem/);
+ assert.match(geometry,/\.executive-app \.executivev2-hero\.s2-landscape-hero \{ min-height: 136px/);
+ assert.match(geometry,/\.executive-app \.executivev2 > \.s2-own-work-session/);
  assert.doesNotMatch(home,/\.(staff-app|manager-app|office-app|executive-app)\b/);
  assert.match(refs,/Visual regression threshold <=6 stays strictly unchanged/);
 });

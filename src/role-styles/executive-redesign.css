@@ -847,18 +847,3 @@
     padding-inline: 13px;
   }
 }
-
-/* P7 approved R4 Executive 1440px reference: close the measured
-   top/hero offset without rebaselining or relaxing RGB threshold. */
-@media (min-width: 1025px) {
-  .executive-app {
-    --ev2s-sidebar-width: 13.125rem;
-    --ev2s-topbar-height: 3.375rem;
-  }
-  .executive-app .executivev2 { gap: 10px; padding-top: 7px; }
-  .executive-app .executivev2-hero.s2-landscape-hero { min-height: 136px; }
-  .executive-app .executivev2 > .s2-own-work-session {
-    padding-block: 11px;
-    margin-top: 9px;
-  }
-}
