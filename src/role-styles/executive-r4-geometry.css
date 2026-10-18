@@ -1,9 +1,9 @@
 /* P7 approved R4 Executive 1440px reference: close the measured
    top/hero offset without rebaselining or relaxing RGB threshold. */
+/* The approved 1440px R4 screenshot's dark sidebar ends at x=219:
+   preserve the shared 13.75rem (220px) width; do not narrow to 210px.
+   Keep the independently measured desktop topbar height. */
 @media (min-width: 1025px) {
-  /* The approved 1440px R4 screenshot's dark sidebar ends at x=219:
-     preserve the shared 13.75rem (220px) width; do not narrow to 210px.
-     Keep the independently measured desktop topbar height. */
   .executive-app {
     --ev2s-topbar-height: 3.375rem;
   }
