@@ -14,6 +14,22 @@ export async function openSession(orgId, userId) {
   return data || null;
 }
 export async function startWork(orgId, userId, place, workItemId, officeLocationId = null) {
+  if (place !== "office" && place !== "elsewhere") {
+    throw new Error("Choose a valid working location before starting.");
+  }
+  if (place === "elsewhere") {
+    // An off-site session must reference an actual active responsibility of
+    // this employee in this organisation, even if a client bypasses the picker.
+    if (!workItemId) throw new Error("Choose an assigned responsibility before starting off-site.");
+    const { data: assigned, error: assignmentError } = await supabase.from("work_items")
+      .select("id")
+      .eq("org_id",orgId).eq("assignee_id",userId).eq("id",workItemId)
+      .in("status",["not_started","in_progress","returned"])
+      .limit(1).maybeSingle();
+    if (assignmentError || !assigned?.id) {
+      throw new Error("That work is no longer an authorised active responsibility.");
+    }
+  }
   const pos = await getPositionOnce();
   if (place === "office" && pos.failure) {
     throw new Error(`${pos.failure}. Allow location access and retry to verify an office start. No session was started.`);

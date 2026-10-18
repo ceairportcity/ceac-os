@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
-import { startWork, endWork, reconcileWorkSession } from "../lib/session";
+import { openSession, startWork, endWork, reconcileWorkSession } from "../lib/session";
 import { isOverdue } from "../lib/time";
 import { Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -63,6 +63,9 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
   const [officeLocationId, setOfficeLocationId] = useState("");
   const [officeLocationStatus, setOfficeLocationStatus] = useState("loading");
   const [sessionWorkItem, setSessionWorkItem] = useState("");
+  const sessionScope = me.org_id + ":" + me.id;
+  const [verifiedSessionScope, setVerifiedSessionScope] = useState(sessionScope);
+  const sessionVerified = verifiedSessionScope === sessionScope;
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -294,43 +297,90 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
     finally { setBusy(false); }
   }
 
+  async function verifyEndedSession(id) {
+    const { data: closed, error: closeError } = await supabase.from("work_sessions")
+      .select("id,ended_at").eq("org_id",me.org_id)
+      .eq("profile_id",me.id).eq("id",id).maybeSingle();
+    if (closeError || !closed?.ended_at)
+      throw new Error("The exact session close record is not verified.");
+    const current = await openSession(me.org_id,me.id);
+    if (current?.id === id) throw new Error("The same session remains open.");
+    setSession(current);
+  }
+
+  async function verifyCurrentSession() {
+    if (busy) return;
+    setBusy(true); setError(null);
+    try {
+      const current = await openSession(me.org_id,me.id);
+      setSession(current); setVerifiedSessionScope(sessionScope);
+      setAsk(false); setRecoveryOpen(false);
+    } catch {
+      setVerifiedSessionScope(null);
+      setError("Work session status remains unverified. Retry before another Start or End action.");
+    } finally { setBusy(false); }
+  }
+
   async function begin() {
+    if (busy || !sessionVerified) return;
     setBusy(true); setError(null);
     try {
       if (place === "elsewhere" && !sessionWorkItem) throw new Error("Choose the work you are doing off-site before you start.");
       if (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId)) {
         throw new Error("Choose the authorised office or programme location before you start.");
       }
-      const current = await startWork(me.org_id, me.id, place, place === "elsewhere" ? sessionWorkItem : null, place === "office" ? officeLocationId : null);
+      const created = await startWork(me.org_id, me.id, place, place === "elsewhere" ? sessionWorkItem : null, place === "office" ? officeLocationId : null);
+      const current = await openSession(me.org_id,me.id);
+      if (!created?.id || current?.id !== created.id)
+        throw new Error("Start was not verified against the current session.");
       setSession(current); setAsk(false); setSessionWorkItem("");
-    }
-    catch (err) { setError(humanError(err, "Work could not be started.")); }
-    finally { setBusy(false); }
+    } catch {
+      // A failed acknowledgement may follow a successful server insert:
+      // another Start must remain disabled until an authoritative re-read.
+      setVerifiedSessionScope(null); setAsk(false);
+      setError("Start Work could not be verified. Recheck your current session before trying again.");
+    } finally { setBusy(false); }
   }
+
   async function stop() {
-    if (!session) return;
-    setBusy(true); setError(null);
-    try { await endWork(session.id); setSession(null); }
-    catch (err) { setError(humanError(err, "Work could not be ended.")); }
-    finally { setBusy(false); }
-  }
-  async function continueRecoveredSession() {
-    if (!session) return;
+    if (!session?.id || busy || !sessionVerified) return;
     setBusy(true); setError(null);
     try {
-      const current = await reconcileWorkSession(session.id, "continue");
-      setSession(current);
-    } catch (err) { setError(humanError(err, "The work session could not be confirmed.")); }
-    finally { setBusy(false); }
+      await endWork(session.id);
+      await verifyEndedSession(session.id);
+    } catch {
+      setVerifiedSessionScope(null);
+      setError("End Work could not be verified. Recheck your current session before trying again.");
+    } finally { setBusy(false); }
   }
+
+  async function continueRecoveredSession() {
+    if (!session?.id || busy || !sessionVerified) return;
+    setBusy(true); setError(null);
+    try {
+      await reconcileWorkSession(session.id, "continue");
+      const current = await openSession(me.org_id,me.id);
+      if (!current || current.id !== session.id ||
+          accraDateKey(current.last_confirmed_at || current.started_at) < accraDateKey(new Date()))
+        throw new Error("The stale session still requires verification.");
+      setSession(current); setRecoveryOpen(false);
+    } catch {
+      setVerifiedSessionScope(null); setRecoveryOpen(false);
+      setError("Continued work session could not be verified. Recheck the server record.");
+    } finally { setBusy(false); }
+  }
+
   async function closeRecoveredSession() {
-    if (!session || !recoveryEndedAt) return;
+    if (!session?.id || !recoveryEndedAt || busy || !sessionVerified) return;
     setBusy(true); setError(null);
     try {
       await reconcileWorkSession(session.id, "close", new Date(recoveryEndedAt).toISOString(), recoveryNote.trim() || null);
-      setSession(null); setRecoveryOpen(false); setRecoveryEndedAt(""); setRecoveryNote("");
-    } catch (err) { setError(humanError(err, "The work session could not be reconciled.")); }
-    finally { setBusy(false); }
+      await verifyEndedSession(session.id);
+      setRecoveryOpen(false); setRecoveryEndedAt(""); setRecoveryNote("");
+    } catch {
+      setVerifiedSessionScope(null); setRecoveryOpen(false);
+      setError("Earlier session close could not be verified. Recheck the server record.");
+    } finally { setBusy(false); }
   }
 
   const accraHour = Number(new Intl.DateTimeFormat("en-GB", {
@@ -355,6 +405,7 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
       session={session}
       staleSession={staleSession}
       busy={busy}
+      sessionVerified={sessionVerified}
       greeting={greeting}
       todayLabel={todayLabel}
       loading={loading}
@@ -382,9 +433,9 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
       overdue={overdue}
       drill={drill}
       drillRows={drillRows}
-      onStartWork={() => setAsk(true)}
+      onStartWork={() => sessionVerified && setAsk(true)}
       onEndWork={stop}
-      onReviewSession={() => setRecoveryOpen(true)}
+      onReviewSession={() => sessionVerified && setRecoveryOpen(true)}
       onContinueRecoveredSession={continueRecoveredSession}
       onCloseRecoveredSession={() => setRecoveryOpen(true)}
       onOpenItem={openItem}
@@ -402,7 +453,8 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
       ministryRecord={<MinistryNumbers me={me} compact presentation="staffV2" />}
     />
 
-    {ask && <Sheet onClose={() => setAsk(false)}>
+    {!sessionVerified && <div role="alert" className="flag flag-amber">Work session status requires verification. <button type="button" disabled={busy} onClick={verifyCurrentSession}>Retry session verification</button></div>}
+    {ask && sessionVerified && <Sheet onClose={() => setAsk(false)}>
       <div className="h2">Where are you working?</div>
       <p className="screen-note" style={{ marginBottom: 10 }}>We record where you start. We do not track you during the day.</p>
       <button className="opt" onClick={() => { setPlace("office"); setSessionWorkItem(""); }}><span className={`rd ${place === "office" ? "on" : ""}`} /> At an authorised office or programme location</button>
@@ -426,9 +478,9 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
         </select>
         <div className="hint">The location is attached to this work when you start. CEAC OS does not track you during the day.</div>
       </>}
-      <button className="btn" style={{ marginTop: 16 }} onClick={begin} disabled={busy || (place === "elsewhere" && !sessionWorkItem) || (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId))}>{busy ? "Starting..." : "Start work"}</button>
+      <button className="btn" style={{ marginTop: 16 }} onClick={begin} disabled={busy || !sessionVerified || (place === "elsewhere" && !sessionWorkItem) || (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId))}>{busy ? "Starting..." : "Start work"}</button>
     </Sheet>}
-    {recoveryOpen && <Sheet onClose={() => !busy && setRecoveryOpen(false)}>
+    {recoveryOpen && sessionVerified && <Sheet onClose={() => !busy && setRecoveryOpen(false)}>
       <div className="h2">Close the earlier work session</div>
       <p className="screen-note">Enter when you actually stopped. The original start, this correction and who made it remain in the history.</p>
       <label className="label" htmlFor="recovery-ended-at">Actual end time</label>

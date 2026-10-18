@@ -77,6 +77,7 @@ export default function StaffTodayV2({
   session,
   staleSession,
   busy,
+  sessionVerified = true,
   greeting,
   todayLabel,
   loading,
@@ -238,13 +239,13 @@ export default function StaffTodayV2({
           <div className="staffv2-session-copy">
             <div className="staffv2-session-label">Work session</div>
             <div className="staffv2-session-line">
-              <strong>{session ? staleSession ? "Needs reconciliation" : since(session.started_at) : "Not working"}</strong>
-              <StatusBadge tone={staleSession ? "warning" : session ? "success" : "neutral"}>
-                {staleSession ? "Review needed" : session ? "Active" : "Not started"}
+              <strong>{!sessionVerified ? "Verification required" : session ? staleSession ? "Needs reconciliation" : since(session.started_at) : "Not working"}</strong>
+              <StatusBadge tone={!sessionVerified ? "warning" : staleSession ? "warning" : session ? "success" : "neutral"}>
+                {!sessionVerified ? "Unverified" : staleSession ? "Review needed" : session ? "Active" : "Not started"}
               </StatusBadge>
             </div>
             <span>
-              {session
+              {!sessionVerified ? "Work-session actions are paused pending server verification." : session
                 ? staleSession
                   ? "The running duration is paused until you confirm what happened."
                   : `Started ${new Date(session.started_at).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" })} · ${session.place === "office" ? "At the office" : "Working off-site"}`
@@ -254,9 +255,9 @@ export default function StaffTodayV2({
           <div className="staffv2-session-actions">
             {session
               ? staleSession
-                ? <Button variant="secondary" onClick={onReviewSession} disabled={busy}>Review</Button>
-                : <Button variant="secondary" onClick={onEndWork} disabled={busy}>End work</Button>
-              : <Button onClick={onStartWork} disabled={busy}>Start work</Button>}
+                ? <Button variant="secondary" onClick={onReviewSession} disabled={busy || !sessionVerified}>Review</Button>
+                : <Button variant="secondary" onClick={onEndWork} disabled={busy || !sessionVerified}>End work</Button>
+              : <Button onClick={onStartWork} disabled={busy || !sessionVerified}>Start work</Button>}
           </div>
         </Surface>
 
@@ -268,8 +269,8 @@ export default function StaffTodayV2({
               <p>CEAC OS will not record continuous overnight work by itself. Confirm whether you continued or close it at the actual time.</p>
             </div>
             <div className="staffv2-recovery-actions">
-              <Button onClick={onContinueRecoveredSession} disabled={busy}>Continue this session</Button>
-              <Button variant="secondary" onClick={onCloseRecoveredSession} disabled={busy}>Close at the actual time</Button>
+              <Button onClick={onContinueRecoveredSession} disabled={busy || !sessionVerified}>Continue this session</Button>
+              <Button variant="secondary" onClick={onCloseRecoveredSession} disabled={busy || !sessionVerified}>Close at the actual time</Button>
             </div>
           </Surface>
         ) : null}

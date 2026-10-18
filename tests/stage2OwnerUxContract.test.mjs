@@ -577,7 +577,7 @@ test("P5 project-close history requires a current actor-owned verified read", ()
   assert.match(project, /closeReadSequence\.current === requestedRead/);
   assert.match(project, /if \(!stillCurrent\(\)\) return false/);
   assert.match(project, /const closeEvidenceVerified = verifiedScope === projectScope && !evidenceLoading/);
-  assert.match(project, /if \(closeResult\.error \|\| reopenResult\.error\) throw/);
+  assert.match(project, /if \(closeResult\.error \|\| reopenResult\.error \|\| !Array\.isArray\(reopenResult\.data\)\)/);
   assert.match(project, /if \(readyResult\.error\) throw readyResult\.error/);
   assert.match(project, /if \(!closeEvidenceVerified\) return/);
   assert.match(project, /Retry project-close verification/);

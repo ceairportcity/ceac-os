@@ -150,3 +150,38 @@ test("P3 Manager and Admin Workforce do not fabricate zero session evidence on f
  assert.equal((source.match(/!flaggedSessions\.length&&!sessionReadFailed&&<WorkforceEmpty/g) || []).length, 2);
  assert.match(source, /sessionReadFailed\?"session evidence unavailable":facts\.first/);
 });
+
+
+test("P3 Start Work refuses unknown places and rejects other employees' or tenants' off-site tasks before location capture",()=>{
+ const api=read("src/lib/session.js");
+ const body=api.match(/export async function startWork\(orgId, userId, place, workItemId, officeLocationId = null\) \{([\s\S]*?)\n\}/)?.[1];
+ assert.ok(body);
+ assert.match(body,/place !== "office" && place !== "elsewhere"/);
+ assert.match(body,/if \(place === "elsewhere"\)/);
+ assert.match(body,/if \(!workItemId\) throw/);
+ assert.match(body,/\.eq\("org_id",orgId\)\.eq\("assignee_id",userId\)\.eq\("id",workItemId\)/);
+ assert.match(body,/\.in\("status",\["not_started","in_progress","returned"\]\)/);
+ assert.match(body,/if \(assignmentError \|\| !assigned\?\.id\)/);
+ assert.ok(body.indexOf("assignmentError")<body.indexOf("const pos = await getPositionOnce()"));
+});
+
+test("P3 Staff session actions require authoritative exact-row verification before another Start or End",()=>{
+ const home=read("src/screens/Home.jsx");
+ const view=read("src/experience-v2/staff-today/StaffTodayV2.jsx");
+ assert.match(home,/import \{ openSession, startWork, endWork, reconcileWorkSession \} from/);
+ assert.match(home,/const sessionVerified = verifiedSessionScope === sessionScope/);
+ assert.match(home,/const created = await startWork/);
+ assert.match(home,/const current = await openSession\(me\.org_id,me\.id\)/);
+ assert.match(home,/!created\?\.id \|\| current\?\.id !== created\.id/);
+ assert.match(home,/await endWork\(session\.id\);\s*await verifyEndedSession\(session\.id\)/);
+ assert.match(home,/\.eq\("profile_id",me\.id\)\.eq\("id",id\)\.maybeSingle\(\)/);
+ assert.match(home,/closeError \|\| !closed\?\.ended_at/);
+ assert.match(home,/await reconcileWorkSession\(session\.id, "continue"\)/);
+ assert.match(home,/await reconcileWorkSession\(session\.id, "close",[\s\S]*?await verifyEndedSession\(session\.id\)/);
+ assert.match(home,/setVerifiedSessionScope\(null\)/);
+ assert.match(home,/Retry session verification/);
+ assert.match(home,/sessionVerified=\{sessionVerified\}/);
+ assert.match(view,/sessionVerified = true/);
+ assert.match(view,/disabled=\{busy \|\| !sessionVerified\}/);
+ assert.match(view,/!sessionVerified \? "Unverified"/);
+});
