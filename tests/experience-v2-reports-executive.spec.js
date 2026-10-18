@@ -137,13 +137,13 @@ test("VF5C Executive Reports is coverage-first with factual named filing status"
     });
     await page.route("**/rest/v1/units*", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json",
-        headers: { "content-range": "0-2/3" }, body: JSON.stringify(units) });
+        headers: { "access-control-expose-headers": "content-range", "content-range": "0-2/3" }, body: JSON.stringify(units) });
     });
     await page.route("**/rest/v1/reports*", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        headers: { "content-range": "0-1/2" },
+        headers: { "access-control-expose-headers": "content-range", "content-range": "0-1/2" },
         body: JSON.stringify([
           { unit_id: units[0].id, status: "submitted", version: 2, submitted_at: "2026-10-01T08:30:00Z" },
           { unit_id: units[1].id, status: "draft", version: 1, submitted_at: null },
@@ -217,7 +217,7 @@ test("Executive Reports refuses partially returned unit rows instead of inventin
   }));
   await page.route("**/rest/v1/units*", route => route.fulfill({
     status: 200, contentType: "application/json",
-    headers: { "content-range": "0-1/3" },
+    headers: { "access-control-expose-headers": "content-range", "content-range": "0-1/3" },
     body: JSON.stringify([{ id: "00000000-0000-4000-8000-000000000702", name: "Media" },
       { id: "00000000-0000-4000-8000-000000000703", name: "Technical" }]),
   }));
@@ -225,5 +225,45 @@ test("Executive Reports refuses partially returned unit rows instead of inventin
   await expect(page.getByText("Reporting context could not be loaded", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Try again", exact: true })).toBeVisible();
   await expect(page.getByText("0 of", { exact: false })).toHaveCount(0);
+  await context.close();
+});
+
+test("Executive issued-outcome brief hides incomplete history rather than counting a partial result", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.goto("/");
+  await page.getByPlaceholder("Work email").fill("exec@ceac.local.test");
+  await page.getByPlaceholder("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
+  const periodId = "00000000-0000-4000-8000-000000000701";
+  await page.route("**/rest/v1/report_periods*", route => route.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({ id: periodId, label: "September 2026", status: "open",
+      starts_on: "2026-09-01", ends_on: "2026-09-30" }),
+  }));
+  await page.route("**/rest/v1/units*", route => route.fulfill({
+    status: 200, contentType: "application/json", headers: { "access-control-expose-headers": "content-range", "content-range": "0-0/1" },
+    body: JSON.stringify([{ id: "00000000-0000-4000-8000-000000000702", name: "Media" }]),
+  }));
+  await page.route("**/rest/v1/reports*", route => {
+    const details = new URL(route.request().url()).searchParams.get("select")?.includes("narrative");
+    const row = { unit_id: "00000000-0000-4000-8000-000000000702",
+      status: "submitted", version: 1, submitted_at: "2026-09-30T14:00:00Z" };
+    return route.fulfill({ status: 200, contentType: "application/json",
+      headers: { "access-control-expose-headers": "content-range", "content-range": details ? "0-0/2" : "0-0/1" },
+      body: JSON.stringify([details ? { id: "00000000-0000-4000-8000-000000000711", ...row, narrative: "Verified service", challenges: "None" } : row]),
+    });
+  });
+  for (const table of ["objectives", "project_milestones"]) {
+    await page.route("**/rest/v1/" + table + "*", route => route.fulfill({
+      status: 200, contentType: "application/json", headers: { "access-control-expose-headers": "content-range", "content-range": "*/0" }, body: "[]",
+    }));
+  }
+  await page.goto("/?tab=exec-reports");
+  await expect(page.locator(".ev2-reporting-executive")).toBeVisible();
+  await expect(page.getByText("submitted units", { exact: true })).toBeVisible();
+  await expect(page.getByText("Detailed outcome records could not be verified. No achievement figures have been inferred.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Print / Save PDF" })).toBeDisabled();
   await context.close();
 });

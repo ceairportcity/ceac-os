@@ -5,11 +5,11 @@ const read=p=>readFileSync(p,"utf8");
 test("Executive briefing only receives explicitly issued organisational reports, not HR narratives or drafts",()=>{
  const screen=read("src/screens/ExecutiveReports.jsx");
  const view=read("src/components/ExecutiveOutcomeBrief.jsx");
- assert.match(screen,/\.from\("reports"\)\.select\("id,unit_id,version,status,submitted_at,narrative,challenges"\)/);
+ assert.match(screen,/\.from\("reports"\)\.select\("id,unit_id,version,status,submitted_at,narrative,challenges", \{ count: "exact" \}\)/);
  assert.match(screen,/\.in\("status",\["submitted","confirmed"\]\)/, "leadership fetch must never request draft or returned narrative");
  assert.match(screen,/\.from\("objectives"\)/);
  assert.match(screen,/\.from\("project_milestones"\)/);
- assert.match(screen,/\.length>500/);
+ assert.match(screen,/x\.count>500/);
  assert.match(view,/ministryPeriodEvidence/);
  assert.doesNotMatch(view,/appraisal_entries|profile_portraits|feedback_notes|appraisal_human_rating_versions/);
 });
@@ -53,4 +53,19 @@ test("Executive filing counts fail closed on silent database result truncation",
  assert.match(screen,/reportResult\.count !== \(reportResult\.data \|\| \[\]\)\.length/);
  assert.match(screen,/No filing totals can be verified/);
  assert.match(screen,/Filing totals are withheld/);
+});
+
+test("Executive outcome sources require exact counts, not a potentially truncated 500-row view",()=>{
+ const screen=read("src/screens/ExecutiveReports.jsx");
+ for(const select of [
+  'id,unit_id,version,status,submitted_at,narrative,challenges',
+  'id,name,status,project_id,unit_id,target_value,achieved_value,target_unit',
+  'id,name,status,project_id,target_on,completed_at'
+ ]) {
+  assert.ok(screen.includes('.select("'+select+'", { count: "exact" })'),"Missing complete-count source: "+select);
+ }
+ assert.match(screen,/typeof x\.count !== "number"/);
+ assert.match(screen,/x\.count !== \(x\.data\|\|\[\]\)\.length/);
+ assert.match(screen,/x\.count>500/);
+ assert.match(screen,/nextOutcomeError="Leadership evidence could not be verified completely\. Detailed totals are withheld\."/);
 });

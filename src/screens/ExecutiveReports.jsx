@@ -87,14 +87,19 @@ export default function ExecutiveReports({ me }) {
         nextReports = Object.values(latestUnitReportStatus(reportResult.data || []));
         // Only issued organisational reports; no draft narrative or HR ratings.
         const [issued,objectives,milestones] = await Promise.all([
-          supabase.from("reports").select("id,unit_id,version,status,submitted_at,narrative,challenges")
+          supabase.from("reports").select("id,unit_id,version,status,submitted_at,narrative,challenges", { count: "exact" })
             .eq("period_id",periodResult.data.id).eq("scope","unit").in("status",["submitted","confirmed"]).limit(501),
-          supabase.from("objectives").select("id,name,status,project_id,unit_id,target_value,achieved_value,target_unit")
+          supabase.from("objectives").select("id,name,status,project_id,unit_id,target_value,achieved_value,target_unit", { count: "exact" })
             .eq("org_id",me.org_id).limit(501),
-          supabase.from("project_milestones").select("id,name,status,project_id,target_on,completed_at")
+          supabase.from("project_milestones").select("id,name,status,project_id,target_on,completed_at", { count: "exact" })
             .eq("org_id",me.org_id).limit(501),
         ]);
-        const detailsError=[issued,objectives,milestones].find(x=>x.error || (x.data||[]).length>500);
+        // The API may silently apply its row cap even when our requested limit
+        // is higher. An exact count is required before outcome coverage can
+        // be described as complete; otherwise withhold the detailed brief.
+        const detailsError=[issued,objectives,milestones].find(x=>
+          x.error || typeof x.count !== "number"
+          || x.count !== (x.data||[]).length || x.count>500);
         if (detailsError) {
           nextOutcomeError="Leadership evidence could not be verified completely. Detailed totals are withheld.";
         } else {
