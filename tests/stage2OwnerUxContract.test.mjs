@@ -677,3 +677,25 @@ test("P7 retired Staff and Manager command-dashboard CSS is removed without eras
     }
   }
 });
+
+
+test("P7 legacy department, personal and project-screen CSS is retired only where V2 replaced its DOM",()=>{
+ const css=file("src/styles.css");
+ const staffMe=file("src/screens/Me.jsx");
+ const managerCalendar=file("src/screens/ManagerCalendar.jsx");
+ const adminProjects=file("src/screens/AdminProjects.jsx");
+ const staffTeam=file("src/screens/StaffTeam.jsx");
+ const managerPerson=file("src/screens/PersonDetail.jsx");
+ for(const screen of [staffMe,managerCalendar,adminProjects,staffTeam]){
+   assert.doesNotMatch(screen,/className="(?:staff-me|manager-calendar|team-resource-row|team-person-row)"/);
+ }
+ assert.match(managerPerson,/manager-person-detail/);
+ assert.match(css,/\.manager-person-detail/);
+ for(const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)){
+   const selector=rule[1].replace(/\/\*[\s\S]*?\*\//g,"").trim();
+   if(selector.startsWith("@")||selector.includes("@media"))continue;
+   const obsolete=/\.(?:staff-me(?:-[\w-]+)?|manager-calendar(?:-[\w-]+)?|team-resource-row|team-person-row|admin-project-[\w-]+|manager-person-(?!detail\b)[\w-]+)/;
+   const members=selector.split(",").map(x=>x.trim()).filter(Boolean);
+   assert.ok(!members.length||!members.every(x=>obsolete.test(x)), "Orphaned pre-V2 surface rule: "+selector.slice(0,100));
+ }
+});

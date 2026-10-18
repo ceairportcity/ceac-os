@@ -331,10 +331,6 @@ input,textarea,select{font:inherit;color:inherit}
 .team-compact-row strong,.team-person-row strong,.team-resource-row strong{font-size:13.5px}
 .team-compact-row span,.team-person-row span,.team-resource-row span{font-size:11.5px;color:var(--ink-faint)}
 .team-compact-row time{font-size:11.5px;color:var(--ink-soft);text-align:right}
-.team-person-row{display:block}
-.team-person-row p,.team-resource-row p{font-size:12px;color:var(--ink-soft);line-height:1.45;margin-top:7px}
-.team-resource-row{align-items:flex-start;text-decoration:none;color:inherit}
-.team-resource-row>b{font-size:15px;color:var(--green);font-weight:500}
 
 /* Me becomes an employee workspace rather than one long settings screen. */
 .personal-area{margin-top:22px}
@@ -606,7 +602,6 @@ textarea{width:100%}
 .staff-team .team-compact-row,.staff-team .team-person-row,.staff-team .team-resource-row{
   border-top-color:var(--staff-line-soft)
 }
-.staff-team .team-resource-row>b{color:var(--staff-brand)}
 
 /* Record */
 .staff-record .month-field{background:#fff}
@@ -622,14 +617,6 @@ textarea{width:100%}
 }
 .staff-record .timeline-row,.staff-record .record-line,.staff-record .session-row{
   border-bottom-color:var(--staff-line-soft)
-}
-
-/* Me */
-.staff-me .leave-summary>div{border-color:var(--staff-line);background:#fff;border-radius:12px}
-.staff-me .development-summary{background:var(--staff-brand-soft);color:var(--staff-brand-strong)}
-.staff-me .goal-list,.staff-me .info-list{border-top-color:var(--staff-line)}
-.staff-me .goal-card,.staff-me .reminder-row,.staff-me .leave-request-row,.staff-me .info-row{
-  border-color:var(--staff-line-soft)
 }
 
 /* Work detail */
@@ -693,8 +680,6 @@ textarea{width:100%}
   }
   .staff-record .record-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .staff-record .record-summary-grid>div:last-child{grid-column:1/-1}
-  .staff-me .info-row{align-items:flex-start;flex-direction:column;gap:4px}
-  .staff-me .info-row strong{text-align:left;max-width:100%}
   .work-detail-meta{align-items:flex-start;flex-direction:column}
 }
 @media (max-width:330px){
@@ -1113,10 +1098,6 @@ textarea{width:100%}
 .staff-app .team-compact-row strong,.staff-app .team-person-row strong,.staff-app .team-resource-row strong{font-size:12.5px}
 .staff-app .team-compact-row span,.staff-app .team-person-row span,.staff-app .team-resource-row span,
 .staff-app .team-compact-row time{margin-top:3px;color:var(--staff-ink-faint);font-size:10.5px}
-.staff-app .team-person-row p,.staff-app .team-resource-row p{
-  grid-column:1/-1;margin-top:-3px;color:var(--staff-ink-soft);font-size:11px;line-height:1.45
-}
-.staff-app .team-resource-row>b{color:var(--staff-brand);font-weight:500}
 
 /* Record — evidence first, editorial rather than dashboard-heavy */
 .staff-record .month-field{max-width:190px;margin-top:16px}
@@ -1161,48 +1142,9 @@ textarea{width:100%}
   padding:14px 0;border-bottom:1px solid var(--staff-line-soft)
 }
 
-/* Me — private workspace, not an HR admin form */
-.staff-me .personal-area{margin-top:20px}
-.staff-me .goal-list,.staff-me .info-list{overflow:hidden;border:1px solid var(--staff-line);border-radius:14px;background:#fff}
-.staff-me .goal-card{
-  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;width:100%;
-  padding:14px;border-bottom:1px solid var(--staff-line-soft);text-align:left
-}
-.staff-me .goal-card:last-child{border-bottom:0}
-.staff-me .goal-card strong{font-size:13px}
-.staff-me .goal-card span{grid-column:1;color:var(--staff-ink-faint);font-size:10.5px}
-.staff-me .goal-card b{grid-column:2;grid-row:1/3;align-self:center;color:var(--staff-brand);font-weight:500}
-.staff-me .development-summary{
-  display:flex;align-items:baseline;gap:8px;margin-top:12px;padding:12px 14px;border-radius:12px;
-  background:var(--staff-brand-soft);color:var(--staff-brand-strong)
-}
-.staff-me .development-summary strong{font-size:20px}
-.staff-me .development-summary span{font-size:11px}
-.staff-me .reminder-row,.staff-me .leave-request-row,.staff-me .info-row{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--staff-line-soft)
-}
-.staff-me .reminder-row>div,.staff-me .leave-request-row>div{display:flex;flex-direction:column;min-width:0}
-.staff-me .reminder-row strong,.staff-me .leave-request-row strong{font-size:12.5px}
-.staff-me .reminder-row span,.staff-me .leave-request-row span{margin-top:3px;color:var(--staff-ink-faint);font-size:10.5px}
-.staff-me .leave-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
-.staff-me .leave-summary>div{padding:16px;border:1px solid var(--staff-line);border-radius:14px;background:#fff}
-.staff-me .leave-summary strong{display:block;font-size:24px}
-.staff-me .leave-summary span{display:block;margin-top:5px;color:var(--staff-ink-soft);font-size:10.5px}
-.staff-me .info-list{padding:0 14px}
-.staff-me .info-row span{color:var(--staff-ink-faint);font-size:10.5px}
-.staff-me .info-row strong{max-width:65%;text-align:right;font-size:11.5px;overflow-wrap:anywhere}
-.staff-me .protected-boundary{
-  margin-top:16px;padding:14px;border:1px solid #DDE4E7;border-radius:13px;background:#F7F9FA
-}
-.staff-me .protected-boundary strong{display:block;font-size:11.5px}
-.staff-me .protected-boundary span{display:block;margin-top:5px;color:var(--staff-ink-soft);font-size:10.5px;line-height:1.5}
-.staff-me .signout-action{margin-top:20px;color:var(--staff-danger)}
-
 @media (max-width:390px){
   .staff-record .record-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .staff-record .record-summary-grid>div:last-child{grid-column:1/-1}
-  .staff-me .info-row{align-items:flex-start;flex-direction:column;gap:4px}
-  .staff-me .info-row strong{max-width:100%;text-align:left}
 }
 
 /* ==========================================================================
@@ -1367,46 +1309,9 @@ textarea{width:100%}
     grid-template-columns:repeat(4,minmax(0,1fr))
   }
 }
-
-/* Manager Calendar — list-first on phone, full calendar on desktop */
-.manager-calendar-controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
-.manager-calendar-controls .btn{width:auto}
-.manager-calendar-controls .btn-ghost.on{
-  background:var(--manager-shell);border-color:var(--manager-shell);color:#fff
-}
-.manager-calendar-period{
-  display:grid;grid-template-columns:38px minmax(0,1fr) 38px;align-items:center;gap:10px;
-  margin:22px 0 10px
-}
-.manager-calendar-period button{
-  display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--manager-line);border-radius:10px;background:#fff
-}
-.manager-calendar-period strong{text-align:center;font-size:12.5px;letter-spacing:-.01em}
-.manager-calendar-grid{display:grid;gap:8px}
-.manager-calendar-day{
-  min-width:0;border:1px solid var(--manager-line);border-radius:13px;background:#fff;padding:11px 12px
-}
-.manager-calendar-day.is-muted{opacity:.5}
-.manager-calendar-date{font-size:10.5px;font-weight:700;color:var(--manager-faint);text-transform:uppercase;letter-spacing:.05em}
-.manager-calendar-events{display:grid;gap:6px;margin-top:7px}
-.manager-calendar-event{
-  width:100%;padding:8px 9px;border-radius:9px;background:#F3F6F7;color:var(--manager-ink);
-  font-size:11px;line-height:1.35;text-align:left
-}
-.manager-calendar-event:active{background:#EAF1F2}
-.manager-calendar-empty{margin-top:12px}
 @media (max-width:819px){
-  .manager-calendar-grid{grid-template-columns:1fr}
-  .manager-calendar-day.is-empty{display:none}
-  .manager-calendar-day{padding:12px 13px}
-  .manager-calendar-date{font-size:10px}
-  .manager-calendar-events{margin-top:8px}
 }
 @media (min-width:820px){
-  .manager-calendar-grid{grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
-  .manager-calendar-day{min-height:112px;padding:10px}
-  .manager-calendar-week .manager-calendar-day{min-height:180px}
-  .manager-calendar-event{padding:5px 6px;background:#F5F7F8;font-size:10.5px}
 }
 
 /* ==========================================================================
@@ -1732,7 +1637,6 @@ textarea{width:100%}
 }
 .meeting-provider-note strong{font-size:10.5px;color:#52636D}
 .meeting-provider-note span{margin-top:4px;color:#7B8A92;font-size:9.5px;line-height:1.5}
-.manager-calendar-create{margin-top:14px}
 
 /* Shared meeting entry surfaces */
 .project-collaboration-grid{display:grid;grid-template-columns:1fr;gap:8px}
@@ -1963,11 +1867,6 @@ textarea{width:100%}
 .meeting-scheduler-actions .btn{width:auto}
 .meeting-scheduler-note{margin-top:8px;color:#85939A;font-size:8.8px;line-height:1.4;text-align:right}
 @keyframes sheet-up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-
-/* Calendar controls: one view switch + one filter control on mobile */
-.manager-calendar-toolbar{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px
-}
 .calendar-view-toggle{display:flex;gap:3px;padding:3px;border-radius:11px;background:#E4EAEC}
 .calendar-view-toggle button{min-width:76px;min-height:36px;padding:0 12px;border-radius:9px;color:#65757E;font-size:10.5px;font-weight:650}
 .calendar-view-toggle button.on{background:#fff;color:#17232D;box-shadow:0 1px 4px rgba(25,40,50,.08)}
@@ -1993,7 +1892,6 @@ textarea{width:100%}
   .meeting-scheduler-sheet{max-width:900px;border-radius:22px;padding:22px;max-height:min(88vh,860px)}
   .meeting-scheduler-grid{grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:20px}
   .meeting-audience{max-height:560px;overflow-y:auto}
-  .manager-calendar-toolbar{justify-content:flex-start}
 }
 
 /* Motion: purposeful and optional */
@@ -2218,13 +2116,6 @@ textarea{width:100%}
   .work-scale-tools{grid-template-columns:1fr}
   .finance-request-amount{grid-template-columns:1fr 110px}
 }
-
-
-/* Product refinement: Calendar meeting cues */
-.manager-calendar-event{display:grid;gap:2px}
-.manager-calendar-event small{display:block;font-size:9.5px;line-height:1.25;color:var(--ink-faint);font-weight:500}
-.manager-calendar-event.is-meeting{border-left:3px solid var(--green);padding-left:7px}
-.manager-calendar-event.is-cancelled{opacity:.62;text-decoration:line-through}
 
 
 /* Administration & HR operating surface — 21 Sep 2026 */
@@ -2560,34 +2451,6 @@ button.office-config-card:active{background:#EEF5F4}
 .record-period-control>button{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink-soft)}
 .record-period-selects{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:7px}
 .record-period-selects select{min-width:0;height:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:12px}
-
-
-/* Manager Team identity cards */
-.manager-person-card{margin-bottom:8px;border:1px solid var(--line);border-radius:13px;background:#fff;overflow:hidden}
-.manager-person-main{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;width:100%;padding:12px 13px;text-align:left}
-.manager-person-identity{min-width:0}
-.manager-person-identity>strong{display:block;font-size:13px}
-.manager-person-identity>small{display:block;margin-top:2px;font-size:10.5px;color:var(--ink-faint)}
-.manager-person-identity>span{display:block;margin-top:5px;font-size:10.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.manager-person-evidence{display:flex;flex-wrap:wrap;gap:6px 12px;padding:9px 13px;border-top:1px solid var(--line-soft);background:#FAFBFB;font-size:10.5px}
-.manager-person-evidence button{text-decoration:none!important;color:var(--ink-soft)!important}
-.manager-person-evidence button:hover{text-decoration:underline!important}
-
-
-/* Administration projects + organisation calendar */
-.admin-project-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0 4px}
-.admin-project-summary>div{padding:12px;border:1px solid var(--line);border-radius:11px;background:#fff}
-.admin-project-summary b{display:block;font-size:20px;line-height:1}
-.admin-project-summary span{display:block;margin-top:6px;font-size:10px;color:var(--ink-soft)}
-.admin-project-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.admin-project-card{display:grid;gap:11px;padding:15px;border:1px solid var(--line);border-radius:14px;background:#fff}
-.admin-project-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.admin-project-card-head span{display:block;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint)}
-.admin-project-card-head strong{display:block;margin-top:3px;font-size:14px}
-.admin-project-card-head small{font-size:9.5px;color:var(--ink-faint)}
-.admin-project-card p{font-size:11px;line-height:1.45;color:var(--ink-soft)}
-.admin-project-meta{display:grid;gap:3px}
-.admin-project-meta span,.admin-project-no-objectives{font-size:10px;color:var(--ink-faint)}
 .calendar-window-switch{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
 .calendar-window-switch button{padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink-soft);font-size:10.5px}
 .calendar-window-switch button.on{background:var(--ink);border-color:var(--ink);color:#fff}
@@ -2601,8 +2464,6 @@ button.office-config-card:active{background:#EEF5F4}
 .admin-calendar-event strong{font-size:12.5px}
 .admin-calendar-event small{font-size:10px;color:var(--ink-soft)}
 @media(max-width:700px){
-  .admin-project-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .admin-project-grid{grid-template-columns:1fr}
   .admin-calendar-day{grid-template-columns:1fr;gap:6px}
   .admin-calendar-day>time{padding-top:0}
 }
