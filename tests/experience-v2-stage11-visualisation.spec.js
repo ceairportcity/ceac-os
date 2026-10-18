@@ -57,7 +57,9 @@ async function installFactualReportFixture(page) {
     await route.fulfill({
       status:200,
       contentType:"application/json",
-      headers:{ "content-range": count ? `0-${count-1}/${count}` : "*/0" },
+      headers:{ "content-range": count ? `0-${count-1}/${count}` : "*/0",
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "content-range" },
       body:JSON.stringify(body),
     });
   };

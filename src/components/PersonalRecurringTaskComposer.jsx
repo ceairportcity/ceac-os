@@ -55,10 +55,10 @@ export default function PersonalRecurringTaskComposer({
         .order("created_at", { ascending: false });
       if (!isLatest()) return false;
       if (failure) throw failure;
-      if (typeof count !== "number" || count !== (data || []).length) {
+      if (!Array.isArray(data) || typeof count !== "number" || count !== data.length) {
         throw new Error("Private recurring-task history is incomplete. No series changes are allowed.");
       }
-      setList(data || []); setError("");
+      setList(data); setError("");
       setVerifiedIdentity(requestedIdentity);
       return true;
     } catch {
@@ -118,10 +118,12 @@ export default function PersonalRecurringTaskComposer({
       if (editing) {
         // Editing title/details/time alters only future newly materialised rows;
         // existing and completed occurrences are never silently rewritten.
-        const { error: failure } = await supabase.from("personal_task_series")
+        const { data: changed, error: failure } = await supabase.from("personal_task_series")
           .update({ title, details: form.details.trim() || null, planned_time: form.planned_time || null })
-          .eq("id", editing).eq("org_id", me.org_id).eq("profile_id", me.id);
-        if (failure) throw failure;
+          .eq("id", editing).eq("org_id", me.org_id).eq("profile_id", me.id)
+          .select("id").single();
+        if (failure || changed?.id !== editing)
+          throw new Error("Private series edit was not confirmed by the server.");
         setNotice("Series details updated. Recorded occurrences are unchanged. Stop this series and create a new one to change its schedule.");
       } else {
         const payload = {
@@ -164,15 +166,21 @@ export default function PersonalRecurringTaskComposer({
           .delete().eq("org_id", me.org_id).eq("profile_id", me.id).eq("series_id", series.id)
           .gte("plan_date", dayInAccra()).is("completed_at", null);
         if (futureFailure) throw futureFailure;
-        const { error: removeFailure } = await supabase.from("personal_task_series")
-          .delete().eq("id", series.id).eq("org_id", me.org_id).eq("profile_id", me.id);
-        if (removeFailure) throw removeFailure;
+        const { data: removed, error: removeFailure } = await supabase.from("personal_task_series")
+          .delete().eq("id", series.id).eq("org_id", me.org_id).eq("profile_id", me.id)
+          .select("id").single();
+        if (removeFailure || removed?.id !== series.id)
+          throw new Error("Private recurrence deletion was not confirmed by the server.");
         setNotice("Repetition deleted. Earlier recorded instances remain intact.");
       } else {
-        const { error: failure } = await supabase.from("personal_task_series")
+        const { data: changed, error: failure } = await supabase.from("personal_task_series")
           .update({ is_active: !series.is_active })
-          .eq("id", series.id).eq("org_id", me.org_id).eq("profile_id", me.id);
-        if (failure) throw failure;
+          .eq("id", series.id).eq("org_id", me.org_id).eq("profile_id", me.id)
+          // Compare-and-set rejects another tab's intervening pause/resume.
+          .eq("is_active", series.is_active)
+          .select("id,is_active").single();
+        if (failure || changed?.id !== series.id || changed.is_active !== !series.is_active)
+          throw new Error("Private series state change was not confirmed by the server.");
         setNotice(series.is_active ? "Repetition paused; recorded instances remain." : "Repetition resumed.");
         if (!series.is_active) {
           const { error: generateFailure } = await supabase.rpc("personal_materialize_task_series", {

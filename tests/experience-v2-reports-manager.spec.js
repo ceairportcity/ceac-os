@@ -95,7 +95,9 @@ test("Stage 10 Family F2 keeps no-period Manager reporting as an explicit live p
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      headers: { "content-range": "*/0" },
+      headers: { "content-range": "*/0",
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "content-range" },
       body: JSON.stringify([]),
     });
   });
@@ -106,6 +108,31 @@ test("Stage 10 Family F2 keeps no-period Manager reporting as an explicit live p
   await expect(page.getByRole("button", { name: "Save draft", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Submit report", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open a reporting period", exact: true })).toHaveCount(0);
+  await context.close();
+});
+
+
+test("Stage 10 Manager reporting will not treat successful but unverified count as empty evidence", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.goto("/");
+  await page.getByPlaceholder("Work email").fill("manager@ceac.local.test");
+  await page.getByPlaceholder("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
+  await page.route("**/rest/v1/report_periods*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*",
+        "access-control-expose-headers": "content-range" },
+      body: "[]",
+    });
+  });
+  await page.goto("/?tab=manager-reports");
+  await expect(page.getByText("Report evidence could not be loaded", { exact: true })).toBeVisible();
+  await expect(page.locator(".ev2rep-evidence")).toHaveCount(0);
+  await expect(page.getByText("Live preview only", { exact: true })).toHaveCount(0);
   await context.close();
 });
 

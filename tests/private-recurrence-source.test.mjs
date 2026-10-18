@@ -55,7 +55,7 @@ test("private recurrence writes require current-actor verified series and close 
   assert.match(recurrence,/const currentIdentity = useRef\(identity\)/);
   assert.match(recurrence,/const refreshSequence = useRef\(0\)/);
   assert.match(recurrence,/\{ count: "exact" \}/);
-  assert.match(recurrence,/typeof count !== "number" \|\| count !== \(data \|\| \[\]\)\.length/);
+  assert.match(recurrence,/!Array\.isArray\(data\) \|\| typeof count !== "number" \|\| count !== data\.length/);
   assert.match(recurrence,/\.eq\("org_id", me\.org_id\)\.eq\("profile_id", me\.id\)/);
 
   assert.match(recurrence,/const requestedRead = \+\+refreshSequence\.current/);
@@ -77,4 +77,16 @@ test("one-bundle manifest includes recurrence, never silently activates Stage 2 
   assert.equal(new Set(versions).size,32);
   assert.ok(versions.includes("20261015090000"));
   assert.ok(!versions.includes("20261012172718"));
+});
+
+
+test("P4 private recurring write acknowledgements require actual owner-row readback, not zero-row HTTP success",()=>{
+  assert.match(recurrence,/!Array\.isArray\(data\) \|\| typeof count !== "number" \|\| count !== data\.length/);
+  assert.match(recurrence,/\.update\(\{ title, details:/);
+  assert.match(recurrence,/changed\?\.id !== editing/);
+  assert.match(recurrence,/\.delete\(\)\.eq\("id", series\.id\)[\s\S]*?\.select\("id"\)\.single\(\)/);
+  assert.match(recurrence,/removed\?\.id !== series\.id/);
+  assert.match(recurrence,/\.update\(\{ is_active: !series\.is_active \}\)[\s\S]*?\.select\("id,is_active"\)\.single\(\)/);
+  assert.match(recurrence,/changed\.is_active !== !series\.is_active/);
+  assert.match(recurrence,/\.eq\("is_active", series\.is_active\)/);
 });
