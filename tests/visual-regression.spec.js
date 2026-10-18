@@ -2,6 +2,7 @@ import zlib from "node:zlib";
 import { mkdirSync } from "node:fs";
 import { test, expect } from "@playwright/test";
 import { visualHomeBaselines } from "./visual-home-baselines.js";
+import { ceacLandscapeCatalog } from "../src/lib/ceacLandscapeCatalog.js";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 const roles = [
@@ -142,6 +143,13 @@ test.describe("CEAC visual regression", () => {
     test(`${role} home stays within the approved visual baseline`, async ({ browser }) => {
       const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
       const page = await context.newPage();
+      // Ten approved scenic photographs rotate each Ghana day in the app.
+      // Stabilise ONLY the bitmap used by this layout-fingerprint test,
+      // without changing the application clock, actual selected image URL
+      // or production daily photo rotation. Source unit tests separately
+      // require all ten real licensed images and date-correct selection.
+      await page.route("**/assets/ceac-landscapes/scene-*.webp", (route) =>
+        route.fulfill({ path: "public/assets/ceac-landscapes/scene-01.webp" }));
       await page.goto("/");
       await page.getByPlaceholder("Work email").fill(email);
       await page.getByPlaceholder("Password").fill(password);
@@ -154,6 +162,12 @@ test.describe("CEAC visual regression", () => {
         await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });
       }
       await page.evaluate(() => document.fonts.ready);
+      const scenic = page.locator(".s2-scenic-photo img");
+      if (await scenic.count()) {
+        const actualSrc = await scenic.first().getAttribute("src");
+        expect(ceacLandscapeCatalog.some((photo) => photo.src === actualSrc)).toBe(true);
+        await expect.poll(() => scenic.first().evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+      }
       await page.waitForTimeout(250);
 
       // Preserve the actual synthetic-role rendering for comparison against
