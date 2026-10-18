@@ -590,7 +590,7 @@ test("P7 approved Executive R4 laptop shell dimensions stay role-scoped", () => 
  const refs = file("tests/visual-home-baselines.js");
  assert.match(shared,/--ev2s-sidebar-width: 13\.75rem/);
  assert.match(geometry,/@media \(min-width: 1025px\) \{\s*\.executive-app \{/);
- assert.match(geometry,/--ev2s-sidebar-width: 13\.125rem/);
+ assert.doesNotMatch(geometry,/--ev2s-sidebar-width:/, "R4 must inherit the approved 220px desktop sidebar, not shift it to 210px");
  assert.match(geometry,/--ev2s-topbar-height: 3\.375rem/);
  assert.match(geometry,/\.executive-app \.executivev2-hero\.s2-landscape-hero \{ min-height: 136px/);
  assert.match(geometry,/\.executive-app \.executivev2 > \.s2-own-work-session/);
