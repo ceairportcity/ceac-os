@@ -98,3 +98,19 @@ test("Manager report calendar refreshes Ghana day on focus, visibility and midni
  assert.match(screen,/document\.addEventListener\("visibilitychange", onVisible\)/);
  assert.match(screen,/\[mode, reportDay\]/);
 });
+
+test("date-only due dates include the full Ghana calendar day; timed deadlines stay strict",()=>{
+ const range=reportRange(2026,"month",10);
+ const events=[
+   {id:"same-day",status:"completed",due_at:"2026-10-18",completed_at:"2026-10-18T23:59:59Z"},
+   {id:"next-day",status:"completed",due_at:"2026-10-18",completed_at:"2026-10-19T00:00:01Z"},
+   {id:"timed-late",status:"completed",due_at:"2026-10-18T14:00:00Z",completed_at:"2026-10-18T14:00:01Z"},
+   {id:"timed-early",status:"completed",due_at:"2026-10-18T14:00:00Z",completed_at:"2026-10-18T13:59:59Z"},
+   {id:"undone",status:"in_progress",due_at:"2026-10-18"},
+ ];
+ const values=personalAchievementSummary(events,range,{generatedAt:"2026-10-20T12:00:00Z"});
+ assert.equal(values.counts.due,5);
+ assert.equal(values.counts.onTime,2);
+ assert.deepEqual(values.counts.onTimeRatio,{numerator:2,denominator:5});
+ assert.equal(personalAchievementSummary(events,range,{projectId:"none"}).counts.onTimeRatio,null);
+});

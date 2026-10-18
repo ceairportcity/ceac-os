@@ -49,8 +49,19 @@ export function personalAchievementSummary(records, range, { projectId = null, g
       inPeriod(accraDate(x.created_at),range));
   const due = scoped.filter(x=>inPeriod(accraDate(x.due_at),range));
   const completed = scoped.filter(x=>CLOSED.has(x.status) && inPeriod(accraDate(x.completed_at),range));
-  const onTime = due.filter(x=>CLOSED.has(x.status) && x.completed_at &&
-     new Date(x.completed_at).getTime() <= new Date(x.due_at).getTime());
+  // Due dates entered without a time expire at the end of the Ghana
+  // calendar day, not at 00:00 UTC. Explicit timestamp deadlines retain
+  // their exact clock time; neither case produces an appraisal score.
+  const onTime = due.filter(x=>{
+    if(!CLOSED.has(x.status)||!x.completed_at) return false;
+    if(DATE.test(String(x.due_at))) {
+      const completedDay=accraDate(x.completed_at);
+      return Boolean(completedDay && completedDay<=x.due_at);
+    }
+    const completedAt=new Date(x.completed_at).getTime();
+    const deadline=new Date(x.due_at).getTime();
+    return Number.isFinite(completedAt)&&Number.isFinite(deadline)&&completedAt<=deadline;
+  });
   const assessed = completed.filter(x=>x.first_time_approved === true);
   const selfCertified = completed.filter(x=>x.status === "self_certified");
   const uniqueProjects = [...new Set(periodTasks.map(x=>x.project_id).filter(Boolean))];
