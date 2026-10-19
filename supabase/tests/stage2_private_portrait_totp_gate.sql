@@ -1,5 +1,5 @@
 \set ON_ERROR_STOP on
--- Stage 2 portrait media: local disposable PostgreSQL only, rollback-only.
+-- Stage 2 password launch plus later opt-in MFA: disposable PostgreSQL, rollback-only.
 -- Requires migration 149 and the standard seeded fixture profiles.
 -- This tests policy effects; actual Supabase Storage signed-URL behaviour
 -- and universal MFA/Auth provider step-up require separate browser testing.
@@ -40,6 +40,37 @@ VALUES (
  '31000000-0000-4000-8000-000000000001',
  '10000000-0000-4000-8000-000000000010',
  '10000000-0000-4000-8000-000000000010/31000000-0000-4000-8000-000000000001/81000000-0000-4000-8000-000000000001.webp'
+);
+
+-- Current owner release: password-only signed active staff see private
+-- portraits in their own organisation when universal MFA is DEFAULT OFF.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims',
+ '{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1","amr":[{"method":"password"}]}',true);
+DO $password_release$
+BEGIN
+ IF NOT public.app_portrait_totp_aal2()
+    OR (SELECT count(*) FROM public.profile_portraits) <> 1
+    OR (SELECT count(*) FROM storage.objects
+       WHERE bucket_id='ceac-profile-portraits') <> 1 THEN
+   RAISE EXCEPTION 'Password-only active staff denied private organisation portrait with MFA disabled';
+ END IF;
+END
+$password_release$;
+RESET ROLE;
+
+-- Future, separate owner-authorised universal TOTP release tested only
+-- inside this transaction; verified factor must truly exist on the server.
+UPDATE public.organisations SET universal_totp_required=true
+WHERE id='10000000-0000-4000-8000-000000000010';
+INSERT INTO auth.mfa_factors(
+ id,user_id,friendly_name,factor_type,status,created_at,updated_at,secret
+) VALUES (
+ '51000000-0000-4000-8000-000000000081',
+ '31000000-0000-4000-8000-000000000001',
+ 'Stage 2 private portrait synthetic verifier',
+ 'totp'::auth.factor_type,'verified'::auth.factor_status,
+ now(),now(),'stage2-fixture-not-a-real-secret'
 );
 
 SET LOCAL ROLE authenticated;
