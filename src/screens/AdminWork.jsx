@@ -75,11 +75,9 @@ export default function AdminWork({ me, openItem, goAssign }) {
       description="Follow work Administration delegated, review what is waiting, or inspect organisation work without turning every operational engine into a separate menu."
       actionLabel="Give out work"
       onAction={() => goAssign?.()}
+      secondaryActionLabel="Add my work"
+      onSecondaryAction={() => setAddingMyWork(true)}
     />
-
-    <div className="ev2w-self-work-action">
-      <button type="button" className="btn btn-primary" onClick={() => setAddingMyWork(true)}>+ Add my work</button>
-    </div>
     <WorkTabs items={views} value={view} onChange={setView} ariaLabel="Administration work views" />
     {addingMyWork && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
