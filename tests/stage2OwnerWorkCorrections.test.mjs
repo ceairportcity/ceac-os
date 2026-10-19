@@ -80,7 +80,11 @@ test("approved Work register opens a factual responsive inspector for every role
     const code = source(`src/screens/${page}.jsx`);
     assert.match(code, /import WorkRegisterLayout from/);
     assert.match(code, /<WorkRegisterLayout me=\{me\}/);
-    assert.match(code, /setSelectedWorkId\(item\.id\)/);
+    if (page === 'Work') assert.match(code, /setSelectedWorkId\(item\.id\)/);
+    else {
+      assert.match(code, /<ResponsibilityRegister/);
+      assert.match(code, /onSelect=\{setSelectedWorkId\}/);
+    }
   }
   assert.match(inspector, /\.from\("work_items"\)/);
   assert.match(inspector, /\.eq\("org_id",me\.org_id\)/);
@@ -228,8 +232,9 @@ test("manager, administration and executive default to truthful My work records 
     assert.match(page, /item\.status === "completed" \|\| item\.status === "self_certified"/);
   }
   const manager=source("src/screens/ManagerWork.jsx");
+  const register=source("src/lib/responsibilityRegister.js");
   for(const label of ["In progress", "Waiting & review", "Upcoming", "Completed"]){
-    assert.ok(manager.includes(label),`Missing Manager Work group: ${label}`);
+    assert.ok(register.includes(label),`Missing shared Work group: ${label}`);
   }
-  assert.match(manager, /displaySections\.map/);
+  assert.match(manager, /<ResponsibilityRegister/);
 });

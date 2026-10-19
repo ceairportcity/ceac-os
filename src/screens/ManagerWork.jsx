@@ -3,7 +3,7 @@ import ManagerRoutineOccurrences from "../components/ManagerRoutineOccurrences";
 import { supabase } from "../lib/supabase";
 import SelfWorkComposer from "../components/SelfWorkComposer";
 import WorkRegisterLayout from "../components/WorkRegisterInspector";
-import { dueLabel, isOverdue } from "../lib/time";
+import ResponsibilityRegister from "../components/ResponsibilityRegister";
 import { ProductNotice, LoadingState } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import {
@@ -12,7 +12,6 @@ import {
   WorkGroup,
   WorkPageHeader,
   WorkReviewRow,
-  WorkRow,
   WorkTabs,
 } from "../experience-v2/work-family/WorkFamilyV2";
 
@@ -37,13 +36,13 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     try {
       const [mineResult, givenResult, teamResult, reviewResult] = await Promise.all([
         supabase.from("work_items")
-          .select("id,ref,title,kind,status,origin,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+          .select("id,ref,title,kind,status,origin,project_id,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
           .eq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items")
-          .select("id,ref,title,kind,status,origin,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+          .select("id,ref,title,kind,status,origin,project_id,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
           .eq("assigned_by", me.id).neq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items")
-          .select("id,ref,title,kind,status,origin,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+          .select("id,ref,title,kind,status,origin,project_id,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
           .in("unit_id", me.memberships.filter((m) => m.role === "manager").map((m) => m.unit_id)).neq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.rpc("my_work_attention_queue"),
       ]);
@@ -92,14 +91,6 @@ export default function ManagerWork({ me, openItem, goAssign }) {
   const groupTitle = view === "given" ? "Work you gave out" : view === "team" ? "Active team work"
     : view === "routines" ? "Repeating responsibilities" : view === "completed" ? "Completed responsibilities"
     : view === "created" ? "Responsibilities created by me" : "My responsibilities";
-  const category = (status) => status === "cancelled" ? "Archived"
-    : status === "completed" || status === "self_certified" ? "Completed"
-    : status === "in_review" || status === "returned" || status === "waiting" ? "Waiting & review"
-      : status === "not_started" || status === "scheduled" ? "Upcoming" : "In progress";
-  const statusSections = ["In progress", "Waiting & review", "Upcoming", "Completed", "Archived"]
-    .map((title) => ({ title, items: rows.filter((item) => category(item.status) === title) }))
-    .filter(({ items }) => items.length > 0);
-  const displaySections = view === "mine" || view === "created" ? statusSections : [{ title: groupTitle, items: rows }];
 
   return <div className="body manager-work premium-manager-page ev2-work-page ev2-work-manager">
     <WorkPageHeader
@@ -111,7 +102,6 @@ export default function ManagerWork({ me, openItem, goAssign }) {
       secondaryActionLabel="Add my work"
       onSecondaryAction={() => setAddingMyWork(true)}
     />
-    <WorkTabs items={views} value={view} onChange={setView} ariaLabel="Manager work views" />
     {addingMyWork && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
       onCreated={() => { setView("mine"); void load(); }} />}
@@ -119,48 +109,21 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     {error && <ProductNotice tone="error" title="Could not load Manager Work">{error}</ProductNotice>}
     {loading && <LoadingState label="Loading manager work…" />}
 
-    {!loading && view === "reviews" && (
-      reviews.length ? (
-        <WorkGroup title="Waiting for your review" count={reviews.length}>
-          {reviews.map((row) => <WorkReviewRow
-            key={row.submission_id}
-            title={row.work_title}
-            person={row.assignee_name || "Team member"}
-            context={row.project_name || row.unit_name}
-            submitted={`submitted ${new Date(row.action_at).toLocaleString("en-GB")}`}
-            note="Review authority is assigned to you for this item."
-            onClick={() => openItem(row.work_item_id)}
-          />)}
-        </WorkGroup>
-      ) : <WorkEmpty title="Nothing waiting for review" description="New submissions from your team will appear here." />
-    )}
-
-    {!loading && view !== "reviews" && (
-      <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
-        {rows.length ? displaySections.map((section) => <WorkGroup key={section.title} title={section.title} count={section.items.length}>
-          {section.items.map((item) => <WorkRow
-            key={item.id}
-            title={item.title}
-            refCode={item.ref}
-            kind={item.kind}
-            context={item.projects?.name}
-            owner={["mine","created","completed"].includes(view) ? null : (item.profiles?.full_name || "Unassigned")}
-            due={item.kind === "routine" ? "Scheduled routine" : dueLabel(item.due_at)}
-            status={item.status}
-            recordedAt={item.created_at}
-            actionLabel={item.status === "not_started" ? "New assignment" : item.status === "returned" ? "Needs correction" : null}
-            attention={isOverdue(item.due_at) && !COMPLETE.has(item.status)}
-            onClick={() => setSelectedWorkId(item.id)}
-          />)}
-        </WorkGroup>) : <WorkEmpty
-        title={view === "routines" ? "No repeating responsibilities recorded" : view === "given" ? "No delegated work is open" : view === "team" ? "No other team work is open" : "Nothing is waiting in your own work"}
-        description={view === "routines" ? "Create a repeating responsibility in Give out work. Its dated history stays in the routine record." : view === "given" ? "Use Give out work when you delegate something." : view === "team" ? "Active work carried by your unit will appear here." : "Your personal responsibilities will appear here."}
-        actionLabel={view === "given" || view === "routines" ? "Give out work" : undefined}
-        onAction={view === "given" || view === "routines" ? () => goAssign?.() : undefined}
-      />
-        }
-      </WorkRegisterLayout>
-    )}
+    {!loading && !error && <WorkRegisterLayout me={me}
+      selectedId={view === "reviews" ? null : selectedInView}
+      onClose={() => setSelectedWorkId("none")} openItem={openItem}
+      recordCount={view === "reviews" ? reviews.length : rows.length}
+      tabs={<WorkTabs items={views} value={view} onChange={setView} ariaLabel="Manager work views" />}>
+      {view === "reviews" ? (reviews.length ? <WorkGroup title="Waiting for your review" count={reviews.length}>
+        {reviews.map(row=><WorkReviewRow key={row.submission_id} title={row.work_title}
+          person={row.assignee_name || "Team member"} context={row.project_name || row.unit_name}
+          submitted={`submitted ${new Date(row.action_at).toLocaleString("en-GB")}`}
+          note="Review authority is assigned to you for this item." onClick={() => openItem(row.work_item_id)} />)}
+      </WorkGroup> : <WorkEmpty title="Nothing waiting for review" description="New submissions available to you will appear here." />)
+      : <ResponsibilityRegister key={view} rows={rows} selectedId={selectedInView}
+          onSelect={setSelectedWorkId} onAdd={() => setAddingMyWork(true)}
+          emptyAction={view === "given" || view === "routines" ? {label:"Give out work",onClick:()=>goAssign?.()} : undefined} />}
+    </WorkRegisterLayout>}
 
     {!loading && !error && view === "routines" && <ManagerRoutineOccurrences me={me} openItem={openItem} />}
 

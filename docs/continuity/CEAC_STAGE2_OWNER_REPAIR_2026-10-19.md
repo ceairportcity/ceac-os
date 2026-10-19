@@ -17,3 +17,10 @@ Use the original approved Work desktop/mobile and revised Projects references id
 ## Still open
 
 Work register visual/functional completion, self-created recurrence, complete HR assessment publication/response integration, Admin/HR Control Center correction, full latest-head migration replay and negative authorization, authenticated multi-role browser journeys and literal reference comparison. The latest staging functions are not yet a verified replay of source; no current correction is declared production-ready. Do not merge or deploy based on source tests alone.
+
+## Second source checkpoint — pending rendered acceptance
+
+- Manager, Administration and Executive now use one semantic responsibility register with search, project-ID and status filters, expandable factual status groups and a selected record inspector. Waiting-on/returned records no longer appear under In progress. Selected register filters update the inspector; private records retain their source visibility.
+- Control Center displays each settings domain once, with search and a needs-attention view. Missing account privileges and optional integrations are no longer labelled incomplete organisational setup. A consistent Control Center return link is available in its settings pages, and the root returns to Overview.
+- Exact private Work desktop/mobile and revised Projects images recovered and inspected. This is not a pixel-match claim. Staff register propagation and other workflows remain in progress.
+- 472 source/behaviour tests pass under Node 22. Production build passes. A single explicit Vercel preview checkpoint is requested for real rendered review; routine commits stay ignored by the existing build policy.

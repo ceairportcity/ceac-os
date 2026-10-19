@@ -59,9 +59,12 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
   </aside>;
 }
 
-export default function WorkRegisterLayout({ me, selectedId, onClose, openItem, children }) {
+export default function WorkRegisterLayout({ me, selectedId, onClose, openItem, children, tabs, recordCount }) {
   return <div className="s2-work-layout">
-    <div className="s2-work-register">{children}</div>
+    <div className="s2-work-register">
+      {tabs && <><header className="s2-register-heading"><h2>Responsibilities</h2><span>{recordCount} current records</span></header>{tabs}</>}
+      {children}
+    </div>
     <WorkRegisterInspector me={me} selectedId={selectedId} onClose={onClose} openItem={openItem}/>
   </div>;
 }

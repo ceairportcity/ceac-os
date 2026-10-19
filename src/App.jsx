@@ -7,6 +7,7 @@ const AccountPassword = lazy(() => import("./screens/AccountPassword"));
 import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
 import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
+import ControlCenterTrail from "./components/ControlCenterTrail";
 import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
 import Stage2UniversalMfaGate from "./components/Stage2UniversalMfaGate";
 import { decideUniversalTotpAccess } from "./lib/Stage2UniversalMfaPolicy";
@@ -588,6 +589,7 @@ export default function App() {
           onGuide={() => openGuide(true)}
         />
         <main className="app-content ev2s-content">
+          {isAdmin && !overlay && <ControlCenterTrail tab={tab} go={go} />}
           {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
             {me.legacyAuthorityVerified
               ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."

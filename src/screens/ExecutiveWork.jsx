@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import SelfWorkComposer from "../components/SelfWorkComposer";
 import WorkRegisterLayout from "../components/WorkRegisterInspector";
+import ResponsibilityRegister from "../components/ResponsibilityRegister";
 import { LoadingState, ProductNotice } from "../components/bits";
-import { dueLabel, isOverdue } from "../lib/time";
 import { humanError } from "../lib/productLanguage";
 import {
   WorkEmpty,
@@ -11,7 +11,6 @@ import {
   WorkGroup,
   WorkPageHeader,
   WorkReviewRow,
-  WorkRow,
   WorkTabs,
 } from "../experience-v2/work-family/WorkFamilyV2";
 
@@ -33,7 +32,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     setLoading(true);
     setError(null);
     try {
-      const fields = "id,ref,title,status,origin,due_at,assignee_id,assigned_by,units(name),profiles!work_items_assignee_id_fkey(full_name),projects(name)";
+      const fields = "id,ref,title,status,origin,project_id,due_at,assignee_id,assigned_by,units(name),profiles!work_items_assignee_id_fkey(full_name),projects(name)";
       const [mineResult, givenResult, reviewResult] = await Promise.all([
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assignee_id", me.id).order("due_at", { ascending: true, nullsFirst: false }),
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assigned_by", me.id).neq("assignee_id", me.id).order("due_at", { ascending: true, nullsFirst: false }),
@@ -77,7 +76,6 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
       secondaryActionLabel="Add my work"
       onSecondaryAction={() => setAddingMyWork(true)}
     />
-    <WorkTabs items={tabs} value={view} onChange={setView} ariaLabel="Executive work views" />
     {addingMyWork && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
       onCreated={() => { setView("mine"); void load(); }} />}
@@ -85,47 +83,21 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     {error && <ProductNotice tone="error" title="Could not load Work">{error}</ProductNotice>}
     {loading && <LoadingState label="Loading leadership work…" />}
 
-    {!loading && view === "reviews" && (
-      reviews.length ? (
-        <WorkGroup title="Submitted work requiring leadership context" count={reviews.length}>
-          {reviews.map((row) => <WorkReviewRow
-            key={row.submission_id}
-            title={row.work_title}
-            person={row.assignee_name || "Team member"}
-            context={row.unit_name || "Unit"}
-            submitted={row.action_at ? new Date(row.action_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : null}
-            note="Review authority follows this leadership assignment."
-            onClick={() => openItem(row.work_item_id)}
-          />)}
-        </WorkGroup>
-      ) : <WorkEmpty title="Nothing is waiting for review" description="Leadership-visible submissions that require context will appear here." />
-    )}
-
-    {!loading && view !== "reviews" && (
-      <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
-        {rows.length ? (
-        <WorkGroup title={view === "given" ? "Delegated work" : view === "created" ? "Responsibilities created by me" : view === "completed" ? "Completed responsibilities" : "My responsibilities"} count={rows.length}>
-          {rows.map((item) => <WorkRow
-            key={item.id}
-            title={item.title}
-            refCode={item.ref}
-            context={item.projects?.name || item.units?.name}
-            owner={view === "given" ? (item.profiles?.full_name || "Unassigned") : null}
-            due={dueLabel(item.due_at)}
-            status={item.status}
-            attention={isOverdue(item.due_at) && !CLOSED.has(item.status)}
-            onClick={() => setSelectedWorkId(item.id)}
-          />)}
-        </WorkGroup>
-      ) : <WorkEmpty
-        title="No open work in this view"
-        description={view === "given" ? "Work you delegate will appear here." : "Your personal leadership work will appear here."}
-        actionLabel={view === "given" ? "Give out work" : undefined}
-        onAction={view === "given" ? () => goAssign?.() : undefined}
-      />
-        }
-      </WorkRegisterLayout>
-    )}
+    {!loading && !error && <WorkRegisterLayout me={me}
+      selectedId={view === "reviews" ? null : selectedInView}
+      onClose={() => setSelectedWorkId("none")} openItem={openItem}
+      recordCount={view === "reviews" ? reviews.length : rows.length}
+      tabs={<WorkTabs items={tabs} value={view} onChange={setView} ariaLabel="Executive work views" />}>
+      {view === "reviews" ? (reviews.length ? <WorkGroup title="Waiting for your review" count={reviews.length}>
+        {reviews.map(row=><WorkReviewRow key={row.submission_id} title={row.work_title}
+          person={row.assignee_name || "Team member"} context={row.project_name || row.unit_name}
+          submitted={`submitted ${new Date(row.action_at).toLocaleString("en-GB")}`}
+          note="Review the recorded evidence before making a decision." onClick={() => openItem(row.work_item_id)} />)}
+      </WorkGroup> : <WorkEmpty title="Nothing waiting for review" description="New submissions available to you will appear here." />)
+      : <ResponsibilityRegister key={view} rows={rows} selectedId={selectedInView}
+          onSelect={setSelectedWorkId} onAdd={() => setAddingMyWork(true)}
+          emptyAction={view === "given" || view === "routines" ? {label:"Give out work",onClick:()=>goAssign?.()} : undefined} />}
+    </WorkRegisterLayout>}
 
     {view === "given" && <WorkFootnote>
       “Given out” reflects the current recorded assigner. CEAC OS does not invent a delegation chain that is not stored.
