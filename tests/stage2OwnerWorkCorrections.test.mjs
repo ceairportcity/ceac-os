@@ -71,3 +71,35 @@ test("relink only self-created organisational work through an audited authority-
   assert.match(form, /eq\("assignee_id",me\.id\)/);
   assert.match(detail, /<WorkProjectLink .*item=\{item\} onLinked=\{load\}/);
 });
+
+test("approved Work register opens a factual responsive inspector for every role", () => {
+  const inspector = source("src/components/WorkRegisterInspector.jsx");
+  const css = source("src/components/WorkRegisterInspector.css");
+  for (const page of ["Work", "ManagerWork", "AdminWork", "ExecutiveWork"]) {
+    const code = source(`src/screens/${page}.jsx`);
+    assert.match(code, /import WorkRegisterLayout from/);
+    assert.match(code, /<WorkRegisterLayout me=\{me\}/);
+    assert.match(code, /setSelectedWorkId\(item\.id\)/);
+  }
+  assert.match(inspector, /\.from\("work_items"\)/);
+  assert.match(inspector, /\.eq\("org_id",me\.org_id\)/);
+  assert.match(inspector, /<WorkActivityDiary me=\{me\} item=\{work\}/);
+  assert.match(inspector, /<WorkProjectLink me=\{me\} item=\{work\}/);
+  assert.match(inspector, /openItem\?\.\(work\.id\)/);
+  assert.match(css, /\.s2-work-layout\{display:grid/);
+  assert.match(css, /@media\(max-width:920px\)/);
+});
+
+test("personal monthly and quarterly report waits for complete authoritative dated activity reads", () => {
+  const report = source("src/screens/PersonalAchievements.jsx");
+  const sql = source("supabase/migrations/20261019175500_159_owner_activity_project_attribution.sql");
+  assert.match(report, /fetchAll\(\(\)=>supabase\.from\("work_activity_records"\)/);
+  assert.match(report, /setActivities\(activity\);setLoadedKey\(reportKey\)/);
+  assert.match(report, /activity_date",range\.start/);
+  assert.match(report, /\.eq\("contributor_id",me\.id\)/);
+  assert.match(report, /a\.source_project_id === projectId/);
+  assert.match(report, /Self-recorded, not verified/);
+  assert.match(sql, /source_project_id uuid REFERENCES public\.projects/);
+  assert.match(sql, /NEW\.source_project_id:=w\.project_id/);
+  assert.match(sql, /NEW\.source_objective_id:=w\.objective_id/);
+});
