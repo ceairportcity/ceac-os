@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import SelfWorkComposer from "../components/SelfWorkComposer";
+import WorkRegisterLayout from "../components/WorkRegisterInspector";
 import { LoadingState, ProductNotice } from "../components/bits";
 import { dueLabel, isOverdue } from "../lib/time";
 import { humanError } from "../lib/productLanguage";
@@ -19,6 +20,7 @@ const CLOSED = new Set(["completed", "self_certified", "cancelled"]);
 export default function ExecutiveWork({ me, openItem, goAssign }) {
   const [view, setView] = useState("given");
   const [addingMyWork, setAddingMyWork] = useState(false);
+  const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [mine, setMine] = useState([]);
   const [given, setGiven] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -58,6 +60,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     ["mine", "Mine", activeMine.length],
   ];
   const rows = view === "given" ? activeGiven : activeMine;
+  const selectedInView = selectedWorkId === "none" ? null : (rows.some(item => item.id === selectedWorkId) ? selectedWorkId : (rows[0]?.id || null));
 
   return <div className="body executive-work ev2-work-page ev2-work-executive">
     <WorkPageHeader
@@ -96,7 +99,8 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     )}
 
     {!loading && view !== "reviews" && (
-      rows.length ? (
+      <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
+        {rows.length ? (
         <WorkGroup title={view === "given" ? "Delegated work" : "Your open work"} count={rows.length}>
           {rows.map((item) => <WorkRow
             key={item.id}
@@ -107,7 +111,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
             due={dueLabel(item.due_at)}
             status={item.status}
             attention={isOverdue(item.due_at) && !CLOSED.has(item.status)}
-            onClick={() => openItem(item.id)}
+            onClick={() => setSelectedWorkId(item.id)}
           />)}
         </WorkGroup>
       ) : <WorkEmpty
@@ -116,6 +120,8 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
         actionLabel={view === "given" ? "Give out work" : undefined}
         onAction={view === "given" ? () => goAssign?.() : undefined}
       />
+        )}
+      </WorkRegisterLayout>
     )}
 
     {view === "given" && <WorkFootnote>
