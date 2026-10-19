@@ -168,3 +168,19 @@ test("HR alone sees restricted optional project contribution drafts; employee ou
   assert.match(sql, /app_has_capability\('people\.manage',NULL\)/);
   assert.match(sql, /wi\.confidential=false/);
 });
+
+test("dated work corrections retain the original contributor, audit history and project", () => {
+  const diary = source("src/components/WorkActivityDiary.jsx");
+  const snapshot = source("supabase/migrations/20261019175500_159_owner_activity_project_attribution.sql");
+  const access = source("supabase/migrations/20261019174500_158_owner_work_activity_diary.sql");
+  assert.match(diary, /entry\.contributor_id !== me\.id/);
+  assert.match(diary, /supersedes_id: correctingId \|\| null/);
+  assert.match(diary, /check\.data\.supersedes_id \|\| null/);
+  assert.match(diary, /Correct this entry/);
+  assert.match(snapshot, /IF NEW\.supersedes_id IS NOT NULL THEN/);
+  assert.match(snapshot, /prior\.source_project_id,prior\.source_objective_id/);
+  assert.match(snapshot, /prior\.work_item_id=NEW\.work_item_id/);
+  assert.match(snapshot, /prior\.contributor_id=NEW\.contributor_id/);
+  assert.match(access, /prior\.contributor_id<>NEW\.contributor_id/);
+  assert.doesNotMatch(diary, /\.update\("work_activity_records"\)|\.delete\("work_activity_records"\)/);
+});
