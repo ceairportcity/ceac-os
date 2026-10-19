@@ -398,6 +398,10 @@ test("OCR6C Project Files upload is searchable and opens through a signed privat
 
   const filename = "ocr6-private-search.txt";
   const input = page.locator('.operational-files input[type="file"]');
+  // The private-file panel verifies the current Project before enabling writes.
+  // Sending a synthetic file before that read completes can drop the change.
+  // Wait for the actual authorised upload state; do not mock file/storage success.
+  await expect(input).toBeEnabled({ timeout: 15000 });
   await input.setInputFiles({ name: filename, mimeType: "text/plain", buffer: Buffer.from("OCR6 private search fixture") });
   await expect(page.getByText(filename, { exact: true })).toBeVisible({ timeout: 15000 });
 

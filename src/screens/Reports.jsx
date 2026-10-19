@@ -159,8 +159,8 @@ export default function Reports({ me }) {
     try {
       // Match this tenant and the status the administrator actually reviewed.
       // No updated row is an uncertain operation, not a successful close.
-      const { data, error } = await supabase.from("report_periods")
-        .update({ status }).eq("id", period.id)
+      const { data, error } = await supabase.from("report_periods").update({ status })
+        .eq("id", period.id)
         .eq("org_id", me.org_id).eq("status", period.status)
         .select("id,status").single();
       if (currentActorScope.current !== writingActor) return;
