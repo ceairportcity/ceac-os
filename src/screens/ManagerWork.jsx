@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import ManagerRoutineOccurrences from "../components/ManagerRoutineOccurrences";
 import { supabase } from "../lib/supabase";
 import SelfWorkComposer from "../components/SelfWorkComposer";
+import WorkRegisterLayout from "../components/WorkRegisterInspector";
 import { dueLabel, isOverdue } from "../lib/time";
 import { ProductNotice, LoadingState } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -20,6 +21,7 @@ const COMPLETE = new Set(["completed", "self_certified", "cancelled"]);
 export default function ManagerWork({ me, openItem, goAssign }) {
   const [view, setView] = useState("reviews");
   const [addingMyWork, setAddingMyWork] = useState(false);
+  const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [mine, setMine] = useState([]);
   const [given, setGiven] = useState([]);
   const [team, setTeam] = useState([]);
@@ -79,6 +81,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     ["routines", "Routines", routines.length],
   ];
   const rows = view === "given" ? activeGiven : view === "team" ? activeTeam : view === "routines" ? routines : activeMine;
+  const selectedInView = selectedWorkId === "none" ? null : (rows.some(item => item.id === selectedWorkId) ? selectedWorkId : (rows[0]?.id || null));
   const groupTitle = view === "given" ? "Work you gave out" : view === "team" ? "Active team work" : view === "routines" ? "Repeating responsibilities" : "Your open work";
 
   return <div className="body manager-work premium-manager-page ev2-work-page ev2-work-manager">
@@ -118,7 +121,8 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     )}
 
     {!loading && view !== "reviews" && (
-      rows.length ? (
+      <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
+        {rows.length ? (
         <WorkGroup title={groupTitle} count={rows.length}>
           {rows.map((item) => <WorkRow
             key={item.id}
@@ -132,7 +136,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
             recordedAt={item.created_at}
             actionLabel={item.status === "not_started" ? "New assignment" : item.status === "returned" ? "Needs correction" : null}
             attention={isOverdue(item.due_at) && !COMPLETE.has(item.status)}
-            onClick={() => openItem(item.id)}
+            onClick={() => setSelectedWorkId(item.id)}
           />)}
         </WorkGroup>
       ) : <WorkEmpty
@@ -141,6 +145,8 @@ export default function ManagerWork({ me, openItem, goAssign }) {
         actionLabel={view === "given" || view === "routines" ? "Give out work" : undefined}
         onAction={view === "given" || view === "routines" ? () => goAssign?.() : undefined}
       />
+        )}
+      </WorkRegisterLayout>
     )}
 
     {!loading && !error && view === "routines" && <ManagerRoutineOccurrences me={me} openItem={openItem} />}
