@@ -124,35 +124,17 @@ function meanAbsoluteError(actual, expected) {
   return total / expected.length;
 }
 
-function roleContentRegion(rgb, dimensions, approvedPhotoRect = null) {
+function roleContentRegion(rgb) {
   const values = [];
-  let excludedPhotoCells = 0;
-  // Preserve the historical shell exclusion and literal RGB <=6 comparison.
-  // The approved Stage 2 scenic image is new; an older Stage 1/early R4 bitmap
-  // did not contain a photograph. Compare all OTHER shared workspace cells.
-  // Its exact photo geometry and licensing are checked separately below.
+  // Compare every content cell of the owner-approved full render, INCLUDING
+  // the scenic-photo hero. Exclude only the fixed shared shell/nav cells.
   for (let gy = 1; gy < GRID_H; gy += 1) {
     for (let gx = 2; gx < GRID_W; gx += 1) {
-      const cell = {
-        left: (gx * dimensions.width) / GRID_W,
-        right: ((gx + 1) * dimensions.width) / GRID_W,
-        top: (gy * dimensions.height) / GRID_H,
-        bottom: ((gy + 1) * dimensions.height) / GRID_H,
-      };
-      const photoOverlaps = approvedPhotoRect &&
-        cell.right > approvedPhotoRect.left &&
-        cell.left < approvedPhotoRect.right &&
-        cell.bottom > approvedPhotoRect.top &&
-        cell.top < approvedPhotoRect.bottom;
-      if (photoOverlaps) {
-        excludedPhotoCells += 1;
-        continue;
-      }
       const offset = (gy * GRID_W + gx) * 3;
       values.push(rgb[offset], rgb[offset + 1], rgb[offset + 2]);
     }
   }
-  return { values, excludedPhotoCells };
+  return values;
 }
 
 test.describe("CEAC visual regression", () => {
@@ -187,9 +169,8 @@ test.describe("CEAC visual regression", () => {
       }
       await page.waitForTimeout(250);
 
-      // Preserve the actual synthetic-role rendering for comparison against
-      // owner-approved V2 designs. Do not silently rebaseline or relax the
-      // existing Admin/Executive colour/layout regression threshold.
+      // Compare exact synthetic renders against the explicitly owner-approved
+      // pinned screenshots; visual mean RGB <=6 is unchanged.
       mkdirSync("test-artifacts", { recursive: true });
       const screenshot = await page.screenshot({
         path: `test-artifacts/visual-home-${role}-desktop-1440.png`,
@@ -204,18 +185,14 @@ test.describe("CEAC visual regression", () => {
       } else {
         const actual = visualFingerprint(screenshot);
         const expected = visualHomeBaselines[role];
-        // Fail closed on missing/truncated approved reference data. The owner
-        // approved R3/R4 fingerprints for Admin/Executive, not an empty array
-        // or a relaxed visual threshold.
+        // Fail closed on missing/truncated pinned owner-approved references.
         expect(expected.rgb, `${role} approved 12×12 reference must be complete`)
           .toHaveLength(GRID_W * GRID_H * 3);
         expect(actual.rgb).toHaveLength(GRID_W * GRID_H * 3);
         expect(actual.width).toBe(expected.width);
         expect(actual.height).toBe(expected.height);
-        // The older Staff and R4 Executive references predate the approved
-        // photo-backed Stage 2 Overview. Only the exact approved PHOTO region
-        // is incomparable; do not rebaseline other pixels or change RGB <=6.
-        let approvedPhotoRect = null;
+        // 19 October owner approval: Staff/Executive exact full renders now include
+        // the scenic hero. Verify its geometry; NO photo masking is allowed.
         if (role === "staff" || role === "executive") {
           await expect(scenic.first()).toBeVisible();
           const rect = await scenic.first().evaluate((image) => {
@@ -226,29 +203,18 @@ test.describe("CEAC visual regression", () => {
               bottom:region.bottom, width:region.width, height:region.height };
           });
           expect(rect, "approved scenic image region is required").not.toBeNull();
-          // Fail closed if a future design erroneously blankets the viewport:
-          // the bounded exclusion is strictly upper-right, not arbitrary.
+          // The scenic image remains in its bounded upper-right hero location.
           expect(rect.left).toBeGreaterThan(actual.width * 0.42);
           expect(rect.right).toBeLessThanOrEqual(actual.width);
           expect(rect.top).toBeLessThan(actual.height * 0.36);
           expect(rect.bottom).toBeLessThan(actual.height * 0.43);
           expect(rect.width).toBeLessThan(actual.width * 0.57);
           expect(rect.height).toBeLessThan(actual.height * 0.28);
-          approvedPhotoRect = rect;
         }
-        const actualRegion = roleContentRegion(actual.rgb, actual, approvedPhotoRect);
-        const expectedRegion = roleContentRegion(expected.rgb, expected, approvedPhotoRect);
-        expect(actualRegion.excludedPhotoCells).toBe(expectedRegion.excludedPhotoCells);
-        if (approvedPhotoRect) {
-          expect(actualRegion.excludedPhotoCells).toBeGreaterThan(0);
-          expect(actualRegion.excludedPhotoCells).toBeLessThanOrEqual(20);
-        } else {
-          expect(actualRegion.excludedPhotoCells).toBe(0);
-        }
-        // More than 80% of the stable workspace fingerprint remains checked.
-        expect(actualRegion.values.length).toBeGreaterThanOrEqual(270);
-        const actualContent = actualRegion.values;
-        const expectedContent = expectedRegion.values;
+        const actualContent = roleContentRegion(actual.rgb);
+        const expectedContent = roleContentRegion(expected.rgb);
+        expect(actualContent, "no approved content or scenic cells may be masked").toHaveLength(330);
+        expect(expectedContent).toHaveLength(330);
         const error = meanAbsoluteError(actualContent, expectedContent);
         // Diagnostic evidence, not a rebaseline or a relaxed visual guard.
         // On failure preserve the exact changed coarse-grid cells so an
