@@ -19,6 +19,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
   const [outcome, setOutcome] = useState("");
   const [due, setDue] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [projectQuery, setProjectQuery] = useState("");
   const [objectiveId, setObjectiveId] = useState("");
   const [phaseId, setPhaseId] = useState("");
   const [steps, setSteps] = useState([""]);
@@ -90,7 +91,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
 
   const cleanSteps = noSteps ? [] : steps.map((step) => step.trim()).filter(Boolean);
   const canSubmit = Boolean(unitId && title.trim() && outcome.trim() && (noSteps || cleanSteps.length))
-    && !saving && !loadingRelations;
+    && !saving && !loadingRelations && !error;
 
   async function submit(event) {
     event.preventDefault();
@@ -165,11 +166,15 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
       <FieldGroup label="Purpose (optional)">
         <textarea className="field" rows={2} value={purpose} onChange={(e) => setPurpose(e.target.value)} />
       </FieldGroup>
+      <FieldGroup label="Find an authorised project">
+        <input className="field" type="search" aria-label="Search projects for my work" value={projectQuery}
+          onChange={(e)=>setProjectQuery(e.target.value)} placeholder="Search by project name" />
+      </FieldGroup>
       <FieldGroup label="Project (optional)">
         <select className="field" aria-label="Link my work to project" value={projectId}
           disabled={loadingProjects} onChange={(e) => setProjectId(e.target.value)}>
           <option value="">Not linked to a project</option>
-          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {projects.filter((p) => !projectQuery || p.name.toLowerCase().includes(projectQuery.toLowerCase()) || p.id === projectId).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </FieldGroup>
       {projectId && <>
