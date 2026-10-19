@@ -46,16 +46,19 @@ export default function PersonalAchievements({ me, back, openItem }) {
     for(const row of works) if(row.project_id) seen.set(row.project_id,{
       id:row.project_id,name:row.projects?.name||"Project name unavailable"
     });
+    for(const a of activities) if(a.source_project_id) seen.set(a.source_project_id,{
+      id:a.source_project_id,name:a.source_project?.name||"Previously linked project"
+    });
     return [...seen.values()].sort((a,b)=>a.name.localeCompare(b.name));
-  },[works]);
+  },[works,activities]);
   const evidencedWorkIds = new Set(activities.map((action) => action.work_item_id));
   const contributions = works.filter((w) =>
     (preview.contributions.some((entry) => entry.id === w.id) || evidencedWorkIds.has(w.id))
     && (!projectId || w.project_id === projectId)).filter((w) => !search ||
     [w.title,w.ref,w.projects?.name].some((v) => String(v||"").toLocaleLowerCase().includes(search.toLocaleLowerCase())));
 
-  const activityRows = activities.filter((a) => (!projectId || a.work_items?.project_id === projectId) && (!search || [a.action_summary,a.work_items?.title,a.work_items?.ref,a.work_items?.projects?.name].some((value) => String(value || "").toLowerCase().includes(search.toLowerCase()))));
-  const activeProjectIds = new Set([...preview.projectIds, ...activities.map((a) => a.work_items?.project_id).filter(Boolean)]);
+  const activityRows = activities.filter((a) => (!projectId || a.source_project_id === projectId) && (!search || [a.action_summary,a.work_items?.title,a.work_items?.ref,a.work_items?.projects?.name].some((value) => String(value || "").toLowerCase().includes(search.toLowerCase()))));
+  const activeProjectIds = new Set([...preview.projectIds, ...activities.map((a) => a.source_project_id).filter(Boolean)]);
 
   // A new employee must not inherit another employee's project filter.
   useEffect(() => { setProjectId(""); }, [me.id]);
@@ -104,7 +107,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
             .lt("submitted_at",new Date(new Date(range.end+"T00:00:00Z").getTime()+86400000).toISOString())
             .order("submitted_at",{ascending:false}).order("id",{ascending:false})),
           fetchAll(()=>supabase.from("work_activity_records")
-            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,duration_minutes,evidence_url,recorded_at,supersedes_id,work_items!inner(id,ref,title,project_id,projects(name))")
+            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,duration_minutes,evidence_url,recorded_at,supersedes_id,source_project_id,source_objective_id,source_project:projects!work_activity_records_source_project_id_fkey(name),work_items!inner(id,ref,title,project_id,projects(name))")
             .eq("org_id",me.org_id).eq("contributor_id",me.id)
             .gte("activity_date",range.start).lte("activity_date",range.end)
             .order("activity_date",{ascending:false}).order("id",{ascending:false})),
