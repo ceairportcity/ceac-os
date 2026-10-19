@@ -339,9 +339,13 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "New announcement" });
+  // Set a real, explicit authorised audience instead of relying on the
+  // draft composer's prior/default state after the Global Search overlay.
+  await dialog.getByRole("button", { name: "Everyone", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Everyone", exact: true })).toHaveClass(/is-active/);
   await dialog.locator("#announcement-title").fill("OCR6 Search Announcement");
   await dialog.locator("#announcement-body").fill("OCR6 searchable announcement record");
-  // A functional draft must be validated and enabled after two field edits.
+  // This still exercises an actual authorised Save Draft, not a mocked result.
   const saveDraft = dialog.getByRole("button", { name: "Save draft", exact: true });
   await expect(saveDraft).toBeEnabled();
   await saveDraft.click();
