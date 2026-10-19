@@ -54,7 +54,7 @@ export default function WorkProjectLink({ me, item, onLinked }) {
     ]).then(([o,p]) => {
       if (!current) return;
       if (o.error || p.error) setError("Project objectives or phases could not be verified.");
-      else { setObjectives(o.data || []); setPhases(p.data || []); }
+      else { setError(""); setObjectives(o.data || []); setPhases(p.data || []); }
       setLoading(false);
     });
     return () => { current = false; };
@@ -109,7 +109,7 @@ export default function WorkProjectLink({ me, item, onLinked }) {
         </FieldGroup>
         <FieldGroup label="Project">
           <select className="field" value={projectId} disabled={loading}
-            onChange={(e) => {setProjectId(e.target.value);setObjectiveId("");setPhaseId("");}}>
+            onChange={(e) => {setProjectId(e.target.value);setObjectiveId("");setPhaseId("");setError("");}}>
             <option value="">No project linked</option>
             {projects.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()))
               .map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
