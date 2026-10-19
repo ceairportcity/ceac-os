@@ -8,7 +8,6 @@ import {
   PeopleEvidencePerson,
   PeoplePageHeader,
   PeoplePersonRow,
-  PeopleRoomCard,
   PeopleSection,
 } from "../experience-v2/people-family/PeopleFamilyV2";
 
