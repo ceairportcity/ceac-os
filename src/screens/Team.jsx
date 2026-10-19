@@ -357,17 +357,21 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
     <div className="body manager-team ev2-people-page ev2-people-manager">
       <PeoplePageHeader
         eyebrow={me.unit_name || "Your unit"}
-        title="People & volunteers"
-        description="One team workspace for Staff and volunteers. Volunteer is an engagement type, not a new CEAC role or authority level."
+        title="Team"
+        description="People, responsibilities and coordination for your unit."
         count={people.length + 1}
-        countLabel={people.length ? "people including you" : "person"}
+        countLabel={(people.length + 1) === 1 ? "person" : "people"}
       />
 
-      {openRoom && <PeopleRoomCard
-        title="Unit Room"
-        description="Coordinate with the unit without leaving CEAC OS."
-        onClick={openRoom}
-      />}
+      {openRoom && <div className="s2-team-room-entry" aria-label="Unit coordination">
+        <div className="s2-team-room-copy">
+          <strong>Unit Room</strong>
+          <span>Messages and coordination for {me.unit_name || "your unit"}</span>
+        </div>
+        <button type="button" className="s2-team-room-open" onClick={openRoom}>
+          Open room <span aria-hidden="true">→</span>
+        </button>
+      </div>}
 
       <section className="phase6-manager-people-toolbar" aria-label="People and volunteer controls">
         <div className="phase6-manager-people-tabs" role="tablist" aria-label="People type">
@@ -384,9 +388,9 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
             onClick={() => setPeopleView(value)}
           >{label}</button>)}
         </div>
-        <button className="btn phase6-add-volunteer" disabled={!volunteerInvitationsReady}
+        <button type="button" className="btn phase6-add-volunteer" disabled={!volunteerInvitationsReady}
           onClick={() => { setSheet("volunteer"); setMsg(null); }}>
-          + Add volunteer
+          <span aria-hidden="true">+</span> Add volunteer
         </button>
       </section>
 
