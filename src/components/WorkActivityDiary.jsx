@@ -84,6 +84,9 @@ export default function WorkActivityDiary({ me, item }) {
     return () => { current = false; };
   }, [me.id, me.org_id, item.id, reload]);
 
+  const completedActionCount = history.filter((action) => action.activity_state === "done").length;
+  const latestNextAction = history.find((action) => action.next_action?.trim())?.next_action || null;
+
   const canRecord = item.assignee_id === me.id || (
     item.visibility !== "private" && item.confidential !== true
   );
@@ -160,6 +163,13 @@ export default function WorkActivityDiary({ me, item }) {
       {!unavailable && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setReload((n) => n + 1)}>Retry</button>}
     </p>}
     {success && <p role="status">{success}</p>}
+    {!loading && !error && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
+      <div><span>Recorded actions</span><strong>{history.length}</strong></div>
+      <div><span>Recorded as done</span><strong>{completedActionCount}</strong></div>
+    </div>}
+    {!loading && !error && latestNextAction && <div className="s2-work-diary-next-action">
+      <span>Next action</span><p>{latestNextAction}</p>
+    </div>}
     {!loading && !error && history.length === 0 && <p>No dated activities have been recorded under this responsibility yet.</p>}
     {!loading && !error && history.length > 0 && <ol className="s2-work-diary-timeline">
       {history.map((entry) => <li key={entry.id}>
