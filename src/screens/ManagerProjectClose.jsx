@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
+import ProjectPersonAssessments from "../components/ProjectPersonAssessments";
 import { supabase } from "../lib/supabase";
 import { Pill, Sheet } from "../components/bits";
 
@@ -377,6 +378,8 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
         {closes.filter((row) => row.scope === "overall" && row.status === "submitted").map((close) => <button key={close.id} className="btn btn-ghost btn-sm" style={{ marginRight: 6, marginBottom: 6 }} onClick={() => openCloseHistory(close)}>Version {close.version}</button>)}
       </div>}
     </div>}
+
+    <ProjectPersonAssessments me={me} project={project} closeId={unitClose?.id || overallClose?.id || null} />
 
     {historyClose && <Sheet onClose={() => !busy && setHistoryClose(null)}>
       <div className="eyebrow">{historyClose.scope === "overall" ? "Overall project close" : "Unit return"} · version {historyClose.version}</div>
