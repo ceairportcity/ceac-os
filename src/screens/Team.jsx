@@ -375,8 +375,8 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
       <section className="phase6-manager-people-toolbar" aria-label="People and volunteer controls">
         <div className="phase6-manager-people-tabs" role="tablist" aria-label="People type">
           {[
-            ["all", `All ${people.length}`],
-            ["staff", `Staff ${staffCount}`],
+            ["all", `All ${people.length + 1}`],
+            ["staff", `Staff ${staffCount + 1}`],
             ["volunteers", `Volunteers ${volunteerCount}`],
           ].map(([value,label]) => <button
             key={value}
@@ -412,13 +412,13 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
             meta={`${visiblePeople.length + (peopleView === "volunteers" ? 0 : 1)} shown`}
             description="Open a person for unit-scoped work, activity and visible feedback context."
           >
-            <PeoplePersonRow
+            {peopleView !== "volunteers" && <PeoplePersonRow
               name={me.full_name || "—"}
               subtitle="Unit head"
               context="Your own work remains under My work."
               status="You"
               statusTone="neutral"
-            />
+            />}
             {visiblePeople.map((person) => {
               const laneNames = subTeams
                 .filter((team) => (members[person.profile_id] || []).includes(team.id))
