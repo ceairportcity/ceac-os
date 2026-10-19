@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import SelfWorkComposer from "../components/SelfWorkComposer";
+import WorkRegisterLayout from "../components/WorkRegisterInspector";
 import { dueLabel, isOverdue } from "../lib/time";
 import { LoadingState, ProductNotice } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -19,6 +20,7 @@ const CLOSED = new Set(["completed", "self_certified", "cancelled"]);
 export default function AdminWork({ me, openItem, goAssign }) {
   const [view, setView] = useState("given");
   const [addingMyWork, setAddingMyWork] = useState(false);
+  const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [mine, setMine] = useState([]);
   const [given, setGiven] = useState([]);
   const [org, setOrg] = useState([]);
@@ -63,6 +65,7 @@ export default function AdminWork({ me, openItem, goAssign }) {
     ["mine", "Mine", activeMine.length],
   ];
   const rows = view === "given" ? activeGiven : view === "organisation" ? activeOrg : activeMine;
+  const selectedInView = selectedWorkId === "none" ? null : (rows.some(item => item.id === selectedWorkId) ? selectedWorkId : (rows[0]?.id || null));
   const groupTitle = view === "given" ? "Work Administration gave out" : view === "organisation" ? "Organisation work" : "Your open work";
 
   return <div className="body admin-work premium-admin-page ev2-work-page ev2-work-admin">
@@ -102,7 +105,8 @@ export default function AdminWork({ me, openItem, goAssign }) {
     )}
 
     {!loading && view !== "reviews" && (
-      rows.length ? (
+      <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
+        {rows.length ? (
         <WorkGroup title={groupTitle} count={rows.length}>
           {rows.map((item) => <WorkRow
             key={item.id}
@@ -114,7 +118,7 @@ export default function AdminWork({ me, openItem, goAssign }) {
             due={dueLabel(item.due_at)}
             status={item.status}
             attention={isOverdue(item.due_at) && !CLOSED.has(item.status)}
-            onClick={() => openItem(item.id)}
+            onClick={() => setSelectedWorkId(item.id)}
           />)}
         </WorkGroup>
       ) : <WorkEmpty
@@ -123,6 +127,8 @@ export default function AdminWork({ me, openItem, goAssign }) {
         actionLabel={view === "given" ? "Give out work" : undefined}
         onAction={view === "given" ? () => goAssign?.() : undefined}
       />
+        )}
+      </WorkRegisterLayout>
     )}
 
     {view === "given" && <WorkFootnote>
