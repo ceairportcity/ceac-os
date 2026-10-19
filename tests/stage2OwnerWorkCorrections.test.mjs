@@ -83,8 +83,8 @@ test("approved Work register opens a factual responsive inspector for every role
   }
   assert.match(inspector, /\.from\("work_items"\)/);
   assert.match(inspector, /\.eq\("org_id",me\.org_id\)/);
-  assert.match(inspector, /<WorkActivityDiary me=\{me\} item=\{work\}/);
-  assert.match(inspector, /<WorkProjectLink me=\{me\} item=\{work\}/);
+  assert.match(inspector, /<WorkActivityDiary me=\{me\} item=\{work\}[^>]*>/);
+  assert.match(inspector, /<WorkProjectLink me=\{me\} item=\{work\}[^>]*>/);
   assert.match(inspector, /openItem\?\.\(work\.id\)/);
   assert.match(css, /\.s2-work-layout\{display:grid/);
   assert.match(css, /@media\(max-width:920px\)/);
