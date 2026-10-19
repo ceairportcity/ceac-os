@@ -196,3 +196,20 @@ test("monthly and quarterly evidence excludes superseded activity even when corr
   assert.match(report, /Current project/);
   assert.match(report, /No project at action time/);
 });
+
+test("approved desktop and mobile Work header places Give out work and Add my work together", () => {
+  const header = source("src/experience-v2/work-family/WorkFamilyV2.jsx");
+  const css = source("src/experience-v2/work-family/work-family.css");
+  assert.match(header, /secondaryActionLabel/);
+  assert.match(header, /onSecondaryAction/);
+  assert.match(header, /ev2w-header-actions/);
+  for(const role of ["ManagerWork","AdminWork","ExecutiveWork"]) {
+    const code=source(`src/screens/${role}.jsx`);
+    assert.match(code, /actionLabel="Give out work"/);
+    assert.match(code, /secondaryActionLabel="Add my work"/);
+    assert.match(code, /onSecondaryAction=\{\(\) => setAddingMyWork\(true\)\}/);
+    assert.doesNotMatch(code, /ev2w-self-work-action/);
+  }
+  assert.match(css, /\.ev2w-header-actions\{/);
+  assert.match(css, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
+});
