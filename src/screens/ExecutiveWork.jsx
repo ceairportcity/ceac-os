@@ -69,11 +69,9 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
       description="Give out work, track progress and support your teams."
       actionLabel="Give out work"
       onAction={() => goAssign?.()}
+      secondaryActionLabel="Add my work"
+      onSecondaryAction={() => setAddingMyWork(true)}
     />
-
-    <div className="ev2w-self-work-action">
-      <button type="button" className="btn btn-primary" onClick={() => setAddingMyWork(true)}>+ Add my work</button>
-    </div>
     <WorkTabs items={tabs} value={view} onChange={setView} ariaLabel="Executive work views" />
     {addingMyWork && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
