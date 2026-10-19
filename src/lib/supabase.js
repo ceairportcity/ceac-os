@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { assertStage2SupabaseTarget } from "./stage2SupabaseTarget";
 import { authRedirect } from "./authRedirect";
 import { isPlausibleInvitationEmail } from "./invitationSafety";
 import { readServerVerifiedLegacyGrants, resolveCapabilityGrantRead } from "./capabilitySchemaCompatibility";
@@ -6,6 +7,15 @@ import { readServerVerifiedLegacyGrants, resolveCapabilityGrantRead } from "./ca
 const fallbackSupabaseUrl = "https://efjljhftsesssumtshvp.supabase.co";
 const fallbackSupabasePublishableKey = "sb_publishable_CVq1sCY0Z4-o9Us4Y6RaUw_53FUHQj-";
 
+// Stage 1 retains its existing production fallback. Stage 2's universal
+// authenticator cutover may NEVER use that fallback or silently target the
+// original live Stage 1 project in an incompletely configured preview.
+assertStage2SupabaseTarget({
+  enabled: import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true",
+  configuredUrl: import.meta.env.VITE_SUPABASE_URL,
+  configuredKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  stage1Url: fallbackSupabaseUrl,
+});
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || fallbackSupabaseUrl;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || fallbackSupabasePublishableKey;
 

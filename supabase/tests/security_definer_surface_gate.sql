@@ -36,6 +36,7 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.app_managed_units()'),
   ('public.app_my_units()'),
   ('public.app_org_id()'),
+  ('public.app_stage2_universal_aal_allowed()'),
   ('public.app_visible_profiles()'),
   ('public.app_visible_projects()'),
   ('public.app_visible_units()'),
@@ -207,7 +208,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>145 or v_expected<>145 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>146 or v_expected<>146 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;

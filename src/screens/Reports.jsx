@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { dateOnly } from "../lib/time";
+import { reportAccraDate, reportDateOnly, reportWeekRange, reportMonthRange } from "../lib/ghanaReportingDates";
+import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
 import { Sheet, ProductNotice } from "../components/bits";
 import { Button, Skeleton, StatePanel } from "../experience-v2/components";
 import {
@@ -24,69 +27,103 @@ export default function Reports({ me }) {
   const [sheet, setSheet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [periodCount, setPeriodCount] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  // The same mounted panel can receive a new authenticated actor or org.
+  // A successful former-actor read must never become this actor's evidence.
+  const actorScope = [me.org_id, me.id].join(":");
+  const currentActorScope = useRef(actorScope);
+  currentActorScope.current = actorScope;
+  const loadSequence = useRef(0);
+  const [loadedActor, setLoadedActor] = useState(null);
 
   const [kind, setKind] = useState("week");
   const [label, setLabel] = useState("");
   const [starts, setStarts] = useState("");
   const [ends, setEnds] = useState("");
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    setOpen(null);
+    setSheet(null);
+    setBusy(false);
+    void load();
+    return () => { loadSequence.current += 1; };
+  }, [me.org_id, me.id]);
 
   async function load() {
+    const requestedActor = actorScope;
+    const request = ++loadSequence.current;
+    const isCurrent = () => request === loadSequence.current
+      && currentActorScope.current === requestedActor;
     setLoading(true);
+    setLoadedActor(null);
     setLoadFailed(false);
     setMsg(null);
-    const [periodResult, reportResult, unitResult] = await Promise.all([
-      supabase.from("report_periods").select("*").order("starts_on", { ascending: false }).limit(40),
-      supabase.from("reports").select("id, period_id, scope, unit_id, project_id, status, version, narrative, challenges, submitted_at, submitted_by, evidence"),
-      supabase.from("units").select("id, name").eq("active", true).order("name"),
-    ]);
-    const loadError = periodResult.error || reportResult.error || unitResult.error;
-    if (loadError) {
+    setPeriodCount(null);
+    setPeriods([]); setReports([]); setUnits([]);
+    try {
+      const [periodResult, reportResult, unitResult] = await Promise.all([
+        // This page deliberately shows only the most recent 40 periods;
+        // its label makes that partial history explicit.
+        supabase.from("report_periods").select("*",{count:"exact"}).eq("org_id",me.org_id).order("starts_on", { ascending: false }).limit(40),
+        supabase.from("reports").select("id, period_id, scope, unit_id, project_id, status, version, narrative, challenges, submitted_at, submitted_by, evidence",{count:"exact"}).eq("org_id",me.org_id).eq("scope","unit"),
+        supabase.from("units").select("id, name",{count:"exact"}).eq("org_id",me.org_id).eq("active", true).order("name"),
+      ]);
+      if (!isCurrent()) return;
+      const exact = (response) => !response.error && Array.isArray(response.data)
+        && typeof response.count === "number";
+      if (![periodResult,reportResult,unitResult].every(exact) ||
+          periodResult.data.length > periodResult.count ||
+          reportResult.data.length !== reportResult.count ||
+          unitResult.data.length !== unitResult.count)
+        throw new Error("Administrative reporting evidence could not be verified in full.");
+      setPeriods(periodResult.data);
+      setPeriodCount(periodResult.count);
+      setReports(reportResult.data);
+      setUnits(unitResult.data);
+      setLoadedActor(requestedActor);
+    } catch {
+      if (!isCurrent()) return;
+      setLoadedActor(requestedActor);
       setLoadFailed(true);
-      setMsg(loadError.message);
-      setLoading(false);
-      return;
+      setPeriodCount(null);
+      setPeriods([]); setReports([]); setUnits([]);
+      setMsg("Administrative reporting evidence is incomplete or unavailable. Retry before inspecting filing coverage.");
+    } finally {
+      if (isCurrent()) setLoading(false);
     }
-    setPeriods(periodResult.data || []);
-    setReports(reportResult.data || []);
-    setUnits(unitResult.data || []);
-    setLoading(false);
   }
 
   function prefill(nextKind) {
     setKind(nextKind);
+    // Reporting periods are Ghana civil dates, not the operator's device TZ.
     const now = new Date();
     if (nextKind === "week") {
-      const d = new Date(now);
-      const day = (d.getDay() + 6) % 7;
-      const mon = new Date(d); mon.setDate(d.getDate() - day);
-      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-      const wk = Math.ceil((((mon - new Date(mon.getFullYear(), 0, 1)) / 86400000) + 1) / 7);
-      setStarts(mon.toISOString().slice(0, 10));
-      setEnds(sun.toISOString().slice(0, 10));
-      setLabel("Week " + wk + " — " + mon.toLocaleDateString("en-GB", { day: "numeric", month: "short" })
-        + " – " + sun.toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
+      const range = reportWeekRange(now);
+      const mon = reportDateOnly(range.start);
+      const sun = reportDateOnly(range.end);
+      const first = new Date(Date.UTC(mon.getUTCFullYear(),0,1));
+      const wk = Math.ceil((Math.floor((mon.getTime()-first.getTime())/86400000)+1)/7);
+      setStarts(range.start); setEnds(range.end);
+      const labelDay = (date) => date.toLocaleDateString("en-GB", {
+        timeZone:"Africa/Accra", day:"numeric", month:"short",
+      });
+      setLabel("Week " + wk + " — " + labelDay(mon) + " – " + labelDay(sun));
     } else if (nextKind === "month") {
-      const first = new Date(now.getFullYear(), now.getMonth(), 1);
-      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      setStarts(first.toISOString().slice(0, 10));
-      setEnds(last.toISOString().slice(0, 10));
-      setLabel(first.toLocaleDateString("en-GB", { month: "long", year: "numeric" }));
+      const range = reportMonthRange(now);
+      setStarts(range.start); setEnds(range.end); setLabel(range.label);
     } else if (nextKind === "year") {
-      setStarts(now.getFullYear() + "-01-01");
-      setEnds(now.getFullYear() + "-12-31");
-      setLabel(String(now.getFullYear()));
+      const year = reportAccraDate(now).slice(0,4);
+      setStarts(year + "-01-01"); setEnds(year + "-12-31"); setLabel(year);
     } else {
-      setStarts("");
-      setEnds("");
-      setLabel("");
+      setStarts(""); setEnds(""); setLabel("");
     }
   }
 
   async function openPeriod() {
+    if (busy || loading || loadFailed || loadedActor !== actorScope) return;
+    const writingActor = actorScope;
     setBusy(true);
     setMsg(null);
     try {
@@ -101,37 +138,48 @@ export default function Reports({ me }) {
         ends_on: ends,
         status: "open",
       });
+      if (currentActorScope.current !== writingActor) return;
       if (error) throw error;
       setSheet(null);
       setLabel("");
       await load();
     } catch (error) {
-      setMsg(error.message);
+      if (currentActorScope.current === writingActor) setMsg(error.message);
     } finally {
-      setBusy(false);
+      if (currentActorScope.current === writingActor) setBusy(false);
     }
   }
 
   async function setStatus(period, status) {
+    if (busy || loading || loadFailed || loadedActor !== actorScope) return;
     if (status === "closed" && !confirm("Close " + period.label + "? Managers will no longer be able to file or change reports for it.")) return;
+    const writingActor = actorScope;
     setBusy(true);
     setMsg(null);
-    const { error } = await supabase.from("report_periods").update({ status }).eq("id", period.id);
-    setBusy(false);
-    if (error) {
-      setMsg(error.message);
-      return;
+    try {
+      // Match this tenant and the status the administrator actually reviewed.
+      // No updated row is an uncertain operation, not a successful close.
+      const { data, error } = await supabase.from("report_periods").update({ status })
+        .eq("id", period.id)
+        .eq("org_id", me.org_id).eq("status", period.status)
+        .select("id,status").single();
+      if (currentActorScope.current !== writingActor) return;
+      if (error || data?.id !== period.id || data.status !== status) {
+        throw new Error("This reporting period change could not be verified. Reload its current state.");
+      }
+      await load();
+    } catch (error) {
+      if (currentActorScope.current === writingActor) {
+        setMsg(error.message || "This reporting period change could not be verified.");
+      }
+    } finally {
+      if (currentActorScope.current === writingActor) setBusy(false);
     }
-    await load();
   }
 
   function latestFor(periodId) {
     const inPeriod = reports.filter((report) => report.period_id === periodId && report.scope === "unit");
-    const byUnit = {};
-    inPeriod.forEach((report) => {
-      if (!byUnit[report.unit_id] || report.version > byUnit[report.unit_id].version) byUnit[report.unit_id] = report;
-    });
-    return byUnit;
+    return latestUnitReportStatus(inPeriod);
   }
 
   const statusLabel = loading
@@ -139,10 +187,12 @@ export default function Reports({ me }) {
     : loadFailed
       ? "Records unavailable"
       : periods.length
-        ? `${periods.length} ${periods.length === 1 ? "period" : "periods"} recorded`
+        ? periodCount > periods.length
+          ? `Showing the latest ${periods.length} of ${periodCount} reporting periods`
+          : `${periods.length} ${periods.length === 1 ? "period" : "periods"} recorded`
         : "No periods recorded";
 
-  if (loading) {
+  if (loadedActor !== actorScope || loading) {
     return (
       <div className="body ev2-reporting-page ev2-reporting-admin" aria-busy="true">
         <ReportingPageHeader
@@ -190,7 +240,7 @@ export default function Reports({ me }) {
       return null;
     }
     const byUnit = latestFor(open);
-    const filed = units.filter((unit) => byUnit[unit.id] && byUnit[unit.id].status !== "draft");
+    const filed = units.filter((unit) => isIssuedUnitReport(byUnit[unit.id]));
     const drafting = units.filter((unit) => byUnit[unit.id] && byUnit[unit.id].status === "draft");
     const missing = units.filter((unit) => !byUnit[unit.id]);
     const challengesRecorded = filed.filter((unit) => byUnit[unit.id]?.challenges).length;
@@ -311,6 +361,8 @@ export default function Reports({ me }) {
         statusLabel={statusLabel}
       />
 
+      <QuarterlyReviewEventControl me={me} />
+
       {msg && !sheet ? <ProductNotice tone="error" title="Reporting update">{msg}</ProductNotice> : null}
 
       <div className="ev2rep-actions">
@@ -339,7 +391,7 @@ export default function Reports({ me }) {
           <div className="ev2rep-list">
             {periods.map((period) => {
               const byUnit = latestFor(period.id);
-              const filed = units.filter((unit) => byUnit[unit.id] && byUnit[unit.id].status !== "draft").length;
+              const filed = units.filter((unit) => isIssuedUnitReport(byUnit[unit.id])).length;
               const drafting = units.filter((unit) => byUnit[unit.id] && byUnit[unit.id].status === "draft").length;
               const missing = units.filter((unit) => !byUnit[unit.id]).length;
               return (

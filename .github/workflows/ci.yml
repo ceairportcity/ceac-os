@@ -62,6 +62,10 @@ jobs:
         if: steps.classify.outputs.documentation_only != 'true'
         run: npm run verify:source
 
+      - name: Validate focused Stage 2 CI classification and release safety
+        if: steps.classify.outputs.documentation_only != 'true'
+        run: node --test tests/stage2P1ConnectedDesignContract.test.mjs tests/p1DesignPreviewScope.test.mjs tests/p2EdgeScope.test.mjs tests/stage2FocusedScope.test.mjs
+
       - name: Dependency security audit
         if: steps.classify.outputs.documentation_only != 'true'
         run: npm audit --audit-level=high
@@ -80,7 +84,7 @@ jobs:
   targeted-browser:
     name: Level A targeted browser
     needs: build
-    if: needs.build.outputs.documentation_only != 'true' && needs.build.outputs.level_b != 'true'
+    if: needs.build.outputs.documentation_only != 'true' && needs.build.outputs.level_b != 'true' && needs.build.outputs.scope != 'p2-edge'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

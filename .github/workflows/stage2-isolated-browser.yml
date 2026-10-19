@@ -1,0 +1,50 @@
+name: CEAC Stage 2 isolated approved-role browser acceptance
+on:
+  push:
+    branches:
+      - chatgpt/stage2-integrated-qa-contract-20261016
+    paths:
+      - .github/workflows/stage2-isolated-browser.yml
+permissions:
+  contents: read
+jobs:
+  approved-role-workspaces:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ROLE_FIXTURE_PASSWORD: Local-role-fixture-2026!
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: ./.github/actions/setup-ceac-test-environment
+      - name: Install pinned Playwright runner and Chromium
+        run: |
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start isolated CEAC
+        run: |
+          npm run dev -- --host 127.0.0.1 > /tmp/ceac-stage2-vite.log 2>&1 &
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:5173 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/ceac-stage2-vite.log
+          exit 1
+      - name: Stage 2 approved-role interactive and responsive checks
+        run: npx playwright test tests/stage2-approved-role-workspaces.spec.js tests/stage2-recurring-work.spec.js --workers=1
+      - name: Preserve rendered acceptance screenshots and failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: stage2-approved-role-visual-review
+          path: test-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+# Exact-head rerun after responsive-selector fix and integrated Projects refinements.
+# Focused QA: balanced preview across independent recurring responsibility masters.

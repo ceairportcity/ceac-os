@@ -30,61 +30,159 @@ function currentCode(secret) {
   return String((digest.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, "0");
 }
 
-async function signIn(page, email) {
+async function passwordSignIn(page, email) {
   await page.goto("/");
   await expect(page.getByPlaceholder("Work email")).toBeVisible();
   await page.getByPlaceholder("Work email").fill(email);
   await page.getByPlaceholder("Password").fill(process.env.ROLE_FIXTURE_PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.locator(".app")).toBeVisible({ timeout: 15000 });
-  await page.goto("/?tab=account");
-  await expect(page.getByRole("heading", { name: "Your account" })).toBeVisible({ timeout: 15000 });
 }
 
-test("self-only authenticator enrollment rejects a wrong code then grants AAL2", async ({ browser }) => {
-  test.skip(process.env.CEAC_LOCAL_TOTP_UI !== "1", "Requires disposable TOTP-enabled Supabase");
-  test.setTimeout(120000);
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  try {
-    // The Vite page may point to a remote Supabase even when its own URL is local.
-    // Fail closed at the browser network boundary BEFORE the first auth request.
-    const url = test.info().project.use.baseURL || "";
-    expect(new URL(url).hostname).toBe("127.0.0.1");
-    const disallowedRequests = [];
-    await page.route("**/*", (route) => {
-      const target = new URL(route.request().url());
-      const allowed = target.protocol === "http:" && target.hostname === "127.0.0.1"
-        && (target.port === "5173" || target.port === "54321");
-      if (!allowed) {
-        disallowedRequests.push(target.origin);
-        return route.abort("blockedbyclient");
-      }
-      return route.continue();
+// Every browser in this test must be isolated from hosted or third-party APIs.
+async function localOnlyNetwork(page) {
+  const blocked = [];
+  await page.route("**/*", (route) => {
+    const target = new URL(route.request().url());
+    const local = target.protocol === "http:" && target.hostname === "127.0.0.1" &&
+      (target.port === "5173" || target.port === "54321");
+    const offlineFont = target.protocol === "https:" && target.hostname === "fonts.googleapis.com" &&
+      target.pathname === "/css2" && route.request().resourceType() === "stylesheet" &&
+      target.searchParams.has("family");
+    if (offlineFont) return route.fulfill({
+      status: 200, contentType: "text/css", body: "/* isolated CEAC local MFA font fixture */",
     });
-    await signIn(page, "staff@ceac.local.test");
-    expect(disallowedRequests, "MFA test attempted a non-fixture network request").toEqual([]);
-    await expect(page.getByText("No verified authenticator is registered for this account.")).toBeVisible();
+    if (!local) {
+      blocked.push(target.origin);
+      return route.abort("blockedbyclient");
+    }
+    return route.continue();
+  });
+  return blocked;
+}
+
+test("universal Stage 2 gate enforces TOTP on initial and new-browser sign-in without repeated refresh challenges", async ({ browser }) => {
+  test.skip(process.env.CEAC_LOCAL_TOTP_UI !== "1", "Requires disposable local TOTP-enabled Supabase");
+  test.setTimeout(180000);
+  const baseURL = test.info().project.use.baseURL || "";
+  expect(new URL(baseURL).hostname).toBe("127.0.0.1");
+
+  const first = await browser.newContext();
+  const second = await browser.newContext();
+  const page = await first.newPage();
+  const nextPage = await second.newPage();
+  try {
+    const blockedFirst = await localOnlyNetwork(page);
+    const blockedSecond = await localOnlyNetwork(nextPage);
+    await passwordSignIn(page, "staff@ceac.local.test");
+    await expect(page.getByRole("heading", { name: "Set up your authenticator" })).toBeVisible({timeout:15000});
+    await expect(page.locator(".app")).toHaveCount(0);
     await page.getByRole("button", { name: "Set up authenticator" }).click();
     await expect(page.getByText("This setup is incomplete until you verify a code below.")).toBeVisible();
     await page.getByRole("button", { name: "Use a manual setup key" }).click();
     const secret = await page.locator(".ev2pf-mfa-enrollment code").textContent();
     expect(secret).toBeTruthy();
-    const actual = currentCode(secret);
-    const wrong = actual.slice(0, 5) + String((Number(actual[5]) + 1) % 10);
-    const input = page.getByRole("textbox", { name: "Authenticator verification code" });
-    await input.fill(wrong);
-    await page.getByRole("button", { name: "Verify authenticator" }).click();
-    await expect(page.locator(".ev2pf-account-mfa [role=alert]")).toBeVisible();
-    // Recompute immediately: never depend on the code from the previous time window.
-    await input.fill(currentCode(secret));
-    await page.getByRole("button", { name: "Verify authenticator" }).click();
-    await expect(page.getByText("This session has verified two-step access.")).toBeVisible({ timeout: 15000 });
-    await expect(page.locator(".ev2pf-mfa-enrollment")).toHaveCount(0);
 
+    const correct = currentCode(secret);
+    const wrong = correct.slice(0,5) + String((Number(correct[5])+1)%10);
+    const codeInput=page.getByRole("textbox",{name:"Authenticator verification code"});
+    await codeInput.fill(wrong);
+    await page.getByRole("button",{name:"Verify authenticator"}).click();
+    await expect(page.locator(".ev2pf-account-mfa [role=alert]")).toBeVisible();
+    await expect(page.locator(".app")).toHaveCount(0);
+
+    await codeInput.fill(currentCode(secret));
+    await page.getByRole("button",{name:"Verify authenticator"}).click();
+    await expect(page.locator(".app")).toBeVisible({timeout:15000});
+
+    await page.goto("/?tab=account");
+    await expect(page.getByRole("heading",{name:"Your account"})).toBeVisible();
+    await expect(page.getByText("This session has verified two-step access.")).toBeVisible();
+
+    // Secure device-loss fallback: a signed AAL2 user can enroll a second
+    // authenticator in advance. AAL1 cannot add a backup without step-up.
+    await page.getByRole("button",{name:"Add backup authenticator"}).click();
+    await page.getByRole("button",{name:"Use a manual setup key"}).click();
+    const backupSecret=await page.locator(".ev2pf-mfa-enrollment code").textContent();
+    expect(backupSecret).toBeTruthy();
+    await page.getByRole("textbox",{name:"Authenticator verification code"}).fill(currentCode(backupSecret));
+    await page.getByRole("button",{name:"Verify authenticator"}).click();
+    // The universal AAL2 gate intentionally unmounts the account screen during
+    // Auth token re-verification. A short-lived success toast is not durable.
+    // Require the real local Auth provider to report both verified factors.
+    await expect.poll(async () => page.evaluate(async () => {
+      const { supabase } = await import("/src/lib/supabase.js");
+      const result = await supabase.auth.mfa.listFactors();
+      if (result.error) throw new Error("Could not read local provider TOTP inventory");
+      return (result.data?.totp || []).filter((factor) =>
+        factor.factor_type === "totp" && factor.status === "verified").length;
+    }), {
+      message: "Backup enrollment must create TWO verified provider TOTP factors",
+      timeout: 15000,
+      intervals: [250, 500, 1000],
+    }).toBe(2);
+    // This status comes from the provider inventory, so it survives remount.
+    await expect(page.getByText("A backup authenticator is verified for this account.")).toBeVisible();
+    await expect(page.getByRole("button",{name:"Add backup authenticator"})).toHaveCount(0);
+
+    // Ordinary reload reuses the verified AAL2 session; it must not request a
+    // new code merely because the browser refreshed or the app navigated.
     await page.reload();
-    await expect(page.getByText("This session has verified two-step access.")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".app")).toBeVisible({timeout:15000});
+    await expect(page.getByText("This session has verified two-step access.")).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Verify your authenticator"})).toHaveCount(0);
+
+    // A separate browser does not inherit the existing device's verified AAL2.
+    await passwordSignIn(nextPage, "staff@ceac.local.test");
+    await expect(nextPage.getByRole("heading",{name:"Verify your authenticator"})).toBeVisible({timeout:15000});
+    await expect(nextPage.locator(".app")).toHaveCount(0);
+    const factorChoice = nextPage.getByRole("combobox", { name: "Authenticator device" });
+    await expect(factorChoice).toBeVisible();
+    await factorChoice.selectOption({ label: "Backup authenticator" });
+    // The independent backup factor works even without the primary device.
+    await nextPage.getByRole("textbox",{name:"Authenticator verification code"}).fill(currentCode(backupSecret));
+    await nextPage.getByRole("button",{name:"Verify authenticator"}).click();
+    await expect(nextPage.locator(".app")).toBeVisible({timeout:15000});
+
+    // A stale AAL2 workspace lookup must never restore the previous actor
+    // after a real sign-out. Hold one protected session read over token refresh,
+    // sign out, then let the old request complete against disposable GoTrue.
+    let intercepted = false;
+    let resumeOldRead;
+    const pendingRead = new Promise((resolve) => { resumeOldRead = resolve; });
+    let finishedOldRead;
+    const oldReadFinished = new Promise((resolve) => { finishedOldRead = resolve; });
+    await page.route("**/rest/v1/work_sessions*", async (route) => {
+      if (!intercepted) {
+        intercepted = true;
+        await pendingRead;
+      }
+      try { await route.continue(); } catch {
+        // Sign-out can abort the old browser request; it must not restore UI.
+      } finally {
+        finishedOldRead();
+      }
+    });
+    await page.evaluate(async () => {
+      const { supabase } = await import("/src/lib/supabase.js");
+      const result = await supabase.auth.refreshSession();
+      if (result.error) throw result.error;
+    });
+    await expect.poll(() => intercepted, { timeout: 15000 }).toBe(true);
+    const signedOut = await page.evaluate(async () => {
+      const { supabase } = await import("/src/lib/supabase.js");
+      return supabase.auth.signOut();
+    });
+    expect(signedOut.error).toBeNull();
+    await expect(page.getByPlaceholder("Work email")).toBeVisible({ timeout: 15000 });
+    resumeOldRead();
+    await oldReadFinished;
+    await expect(page.locator(".app")).toHaveCount(0);
+    await expect(page.getByPlaceholder("Work email")).toBeVisible();
+
+    expect(blockedFirst,"First device attempted an external MFA request").toEqual([]);
+    expect(blockedSecond,"Fresh second device attempted an external MFA request").toEqual([]);
   } finally {
-    await context.close();
+    await second.close();
+    await first.close();
   }
 });

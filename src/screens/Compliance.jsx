@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -30,6 +30,12 @@ function stateTone(state,expired=false){
 export default function Compliance({ me, openWork, openAnnouncements }) {
   const hasOrgCapability=(capability)=>(me.capability_grants||[]).some((grant)=>grant.capability===capability&&!grant.scope_unit_id);
   const canManage=hasOrgCapability("compliance.manage");
+  const actorScope=me.org_id+":"+me.id+":"+String(canManage);
+  const actorRef=useRef(actorScope); actorRef.current=actorScope;
+  const readSequence=useRef(0);
+  const overviewReadSequence=useRef(0);
+  const [verifiedActor,setVerifiedActor]=useState(null);
+  const isVerified=verifiedActor===actorScope;
   const isManager=me.role==="manager";
   const canPublishInstruction=hasOrgCapability("post_announcement");
   const [tab,setTab]=useState(canManage?"overview":"policies");
@@ -91,44 +97,64 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
   const [decisionNote,setDecisionNote]=useState("");
   const [decisionUntil,setDecisionUntil]=useState("");
 
-  useEffect(()=>{load();},[me.id]);
-  useEffect(()=>{if(canManage)loadOverview(overviewDate);},[me.id,canManage,overviewDate]);
+  useEffect(()=>{void load();return()=>{readSequence.current+=1;};},[me.id,me.org_id,canManage]);
+  useEffect(()=>{if(canManage)void loadOverview(overviewDate);return()=>{overviewReadSequence.current+=1;};},[me.id,me.org_id,canManage,overviewDate]);
 
   async function loadOverview(date=overviewDate){
-    setOverviewLoading(true);setOverviewError(null);
-    const {data,error:e}=await supabase.rpc("attendance_day_evidence",{p_date:date});
-    if(e){setAttendanceRows([]);setOverviewError(humanError(e,"Compliance attendance evidence could not load."));}
-    else setAttendanceRows(data||[]);
-    setOverviewLoading(false);
+    const expectedActor=actorScope, request=++overviewReadSequence.current;
+    const current=()=>actorRef.current===expectedActor&&overviewReadSequence.current===request;
+    setOverviewLoading(true);setOverviewError(null);setAttendanceRows([]);
+    try {
+      const {data,error:e}=await supabase.rpc("attendance_day_evidence",{p_date:date});
+      if(e||!Array.isArray(data))
+        throw new Error("Compliance attendance-day evidence is incomplete.");
+      if(current())setAttendanceRows(data);
+    }catch{
+      if(current()){
+        setAttendanceRows([]);
+        setOverviewError("Compliance attendance evidence could not be verified.");
+      }
+    }finally{if(current())setOverviewLoading(false);}
   }
 
   async function load(){
-    setLoading(true); setError(null);
-    const queries=[
-      supabase.from("compliance_policy_versions").select("*").order("created_at",{ascending:false}),
-      supabase.from("compliance_policy_applicability").select("*").order("created_at"),
-      supabase.from("compliance_requirements").select("*").order("created_at"),
-      supabase.from("compliance_acknowledgements").select("*, profile:profiles!compliance_acknowledgements_profile_id_fkey(full_name)").order("acknowledged_at",{ascending:false}),
-      supabase.from("compliance_evidence_versions").select("*, profile:profiles!compliance_evidence_versions_profile_id_fkey(full_name), requirement:compliance_requirements!compliance_evidence_versions_requirement_id_fkey(title,requirement_code,policy_version_id)").order("created_at",{ascending:false}),
-      supabase.from("compliance_exception_versions").select("*, profile:profiles!compliance_exception_versions_profile_id_fkey(full_name), requirement:compliance_requirements!compliance_exception_versions_requirement_id_fkey(title,requirement_code,policy_version_id)").order("created_at",{ascending:false}),
-    ];
-    if(canManage){
-      queries.push(
-        supabase.from("profiles").select("id,full_name,email,active").eq("org_id",me.org_id).eq("active",true).order("full_name"),
-        supabase.from("units").select("id,name,active").eq("org_id",me.org_id).eq("active",true).order("name")
-      );
-    }
-    const results=await Promise.all(queries);
-    const failed=results.find((r)=>r.error);
-    if(failed){setError(humanError(failed.error,"Compliance could not finish loading."));setLoading(false);return;}
-    setPolicies(results[0].data||[]);
-    setApplicability(results[1].data||[]);
-    setRequirements(results[2].data||[]);
-    setAcknowledgements(results[3].data||[]);
-    setEvidence(results[4].data||[]);
-    setExceptions(results[5].data||[]);
-    if(canManage){setPeople(results[6].data||[]);setUnits(results[7].data||[]);}
-    setLoading(false);
+    const expectedActor=actorScope, request=++readSequence.current;
+    const current=()=>actorRef.current===expectedActor&&readSequence.current===request;
+    setLoading(true);setVerifiedActor(null);setError(null);
+    try {
+      const queries=[
+        supabase.from("compliance_policy_versions").select("*",{count:"exact"}).order("created_at",{ascending:false}),
+        supabase.from("compliance_policy_applicability").select("*",{count:"exact"}).order("created_at"),
+        supabase.from("compliance_requirements").select("*",{count:"exact"}).order("created_at"),
+        supabase.from("compliance_acknowledgements").select("*, profile:profiles!compliance_acknowledgements_profile_id_fkey(full_name)",{count:"exact"}).order("acknowledged_at",{ascending:false}),
+        supabase.from("compliance_evidence_versions").select("*, profile:profiles!compliance_evidence_versions_profile_id_fkey(full_name), requirement:compliance_requirements!compliance_evidence_versions_requirement_id_fkey(title,requirement_code,policy_version_id)",{count:"exact"}).order("created_at",{ascending:false}),
+        supabase.from("compliance_exception_versions").select("*, profile:profiles!compliance_exception_versions_profile_id_fkey(full_name), requirement:compliance_requirements!compliance_exception_versions_requirement_id_fkey(title,requirement_code,policy_version_id)",{count:"exact"}).order("created_at",{ascending:false}),
+      ];
+      if(canManage){
+        queries.push(
+          supabase.from("profiles").select("id,full_name,email,active",{count:"exact"}).eq("org_id",me.org_id).eq("active",true).order("full_name"),
+          supabase.from("units").select("id,name,active",{count:"exact"}).eq("org_id",me.org_id).eq("active",true).order("name")
+        );
+      }
+      const results=await Promise.all(queries);
+      if(!current())return false;
+      const complete=(result)=>!result.error&&Array.isArray(result.data)
+        && typeof result.count==="number"&&result.count===result.data.length;
+      if(!results.every(complete))
+        throw new Error("Compliance history is incomplete.");
+      setPolicies(results[0].data);setApplicability(results[1].data);
+      setRequirements(results[2].data);setAcknowledgements(results[3].data);
+      setEvidence(results[4].data);setExceptions(results[5].data);
+      if(canManage){setPeople(results[6].data);setUnits(results[7].data);}
+      setVerifiedActor(expectedActor);
+      return true;
+    }catch{
+      if(current()){
+        setVerifiedActor(null);
+        setError("Compliance source evidence is incomplete or unavailable. Retry before making a decision.");
+      }
+      return false;
+    }finally{if(current())setLoading(false);}
   }
 
   const currentPolicies=useMemo(()=>{
@@ -147,10 +173,19 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
   function latestExceptionFor(reqId,profileId=me.id){return exceptionLatest.find((row)=>row.requirement_id===reqId&&row.profile_id===profileId)||null;}
 
   async function rpc(name,args,success){
+    if(!isVerified)return false;
     setBusy(true);setError(null);setNotice(null);
-    const {error:e}=await supabase.rpc(name,args);
-    if(e){setBusy(false);setError(humanError(e,"That compliance change could not be recorded."));return false;}
-    await load();setBusy(false);setNotice(success);return true;
+    try{
+      const {error:e}=await supabase.rpc(name,args);
+      if(e)throw e;
+      const reverified=await load();
+      if(!reverified){
+        setError("The change needs a fresh, complete Compliance read before it can be confirmed.");
+        return false;
+      }
+      setNotice(success);return true;
+    }catch(e){setError(humanError(e,"That compliance change could not be verified."));return false;}
+    finally{setBusy(false);}
   }
 
   function scopeLabel(row){
@@ -265,6 +300,12 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
     : [["policies","Policies"],["evidence","My evidence"],["exceptions","My exceptions"]];
 
   if(loading)return <div className="body"><LoadingState label="Loading compliance…" /></div>;
+  if(!isVerified)return <div className="body">
+    <ProductNotice tone="error" title="Compliance evidence unverified">
+      {error || "The complete Compliance records could not be verified. No findings or zero counts are displayed."}
+      <button type="button" className="btn btn-ghost btn-sm" onClick={()=>void load()}>Retry Compliance verification</button>
+    </ProductNotice>
+  </div>;
 
   const personalCompliance = !canManage && !isManager && !me.is_admin;
   return <div className={`body compliance-page ${personalCompliance ? "ev2-personal-page ev2-personal-compliance" : ""}`.trim()}>

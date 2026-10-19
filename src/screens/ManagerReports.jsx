@@ -1,4 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { isIssuedUnitReport } from "../lib/ministryReportingFacts";
+import { deadlineOverdue } from "../lib/stage2AchievementMetrics";
+import {
+  reportDateKey as dateKey,
+  reportDateOnly as parseDateOnly,
+  addReportDays as addDays,
+  reportAccraDate as localDate,
+  reportWeekRange as weekRange,
+  reportMonthRange as monthRange,
+} from "../lib/ghanaReportingDates";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { Sheet, ProductNotice, FieldGroup } from "../components/bits";
@@ -17,25 +27,10 @@ import {
   ReportingFootnote,
 } from "../experience-v2/reporting-family/ReportingFamilyV2";
 
-const pad = (value) => String(value).padStart(2, "0");
-const dateKey = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-const parseDateOnly = (value) => { const [y, m, d] = String(value).slice(0, 10).split("-").map(Number); return new Date(y, m - 1, d); };
-const addDays = (date, days) => { const next = new Date(date); next.setDate(next.getDate() + days); return next; };
-const localDate = (value) => value ? dateKey(new Date(value)) : null;
+// Managers may open CEAC from any country, but reporting days and periods
+// always follow the Africa/Accra calendar, never device-local midnight.
 const within = (value, start, end) => Boolean(value && value >= start && value <= end);
 const COMPLETE = new Set(["completed", "self_certified"]);
-
-function weekRange(now = new Date()) {
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-  return { start: dateKey(start), end: dateKey(addDays(start, 6)), label: "This week" };
-}
-
-function monthRange(now = new Date()) {
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return { start: dateKey(start), end: dateKey(end), label: now.toLocaleDateString("en-GB", { month: "long", year: "numeric" }) };
-}
 
 function countBy(rows, key) {
   const out = {};
@@ -55,6 +50,24 @@ function distinctAttendanceDays(rows) {
 
 function EvidenceMetric({ value, label, onClick }) {
   return <ReportingEvidenceCard value={value} label={label} detail="Why?" onClick={onClick} />;
+}
+
+// A submitted report's evidence is immutable. Never substitute today's live
+// numbers, charts or objectives for a missing/partial historical snapshot.
+function validFrozenReportSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return false;
+  const counts = snapshot.counts;
+  if (!counts || typeof counts !== "object" || Array.isArray(counts)) return false;
+  if (!["completed", "submissions", "overdue", "attendance_days"].every(
+    (key) => Number.isSafeInteger(counts[key]) && counts[key] >= 0
+  )) return false;
+  if (!snapshot.range || typeof snapshot.range.start !== "string"
+    || typeof snapshot.range.end !== "string" || snapshot.range.end < snapshot.range.start) return false;
+  if (!["unit", "project"].includes(snapshot.scope)) return false;
+  if (!["daily", "by_project", "status_mix", "attendance", "objectives"].every(
+    (key) => Array.isArray(snapshot[key])
+  )) return false;
+  return true;
 }
 
 export default function ManagerReports({ me, openItem }) {
@@ -82,32 +95,110 @@ export default function ManagerReports({ me, openItem }) {
   const [loadFailed, setLoadFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [periodRowsState, setPeriodRowsState] = useState("loading");
+  const [historyVerified, setHistoryVerified] = useState(false);
+  const [refsVerified, setRefsVerified] = useState(false);
+  const refsReadSequence = useRef(0);
+  const historyRequestRef = useRef(0);
+  // A report can stay mounted while a Manager switches units or identities.
+  // Never render a previous actor's figures during the next scoped fetch.
+  const reportScope = [me.org_id, me.id, me.unit_id].join(":");
+  const currentReportScope = useRef(reportScope);
+  currentReportScope.current = reportScope;
+  const baseRequestRef = useRef(0);
+  const [loadedScope, setLoadedScope] = useState(null);
+  // The live report must also change calendar day when a manager leaves this
+  // screen open across Ghana midnight (or returns to a sleeping laptop).
+  const [reportDay, setReportDay] = useState(() => dateKey(new Date()));
+  const [reportAsOf, setReportAsOf] = useState(() => Date.now());
+  useEffect(() => {
+    const refreshDay = () => { setReportAsOf(Date.now()); setReportDay((day) => {
+      const today = dateKey(new Date());
+      return today === day ? day : today;
+    }); };
+    const onVisible = () => { if (!document.hidden) refreshDay(); };
+    const interval = window.setInterval(refreshDay, 60_000);
+    window.addEventListener("focus", refreshDay);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshDay);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
-  useEffect(() => { loadBase(); }, [me.id, me.unit_id]);
+  useEffect(() => {
+    // Last-resort catch protects report privacy even if a future change
+    // throws outside loadBase's own fail-closed provider error handler.
+    void loadBase().catch(() => {
+      if (currentReportScope.current !== reportScope) return;
+      setLoadedScope(reportScope);
+      setLoadFailed(true);
+      setError("Manager reporting sources could not be verified.");
+      setLoading(false);
+    });
+    return () => {
+      baseRequestRef.current += 1;
+      historyRequestRef.current += 1;
+      refsReadSequence.current += 1;
+    };
+  }, [me.id, me.unit_id, me.org_id]);
 
   async function loadBase() {
-    setLoading(true); setError(null); setLoadFailed(false);
+    const requestedScope = reportScope;
+    const request = ++baseRequestRef.current;
+    const isCurrent = () => request === baseRequestRef.current
+      && currentReportScope.current === requestedScope;
+    setLoading(true); setError(null); setLoadFailed(false); setLoadedScope(null);
+    setProjects([]); setPeriods([]); setWork([]); setObjectives([]);
+    setMemberIds([]); setSessions([]); setSubmissions([]);
+    setPeriodRowsState("loading");
+    setHistory([]); setHistoryVerified(false); setSelectedReportId(null);
+    setReportRefs([]); setRefsVerified(false); setDrill(null); setNotice(null);
+    historyRequestRef.current += 1;
+    refsReadSequence.current += 1;
+    try {
     const [projectResult, periodResult, workResult, memberResult, objectiveResult] = await Promise.all([
-      supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)").order("starts_on", { ascending: false, nullsFirst: false }),
-      supabase.from("report_periods").select("id,kind,label,starts_on,ends_on,status").order("starts_on", { ascending: false }),
-      supabase.from("work_items").select("id,ref,title,kind,status,due_at,completed_at,project_id,assignee_id,origin,projects(name),profiles!work_items_assignee_id_fkey(full_name)").eq("unit_id", me.unit_id).neq("visibility", "private"),
-      supabase.from("unit_memberships").select("profile_id").eq("unit_id", me.unit_id),
-      supabase.from("objectives").select("id,project_id,unit_id,ref,name,status").eq("unit_id", me.unit_id),
+      supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)", { count:"exact" }).order("starts_on", { ascending: false, nullsFirst: false }),
+      supabase.from("report_periods").select("id,kind,label,starts_on,ends_on,status", { count:"exact" }).order("starts_on", { ascending: false }),
+      supabase.from("work_items").select("id,ref,title,kind,status,due_at,completed_at,project_id,assignee_id,origin,projects(name),profiles!work_items_assignee_id_fkey(full_name)", { count:"exact" }).eq("unit_id", me.unit_id).neq("visibility", "private"),
+      supabase.from("unit_memberships").select("profile_id", { count:"exact" }).eq("unit_id", me.unit_id),
+      supabase.from("objectives").select("id,project_id,unit_id,ref,name,status", { count:"exact" }).eq("unit_id", me.unit_id),
     ]);
+    if (!isCurrent()) return;
     const first = [projectResult.error, periodResult.error, workResult.error, memberResult.error, objectiveResult.error].find(Boolean);
-    if (first) { setLoadFailed(true); setError(first.message); setLoading(false); return; }
+    if (first) {
+      setLoadFailed(true); setError("Manager reporting source records could not be verified.");
+      setLoadedScope(requestedScope); setLoading(false); return;
+    }
+    const fullyRead = (result) => Array.isArray(result.data) &&
+      typeof result.count === "number" && result.count === result.data.length;
+    if (![projectResult,periodResult,workResult,memberResult,objectiveResult].every(fullyRead)) {
+      setLoadFailed(true); setError("Manager reporting records are incomplete; no totals can be verified.");
+      setLoadedScope(requestedScope); setLoading(false); return;
+    }
     setProjects((projectResult.data || []).filter((project) => project.lead_unit_id === me.unit_id || (project.project_units || []).some((row) => row.unit_id === me.unit_id)));
     setPeriods(periodResult.data || []);
     setWork(workResult.data || []);
     setObjectives(objectiveResult.data || []);
 
-    setMemberIds((memberResult.data || []).map((row) => row.profile_id));
+    // A salaried Manager also has their OWN attendance and achievements.
+    // Do not suppress the period-session evidence read merely because the
+    // selected unit currently has no other roster members.
+    setMemberIds([...new Set([me.id, ...(memberResult.data || []).map((row) => row.profile_id)].filter(Boolean))]);
     setSessions([]);
     setSubmissions([]);
+    setLoadedScope(requestedScope);
     setLoading(false);
+    } catch {
+      if (!isCurrent()) return;
+      setLoadFailed(true); setLoadedScope(requestedScope);
+      setError("Manager reporting source request failed; no totals can be verified.");
+      setLoading(false);
+    }
   }
 
-  const baseRange = useMemo(() => mode === "week" ? weekRange() : mode === "month" ? monthRange() : null, [mode]);
+  const baseRange = useMemo(() => mode === "week" ? weekRange(parseDateOnly(reportDay)) : mode === "month" ? monthRange(parseDateOnly(reportDay)) : null, [mode, reportDay]);
   const kindPeriods = useMemo(() => periods.filter((period) => period.kind === mode), [periods, mode]);
 
   const matchingPeriod = useMemo(() => {
@@ -135,54 +226,73 @@ export default function ManagerReports({ me, openItem }) {
   }, [mode, baseRange, matchingPeriod, projectId, projects, work]);
 
   useEffect(() => {
-    if (!range || !memberIds.length) {
+    if (loadedScope !== reportScope || !range || !memberIds.length) {
       setSessions([]);
       setSubmissions([]);
+      setPeriodRowsState(loadedScope === reportScope ? "ready" : "loading");
       return;
     }
+    setSessions([]);
+    setSubmissions([]);
+    setPeriodRowsState("loading");
     let cancelled = false;
     async function loadPeriodRows() {
-      const start = new Date(range.start + "T00:00:00");
-      const endExclusive = new Date(range.end + "T00:00:00");
-      endExclusive.setDate(endExclusive.getDate() + 1);
+      // Ghana periods are UTC civil days, not the manager device timezone.
+      const start = new Date(range.start + "T00:00:00Z");
+      const endExclusive = new Date(new Date(range.end + "T00:00:00Z").getTime() + 86400000);
       const relevantWorkIds = work
         .filter((row) => mode !== "project" || row.project_id === projectId)
         .map((row) => row.id);
 
       const [sessionResult, submissionResult] = await Promise.all([
         supabase.from("work_sessions")
-          .select("id,profile_id,work_item_id,started_at,ended_at,end_reason,profiles!work_sessions_profile_id_fkey(full_name)")
+          .select("id,profile_id,work_item_id,started_at,ended_at,end_reason,profiles!work_sessions_profile_id_fkey(full_name)", { count:"exact" })
+          .eq("org_id", me.org_id)
           .in("profile_id", memberIds)
           .gte("started_at", start.toISOString())
           .lt("started_at", endExclusive.toISOString()),
         relevantWorkIds.length
           ? supabase.from("submissions")
-              .select("id,work_item_id,profile_id,submitted_at,note,profiles!submissions_profile_id_fkey(full_name)")
+              .select("id,work_item_id,profile_id,submitted_at,note,profiles!submissions_profile_id_fkey(full_name)", { count:"exact" })
               .in("work_item_id", relevantWorkIds)
               .gte("submitted_at", start.toISOString())
               .lt("submitted_at", endExclusive.toISOString())
-          : Promise.resolve({ data: [], error: null }),
+          : Promise.resolve({ data: [], error: null, count: 0 }),
       ]);
-      if (cancelled) return;
+      if (cancelled || currentReportScope.current !== reportScope) return;
       const periodError = sessionResult.error || submissionResult.error;
       if (periodError) {
-        setError(periodError.message);
+        setPeriodRowsState("error");
+        setError("Manager session or submission source records could not be verified.");
         return;
       }
-      setSessions(sessionResult.data || []);
-      setSubmissions(submissionResult.data || []);
+      const complete = (result) => Array.isArray(result.data)
+        && typeof result.count === "number" && result.count === result.data.length;
+      if (![sessionResult, submissionResult].every(complete)) {
+        setPeriodRowsState("error");
+        setError("Manager reporting period evidence is incomplete; no totals can be verified.");
+        return;
+      }
+      setSessions(sessionResult.data);
+      setSubmissions(submissionResult.data);
+      setPeriodRowsState("ready");
     }
-    loadPeriodRows();
+    void loadPeriodRows().catch(() => {
+      if (!cancelled && currentReportScope.current === reportScope) {
+        setPeriodRowsState("error");
+        setError("Manager reporting source request failed; no totals can be verified.");
+      }
+    });
     return () => { cancelled = true; };
-  }, [range?.start, range?.end, mode, projectId, memberIds.join(","), work]);
+  }, [range?.start, range?.end, mode, projectId, memberIds.join(","), work, reportScope, loadedScope]);
 
   const evidence = useMemo(() => {
-    if (!range) return null;
+    if (!range || periodRowsState !== "ready") return null;
     const projectFilter = mode === "project" ? (row) => row.project_id === projectId : () => true;
     const relevantWork = work.filter(projectFilter);
     const completed = relevantWork.filter((row) => ["task", "deliverable"].includes(row.kind) && COMPLETE.has(row.status) && within(localDate(row.completed_at), range.start, range.end));
     const due = relevantWork.filter((row) => within(localDate(row.due_at), range.start, range.end));
-    const overdue = due.filter((row) => !COMPLETE.has(row.status) && row.status !== "waiting_on" && row.due_at && new Date(row.due_at) < new Date());
+    const overdue = due.filter((row) => !COMPLETE.has(row.status) && row.status !== "waiting_on" && deadlineOverdue(row.due_at, reportAsOf));
     const workIds = new Set(relevantWork.map((row) => row.id));
     const periodSubmissions = submissions.filter((row) => workIds.has(row.work_item_id) && within(localDate(row.submitted_at), range.start, range.end));
     const periodSessions = sessions.filter((row) => within(localDate(row.started_at), range.start, range.end) && (mode !== "project" || (row.work_item_id && workIds.has(row.work_item_id))));
@@ -190,7 +300,7 @@ export default function ManagerReports({ me, openItem }) {
     const activeProjects = projects.filter((project) => relevantWork.some((row) => row.project_id === project.id));
     const relevantObjectives = objectives.filter((objective) => mode !== "project" || objective.project_id === projectId);
     return { relevantWork, completed, due, overdue, periodSubmissions, periodSessions, attendanceDays, activeProjects, relevantObjectives };
-  }, [range, mode, projectId, work, submissions, sessions, projects, objectives]);
+  }, [range, mode, projectId, work, submissions, sessions, projects, objectives, periodRowsState, reportAsOf]);
 
   const daily = useMemo(() => {
     if (!range || !evidence) return [];
@@ -238,28 +348,46 @@ export default function ManagerReports({ me, openItem }) {
   const scope = mode === "project" ? "project" : "unit";
 
   useEffect(() => {
+    historyRequestRef.current += 1;
     setSelectedReportId(null);
     setReportRefs([]);
     setHistory([]);
+    setHistoryVerified(false);
     setNotice(null);
-    if (matchingPeriod && (scope === "unit" || projectId)) loadHistory();
-  }, [matchingPeriod?.id, scope, projectId]);
+    if (loadedScope === reportScope && matchingPeriod && (scope === "unit" || projectId)) {
+      void loadHistory().catch(() => {
+        if (currentReportScope.current !== reportScope) return;
+        setHistoryVerified(false);
+        setError("Report version history could not be verified.");
+      });
+    }
+  }, [matchingPeriod?.id, scope, projectId, reportScope, loadedScope]);
 
   async function loadHistory(preferDraft = true) {
     if (!matchingPeriod) return;
+    const request = ++historyRequestRef.current;
+    const requestedScope = reportScope;
+    setHistoryVerified(false);
     let query = supabase.from("reports")
-      .select("id,period_id,scope,unit_id,project_id,narrative,challenges,status,version,correction_reason,supersedes_report_id,evidence,submitted_at,submitted_by")
+      .select("id,period_id,scope,unit_id,project_id,narrative,challenges,status,version,correction_reason,supersedes_report_id,evidence,submitted_at,submitted_by", { count:"exact" })
       .eq("period_id", matchingPeriod.id)
       .eq("scope", scope)
       .eq("unit_id", me.unit_id)
       .order("version", { ascending: false });
     query = scope === "project" ? query.eq("project_id", projectId) : query.is("project_id", null);
     const result = await query;
-    if (result.error) { setError(result.error.message); return; }
-    const rows = result.data || [];
+    if (request !== historyRequestRef.current || currentReportScope.current !== requestedScope) return;
+    if (result.error || !Array.isArray(result.data) ||
+        typeof result.count !== "number" || result.count !== result.data.length) {
+      setError("The complete version history for this report could not be verified.");
+      setHistory([]); setSelectedReportId(null); setReportRefs([]);
+      return;
+    }
+    const rows = result.data;
     setHistory(rows);
+    setHistoryVerified(true);
     const draft = rows.find((row) => row.status === "draft");
-    const latestSubmitted = rows.find((row) => row.status === "submitted");
+    const latestSubmitted = rows.find(isIssuedUnitReport);
     if (preferDraft && draft) {
       setSelectedReportId(null);
       setNarrative(draft.narrative || "");
@@ -278,23 +406,41 @@ export default function ManagerReports({ me, openItem }) {
   }
 
   useEffect(() => {
-    if (!selectedReportId) { setReportRefs([]); return; }
-    loadRefs(selectedReportId);
-  }, [selectedReportId]);
+    const request = ++refsReadSequence.current;
+    setRefsVerified(loadedScope === reportScope && !selectedReportId);
+    setReportRefs([]);
+    if (loadedScope === reportScope && selectedReportId) void loadRefs(selectedReportId, request);
+    return () => { refsReadSequence.current += 1; };
+  }, [selectedReportId, reportScope, loadedScope]);
 
-  async function loadRefs(reportId) {
-    const result = await supabase.from("report_evidence_refs")
-      .select("id,report_id,section,object_type,object_id,label")
-      .eq("report_id", reportId);
-    if (result.error) { setError(result.error.message); return; }
-    setReportRefs(result.data || []);
+  async function loadRefs(reportId, request) {
+    try {
+      const result = await supabase.from("report_evidence_refs")
+        .select("id,report_id,section,object_type,object_id,label", { count:"exact" })
+        .eq("report_id", reportId);
+      if (request !== refsReadSequence.current || currentReportScope.current !== reportScope) return;
+      if (result.error || !Array.isArray(result.data) ||
+          typeof result.count !== "number" || result.count !== result.data.length) {
+        setRefsVerified(false);
+        setError("The submitted report evidence links could not be verified.");
+        return;
+      }
+      setReportRefs(result.data);
+      setRefsVerified(true);
+    } catch {
+      if (request === refsReadSequence.current && currentReportScope.current === reportScope) {
+        setRefsVerified(false);
+        setError("The submitted report evidence links could not be verified.");
+      }
+    }
   }
 
   const draft = history.find((row) => row.status === "draft") || null;
-  const latestSubmitted = history.find((row) => row.status === "submitted") || null;
+  const latestSubmitted = history.find(isIssuedUnitReport) || null;
   const frozenReport = selectedReportId ? history.find((row) => row.id === selectedReportId) || null : (!draft ? latestSubmitted : null);
   const frozen = frozenReport?.evidence || null;
   const viewingFrozen = Boolean(frozenReport && frozen);
+  const invalidFrozenEvidence = Boolean(frozenReport && !validFrozenReportSnapshot(frozen));
 
   const liveCounts = evidence ? {
     completed: evidence.completed.length,
@@ -303,12 +449,12 @@ export default function ManagerReports({ me, openItem }) {
     attendance_days: evidence.attendanceDays.length,
   } : { completed: 0, submissions: 0, overdue: 0, attendance_days: 0 };
 
-  const displayCounts = viewingFrozen ? (frozen.counts || liveCounts) : liveCounts;
-  const displayDaily = viewingFrozen ? (frozen.daily || []) : daily;
-  const displayProjects = viewingFrozen ? (frozen.by_project || []) : projectRows;
-  const displayStatus = viewingFrozen ? (frozen.status_mix || []) : statusRows;
-  const displayAttendance = viewingFrozen ? (frozen.attendance || []) : attendanceHeat;
-  const displayObjectives = viewingFrozen ? (frozen.objectives || []) : (evidence?.relevantObjectives || []);
+  const displayCounts = viewingFrozen ? (frozen.counts || {}) : liveCounts;
+  const displayDaily = viewingFrozen ? (Array.isArray(frozen.daily) ? frozen.daily : []) : daily;
+  const displayProjects = viewingFrozen ? (Array.isArray(frozen.by_project) ? frozen.by_project : []) : projectRows;
+  const displayStatus = viewingFrozen ? (Array.isArray(frozen.status_mix) ? frozen.status_mix : []) : statusRows;
+  const displayAttendance = viewingFrozen ? (Array.isArray(frozen.attendance) ? frozen.attendance : []) : attendanceHeat;
+  const displayObjectives = viewingFrozen ? (Array.isArray(frozen.objectives) ? frozen.objectives : []) : (evidence?.relevantObjectives || []);
   const hasSupportingAnalysis = displayDaily.some((point) => point.value > 0)
     || displayProjects.length > 1
     || displayStatus.reduce((sum, row) => sum + Number(row.value || 0), 0) >= 5
@@ -327,6 +473,7 @@ export default function ManagerReports({ me, openItem }) {
   }
 
   async function saveDraft(showNotice = true) {
+    if (!evidence) throw new Error("Report evidence is still being verified. Please retry after it loads.");
     if (!matchingPeriod || matchingPeriod.status !== "open") throw new Error("Administration must open this reporting period before you can save a report.");
     const result = await supabase.rpc("save_report_draft", {
       p_period_id: matchingPeriod.id,
@@ -353,7 +500,7 @@ export default function ManagerReports({ me, openItem }) {
       label: labelFor(row),
     }));
     add("completed", "work_item", evidence.completed, (row) => `${row.ref} · ${row.title}`);
-    add("submissions", "submission", evidence.periodSubmissions, (row) => `${row.profiles?.full_name || "Team member"} · ${new Date(row.submitted_at).toLocaleString("en-GB")}`);
+    add("submissions", "submission", evidence.periodSubmissions, (row) => `${row.profiles?.full_name || "Team member"} · ${new Date(row.submitted_at).toLocaleString("en-GB", { timeZone: "Africa/Accra" })}`);
     add("overdue", "work_item", evidence.overdue, (row) => `${row.ref} · ${row.title}`);
     add("attendance_days", "work_session", evidence.attendanceDays, (row) => `${row.profiles?.full_name || "Team member"} · ${localDate(row.started_at)}`);
     daily.forEach((day) => add(day.section, "work_item", day.rows, (row) => `${row.ref} · ${row.title}`));
@@ -378,6 +525,7 @@ export default function ManagerReports({ me, openItem }) {
   }
 
   async function handleSave() {
+    if (matchingPeriod && !historyVerified) return;
     setBusy(true); setError(null); setNotice(null);
     try { await saveDraft(true); }
     catch (err) { setError(humanError(err, "The report draft could not be saved.")); }
@@ -385,7 +533,7 @@ export default function ManagerReports({ me, openItem }) {
   }
 
   async function submitReport() {
-    if (!evidence) return;
+    if (!evidence || !historyVerified) return;
     setBusy(true); setError(null); setNotice(null);
     try {
       if (!matchingPeriod || matchingPeriod.status !== "open") throw new Error("Administration must open this reporting period before you can submit a report.");
@@ -411,7 +559,7 @@ export default function ManagerReports({ me, openItem }) {
   }
 
   async function startCorrection() {
-    if (!frozenReport || !correctionReason.trim()) return;
+    if (!historyVerified || !refsVerified || !frozenReport || !correctionReason.trim()) return;
     setBusy(true); setError(null);
     try {
       const result = await supabase.rpc("correct_report", { p_report_id: frozenReport.id, p_reason: correctionReason.trim() });
@@ -426,7 +574,10 @@ export default function ManagerReports({ me, openItem }) {
     }
   }
 
-  function printReport() { window.print(); }
+  function printReport() {
+    if ((matchingPeriod && !historyVerified) || (viewingFrozen && !refsVerified)) return;
+    window.print();
+  }
 
   const reportStatusLabel = viewingFrozen
     ? "Submitted · version " + frozenReport.version
@@ -436,7 +587,7 @@ export default function ManagerReports({ me, openItem }) {
         ? "Period closed"
         : "Live preview";
 
-  if (loading) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
+  if (loadedScope !== reportScope || loading || (range && periodRowsState === "loading")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
     <ReportingPageHeader
       eyebrow={me.unit_name}
       title="Reports"
@@ -449,7 +600,7 @@ export default function ManagerReports({ me, openItem }) {
     </div>
   </div>;
 
-  if (loadFailed) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
+  if (loadFailed || (range && periodRowsState === "error")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
     <ReportingPageHeader
       eyebrow={me.unit_name}
       title="Reports"
@@ -469,6 +620,22 @@ export default function ManagerReports({ me, openItem }) {
     </div>
   </div>;
 
+  if (invalidFrozenEvidence) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
+    <ReportingPageHeader eyebrow={me.unit_name} title="Reports"
+      description="Submitted versions must retain their original factual evidence."
+      statusLabel="Archived evidence unavailable" statusTone="danger" />
+    <div className="ev2rep-control-panel">
+      <StatePanel state="error" title="Submitted report evidence could not be verified"
+        description="This submitted version has a missing or incomplete frozen evidence snapshot. Current live figures cannot replace its historical counts or objectives."
+        actionLabel="Retry submitted report"
+        onAction={() => void loadHistory(false).catch(() => {
+          setHistoryVerified(false);
+          setError("Submitted report evidence could not be verified.");
+        })}
+        icon="reports" />
+    </div>
+  </div>;
+
   return <div className="body manager-reports report-print ev2-reporting-page ev2-reporting-manager">
     <div className="print-only report-print-brand">
       <b>CEAC</b>
@@ -485,6 +652,12 @@ export default function ManagerReports({ me, openItem }) {
 
     {error && <ProductNotice tone="error" title="Could not complete reporting">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Report updated">{notice}</ProductNotice>}
+    {matchingPeriod && !historyVerified && <ProductNotice tone="attention" title="Report history not yet verified">
+      Submitted versions, edits and printable evidence remain unavailable until their complete authorised history has been checked.
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => {
+        void loadHistory().catch(() => setError("Report version history could not be verified."));
+      }}>Retry report history</button>
+    </ProductNotice>}
 
     <ReportingTabs
       items={[["week","Weekly"],["month","Monthly"],["project","Project"]]}
@@ -701,12 +874,12 @@ export default function ManagerReports({ me, openItem }) {
         </div>}
 
         <div className="ev2rep-actions">
-          <button className="btn btn-ghost" onClick={printReport}>Print / save PDF</button>
+          <button className="btn btn-ghost" disabled={(!!matchingPeriod && !historyVerified) || (viewingFrozen && !refsVerified)} onClick={printReport}>Print / save PDF</button>
           {!viewingFrozen && matchingPeriod?.status === "open" && <>
-            <button className="btn btn-ghost" disabled={busy} onClick={handleSave}>{busy ? "Saving..." : "Save draft"}</button>
-            <button className="btn" disabled={busy} onClick={submitReport}>{busy ? "Submitting..." : "Submit report"}</button>
+            <button className="btn btn-ghost" disabled={busy || !historyVerified} onClick={handleSave}>{busy ? "Saving..." : "Save draft"}</button>
+            <button className="btn" disabled={busy || !historyVerified} onClick={submitReport}>{busy ? "Submitting..." : "Submit report"}</button>
           </>}
-          {viewingFrozen && !draft && frozenReport?.status === "submitted" && frozenReport.id === latestSubmitted?.id && matchingPeriod?.status === "open" && <button className="btn btn-ghost" onClick={() => { setCorrectionReason(""); setSheet("correct"); }}>Correct this report</button>}
+          {viewingFrozen && !draft && frozenReport?.status === "submitted" && frozenReport.id === latestSubmitted?.id && matchingPeriod?.status === "open" && <button className="btn btn-ghost" disabled={!historyVerified || !refsVerified} onClick={() => { setCorrectionReason(""); setSheet("correct"); }}>Correct this report</button>}
           {viewingFrozen && draft && <button className="btn btn-ghost" onClick={() => { setSelectedReportId(null); setNarrative(draft.narrative || ""); setChallenges(draft.challenges || ""); }}>Return to draft</button>}
         </div>
 

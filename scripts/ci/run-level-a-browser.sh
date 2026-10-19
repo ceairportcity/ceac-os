@@ -4,6 +4,9 @@ set -euo pipefail
 scope="${1:-full}"
 
 case "$scope" in
+  p1-design)
+    tests=(tests/stage2-p1-connected-review.spec.js)
+    ;;
   vf9b)
     tests=(
       tests/visual-fidelity-css-cascade-closure.spec.js
@@ -47,10 +50,19 @@ case "$scope" in
     tests=(tests/experience-v2-work-family.spec.js tests/role-routing.spec.js)
     ;;
   reports)
-    tests=(tests/premium-redesign-r7.spec.js tests/role-routing.spec.js)
+    tests=(tests/experience-v2-reports-manager.spec.js tests/role-routing.spec.js)
     ;;
   personal)
     tests=(tests/experience-v2-personal-*.spec.js tests/role-routing.spec.js)
+    ;;
+  p7-people)
+    # Targeted People component fidelity plus immutable aggregate CSS budget.
+    # Full visual screenshots and 4-shard acceptance stay mandatory at P7/P8.
+    tests=(
+      tests/experience-v2-people-family.spec.js
+      tests/visual-fidelity-performance-closure.spec.js
+      tests/role-routing.spec.js
+    )
     ;;
   shell)
     tests=(

@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
+import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
+import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { humanError } from "../lib/productLanguage";
 import { Skeleton, StatePanel } from "../experience-v2/components";
 import {
@@ -19,12 +22,35 @@ export default function ExecutiveReports({ me }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [view, setView] = useState("all");
+  const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[]});
+  const [outcomeError,setOutcomeError] = useState(null);
 
-  useEffect(() => { load(); }, [me.org_id]);
+  // An old Executive report response must never populate a newly signed-in
+  // actor's coverage/briefing after a cross-org or same-org identity change.
+  const identity = me.org_id + ":" + me.id;
+  const loadedActor = useRef(identity);
+  loadedActor.current = identity;
+  const requestSequence = useRef(0);
+  const [readyActor, setReadyActor] = useState(null);
+  const [failedActor, setFailedActor] = useState(null);
+  // A failed CURRENT actor must see an error/retry, not perpetual loading.
+  // An earlier actor's success OR error must not surface after identity change.
+  const contextPending = loading || (readyActor !== identity && failedActor !== identity);
+  const contextError = error && failedActor === identity;
+
+  useEffect(() => {
+    void load();
+    return () => { requestSequence.current += 1; };
+  }, [me.org_id, me.id]);
 
   async function load() {
-    setLoading(true);
-    setError(null);
+    const expected = identity;
+    const request = ++requestSequence.current;
+    const current = () => loadedActor.current === expected && requestSequence.current === request;
+    setLoading(true); setReadyActor(null); setFailedActor(null); setError(null);
+    setPeriod(null); setUnits([]); setReports([]);
+    setOutcomeError(null);
+    setOutcomeSources({issued:[],objectives:[],milestones:[]});
     try {
       const [periodResult, unitResult] = await Promise.all([
         supabase.from("report_periods")
@@ -34,51 +60,80 @@ export default function ExecutiveReports({ me }) {
           .limit(1)
           .maybeSingle(),
         supabase.from("units")
-          .select("id,name")
+          .select("id,name", { count: "exact" })
           .eq("org_id", me.org_id)
           .eq("active", true)
           .order("name"),
       ]);
       if (periodResult.error || unitResult.error) throw periodResult.error || unitResult.error;
-
-      setPeriod(periodResult.data || null);
-      setUnits(unitResult.data || []);
-
-      if (!periodResult.data) {
-        setReports([]);
-        return;
+      if (typeof unitResult.count !== "number"
+        || unitResult.count !== (unitResult.data || []).length) {
+        throw new Error("Active unit reporting context is incomplete. No filing totals can be verified.");
       }
 
-      const reportResult = await supabase.from("reports")
-        .select("unit_id,status,version,submitted_at")
-        .eq("period_id", periodResult.data.id)
-        .eq("scope", "unit");
-      if (reportResult.error) throw reportResult.error;
-
-      const latest = {};
-      (reportResult.data || []).forEach((report) => {
-        if (!latest[report.unit_id] || Number(report.version) > Number(latest[report.unit_id].version)) {
-          latest[report.unit_id] = report;
+      let nextReports = [];
+      let nextOutcomeError = null;
+      let nextSources = {issued:[],objectives:[],milestones:[]};
+      if (periodResult.data) {
+        const reportResult = await supabase.from("reports")
+          .select("unit_id,status,version,submitted_at", { count: "exact" })
+          .eq("period_id", periodResult.data.id)
+          .eq("scope", "unit");
+        if (reportResult.error) throw reportResult.error;
+        if (typeof reportResult.count !== "number"
+          || reportResult.count !== (reportResult.data || []).length) {
+          throw new Error("Period report history is incomplete. Filing totals are withheld.");
         }
-      });
-      setReports(Object.values(latest));
+        nextReports = Object.values(latestUnitReportStatus(reportResult.data || []));
+        // Only issued organisational reports; no draft narrative or HR ratings.
+        const [issued,objectives,milestones] = await Promise.all([
+          supabase.from("reports").select("id,unit_id,version,status,submitted_at,narrative,challenges", { count: "exact" })
+            .eq("period_id",periodResult.data.id).eq("scope","unit").in("status",["submitted","confirmed"]).limit(501),
+          supabase.from("objectives").select("id,name,status,project_id,unit_id,target_value,achieved_value,target_unit", { count: "exact" })
+            .eq("org_id",me.org_id).limit(501),
+          supabase.from("project_milestones").select("id,name,status,project_id,target_on,completed_at", { count: "exact" })
+            .eq("org_id",me.org_id).limit(501),
+        ]);
+        // The API may silently apply its row cap even when our requested limit
+        // is higher. An exact count is required before outcome coverage can
+        // be described as complete; otherwise withhold the detailed brief.
+        const detailsError=[issued,objectives,milestones].find(x=>
+          x.error || typeof x.count !== "number"
+          || x.count !== (x.data||[]).length || x.count>500);
+        if (detailsError) {
+          nextOutcomeError="Leadership evidence could not be verified completely. Detailed totals are withheld.";
+        } else {
+          nextSources={issued:issued.data||[],objectives:objectives.data||[],milestones:milestones.data||[]};
+        }
+      }
+      if (!current()) return;
+      // Commit coherent reporting evidence only after every required read.
+      setPeriod(periodResult.data || null);
+      setUnits(unitResult.data || []);
+      setReports(nextReports);
+      setOutcomeError(nextOutcomeError);
+      setOutcomeSources(nextSources);
+      setReadyActor(expected);
     } catch (loadError) {
-      setError(humanError(loadError, "Reports could not be loaded."));
+      if (current()) {
+        setError(humanError(loadError, "Reports could not be loaded."));
+        setFailedActor(expected);
+      }
     } finally {
-      setLoading(false);
+      if (current()) setLoading(false);
     }
   }
 
-  const filed = useMemo(() => reports.filter((report) => report.status !== "draft"), [reports]);
+  const filed = useMemo(() => reports.filter(isIssuedUnitReport), [reports]);
   const drafting = useMemo(() => reports.filter((report) => report.status === "draft"), [reports]);
   const waiting = useMemo(
-    () => units.filter((unit) => !reports.some((report) => report.unit_id === unit.id && report.status !== "draft")),
+    () => units.filter((unit) => !reports.some((report) => report.unit_id === unit.id && isIssuedUnitReport(report))),
     [units, reports],
   );
   const unitStatusRows = useMemo(
     () => units.map((unit) => {
       const report = reports.find((row) => row.unit_id === unit.id);
-      const state = report && report.status !== "draft" ? "submitted" : report?.status === "draft" ? "draft" : "waiting";
+      const state = isIssuedUnitReport(report) ? "submitted" : report?.status === "draft" ? "draft" : "waiting";
       return { unit, report, state };
     }),
     [units, reports],
@@ -88,9 +143,9 @@ export default function ExecutiveReports({ me }) {
     [unitStatusRows, view],
   );
 
-  const statusLabel = loading
+  const statusLabel = contextPending
     ? "Loading records"
-    : error
+    : contextError
       ? "Context unavailable"
       : period
         ? period.status === "open" ? "Latest period open" : "Latest period closed"
@@ -103,15 +158,17 @@ export default function ExecutiveReports({ me }) {
         title="Reports"
         description="View submissions, reporting coverage and key recorded reports. Administration controls periods and report configuration; coverage is not a performance score."
         statusLabel={statusLabel}
-        statusTone={error ? "danger" : "neutral"}
+        statusTone={contextError ? "danger" : "neutral"}
       />
 
-      {loading ? (
+      <QuarterlyReviewEventControl me={me} />
+
+      {contextPending ? (
         <div className="ev2rep-loading" aria-label="Loading reports" aria-busy="true">
           <Skeleton variant="block" height="7rem" />
           <Skeleton variant="block" height="12rem" />
         </div>
-      ) : error ? (
+      ) : contextError ? (
         <div className="ev2rep-state">
           <StatePanel
             state="error"
@@ -219,6 +276,10 @@ export default function ExecutiveReports({ me }) {
               )}
             </ReportingSection>
           </div>
+
+          <ExecutiveOutcomeBrief period={period} units={units}
+            issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
+            milestones={outcomeSources.milestones} readError={outcomeError} />
 
           <ReportingFootnote>
             Executive Reports is read-only. Filing coverage describes reporting status only; CEAC OS does not infer unit performance, staff performance, achievement, score or ranking from it.

@@ -67,7 +67,8 @@ $definer_search_path$;
 -- workforce_request_leave SECURITY INVOKER wrapper. The integrated one-bundle release
 -- adds twelve reviewed caller-scoped interfaces and removes two obsolete direct
 -- execution grants (attendance correction and performance publication): 145.
--- The full 145 signature exact allowlist plus anon-denial and caller-binding checks
+-- The full 146-signature exact allowlist (145 frozen Stage 1 functions plus one
+-- narrowly reviewed Stage 2 universal-TOTP assurance helper) and anon-denial checks
 -- remain independently enforced in security_definer_surface_gate.sql,
 -- admin_hr_security_gate.sql and privileged_mfa_aal2_gate.sql. Count alone is
 -- insufficient evidence of security; never relax the signature allowlist.
@@ -85,8 +86,18 @@ begin
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
 
-  if n<>145 then
-    raise exception 'Platform Kernel gate failure: expected 145 explicitly reviewed authenticated SECURITY DEFINER functions for the integrated release (exact signature allowlist enforced separately), found %.',n;
+  -- Preserve the historical Stage 1 145-function allowlist and explicitly
+  -- admit only the reviewed Stage 2 TOTP/AAL2 RLS helper, not arbitrary grants.
+  if n<>146 then
+    raise exception 'Platform Kernel gate failure: expected 145 reviewed Stage 1 SECURITY DEFINER interfaces plus one explicitly allowed Stage 2 TOTP assurance helper (146 total); found %.',n;
+  end if;
+
+  if to_regprocedure('public.app_stage2_universal_aal_allowed()') is null
+     or not has_function_privilege('authenticated','public.app_stage2_universal_aal_allowed()','EXECUTE')
+     or has_function_privilege('anon','public.app_stage2_universal_aal_allowed()','EXECUTE')
+     or pg_get_functiondef('public.app_stage2_universal_aal_allowed()'::regprocedure) not ilike '%auth.mfa_factors%'
+     or pg_get_functiondef('public.app_stage2_universal_aal_allowed()'::regprocedure) not ilike '%method == "totp"%' then
+    raise exception 'Platform Kernel gate failure: reviewed Stage 2 authenticator verifier missing, unverified or publicly accessible.';
   end if;
 
   if to_regprocedure('public.my_sessions()') is null
@@ -131,13 +142,27 @@ begin
     raise exception 'Platform Kernel gate failure: record_ministry_number does not match reviewed scheduleless unit authority.';
   end if;
 
+  -- Permissive INSERT/UPDATE/DELETE/ALL policies would reopen direct
+  -- ministry-number writes. Stage 2's RESTRICTIVE ALL TOTP policy only
+  -- narrows existing permissions; it cannot grant a write by itself.
   if exists (
     select 1 from pg_policies
     where schemaname='public'
       and tablename in ('recurring_operations','operation_occurrences')
       and cmd in ('INSERT','UPDATE','DELETE','ALL')
+      and permissive='PERMISSIVE'
   ) then
-    raise exception 'Platform Kernel gate failure: direct ministry-table writes were reopened.';
+    raise exception 'Platform Kernel gate failure: permissive direct ministry-table writes were reopened.';
+  end if;
+  if (select count(*) from pg_policies
+      where schemaname='public'
+        and tablename in ('recurring_operations','operation_occurrences')
+        and policyname='stage2_universal_totp_gate'
+        and permissive='RESTRICTIVE'
+        and cmd='ALL'
+        and qual like '%app_stage2_universal_aal_allowed%'
+        and with_check like '%app_stage2_universal_aal_allowed%')<>2 then
+    raise exception 'Platform Kernel gate failure: Stage 2 restrictive TOTP protection missing from both ministry tables.';
   end if;
 
   if has_function_privilege('authenticated','public.app_can_publish_announcements()','EXECUTE')

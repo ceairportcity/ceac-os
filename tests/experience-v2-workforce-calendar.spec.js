@@ -229,6 +229,9 @@ test("VF6C cross-role Calendar surfaces stay top-anchored and context-led", asyn
       const root = page.locator(role.root);
       await expect(root).toBeVisible({ timeout: 15000 });
 
+      // Lazy Calendar styles may settle after route mount. Still require
+      // the exact top-anchored computed layout, with no relaxed criterion.
+      await expect.poll(() => root.evaluate((node) => getComputedStyle(node).alignContent)).toBe("start");
       const layout = await root.evaluate((node) => ({
         alignContent: getComputedStyle(node).alignContent,
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,

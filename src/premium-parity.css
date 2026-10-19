@@ -3,7 +3,6 @@
 html,body,#root{min-height:100%;background:var(--ceac-bg)}
 body{color:var(--ceac-text)}
 .app{background:var(--ceac-bg)}
-.app-workspace{min-width:0;background:linear-gradient(180deg,#eef5fb 0,#f7f9fc 220px,#f3f6fa 100%);min-height:100vh}
 .app-content{max-width:none;padding:14px 18px 86px}
 .body{max-width:none}
 
@@ -37,8 +36,7 @@ body{color:var(--ceac-text)}
 .btn{border-radius:8px!important}.btn:not(.btn-ghost){background:linear-gradient(135deg,#1677ff,#0863ea)!important;border-color:#0d6cf0!important}
 .field{border-color:#dce5ef!important;border-radius:9px!important;background:#fff!important}.sec{color:#24364d!important}.pill{border-radius:999px!important}
 
-@media(max-width:900px){
-  .app-workspace{width:100%!important}.app-content{padding:8px 9px 78px!important}
+@media(max-width:900px){.app-content{padding:8px 9px 78px!important}
   .executive-home>.sec,.executive-home>.metric-grid,.executive-home>.row,.executive-home>.screen-note{margin-right:0!important}
 }
 
@@ -144,7 +142,6 @@ body{color:var(--ceac-text)}
 /* Visual parity pass 2: remove legacy desktop width caps and lock the approved composition. */
 @media(min-width:981px){
   .app{max-width:none!important;margin:0!important;width:100%!important;display:block!important}
-  .app-workspace{margin-left:226px!important;width:calc(100% - 226px)!important}
   .app-content{width:100%!important;max-width:none!important;padding:14px 18px 80px!important}
   .app-content>.body,
   .staff-app .app-content>.body,
@@ -164,22 +161,8 @@ body{color:var(--ceac-text)}
 }
 
 @media(min-width:981px){
-  .manager-command-action{
-    position:absolute!important;
-    right:306px!important;
-    top:18px!important;
-    z-index:5!important;
-  }
-  .manager-command-head{padding-right:405px!important}
 }
 @media(max-width:980px){
-  .manager-command-action{
-    position:relative!important;
-    right:auto!important;
-    top:auto!important;
-    margin-top:12px!important;
-  }
-  .manager-command-head{padding-right:0!important}
 }
 
 /* Laptop density correction — 25 Sep 2026
@@ -220,14 +203,6 @@ body{color:var(--ceac-text)}
   .executive-app .executive-home>.screen-note{
     margin-right:0!important;
   }
-
-  .manager-command-action{
-    position:relative!important;
-    right:auto!important;
-    top:auto!important;
-    margin-top:12px!important;
-  }
-  .manager-command-head{padding-right:0!important}
 
   /* Restore a normal laptop reading size without changing the visual system. */
   .row-t{font-size:13px!important}

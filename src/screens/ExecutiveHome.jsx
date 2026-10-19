@@ -25,7 +25,8 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
     if (fn) query = fn(query);
     const result = await query;
     if (result.error) throw new Error(`${table}: ${result.error.message}`);
-    return result.count ?? 0;
+    if (!Number.isInteger(result.count) || result.count < 0) throw new Error("Executive source count could not be verified.");
+    return result.count;
   }
 
   async function load() {
@@ -52,17 +53,17 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
           .gte("starts_at",now.toISOString())
           .lte("starts_at",new Date(Date.now()+14*864e5).toISOString())
           .neq("status","cancelled").order("starts_at").limit(5),
-        supabase.from("objectives").select("status").eq("org_id",me.org_id),
+        supabase.from("objectives").select("status", { count: "exact" }).eq("org_id",me.org_id),
         supabase.from("strategy_nodes")
-          .select("id,node_type,name,status,measurement_kind,current_value,target_value,target_unit,created_at")
+          .select("id,node_type,name,status,measurement_kind,current_value,target_value,target_unit,created_at", { count: "exact" })
           .eq("org_id",me.org_id)
           .in("node_type",["ministry_direction","ministry_objective"])
           .neq("status","closed")
           .order("created_at",{ascending:false}),
         supabase.from("report_periods").select("id,label,status,starts_on").eq("org_id",me.org_id).eq("status","open").order("starts_on",{ascending:false}).limit(1),
-        supabase.from("units").select("id").eq("org_id",me.org_id).eq("active",true),
+        supabase.from("units").select("id", { count: "exact" }).eq("org_id",me.org_id).eq("active",true),
         supabase.from("recurring_operations")
-          .select("id,name,value_label,unit_id,units(name)")
+          .select("id,name,value_label,unit_id,units(name)", { count: "exact" })
           .eq("org_id",me.org_id).eq("active",true).eq("records_value",true)
           .order("name"),
         supabase.from("employment_records").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").eq("employment_type", "volunteer"),
@@ -75,25 +76,29 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
           .limit(12),
       ]);
 
-      const firstError = [meetingRows.error, objectiveRows.error, strategyRows.error, periodRows.error, unitRows.error, operationRows.error].find(Boolean);
-      if (firstError) throw new Error(firstError.message);
+      const firstError = [meetingRows.error, objectiveRows.error, strategyRows.error, periodRows.error, unitRows.error, operationRows.error, activityResult.error].find(Boolean);
+      if (firstError) throw new Error("Executive records could not be verified.");
+      const complete = (result) => !result.error && Array.isArray(result.data) && Number.isInteger(result.count) && result.count === result.data.length;
+      if (![objectiveRows,strategyRows,unitRows,operationRows].every(complete)) throw new Error("Executive source collections are incomplete.");
+      if (![meetingRows,periodRows,activityResult].every(result=>Array.isArray(result.data))) throw new Error("Executive visible records could not be verified.");
+      const optionalCount = (result) => !result.error && Number.isInteger(result.count) && result.count >= 0 ? result.count : null;
 
-      const operations = operationRows.data || [];
+      const operations = operationRows.data;
       let occurrenceRows = [];
       if (operations.length) {
         const occurrenceResult = await supabase.from("operation_occurrences")
-          .select("id,operation_id,occurred_on,value,note,created_at,recorded_by")
+          .select("id,operation_id,occurred_on,value,note,created_at,recorded_by", { count: "exact" })
           .in("operation_id",operations.map((row)=>row.id))
           .gte("occurred_on",dateKey(ministryStart))
           .order("occurred_on",{ascending:true})
           .order("created_at",{ascending:true});
-        if (occurrenceResult.error) throw new Error(`operation_occurrences: ${occurrenceResult.error.message}`);
-        occurrenceRows = occurrenceResult.data || [];
+        if (!complete(occurrenceResult)) throw new Error("Executive occurrence history is incomplete.");
+        occurrenceRows = occurrenceResult.data;
       }
       setMinistryOperations(operations);
       setMinistryOccurrences(occurrenceRows);
 
-      const visibleActivity = activityResult.error ? [] : (activityResult.data || []);
+      const visibleActivity = activityResult.data;
       const actorIds = [...new Set(visibleActivity.map((row) => row.actor_id).filter(Boolean))];
       let actorNames = {};
       if (actorIds.length) {
@@ -102,9 +107,9 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
       }
       setRecentActivity(visibleActivity.map((row) => ({ ...row, actor_name: actorNames[row.actor_id] || null })));
 
-      setMinistryStrategyRows(strategyRows.data || []);
+      setMinistryStrategyRows(strategyRows.data);
 
-      const mixRows=objectiveRows.data||[];
+      const mixRows=objectiveRows.data;
       const onTrack=mixRows.filter((row)=>row.status==="on_track").length;
       const met=mixRows.filter((row)=>row.status==="met").length;
       const atRisk=mixRows.filter((row)=>row.status==="at_risk").length;
@@ -113,12 +118,12 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
 
       const openPeriod=(periodRows.data||[])[0]||null;
       if(openPeriod){
-        const reportRows=await supabase.from("reports").select("unit_id,status,version").eq("org_id",me.org_id).eq("period_id",openPeriod.id).eq("scope","unit");
-        if(reportRows.error) throw new Error(`reports: ${reportRows.error.message}`);
+        const reportRows=await supabase.from("reports").select("unit_id,status,version", { count: "exact" }).eq("org_id",me.org_id).eq("period_id",openPeriod.id).eq("scope","unit");
+        if(!complete(reportRows)) throw new Error("Executive filing history is incomplete.");
         const latest={};
-        (reportRows.data||[]).forEach((row)=>{if(!latest[row.unit_id]||Number(row.version)>Number(latest[row.unit_id].version))latest[row.unit_id]=row;});
+        reportRows.data.forEach((row)=>{if(!latest[row.unit_id]||Number(row.version)>Number(latest[row.unit_id].version))latest[row.unit_id]=row;});
         const filed=Object.values(latest).filter((row)=>row.status!=="draft").length;
-        setReporting({label:openPeriod.label,filed,total:(unitRows.data||[]).length});
+        setReporting({label:openPeriod.label,filed,total:unitRows.data.length});
       }else setReporting(null);
 
       setX({
@@ -129,15 +134,15 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
         projects,
         blocked,
         review,
-        activeUnits: (unitRows.data || []).length,
-        ministryObjectives: (strategyRows.data || []).filter((row) => row.node_type === "ministry_objective").length,
-        activeTeams: teamRows.error ? null : (teamRows.count ?? 0),
-        activeVolunteers: volunteerRows.error ? null : (volunteerRows.count ?? 0),
-        activeStaff: staffRows.error ? null : (staffRows.count ?? 0),
+        activeUnits: unitRows.data.length,
+        ministryObjectives: strategyRows.data.filter((row) => row.node_type === "ministry_objective").length,
+        activeTeams: optionalCount(teamRows),
+        activeVolunteers: optionalCount(volunteerRows),
+        activeStaff: optionalCount(staffRows),
       });
       setMeetings(meetingRows.data || []);
     } catch (loadError) {
-      setError(loadError.message || "The ministry overview could not load.");
+      setError("The executive source evidence could not be fully verified. Retry before relying on the figures.");
     } finally {
       setLoading(false);
     }
@@ -191,6 +196,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
   }, [ministryOperations,ministryOccurrences]);
 
   return <ExecutiveOverviewV2
+    me={me}
     executiveName={me.full_name || "Group Pastor"}
     executiveDate={executiveDate}
     loading={loading}

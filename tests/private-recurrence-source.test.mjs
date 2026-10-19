@@ -51,6 +51,25 @@ test("private calendar supports the complete approved recurrence and edit/remove
   assert.match(compatibility,/personal_materialize_task_series/);
 });
 
+test("private recurrence writes require current-actor verified series and close uncertain create",()=>{
+  assert.match(recurrence,/const currentIdentity = useRef\(identity\)/);
+  assert.match(recurrence,/const refreshSequence = useRef\(0\)/);
+  assert.match(recurrence,/\{ count: "exact" \}/);
+  assert.match(recurrence,/!Array\.isArray\(data\) \|\| typeof count !== "number" \|\| count !== data\.length/);
+  assert.match(recurrence,/\.eq\("org_id", me\.org_id\)\.eq\("profile_id", me\.id\)/);
+
+  assert.match(recurrence,/const requestedRead = \+\+refreshSequence\.current/);
+  assert.match(recurrence,/refreshSequence\.current === requestedRead/);
+  assert.match(recurrence,/if \(!isLatest\(\)\) return false/);
+  assert.match(recurrence,/return \(\) => \{ refreshSequence\.current \+= 1; \}/);
+  assert.match(recurrence,/const isLatest = \(\) => currentIdentity\.current === requestedIdentity/);
+  assert.match(recurrence,/const seriesVerified = ready && !loading && verifiedIdentity === identity/);
+  assert.match(recurrence,/if \(!seriesVerified \|\| loading \|\| busy/);
+  assert.match(recurrence,/setShowForm\(false\); setEditing\(null\); setList\(\[\]\); setVerifiedIdentity\(null\)/);
+  assert.match(recurrence,/\(seriesVerified \? list : \[\]\)\.map/);
+  assert.match(recurrence,/Verify private series/);
+});
+
 test("one-bundle manifest includes recurrence, never silently activates Stage 2 Google/AAL2",()=>{
   const list=manifest.slice(manifest.indexOf("WITH expected_pending"),manifest.indexOf("SELECT\n"));
   const versions=[...list.matchAll(/'([0-9]{14})'/g)].map(match=>match[1]);
@@ -58,4 +77,16 @@ test("one-bundle manifest includes recurrence, never silently activates Stage 2 
   assert.equal(new Set(versions).size,32);
   assert.ok(versions.includes("20261015090000"));
   assert.ok(!versions.includes("20261012172718"));
+});
+
+
+test("P4 private recurring write acknowledgements require actual owner-row readback, not zero-row HTTP success",()=>{
+  assert.match(recurrence,/!Array\.isArray\(data\) \|\| typeof count !== "number" \|\| count !== data\.length/);
+  assert.match(recurrence,/\.update\(\{ title, details:/);
+  assert.match(recurrence,/changed\?\.id !== editing/);
+  assert.match(recurrence,/\.delete\(\)\.eq\("id", series\.id\)[\s\S]*?\.select\("id"\)\.single\(\)/);
+  assert.match(recurrence,/removed\?\.id !== series\.id/);
+  assert.match(recurrence,/\.update\(\{ is_active: !series\.is_active \}\)[\s\S]*?\.select\("id,is_active"\)\.single\(\)/);
+  assert.match(recurrence,/changed\.is_active !== !series\.is_active/);
+  assert.match(recurrence,/\.eq\("is_active", series\.is_active\)/);
 });

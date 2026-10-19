@@ -69,7 +69,28 @@ for (const viewport of [
     const { context, page } = await openExecutive(browser, { width: viewport.width, height: viewport.height });
 
     await expect(page.locator(".executivev2-hero h2")).toContainText(/Good (morning|afternoon|evening), Executive Fixture/);
+    // Desktop/laptop: variable scenic photography must not obscure the date.
+    // Do not alter the approved image rotation or mock the user's clock.
+    if (viewport.width >= 1025) {
+      const dateStyle = await page.locator(".executivev2-hero time").evaluate((node) => {
+        const style = getComputedStyle(node);
+        return { background: style.backgroundColor, color: style.color, display: style.display };
+      });
+      expect(dateStyle.display).not.toBe("none");
+      const background = (dateStyle.background.match(/[0-9.]+/g) || []).map(Number);
+      expect(background.slice(0, 3)).toEqual([255, 255, 255]);
+      expect(background[3]).toBeGreaterThanOrEqual(0.9);
+      expect(dateStyle.color).toBe("rgb(20, 43, 72)");
+    }
     await expect(page.locator(".executivev2-kpis")).toBeVisible();
+    // Functional Start/End Work must remain unobstructed by KPI cards.
+    const sessionBox = await page.locator(".executivev2 > .s2-own-work-session").boundingBox();
+    const kpiBox = await page.locator(".executivev2-kpis").boundingBox();
+    expect(sessionBox, "Executive attendance card must render").toBeTruthy();
+    expect(kpiBox, "Executive KPI row must render").toBeTruthy();
+    expect(kpiBox.y, "KPI cards must begin below employee attendance").toBeGreaterThanOrEqual(
+      sessionBox.y + sessionBox.height - 1,
+    );
     await expect(page.locator(".executivev2-attention")).toBeVisible();
     if (viewport.width > 720) {
       await expect(page.locator(".executivev2-direction")).toBeVisible();

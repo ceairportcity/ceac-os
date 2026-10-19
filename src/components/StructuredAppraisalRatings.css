@@ -1,0 +1,25 @@
+.s2-rating-section{margin:18px 0;border:1px solid #dfe9f6;border-radius:12px;background:#fff;padding:18px;color:#274766}
+.s2-rating-section>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.s2-rating-section h3{margin:4px 0;font-size:16px;color:#15477f}
+.s2-rating-eyebrow{font-size:11px;text-transform:uppercase;font-weight:750;color:#3271b3;letter-spacing:.06em}
+.s2-rating-section p,.s2-rating-section small{color:#70839a;font-size:12px;line-height:1.55}
+.s2-rating-form{margin:12px 0;border-top:1px solid #e7eef7;padding-top:12px}
+.s2-rating-row{display:grid;grid-template-columns:minmax(140px,1fr) minmax(160px,1fr);gap:9px;padding:13px 0;border-bottom:1px solid #e9eff7}
+.s2-rating-row>strong{font-size:13px;color:#1f4570}
+.s2-rating-row>label:nth-of-type(2),.s2-rating-row>label:nth-of-type(3){grid-column:1/-1}
+.s2-rating-section label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:#3b5876}
+.s2-rating-section select,.s2-rating-section textarea{font:inherit;font-weight:400;min-height:35px;padding:8px 9px;color:#213d5e;background:#fafdff;border:1px solid #d7e5f4;border-radius:7px;width:100%}
+.s2-rating-overall-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.s2-rating-overall-form label:nth-child(2){grid-column:1/-1}
+.s2-rating-hint,.s2-rating-error{padding:9px 12px;background:#fff5eb;border-radius:8px;color:#98613e!important}
+.s2-rating-summary{margin:12px 0;display:grid;gap:10px}
+.s2-rating-summary>div{border:1px solid #e7eef7;border-radius:8px;padding:12px;font-size:12px}
+.s2-rating-summary strong{display:block;color:#204c7b;margin-bottom:6px}
+.s2-rating-summary .s2-rating-overall{background:#f1f7ff}
+.s2-rating-overall>span{display:block;font-size:12px;color:#52769c}
+.s2-rating-overall>strong{font-size:25px;margin:6px 0}
+.s2-rating-hr-exception{margin-top:15px;padding:12px;border-radius:8px;border:1px solid #e4ecf6}
+.s2-rating-hr-exception summary{font-size:12px;font-weight:750;cursor:pointer}
+.s2-rating-hr-exception label{margin:9px 0}
+@media(max-width:580px){.s2-rating-section{padding:12px}.s2-rating-section>header{flex-direction:column}.s2-rating-row,.s2-rating-overall-form{grid-template-columns:minmax(0,1fr)}.s2-rating-overall-form label:nth-child(2){grid-column:auto}}
+@media print{.s2-rating-form,.s2-rating-hr-exception{display:none!important}}

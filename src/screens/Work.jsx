@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import AssignedRoutineOccurrences from "../components/AssignedRoutineOccurrences";
 import { dueLabel } from "../lib/time";
 import { humanError } from "../lib/productLanguage";
 import { Sheet, FieldGroup, ProductNotice, LoadingState } from "../components/bits";
@@ -74,6 +75,8 @@ export default function Work({ me, isManager = false, openItem }) {
   const [steps, setSteps] = useState([""]);
   const [noStepsNeeded, setNoStepsNeeded] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Blocks two synchronous create clicks before React renders the busy state.
+  const ownCreatePending = useRef(false);
   const [notice, setNotice] = useState(null);
   const [queryText, setQueryText] = useState("");
   const [sortMode, setSortMode] = useState("due");
@@ -225,9 +228,11 @@ export default function Work({ me, isManager = false, openItem }) {
   }
 
   async function createOwnTask() {
+    if (busy || ownCreatePending.current) return;
     const clean = noStepsNeeded ? [] : steps.map((step) => step.trim()).filter(Boolean);
     if (!title.trim() || !expectedOutcome.trim() || (!noStepsNeeded && !clean.length)) return;
 
+    ownCreatePending.current = true;
     setBusy(true);
     setLoadError(null);
     setNotice(null);
@@ -250,6 +255,22 @@ export default function Work({ me, isManager = false, openItem }) {
         p_steps: clean,
       });
       if (createError) throw createError;
+      // The server may have committed despite an incomplete client response.
+      // Never claim a successful task or encourage a blind duplicate retry.
+      if (typeof created?.ref !== "string" || !created.ref.trim()) {
+        setSheet(null);
+        throw new Error("The work creation outcome is uncertain. Check your existing work before creating another task.");
+      }
+      const confirmation = await supabase.from("work_items")
+        .select("id,ref,org_id,assignee_id,origin,visibility")
+        .eq("ref", created.ref).eq("org_id", me.org_id)
+        .eq("assignee_id", me.id).maybeSingle();
+      if (confirmation.error || !confirmation.data?.id
+          || confirmation.data.origin !== "self_created"
+          || confirmation.data.visibility !== createVisibility) {
+        setSheet(null);
+        throw new Error("The new work record could not be independently verified. Check your work list before creating another task.");
+      }
 
       setSheet(null);
       setMode(createVisibility === "private" ? "private" : "agreed");
@@ -261,6 +282,7 @@ export default function Work({ me, isManager = false, openItem }) {
     } catch (error) {
       setLoadError(humanError(error, "The work could not be added."));
     } finally {
+      ownCreatePending.current = false;
       setBusy(false);
     }
   }
@@ -377,6 +399,8 @@ export default function Work({ me, isManager = false, openItem }) {
         </div>)}
       </div>
     </details>}
+
+    {mode === "assigned" && !loading && !loadError && <AssignedRoutineOccurrences me={me} onOpen={openItem} />}
 
     <WorkTabs
       items={STATUS_FILTERS}

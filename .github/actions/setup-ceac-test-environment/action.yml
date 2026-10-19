@@ -1,5 +1,10 @@
 name: Set up isolated CEAC test environment
 description: Replays the database and seeds the deterministic role fixtures on an isolated runner.
+inputs:
+  enable_local_totp:
+    description: Enables real authenticator MFA only on this disposable local fixture when explicitly requested.
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -11,9 +16,14 @@ runs:
 
     - name: Start clean local Supabase and replay migrations
       shell: bash
+      env:
+        CEAC_ENABLE_LOCAL_TOTP: ${{ inputs.enable_local_totp }}
       run: |
         if [ ! -f supabase/config.toml ]; then
           supabase init
+        fi
+        if [[ "$CEAC_ENABLE_LOCAL_TOTP" == "true" ]]; then
+          SUPABASE_URL=http://127.0.0.1:54321 node scripts/ci/prepare-local-totp-mfa.mjs
         fi
         mkdir -p /tmp/ceac-migrations
         find supabase/migrations -maxdepth 1 -name '*.sql' -exec mv {} /tmp/ceac-migrations/ \;

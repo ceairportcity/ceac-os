@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
@@ -8,6 +8,14 @@ import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
 import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
 import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
+import Stage2UniversalMfaGate from "./components/Stage2UniversalMfaGate";
+import { decideUniversalTotpAccess } from "./lib/Stage2UniversalMfaPolicy";
+
+// Stage 2 activates only after the independently approved server/Auth AAL2 cutover.
+// Never infer cutover authority from a frontend preview or design approval.
+const UNIVERSAL_TOTP_CUTOVER = import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true";
+const ActiveMfaGate = import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true"
+  ? Stage2UniversalMfaGate : PrivilegedMfaGate;
 
 const Home = lazy(() => import("./screens/Home"));
 const Work = lazy(() => import("./screens/Work"));
@@ -24,6 +32,7 @@ const Workforce = lazy(() => import("./screens/Workforce"));
 const Cost = lazy(() => import("./screens/Cost"));
 const Finance = lazy(() => import("./screens/Finance"));
 const Reports = lazy(() => import("./screens/Reports"));
+const PersonalAchievements = lazy(() => import("./screens/PersonalAchievements"));
 const ExecutiveHome = lazy(() => import("./screens/ExecutiveHome"));
 const ExecutiveWork = lazy(() => import("./screens/ExecutiveWork"));
 const ExecutiveOrganisation = lazy(() => import("./screens/ExecutiveOrganisation"));
@@ -118,32 +127,89 @@ export default function App() {
   const [lifecycleIntent, setLifecycleIntent] = useState(null);
   const [announcementFocusId, setAnnouncementFocusId] = useState(null);
   const [session, setSession] = useState(null);
+  const [hasPendingMfaSession, setHasPendingMfaSession] = useState(false);
+  // Invalidate slow responses from a previous sign-in, token refresh or logout.
+  const bootEpoch = useRef(0);
   useForegroundPresence(me, session);
 
   useEffect(() => {
     boot();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => boot());
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (UNIVERSAL_TOTP_CUTOVER) {
+        // Identity-changing Auth events must immediately hide the previous
+        // actor's protected workspace, before any asynchronous profile read.
+        // Routine token refreshes retain their legitimate workspace while
+        // the separate universal MFA gate rechecks signed assurance.
+        if (["SIGNED_OUT", "SIGNED_IN", "PASSWORD_RECOVERY", "USER_UPDATED"].includes(event)) {
+          ++bootEpoch.current;
+          setReady(false);
+          setMe(null);
+          setSession(null);
+        }
+        // Do not await provider calls within Supabase's Auth callback lock.
+        setTimeout(() => boot(), 0);
+      } else boot();
+    });
     const onPopState = () => applyRoute(routeFromLocation());
     window.addEventListener("popstate", onPopState);
     return () => {
+      ++bootEpoch.current;
       sub.subscription.unsubscribe();
       window.removeEventListener("popstate", onPopState);
     };
   }, []);
 
   async function boot() {
+    const requestEpoch = ++bootEpoch.current;
+    const isCurrent = () => requestEpoch === bootEpoch.current;
     setBootError(null);
     try {
+      // Stage 2 protects ordinary profile reads at AAL1; Auth verification
+      // must precede any access to the RLS-protected employee profile.
+      if (UNIVERSAL_TOTP_CUTOVER) {
+        const result = await supabase.auth.getSession();
+        if (!isCurrent()) return;
+        if (result.error) throw result.error;
+        const authSession = result.data?.session || null;
+        setHasPendingMfaSession(Boolean(authSession));
+        if (!authSession) {
+          // A delayed profile lookup from a previous session must not restore
+          // an old role or personal-work session after sign-out.
+          setMe(null);
+          setSession(null);
+          return;
+        }
+        const [assurance, factors, claims] = await Promise.all([
+          supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+          supabase.auth.mfa.listFactors(),
+          supabase.auth.getClaims(),
+        ]);
+        if (!isCurrent()) return;
+        const failure = [assurance.error, factors.error, claims.error].find(Boolean);
+        if (failure) throw failure;
+        const access = decideUniversalTotpAccess({
+          session: authSession, assurance: assurance.data,
+          factors: factors.data, claims: claims.data?.claims,
+        });
+        if (access.state !== "allow") {
+          setMe(null); setSession(null);
+          return;
+        }
+      }
       const m = await loadMe();
+      if (!isCurrent()) return;
+      const currentSession = m ? await openSession(m.org_id, m.id) : null;
+      if (!isCurrent()) return;
+      // Publish identity and attendance together, never from stale async work.
       setMe(m);
-      if (m) setSession(await openSession(m.org_id, m.id));
-      else setSession(null);
+      setSession(currentSession);
     } catch (error) {
+      if (!isCurrent()) return;
       setMe(null);
       setSession(null);
       setBootError(error.message || "CEAC could not load your account.");
     } finally {
-      setReady(true);
+      if (isCurrent()) setReady(true);
     }
   }
 
@@ -288,6 +354,9 @@ export default function App() {
     <div className="auth-message error">{bootError}</div>
     <button className="auth-primary" onClick={boot}><span>Try again</span><span aria-hidden="true">→</span></button>
   </AuthFrame>;
+  if (!me && UNIVERSAL_TOTP_CUTOVER && hasPendingMfaSession) return <Stage2UniversalMfaGate onVerified={boot}>
+    <div className="auth-boot">Opening your verified CEAC workspace…</div>
+  </Stage2UniversalMfaGate>;
   if (!me) return <SignIn />;
 
   const isAdmin = Boolean(me.is_admin);
@@ -332,26 +401,30 @@ export default function App() {
   }
 
   function pageForTab() {
+    // Unit Managers can lead several units. Remount current-unit content on
+    // a headship switch so previous-unit drafts and request state cannot leak.
+    const managerScopeKey = `${me.org_id}:${me.id}:${me.unit_id || "none"}`;
     if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
+    if (tab === "achievements") return <PersonalAchievements me={me} back={() => go("me")} openItem={openItem} />;
     if (tab === "technical-help") return <TechnicalHelp key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "technical-support") return canManageSupport
       ? <TechnicalSupport key={`${me.org_id}:${me.id}`} me={me} go={go} />
       : <div className="body" role="alert">This account is not authorised to manage Technical Support.</div>;
     if (tab === "primitives" && isAdmin) return <DesignPrimitives me={me} />;
     if (tab === "home") {
-      if (me.is_exec) return <ExecutiveHome me={me} openMeeting={openMeeting} scheduleMeeting={startMeeting} go={go} />;
+      if (me.is_exec) return <ExecutiveHome key={me.org_id+":"+me.id} me={me} openMeeting={openMeeting} scheduleMeeting={startMeeting} go={go} />;
       if (me.is_admin) return <AdminHome key={`${me.org_id}:${me.id}`} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} openSettings={() => go("settings")} openUnits={() => go("units")} openPeopleAccess={openPeopleAccess} go={go} />;
-      if (isManager) return <ManagerHome me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
+      if (isManager) return <ManagerHome key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
       return <Home me={me} session={session} setSession={setSession} openItem={openItem} openMeeting={openMeeting} openRoom={openRoom} openWork={() => go("work")} openMe={() => go("me")} openAnnouncements={() => go("announcements")} openTeam={() => go("team")} openCalendar={() => go("staff-calendar")} />;
     }
     if (tab === "team") return isManager
-      ? <Team me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
+      ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
       : <StaffTeam me={me} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />;
     if (tab === "work") {
       if (isExec) return <ExecutiveWork me={me} openItem={openItem} goAssign={startAssignment} />;
       if (isAdmin) return <AdminWork me={me} openItem={openItem} goAssign={startAssignment} />;
-      if (isUnitManager) return <ManagerWork me={me} openItem={openItem} goAssign={startAssignment} />;
+      if (isUnitManager) return <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
       return <Work me={me} isManager={false} openItem={openItem} />;
     }
     if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} />;
@@ -363,10 +436,10 @@ export default function App() {
       initialView={createIntent === "message_room" ? "rooms" : null}
       onInitialViewHandled={() => setCreateIntent(null)}
     />;
-    if (tab === "projects" && isUnitManager) return <ManagerProjects me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
-    if (tab === "calendar" && isUnitManager) return <ManagerCalendar me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
-    if (tab === "manager-finance" && isUnitManager) return <ManagerFinance me={me} openProject={openProject} />;
-    if (tab === "manager-reports" && isUnitManager) return <ManagerReports me={me} openItem={openItem} openProject={openProject} />;
+    if (tab === "projects" && isUnitManager) return <ManagerProjects key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
+    if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
+    if (tab === "manager-finance" && isUnitManager) return <ManagerFinance key={managerScopeKey} me={me} openProject={openProject} />;
+    if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} />;
     if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation me={me} />;
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
     if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} />;
@@ -384,7 +457,7 @@ export default function App() {
       createRequest={createIntent === "ministry_objective" ? "ministry_objective" : null}
       onCreateHandled={() => setCreateIntent(null)}
     />;
-    if (tab === "delivery" && canUseDelivery) return <Delivery me={me} initialProjectId={projectId} />;
+    if (tab === "delivery" && canUseDelivery) return <Delivery me={me} initialProjectId={projectId} openItem={openItem} />;
     if (tab === "workload" && canUseWorkload) return <ResourceWorkload me={me} />;
     if (tab === "performance" && canUsePerformance) return <Performance me={me} />;
     if (tab === "learning" && canUseLearning) return <Learning me={me} />;
@@ -413,7 +486,7 @@ export default function App() {
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "payroll" && canUsePayroll) return <AdminPayroll key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} />;
-    if (tab === "admin-projects" && isAdmin) return <AdminProjects me={me} scheduleMeeting={startMeeting} />;
+    if (tab === "admin-projects" && isAdmin) return <AdminProjects me={me} scheduleMeeting={startMeeting} openItem={openItem} />;
     if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" />;
     if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;
@@ -424,7 +497,7 @@ export default function App() {
     if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} />;
     if (tab === "settings" && isAdmin) return <ControlCenter me={me} go={go} />;
     if (tab === "office-settings" && isAdmin) return <OfficeSettings me={me} openWorkforce={() => go("attendance")} />;
-    return <MeScreen me={me} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
+    return <MeScreen me={me} onOpenWork={openItem} onOpenAchievements={() => go("achievements")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
   }
 
   const appModeClass = isExec ? "executive-app" : isUnitManager ? "manager-app" : (!isAdmin ? "staff-app" : "office-app");
@@ -448,7 +521,7 @@ export default function App() {
                   : `tab:${tab}`;
 
   return (
-    <PrivilegedMfaGate me={me} onVerified={boot}>
+    <ActiveMfaGate me={me} onVerified={boot}>
     <div className={`app ${appModeClass}`}>
       {isExec ? <Suspense fallback={null}><ExecutiveRedesignStyles /></Suspense> : null}
       <SideNav
@@ -520,6 +593,9 @@ export default function App() {
               ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."
               : "Preview compatibility: the database upgrade is not installed and server permission verification was incomplete. Privileged capabilities are disabled here. Use production for normal work."}
           </div>}
+          {tab === "work" && !overlay && <div className="s2-achievement-entry">
+            <button type="button" onClick={() => go("achievements")}>My achievements · Monthly / Quarterly / Projects →</button>
+          </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
           {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} openRoom={openRoom} back={closeUrlOverlay} />
@@ -537,7 +613,7 @@ export default function App() {
                 initialSourceRoomId={assigning.sourceRoomId}
                 initialSourceMessageId={assigning.sourceMessageId}
                 back={() => setAssigning(null)} />
-            : projectId && isUnitManager ? <ManagerProjects me={me} initialProjectId={projectId} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(id, reference) => openRoom({ kind: "project", projectId: id, reference })} back={closeUrlOverlay} />
+            : projectId && isUnitManager ? <ManagerProjects key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${projectId}`} me={me} initialProjectId={projectId} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(id, reference) => openRoom({ kind: "project", projectId: id, reference })} back={closeUrlOverlay} />
             : goalId ? <Goals id={goalId} me={me} back={() => setGoalId(null)} />
             : person && isManager ? <PersonDetail me={me} profileId={person.id} focus={person.focus} openItem={openItem} openProject={openProject} back={() => setPerson(null)} />
             : roomContext ? <Room me={me} context={roomContext} back={closeRoom} openItem={openItem} openProject={openProject} scheduleMeeting={startMeeting} openAnnouncements={() => go("announcements")} onRoomChange={openRoom} startWorkFromMessage={isManager ? startAssignment : null} />
@@ -550,5 +626,5 @@ export default function App() {
         {!overlay && <Tabs tab={tab} setTab={go} isManager={isUnitManager} isExec={isExec} isAdmin={isAdmin} me={me} onGuide={() => openGuide(false)} />}
       </div>
     </div>
-    </PrivilegedMfaGate>);
+    </ActiveMfaGate>);
 }

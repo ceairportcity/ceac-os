@@ -2,6 +2,7 @@ import zlib from "node:zlib";
 import { mkdirSync } from "node:fs";
 import { test, expect } from "@playwright/test";
 import { visualHomeBaselines } from "./visual-home-baselines.js";
+import { ceacLandscapeCatalog } from "../src/lib/ceacLandscapeCatalog.js";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 const roles = [
@@ -125,9 +126,8 @@ function meanAbsoluteError(actual, expected) {
 
 function roleContentRegion(rgb) {
   const values = [];
-  // Stage 4 deliberately replaces the shared shell. Preserve the existing
-  // role-page regression signal by comparing only grid cells safely inside
-  // the workspace: below both old/new top bars and right of both sidebars.
+  // Compare every content cell of the owner-approved full render, INCLUDING
+  // the scenic-photo hero. Exclude only the fixed shared shell/nav cells.
   for (let gy = 1; gy < GRID_H; gy += 1) {
     for (let gx = 2; gx < GRID_W; gx += 1) {
       const offset = (gy * GRID_W + gx) * 3;
@@ -142,6 +142,13 @@ test.describe("CEAC visual regression", () => {
     test(`${role} home stays within the approved visual baseline`, async ({ browser }) => {
       const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
       const page = await context.newPage();
+      // Ten approved scenic photographs rotate each Ghana day in the app.
+      // Stabilise ONLY the bitmap used by this layout-fingerprint test,
+      // without changing the application clock, actual selected image URL
+      // or production daily photo rotation. Source unit tests separately
+      // require all ten real licensed images and date-correct selection.
+      await page.route("**/assets/ceac-landscapes/scene-*.webp", (route) =>
+        route.fulfill({ path: "public/assets/ceac-landscapes/scene-01.webp" }));
       await page.goto("/");
       await page.getByPlaceholder("Work email").fill(email);
       await page.getByPlaceholder("Password").fill(password);
@@ -154,11 +161,16 @@ test.describe("CEAC visual regression", () => {
         await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });
       }
       await page.evaluate(() => document.fonts.ready);
+      const scenic = page.locator(".s2-scenic-photo img");
+      if (await scenic.count()) {
+        const actualSrc = await scenic.first().getAttribute("src");
+        expect(ceacLandscapeCatalog.some((photo) => photo.src === actualSrc)).toBe(true);
+        await expect.poll(() => scenic.first().evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+      }
       await page.waitForTimeout(250);
 
-      // Preserve the actual synthetic-role rendering for comparison against
-      // owner-approved V2 designs. Do not silently rebaseline or relax the
-      // existing Admin/Executive colour/layout regression threshold.
+      // Compare exact synthetic renders against the explicitly owner-approved
+      // pinned screenshots; visual mean RGB <=6 is unchanged.
       mkdirSync("test-artifacts", { recursive: true });
       const screenshot = await page.screenshot({
         path: `test-artifacts/visual-home-${role}-desktop-1440.png`,
@@ -173,16 +185,36 @@ test.describe("CEAC visual regression", () => {
       } else {
         const actual = visualFingerprint(screenshot);
         const expected = visualHomeBaselines[role];
-        // Fail closed on missing/truncated approved reference data. The owner
-        // approved R3/R4 fingerprints for Admin/Executive, not an empty array
-        // or a relaxed visual threshold.
+        // Fail closed on missing/truncated pinned owner-approved references.
         expect(expected.rgb, `${role} approved 12×12 reference must be complete`)
           .toHaveLength(GRID_W * GRID_H * 3);
         expect(actual.rgb).toHaveLength(GRID_W * GRID_H * 3);
         expect(actual.width).toBe(expected.width);
         expect(actual.height).toBe(expected.height);
+        // 19 October owner approval: Staff/Executive exact full renders now include
+        // the scenic hero. Verify its geometry; NO photo masking is allowed.
+        if (role === "staff" || role === "executive") {
+          await expect(scenic.first()).toBeVisible();
+          const rect = await scenic.first().evaluate((image) => {
+            const parent = image.closest(".s2-scenic-photo");
+            if (!parent) return null;
+            const region = parent.getBoundingClientRect();
+            return { left:region.left, right:region.right, top:region.top,
+              bottom:region.bottom, width:region.width, height:region.height };
+          });
+          expect(rect, "approved scenic image region is required").not.toBeNull();
+          // The scenic image remains in its bounded upper-right hero location.
+          expect(rect.left).toBeGreaterThan(actual.width * 0.42);
+          expect(rect.right).toBeLessThanOrEqual(actual.width);
+          expect(rect.top).toBeLessThan(actual.height * 0.36);
+          expect(rect.bottom).toBeLessThan(actual.height * 0.43);
+          expect(rect.width).toBeLessThan(actual.width * 0.57);
+          expect(rect.height).toBeLessThan(actual.height * 0.28);
+        }
         const actualContent = roleContentRegion(actual.rgb);
         const expectedContent = roleContentRegion(expected.rgb);
+        expect(actualContent, "no approved content or scenic cells may be masked").toHaveLength(330);
+        expect(expectedContent).toHaveLength(330);
         const error = meanAbsoluteError(actualContent, expectedContent);
         // Diagnostic evidence, not a rebaseline or a relaxed visual guard.
         // On failure preserve the exact changed coarse-grid cells so an

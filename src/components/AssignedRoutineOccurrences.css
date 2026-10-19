@@ -1,0 +1,13 @@
+.s2-assigned-routines{margin:14px 0;padding:16px 18px;border:1px solid #e2ebf6;border-radius:12px;background:#fff}
+.s2-assigned-routines>header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.s2-assigned-routines h2{margin:0;font-size:14px;font-weight:750;color:#25486d}
+.s2-assigned-routines header small,.s2-assigned-routines p{color:#7087a1;font-size:12px;line-height:1.45}
+.s2-assigned-routines>p{margin:7px 0 12px}
+.s2-assigned-routine-list{display:grid;gap:0}
+.s2-assigned-routine-list>button{display:grid;grid-template-columns:115px minmax(0,1fr) 108px;align-items:center;gap:12px;width:100%;min-height:47px;padding:10px 4px;background:transparent;border:0;border-bottom:1px solid #e9eff6;text-align:left;cursor:pointer}
+.s2-assigned-routine-list>button:last-child{border-bottom:0}
+.s2-assigned-routine-list time{color:#5f7893;font-size:12px}
+.s2-assigned-routine-list strong{min-width:0;color:#245181;font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.s2-assigned-routine-list span{border-radius:5px;background:#e8f2ff;color:#1e69c5;padding:5px 8px;text-align:center;font-size:12px}
+.s2-assigned-routine-list span.is-missed{background:#fff1e8;color:#b66c36}
+@media(max-width:450px){.s2-assigned-routines{padding:13px}.s2-assigned-routine-list>button{grid-template-columns:85px minmax(0,1fr);gap:4px 8px}.s2-assigned-routine-list span{grid-column:2;justify-self:start}}

@@ -49,17 +49,26 @@ async function installFactualReportFixture(page) {
     profiles:{ full_name:"Staff Fixture" },
   }));
 
-  const fulfill = (body) => async (route) => route.fulfill({
-    status:200,
-    contentType:"application/json",
-    body:JSON.stringify(body),
-  });
+  const fulfill = (body) => async (route) => {
+    // A legitimate HTTP 200 with count=exact must identify the complete
+    // result cardinality. Missing Content-Range is intentionally rejected by
+    // the Manager reporting source and must not be a successful zero fixture.
+    const count = body.length;
+    await route.fulfill({
+      status:200,
+      contentType:"application/json",
+      headers:{ "content-range": count ? `0-${count-1}/${count}` : "*/0",
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "content-range" },
+      body:JSON.stringify(body),
+    });
+  };
 
   await page.route("**/rest/v1/projects*", fulfill(projects));
   await page.route("**/rest/v1/report_periods*", fulfill([]));
   await page.route("**/rest/v1/work_items*", fulfill(work));
   await page.route("**/rest/v1/objectives*", fulfill([]));
-  await page.route("**/rest/v1/work_sessions*", fulfill([
+  const fixtureWorkSessions = [
     {
       id:"28000000-0000-4000-8000-000000000101",
       profile_id:staffId,
@@ -69,7 +78,13 @@ async function installFactualReportFixture(page) {
       end_reason:"manual",
       profiles:{ full_name:"Staff Fixture" },
     },
-  ]));
+  ];
+  await page.route("**/rest/v1/work_sessions*", (route) => {
+    const fields = new URL(route.request().url()).searchParams.get("select") || "";
+    // The bootstrap owner-only openSession lookup is not a Manager report.
+    if (!fields.includes("end_reason") || !fields.includes("profile_id")) return route.continue();
+    return fulfill(fixtureWorkSessions)(route);
+  });
   await page.route("**/rest/v1/submissions*", fulfill([]));
   return { day };
 }

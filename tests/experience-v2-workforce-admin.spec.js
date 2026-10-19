@@ -157,3 +157,42 @@ for (const viewport of [
     await context.close();
   });
 }
+
+test("Administration does not turn failed work-session reads into zero attendance", async ({ browser }) => {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  const page=await context.newPage();
+  try {
+    await page.goto("/");
+    await page.getByPlaceholder("Work email").fill("admin@ceac.local.test");
+    await page.getByPlaceholder("Password").fill(password);
+    await page.getByRole("button",{name:"Sign in"}).click();
+    await expect(page.locator(".office-app")).toBeVisible({timeout:15000});
+    // App bootstrap also reads this person's own currently-open work session.
+    // Only fail the Workforce multi-employee evidence request; otherwise this
+    // test blocks app sign-in before the Workforce error state can render.
+    await page.route("**/rest/v1/work_sessions*",async route=>{
+      const fields = new URL(route.request().url()).searchParams.get("select") || "";
+      if (fields.includes("end_location_status") && fields.includes("profile_id")) {
+        await route.fulfill({
+          status:503,contentType:"application/json",
+          body:JSON.stringify({message:"synthetic session evidence unavailable"}),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+    await page.goto("/?tab=attendance");
+    await expect(page.locator(".ev2-workforce-admin")).toBeVisible({timeout:15000});
+    await expect(page.getByText("Session evidence unavailable").first()).toBeVisible({timeout:20000});
+    // Judge the real Administration Today record states, not unrelated copy
+    // on a page with other descriptive "No session" explanations.
+    const statusRows = page.locator(".ev2-workforce-admin .workforce-person .ev2wf-row-state");
+    const count = await statusRows.count();
+    expect(count).toBeGreaterThan(0);
+    // Verified leave may still be shown independently when session reads fail.
+    // No row may claim a missing work session from unavailable evidence.
+    await expect(statusRows.getByText("Session evidence unavailable",{exact:true}).first()).toBeVisible();
+    await expect(statusRows.getByText("No session recorded",{exact:true})).toHaveCount(0);
+    await expect(page.getByRole("button",{name:"Retry Workforce data"})).toBeVisible();
+  } finally {await context.close();}
+});

@@ -88,9 +88,16 @@ test("Stage 10 Family F2 keeps no-period Manager reporting as an explicit live p
   await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
 
   await page.route("**/rest/v1/report_periods*", async (route) => {
+    // A successful PostgREST count=exact response includes Content-Range.
+    // Without it the provider correctly reports count=null, which the
+    // strengthened Manager dashboard must treat as UNVERIFIED, not zero.
+    expect(route.request().headers().prefer || "").toContain("count=exact");
     await route.fulfill({
       status: 200,
       contentType: "application/json",
+      headers: { "content-range": "*/0",
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "content-range" },
       body: JSON.stringify([]),
     });
   });
@@ -101,6 +108,31 @@ test("Stage 10 Family F2 keeps no-period Manager reporting as an explicit live p
   await expect(page.getByRole("button", { name: "Save draft", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Submit report", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open a reporting period", exact: true })).toHaveCount(0);
+  await context.close();
+});
+
+
+test("Stage 10 Manager reporting will not treat successful but unverified count as empty evidence", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.goto("/");
+  await page.getByPlaceholder("Work email").fill("manager@ceac.local.test");
+  await page.getByPlaceholder("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
+  await page.route("**/rest/v1/report_periods*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*",
+        "access-control-expose-headers": "content-range" },
+      body: "[]",
+    });
+  });
+  await page.goto("/?tab=manager-reports");
+  await expect(page.getByText("Report evidence could not be loaded", { exact: true })).toBeVisible();
+  await expect(page.locator(".ev2rep-evidence")).toHaveCount(0);
+  await expect(page.getByText("Live preview only", { exact: true })).toHaveCount(0);
   await context.close();
 });
 
@@ -150,3 +182,45 @@ for (const viewport of [
     await context.close();
   });
 }
+
+test("Stage 2 Manager reporting fails closed when period work sessions cannot be loaded", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  try {
+    await page.goto("/");
+    await page.getByPlaceholder("Work email").fill("manager@ceac.local.test");
+    await page.getByPlaceholder("Password").fill(password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.locator(".manager-app")).toBeVisible({ timeout: 15000 });
+    // Scope this simulated outage to the Manager report's period dataset.
+    // The router's own per-user openSession read shares this endpoint, and
+    // must remain available so the report page can render its failure state.
+    let failedPeriodRead = false;
+    await page.route("**/rest/v1/work_sessions*", async (route) => {
+      const fields = new URL(route.request().url()).searchParams.get("select") || "";
+      if (fields.includes("end_reason") && fields.includes("profile_id")) {
+        failedPeriodRead = true;
+        await route.fulfill({
+          status: 500, contentType: "application/json",
+          body: JSON.stringify({ message: "synthetic period work-session read failed" }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+    await page.goto("/?tab=manager-reports");
+    await expect.poll(() => failedPeriodRead, { timeout: 20000 }).toBe(true);
+    await expect(page.getByText("Report evidence could not be loaded", { exact: true })).toBeVisible({ timeout: 20000 });
+    await expect(page.locator(".ev2rep-evidence")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Submit report", exact: true })).toHaveCount(0);
+  } finally { await context.close(); }
+});
+
+test("Manager period attendance includes the Manager and respects tenant scope", () => {
+  const manager = readFileSync("src/screens/ManagerReports.jsx", "utf8");
+  expect(manager).toContain('setMemberIds([...new Set([me.id,');
+  expect(manager).toContain('.eq("org_id", me.org_id)');
+  expect(manager).toContain('.in("profile_id", memberIds)');
+  // The original browser regression must still fail if the session evidence
+  // request returns an error; do not substitute mock counts or hide the test.
+});

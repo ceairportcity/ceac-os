@@ -54,7 +54,7 @@ test("Stage 4B shell is isolated, tokenized and wired through App", async () => 
   ]) {
     expect(css.includes(forbidden), forbidden).toBeFalsy();
   }
-  expect(css).toContain("var(--ev2-shell)");
+  expect(css).toContain("background: var(--ev2-surface);");
   expect(css).toContain("var(--ev2-action)");
   expect(css).toContain("var(--ev2-control-min)");
 
@@ -339,9 +339,16 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await page.getByRole("menu").getByRole("menuitem", { name: "Announcement", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "New announcement" });
+  // Set a real, explicit authorised audience instead of relying on the
+  // draft composer's prior/default state after the Global Search overlay.
+  await dialog.getByRole("button", { name: "Everyone", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Everyone", exact: true })).toHaveClass(/is-active/);
   await dialog.locator("#announcement-title").fill("OCR6 Search Announcement");
   await dialog.locator("#announcement-body").fill("OCR6 searchable announcement record");
-  await dialog.getByRole("button", { name: "Save draft", exact: true }).click();
+  // This still exercises an actual authorised Save Draft, not a mocked result.
+  const saveDraft = dialog.getByRole("button", { name: "Save draft", exact: true });
+  await expect(saveDraft).toBeEnabled();
+  await saveDraft.click();
   await expect(dialog).toBeHidden();
 
   await page.getByPlaceholder("Search CEAC…").fill("OCR6 Search Announcement");
@@ -395,6 +402,10 @@ test("OCR6C Project Files upload is searchable and opens through a signed privat
 
   const filename = "ocr6-private-search.txt";
   const input = page.locator('.operational-files input[type="file"]');
+  // The private-file panel verifies the current Project before enabling writes.
+  // Sending a synthetic file before that read completes can drop the change.
+  // Wait for the actual authorised upload state; do not mock file/storage success.
+  await expect(input).toBeEnabled({ timeout: 15000 });
   await input.setInputFiles({ name: filename, mimeType: "text/plain", buffer: Buffer.from("OCR6 private search fixture") });
   await expect(page.getByText(filename, { exact: true })).toBeVisible({ timeout: 15000 });
 
@@ -448,4 +459,38 @@ test("Stage 4B mobile shell keeps five controls and uses the shared More drawer"
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
   );
   expect(overflow).toBeLessThanOrEqual(1);
+});
+
+
+test("P7 desktop and phone shell render accessible approved white-blue surfaces",async({page})=>{
+ await page.setViewportSize({width:1440,height:960});
+ await signIn(page,"staff@ceac.local.test");
+ await expect(page.locator(".ev2s-sidebar")).toBeVisible();
+ const desktop=await page.evaluate(()=>{
+   const shell=document.querySelector(".ev2s-sidebar");
+   const active=shell.querySelector(".ev2s-sidebar-nav button.is-active");
+   return {
+     surface:getComputedStyle(shell).backgroundColor,
+     activeSurface:getComputedStyle(active).backgroundColor,
+     activeText:getComputedStyle(active).color,
+     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
+   };
+ });
+ expect(desktop.surface).toBe("rgb(255, 255, 255)");
+ expect(desktop.activeSurface).toBe("rgb(234, 241, 255)");
+ expect(desktop.activeText).toBe("rgb(20, 88, 184)");
+ expect(desktop.overflow).toBeLessThanOrEqual(1);
+ await page.setViewportSize({width:390,height:844});
+ await expect(page.locator(".ev2s-mobile-topbar")).toBeVisible();
+ const mobile=await page.evaluate(()=>{
+   const top=getComputedStyle(document.querySelector(".ev2s-mobile-topbar"));
+   return {
+     surface:top.backgroundColor,
+     text:top.color,
+     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
+   };
+ });
+ expect(mobile.surface).toBe("rgba(255, 255, 255, 0.98)");
+ expect(mobile.text).toBe("rgb(23, 35, 45)");
+ expect(mobile.overflow).toBeLessThanOrEqual(1);
 });

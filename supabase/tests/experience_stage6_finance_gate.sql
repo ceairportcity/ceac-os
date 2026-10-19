@@ -21,6 +21,7 @@ begin
     select 1 from pg_policies
     where schemaname='public' and tablename='spend_lines'
       and cmd in ('UPDATE','DELETE','ALL')
+      and permissive='PERMISSIVE' -- A restrictive Stage 2 TOTP guard cannot grant mutation.
   ) then
     raise exception 'Stage 6 finance gate failure: spend_lines is no longer append-only.';
   end if;

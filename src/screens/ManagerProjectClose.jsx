@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { Pill, Sheet } from "../components/bits";
@@ -29,7 +29,16 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   const [reopenReason, setReopenReason] = useState("");
   const [historyClose, setHistoryClose] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Versioned project-close mutations must not dispatch twice in one render.
+  const closeMutationPending = useRef(false);
   const [error, setError] = useState(null);
+  const projectScope = [project.id, me.org_id, me.id, me.unit_id].join(":");
+  const currentProjectScope = useRef(projectScope);
+  currentProjectScope.current = projectScope;
+  const closeReadSequence = useRef(0);
+  const [verifiedScope, setVerifiedScope] = useState(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(true);
+  const closeEvidenceVerified = verifiedScope === projectScope && !evidenceLoading;
 
   const isLead = project.lead_unit_id === me.unit_id;
   const ownObjectives = objectives.filter((row) => row.unit_id === me.unit_id);
@@ -43,33 +52,60 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
     !lastReopenedAt || new Date(overallClose.submitted_at).getTime() > new Date(lastReopenedAt).getTime()
   );
 
-  useEffect(() => { load(); }, [project.id, me.unit_id]);
+  useEffect(() => {
+    setSheet(null); setLifecycle(null); setHistoryClose(null);
+    void load();
+    return () => { closeReadSequence.current += 1; };
+  }, [project.id, me.org_id, me.id, me.unit_id]);
 
   async function load() {
-    setError(null);
-    const [closeResult, reopenResult] = await Promise.all([
-      supabase.from("project_closes")
-        .select("id,scope,unit_id,version,status,deliverables_note,challenges,do_differently,submitted_at")
-        .eq("project_id", project.id)
-        .order("version", { ascending: false }),
-      supabase.from("activity_events")
-        .select("at")
-        .eq("object_type", "project")
-        .eq("object_id", project.id)
-        .eq("verb", "reopened")
-        .order("at", { ascending: false })
-        .limit(1),
-    ]);
-    if (closeResult.error) { setError(closeResult.error.message); return; }
-    if (reopenResult.error) { setError(reopenResult.error.message); return; }
-    setCloses(closeResult.data || []);
-    setLastReopenedAt(reopenResult.data?.[0]?.at || null);
-    if (isLead) {
-      const readyResult = await supabase.rpc("project_close_readiness", { p_project_id: project.id });
-      if (readyResult.error) { setError(readyResult.error.message); return; }
-      setReadiness(readyResult.data || []);
-    } else {
-      setReadiness([]);
+    const requestedScope = projectScope;
+    const requestedRead = ++closeReadSequence.current;
+    const stillCurrent = () => currentProjectScope.current === requestedScope
+      && closeReadSequence.current === requestedRead;
+    setVerifiedScope(null); setEvidenceLoading(true); setError(null);
+    setCloses([]); setReadiness([]); setLastReopenedAt(null);
+    try {
+      const [closeResult, reopenResult] = await Promise.all([
+        supabase.from("project_closes")
+          .select("id,scope,unit_id,version,status,deliverables_note,challenges,do_differently,submitted_at", { count: "exact" })
+          .eq("project_id", project.id)
+          .order("version", { ascending: false }),
+        supabase.from("activity_events")
+          .select("at")
+          .eq("object_type", "project")
+          .eq("object_id", project.id)
+          .eq("verb", "reopened")
+          .order("at", { ascending: false })
+          .limit(1),
+      ]);
+      if (closeResult.error || reopenResult.error || !Array.isArray(reopenResult.data))
+        throw (closeResult.error || reopenResult.error || new Error("Project reopen history is incomplete."));
+      if (typeof closeResult.count !== "number"
+        || closeResult.count !== (closeResult.data || []).length) {
+        throw new Error("Project close history was truncated. No close authority can be verified.");
+      }
+      let verifiedReadiness = [];
+      if (isLead) {
+        const readyResult = await supabase.rpc("project_close_readiness", { p_project_id: project.id });
+        if (readyResult.error) throw readyResult.error;
+        if (!Array.isArray(readyResult.data)) throw new Error("Project readiness evidence is incomplete.");
+        verifiedReadiness = readyResult.data;
+      }
+      if (!stillCurrent()) return false;
+      setCloses(closeResult.data || []);
+      setLastReopenedAt(reopenResult.data?.[0]?.at || null);
+      setReadiness(verifiedReadiness);
+      setVerifiedScope(requestedScope);
+      return true;
+    } catch {
+      if (stillCurrent()) {
+        setCloses([]); setReadiness([]); setLastReopenedAt(null);
+        setError("Project close history or readiness could not be verified. Retry before recording a close.");
+      }
+      return false;
+    } finally {
+      if (stillCurrent()) setEvidenceLoading(false);
     }
   }
 
@@ -84,11 +120,13 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
     const submittedUnits = [...latestByUnit.values()];
     if (!submittedUnits.length) { setOverallCosts([]); return []; }
     const costResult = await supabase.from("project_close_costs")
-      .select("close_id,currency,planned_amount_minor,actual_amount_minor")
+      .select("close_id,currency,planned_amount_minor,actual_amount_minor", { count: "exact" })
       .in("close_id", submittedUnits.map((row) => row.id));
-    if (costResult.error) throw costResult.error;
+    if (costResult.error || !Array.isArray(costResult.data) ||
+      typeof costResult.count !== "number" || costResult.count !== costResult.data.length)
+      throw new Error("Overall project cost snapshots could not be verified.");
     const grouped = new Map();
-    (costResult.data || []).forEach((row) => {
+    costResult.data.forEach((row) => {
       const current = grouped.get(row.currency) || { currency: row.currency, planned: 0, actual: 0 };
       current.planned += Number(row.planned_amount_minor);
       current.actual += Number(row.actual_amount_minor);
@@ -100,6 +138,8 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   }
 
   async function openClose(scope) {
+    if (!closeEvidenceVerified) return;
+    const requestedScope = projectScope;
     setError(null);
     const relevantObjectives = scope === "overall" ? objectives : ownObjectives;
     const prefilled = {};
@@ -120,6 +160,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
     } else {
       setOverallCosts([]);
     }
+    if (currentProjectScope.current !== requestedScope) return;
     setSheet({ scope });
   }
 
@@ -148,7 +189,10 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   const noDeliverable = selectedDeliverables.length === 0 && !deliverablesNote.trim();
 
   async function submitClose() {
+    if (busy || closeMutationPending.current) return;
+    if (!closeEvidenceVerified) return;
     if (missingObjective || noDeliverable || !challenges.trim() || !doDifferently.trim()) return;
+    closeMutationPending.current = true;
     setBusy(true); setError(null);
     try {
       const objectivePayload = currentObjectives.map((objective) => ({
@@ -189,18 +233,24 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       await load();
       if (onRefresh) await onRefresh();
     } catch (err) {
-      setError(err.message || "The project return could not be submitted. No partial close was saved.");
+      // A network error after a server commit can leave the outcome
+      // uncertain; do not assert that no version was saved.
+      setError(err.message || "The project return could not be confirmed. Refresh the project-close history before trying again.");
     } finally {
+      closeMutationPending.current = false;
       setBusy(false);
     }
   }
 
   async function closeProject() {
+    if (busy || closeMutationPending.current) return;
+    if (!closeEvidenceVerified) return;
     if (!overallCloseCurrentCycle) {
       setLifecycle(null);
       setError("Submit a new overall close for this reopened project before closing it again.");
       return;
     }
+    closeMutationPending.current = true;
     setBusy(true); setError(null);
     try {
       const { error: closeError } = await supabase.rpc("close_project", { p_project_id: project.id });
@@ -209,35 +259,41 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       await load();
       if (onRefresh) await onRefresh();
     } catch (err) {
-      setError(err.message || "The project could not be closed.");
+      setError(err.message || "The project close result is uncertain. Refresh its status before repeating the action.");
     } finally {
+      closeMutationPending.current = false;
       setBusy(false);
     }
   }
 
   async function openCloseHistory(close) {
-    setBusy(true); setError(null);
+    if (!closeEvidenceVerified) return;
+    const requestedScope = projectScope;
+    setHistoryClose(null); setBusy(true); setError(null);
     try {
       const [objectiveResult, deliverableResult, costResult] = await Promise.all([
         supabase.from("project_close_objectives")
-          .select("objective_id,outcome,note,objectives(ref,name)")
+          .select("objective_id,outcome,note,objectives(ref,name)", { count: "exact" })
           .eq("close_id", close.id),
         supabase.from("project_close_deliverables")
-          .select("id,description,work_item_id,submission_id")
+          .select("id,description,work_item_id,submission_id", { count: "exact" })
           .eq("close_id", close.id)
           .order("position"),
         supabase.from("project_close_costs")
-          .select("currency,planned_amount_minor,actual_amount_minor")
+          .select("currency,planned_amount_minor,actual_amount_minor", { count: "exact" })
           .eq("close_id", close.id)
           .order("currency"),
       ]);
-      const first = [objectiveResult.error, deliverableResult.error, costResult.error].find(Boolean);
-      if (first) throw first;
+      const complete = (result) => !result.error && Array.isArray(result.data)
+        && typeof result.count === "number" && result.count === result.data.length;
+      if (![objectiveResult, deliverableResult, costResult].every(complete))
+        throw new Error("The selected close version was incomplete.");
+      if (currentProjectScope.current !== requestedScope) return;
       setHistoryClose({
         ...close,
-        objectives: objectiveResult.data || [],
-        deliverables: deliverableResult.data || [],
-        costs: costResult.data || [],
+        objectives: objectiveResult.data,
+        deliverables: deliverableResult.data,
+        costs: costResult.data,
       });
     } catch (err) {
       setError(err.message || "That close version could not be loaded.");
@@ -247,7 +303,10 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   }
 
   async function reopenProject() {
+    if (busy || closeMutationPending.current) return;
+    if (!closeEvidenceVerified) return;
     if (!reopenReason.trim()) return;
+    closeMutationPending.current = true;
     setBusy(true); setError(null);
     try {
       const { error: reopenError } = await supabase.rpc("reopen_project", {
@@ -260,11 +319,20 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       await load();
       if (onRefresh) await onRefresh();
     } catch (err) {
-      setError(err.message || "The project could not be reopened.");
+      setError(err.message || "The project reopen result is uncertain. Refresh its status before repeating the action.");
     } finally {
+      closeMutationPending.current = false;
       setBusy(false);
     }
   }
+
+  if (!closeEvidenceVerified) return <section aria-label="Project close verification">
+    <div className="sec"><span>Project close</span></div>
+    {evidenceLoading ? <p role="status">Verifying project close history and authority…</p>
+      : <p role="alert">{error || "Project close history is not verified."}</p>}
+    <button type="button" className="btn btn-ghost btn-sm"
+      disabled={evidenceLoading || busy} onClick={() => void load()}>Retry project-close verification</button>
+  </section>;
 
   return <>
     <div className="sec"><span>Project close</span></div>

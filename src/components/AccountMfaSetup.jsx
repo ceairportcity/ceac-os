@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { verifiedMfaFactors } from "../lib/mfaPolicy";
 import { humanError } from "../lib/productLanguage";
+import { hasSignedTotpAssurance } from "../lib/Stage2UniversalMfaPolicy";
 
 // This surface only manages the signed-in person's own Auth factors.
 // Neither the service-role credential nor any colleague's MFA secrets belong here.
@@ -10,40 +11,75 @@ export default function AccountMfaSetup({ onVerified }) {
   const [statusReady, setStatusReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [factors, setFactors] = useState([]);
-  const [level, setLevel] = useState("aal1");
+  const [selectedFactorId, setSelectedFactorId] = useState(null);
+  const [totpAssured, setTotpAssured] = useState(false);
   const [setup, setSetup] = useState(null);
   const [code, setCode] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
 
+
+  // A backup factor is a separate verified provider factor. Keep the user's
+  // selection only while it remains present in the provider's own factor list.
+  function recordVerifiedFactors(data) {
+    const active = verifiedMfaFactors(data || {})
+      .filter((factor) => factor.factor_type === "totp");
+    setFactors(active);
+    setSelectedFactorId((previous) =>
+      active.some((factor) => factor.id === previous) ? previous : active[0]?.id || null);
+  }
+
   async function refresh() {
-    const [factorResult, assuranceResult] = await Promise.all([
+    // Deny backup-factor actions while fresh provider assurance is unresolved.
+    setStatusReady(false);
+    setTotpAssured(false);
+    const [factorResult, assuranceResult, claimsResult, userResult] = await Promise.all([
       supabase.auth.mfa.listFactors(),
       supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+      supabase.auth.getClaims(),
+      supabase.auth.getUser(),
     ]);
-    if (factorResult.error) throw factorResult.error;
-    if (assuranceResult.error) throw assuranceResult.error;
-    setFactors(verifiedMfaFactors(factorResult.data || {})
-      .filter((factor) => factor.factor_type === "totp"));
-    setLevel(assuranceResult.data?.currentLevel || "aal1");
+    for (const result of [factorResult, assuranceResult, claimsResult, userResult]) {
+      if (result.error) throw result.error;
+    }
+    const userId = userResult.data?.user?.id;
+    if (!userId || claimsResult.data?.claims?.sub !== userId) {
+      throw new Error("Your current authenticator identity could not be verified.");
+    }
+    const assured = hasSignedTotpAssurance({
+      assurance: assuranceResult.data, claims: claimsResult.data?.claims,
+      expectedUserId: userId,
+    });
+    recordVerifiedFactors(factorResult.data);
+    setTotpAssured(assured);
     setStatusReady(true);
+    return assured;
   }
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [factorResult, assuranceResult] = await Promise.all([
+        const [factorResult, assuranceResult, claimsResult, userResult] = await Promise.all([
           supabase.auth.mfa.listFactors(),
           supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+          supabase.auth.getClaims(),
+          supabase.auth.getUser(),
         ]);
         if (!active) return;
-        if (factorResult.error) throw factorResult.error;
-        if (assuranceResult.error) throw assuranceResult.error;
-        setFactors(verifiedMfaFactors(factorResult.data || {})
-          .filter((factor) => factor.factor_type === "totp"));
-        setLevel(assuranceResult.data?.currentLevel || "aal1");
+        for (const result of [factorResult, assuranceResult, claimsResult, userResult]) {
+          if (result.error) throw result.error;
+        }
+        const userId = userResult.data?.user?.id;
+        if (!userId || claimsResult.data?.claims?.sub !== userId) {
+          throw new Error("Your current authenticator identity could not be verified.");
+        }
+        recordVerifiedFactors(factorResult.data);
+        setTotpAssured(hasSignedTotpAssurance({
+          assurance: assuranceResult.data, claims: claimsResult.data?.claims,
+          expectedUserId: userId,
+        }));
         setStatusReady(true);
       } catch (err) {
         if (active) setError(humanError(err, "Authenticator status could not be loaded."));
@@ -55,14 +91,14 @@ export default function AccountMfaSetup({ onVerified }) {
   }, []);
 
   async function startEnrollment() {
-    if (busy || setup) return;
+    if (busy || !statusReady || setup || (factors.length > 0 && !totpAssured)) return;
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
       const { data, error: failure } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "CEAC authenticator",
+        friendlyName: factors.length ? "CEAC backup authenticator" : "CEAC authenticator",
       });
       if (failure) throw failure;
       if (!data?.id || !data?.totp) throw new Error("Authenticator setup was not returned.");
@@ -88,7 +124,9 @@ export default function AccountMfaSetup({ onVerified }) {
       setError("Enter the six-digit code shown by your authenticator app.");
       return;
     }
-    const factorId = setup?.id || factors[0]?.id;
+    const factorId = setup?.id || (
+      factors.some((factor) => factor.id === selectedFactorId) ? selectedFactorId : factors[0]?.id
+    );
     if (!factorId) {
       setError("Set up an authenticator before verifying a code.");
       return;
@@ -105,9 +143,12 @@ export default function AccountMfaSetup({ onVerified }) {
       setCode("");
       setSetup(null);
       setShowKey(false);
-      await refresh();
-            onVerified?.();
-            setNotice("Authenticator verified for this session.");
+      const assured = await refresh();
+      if (!assured) {
+        throw new Error("Your authenticator code was accepted but this session has not yet reached verified TOTP/AAL2. Retry verification.");
+      }
+      await onVerified?.();
+      setNotice("Authenticator verified for this session.");
     } catch (err) {
       setError(humanError(err, "That code could not be verified. Check your authenticator and try again."));
     } finally {
@@ -133,23 +174,38 @@ export default function AccountMfaSetup({ onVerified }) {
     }
   }
 
-      const enrolled = factors.length > 0;
-  const needsStepUp = enrolled && level !== "aal2";
+  const enrolled = factors.length > 0;
+  // Supabase AAL2 from a different MFA method does not satisfy CEAC TOTP.
+  // Its verified TOTP challenge MUST remain visible, and it cannot enrol a
+  // backup authenticator until the current signed session proves TOTP.
+  const needsStepUp = enrolled && !totpAssured;
+  const canAddBackup = enrolled && totpAssured && factors.length < 2;
 return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
       <p className="screen-note">
-      An authenticator app adds a second check when you sign in to a privileged CEAC workspace.
+      An authenticator app provides the required second check for your CEAC account.
       Set this up for your own account only. Never share setup keys or verification codes.
     </p>
     {loading && <p role="status" aria-busy="true">Checking your authenticator...</p>}
     {!loading && statusReady && !error && <p role="status">
-      {level === "aal2"
+      {totpAssured
         ? "This session has verified two-step access."
         : enrolled
           ? "An authenticator is registered. Verify a code to strengthen this session."
           : "No verified authenticator is registered for this account."}
     </p>}
+    {!loading && statusReady && needsStepUp && <p className="screen-note">
+      If your authenticator devices are unavailable, request independently verified
+      account recovery through CEAC Administration/HR.
+      A password reset cannot bypass the required TOTP check.
+      Never share your password or authenticator codes.
+    </p>}
     {error && <div className="flag flag-brick" role="alert">{error}</div>}
     {notice && <p role="status" className="pill p-green">{notice}</p>}
+    {/* Auth token refresh can remount this account screen, discarding a brief
+        success toast. Persist the factual backup status via the provider list
+        instead of client storage or a remembered AAL2 flag. */}
+    {!loading && statusReady && factors.length > 1 &&
+      <p role="status">A backup authenticator is verified for this account.</p>}
 
     {!loading && !statusReady && <button type="button" className="btn btn-ghost" disabled={busy} onClick={async () => {
       setBusy(true); setError(null);
@@ -157,10 +213,18 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
       finally { setBusy(false); }
     }}>Retry authenticator status</button>}
 
-    {!loading && statusReady && !enrolled && !setup &&
-      <button type="button" className="btn wide-auto" onClick={startEnrollment} disabled={busy}>
-        {busy ? "Preparing..." : "Set up authenticator"}
-      </button>}
+    {!loading && statusReady && !setup && (!enrolled || canAddBackup) &&
+      <>
+        {canAddBackup && <p className="screen-note">
+          Add a separate backup authenticator while your current verified session is active.
+          It can help if your primary device is lost. If both authenticators are unavailable,
+          request independently verified recovery from CEAC Administration/HR.
+          A password reset alone cannot replace the required authenticator.
+        </p>}
+        <button type="button" className="btn wide-auto" onClick={startEnrollment} disabled={busy}>
+          {busy ? "Preparing..." : canAddBackup ? "Add backup authenticator" : "Set up authenticator"}
+        </button>
+      </>}
 
     {setup && <div className="ev2pf-mfa-enrollment">
       <p>Open your authenticator app and add a new account using this QR code.</p>
@@ -176,6 +240,28 @@ return <div className="ev2pf-account-mfa" aria-label="Your authenticator">
 
     {!loading && statusReady && (setup || needsStepUp) &&
       <div className="auth-form">
+        {needsStepUp && factors.length > 1 &&
+          <label className="auth-field">
+            <span>Authenticator device</span>
+            <select
+              aria-label="Authenticator device"
+              value={selectedFactorId || factors[0]?.id || ""}
+              onChange={(event) => {
+                setSelectedFactorId(event.target.value);
+                setCode("");
+                setError(null);
+              }}
+              disabled={busy}
+            >
+              {factors.map((factor, index) =>
+                <option key={factor.id} value={factor.id}>
+                  {factor.friendly_name === "CEAC backup authenticator"
+                    ? "Backup authenticator"
+                    : factor.friendly_name || `Authenticator ${index + 1}`}
+                </option>
+              )}
+            </select>
+          </label>}
         <label className="auth-field">
           <span>Six-digit authenticator code</span>
           <input

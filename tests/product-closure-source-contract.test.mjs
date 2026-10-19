@@ -330,3 +330,40 @@ test("protected employee compensation never accepts overflowing minor-unit arith
   assert.match(compensation, /if \(!Number\.isSafeInteger\(amount\)\) return "Amount could not be verified"/);
   assert.match(compensation, /return "Currency could not be verified"/);
 });
+
+
+test("P5 cross-role project reader fails closed on truncated or malformed successful provider results",()=>{
+ const s=file("src/components/Stage2ProjectReader.jsx");
+ assert.match(s,/project_units"\)\s*\.select\("[^"]+", \{ count:"exact" \}\)/);
+ assert.match(s,/project_phases"\)\.select\("[^"]+", \{ count:"exact" \}\)/);
+ assert.match(s,/project_milestones"\)\.select\("[^"]+", \{ count:"exact" \}\)/);
+ assert.match(s,/result\.count === result\.data\.length/);
+ assert.match(s,/\[participation,phases,work\]\.every\(fullyRead\)/);
+ assert.match(s,/milestonesVerified \? milestones\.data : null/);
+ assert.doesNotMatch(s,/participants: participation\.data \|\| \[\]/);
+});
+test("P5 project work indicators respect exact Ghana deadlines and refresh on an open screen",()=>{
+ const s=file("src/components/Stage2ProjectOverview.jsx");
+ assert.match(s,/import \{ deadlineOverdue \} from/);
+ assert.match(s,/deadlineOverdue\(row\.due_at, asOf\)/);
+ assert.match(s,/window\.setInterval\(refresh, 60000\)/);
+ assert.match(s,/document\.addEventListener\("visibilitychange", refresh\)/);
+ assert.match(s,/Visible task completion/);
+ assert.match(s,/Visible participating departments/);
+ assert.doesNotMatch(s,/new Date\(row\.due_at\) < new Date\(\)/);
+});
+
+
+test("P5 versioned project closure refuses missing or truncated readback of costs and historical evidence",()=>{
+ const screen=file("src/screens/ManagerProjectClose.jsx");
+ assert.match(screen,/!Array\.isArray\(reopenResult\.data\)/);
+ assert.match(screen,/!Array\.isArray\(readyResult\.data\)/);
+ assert.match(screen,/costResult\.count !== costResult\.data\.length/);
+ assert.match(screen,/costResult\.data\.forEach/);
+ assert.match(screen,/project_close_objectives"\)[\s\S]*?\{ count: "exact" \}/);
+ assert.match(screen,/project_close_deliverables"\)[\s\S]*?\{ count: "exact" \}/);
+ assert.match(screen,/\[objectiveResult, deliverableResult, costResult\]\.every\(complete\)/);
+ assert.match(screen,/setHistoryClose\(null\); setBusy\(true\); setError\(null\)/);
+ assert.doesNotMatch(screen,/objectives: objectiveResult\.data \|\| \[\]/);
+ assert.doesNotMatch(screen,/deliverables: deliverableResult\.data \|\| \[\]/);
+});
