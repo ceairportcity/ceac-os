@@ -1,0 +1,168 @@
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "../lib/supabase";
+import "./WorkActivityDiary.css";
+
+function ghanaDay() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+const states = [
+  ["planned", "Planned"],
+  ["in_progress", "In progress"],
+  ["done", "Done"],
+  ["waiting", "Waiting"],
+  ["blocked", "Blocked"],
+];
+
+/** Source-backed contribution diary. A diary action never completes a parent
+ * responsibility, changes formal attendance or self-approves an objective. */
+export default function WorkActivityDiary({ me, item }) {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [unavailable, setUnavailable] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [editor, setEditor] = useState(false);
+  const [date, setDate] = useState(ghanaDay);
+  const [state, setState] = useState("done");
+  const [summary, setSummary] = useState("");
+  const [outcome, setOutcome] = useState("");
+  const [nextAction, setNextAction] = useState("");
+  const [minutes, setMinutes] = useState("");
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [reload, setReload] = useState(0);
+  const submitting = useRef(false);
+
+  useEffect(() => {
+    let current = true;
+    setLoading(true);
+    setError("");
+    setHistory([]);
+    setUnavailable(false);
+    (async () => {
+      try {
+        let all = [];
+        let total = null;
+        for (let page = 0; page < 20; page++) {
+          const start = page * 200;
+          const read = await supabase.from("work_activity_records")
+            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
+            .eq("org_id", me.org_id).eq("work_item_id", item.id)
+            .order("recorded_at", { ascending: false })
+            .range(start, start + 199);
+          if (read.error) throw read.error;
+          if (typeof read.count !== "number" || !Array.isArray(read.data))
+            throw new Error("Complete activity history could not be confirmed.");
+          if (total !== null && total !== read.count)
+            throw new Error("Activity history changed during reading. Please refresh.");
+          total = read.count;
+          all = [...all, ...read.data];
+          if (all.length === total) break;
+        }
+        if (all.length !== total) throw new Error("Activity history is incomplete. Please refresh.");
+        if (!current) return;
+        const revised = new Set(all.map((row) => row.supersedes_id).filter(Boolean));
+        setHistory(all.filter((row) => !revised.has(row.id))
+          .sort((a,b) => b.activity_date.localeCompare(a.activity_date) || b.recorded_at.localeCompare(a.recorded_at)));
+      } catch (e) {
+        if (!current) return;
+        const message = String(e?.message || "");
+        if (/work_activity_records|PGRST205|42P01/.test(message)) {
+          setUnavailable(true);
+          setError("Dated activity recording is awaiting its authorised database migration.");
+        } else setError(message || "Activity records could not be verified.");
+      } finally {
+        if (current) setLoading(false);
+      }
+    })();
+    return () => { current = false; };
+  }, [me.id, me.org_id, item.id, reload]);
+
+  const canRecord = item.assignee_id === me.id || (
+    item.visibility !== "private" && item.confidential !== true
+  );
+
+  async function save(event) {
+    event.preventDefault();
+    if (busy || submitting.current || unavailable || !canRecord || summary.trim().length < 3 || !date) return;
+    submitting.current = true;
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const fields = {
+        org_id: me.org_id, work_item_id: item.id, contributor_id: me.id,
+        activity_date: date, activity_state: state,
+        action_summary: summary.trim(),
+        outcome_note: outcome.trim() || null,
+        next_action: nextAction.trim() || null,
+        duration_minutes: minutes === "" ? null : Number(minutes),
+        evidence_url: evidenceUrl.trim() || null,
+      };
+      const write = await supabase.from("work_activity_records").insert(fields).select("id").single();
+      if (write.error) throw write.error;
+      if (!write.data?.id)
+        throw new Error("The save outcome is uncertain. Inspect the activity history before trying again.");
+      const check = await supabase.from("work_activity_records")
+        .select("id,org_id,work_item_id,contributor_id,action_summary,activity_date")
+        .eq("id", write.data.id).eq("org_id", me.org_id).eq("work_item_id", item.id).maybeSingle();
+      if (check.error || !check.data || check.data.contributor_id !== me.id
+        || check.data.action_summary !== fields.action_summary
+        || check.data.activity_date !== fields.activity_date)
+        throw new Error("The record cannot be independently confirmed. Refresh before retrying.");
+      setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl("");
+      setSuccess("Your dated activity was recorded.");
+      setEditor(false);
+      setReload((n) => n + 1);
+    } catch (e) {
+      setError(e?.message || "The activity could not be saved.");
+    } finally {
+      submitting.current = false;
+      setBusy(false);
+    }
+  }
+
+  return <section className="s2-work-diary" aria-label="Responsibility activity diary">
+    <header>
+      <div><span className="eyebrow">Individual contribution</span><h3>Activity record</h3>
+        <p>Keep each action, outcome and next step under this responsibility. This is not an attendance or performance score.</p>
+      </div>
+      {!loading && !unavailable && canRecord && <button type="button" className="btn btn-sm"
+        onClick={() => setEditor((open) => !open)}>{editor ? "Close" : "+ Record an activity"}</button>}
+    </header>
+    {loading && <p role="status">Verifying activity records...</p>}
+    {error && <p className="s2-work-diary-error" role="alert">{error}
+      {!unavailable && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setReload((n) => n + 1)}>Retry</button>}
+    </p>}
+    {success && <p role="status">{success}</p>}
+    {!loading && !error && history.length === 0 && <p>No dated activities have been recorded under this responsibility yet.</p>}
+    {!loading && !error && history.length > 0 && <ol className="s2-work-diary-timeline">
+      {history.map((entry) => <li key={entry.id}>
+        <div><strong>{entry.action_summary}</strong>
+          <small>{entry.activity_date} · {entry.contributor?.full_name || (entry.contributor_id === me.id ? "You" : "Authorised contributor")} · {states.find(([key]) => key === entry.activity_state)?.[1] || entry.activity_state}</small>
+        </div>
+        {entry.outcome_note && <p>{entry.outcome_note}</p>}
+        {entry.next_action && <p><b>Next:</b> {entry.next_action}</p>}
+        {entry.duration_minutes != null && <small>{entry.duration_minutes} minutes self-recorded (not attendance)</small>}
+        {entry.evidence_url && <a href={entry.evidence_url} target="_blank" rel="noopener noreferrer">Open evidence ↗</a>}
+      </li>)}
+    </ol>}
+    {editor && !unavailable && <form className="s2-work-diary-form" onSubmit={save}>
+      <label>Activity date <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></label>
+      <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
+        {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
+      </select></label>
+      <label className="wide">Action taken or planned <textarea value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
+      <label className="wide">Factual outcome <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
+      <label className="wide">Next action <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
+      <label>Minutes spent (optional, self-recorded) <input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
+      <label className="wide">Evidence link (optional, HTTPS) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
+      <button type="submit" className="btn" disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : "Record activity"}</button>
+    </form>}
+  </section>;
+}
