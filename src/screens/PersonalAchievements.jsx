@@ -51,14 +51,18 @@ export default function PersonalAchievements({ me, back, openItem }) {
     });
     return [...seen.values()].sort((a,b)=>a.name.localeCompare(b.name));
   },[works,activities]);
-  const evidencedWorkIds = new Set(activities.map((action) => action.work_item_id));
+  const attributableActions = activities.filter((a) => !projectId || a.source_project_id === projectId);
+  const evidencedWorkIds = new Set(attributableActions.map((action) => action.work_item_id));
   const contributions = works.filter((w) =>
-    (preview.contributions.some((entry) => entry.id === w.id) || evidencedWorkIds.has(w.id))
-    && (!projectId || w.project_id === projectId)).filter((w) => !search ||
-    [w.title,w.ref,w.projects?.name].some((v) => String(v||"").toLocaleLowerCase().includes(search.toLocaleLowerCase())));
+    (preview.contributions.some((entry) => entry.id === w.id)
+      && (!projectId || w.project_id === projectId)) || evidencedWorkIds.has(w.id))
+    .filter((w) => !search ||
+      [w.title,w.ref,w.projects?.name].some((v) => String(v||"").toLocaleLowerCase().includes(search.toLocaleLowerCase())));
 
-  const activityRows = activities.filter((a) => (!projectId || a.source_project_id === projectId) && (!search || [a.action_summary,a.work_items?.title,a.work_items?.ref,a.work_items?.projects?.name].some((value) => String(value || "").toLowerCase().includes(search.toLowerCase()))));
-  const activeProjectIds = new Set([...preview.projectIds, ...activities.map((a) => a.source_project_id).filter(Boolean)]);
+  const activityRows = attributableActions.filter((a) =>
+    !search || [a.action_summary,a.work_items?.title,a.work_items?.ref,a.source_project?.name]
+      .some((value) => String(value || "").toLowerCase().includes(search.toLowerCase())));
+  const activeProjectIds = new Set([...preview.projectIds, ...attributableActions.map((a) => a.source_project_id).filter(Boolean)]);
 
   // A new employee must not inherit another employee's project filter.
   useEffect(() => { setProjectId(""); }, [me.id]);
