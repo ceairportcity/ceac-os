@@ -122,6 +122,9 @@ DECLARE
 BEGIN
   IF auth.uid() IS NULL OR v_org IS NULL
     THEN RAISE EXCEPTION 'Sign in with your existing account.' USING ERRCODE='42501';
+  IF NOT public.app_stage2_universal_aal_allowed()
+    THEN RAISE EXCEPTION 'Your current assurance level does not authorise this action.'
+      USING ERRCODE='42501'; END IF;
   END IF;
   SELECT * INTO w FROM public.work_items
     WHERE id=p_work_item_id AND org_id=v_org FOR UPDATE;
