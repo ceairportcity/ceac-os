@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
+import ExecutiveContributionDrilldown from "../components/ExecutiveContributionDrilldown";
 import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { humanError } from "../lib/productLanguage";
@@ -15,7 +16,7 @@ import {
   ReportingSection,
 } from "../experience-v2/reporting-family/ReportingFamilyV2";
 
-export default function ExecutiveReports({ me }) {
+export default function ExecutiveReports({ me, openItem }) {
   const [period, setPeriod] = useState(null);
   const [reports, setReports] = useState([]);
   const [units, setUnits] = useState([]);
@@ -280,6 +281,8 @@ export default function ExecutiveReports({ me }) {
           <ExecutiveOutcomeBrief period={period} units={units}
             issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
             milestones={outcomeSources.milestones} readError={outcomeError} />
+
+          <ExecutiveContributionDrilldown me={me} period={period} units={units} openItem={openItem} />
 
           <ReportingFootnote>
             Executive Reports is read-only. Filing coverage describes reporting status only; CEAC OS does not infer unit performance, staff performance, achievement, score or ranking from it.
