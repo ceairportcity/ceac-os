@@ -3,6 +3,7 @@ import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
+import WorkActivityDiary from "../components/WorkActivityDiary";
 import { OperationalFileList } from "../components/OperationalFiles";
 import {
   WorkDetailCopy,
@@ -580,6 +581,8 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
       {item.instructions && <WorkDetailSection title="What to do">
         <WorkDetailCopy>{item.instructions}</WorkDetailCopy>
       </WorkDetailSection>}
+
+      <WorkActivityDiary key={`${me.id}:${item.id}`} me={me} item={item} />
 
       {item.kind === "deliverable" && deliverableRecord && <>
         <div className="sec"><span>Deliverable evidence</span></div>
