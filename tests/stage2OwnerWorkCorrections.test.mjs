@@ -124,3 +124,33 @@ test("rejected live mobile Team screenshot is not a design reference, and Manage
   assert.match(styles, /\.s2-team-room-entry\{display:flex/);
   assert.match(styles, /\.ev2-people-manager \.ev2p-count\{display:inline-flex/);
 });
+
+test("optional individual project-close review stays unpublished and is not mandatory for closure", () => {
+  const project = source("src/screens/ManagerProjectClose.jsx");
+  const review = source("src/components/ProjectPersonAssessments.jsx");
+  const migration = source("supabase/migrations/20261019181500_160_project_person_optional_assessments.sql");
+  assert.match(project, /<ProjectPersonAssessments me=\{me\}/);
+  assert.match(review, /stage2_record_project_person_assessment/);
+  assert.match(migration, /CREATE TABLE public\.project_person_contribution_assessments/);
+  assert.match(migration, /GRANT SELECT ON public\.project_person_contribution_assessments TO authenticated/);
+  assert.doesNotMatch(migration, /GRANT INSERT ON public\.project_person_contribution_assessments TO authenticated/);
+  assert.match(review, /not published employee ratings/);
+});
+
+test("Executive drilldown links people, projects and dated evidence without inferred rankings", () => {
+  const exec = source("src/screens/ExecutiveReports.jsx");
+  const detail = source("src/components/ExecutiveContributionDrilldown.jsx");
+  assert.match(exec, /<ExecutiveContributionDrilldown me=\{me\}/);
+  assert.match(detail, /work_activity_records/);
+  assert.match(detail, /source_project_id/);
+  assert.match(detail, /contributor_id/);
+  assert.match(detail, /collected.length!==expected/);
+  assert.doesNotMatch(detail, /performanceScore|autoRate|averageRating/);
+});
+
+test("support organisational migration preserves unit identity instead of reassigning people", () => {
+  const sql = source("supabase/migrations/20261019183500_161_technical_support_under_it.sql");
+  assert.match(sql, /UPDATE public\.units SET parent_id=new_parent/);
+  assert.doesNotMatch(sql, /DELETE FROM public\.unit_memberships|UPDATE public\.unit_memberships/);
+  assert.match(sql, /lower\(s\.name\)='technical support'/);
+});
