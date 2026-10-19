@@ -19,7 +19,7 @@ import {
 const COMPLETE = new Set(["completed", "self_certified", "cancelled"]);
 
 export default function ManagerWork({ me, openItem, goAssign }) {
-  const [view, setView] = useState("reviews");
+  const [view, setView] = useState("mine");
   const [addingMyWork, setAddingMyWork] = useState(false);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [mine, setMine] = useState([]);
@@ -37,13 +37,13 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     try {
       const [mineResult, givenResult, teamResult, reviewResult] = await Promise.all([
         supabase.from("work_items")
-          .select("id,ref,title,kind,status,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+          .select("id,ref,title,kind,status,origin,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
           .eq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items")
-          .select("id,ref,title,kind,status,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+          .select("id,ref,title,kind,status,origin,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
           .eq("assigned_by", me.id).neq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items")
-          .select("id,ref,title,kind,status,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+          .select("id,ref,title,kind,status,origin,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
           .in("unit_id", me.memberships.filter((m) => m.role === "manager").map((m) => m.unit_id)).neq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.rpc("my_work_attention_queue"),
       ]);
@@ -73,16 +73,31 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     }
     return [...indexed.values()].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
   }, [mine, given, team]);
+  const createdByMe = useMemo(() => mine.filter((item) => item.origin === "self_created"), [mine]);
+  const completedByMe = useMemo(() => mine.filter((item) => item.status === "completed" || item.status === "self_certified"), [mine]);
   const views = [
+    ["mine", "My work", mine.filter((item) => item.status !== "cancelled").length],
+    ["created", "Created by me", createdByMe.length],
     ["given", "Given out", activeGiven.length],
-    ["reviews", "Needs review", reviews.length],
+    ["reviews", "For review", reviews.length],
+    ["completed", "Completed", completedByMe.length],
     ["team", "Team work", activeTeam.length],
-    ["mine", "My work", activeMine.length],
     ["routines", "Routines", routines.length],
   ];
-  const rows = view === "given" ? activeGiven : view === "team" ? activeTeam : view === "routines" ? routines : activeMine;
+  const rows = view === "given" ? activeGiven : view === "team" ? activeTeam
+    : view === "routines" ? routines : view === "created" ? createdByMe
+    : view === "completed" ? completedByMe
+    : mine.filter((item) => item.status !== "cancelled");
   const selectedInView = selectedWorkId === "none" ? null : (rows.some(item => item.id === selectedWorkId) ? selectedWorkId : (rows[0]?.id || null));
-  const groupTitle = view === "given" ? "Work you gave out" : view === "team" ? "Active team work" : view === "routines" ? "Repeating responsibilities" : "Your open work";
+  const groupTitle = view === "given" ? "Work you gave out" : view === "team" ? "Active team work"
+    : view === "routines" ? "Repeating responsibilities" : view === "completed" ? "Completed responsibilities"
+    : view === "created" ? "Responsibilities created by me" : "My responsibilities";
+  const category = (status) => status === "completed" || status === "self_certified" ? "Completed"
+    : status === "in_review" || status === "returned" || status === "waiting" ? "Waiting & review"
+      : status === "not_started" || status === "scheduled" ? "Upcoming" : "In progress";
+  const statusSections = ["In progress", "Waiting & review", "Upcoming", "Completed"]
+    .map((title) => ({ title, items: rows.filter((item) => category(item.status) === title) }))
+    .filter(({ items }) => items.length > 0);
 
   return <div className="body manager-work premium-manager-page ev2-work-page ev2-work-manager">
     <WorkPageHeader
