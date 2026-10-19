@@ -95,7 +95,7 @@ test("personal monthly and quarterly report waits for complete authoritative dat
   const sql = source("supabase/migrations/20261019175500_159_owner_activity_project_attribution.sql");
   assert.match(report, /fetchAll\(\(\)=>supabase\.from\("work_activity_records"\)/);
   assert.match(report, /setActivities\(activity\);setLoadedKey\(reportKey\)/);
-  assert.match(report, /activity_date",range\.start/);
+  assert.match(report, /a\.activity_date >= range\.start && a\.activity_date <= range\.end/);
   assert.match(report, /\.eq\("contributor_id",me\.id\)/);
   assert.match(report, /a\.source_project_id === projectId/);
   assert.match(report, /Self-recorded, not verified/);
@@ -183,4 +183,16 @@ test("dated work corrections retain the original contributor, audit history and 
   assert.match(snapshot, /prior\.contributor_id=NEW\.contributor_id/);
   assert.match(access, /prior\.contributor_id<>NEW\.contributor_id/);
   assert.doesNotMatch(diary, /\.update\("work_activity_records"\)|\.delete\("work_activity_records"\)/);
+});
+
+test("monthly and quarterly evidence excludes superseded activity even when correction crosses period boundaries", () => {
+  const report = source("src/screens/PersonalAchievements.jsx");
+  assert.match(report, /supersededActivityIds/);
+  assert.match(report, /activities\.map\(\(a\) => a\.supersedes_id\)/);
+  assert.match(report, /!supersededActivityIds\.has\(a\.id\)/);
+  assert.match(report, /periodActions\.filter/);
+  assert.match(report, /\.order\("recorded_at",\{ascending:false\}\)/);
+  assert.doesNotMatch(report, /\.gte\("activity_date",range\.start\)\.lte\("activity_date",range\.end\)/);
+  assert.match(report, /Current project/);
+  assert.match(report, /No project at action time/);
 });
