@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ManagerRoutineOccurrences from "../components/ManagerRoutineOccurrences";
 import { supabase } from "../lib/supabase";
+import SelfWorkComposer from "../components/SelfWorkComposer";
 import { dueLabel, isOverdue } from "../lib/time";
 import { ProductNotice, LoadingState } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -18,6 +19,7 @@ const COMPLETE = new Set(["completed", "self_certified", "cancelled"]);
 
 export default function ManagerWork({ me, openItem, goAssign }) {
   const [view, setView] = useState("reviews");
+  const [addingMyWork, setAddingMyWork] = useState(false);
   const [mine, setMine] = useState([]);
   const [given, setGiven] = useState([]);
   const [team, setTeam] = useState([]);
@@ -88,7 +90,13 @@ export default function ManagerWork({ me, openItem, goAssign }) {
       onAction={() => goAssign?.()}
     />
 
+    <div className="ev2w-self-work-action">
+      <button type="button" className="btn btn-primary" onClick={() => setAddingMyWork(true)}>+ Add my work</button>
+    </div>
     <WorkTabs items={views} value={view} onChange={setView} ariaLabel="Manager work views" />
+    {addingMyWork && <SelfWorkComposer me={me}
+      onClose={() => setAddingMyWork(false)}
+      onCreated={() => { setView("mine"); void load(); }} />}
 
     {error && <ProductNotice tone="error" title="Could not load Manager Work">{error}</ProductNotice>}
     {loading && <LoadingState label="Loading manager work…" />}
