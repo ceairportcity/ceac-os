@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import SelfWorkComposer from "../components/SelfWorkComposer";
 import { LoadingState, ProductNotice } from "../components/bits";
 import { dueLabel, isOverdue } from "../lib/time";
 import { humanError } from "../lib/productLanguage";
@@ -17,6 +18,7 @@ const CLOSED = new Set(["completed", "self_certified", "cancelled"]);
 
 export default function ExecutiveWork({ me, openItem, goAssign }) {
   const [view, setView] = useState("given");
+  const [addingMyWork, setAddingMyWork] = useState(false);
   const [mine, setMine] = useState([]);
   const [given, setGiven] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -66,7 +68,13 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
       onAction={() => goAssign?.()}
     />
 
+    <div className="ev2w-self-work-action">
+      <button type="button" className="btn btn-primary" onClick={() => setAddingMyWork(true)}>+ Add my work</button>
+    </div>
     <WorkTabs items={tabs} value={view} onChange={setView} ariaLabel="Executive work views" />
+    {addingMyWork && <SelfWorkComposer me={me}
+      onClose={() => setAddingMyWork(false)}
+      onCreated={() => { setView("mine"); void load(); }} />}
 
     {error && <ProductNotice tone="error" title="Could not load Work">{error}</ProductNotice>}
     {loading && <LoadingState label="Loading leadership work…" />}
