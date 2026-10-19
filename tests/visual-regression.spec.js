@@ -124,18 +124,35 @@ function meanAbsoluteError(actual, expected) {
   return total / expected.length;
 }
 
-function roleContentRegion(rgb) {
+function roleContentRegion(rgb, dimensions, approvedPhotoRect = null) {
   const values = [];
-  // Stage 4 deliberately replaces the shared shell. Preserve the existing
-  // role-page regression signal by comparing only grid cells safely inside
-  // the workspace: below both old/new top bars and right of both sidebars.
+  let excludedPhotoCells = 0;
+  // Preserve the historical shell exclusion and literal RGB <=6 comparison.
+  // The approved Stage 2 scenic image is new; an older Stage 1/early R4 bitmap
+  // did not contain a photograph. Compare all OTHER shared workspace cells.
+  // Its exact photo geometry and licensing are checked separately below.
   for (let gy = 1; gy < GRID_H; gy += 1) {
     for (let gx = 2; gx < GRID_W; gx += 1) {
+      const cell = {
+        left: (gx * dimensions.width) / GRID_W,
+        right: ((gx + 1) * dimensions.width) / GRID_W,
+        top: (gy * dimensions.height) / GRID_H,
+        bottom: ((gy + 1) * dimensions.height) / GRID_H,
+      };
+      const photoOverlaps = approvedPhotoRect &&
+        cell.right > approvedPhotoRect.left &&
+        cell.left < approvedPhotoRect.right &&
+        cell.bottom > approvedPhotoRect.top &&
+        cell.top < approvedPhotoRect.bottom;
+      if (photoOverlaps) {
+        excludedPhotoCells += 1;
+        continue;
+      }
       const offset = (gy * GRID_W + gx) * 3;
       values.push(rgb[offset], rgb[offset + 1], rgb[offset + 2]);
     }
   }
-  return values;
+  return { values, excludedPhotoCells };
 }
 
 test.describe("CEAC visual regression", () => {
@@ -195,8 +212,43 @@ test.describe("CEAC visual regression", () => {
         expect(actual.rgb).toHaveLength(GRID_W * GRID_H * 3);
         expect(actual.width).toBe(expected.width);
         expect(actual.height).toBe(expected.height);
-        const actualContent = roleContentRegion(actual.rgb);
-        const expectedContent = roleContentRegion(expected.rgb);
+        // The older Staff and R4 Executive references predate the approved
+        // photo-backed Stage 2 Overview. Only the exact approved PHOTO region
+        // is incomparable; do not rebaseline other pixels or change RGB <=6.
+        let approvedPhotoRect = null;
+        if (role === "staff" || role === "executive") {
+          await expect(scenic.first()).toBeVisible();
+          const rect = await scenic.first().evaluate((image) => {
+            const parent = image.closest(".s2-scenic-photo");
+            if (!parent) return null;
+            const region = parent.getBoundingClientRect();
+            return { left:region.left, right:region.right, top:region.top,
+              bottom:region.bottom, width:region.width, height:region.height };
+          });
+          expect(rect, "approved scenic image region is required").not.toBeNull();
+          // Fail closed if a future design erroneously blankets the viewport:
+          // the bounded exclusion is strictly upper-right, not arbitrary.
+          expect(rect.left).toBeGreaterThan(actual.width * 0.42);
+          expect(rect.right).toBeLessThanOrEqual(actual.width);
+          expect(rect.top).toBeLessThan(actual.height * 0.36);
+          expect(rect.bottom).toBeLessThan(actual.height * 0.43);
+          expect(rect.width).toBeLessThan(actual.width * 0.57);
+          expect(rect.height).toBeLessThan(actual.height * 0.28);
+          approvedPhotoRect = rect;
+        }
+        const actualRegion = roleContentRegion(actual.rgb, actual, approvedPhotoRect);
+        const expectedRegion = roleContentRegion(expected.rgb, expected, approvedPhotoRect);
+        expect(actualRegion.excludedPhotoCells).toBe(expectedRegion.excludedPhotoCells);
+        if (approvedPhotoRect) {
+          expect(actualRegion.excludedPhotoCells).toBeGreaterThan(0);
+          expect(actualRegion.excludedPhotoCells).toBeLessThanOrEqual(20);
+        } else {
+          expect(actualRegion.excludedPhotoCells).toBe(0);
+        }
+        // More than 80% of the stable workspace fingerprint remains checked.
+        expect(actualRegion.values.length).toBeGreaterThanOrEqual(270);
+        const actualContent = actualRegion.values;
+        const expectedContent = expectedRegion.values;
         const error = meanAbsoluteError(actualContent, expectedContent);
         // Diagnostic evidence, not a rebaseline or a relaxed visual guard.
         // On failure preserve the exact changed coarse-grid cells so an
