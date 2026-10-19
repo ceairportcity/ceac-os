@@ -26,6 +26,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
   const [search,setSearch] = useState("");
   const [works,setWorks] = useState([]);
   const [submissions,setSubmissions] = useState([]);
+  const [activities,setActivities] = useState([]);
   const [busy,setBusy] = useState(true);
   const [retryToken,setRetryToken] = useState(0);
   const [error,setError] = useState("");
@@ -47,8 +48,14 @@ export default function PersonalAchievements({ me, back, openItem }) {
     });
     return [...seen.values()].sort((a,b)=>a.name.localeCompare(b.name));
   },[works]);
-  const contributions = preview.contributions.filter((w) => !search ||
+  const evidencedWorkIds = new Set(activities.map((action) => action.work_item_id));
+  const contributions = works.filter((w) =>
+    (preview.contributions.some((entry) => entry.id === w.id) || evidencedWorkIds.has(w.id))
+    && (!projectId || w.project_id === projectId)).filter((w) => !search ||
     [w.title,w.ref,w.projects?.name].some((v) => String(v||"").toLocaleLowerCase().includes(search.toLocaleLowerCase())));
+
+  const activityRows = activities.filter((a) => (!projectId || a.work_items?.project_id === projectId) && (!search || [a.action_summary,a.work_items?.title,a.work_items?.ref,a.work_items?.projects?.name].some((value) => String(value || "").toLowerCase().includes(search.toLowerCase()))));
+  const activeProjectIds = new Set([...preview.projectIds, ...activities.map((a) => a.work_items?.project_id).filter(Boolean)]);
 
   // A new employee must not inherit another employee's project filter.
   useEffect(() => { setProjectId(""); }, [me.id]);
@@ -84,9 +91,9 @@ export default function PersonalAchievements({ me, back, openItem }) {
       throw new Error("Too many records to verify accurately. Contact Administration for a verified report.");
     };
     (async()=>{
-      setBusy(true);setError("");setCompleteLoad(false);setLoadedKey("");setWorks([]);setSubmissions([]);
+      setBusy(true);setError("");setCompleteLoad(false);setLoadedKey("");setWorks([]);setSubmissions([]);setActivities([]);
       try{
-        const [work,proof]=await Promise.all([
+        const [work,proof,activity]=await Promise.all([
           fetchAll(()=>supabase.from("work_items")
             .select("id,ref,title,kind,status,created_at,completed_at,original_due_at,due_at,reschedule_count,first_time_approved,origin,visibility,project_id,projects(name)")
             .eq("assignee_id",me.id).order("created_at",{ascending:false}).order("id",{ascending:false})),
@@ -96,8 +103,13 @@ export default function PersonalAchievements({ me, back, openItem }) {
             .gte("submitted_at",range.start+"T00:00:00+00:00")
             .lt("submitted_at",new Date(new Date(range.end+"T00:00:00Z").getTime()+86400000).toISOString())
             .order("submitted_at",{ascending:false}).order("id",{ascending:false})),
+          fetchAll(()=>supabase.from("work_activity_records")
+            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,duration_minutes,evidence_url,recorded_at,supersedes_id,work_items!inner(id,ref,title,project_id,projects(name))")
+            .eq("org_id",me.org_id).eq("contributor_id",me.id)
+            .gte("activity_date",range.start).lte("activity_date",range.end)
+            .order("activity_date",{ascending:false}).order("id",{ascending:false})),
         ]);
-        if(alive){setWorks(work);setSubmissions(proof);setLoadedKey(reportKey);setCompleteLoad(true);}
+        if(alive){setWorks(work);setSubmissions(proof);setActivities(activity);setLoadedKey(reportKey);setCompleteLoad(true);}
       }catch(e){if(alive)setError("Report source records could not be verified. Retry records or contact Administration.");}
       finally{if(alive)setBusy(false);}
     })();
@@ -144,7 +156,8 @@ export default function PersonalAchievements({ me, back, openItem }) {
           ["Completed in period",preview.completed.length+"", "Self-certified "+preview.selfCertified.length+" · completed "+preview.completedReviewed.length],
           ["Due during period",preview.due.length+"", preview.cancelled.length+" cancelled commitments excluded"],
           ["Contributions recorded",preview.contributions.length+"", preview.submissions.length+" recorded submissions"],
-          ["Distinct projects contributed to",preview.projectIds.length+"", "From attributable evidence, not membership"],
+          ["Distinct projects with recorded evidence",activeProjectIds.size+"", "Unique project IDs from work and activity, not membership"],
+          ["Dated activities recorded",activityRows.length+"", "Self-recorded actions, not approved outputs"],
         ].map(([label,value,explain])=><article key={label}><span>{label}</span><strong>{value}</strong><small>{explain}</small></article>)}
       </div>
       <div className="s2-achievement-layout">
@@ -176,7 +189,16 @@ export default function PersonalAchievements({ me, back, openItem }) {
         </aside>
       </div>
       <section className="s2-achievement-panel s2-achievement-evidence">
-        <header><h2>Dated work evidence</h2><span>{preview.submissions.length} recorded submissions</span></header>
+        <header><h2>Dated work evidence</h2><span>{activityRows.length} activities · {preview.submissions.length} submissions</span></header>
+        {!activityRows.length && <p>No dated personal activities were recorded for these filters.</p>}
+        {activityRows.map((a)=><article key={a.id}>
+          <time dateTime={a.activity_date}>{niceDay(a.activity_date)}</time>
+          <span>{a.work_items?.ref||"Authorised work"} · {status(a.activity_state)} · Self-recorded, not verified</span>
+          <p><strong>{a.action_summary}</strong>{a.outcome_note ? " — "+a.outcome_note : ""}</p>
+          {a.next_action && <p><b>Next:</b> {a.next_action}</p>}
+          {a.duration_minutes != null && <small>{a.duration_minutes} minutes self-reported; not attendance</small>}
+          {a.evidence_url && <a href={a.evidence_url} target="_blank" rel="noopener noreferrer">Open source evidence</a>}
+        </article>)}
         {!preview.submissions.length && <p>No submission records for the selected period.</p>}
         {preview.submissions.map((s)=><article key={s.id}>
           <time dateTime={s.submitted_at}>{niceDay(s.submitted_at)}</time>
