@@ -154,3 +154,17 @@ test("support organisational migration preserves unit identity instead of reassi
   assert.doesNotMatch(sql, /DELETE FROM public\.unit_memberships|UPDATE public\.unit_memberships/);
   assert.match(sql, /lower\(s\.name\)='technical support'/);
 });
+
+test("HR alone sees restricted optional project contribution drafts; employee output stays unpublished", () => {
+  const hr = source("src/components/HRProjectContributionQueue.jsx");
+  const performance = source("src/screens/Performance.jsx");
+  const sql = source("supabase/migrations/20261019181500_160_project_person_optional_assessments.sql");
+  assert.match(performance, /hrReleaseAdmin && <HRProjectContributionQueue me=\{me\}/);
+  assert.match(hr, /project_person_contribution_assessments/);
+  assert.match(hr, /eq\("org_id",me\.org_id\)/);
+  assert.match(hr, /all\.length !== expected/);
+  assert.doesNotMatch(hr, /\.insert\(|\.update\(|\.delete\(/);
+  assert.match(sql, /reviewer_id=auth\.uid\(\)/);
+  assert.match(sql, /app_has_capability\('people\.manage',NULL\)/);
+  assert.match(sql, /wi\.confidential=false/);
+});
