@@ -442,7 +442,7 @@ export default function App() {
     if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} />;
     if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation me={me} />;
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
-    if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} />;
+    if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} openItem={openItem} />;
     if (tab === "record") return <Record me={me} openItem={openItem} />;
     if (tab === "announcements") return <Announcements
       me={me}
