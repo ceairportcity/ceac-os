@@ -48,14 +48,14 @@ test("new rollback-only private portrait adversarial gate is registered", () => 
 
 test("forward-only 157 permits current password release while keeping future factor-backed MFA", () => {
   const next = source("supabase/migrations/20261019160000_157_stage2_password_release_private_portraits.sql");
-  assert.match(next, /CREATE OR REPLACE FUNCTION public\\.app_portrait_totp_aal2\\(\\)/);
-  assert.match(next, /public\\.app_stage2_universal_aal_allowed\\(\\)/);
-  assert.match(next, /auth\\.uid\\(\\) IS NOT NULL/);
+  assert.match(next, /CREATE OR REPLACE FUNCTION public\.app_portrait_totp_aal2\(\)/);
+  assert.match(next, /public\.app_stage2_universal_aal_allowed\(\)/);
+  assert.match(next, /auth\.uid\(\) IS NOT NULL/);
   assert.match(next, /SECURITY INVOKER/);
-  assert.doesNotMatch(next, /SET universal_totp_required\\s*=\\s*true/i);
-  assert.match(next, /REVOKE ALL ON FUNCTION public\\.app_portrait_totp_aal2\\(\\) FROM PUBLIC, anon/);
+  assert.doesNotMatch(next, /SET universal_totp_required\s*=\s*true/i);
+  assert.match(next, /REVOKE ALL ON FUNCTION public\.app_portrait_totp_aal2\(\) FROM PUBLIC, anon/);
   const gate = source("supabase/tests/stage2_private_portrait_totp_gate.sql");
-  assert.match(gate, /\\$password_release\\$/);
+  assert.match(gate, /\$password_release\$/);
   assert.match(gate, /universal_totp_required=true/);
   assert.match(gate, /'verified'::auth.factor_status/);
 });
