@@ -29,3 +29,7 @@
 ## Current truthful status
 
 **Engineering P0–P7 accepted. Owner Stage 2 release method approved. P8 non-MFA production prerequisites IN PROGRESS. P9 deployment NOT EXECUTED.** No old Google/MFA test blocks current Stage 2, but hosting access, migration sequencing/backups and authentic email/password/tenant smoke tests remain genuine release blockers. Do not ask owner to operate Codespace/TinyFish or paste credentials into chat.
+
+## 19 Oct explicit isolated preview marker
+
+With candidate `edb0c1a6a641ef3f291dcfce5b8e6d890718bf0e` complete (CI/Account Security/Migration Replay/Quality Gate all SUCCESS), authorize exactly **one GitHub/Vercel [vercel] preview** for this Stage 2 code on the existing integration branch. The repository's `scripts/vercel/ignore-build.mjs` intentionally skips ordinary non-main commits, so the `[vercel]` commit marker must be used. The same Vite application source is unchanged by this documentation note. The preview branch variables target CEAC-owned **staging** (`ugaifpxjgkclmcdvyppx`), **never production**; universal MFA stays `false`. Preview success is not real hosted signed-in actor acceptance because staging currently contains no Auth user/profile. Production schema, auth, storage and Vercel alias remain untouched during this preview.
