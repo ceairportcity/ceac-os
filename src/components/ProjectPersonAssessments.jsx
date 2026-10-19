@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import "./ProjectPersonAssessments.css";
 
 /**
  * Optional person-specific contribution remarks for a manager's project.
@@ -34,7 +35,7 @@ export default function ProjectPersonAssessments({ me, project, closeId = null }
           supabase.from("work_items")
             .select("id,unit_id,assignee_id,profiles!work_items_assignee_id_fkey(id,full_name)", { count: "exact" })
             .eq("org_id", me.org_id).eq("project_id", project.id)
-            .neq("visibility", "private").limit(1001),
+            .neq("visibility", "private").eq("confidential", false).limit(1001),
           supabase.from("work_activity_records")
             .select("id,contributor_id,work_items!inner(unit_id),contributor:profiles!work_activity_records_contributor_id_fkey(id,full_name)", { count: "exact" })
             .eq("org_id", me.org_id).eq("source_project_id", project.id).limit(1001),
