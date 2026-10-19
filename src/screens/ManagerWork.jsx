@@ -92,10 +92,11 @@ export default function ManagerWork({ me, openItem, goAssign }) {
   const groupTitle = view === "given" ? "Work you gave out" : view === "team" ? "Active team work"
     : view === "routines" ? "Repeating responsibilities" : view === "completed" ? "Completed responsibilities"
     : view === "created" ? "Responsibilities created by me" : "My responsibilities";
-  const category = (status) => status === "completed" || status === "self_certified" ? "Completed"
+  const category = (status) => status === "cancelled" ? "Archived"
+    : status === "completed" || status === "self_certified" ? "Completed"
     : status === "in_review" || status === "returned" || status === "waiting" ? "Waiting & review"
       : status === "not_started" || status === "scheduled" ? "Upcoming" : "In progress";
-  const statusSections = ["In progress", "Waiting & review", "Upcoming", "Completed"]
+  const statusSections = ["In progress", "Waiting & review", "Upcoming", "Completed", "Archived"]
     .map((title) => ({ title, items: rows.filter((item) => category(item.status) === title) }))
     .filter(({ items }) => items.length > 0);
   const displaySections = view === "mine" || view === "created" ? statusSections : [{ title: groupTitle, items: rows }];
@@ -144,7 +145,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
             refCode={item.ref}
             kind={item.kind}
             context={item.projects?.name}
-            owner={view !== "mine" ? (item.profiles?.full_name || "Unassigned") : null}
+            owner={["mine","created","completed"].includes(view) ? null : (item.profiles?.full_name || "Unassigned")}
             due={item.kind === "routine" ? "Scheduled routine" : dueLabel(item.due_at)}
             status={item.status}
             recordedAt={item.created_at}
