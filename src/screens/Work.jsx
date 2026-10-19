@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AssignedRoutineOccurrences from "../components/AssignedRoutineOccurrences";
+import WorkRegisterLayout from "../components/WorkRegisterInspector";
 import { dueLabel } from "../lib/time";
 import { humanError } from "../lib/productLanguage";
 import { Sheet, FieldGroup, ProductNotice, LoadingState } from "../components/bits";
@@ -61,6 +62,7 @@ export default function Work({ me, isManager = false, openItem }) {
   const [mode, setMode] = useState(savedView?.mode || "assigned");
   const [statusFilter, setStatusFilter] = useState(savedView?.statusFilter || "active");
   const [items, setItems] = useState([]);
+  const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -298,6 +300,8 @@ export default function Work({ me, isManager = false, openItem }) {
       return a-b || left.title.localeCompare(right.title);
     });
 
+  const selectedInView = selectedWorkId === "none" ? null : (visibleItems.some((item) => item.id === selectedWorkId) ? selectedWorkId : (visibleItems[0]?.id || null));
+
   const grouped = {};
   visibleItems.forEach((item) => {
     const key = item.projects ? item.projects.name : "Not attached to a project";
@@ -418,6 +422,7 @@ export default function Work({ me, isManager = false, openItem }) {
     {loadError && <ProductNotice tone="error" title="Could not load your work">{loadError}</ProductNotice>}
     {loading && <LoadingState label="Loading your work…" />}
 
+    {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
     {!loading && Object.keys(grouped).map((project) => <WorkGroup key={project} title={project} count={grouped[project].length}>
       {grouped[project].map((item) => <WorkRow
         key={item.id}
@@ -429,7 +434,7 @@ export default function Work({ me, isManager = false, openItem }) {
             recordedAt={item.created_at}
             actionLabel={item.status === "not_started" ? "New assignment · Start work" : item.status === "returned" ? "Needs correction" : item.status === "in_review" ? "Waiting for reviewer" : null}
         note={item.expected_outcome}
-        onClick={() => openItem(item.id)}
+        onClick={() => setSelectedWorkId(item.id)}
       />)}
     </WorkGroup>)}
 
@@ -448,6 +453,8 @@ export default function Work({ me, isManager = false, openItem }) {
       actionLabel={mode === "private" ? "Add private work" : mode === "agreed" ? "Add agreed work" : undefined}
       onAction={mode === "private" ? () => openCreate("private") : mode === "agreed" ? () => openCreate("unit") : undefined}
     />}
+
+    </WorkRegisterLayout>}
 
     {sheet === "proposal" && <Sheet onClose={() => !busy && setSheet(null)}>
       <div className="eyebrow">Project proposal</div>
