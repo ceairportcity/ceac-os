@@ -18,7 +18,7 @@ import {
 const CLOSED = new Set(["completed", "self_certified", "cancelled"]);
 
 export default function ExecutiveWork({ me, openItem, goAssign }) {
-  const [view, setView] = useState("given");
+  const [view, setView] = useState("mine");
   const [addingMyWork, setAddingMyWork] = useState(false);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [mine, setMine] = useState([]);
@@ -33,7 +33,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     setLoading(true);
     setError(null);
     try {
-      const fields = "id,ref,title,status,due_at,assignee_id,assigned_by,units(name),profiles!work_items_assignee_id_fkey(full_name),projects(name)";
+      const fields = "id,ref,title,status,origin,due_at,assignee_id,assigned_by,units(name),profiles!work_items_assignee_id_fkey(full_name),projects(name)";
       const [mineResult, givenResult, reviewResult] = await Promise.all([
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assignee_id", me.id).order("due_at", { ascending: true, nullsFirst: false }),
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assigned_by", me.id).neq("assignee_id", me.id).order("due_at", { ascending: true, nullsFirst: false }),
@@ -54,12 +54,17 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
   const active = (rows) => rows.filter((item) => !CLOSED.has(item.status));
   const activeMine = active(mine);
   const activeGiven = active(given);
+  const selfCreated = mine.filter((item) => item.origin === "self_created");
+  const completedMine = mine.filter((item) => item.status === "completed" || item.status === "self_certified");
   const tabs = [
+    ["mine", "My work", mine.filter((item) => item.status !== "cancelled").length],
+    ["created", "Created by me", selfCreated.length],
     ["given", "Given out", activeGiven.length],
-    ["reviews", "Needs review", reviews.length],
-    ["mine", "Mine", activeMine.length],
+    ["reviews", "For review", reviews.length],
+    ["completed", "Completed", completedMine.length],
   ];
-  const rows = view === "given" ? activeGiven : activeMine;
+  const rows = view === "given" ? activeGiven : view === "created" ? selfCreated
+    : view === "completed" ? completedMine : mine.filter((item) => item.status !== "cancelled");
   const selectedInView = selectedWorkId === "none" ? null : (rows.some(item => item.id === selectedWorkId) ? selectedWorkId : (rows[0]?.id || null));
 
   return <div className="body executive-work ev2-work-page ev2-work-executive">
@@ -99,7 +104,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     {!loading && view !== "reviews" && (
       <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
         {rows.length ? (
-        <WorkGroup title={view === "given" ? "Delegated work" : "Your open work"} count={rows.length}>
+        <WorkGroup title={view === "given" ? "Delegated work" : view === "created" ? "Responsibilities created by me" : view === "completed" ? "Completed responsibilities" : "My responsibilities"} count={rows.length}>
           {rows.map((item) => <WorkRow
             key={item.id}
             title={item.title}
