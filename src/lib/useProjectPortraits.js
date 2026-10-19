@@ -11,7 +11,8 @@ import { signedProjectPortraits } from "./profilePortraits";
  * separately approved Auth/database cutover, do not query a nonexistent table.
  */
 export function useProjectPortraits(project) {
-  const enabled = import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true";
+  const enabled = import.meta.env.VITE_STAGE2_PORTRAITS_ENABLED === "true"
+    || import.meta.env.VITE_STAGE2_UNIVERSAL_AAL2 === "true";
   const ids = useMemo(() => [...new Set((project?.work || [])
     .map((item) => item.assignee_id).filter(Boolean))].sort().slice(0, 100),
     [project?.work]);
