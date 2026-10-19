@@ -80,11 +80,8 @@ test("approved Work register opens a factual responsive inspector for every role
     const code = source(`src/screens/${page}.jsx`);
     assert.match(code, /import WorkRegisterLayout from/);
     assert.match(code, /<WorkRegisterLayout me=\{me\}/);
-    if (page === 'Work') assert.match(code, /setSelectedWorkId\(item\.id\)/);
-    else {
-      assert.match(code, /<ResponsibilityRegister/);
-      assert.match(code, /onSelect=\{setSelectedWorkId\}/);
-    }
+    assert.match(code, /<ResponsibilityRegister/);
+    assert.match(code, /onSelect=\{setSelectedWorkId\}/);
   }
   assert.match(inspector, /\.from\("work_items"\)/);
   assert.match(inspector, /\.eq\("org_id",me\.org_id\)/);

@@ -2,30 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AssignedRoutineOccurrences from "../components/AssignedRoutineOccurrences";
 import WorkRegisterLayout from "../components/WorkRegisterInspector";
-import { dueLabel } from "../lib/time";
+import ResponsibilityRegister from "../components/ResponsibilityRegister";
 import { humanError } from "../lib/productLanguage";
 import { Sheet, FieldGroup, ProductNotice, LoadingState } from "../components/bits";
 import {
   WorkActionStrip,
-  WorkEmpty,
-  WorkGroup,
   WorkPageHeader,
-  WorkRow,
   WorkTabs,
-  WorkToolbar,
 } from "../experience-v2/work-family/WorkFamilyV2";
 
 const MODES = [
+  ["all", "My work"],
   ["assigned", "Assigned"],
-  ["agreed", "Agreed"],
+  ["agreed", "Created by me"],
   ["private", "Private"],
-];
-
-const STATUS_FILTERS = [
-  ["active", "Active"],
-  ["waiting_on", "Waiting"],
-  ["in_review", "In review"],
-  ["completed", "Completed"],
 ];
 
 const BRAND_BOOK_DASHBOARD_CSS = `.fpg-brandbook-dashboard{display:grid;grid-template-columns:1.05fr .9fr 1fr;gap:10px;margin:12px 0 18px}
@@ -56,11 +46,11 @@ function minutesLabel(value) {
 }
 
 export default function Work({ me, isManager = false, openItem }) {
-  const viewKey = `ceac-work-view:${me.id}`;
+  const viewKey = `ceac-work-view:v2:${me.id}`;
   let savedView = null;
   try { savedView = JSON.parse(sessionStorage.getItem(viewKey) || "null"); } catch { savedView = null; }
-  const [mode, setMode] = useState(savedView?.mode || "assigned");
-  const [statusFilter, setStatusFilter] = useState(savedView?.statusFilter || "active");
+  const [mode, setMode] = useState(MODES.some(([value]) => value === savedView?.mode) ? savedView.mode : "all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [items, setItems] = useState([]);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -80,8 +70,7 @@ export default function Work({ me, isManager = false, openItem }) {
   // Blocks two synchronous create clicks before React renders the busy state.
   const ownCreatePending = useRef(false);
   const [notice, setNotice] = useState(null);
-  const [queryText, setQueryText] = useState("");
-  const [sortMode, setSortMode] = useState("due");
+  const loadSerial = useRef(0);
   const [proposalName, setProposalName] = useState("");
   const [proposalPurpose, setProposalPurpose] = useState("");
   const [proposalStart, setProposalStart] = useState("");
@@ -90,31 +79,34 @@ export default function Work({ me, isManager = false, openItem }) {
   const [brandbookLoading, setBrandbookLoading] = useState(true);
   const [brandbookError, setBrandbookError] = useState(false);
 
-  useEffect(() => { load(); }, [mode, statusFilter, me.id, isManager]);
+  useEffect(() => { load(); return () => { loadSerial.current += 1; }; }, [mode, statusFilter, me.id, isManager]);
   useEffect(() => { loadProjects(); loadProposals(); }, [me.id, me.unit_id]);
   useEffect(() => { loadBrandbookContext(); }, [me.id]);
   useEffect(() => {
-    sessionStorage.setItem(viewKey, JSON.stringify({ mode, statusFilter }));
+    try { sessionStorage.setItem(viewKey, JSON.stringify({ mode })); } catch { /* Storage may be unavailable. */ }
   }, [viewKey, mode, statusFilter]);
 
   async function load(nextMode = mode, nextStatusFilter = statusFilter) {
+    const serial = ++loadSerial.current;
     setLoading(true);
     setLoadError(null);
     setItems([]);
 
     let query = supabase.from("work_items")
-      .select("id,ref,title,kind,status,due_at,visibility,origin,created_at,expected_outcome,projects(name)")
+      .select("id,ref,title,kind,status,due_at,visibility,origin,created_at,expected_outcome,project_id,unit_id,projects(name)")
       .eq("assignee_id", me.id);
 
+    if (nextMode === "all") query = query.neq("visibility", "private");
     if (nextMode === "assigned") query = query.eq("visibility", "unit").in("origin", ["assigned", "assigned_by_exec"]);
     if (nextMode === "agreed") query = query.eq("visibility", "unit").eq("origin", "self_created");
     if (nextMode === "private") query = query.eq("visibility", "private");
 
     if (nextStatusFilter === "active") query = query.in("status", ["not_started", "in_progress", "returned"]);
     else if (nextStatusFilter === "completed") query = query.in("status", ["completed", "self_certified"]);
-    else query = query.eq("status", nextStatusFilter);
+    else if (nextStatusFilter !== "all") query = query.eq("status", nextStatusFilter);
 
-    const { data, error } = await query.order("due_at", { ascending: true, nullsFirst: false });
+    const { data, error } = await query.order("due_at", { ascending: true, nullsFirst: false }).order("id");
+    if (serial !== loadSerial.current) return;
     if (error) {
       setLoadError(error.message);
       setLoading(false);
@@ -276,11 +268,11 @@ export default function Work({ me, isManager = false, openItem }) {
 
       setSheet(null);
       setMode(createVisibility === "private" ? "private" : "agreed");
-      setStatusFilter("active");
+      setStatusFilter("all");
       setNotice(createVisibility === "private"
         ? `${created.ref} added as private work. Only you can see it.`
-        : `${created.ref} added to your agreed work. It appears immediately in your record.`);
-      await load(createVisibility === "private" ? "private" : "agreed", "active");
+        : `${created.ref} added to My work. It appears immediately in your record.`);
+      await load(createVisibility === "private" ? "private" : "agreed", "all");
     } catch (error) {
       setLoadError(humanError(error, "The work could not be added."));
     } finally {
@@ -289,31 +281,12 @@ export default function Work({ me, isManager = false, openItem }) {
     }
   }
 
-  const cleanQuery = queryText.trim().toLowerCase();
-  const visibleItems = items
-    .filter((item) => !cleanQuery || [item.title,item.ref,item.kind,item.projects?.name,item.expected_outcome].filter(Boolean).some((value) => String(value).toLowerCase().includes(cleanQuery)))
-    .sort((left,right) => {
-      if (sortMode === "title") return left.title.localeCompare(right.title);
-      if (sortMode === "status") return String(left.status).localeCompare(String(right.status)) || left.title.localeCompare(right.title);
-      const a = left.due_at ? new Date(left.due_at).getTime() : Number.MAX_SAFE_INTEGER;
-      const b = right.due_at ? new Date(right.due_at).getTime() : Number.MAX_SAFE_INTEGER;
-      return a-b || left.title.localeCompare(right.title);
-    });
-
-  const selectedInView = selectedWorkId === "none" ? null : (visibleItems.some((item) => item.id === selectedWorkId) ? selectedWorkId : (visibleItems[0]?.id || null));
-
-  const grouped = {};
-  visibleItems.forEach((item) => {
-    const key = item.projects ? item.projects.name : "Not attached to a project";
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(item);
+  const visibleItems = [...items].sort((left, right) => {
+    const a = left.due_at ? new Date(left.due_at).getTime() : Number.MAX_SAFE_INTEGER;
+    const b = right.due_at ? new Date(right.due_at).getTime() : Number.MAX_SAFE_INTEGER;
+    return a - b || left.title.localeCompare(right.title);
   });
-
-  const modeNote = mode === "assigned"
-    ? "Formal work given to you."
-    : mode === "agreed"
-      ? "Work you already agreed to carry and recorded yourself."
-      : "Personal work visible only to you. It is not counted in formal CEAC reports.";
+  const selectedInView = selectedWorkId === "none" ? null : (visibleItems.some((item) => item.id === selectedWorkId) ? selectedWorkId : (visibleItems[0]?.id || null));
 
   const sessionDays = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
@@ -338,10 +311,40 @@ export default function Work({ me, isManager = false, openItem }) {
     <style data-fpg-brandbook-dashboard>{BRAND_BOOK_DASHBOARD_CSS}</style>
     <WorkPageHeader
       eyebrow={me.unit_name}
-      title="My work"
-      description="Everything you are carrying, organised by where it came from and what needs to happen next."
+      title="Work"
+      description="Plan, record, and finish your work. Keep every contribution connected to the right project."
+      actionLabel="Add my work"
+      onAction={() => openCreate("unit")}
     />
 
+    {notice && <ProductNotice tone="success" title="Work updated">{notice}</ProductNotice>}
+    {proposals.length > 0 && <details className="finance-section ev2w-inline-panel">
+      <summary><span>My project proposals</span><b>{proposals.length}</b></summary>
+      <div className="finance-section-body">
+        {proposals.map((proposal) => <div className="row" key={proposal.id}>
+          <div className="row-t">{proposal.name}</div>
+          <div className="row-m">{proposal.state === "submitted" ? "Waiting for Unit Head confirmation" : proposal.state === "approved" ? "Confirmed as a project" : "Not approved"}</div>
+          {proposal.review_note && <div className="row-note">{proposal.review_note}</div>}
+        </div>)}
+      </div>
+    </details>}
+
+
+    {loadError && <ProductNotice tone="error" title="Could not load your work">{loadError}</ProductNotice>}
+    {loading && <LoadingState label="Loading your work…" />}
+    {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView}
+      onClose={() => setSelectedWorkId("none")} openItem={openItem} recordCount={visibleItems.length}
+      tabs={<WorkTabs items={MODES} value={mode} onChange={nextMode=>{setMode(nextMode);setStatusFilter("all");}} ariaLabel="Work source" />}>
+      <ResponsibilityRegister key={mode} rows={visibleItems} selectedId={selectedInView}
+        onSelect={setSelectedWorkId} onAdd={()=>openCreate(mode === "private" ? "private" : "unit")} />
+    </WorkRegisterLayout>}
+    <WorkActionStrip actions={[
+      {label:"Add private work",icon:"lock",onClick:()=>openCreate("private")},
+      {label:"Propose project",icon:"projects",onClick:openProjectProposal},
+    ]} />
+    {(mode === "all" || mode === "assigned") && !loading && !loadError && <AssignedRoutineOccurrences me={me} onOpen={openItem} />}
+
+    <details className="s2-work-context"><summary>Schedule and recorded work context</summary>
     <section className="fpg-brandbook-dashboard" aria-label="Recorded work context">
       <article className="fpg-brandbook-card fpg-brandbook-schedule">
         <header><span>Weekly schedule</span><small>Next 7 days</small></header>
@@ -378,83 +381,7 @@ export default function Work({ me, isManager = false, openItem }) {
     </section>
     {brandbookError && <p className="fpg-brandbook-context-warning">Some recorded work context is unavailable. No missing value has been inferred.</p>}
 
-    <WorkTabs
-      items={MODES}
-      value={mode}
-      onChange={(nextMode) => { setMode(nextMode); setStatusFilter("active"); }}
-      ariaLabel="Work source"
-    />
-    <p className="ev2w-context-note">{modeNote}</p>
-
-    <WorkActionStrip actions={[
-      { label: "Add agreed work", icon: "create", onClick: () => openCreate("unit") },
-      { label: "Add private work", icon: "lock", onClick: () => openCreate("private") },
-      { label: "Propose project", icon: "projects", onClick: openProjectProposal },
-    ]} />
-
-    {notice && <ProductNotice tone="success" title="Work updated">{notice}</ProductNotice>}
-    {proposals.length > 0 && <details className="finance-section ev2w-inline-panel">
-      <summary><span>My project proposals</span><b>{proposals.length}</b></summary>
-      <div className="finance-section-body">
-        {proposals.map((proposal) => <div className="row" key={proposal.id}>
-          <div className="row-t">{proposal.name}</div>
-          <div className="row-m">{proposal.state === "submitted" ? "Waiting for Unit Head confirmation" : proposal.state === "approved" ? "Confirmed as a project" : "Not approved"}</div>
-          {proposal.review_note && <div className="row-note">{proposal.review_note}</div>}
-        </div>)}
-      </div>
-    </details>}
-
-    {mode === "assigned" && !loading && !loadError && <AssignedRoutineOccurrences me={me} onOpen={openItem} />}
-
-    <WorkTabs
-      items={STATUS_FILTERS}
-      value={statusFilter}
-      onChange={setStatusFilter}
-      ariaLabel="Work status"
-      compact
-    />
-
-    {items.length > 10 && <WorkToolbar>
-      <FieldGroup label="Find work"><input className="field" type="search" placeholder="Search title, reference or project" value={queryText} onChange={(event) => setQueryText(event.target.value)} /></FieldGroup>
-      <FieldGroup label="Sort by"><select className="field" value={sortMode} onChange={(event) => setSortMode(event.target.value)}><option value="due">Due date</option><option value="title">Title</option><option value="status">Status</option></select></FieldGroup>
-    </WorkToolbar>}
-
-    {loadError && <ProductNotice tone="error" title="Could not load your work">{loadError}</ProductNotice>}
-    {loading && <LoadingState label="Loading your work…" />}
-
-    {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
-    {!loading && Object.keys(grouped).map((project) => <WorkGroup key={project} title={project} count={grouped[project].length}>
-      {grouped[project].map((item) => <WorkRow
-        key={item.id}
-        title={item.title}
-        refCode={item.ref}
-        kind={item.kind}
-        due={dueLabel(item.due_at)}
-        status={item.status}
-            recordedAt={item.created_at}
-            actionLabel={item.status === "not_started" ? "New assignment · Start work" : item.status === "returned" ? "Needs correction" : item.status === "in_review" ? "Waiting for reviewer" : null}
-        note={item.expected_outcome}
-        onClick={() => setSelectedWorkId(item.id)}
-      />)}
-    </WorkGroup>)}
-
-    {!loading && !loadError && items.length > 0 && visibleItems.length === 0 && <WorkEmpty
-      title="No matching work"
-      description="Try a different search or sort order."
-    />}
-
-    {!loading && !loadError && items.length === 0 && <WorkEmpty
-      title="Nothing here right now"
-      description={mode === "private"
-        ? "Private work you add will stay here and remain visible only to you."
-        : statusFilter === "active"
-          ? "There is no active work in this view."
-          : "There is no work in this status."}
-      actionLabel={mode === "private" ? "Add private work" : mode === "agreed" ? "Add agreed work" : undefined}
-      onAction={mode === "private" ? () => openCreate("private") : mode === "agreed" ? () => openCreate("unit") : undefined}
-    />}
-
-    </WorkRegisterLayout>}
+    </details>
 
     {sheet === "proposal" && <Sheet onClose={() => !busy && setSheet(null)}>
       <div className="eyebrow">Project proposal</div>
@@ -473,7 +400,7 @@ export default function Work({ me, isManager = false, openItem }) {
 
     {sheet === "self" && <Sheet onClose={() => !busy && setSheet(null)}>
       <div className="eyebrow">{createVisibility === "private" ? "Only you can see this" : "Your agreed CEAC work"}</div>
-      <div className="h2" style={{ marginTop: 5 }}>{createVisibility === "private" ? "Add private work" : "Add agreed work"}</div>
+      <div className="h2" style={{ marginTop: 5 }}>{createVisibility === "private" ? "Add private work" : "Add my work"}</div>
       <p className="screen-note">
         {createVisibility === "private"
           ? "Use this for work or planning you want to keep to yourself."

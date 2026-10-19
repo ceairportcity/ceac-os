@@ -21,3 +21,5 @@
 .s2-work-inspector-empty{font-size:13px;color:#66778a}
 @media(max-width:920px){.s2-work-layout{grid-template-columns:1fr}.s2-work-inspector{position:static}.s2-work-inspector-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:430px){.s2-work-inspector{padding:16px 13px}.s2-work-inspector-facts{grid-template-columns:1fr 1fr}.s2-register-heading{padding:20px 16px 5px}.s2-work-register>.ev2w-tabs{margin-inline:16px}.s2-work-register>.ev2w-tabs button{padding-inline:10px;font-size:11px}}
+
+.s2-work-context{margin-top:20px;border-top:1px solid #e0e9f4;padding-top:14px}.s2-work-context>summary{cursor:pointer;color:#52697f;font-size:12px;font-weight:600;padding:8px 0}.s2-work-context>summary:focus-visible{outline:2px solid #1687ff;outline-offset:3px}

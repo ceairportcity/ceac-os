@@ -24,3 +24,11 @@ Work register visual/functional completion, self-created recurrence, complete HR
 - Control Center displays each settings domain once, with search and a needs-attention view. Missing account privileges and optional integrations are no longer labelled incomplete organisational setup. A consistent Control Center return link is available in its settings pages, and the root returns to Overview.
 - Exact private Work desktop/mobile and revised Projects images recovered and inspected. This is not a pixel-match claim. Staff register propagation and other workflows remain in progress.
 - 472 source/behaviour tests pass under Node 22. Production build passes. A single explicit Vercel preview checkpoint is requested for real rendered review; routine commits stay ignored by the existing build policy.
+
+## Third source checkpoint — Staff propagation
+
+- Staff Work now defaults to My work and uses the same searchable responsibility register and inspector. Created by me, Assigned and Private stay separate views; the assignee and visibility constraints remain in place. Routine occurrences are below the register, not a second dashboard above it. Secondary schedule/session context is collapsed.
+- Invalid saved view values fall back to My work, unavailable session storage does not break rendering, and a serial guard prevents a slower prior-view response replacing the latest view.
+- Node 22: 472/472 source and behaviour tests passed; production build passed. No migration or production write was made for this checkpoint.
+- The second checkpoint preview is READY at commit `78eacc9136836a07bb3e6ba90d8d796535554e1b`; this third checkpoint is not yet browser-accepted.
+- Existing Codespace is connected but VS Code blocks terminal creation in Restricted Mode with “Trust Folder & Continue”. That security decision has not been accepted. Isolated SQL replay and authenticated/browser testing remain pending that essential authorisation.

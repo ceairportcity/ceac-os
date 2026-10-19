@@ -7,7 +7,7 @@ const source = (path) => readFileSync(path,"utf8");
 test("staff Work includes only their assigned, unit-visible recurring responsibilities", () => {
   const staff = source("src/components/AssignedRoutineOccurrences.jsx");
   const parent = source("src/screens/Work.jsx");
-  assert.match(parent, /mode === "assigned" && !loading && !loadError && <AssignedRoutineOccurrences/);
+  assert.match(parent, /\(mode === "all" \|\| mode === "assigned"\) && !loading && !loadError && <AssignedRoutineOccurrences/);
   assert.match(staff, /\.eq\("assignee_id", me\.id\)/);
   assert.match(staff, /\.eq\("kind", "routine"\)/);
   assert.match(staff, /\.eq\("visibility", "unit"\)/);
