@@ -50,8 +50,8 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       {work.expected_outcome && <section className="s2-work-inspector-outcome">
         <strong>Expected outcome</strong><p>{work.expected_outcome}</p>
       </section>}
-      <WorkProjectLink me={me} item={work} onLinked={() => setReload(n=>n+1)} />
-      <WorkActivityDiary me={me} item={work} />
+      <WorkProjectLink me={me} item={work} key={`${me.id}:${work.id}`} onLinked={() => setReload(n=>n+1)} />
+      <WorkActivityDiary me={me} item={work} key={`${me.id}:${work.id}`} />
       <button className="btn s2-work-inspector-open" type="button" onClick={() => openItem?.(work.id)}>
         Open complete work record →
       </button>

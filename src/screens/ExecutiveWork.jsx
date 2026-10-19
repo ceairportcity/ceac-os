@@ -123,7 +123,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
         actionLabel={view === "given" ? "Give out work" : undefined}
         onAction={view === "given" ? () => goAssign?.() : undefined}
       />
-        )}
+        }
       </WorkRegisterLayout>
     )}
 

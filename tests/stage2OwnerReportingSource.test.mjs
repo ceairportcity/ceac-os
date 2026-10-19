@@ -29,7 +29,7 @@ test("personal reports distinguish live factual records from frozen HR-reviewed 
  assert.match(screen,/live view of your current authorised records/i);
  assert.match(screen,/not a frozen monthly filing/i);
  assert.match(screen,/Print \/ Save as PDF/);
- assert.match(screen,/Distinct projects contributed to/);
+ assert.match(screen,/Distinct projects with recorded evidence/);
  assert.match(screen,/No employee rating, comparison, salary/i);
  assert.match(metrics,/distinctVerifiedProjectOutcomes/);
  assert.doesNotMatch(screen,/\.from\("appraisal_entries"\)|\.from\("appraisal_human_rating_versions"\)/);

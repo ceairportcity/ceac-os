@@ -131,14 +131,13 @@ export default function ManagerWork({ me, openItem, goAssign }) {
             note="Review authority is assigned to you for this item."
             onClick={() => openItem(row.work_item_id)}
           />)}
-        </WorkGroup>)
+        </WorkGroup>
       ) : <WorkEmpty title="Nothing waiting for review" description="New submissions from your team will appear here." />
     )}
 
     {!loading && view !== "reviews" && (
       <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
-        {rows.length ? (
-        displaySections.map((section) => <WorkGroup key={section.title} title={section.title} count={section.items.length}>
+        {rows.length ? displaySections.map((section) => <WorkGroup key={section.title} title={section.title} count={section.items.length}>
           {section.items.map((item) => <WorkRow
             key={item.id}
             title={item.title}
@@ -153,14 +152,13 @@ export default function ManagerWork({ me, openItem, goAssign }) {
             attention={isOverdue(item.due_at) && !COMPLETE.has(item.status)}
             onClick={() => setSelectedWorkId(item.id)}
           />)}
-        </WorkGroup>
-      ) : <WorkEmpty
+        </WorkGroup>) : <WorkEmpty
         title={view === "routines" ? "No repeating responsibilities recorded" : view === "given" ? "No delegated work is open" : view === "team" ? "No other team work is open" : "Nothing is waiting in your own work"}
         description={view === "routines" ? "Create a repeating responsibility in Give out work. Its dated history stays in the routine record." : view === "given" ? "Use Give out work when you delegate something." : view === "team" ? "Active work carried by your unit will appear here." : "Your personal responsibilities will appear here."}
         actionLabel={view === "given" || view === "routines" ? "Give out work" : undefined}
         onAction={view === "given" || view === "routines" ? () => goAssign?.() : undefined}
       />
-        )}
+        }
       </WorkRegisterLayout>
     )}
 

@@ -55,6 +55,7 @@ export default function WorkActivityDiary({ me, item }) {
             .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
             .eq("org_id", me.org_id).eq("work_item_id", item.id)
             .order("recorded_at", { ascending: false })
+            .order("id", { ascending: false })
             .range(start, start + 199);
           if (read.error) throw read.error;
           if (typeof read.count !== "number" || !Array.isArray(read.data))

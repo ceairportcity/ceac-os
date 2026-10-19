@@ -43,7 +43,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
     setObjectives([]);
     setPhases([]);
     setProjectError("");
-    if (!unitId) return () => { current = false; };
+    if (!unitId) { setLoadingProjects(false); return () => { current = false; }; }
     setLoadingProjects(true);
     supabase.from("projects")
       .select("id,name,status,lead_unit_id,project_units(unit_id)")
@@ -68,7 +68,8 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
     setPhaseId("");
     setObjectives([]);
     setPhases([]);
-    if (!projectId || !unitId) return () => { current = false; };
+    setError("");
+    if (!projectId || !unitId) { setLoadingRelations(false); return () => { current = false; }; }
     setLoadingRelations(true);
     Promise.all([
       supabase.from("objectives")

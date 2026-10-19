@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { activityRecordsInPeriod } from "../lib/workActivityVersions";
 import "./ExecutiveContributionDrilldown.css";
 
 const normalize = (v) => String(v || "").trim().toLocaleLowerCase();
@@ -33,7 +34,7 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
           const offset = index*take;
           const response = await supabase.from("work_activity_records")
             .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,duration_minutes,evidence_url,recorded_at,supersedes_id,source_project_id,source_objective_id,contributor:profiles!work_activity_records_contributor_id_fkey(full_name),source_project:projects!work_activity_records_source_project_id_fkey(name),work_items!inner(id,ref,title,unit_id,visibility,confidential)", { count:"exact" })
-            .eq("org_id",me.org_id).gte("activity_date",start).lte("activity_date",end)
+            .eq("org_id",me.org_id)
             .order("recorded_at",{ascending:false}).order("id",{ascending:false})
             .range(offset,offset+take-1);
           if (response.error) throw response.error;
@@ -46,10 +47,9 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
           if (collected.length===expected) break;
         }
         if (collected.length!==expected)
-          throw new Error("There are more activity records than can be safely verified at once. Narrow the reporting period.");
+          throw new Error("The activity history exceeds the verification limit. Contact Administration for a verified report.");
         if (!current) return;
-        const revisions = new Set(collected.map((entry) => entry.supersedes_id).filter(Boolean));
-        setRows(collected.filter((entry) => !revisions.has(entry.id)));
+        setRows(activityRecordsInPeriod(collected, start, end));
       } catch (e) {
         if (current) setError(e?.message || "Executive contribution evidence could not be verified.");
       } finally { if (current) setLoading(false); }

@@ -20,7 +20,7 @@ test("all salaried role Work pages expose first-class self creation, not a staff
   assert.match(composer, /p_objective_id:/);
   assert.match(composer, /p_phase_id:/);
   assert.match(composer, /eq\("assignee_id", me\.id\)/);
-  assert.doesNotMatch(composer, /setRole\(|impersonate|localStorage\.setItem\("role"/);
+  assert.doesNotMatch(composer, /setRole\(|localStorage\.setItem\("role"|auth\.admin\./);
 });
 
 test("each real work record exposes source-backed person-attributed dated activity, not calculated performance", () => {
@@ -53,7 +53,8 @@ test("work diary SQL denies cross-person writes, keeps corrections append-only, 
   assert.match(sql, /public\.app_stage2_universal_aal_allowed\(\)/);
   assert.match(sql, /prior\.contributor_id<>NEW\.contributor_id/);
   assert.match(sql, /NEW\.recorded_at:=clock_timestamp\(\)/);
-  assert.doesNotMatch(sql, /UPDATE public\.work_items|DELETE FROM public\.work_items/);
+  const diarySql = sql.split('CREATE FUNCTION public.stage2_relink_own_work')[0];
+  assert.doesNotMatch(diarySql, /UPDATE public\.work_items|DELETE FROM public\.work_items/);
 });
 
 test("relink only self-created organisational work through an audited authority-checked RPC", () => {
