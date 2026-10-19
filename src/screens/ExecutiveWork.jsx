@@ -52,7 +52,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
   }
 
   const active = (rows) => rows.filter((item) => !CLOSED.has(item.status));
-  const activeMine = active(mine);
+
   const activeGiven = active(given);
   const selfCreated = mine.filter((item) => item.origin === "self_created");
   const completedMine = mine.filter((item) => item.status === "completed" || item.status === "self_certified");
