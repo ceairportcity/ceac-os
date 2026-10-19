@@ -54,3 +54,19 @@ test("Executive scenic hero reuses the local approved CEAC asset and keeps clean
   assert.match(css, /@media \(max-width: 720px\)\s*\{[\s\S]*?\.executivev2-hero\s*\{[^}]*background:\s*#fff;/);
   assert.doesNotMatch(css, /\.executivev2-hero::before\s*\{\s*background:/);
 });
+
+test("Executive Overview denies false zero counts and incomplete ministry sources",()=>{
+ const src=readFileSync("src/screens/ExecutiveHome.jsx","utf8");
+ const app=readFileSync("src/App.jsx","utf8");
+ assert.match(src,/if \(!Number\.isInteger\(result\.count\) \|\| result\.count < 0\)/);
+ assert.doesNotMatch(src,/return result\.count \?\? 0/);
+ assert.match(src,/\[objectiveRows,strategyRows,unitRows,operationRows\]\.every\(complete\)/);
+ assert.match(src,/result\.count === result\.data\.length/);
+ assert.match(src,/!complete\(occurrenceResult\)/);
+ assert.match(src,/!complete\(reportRows\)/);
+ assert.match(src,/activeTeams: optionalCount\(teamRows\)/);
+ assert.match(src,/activeVolunteers: optionalCount\(volunteerRows\)/);
+ assert.match(src,/activeStaff: optionalCount\(staffRows\)/);
+ assert.match(src,/The executive source evidence could not be fully verified/);
+ assert.match(app,/ExecutiveHome key=\{me\.org_id\+":"\+me\.id\}/);
+});
