@@ -82,6 +82,13 @@ export default function ManagerReports({ me, openItem }) {
   const [refsVerified, setRefsVerified] = useState(false);
   const refsReadSequence = useRef(0);
   const historyRequestRef = useRef(0);
+  // A report can stay mounted while a Manager switches units or identities.
+  // Never render a previous actor's figures during the next scoped fetch.
+  const reportScope = [me.org_id, me.id, me.unit_id].join(":");
+  const currentReportScope = useRef(reportScope);
+  currentReportScope.current = reportScope;
+  const baseRequestRef = useRef(0);
+  const [loadedScope, setLoadedScope] = useState(null);
   // The live report must also change calendar day when a manager leaves this
   // screen open across Ghana midnight (or returns to a sleeping laptop).
   const [reportDay, setReportDay] = useState(() => dateKey(new Date()));
@@ -103,15 +110,28 @@ export default function ManagerReports({ me, openItem }) {
   }, []);
 
   useEffect(() => {
-    void loadBase().catch(() => {
-      setLoadFailed(true);
-      setError("Manager reporting sources could not be verified.");
-      setLoading(false);
-    });
+    void loadBase();
+    return () => {
+      baseRequestRef.current += 1;
+      historyRequestRef.current += 1;
+      refsReadSequence.current += 1;
+    };
   }, [me.id, me.unit_id, me.org_id]);
 
   async function loadBase() {
-    setLoading(true); setError(null); setLoadFailed(false);
+    const requestedScope = reportScope;
+    const request = ++baseRequestRef.current;
+    const isCurrent = () => request === baseRequestRef.current
+      && currentReportScope.current === requestedScope;
+    setLoading(true); setError(null); setLoadFailed(false); setLoadedScope(null);
+    setProjects([]); setPeriods([]); setWork([]); setObjectives([]);
+    setMemberIds([]); setSessions([]); setSubmissions([]);
+    setPeriodRowsState("loading");
+    setHistory([]); setHistoryVerified(false); setSelectedReportId(null);
+    setReportRefs([]); setRefsVerified(false); setDrill(null); setNotice(null);
+    historyRequestRef.current += 1;
+    refsReadSequence.current += 1;
+    try {
     const [projectResult, periodResult, workResult, memberResult, objectiveResult] = await Promise.all([
       supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)", { count:"exact" }).order("starts_on", { ascending: false, nullsFirst: false }),
       supabase.from("report_periods").select("id,kind,label,starts_on,ends_on,status", { count:"exact" }).order("starts_on", { ascending: false }),
@@ -119,13 +139,17 @@ export default function ManagerReports({ me, openItem }) {
       supabase.from("unit_memberships").select("profile_id", { count:"exact" }).eq("unit_id", me.unit_id),
       supabase.from("objectives").select("id,project_id,unit_id,ref,name,status", { count:"exact" }).eq("unit_id", me.unit_id),
     ]);
+    if (!isCurrent()) return;
     const first = [projectResult.error, periodResult.error, workResult.error, memberResult.error, objectiveResult.error].find(Boolean);
-    if (first) { setLoadFailed(true); setError("Manager reporting source records could not be verified."); setLoading(false); return; }
+    if (first) {
+      setLoadFailed(true); setError("Manager reporting source records could not be verified.");
+      setLoadedScope(requestedScope); setLoading(false); return;
+    }
     const fullyRead = (result) => Array.isArray(result.data) &&
       typeof result.count === "number" && result.count === result.data.length;
     if (![projectResult,periodResult,workResult,memberResult,objectiveResult].every(fullyRead)) {
       setLoadFailed(true); setError("Manager reporting records are incomplete; no totals can be verified.");
-      setLoading(false); return;
+      setLoadedScope(requestedScope); setLoading(false); return;
     }
     setProjects((projectResult.data || []).filter((project) => project.lead_unit_id === me.unit_id || (project.project_units || []).some((row) => row.unit_id === me.unit_id)));
     setPeriods(periodResult.data || []);
@@ -138,7 +162,14 @@ export default function ManagerReports({ me, openItem }) {
     setMemberIds([...new Set([me.id, ...(memberResult.data || []).map((row) => row.profile_id)].filter(Boolean))]);
     setSessions([]);
     setSubmissions([]);
+    setLoadedScope(requestedScope);
     setLoading(false);
+    } catch {
+      if (!isCurrent()) return;
+      setLoadFailed(true); setLoadedScope(requestedScope);
+      setError("Manager reporting source request failed; no totals can be verified.");
+      setLoading(false);
+    }
   }
 
   const baseRange = useMemo(() => mode === "week" ? weekRange(parseDateOnly(reportDay)) : mode === "month" ? monthRange(parseDateOnly(reportDay)) : null, [mode, reportDay]);
@@ -169,10 +200,10 @@ export default function ManagerReports({ me, openItem }) {
   }, [mode, baseRange, matchingPeriod, projectId, projects, work]);
 
   useEffect(() => {
-    if (!range || !memberIds.length) {
+    if (loadedScope !== reportScope || !range || !memberIds.length) {
       setSessions([]);
       setSubmissions([]);
-      setPeriodRowsState("ready");
+      setPeriodRowsState(loadedScope === reportScope ? "ready" : "loading");
       return;
     }
     setSessions([]);
@@ -202,7 +233,7 @@ export default function ManagerReports({ me, openItem }) {
               .lt("submitted_at", endExclusive.toISOString())
           : Promise.resolve({ data: [], error: null, count: 0 }),
       ]);
-      if (cancelled) return;
+      if (cancelled || currentReportScope.current !== reportScope) return;
       const periodError = sessionResult.error || submissionResult.error;
       if (periodError) {
         setPeriodRowsState("error");
@@ -221,13 +252,13 @@ export default function ManagerReports({ me, openItem }) {
       setPeriodRowsState("ready");
     }
     void loadPeriodRows().catch(() => {
-      if (!cancelled) {
+      if (!cancelled && currentReportScope.current === reportScope) {
         setPeriodRowsState("error");
         setError("Manager reporting source request failed; no totals can be verified.");
       }
     });
     return () => { cancelled = true; };
-  }, [range?.start, range?.end, mode, projectId, memberIds.join(","), work]);
+  }, [range?.start, range?.end, mode, projectId, memberIds.join(","), work, reportScope, loadedScope]);
 
   const evidence = useMemo(() => {
     if (!range || periodRowsState !== "ready") return null;
@@ -297,17 +328,19 @@ export default function ManagerReports({ me, openItem }) {
     setHistory([]);
     setHistoryVerified(false);
     setNotice(null);
-    if (matchingPeriod && (scope === "unit" || projectId)) {
+    if (loadedScope === reportScope && matchingPeriod && (scope === "unit" || projectId)) {
       void loadHistory().catch(() => {
+        if (currentReportScope.current !== reportScope) return;
         setHistoryVerified(false);
         setError("Report version history could not be verified.");
       });
     }
-  }, [matchingPeriod?.id, scope, projectId]);
+  }, [matchingPeriod?.id, scope, projectId, reportScope, loadedScope]);
 
   async function loadHistory(preferDraft = true) {
     if (!matchingPeriod) return;
     const request = ++historyRequestRef.current;
+    const requestedScope = reportScope;
     setHistoryVerified(false);
     let query = supabase.from("reports")
       .select("id,period_id,scope,unit_id,project_id,narrative,challenges,status,version,correction_reason,supersedes_report_id,evidence,submitted_at,submitted_by", { count:"exact" })
@@ -317,7 +350,7 @@ export default function ManagerReports({ me, openItem }) {
       .order("version", { ascending: false });
     query = scope === "project" ? query.eq("project_id", projectId) : query.is("project_id", null);
     const result = await query;
-    if (request !== historyRequestRef.current) return;
+    if (request !== historyRequestRef.current || currentReportScope.current !== requestedScope) return;
     if (result.error || !Array.isArray(result.data) ||
         typeof result.count !== "number" || result.count !== result.data.length) {
       setError("The complete version history for this report could not be verified.");
@@ -348,18 +381,18 @@ export default function ManagerReports({ me, openItem }) {
 
   useEffect(() => {
     const request = ++refsReadSequence.current;
-    setRefsVerified(!selectedReportId);
+    setRefsVerified(loadedScope === reportScope && !selectedReportId);
     setReportRefs([]);
-    if (selectedReportId) void loadRefs(selectedReportId, request);
+    if (loadedScope === reportScope && selectedReportId) void loadRefs(selectedReportId, request);
     return () => { refsReadSequence.current += 1; };
-  }, [selectedReportId]);
+  }, [selectedReportId, reportScope, loadedScope]);
 
   async function loadRefs(reportId, request) {
     try {
       const result = await supabase.from("report_evidence_refs")
         .select("id,report_id,section,object_type,object_id,label", { count:"exact" })
         .eq("report_id", reportId);
-      if (request !== refsReadSequence.current) return;
+      if (request !== refsReadSequence.current || currentReportScope.current !== reportScope) return;
       if (result.error || !Array.isArray(result.data) ||
           typeof result.count !== "number" || result.count !== result.data.length) {
         setRefsVerified(false);
@@ -369,7 +402,7 @@ export default function ManagerReports({ me, openItem }) {
       setReportRefs(result.data);
       setRefsVerified(true);
     } catch {
-      if (request === refsReadSequence.current) {
+      if (request === refsReadSequence.current && currentReportScope.current === reportScope) {
         setRefsVerified(false);
         setError("The submitted report evidence links could not be verified.");
       }
@@ -527,7 +560,7 @@ export default function ManagerReports({ me, openItem }) {
         ? "Period closed"
         : "Live preview";
 
-  if (loading || (range && periodRowsState === "loading")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
+  if (loadedScope !== reportScope || loading || (range && periodRowsState === "loading")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
     <ReportingPageHeader
       eyebrow={me.unit_name}
       title="Reports"

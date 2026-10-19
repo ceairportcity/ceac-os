@@ -24,3 +24,24 @@ test("report-draft SQL stays a review-only proposal until restored-backup migrat
   assert.match(sql, /DO NOT execute against production/);
   assert.doesNotMatch(sql, /^(?:INSERT|UPDATE|DELETE|ALTER TABLE|GRANT)\b/im);
 });
+
+test("Manager reports never render another actor or unit's pending source results", () => {
+  const source = readFileSync("src/screens/ManagerReports.jsx", "utf8");
+  assert.match(source, /const reportScope = \[me\.org_id, me\.id, me\.unit_id\]\.join\(":"\)/);
+  assert.match(source, /currentReportScope\.current = reportScope/);
+  assert.match(source, /const request = \+\+baseRequestRef\.current/);
+  assert.match(source, /const isCurrent = \(\) => request === baseRequestRef\.current\s*&& currentReportScope\.current === requestedScope/);
+  assert.match(source, /if \(!isCurrent\(\)\) return;/);
+  assert.match(source, /setLoadedScope\(requestedScope\)/);
+  assert.match(source, /loadedScope !== reportScope \|\| loading/,
+    "Old unit or actor data must be visually withheld BEFORE useEffect re-fetches");
+  assert.match(source, /historyRequestRef\.current \+= 1/);
+  assert.match(source, /refsReadSequence\.current \+= 1/);
+  assert.match(source, /currentReportScope\.current !== requestedScope/);
+  assert.match(source, /currentReportScope\.current !== reportScope/);
+  assert.match(source, /\[matchingPeriod\?\.id, scope, projectId, reportScope, loadedScope\]/);
+  assert.match(source, /\[selectedReportId, reportScope, loadedScope\]/);
+  assert.match(source, /loadedScope !== reportScope \|\| !range \|\| !memberIds\.length/);
+  assert.match(source, /setPeriodRowsState\(loadedScope === reportScope \? "ready" : "loading"\)/);
+  assert.match(source, /\[range\?\.start, range\?\.end, mode, projectId, memberIds\.join\(","\), work, reportScope, loadedScope\]/);
+});
