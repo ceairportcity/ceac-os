@@ -15,8 +15,21 @@ BEGIN
    WHERE id=NEW.work_item_id AND org_id=NEW.org_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'A valid parent responsibility is required.'
     USING ERRCODE='42501'; END IF;
-  NEW.source_project_id:=w.project_id;
-  NEW.source_objective_id:=w.objective_id;
+  IF NEW.supersedes_id IS NOT NULL THEN
+    -- A correction must remain attributable to the original project's
+    -- historical state, even when the parent work has since been moved.
+    SELECT prior.source_project_id,prior.source_objective_id
+      INTO NEW.source_project_id,NEW.source_objective_id
+    FROM public.work_activity_records prior
+    WHERE prior.id=NEW.supersedes_id AND prior.org_id=NEW.org_id
+      AND prior.work_item_id=NEW.work_item_id
+      AND prior.contributor_id=NEW.contributor_id;
+    IF NOT FOUND THEN RAISE EXCEPTION 'A correction must belong to the same original contributor and responsibility.'
+      USING ERRCODE='42501'; END IF;
+  ELSE
+    NEW.source_project_id:=w.project_id;
+    NEW.source_objective_id:=w.objective_id;
+  END IF;
   RETURN NEW;
 END;
 $snapshot$;
