@@ -55,7 +55,7 @@ export default function AdminWork({ me, openItem, goAssign }) {
   }
 
   const active = (rows) => rows.filter((item) => !CLOSED.has(item.status));
-  const activeMine = active(mine);
+
   const activeGiven = active(given);
   const activeOrg = active(org);
   const selfCreated = mine.filter((item) => item.origin === "self_created");
