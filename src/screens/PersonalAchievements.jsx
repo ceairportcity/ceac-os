@@ -41,17 +41,22 @@ export default function PersonalAchievements({ me, back, openItem }) {
   const preview = useMemo(() => individualAchievementFacts({
     works, submissions, range, projectId:projectId||null, asOf:new Date(asOf)
   }),[works,submissions,range,projectId,asOf]);
+  // Revisions may supersede actions from an earlier reporting period.
+  // Resolve the complete contributor history BEFORE applying date filters.
+  const supersededActivityIds = useMemo(() => new Set(activities.map((a) => a.supersedes_id).filter(Boolean)),[activities]);
+  const periodActions = useMemo(() => activities.filter((a) => !supersededActivityIds.has(a.id)
+    && a.activity_date >= range.start && a.activity_date <= range.end),[activities,supersededActivityIds,range.start,range.end]);
   const projects = useMemo(() => {
     const seen=new Map();
     for(const row of works) if(row.project_id) seen.set(row.project_id,{
       id:row.project_id,name:row.projects?.name||"Project name unavailable"
     });
-    for(const a of activities) if(a.source_project_id) seen.set(a.source_project_id,{
+    for(const a of periodActions) if(a.source_project_id) seen.set(a.source_project_id,{
       id:a.source_project_id,name:a.source_project?.name||"Previously linked project"
     });
     return [...seen.values()].sort((a,b)=>a.name.localeCompare(b.name));
-  },[works,activities]);
-  const attributableActions = activities.filter((a) => !projectId || a.source_project_id === projectId);
+  },[works,periodActions]);
+  const attributableActions = periodActions.filter((a) => !projectId || a.source_project_id === projectId);
   const evidencedWorkIds = new Set(attributableActions.map((action) => action.work_item_id));
   const contributions = works.filter((w) =>
     (preview.contributions.some((entry) => entry.id === w.id)
@@ -113,8 +118,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
           fetchAll(()=>supabase.from("work_activity_records")
             .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,duration_minutes,evidence_url,recorded_at,supersedes_id,source_project_id,source_objective_id,source_project:projects!work_activity_records_source_project_id_fkey(name),work_items!inner(id,ref,title,project_id,projects(name))")
             .eq("org_id",me.org_id).eq("contributor_id",me.id)
-            .gte("activity_date",range.start).lte("activity_date",range.end)
-            .order("activity_date",{ascending:false}).order("id",{ascending:false})),
+            .order("recorded_at",{ascending:false}).order("id",{ascending:false})),
         ]);
         if(alive){setWorks(work);setSubmissions(proof);setActivities(activity);setLoadedKey(reportKey);setCompleteLoad(true);}
       }catch(e){if(alive)setError("Report source records could not be verified. Retry records or contact Administration.");}
@@ -172,7 +176,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
           <header><h2>My recorded contribution</h2><span>{contributions.length} records</span></header>
           {!contributions.length && <p className="s2-achievement-empty">No attributable completion or submission is recorded for these filters. This is not evidence of no work.</p>}
           {contributions.length>0 && <div className="s2-achievement-table-scroll"><table><thead><tr>
-            <th>Work record</th><th>Project</th><th>Recorded outcome</th><th>State now</th>
+            <th>Work record</th><th>Current project</th><th>Recorded outcome</th><th>State now</th>
           </tr></thead><tbody>{contributions.map((w)=><tr key={w.id}>
             <td><button type="button" onClick={()=>openItem?.(w.id)}>{w.title}<small>{w.ref}</small></button></td>
             <td>{w.projects?.name||"No linked project"}</td>
@@ -200,7 +204,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
         {!activityRows.length && <p>No dated personal activities were recorded for these filters.</p>}
         {activityRows.map((a)=><article key={a.id}>
           <time dateTime={a.activity_date}>{niceDay(a.activity_date)}</time>
-          <span>{a.work_items?.ref||"Authorised work"} · {status(a.activity_state)} · Self-recorded, not verified</span>
+          <span>{a.work_items?.ref||"Authorised work"} · {a.source_project?.name||"No project at action time"} · {status(a.activity_state)} · Self-recorded, not verified</span>
           <p><strong>{a.action_summary}</strong>{a.outcome_note ? " — "+a.outcome_note : ""}</p>
           {a.next_action && <p><b>Next:</b> {a.next_action}</p>}
           {a.duration_minutes != null && <small>{a.duration_minutes} minutes self-reported; not attendance</small>}
