@@ -103,3 +103,22 @@ test("personal monthly and quarterly report waits for complete authoritative dat
   assert.match(sql, /NEW\.source_project_id:=w\.project_id/);
   assert.match(sql, /NEW\.source_objective_id:=w\.objective_id/);
 });
+
+test("rejected live mobile Team screenshot is not a design reference, and Manager Team adopts compact owner layout", () => {
+  const team = source("src/screens/Team.jsx");
+  const styles = source("src/experience-v2/people-family/people-family.css");
+  const manifest = JSON.parse(source("docs/design/stage2-v4/CEAC_STAGE2_OWNER_SELECTED_SCREEN_PROVENANCE_2026-10-17.json"));
+  assert.equal(manifest.rejected_live_team_capture?.never_use_as_design_baseline, true);
+  assert.equal(manifest.rejected_live_team_capture?.status, "EXPLICITLY_REJECTED_NOT_A_MOCKUP");
+  assert.match(team, /title="Team"/);
+  assert.doesNotMatch(team, /Volunteer is an engagement type, not a new CEAC role or authority level\./);
+  assert.match(team, /className="s2-team-room-entry"/);
+  assert.match(team, /className="s2-team-room-open" onClick=\{openRoom\}/);
+  assert.doesNotMatch(team, /<PeopleRoomCard/);
+  assert.match(team, /role="tablist" aria-label="People type"/);
+  assert.match(team, /disabled=\{!volunteerInvitationsReady\}/);
+  assert.match(styles, /\.phase6-manager-people-tabs button\.is-selected\{border-bottom-color:/);
+  assert.match(styles, /\.phase6-add-volunteer\.btn\{[^}]*width:auto/);
+  assert.match(styles, /\.s2-team-room-entry\{display:flex/);
+  assert.match(styles, /\.ev2-people-manager \.ev2p-count\{display:inline-flex/);
+});
