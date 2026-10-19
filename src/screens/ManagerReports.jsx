@@ -110,7 +110,15 @@ export default function ManagerReports({ me, openItem }) {
   }, []);
 
   useEffect(() => {
-    void loadBase();
+    // Last-resort catch protects report privacy even if a future change
+    // throws outside loadBase's own fail-closed provider error handler.
+    void loadBase().catch(() => {
+      if (currentReportScope.current !== reportScope) return;
+      setLoadedScope(reportScope);
+      setLoadFailed(true);
+      setError("Manager reporting sources could not be verified.");
+      setLoading(false);
+    });
     return () => {
       baseRequestRef.current += 1;
       historyRequestRef.current += 1;
