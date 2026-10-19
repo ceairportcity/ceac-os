@@ -18,7 +18,7 @@ import {
 const CLOSED = new Set(["completed", "self_certified", "cancelled"]);
 
 export default function AdminWork({ me, openItem, goAssign }) {
-  const [view, setView] = useState("given");
+  const [view, setView] = useState("mine");
   const [addingMyWork, setAddingMyWork] = useState(false);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [mine, setMine] = useState([]);
@@ -34,7 +34,7 @@ export default function AdminWork({ me, openItem, goAssign }) {
     setLoading(true);
     setError(null);
     try {
-      const fields = "id,ref,title,kind,status,due_at,assigned_by,assignee_id,unit_id,projects(name),units(name),profiles!work_items_assignee_id_fkey(full_name)";
+      const fields = "id,ref,title,kind,status,origin,due_at,assigned_by,assignee_id,unit_id,projects(name),units(name),profiles!work_items_assignee_id_fkey(full_name)";
       const [mineR, givenR, orgR, reviewR] = await Promise.all([
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items").select(fields).eq("org_id", me.org_id).eq("assigned_by", me.id).neq("assignee_id", me.id).order("created_at", { ascending: false }),
@@ -58,15 +58,22 @@ export default function AdminWork({ me, openItem, goAssign }) {
   const activeMine = active(mine);
   const activeGiven = active(given);
   const activeOrg = active(org);
+  const selfCreated = mine.filter((item) => item.origin === "self_created");
+  const completedMine = mine.filter((item) => item.status === "completed" || item.status === "self_certified");
   const views = [
+    ["mine", "My work", mine.filter((item) => item.status !== "cancelled").length],
+    ["created", "Created by me", selfCreated.length],
     ["given", "Given out", activeGiven.length],
-    ["reviews", "Needs review", reviews.length],
+    ["reviews", "For review", reviews.length],
+    ["completed", "Completed", completedMine.length],
     ["organisation", "Organisation", activeOrg.length],
-    ["mine", "Mine", activeMine.length],
   ];
-  const rows = view === "given" ? activeGiven : view === "organisation" ? activeOrg : activeMine;
+  const rows = view === "given" ? activeGiven : view === "organisation" ? activeOrg
+    : view === "created" ? selfCreated : view === "completed" ? completedMine
+    : mine.filter((item) => item.status !== "cancelled");
   const selectedInView = selectedWorkId === "none" ? null : (rows.some(item => item.id === selectedWorkId) ? selectedWorkId : (rows[0]?.id || null));
-  const groupTitle = view === "given" ? "Work Administration gave out" : view === "organisation" ? "Organisation work" : "Your open work";
+  const groupTitle = view === "given" ? "Work Administration gave out" : view === "organisation" ? "Organisation work"
+    : view === "created" ? "Responsibilities created by me" : view === "completed" ? "Completed responsibilities" : "My responsibilities";
 
   return <div className="body admin-work premium-admin-page ev2-work-page ev2-work-admin">
     <WorkPageHeader
@@ -112,7 +119,7 @@ export default function AdminWork({ me, openItem, goAssign }) {
             refCode={item.ref}
             kind={item.kind}
             context={item.projects?.name}
-            owner={view === "mine" ? null : [item.units?.name, item.profiles?.full_name].filter(Boolean).join(" · ") || "Unassigned"}
+            owner={["mine","created","completed"].includes(view) ? null : [item.units?.name, item.profiles?.full_name].filter(Boolean).join(" · ") || "Unassigned"}
             due={dueLabel(item.due_at)}
             status={item.status}
             attention={isOverdue(item.due_at) && !CLOSED.has(item.status)}
