@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import StructuredAppraisalRatings from "../components/StructuredAppraisalRatings";
+import HRProjectContributionQueue from "../components/HRProjectContributionQueue";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Avatar } from "../experience-v2/components";
@@ -436,6 +437,8 @@ export default function Performance({ me }) {
         <button className="btn btn-sm" onClick={() => setCycleFlow(true)}>Open review period</button>
       </div>
     </section>}
+
+    {hrReleaseAdmin && <HRProjectContributionQueue me={me} />}
 
     {cycles.length > 0 && <div className="performance-cycle-strip" aria-label="Review periods">
       {cycles.map((cycle) => <button key={cycle.id} className={selectedCycleId === cycle.id ? "on" : ""} onClick={() => {
