@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
 import WorkActivityDiary from "../components/WorkActivityDiary";
+import WorkProjectLink from "../components/WorkProjectLink";
 import { OperationalFileList } from "../components/OperationalFiles";
 import {
   WorkDetailCopy,
@@ -529,6 +530,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         status={item.status}
         onBack={back}
       />
+      <WorkProjectLink key={`${me.id}:${item.id}:${item.project_id || "unlinked"}`} me={me} item={item} onLinked={load} />
 
       {openRoom && (item.project_id || item.sub_team_id || item.unit_id) && <button className="work-room-entry" onClick={() => openRoom({
         ...(item.project_id
