@@ -91,11 +91,9 @@ export default function ManagerWork({ me, openItem, goAssign }) {
       description="Delegate, follow progress and review what comes back without losing sight of your own work."
       actionLabel="Give out work"
       onAction={() => goAssign?.()}
+      secondaryActionLabel="Add my work"
+      onSecondaryAction={() => setAddingMyWork(true)}
     />
-
-    <div className="ev2w-self-work-action">
-      <button type="button" className="btn btn-primary" onClick={() => setAddingMyWork(true)}>+ Add my work</button>
-    </div>
     <WorkTabs items={views} value={view} onChange={setView} ariaLabel="Manager work views" />
     {addingMyWork && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
