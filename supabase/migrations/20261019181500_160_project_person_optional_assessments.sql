@@ -73,6 +73,7 @@ BEGIN
  FROM public.work_items wi
  WHERE wi.project_id=p_project_id AND wi.org_id=v_org AND wi.assignee_id=p_subject_profile_id
    AND wi.visibility<>'private'
+   AND wi.confidential=false
    AND wi.unit_id IN (SELECT public.app_managed_units())
  ORDER BY wi.created_at DESC LIMIT 1;
  IF v_unit IS NULL THEN
@@ -83,6 +84,7 @@ BEGIN
    AND act.contributor_id=p_subject_profile_id
    AND wi.unit_id IN (SELECT public.app_managed_units())
    AND wi.visibility<>'private'
+   AND wi.confidential=false
   ORDER BY act.recorded_at DESC LIMIT 1;
  END IF;
  IF v_unit IS NULL
