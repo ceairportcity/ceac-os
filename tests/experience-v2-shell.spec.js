@@ -54,7 +54,7 @@ test("Stage 4B shell is isolated, tokenized and wired through App", async () => 
   ]) {
     expect(css.includes(forbidden), forbidden).toBeFalsy();
   }
-  expect(css).toContain("var(--ev2-shell)");
+  expect(css).toContain("background: var(--ev2-surface);");
   expect(css).toContain("var(--ev2-action)");
   expect(css).toContain("var(--ev2-control-min)");
 
@@ -451,4 +451,38 @@ test("Stage 4B mobile shell keeps five controls and uses the shared More drawer"
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
   );
   expect(overflow).toBeLessThanOrEqual(1);
+});
+
+
+test("P7 desktop and phone shell render accessible approved white-blue surfaces",async({page})=>{
+ await page.setViewportSize({width:1440,height:960});
+ await signIn(page,"staff@ceac.local.test");
+ await expect(page.locator(".ev2s-sidebar")).toBeVisible();
+ const desktop=await page.evaluate(()=>{
+   const shell=document.querySelector(".ev2s-sidebar");
+   const active=shell.querySelector(".ev2s-sidebar-nav button.is-active");
+   return {
+     surface:getComputedStyle(shell).backgroundColor,
+     activeSurface:getComputedStyle(active).backgroundColor,
+     activeText:getComputedStyle(active).color,
+     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
+   };
+ });
+ expect(desktop.surface).toBe("rgb(255, 255, 255)");
+ expect(desktop.activeSurface).toBe("rgb(234, 241, 255)");
+ expect(desktop.activeText).toBe("rgb(20, 88, 184)");
+ expect(desktop.overflow).toBeLessThanOrEqual(1);
+ await page.setViewportSize({width:390,height:844});
+ await expect(page.locator(".ev2s-mobile-topbar")).toBeVisible();
+ const mobile=await page.evaluate(()=>{
+   const top=getComputedStyle(document.querySelector(".ev2s-mobile-topbar"));
+   return {
+     surface:top.backgroundColor,
+     text:top.color,
+     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
+   };
+ });
+ expect(mobile.surface).toBe("rgba(255, 255, 255, 0.98)");
+ expect(mobile.text).toBe("rgb(23, 35, 45)");
+ expect(mobile.overflow).toBeLessThanOrEqual(1);
 });

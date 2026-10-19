@@ -699,3 +699,13 @@ test("P7 legacy department, personal and project-screen CSS is retired only wher
    assert.ok(!members.length||!members.every(x=>obsolete.test(x)), "Orphaned pre-V2 surface rule: "+selector.slice(0,100));
  }
 });
+
+test("P7 shared shell adopts the owner-approved light/blue Work navigation on all roles",()=>{
+ const css=file("src/experience-v2/shell/shell.css");
+ assert.match(css,/\.ev2s-sidebar \{[\s\S]*?background: var\(--ev2-surface\)/);
+ assert.match(css,/\.ev2s-sidebar-nav button\.is-active \{[\s\S]*?background: var\(--ev2-action-soft\)/);
+ assert.match(css,/\.ev2s-sidebar-nav button\.is-active \{[\s\S]*?color: #1458b8/);
+ assert.match(css,/\.ev2s-mobile-topbar \{[\s\S]*?background: rgba\(255, 255, 255, \.98\)/);
+ assert.match(css,/--ev2s-sidebar-width: 13\.75rem/);
+ assert.doesNotMatch(css,/background: linear-gradient\(180deg, var\(--ev2-shell-raised\)/);
+});
