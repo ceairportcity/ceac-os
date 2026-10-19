@@ -52,6 +52,24 @@ function EvidenceMetric({ value, label, onClick }) {
   return <ReportingEvidenceCard value={value} label={label} detail="Why?" onClick={onClick} />;
 }
 
+// A submitted report's evidence is immutable. Never substitute today's live
+// numbers, charts or objectives for a missing/partial historical snapshot.
+function validFrozenReportSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return false;
+  const counts = snapshot.counts;
+  if (!counts || typeof counts !== "object" || Array.isArray(counts)) return false;
+  if (!["completed", "submissions", "overdue", "attendance_days"].every(
+    (key) => Number.isSafeInteger(counts[key]) && counts[key] >= 0
+  )) return false;
+  if (!snapshot.range || typeof snapshot.range.start !== "string"
+    || typeof snapshot.range.end !== "string" || snapshot.range.end < snapshot.range.start) return false;
+  if (!["unit", "project"].includes(snapshot.scope)) return false;
+  if (!["daily", "by_project", "status_mix", "attendance", "objectives"].every(
+    (key) => Array.isArray(snapshot[key])
+  )) return false;
+  return true;
+}
+
 export default function ManagerReports({ me, openItem }) {
   const [mode, setMode] = useState("week");
   const [projectId, setProjectId] = useState("");
@@ -422,6 +440,7 @@ export default function ManagerReports({ me, openItem }) {
   const frozenReport = selectedReportId ? history.find((row) => row.id === selectedReportId) || null : (!draft ? latestSubmitted : null);
   const frozen = frozenReport?.evidence || null;
   const viewingFrozen = Boolean(frozenReport && frozen);
+  const invalidFrozenEvidence = Boolean(frozenReport && !validFrozenReportSnapshot(frozen));
 
   const liveCounts = evidence ? {
     completed: evidence.completed.length,
@@ -430,12 +449,12 @@ export default function ManagerReports({ me, openItem }) {
     attendance_days: evidence.attendanceDays.length,
   } : { completed: 0, submissions: 0, overdue: 0, attendance_days: 0 };
 
-  const displayCounts = viewingFrozen ? (frozen.counts || liveCounts) : liveCounts;
-  const displayDaily = viewingFrozen ? (frozen.daily || []) : daily;
-  const displayProjects = viewingFrozen ? (frozen.by_project || []) : projectRows;
-  const displayStatus = viewingFrozen ? (frozen.status_mix || []) : statusRows;
-  const displayAttendance = viewingFrozen ? (frozen.attendance || []) : attendanceHeat;
-  const displayObjectives = viewingFrozen ? (frozen.objectives || []) : (evidence?.relevantObjectives || []);
+  const displayCounts = viewingFrozen ? (frozen.counts || {}) : liveCounts;
+  const displayDaily = viewingFrozen ? (Array.isArray(frozen.daily) ? frozen.daily : []) : daily;
+  const displayProjects = viewingFrozen ? (Array.isArray(frozen.by_project) ? frozen.by_project : []) : projectRows;
+  const displayStatus = viewingFrozen ? (Array.isArray(frozen.status_mix) ? frozen.status_mix : []) : statusRows;
+  const displayAttendance = viewingFrozen ? (Array.isArray(frozen.attendance) ? frozen.attendance : []) : attendanceHeat;
+  const displayObjectives = viewingFrozen ? (Array.isArray(frozen.objectives) ? frozen.objectives : []) : (evidence?.relevantObjectives || []);
   const hasSupportingAnalysis = displayDaily.some((point) => point.value > 0)
     || displayProjects.length > 1
     || displayStatus.reduce((sum, row) => sum + Number(row.value || 0), 0) >= 5
@@ -598,6 +617,22 @@ export default function ManagerReports({ me, openItem }) {
         onAction={loadBase}
         icon="reports"
       />
+    </div>
+  </div>;
+
+  if (invalidFrozenEvidence) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
+    <ReportingPageHeader eyebrow={me.unit_name} title="Reports"
+      description="Submitted versions must retain their original factual evidence."
+      statusLabel="Archived evidence unavailable" statusTone="danger" />
+    <div className="ev2rep-control-panel">
+      <StatePanel state="error" title="Submitted report evidence could not be verified"
+        description="This submitted version has a missing or incomplete frozen evidence snapshot. Current live figures cannot replace its historical counts or objectives."
+        actionLabel="Retry submitted report"
+        onAction={() => void loadHistory(false).catch(() => {
+          setHistoryVerified(false);
+          setError("Submitted report evidence could not be verified.");
+        })}
+        icon="reports" />
     </div>
   </div>;
 

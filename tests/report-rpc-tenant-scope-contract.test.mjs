@@ -45,3 +45,17 @@ test("Manager reports never render another actor or unit's pending source result
   assert.match(source, /setPeriodRowsState\(loadedScope === reportScope \? "ready" : "loading"\)/);
   assert.match(source, /\[range\?\.start, range\?\.end, mode, projectId, memberIds\.join\(","\), work, reportScope, loadedScope\]/);
 });
+
+test("submitted Manager reports fail closed on missing frozen evidence rather than mixing live numbers", () => {
+  const source = readFileSync("src/screens/ManagerReports.jsx", "utf8");
+  assert.match(source, /function validFrozenReportSnapshot\(snapshot\)/);
+  assert.match(source, /\["completed", "submissions", "overdue", "attendance_days"\]\.every/);
+  assert.match(source, /Number\.isSafeInteger\(counts\[key\]\)/);
+  assert.match(source, /\["daily", "by_project", "status_mix", "attendance", "objectives"\]\.every/);
+  assert.match(source, /const invalidFrozenEvidence = Boolean\(frozenReport && !validFrozenReportSnapshot\(frozen\)\)/);
+  assert.doesNotMatch(source, /frozen\.counts \|\| liveCounts/);
+  assert.doesNotMatch(source, /frozen\.objectives \|\| \[\]/);
+  assert.match(source, /if \(invalidFrozenEvidence\) return/);
+  assert.match(source, /Submitted report evidence could not be verified/);
+  assert.match(source, /Current live figures cannot replace its historical counts/);
+});
