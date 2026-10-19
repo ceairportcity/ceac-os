@@ -62,7 +62,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     }
   }
 
-  const activeMine = useMemo(() => mine.filter((item) => !COMPLETE.has(item.status)), [mine]);
+
   const activeGiven = useMemo(() => given.filter((item) => !COMPLETE.has(item.status)), [given]);
   const activeTeam = useMemo(() => team.filter((item) => !COMPLETE.has(item.status)), [team]);
   const routines = useMemo(() => {
