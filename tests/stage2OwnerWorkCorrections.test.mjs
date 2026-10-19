@@ -55,3 +55,19 @@ test("work diary SQL denies cross-person writes, keeps corrections append-only, 
   assert.match(sql, /NEW\.recorded_at:=clock_timestamp\(\)/);
   assert.doesNotMatch(sql, /UPDATE public\.work_items|DELETE FROM public\.work_items/);
 });
+
+test("relink only self-created organisational work through an audited authority-checked RPC", () => {
+  const sql = source("supabase/migrations/20261019174500_158_owner_work_activity_diary.sql");
+  const form = source("src/components/WorkProjectLink.jsx");
+  const detail = source("src/screens/Item.jsx");
+  assert.match(sql, /CREATE FUNCTION public\.stage2_relink_own_work/);
+  assert.match(sql, /w\.assignee_id IS DISTINCT FROM auth\.uid\(\)/);
+  assert.match(sql, /w\.origin<>'self_created'/);
+  assert.match(sql, /w\.visibility<>'unit'/);
+  assert.match(sql, /w\.unit_id NOT IN \(SELECT public\.app_my_units\(\)\)/);
+  assert.match(sql, /project_id',w\.project_id/);
+  assert.match(sql, /'reason',btrim\(p_reason\)/);
+  assert.match(form, /supabase\.rpc\("stage2_relink_own_work"/);
+  assert.match(form, /eq\("assignee_id",me\.id\)/);
+  assert.match(detail, /<WorkProjectLink .*item=\{item\} onLinked=\{load\}/);
+});
