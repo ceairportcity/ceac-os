@@ -4,7 +4,7 @@
 .control-settings-views{display:flex;gap:4px;border-bottom:1px solid #dce5f0}
 .control-settings-views button{padding:10px 12px;min-height:40px;border:0;border-bottom:2px solid transparent;background:none;color:#657b92;font:inherit;font-size:12px;cursor:pointer}
 .control-settings-views button[aria-pressed=true]{border-bottom-color:#087bf5;color:#087bf5}
-.control-settings-views span{margin-left:5px;font-size:11px}
+.control-settings-views span{margin-left:5px;font-size:12px}
 .ev2-control-center .phase5-control-group-head{margin-bottom:12px}
 .ev2-control-center .phase5-control-group-head h2{font-size:16px}
 .ev2-control-center .phase5-control-ledger{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -13,3 +13,5 @@
 .ev2-control-center .phase5-control-groups{display:grid;gap:28px}
 .control-settings-toolbar input:focus-visible,.control-settings-views button:focus-visible{outline:2px solid #087bf5;outline-offset:3px}
 @media(max-width:700px){.ev2-control-center .control-settings-toolbar{display:grid;gap:12px}.control-settings-toolbar>label{max-width:none}.control-settings-views{justify-content:flex-start}.ev2-control-center .phase5-control-ledger{grid-template-columns:1fr}}
+
+@media(max-width:700px){.control-settings-toolbar input{font-size:16px}}

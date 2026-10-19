@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import {
   Button,
@@ -19,6 +19,7 @@ const STATUSES = {
   policy:"Awaiting policy",
   restricted:"Access not assigned",
   optional:"Optional",
+  available:"Available",
 };
 
 function statusTone(status){
@@ -56,8 +57,9 @@ export default function ControlCenter({me,go}){
   const [error,setError]=useState(null);
   const [query,setQuery]=useState("");
   const [attentionOnly,setAttentionOnly]=useState(false);
+  const loadSerial=useRef(0);
 
-  useEffect(()=>{ load(); },[me.id]);
+  useEffect(()=>{ load(); return ()=>{loadSerial.current+=1;}; },[me.id,me.org_id,canPayroll,canIntegrations,canAudit]);
 
   async function must(result,label){
     const resolved=await result;
@@ -66,8 +68,10 @@ export default function ControlCenter({me,go}){
   }
 
   async function load(){
+    const serial=++loadSerial.current;
     setLoading(true);
     setError(null);
+    setSnapshot(null);
     try{
       const [
         officeResult,
@@ -105,6 +109,7 @@ export default function ControlCenter({me,go}){
           : Promise.resolve({data:[]}),
       ]);
 
+      if(serial!==loadSerial.current) return;
       setSnapshot({
         office:officeResult.data||null,
         units:unitsResult.data||[],
@@ -119,9 +124,9 @@ export default function ControlCenter({me,go}){
         audit:auditResult.data||[],
       });
     }catch(loadError){
-      setError(humanError(loadError,"Control Center could not finish loading."));
+      if(serial===loadSerial.current) setError(humanError(loadError,"Control Center could not finish loading."));
     }finally{
-      setLoading(false);
+      if(serial===loadSerial.current) setLoading(false);
     }
   }
 
@@ -172,7 +177,7 @@ export default function ControlCenter({me,go}){
           : "Protected compensation and payment readiness is recorded for the active employee roster. Finance remains separate by currency.";
     }
 
-    const governanceStatus=caps.has("authority.manage") ? STATUSES.ready : STATUSES.restricted;
+    const governanceStatus=caps.has("authority.manage") ? STATUSES.available : STATUSES.restricted;
 
     const connectorByProvider=new Map(snapshot.connectors.map((row)=>[row.provider_key,row]));
     const broken=snapshot.connectors.filter((row)=>["needs_reconnect","error"].includes(row.connection_state));
@@ -180,7 +185,7 @@ export default function ControlCenter({me,go}){
     const integrationsStatus=!canIntegrations ? STATUSES.restricted
       : broken.length ? STATUSES.attention : connected.length ? STATUSES.ready : STATUSES.optional;
 
-    const auditStatus=canAudit ? STATUSES.ready : STATUSES.restricted;
+    const auditStatus=canAudit ? STATUSES.available : STATUSES.restricted;
 
     return [
       {
@@ -250,7 +255,7 @@ export default function ControlCenter({me,go}){
         title:"Security & governance",
         description:"Explicit authority, versioned rules and consequential checks.",
         status:governanceStatus,
-        detail:governanceStatus===STATUSES.ready
+        detail:governanceStatus===STATUSES.available
           ? "Review assigned permissions and organisation rules. Changes retain their recorded history."
           : "Permission management requires separately assigned access.",
         actions:[
@@ -266,9 +271,9 @@ export default function ControlCenter({me,go}){
           ? "Integration management is not assigned to this account."
           : broken.length
             ? `${broken.length} connection${broken.length===1?" needs":"s need"} attention or reconnection.`
-            : snapshot.providers.length
-              ? `${connected.length} of ${snapshot.providers.length} approved provider${snapshot.providers.length===1?" is":"s are"} connected.`
-              : "No active provider adapter is configured.",
+            : connected.length
+              ? `${connected.length} approved app connection${connected.length===1?" is":"s are"} active.`
+              : "App connections are optional. Connect an approved app when it is needed.",
         actions:canIntegrations?[{label:"Connected Apps",onClick:()=>go("integrations")}]:[],
       },
       {

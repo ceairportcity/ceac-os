@@ -8,7 +8,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 900 
       await page.goto('/');
       await page.getByPlaceholder('Work email').fill('admin@ceac.local.test');
       await page.getByPlaceholder('Password').fill(process.env.ROLE_FIXTURE_PASSWORD);
-      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+      await page.getByRole('button', { name: 'Sign in to CEAC OS', exact: true }).click();
       await expect(page.locator('.office-app')).toBeVisible();
       await page.goto('/?tab=settings');
       const center = page.locator('.control-center');
@@ -31,6 +31,6 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 900 
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await center.getByRole('button', { name: /Overview/ }).click();
       await expect(center).toHaveCount(0);
-    } finally { await context.close(); }
+    } finally { await context.close().catch(() => {}); }
   });
 }
