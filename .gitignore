@@ -7,3 +7,4 @@ dist
 .DS_Store
 recovery-output
 standby-output
+supabase/.temp/

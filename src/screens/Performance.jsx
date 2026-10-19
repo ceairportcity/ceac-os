@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import StructuredAppraisalRatings from "../components/StructuredAppraisalRatings";
 import HRProjectContributionQueue from "../components/HRProjectContributionQueue";
+import FormalReviewProjectDrafts from "../components/FormalReviewProjectDrafts";
+import { includeProjectAssessment } from "../lib/projectAssessmentDraft";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Avatar } from "../experience-v2/components";
@@ -102,6 +104,8 @@ export default function Performance({ me }) {
   const baseRequestSerial = useRef(0);
   const selectedCaseRef = useRef("");
   const selectedCycleRef = useRef("");
+  const requestedPersonRef = useRef(new URLSearchParams(window.location.search).get("reviewPerson"));
+  const reviewPanelRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -177,6 +181,14 @@ export default function Performance({ me }) {
         setMemberships(results[3].data || []);
       }
       // An in-flight refresh must not undo an employee/cycle selected after it started.
+      const linkedReview = requestedPersonRef.current
+        ? caseRows.find(row => row.profile_id === requestedPersonRef.current && cycleRows.some(cycle => cycle.id === row.cycle_id && cycle.status === "open"))
+        : null;
+      if (linkedReview) {
+        selectedCaseRef.current = linkedReview.id;
+        selectedCycleRef.current = linkedReview.cycle_id;
+      }
+      requestedPersonRef.current = null;
       const requestedCycle = selectedCycleRef.current;
       const cycleId = requestedCycle && cycleRows.some((row) => row.id === requestedCycle)
         ? requestedCycle
@@ -438,7 +450,18 @@ export default function Performance({ me }) {
       </div>
     </section>}
 
-    {hrReleaseAdmin && <HRProjectContributionQueue me={me} />}
+    {hrReleaseAdmin && <HRProjectContributionQueue me={me} cases={cases} cycles={cycles} onOpenReview={reviewId => {
+      const review = cases.find(row => row.id === reviewId);
+      if (!review || !cycles.some(cycle => cycle.id === review.cycle_id)) return;
+      selectedCaseRef.current = review.id;
+      selectedCycleRef.current = review.cycle_id;
+      setSelectedCycleId(review.cycle_id);
+      setSelectedCaseId(review.id);
+      requestAnimationFrame(() => {
+        reviewPanelRef.current?.focus();
+        reviewPanelRef.current?.scrollIntoView({ block: "start" });
+      });
+    }} />}
 
     {cycles.length > 0 && <div className="performance-cycle-strip" aria-label="Review periods">
       {cycles.map((cycle) => <button key={cycle.id} className={selectedCycleId === cycle.id ? "on" : ""} onClick={() => {
@@ -466,7 +489,7 @@ export default function Performance({ me }) {
         </button>)}
       </aside>
 
-      <section className="performance-review">
+      <section className="performance-review" ref={reviewPanelRef} tabIndex={-1} aria-label="Selected formal review">
         {!selectedCase ? <EmptyState title="Choose a review">Open a person to inspect the evidence and review record.</EmptyState> : caseLoading ? <LoadingState label="Opening review…" /> : <>
           <header className="performance-person-header">
             <Avatar name={selectedCase.profiles?.full_name} size="lg" />
@@ -519,6 +542,8 @@ export default function Performance({ me }) {
           <div className="performance-section-head"><div><span className="eyebrow">Reviewer narrative</span><h3>Manager assessment</h3></div></div>
           {currentAssessment && <div className="card performance-narrative"><p>{currentAssessment.body}</p><small>{currentAssessment.author?.full_name || "Reviewer"} · {new Date(currentAssessment.created_at).toLocaleString("en-GB")}</small></div>}
           {isReviewer && <>
+            <FormalReviewProjectDrafts key={selectedCase.id} me={me} review={selectedCase} cycle={selectedCycle}
+              disabled={busy || caseLoading} onInclude={note => setAssessment(body => includeProjectAssessment(body, note))} />
             <FieldGroup label={currentAssessment ? "Record a revised assessment" : "Manager assessment"} hint="Narrative judgement only. Do not add a score, rank or invented percentage.">
               <textarea className="field" aria-label="Manager assessment" rows="5" value={assessment} onChange={(event) => setAssessment(event.target.value)} />
             </FieldGroup>

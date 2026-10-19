@@ -161,6 +161,12 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.workforce_record_roster_pattern(p_employee_id uuid, p_effective_from date, p_effective_to date, p_day_map jsonb, p_clock_map jsonb, p_reason text, p_supersedes_id uuid)'),
   ('public.workforce_record_schedule(p_profile_id uuid, p_unit_id uuid, p_effective_from date, p_effective_to date, p_source text, p_day_map jsonb, p_expected_start time without time zone, p_expected_end time without time zone, p_reason text, p_supersedes_id uuid)');
 
+-- Two explicitly scoped owner-correction interfaces, covered by the rollback-only
+-- stage2_owner_activity_guard_gate.sql. The original signatures remain unchanged.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.stage2_relink_own_work(p_work_item_id uuid, p_project_id uuid, p_objective_id uuid, p_phase_id uuid, p_reason text)'),
+ ('public.stage2_record_project_person_assessment(p_project_id uuid, p_subject_profile_id uuid, p_narrative text, p_evidence_note text, p_next_action text, p_project_close_id uuid, p_period_start date, p_period_end date)');
+
 do $allowlist$
 declare
   v_unexpected text;
@@ -208,7 +214,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>146 or v_expected<>146 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>148 or v_expected<>148 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;

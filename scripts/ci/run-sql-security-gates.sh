@@ -64,6 +64,7 @@ tests=(
   stage2_private_portrait_totp_gate.sql
   stage2_universal_totp_all_roles_gate.sql
   stage2_human_appraisal_ratings_gate.sql
+  stage2_owner_activity_guard_gate.sql
 )
 
 for test_file in "${tests[@]}"; do

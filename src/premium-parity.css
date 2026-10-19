@@ -97,7 +97,6 @@ body{color:var(--ceac-text)}
 }
 .metric b,.finance-currency-card strong,.manager-finance-position-card strong,.exec-currency-card strong{color:#132840!important}
 /* VF4D: Control Center presentation is owned by the later governance-workspace layer. */
-.control-card-icon{background:#edf5ff!important;color:#1677ff!important;border-radius:8px!important}
 .people-directory-name strong,.work-list-main strong,.manager-work-main strong,.admin-work-main strong,.inbox-copy>b{color:#172a41!important}
 .people-directory-context,.work-list-main span,.work-list-main small,.manager-work-main span,.manager-work-main small,.admin-work-main small,.inbox-context{color:#8490a0!important}
 .staff-calendar-layout,.manager-calendar .calendar-shell{background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 5px 16px rgba(36,63,96,.04)!important}

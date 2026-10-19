@@ -8,25 +8,25 @@ const roles = [
     key: "staff",
     email: "staff@ceac.local.test",
     app: ".staff-app",
-    tabs: ["Assigned", "Agreed", "Private"],
+    tabs: ["My work", "Assigned", "Created by me", "Private"],
   },
   {
     key: "manager",
     email: "manager@ceac.local.test",
     app: ".manager-app",
-    tabs: ["Given out", "Needs review", "Team work", "My work", "Routines"],
+    tabs: ["My work", "Created by me", "Given out", "For review", "Completed", "Team work", "Routines"],
   },
   {
     key: "administration",
     email: "admin@ceac.local.test",
     app: ".office-app",
-    tabs: ["Given out", "Needs review", "Organisation", "Mine"],
+    tabs: ["My work", "Created by me", "Given out", "For review", "Completed", "Organisation"],
   },
   {
     key: "executive",
     email: "exec@ceac.local.test",
     app: ".executive-app",
-    tabs: ["Given out", "Needs review", "Mine"],
+    tabs: ["My work", "Created by me", "Given out", "For review", "Completed"],
   },
 ];
 
@@ -78,12 +78,14 @@ for (const viewport of [
     test(`Stage 10 Family A1 ${role.key} Work composes at ${viewport.name}`, async ({ browser }) => {
       const { context, page } = await openWork(browser, role, { width: viewport.width, height: viewport.height });
 
-      await expect(page.getByRole("heading", { name: role.key === "staff" ? "My work" : "Work", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Work", exact: true })).toBeVisible();
       for (const label of role.tabs) {
         await expect(page.getByRole("tab", { name: new RegExp(label) }).first()).toBeVisible();
       }
 
       if (role.key === "staff") {
+        await expect(page.locator(".fpg-brandbook-dashboard")).toBeHidden();
+        await page.getByText("Schedule and recorded work context", { exact: true }).click();
         await expect(page.locator(".fpg-brandbook-dashboard")).toBeVisible();
         await expect(page.locator(".fpg-brandbook-schedule")).toBeVisible();
         await expect(page.locator(".fpg-brandbook-hours")).toBeVisible();
@@ -99,20 +101,21 @@ for (const viewport of [
             return rect.width > 0 && rect.height > 0;
           }).length,
         }));
-        // Stage 2 adds an authorised fifth Routines destination without
-        // hiding the original Manager tabs or introducing horizontal overflow.
+        // The approved register tabs scroll inside their own navigation region.
+        // All destinations remain keyboard reachable without page overflow.
         expect(managerTabs.visibleTabs).toBe(role.tabs.length);
-        expect(managerTabs.scrollWidth - managerTabs.clientWidth).toBeLessThanOrEqual(1);
+        await page.getByRole("tab", { name: /^Routines/ }).click();
+        await expect(page.getByRole("tab", { name: /^Routines/ })).toBeInViewport();
       }
 
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
-      const rows = page.locator(".ev2w-row:visible");
+      const rows = page.locator(".s2-register-row:visible");
       if (await rows.count()) {
         const first = rows.first();
         const box = await first.boundingBox();
         expect(box?.height || 0).toBeGreaterThanOrEqual(44);
-        const smallest = await first.locator(".ev2w-row-main strong, .ev2w-row-meta, .ev2w-row-main small").evaluateAll((nodes) =>
+        const smallest = await first.locator("strong").evaluateAll((nodes) =>
           Math.min(...nodes.map((node) => parseFloat(getComputedStyle(node).fontSize)))
         );
         expect(smallest).toBeGreaterThanOrEqual(12);

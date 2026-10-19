@@ -67,8 +67,8 @@ $definer_search_path$;
 -- workforce_request_leave SECURITY INVOKER wrapper. The integrated one-bundle release
 -- adds twelve reviewed caller-scoped interfaces and removes two obsolete direct
 -- execution grants (attendance correction and performance publication): 145.
--- The full 146-signature exact allowlist (145 frozen Stage 1 functions plus one
--- narrowly reviewed Stage 2 universal-TOTP assurance helper) and anon-denial checks
+-- The full 148-signature exact allowlist (145 frozen Stage 1 functions plus one
+-- narrowly reviewed Stage 2 universal-TOTP assurance helper and two caller-scoped owner Work RPCs) and anon-denial checks
 -- remain independently enforced in security_definer_surface_gate.sql,
 -- admin_hr_security_gate.sql and privileged_mfa_aal2_gate.sql. Count alone is
 -- insufficient evidence of security; never relax the signature allowlist.
@@ -88,8 +88,8 @@ begin
 
   -- Preserve the historical Stage 1 145-function allowlist and explicitly
   -- admit only the reviewed Stage 2 TOTP/AAL2 RLS helper, not arbitrary grants.
-  if n<>146 then
-    raise exception 'Platform Kernel gate failure: expected 145 reviewed Stage 1 SECURITY DEFINER interfaces plus one explicitly allowed Stage 2 TOTP assurance helper (146 total); found %.',n;
+  if n<>148 then
+    raise exception 'Platform Kernel gate failure: expected 145 reviewed Stage 1 SECURITY DEFINER interfaces plus the Stage 2 TOTP helper and two owner Work RPCs (148 total); found %.',n;
   end if;
 
   if to_regprocedure('public.app_stage2_universal_aal_allowed()') is null

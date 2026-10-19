@@ -133,6 +133,9 @@ export default function ProjectPersonAssessments({ me, project, closeId = null }
         {row.evidence_note && <p><b>Evidence:</b> {row.evidence_note}</p>}
         {row.next_action && <p><b>Next:</b> {row.next_action}</p>}
         <small>Private draft · author-only/HR visibility · not published</small>
+        {row.reviewer_id === me.id && <p><a href={`?tab=performance&reviewPerson=${encodeURIComponent(row.subject_profile_id)}`}>
+          Continue in formal review →
+        </a></p>}
       </details>)}
     </div>}
   </section>;

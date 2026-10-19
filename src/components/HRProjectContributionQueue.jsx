@@ -6,7 +6,7 @@ import { supabase } from "../lib/supabase";
  * This does not publish, approve, score, or expose draft manager remarks
  * to the subject. HR may consider evidence through the existing appraisal flow.
  */
-export default function HRProjectContributionQueue({ me }) {
+export default function HRProjectContributionQueue({ me, cases = [], cycles = [], onOpenReview }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -71,6 +71,12 @@ export default function HRProjectContributionQueue({ me }) {
         {row.evidence_note&&<p><b>Evidence reference: </b>{row.evidence_note}</p>}
         {row.next_action&&<p><b>Next action: </b>{row.next_action}</p>}
         <p className="screen-note">Unpublished draft. Independent structured appraisal ratings and HR publication remain separate.</p>
+        {cases.filter(review => review.profile_id === row.subject_profile_id).map(review =>
+          <button type="button" key={review.id} className="btn btn-ghost btn-sm" onClick={() => onOpenReview?.(review.id)}>
+            Open formal review · {cycles.find(cycle => cycle.id === review.cycle_id)?.name || "Recorded period"}
+          </button>)}
+        {!cases.some(review => review.profile_id === row.subject_profile_id) &&
+          <p className="screen-note">No formal review is available for this person. Open an authorised review period before considering publication.</p>}
       </details>)}
     </>}
   </section>;

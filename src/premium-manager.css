@@ -10,14 +10,6 @@
 .manager-person-detail{max-width:1050px!important}
 .manager-person-detail>.back{margin-bottom:16px!important}
 .manager-person-detail>.h1{font-size:35px!important;letter-spacing:-.045em!important}
-.manager-person-detail .person-orientation-grid{
-  display:grid!important;grid-template-columns:repeat(3,1fr)!important;border:1px solid #e1e7ee!important;border-radius:15px!important;
-  background:#fff!important;overflow:hidden!important;box-shadow:0 7px 24px rgba(35,53,79,.04)!important;
-}
-.manager-person-detail .person-orientation-grid>div{border:0!important;border-right:1px solid #edf0f4!important;background:#fff!important;padding:16px!important}
-.manager-person-detail .person-orientation-grid>div:last-child{border-right:0!important}
-.manager-person-detail .person-orientation-grid strong{font-size:21px!important;color:#18324e!important}
-.manager-person-detail .person-orientation-grid span{color:#7b899b!important}
 .manager-person-detail .metric-grid{gap:8px!important}
 .manager-person-detail .metric{
   border:1px solid #e4e9ef!important;border-radius:12px!important;background:#f9fbfd!important;box-shadow:none!important;
@@ -28,9 +20,6 @@
 
 /* Projects */
 .manager-projects{max-width:1180px!important}
-.manager-projects .project-detail-hero,.manager-projects .project-command-surface{
-  border-radius:20px!important;overflow:hidden!important;
-}
 .manager-projects .row,.manager-projects .card{border-color:#e2e7ee!important;box-shadow:0 5px 18px rgba(35,53,79,.035)!important}
 
 /* Calendar */
@@ -63,8 +52,4 @@
   .manager-app .home-panel-priority,.manager-app .home-panel-projects,.manager-app .home-panel-waiting,.manager-app .home-panel-pulse,.manager-app .home-panel-week{grid-column:1!important}
 }
 @media(max-width:620px){
-  .manager-page-header{display:block}
-  .manager-page-header>.btn{margin-top:12px}
-  .manager-person-detail .person-orientation-grid{grid-template-columns:1fr!important}
-  .manager-person-detail .person-orientation-grid>div{border-right:0!important;border-bottom:1px solid #edf0f4!important}
 }

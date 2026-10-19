@@ -36,10 +36,6 @@
 .staff-app .staff-segment button.on,.staff-app .staff-segment button[aria-selected="true"]{
   background:#fff!important;color:#17324e!important;box-shadow:0 3px 10px rgba(31,52,80,.08)!important;
 }
-.premium-count-badge{
-  padding:7px 10px;border-radius:999px;background:#eef4ff;color:var(--ceac-action-blue);
-  font-size:12px;font-weight:750;white-space:nowrap;
-}
 
 /* Team V2 keeps the shared scroll-anchor behaviour only. */
 .team-scroll-anchor{scroll-margin-top:88px}
@@ -49,13 +45,6 @@
 .staff-app .hub-entry-grid{
   display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin:4px 0 22px!important;
 }
-.staff-app .personal-history-entry{
-  min-height:104px!important;border:1px solid #e1e7ee!important;border-radius:15px!important;background:#fff!important;
-  padding:15px!important;box-shadow:0 7px 22px rgba(35,53,79,.04)!important;text-align:left!important;
-}
-.staff-app .personal-history-entry:hover{border-color:#cfdef1!important;background:#f9fbff!important}
-.staff-app .personal-history-entry strong{font-size:13px!important;color:#172a40!important}
-.staff-app .personal-history-entry small{color:#7b899a!important;line-height:1.45!important}
 .staff-app .personal-area{
   background:#fff;border:1px solid #e2e7ee;border-radius:16px;padding:18px;
   box-shadow:0 8px 24px rgba(35,53,79,.04);
@@ -86,7 +75,6 @@
 .staff-calendar-layout{
   display:grid;grid-template-columns:minmax(0,1.55fr) minmax(285px,.65fr);gap:14px;align-items:start;
 }
-.staff-month-card{padding:16px}
 .staff-calendar-toolbar{display:grid;grid-template-columns:38px 1fr 38px;align-items:center;margin-bottom:12px}
 .staff-calendar-toolbar strong{text-align:center;color:#193047;font-size:14px}
 .staff-calendar-toolbar button{
@@ -110,16 +98,6 @@
 .staff-calendar-event.ministry{background:#f4efff;color:#6944aa}
 .staff-calendar-event.leave{background:#fff5e4;color:#9a6a12}
 .staff-calendar-agenda{padding:16px;position:sticky;top:90px}
-.premium-section-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
-.premium-section-head h2{margin:3px 0 0;font-size:17px;color:#17293f}
-.premium-section-head>span{min-width:28px;height:28px;border-radius:999px;background:#f0f4f8;display:flex;align-items:center;justify-content:center;font-size:12px;color:#68788c}
-.premium-list-row{
-  width:100%;border:0;border-top:1px solid #edf0f4;background:transparent;display:grid;grid-template-columns:9px 1fr;gap:10px;padding:12px 2px;text-align:left;
-}
-.premium-list-row:first-of-type{border-top:0}
-.premium-list-row>span:nth-child(2){min-width:0}
-.premium-list-row strong{display:block;color:#24384e;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.premium-list-row small{display:block;color:#8490a0;font-size:12px;margin-top:3px}
 .premium-dot{width:7px;height:7px;border-radius:50%;background:#9ba7b4;margin-top:4px}
 .premium-dot.work{background:#0cb167}.premium-dot.meeting{background:var(--ceac-action-blue)}.premium-dot.ministry{background:#9565f5}.premium-dot.leave{background:#fcaf2e}
 .premium-empty{padding:18px;border:1px dashed #dfe5eb;border-radius:11px;color:#8491a3;font-size:12px;background:#fafbfd}
@@ -156,13 +134,11 @@
   .premium-page-head,.premium-page-heading,.staff-app .staff-page-intro{display:block;padding-top:5px}
   .premium-page-head .h1,.premium-page-heading .h1,.staff-app .staff-page-intro .h1{font-size:28px!important}
   .staff-app .hub-entry-grid{grid-template-columns:1fr!important}
-  .staff-app .personal-history-entry{min-height:auto!important}
   .staff-calendar-weekdays span{font-size:12px}
   .staff-calendar-day{min-height:60px;padding:4px}
   .staff-calendar-number{font-size:12px}
   .staff-calendar-event{height:5px;padding:0;font-size:0;border-radius:999px}
   .staff-calendar-event span{display:none}
-  .staff-month-card{padding:9px}
   .inbox-row{padding:12px 10px}
 }
 
