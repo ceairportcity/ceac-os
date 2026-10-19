@@ -213,3 +213,22 @@ test("approved desktop and mobile Work header places Give out work and Add my wo
   assert.match(css, /\.ev2w-header-actions\{/);
   assert.match(css, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
 });
+
+test("manager, administration and executive default to truthful My work records with complete status tabs", () => {
+  for (const role of ["ManagerWork","AdminWork","ExecutiveWork"]) {
+    const page = source(`src/screens/${role}.jsx`);
+    assert.match(page, /const \[view, setView\] = useState\("mine"\)/);
+    assert.match(page, /\["mine", "My work"/);
+    assert.match(page, /\["created", "Created by me"/);
+    assert.match(page, /\["given", "Given out"/);
+    assert.match(page, /\["reviews", "For review"/);
+    assert.match(page, /\["completed", "Completed"/);
+    assert.match(page, /origin === "self_created"/);
+    assert.match(page, /item\.status === "completed" \|\| item\.status === "self_certified"/);
+  }
+  const manager=source("src/screens/ManagerWork.jsx");
+  for(const label of ["In progress", "Waiting & review", "Upcoming", "Completed"]){
+    assert.ok(manager.includes(label),`Missing Manager Work group: ${label}`);
+  }
+  assert.match(manager, /displaySections\.map/);
+});
