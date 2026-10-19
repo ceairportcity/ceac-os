@@ -98,6 +98,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
   const statusSections = ["In progress", "Waiting & review", "Upcoming", "Completed"]
     .map((title) => ({ title, items: rows.filter((item) => category(item.status) === title) }))
     .filter(({ items }) => items.length > 0);
+  const displaySections = view === "mine" || view === "created" ? statusSections : [{ title: groupTitle, items: rows }];
 
   return <div className="body manager-work premium-manager-page ev2-work-page ev2-work-manager">
     <WorkPageHeader
@@ -129,15 +130,15 @@ export default function ManagerWork({ me, openItem, goAssign }) {
             note="Review authority is assigned to you for this item."
             onClick={() => openItem(row.work_item_id)}
           />)}
-        </WorkGroup>
+        </WorkGroup>)
       ) : <WorkEmpty title="Nothing waiting for review" description="New submissions from your team will appear here." />
     )}
 
     {!loading && view !== "reviews" && (
       <WorkRegisterLayout me={me} selectedId={selectedInView} onClose={() => setSelectedWorkId("none")} openItem={openItem}>
         {rows.length ? (
-        <WorkGroup title={groupTitle} count={rows.length}>
-          {rows.map((item) => <WorkRow
+        displaySections.map((section) => <WorkGroup key={section.title} title={section.title} count={section.items.length}>
+          {section.items.map((item) => <WorkRow
             key={item.id}
             title={item.title}
             refCode={item.ref}
