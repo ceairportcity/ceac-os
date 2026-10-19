@@ -248,3 +248,22 @@ test("P6 Compliance attendance never publishes an old operator's evidence after 
  assert.match(screen,/overviewReadSequence\.current\+=1/);
  assert.match(screen,/\[me\.id,me\.org_id,canManage,overviewDate\]/);
 });
+
+test("P6 Administration reporting hides previous account and tenant evidence before a new verified read",()=>{
+ const admin=file("src/screens/Reports.jsx");
+ assert.match(admin,/const actorScope = \[me\.org_id, me\.id\]\.join\(":"\)/);
+ assert.match(admin,/currentActorScope\.current = actorScope/);
+ assert.match(admin,/const request = \+\+loadSequence\.current/);
+ assert.match(admin,/const isCurrent = \(\) => request === loadSequence\.current\s*&& currentActorScope\.current === requestedActor/);
+ assert.match(admin,/\[me\.org_id, me\.id\]/);
+ assert.match(admin,/return \(\) => \{ loadSequence\.current \+= 1; \}/);
+ assert.match(admin,/if \(!isCurrent\(\)\) return;/);
+ assert.match(admin,/setLoadedActor\(requestedActor\)/);
+ assert.match(admin,/if \(loadedActor !== actorScope \|\| loading\)/);
+ assert.match(admin,/setPeriods\(\[\]\); setReports\(\[\]\); setUnits\(\[\]\)/);
+ assert.match(admin,/if \(isCurrent\(\)\) setLoading\(false\)/);
+ assert.match(admin,/if \(currentActorScope\.current !== writingActor\) return;/);
+ assert.match(admin,/\.eq\("org_id", me\.org_id\)\.eq\("status", period\.status\)/);
+ assert.match(admin,/\.select\("id,status"\)\.single\(\)/);
+ assert.match(admin,/if \(error \|\| data\?\.id !== period\.id \|\| data\.status !== status\)/);
+});

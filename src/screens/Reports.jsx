@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { dateOnly } from "../lib/time";
@@ -30,18 +30,38 @@ export default function Reports({ me }) {
   const [periodCount, setPeriodCount] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  // The same mounted panel can receive a new authenticated actor or org.
+  // A successful former-actor read must never become this actor's evidence.
+  const actorScope = [me.org_id, me.id].join(":");
+  const currentActorScope = useRef(actorScope);
+  currentActorScope.current = actorScope;
+  const loadSequence = useRef(0);
+  const [loadedActor, setLoadedActor] = useState(null);
 
   const [kind, setKind] = useState("week");
   const [label, setLabel] = useState("");
   const [starts, setStarts] = useState("");
   const [ends, setEnds] = useState("");
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    setOpen(null);
+    setSheet(null);
+    setBusy(false);
+    void load();
+    return () => { loadSequence.current += 1; };
+  }, [me.org_id, me.id]);
 
   async function load() {
+    const requestedActor = actorScope;
+    const request = ++loadSequence.current;
+    const isCurrent = () => request === loadSequence.current
+      && currentActorScope.current === requestedActor;
     setLoading(true);
+    setLoadedActor(null);
     setLoadFailed(false);
     setMsg(null);
+    setPeriodCount(null);
+    setPeriods([]); setReports([]); setUnits([]);
     try {
       const [periodResult, reportResult, unitResult] = await Promise.all([
         // This page deliberately shows only the most recent 40 periods;
@@ -50,6 +70,7 @@ export default function Reports({ me }) {
         supabase.from("reports").select("id, period_id, scope, unit_id, project_id, status, version, narrative, challenges, submitted_at, submitted_by, evidence",{count:"exact"}).eq("org_id",me.org_id).eq("scope","unit"),
         supabase.from("units").select("id, name",{count:"exact"}).eq("org_id",me.org_id).eq("active", true).order("name"),
       ]);
+      if (!isCurrent()) return;
       const exact = (response) => !response.error && Array.isArray(response.data)
         && typeof response.count === "number";
       if (![periodResult,reportResult,unitResult].every(exact) ||
@@ -61,13 +82,16 @@ export default function Reports({ me }) {
       setPeriodCount(periodResult.count);
       setReports(reportResult.data);
       setUnits(unitResult.data);
+      setLoadedActor(requestedActor);
     } catch {
+      if (!isCurrent()) return;
+      setLoadedActor(requestedActor);
       setLoadFailed(true);
       setPeriodCount(null);
       setPeriods([]); setReports([]); setUnits([]);
       setMsg("Administrative reporting evidence is incomplete or unavailable. Retry before inspecting filing coverage.");
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }
 
@@ -98,6 +122,8 @@ export default function Reports({ me }) {
   }
 
   async function openPeriod() {
+    if (busy || loading || loadFailed || loadedActor !== actorScope) return;
+    const writingActor = actorScope;
     setBusy(true);
     setMsg(null);
     try {
@@ -112,28 +138,43 @@ export default function Reports({ me }) {
         ends_on: ends,
         status: "open",
       });
+      if (currentActorScope.current !== writingActor) return;
       if (error) throw error;
       setSheet(null);
       setLabel("");
       await load();
     } catch (error) {
-      setMsg(error.message);
+      if (currentActorScope.current === writingActor) setMsg(error.message);
     } finally {
-      setBusy(false);
+      if (currentActorScope.current === writingActor) setBusy(false);
     }
   }
 
   async function setStatus(period, status) {
+    if (busy || loading || loadFailed || loadedActor !== actorScope) return;
     if (status === "closed" && !confirm("Close " + period.label + "? Managers will no longer be able to file or change reports for it.")) return;
+    const writingActor = actorScope;
     setBusy(true);
     setMsg(null);
-    const { error } = await supabase.from("report_periods").update({ status }).eq("id", period.id);
-    setBusy(false);
-    if (error) {
-      setMsg(error.message);
-      return;
+    try {
+      // Match this tenant and the status the administrator actually reviewed.
+      // No updated row is an uncertain operation, not a successful close.
+      const { data, error } = await supabase.from("report_periods")
+        .update({ status }).eq("id", period.id)
+        .eq("org_id", me.org_id).eq("status", period.status)
+        .select("id,status").single();
+      if (currentActorScope.current !== writingActor) return;
+      if (error || data?.id !== period.id || data.status !== status) {
+        throw new Error("This reporting period change could not be verified. Reload its current state.");
+      }
+      await load();
+    } catch (error) {
+      if (currentActorScope.current === writingActor) {
+        setMsg(error.message || "This reporting period change could not be verified.");
+      }
+    } finally {
+      if (currentActorScope.current === writingActor) setBusy(false);
     }
-    await load();
   }
 
   function latestFor(periodId) {
@@ -151,7 +192,7 @@ export default function Reports({ me }) {
           : `${periods.length} ${periods.length === 1 ? "period" : "periods"} recorded`
         : "No periods recorded";
 
-  if (loading) {
+  if (loadedActor !== actorScope || loading) {
     return (
       <div className="body ev2-reporting-page ev2-reporting-admin" aria-busy="true">
         <ReportingPageHeader
