@@ -294,8 +294,14 @@ export default function ControlCenter({me,go}){
     ];
   },[snapshot,caps,canPayroll,canIntegrations,canAudit,go]);
 
-  const attention=domains.filter((domain)=>[STATUSES.attention,STATUSES.partial,STATUSES.missing,STATUSES.policy].includes(domain.status));
-  const visibleDomains=domains.filter((domain)=>
+  // Non-actionable permission notices used to fill the Control Center with
+  // redundant cards. Keep every genuinely actionable domain, including
+  // Finance when Payroll is restricted; never create a fake access route.
+  const accessibleDomains=domains.filter((domain)=>
+    domain.status!==STATUSES.restricted || domain.actions.length>0
+  );
+  const attention=accessibleDomains.filter((domain)=>[STATUSES.attention,STATUSES.partial,STATUSES.missing,STATUSES.policy].includes(domain.status));
+  const visibleDomains=accessibleDomains.filter((domain)=>
     (!attentionOnly || attention.includes(domain)) &&
     (!query.trim() || [domain.title,domain.description,domain.detail,...domain.actions.map(action=>action.label)]
       .some(text=>text.toLowerCase().includes(query.trim().toLowerCase())))

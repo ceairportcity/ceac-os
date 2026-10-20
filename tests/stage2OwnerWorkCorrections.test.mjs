@@ -391,3 +391,13 @@ test("Executive contribution filters stay connected from unit to its projects to
   assert.match(code,/!projectId \|\| a\.source_project_id===projectId/);
   assert.match(code,/!personId \|\| a\.contributor_id===personId/);
 });
+
+test("Administration Control Center hides inaccessible, inert notices without hiding Finance or other actionable routes",()=>{
+  const code=source("src/screens/ControlCenter.jsx");
+  assert.match(code,/const accessibleDomains=domains\.filter\(\(domain\)=>/);
+  assert.match(code,/domain\.status!==STATUSES\.restricted \|\| domain\.actions\.length>0/);
+  assert.match(code,/const attention=accessibleDomains\.filter/);
+  assert.match(code,/const visibleDomains=accessibleDomains\.filter/);
+  assert.match(code,/\{label:"Finance",onClick:\(\)=>go\("finance"\)\}/);
+  assert.match(code,/domainGroups\.filter\(group=>group\.domainKeys\.some/);
+});
