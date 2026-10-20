@@ -16,6 +16,14 @@ function assertLocalEnvironment() {
     throw new Error("Stage 2 browser test requires a disposable localhost Supabase and service-role fixture.");
 }
 
+async function endDisposableSupportMembership(service, membershipId) {
+  const ended = await service.from("support_team_memberships").update({
+    active: false, ended_at: new Date().toISOString(), ended_by: admin,
+    end_reason: "Disposable browser role fixture completed",
+  }).eq("id", membershipId).eq("active", true);
+  expect(ended.error, ended.error?.message).toBeNull();
+}
+
 async function openAs(browser, email, viewport = { width: 1440, height: 900 }) {
   const context = await browser.newContext({ viewport });
   const page = await context.newPage();
@@ -153,7 +161,7 @@ test("Technical Support manager receives premium support workflow without HR/Fin
   const membership = await service.from("support_team_memberships").insert({
     org_id: org, profile_id: managerB, role: "lead", added_by: admin,
     reason: "Stage 2 local Technical Support visual acceptance", associated_unit_id: unitB,
-  });
+  }).select("id").single();
   expect(membership.error, membership.error?.message).toBeNull();
   const capability = await service.from("capability_grants").insert({
     org_id: org, profile_id: managerB, capability: "support.case.manage",
@@ -171,7 +179,10 @@ test("Technical Support manager receives premium support workflow without HR/Fin
     await expect(page.locator(".s2-support-split")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/stage2-technical-support-manager.png", fullPage: true });
     await assertSupportMobileHelpDesk(page, "manager");
-  } finally { await context.close(); }
+  } finally {
+    await context.close();
+    await endDisposableSupportMembership(service, membership.data.id);
+  }
 });
 
 test("Technical Support staff sees their permitted case workflow, not manager/HR authority", async ({ browser }) => {
@@ -183,7 +194,7 @@ test("Technical Support staff sees their permitted case workflow, not manager/HR
   const membership = await service.from("support_team_memberships").insert({
     org_id: org, profile_id: staffId, role: "member", added_by: admin,
     reason: "Stage 2 disposable staff Support visual acceptance", associated_unit_id: unitA,
-  });
+  }).select("id").single();
   expect(membership.error, membership.error?.message).toBeNull();
   const grant = await service.from("capability_grants").insert({
     org_id: org, profile_id: staffId, capability: "support.case.manage",
@@ -202,5 +213,8 @@ test("Technical Support staff sees their permitted case workflow, not manager/HR
     await expect(page.locator(".s2-support-split")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/stage2-technical-support-staff.png", fullPage: true });
     await assertSupportMobileHelpDesk(page, "staff");
-  } finally { await context.close(); }
+  } finally {
+    await context.close();
+    await endDisposableSupportMembership(service, membership.data.id);
+  }
 });

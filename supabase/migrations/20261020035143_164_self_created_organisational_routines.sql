@@ -48,7 +48,7 @@ declare
   v_evidence_required boolean;
   v_evidence_kind text;
 begin
-  if not public.app_stage2_universal_aal_allowed() then
+  if auth.uid() is null or public.app_org_id() is null or not public.app_stage2_universal_aal_allowed() then
     raise exception 'Complete authenticator verification before changing work.' using errcode='42501';
   end if;
   p_details := coalesce(p_details,'{}'::jsonb);
@@ -324,12 +324,12 @@ declare
   v_latest record;
   v_version integer;
 begin
-  if auth.uid() is null or not public.app_stage2_universal_aal_allowed() then
+  if auth.uid() is null or public.app_org_id() is null or not public.app_stage2_universal_aal_allowed() then
     raise exception 'Sign in with the required account verification.' using errcode='42501';
   end if;
   select * into ro from recurring_operations where work_item_id=p_work_item_id for update;
   if ro is null then raise exception 'That routine does not exist.'; end if;
-  if ro.org_id<>app_org_id() then raise exception 'That belongs to another organisation.'; end if;
+  if ro.org_id is distinct from app_org_id() then raise exception 'That belongs to another organisation.'; end if;
   if not (ro.unit_id in (select app_managed_units()) or app_is_admin() or exists (
     select 1 from public.work_items w join public.unit_memberships m
       on m.profile_id=auth.uid() and m.unit_id=w.unit_id and m.org_id=w.org_id
@@ -421,12 +421,12 @@ set search_path=public
 as $$
 declare ro record;
 begin
-  if auth.uid() is null or not public.app_stage2_universal_aal_allowed() then
+  if auth.uid() is null or public.app_org_id() is null or not public.app_stage2_universal_aal_allowed() then
     raise exception 'Sign in with the required account verification.' using errcode='42501';
   end if;
   select * into ro from recurring_operations where work_item_id=p_work_item_id for update;
   if ro is null then raise exception 'That routine does not exist.'; end if;
-  if ro.org_id<>app_org_id() then raise exception 'That belongs to another organisation.'; end if;
+  if ro.org_id is distinct from app_org_id() then raise exception 'That belongs to another organisation.'; end if;
   if not (ro.unit_id in (select app_managed_units()) or app_is_admin() or exists (
     select 1 from public.work_items w join public.unit_memberships m
       on m.profile_id=auth.uid() and m.unit_id=w.unit_id and m.org_id=w.org_id
@@ -470,7 +470,7 @@ declare
   v_id uuid;
   v_dow integer;
 begin
-  if auth.uid() is null or not public.app_stage2_universal_aal_allowed() then
+  if auth.uid() is null or public.app_org_id() is null or not public.app_stage2_universal_aal_allowed() then
     raise exception 'Sign in with the required account verification.' using errcode='42501';
   end if;
   select r.* into ro
@@ -479,7 +479,7 @@ begin
   for update;
 
   if ro is null then raise exception 'That routine does not exist.'; end if;
-  if ro.org_id<>app_org_id() then raise exception 'That routine belongs to another organisation.'; end if;
+  if ro.org_id is distinct from app_org_id() then raise exception 'That routine belongs to another organisation.'; end if;
   if p_occurred_on is null or p_occurred_on>current_date then
     raise exception 'Record an occurrence for today or an earlier date.';
   end if;
