@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { organisationalRepeatDetails } from "../src/lib/organisationalRepeatRules.js";
 
 const source = (path) => readFileSync(path, "utf8");
 
@@ -239,16 +240,43 @@ test("manager, administration and executive default to truthful My work records 
 });
 
 
-test("organisational repeat creation validates civil dates and bounded schedule choices before RPC", () => {
+test("organisational repeat creation validates civil dates and several weekdays before RPC", () => {
   const fields = source("src/components/OrganisationalRepeatFields.jsx");
+  const rules = source("src/lib/organisationalRepeatRules.js");
   const composer = source("src/components/SelfWorkComposer.jsx");
-  assert.match(fields, /function organisationalRepeatDetails\(repeat, steps\)/);
-  assert.match(fields, /validCivilDate\(repeat\.start\)/);
-  assert.match(fields, /validCivilDate\(repeat\.end\)/);
-  assert.match(fields, /repeat\.end < repeat\.start/);
-  assert.match(fields, /Number\.isInteger\(weekday\)/);
-  assert.match(fields, /weekday < 1 \|\| weekday > 7/);
-  assert.match(fields, /Number\.isInteger\(monthDay\)/);
-  assert.match(fields, /monthDay < 1 \|\| monthDay > 31/);
+  assert.match(fields, /export \{ organisationalRepeatDetails \}/);
+  assert.match(fields, /weekdays: \[6\]/);
+  assert.match(fields, /role="group" aria-label="Repeat weekdays"/);
+  assert.match(fields, /weekdays\[0\]/);
+  assert.match(rules, /validCivilDate\(repeat\.start\)/);
+  assert.match(rules, /validCivilDate\(repeat\.end\)/);
+  assert.match(rules, /repeat\.end < repeat\.start/);
+  assert.match(rules, /new Set\(weekdays\)\.size !== weekdays\.length/);
+  assert.match(rules, /Number\.isInteger\(weekday\)/);
+  assert.match(rules, /Number\.isInteger\(monthDay\)/);
   assert.match(composer, /organisationalRepeatDetails\(repeat, cleanSteps\)/);
+});
+
+test("multi-weekday organisational routines keep independent dates without duplicate weekdays", () => {
+  const options = { frequency: "weekly", start: "2026-10-20", end: "2026-11-30", weekday: "6", weekdays: [7, 6] };
+  assert.deepEqual(organisationalRepeatDetails(options, ["Venue check"]), {
+    origin: "self_created", schedule_kind: "weekly", starts_on: "2026-10-20",
+    ends_on: "2026-11-30", weekdays: [6, 7], steps: ["Venue check"],
+  });
+  assert.deepEqual(organisationalRepeatDetails({ ...options, weekdays: undefined }, []).weekdays, [6]);
+  assert.throws(() => organisationalRepeatDetails({ ...options, weekdays: [] }, []), /weekdays/);
+  assert.throws(() => organisationalRepeatDetails({ ...options, weekdays: [7, 7] }, []), /weekdays/);
+  assert.throws(() => organisationalRepeatDetails({ ...options, weekdays: [0] }, []), /weekdays/);
+  assert.throws(() => organisationalRepeatDetails({ ...options, weekdays: [8] }, []), /weekdays/);
+  assert.throws(() => organisationalRepeatDetails({ ...options, weekdays: [1.5] }, []), /weekdays/);
+  assert.throws(() => organisationalRepeatDetails({ ...options, weekdays: "6" }, []), /weekday/);
+});
+
+test("organisational schedule errors are rejected before server creation, including invalid calendar days", () => {
+  const base = { frequency: "monthly", start: "2026-10-20", monthDay: "31" };
+  assert.equal(organisationalRepeatDetails(base, []).day_of_month, 31);
+  assert.throws(() => organisationalRepeatDetails({ ...base, monthDay: "32" }, []), /month/);
+  assert.throws(() => organisationalRepeatDetails({ ...base, start: "2026-02-30" }, []), /date/);
+  assert.throws(() => organisationalRepeatDetails({ ...base, end: "2026-10-19" }, []), /date/);
+  assert.throws(() => organisationalRepeatDetails({ ...base, frequency: "custom" }, []), /frequency/);
 });
