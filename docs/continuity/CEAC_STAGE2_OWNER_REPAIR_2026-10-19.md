@@ -166,3 +166,17 @@ Initial browser attempt could not reach the stopped local server after Codespace
 Required-check verification remains PENDING: gh is absent, and existing repository credential API reads of main branch protection and rulesets both returned403. No permissions or protections were modified; no external success statuses were fabricated. Continue authorised feature work while final-check access is unresolved.
 
 Still open: organisational recurrence dates in Staff/My and Manager/Unit Calendar; real reminders; per-occurrence checklist/file evidence/status and authorised cover/delegation/one-date edits; exact approved visual reconciliation; final frozen release-wide role/tenant/Storage/Edge/activation/recovery and fresh173 replay; recoverable production backup, ordered cutover and existing-project deployed URL proof. Production main34f3c698 and existing accounts remain unchanged. Google OAuth and mandatory MFA stay deferred.
+
+
+## 20 October — organisational dates in the existing Calendar
+
+Tested source SHA: `8e1de10027d8f3c6e4789884096f66206b3d5b3e`; environment: existing Codespace Node22.16.0, locked Vite8.3.0, isolated Playwright1.55.0, disposable local Supabase only. Started 2026-10-20T12:37:23Z; finished 2026-10-20T12:38:01Z.
+
+- `node --test tests/routineCalendar.test.js tests/routineScheduleOptions.test.js`: 6/6, exit0. Covers complete exact-count paging/batches, original timezone/date versus Accra projection, unknown/missing operations and actor/org/unit rejection.
+- `npm run build`: exit0; CSS 631430 bytes <= unchanged631808 ceiling. Dependencies and lock unchanged; prior locked npm-ci evidence remains historical at fb32d085.
+- Pinned Playwright: `node /workspaces/ceac-browser-runtime-1.55.0/node_modules/playwright/cli.js test tests/stage2-routine-calendar.spec.js tests/phase6-calendar.spec.js --grep 'real organisational|owner-only|one Staff account|role calendars' --workers=1`: 4/4, 14.2s, exit0. One real authenticated Staff-phone/Manager-desktop journey plus existing private-planning source/role contracts and real cross-account private-plan RLS regression. Staff own dates exclude colleague dates; Unit includes both; actual recorded proof displays Outcome recorded, parent status unchanged, linked private-task copies zero, phone overflow <=1.
+- Artifacts: `/workspaces/ceac-stage2-verification/8e1de100/{source,build,browser}.log` and `.exit`, exact SHA/timestamps, two archived synthetic screenshots under `rendered/`, SHA256 manifest. No production data or credentials in repository.
+
+Implementation: read-only source Work/RLS plus canonical routine preview, complete bounded provider counts, scoped cancellable React reads, explicit retry/focus refresh, unchanged private planning. Routine master deadlines excluded to avoid duplicate dates; factual recorded/unrecorded/scheduled labels do not infer approval or completion. No new SQL, grants, service, scheduler or CSS.
+
+Historical fb32d085 Work/SQL/browser evidence retained for unchanged areas, not relabelled current exact-head. Final full frozen173 replay, all-role visual/integration/security, real reminder delivery, independent occurrence checklist/file evidence/one-date changes/cover and production release checks remain PENDING. No merge/deployment/production mutation.
