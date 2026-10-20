@@ -285,9 +285,9 @@ test("organisational schedule errors are rejected before server creation, includ
 test("recorded routine dates can open a factual evidence entry without certifying occurrence completion", () => {
   const item = source("src/screens/Item.jsx");
   const diary = source("src/components/WorkActivityDiary.jsx");
-  assert.match(item, /setRoutineEvidenceDate\(occurrence\.occurred_on\)/);
+  assert.match(item, /setRoutineEvidenceDate\(date\)/);
   assert.match(item, /setRoutineEvidenceRequest\(\(n\) => n \+ 1\)/);
-  assert.match(item, /Record evidence for \{occurrence\.occurred_on\}/);
+  assert.match(source("src/components/RoutineOccurrenceReviews.jsx"), /Record evidence for \{entry\.occurred_on\}/);
   assert.match(item, /prefillDate=\{routineEvidenceDate\} prefillRequest=\{routineEvidenceRequest\}/);
   assert.match(diary, /if \(!prefillRequest/);
   assert.match(diary, /setDate\(prefillDate\)/);

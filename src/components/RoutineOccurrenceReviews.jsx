@@ -98,7 +98,7 @@ export default function RoutineOccurrenceReviews({
         </div>
         <div className="s2-routine-review-actions">
           {onRecordEvidence && <button type="button"
-            onClick={() => onRecordEvidence(entry.occurred_on)}>Record evidence</button>}
+            onClick={() => onRecordEvidence(entry.occurred_on)}>Record evidence for {entry.occurred_on}</button>}
           {canReviewEntry && <button type="button" onClick={()=>{
             setSelection(selection===entry.id?"":entry.id);setNote("");setDecision("accepted");
           }}>{selection===entry.id?"Cancel":"Review date"}</button>}
