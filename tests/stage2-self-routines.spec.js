@@ -51,8 +51,19 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       const colleagueSignIn = await colleague.auth.signInWithPassword({email:'sameunit@ceac.local.test',password});
       expect(colleagueSignIn.error).toBeNull();
       expect((await colleague.rpc('record_routine_occurrence',params)).error?.code).toBe('42501');
-      const recorded = await client.rpc('record_routine_occurrence',params);
-      expect(recorded.error,recorded.error?.message).toBeNull();
+      await page.locator('.s2-register-row').filter({hasText:title}).locator('th button').click();
+      await page.getByRole('complementary',{name:'Selected responsibility'})
+        .getByRole('button',{name:/Open complete work record/}).click();
+      await expect(page.getByRole('region',{name:'Routine method'})).toBeVisible();
+      await expect(page.getByRole('region',{name:'Task checklist and progress'})).toHaveCount(0);
+      await expect(page.getByRole('button',{name:'Change future schedule',exact:true})).toBeVisible();
+      await expect(page.getByRole('button',{name:'Pause routine',exact:true})).toBeVisible();
+      await page.getByRole('button',{name:'Record occurrence',exact:true}).click();
+      const dialog = page.getByRole('dialog');
+      await dialog.getByPlaceholder('Note (optional)').fill('Venue inspected');
+      await dialog.getByRole('button',{name:'Record occurrence',exact:true}).click();
+      await expect(dialog).toHaveCount(0);
+      await expect(page.getByText('Venue inspected',{exact:true})).toBeVisible();
       expect((await client.rpc('record_routine_occurrence',params)).error?.code).toBe('23505');
       const routine = await client.from('recurring_operations').select('id').eq('work_item_id',saved.data.id).single();
       expect(routine.error).toBeNull();

@@ -445,7 +445,7 @@ export default function Work({ me, isManager = false, openItem }) {
       </label>
 
       {!noStepsNeeded && <>
-        <div className="small" style={{ marginTop: 12 }}>Completion steps</div>
+        <div className="small" style={{ marginTop: 12 }}>{repeat.enabled ? "Steps to repeat each time" : "Completion steps"}</div>
         {steps.map((step, index) => <div className="inline-step" key={index}>
           <input
             className="field"

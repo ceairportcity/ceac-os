@@ -219,7 +219,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
       <div className="card small">
         <label><input type="checkbox" checked={noSteps} onChange={(e) => setNoSteps(e.target.checked)} /> No steps needed yet</label>
         {!noSteps && <>
-          <p>Completion steps</p>
+          <p>{repeat.enabled ? "Steps to repeat each time" : "Completion steps"}</p>
           {steps.map((step, index) => <div key={index} className="inline-step">
             <input className="field" aria-label={`Step ${index+1}`} value={step}
               onChange={(e) => setSteps((current) => current.map((v,i) => i===index ? e.target.value : v))}

@@ -676,6 +676,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         {!routine.schedule_kind && <div className="flag flag-amber" style={{ marginTop: 10 }}>
           <h4>Schedule not yet configured</h4>This is a reconciled legacy routine. Its old record only said “Weekly”, so CEAC OS did not invent a weekday.
         </div>}
+        {checks.length > 0 && <section aria-label="Routine method"><h3>Steps to repeat each time</h3><ol>{checks.map(step => <li key={step.id}>{step.label}</li>)}</ol></section>}
         {routineOccurrences.length > 0 && <>
           <div className="sec"><span>Recent occurrences</span><span>{routineOccurrences.length}</span></div>
           {routineOccurrences.map((occurrence) => <div className="row" key={occurrence.id}>
@@ -693,7 +694,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         </div>}
       </>}
 
-      {checks.length > 0 && <><style data-fpg-brandbook-task>{BRAND_BOOK_TASK_CSS}</style><section className="fpg-brandbook-task-card" aria-label="Task checklist and progress">
+      {item.kind !== "routine" && checks.length > 0 && <><style data-fpg-brandbook-task>{BRAND_BOOK_TASK_CSS}</style><section className="fpg-brandbook-task-card" aria-label="Task checklist and progress">
         <header>
           <span><small>Task progress</small><strong>Completion checklist</strong></span>
           <b>{Math.round((done / checks.length) * 100)}%</b>
