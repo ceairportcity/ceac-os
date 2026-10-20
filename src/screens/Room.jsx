@@ -318,6 +318,7 @@ export default function Room({
         .select(messageSelect)
         .eq("room_id", roomId)
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(PAGE_SIZE);
       if (result.error) throw result.error;
       const hydrated = await hydrateMessageMedia(result.data || []);
@@ -346,8 +347,9 @@ export default function Room({
       const result = await supabase.from("room_messages")
         .select(messageSelect)
         .eq("room_id", room.id)
-        .lt("created_at", oldest.created_at)
+        .or(`created_at.lt.${oldest.created_at},and(created_at.eq.${oldest.created_at},id.lt.${oldest.id})`)
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(PAGE_SIZE);
       if (result.error) throw result.error;
       const hydrated = await hydrateMessageMedia(result.data || []);

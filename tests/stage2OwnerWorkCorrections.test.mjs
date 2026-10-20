@@ -348,3 +348,12 @@ test("Room switching never restores stale participants or work links, and failed
   assert.match(room,/if \(requestSerial !== messageLoadSerial.current \|\| activeRoomIdRef.current !== roomId\) return false;/);
   assert.match(room,/if \(!result.error && activeRoomIdRef.current === roomId\) setNewMessageCount\(0\)/);
 });
+
+test("Room message history uses a deterministic same-timestamp cursor without silently skipping messages",()=>{
+  const room=source("src/screens/Room.jsx");
+  assert.match(room,/\.or\(\`created_at\.lt\.\$\{oldest\.created_at\},and\(created_at\.eq\.\$\{oldest\.created_at\},id\.lt\.\$\{oldest\.id\}\)\`\)/);
+  const ordered=(room.match(/\.order\("created_at", \{ ascending: false \}\)\s*\.order\("id", \{ ascending: false \}\)/g)||[]).length;
+  assert.ok(ordered >= 2,"recent/older reads must agree on timestamp + ID ordering");
+  assert.doesNotMatch(room,/\.lt\("created_at", oldest\.created_at\)/);
+  assert.match(room,/activeRoomIdRef.current !== selectedRoomId\) return/);
+});
