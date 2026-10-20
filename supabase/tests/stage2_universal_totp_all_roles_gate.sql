@@ -50,6 +50,16 @@ BEGIN
    RAISE EXCEPTION 'Legacy restrictive Google-only Storage policy survived';
  END IF;
  -- Ensure no remaining role RLS policy still silently demands Google OAuth.
+ IF EXISTS (
+   SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='public' AND p.proname IN (
+     'ceac_google_mfa_eligible','ceac_session_is_google_aal2',
+     'ceac_session_is_google','ceac_require_google_aal2'
+   ) AND (has_function_privilege('authenticated',p.oid,'EXECUTE')
+       OR has_function_privilege('anon',p.oid,'EXECUTE'))
+ ) THEN
+   RAISE EXCEPTION 'Retired Google-only helpers remain callable by browser roles';
+ END IF;
  -- This detects regressions beyond the five known historical Storage policy names.
  IF EXISTS (
    SELECT 1 FROM pg_policies
