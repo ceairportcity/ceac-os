@@ -9,7 +9,8 @@ import "./RoutineOccurrenceReviews.css";
 export default function RoutineOccurrenceReviews({
   me, item, occurrences, canReview = false, onRecordEvidence,
 }) {
-  const [history, setHistory] = useState([]);
+  const [sourceHistory, setSourceHistory] = useState([]);
+  const [completedReviewScope, setCompletedReviewScope] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selection, setSelection] = useState("");
@@ -19,13 +20,18 @@ export default function RoutineOccurrenceReviews({
   const [reload, setReload] = useState(0);
   const sending = useRef(false);
   const ids = occurrences.map((row) => row.id).sort().join(",");
+  const reviewScope = `${me.org_id}:${me.id}:${item.id}:${ids}`;
+  const ready = completedReviewScope === reviewScope && !loading && !error;
+  const history = ready ? sourceHistory : [];
+  const checking = loading || completedReviewScope !== reviewScope;
+  const activeError = completedReviewScope === reviewScope ? error : "";
 
   useEffect(() => {
     let current = true;
-    setHistory([]); setError(""); setLoading(true); setSelection("");
+    setSourceHistory([]); setCompletedReviewScope(""); setError(""); setLoading(true); setSelection("");
     (async () => {
       try {
-        if (!ids) { if (current) setHistory([]); return; }
+        if (!ids) { if (current) setSourceHistory([]); return; }
         const all = [];
         let total = null;
         const occurrenceIds = ids.split(",");
@@ -46,12 +52,12 @@ export default function RoutineOccurrenceReviews({
         }
         if (all.length !== total)
           throw new Error("Occurrence review history exceeds the verification limit.");
-        if (current) setHistory(all);
+        if (current) setSourceHistory(all);
       } catch (cause) {
         if (current) setError(/routine_occurrence_reviews|PGRST205|42P01/.test(String(cause?.message||""))
           ? "Occurrence review is awaiting its authorised database migration."
           : "Occurrence reviews could not be verified; no review state is shown.");
-      } finally { if (current) setLoading(false); }
+      } finally { if (current) { setCompletedReviewScope(reviewScope); setLoading(false); } }
     })();
     return () => { current = false; };
   }, [me.id, me.org_id, item.id, ids, reload]);
@@ -62,7 +68,7 @@ export default function RoutineOccurrenceReviews({
 
   async function recordReview(event) {
     event.preventDefault();
-    if (sending.current || saving || loading || error || !reviewPermitted || !selection) return;
+    if (sending.current || saving || !ready || !reviewPermitted || !selection) return;
     const occurrence = occurrences.find((row) => row.id === selection);
     if (!occurrence || occurrence.recorded_by === me.id || (decision==="changes_requested" && note.trim().length < 3)) return;
     sending.current = true; setSaving(true); setError("");
@@ -81,20 +87,20 @@ export default function RoutineOccurrenceReviews({
   }
 
   return <section className="s2-routine-review" aria-label="Routine occurrence review history">
-    {loading && <p role="status">Verifying occurrence reviews…</p>}
-    {error && <p role="alert">{error} <button type="button" onClick={()=>setReload(n=>n+1)}>Retry</button></p>}
+    {checking && <p role="status">Verifying occurrence reviews…</p>}
+    {activeError && <p role="alert">{activeError} <button type="button" onClick={()=>setReload(n=>n+1)}>Retry</button></p>}
     {occurrences.map((entry) => {
       const current = latest.get(entry.id);
-      const canReviewEntry = reviewPermitted && !error && !loading && entry.recorded_by !== me.id;
+      const canReviewEntry = reviewPermitted && ready && entry.recorded_by !== me.id;
       return <div className="s2-routine-review-row" key={entry.id}>
         <div className="s2-routine-review-content">
           <strong>{entry.occurred_on}{item?.ref ? " · "+item.ref : ""}</strong>
           <small>{entry.note || "No outcome note recorded"}{entry.value != null ? " · "+entry.value : ""}</small>
-          {current && !error && <span className="s2-routine-review-label">
+          {current && ready && <span className="s2-routine-review-label">
             {current.decision === "accepted" ? "Reviewed · accepted" : "Reviewed · needs more evidence"}
             {current.note ? " · "+current.note : ""}
           </span>}
-          {!loading && !error && !current && <small>Awaiting independent review</small>}
+          {ready && !current && <small>Awaiting independent review</small>}
         </div>
         <div className="s2-routine-review-actions">
           {onRecordEvidence && <button type="button"

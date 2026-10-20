@@ -20,16 +20,22 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const [filter, setFilter] = useState("all");
   const [unit, setUnit] = useState("all");
   const [asOf, setAsOf] = useState(() => Date.now());
-  const [visibleActions, setVisibleActions] = useState([]);
+  const [sourceActions, setSourceActions] = useState([]);
+  const [completedProjectKey, setCompletedProjectKey] = useState("");
   const [actionLoading, setActionLoading] = useState(true);
   const [actionError, setActionError] = useState("");
   const [actionReload, setActionReload] = useState(0);
+  const projectEvidenceKey = `${project.org_id}:${project.id}`;
+  const activityChecking = actionLoading || completedProjectKey !== projectEvidenceKey;
+  const displayActionError = completedProjectKey === projectEvidenceKey ? actionError : "";
+  const visibleActions = !activityChecking && !displayActionError ? sourceActions : [];
+  // Discard evidence from the previously mounted project before effects run.
 
   // Read only real, permission-filtered, immutable contribution records.
   // Creating a work item is not evidence that someone did work.
   useEffect(() => {
     let active = true;
-    setActionLoading(true); setActionError(""); setVisibleActions([]);
+    setActionLoading(true); setActionError(""); setSourceActions([]); setCompletedProjectKey("");
     (async () => {
       try {
         const collected = [];
@@ -55,13 +61,13 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         }
         if (collected.length !== total)
           throw new Error("Project activity exceeds the verified display window. Request a report.");
-        if (active) setVisibleActions(currentProjectActions(collected));
+        if (active) setSourceActions(currentProjectActions(collected));
       } catch (error) {
         if (active) setActionError(/PGRST205|42P01|work_activity_records/.test(String(error?.message || ""))
           ? "Project activity is awaiting its authorised database migration."
           : "Recent project activity could not be verified.");
       } finally {
-        if (active) setActionLoading(false);
+        if (active) { setCompletedProjectKey(projectEvidenceKey); setActionLoading(false); }
       }
     })();
     return () => { active = false; };
@@ -140,7 +146,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
     </section>
         <section className="s2-project-panel">
           <header><h2>Project team</h2><small>{people.length} people with visible assignments or dated actions</small></header>
-          {actionError && <p role="alert">Additional contributors could not be verified; only visible assignments are shown.</p>}
+          {displayActionError && <p role="alert">Additional contributors could not be verified; only visible assignments are shown.</p>}
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>
             <PersonAvatar name={person.name} photoUrl={visiblePortraits[person.id]} /><span><strong>{person.name}</strong>
               <small>{person.assignedWorkCount} assigned · {person.recordedActionCount} dated action{person.recordedActionCount === 1 ? "" : "s"}</small></span>
@@ -172,12 +178,12 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         <section><h3>Key milestones</h3>{project.milestones === null ? <p>Milestone records are unavailable to this view.</p> : project.milestones?.length ? <ol className="s2-project-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.status === "achieved" ? "is-complete" : ""}><strong>{milestone.name}</strong><small>{String(milestone.status || "Not recorded").replaceAll("_", " ")} · {milestone.completed_at ? "Completed " + when(milestone.completed_at) : milestone.target_on ? "Target " + when(milestone.target_on) : "No recorded date"}</small></li>)}</ol> : <p>No milestones recorded.</p>}</section>
         <section className="s2-project-recent-activity" aria-label="Recent visible project activity">
           <header><h3>Recent activity</h3><button type="button" onClick={() => setActionReload((n) => n + 1)}
-            disabled={actionLoading}>Refresh</button></header>
+            disabled={activityChecking}>Refresh</button></header>
           <p>Recorded actions visible to your account, not automatic approvals.</p>
-          {actionLoading && <p role="status">Verifying project activity…</p>}
-          {actionError && <p role="alert">{actionError}</p>}
-          {!actionLoading && !actionError && !recentActions.length && <p>No dated contribution records visible yet.</p>}
-          {!actionLoading && !actionError && recentActions.length > 0 && <ol>{recentActions.map((entry) =>
+          {activityChecking && <p role="status">Verifying project activity…</p>}
+          {displayActionError && <p role="alert">{displayActionError}</p>}
+          {!activityChecking && !displayActionError && !recentActions.length && <p>No dated contribution records visible yet.</p>}
+          {!activityChecking && !displayActionError && recentActions.length > 0 && <ol>{recentActions.map((entry) =>
             <li key={entry.id}>
               <button type="button" onClick={() => openWork?.(entry.work_item_id)}>
                 <strong>{entry.action_summary}</strong>

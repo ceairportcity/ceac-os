@@ -447,3 +447,23 @@ test("all self-created and assigned routine forms share a compact weekday picker
   assert.match(css,/flex-wrap:wrap/);
   assert.doesNotMatch(picker,/btn btn-sm|btn-ghost/);
 });
+
+
+test("Stage 2 evidence readers hide prior project, period and actor data until the new scope is verified",()=>{
+  const project=source("src/components/Stage2ProjectOverview.jsx");
+  const exec=source("src/components/ExecutiveContributionDrilldown.jsx");
+  const reviews=source("src/components/RoutineOccurrenceReviews.jsx");
+  assert.match(project,/const projectEvidenceKey = `\$\{project\.org_id\}:\$\{project\.id\}`/);
+  assert.match(project,/completedProjectKey !== projectEvidenceKey/);
+  assert.match(project,/const visibleActions = !activityChecking && !displayActionError \? sourceActions : \[\]/);
+  assert.match(project,/setCompletedProjectKey\(projectEvidenceKey\)/);
+  assert.match(exec,/const evidenceScope = `\$\{me\.org_id\}:\$\{me\.id\}:\$\{start\}:\$\{end\}`/);
+  assert.match(exec,/const rows = evidenceReady \? sourceRows : \[\]/);
+  assert.match(exec,/setCompletedEvidenceScope\(evidenceScope\)/);
+  assert.match(exec,/\{evidenceReady&&<>/);
+  assert.match(reviews,/const reviewScope = `\$\{me\.org_id\}:\$\{me\.id\}:\$\{item\.id\}:\$\{ids\}`/);
+  assert.match(reviews,/const history = ready \? sourceHistory : \[\]/);
+  assert.match(reviews,/setCompletedReviewScope\(reviewScope\)/);
+  assert.match(reviews,/if \(sending\.current \|\| saving \|\| !ready/);
+  assert.match(reviews,/const canReviewEntry = reviewPermitted && ready/);
+});

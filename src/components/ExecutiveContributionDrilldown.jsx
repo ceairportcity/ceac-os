@@ -8,7 +8,8 @@ const normalize = (v) => String(v || "").trim().toLocaleLowerCase();
 /** Executive factual project -> department -> person -> dated-action detail.
  * No personal HR ratings, private employee activity, or automatic performance scores. */
 export default function ExecutiveContributionDrilldown({ me, period, units, openItem }) {
-  const [rows, setRows] = useState([]);
+  const [sourceRows, setSourceRows] = useState([]);
+  const [completedEvidenceScope, setCompletedEvidenceScope] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [unitId, setUnitId] = useState("");
@@ -19,10 +20,15 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
   const [reload, setReload] = useState(0);
   const start = period?.starts_on || "";
   const end = period?.ends_on || "";
+  const evidenceScope = `${me.org_id}:${me.id}:${start}:${end}`;
+  const evidenceReady = completedEvidenceScope === evidenceScope && !loading && !error && Boolean(start && end);
+  const rows = evidenceReady ? sourceRows : [];
+  const evidenceChecking = Boolean(start && end) && (loading || completedEvidenceScope !== evidenceScope);
+  const activeError = completedEvidenceScope === evidenceScope ? error : "";
 
   useEffect(() => {
     let current = true;
-    setRows([]); setLoading(Boolean(start && end)); setError("");
+    setSourceRows([]); setCompletedEvidenceScope(""); setLoading(Boolean(start && end)); setError("");
     setSelectedId(null); setUnitId(""); setProjectId(""); setPersonId("");
     if (!start || !end) return () => { current = false; };
     (async () => {
@@ -49,10 +55,10 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
         if (collected.length!==expected)
           throw new Error("The activity history exceeds the verification limit. Contact Administration for a verified report.");
         if (!current) return;
-        setRows(activityRecordsInPeriod(collected, start, end));
+        setSourceRows(activityRecordsInPeriod(collected, start, end));
       } catch (e) {
         if (current) setError(e?.message || "Executive contribution evidence could not be verified.");
-      } finally { if (current) setLoading(false); }
+      } finally { if (current) { setCompletedEvidenceScope(evidenceScope); setLoading(false); } }
     })();
     return () => { current=false; };
   }, [me.id,me.org_id,start,end,reload]);
@@ -96,9 +102,9 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
       <p>Inspect dated contributions by project, department and person. Entries are self-recorded evidence, not automatically approved outcomes, employee ratings or attendance.</p>
     </div><button type="button" className="btn btn-ghost btn-sm" disabled={loading} onClick={()=>setReload(n=>n+1)}>Refresh evidence</button></header>
     {(!start || !end) && <p role="status">Select a reporting period to inspect recorded contributions.</p>}
-    {loading && <p role="status">Checking source records and permissions…</p>}
-    {error && <p role="alert" className="flag flag-amber">{error} No partial totals are displayed.</p>}
-    {!loading&&!error&&start&&end&&<>
+    {evidenceChecking && <p role="status">Checking source records and permissions…</p>}
+    {activeError && <p role="alert" className="flag flag-amber">{activeError} No partial totals are displayed.</p>}
+    {evidenceReady&&<>
       <div className="s2-exec-contrib-facts">
         <div><strong>{visible.length}</strong><span>Dated actions recorded</span></div>
         <div><strong>{workIds.size}</strong><span>Distinct responsibilities</span></div>
