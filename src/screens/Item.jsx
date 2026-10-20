@@ -5,6 +5,8 @@ import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
 import WorkActivityDiary from "../components/WorkActivityDiary";
 import WorkProjectLink from "../components/WorkProjectLink";
+import { routineFutureChange, routineOccurrenceDetails } from "../lib/routineWriteValidation";
+import { ghanaCalendarDate } from "../lib/dailyLandscape";
 import { OperationalFileList } from "../components/OperationalFiles";
 import {
   WorkDetailCopy,
@@ -408,16 +410,11 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
     if (!routine) return;
     setBusy(true); setErr(null);
     try {
-      const numericValue = routine.records_value ? Number(routineValue) : null;
-      if (routine.records_value && (routineValue.trim() === "" || Number.isNaN(numericValue))) {
-        throw new Error(`Enter ${routine.value_label || "the routine value"}.`);
-      }
-      const { error } = await supabase.rpc("record_routine_occurrence", {
-        p_work_item_id: id,
-        p_occurred_on: routineDate,
-        p_value: routine.records_value ? numericValue : null,
-        p_note: note.trim() || null,
+      const details = routineOccurrenceDetails({
+        workId: id, date: routineDate, today: ghanaCalendarDate(),
+        numericValue: routineValue, recordsValue: routine.records_value, note,
       });
+      const { error } = await supabase.rpc("record_routine_occurrence", details);
       if (error) throw error;
       setSheet(null); setRoutineValue(""); setNote(""); await load();
     } catch (e) { setErr(e.message || "The routine occurrence could not be recorded."); }
@@ -438,17 +435,13 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   async function saveRoutineSchedule() {
     setBusy(true); setErr(null);
     try {
-      const weekdays = routineSchedule === "weekly"
-        ? [Number(routineWeeklyDay)]
-        : routineSchedule === "weekdays" ? routineWeekdays.map(Number) : null;
-      const { error } = await supabase.rpc("change_routine_schedule", {
-        p_work_item_id: id,
-        p_effective_from: routineEffective,
-        p_schedule_kind: routineSchedule,
-        p_weekdays: weekdays,
-        p_day_of_month: routineSchedule === "monthly" ? Number(routineDayOfMonth) : null,
-        p_ends_on: routineEnd || null,
+      const details = routineFutureChange({
+        workId: id, effectiveFrom: routineEffective, schedule: routineSchedule,
+        weekday: routineWeeklyDay, weekdays: routineWeekdays,
+        monthDay: routineDayOfMonth, end: routineEnd, today: ghanaCalendarDate(),
+        hasReliableSchedule: Boolean(routine?.schedule_kind),
       });
+      const { error } = await supabase.rpc("change_routine_schedule", details);
       if (error) throw error;
       setSheet(null); await load();
     } catch (e) { setErr(e.message || "The routine schedule could not be changed."); }

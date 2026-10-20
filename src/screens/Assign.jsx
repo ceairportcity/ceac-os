@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
+import { routineCreationDetails } from "../lib/routineWriteValidation";
 import VoiceInput from "../components/VoiceInput";
 import { parseWorkInput } from "../lib/parseTask";
 import { humanError } from "../lib/productLanguage";
@@ -269,7 +270,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     if (kind === "decision") return !title.trim() || !decisionQuestion.trim() || !assignee;
     if (kind === "request") return !title.trim() || (!requestResponsibleUnit && !assignee);
     if (kind === "case") return !title.trim() || !assignee || !caseOpenedOn || Boolean(caseTargetOn && caseTargetOn < caseOpenedOn);
-    if (kind === "routine") return !title.trim() || !assignee
+    if (kind === "routine") return !title.trim() || !assignee || !routineStart || Boolean(routineEnd && routineEnd < routineStart)
       || (routineSchedule === "weekdays" && routineWeekdays.length === 0)
       || (routineSchedule === "monthly" && !(Number(routineDayOfMonth) >= 1 && Number(routineDayOfMonth) <= 31))
       || (routineRecordsValue && !routineValueLabel.trim());
@@ -442,16 +443,11 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       }
 
       if (kind === "routine") {
-        const details = {
-          schedule_kind: routineSchedule,
-          records_value: routineRecordsValue,
-        };
-        if (routineStart) details.starts_on = routineStart;
-        if (routineEnd) details.ends_on = routineEnd;
-        if (routineSchedule === "weekly") details.weekdays = [Number(routineWeeklyDay)];
-        if (routineSchedule === "weekdays") details.weekdays = routineWeekdays.map(Number);
-        if (routineSchedule === "monthly") details.day_of_month = Number(routineDayOfMonth);
-        if (routineRecordsValue) details.value_label = routineValueLabel.trim();
+        const details = routineCreationDetails({
+          schedule: routineSchedule, start: routineStart, end: routineEnd,
+          weekday: routineWeeklyDay, weekdays: routineWeekdays, monthDay: routineDayOfMonth,
+          recordsValue: routineRecordsValue, valueLabel: routineValueLabel,
+        });
 
         const { data: workId, error: routineError } = await supabase.rpc("create_typed_work", {
           p_kind: "routine",
