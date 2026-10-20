@@ -126,7 +126,7 @@ test("approved Executive stylesheet has exactly the same Git blob", () => {
   assert.equal(digest, "5613e38749322da28f6bfd6f4a584dd4bebd6d47");
 });
 
-test("canonical S3 migration and fourteen reviewed security migrations have unique ordered versions", () => {
+test("canonical S3 migration and fifteen reviewed security migrations have unique ordered versions", () => {
   const folder = "supabase/migrations";
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
