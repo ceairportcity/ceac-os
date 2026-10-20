@@ -296,3 +296,16 @@ test("recorded routine dates can open a factual evidence entry without certifyin
   assert.match(diary, /work_activity_records/);
   assert.doesNotMatch(diary, /autoApprove|markObjectiveAchieved|record_routine_occurrence/);
 });
+
+test("unit coordination Room uses compact square controls and readable light-blue visual hierarchy",()=>{
+  const css=source("src/styles.css");
+  const room=source("src/screens/Room.jsx");
+  assert.match(css,/\.room-head\{[\s\S]*?color:#173D63;background:#FFFFFF;/);
+  assert.match(css,/\.room-scope-strip button\{[\s\S]*?border-bottom:2px solid transparent;border-radius:0/);
+  assert.match(css,/\.room-message\.mine\{[\s\S]*?border-radius:6px;background:#F1F7FF/);
+  assert.match(css,/\.room-plus\{[\s\S]*?width:36px;height:42px;[^}]*border-radius:6px/);
+  assert.match(css,/\.room-person-avatar\{[\s\S]*?border-radius:6px/);
+  assert.doesNotMatch(css,/\.room-scope-strip button\{[^}]*border-radius:999px/);
+  assert.match(room,/aria-label="Back from Room"/);
+  assert.match(room,/aria-label="Unit conversations"/);
+});

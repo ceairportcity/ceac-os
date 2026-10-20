@@ -477,7 +477,7 @@ export default function Room({
 
   return <div className="body room-screen">
     <header className="room-head">
-      <button className="room-back" onClick={back}>←</button>
+      <button type="button" className="room-back" aria-label="Back from Room" onClick={back}>←</button>
       <div className="room-head-copy">
         <span>{roomLabel(room)}</span>
         <h1>{roomTitle(room)}</h1>
