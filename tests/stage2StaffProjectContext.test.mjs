@@ -31,3 +31,10 @@ test("Failed project context reads prevent a save and duplicate uncertain retrie
   assert.match(source, /confirmation\.data\.phase_id \|\| null/);
   assert.match(source, /ownCreatePending\.current/);
 });
+
+test("Staff project selector searches authorised projects and retains the selected project", () => {
+  assert.match(source, /aria-label="Search authorised projects"/);
+  assert.match(source, /project\.id === projectId \|\| project\.name\.toLowerCase\(\)\.includes\(projectQuery\.trim\(\)\.toLowerCase\(\)\)/);
+  assert.match(source, /setProjectId\(""\); setProjectQuery\(""\)/);
+  assert.match(source, /createVisibility === "unit" && <FieldGroup label="Linked project/);
+});

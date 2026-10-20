@@ -61,6 +61,7 @@ export default function Work({ me, isManager = false, openItem }) {
   const [sheet, setSheet] = useState(null);
   const [createVisibility, setCreateVisibility] = useState("unit");
   const [projectId, setProjectId] = useState("");
+  const [projectQuery, setProjectQuery] = useState("");
   const [objectiveId, setObjectiveId] = useState("");
   const [phaseId, setPhaseId] = useState("");
   const [objectives, setObjectives] = useState([]);
@@ -250,7 +251,7 @@ export default function Work({ me, isManager = false, openItem }) {
 
   function openCreate(visibility) {
     setCreateVisibility(visibility);
-    setProjectId("");
+    setProjectId(""); setProjectQuery("");
     setObjectiveId(""); setPhaseId(""); setObjectives([]); setPhases([]);
     setVerifiedProjectId(""); setProjectContextError("");
     setTitle("");
@@ -486,13 +487,17 @@ export default function Work({ me, isManager = false, openItem }) {
       <FieldGroup label="Finished result"><textarea className="field" rows={3} placeholder="What should be true when this is finished?" value={expectedOutcome} onChange={(event) => setExpectedOutcome(event.target.value)} /></FieldGroup>
 
       {createVisibility === "unit" && <FieldGroup label="Linked project (optional)">
+        <input className="field" type="search" aria-label="Search authorised projects"
+          placeholder="Search authorised projects" value={projectQuery}
+          onChange={(event) => setProjectQuery(event.target.value)} />
         <select className="field" aria-label="Linked project" value={projectId}
           onChange={(event) => {
             setProjectId(event.target.value); setObjectiveId(""); setPhaseId("");
             setObjectives([]); setPhases([]); setVerifiedProjectId("");
           }}>
           <option value="">No project attached</option>
-          {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+          {projects.filter((project) => project.id === projectId || project.name.toLowerCase().includes(projectQuery.trim().toLowerCase()))
+            .map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
         </select>
       </FieldGroup>}
       {createVisibility === "unit" && projectId && <>
