@@ -32,7 +32,7 @@ test("weekly assigned routine is created once and appears on staff's future Work
   const followingSaturday = afterSaturday.toISOString().slice(0,10);
 
   const manager = await auth(browser,"manager@ceac.local.test");
-  const title = "Saturday venue inspection " + nextSaturday;
+  const title = "Saturday venue inspection " + nextSaturday + " " + Date.now();
   try {
     await manager.page.goto(BASE + "/?tab=work");
     await expect(manager.page.locator(".ev2-work-manager")).toBeVisible();
@@ -100,6 +100,33 @@ test("weekly assigned routine is created once and appears on staff's future Work
     );
     expect(projectedDates, "one occurrence per day, no duplicate Work item").toEqual(expectedDates);
     await expect(scheduled.getByText("Scheduled", {exact:true}).first()).toBeVisible();
+    // A normal authenticated manager changes FUTURE dates; the first Saturday
+    // remains due. Service-role writes must not fabricate schedule history.
+    const managerClient = (await import("@supabase/supabase-js")).createClient(
+      process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY,
+      { auth: { autoRefreshToken:false, persistSession:false } }
+    );
+    const signIn = await managerClient.auth.signInWithPassword({
+      email: "manager@ceac.local.test", password: process.env.ROLE_FIXTURE_PASSWORD,
+    });
+    expect(signIn.error, signIn.error?.message).toBeNull();
+    const sunday = new Date(nextSaturday+"T12:00:00Z");
+    sunday.setUTCDate(sunday.getUTCDate()+1);
+    const firstSunday = sunday.toISOString().slice(0,10);
+    try {
+      const changed = await managerClient.rpc("change_routine_schedule", {
+        p_work_item_id: actualWork.id, p_effective_from: firstSunday,
+        p_schedule_kind: "weekly", p_weekdays: [7],
+      });
+      expect(changed.error, changed.error?.message).toBeNull();
+      expect(changed.data).toBe(2);
+      await staff.page.reload();
+      const changedRows = staff.page.getByRole("region",{name:"My scheduled recurring work"})
+        .locator(".s2-assigned-routine-list > button").filter({hasText:title});
+      await expect(changedRows.locator(`time[datetime="${firstSunday}"]`)).toHaveCount(1,{timeout:20000});
+      await expect(changedRows.locator(`time[datetime="${nextSaturday}"]`)).toHaveCount(1);
+      await expect(changedRows.locator(`time[datetime="${followingSaturday}"]`)).toHaveCount(0);
+    } finally { await managerClient.auth.signOut(); }
     await staff.page.screenshot({path:"test-artifacts/stage2-recurring-staff-weekly-work.png",fullPage:true});
   } finally { await staff.context.close(); }
 });

@@ -14,6 +14,7 @@ function shiftDate(date, days) {
 export default function ManagerRoutineOccurrences({ me, openItem }) {
   const [series, setSeries] = useState([]);
   const [history, setHistory] = useState([]);
+  const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [today,setToday] = useState(()=>ghanaCalendarDate());
@@ -44,7 +45,7 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
   useEffect(() => {
     let alive = true;
     (async () => {
-      setLoading(true); setError(""); setSeries([]); setHistory([]); setVerifiedIdentity("");
+      setLoading(true); setError(""); setSeries([]); setHistory([]); setVersions([]); setVerifiedIdentity("");
       try {
         if (!unitIds.length) { if (alive) setVerifiedIdentity(identity); return; }
         const { data: operations, error: operationError, count: operationCount } = await supabase.from("recurring_operations")
@@ -54,12 +55,21 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
           throw new Error("Unit routines are incomplete");
         const ids = operations.map((row) => row.id);
         let records = [];
+        let schedules = [];
         if (ids.length) {
-          const result = await supabase.from("operation_occurrences")
+          const [result, scheduleResult] = await Promise.all([supabase.from("operation_occurrences")
             .select("id,operation_id,occurred_on",{count:"exact"})
             .in("operation_id", ids)
             .gte("occurred_on", shiftDate(today, -14))
-            .lte("occurred_on", shiftDate(today, 30));
+            .lte("occurred_on", shiftDate(today, 30)),
+            supabase.from("routine_schedule_versions")
+              .select("operation_id,version,effective_from,effective_to,schedule_kind,weekdays,day_of_month",{count:"exact"})
+              .in("operation_id", ids).lte("effective_from", shiftDate(today,30))
+              .or(`effective_to.is.null,effective_to.gte.${shiftDate(today,-14)}`),
+          ]);
+          if (scheduleResult.error || !Array.isArray(scheduleResult.data) || typeof scheduleResult.count!=="number" || scheduleResult.count!==scheduleResult.data.length)
+            throw new Error("Unit routine schedule versions are incomplete");
+          schedules = scheduleResult.data;
           if (result.error || !Array.isArray(result.data) || typeof result.count!=="number" || result.count!==result.data.length)
             throw new Error("Unit routine history is incomplete");
           records = result.data;
@@ -67,10 +77,10 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
         // Corrupt projection cannot silently remove a responsibility.
         for (const operation of operations) if (operation.active && !operation.paused_at) {
           projectedRoutineDates(operation, records, {
-            fromDate: shiftDate(today,-14), throughDate: shiftDate(today,30), today,
+            fromDate: shiftDate(today,-14), throughDate: shiftDate(today,30), today, versions: schedules,
           });
         }
-        if (alive) { setSeries(operations); setHistory(records); setVerifiedIdentity(identity); }
+        if (alive) { setSeries(operations); setHistory(records); setVersions(schedules); setVerifiedIdentity(identity); }
       } catch {
         if (alive) setError("Routine schedules or recorded occurrences could not be verified for this account.");
       } finally {
@@ -82,7 +92,7 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
 
   const items = !ready ? [] : series.filter((operation)=>!operation.paused_at).flatMap((operation) =>
     projectedRoutineDates(operation, history, {
-      fromDate: shiftDate(today,-14), throughDate: shiftDate(today,30), today,
+      fromDate: shiftDate(today,-14), throughDate: shiftDate(today,30), today, versions,
     }).map((item)=>({...item,operation}))
   ).sort((a,b)=>a.date.localeCompare(b.date)||a.operation.name.localeCompare(b.operation.name));
 

@@ -59,16 +59,24 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
           throw new Error("Assigned routine rows are incomplete");
         const routines = result.data;
         if (!routines.length) { if (active) { setRows([]); setVerifiedIdentity(identity); } return; }
-        const history = await supabase.from("operation_occurrences")
+        const [history, schedules] = await Promise.all([supabase.from("operation_occurrences")
           .select("id,operation_id,occurred_on",{count:"exact"})
           .in("operation_id", routines.map((x) => x.id))
-          .gte("occurred_on", plusDays(today,-14)).lte("occurred_on", plusDays(today,14));
+          .gte("occurred_on", plusDays(today,-14)).lte("occurred_on", plusDays(today,14)),
+          supabase.from("routine_schedule_versions")
+            .select("operation_id,version,effective_from,effective_to,schedule_kind,weekdays,day_of_month",{count:"exact"})
+            .in("operation_id", routines.map((row) => row.id))
+            .lte("effective_from", plusDays(today,14))
+            .or(`effective_to.is.null,effective_to.gte.${plusDays(today,-14)}`),
+        ]);
+        if (schedules.error || !Array.isArray(schedules.data) || typeof schedules.count!=="number" || schedules.count!==schedules.data.length)
+          throw new Error("Assigned routine schedule versions are incomplete");
         if (history.error || !Array.isArray(history.data) || typeof history.count!=="number" || history.count!==history.data.length)
           throw new Error("Assigned routine history is incomplete");
         const projected = routines.flatMap((routine) => {
           if (routine.paused_at) return [];
           return projectedRoutineDates(routine, history.data, {
-            fromDate: plusDays(today,-14), throughDate: plusDays(today,14), today,
+            fromDate: plusDays(today,-14), throughDate: plusDays(today,14), today, versions: schedules.data,
           }).map((item) => ({ ...item, routine }));
         }).sort((a,b) => a.date.localeCompare(b.date) || a.routine.name.localeCompare(b.routine.name));
         if (active) { setRows(projected); setVerifiedIdentity(identity); }
