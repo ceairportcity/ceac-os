@@ -29,7 +29,7 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
   useEffect(() => {
     let current = true;
     setSourceRows([]); setCompletedEvidenceScope(""); setLoading(Boolean(start && end)); setError("");
-    setSelectedId(null); setUnitId(""); setProjectId(""); setPersonId("");
+    setSelectedId(null); setUnitId(""); setProjectId(""); setPersonId(""); setQuery("");
     if (!start || !end) return () => { current = false; };
     (async () => {
       try {

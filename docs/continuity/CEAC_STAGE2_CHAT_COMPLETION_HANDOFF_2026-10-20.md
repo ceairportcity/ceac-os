@@ -42,3 +42,11 @@ The other current branch code also contains migration **167** for per-occurrence
 5. Only with the owner's separate approved production GO: verified backup/rollback, original Supabase migration reconcile, controlled app deployment, existing invitation-controlled email/password smoke across real roles, authenticated visual/product check and observation. Google-only login and universal mandatory MFA remain jointly **deferred** to a separate release by the 19 October owner decision. No live provider, HR/payroll, database, Vercel or repo-visibility change now.
 
 Do not describe the owner repair as production released or 100% feature complete before these gates are actually proven.
+
+
+## 20 October follow-on code-only closure (after 7d9530)
+
+- **Evidence isolation:** `7cac6c65` scopes Projects' read-only dated contributors, Executive reporting and per-date human reviews by active account/project/period/record. While switching scope or verifying pages, the UI does not render stale evidence or allow a stale review submission. Source-contract tests added to existing `verify:source` suite; connected source checks are not native browser/SQL acceptance.
+- **Filter isolation:** on moving between Projects, status/department/search selections reset and do not carry hidden prior-project state. Executive search clears on reporting context changes. Scoped refresh of the SAME project preserves the user's filters.
+
+Work should inspect actual current PR HEAD, preserve newer commits, run **affected** source/browser checks and review any change-impact on identity scoping, then qualify final release at the frozen candidate SHA. No new migration, permission, Auth, production or security flag change in these UI patches.

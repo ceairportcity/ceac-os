@@ -19,6 +19,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [unit, setUnit] = useState("all");
+  const [filterProjectKey, setFilterProjectKey] = useState("");
   const [asOf, setAsOf] = useState(() => Date.now());
   const [sourceActions, setSourceActions] = useState([]);
   const [completedProjectKey, setCompletedProjectKey] = useState("");
@@ -26,6 +27,13 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const [actionError, setActionError] = useState("");
   const [actionReload, setActionReload] = useState(0);
   const projectEvidenceKey = `${project.org_id}:${project.id}`;
+  const projectFilterReady = filterProjectKey === projectEvidenceKey;
+  const scopedSearch = projectFilterReady ? search : "";
+  const scopedFilter = projectFilterReady ? filter : "all";
+  const scopedUnit = projectFilterReady ? unit : "all";
+  useEffect(() => {
+    setSearch(""); setFilter("all"); setUnit("all"); setFilterProjectKey(projectEvidenceKey);
+  }, [project.id, project.org_id]);
   const activityChecking = actionLoading || completedProjectKey !== projectEvidenceKey;
   const displayActionError = completedProjectKey === projectEvidenceKey ? actionError : "";
   const visibleActions = !activityChecking && !displayActionError ? sourceActions : [];
@@ -110,9 +118,9 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const people = useMemo(() => visibleProjectPeople(work, visibleActions), [work, visibleActions]);
   const recentActions = visibleActions.slice(0, 6);
 
-  const visible = tasks.filter((item) => (filter === "all" || (filter === "finished" ? finished.has(item.status) : !inactive.has(item.status))) &&
-    (unit === "all" || item.unit_id === unit) &&
-    [item.title, item.ref, item.profiles?.full_name].some((value) => String(value || "").toLowerCase().includes(search.trim().toLowerCase())));
+  const visible = tasks.filter((item) => (scopedFilter === "all" || (scopedFilter === "finished" ? finished.has(item.status) : !inactive.has(item.status))) &&
+    (scopedUnit === "all" || item.unit_id === scopedUnit) &&
+    [item.title, item.ref, item.profiles?.full_name].some((value) => String(value || "").toLowerCase().includes(scopedSearch.trim().toLowerCase())));
   return <div className="s2-project">
     <div className="s2-project-layout">
       <div className="s2-project-content">
@@ -156,9 +164,9 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         <section className="s2-project-panel">
           <header><h2>Project tasks</h2>{canAssign && <button className="s2-project-primary" onClick={addWork}>+ Add task</button>}</header>
           <div className="s2-project-filters">
-            <input type="search" aria-label="Search project tasks" placeholder="Search tasks or assignees" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <select aria-label="Task status" value={filter} onChange={(e) => setFilter(e.target.value)}><option value="all">All tasks</option><option value="active">Active</option><option value="finished">Finished</option></select>
-            <select aria-label="Department" value={unit} onChange={(e) => setUnit(e.target.value)}><option value="all">All departments</option>{units.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
+            <input type="search" aria-label="Search project tasks" placeholder="Search tasks or assignees" value={scopedSearch} onChange={(e) => setSearch(e.target.value)} />
+            <select aria-label="Task status" value={scopedFilter} onChange={(e) => setFilter(e.target.value)}><option value="all">All tasks</option><option value="active">Active</option><option value="finished">Finished</option></select>
+            <select aria-label="Department" value={scopedUnit} onChange={(e) => setUnit(e.target.value)}><option value="all">All departments</option>{units.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
           </div>
           <div className="s2-project-table-scroll"><table><thead><tr><th>Task</th><th>Department</th><th>Assigned to</th><th>Due</th><th>Status</th></tr></thead>
           <tbody>{visible.map((item) => <tr key={item.id}>

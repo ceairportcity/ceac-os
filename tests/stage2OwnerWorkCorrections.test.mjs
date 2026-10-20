@@ -467,3 +467,14 @@ test("Stage 2 evidence readers hide prior project, period and actor data until t
   assert.match(reviews,/if \(sending\.current \|\| saving \|\| !ready/);
   assert.match(reviews,/const canReviewEntry = reviewPermitted && ready/);
 });
+
+
+test("project navigation does not inherit stale task filters or another project's activities",()=>{
+  const project=source("src/components/Stage2ProjectOverview.jsx");
+  const exec=source("src/components/ExecutiveContributionDrilldown.jsx");
+  assert.match(project,/const scopedSearch = projectFilterReady \? search : ""/);
+  assert.match(project,/const scopedFilter = projectFilterReady \? filter : "all"/);
+  assert.match(project,/const scopedUnit = projectFilterReady \? unit : "all"/);
+  assert.match(project,/setSearch\(""\); setFilter\("all"\); setUnit\("all"\); setFilterProjectKey\(projectEvidenceKey\)/);
+  assert.match(exec,/setSelectedId\(null\); setUnitId\(""\); setProjectId\(""\); setPersonId\(""\); setQuery\(""\)/);
+});
