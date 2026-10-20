@@ -382,3 +382,12 @@ test("Unit Room keeps helper labels at least 12px with compact non-pill controls
     assert.doesNotMatch(body,/border-radius:999px/,"Room pill retained in "+selector.trim());
   }
 });
+
+test("Executive contribution filters stay connected from unit to its projects to its people",()=>{
+  const code=source("src/components/ExecutiveContributionDrilldown.jsx");
+  assert.match(code,/rows\.filter\(a => !unitId \|\| a\.work_items\?\.unit_id === unitId\)\.forEach/);
+  assert.match(code,/\},\[rows,unitId\]\)/);
+  assert.match(code,/setUnitId\(e\.target\.value\);setProjectId\(""\);setPersonId\(""\)/);
+  assert.match(code,/!projectId \|\| a\.source_project_id===projectId/);
+  assert.match(code,/!personId \|\| a\.contributor_id===personId/);
+});

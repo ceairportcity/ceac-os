@@ -60,13 +60,13 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
   // The unit is the responsibility's unit; the project is frozen at action time.
   const projects = useMemo(() => {
     const map = new Map();
-    rows.forEach((a) => {
+    rows.filter(a => !unitId || a.work_items?.unit_id === unitId).forEach((a) => {
       if (a.source_project_id) map.set(a.source_project_id, {
         id:a.source_project_id, name:a.source_project?.name || "Authorised project"
       });
     });
     return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name));
-  },[rows]);
+  },[rows,unitId]);
   const people = useMemo(() => {
     const map = new Map();
     rows.filter(a => (!unitId || a.work_items?.unit_id===unitId)
@@ -106,7 +106,7 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
         <div><strong>{affectedProjects.size}</strong><span>Projects with evidence</span></div>
       </div>
       <div className="s2-exec-contrib-controls">
-        <label>Department <select value={unitId} onChange={e=>{setUnitId(e.target.value);setPersonId("");}}><option value="">All authorised units</option>
+        <label>Department <select value={unitId} onChange={e=>{setUnitId(e.target.value);setProjectId("");setPersonId("");}}><option value="">All authorised units</option>
           {units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
         <label>Project <select value={projectId} onChange={e=>{setProjectId(e.target.value);setPersonId("");}}><option value="">All projects</option>
           {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
