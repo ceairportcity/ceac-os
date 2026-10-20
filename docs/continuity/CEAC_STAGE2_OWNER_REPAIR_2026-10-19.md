@@ -138,3 +138,31 @@ Full custom intervals/timezones/reminders, independent occurrence checklist/evid
 At `3170d22b`, the existing desktop/phone/laptop route sweep completed **12/14 passes in 3.1 minutes** across Staff, Manager, Administration and Executive. All mobile sweeps, Administration/Executive inventories and laptop shell checks passed. Staff and Manager desktop inventories reported actual 11px human-assessment labels, review-history summaries and publication text below the unchanged 12px minimum.
 
 The correction raises the existing performance-family text declarations below 12px, including disclosure/history content, to the 12px floor; the human-rating eyebrow also becomes 12px. Rating select/textarea controls use 16px on phones. No blanket test exclusion, visual threshold, font-size assertion, role authority or data access rule is relaxed. CSS source increases by only 44 bytes. At `823c1e08`, native Node 22 source/build passed **481/481**, and the real independent HR publication journey passed **1/1** in 15.2 seconds. The first scoped route invocation selected no tests because its regex was anchored before Playwright's full title prefix; it is not acceptance evidence. The corrected selector executed the two actual Staff/Manager desktop inventories: **2/2 passed in 47.9 seconds**, exit 0. These affected checks close the two observed readability failures; the 12 other route checks passed at the preceding application checkpoint. This is route/readability evidence, not literal owner-reference pixel acceptance or final release-wide certification.
+
+
+## 20 October resumed implementation — reconciled candidate fb32d085
+
+Tested source SHA: `fb32d0853071219cbeca81c23ac1c91a43438921`, built on actual owner continuation `b27f495ad9562f983812da4fbf9478159ba139ae` (36 commits beyond dd534b92). New Room, Work project links/validation, source-backed contributions, confidentiality guards, compact weekday controls and independent routine reviews were preserved. No restart or new branch.
+
+Custom intervals, IANA timezones, local due times, optional end counts and future schedule options now share the existing organisational Work engine and canonical RLS-backed preview. Latest strict validation and shared weekday picker remain. Canonical review migration167 is retained; the CLI generated scheduling extension168 at `20261020120556_168_organisational_schedule_options.sql`. Inventory now explicitly checks173 unique migrations. Two new public invoker APIs and their separately reviewed private configuration implementation are checked independently of the unchanged148 public privileged-signature allowlist.
+
+Executed in the existing isolated Codespace with Node22.16.0 and synthetic Supabase accounts:
+
+| Scope | Command / evidence | Actual result |
+| --- | --- | --- |
+| Dependencies | `npm ci`; locked app dependencies restored after separating the pinned test runner | exit0 |
+| Affected source | `node --test` routineScheduleOptions, routineWriteValidation, stage2OwnerWorkCorrections, stage2StaffProjectContext, stage2WorkRoleReadIsolation, projectContributionPeople, stage2AssignedRoutines, technical-support-source-contract, stage2OwnerUxContract tests |107/107, exit0|
+| Build | `npm run build` |exit0; emitted CSS631430 bytes, unchanged ceiling631808|
+| SQL | psql ON_ERROR_STOP for routine occurrence review, schedule options, self routines, privileged API surface and human appraisal ratings gates |5/5, each exit0|
+| Security advisors | `supabase db advisors --local --type security --level error --fail-on error` |exit0|
+| Authenticated browser | pinned Playwright1.55.0, workers1: stage2-self-routines, stage2-recurring-work, stage2-project-review-publication, stage2-control-center-navigation, stage2-owner-workflows |14/14,1.6m, exit0|
+
+Exact timestamps, individual exits, logs, synthetic screenshots and hash manifest: `/workspaces/ceac-stage2-verification/fb32d085/`. Browser covers phone/desktop Control Center return routes; all-role responsibility creation and attributable correction; independent Manager/HR/employee publication; assigned future dates and pause history; all-role own routine recording with colleague denial; custom interval/count/timezone and future edit preserving the earlier version. It does not certify all routes, literal private-image pixel acceptance, complete advanced recurrence or production.
+
+Local migration reconciliation:168 is byte-identical to the earlier isolated scheduling167 experiment (SHA256 c8adf620ea2c0cb69a3ca72ab1cc48eb0c644e838e3ee2eac09ca8eafbf7b8bc). Official CLI repaired ONLY that local receipt to168, then applied canonical review167 using `migration up --local --include-all`. Both affected SQL gates passed. This is preserved-fixture forward compatibility, NOT a fresh ordered173-migration replay; final frozen qualification must prove the chronological replay. No remote database writes.
+
+Initial browser attempt could not reach the stopped local server after Codespace restart; a readiness attempt stopped at the server condition. Those records are retained, not counted as product passes. The final14-run used locked app Vite8.3.0, external pinned test runner and stdin detached so Vite cannot suspend on background terminal input. Future `npm ci` removes the three test-runner symlinks: recreate them from `/workspaces/ceac-browser-runtime-1.55.0/node_modules/`, do not let npx silently choose a newer runner or update app dependencies.
+
+Required-check verification remains PENDING: gh is absent, and existing repository credential API reads of main branch protection and rulesets both returned403. No permissions or protections were modified; no external success statuses were fabricated. Continue authorised feature work while final-check access is unresolved.
+
+Still open: organisational recurrence dates in Staff/My and Manager/Unit Calendar; real reminders; per-occurrence checklist/file evidence/status and authorised cover/delegation/one-date edits; exact approved visual reconciliation; final frozen release-wide role/tenant/Storage/Edge/activation/recovery and fresh173 replay; recoverable production backup, ordered cutover and existing-project deployed URL proof. Production main34f3c698 and existing accounts remain unchanged. Google OAuth and mandatory MFA stay deferred.
