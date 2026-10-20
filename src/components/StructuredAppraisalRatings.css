@@ -1,7 +1,7 @@
 .s2-rating-section{margin:18px 0;border:1px solid #dfe9f6;border-radius:12px;background:#fff;padding:18px;color:#274766}
 .s2-rating-section>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .s2-rating-section h3{margin:4px 0;font-size:16px;color:#15477f}
-.s2-rating-eyebrow{font-size:11px;text-transform:uppercase;font-weight:750;color:#3271b3;letter-spacing:.06em}
+.s2-rating-eyebrow{font-size:12px;text-transform:uppercase;font-weight:750;color:#3271b3;letter-spacing:.06em}
 .s2-rating-section p,.s2-rating-section small{color:#70839a;font-size:12px;line-height:1.55}
 .s2-rating-form{margin:12px 0;border-top:1px solid #e7eef7;padding-top:12px}
 .s2-rating-row{display:grid;grid-template-columns:minmax(140px,1fr) minmax(160px,1fr);gap:9px;padding:13px 0;border-bottom:1px solid #e9eff7}
@@ -21,5 +21,5 @@
 .s2-rating-hr-exception{margin-top:15px;padding:12px;border-radius:8px;border:1px solid #e4ecf6}
 .s2-rating-hr-exception summary{font-size:12px;font-weight:750;cursor:pointer}
 .s2-rating-hr-exception label{margin:9px 0}
-@media(max-width:580px){.s2-rating-section{padding:12px}.s2-rating-section>header{flex-direction:column}.s2-rating-row,.s2-rating-overall-form{grid-template-columns:minmax(0,1fr)}.s2-rating-overall-form label:nth-child(2){grid-column:auto}}
+@media(max-width:580px){.s2-rating-section select,.s2-rating-section textarea{font-size:16px}.s2-rating-section{padding:12px}.s2-rating-section>header{flex-direction:column}.s2-rating-row,.s2-rating-overall-form{grid-template-columns:minmax(0,1fr)}.s2-rating-overall-form label:nth-child(2){grid-column:auto}}
 @media print{.s2-rating-form,.s2-rating-hr-exception{display:none!important}}
