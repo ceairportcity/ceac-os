@@ -17,3 +17,11 @@ Verification: SQL covers interval/count dates, rejected dates, preserved recorde
 Still outstanding separately: actual reminder delivery, independent occurrence checklist/evidence/status/review, authorised cover/delegation and final release-wide/reference checks. Stored schedule options alone do not close that broader recurrence contract.
 
 References: https://supabase.com/docs/guides/database/functions and https://www.postgresql.org/docs/16/datetime-invalid-input.html .
+
+## Read-only Calendar integration
+
+Staff/My Calendar reads only the signed-in person's organisational routines; Manager/Unit Calendar reads visible routines in the active unit. Both use existing work_items/recurring_operations RLS and the canonical bounded routine_schedule_preview API. No new grants, writes, tasks, recurrence engine, approval or employee scores.
+
+The reader verifies exact source counts across 500-row pages, maps only source-backed operations in 200-ID batches and reads all canonical preview pages. It rejects inconsistent or unknown-source rows and caps source work at 2,000 and displayed dates at 20,000. Calendar dates use the same Africa/Accra clock as the existing Calendar, with the original scheduled date/timezone preserved in metadata. Outcome recorded remains distinct from approved or complete.
+
+The hook keys snapshots by organisation, actor, active unit, scope and date window, discards superseded reads and hides old-scope events before a new read resolves. Explicit retry and focus refresh use the same reader. Per-date workflow/evidence, delivery reminders, cover and one-date edits are separate remaining work. This implementation must pass affected browser/source checks before publication; final literal visual and release qualification remain separate.
