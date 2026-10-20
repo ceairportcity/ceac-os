@@ -1,5 +1,6 @@
 import { FieldGroup } from "./bits";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
+import RoutineWeekdayPicker from "./RoutineWeekdayPicker";
 export { organisationalRepeatDetails } from "../lib/organisationalRepeatRules.js";
 
 export const initialOrganisationalRepeat = () => ({ enabled: false, frequency: "weekly", weekday: "6", weekdays: [6], monthDay: "1", start: ghanaCalendarDate(), end: "" });
@@ -14,22 +15,9 @@ export default function OrganisationalRepeatFields({ value, onChange, disabled =
         <option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option>
       </select></FieldGroup>
       {value.frequency === "weekly" && <FieldGroup label="Repeat weekdays">
-        <div role="group" aria-label="Repeat weekdays" style={{ display: "flex", flexWrap: "wrap", gap: "8px 14px" }}>
-          {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day, index) => {
-            const number = index + 1;
-            const selected = (value.weekdays ?? [value.weekday]).map(Number);
-            return <label key={day} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <input type="checkbox" aria-label={day} checked={selected.includes(number)}
-                onChange={(event) => {
-                  const next = new Set(selected);
-                  if (event.target.checked) next.add(number);
-                  else next.delete(number);
-                  const weekdays = [...next].sort((a, b) => a - b);
-                  onChange({ ...value, weekdays, weekday: String(weekdays[0] ?? "") });
-                }} /> {day}
-            </label>;
-          })}
-        </div>
+        <RoutineWeekdayPicker label="Repeat weekdays"
+          value={value.weekdays ?? [value.weekday].map(Number)}
+          onChange={(weekdays) => onChange({ ...value, weekdays, weekday: String(weekdays[0] ?? "") })} />
         <p className="small">Select each weekday this responsibility repeats. Each scheduled date is recorded separately.</p>
       </FieldGroup>}
       {value.frequency === "monthly" && <FieldGroup label="Day of month"><input className="field" aria-label="Repeat month day" type="number" min="1" max="31" required value={value.monthDay} onChange={event => update("monthDay", event.target.value)} /><p className="small">Months without this date are skipped.</p></FieldGroup>}

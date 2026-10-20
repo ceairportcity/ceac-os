@@ -246,7 +246,7 @@ test("organisational repeat creation validates civil dates and several weekdays 
   const composer = source("src/components/SelfWorkComposer.jsx");
   assert.match(fields, /export \{ organisationalRepeatDetails \}/);
   assert.match(fields, /weekdays: \[6\]/);
-  assert.match(fields, /role="group" aria-label="Repeat weekdays"/);
+  assert.match(fields, /RoutineWeekdayPicker/);
   assert.match(fields, /weekdays\[0\]/);
   assert.match(rules, /validCivilDate\(repeat\.start\)/);
   assert.match(rules, /validCivilDate\(repeat\.end\)/);
@@ -433,4 +433,17 @@ test("date-specific routine reviews are append-only and cannot self-approve or m
   assert.match(review,/Record human review/);
   assert.match(detail,/<RoutineOccurrenceReviews me=\{me\} item=\{item\} occurrences=\{routineOccurrences\}/);
   assert.doesNotMatch(review,/record_routine_occurrence|setTaskCompleted|autoApprove|staffPerformanceScore/);
+});
+
+test("all self-created and assigned routine forms share a compact weekday picker", () => {
+  const picker = source("src/components/RoutineWeekdayPicker.jsx");
+  const css = source("src/components/RoutineWeekdayPicker.css");
+  const own = source("src/components/OrganisationalRepeatFields.jsx");
+  const assign = source("src/screens/Assign.jsx");
+  const detail = source("src/screens/Item.jsx");
+  for (const text of [own,assign,detail]) assert.match(text,/RoutineWeekdayPicker/);
+  assert.match(picker,/type="checkbox"/);
+  assert.match(picker,/aria-label=\{day\}/);
+  assert.match(css,/flex-wrap:wrap/);
+  assert.doesNotMatch(picker,/btn btn-sm|btn-ghost/);
 });
