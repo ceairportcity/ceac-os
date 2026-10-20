@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { deadlineOverdue } from "../lib/stage2AchievementMetrics";
+import { currentProjectActions, visibleProjectPeople } from "../lib/projectContributionPeople";
 import { supabase } from "../lib/supabase";
 import PersonAvatar from "./PersonAvatar";
 import { useProjectPortraits } from "../lib/useProjectPortraits";
@@ -19,7 +20,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const [filter, setFilter] = useState("all");
   const [unit, setUnit] = useState("all");
   const [asOf, setAsOf] = useState(() => Date.now());
-  const [recentActions, setRecentActions] = useState([]);
+  const [visibleActions, setVisibleActions] = useState([]);
   const [actionLoading, setActionLoading] = useState(true);
   const [actionError, setActionError] = useState("");
   const [actionReload, setActionReload] = useState(0);
@@ -28,22 +29,33 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   // Creating a work item is not evidence that someone did work.
   useEffect(() => {
     let active = true;
-    setActionLoading(true); setActionError(""); setRecentActions([]);
+    setActionLoading(true); setActionError(""); setVisibleActions([]);
     (async () => {
       try {
-        const evidence = await supabase.from("work_activity_records")
-          .select("id,work_item_id,contributor_id,activity_date,activity_state,action_summary,recorded_at,supersedes_id,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
-          .eq("org_id", project.org_id).eq("source_project_id", project.id)
-          .order("recorded_at", { ascending: false }).order("id", { ascending: false }).limit(100);
-        if (evidence.error) throw evidence.error;
-        if (typeof evidence.count !== "number" || !Array.isArray(evidence.data)
-          || evidence.data.length !== Math.min(100, evidence.count))
-          throw new Error("Recent project activity could not be verified completely.");
-        // Corrections are written after the records they supersede; the
-        // newest 100 therefore include corrections for every displayed entry.
-        const superseded = new Set(evidence.data.map((row) => row.supersedes_id).filter(Boolean));
-        const current = evidence.data.filter((row) => !superseded.has(row.id)).slice(0, 6);
-        if (active) setRecentActions(current);
+        const collected = [];
+        let total = null;
+        const pageSize = 200;
+        // The source-backed people list must not infer total contributors
+        // from only the latest six actions. Fail closed if records exceed
+        // the explicit bounded verification window.
+        for (let page = 0; page < 20; page++) {
+          const first = page * pageSize;
+          const evidence = await supabase.from("work_activity_records")
+            .select("id,work_item_id,contributor_id,activity_date,activity_state,action_summary,recorded_at,supersedes_id,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
+            .eq("org_id", project.org_id).eq("source_project_id", project.id)
+            .order("recorded_at", { ascending: false }).order("id", { ascending: false })
+            .range(first, first + pageSize - 1);
+          if (evidence.error) throw evidence.error;
+          if (typeof evidence.count !== "number" || !Array.isArray(evidence.data)
+            || (total !== null && total !== evidence.count))
+            throw new Error("Project activity changed during reading. Refresh.");
+          total = evidence.count;
+          collected.push(...evidence.data);
+          if (collected.length === total) break;
+        }
+        if (collected.length !== total)
+          throw new Error("Project activity exceeds the verified display window. Request a report.");
+        if (active) setVisibleActions(currentProjectActions(collected));
       } catch (error) {
         if (active) setActionError(/PGRST205|42P01|work_activity_records/.test(String(error?.message || ""))
           ? "Project activity is awaiting its authorised database migration."
@@ -89,16 +101,8 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
     return [...found.values()];
   }, [project]);
 
-  const people = useMemo(() => {
-    const found = new Map();
-    for (const item of work) {
-      if (!item.assignee_id || !item.profiles?.full_name) continue;
-      const previous = found.get(item.assignee_id) || { id: item.assignee_id, name: item.profiles.full_name, count: 0 };
-      previous.count++;
-      found.set(item.assignee_id, previous);
-    }
-    return [...found.values()].sort((a,b) => a.name.localeCompare(b.name));
-  }, [work]);
+  const people = useMemo(() => visibleProjectPeople(work, visibleActions), [work, visibleActions]);
+  const recentActions = visibleActions.slice(0, 6);
 
   const visible = tasks.filter((item) => (filter === "all" || (filter === "finished" ? finished.has(item.status) : !inactive.has(item.status))) &&
     (unit === "all" || item.unit_id === unit) &&
@@ -135,10 +139,12 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
       </div>
     </section>
         <section className="s2-project-panel">
-          <header><h2>Project team</h2><small>{people.length} recorded assignees</small></header>
+          <header><h2>Project team</h2><small>{people.length} people with visible assignments or dated actions</small></header>
+          {actionError && <p role="alert">Additional contributors could not be verified; only visible assignments are shown.</p>}
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>
-            <PersonAvatar name={person.name} photoUrl={visiblePortraits[person.id]} /><span><strong>{person.name}</strong><small>{person.count} assigned work item{person.count === 1 ? "" : "s"}</small></span>
-          </div>)}{!people.length && <p>No named assignees recorded yet.</p>}</div>
+            <PersonAvatar name={person.name} photoUrl={visiblePortraits[person.id]} /><span><strong>{person.name}</strong>
+              <small>{person.assignedWorkCount} assigned · {person.recordedActionCount} dated action{person.recordedActionCount === 1 ? "" : "s"}</small></span>
+          </div>)}{!people.length && <p>No visible assignments or dated contributions yet.</p>}</div>
           <div className="s2-project-units"><header><h3>Departments involved</h3></header><div>{units.map((row) => <span key={row.id}><strong>{row.name}</strong><small>{row.lead ? "Lead" : "Participating"}</small></span>)}</div></div>
         </section>
         <section className="s2-project-panel">

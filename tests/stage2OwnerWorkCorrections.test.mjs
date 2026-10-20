@@ -401,3 +401,13 @@ test("Administration Control Center hides inaccessible, inert notices without hi
   assert.match(code,/\{label:"Finance",onClick:\(\)=>go\("finance"\)\}/);
   assert.match(code,/domainGroups\.filter\(group=>group\.domainKeys\.some/);
 });
+
+test("Project team merges assignment with fully verified current activity contributors",()=>{
+  const src=source("src/components/Stage2ProjectOverview.jsx");
+  assert.match(src,/const pageSize = 200/);
+  assert.match(src,/collected\.length !== total/);
+  assert.match(src,/currentProjectActions\(collected\)/);
+  assert.match(src,/visibleProjectPeople\(work, visibleActions\)/);
+  assert.match(src,/people with visible assignments or dated actions/);
+  assert.match(src,/Additional contributors could not be verified/);
+});
