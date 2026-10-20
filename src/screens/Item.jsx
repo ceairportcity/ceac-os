@@ -26,7 +26,17 @@ const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space
 .fpg-brandbook-task-card>footer{padding:9px 15px;border-top:1px solid var(--ev2-line);color:var(--ev2-text-secondary);font-size:12px}
 .fpg-brandbook-task-card .staff-check-progress{margin:0 15px 8px;border-radius:999px}.fpg-brandbook-task-card .checklist-card{border:0;border-radius:0;box-shadow:none}`;
 
-export default function Item({ id, me, session, isManager = false, openRoom, back }) {
+/** Remount the detail's multi-query state for each actual work/user/unit.
+ * A late response from a previous account or work item must never populate
+ * another responsibility's detail, its routine proof or its review controls.
+ * The existing authoritative RPC/RLS write checks remain unchanged.
+ */
+export default function Item(props) {
+  const scope = [props.me?.org_id, props.me?.id, props.me?.unit_id, props.id].join(":");
+  return <ItemDetail key={scope} {...props} />;
+}
+
+function ItemDetail({ id, me, session, isManager = false, openRoom, back }) {
   const [item, setItem] = useState(null);
   const [canReview, setCanReview] = useState(false);
   const [responsibleReviewer, setResponsibleReviewer] = useState(null);
