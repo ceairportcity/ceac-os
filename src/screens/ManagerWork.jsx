@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ManagerRoutineOccurrences from "../components/ManagerRoutineOccurrences";
 import { supabase } from "../lib/supabase";
 import SelfWorkComposer from "../components/SelfWorkComposer";
@@ -27,27 +27,43 @@ export default function ManagerWork({ me, openItem, goAssign }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const readGeneration = useRef(0);
+  const [loadedScope, setLoadedScope] = useState("");
+  const managedUnitIds = (me.memberships || []).filter(member => member.role === "manager")
+    .map(member => member.unit_id).filter(Boolean).sort();
+  const actorScope = [me.org_id, me.id, me.unit_id, managedUnitIds.join(",")].join(":");
+  const scopedLoading = loading || loadedScope !== actorScope;
 
-  useEffect(() => { load(); }, [me.id, me.unit_id]);
+  useEffect(() => {
+    const request = ++readGeneration.current;
+    setAddingMyWork(false);
+    setSelectedWorkId(null);
+    void load(request, actorScope);
+    return () => { readGeneration.current += 1; };
+  }, [actorScope]);
 
-  async function load() {
+  async function load(request = ++readGeneration.current, requestedScope = actorScope) {
+    setLoadedScope("");
     setLoading(true);
     setError(null);
+    setMine([]); setGiven([]); setTeam([]); setReviews([]);
     try {
       const [mineResult, givenResult, teamResult, reviewResult] = await Promise.all([
         supabase.from("work_items")
           .select("id,ref,title,kind,status,origin,project_id,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
-          .eq("assignee_id", me.id).order("created_at", { ascending: false }),
+          .eq("org_id", me.org_id).eq("assignee_id", me.id).order("created_at", { ascending: false }),
         supabase.from("work_items")
           .select("id,ref,title,kind,status,origin,project_id,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
-          .eq("assigned_by", me.id).neq("assignee_id", me.id).order("created_at", { ascending: false }),
-        supabase.from("work_items")
+          .eq("org_id", me.org_id).eq("assigned_by", me.id).neq("assignee_id", me.id).order("created_at", { ascending: false }),
+        managedUnitIds.length ? supabase.from("work_items")
           .select("id,ref,title,kind,status,origin,project_id,due_at,created_at,assigned_by,assignee_id,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
-          .in("unit_id", me.memberships.filter((m) => m.role === "manager").map((m) => m.unit_id)).neq("assignee_id", me.id).order("created_at", { ascending: false }),
+          .eq("org_id", me.org_id).in("unit_id", managedUnitIds).neq("assignee_id", me.id).order("created_at", { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
         supabase.rpc("my_work_attention_queue"),
       ]);
       const err = [mineResult.error, givenResult.error, teamResult.error, reviewResult.error].find(Boolean);
       if (err) throw err;
+      if (request !== readGeneration.current) return;
       setMine(mineResult.data || []);
       setGiven(givenResult.data || []);
       setTeam(teamResult.data || []);
@@ -55,9 +71,13 @@ export default function ManagerWork({ me, openItem, goAssign }) {
         .filter((row) => row.action_kind === "review_required")
         .sort((left, right) => new Date(left.action_at) - new Date(right.action_at)));
     } catch (err) {
-      setError(humanError(err, "Manager work could not be loaded."));
+      if (request === readGeneration.current)
+        setError(humanError(err, "Manager work could not be loaded."));
     } finally {
-      setLoading(false);
+      if (request === readGeneration.current) {
+        setLoadedScope(requestedScope);
+        setLoading(false);
+      }
     }
   }
 
@@ -102,14 +122,14 @@ export default function ManagerWork({ me, openItem, goAssign }) {
       secondaryActionLabel="Add my work"
       onSecondaryAction={() => setAddingMyWork(true)}
     />
-    {addingMyWork && <SelfWorkComposer me={me}
+    {addingMyWork && !scopedLoading && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
       onCreated={() => { setView("mine"); void load(); }} />}
 
-    {error && <ProductNotice tone="error" title="Could not load Manager Work">{error}</ProductNotice>}
-    {loading && <LoadingState label="Loading manager work…" />}
+    {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Manager Work">{error}</ProductNotice>}
+    {scopedLoading && <LoadingState label="Loading manager work…" />}
 
-    {!loading && !error && <WorkRegisterLayout me={me}
+    {!scopedLoading && !error && <WorkRegisterLayout me={me}
       selectedId={view === "reviews" ? null : selectedInView}
       onClose={() => setSelectedWorkId("none")} openItem={openItem}
       recordCount={view === "reviews" ? reviews.length : rows.length}
@@ -125,7 +145,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
           emptyAction={view === "given" || view === "routines" ? {label:"Give out work",onClick:()=>goAssign?.()} : undefined} />}
     </WorkRegisterLayout>}
 
-    {!loading && !error && view === "routines" && <ManagerRoutineOccurrences me={me} openItem={openItem} />}
+    {!scopedLoading && !error && view === "routines" && <ManagerRoutineOccurrences me={me} openItem={openItem} />}
 
     {view === "given" && <WorkFootnote>
       This view uses the recorded assigner on the current work item. A complete multi-step delegation chain requires explicit assignment-history records; CEAC OS does not invent that history.

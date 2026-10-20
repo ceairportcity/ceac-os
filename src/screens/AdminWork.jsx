@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import SelfWorkComposer from "../components/SelfWorkComposer";
 import WorkRegisterLayout from "../components/WorkRegisterInspector";
@@ -26,12 +26,24 @@ export default function AdminWork({ me, openItem, goAssign }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const readGeneration = useRef(0);
+  const [loadedScope, setLoadedScope] = useState("");
+  const actorScope = [me.org_id, me.id, me.unit_id].join(":");
+  const scopedLoading = loading || loadedScope !== actorScope;
 
-  useEffect(() => { load(); }, [me.id, me.org_id]);
+  useEffect(() => {
+    const request = ++readGeneration.current;
+    setAddingMyWork(false);
+    setSelectedWorkId(null);
+    void load(request, actorScope);
+    return () => { readGeneration.current += 1; };
+  }, [actorScope]);
 
-  async function load() {
+  async function load(request = ++readGeneration.current, requestedScope = actorScope) {
+    setLoadedScope("");
     setLoading(true);
     setError(null);
+    setMine([]); setGiven([]); setOrg([]); setReviews([]);
     try {
       const fields = "id,ref,title,kind,status,origin,project_id,due_at,assigned_by,assignee_id,unit_id,projects(name),units(name),profiles!work_items_assignee_id_fkey(full_name)";
       const [mineR, givenR, orgR, reviewR] = await Promise.all([
@@ -42,14 +54,19 @@ export default function AdminWork({ me, openItem, goAssign }) {
       ]);
       const err = [mineR.error, givenR.error, orgR.error, reviewR.error].find(Boolean);
       if (err) throw err;
+      if (request !== readGeneration.current) return;
       setMine(mineR.data || []);
       setGiven(givenR.data || []);
       setOrg(orgR.data || []);
       setReviews((reviewR.data || []).filter((row) => row.action_kind === "review_required"));
     } catch (err) {
-      setError(humanError(err, "Administration work could not be loaded."));
+      if (request === readGeneration.current)
+        setError(humanError(err, "Administration work could not be loaded."));
     } finally {
-      setLoading(false);
+      if (request === readGeneration.current) {
+        setLoadedScope(requestedScope);
+        setLoading(false);
+      }
     }
   }
 
@@ -84,14 +101,14 @@ export default function AdminWork({ me, openItem, goAssign }) {
       secondaryActionLabel="Add my work"
       onSecondaryAction={() => setAddingMyWork(true)}
     />
-    {addingMyWork && <SelfWorkComposer me={me}
+    {addingMyWork && !scopedLoading && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
       onCreated={() => { setView("mine"); void load(); }} />}
 
-    {error && <ProductNotice tone="error" title="Could not load Work">{error}</ProductNotice>}
-    {loading && <LoadingState label="Loading organisation work…" />}
+    {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Work">{error}</ProductNotice>}
+    {scopedLoading && <LoadingState label="Loading organisation work…" />}
 
-    {!loading && !error && <WorkRegisterLayout me={me}
+    {!scopedLoading && !error && <WorkRegisterLayout me={me}
       selectedId={view === "reviews" ? null : selectedInView}
       onClose={() => setSelectedWorkId("none")} openItem={openItem}
       recordCount={view === "reviews" ? reviews.length : rows.length}
