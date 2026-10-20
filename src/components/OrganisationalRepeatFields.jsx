@@ -2,13 +2,29 @@ import { FieldGroup } from "./bits";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
 
 export const initialOrganisationalRepeat = () => ({ enabled: false, frequency: "weekly", weekday: "6", monthDay: "1", start: ghanaCalendarDate(), end: "" });
+const validCivilDate = (value) => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+};
+
 export function organisationalRepeatDetails(repeat, steps) {
-  if (!repeat.start || repeat.end && repeat.end < repeat.start) throw new Error("Choose a start date and an end date after it.");
+  if (!["daily", "weekly", "monthly"].includes(repeat?.frequency))
+    throw new Error("Choose a supported repeat frequency.");
+  if (!validCivilDate(repeat.start) || (repeat.end && !validCivilDate(repeat.end)) ||
+      (repeat.end && repeat.end < repeat.start))
+    throw new Error("Choose a valid start date and an end date after it.");
+  const weekday = Number(repeat.weekday);
+  const monthDay = Number(repeat.monthDay);
+  if (repeat.frequency === "weekly" && (!Number.isInteger(weekday) || weekday < 1 || weekday > 7))
+    throw new Error("Choose a weekday from Monday to Sunday.");
+  if (repeat.frequency === "monthly" && (!Number.isInteger(monthDay) || monthDay < 1 || monthDay > 31))
+    throw new Error("Choose a day of month from 1 to 31.");
   return {
     origin: "self_created", schedule_kind: repeat.frequency, starts_on: repeat.start,
     ...(repeat.end ? { ends_on: repeat.end } : {}),
-    ...(repeat.frequency === "weekly" ? { weekdays: [Number(repeat.weekday)] } : {}),
-    ...(repeat.frequency === "monthly" ? { day_of_month: Number(repeat.monthDay) } : {}),
+    ...(repeat.frequency === "weekly" ? { weekdays: [weekday] } : {}),
+    ...(repeat.frequency === "monthly" ? { day_of_month: monthDay } : {}),
     steps,
   };
 }
