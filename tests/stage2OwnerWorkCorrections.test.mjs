@@ -411,3 +411,25 @@ test("Project team merges assignment with fully verified current activity contri
   assert.match(src,/people with visible assignments or dated actions/);
   assert.match(src,/Additional contributors could not be verified/);
 });
+
+test("date-specific routine reviews are append-only and cannot self-approve or modify formal attendance",()=>{
+  const sql=source("supabase/migrations/20261020095000_167_routine_occurrence_reviews.sql");
+  const review=source("src/components/RoutineOccurrenceReviews.jsx");
+  const detail=source("src/screens/Item.jsx");
+  assert.match(sql,/CREATE TABLE public\.routine_occurrence_reviews/);
+  assert.match(sql,/ALTER TABLE public\.routine_occurrence_reviews ENABLE ROW LEVEL SECURITY/);
+  assert.match(sql,/GRANT SELECT,INSERT ON public\.routine_occurrence_reviews TO authenticated/);
+  assert.doesNotMatch(sql,/GRANT[^;]*(UPDATE|DELETE)[^;]*routine_occurrence_reviews/);
+  assert.match(sql,/occurrence\.recorded_by IS DISTINCT FROM auth\.uid\(\)/);
+  assert.match(sql,/public\.app_can_see_item\(work\.id\)/);
+  assert.match(sql,/public\.app_stage2_universal_aal_allowed\(\)/);
+  assert.match(sql,/routine\.unit_id IN \(SELECT public\.app_managed_units\(\)\)/);
+  assert.match(sql,/NEW\.reviewer_id := auth\.uid\(\)/);
+  assert.match(sql,/NEW\.reviewed_at := clock_timestamp\(\)/);
+  assert.match(review,/\.from\("routine_occurrence_reviews"\)\.insert\(/);
+  assert.match(review,/entry\.recorded_by !== me\.id/);
+  assert.match(review,/Awaiting independent review/);
+  assert.match(review,/Record human review/);
+  assert.match(detail,/<RoutineOccurrenceReviews me=\{me\} item=\{item\} occurrences=\{routineOccurrences\}/);
+  assert.doesNotMatch(review,/record_routine_occurrence|setTaskCompleted|autoApprove|staffPerformanceScore/);
+});

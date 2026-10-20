@@ -1,0 +1,16 @@
+/* Owner-directed compact, squared-off Work evidence controls. */
+.s2-routine-review{display:grid;gap:0;border:1px solid #dce7f2;border-radius:7px;background:#fff}
+.s2-routine-review>p{margin:10px 12px;font-size:12px}
+.s2-routine-review-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:12px;border-bottom:1px solid #e5edf5;align-items:start}
+.s2-routine-review-row:last-child{border-bottom:0}
+.s2-routine-review-content{display:grid;gap:4px;min-width:0}
+.s2-routine-review-content strong{font-size:13px;color:#1d466d;font-weight:650}
+.s2-routine-review-content small,.s2-routine-review-label{font-size:12px;line-height:1.45;color:#647d96}
+.s2-routine-review-label{color:#365e85}
+.s2-routine-review-actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}
+.s2-routine-review-actions button,.s2-routine-review-form button{border:1px solid #c9dcef;border-radius:5px;background:#f5f9ff;color:#1a65a2;font:inherit;font-size:12px;font-weight:650;padding:6px 9px;cursor:pointer}
+.s2-routine-review-form{grid-column:1/-1;display:grid;gap:8px;padding:10px;background:#f7faff;border:1px solid #e1ebf5;border-radius:5px}
+.s2-routine-review-form label{display:grid;gap:5px;font-size:12px;color:#4a6987}
+.s2-routine-review-form select,.s2-routine-review-form textarea{font:inherit;font-size:13px;border:1px solid #cfdfef;border-radius:5px;padding:8px;background:#fff}
+.s2-routine-review-form button{justify-self:start}
+@media(max-width:650px){.s2-routine-review-row{grid-template-columns:1fr}.s2-routine-review-actions{justify-content:flex-start}.s2-routine-review-form select,.s2-routine-review-form textarea{font-size:16px}}

@@ -5,6 +5,7 @@ import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
 import WorkActivityDiary from "../components/WorkActivityDiary";
 import WorkProjectLink from "../components/WorkProjectLink";
+import RoutineOccurrenceReviews from "../components/RoutineOccurrenceReviews";
 import { routineFutureChange, routineOccurrenceDetails } from "../lib/routineWriteValidation";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
 import { OperationalFileList } from "../components/OperationalFiles";
@@ -677,15 +678,11 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         {checks.length > 0 && <section aria-label="Routine method"><h3>Steps to repeat each time</h3><ol>{checks.map(step => <li key={step.id}>{step.label}</li>)}</ol></section>}
         {routineOccurrences.length > 0 && <>
           <div className="sec"><span>Recent occurrences</span><span>{routineOccurrences.length}</span></div>
-          {routineOccurrences.map((occurrence) => <div className="row" key={occurrence.id}>
-            <div className="row-t">{occurrence.occurred_on}{routine.records_value && occurrence.value !== null ? ` · ${occurrence.value} ${routine.value_label || ""}` : ""}</div>
-            {occurrence.note && <div className="row-m">{occurrence.note}</div>}
-            {(item.assignee_id === me.id || item.visibility !== "private" && item.confidential !== true) &&
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => {
-                setRoutineEvidenceDate(occurrence.occurred_on);
-                setRoutineEvidenceRequest((n) => n + 1);
-              }}>Record evidence for {occurrence.occurred_on}</button>}
-          </div>)}
+          <RoutineOccurrenceReviews me={me} item={item} occurrences={routineOccurrences}
+            canReview={Boolean(isManager || me.is_admin || canReview)}
+            onRecordEvidence={item.assignee_id === me.id || item.visibility !== "private" && item.confidential !== true
+              ? (date) => { setRoutineEvidenceDate(date); setRoutineEvidenceRequest((n) => n + 1); }
+              : null} />
         </>}
         {routine.active && routine.schedule_kind && (item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin) && <button className="btn" style={{ marginTop: 20 }} onClick={() => {
           setRoutineDate(new Date().toISOString().slice(0, 10)); setRoutineValue(""); setNote(""); setSheet("routine-record");
