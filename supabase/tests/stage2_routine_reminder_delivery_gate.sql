@@ -110,6 +110,45 @@ begin
   raise exception 'Reminder ignored non-working day';end if;
 end;
 $quiet$;
+-- Explicit day-specific blanks must not inherit broad legacy default hours.
+update public.workforce_day_types set session_expected=true where id='71000000-0000-4000-8000-000000000169';
+update public.workforce_schedule_versions
+ set clock_map=jsonb_build_object(lower(to_char(current_date,'Dy')),jsonb_build_object('start',null,'end',null))
+ where profile_id='31000000-0000-4000-8000-000000000001' and reason='Rollback-only working pattern';
+update private.routine_reminder_sweep set last_operation_id=null;
+select public.app_heartbeat();
+do $blank_override$
+begin
+ if exists(select 1 from public.routine_reminder_deliveries where work_item_id=current_setting('ceac.test.reminder_paused')::uuid) then
+  raise exception 'Explicit blank daily hours inherited legacy general hours';end if;
+end;
+$blank_override$;
+-- A valid but currently closed explicit window must also suppress delivery.
+update public.workforce_schedule_versions
+ set clock_map=jsonb_build_object(lower(to_char(current_date,'Dy')),
+  case when (now() at time zone 'Africa/Accra')::time>=time '12:00'
+   then jsonb_build_object('start','00:00','end','12:00')
+   else jsonb_build_object('start','12:00','end','24:00') end)
+ where profile_id='31000000-0000-4000-8000-000000000001' and reason='Rollback-only working pattern';
+update private.routine_reminder_sweep set last_operation_id=null;
+select public.app_heartbeat();
+do $closed_hours$
+begin
+ if exists(select 1 from public.routine_reminder_deliveries where work_item_id=current_setting('ceac.test.reminder_paused')::uuid) then
+  raise exception 'Reminder ignored explicit closed daily hours';end if;
+end;
+$closed_hours$;
+-- Without a day override, legitimate recorded general hours still work.
+update public.workforce_schedule_versions set clock_map='{}'::jsonb
+ where profile_id='31000000-0000-4000-8000-000000000001' and reason='Rollback-only working pattern';
+update private.routine_reminder_sweep set last_operation_id=null;
+select public.app_heartbeat();
+do $general_hours$
+begin
+ if (select count(*) from public.routine_reminder_deliveries where work_item_id=current_setting('ceac.test.reminder_paused')::uuid)<>1 then
+  raise exception 'Valid general hours no longer deliver reminders';end if;
+end;
+$general_hours$;
 update public.organisations set universal_totp_required=true where id='10000000-0000-4000-8000-000000000010';
 set local role authenticated;
 do $assurance$
