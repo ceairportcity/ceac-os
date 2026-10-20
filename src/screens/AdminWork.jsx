@@ -78,7 +78,7 @@ export default function AdminWork({ me, openItem, goAssign }) {
     <WorkPageHeader
       eyebrow="Organisation operations"
       title="Work"
-      description="Follow work Administration delegated, review what is waiting, or inspect organisation work without turning every operational engine into a separate menu."
+      description="Plan, record, and finish your work. Keep every contribution connected to the right project."
       actionLabel="Give out work"
       onAction={() => goAssign?.()}
       secondaryActionLabel="Add my work"

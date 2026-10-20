@@ -96,7 +96,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     <WorkPageHeader
       eyebrow={me.unit_name}
       title="Work"
-      description="Delegate, follow progress and review what comes back without losing sight of your own work."
+      description="Plan, record, and finish your work. Keep every contribution connected to the right project."
       actionLabel="Give out work"
       onAction={() => goAssign?.()}
       secondaryActionLabel="Add my work"

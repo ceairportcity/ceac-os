@@ -2,11 +2,11 @@
 .s2-register-filters label{min-width:0}.s2-register-filters input,.s2-register-filters select{box-sizing:border-box;width:100%;min-height:36px;padding:8px 10px;border:1px solid #dce6f2;border-radius:6px;background:#fff;color:#52697f;font:inherit;font-size:12px}
 .s2-register-search input{border-color:transparent;padding-left:0}
 .s2-register-table-region{max-width:100%;overflow:auto;container-type:inline-size}
-.s2-register-table{width:100%;border-collapse:collapse;table-layout:fixed;text-align:left;color:#52697f}
-.s2-register-table th,.s2-register-table td{border-bottom:1px solid #edf1f7;padding:16px 14px;overflow-wrap:anywhere;vertical-align:middle;font-size:12px;font-weight:400}
+.s2-work-register .s2-register-table{display:table;width:100%;border:0;border-radius:0;border-collapse:collapse;table-layout:fixed;white-space:normal;text-align:left;color:#52697f}
+.s2-register-table th,.s2-register-table td{box-sizing:border-box;border-bottom:1px solid #edf1f7;padding:16px 14px;overflow-wrap:anywhere;white-space:normal;vertical-align:middle;font-size:12px;font-weight:400}
 .s2-register-table thead th{background:#f6f9fd;color:#8397b0;font-size:12px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;padding-block:15px}
 .s2-register-table th:first-child{width:49%;padding-left:22px}.s2-register-table thead th:nth-child(2){width:23%}.s2-register-table thead th:nth-child(3){width:10%}.s2-register-table thead th:nth-child(4){width:18%}
-.s2-register-table .s2-register-group th{padding:0;background:#fff;border-bottom:1px solid #edf1f7}
+.s2-register-table .s2-register-group th{width:auto;padding:0;background:#fff;border-bottom:1px solid #edf1f7}
 .s2-register-group button{display:flex;align-items:center;gap:10px;width:100%;min-height:43px;padding:10px 22px;background:none;border:0;color:#344d5b;font:inherit;font-size:12px;font-weight:650;text-align:left;cursor:pointer}
 .s2-register-group button>span:last-child{color:#8fa0ad;font-size:12px}
 .s2-register-row>th>button{display:grid;gap:6px;width:100%;padding:0;border:0;background:none;font:inherit;color:#193d62;text-align:left;cursor:pointer}

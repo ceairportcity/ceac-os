@@ -314,6 +314,20 @@ for (const viewport of [
         await expect(page.getByRole("tab", { name: tab, exact: true }).first()).toBeVisible();
       }
 
+      const tabLines = await tabs.evaluateAll(nodes => [...new Set(nodes.map(node => Math.round(node.getBoundingClientRect().top)))]);
+      expect(tabLines, 'Responsibility source tabs remain one horizontally scrollable row').toHaveLength(1);
+      const registerColumns = await page.locator('.s2-register-table-region').evaluate(region => {
+        const bounds = region.getBoundingClientRect();
+        const headings = [...region.querySelectorAll('thead th')].filter(node => node.getBoundingClientRect().width > 0);
+        return headings.map(node => {
+          const rect = node.getBoundingClientRect();
+          return { name: node.textContent.trim(), inside: rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1 };
+        });
+      });
+      expect(registerColumns.every(column => column.inside), 'Every displayed register column fits inside the register').toBe(true);
+      expect(registerColumns.map(column => column.name)).toEqual(viewport.width < 560
+        ? ['Responsibility', 'Status'] : ['Responsibility', 'Project', 'Due', 'Status']);
+
       const smallest = await page.locator(".ev2-work-page").evaluate((root) => {
         const values = [...root.querySelectorAll("*")]
           .filter((node) => {
