@@ -5,6 +5,12 @@ BEGIN;
 
 DO $schema$
 BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_class WHERE oid='public.stage2_employee_published_human_ratings'::regclass
+   AND reloptions @> ARRAY['security_invoker=true','security_barrier=true'])
+  OR to_regprocedure('private.stage2_self_published_human_ratings()') IS NULL
+  OR has_function_privilege('anon','private.stage2_self_published_human_ratings()','EXECUTE')
+  OR NOT has_function_privilege('authenticated','private.stage2_self_published_human_ratings()','EXECUTE')
+ THEN RAISE EXCEPTION 'Published rating invoker/private-reader boundary is incorrect'; END IF;
  IF to_regclass('public.appraisal_human_rating_versions') IS NULL
     OR to_regclass('public.appraisal_review_exceptions') IS NULL
  THEN RAISE EXCEPTION 'Stage 2 protected human-review tables are absent'; END IF;
@@ -176,6 +182,9 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 DO $employee_pending_view$
 BEGIN
+ IF EXISTS(SELECT 1 FROM private.stage2_self_published_human_ratings()) THEN
+  RAISE EXCEPTION 'Private reader leaked an unpublished rating';
+ END IF;
  IF EXISTS(SELECT 1 FROM public.stage2_employee_published_human_ratings) THEN
   RAISE EXCEPTION 'Employee read the pending unpublished Manager rating from projection';
  END IF;
@@ -202,6 +211,9 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 DO $employee_approved$
 BEGIN
+ IF (SELECT count(*) FROM private.stage2_self_published_human_ratings() WHERE appraisal_id='53000000-0000-4000-8000-000000000082')<>1 THEN
+  RAISE EXCEPTION 'Private reader lost the exact independently approved rating';
+ END IF;
  IF (SELECT count(*) FROM public.stage2_employee_published_human_ratings
   WHERE appraisal_id='53000000-0000-4000-8000-000000000082')<>1 THEN
   RAISE EXCEPTION 'Employee cannot read the single exact HR-approved rating version';
@@ -211,6 +223,21 @@ BEGIN
  END IF;
 END
 $employee_approved$;
+RESET ROLE;
+
+-- Neither an unrelated colleague nor a different requested profile may read it.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000006',true);
+DO $other_employee$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.stage2_employee_published_human_ratings
+   WHERE appraisal_id='53000000-0000-4000-8000-000000000082')
+  OR EXISTS(SELECT 1 FROM private.stage2_self_published_human_ratings()
+   WHERE appraisal_id='53000000-0000-4000-8000-000000000082') THEN
+  RAISE EXCEPTION 'Another employee read a colleague published rating';
+ END IF;
+END;
+$other_employee$;
 RESET ROLE;
 
 -- Re-enabling universal MFA inside this rollback-only fixture must close the

@@ -240,6 +240,22 @@ begin
 end
 $revoked_surface$;
 
+
+-- A reviewed private implementation reader supports the invoker publication
+-- view. It is additional trusted code, never part of the public REST inventory.
+do $private_published_reader$
+begin
+ if not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='stage2_self_published_human_ratings'
+     and p.pronargs=0 and p.prosecdef and p.provolatile='s'
+     and p.proconfig @> array['search_path=""'])
+   or has_function_privilege('anon','private.stage2_self_published_human_ratings()','EXECUTE')
+   or not has_function_privilege('authenticated','private.stage2_self_published_human_ratings()','EXECUTE') then
+  raise exception 'Unreviewed private published-rating reader boundary';
+ end if;
+end
+$private_published_reader$;
+
 -- Ordinary Staff must not turn an arbitrary target identifier into a protected
 -- read/write or capability escalation.
 set local role authenticated;

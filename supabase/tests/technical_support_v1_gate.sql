@@ -357,8 +357,8 @@ $cross_tenant_support$;
 
 -- People Administration lifecycle is attributable, append-only and does not
 -- mutate the profile, employment or ordinary unit history.
-INSERT INTO public.support_team_memberships(org_id,profile_id,role,added_by,reason,associated_unit_id)
-VALUES('10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000007','member',
+INSERT INTO public.support_team_memberships(id,org_id,profile_id,role,added_by,reason,associated_unit_id)
+VALUES('61000000-0000-4000-8000-000000000165','10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000007','member',
   '31000000-0000-4000-8000-000000000001','Approved temporary support membership','20000000-0000-4000-8000-000000000011');
 SELECT public.grant_capability(
   '31000000-0000-4000-8000-000000000007','support.guides.manage',NULL,
@@ -366,7 +366,7 @@ SELECT public.grant_capability(
 );
 UPDATE public.support_team_memberships SET active=false,ended_at=now(),ended_by=auth.uid(),
   end_reason='Temporary support assignment completed'
-WHERE profile_id='31000000-0000-4000-8000-000000000007' AND active;
+WHERE id='61000000-0000-4000-8000-000000000165' AND active;
 DO $membership_history$
 BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.profiles
@@ -374,11 +374,11 @@ BEGIN
      OR NOT EXISTS(SELECT 1 FROM public.unit_memberships
       WHERE profile_id='31000000-0000-4000-8000-000000000007' AND role='manager')
      OR NOT EXISTS(SELECT 1 FROM public.support_team_memberships
-      WHERE profile_id='31000000-0000-4000-8000-000000000007'
+      WHERE id='61000000-0000-4000-8000-000000000165'
         AND NOT active AND added_by='31000000-0000-4000-8000-000000000003'
         AND ended_by='31000000-0000-4000-8000-000000000003')
      OR (SELECT count(*) FROM public.support_membership_events
-      WHERE profile_id='31000000-0000-4000-8000-000000000007')<>2 THEN
+      WHERE membership_id='61000000-0000-4000-8000-000000000165')<>2 THEN
     RAISE EXCEPTION 'Membership lifecycle changed identity/business history or lost attribution.';
   END IF;
   IF EXISTS(SELECT 1 FROM public.capability_grants
