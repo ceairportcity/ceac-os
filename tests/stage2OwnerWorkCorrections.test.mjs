@@ -318,3 +318,17 @@ test("compact Room action control makes open/close state visible without circula
   assert.match(room,/panel \? "Close Room actions" : "Add context or action"/);
   assert.match(css,/\.room-plus\.on\{transform:none/);
 });
+
+test("Room live badge describes the actual subscribed connection, never a permanent false-green indicator",()=>{
+  const room=source("src/screens/Room.jsx");
+  const css=source("src/styles.css");
+  assert.match(room,/const \[realtimeStatus, setRealtimeStatus\] = useState\("offline"\)/);
+  assert.match(room,/\.subscribe\(\(status\) =>/);
+  assert.match(room,/status === "SUBSCRIBED"/);
+  assert.match(room,/status === "CHANNEL_ERROR" \|\| status === "CLOSED" \|\| status === "TIMED_OUT"/);
+  assert.match(room,/active = false; setRealtimeStatus\("offline"\)/);
+  assert.match(room,/data-state=\{realtimeStatus\}/);
+  assert.match(room,/realtimeStatus === "connected" \? "Live updates"/);
+  assert.match(css,/\.room-live-status\[data-state=offline\]/);
+  assert.doesNotMatch(room,/title="Live updates" aria-label="Live updates"/);
+});

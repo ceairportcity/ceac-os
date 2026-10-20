@@ -72,6 +72,7 @@ export default function Room({
   const [hasOlder, setHasOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
+  const [realtimeStatus, setRealtimeStatus] = useState("offline");
   const endRef = useRef(null);
   const unreadRef = useRef(null);
   const feedRef = useRef(null);
@@ -93,7 +94,9 @@ export default function Room({
   }, [me.id, me.is_admin, me.is_exec]);
 
   useEffect(() => {
-    if (!room?.id) return undefined;
+    if (!room?.id) { setRealtimeStatus("offline"); return undefined; }
+    let active = true;
+    setRealtimeStatus("connecting");
     const channel = supabase.channel(`ceac-room-${room.id}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${room.id}`,
@@ -106,8 +109,14 @@ export default function Room({
           setNewMessageCount((count) => count + 1);
         }
       })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      .subscribe((status) => {
+        if (!active) return;
+        if (status === "SUBSCRIBED") setRealtimeStatus("connected");
+        else if (status === "CHANNEL_ERROR" || status === "CLOSED" || status === "TIMED_OUT")
+          setRealtimeStatus("offline");
+        else setRealtimeStatus("connecting");
+      });
+    return () => { active = false; setRealtimeStatus("offline"); supabase.removeChannel(channel); };
   }, [room?.id]);
 
   useEffect(() => {
@@ -482,7 +491,10 @@ export default function Room({
         <span>{roomLabel(room)}</span>
         <h1>{roomTitle(room)}</h1>
       </div>
-      <span className="room-live-dot" title="Live updates" aria-label="Live updates" />
+      <span className="room-live-status" role="status" data-state={realtimeStatus}>
+        <span className="room-live-dot" aria-hidden="true" />
+        {realtimeStatus === "connected" ? "Live updates" : realtimeStatus === "connecting" ? "Connecting" : "Updates offline"}
+      </span>
     </header>
 
     {error && <div className="flag flag-brick room-error"><h4>Room could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" onClick={loadInitialRoom}>Try again</button></div>}

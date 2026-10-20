@@ -1327,7 +1327,7 @@ textarea{width:100%}
   max-width:900px!important;margin:0 auto!important;padding:0!important;background:#F7FAFD!important
 }
 .room-head{
-  position:sticky;top:0;z-index:5;display:grid;grid-template-columns:40px minmax(0,1fr) 18px;
+  position:sticky;top:0;z-index:5;display:grid;grid-template-columns:34px minmax(0,1fr) auto;
   align-items:center;gap:10px;min-height:72px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
   color:#173D63;background:#FFFFFF;
   border-bottom:1px solid #DCE6F0
@@ -1345,6 +1345,11 @@ textarea{width:100%}
 .room-live-dot{
   width:8px;height:8px;border-radius:50%;background:#59CABB;box-shadow:0 0 0 5px rgba(89,202,187,.10)
 }
+.room-live-status{display:inline-flex;align-items:center;gap:6px;color:#657F99;font-size:12px;white-space:nowrap}
+.room-live-status[data-state=connected]{color:#187C69}
+.room-live-status[data-state=offline]{color:#708196}
+.room-live-status[data-state=offline] .room-live-dot{background:#9FB0C2;box-shadow:none}
+.room-live-status[data-state=connecting] .room-live-dot{background:#D6A34B;box-shadow:none}
 .room-context-note{
   margin:10px 14px 0;padding:8px 10px;border-left:3px solid #BFD8F2;background:#F5F9FE;
   color:#65757F;font-size:10.5px;line-height:1.45
