@@ -29,7 +29,7 @@ comment on table public.routine_pause_periods is
 with events as (
  select a.*, r.id operation_id,
   count(*) filter(where a.verb='routine_resumed') over(
-   partition by r.id order by a.created_at,case when a.verb='routine_paused' then 0 else 1 end,a.id
+   partition by r.id order by a.at,case when a.verb='routine_paused' then 0 else 1 end,a.id
    rows unbounded preceding) as resume_group
  from public.activity_events a join public.recurring_operations r
   on r.work_item_id=a.object_id and r.org_id=a.org_id
@@ -37,14 +37,14 @@ with events as (
 ), openings as (
  select distinct on(operation_id,resume_group) *
  from events where verb='routine_paused'
- order by operation_id,resume_group,created_at,id
+ order by operation_id,resume_group,at,id
 )
 insert into public.routine_pause_periods(operation_id,org_id,paused_at,resumed_at,paused_by,resumed_by,pause_reason,resume_reason,source_event_id)
-select p.operation_id,p.org_id,p.created_at,c.created_at,p.actor_id,c.actor_id,p.meta->>'reason',c.meta->>'reason',p.id
+select p.operation_id,p.org_id,p.at,c.at,p.actor_id,c.actor_id,p.meta->>'reason',c.meta->>'reason',p.id
 from openings p left join lateral (
- select e.created_at,e.actor_id,e.meta from events e
+ select e.at,e.actor_id,e.meta from events e
  where e.operation_id=p.operation_id and e.verb='routine_resumed' and e.resume_group=p.resume_group+1
- order by e.created_at,e.id limit 1
+ order by e.at,e.id limit 1
 ) c on true;
 -- A legacy current pause can exist without an activity event. Its persisted
 -- pause timestamp is evidence; earlier unknown intervals are not invented.
@@ -101,7 +101,7 @@ begin
       paused_at=case when p_paused then v_changed_at else null end
   where id=ro.id;
 
-  insert into activity_events(org_id,actor_id,verb,object_type,object_id,meta,created_at)
+  insert into activity_events(org_id,actor_id,verb,object_type,object_id,meta,at)
   values(ro.org_id,auth.uid(),case when p_paused then 'routine_paused' else 'routine_resumed' end,
          'work_item',p_work_item_id,jsonb_build_object('reason',btrim(p_reason),'changed_at',v_changed_at),v_changed_at);
 
