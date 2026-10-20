@@ -68,8 +68,8 @@ test('project evidence reaches an employee only through the existing reviewer an
     const ratings = reviewerPage.getByRole('region', { name: 'Human-entered Manager appraisal ratings' });
     await ratings.getByRole('button', { name: 'Enter ratings', exact: true }).click();
     const delivery = ratings.locator('.s2-rating-row').filter({ hasText: 'Delivery of responsibilities' });
-    await delivery.getByLabel('Human rating', { exact: true }).selectOption('N/O');
-    await delivery.getByLabel('Explanation', { exact: true }).fill(ratingReason);
+    await delivery.getByRole('combobox', { name: 'Delivery of responsibilities: human rating', exact: true }).selectOption('N/O');
+    await delivery.getByRole('textbox', { name: 'Delivery of responsibilities: explanation', exact: true }).fill(ratingReason);
     await ratings.getByRole('button', { name: 'Record human ratings', exact: true }).click();
     await expect(ratings.getByText(ratingReason, { exact: true })).toBeVisible();
     const ratingSaved = await manager.from('appraisal_human_rating_versions')

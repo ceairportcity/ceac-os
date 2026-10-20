@@ -113,3 +113,6 @@ The post-browser Support rerun now passed reporter/authority checks but found a 
 
 
 At `f0fd14ee`, migration 165 applied locally, all three affected SQL gates passed (published ratings, exact public/private definer inventory and post-browser Support lifecycle), and the official CLI security advisor returned **No issues found**, exit 0. The original HR confidential-table grants and 148-signature public RPC inventory remain unchanged. A strengthened real Manager→independent HR→employee browser journey now records an optional human-entered monthly N/O explanation, proves it hidden before release, visible only to the employee after HR release, unavailable to a colleague, and confirms the private helper is unavailable through either public or private-schema REST RPC. That new browser proof remains pending, not inferred from SQL.
+
+
+The strengthened publication browser first stopped at a genuinely ambiguous category control label, before attempting HR publication. Each rating/explanation/evidence control now has a unique category-specific accessible name, retaining the existing visual layout and strict assertions. The rerun uses these actual labels; no timeout or permission check was relaxed. Latest 165 native source/build remains 478/478, exit 0; this accessibility correction needs its focused rerun.

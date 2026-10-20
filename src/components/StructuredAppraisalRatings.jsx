@@ -146,11 +146,11 @@ export default function StructuredAppraisalRatings({me,review,cycle,evidence,ass
     <p>One rating per observed category, with a specific reason and an actual evidence link. Choose N/O with an explanation if the category cannot fairly be assessed.</p>
     {HUMAN_RUBRIC.map(d=><div className="s2-rating-row" key={d.key}>
       <strong>{d.label}</strong>
-      <label>Human rating <select value={categories[d.key].rating} onChange={e=>setCategories(x=>({...x,[d.key]:{...x[d.key],rating:e.target.value}}))}>
+      <label>Human rating <select aria-label={`${d.label}: human rating`} value={categories[d.key].rating} onChange={e=>setCategories(x=>({...x,[d.key]:{...x[d.key],rating:e.target.value}}))}>
         <option value="">Not entered</option>{ratingOptions}
       </select></label>
-      <label>Explanation <textarea value={categories[d.key].reason} rows={2} placeholder="Specific observation, not a generic grade" onChange={e=>setCategories(x=>({...x,[d.key]:{...x[d.key],reason:e.target.value}}))}/></label>
-      <label>Evidence from this review <select value={categories[d.key].evidenceIds[0]||""} onChange={e=>setCategories(x=>({...x,[d.key]:{...x[d.key],evidenceIds:e.target.value?[e.target.value]:[]}}))}>
+      <label>Explanation <textarea aria-label={`${d.label}: explanation`} value={categories[d.key].reason} rows={2} placeholder="Specific observation, not a generic grade" onChange={e=>setCategories(x=>({...x,[d.key]:{...x[d.key],reason:e.target.value}}))}/></label>
+      <label>Evidence from this review <select aria-label={`${d.label}: evidence`} value={categories[d.key].evidenceIds[0]||""} onChange={e=>setCategories(x=>({...x,[d.key]:{...x[d.key],evidenceIds:e.target.value?[e.target.value]:[]}}))}>
         <option value="">No evidence chosen</option>
         {selection.map(ev=><option value={ev.id} key={ev.id}>{ev.label||ev.category||"Evidence"} · {ev.occurred_on||"undated"}</option>)}
       </select></label>
