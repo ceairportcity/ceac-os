@@ -50,3 +50,21 @@ Do not describe the owner repair as production released or 100% feature complete
 - **Filter isolation:** on moving between Projects, status/department/search selections reset and do not carry hidden prior-project state. Executive search clears on reporting context changes. Scoped refresh of the SAME project preserves the user's filters.
 
 Work should inspect actual current PR HEAD, preserve newer commits, run **affected** source/browser checks and review any change-impact on identity scoping, then qualify final release at the frozen candidate SHA. No new migration, permission, Auth, production or security flag change in these UI patches.
+
+
+## Code continuation completed in this chat — verified commit chain
+
+Starting from PR #124 `7d9530f0` (code remained on the current draft branch), the connected GitHub session committed:
+
+1. `7cac6c65`: scope Projects' dated activity, Executive factual contribution drilldown, and date-specific independent routine reviews to the current tenant/actor/project/period/occurrence. Historical results are not rendered while a new identity/selection is verifying; stale review submits are blocked.
+2. `3aeb8f41`: prevent previous-project task search/status/department filters and previous Executive search terms from carrying over to a different project/reporting context.
+3. `551ca98d`: scope restricted manager project-close assessments, HR restricted project contribution drafts and formal reviewer evidence selection to current identity/project/review cycle, including submission gating and resetting unsaved assessment fields.
+4. `55593f0b` followed by **mandatory correction `c5040fca`**: scope Work inspector and its dated action diary, prevent stale submissions; the initial diary guard accidentally referenced itself, detected by focused source validation and promptly fixed at `c5040fca` before any acceptance claim.
+5. `5a796635`: remount the complete Work-detail screen when organisation, actor, active department or work record changes, isolating the original multi-query and form state without changing its underlying Work engine or RPC authority.
+6. The next bounded commit adds a rejected-network-response recovery path for the formal-reviews draft read, preserving fail-closed confidentiality.
+
+**Focused checks executed in connected chat:** 4/4 new source-contract tests for the first four scope/error areas passed when evaluated against the actual committed GitHub contents; the Work-detail remount and formal-draft catch have matching focused source assertions but must be included in Work's native affected source suite. Also inspected all touched scope guards for self-referential readiness expressions; none remained after `c5040fca`. The repository itself was unreachable from the local terminal (DNS failure for github.com), so **native npm/vite, ESLint, isolated SQL replay, authenticated Playwright, literal reference screenshots, and final release-wide testing were NOT run by this chat.** Do not misstate prior 481-source/63-SQL/53-browser results at older SHAs as exact-head acceptance.
+
+**Next work to execute in Codespace**, once owner-authorised: recover any unpushed workspace changes, compare to current PR HEAD and reconcile without losing newer work; focused source tests for `tests/stage2OwnerWorkCorrections.test.mjs`, native Vite build and affected real authenticated role changes (switch actor, unit, project, reporting period and Work detail during in-flight data reads), including restricted HR draft publication, normal diary correction and per-date review. Then continue the genuinely missing recurrence capabilities (custom intervals, reminders, delegation/cover, per-date workflow/evidence), exact private owner-approved Work/Projects/Room visual fidelity, and **one full frozen-candidate release-wide integration acceptance**. No Stage 2 final build/visual/release PASS is asserted here.
+
+**Production remains unchanged:** no main merge, production migration, user/auth change, deploy, or repository visibility change was performed in this chat. Deferred Google OAuth and universal mandatory MFA are not Stage 2 blockers under the latest owner's override.

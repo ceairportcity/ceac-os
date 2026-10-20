@@ -29,6 +29,11 @@ export default function FormalReviewProjectDrafts({ me, review, cycle, disabled,
           setError('Project assessment history could not be verified. Retry before using this evidence.');
         else setSourceNotes(result.data.filter(note => assessmentMatchesReview(note, review, cycle, me.id)));
         setCompletedReviewScope(reviewScope); setLoading(false);
+      }).catch(() => {
+        if (!current) return;
+        setSourceNotes([]);
+        setError('Project assessment history could not be verified. Retry before using this evidence.');
+        setCompletedReviewScope(reviewScope); setLoading(false);
       });
     return () => { current = false; };
   }, [me.id, me.org_id, review.id, review.profile_id, review.manager_id, cycle.id, cycle.starts_on, cycle.ends_on, retry]);

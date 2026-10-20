@@ -526,3 +526,13 @@ test("Work full-detail remounts its independent async state on account, departme
   assert.match(item,/record_routine_occurrence/);
   assert.match(item,/change_routine_schedule/);
 });
+
+
+test("restricted reviewer evidence shows a safe retry when the database request rejects asynchronously",()=>{
+  const src=source("src/components/FormalReviewProjectDrafts.jsx");
+  assert.match(src,/\.catch\(\(\) => \{/);
+  assert.match(src,/if \(!current\) return;/);
+  assert.match(src,/setSourceNotes\(\[\]\)/);
+  assert.match(src,/setCompletedReviewScope\(reviewScope\); setLoading\(false\)/);
+  assert.match(src,/\{activeError && <p role="alert">/);
+});
