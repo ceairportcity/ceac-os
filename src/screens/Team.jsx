@@ -71,6 +71,7 @@ function PersonRow({ person, openPerson, laneNames = [] }) {
 
 export default function Team({ me, openPerson, goAssign, openRoom }) {
   const [people, setPeople] = useState([]);
+  const [ownEngagement, setOwnEngagement] = useState(null);
   const [subTeams, setSubTeams] = useState([]);
   const [members, setMembers] = useState({});
   const [pending, setPending] = useState([]);
@@ -101,6 +102,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
   async function load() {
     if (!me.unit_id) {
       setPeople([]);
+      setOwnEngagement(null);
       setSubTeams([]);
       setMembers({});
       setPending([]);
@@ -111,6 +113,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
       return;
     }
     setLoading(true);
+    setOwnEngagement(null);
     setVolunteerInvitationsReady(false);
     setError(null);
     try {
@@ -144,6 +147,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
       const memberships = requireResult(membershipResult, "Team members");
       const employment = requireResult(employmentResult, "Engagement records");
       const employmentByProfile = new Map(employment.map((row) => [row.profile_id, row]));
+      setOwnEngagement(employmentByProfile.get(me.id) || null);
       const staff = memberships.filter((membership) => membership.profile_id !== me.id);
       const staffIds = new Set(staff.map((membership) => membership.profile_id));
       const work = requireResult(workResult, "Team work").filter((item) => staffIds.has(item.assignee_id));
@@ -343,8 +347,10 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
   const visiblePeople = people.filter((person) =>
     peopleView === "all" ? true : peopleView === "volunteers" ? person.employment_type === "volunteer" : person.employment_type !== "volunteer"
   );
-  const volunteerCount = people.filter((person) => person.employment_type === "volunteer").length;
-  const staffCount = people.length - volunteerCount;
+  const selfIsVolunteer = ownEngagement?.employment_type === "volunteer";
+  const showSelf = peopleView === "all" || (peopleView === "volunteers" ? selfIsVolunteer : !selfIsVolunteer);
+  const volunteerCount = people.filter((person) => person.employment_type === "volunteer").length + (selfIsVolunteer ? 1 : 0);
+  const staffCount = people.length + 1 - volunteerCount;
 
   const groupedPeople = subTeams.map((team) => ({
     ...team,
@@ -376,7 +382,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
         <div className="phase6-manager-people-tabs" role="tablist" aria-label="People type">
           {[
             ["all", `All ${people.length + 1}`],
-            ["staff", `Staff ${staffCount + 1}`],
+            ["staff", `Staff ${staffCount}`],
             ["volunteers", `Volunteers ${volunteerCount}`],
           ].map(([value,label]) => <button
             key={value}
@@ -409,12 +415,12 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
         <div className="ev2p-stack">
           <PeopleSection
             title="People & volunteers"
-            meta={`${visiblePeople.length + (peopleView === "volunteers" ? 0 : 1)} shown`}
+            meta={`${visiblePeople.length + (showSelf ? 1 : 0)} shown`}
             description="Open a person for unit-scoped work, activity and visible feedback context."
           >
-            {peopleView !== "volunteers" && <PeoplePersonRow
+            {showSelf && <PeoplePersonRow
               name={me.full_name || "—"}
-              subtitle="Unit head"
+              subtitle={selfIsVolunteer ? "Unit head · Volunteer" : "Unit head"}
               context="Your own work remains under My work."
               status="You"
               statusTone="neutral"
@@ -430,7 +436,7 @@ export default function Team({ me, openPerson, goAssign, openRoom }) {
                 laneNames={laneNames}
               />;
             })}
-            {visiblePeople.length === 0 && <PeopleEmpty
+            {visiblePeople.length === 0 && !showSelf && <PeopleEmpty
               title={peopleView === "volunteers" ? "No volunteers in this unit yet" : peopleView === "staff" ? "No other Staff in this unit yet" : "No other people yet"}
               description="Invited or authorised unit members will appear here. Your own work remains under My work."
             />}

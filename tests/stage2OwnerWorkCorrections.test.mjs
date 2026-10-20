@@ -119,7 +119,9 @@ test("rejected live mobile Team screenshot is not a design reference, and Manage
   assert.doesNotMatch(team, /<PeopleRoomCard/);
   assert.match(team, /role="tablist" aria-label="People type"/);
   assert.match(team, /\["all", `All \$\{people\.length \+ 1\}`\]/);
-  assert.match(team, /peopleView !== "volunteers" && <PeoplePersonRow/);
+  assert.match(team, /showSelf && <PeoplePersonRow/);
+  assert.match(team, /setOwnEngagement\(employmentByProfile.get\(me.id\) \|\| null\)/);
+  assert.match(team, /visiblePeople.length === 0 && !showSelf && <PeopleEmpty/);
   assert.match(team, /disabled=\{!volunteerInvitationsReady\}/);
   assert.match(styles, /\.phase6-manager-people-tabs button\.is-selected\{border-bottom-color:/);
   assert.match(styles, /\.phase6-add-volunteer\.btn\{[^}]*width:auto/);

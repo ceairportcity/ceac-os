@@ -36,6 +36,9 @@ export default function FormalReviewProjectDrafts({ me, review, cycle, disabled,
     {notes.map(note => <article key={note.id} className="card">
       <strong>{note.project?.name || 'Recorded project'}</strong>
       <small> · {note.written_at?.slice(0, 10)}</small>
+      <p className="screen-note">{note.period_start || note.period_end
+        ? `Contribution period: ${note.period_start || 'Start not specified'} to ${note.period_end || 'End not specified'}`
+        : 'No contribution period specified — confirm relevance to this review.'}</p>
       <p>{note.narrative}</p>
       {note.evidence_note && <p>Evidence: {note.evidence_note}</p>}
       <button type="button" className="btn btn-ghost btn-sm" disabled={disabled}
