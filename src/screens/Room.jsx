@@ -615,7 +615,10 @@ export default function Room({
       />
 
       <div className="room-composer-row room-composer-v2">
-        <button className={"room-plus " + (panel ? "on" : "")} aria-label="Add context or action" onClick={() => setPanel((current) => current ? null : "actions")}>+</button>
+        <button type="button" className={"room-plus " + (panel ? "on" : "")}
+          aria-label={panel ? "Close Room actions" : "Add context or action"}
+          aria-expanded={Boolean(panel)} onClick={() => setPanel((current) => current ? null : "actions")}>
+          {panel ? "×" : "+"}</button>
         <div className="room-text-wrap">
           <textarea
             rows={1}

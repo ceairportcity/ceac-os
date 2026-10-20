@@ -309,3 +309,12 @@ test("unit coordination Room uses compact square controls and readable light-blu
   assert.match(room,/aria-label="Back from Room"/);
   assert.match(room,/aria-label="Unit conversations"/);
 });
+
+test("compact Room action control makes open/close state visible without circular rotation",()=>{
+  const room=source("src/screens/Room.jsx");
+  const css=source("src/styles.css");
+  assert.match(room,/aria-expanded=\{Boolean\(panel\)\}/);
+  assert.match(room,/panel \? "×" : "\+"/);
+  assert.match(room,/panel \? "Close Room actions" : "Add context or action"/);
+  assert.match(css,/\.room-plus\.on\{transform:none/);
+});
