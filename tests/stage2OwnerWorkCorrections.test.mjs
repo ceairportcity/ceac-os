@@ -371,3 +371,14 @@ test("Projects shows real dated project contributions, not merely recently creat
   assert.doesNotMatch(project,/Recently created work/);
   assert.doesNotMatch(project,/const recent = work\.filter/);
 });
+
+test("Unit Room keeps helper labels at least 12px with compact non-pill controls",()=>{
+  const css=source("src/styles.css");
+  const rules=[...css.matchAll(/([^{}]*\.room-[^{}]+)\{([^{}]*)\}/g)];
+  assert.ok(rules.length>35,"Expected broad Room family coverage");
+  for(const [,selector,body] of rules){
+    for(const m of body.matchAll(/font-size:(\d+(?:\.\d+)?)px/g))
+      assert.ok(Number(m[1])>=12,selector.trim()+" includes illegible "+m[0]);
+    assert.doesNotMatch(body,/border-radius:999px/,"Room pill retained in "+selector.trim());
+  }
+});

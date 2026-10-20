@@ -1352,7 +1352,7 @@ textarea{width:100%}
 .room-live-status[data-state=connecting] .room-live-dot{background:#D6A34B;box-shadow:none}
 .room-context-note{
   margin:10px 14px 0;padding:8px 10px;border-left:3px solid #BFD8F2;background:#F5F9FE;
-  color:#65757F;font-size:10.5px;line-height:1.45
+  color:#65757F;font-size:12px;line-height:1.45
 }
 .room-error{margin:12px 14px 0}
 .room-error .btn{margin-top:9px}
@@ -1364,7 +1364,7 @@ textarea{width:100%}
   background:#F8FAFA;text-align:center
 }
 .room-empty strong{display:block;font-size:13.5px;color:#1B2932}
-.room-empty span{display:block;margin-top:6px;color:#72818A;font-size:11.5px;line-height:1.5}
+.room-empty span{display:block;margin-top:6px;color:#72818A;font-size:12px;line-height:1.5}
 .room-day{display:flex;align-items:center;justify-content:center;margin:18px 0 10px}
 .room-day span{
   padding:4px 8px;border-radius:0;background:transparent;color:#738CA4;font-size:12px;font-weight:650;letter-spacing:.02em
@@ -1384,9 +1384,9 @@ textarea{width:100%}
   display:flex;flex-direction:column;margin-top:8px;padding:8px 9px;border-left:3px solid #89BDB7;border-radius:0 8px 8px 0;
   background:rgba(229,244,242,.62)
 }
-.room-reply-context strong{font-size:9px;color:#59716F}
+.room-reply-context strong{font-size:12px;color:#59716F}
 .room-reply-context span{
-  display:-webkit-box;margin-top:3px;color:#6F7F87;font-size:10px;line-height:1.35;
+  display:-webkit-box;margin-top:3px;color:#6F7F87;font-size:12px;line-height:1.35;
   -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden
 }
 .room-ref-list{display:grid;gap:6px;margin-top:9px}
@@ -1394,8 +1394,8 @@ textarea{width:100%}
   display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:8px 9px;
   border:1px solid #D7E3E5;border-radius:9px;background:#FAFCFC;text-align:left
 }
-.room-ref-list span{color:#7A8991;font-size:8.5px;text-transform:uppercase;letter-spacing:.06em}
-.room-ref-list strong{min-width:0;color:#41545E;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.room-ref-list span{color:#7A8991;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.room-ref-list strong{min-width:0;color:#41545E;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .room-reply-action{
   margin-top:8px;color:#647D96;font-size:12px;font-weight:650
 }
@@ -1406,7 +1406,7 @@ textarea{width:100%}
 }
 .room-composer-reply,.room-composer-context{
   display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;padding:7px 9px;
-  border-radius:9px;background:#EEF3F4;color:#64747D;font-size:9.5px
+  border-radius:9px;background:#EEF3F4;color:#64747D;font-size:12px
 }
 .room-composer-reply button{font-size:17px;line-height:1;color:#7C8B93}
 .room-composer-context{justify-content:flex-start}
@@ -1530,7 +1530,7 @@ textarea{width:100%}
 .room-composer-tools{display:flex;gap:6px;margin-bottom:7px}
 .room-composer-tools button{
   min-height:30px;padding:0 9px;border:1px solid #DCE4E7;border-radius:9px;background:#fff;
-  color:#687780;font-size:9.5px;font-weight:650
+  color:#687780;font-size:12px;font-weight:650
 }
 .room-composer-tools button.on{border-color:#B9D9D5;background:#EAF6F4;color:#0E776F}
 .room-composer-tools button:disabled{opacity:.45}
@@ -1635,8 +1635,8 @@ textarea{width:100%}
 .room-picker-head{
   display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;border-bottom:1px solid #E6ECEE
 }
-.room-picker-head strong{font-size:10.5px;color:#394B54}
-.room-picker-head button{color:#14776F;font-size:9px;font-weight:650}
+.room-picker-head strong{font-size:12px;color:#394B54}
+.room-picker-head button{color:#14776F;font-size:12px;font-weight:650}
 .room-picker-panel>button{
   display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:42px;padding:9px 11px;
   border-bottom:1px solid #EDF1F2;text-align:left;color:#425F7D;font-size:12px
@@ -1644,11 +1644,11 @@ textarea{width:100%}
 .room-picker-panel>button:last-child{border-bottom:0}
 .room-picker-panel>button.on{background:#EEF8F6;color:#0E776F}
 .room-picker-panel>button span{min-width:0}
-.room-picker-panel>button span small{display:block;margin-bottom:2px;color:#89979E;font-size:8.5px}
-.room-picker-panel>button b{color:#118C83;font-size:10px}
+.room-picker-panel>button span small{display:block;margin-bottom:2px;color:#89979E;font-size:12px}
+.room-picker-panel>button b{color:#118C83;font-size:12px}
 .room-inline-mentions{max-height:220px;overflow-y:auto}
 .room-inline-label{
-  padding:8px 10px;border-bottom:1px solid #E8EDEF;color:#839198;font-size:8.8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase
+  padding:8px 10px;border-bottom:1px solid #E8EDEF;color:#839198;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase
 }
 .room-inline-mentions>button{
   display:flex;align-items:center;gap:9px;width:100%;min-height:42px;padding:8px 10px;border-bottom:1px solid #EDF1F2;text-align:left
@@ -1657,15 +1657,15 @@ textarea{width:100%}
 .room-person-avatar{
   display:grid;place-items:center;width:28px;height:28px;border-radius:6px;background:#EEF5FD;color:#2369A9;font-size:12px;font-weight:750
 }
-.room-inline-mentions strong{font-size:10.5px;color:#394B54}
+.room-inline-mentions strong{font-size:12px;color:#394B54}
 .room-composer-context-list{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}
 .room-composer-context-list button{
   display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px;max-width:100%;padding:6px 8px;
   border:1px solid #D6E4E2;border-radius:9px;background:#F2F8F7;text-align:left
 }
-.room-composer-context-list span{color:#78908D;font-size:7.8px;text-transform:uppercase}
-.room-composer-context-list strong{min-width:0;color:#37554F;font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.room-composer-context-list b{color:#708189;font-size:11px}
+.room-composer-context-list span{color:#78908D;font-size:12px;text-transform:uppercase}
+.room-composer-context-list strong{min-width:0;color:#37554F;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.room-composer-context-list b{color:#708189;font-size:12px}
 @keyframes composer-rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* Audience-aware meeting scheduler */
@@ -1845,16 +1845,16 @@ textarea{width:100%}
 /* Product refinement: Room unread, mentions and history */
 .room-load-older{
   display:block;margin:4px auto 14px;padding:7px 12px;border:1px solid var(--line);
-  border-radius:999px;background:var(--card);color:var(--ink-soft);font-size:11.5px;font-weight:600
+  border-radius:6px;background:var(--card);color:var(--ink-soft);font-size:12px;font-weight:600
 }
-.room-unread-divider{display:flex;align-items:center;gap:8px;margin:15px 0 10px;color:var(--green);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.room-unread-divider{display:flex;align-items:center;gap:8px;margin:15px 0 10px;color:var(--green);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .room-unread-divider:before,.room-unread-divider:after{content:"";height:1px;flex:1;background:rgba(17,140,131,.28)}
 .room-message-mentions{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
-.room-message-mentions span{padding:2px 6px;border-radius:999px;background:rgba(17,140,131,.10);color:var(--green);font-size:10.5px;font-weight:650}
+.room-message-mentions span{padding:2px 6px;border-radius:6px;background:rgba(17,140,131,.10);color:var(--green);font-size:12px;font-weight:650}
 .room-new-messages{
   position:sticky;z-index:5;bottom:92px;margin:-46px auto 10px;display:block;
-  padding:8px 12px;border-radius:999px;background:var(--manager-shell,#17232D);color:#fff;
-  box-shadow:0 8px 24px rgba(23,35,45,.18);font-size:11.5px;font-weight:650
+  padding:8px 12px;border-radius:6px;background:var(--manager-shell,#17232D);color:#fff;
+  box-shadow:0 8px 24px rgba(23,35,45,.18);font-size:12px;font-weight:650
 }
 
 
