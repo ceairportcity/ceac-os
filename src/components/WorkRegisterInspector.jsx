@@ -8,15 +8,20 @@ import "./WorkRegisterInspector.css";
 /** Approved Work register's selected-responsibility inspector.
  * Uses real RLS-scoped work and contribution records, never sample outcomes. */
 export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
-  const [work, setWork] = useState(null);
+  const [sourceWork, setSourceWork] = useState(null);
+  const [completedWorkScope, setCompletedWorkScope] = useState("");
   const [loading, setLoading] = useState(Boolean(selectedId));
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
+  const workScope = `${me.org_id}:${me.id}:${selectedId || ""}`;
+  const checking = Boolean(selectedId) && (loading || completedWorkScope !== workScope);
+  const activeError = completedWorkScope === workScope ? error : "";
+  const work = !checking && !activeError && completedWorkScope === workScope ? sourceWork : null;
   useEffect(() => {
     let current = true;
-    setWork(null);
+    setSourceWork(null); setCompletedWorkScope("");
     setError("");
-    if (!selectedId) { setLoading(false); return () => { current = false; }; }
+    if (!selectedId) { setLoading(false); setCompletedWorkScope(workScope); return () => { current = false; }; }
     setLoading(true);
     supabase.from("work_items")
       .select("id,org_id,unit_id,project_id,objective_id,phase_id,assignee_id,origin,visibility,confidential,title,ref,kind,status,purpose,expected_outcome,due_at,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
@@ -24,8 +29,14 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       .then(({data,error:readError}) => {
         if (!current) return;
         if (readError) setError("This responsibility could not be verified for your account.");
-        else setWork(data);
-        setLoading(false);
+        else if (!data || data.id !== selectedId || data.org_id !== me.org_id)
+          setError("The selected responsibility could not be verified.");
+        else setSourceWork(data);
+        setCompletedWorkScope(workScope); setLoading(false);
+      }).catch(() => {
+        if (!current) return;
+        setSourceWork(null); setError("This responsibility could not be loaded. Retry.");
+        setCompletedWorkScope(workScope); setLoading(false);
       });
     return () => { current=false; };
   }, [me.id,me.org_id,selectedId,reload]);
@@ -36,9 +47,9 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       {onClose && <button aria-label="Close responsibility inspector" type="button" onClick={onClose}>×</button>}
     </header>
     {!selectedId && <p className="s2-work-inspector-empty">Choose a responsibility from the register to inspect it.</p>}
-    {loading && <p role="status">Loading selected responsibility…</p>}
-    {error && <div role="alert">{error}<button type="button" onClick={() => setReload(n=>n+1)}>Retry</button></div>}
-    {!loading && !error && work && <>
+    {checking && <p role="status">Loading selected responsibility…</p>}
+    {activeError && <div role="alert">{activeError}<button type="button" onClick={() => setReload(n=>n+1)}>Retry</button></div>}
+    {!checking && !activeError && work && <>
       <h2>{work.title}</h2>
       <p className="s2-work-inspector-context">{work.ref} · {work.projects?.name || "No linked project"}</p>
       <dl className="s2-work-inspector-facts">

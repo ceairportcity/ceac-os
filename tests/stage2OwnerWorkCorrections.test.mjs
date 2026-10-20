@@ -497,3 +497,21 @@ test("person-specific project and HR appraisal draft views reject stale identiti
   assert.match(f,/const notes = ready \? sourceNotes : \[\]/);
   assert.match(f,/disabled=\{disabled \|\| !ready\}/);
 });
+
+
+test("Work inspector and dated diary cannot display or submit stale actor/work context",()=>{
+  const inspector=source("src/components/WorkRegisterInspector.jsx");
+  const diary=source("src/components/WorkActivityDiary.jsx");
+  assert.match(inspector,/const workScope = /);
+  assert.match(inspector,/completedWorkScope !== workScope/);
+  assert.match(inspector,/const work = !checking && !activeError && completedWorkScope === workScope \? sourceWork : null/);
+  assert.match(inspector,/data\.id !== selectedId \|\| data\.org_id !== me\.org_id/);
+  assert.match(inspector,/setCompletedWorkScope\(workScope\)/);
+  assert.match(diary,/const diaryScope = /);
+  assert.match(diary,/const verified = completedDiaryScope === diaryScope && !loading && !error && !unavailable/);
+  assert.match(diary,/const history = verified \? sourceHistory : \[\]/);
+  assert.match(diary,/setCompletedDiaryScope\(diaryScope\)/);
+  assert.match(diary,/const canRecord = verified &&/);
+  assert.match(diary,/if \(busy \|\| submitting\.current \|\| !verified \|\| !canRecord/);
+  assert.match(diary,/\{editor && verified && <form/);
+});

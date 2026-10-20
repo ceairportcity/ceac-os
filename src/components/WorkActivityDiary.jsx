@@ -21,7 +21,8 @@ const states = [
 /** Source-backed contribution diary. A diary action never completes a parent
  * responsibility, changes formal attendance or self-approves an objective. */
 export default function WorkActivityDiary({ me, item, prefillDate = "", prefillRequest = 0 }) {
-  const [history, setHistory] = useState([]);
+  const [sourceHistory, setSourceHistory] = useState([]);
+  const [completedDiaryScope, setCompletedDiaryScope] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -39,6 +40,18 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   const [reload, setReload] = useState(0);
   const submitting = useRef(false);
   const sectionRef = useRef(null);
+  const diaryScope = `${me.org_id}:${me.id}:${item.id}`;
+  const verified = completedDiaryScope === diaryScope && verified && !unavailable;
+  const history = verified ? sourceHistory : [];
+  const checking = loading || completedDiaryScope !== diaryScope;
+  const activeError = completedDiaryScope === diaryScope ? error : "";
+  const visibleSuccess = verified ? success : "";
+  // Reset the previous identity and its draft before a new scope can submit.
+  useEffect(() => {
+    setEditor(false); setCorrectingId(null); setDate(ghanaDay()); setState("done");
+    setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl("");
+    setSuccess(""); setError("");
+  }, [me.id, me.org_id, item.id]);
   // Only user-invoked occurrence shortcuts set the entry date; an unrelated
   // rerender or ordinary load never discards an editor's unsaved work.
   useEffect(() => {
@@ -54,9 +67,9 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
 
   useEffect(() => {
     let current = true;
-    setLoading(true);
+    setLoading(true); setCompletedDiaryScope("");
     setError("");
-    setHistory([]);
+    setSourceHistory([]);
     setUnavailable(false);
     (async () => {
       try {
@@ -82,7 +95,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
         if (all.length !== total) throw new Error("Activity history is incomplete. Please refresh.");
         if (!current) return;
         const revised = new Set(all.map((row) => row.supersedes_id).filter(Boolean));
-        setHistory(all.filter((row) => !revised.has(row.id))
+        setSourceHistory(all.filter((row) => !revised.has(row.id))
           .sort((a,b) => b.activity_date.localeCompare(a.activity_date) || b.recorded_at.localeCompare(a.recorded_at)));
       } catch (e) {
         if (!current) return;
@@ -92,7 +105,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
           setError("Dated activity recording is awaiting its authorised database migration.");
         } else setError(message || "Activity records could not be verified.");
       } finally {
-        if (current) setLoading(false);
+        if (current) { setCompletedDiaryScope(diaryScope); setLoading(false); }
       }
     })();
     return () => { current = false; };
@@ -101,12 +114,12 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   const completedActionCount = history.filter((action) => action.activity_state === "done").length;
   const latestNextAction = history.find((action) => action.next_action?.trim())?.next_action || null;
 
-  const canRecord = item.assignee_id === me.id || (
+  const canRecord = verified && (item.assignee_id === me.id || (
     item.visibility !== "private" && item.confidential !== true
-  );
+  ));
 
   function correct(entry) {
-    if (entry.contributor_id !== me.id || busy || unavailable) return;
+    if (entry.contributor_id !== me.id || busy || !verified) return;
     setCorrectingId(entry.id);
     setDate(entry.activity_date);
     setState(entry.activity_state);
@@ -120,7 +133,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
 
   async function save(event) {
     event.preventDefault();
-    if (busy || submitting.current || unavailable || !canRecord || summary.trim().length < 3 || !date) return;
+    if (busy || submitting.current || !verified || !canRecord || summary.trim().length < 3 || !date) return;
     submitting.current = true;
     setBusy(true);
     setError("");
@@ -168,24 +181,24 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
       <div><span className="eyebrow">Individual contribution</span><h3>Activity record</h3>
         <p>Keep each action, outcome and next step under this responsibility. This is not an attendance or performance score.</p>
       </div>
-      {!loading && !unavailable && canRecord && <button type="button" className="btn btn-sm"
+      {verified && canRecord && <button type="button" className="btn btn-sm"
         onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl(""); setEditor((open) => !open); }}
         >{editor ? "Close" : "+ Record an activity"}</button>}
     </header>
-    {loading && <p role="status">Verifying activity records...</p>}
-    {error && <p className="s2-work-diary-error" role="alert">{error}
+    {checking && <p role="status">Verifying activity records...</p>}
+    {activeError && <p className="s2-work-diary-error" role="alert">{activeError}
       {!unavailable && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setReload((n) => n + 1)}>Retry</button>}
     </p>}
-    {success && <p role="status">{success}</p>}
-    {!loading && !error && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
+    {visibleSuccess && <p role="status">{visibleSuccess}</p>}
+    {verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
       <div><span>Recorded actions</span><strong>{history.length}</strong></div>
       <div><span>Recorded as done</span><strong>{completedActionCount}</strong></div>
     </div>}
-    {!loading && !error && latestNextAction && <div className="s2-work-diary-next-action">
+    {verified && latestNextAction && <div className="s2-work-diary-next-action">
       <span>Next action</span><p>{latestNextAction}</p>
     </div>}
-    {!loading && !error && history.length === 0 && <p>No dated activities have been recorded under this responsibility yet.</p>}
-    {!loading && !error && history.length > 0 && <ol className="s2-work-diary-timeline">
+    {verified && history.length === 0 && <p>No dated activities have been recorded under this responsibility yet.</p>}
+    {verified && history.length > 0 && <ol className="s2-work-diary-timeline">
       {history.map((entry) => <li key={entry.id}>
         <div><strong>{entry.action_summary}</strong>
           <small>{entry.activity_date} · {entry.contributor?.full_name || (entry.contributor_id === me.id ? "You" : "Authorised contributor")} · {states.find(([key]) => key === entry.activity_state)?.[1] || entry.activity_state}</small>
@@ -198,7 +211,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
         {entry.contributor_id === me.id && canRecord && <button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={() => correct(entry)}>Correct this entry</button>}
       </li>)}
     </ol>}
-    {editor && !unavailable && <form className="s2-work-diary-form" onSubmit={save}>
+    {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail.</p>}
       <label>Activity date <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></label>
       <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
