@@ -1,7 +1,8 @@
 /**
  * Guard CEAC's existing organisational routine write paths before network RPCs.
  * Database RPCs remain the source of authorisation, concurrency and history truth.
- * Ghana-local date-only routines cannot claim other-timezone or reminder support.
+ * Custom interval, timezone and reminder options are validated separately by
+ * routineScheduleOptions and the authoritative server schedule contract.
  */
 const civil = date => {
   if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;

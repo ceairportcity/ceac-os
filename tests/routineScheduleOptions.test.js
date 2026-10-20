@@ -28,3 +28,12 @@ test("missing, changed or duplicated provider pages never appear as a complete r
   await assert.rejects(()=>readRoutineSchedulePreview(provider([page,next]),["work-1"],{fromDate:"2026-10-01",throughDate:"2026-10-31"}));
  }
 });
+
+test("routine reminder is explicitly opt-in, bounded, and keeps the zero-minute option",()=>{
+ assert.equal(routineScheduleOptions({reminder:""}).reminder_minutes_before,null);
+ assert.equal(routineScheduleOptions({reminder:"0"}).reminder_minutes_before,0);
+ assert.equal(routineScheduleOptions({reminder:"1440"}).reminder_minutes_before,1440);
+ for(const reminder of ["-1","1441","0.5","tomorrow"])
+  assert.throws(()=>routineScheduleOptions({reminder}));
+ assert.equal("reminder_minutes_before" in routineScheduleOptions({}),false);
+});

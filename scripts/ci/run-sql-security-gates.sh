@@ -68,6 +68,7 @@ tests=(
   stage2_self_routines_gate.sql
   stage2_routine_occurrence_review_gate.sql
   stage2_routine_schedule_options_gate.sql
+  stage2_routine_reminder_delivery_gate.sql
 )
 
 for test_file in "${tests[@]}"; do

@@ -271,6 +271,24 @@ begin
 end;
 $routine_options_surface$;
 
+-- Canonical schedule evaluation remains invoker/RLS, not a bypass. The NEW
+-- private delivery worker is executable only by its owner via controlled heartbeat.
+do $routine_reminder_surface$
+begin
+ if exists(select 1 from pg_proc where oid='private.routine_schedule_dates(uuid[],date,date,uuid)'::regprocedure and prosecdef)
+  or has_function_privilege('anon','private.routine_schedule_dates(uuid[],date,date,uuid)','EXECUTE')
+  or has_function_privilege('authenticated','private.deliver_routine_reminders()','EXECUTE')
+  or has_function_privilege('anon','private.deliver_routine_reminders()','EXECUTE')
+  or has_function_privilege('service_role','private.deliver_routine_reminders()','EXECUTE')
+  or not exists(select 1 from pg_proc where oid='private.deliver_routine_reminders()'::regprocedure
+    and prosecdef and proconfig @> array['search_path=""'])
+  or has_table_privilege('authenticated','public.routine_reminder_deliveries','INSERT')
+  or has_table_privilege('authenticated','public.routine_reminder_deliveries','UPDATE')
+  or has_table_privilege('authenticated','public.routine_reminder_deliveries','DELETE')
+ then raise exception 'Unreviewed routine reminder boundary'; end if;
+end;
+$routine_reminder_surface$;
+
 -- Ordinary Staff must not turn an arbitrary target identifier into a protected
 -- read/write or capability escalation.
 set local role authenticated;
