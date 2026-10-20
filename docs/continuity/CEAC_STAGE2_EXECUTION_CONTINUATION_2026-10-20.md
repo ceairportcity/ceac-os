@@ -1,3 +1,5 @@
+> **20 OCT 2026, 17:50 UTC — BINDING CONTINUATION ORDER:** Before resuming any candidate or test, read the [owner's locked correction-to-release decision](../final-product/PRODUCT_OWNER_DECISIONS.md#20-october-2026-1750-utc--binding-stage-2-correction-to-release-sequence-read-first-until-release). Complete approved visual corrections first, outstanding agreed functionality second, connected workflow/permission verification and safe database/deployment release third, and actual live checks last. The prepared pagination patch below is subordinate to that order and only justified as a demonstrated Work-reference correction. Preserve this interrupted state and existing evidence; no automatic full-suite reruns or scope expansion. No runtime, database or production change is made by recording this decision.
+
 # CEAC Stage 2 — exact continuation after environment interruption
 
 Recorded 20 October 2026, resumed at 17:16 UTC. This is a continuation record, not acceptance, a deployment, or permission to bypass release gates.
