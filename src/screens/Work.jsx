@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AssignedRoutineOccurrences from "../components/AssignedRoutineOccurrences";
+import OrganisationalRepeatFields, { initialOrganisationalRepeat, organisationalRepeatDetails } from "../components/OrganisationalRepeatFields";
 import WorkRegisterLayout from "../components/WorkRegisterInspector";
 import ResponsibilityRegister from "../components/ResponsibilityRegister";
 import { humanError } from "../lib/productLanguage";
@@ -64,6 +65,7 @@ export default function Work({ me, isManager = false, openItem }) {
   const [purpose, setPurpose] = useState("");
   const [expectedOutcome, setExpectedOutcome] = useState("");
   const [due, setDue] = useState("");
+  const [repeat, setRepeat] = useState(initialOrganisationalRepeat);
   const [steps, setSteps] = useState([""]);
   const [noStepsNeeded, setNoStepsNeeded] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -215,6 +217,7 @@ export default function Work({ me, isManager = false, openItem }) {
     setPurpose("");
     setExpectedOutcome("");
     setDue("");
+    setRepeat(initialOrganisationalRepeat());
     setSteps([""]);
     setNoStepsNeeded(false);
     setNotice(null);
@@ -232,7 +235,20 @@ export default function Work({ me, isManager = false, openItem }) {
     setNotice(null);
     try {
       const dueIso = due ? new Date(due).toISOString() : null;
-      const { data: created, error: createError } = await supabase.rpc("create_task_with_checklist", {
+      let created;
+      if (repeat.enabled && createVisibility === "unit") {
+        const result = await supabase.rpc("create_typed_work", {
+          p_kind: "routine", p_unit_id: me.unit_id, p_assignee_id: me.id, p_title: title.trim(),
+          p_expected_outcome: expectedOutcome.trim(), p_purpose: purpose.trim() || null, p_project_id: projectId || null,
+          p_visibility: "unit", p_details: organisationalRepeatDetails(repeat, clean),
+        });
+        if (result.error) throw result.error;
+        if (!result.data) throw new Error("Creation is uncertain. Check My work before retrying.");
+        const receipt = await supabase.from("work_items").select("id,ref").eq("id",result.data).single();
+        if (receipt.error) throw new Error("Creation could not be verified. Check My work before retrying.");
+        created = receipt.data;
+      } else {
+      const { data: taskData, error: createError } = await supabase.rpc("create_task_with_checklist", {
         p_unit_id: me.unit_id,
         p_assignee_id: me.id,
         p_title: title.trim(),
@@ -249,6 +265,8 @@ export default function Work({ me, isManager = false, openItem }) {
         p_steps: clean,
       });
       if (createError) throw createError;
+      created = taskData;
+      }
       // The server may have committed despite an incomplete client response.
       // Never claim a successful task or encourage a blind duplicate retry.
       if (typeof created?.ref !== "string" || !created.ref.trim()) {
@@ -256,10 +274,11 @@ export default function Work({ me, isManager = false, openItem }) {
         throw new Error("The work creation outcome is uncertain. Check your existing work before creating another task.");
       }
       const confirmation = await supabase.from("work_items")
-        .select("id,ref,org_id,assignee_id,origin,visibility")
+        .select("id,kind,ref,org_id,assignee_id,origin,visibility")
         .eq("ref", created.ref).eq("org_id", me.org_id)
         .eq("assignee_id", me.id).maybeSingle();
       if (confirmation.error || !confirmation.data?.id
+          || confirmation.data.kind !== (repeat.enabled && createVisibility === "unit" ? "routine" : "task")
           || confirmation.data.origin !== "self_created"
           || confirmation.data.visibility !== createVisibility) {
         setSheet(null);
@@ -416,8 +435,9 @@ export default function Work({ me, isManager = false, openItem }) {
         {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
       </select>
 
-      <label className="field-label">Due date (optional)</label>
-      <input className="field" type="datetime-local" value={due} onChange={(event) => setDue(event.target.value)} />
+      {createVisibility === "unit" && <OrganisationalRepeatFields value={repeat} onChange={setRepeat} disabled={busy} />}
+      {!repeat.enabled && <><label className="field-label">Due date (optional)</label>
+      <input className="field" type="datetime-local" value={due} onChange={(event) => setDue(event.target.value)} /></>}
 
       <label className="card small no-steps-option">
         <input type="checkbox" checked={noStepsNeeded} onChange={(event) => setNoStepsNeeded(event.target.checked)} />

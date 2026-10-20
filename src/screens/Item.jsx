@@ -683,11 +683,11 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
             {occurrence.note && <div className="row-m">{occurrence.note}</div>}
           </div>)}
         </>}
-        {routine.active && routine.schedule_kind && <button className="btn" style={{ marginTop: 20 }} onClick={() => {
+        {routine.active && routine.schedule_kind && (item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin) && <button className="btn" style={{ marginTop: 20 }} onClick={() => {
           setRoutineDate(new Date().toISOString().slice(0, 10)); setRoutineValue(""); setNote(""); setSheet("routine-record");
         }}>Record occurrence</button>}
         {!routine.active && <div className="flag flag-amber" style={{ marginTop: 16 }}><h4>Routine paused</h4>No new occurrence action is shown while this routine is paused.</div>}
-        {isManager && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+        {(isManager || me.is_admin || item.origin === "self_created" && item.assignee_id === me.id && item.assigned_by === me.id) && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
           <button className="btn btn-ghost btn-sm" onClick={openRoutineSchedule}>{routine.schedule_kind ? "Change future schedule" : "Set schedule"}</button>
           <button className="btn btn-ghost btn-sm" onClick={() => { setNote(""); setSheet("routine-pause"); }}>{routine.active ? "Pause routine" : "Resume routine"}</button>
         </div>}

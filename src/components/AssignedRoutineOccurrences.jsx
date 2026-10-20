@@ -102,7 +102,7 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
   if (ready && !rows.length) return null;
   return <section className="s2-assigned-routines" aria-label="My scheduled recurring work">
     <header><h2>Recurring responsibilities</h2><small>Past 14 days · Next 14 days</small></header>
-    <p>Assigned once by your manager. Each scheduled date has its own completion record; missed dates remain visible.</p>
+    <p>Created by you or assigned to you. Each scheduled date has its own outcome record; missed dates remain visible.</p>
     {(loading || verifiedIdentity!==identity && !error) && <p role="status">Checking your scheduled responsibilities…</p>}
     {error && <p role="alert">{error}</p>}
     {ready && <div className="s2-assigned-routine-list">

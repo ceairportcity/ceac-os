@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, Sheet } from "./bits";
+import OrganisationalRepeatFields, { initialOrganisationalRepeat, organisationalRepeatDetails } from "./OrganisationalRepeatFields";
 
 /**
  * First-class self-created organisational work for Manager, Administration,
@@ -18,6 +19,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
   const [purpose, setPurpose] = useState("");
   const [outcome, setOutcome] = useState("");
   const [due, setDue] = useState("");
+  const [repeat, setRepeat] = useState(initialOrganisationalRepeat);
   const [projectId, setProjectId] = useState("");
   const [projectQuery, setProjectQuery] = useState("");
   const [objectiveId, setObjectiveId] = useState("");
@@ -101,7 +103,21 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
     setSaving(true);
     setError("");
     try {
-      const { data, error: writeError } = await supabase.rpc("create_task_with_checklist", {
+      let data;
+      if (repeat.enabled) {
+        const created = await supabase.rpc("create_typed_work", {
+          p_kind: "routine", p_unit_id: unitId, p_assignee_id: me.id, p_title: title.trim(),
+          p_expected_outcome: outcome.trim(), p_purpose: purpose.trim() || null, p_project_id: projectId || null,
+          p_objective_id: objectiveId || null, p_phase_id: phaseId || null, p_visibility: "unit",
+          p_details: organisationalRepeatDetails(repeat, cleanSteps),
+        });
+        if (created.error) throw created.error;
+        if (!created.data) throw new Error("Creation is uncertain. Check My work before retrying.");
+        const receipt = await supabase.from("work_items").select("id,ref").eq("id",created.data).single();
+        if (receipt.error) throw new Error("Creation could not be verified. Check My work before retrying.");
+        data = receipt.data;
+      } else {
+      const { data: taskData, error: writeError } = await supabase.rpc("create_task_with_checklist", {
         p_unit_id: unitId,
         p_assignee_id: me.id,
         p_title: title.trim(),
@@ -118,14 +134,16 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
         p_steps: cleanSteps,
       });
       if (writeError) throw writeError;
+      data = taskData;
+      }
       if (!data?.id || typeof data?.ref !== "string" || !data.ref.trim())
         throw new Error("Creation is uncertain. Check your work before trying again.");
       // Do not treat an acknowledgement alone as proof of an authorised write.
       const check = await supabase.from("work_items")
-        .select("id,org_id,unit_id,assignee_id,ref,origin,visibility,project_id,objective_id,phase_id")
+        .select("id,kind,org_id,unit_id,assignee_id,ref,origin,visibility,project_id,objective_id,phase_id")
         .eq("id", data.id).eq("org_id", me.org_id).eq("assignee_id", me.id).maybeSingle();
       const saved = check.data;
-      if (check.error || !saved || saved.ref !== data.ref || saved.origin !== "self_created"
+      if (check.error || !saved || saved.kind !== (repeat.enabled ? "routine" : "task") || saved.ref !== data.ref || saved.origin !== "self_created"
         || saved.visibility !== "unit" || saved.unit_id !== unitId
         || (saved.project_id || null) !== (projectId || null)
         || (saved.objective_id || null) !== (objectiveId || null)
@@ -194,9 +212,10 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
           </select>
         </FieldGroup>
       </>}
-      <FieldGroup label="Due date (optional)">
+      <OrganisationalRepeatFields value={repeat} onChange={setRepeat} disabled={saving} />
+      {!repeat.enabled && <FieldGroup label="Due date (optional)">
         <input className="field" type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
-      </FieldGroup>
+      </FieldGroup>}
       <div className="card small">
         <label><input type="checkbox" checked={noSteps} onChange={(e) => setNoSteps(e.target.checked)} /> No steps needed yet</label>
         {!noSteps && <>
