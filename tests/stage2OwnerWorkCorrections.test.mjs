@@ -332,3 +332,19 @@ test("Room live badge describes the actual subscribed connection, never a perman
   assert.match(css,/\.room-live-status\[data-state=offline\]/);
   assert.doesNotMatch(room,/title="Live updates" aria-label="Live updates"/);
 });
+
+test("Room switching never restores stale participants or work links, and failed message reads are not acknowledged", () => {
+  const room = source("src/screens/Room.jsx");
+  assert.match(room,/activeRoomIdRef = useRef\(null\)/);
+  assert.match(room,/setParticipants\(\[\]\); setScopeRooms\(\[\]\); setWorkOptions\(\[\]\); setProjectOptions\(\[\]\);/);
+  assert.match(room,/async function loadParticipants\(currentRoom, openSerial\)/);
+  assert.match(room,/async function loadReferenceOptions\(currentRoom, openSerial\)/);
+  assert.match(room,/async function loadScopeRooms\(currentRoom, openSerial\)/);
+  assert.match(room,/const current = \(\) => openSerial === roomOpenSerial.current && activeRoomIdRef.current === currentRoom.id/);
+  assert.match(room,/if \(!current\(\)\) return;/);
+  assert.match(room,/const loaded = await loadMessages\(room.id, false\)/);
+  assert.match(room,/if \(loaded && activeRoomIdRef.current === room.id && atBottomRef.current\)/);
+  assert.match(room,/if \(loading \|\| !room\?\.id \|\| error \|\| activeRoomIdRef.current !== room.id\) return;/);
+  assert.match(room,/if \(requestSerial !== messageLoadSerial.current \|\| activeRoomIdRef.current !== roomId\) return false;/);
+  assert.match(room,/if \(!result.error && activeRoomIdRef.current === roomId\) setNewMessageCount\(0\)/);
+});
