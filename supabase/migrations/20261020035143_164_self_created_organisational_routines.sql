@@ -329,14 +329,14 @@ begin
   end if;
   select * into ro from recurring_operations where work_item_id=p_work_item_id for update;
   if ro is null then raise exception 'That routine does not exist.'; end if;
-  if ro.org_id is distinct from app_org_id() then raise exception 'That belongs to another organisation.'; end if;
+  if ro.org_id is distinct from app_org_id() then raise exception 'That belongs to another organisation.' using errcode='42501'; end if;
   if not (ro.unit_id in (select app_managed_units()) or app_is_admin() or exists (
     select 1 from public.work_items w join public.unit_memberships m
       on m.profile_id=auth.uid() and m.unit_id=w.unit_id and m.org_id=w.org_id
     where w.id=ro.work_item_id and w.org_id=app_org_id() and w.origin='self_created'
       and w.assignee_id=auth.uid() and w.assigned_by=auth.uid()
   )) then
-    raise exception 'Only its creator, the department head or Administration can change this routine.';
+    raise exception 'Only its creator, the department head or Administration can change this routine.' using errcode='42501';
   end if;
   if p_effective_from is null then
     raise exception 'Choose when the schedule starts.';
@@ -426,14 +426,14 @@ begin
   end if;
   select * into ro from recurring_operations where work_item_id=p_work_item_id for update;
   if ro is null then raise exception 'That routine does not exist.'; end if;
-  if ro.org_id is distinct from app_org_id() then raise exception 'That belongs to another organisation.'; end if;
+  if ro.org_id is distinct from app_org_id() then raise exception 'That belongs to another organisation.' using errcode='42501'; end if;
   if not (ro.unit_id in (select app_managed_units()) or app_is_admin() or exists (
     select 1 from public.work_items w join public.unit_memberships m
       on m.profile_id=auth.uid() and m.unit_id=w.unit_id and m.org_id=w.org_id
     where w.id=ro.work_item_id and w.org_id=app_org_id() and w.origin='self_created'
       and w.assignee_id=auth.uid() and w.assigned_by=auth.uid()
   )) then
-    raise exception 'Only its creator, the department head or Administration can pause or resume this routine.';
+    raise exception 'Only its creator, the department head or Administration can pause or resume this routine.' using errcode='42501';
   end if;
   if p_reason is null or length(btrim(p_reason))=0 then
     raise exception 'Record why the routine is being paused or resumed.';
@@ -479,7 +479,7 @@ begin
   for update;
 
   if ro is null then raise exception 'That routine does not exist.'; end if;
-  if ro.org_id is distinct from app_org_id() then raise exception 'That routine belongs to another organisation.'; end if;
+  if ro.org_id is distinct from app_org_id() then raise exception 'That routine belongs to another organisation.' using errcode='42501'; end if;
   if p_occurred_on is null or p_occurred_on>current_date then
     raise exception 'Record an occurrence for today or an earlier date.';
   end if;
@@ -494,7 +494,7 @@ begin
     or ro.unit_id in (select app_managed_units())
     or app_is_admin()
   ) then
-    raise exception 'You cannot record this routine.';
+    raise exception 'You cannot record this routine.' using errcode='42501';
   end if;
 
   if not ro.active or ro.paused_at is not null then
