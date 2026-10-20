@@ -6,6 +6,7 @@ import VoiceInput from "../components/VoiceInput";
 import { parseWorkInput } from "../lib/parseTask";
 import { humanError } from "../lib/productLanguage";
 import { FieldGroup } from "../components/bits";
+import RoutineWeekdayPicker from "../components/RoutineWeekdayPicker";
 import { ComposerDrawer } from "../experience-v2/components";
 import { CeacIcon } from "../experience-v2/icons";
 import { PendingFilePicker } from "../components/OperationalFiles";
@@ -740,17 +741,8 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             {routineSchedule === "weekly" && <select className="field" aria-label="Repeat weekday" value={routineWeeklyDay} onChange={(e) => setRoutineWeeklyDay(e.target.value)}>
               {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day, index) => <option key={day} value={index + 1}>{day}</option>)}
             </select>}
-            {routineSchedule === "weekdays" && <div className="card small" style={{ marginTop: 10 }}>
-              <div style={{ fontWeight: 700, marginBottom: 8 }}>Which days?</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day, index) => {
-                  const value = index + 1;
-                  const on = routineWeekdays.includes(value);
-                  return <button type="button" key={day} className={`btn btn-sm ${on ? "" : "btn-ghost"}`}
-                    onClick={() => setRoutineWeekdays((current) => on ? current.filter((d) => d !== value) : [...current, value].sort())}>{day}</button>;
-                })}
-              </div>
-            </div>}
+            {routineSchedule === "weekdays" && <RoutineWeekdayPicker value={routineWeekdays}
+              onChange={setRoutineWeekdays} label="Which days?" />}
             {routineSchedule === "monthly" && <input className="field" type="number" min="1" max="31" placeholder="Day of month (1–31)"
               value={routineDayOfMonth} onChange={(e) => setRoutineDayOfMonth(e.target.value)} />}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>

@@ -7,6 +7,7 @@ import WorkActivityDiary from "../components/WorkActivityDiary";
 import WorkProjectLink from "../components/WorkProjectLink";
 import RoutineOccurrenceReviews from "../components/RoutineOccurrenceReviews";
 import { routineFutureChange, routineOccurrenceDetails } from "../lib/routineWriteValidation";
+import RoutineWeekdayPicker from "../components/RoutineWeekdayPicker";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
 import { OperationalFileList } from "../components/OperationalFiles";
 import {
@@ -897,16 +898,8 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
           {routineSchedule === "weekly" && <select className="field" value={routineWeeklyDay} onChange={(e) => setRoutineWeeklyDay(e.target.value)}>
             {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day, index) => <option key={day} value={index + 1}>{day}</option>)}
           </select>}
-          {routineSchedule === "weekdays" && <div className="card small" style={{ marginTop: 10 }}>
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>Which days?</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day, index) => {
-                const value = index + 1; const on = routineWeekdays.includes(value);
-                return <button type="button" key={day} className={`btn btn-sm ${on ? "" : "btn-ghost"}`}
-                  onClick={() => setRoutineWeekdays((current) => on ? current.filter((d) => d !== value) : [...current, value].sort())}>{day}</button>;
-              })}
-            </div>
-          </div>}
+          {routineSchedule === "weekdays" && <RoutineWeekdayPicker value={routineWeekdays}
+             onChange={setRoutineWeekdays} label="Which days?" />}
           {routineSchedule === "monthly" && <input className="field" type="number" min="1" max="31" placeholder="Day of month (1–31)" value={routineDayOfMonth} onChange={(e) => setRoutineDayOfMonth(e.target.value)} />}
           <label className="small">Ends (optional)<input className="field" type="date" value={routineEnd} onChange={(e) => setRoutineEnd(e.target.value)} /></label>
           <button className="btn" style={{ marginTop: 14 }} onClick={saveRoutineSchedule}

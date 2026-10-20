@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { routineCreationDetails, routineFutureChange, routineOccurrenceDetails }
   from "../src/lib/routineWriteValidation.js";
 import { readFileSync } from "node:fs";
+import { toggleRoutineWeekday } from "../src/lib/routineWeekdaySelection.js";
 
 const base = { schedule:"weekdays", start:"2026-10-20", end:"2026-11-20",
   weekday:"6", weekdays:[7,6], monthDay:"31" };
@@ -53,4 +54,21 @@ test("both assigning and editing use the shared guard, not unvalidated RPC paylo
   assert.match(item,/routineFutureChange\(\{/);
   assert.match(item,/routineOccurrenceDetails\(\{/);
   assert.match(item,/ghanaCalendarDate\(\)/);
+});
+
+test("assigned and future routine forms use accessible compact weekday selections", () => {
+  const assign=readFileSync("src/screens/Assign.jsx","utf8");
+  const item=readFileSync("src/screens/Item.jsx","utf8");
+  const picker=readFileSync("src/components/RoutineWeekdayPicker.jsx","utf8");
+  assert.match(assign,/RoutineWeekdayPicker/);
+  assert.match(item,/RoutineWeekdayPicker/);
+  assert.match(picker, /<fieldset/);
+  assert.match(picker, /type="checkbox"/);
+  assert.doesNotMatch(picker, /btn-sm|btn-ghost|border-radius:\s*999/);
+  assert.deepEqual(toggleRoutineWeekday([7,6],1,true),[1,6,7]);
+  assert.deepEqual(toggleRoutineWeekday([1,6,7],6,false),[1,7]);
+  assert.deepEqual(toggleRoutineWeekday([6,7],7,true),[6,7]);
+  assert.deepEqual(toggleRoutineWeekday([6],6,false),[]);
+  assert.throws(()=>toggleRoutineWeekday([6],8,true),/weekday/);
+  assert.throws(()=>toggleRoutineWeekday([],0,true),/weekday/);
 });
