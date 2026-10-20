@@ -256,6 +256,21 @@ begin
 end
 $private_published_reader$;
 
+-- Explicitly review the two NEW invoker APIs and private trusted writer;
+-- the older public SECURITY DEFINER allowlist is not a claim of no new API.
+do $routine_options_surface$
+begin
+ if exists(select 1 from pg_proc where oid in('public.routine_schedule_preview(uuid[],date,date)'::regprocedure,
+   'public.change_routine_schedule_options(uuid,date,jsonb)'::regprocedure) and prosecdef)
+  or has_function_privilege('anon','public.routine_schedule_preview(uuid[],date,date)','EXECUTE')
+  or has_function_privilege('anon','public.change_routine_schedule_options(uuid,date,jsonb)','EXECUTE')
+  or has_function_privilege('anon','private.change_routine_schedule_options(uuid,date,jsonb)','EXECUTE')
+  or not exists(select 1 from pg_proc where oid='private.change_routine_schedule_options(uuid,date,jsonb)'::regprocedure
+   and prosecdef and pronargs=3 and proconfig @> array['search_path=""'])
+  then raise exception 'Unreviewed routine options API boundary'; end if;
+end;
+$routine_options_surface$;
+
 -- Ordinary Staff must not turn an arbitrary target identifier into a protected
 -- read/write or capability escalation.
 set local role authenticated;

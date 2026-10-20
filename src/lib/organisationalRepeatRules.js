@@ -1,3 +1,4 @@
+import { routineScheduleOptions } from "./routineScheduleOptions.js";
 /** Authoritative client schedule validation for CEAC organisational routines.
  * Validation is additional to existing server authority and recurrence checks.
  * No client completion, approval or calendar event is created here.
@@ -33,7 +34,7 @@ export function organisationalRepeatDetails(repeat, steps) {
     throw new Error("Choose a day of month from 1 to 31.");
 
   return {
-    origin: "self_created", schedule_kind: repeat.frequency, starts_on: repeat.start,
+    ...(["interval","timezone","dueTime","limit"].some(key=>key in repeat) ? routineScheduleOptions(repeat) : {}), origin: "self_created", schedule_kind: repeat.frequency, starts_on: repeat.start,
     ...(repeat.end ? { ends_on: repeat.end } : {}),
     ...(repeat.frequency === "weekly" ? { weekdays: weekdays.sort((a, b) => a - b) } : {}),
     ...(repeat.frequency === "monthly" ? { day_of_month: monthDay } : {}),

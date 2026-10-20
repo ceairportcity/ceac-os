@@ -67,6 +67,7 @@ tests=(
   stage2_owner_activity_guard_gate.sql
   stage2_self_routines_gate.sql
   stage2_routine_occurrence_review_gate.sql
+  stage2_routine_schedule_options_gate.sql
 )
 
 for test_file in "${tests[@]}"; do

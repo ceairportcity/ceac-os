@@ -45,12 +45,15 @@ test("Projects presents one connected workspace with factual people and task tab
 test("manager routine schedule is backed by authoritative records, never synthetic completion", () => {
   const work = file("src/screens/ManagerWork.jsx");
   const schedule = file("src/components/ManagerRoutineOccurrences.jsx");
-  const planner = file("src/lib/organisationRoutineSchedule.js");
+  const planner = file("supabase/migrations/20261020120556_168_organisational_schedule_options.sql");
+  const reader = file("src/lib/readRoutineSchedulePreview.js");
   assert.match(work, /ManagerRoutineOccurrences/);
   assert.match(work, /\["routines", "Routines"/);
   assert.match(schedule, /\.from\("recurring_operations"\)/);
-  assert.match(schedule, /\.from\("operation_occurrences"\)/);
-  assert.match(schedule, /projectedRoutineDates/);
+  assert.match(schedule, /readRoutineSchedulePreview/);
+  assert.match(reader, /rpc\("routine_schedule_preview"/);
+  assert.match(planner, /public\.operation_occurrences/);
+  assert.match(planner, /security invoker set search_path=''/);
   assert.match(planner, /unrecorded_past/);
   assert.doesNotMatch(schedule, /\.insert\(/);
 });

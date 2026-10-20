@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
-import { projectedRoutineDates } from "../lib/organisationRoutineSchedule";
+import { readRoutineSchedulePreview, routineDueLabel } from "../lib/readRoutineSchedulePreview";
 import "./AssignedRoutineOccurrences.css";
 
 const plusDays = (date, days) => {
@@ -59,31 +59,14 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
           throw new Error("Assigned routine rows are incomplete");
         const routines = result.data;
         if (!routines.length) { if (active) { setRows([]); setVerifiedIdentity(identity); } return; }
-        const [history, schedules, pauseHistory] = await Promise.all([supabase.from("operation_occurrences")
-          .select("id,operation_id,occurred_on",{count:"exact"})
-          .in("operation_id", routines.map((x) => x.id))
-          .gte("occurred_on", plusDays(today,-14)).lte("occurred_on", plusDays(today,14)),
-          supabase.from("routine_schedule_versions")
-            .select("operation_id,version,effective_from,effective_to,schedule_kind,weekdays,day_of_month",{count:"exact"})
-            .in("operation_id", routines.map((row) => row.id))
-            .lte("effective_from", plusDays(today,14))
-            .or(`effective_to.is.null,effective_to.gte.${plusDays(today,-14)}`),
-          supabase.from("routine_pause_periods")
-            .select("operation_id,paused_at,resumed_at",{count:"exact"})
-            .in("operation_id", routines.map(row => row.id))
-            .lt("paused_at", plusDays(today,15)+"T00:00:00Z")
-            .or(`resumed_at.is.null,resumed_at.gte.${plusDays(today,-14)}T00:00:00Z`),
-        ]);
-        if (pauseHistory.error || !Array.isArray(pauseHistory.data) || typeof pauseHistory.count!=="number" || pauseHistory.count!==pauseHistory.data.length)
-          throw new Error("Assigned routine pause history is incomplete");
-        if (schedules.error || !Array.isArray(schedules.data) || typeof schedules.count!=="number" || schedules.count!==schedules.data.length)
-          throw new Error("Assigned routine schedule versions are incomplete");
-        if (history.error || !Array.isArray(history.data) || typeof history.count!=="number" || history.count!==history.data.length)
-          throw new Error("Assigned routine history is incomplete");
-        const projected = routines.flatMap((routine) => {
-          return projectedRoutineDates(routine, history.data, {
-            fromDate: plusDays(today,-14), throughDate: plusDays(today,14), today, versions: schedules.data, pauses: pauseHistory.data,
-          }).map((item) => ({ ...item, routine }));
+        const dates = await readRoutineSchedulePreview(supabase, routines.map(row=>row.work_item_id), {
+          fromDate: plusDays(today,-14), throughDate: plusDays(today,14),
+        });
+        const byId = new Map(routines.map(row=>[row.id,row]));
+        const projected = dates.map(item=>{
+          const routine=byId.get(item.operationId);
+          if(!routine) throw new Error("Unrecognised assigned routine date");
+          return {...item,routine};
         }).sort((a,b) => a.date.localeCompare(b.date) || a.routine.name.localeCompare(b.routine.name));
         if (active) { setRows(projected); setVerifiedIdentity(identity); }
       } catch {
@@ -117,6 +100,7 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
         disabled={!item.routine.work_item_id}>
         <time dateTime={item.date}>{item.date}</time>
         <strong>{item.routine.name}</strong>
+        <small style={{fontSize:12}}>{routineDueLabel(item)}</small>
         <span className={item.state==="unrecorded_past"?"is-missed":"is-upcoming"}>
           {item.state==="unrecorded_past"?"Not recorded":"Scheduled"}
         </span>

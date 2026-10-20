@@ -1,3 +1,5 @@
+import RoutineScheduleOptions from "../components/RoutineScheduleOptions";
+import { initialRoutineScheduleOptions, routineScheduleOptions } from "../lib/routineScheduleOptions";
 import { useEffect, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
@@ -74,6 +76,7 @@ function ItemDetail({ id, me, session, isManager = false, openRoom, back }) {
   const [routineWeekdays, setRoutineWeekdays] = useState([]);
   const [routineDayOfMonth, setRoutineDayOfMonth] = useState("");
   const [routineEnd, setRoutineEnd] = useState("");
+  const [routineOptions, setRoutineOptions] = useState(initialRoutineScheduleOptions);
   const [sheet, setSheet] = useState(null);
   const [note, setNote] = useState("");
   const [link, setLink] = useState("");
@@ -152,7 +155,7 @@ function ItemDetail({ id, me, session, isManager = false, openRoom, back }) {
     } else setCaseRecord(null);
     if (w.kind === "routine") {
       const routineResult = await supabase.from("recurring_operations")
-        .select("id,name,cadence,records_value,value_label,active,starts_on,ends_on,paused_at,schedule_kind,weekdays,day_of_month")
+        .select("id,name,cadence,records_value,value_label,active,starts_on,ends_on,paused_at,schedule_kind,weekdays,day_of_month,interval_count,timezone,due_time,occurrence_limit")
         .eq("work_item_id", id).single();
       if (routineResult.error) { setErr(`Routine: ${routineResult.error.message}`); return; }
       setRoutine(routineResult.data);
@@ -445,6 +448,8 @@ function ItemDetail({ id, me, session, isManager = false, openRoom, back }) {
     setRoutineDayOfMonth(routine?.day_of_month ? String(routine.day_of_month) : "");
     setRoutineEnd(routine?.ends_on || "");
     setRoutineEffective(routine?.schedule_kind ? "" : today);
+    setRoutineOptions({interval:String(routine?.interval_count || 1),timezone:routine?.timezone || "Africa/Accra",
+      dueTime:routine?.due_time || "",limit:routine?.occurrence_limit == null ? "" : String(routine.occurrence_limit)});
     setSheet("routine-schedule");
   }
 
@@ -457,7 +462,7 @@ function ItemDetail({ id, me, session, isManager = false, openRoom, back }) {
         monthDay: routineDayOfMonth, end: routineEnd, today: ghanaCalendarDate(),
         hasReliableSchedule: Boolean(routine?.schedule_kind),
       });
-      const { error } = await supabase.rpc("change_routine_schedule", details);
+      const { error } = await supabase.rpc("change_routine_schedule_options", {p_work_item_id:details.p_work_item_id,p_effective_from:details.p_effective_from,p_options:{...routineScheduleOptions(routineOptions),schedule_kind:details.p_schedule_kind,...(details.p_weekdays ? {weekdays:details.p_weekdays} : {}),day_of_month:details.p_day_of_month,ends_on:details.p_ends_on}});
       if (error) throw error;
       setSheet(null); await load();
     } catch (e) { setErr(e.message || "The routine schedule could not be changed."); }
@@ -912,6 +917,7 @@ function ItemDetail({ id, me, session, isManager = false, openRoom, back }) {
              onChange={setRoutineWeekdays} label="Which days?" />}
           {routineSchedule === "monthly" && <input className="field" type="number" min="1" max="31" placeholder="Day of month (1–31)" value={routineDayOfMonth} onChange={(e) => setRoutineDayOfMonth(e.target.value)} />}
           <label className="small">Ends (optional)<input className="field" type="date" value={routineEnd} onChange={(e) => setRoutineEnd(e.target.value)} /></label>
+          <RoutineScheduleOptions value={routineOptions} onChange={setRoutineOptions} frequency={routineSchedule} />
           <button className="btn" style={{ marginTop: 14 }} onClick={saveRoutineSchedule}
             disabled={busy || !routineEffective || (routineSchedule === "weekdays" && routineWeekdays.length === 0)
               || (routineSchedule === "monthly" && !(Number(routineDayOfMonth) >= 1 && Number(routineDayOfMonth) <= 31))}>

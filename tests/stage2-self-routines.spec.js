@@ -121,3 +121,58 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
     }
   });
 }
+
+
+test("custom self routine keeps exact interval/count/timezone and future edits preserve the earlier date", async ({browser})=>{
+ expect(process.env.SUPABASE_URL).toBe("http://127.0.0.1:54321");
+ const context=await browser.newContext({viewport:{width:390,height:844}});
+ const page=await context.newPage();
+ const client=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+ const day=(offset)=>{const d=new Date();d.setUTCDate(d.getUTCDate()+offset);return d.toISOString().slice(0,10);};
+ const title="Custom two-day venue check "+Date.now();
+ try {
+  await page.route("**/*",route=>{const u=new URL(route.request().url());return u.hostname==="127.0.0.1"&&["5173","54321"].includes(u.port)?route.continue():route.abort("blockedbyclient");});
+  await page.goto("/");
+  await page.getByPlaceholder("Work email").fill("staff@ceac.local.test");
+  await page.getByPlaceholder("Password").fill(process.env.ROLE_FIXTURE_PASSWORD);
+  await page.getByRole("button",{name:"Sign in to CEAC OS",exact:true}).click();
+  await expect(page.locator(".ev2s-workspace")).toBeVisible();
+  await page.goto("/?tab=work");
+  await page.getByRole("button",{name:"Add my work",exact:true}).click();
+  await page.getByPlaceholder("What are you doing?").fill(title);
+  await page.getByPlaceholder("What should be true when this is finished?").fill("Inspect the venue on each scheduled date.");
+  await page.getByPlaceholder("What must be done?").fill("Inspect venue");
+  await page.getByRole("checkbox",{name:"Repeat this responsibility"}).check();
+  await page.getByRole("combobox",{name:"Repeat frequency"}).selectOption("daily");
+  await page.getByLabel("Repeat starts",{exact:true}).fill(day(1));
+  await page.getByLabel("Repeat every",{exact:true}).fill("2");
+  await page.getByLabel("Schedule time zone",{exact:true}).fill("Europe/Amsterdam");
+  await page.getByLabel("Occurrence due time",{exact:true}).fill("09:30");
+  await page.getByLabel("End after scheduled dates",{exact:true}).fill("3");
+  await page.getByRole("button",{name:"Add to my work",exact:true}).click();
+  const register=page.locator(".s2-register-row").filter({hasText:title});
+  await expect(register).toBeVisible();
+  expect((await client.auth.signInWithPassword({email:"staff@ceac.local.test",password:process.env.ROLE_FIXTURE_PASSWORD})).error).toBeNull();
+  const work=await client.from("work_items").select("id").eq("title",title).single();
+  expect(work.error).toBeNull();
+  const preview=await client.rpc("routine_schedule_preview",{p_work_item_ids:[work.data.id],p_from_date:day(0),p_through_date:day(14)});
+  expect(preview.error,preview.error?.message).toBeNull();
+  expect(preview.data.map(row=>row.scheduled_on)).toEqual([day(1),day(3),day(5)]);
+  for(const row of preview.data) expect(new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Amsterdam",hour:"2-digit",minute:"2-digit"}).format(new Date(row.due_at))).toBe("09:30");
+  expect((await client.schema("private").rpc("change_routine_schedule_options",{p_work_item_id:work.data.id,p_effective_from:day(2),p_options:{schedule_kind:"daily"}})).error?.code).toBe("PGRST106");
+  await register.locator("th button").click();
+  await page.getByRole("complementary",{name:"Selected responsibility"}).getByRole("button",{name:/Open complete work record/}).click();
+  await page.getByRole("button",{name:"Change future schedule",exact:true}).click();
+  const dialog=page.getByRole("dialog");
+  await dialog.getByLabel("Effective from").fill(day(2));
+  await dialog.getByLabel("Repeat every",{exact:true}).fill("3");
+  await dialog.getByRole("button",{name:"Save schedule",exact:true}).click();
+  await expect(dialog).toHaveCount(0);
+  const changed=await client.rpc("routine_schedule_preview",{p_work_item_ids:[work.data.id],p_from_date:day(0),p_through_date:day(14)});
+  expect(changed.error,changed.error?.message).toBeNull();
+  expect(changed.data.map(row=>row.scheduled_on)).toEqual([day(1),day(2),day(5),day(8)]);
+  expect(changed.data.map(row=>row.schedule_version)).toEqual([1,2,2,2]);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  await page.screenshot({path:"test-artifacts/custom-routine-options-phone.png",fullPage:true});
+ } finally {await client.auth.signOut();await context.close();}
+});

@@ -1,3 +1,5 @@
+import RoutineScheduleOptions from "../components/RoutineScheduleOptions";
+import { initialRoutineScheduleOptions, routineScheduleOptions } from "../lib/routineScheduleOptions";
 import { useEffect, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
@@ -59,6 +61,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   const [routineDayOfMonth, setRoutineDayOfMonth] = useState("");
   const [routineStart, setRoutineStart] = useState("");
   const [routineEnd, setRoutineEnd] = useState("");
+  const [routineOptions, setRoutineOptions] = useState(initialRoutineScheduleOptions);
   const [routineRecordsValue, setRoutineRecordsValue] = useState(false);
   const [routineValueLabel, setRoutineValueLabel] = useState("");
   const [caseOpenedOn, setCaseOpenedOn] = useState(() => new Date().toISOString().slice(0, 10));
@@ -465,7 +468,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           p_due_at: null,
           p_visibility: "unit",
           p_confidential: false,
-          p_details: details,
+          p_details: {...details, ...routineScheduleOptions(routineOptions)},
         });
         if (routineError) throw routineError;
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
@@ -749,6 +752,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
               <label className="small">Starts<input className="field" type="date" value={routineStart} onChange={(e) => setRoutineStart(e.target.value)} /></label>
               <label className="small">Ends (optional)<input className="field" type="date" value={routineEnd} onChange={(e) => setRoutineEnd(e.target.value)} /></label>
             </div>
+            <RoutineScheduleOptions value={routineOptions} onChange={setRoutineOptions} frequency={routineSchedule} />
             <label className="card small" style={{ display: "flex", alignItems: "flex-start", gap: 9, marginTop: 10 }}>
               <input type="checkbox" checked={routineRecordsValue} onChange={(e) => setRoutineRecordsValue(e.target.checked)} />
               <span>Record a number each time this routine happens.</span>
