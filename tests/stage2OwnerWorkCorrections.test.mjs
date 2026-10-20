@@ -364,8 +364,9 @@ test("Projects shows real dated project contributions, not merely recently creat
   assert.match(project,/\.eq\("source_project_id", project\.id\)/);
   assert.match(project,/\.eq\("org_id", project\.org_id\)/);
   assert.match(project,/\.order\("recorded_at"/);
-  assert.match(project,/evidence\.data\.length !== Math\.min\(100, evidence\.count\)/);
-  assert.match(project,/new Set\(evidence\.data\.map\(\(row\) => row\.supersedes_id\)/);
+  assert.match(project,/collected\.length !== total/);
+  assert.match(project,/currentProjectActions\(collected\)/);
+  assert.match(project,/visibleProjectPeople\(work, visibleActions\)/);
   assert.match(project,/Recent visible project activity/);
   assert.match(project,/Recorded actions visible to your account/);
   assert.doesNotMatch(project,/Recently created work/);
