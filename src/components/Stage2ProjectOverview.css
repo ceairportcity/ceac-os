@@ -164,3 +164,13 @@
 /* Reconciled PR #117 accessible Projects typography: real project people,
    departments and milestones must remain readable at 320px and desktop. */
 .s2-project :is(.s2-project-person strong,.s2-project-units strong,.s2-project-aside dt,.s2-project-aside dd,.s2-project-aside section p,.s2-project-aside li,.s2-project-avatar,.s2-project-more,.s2-project-unit-chip){font-size:12px!important}
+
+/* Dated project contribution history, compact source-backed right inspector. */
+.s2-project-recent-activity>header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.s2-project-recent-activity>header button{border:0;border-bottom:1px solid currentColor;border-radius:0;padding:2px 0;background:transparent;color:#1677c8;font:inherit;font-size:12px;cursor:pointer}
+.s2-project-recent-activity>header button:disabled{opacity:.5;cursor:default}
+.s2-project-recent-activity>p{margin:6px 0 12px;color:#6a8099;font-size:12px}
+.s2-project-recent-activity li{display:grid;gap:3px}
+.s2-project-recent-activity li button{padding:0;text-align:left;border:0;background:none;color:#214c73;font:inherit;cursor:pointer}
+.s2-project-recent-activity li strong{font-size:12px;font-weight:650;line-height:1.45}
+.s2-project-recent-activity li small{color:#71849b;font-size:12px;line-height:1.45}

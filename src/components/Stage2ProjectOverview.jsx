@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { deadlineOverdue } from "../lib/stage2AchievementMetrics";
+import { supabase } from "../lib/supabase";
 import PersonAvatar from "./PersonAvatar";
 import { useProjectPortraits } from "../lib/useProjectPortraits";
 import "./Stage2ProjectOverview.css";
@@ -18,6 +19,41 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const [filter, setFilter] = useState("all");
   const [unit, setUnit] = useState("all");
   const [asOf, setAsOf] = useState(() => Date.now());
+  const [recentActions, setRecentActions] = useState([]);
+  const [actionLoading, setActionLoading] = useState(true);
+  const [actionError, setActionError] = useState("");
+  const [actionReload, setActionReload] = useState(0);
+
+  // Read only real, permission-filtered, immutable contribution records.
+  // Creating a work item is not evidence that someone did work.
+  useEffect(() => {
+    let active = true;
+    setActionLoading(true); setActionError(""); setRecentActions([]);
+    (async () => {
+      try {
+        const evidence = await supabase.from("work_activity_records")
+          .select("id,work_item_id,contributor_id,activity_date,activity_state,action_summary,recorded_at,supersedes_id,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
+          .eq("org_id", project.org_id).eq("source_project_id", project.id)
+          .order("recorded_at", { ascending: false }).order("id", { ascending: false }).limit(100);
+        if (evidence.error) throw evidence.error;
+        if (typeof evidence.count !== "number" || !Array.isArray(evidence.data)
+          || evidence.data.length !== Math.min(100, evidence.count))
+          throw new Error("Recent project activity could not be verified completely.");
+        // Corrections are written after the records they supersede; the
+        // newest 100 therefore include corrections for every displayed entry.
+        const superseded = new Set(evidence.data.map((row) => row.supersedes_id).filter(Boolean));
+        const current = evidence.data.filter((row) => !superseded.has(row.id)).slice(0, 6);
+        if (active) setRecentActions(current);
+      } catch (error) {
+        if (active) setActionError(/PGRST205|42P01|work_activity_records/.test(String(error?.message || ""))
+          ? "Project activity is awaiting its authorised database migration."
+          : "Recent project activity could not be verified.");
+      } finally {
+        if (active) setActionLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [project.id, project.org_id, actionReload]);
   // Project due dates (including date-only promises) must follow the Ghana
   // civil day without marking an entire still-valid deadline day overdue.
   useEffect(() => {
@@ -67,7 +103,6 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const visible = tasks.filter((item) => (filter === "all" || (filter === "finished" ? finished.has(item.status) : !inactive.has(item.status))) &&
     (unit === "all" || item.unit_id === unit) &&
     [item.title, item.ref, item.profiles?.full_name].some((value) => String(value || "").toLowerCase().includes(search.trim().toLowerCase())));
-  const recent = work.filter((item) => item.created_at).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 4);
   return <div className="s2-project">
     <div className="s2-project-layout">
       <div className="s2-project-content">
@@ -129,7 +164,22 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Lead unit</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>End date</dt><dd>{when(project.ends_on)}</dd></div></dl>
         {project.purpose && <section><h3>Description</h3><p>{project.purpose}</p></section>}
         <section><h3>Key milestones</h3>{project.milestones === null ? <p>Milestone records are unavailable to this view.</p> : project.milestones?.length ? <ol className="s2-project-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.status === "achieved" ? "is-complete" : ""}><strong>{milestone.name}</strong><small>{String(milestone.status || "Not recorded").replaceAll("_", " ")} · {milestone.completed_at ? "Completed " + when(milestone.completed_at) : milestone.target_on ? "Target " + when(milestone.target_on) : "No recorded date"}</small></li>)}</ol> : <p>No milestones recorded.</p>}</section>
-        <section><h3>Recently created work</h3>{recent.length ? <ol>{recent.map((item) => <li key={item.id}><button onClick={() => openWork?.(item.id)}>{item.title}</button><small>{when(item.created_at)}</small></li>)}</ol> : <p>No work records yet.</p>}</section>
+        <section className="s2-project-recent-activity" aria-label="Recent visible project activity">
+          <header><h3>Recent activity</h3><button type="button" onClick={() => setActionReload((n) => n + 1)}
+            disabled={actionLoading}>Refresh</button></header>
+          <p>Recorded actions visible to your account, not automatic approvals.</p>
+          {actionLoading && <p role="status">Verifying project activity…</p>}
+          {actionError && <p role="alert">{actionError}</p>}
+          {!actionLoading && !actionError && !recentActions.length && <p>No dated contribution records visible yet.</p>}
+          {!actionLoading && !actionError && recentActions.length > 0 && <ol>{recentActions.map((entry) =>
+            <li key={entry.id}>
+              <button type="button" onClick={() => openWork?.(entry.work_item_id)}>
+                <strong>{entry.action_summary}</strong>
+              </button>
+              <small>{when(entry.activity_date)} · {entry.contributor?.full_name || "Authorised contributor"} · {String(entry.activity_state || "recorded").replaceAll("_", " ")}</small>
+            </li>
+          )}</ol>}
+        </section>
       </aside>
     </div>
   </div>;
