@@ -61,6 +61,13 @@ export default function Work({ me, isManager = false, openItem }) {
   const [sheet, setSheet] = useState(null);
   const [createVisibility, setCreateVisibility] = useState("unit");
   const [projectId, setProjectId] = useState("");
+  const [objectiveId, setObjectiveId] = useState("");
+  const [phaseId, setPhaseId] = useState("");
+  const [objectives, setObjectives] = useState([]);
+  const [phases, setPhases] = useState([]);
+  const [projectContextLoading, setProjectContextLoading] = useState(false);
+  const [projectContextError, setProjectContextError] = useState("");
+  const [verifiedProjectId, setVerifiedProjectId] = useState("");
   const [title, setTitle] = useState("");
   const [purpose, setPurpose] = useState("");
   const [expectedOutcome, setExpectedOutcome] = useState("");
@@ -83,6 +90,37 @@ export default function Work({ me, isManager = false, openItem }) {
 
   useEffect(() => { load(); return () => { loadSerial.current += 1; }; }, [mode, statusFilter, me.id, isManager]);
   useEffect(() => { loadProjects(); loadProposals(); }, [me.id, me.unit_id]);
+  useEffect(() => {
+    let current = true;
+    setObjectiveId(""); setPhaseId(""); setObjectives([]); setPhases([]);
+    setProjectContextError(""); setVerifiedProjectId("");
+    if (sheet !== "self" || createVisibility !== "unit" || !projectId) {
+      setProjectContextLoading(false);
+      return () => { current = false; };
+    }
+    setProjectContextLoading(true);
+    Promise.all([
+      supabase.from("objectives")
+        .select("id,ref,name,project_id,unit_id")
+        .eq("project_id", projectId).eq("unit_id", me.unit_id),
+      supabase.from("project_phases")
+        .select("id,name,project_id").eq("project_id", projectId).order("position"),
+    ]).then(([objectiveRead, phaseRead]) => {
+      if (!current) return;
+      if (objectiveRead.error || phaseRead.error) {
+        setProjectContextError("The selected project's objectives or phases could not be verified. Select another project or reopen this form.");
+        return;
+      }
+      setObjectives(objectiveRead.data || []);
+      setPhases(phaseRead.data || []);
+      setVerifiedProjectId(projectId);
+    }).catch(() => {
+      if (current) setProjectContextError("Project context could not be verified. Reopen this form to retry.");
+    }).finally(() => {
+      if (current) setProjectContextLoading(false);
+    });
+    return () => { current = false; };
+  }, [sheet, createVisibility, projectId, me.org_id, me.unit_id]);
   useEffect(() => { loadBrandbookContext(); }, [me.id]);
   useEffect(() => {
     try { sessionStorage.setItem(viewKey, JSON.stringify({ mode })); } catch { /* Storage may be unavailable. */ }
@@ -213,6 +251,8 @@ export default function Work({ me, isManager = false, openItem }) {
   function openCreate(visibility) {
     setCreateVisibility(visibility);
     setProjectId("");
+    setObjectiveId(""); setPhaseId(""); setObjectives([]); setPhases([]);
+    setVerifiedProjectId(""); setProjectContextError("");
     setTitle("");
     setPurpose("");
     setExpectedOutcome("");
@@ -228,6 +268,17 @@ export default function Work({ me, isManager = false, openItem }) {
     if (busy || ownCreatePending.current) return;
     const clean = noStepsNeeded ? [] : steps.map((step) => step.trim()).filter(Boolean);
     if (!title.trim() || !expectedOutcome.trim() || (!noStepsNeeded && !clean.length)) return;
+    if (createVisibility === "unit" && projectId &&
+        (projectContextLoading || projectContextError || verifiedProjectId !== projectId
+          || !projects.some(project => project.id === projectId)
+          || (objectiveId && !objectives.some(objective => objective.id === objectiveId))
+          || (phaseId && !phases.some(phase => phase.id === phaseId)))) {
+      setLoadError("The selected project context is not verified. Refresh the work form before saving.");
+      return;
+    }
+    const linkedProjectId = createVisibility === "unit" ? projectId || null : null;
+    const linkedObjectiveId = linkedProjectId && objectiveId ? objectiveId : null;
+    const linkedPhaseId = linkedProjectId && phaseId ? phaseId : null;
 
     ownCreatePending.current = true;
     setBusy(true);
@@ -239,7 +290,8 @@ export default function Work({ me, isManager = false, openItem }) {
       if (repeat.enabled && createVisibility === "unit") {
         const result = await supabase.rpc("create_typed_work", {
           p_kind: "routine", p_unit_id: me.unit_id, p_assignee_id: me.id, p_title: title.trim(),
-          p_expected_outcome: expectedOutcome.trim(), p_purpose: purpose.trim() || null, p_project_id: projectId || null,
+          p_expected_outcome: expectedOutcome.trim(), p_purpose: purpose.trim() || null, p_project_id: linkedProjectId,
+          p_objective_id: linkedObjectiveId, p_phase_id: linkedPhaseId,
           p_visibility: "unit", p_details: organisationalRepeatDetails(repeat, clean),
         });
         if (result.error) throw result.error;
@@ -254,9 +306,9 @@ export default function Work({ me, isManager = false, openItem }) {
         p_title: title.trim(),
         p_expected_outcome: expectedOutcome.trim(),
         p_sub_team_id: null,
-        p_project_id: projectId || null,
-        p_objective_id: null,
-        p_phase_id: null,
+        p_project_id: linkedProjectId,
+        p_objective_id: linkedObjectiveId,
+        p_phase_id: linkedPhaseId,
         p_purpose: purpose.trim() || null,
         p_instructions: null,
         p_due_at: dueIso,
@@ -274,13 +326,16 @@ export default function Work({ me, isManager = false, openItem }) {
         throw new Error("The work creation outcome is uncertain. Check your existing work before creating another task.");
       }
       const confirmation = await supabase.from("work_items")
-        .select("id,kind,ref,org_id,assignee_id,origin,visibility")
+        .select("id,kind,ref,org_id,assignee_id,origin,visibility,project_id,objective_id,phase_id")
         .eq("ref", created.ref).eq("org_id", me.org_id)
         .eq("assignee_id", me.id).maybeSingle();
       if (confirmation.error || !confirmation.data?.id
           || confirmation.data.kind !== (repeat.enabled && createVisibility === "unit" ? "routine" : "task")
           || confirmation.data.origin !== "self_created"
-          || confirmation.data.visibility !== createVisibility) {
+          || confirmation.data.visibility !== createVisibility
+          || (confirmation.data.project_id || null) !== linkedProjectId
+          || (confirmation.data.objective_id || null) !== linkedObjectiveId
+          || (confirmation.data.phase_id || null) !== linkedPhaseId) {
         setSheet(null);
         throw new Error("The new work record could not be independently verified. Check your work list before creating another task.");
       }
@@ -430,10 +485,37 @@ export default function Work({ me, isManager = false, openItem }) {
       <FieldGroup label="Why it matters" hint="Optional context."><textarea className="field" rows={2} placeholder="Why it matters" value={purpose} onChange={(event) => setPurpose(event.target.value)} /></FieldGroup>
       <FieldGroup label="Finished result"><textarea className="field" rows={3} placeholder="What should be true when this is finished?" value={expectedOutcome} onChange={(event) => setExpectedOutcome(event.target.value)} /></FieldGroup>
 
-      <select className="field" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-        <option value="">No project attached</option>
-        {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-      </select>
+      {createVisibility === "unit" && <FieldGroup label="Linked project (optional)">
+        <select className="field" aria-label="Linked project" value={projectId}
+          onChange={(event) => {
+            setProjectId(event.target.value); setObjectiveId(""); setPhaseId("");
+            setObjectives([]); setPhases([]); setVerifiedProjectId("");
+          }}>
+          <option value="">No project attached</option>
+          {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+        </select>
+      </FieldGroup>}
+      {createVisibility === "unit" && projectId && <>
+        {projectContextLoading && <p role="status">Checking authorised project details…</p>}
+        {projectContextError && <p role="alert">{projectContextError}</p>}
+        {verifiedProjectId === projectId && <details className="reference-disclosure">
+          <summary>Project objective and phase (optional)</summary>
+          <div className="reference-disclosure-body">
+            <FieldGroup label="Project objective">
+              <select className="field" aria-label="Project objective" value={objectiveId} onChange={(event) => setObjectiveId(event.target.value)}>
+                <option value="">No objective selected</option>
+                {objectives.map((objective) => <option key={objective.id} value={objective.id}>{objective.ref} · {objective.name}</option>)}
+              </select>
+            </FieldGroup>
+            <FieldGroup label="Project phase">
+              <select className="field" aria-label="Project phase" value={phaseId} onChange={(event) => setPhaseId(event.target.value)}>
+                <option value="">No phase selected</option>
+                {phases.map((phase) => <option key={phase.id} value={phase.id}>{phase.name}</option>)}
+              </select>
+            </FieldGroup>
+          </div>
+        </details>}
+      </>}
 
       {createVisibility === "unit" && <OrganisationalRepeatFields value={repeat} onChange={setRepeat} disabled={busy} />}
       {!repeat.enabled && <><label className="field-label">Due date (optional)</label>
@@ -463,7 +545,9 @@ export default function Work({ me, isManager = false, openItem }) {
       <button
         className="btn"
         style={{ marginTop: 16 }}
-        disabled={busy || !title.trim() || !expectedOutcome.trim() || (!noStepsNeeded && !steps.some((step) => step.trim()))}
+        disabled={busy || !title.trim() || !expectedOutcome.trim() || (!noStepsNeeded && !steps.some((step) => step.trim()))
+          || (createVisibility === "unit" && Boolean(projectId) &&
+            (projectContextLoading || Boolean(projectContextError) || verifiedProjectId !== projectId))}
         onClick={createOwnTask}
       >{busy ? "Adding..." : createVisibility === "private" ? "Add private work" : "Add to my work"}</button>
     </Sheet>}
