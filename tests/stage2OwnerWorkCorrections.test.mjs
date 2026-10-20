@@ -478,3 +478,22 @@ test("project navigation does not inherit stale task filters or another project'
   assert.match(project,/setSearch\(""\); setFilter\("all"\); setUnit\("all"\); setFilterProjectKey\(projectEvidenceKey\)/);
   assert.match(exec,/setSelectedId\(null\); setUnitId\(""\); setProjectId\(""\); setPersonId\(""\); setQuery\(""\)/);
 });
+
+
+test("person-specific project and HR appraisal draft views reject stale identities and submissions",()=>{
+  const p=source("src/components/ProjectPersonAssessments.jsx");
+  const h=source("src/components/HRProjectContributionQueue.jsx");
+  const f=source("src/components/FormalReviewProjectDrafts.jsx");
+  assert.match(p,/const assessmentScope = /);
+  assert.match(p,/const ready = verified && !loading && !error && completedAssessmentScope === assessmentScope/);
+  assert.match(p,/const people = ready \? sourcePeople : \[\]/);
+  assert.match(p,/const notes = ready \? sourceNotes : \[\]/);
+  assert.match(p,/if \(!ready \|\| pending\.current/);
+  assert.match(p,/setCompletedAssessmentScope\(assessmentScope\)/);
+  assert.match(h,/const queueScope = /);
+  assert.match(h,/const rows = ready \? sourceRows : \[\]/);
+  assert.match(h,/\{ready&&<>/);
+  assert.match(f,/const reviewScope = /);
+  assert.match(f,/const notes = ready \? sourceNotes : \[\]/);
+  assert.match(f,/disabled=\{disabled \|\| !ready\}/);
+});

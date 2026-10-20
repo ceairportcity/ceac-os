@@ -7,15 +7,21 @@ import { supabase } from "../lib/supabase";
  * to the subject. HR may consider evidence through the existing appraisal flow.
  */
 export default function HRProjectContributionQueue({ me, cases = [], cycles = [], onOpenReview }) {
-  const [rows, setRows] = useState([]);
+  const [sourceRows, setSourceRows] = useState([]);
+  const [completedQueueScope, setCompletedQueueScope] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [filter, setFilter] = useState("");
+  const queueScope = `${me.org_id}:${me.id}`;
+  const ready = completedQueueScope === queueScope && !loading && !error;
+  const rows = ready ? sourceRows : [];
+  const checking = loading || completedQueueScope !== queueScope;
+  const activeError = completedQueueScope === queueScope ? error : "";
   useEffect(() => {
     let active = true;
     setLoading(true);
-    setRows([]);
+    setSourceRows([]); setCompletedQueueScope("");
     setError("");
     (async () => {
       try {
@@ -36,10 +42,10 @@ export default function HRProjectContributionQueue({ me, cases = [], cycles = []
           if (all.length===expected) break;
         }
         if (all.length !== expected) throw new Error("The review queue is incomplete. Do not rely on partial results.");
-        if (active) setRows(all);
+        if (active) setSourceRows(all);
       } catch (e) {
         if (active) setError(e?.message || "Restricted review queue is unavailable.");
-      } finally { if (active) setLoading(false); }
+      } finally { if (active) { setCompletedQueueScope(queueScope); setLoading(false); } }
     })();
     return () => { active=false; };
   },[me.id,me.org_id,reload]);
@@ -52,11 +58,11 @@ export default function HRProjectContributionQueue({ me, cases = [], cycles = []
       <div><span className="eyebrow">HR restricted evidence</span>
         <h2 className="h2" style={{fontSize:19}}>Individual project contribution drafts</h2>
         <p className="screen-note">Manager-authored evidence awaiting independent HR consideration. These remarks have not been published to employees or made into performance ratings.</p></div>
-      <button type="button" className="btn btn-ghost btn-sm" disabled={loading} onClick={()=>setReload(n=>n+1)}>Refresh</button>
+      <button type="button" className="btn btn-ghost btn-sm" disabled={checking} onClick={()=>setReload(n=>n+1)}>Refresh</button>
     </header>
-    {loading&&<p role="status">Verifying restricted reviews…</p>}
-    {error&&<p role="alert" className="flag flag-amber">{error}</p>}
-    {!loading&&!error&&<>
+    {checking&&<p role="status">Verifying restricted reviews…</p>}
+    {activeError&&<p role="alert" className="flag flag-amber">{activeError}</p>}
+    {ready&&<>
       <label style={{display:"grid",gap:5,fontSize:12,marginBottom:12}}>Filter person, project or reviewer
         <input type="search" className="field" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Find evidence" />
       </label>
