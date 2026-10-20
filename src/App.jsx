@@ -402,8 +402,8 @@ export default function App() {
   }
 
   function pageForTab() {
-    // Unit Managers can lead several units. Remount current-unit content on
-    // a headship switch so previous-unit drafts and request state cannot leak.
+    // All Work roles remount on actor/tenant/unit changes. This invalidates
+    // previous-role drafts and pending state before any new request completes.
     const managerScopeKey = `${me.org_id}:${me.id}:${me.unit_id || "none"}`;
     if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
@@ -423,10 +423,10 @@ export default function App() {
       ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
       : <StaffTeam me={me} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />;
     if (tab === "work") {
-      if (isExec) return <ExecutiveWork me={me} openItem={openItem} goAssign={startAssignment} />;
-      if (isAdmin) return <AdminWork me={me} openItem={openItem} goAssign={startAssignment} />;
+      if (isExec) return <ExecutiveWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
+      if (isAdmin) return <AdminWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
       if (isUnitManager) return <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
-      return <Work me={me} isManager={false} openItem={openItem} />;
+      return <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />;
     }
     if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} />;
     if (tab === "messages") return <Inbox

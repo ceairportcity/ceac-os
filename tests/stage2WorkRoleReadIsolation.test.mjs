@@ -24,3 +24,12 @@ test("manager work reads only the actor's organisation and current managed units
   assert.match(code,/managedUnitIds\.join\(","\)/);
   assert.match(code,/Promise\.resolve\(\{ data: \[\], error: null \}\)/);
 });
+
+test("App remounts Work for every role when actor, tenant or active unit changes", () => {
+  const app = readFileSync("src/App.jsx", "utf8");
+  assert.match(app, /const managerScopeKey = \`\$\{me\.org_id\}:\$\{me\.id\}:\$\{me\.unit_id \|\| "none"\}\`/);
+  for (const surface of ["ExecutiveWork", "AdminWork", "ManagerWork", "Work"]) {
+    const route = new RegExp("<" + surface + " key=\\{managerScopeKey\\} me=\\{me\\}");
+    assert.match(app, route);
+  }
+});
