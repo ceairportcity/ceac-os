@@ -237,3 +237,18 @@ test("manager, administration and executive default to truthful My work records 
   }
   assert.match(manager, /<ResponsibilityRegister/);
 });
+
+
+test("organisational repeat creation validates civil dates and bounded schedule choices before RPC", () => {
+  const fields = source("src/components/OrganisationalRepeatFields.jsx");
+  const composer = source("src/components/SelfWorkComposer.jsx");
+  assert.match(fields, /function organisationalRepeatDetails\(repeat, steps\)/);
+  assert.match(fields, /validCivilDate\(repeat\.start\)/);
+  assert.match(fields, /validCivilDate\(repeat\.end\)/);
+  assert.match(fields, /repeat\.end < repeat\.start/);
+  assert.match(fields, /Number\.isInteger\(weekday\)/);
+  assert.match(fields, /weekday < 1 \|\| weekday > 7/);
+  assert.match(fields, /Number\.isInteger\(monthDay\)/);
+  assert.match(fields, /monthDay < 1 \|\| monthDay > 31/);
+  assert.match(composer, /organisationalRepeatDetails\(repeat, cleanSteps\)/);
+});
