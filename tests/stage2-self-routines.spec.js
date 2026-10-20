@@ -64,6 +64,21 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       await dialog.getByRole('button',{name:'Record occurrence',exact:true}).click();
       await expect(dialog).toHaveCount(0);
       await expect(page.getByText('Venue inspected',{exact:true})).toBeVisible();
+      // The separately attributable dated evidence editor reuses the existing
+      // immutable Work diary; this does not approve or rewrite the occurrence.
+      await page.getByRole('button',{name:`Record evidence for ${today}`}).click();
+      const activityDate = page.getByLabel('Activity date',{exact:true});
+      await expect(activityDate).toHaveValue(today);
+      await page.getByLabel('Action taken or planned',{exact:true}).fill('Inspected venue and verified entrances');
+      await page.getByRole('button',{name:'Record activity',exact:true}).click();
+      const datedEvidence = await client.from('work_activity_records')
+        .select('id,contributor_id,activity_date,action_summary')
+        .eq('work_item_id',saved.data.id).eq('activity_date',today);
+      expect(datedEvidence.error).toBeNull();
+      expect(datedEvidence.data).toEqual([expect.objectContaining({
+        contributor_id:signedIn.data.user.id,activity_date:today,
+        action_summary:'Inspected venue and verified entrances',
+      })]);
       expect((await client.rpc('record_routine_occurrence',params)).error?.code).toBe('23505');
       const routine = await client.from('recurring_operations').select('id').eq('work_item_id',saved.data.id).single();
       expect(routine.error).toBeNull();

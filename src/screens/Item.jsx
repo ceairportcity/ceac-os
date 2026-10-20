@@ -43,6 +43,10 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   const [units, setUnits] = useState([]);
   const [routine, setRoutine] = useState(null);
   const [routineOccurrences, setRoutineOccurrences] = useState([]);
+  // A dated evidence shortcut is UI context only; the authoritative evidence
+  // stays in append-only work_activity_records with normal contributor RLS.
+  const [routineEvidenceDate, setRoutineEvidenceDate] = useState("");
+  const [routineEvidenceRequest, setRoutineEvidenceRequest] = useState(0);
   const [caseRecord, setCaseRecord] = useState(null);
   const [requestRecord, setRequestRecord] = useState(null);
   const [requestResponses, setRequestResponses] = useState([]);
@@ -577,7 +581,8 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         <WorkDetailCopy>{item.instructions}</WorkDetailCopy>
       </WorkDetailSection>}
 
-      <WorkActivityDiary key={`${me.id}:${item.id}`} me={me} item={item} />
+      <WorkActivityDiary key={`${me.id}:${item.id}`} me={me} item={item}
+        prefillDate={routineEvidenceDate} prefillRequest={routineEvidenceRequest} />
 
       {item.kind === "deliverable" && deliverableRecord && <>
         <div className="sec"><span>Deliverable evidence</span></div>
@@ -675,6 +680,11 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
           {routineOccurrences.map((occurrence) => <div className="row" key={occurrence.id}>
             <div className="row-t">{occurrence.occurred_on}{routine.records_value && occurrence.value !== null ? ` · ${occurrence.value} ${routine.value_label || ""}` : ""}</div>
             {occurrence.note && <div className="row-m">{occurrence.note}</div>}
+            {(item.assignee_id === me.id || item.visibility !== "private" && item.confidential !== true) &&
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => {
+                setRoutineEvidenceDate(occurrence.occurred_on);
+                setRoutineEvidenceRequest((n) => n + 1);
+              }}>Record evidence for {occurrence.occurred_on}</button>}
           </div>)}
         </>}
         {routine.active && routine.schedule_kind && (item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin) && <button className="btn" style={{ marginTop: 20 }} onClick={() => {

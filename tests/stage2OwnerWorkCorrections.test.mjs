@@ -280,3 +280,19 @@ test("organisational schedule errors are rejected before server creation, includ
   assert.throws(() => organisationalRepeatDetails({ ...base, end: "2026-10-19" }, []), /date/);
   assert.throws(() => organisationalRepeatDetails({ ...base, frequency: "custom" }, []), /frequency/);
 });
+
+
+test("recorded routine dates can open a factual evidence entry without certifying occurrence completion", () => {
+  const item = source("src/screens/Item.jsx");
+  const diary = source("src/components/WorkActivityDiary.jsx");
+  assert.match(item, /setRoutineEvidenceDate\(occurrence\.occurred_on\)/);
+  assert.match(item, /setRoutineEvidenceRequest\(\(n\) => n \+ 1\)/);
+  assert.match(item, /Record evidence for \{occurrence\.occurred_on\}/);
+  assert.match(item, /prefillDate=\{routineEvidenceDate\} prefillRequest=\{routineEvidenceRequest\}/);
+  assert.match(diary, /if \(!prefillRequest/);
+  assert.match(diary, /setDate\(prefillDate\)/);
+  assert.match(diary, /setCorrectingId\(null\)/);
+  assert.match(diary, /setEditor\(true\)/);
+  assert.match(diary, /work_activity_records/);
+  assert.doesNotMatch(diary, /autoApprove|markObjectiveAchieved|record_routine_occurrence/);
+});

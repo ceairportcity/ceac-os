@@ -20,7 +20,7 @@ const states = [
 
 /** Source-backed contribution diary. A diary action never completes a parent
  * responsibility, changes formal attendance or self-approves an objective. */
-export default function WorkActivityDiary({ me, item }) {
+export default function WorkActivityDiary({ me, item, prefillDate = "", prefillRequest = 0 }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,6 +38,19 @@ export default function WorkActivityDiary({ me, item }) {
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [reload, setReload] = useState(0);
   const submitting = useRef(false);
+  const sectionRef = useRef(null);
+  // Only user-invoked occurrence shortcuts set the entry date; an unrelated
+  // rerender or ordinary load never discards an editor's unsaved work.
+  useEffect(() => {
+    if (!prefillRequest || !/^\\d{4}-\\d{2}-\\d{2}$/.test(prefillDate)) return;
+    setCorrectingId(null);
+    setDate(prefillDate);
+    setState("done");
+    setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl("");
+    setError(""); setSuccess("");
+    setEditor(true);
+    sectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  }, [prefillRequest, prefillDate]);
 
   useEffect(() => {
     let current = true;
@@ -150,7 +163,7 @@ export default function WorkActivityDiary({ me, item }) {
     }
   }
 
-  return <section className="s2-work-diary" aria-label="Responsibility activity diary">
+  return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
     <header>
       <div><span className="eyebrow">Individual contribution</span><h3>Activity record</h3>
         <p>Keep each action, outcome and next step under this responsibility. This is not an attendance or performance score.</p>
