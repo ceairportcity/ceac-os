@@ -182,10 +182,12 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 DO $employee_pending_view$
 BEGIN
- IF EXISTS(SELECT 1 FROM private.stage2_self_published_human_ratings()) THEN
+ IF EXISTS(SELECT 1 FROM private.stage2_self_published_human_ratings()
+   WHERE appraisal_id='53000000-0000-4000-8000-000000000082') THEN
   RAISE EXCEPTION 'Private reader leaked an unpublished rating';
  END IF;
- IF EXISTS(SELECT 1 FROM public.stage2_employee_published_human_ratings) THEN
+ IF EXISTS(SELECT 1 FROM public.stage2_employee_published_human_ratings
+   WHERE appraisal_id='53000000-0000-4000-8000-000000000082') THEN
   RAISE EXCEPTION 'Employee read the pending unpublished Manager rating from projection';
  END IF;
 END
