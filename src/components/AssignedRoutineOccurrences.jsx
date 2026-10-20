@@ -54,12 +54,12 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
         if (!templates.length) { if (active) { setRows([]); setVerifiedIdentity(identity); } return; }
         const result = await supabase.from("recurring_operations")
           .select("id,name,work_item_id,active,paused_at,starts_on,ends_on,schedule_kind,weekdays,day_of_month",{count:"exact"})
-          .in("work_item_id", templates.map((x) => x.id)).eq("active", true);
+          .in("work_item_id", templates.map((x) => x.id));
         if (result.error || !Array.isArray(result.data) || typeof result.count!=="number" || result.count!==result.data.length)
           throw new Error("Assigned routine rows are incomplete");
         const routines = result.data;
         if (!routines.length) { if (active) { setRows([]); setVerifiedIdentity(identity); } return; }
-        const [history, schedules] = await Promise.all([supabase.from("operation_occurrences")
+        const [history, schedules, pauseHistory] = await Promise.all([supabase.from("operation_occurrences")
           .select("id,operation_id,occurred_on",{count:"exact"})
           .in("operation_id", routines.map((x) => x.id))
           .gte("occurred_on", plusDays(today,-14)).lte("occurred_on", plusDays(today,14)),
@@ -68,15 +68,21 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
             .in("operation_id", routines.map((row) => row.id))
             .lte("effective_from", plusDays(today,14))
             .or(`effective_to.is.null,effective_to.gte.${plusDays(today,-14)}`),
+          supabase.from("routine_pause_periods")
+            .select("operation_id,paused_at,resumed_at",{count:"exact"})
+            .in("operation_id", routines.map(row => row.id))
+            .lt("paused_at", plusDays(today,15)+"T00:00:00Z")
+            .or(`resumed_at.is.null,resumed_at.gte.${plusDays(today,-14)}T00:00:00Z`),
         ]);
+        if (pauseHistory.error || !Array.isArray(pauseHistory.data) || typeof pauseHistory.count!=="number" || pauseHistory.count!==pauseHistory.data.length)
+          throw new Error("Assigned routine pause history is incomplete");
         if (schedules.error || !Array.isArray(schedules.data) || typeof schedules.count!=="number" || schedules.count!==schedules.data.length)
           throw new Error("Assigned routine schedule versions are incomplete");
         if (history.error || !Array.isArray(history.data) || typeof history.count!=="number" || history.count!==history.data.length)
           throw new Error("Assigned routine history is incomplete");
         const projected = routines.flatMap((routine) => {
-          if (routine.paused_at) return [];
           return projectedRoutineDates(routine, history.data, {
-            fromDate: plusDays(today,-14), throughDate: plusDays(today,14), today, versions: schedules.data,
+            fromDate: plusDays(today,-14), throughDate: plusDays(today,14), today, versions: schedules.data, pauses: pauseHistory.data,
           }).map((item) => ({ ...item, routine }));
         }).sort((a,b) => a.date.localeCompare(b.date) || a.routine.name.localeCompare(b.routine.name));
         if (active) { setRows(projected); setVerifiedIdentity(identity); }

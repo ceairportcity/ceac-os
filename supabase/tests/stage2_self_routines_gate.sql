@@ -34,11 +34,31 @@ BEGIN
    RAISE EXCEPTION 'Occurrence attribution lost';
  END IF;
  PERFORM public.set_routine_paused(v_id,true,'Venue temporarily unavailable');
+ PERFORM public.set_routine_paused(v_id,true,'Retry must not replace pause');
+ IF (SELECT count(*) FROM public.routine_pause_periods WHERE operation_id=v_operation AND resumed_at IS NULL)<>1
+   OR NOT EXISTS(SELECT 1 FROM public.routine_pause_periods WHERE operation_id=v_operation AND paused_by=auth.uid()
+     AND pause_reason='Venue temporarily unavailable') THEN
+  RAISE EXCEPTION 'Pause retry duplicated or rewrote accountable history';
+ END IF;
+ BEGIN
+  INSERT INTO public.routine_pause_periods(operation_id,org_id,paused_at)
+   VALUES(v_operation,public.app_org_id(),now());
+  RAISE EXCEPTION 'Browser could forge pause history';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN
    PERFORM public.record_routine_occurrence(v_id,current_date,NULL,'Paused');
    RAISE EXCEPTION 'Paused routine accepted outcome';
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  PERFORM public.set_routine_paused(v_id,false,'Venue available again');
+ PERFORM public.set_routine_paused(v_id,false,'Retry must not rewrite resume');
+ IF (SELECT count(*) FROM public.routine_pause_periods WHERE operation_id=v_operation)<>1
+  OR NOT EXISTS(SELECT 1 FROM public.routine_pause_periods WHERE operation_id=v_operation
+    AND resumed_at IS NOT NULL AND resumed_by=auth.uid() AND resume_reason='Venue available again') THEN
+  RAISE EXCEPTION 'Resume retry rewrote accountable history';
+ END IF;
+ IF (SELECT count(*) FROM public.operation_occurrences WHERE operation_id=v_operation AND recorded_by=auth.uid())<>1 THEN
+  RAISE EXCEPTION 'Pause/resume rewrote recorded occurrence proof';
+ END IF;
  PERFORM public.change_routine_schedule(v_id,current_date+1,'weekly',ARRAY[6]::smallint[]);
  BEGIN
    PERFORM public.create_typed_work(p_kind=>'routine',p_unit_id=>'20000000-0000-4000-8000-000000000012',
@@ -61,6 +81,27 @@ BEGIN
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
 END;
 $own$;
+-- Synthetic past interval, never a production rewrite. Dates are relative so
+-- the resumed day remains eligible while the previous paused day is denied.
+RESET ROLE;
+UPDATE public.recurring_operations SET starts_on=current_date-5
+ WHERE work_item_id=current_setting('ceac.test.self_routine')::uuid;
+UPDATE public.routine_schedule_versions SET effective_from=current_date-5
+ WHERE operation_id=(SELECT id FROM public.recurring_operations WHERE work_item_id=current_setting('ceac.test.self_routine')::uuid)
+ AND version=1;
+UPDATE public.routine_pause_periods SET paused_at=(current_date-2)::timestamp at time zone 'Africa/Accra',
+ resumed_at=(current_date-1)::timestamp at time zone 'Africa/Accra'
+ WHERE operation_id=(SELECT id FROM public.recurring_operations WHERE work_item_id=current_setting('ceac.test.self_routine')::uuid);
+SET LOCAL ROLE authenticated;
+DO $past_pause$
+BEGIN
+ BEGIN
+  PERFORM public.record_routine_occurrence(current_setting('ceac.test.self_routine')::uuid,current_date-2,NULL,'False paused-day credit');
+  RAISE EXCEPTION 'Paused historical day accepted a new outcome';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ PERFORM public.record_routine_occurrence(current_setting('ceac.test.self_routine')::uuid,current_date-1,NULL,'Resumption-day outcome');
+END;
+$past_pause$;
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000006","role":"authenticated","aal":"aal1"}',true);
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000006',true);
 DO $colleague$

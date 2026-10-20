@@ -47,7 +47,8 @@ test("P4 assigned/Manager recurring work rejects incomplete provider pages and a
   assert.doesNotMatch(assigned,/catch \{ return \[\]; \}/);
   assert.match(manager,/operationCount!==operations\.length/);
   assert.match(manager,/result\.count!==result\.data\.length/);
-  assert.match(manager,/series\.filter\(\(operation\)=>!operation\.paused_at\)/);
+  assert.doesNotMatch(manager,/series\.filter\(\(operation\)=>!operation\.paused_at\)/);
+  for (const view of [assigned,manager]) assert.match(view,/from\("routine_pause_periods"\)/);
   assert.match(manager,/const items = !ready \? \[\] :/);
   assert.doesNotMatch(manager,/catch \{\s*return \[\];\s*\}/);
 });

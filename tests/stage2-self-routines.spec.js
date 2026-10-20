@@ -73,8 +73,22 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       const change = {p_work_item_id:saved.data.id,p_paused:true,p_reason:'Venue unavailable'};
       expect((await colleague.rpc('set_routine_paused',change)).error).not.toBeNull();
       expect((await client.rpc('set_routine_paused',change)).error).toBeNull();
+      expect((await client.rpc('set_routine_paused',change)).error).toBeNull();
+      const paused = await client.from('routine_pause_periods').select('paused_at,paused_by,resumed_at,pause_reason').eq('operation_id',routine.data.id);
+      expect(paused.error).toBeNull();
+      expect(paused.data).toHaveLength(1);
+      expect(paused.data[0]).toMatchObject({paused_by:signedIn.data.user.id,resumed_at:null,pause_reason:'Venue unavailable'});
+      expect((await client.from('routine_pause_periods').insert({
+        operation_id:routine.data.id,org_id:signedIn.data.user.id,paused_at:new Date().toISOString(),
+      })).error?.code).toBe('42501');
       expect((await client.rpc('record_routine_occurrence',params)).error?.code).toBe('22023');
       expect((await client.rpc('set_routine_paused',{...change,p_paused:false,p_reason:'Venue available'})).error).toBeNull();
+      expect((await client.rpc('set_routine_paused',{...change,p_paused:false,p_reason:'Resume retry'})).error).toBeNull();
+      const resumed = await client.from('routine_pause_periods').select('paused_at,resumed_at,resumed_by,resume_reason').eq('operation_id',routine.data.id);
+      expect(resumed.error).toBeNull();
+      expect(resumed.data).toHaveLength(1);
+      expect(resumed.data[0]).toMatchObject({paused_at:paused.data[0].paused_at,resumed_by:signedIn.data.user.id,resume_reason:'Venue available'});
+      expect(resumed.data[0].resumed_at).not.toBeNull();
       const tomorrow = new Date(today+'T12:00:00Z'); tomorrow.setUTCDate(tomorrow.getUTCDate()+1);
       expect((await client.rpc('change_routine_schedule',{p_work_item_id:saved.data.id,p_effective_from:tomorrow.toISOString().slice(0,10),p_schedule_kind:'weekly',p_weekdays:[6]})).error).toBeNull();
       const wrongAssignee = await client.rpc('create_typed_work',{
