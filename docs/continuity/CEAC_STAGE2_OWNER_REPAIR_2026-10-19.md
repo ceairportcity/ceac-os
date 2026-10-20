@@ -116,3 +116,18 @@ At `f0fd14ee`, migration 165 applied locally, all three affected SQL gates passe
 
 
 The strengthened publication browser first stopped at a genuinely ambiguous category control label, before attempting HR publication. Each rating/explanation/evidence control now has a unique category-specific accessible name, retaining the existing visual layout and strict assertions. The rerun uses these actual labels; no timeout or permission check was relaxed. Latest 165 native source/build remains 478/478, exit 0; this accessibility correction needs its focused rerun.
+
+
+### Actual publication and accountable pause-history correction
+
+At `b1ba2688`, the strengthened real Manager → independent HR → employee publication browser passed (1/1, 15.3 seconds). It proved the optional monthly human rating hidden before approval, visible only to its employee after approval, unavailable to a colleague, and the private reader unavailable through the public REST API. Native source/build passed 478/478.
+
+Official CLI created migration `20261020072046_166_routine_pause_history.sql`. It adds read-only, tenant/assurance/routine-visible pause intervals and retains the existing pause RPC's creator/manager permissions. Pause/resume retries retain the first real actor/time/reason without duplicate transitions. Recorded occurrence proof is untouched. Historical intervals are recovered only from actual existing audit events or the current persisted pause timestamp; unknown past gaps are never invented. New outcomes on paused dates are rejected. Current date-only organisational schedules use Accra dates: pause date inclusive, resumption date eligible again.
+
+Staff and Manager projections now retain earlier missed dates while paused and exclude known pause windows after resumption; same-day recorded proof remains visible. All pause-history reads require complete counts and the existing stale-identity guards. No new callable privileged function, role, authentication flag, personal Calendar engine or historical migration change is introduced.
+
+The first local 166 attempt at `78a0d1a9` rolled back on the wrong existing activity timestamp column; corrected to the observed `activity_events.at`. At `ef9cdc08`, the official CLI forward migration and expanded rollback-only routine permission/history gate passed. 481/481 source tests, production build, and all four role/browser routine journeys passed (4/4, 22.3 seconds), including pause/resume retries, real history attribution and denied browser history insertion.
+
+A broader SQL run against this reused browser fixture stopped on a rating-test fixture assumption: it treated an earlier legitimately HR-published rating as a pending leak. The pending assertion now targets its own explicit appraisal UUID, retaining unpublished, colleague, HR-private, future-assurance and API-denial checks. At `79059c44`, all 63 registered SQL gates passed on the reused fixture. A new real Staff/Manager browser test verifies paused missed-date visibility and resumption, alongside the existing assigned future-schedule test; both focused browser journeys passed (2/2, 20 seconds). Local receipts reached 171 through 166; tracked source is clean. Official CLI `supabase db advisors --local --type security --level error --fail-on error` returned **No issues found**, exit 0.
+
+Full custom intervals/timezones/reminders, independent occurrence checklist/evidence/review and cover/delegation remain open. No production migration, merge, deployment or final Stage 2 release claim is made.
