@@ -41,7 +41,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   const submitting = useRef(false);
   const sectionRef = useRef(null);
   const diaryScope = `${me.org_id}:${me.id}:${item.id}`;
-  const verified = completedDiaryScope === diaryScope && verified && !unavailable;
+  const verified = completedDiaryScope === diaryScope && !loading && !error && !unavailable;
   const history = verified ? sourceHistory : [];
   const checking = loading || completedDiaryScope !== diaryScope;
   const activeError = completedDiaryScope === diaryScope ? error : "";
