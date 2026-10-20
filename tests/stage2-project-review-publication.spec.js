@@ -12,6 +12,7 @@ test('project evidence reaches an employee only through the existing reviewer an
   const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
   const cycleName = `Owner project review ${Date.now()}`;
   const narrative = `Specific project contribution for independent HR review ${Date.now()}.`;
+  const ratingReason = `Observation deferred pending the next delivery evidence ${Date.now()}.`;
   const contexts = [];
   const clients = [];
   async function api(role) {
@@ -64,6 +65,17 @@ test('project evidence reaches an employee only through the existing reviewer an
     expect(await reviewerPage.getByLabel('Manager assessment', { exact: true }).inputValue()).toContain(narrative);
     await reviewerPage.getByRole('button', { name: 'Record assessment', exact: true }).click();
     await expect(reviewerPage.getByText('Manager assessment recorded.', { exact: true })).toBeVisible();
+    const ratings = reviewerPage.getByRole('region', { name: 'Human-entered Manager appraisal ratings' });
+    await ratings.getByRole('button', { name: 'Enter ratings', exact: true }).click();
+    const delivery = ratings.locator('.s2-rating-row').filter({ hasText: 'Delivery of responsibilities' });
+    await delivery.getByLabel('Human rating', { exact: true }).selectOption('N/O');
+    await delivery.getByLabel('Explanation', { exact: true }).fill(ratingReason);
+    await ratings.getByRole('button', { name: 'Record human ratings', exact: true }).click();
+    await expect(ratings.getByText(ratingReason, { exact: true })).toBeVisible();
+    const ratingSaved = await manager.from('appraisal_human_rating_versions')
+      .select('id,appraisal_id,profile_id').eq('profile_id', staffId)
+      .contains('category_ratings', { delivery: { reason: ratingReason } }).single();
+    expect(ratingSaved.error).toBeNull();
     await reviewerPage.getByLabel('Performance release request reason').fill('Manager reviewed the attributable contribution and requests independent HR publication.');
     await reviewerPage.getByRole('button', { name: 'Submit release request to HR', exact: true }).click();
     await expect(reviewerPage.getByText(/release request was recorded for HR review/)).toBeVisible();
@@ -74,6 +86,12 @@ test('project evidence reaches an employee only through the existing reviewer an
     const privateRead = await employee.from('project_person_contribution_assessments').select('id').eq('id', recorded.data);
     expect(privateRead.error).toBeNull();
     expect(privateRead.data).toHaveLength(0);
+    const pendingRating = await employee.from('stage2_employee_published_human_ratings')
+      .select('id').eq('id',ratingSaved.data.id);
+    expect(pendingRating.error).toBeNull();
+    expect(pendingRating.data).toHaveLength(0);
+    expect((await employee.schema('private').rpc('stage2_self_published_human_ratings')).error?.code).toBe('PGRST106');
+    expect((await employee.rpc('stage2_self_published_human_ratings')).error?.code).toBe('PGRST202');
 
     const hrPage = await open('admin');
     const queueNote = hrPage.locator('.s2-hr-project-reviews details').filter({ hasText: narrative });
@@ -85,6 +103,17 @@ test('project evidence reaches an employee only through the existing reviewer an
 
     await employeeBefore.reload();
     await expect(employeeBefore.locator('.performance-narrative p').filter({ hasText: narrative })).toBeVisible();
+    await expect(employeeBefore.getByRole('region', { name: 'Human-entered Manager appraisal ratings' })
+      .getByText(ratingReason, { exact: true })).toBeVisible();
+    const released = await employee.from('stage2_employee_published_human_ratings')
+      .select('id,profile_id').eq('id',ratingSaved.data.id);
+    expect(released.error).toBeNull();
+    expect(released.data).toEqual([{ id:ratingSaved.data.id, profile_id:staffId }]);
+    const colleague = await api('sameunit');
+    const otherRead = await colleague.from('stage2_employee_published_human_ratings')
+      .select('id').eq('id',ratingSaved.data.id);
+    expect(otherRead.error).toBeNull();
+    expect(otherRead.data).toHaveLength(0);
     await employeeBefore.getByLabel('Review response', { exact: true }).fill('I have read the released review and confirm the next action.');
     await employeeBefore.getByRole('button', { name: 'Record response', exact: true }).click();
     await expect(employeeBefore.getByText('Your response was recorded.', { exact: true })).toBeVisible();
