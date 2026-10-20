@@ -69,6 +69,8 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
     [item.title, item.ref, item.profiles?.full_name].some((value) => String(value || "").toLowerCase().includes(search.trim().toLowerCase())));
   const recent = work.filter((item) => item.created_at).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 4);
   return <div className="s2-project">
+    <div className="s2-project-layout">
+      <div className="s2-project-content">
     <section className="s2-project-metrics" aria-label="Recorded project metrics">
       <div className="s2-project-stat-card s2-project-progress-card">
         <span>Visible task completion</span>
@@ -97,8 +99,6 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         <small>{next?.title || "No upcoming due date"}</small>
       </div>
     </section>
-    <div className="s2-project-layout">
-      <div className="s2-project-content">
         <section className="s2-project-panel">
           <header><h2>Project team</h2><small>{people.length} recorded assignees</small></header>
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>

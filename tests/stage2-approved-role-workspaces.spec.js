@@ -58,7 +58,7 @@ async function assertSupportMobileHelpDesk(page, actor) {
 
 test("manager projects preserve one integrated workspace with real photo and task data", async ({ browser }) => {
   assertLocalEnvironment();
-  const { context, page } = await openAs(browser, "manager@ceac.local.test");
+  const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 1536, height: 1024 });
   try {
     await page.goto(root + "/?tab=projects");
     await expect(page.locator(".ev2-project-manager")).toBeVisible();
@@ -70,6 +70,12 @@ test("manager projects preserve one integrated workspace with real photo and tas
     await expect(workspace.getByText("Departments involved")).toBeVisible();
     await expect(workspace.getByText("Project tasks", { exact: true })).toBeVisible();
     await expect(workspace.locator(".s2-project-aside")).toBeVisible();
+    const summary = await workspace.locator('.s2-project-metrics').boundingBox();
+    const inspector = await workspace.locator('.s2-project-aside').boundingBox();
+    const main = await workspace.locator('.s2-project-content').boundingBox();
+    expect(Math.abs(summary.y - inspector.y), 'Project inspector aligns with the summary cards').toBeLessThanOrEqual(2);
+    expect(summary.x + summary.width, 'Summary cards remain inside the main project column').toBeLessThanOrEqual(main.x + main.width + 1);
+    expect(summary.x + summary.width, 'Project summary and inspector do not overlap').toBeLessThan(inspector.x);
     await expect(workspace.locator(".fpg-project-tree")).toBeHidden();
     await expect(workspace.locator(".fpg-project-facts")).toBeHidden();
     const img = workspace.locator(".s2-scenic-photo img");
