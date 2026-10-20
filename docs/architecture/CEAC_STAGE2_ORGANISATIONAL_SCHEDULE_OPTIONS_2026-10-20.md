@@ -14,7 +14,7 @@ Bounds: preview <=200 responsibilities per request, <=370 calendar days, <=370 f
 
 Verification: SQL covers interval/count dates, rejected dates, preserved recorded proof, invalid-zone rollback, DST spring/fall, cross-unit reads, colleague writes, anonymous grants and future assurance. Native tests cover input validation and provider pagination. Real browsers must exercise self-created and assigned custom schedules and future edits before any acceptance claim.
 
-Still outstanding separately: actual reminder delivery, independent occurrence checklist/evidence/status/review, authorised cover/delegation and final release-wide/reference checks. Stored schedule options alone do not close that broader recurrence contract.
+In-app reminder delivery now has scoped169/170 implementation and executed evidence in the reminder-delivery architecture and continuity ledger. Still outstanding separately: independent occurrence checklist/evidence/status/review, authorised cover/delegation and final release-wide/reference checks. Stored schedule options alone do not close that broader recurrence contract.
 
 References: https://supabase.com/docs/guides/database/functions and https://www.postgresql.org/docs/16/datetime-invalid-input.html .
 
