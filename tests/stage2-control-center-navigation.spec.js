@@ -23,7 +23,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 900 
       await expect(returnLink).toBeVisible();
       await expect(page).toHaveURL(/tab=office-settings/);
       await returnLink.click();
-      await expect(center.getByLabel('Find a setting')).toHaveValue('');
+      // App navigation retains the settings search, so returning restores
+      // the user's context. Clear it explicitly before opening another domain.
+      await expect(center.getByLabel('Find a setting')).toHaveValue('Office');
+      await center.getByLabel('Find a setting').fill('');
       await center.getByRole('button', { name: 'Units', exact: true }).click();
       await expect(page).toHaveURL(/tab=units/);
       await page.getByRole('navigation', { name: 'Settings navigation' }).getByRole('link', { name: /Control Center/ }).click();
