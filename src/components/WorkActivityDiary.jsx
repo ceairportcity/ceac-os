@@ -42,7 +42,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   // Only user-invoked occurrence shortcuts set the entry date; an unrelated
   // rerender or ordinary load never discards an editor's unsaved work.
   useEffect(() => {
-    if (!prefillRequest || !/^\\d{4}-\\d{2}-\\d{2}$/.test(prefillDate)) return;
+    if (!prefillRequest || !/^\d{4}-\d{2}-\d{2}$/.test(prefillDate)) return;
     setCorrectingId(null);
     setDate(prefillDate);
     setState("done");
