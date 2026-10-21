@@ -5,7 +5,7 @@ import { humanError } from "../lib/productLanguage";
 import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
 import { summariseAdminToday, countRecordedSessionDays } from "../lib/adminTodaySummary";
 
-export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, openSettings, openUnits, openPeopleAccess, go }) {
+export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, openSettings, openUnits, openPeopleAccess, openPerson, go }) {
   const [units, setUnits] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [blockers, setBlockers] = useState([]);
@@ -309,6 +309,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenReports={() => go?.("reporting")}
       onOpenFinance={() => go?.("finance")}
       onOpenPeople={() => go?.("people")}
+      onOpenPerson={openPerson}
       onOpenInvitations={() => openPeopleAccess?.({ mode: "invitations" })}
       onOpenProtectedHR={() => go?.("protected-hr")}
       onOpenPayroll={() => go?.("payroll")}
