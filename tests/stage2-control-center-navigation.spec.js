@@ -4,6 +4,17 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 900 
   test(`Control Center has one entry per domain and working return routes at ${viewport.width}px`, async ({ browser }) => {
     const context = await browser.newContext({ viewport });
     const page = await context.newPage();
+    expect(process.env.SUPABASE_URL).toBe("http://127.0.0.1:54321");
+    // Presentation fixture only: narrow the grants received by the UI.
+    // Server authority is unchanged; this is not a database-denial test.
+    await page.route("**/rest/v1/capability_grants?*", async route => {
+      const url = new URL(route.request().url());
+      if (url.hostname !== "127.0.0.1" || url.port !== "54321" || route.request().method() !== "GET") return route.continue();
+      const response = await route.fetch();
+      const grants = await response.json();
+      expect(Array.isArray(grants)).toBe(true);
+      await route.fulfill({ response, json: grants.filter(grant => !["payroll.prepare", "payroll.approve"].includes(grant.capability)) });
+    });
     try {
       await page.goto('/');
       await page.getByPlaceholder('Work email').fill('admin@ceac.local.test');
