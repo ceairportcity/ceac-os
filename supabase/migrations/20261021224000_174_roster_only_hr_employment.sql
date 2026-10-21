@@ -4,6 +4,29 @@
 alter table public.employee_roster
  add column manager_profile_id uuid references public.profiles(id) on delete restrict;
 
+create table public.employee_roster_change_events (
+ id uuid primary key default gen_random_uuid(),
+ org_id uuid not null references public.organisations(id) on delete restrict,
+ employee_id uuid not null references public.employee_roster(id) on delete restrict,
+ actor_id uuid not null references public.profiles(id) on delete restrict,
+ recorded_at timestamptz not null default clock_timestamp(),
+ reason text not null check(length(btrim(reason))>=8 and length(reason)<=2000),
+ before_record jsonb not null,
+ after_record jsonb not null
+);
+create index employee_roster_change_events_history_idx
+ on public.employee_roster_change_events(org_id,employee_id,recorded_at desc,id desc);
+alter table public.employee_roster_change_events enable row level security;
+revoke all on public.employee_roster_change_events from public,anon,authenticated;
+grant select on public.employee_roster_change_events to authenticated;
+create policy employee_roster_change_events_admin_read on public.employee_roster_change_events
+ for select to authenticated using (
+ org_id=public.app_org_id() and public.app_is_admin() and public.app_stage2_universal_aal_allowed()
+);
+comment on table public.employee_roster_change_events is
+ 'Append-only HR changes to a roster-only employee, preserving before/after placement and reason. Audited data, not user account permissions.';
+
+
 comment on column public.employee_roster.manager_profile_id is
  'HR-recorded administrative reporting supervisor for a roster-only employee. Not a login account, unit manager grant, or performance reviewer permission.';
 
@@ -30,6 +53,7 @@ declare
  v_expected integer;
  v_actual integer;
  v_updated_at timestamptz;
+ v_before_units jsonb;
 begin
  if auth.uid() is null or v_org is null or not public.app_is_admin()
   or not public.app_stage2_universal_aal_allowed() then
@@ -86,6 +110,10 @@ begin
   raise exception 'Choose an active manager of the employee primary unit.' using errcode='42501';
  end if;
 
+ select coalesce(jsonb_agg(jsonb_build_object('unit_id',m.unit_id,'is_primary',m.is_primary) order by m.unit_id),'[]'::jsonb)
+ into v_before_units from public.employee_unit_memberships m
+ where m.employee_id=p_employee_id and m.org_id=v_org;
+
  -- Demote before promoting; the existing unique primary-membership index is preserved.
  update public.employee_unit_memberships
   set is_primary=false,updated_at=clock_timestamp(),updated_by=auth.uid()
@@ -114,11 +142,29 @@ begin
       employment_type=p_employment_type,
       employment_status=p_employment_status,
       manager_profile_id=p_manager_profile_id,
-      review_note=nullif(btrim(p_reason),''),
       updated_at=clock_timestamp(),updated_by=auth.uid()
   where id=p_employee_id and org_id=v_org and profile_id is null
   returning updated_at into v_updated_at;
  if not found then raise exception 'Employee identity changed while saving.' using errcode='40001'; end if;
+
+ insert into public.employee_roster_change_events (
+  org_id,employee_id,actor_id,reason,before_record,after_record)
+ values(v_org,p_employee_id,auth.uid(),btrim(p_reason),
+  jsonb_build_object(
+   'full_name',v_record.full_name,'preferred_name',v_record.preferred_name,
+   'job_title',v_record.job_title,'employment_type',v_record.employment_type,
+   'employment_status',v_record.employment_status,'manager_profile_id',v_record.manager_profile_id,
+   'units',v_before_units
+  ),
+  jsonb_build_object(
+   'full_name',btrim(p_full_name),'preferred_name',nullif(btrim(coalesce(p_preferred_name,'')),''),
+   'job_title',nullif(btrim(coalesce(p_job_title,'')),''),
+   'employment_type',p_employment_type,'employment_status',p_employment_status,
+   'manager_profile_id',p_manager_profile_id,'units',
+   (select coalesce(jsonb_agg(jsonb_build_object('unit_id',m.unit_id,'is_primary',m.is_primary) order by m.unit_id),'[]'::jsonb)
+    from public.employee_unit_memberships m where m.employee_id=p_employee_id and m.org_id=v_org)
+  )
+ );
 
  return jsonb_build_object(
   'employee_id',p_employee_id,
