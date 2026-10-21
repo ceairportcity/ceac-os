@@ -55,6 +55,19 @@ test("real organisational routine dates appear in Staff and Unit Calendar withou
   expect(privateCopies.error).toBeNull();expect(privateCopies.count).toBe(0);
   expect(await own.page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await own.page.screenshot({path:"test-artifacts/routine-calendar-staff-phone.png",fullPage:true});
+  // The chosen Calendar date must open that exact routine occurrence in Work,
+  // and an independently linked future date must survive refresh.
+  await own.page.locator(".phase6-schedule-row").filter({hasText:title}).first().getByRole("button").click();
+  await expect(own.page).toHaveURL(new RegExp("item="+id+".*routineDate="+today));
+  const editor=own.page.getByRole("region",{name:"Progress for a routine date"});
+  await expect(editor.getByLabel("Scheduled date")).toHaveValue(today);
+  const future=new Date(today+"T00:00:00Z");
+  future.setUTCDate(future.getUTCDate()+2);
+  const target=future.toISOString().slice(0,10);
+  await own.page.goto("/?tab=staff-calendar&item="+id+"&routineDate="+target);
+  await expect(own.page.getByRole("region",{name:"Progress for a routine date"}).getByLabel("Scheduled date")).toHaveValue(target);
+  await expect(own.page.getByRole("region",{name:"Progress for a routine date"})).not.toContainText("This date is not scheduled");
+
   const unit=await signIn(browser,"manager@ceac.local.test",1366);contexts.push(unit.context);
   await unit.page.goto("/?tab=calendar");
   const agenda=unit.page.locator(".ev2cal-side-stack .ev2cal-agenda");
