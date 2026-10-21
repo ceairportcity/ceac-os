@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from "react";
 import {supabase} from "../lib/supabase";
+import {eligibleRosterManagers} from "../lib/eligibleRosterManagers";
 
 const types=[["not_recorded","Not yet recorded"],["permanent","Permanent"],["fixed_term","Fixed-term"],["volunteer","Volunteer"]];
 const statuses=[["active","Active"],["inactive","Inactive"]];
@@ -11,27 +12,34 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],manag
  const authorised=Boolean(me.is_admin);
  const [form,setForm]=useState(blank),[updatedAt,setUpdatedAt]=useState(null);
  const [history,setHistory]=useState([]),[edit,setEdit]=useState(false);
+ const [managerMemberships,setManagerMemberships]=useState([]),[managersVerified,setManagersVerified]=useState(false);
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const [error,setError]=useState(""),[notice,setNotice]=useState(""),[uncertain,setUncertain]=useState(false);
  const [reload,setReload]=useState(0),generation=useRef(0),sending=useRef(false);
  const scope=me.org_id+":"+me.id+":"+employeeId;
  useEffect(()=>{
   const token=++generation.current;setLoading(true);setEdit(false);setUpdatedAt(null);
-  setHistory([]);setError("");setNotice("");setUncertain(false);
+  setHistory([]);setManagerMemberships([]);setManagersVerified(false);setError("");setNotice("");setUncertain(false);
   if(!authorised||!employeeId){setLoading(false);return()=>{generation.current++;};}
   (async()=>{
    try{
-    const [detail,row,events]=await Promise.all([
+    const [detail,row,events,managerRead]=await Promise.all([
      supabase.rpc("admin_employee_roster_detail",{p_employee_id:employeeId}),
      supabase.from("employee_roster").select("id,org_id,profile_id,updated_at,manager_profile_id")
       .eq("org_id",me.org_id).eq("id",employeeId).single(),
      supabase.from("employee_roster_change_events").select("id,recorded_at,reason,actor_id,before_record,after_record")
       .eq("org_id",me.org_id).eq("employee_id",employeeId)
       .order("recorded_at",{ascending:false}).limit(10),
+     supabase.from("unit_memberships")
+      .select("profile_id,unit_id,role",{count:"exact"})
+      .eq("org_id",me.org_id).eq("role","manager").order("unit_id").order("profile_id").range(0,999),
     ]);
-    if(detail.error||row.error||events.error)throw detail.error||row.error||events.error;
+    if(detail.error||row.error||events.error||managerRead.error)
+     throw detail.error||row.error||events.error||managerRead.error;
     if(!detail.data?.employee||row.data?.id!==employeeId||row.data?.profile_id!==null
-      ||!row.data.updated_at||!Array.isArray(detail.data.units)||!Array.isArray(events.data))
+      ||!row.data.updated_at||!Array.isArray(detail.data.units)||!Array.isArray(events.data)
+      ||!Array.isArray(managerRead.data)||!Number.isInteger(managerRead.count)
+      ||managerRead.count!==managerRead.data.length)
      throw new Error("This unlinked employee record could not be verified.");
     if(token!==generation.current)return;
     const e=detail.data.employee, placements=detail.data.units;
@@ -40,6 +48,8 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],manag
      primaryUnit:placements.find(u=>u.is_primary)?.unit_id||"",
      secondaryUnits:placements.filter(u=>!u.is_primary).map(u=>u.unit_id),
      managerId:row.data.manager_profile_id||"",reason:""});
+    eligibleRosterManagers(managers,managerRead.data,placements.find(u=>u.is_primary)?.unit_id||"");
+    setManagerMemberships(managerRead.data);setManagersVerified(true);
     setUpdatedAt(row.data.updated_at);setHistory(events.data);
    }catch(cause){if(token===generation.current)setError(cause.message||"The employee record is unavailable.");}
    finally{if(token===generation.current)setLoading(false);}
@@ -47,10 +57,8 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],manag
   return()=>{generation.current++;};
  },[scope,authorised,reload]);
 
- const managerOptions=managers.filter(row=>row.profile_id&&row.active
-  &&(row.role==="manager"||row.is_operational_manager)
-  &&row.unit_id===form.primaryUnit);
- const valid=Boolean(updatedAt&&!loading&&!uncertain&&form.fullName.trim().length>=2
+ const managerOptions=managersVerified?eligibleRosterManagers(managers,managerMemberships,form.primaryUnit):[];
+ const valid=Boolean(updatedAt&&!loading&&!uncertain&&managersVerified&&form.fullName.trim().length>=2
   &&form.reason.trim().length>=8&&types.some(([value])=>value===form.employmentType)
   &&statuses.some(([value])=>value===form.status)
   &&(!form.managerId||managerOptions.some(row=>row.profile_id===form.managerId)));
