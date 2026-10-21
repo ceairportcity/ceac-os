@@ -198,3 +198,23 @@ Proof roots: `/workspaces/ceac-stage2-verification/{a03c351a,9a54f2e5,ee1cdcdc}/
 ## 20 October17:16UTC — exact interrupted continuation preserved
 
 Actual canonical head rechecked31748712fe385c87e64dc06fc115a506e7113b7f; main unchanged. Four additional all-role Work creation/correction journeys at31748712 passed (4/4,24.1s, exit0) and produced eight desktop/phone captures. This is not literal approved visual acceptance. Long-register pagination candidate38c14be2bf85a3557165d16f9e7c43ed39c5dd57 is saved as a two-file prepared commit, NOT runtime verified or accepted. The final cloud checkout command's completion was not observed. Current execution environment reports unavailable; connected GitHub remains usable. No new runtime tests, deployments, migrations or external statuses were executed on this resume. See CEAC_STAGE2_EXECUTION_CONTINUATION_2026-10-20.md for exact recoverable state, five-journey affected check command and pending scope. Existing proof is retained by original tested SHA; no full-suite rerun, branch or restart.
+
+
+## 21 October 2026 — Work, Projects and Control Center correction batch
+
+Continues the owner's locked correction-to-release sequence on PR #124 and the existing branch. No replacement programme or branch. Application source is 84104019; fa564854 only adjusts the Control Center browser fixture.
+
+Changes: the ten-row Work register keeps selection connected to paging/filtering, and all four Add my work flows open the newly saved responsibility automatically. The selected inspector follows the approved status/action count, next action, dated history, Record an activity and project-link hierarchy; the complete work record remains directly accessible. Revised Projects captions wrap and use concise labels while preserving accessible provenance. Control Center presents available Finance separately from Payroll permissions and preserves return navigation.
+
+The exact private approved desktop Work, phone Work and revised Projects originals were recovered, SHA256 verified and visually compared against rendered application captures. Actual fixture data and row counts differ from the references; this is not a claim of pixel identity or final whole-product visual acceptance. Private originals are not committed.
+
+Affected evidence, not a full qualification run:
+- 0ba765ae: 67/67 native checks, build exit 0, five Work browser journeys passed (all four role creation/selection/correction flows and register paging).
+- 446a608f: four full Work Detail journeys passed; historical evidence for unchanged full-detail navigation.
+- 84104019: 67/67 native checks and build passed; five Projects role/responsive journeys passed. The two added Finance-only Control Center assertions initially failed because the standard Admin fixture has Payroll grants.
+- fa564854: two Control Center return-navigation/responsive journeys passed after narrowly filtering Payroll grants from the local client response. This is presentation evidence only: server grants remain unchanged and this is not a negative database authorization test.
+- Failed intermediate source assertions at fcde61ce and e96025d2 are retained, not reported as passing. Build CSS is 631757 bytes; the 631808-byte ceiling was not relaxed.
+
+Private raw logs, exit codes, timings, captures, commands and SHA256 manifests: /workspaces/ceac-stage2-verification/{commit-prefix}/; summary: /workspaces/ceac-stage2-verification/fa564854/verification-summary.json. Dependency lock is unchanged; existing locked Node 22 installation and isolated Playwright 1.55.0 were reused. No SQL, grants, Auth settings, dependencies, hosted checks, production migration or deployment changed in this batch.
+
+Next: close the remaining agreed routine per-date checklist/evidence/status, one-date edits and authorized cover/delegation using the existing engine and the 16 October Projects/photos/routines owner lock. Preserve the implemented repeat scheduling, review, reminders, workforce-hours and Calendar connections. Then perform frozen final qualification, database reconciliation, recoverable production backup, required checks, safe deployment and actual live checks. Stage 2 is not declared live.
