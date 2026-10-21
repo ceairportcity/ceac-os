@@ -323,6 +323,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenFinance={() => go?.("finance")}
       onOpenPeople={() => go?.("people")}
       onOpenPerson={openPerson}
+      onOpenAccess={(profileId)=>openPeopleAccess?.({profileId})}
       onOpenInvitations={() => openPeopleAccess?.({ mode: "invitations" })}
       onOpenProtectedHR={() => go?.("protected-hr")}
       onOpenPayroll={() => go?.("payroll")}
