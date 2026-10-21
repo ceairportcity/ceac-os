@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
+import { validRoutineDate } from "./lib/routineDateRoute";
 import SignIn from "./screens/SignIn";
 const AccountPassword = lazy(() => import("./screens/AccountPassword"));
 import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
@@ -101,6 +102,7 @@ function routeFromLocation() {
   return {
     tab: params.get("tab") || "home",
     itemId: params.get("item"),
+    routineDate: params.get("item") ? validRoutineDate(params.get("routineDate")) : null,
     projectId: params.get("project"),
     meetingId: params.get("meeting"),
     roomContext,
@@ -114,6 +116,7 @@ export default function App() {
   const initialRoute = routeFromLocation();
   const [tab, setTab] = useState(initialRoute.tab);
   const [itemId, setItemId] = useState(initialRoute.itemId);
+  const [itemRoutineDate,setItemRoutineDate] = useState(initialRoute.routineDate);
   const [goalId, setGoalId] = useState(null);
   const [assigning, setAssigning] = useState(null);
   const [person, setPerson] = useState(null);
@@ -217,6 +220,7 @@ export default function App() {
   function applyRoute(route) {
     setTab(route.tab || "home");
     setItemId(route.itemId || null);
+    setItemRoutineDate(route.itemId ? validRoutineDate(route.routineDate) : null);
     setProjectId(route.projectId || null);
     setMeetingId(route.meetingId || null);
     setRoomContext(route.roomContext || null);
@@ -234,6 +238,7 @@ export default function App() {
     const next = {
       tab: route.tab || tab || "home",
       itemId: route.itemId || null,
+      routineDate: route.itemId ? validRoutineDate(route.routineDate) : null,
       projectId: route.projectId || null,
       meetingId: route.meetingId || null,
       roomContext: route.roomContext || null,
@@ -241,6 +246,7 @@ export default function App() {
     const params = new URLSearchParams();
     if (next.tab !== "home") params.set("tab", next.tab);
     if (next.itemId) params.set("item", next.itemId);
+    if (next.itemId && next.routineDate) params.set("routineDate",next.routineDate);
     if (next.projectId) params.set("project", next.projectId);
     if (next.meetingId) params.set("meeting", next.meetingId);
     if (next.roomContext) {
@@ -281,7 +287,7 @@ export default function App() {
     navigate({ tab: "people" });
     setPeopleAccessIntent(intent);
   }
-  function openItem(id) { navigate({ tab, itemId: id }); }
+  function openItem(id,routineDate=null) { navigate({ tab, itemId: id, routineDate }); }
   function openProject(id) { navigate({ tab, projectId: id }); }
   function openMeeting(id) { navigate({ tab, meetingId: id }); }
 
@@ -600,7 +606,7 @@ export default function App() {
           </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
-          {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} openRoom={openRoom} back={closeUrlOverlay} />
+          {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} back={closeUrlOverlay} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}
                 initialObjectiveId={assigning.objectiveId}
