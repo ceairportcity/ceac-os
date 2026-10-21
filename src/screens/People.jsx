@@ -667,9 +667,12 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     const entitlement = leavePolicy ? Number(leavePolicy.annual_days || 0) + Number(person.balance?.carryover_from_last_year || 0) : null;
     const employmentState = (employmentCurrent?.employment_status || person.employment_status || (person.active ? "active" : "inactive")).replaceAll("_", " ");
     const rosterUnitNames = (person.roster_units || []).map((unit) => unit.unit_name).filter(Boolean);
+    const rosterManagerName = person.manager_profile_id
+      ? rows.find((entry) => entry.profile_id === person.manager_profile_id)?.full_name || "Manager identity unavailable"
+      : "Not recorded";
     const positionLabel = hasLinkedProfile
       ? (person.is_exec ? "Group Pastor" : person.is_admin ? "Administration & HR" : person.role === "manager" ? "Unit head" : person.role === "sub_team_lead" ? "Team lead" : "Staff")
-      : (person.source_position || "Roster employee");
+      : (person.job_title || person.source_position || "Roster employee");
     const identityLabel = person.identity_state === "needs_review"
       ? "Identity review required"
       : hasLinkedProfile ? "Account linked" : "Roster only · no account linked";
@@ -828,7 +831,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           <PeopleFactRow icon="info" title="Access state" subtitle={accessState} />
           <PeopleFactRow icon="notification" title="Invitation" subtitle={invitationState} />
           <PeopleFactRow icon="people" title="Primary unit" subtitle={employmentCurrent?.unit_name || person.unit_name || "Not recorded"} />
-          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : "Not recorded · no authority inferred"} />
+          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : rosterManagerName} />
           <PeopleFactRow icon="people" title="Application role" subtitle={hasLinkedProfile ? (employmentCurrent?.membership_role || person.role || "staff").replaceAll("_", " ") : "Not inferred from job title"} />
           <PeopleFactRow icon="organisation" title="Recorded responsibilities" subtitle={responsibilitySummary} />
           <PeopleFactRow icon="info" title="Employee status" subtitle={employmentState} />
@@ -855,7 +858,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           <PeopleFactRow icon="people" title="Employment type" subtitle={employmentCurrent?.employment_type || person.employment_type || person.contract_type || "Not recorded"} />
           <PeopleFactRow icon="work" title={hasLinkedProfile ? "Title" : "Source position"} subtitle={employmentCurrent?.job_title || person.job_title || person.source_position || "Not recorded"} />
           <PeopleFactRow icon="people" title={hasLinkedProfile ? "Primary unit" : "Recorded units"} subtitle={employmentCurrent?.unit_name || (rosterUnitNames.length ? rosterUnitNames.join(" · ") : "Not recorded")} />
-          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : "Not recorded · no authority inferred"} />
+          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : rosterManagerName} />
           <PeopleFactRow icon="people" title="Role / authority" subtitle={hasLinkedProfile ? (employmentCurrent?.membership_role || person.role || "staff").replaceAll("_", " ") : "Not inferred from workbook title"} />
           <PeopleFactRow icon="calendar" title="Working pattern" subtitle={hasLinkedProfile ? (employmentCurrent?.working_pattern?.kind || "not recorded").replaceAll("_", " ") : "Not recorded"} />
           <PeopleFactRow icon="calendar" title="Joined" subtitle={employmentCurrent?.joined_on ? dateOnly(employmentCurrent.joined_on) : "Not recorded"} />
@@ -867,7 +870,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       {!hasLinkedProfile && <div id="roster-employee-editor"><RosterOnlyEmploymentEditor
         me={me} employeeId={person.employee_id} units={units} managers={rows}
         onSaved={(updated)=>{
-          setPerson(current=>current?.employee_id===updated.employee_id?{...current,...updated}:current);
+          setPerson(current=>current?.employee_id===updated.employee_id?{...current,...updated,active:updated.employment_status==="active"}:current);
           void load({silent:true});
         }} />
       </div>}
