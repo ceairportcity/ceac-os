@@ -17,6 +17,7 @@ import {
 import { Button, ComposerDrawer } from "../experience-v2/components";
 import PeopleAccess from "../components/PeopleAccess";
 import EmployeeScheduleEditor from "../components/EmployeeScheduleEditor";
+import RosterOnlyEmploymentEditor from "../components/RosterOnlyEmploymentEditor";
 import {
   PeopleAdminPersonRow,
   PeopleBackButton,
@@ -193,6 +194,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         role: operational?.role || null,
         is_admin: employee.is_admin || operational?.is_admin || false,
         is_exec: employee.is_exec || operational?.is_exec || false,
+        is_operational_manager: employee.is_operational_manager || operational?.role === "manager",
         on_leave_now: operational?.on_leave_now || false,
         quiet: operational?.quiet || false,
         done_count: operational?.done_count || 0,
@@ -847,7 +849,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       <PeopleWorkspaceSection
         title="Employment record"
         description="The current authorised employment record. Recording a change creates a new historical snapshot rather than overwriting the past."
-        meta={hasLinkedProfile ? <button type="button" className="ev2p-admin-record-change" onClick={openEmploymentEditor}>Record change</button> : "Roster context"}
+        meta={hasLinkedProfile ? <button type="button" className="ev2p-admin-record-change" onClick={openEmploymentEditor}>Record change</button> : <button type="button" className="ev2p-admin-record-change" onClick={()=>document.getElementById("roster-employee-editor")?.scrollIntoView({behavior:"smooth",block:"center"})}>Edit roster record below</button>}
       >
         <div className="ev2p-admin-record-grid">
           <PeopleFactRow icon="people" title="Employment type" subtitle={employmentCurrent?.employment_type || person.employment_type || person.contract_type || "Not recorded"} />
@@ -861,6 +863,14 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           {employmentCurrent?.exited_on && <PeopleFactRow icon="calendar" title="Exit date" subtitle={dateOnly(employmentCurrent.exited_on)} />}
         </div>
       </PeopleWorkspaceSection>
+
+      {!hasLinkedProfile && <div id="roster-employee-editor"><RosterOnlyEmploymentEditor
+        me={me} employeeId={person.employee_id} units={units} managers={rows}
+        onSaved={(updated)=>{
+          setPerson(current=>current?.employee_id===updated.employee_id?{...current,...updated}:current);
+          void load({silent:true});
+        }} />
+      </div>}
 
       {(employmentCurrent?.employment_type === "volunteer" || person.employment_type === "volunteer") && <PeopleWorkspaceSection
         title="Manager recommendations"
