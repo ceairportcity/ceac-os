@@ -292,7 +292,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const gridStart=startOfWeek(first);
   const days=useMemo(()=>Array.from({length:42},(_,i)=>addDays(gridStart,i)),[cursor.getFullYear(),cursor.getMonth()]);
   const visible=filter==="all"?calendarEvents:calendarEvents.filter(e=>e.kind===filter);
-  const open=(event)=>event.itemId?openItem?.(event.itemId):event.meetingId?openMeeting?.(event.meetingId):event.privateEventId?setEditingPrivateItem({kind:"event",...event.raw}):null;
+  const open=(event)=>event.itemId?openItem?.(event.itemId,event.routineState?event.scheduledOn:null):event.meetingId?openMeeting?.(event.meetingId):event.privateEventId?setEditingPrivateItem({kind:"event",...event.raw}):null;
   const displayEvent=(event,includeDate=false)=>({
     ...event,
     icon:event.kind==="meeting"?"meeting":event.kind==="work"?"work":event.kind==="personal"?"check":event.kind==="ministry"?"ministry":"time",
