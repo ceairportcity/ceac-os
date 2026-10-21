@@ -20,6 +20,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [meetings, setMeetings] = useState([]);
   const [employeeRoster, setEmployeeRoster] = useState([]);
   const [dailySessionRows, setDailySessionRows] = useState([]);
+  const [operationalStarters, setOperationalStarters] = useState([]);
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [payrollReadiness, setPayrollReadiness] = useState(null);
   const [msg, setMsg] = useState(null);
@@ -43,7 +44,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     setBusy(false);
     setUnits([]); setAlerts([]); setBlockers([]); setLeaveQueue([]);
     setChecks([]); setMine([]); setOffice(null);
-    setEmployeeRoster([]); setDailySessionRows([]); setPendingInvitations([]); setPayrollReadiness(null);
+    setEmployeeRoster([]); setDailySessionRows([]); setOperationalStarters([]); setPendingInvitations([]); setPayrollReadiness(null);
     setMeetings([]); setReporting(null); setWatch([]);
     setToday({ working: 0, leave: 0, notStarted: 0, headcount: 0 });
     setDelivery({ active: 0, closedThisMonth: 0, onTrack: 0, atRisk: 0, met: 0, notMet: 0, other: 0, objectives: 0 });
@@ -146,6 +147,17 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setOffice(o || null);
       setEmployeeRoster(Array.isArray(rosterRows) ? rosterRows : []);
       setDailySessionRows(sessToday || []);
+      // Only existing organisation-authorised profiles, unit memberships and unit names.
+      // HR roster IDs remain canonical; the profile directory resolves unmatched logins.
+      const accountUnits=new Map();
+      for(const membership of memberships||[]){
+        const names=accountUnits.get(membership.profile_id)||[];
+        const label=(us||[]).find(unit=>unit.id===membership.unit_id)?.name;
+        if(label&&!names.includes(label))names.push(label);
+        accountUnits.set(membership.profile_id,names);
+      }
+      setOperationalStarters((staff||[]).map(person=>({profile_id:person.id,
+        full_name:person.full_name,unit_name:(accountUnits.get(person.id)||[]).join(", ")||"Unit not recorded"})));
       setPendingInvitations(pi || []);
       if (myCapabilities.has("payroll.prepare") || myCapabilities.has("payroll.approve")) {
         const payroll = await must(supabase.rpc("payroll_readiness_summary"), "Payroll readiness");
@@ -294,6 +306,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       meetings={verifiedSnapshot ? meetings : []}
       employeeRoster={verifiedSnapshot ? employeeRoster : []}
       dailySessionRows={verifiedSnapshot ? dailySessionRows : []}
+      operationalStarters={verifiedSnapshot ? operationalStarters : []}
       pendingInvitations={verifiedSnapshot ? pendingInvitations : []}
       payrollReadiness={verifiedSnapshot ? payrollReadiness : null}
       canManagePeople={canManagePeople}
