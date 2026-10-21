@@ -126,7 +126,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
       <div className="s2-project-content">
     <section className="s2-project-metrics" aria-label="Recorded project metrics">
       <div className="s2-project-stat-card s2-project-progress-card">
-        <span>Visible task completion</span>
+        <span>Task completion</span>
         <div className="s2-project-progress-line">
           <span className="s2-project-progress-ring" style={{ "--s2-percent": completionRate ?? 0 }} aria-hidden="true">
             <strong>{completionRate === null ? "—" : completionRate + "%"}</strong>
@@ -143,7 +143,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         </div>
       </div>
       <div className="s2-project-stat-card">
-        <span>Visible participating departments</span>
+        <span>Departments</span>
         <strong>{units.length}</strong><small>Including the lead department</small>
       </div>
       <div className="s2-project-stat-card">
@@ -153,7 +153,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
       </div>
     </section>
         <section className="s2-project-panel">
-          <header><h2>Project team</h2><small>{people.length} people with visible assignments or dated actions</small></header>
+          <header><h2>Project team</h2><small>{people.length} {people.length === 1 ? "person" : "people"}</small></header>
           {displayActionError && <p role="alert">Additional contributors could not be verified; only visible assignments are shown.</p>}
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>
             <PersonAvatar name={person.name} photoUrl={visiblePortraits[person.id]} /><span><strong>{person.name}</strong>
@@ -187,10 +187,9 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         <section className="s2-project-recent-activity" aria-label="Recent visible project activity">
           <header><h3>Recent activity</h3><button type="button" onClick={() => setActionReload((n) => n + 1)}
             disabled={activityChecking}>Refresh</button></header>
-          <p>Recorded actions visible to your account, not automatic approvals.</p>
           {activityChecking && <p role="status">Verifying project activity…</p>}
           {displayActionError && <p role="alert">{displayActionError}</p>}
-          {!activityChecking && !displayActionError && !recentActions.length && <p>No dated contribution records visible yet.</p>}
+          {!activityChecking && !displayActionError && !recentActions.length && <p>No activity recorded in this view yet.</p>}
           {!activityChecking && !displayActionError && recentActions.length > 0 && <ol>{recentActions.map((entry) =>
             <li key={entry.id}>
               <button type="button" onClick={() => openWork?.(entry.work_item_id)}>
