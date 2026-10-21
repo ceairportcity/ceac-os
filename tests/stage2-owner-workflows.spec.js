@@ -76,9 +76,11 @@ for (const actor of actors) {
       expect(history.data[1].supersedes_id).toBe(history.data[0].id);
       expect(history.data[1].activity_date).toBe('2026-10-01');
       expect(history.data.every(entry => entry.contributor_id === signedIn.data.user.id)).toBe(true);
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: `test-artifacts/owner-work-${actor}-desktop.png`, fullPage: true });
       await page.setViewportSize({ width: 390, height: 844 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: `test-artifacts/owner-work-${actor}-phone.png`, fullPage: true });
     } finally {
       await client.auth.signOut();

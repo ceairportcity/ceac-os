@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import WorkActivityDiary from "./WorkActivityDiary";
 import WorkProjectLink from "./WorkProjectLink";
-import { WorkStateBadge } from "../experience-v2/work-family/WorkFamilyV2";
 import "./WorkRegisterInspector.css";
 
 /** Approved Work register's selected-responsibility inspector.
@@ -52,8 +51,10 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
     {!checking && !activeError && work && <>
       <h2>{work.title}</h2>
       <p className="s2-work-inspector-context">{work.ref} · {work.projects?.name || "No linked project"}</p>
+      <WorkActivityDiary compact me={me} item={work} key={`${me.id}:${work.id}`} />
+      <WorkProjectLink me={me} item={work} key={`${me.id}:${work.id}`} onLinked={() => setReload(n=>n+1)} />
+      <details className="s2-work-inspector-details"><summary>Responsibility details</summary>
       <dl className="s2-work-inspector-facts">
-        <div><dt>Work status</dt><dd><WorkStateBadge status={work.status}/></dd></div>
         <div><dt>Person responsible</dt><dd>{work.assignee_id === me.id ? "You" : work.profiles?.full_name || "Authorised person"}</dd></div>
         <div><dt>Origin</dt><dd>{work.origin === "self_created" ? "Self-created" : "Assigned"}</dd></div>
         <div><dt>Due date</dt><dd>{work.due_at ? new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"numeric",timeZone:"Africa/Accra"}).format(new Date(work.due_at)) : "Not specified"}</dd></div>
@@ -61,11 +62,11 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       {work.expected_outcome && <section className="s2-work-inspector-outcome">
         <strong>Expected outcome</strong><p>{work.expected_outcome}</p>
       </section>}
-      <WorkProjectLink me={me} item={work} key={`${me.id}:${work.id}`} onLinked={() => setReload(n=>n+1)} />
-      <WorkActivityDiary me={me} item={work} key={`${me.id}:${work.id}`} />
-      <button className="btn s2-work-inspector-open" type="button" onClick={() => openItem?.(work.id)}>
+      <button className="btn btn-ghost" type="button" onClick={() => openItem?.(work.id)}>
         Open complete work record →
       </button>
+      </details>
+      <footer><strong>Evidence & outcomes</strong> stay linked to the person and project.</footer>
     </>}
   </aside>;
 }

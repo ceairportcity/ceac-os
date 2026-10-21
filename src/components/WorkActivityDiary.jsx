@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { RESPONSIBILITY_STATUS } from "../lib/responsibilityRegister";
 import "./WorkActivityDiary.css";
 
 function ghanaDay() {
@@ -20,7 +21,7 @@ const states = [
 
 /** Source-backed contribution diary. A diary action never completes a parent
  * responsibility, changes formal attendance or self-approves an objective. */
-export default function WorkActivityDiary({ me, item, prefillDate = "", prefillRequest = 0 }) {
+export default function WorkActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact = false }) {
   const [sourceHistory, setSourceHistory] = useState([]);
   const [completedDiaryScope, setCompletedDiaryScope] = useState("");
   const [loading, setLoading] = useState(true);
@@ -176,27 +177,34 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
     }
   }
 
+  const recordAction = (verified && canRecord && <button type="button" className={compact ? "btn s2-work-inspector-open" : "btn btn-sm"}
+        onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl(""); setEditor((open) => !open); }}
+        >{editor ? "Close" : "+ Record an activity"}</button>);
+
   return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
-    <header>
+    {compact && <dl className="s2-work-inspector-facts">
+      <div><dt>Work status</dt><dd>{RESPONSIBILITY_STATUS[item.status] || item.status?.replaceAll("_", " ") || "Not recorded"}</dd></div>
+      <div><dt>Recorded actions</dt><dd>{verified ? history.length : checking ? "Verifying…" : "Unavailable"}</dd></div>
+    </dl>}
+    {!compact && <header>
       <div><span className="eyebrow">Individual contribution</span><h3>Activity record</h3>
         <p>Keep each action, outcome and next step under this responsibility. This is not an attendance or performance score.</p>
       </div>
-      {verified && canRecord && <button type="button" className="btn btn-sm"
-        onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl(""); setEditor((open) => !open); }}
-        >{editor ? "Close" : "+ Record an activity"}</button>}
-    </header>
+      {recordAction}
+    </header>}
     {checking && <p role="status">Verifying activity records...</p>}
     {activeError && <p className="s2-work-diary-error" role="alert">{activeError}
       {!unavailable && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setReload((n) => n + 1)}>Retry</button>}
     </p>}
     {visibleSuccess && <p role="status">{visibleSuccess}</p>}
-    {verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
+    {!compact && verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
       <div><span>Recorded actions</span><strong>{history.length}</strong></div>
       <div><span>Recorded as done</span><strong>{completedActionCount}</strong></div>
     </div>}
     {verified && latestNextAction && <div className="s2-work-diary-next-action">
       <span>Next action</span><p>{latestNextAction}</p>
     </div>}
+    {compact && verified && <h3>Activity record</h3>}
     {verified && history.length === 0 && <p>No dated activities have been recorded under this responsibility yet.</p>}
     {verified && history.length > 0 && <ol className="s2-work-diary-timeline">
       {history.map((entry) => <li key={entry.id}>
@@ -224,5 +232,6 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
       <label className="wide">Evidence link (optional, HTTPS) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
       <button type="submit" className="btn" disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Record activity"}</button>
     </form>}
+    {compact && recordAction}
   </section>;
 }
