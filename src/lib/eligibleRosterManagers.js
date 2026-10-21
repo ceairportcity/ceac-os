@@ -9,9 +9,9 @@ export function eligibleRosterManagers(people,memberships,unitId) {
  if(!unitId)return [];
  const approved=new Set();
  for(const member of memberships) {
-  if(!member||!member.profile_id||!member.unit_id||member.role!=="manager")
+  if(!member||!member.profile_id||!member.unit_id||typeof member.role!=="string")
    throw new Error("The operational manager directory is inconsistent.");
-  if(member.unit_id===unitId)approved.add(member.profile_id);
+  if(member.role==="manager"&&member.unit_id===unitId)approved.add(member.profile_id);
  }
  const seen=new Set();
  return people.filter(person=>{
