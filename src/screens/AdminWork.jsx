@@ -103,7 +103,7 @@ export default function AdminWork({ me, openItem, goAssign }) {
     />
     {addingMyWork && !scopedLoading && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
-      onCreated={() => { setView("mine"); void load(); }} />}
+      onCreated={(saved) => { setSelectedWorkId(saved.id); setView("mine"); void load(); }} />}
 
     {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Work">{error}</ProductNotice>}
     {scopedLoading && <LoadingState label="Loading organisation work…" />}

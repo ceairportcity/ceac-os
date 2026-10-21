@@ -42,7 +42,6 @@ for (const actor of actors) {
       }
       const row = page.locator('.s2-register-row').filter({ hasText: title });
       await expect(row).toBeVisible();
-      await row.locator('th button').click();
       const inspector = page.getByRole('complementary', { name: 'Selected responsibility' });
       await expect(inspector.getByRole('heading', { name: title, exact: true })).toBeVisible();
       const diary = inspector.getByRole('region', { name: 'Responsibility activity diary' });

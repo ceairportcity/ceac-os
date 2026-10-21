@@ -124,7 +124,7 @@ export default function ManagerWork({ me, openItem, goAssign }) {
     />
     {addingMyWork && !scopedLoading && <SelfWorkComposer me={me}
       onClose={() => setAddingMyWork(false)}
-      onCreated={() => { setView("mine"); void load(); }} />}
+      onCreated={(saved) => { setSelectedWorkId(saved.id); setView("mine"); void load(); }} />}
 
     {!scopedLoading && error && <ProductNotice tone="error" title="Could not load Manager Work">{error}</ProductNotice>}
     {scopedLoading && <LoadingState label="Loading manager work…" />}

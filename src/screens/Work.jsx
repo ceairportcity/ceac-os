@@ -342,6 +342,7 @@ export default function Work({ me, isManager = false, openItem }) {
       }
 
       setSheet(null);
+      setSelectedWorkId(confirmation.data.id);
       setMode(createVisibility === "private" ? "private" : "agreed");
       setStatusFilter("all");
       setNotice(createVisibility === "private"

@@ -1,4 +1,4 @@
-import { Fragment, useId, useMemo, useState } from 'react';
+import { Fragment, useEffect, useId, useMemo, useState } from 'react';
 import { dueLabel } from '../lib/time';
 import { filterResponsibilities, groupResponsibilities, RESPONSIBILITY_STATUS } from '../lib/responsibilityRegister';
 import './ResponsibilityRegister.css';
@@ -9,18 +9,42 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
   const [projectId,setProjectId]=useState('');
   const [status,setStatus]=useState('');
   const [collapsed,setCollapsed]=useState({});
+  const [page,setPage]=useState(0);
+  const pageSize=10;
   const projects=useMemo(()=>{
     const seen=new Map();
     rows.forEach(row=>{if(row.project_id) seen.set(row.project_id,row.projects?.name||'Linked project');});
     return [...seen].sort((a,b)=>a[1].localeCompare(b[1]));
   },[rows]);
   const statuses=useMemo(()=>[...new Set(rows.map(row=>row.status))].sort(),[rows]);
-  const visible=filterResponsibilities(rows,{query,projectId,status});
-  const groups=groupResponsibilities(visible);
+  const visible=useMemo(()=>filterResponsibilities(rows,{query,projectId,status}),[rows,query,projectId,status]);
+  const allGroups=useMemo(()=>groupResponsibilities(visible),[visible]);
+  const ordered=useMemo(()=>allGroups.flatMap(group=>group.items),[allGroups]);
+  const pageCount=Math.max(1,Math.ceil(ordered.length/pageSize));
+  const currentPage=Math.min(page,pageCount-1);
+  const start=currentPage*pageSize;
+  const pageIds=new Set(ordered.slice(start,start+pageSize).map(row=>row.id));
+  const groups=allGroups.map(group=>({...group,total:group.items.length,items:group.items.filter(row=>pageIds.has(row.id))})).filter(group=>group.items.length);
+  useEffect(()=>{
+    const index=ordered.findIndex(row=>row.id===selectedId);
+    if(index>=0)setPage(Math.floor(index/pageSize));
+  },[selectedId,ordered]);
+  function changePage(next) {
+    const target=Math.max(0,Math.min(next,pageCount-1));
+    setPage(target);
+    const first=ordered[target*pageSize];
+    if(first) {
+      const group=allGroups.find(item=>item.items.some(row=>row.id===first.id));
+      if(group)setCollapsed(current=>({...current,[group.title]:false}));
+      onSelect(first.id);
+    }
+  }
   function filter(next) {
     const values={query,projectId,status,...next};
+    setPage(0);
     setQuery(values.query);setProjectId(values.projectId);setStatus(values.status);
-    onSelect(filterResponsibilities(rows,values)[0]?.id||'none');
+    setCollapsed({});
+    onSelect(groupResponsibilities(filterResponsibilities(rows,values))[0]?.items[0]?.id||'none');
   }
   return <>
     <div className="s2-register-filters" role="search" aria-label="Find responsibilities">
@@ -42,7 +66,7 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
           <tr className="s2-register-group"><th colSpan={4} scope="rowgroup">
             <button type="button" aria-expanded={!collapsed[group.title]} aria-controls={`${id}-${group.title.replaceAll(' ','-')}`}
               onClick={()=>setCollapsed(current=>({...current,[group.title]:!current[group.title]}))}>
-              <span aria-hidden="true">{collapsed[group.title]?'›':'⌄'}</span>{group.title}<span>{group.items.length}</span>
+              <span aria-hidden="true">{collapsed[group.title]?'›':'⌄'}</span>{group.title}<span>{group.items.length===group.total?group.total:`${group.items.length} of ${group.total}`}</span>
             </button>
           </th></tr>
         </tbody><tbody id={`${id}-${group.title.replaceAll(' ','-')}`} hidden={Boolean(collapsed[group.title])}>
@@ -62,7 +86,12 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
         </td></tr></tbody>}
       </table>
     </div>
-    <footer className="s2-register-footer"><span aria-live="polite">{visible.length} displayed</span>
+    <footer className="s2-register-footer" style={{flexWrap:"wrap"}}><span aria-live="polite">{pageCount>1?`${start+1}–${Math.min(start+pageSize,visible.length)} of ${visible.length} responsibilities`:`${visible.length} displayed`}</span>
+      {pageCount>1&&<nav aria-label="Responsibility pages" style={{display:"flex",alignItems:"center",gap:12}}>
+        <button type="button" aria-label="Previous responsibility page" disabled={currentPage===0} onClick={()=>changePage(currentPage-1)}>Previous</button>
+        <span>Page {currentPage+1} of {pageCount}</span>
+        <button type="button" aria-label="Next responsibility page" disabled={currentPage===pageCount-1} onClick={()=>changePage(currentPage+1)}>Next</button>
+      </nav>}
       {onAdd&&<button type="button" onClick={onAdd}>Add another responsibility →</button>}
     </footer>
   </>;
