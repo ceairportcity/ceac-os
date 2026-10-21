@@ -331,6 +331,7 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
       onDateChange={setOverviewDate}
       onRefresh={()=>loadOverview(overviewDate)}
       rows={attendanceRows}
+      units={units}
       loading={overviewLoading}
       error={overviewError}
       activePolicies={currentPolicies.filter((policy)=>policy.state==="active"&&policy.effective_on<=today&&(!policy.expires_on||policy.expires_on>=today))}
