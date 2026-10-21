@@ -51,7 +51,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
     {!checking && !activeError && work && <>
       <h2>{work.title}</h2>
       <p className="s2-work-inspector-context">{work.ref} · {work.projects?.name || "No linked project"}</p>
-      <WorkActivityDiary compact me={me} item={work} key={`${me.id}:${work.id}`} />
+      <WorkActivityDiary me={me} item={work} compact key={`${me.id}:${work.id}`} />
       <WorkProjectLink me={me} item={work} key={`${me.id}:${work.id}`} onLinked={() => setReload(n=>n+1)} />
       <details className="s2-work-inspector-details"><summary>Responsibility details</summary>
       <dl className="s2-work-inspector-facts">
@@ -62,10 +62,10 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       {work.expected_outcome && <section className="s2-work-inspector-outcome">
         <strong>Expected outcome</strong><p>{work.expected_outcome}</p>
       </section>}
+      </details>
       <button className="btn btn-ghost" type="button" onClick={() => openItem?.(work.id)}>
         Open complete work record →
       </button>
-      </details>
       <footer><strong>Evidence & outcomes</strong> stay linked to the person and project.</footer>
     </>}
   </aside>;
