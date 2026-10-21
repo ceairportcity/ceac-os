@@ -105,7 +105,9 @@ begin
  if p_manager_profile_id is not null and not exists (
   select 1 from public.profiles p join public.unit_memberships m
    on m.profile_id=p.id and m.org_id=p.org_id and m.unit_id=p_primary_unit_id
+  join public.employment_records er on er.profile_id=p.id and er.org_id=v_org
   where p.id=p_manager_profile_id and p.org_id=v_org and p.active and m.role='manager'
+   and er.employment_status='active'
  ) then
   raise exception 'Choose an active manager of the employee primary unit.' using errcode='42501';
  end if;
