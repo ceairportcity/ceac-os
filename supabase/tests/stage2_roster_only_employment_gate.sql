@@ -1,6 +1,7 @@
 \set ON_ERROR_STOP on
 -- Every write below rolls back. The live database is never modified by this gate.
 BEGIN;
+UPDATE public.organisations SET universal_totp_required=false WHERE id='10000000-0000-4000-8000-000000000010';
 DO $surface$
 BEGIN
  IF to_regprocedure('public.admin_record_roster_employment(uuid,timestamptz,text,text,text,text,text,uuid,uuid[],uuid,text)') IS NULL
@@ -67,6 +68,20 @@ BEGIN
    'Linked employee workflow bypass');
   RAISE EXCEPTION 'Linked employment change bypassed canonical history';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ -- Update a second time with a fresh revision, moving the primary department.
+ v_result:=public.admin_record_roster_employment(
+  '41000000-0000-4000-8000-000000000179',
+  (SELECT updated_at FROM public.employee_roster WHERE id='41000000-0000-4000-8000-000000000179'),
+  'Updated roster-only employee','Preferred','HR worker',
+  'permanent','active','20000000-0000-4000-8000-000000000012',
+  '{}'::uuid[],null,'Transferred to another department');
+ IF (SELECT count(*) FROM public.employee_unit_memberships WHERE employee_id='41000000-0000-4000-8000-000000000179')<>1
+  OR NOT EXISTS(SELECT 1 FROM public.employee_unit_memberships WHERE employee_id='41000000-0000-4000-8000-000000000179'
+   AND unit_id='20000000-0000-4000-8000-000000000012' AND is_primary)
+  OR (SELECT count(*) FROM public.employee_roster_change_events WHERE employee_id='41000000-0000-4000-8000-000000000179')<>2
+  OR EXISTS(SELECT 1 FROM public.employee_roster_change_events WHERE employee_id='41000000-0000-4000-8000-000000000179'
+   AND (before_record IS NULL OR after_record IS NULL OR length(btrim(reason))<8))
+ THEN RAISE EXCEPTION 'Primary transfer did not retain exact, reasoned, append-only HR history'; END IF;
  BEGIN
   UPDATE public.employee_roster_change_events SET reason='Overwritten history'
     WHERE employee_id='41000000-0000-4000-8000-000000000179';
@@ -89,5 +104,19 @@ BEGIN
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END;
 $staff$;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal1"}',true);
+DO $manager$
+BEGIN
+ BEGIN
+  PERFORM public.admin_record_roster_employment(
+   '41000000-0000-4000-8000-000000000179',
+   (SELECT updated_at FROM public.employee_roster WHERE id='41000000-0000-4000-8000-000000000179'),
+   'Unauthorised manager edit',null,null,'permanent','active',
+   null,'{}'::uuid[],null,'Manager tried to change HR roster');
+  RAISE EXCEPTION 'Manager role edited an HR record';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END;
+$manager$;
 RESET ROLE;
 ROLLBACK;
