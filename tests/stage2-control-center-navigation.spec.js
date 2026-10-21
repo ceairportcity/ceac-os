@@ -32,6 +32,14 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 900 
       await expect(page).toHaveURL(/tab=units/);
       await page.getByRole('navigation', { name: 'Settings navigation' }).getByRole('link', { name: /Control Center/ }).click();
       await expect(center.getByRole('heading', { name: 'Control Center', exact: true })).toBeVisible();
+      const finance = center.locator(".control-card").filter({ has: page.getByRole("heading", { name: "Finance", exact: true }) });
+      await expect(finance).toBeVisible();
+      await expect(finance).toContainText("Available");
+      await expect(finance.getByRole("button", { name: "Payroll", exact: true })).toHaveCount(0);
+      await finance.getByRole("button", { name: "Finance", exact: true }).click();
+      await expect(page).toHaveURL(/tab=finance/);
+      await page.getByRole("navigation", { name: "Settings navigation" }).getByRole("link", { name: /Control Center/ }).click();
+      await expect(center.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await center.getByRole('button', { name: /Overview/ }).click();
       await expect(center).toHaveCount(0);

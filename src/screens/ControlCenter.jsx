@@ -224,7 +224,7 @@ export default function ControlCenter({me,go}){
         status:workStatus,
         detail:snapshot.checks.length
           ? `${snapshot.checks.length} authorised check${snapshot.checks.length===1?" is":"s are"} waiting for action.`
-          : "No ready workflow check is waiting right now.",
+          : "No checks are waiting for action.",
         actions:[{label:"Checks & workflows",onClick:()=>go("workflows")}],
       },
       {
@@ -236,15 +236,15 @@ export default function ControlCenter({me,go}){
           ? "No active leave policy is recorded. Review the rules before assigning entitlements."
           : rules.some((rule)=>!rule.complete)
             ? "A confirmed Leave policy exists, but one or more rules remain incomplete."
-            : `Confirmed policy: ${snapshot.leavePolicy.name}. Manager approval → Administration final approval remains the route for owner-confirmed leave kinds.`,
+            : `Active policy: ${snapshot.leavePolicy.name}. Open Workforce to review its rules.`,
         actions:[{label:"Workforce",onClick:()=>go("attendance")}],
       },
       {
         key:"payroll",
-        title:"Payroll & Finance",
+        title:canPayroll ? "Payroll & Finance" : "Finance",
         description:"Protected Payroll readiness and separate financial records.",
-        status:payrollStatus,
-        detail:payrollDetail,
+        status:canPayroll ? payrollStatus : STATUSES.available,
+        detail:canPayroll ? payrollDetail : "View finance records available to your account.",
         actions:[
           ...(canPayroll?[{label:"Payroll",onClick:()=>go("payroll")}]:[]),
           {label:"Finance",onClick:()=>go("finance")},
@@ -283,8 +283,8 @@ export default function ControlCenter({me,go}){
         status:auditStatus,
         detail:canAudit
           ? snapshot.audit.length
-            ? `Audit is available. Latest ordinary-platform event: ${new Date(snapshot.audit[0].created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}.`
-            : "Audit is available; no ordinary-platform event is currently returned in the recent window."
+            ? `Latest recorded event: ${new Date(snapshot.audit[0].created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}.`
+            : "No recent events are recorded."
           : "Audit review is not assigned to this account.",
         actions:canAudit?[
           {label:"Audit",onClick:()=>go("audit")},
