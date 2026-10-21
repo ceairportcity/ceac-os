@@ -1,5 +1,6 @@
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
 import EmployeeWorkSession from "../../components/EmployeeWorkSession";
+import AdminWorkforceToday from "../../components/AdminWorkforceToday";
 import { useState } from "react";
 import {
   Button,
@@ -172,6 +173,7 @@ export default function AdminOverviewV2({
   watch = [],
   meetings = [],
   employeeRoster = [],
+  dailySessionRows = [],
   pendingInvitations = [],
   payrollReadiness = null,
   canManagePeople,
@@ -432,6 +434,8 @@ export default function AdminOverviewV2({
             </div>
           </DataPanel>
         </section>
+
+        <AdminWorkforceToday roster={employeeRoster} sessions={dailySessionRows} onOpenPeople={onOpenPeople} />
 
         <section className="adminv2-context-grid" aria-label="People operations">
           <DataPanel
