@@ -174,6 +174,7 @@ export default function AdminOverviewV2({
   meetings = [],
   employeeRoster = [],
   dailySessionRows = [],
+  operationalStarters = [],
   pendingInvitations = [],
   payrollReadiness = null,
   canManagePeople,
@@ -436,7 +437,7 @@ export default function AdminOverviewV2({
           </DataPanel>
         </section>
 
-        <AdminWorkforceToday roster={employeeRoster} sessions={dailySessionRows} onOpenPeople={onOpenPeople} onOpenPerson={onOpenPerson} />
+        <AdminWorkforceToday roster={employeeRoster} sessions={dailySessionRows} operationalProfiles={operationalStarters} onOpenPeople={onOpenPeople} onOpenPerson={onOpenPerson} />
 
         <section className="adminv2-context-grid" aria-label="People operations">
           <DataPanel
