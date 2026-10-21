@@ -96,7 +96,7 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
     {error && <p role="alert">{error}</p>}
     {ready && <div className="s2-assigned-routine-list">
       {upcoming.map((item) => <button key={item.operationId+":"+item.date}
-        type="button" onClick={() => onOpen?.(item.routine.work_item_id)}
+        type="button" onClick={() => onOpen?.(item.routine.work_item_id,item.date)}
         disabled={!item.routine.work_item_id}>
         <time dateTime={item.date}>{item.date}</time>
         <strong>{item.routine.name}</strong>
