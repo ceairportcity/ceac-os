@@ -11,6 +11,7 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
     const page = await context.newPage();
     const client = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
     const colleague = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+    const unrelated = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
     try {
       await page.route('**/*', route => {
         const url = new URL(route.request().url());
@@ -68,11 +69,34 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       await expect(dateProgress.getByText('1 recorded update for '+today,{exact:true})).toBeVisible();
       const datedRoutine=await client.from('recurring_operations').select('id').eq('work_item_id',saved.data.id).single();
       expect(datedRoutine.error).toBeNull();
-      const datedProgress=await client.from('routine_date_progress').select('actor_id,status,scheduled_on,entry_number,checklist_snapshot,evidence_links')
+      const datedProgress=await client.from('routine_date_progress').select('id,actor_id,status,scheduled_on,entry_number,checklist_snapshot,evidence_links')
         .eq('operation_id',datedRoutine.data.id).eq('scheduled_on',today);
       expect(datedProgress.error,datedProgress.error?.message).toBeNull();
       expect(datedProgress.data).toEqual([expect.objectContaining({actor_id:signedIn.data.user.id,status:'ready_for_review',scheduled_on:today,entry_number:1,
         checklist_snapshot:[expect.objectContaining({label:'Inspect the venue',done:true})],evidence_links:['https://example.org/venue-evidence']})]);
+      const datedFiles=dateProgress.locator('.operational-files').filter({hasText:'Evidence files for '+today});
+      const evidenceName='venue-proof-'+actor+'.txt';
+      const evidenceBytes=Buffer.from('Independent '+actor+' venue evidence '+title);
+      await datedFiles.locator('input[type=file]').setInputFiles({name:evidenceName,mimeType:'text/plain',buffer:evidenceBytes});
+      await expect(datedFiles.getByRole('button').filter({hasText:evidenceName})).toBeVisible();
+      const fileLink=await client.from('operational_file_links')
+        .select('context_id,relation,file:operational_files!inner(id,storage_bucket,storage_path,state)')
+        .eq('context_type','routine_date_progress').eq('context_id',datedProgress.data[0].id).single();
+      expect(fileLink.error,fileLink.error?.message).toBeNull();
+      expect(fileLink.data.relation).toBe('routine_evidence');
+      expect(fileLink.data.file.state).toBe('active');
+      expect(fileLink.data.file.storage_path).toContain('/routine-date/'+datedProgress.data[0].id+'/');
+      const downloaded=await client.storage.from(fileLink.data.file.storage_bucket).download(fileLink.data.file.storage_path);
+      expect(downloaded.error,downloaded.error?.message).toBeNull();
+      expect(Buffer.from(await downloaded.data.arrayBuffer())).toEqual(evidenceBytes);
+      expect((await unrelated.auth.signInWithPassword({email:'managerb@ceac.local.test',password})).error).toBeNull();
+      const hiddenFile=await unrelated.from('operational_files').select('id').eq('id',fileLink.data.file.id);
+      expect(hiddenFile.error).toBeNull();expect(hiddenFile.data).toEqual([]);
+      expect((await unrelated.storage.from(fileLink.data.file.storage_bucket).download(fileLink.data.file.storage_path)).error).not.toBeNull();
+      expect((await unrelated.storage.from(fileLink.data.file.storage_bucket).createSignedUrl(fileLink.data.file.storage_path,60)).error).not.toBeNull();
+
+      expect((await colleague.rpc('register_operational_file',{p_context_type:'routine_date_progress',p_context_id:datedProgress.data[0].id,
+        p_relation:'routine_evidence',p_filename:'impersonation.txt',p_mime_type:'text/plain',p_size_bytes:12})).error?.code).toBe('42501');
       expect((await client.from('operation_occurrences').select('id').eq('operation_id',datedRoutine.data.id)).data).toEqual([]);
       expect((await colleague.from('routine_date_progress').insert({org_id:'10000000-0000-4000-8000-000000000010',operation_id:datedRoutine.data.id,
         scheduled_on:today,entry_number:2,actor_id:colleagueSignIn.data.user.id,status:'in_progress'})).error?.code).toBe('42501');
@@ -140,7 +164,7 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       expect(unchanged.data.status).toBe('in_progress');
       await page.screenshot({path:`test-artifacts/self-routine-${actor}-phone.png`,fullPage:true});
     } finally {
-      await client.auth.signOut(); await colleague.auth.signOut(); await context.close();
+      await client.auth.signOut(); await colleague.auth.signOut(); await unrelated.auth.signOut(); await context.close();
     }
   });
 }

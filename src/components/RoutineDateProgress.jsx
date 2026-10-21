@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { OperationalFileList } from "./OperationalFiles";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
 import { readRoutineSchedulePreview } from "../lib/readRoutineSchedulePreview";
 import { readRoutineDateProgress, routineEvidenceLinks } from "../lib/routineDateProgress";
@@ -14,6 +15,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
  const [note,setNote]=useState(""),[links,setLinks]=useState("");
  const [busy,setBusy]=useState(false),[reload,setReload]=useState(0);
  const [limit,setLimit]=useState(5);
+ const [historyOpen,setHistoryOpen]=useState(false);
  const scope=me.org_id+":"+me.id+":"+item.id+":"+routine.id+":"+date;
  const current=useRef(scope); current.current=scope;
  const sending=useRef(false);
@@ -23,7 +25,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
  const stepKey=steps.map(step=>step.id+":"+step.label).join("|");
  useEffect(()=>{
   let active=true;
-  setHistory([]);setVerified("");setError("");setWriteError("");setLimit(5);
+  setHistory([]);setVerified("");setError("");setWriteError("");setLimit(5);setHistoryOpen(false);
   setDone([]);setNote("");setLinks("");setStatus("in_progress");
   (async()=>{
    try {
@@ -86,12 +88,17 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
      {busy?"Saving date progress…":"Save date progress"}
     </button>
    </form>}
-   {rows.length>0 && <details><summary>{rows.length} recorded {rows.length===1?"update":"updates"} for {date}</summary>
-    {rows.slice(0,limit).map(row=><article className="s2-routine-review-row" key={row.id}>
+   {rows[0] && <OperationalFileList key={rows[0].id} contextType="routine_date_progress" contextId={rows[0].id}
+    relation="routine_evidence" title={"Evidence files for "+date} emptyText="No files attached to this update."
+    canUpload={permitted && rows[0].actor_id===me.id && !busy && !writeError} />}
+   {rows.length>0 && <details onToggle={event=>setHistoryOpen(event.currentTarget.open)}><summary>{rows.length} recorded {rows.length===1?"update":"updates"} for {date}</summary>
+    {historyOpen && rows.slice(0,limit).map(row=><article className="s2-routine-review-row" key={row.id}>
      <div><strong>{labels[row.status]} · Update {row.entry_number}</strong>
       <p className="small"><time dateTime={row.recorded_at}>{new Date(row.recorded_at).toLocaleString("en-GB")}</time>{row.actor_id===me.id?" · Recorded by you":" · "+(row.actor?.full_name||"Author details unavailable")}</p>
       <ul>{row.checklist_snapshot.map(step=><li key={step.id}>{step.done?"Done":"Not recorded"} · {step.label}</li>)}</ul>
       {row.note && <p>{row.note}</p>}
+      {row.id!==rows[0].id && <OperationalFileList contextType="routine_date_progress" contextId={row.id}
+       relation="routine_evidence" title={"Files attached to update "+row.entry_number} />}
       {row.evidence_links.map(link=><p key={link} style={{overflowWrap:"anywhere"}}><a href={link} target="_blank" rel="noopener noreferrer">{link}</a></p>)}
      </div>
     </article>)}
