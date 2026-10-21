@@ -6,9 +6,9 @@ const buttonStyle={display:"block",width:"100%",textAlign:"left",background:"tra
 const goodCoordinate=(num)=>Number.isFinite(num);
 
 /** HR-only factual session evidence. A plotted point is a recorded start, NEVER live tracking. */
-export default function AdminWorkforceToday({roster=[],sessions=[],onOpenPeople,onOpenPerson,roleLabel="People & HR",dateLabel="today"}){
+export default function AdminWorkforceToday({roster=[],sessions=[],operationalProfiles=[],onOpenPeople,onOpenPerson,roleLabel="People & HR",dateLabel="today"}){
  const [term,setTerm]=useState(""),[filter,setFilter]=useState("started"),[selectedId,setSelectedId]=useState(null);
- const people=useMemo(()=>adminWorkforceToday(roster,sessions),[roster,sessions]);
+ const people=useMemo(()=>adminWorkforceToday(roster,sessions,operationalProfiles),[roster,sessions,operationalProfiles]);
  const results=useMemo(()=>people.filter(row=>{
   const search=(row.name+" "+row.unit).toLocaleLowerCase();
   if(term&&!search.includes(term.toLocaleLowerCase()))return false;
