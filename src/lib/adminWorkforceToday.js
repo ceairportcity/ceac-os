@@ -19,7 +19,7 @@ export function adminWorkforceToday(roster,sessions,operationalProfiles=[]){
  const byStart=[...sessions].filter(session=>session&&session.profile_id&&session.started_at)
   .sort((a,b)=>Date.parse(a.started_at)-Date.parse(b.started_at)||String(a.id||"").localeCompare(String(b.id||"")));
  for(const session of byStart){
-  let row=byId.get(linked.get(session.profile_id));
+  let row=byId.get(linked.get(session.profile_id)) || byId.get("profile:"+session.profile_id);
   if(!row){
    // A real session can exist while the roster linkage is temporarily unresolved.
    const account=accountByProfile.get(session.profile_id);
