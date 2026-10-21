@@ -58,6 +58,29 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       await expect(page.getByRole('region',{name:'Task checklist and progress'})).toHaveCount(0);
       await expect(page.getByRole('button',{name:'Change future schedule',exact:true})).toBeVisible();
       await expect(page.getByRole('button',{name:'Pause routine',exact:true})).toBeVisible();
+      const dateProgress=page.getByRole('region',{name:'Progress for a routine date',exact:true});
+      await expect(dateProgress.getByRole('button',{name:'Save date progress',exact:true})).toBeVisible();
+      await dateProgress.getByRole('checkbox',{name:'Inspect the venue',exact:true}).check();
+      await dateProgress.getByLabel('Status for this date',{exact:true}).selectOption('ready_for_review');
+      await dateProgress.getByLabel('Progress note',{exact:true}).fill('Checklist checked for this date');
+      await dateProgress.getByLabel('Evidence links, one per line',{exact:true}).fill('https://example.org/venue-evidence');
+      await dateProgress.getByRole('button',{name:'Save date progress',exact:true}).click();
+      await expect(dateProgress.getByText('1 recorded update for '+today,{exact:true})).toBeVisible();
+      const datedRoutine=await client.from('recurring_operations').select('id').eq('work_item_id',saved.data.id).single();
+      expect(datedRoutine.error).toBeNull();
+      const datedProgress=await client.from('routine_date_progress').select('actor_id,status,scheduled_on,entry_number,checklist_snapshot,evidence_links')
+        .eq('operation_id',datedRoutine.data.id).eq('scheduled_on',today);
+      expect(datedProgress.error,datedProgress.error?.message).toBeNull();
+      expect(datedProgress.data).toEqual([expect.objectContaining({actor_id:signedIn.data.user.id,status:'ready_for_review',scheduled_on:today,entry_number:1,
+        checklist_snapshot:[expect.objectContaining({label:'Inspect the venue',done:true})],evidence_links:['https://example.org/venue-evidence']})]);
+      expect((await client.from('operation_occurrences').select('id').eq('operation_id',datedRoutine.data.id)).data).toEqual([]);
+      expect((await colleague.from('routine_date_progress').insert({org_id:'10000000-0000-4000-8000-000000000010',operation_id:datedRoutine.data.id,
+        scheduled_on:today,entry_number:2,actor_id:colleagueSignIn.data.user.id,status:'in_progress'})).error?.code).toBe('42501');
+      await dateProgress.getByLabel('Scheduled date',{exact:true}).fill(new Date(Date.parse(today+'T12:00:00Z')-86400000).toISOString().slice(0,10));
+      await expect(dateProgress.getByRole('alert')).toContainText('not scheduled');
+      await expect(dateProgress.getByRole('checkbox',{name:'Inspect the venue',exact:true})).toHaveCount(0);
+      await dateProgress.getByLabel('Scheduled date',{exact:true}).fill(today);
+      await expect(dateProgress.getByRole('checkbox',{name:'Inspect the venue',exact:true})).toBeChecked();
       await page.getByRole('button',{name:'Record occurrence',exact:true}).click();
       const dialog = page.getByRole('dialog');
       await dialog.getByPlaceholder('Note (optional)').fill('Venue inspected');

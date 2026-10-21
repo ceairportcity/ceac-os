@@ -7,6 +7,7 @@ import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
 import WorkActivityDiary from "../components/WorkActivityDiary";
 import WorkProjectLink from "../components/WorkProjectLink";
+import RoutineDateProgress from "../components/RoutineDateProgress";
 import RoutineOccurrenceReviews from "../components/RoutineOccurrenceReviews";
 import { routineFutureChange, routineOccurrenceDetails } from "../lib/routineWriteValidation";
 import RoutineWeekdayPicker from "../components/RoutineWeekdayPicker";
@@ -692,6 +693,8 @@ function ItemDetail({ id, me, session, isManager = false, openRoom, back }) {
           <h4>Schedule not yet configured</h4>This is a reconciled legacy routine. Its old record only said “Weekly”, so CEAC OS did not invent a weekday.
         </div>}
         {checks.length > 0 && <section aria-label="Routine method"><h3>Steps to repeat each time</h3><ol>{checks.map(step => <li key={step.id}>{step.label}</li>)}</ol></section>}
+        <RoutineDateProgress me={me} item={item} routine={routine} steps={checks}
+          canRecord={Boolean(item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin)} />
         {routineOccurrences.length > 0 && <>
           <div className="sec"><span>Recent occurrences</span><span>{routineOccurrences.length}</span></div>
           <RoutineOccurrenceReviews me={me} item={item} occurrences={routineOccurrences}
