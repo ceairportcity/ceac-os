@@ -189,6 +189,7 @@ export default function AdminOverviewV2({
   onOpenReports,
   onOpenFinance,
   onOpenPeople,
+  onOpenPerson,
   onOpenInvitations,
   onOpenProtectedHR,
   onOpenPayroll,
@@ -435,7 +436,7 @@ export default function AdminOverviewV2({
           </DataPanel>
         </section>
 
-        <AdminWorkforceToday roster={employeeRoster} sessions={dailySessionRows} onOpenPeople={onOpenPeople} />
+        <AdminWorkforceToday roster={employeeRoster} sessions={dailySessionRows} onOpenPeople={onOpenPeople} onOpenPerson={onOpenPerson} />
 
         <section className="adminv2-context-grid" aria-label="People operations">
           <DataPanel
