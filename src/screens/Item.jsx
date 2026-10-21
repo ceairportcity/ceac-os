@@ -35,11 +35,11 @@ const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space
  * The existing authoritative RPC/RLS write checks remain unchanged.
  */
 export default function Item(props) {
-  const scope = [props.me?.org_id, props.me?.id, props.me?.unit_id, props.id].join(":");
+  const scope = [props.me?.org_id, props.me?.id, props.me?.unit_id, props.id, props.initialRoutineDate || ""].join(":");
   return <ItemDetail key={scope} {...props} />;
 }
 
-function ItemDetail({ id, me, session, isManager = false, openRoom, back }) {
+function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=null, openRoom, back }) {
   const [item, setItem] = useState(null);
   const [canReview, setCanReview] = useState(false);
   const [responsibleReviewer, setResponsibleReviewer] = useState(null);
@@ -693,7 +693,7 @@ function ItemDetail({ id, me, session, isManager = false, openRoom, back }) {
           <h4>Schedule not yet configured</h4>This is a reconciled legacy routine. Its old record only said “Weekly”, so CEAC OS did not invent a weekday.
         </div>}
         {checks.length > 0 && <section aria-label="Routine method"><h3>Steps to repeat each time</h3><ol>{checks.map(step => <li key={step.id}>{step.label}</li>)}</ol></section>}
-        <RoutineDateProgress me={me} item={item} routine={routine} steps={checks}
+        <RoutineDateProgress me={me} item={item} routine={routine} steps={checks} initialDate={initialRoutineDate}
           canRecord={Boolean(item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin)} />
         {routineOccurrences.length > 0 && <>
           <div className="sec"><span>Recent occurrences</span><span>{routineOccurrences.length}</span></div>
