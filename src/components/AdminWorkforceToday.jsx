@@ -6,7 +6,7 @@ const buttonStyle={display:"block",width:"100%",textAlign:"left",background:"tra
 const goodCoordinate=(num)=>Number.isFinite(num);
 
 /** HR-only factual session evidence. A plotted point is a recorded start, NEVER live tracking. */
-export default function AdminWorkforceToday({roster=[],sessions=[],onOpenPeople,roleLabel="People & HR",dateLabel="today"}){
+export default function AdminWorkforceToday({roster=[],sessions=[],onOpenPeople,onOpenPerson,roleLabel="People & HR",dateLabel="today"}){
  const [term,setTerm]=useState(""),[filter,setFilter]=useState("started"),[selectedId,setSelectedId]=useState(null);
  const people=useMemo(()=>adminWorkforceToday(roster,sessions),[roster,sessions]);
  const results=useMemo(()=>people.filter(row=>{
@@ -71,6 +71,7 @@ export default function AdminWorkforceToday({roster=[],sessions=[],onOpenPeople,
      <strong>{selected.name}</strong>
      <p className="screen-note" style={{margin:"4px 0"}}>{selected.unit} · {selected.open?"Session open (not verified live presence)":selected.firstStart?"Session ended":"No session recorded"}</p>
      <p className="screen-note" style={{margin:"4px 0"}}>First start: {stamp(selected.firstStart)} · {selected.place==="office"?"Marked office":selected.place==="elsewhere"?"Marked elsewhere":"Place not recorded"}</p>
+     {onOpenPerson && !String(selected.id).startsWith("profile:") && <button type="button" className="btn btn-ghost btn-sm" onClick={()=>onOpenPerson(selected.id)}>Open employee record</button>}
      <p className="screen-note" style={{margin:"4px 0"}}>{goodCoordinate(selected.latitude)?`Start coordinates: ${selected.latitude.toFixed(5)}, ${selected.longitude.toFixed(5)} · GPS captured ${stamp(selected.locationCapturedAt)}${Number.isFinite(selected.accuracyM)?` · ±${Math.round(selected.accuracyM)} m`:""}`:"Start GPS unavailable or not captured"}</p>
     </div>}
    </div>
