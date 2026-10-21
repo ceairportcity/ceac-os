@@ -22,7 +22,7 @@ export default function AdminWorkforceToday({roster=[],sessions=[],onOpenPeople}
  const selected=results.find(row=>row.id===selectedId)||results[0]||null;
  const latitudes=clusters.map(row=>row.lat),longitudes=clusters.map(row=>row.lng);
  const minLat=Math.min(...latitudes),maxLat=Math.max(...latitudes),minLng=Math.min(...longitudes),maxLng=Math.max(...longitudes);
- const coord=(n,min,max)=>max===min?300:40+(n-min)/(max-min)*520;
+ const position=(n,min,max)=>max===min?.5:(n-min)/(max-min);
  const started=people.filter(row=>row.firstStart).length;
  const withoutCoordinates=people.filter(row=>row.firstStart&&!goodCoordinate(row.latitude)).length;
  return <section aria-label="Today's workforce start locations" style={{marginTop:18,minWidth:0}}>
@@ -50,7 +50,7 @@ export default function AdminWorkforceToday({roster=[],sessions=[],onOpenPeople}
       <text x="16" y="22" fill="currentColor" fontSize="13">N ↑</text>
       <path d="M30 40 V270 H570" fill="none" stroke="currentColor" opacity=".17" strokeWidth="1"/>
       {clusters.map(cluster=>{
-       const x=coord(cluster.lng,minLng,maxLng),y=300-coord(cluster.lat,minLat,maxLat);
+       const x=40+position(cluster.lng,minLng,maxLng)*520,y=260-position(cluster.lat,minLat,maxLat)*220;
        const active=cluster.people.some(person=>person.id===selected?.id);
        return <g key={cluster.key} tabIndex={0} role="button"
         aria-label={cluster.people.map(person=>person.name).join(", ")+" recorded start"}
