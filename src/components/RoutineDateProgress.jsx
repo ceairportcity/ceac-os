@@ -61,8 +61,8 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
   } catch(cause) {if(current.current===requestScope) setWriteError(cause.message||"Progress could not be saved. Refresh this date before trying again.");}
   finally {sending.current=false;if(current.current===requestScope) setBusy(false);}
  }
- return <section className="s2-routine-review" aria-label="Progress for a routine date">
-  <h3>Progress for one date</h3>
+ return <section className="s2-routine-review" aria-label="Progress for a routine date" style={{padding:12,gap:10,marginTop:12}}>
+  <h3 style={{margin:0,fontSize:14}}>Progress for one date</h3>
   <label className="small">Scheduled date<input className="field" type="date" value={date}
    disabled={busy} onChange={event=>setDate(event.target.value)} /></label>
   {verified!==scope && <p role="status">Checking this scheduled date…</p>}
@@ -71,7 +71,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
   {ready && <>
    <p className="small">{rows.length?labels[rows[0].status]:"No progress recorded for this date."} · Record the outcome separately when this date is finished.</p>
    {permitted && <form className="s2-routine-review-form" onSubmit={save}>
-    <fieldset disabled={busy}><legend>Checklist for {date}</legend>
+    <fieldset disabled={busy} style={{border:0,padding:0,margin:0,minWidth:0,display:"grid",gap:8}}><legend>Checklist for {date}</legend>
      {steps.length?steps.map(step=><label key={step.id} style={{display:"flex",gap:8,alignItems:"start"}}>
       <input type="checkbox" checked={done.includes(step.id)} onChange={event=>setDone(previous=>event.target.checked?[...previous,step.id]:previous.filter(id=>id!==step.id))} />{step.label}
      </label>):<p className="small">No repeat steps are defined for this responsibility.</p>}
