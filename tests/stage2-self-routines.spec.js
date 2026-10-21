@@ -61,7 +61,7 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       const dateProgress=page.getByRole('region',{name:'Progress for a routine date',exact:true});
       await expect(dateProgress.getByRole('button',{name:'Save date progress',exact:true})).toBeVisible();
       await dateProgress.getByRole('checkbox',{name:'Inspect the venue',exact:true}).check();
-      await dateProgress.getByLabel('Status for this date',{exact:true}).selectOption('ready_for_review');
+      await dateProgress.getByRole('combobox',{name:'Status for this date',exact:true}).selectOption('ready_for_review');
       await dateProgress.getByLabel('Progress note',{exact:true}).fill('Checklist checked for this date');
       await dateProgress.getByLabel('Evidence links, one per line',{exact:true}).fill('https://example.org/venue-evidence');
       await dateProgress.getByRole('button',{name:'Save date progress',exact:true}).click();

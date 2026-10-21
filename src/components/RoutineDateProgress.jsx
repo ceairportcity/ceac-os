@@ -89,10 +89,10 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
    {rows.length>0 && <details><summary>{rows.length} recorded {rows.length===1?"update":"updates"} for {date}</summary>
     {rows.slice(0,limit).map(row=><article className="s2-routine-review-row" key={row.id}>
      <div><strong>{labels[row.status]} · Update {row.entry_number}</strong>
-      <p className="small"><time dateTime={row.recorded_at}>{new Date(row.recorded_at).toLocaleString("en-GB")}</time>{row.actor_id===me.id?" · Recorded by you":" · Recorded by an authorised colleague"}</p>
+      <p className="small"><time dateTime={row.recorded_at}>{new Date(row.recorded_at).toLocaleString("en-GB")}</time>{row.actor_id===me.id?" · Recorded by you":" · "+(row.actor?.full_name||"Author details unavailable")}</p>
       <ul>{row.checklist_snapshot.map(step=><li key={step.id}>{step.done?"Done":"Not recorded"} · {step.label}</li>)}</ul>
       {row.note && <p>{row.note}</p>}
-      {row.evidence_links.map(link=><p key={link}><a href={link} target="_blank" rel="noopener noreferrer">{link}</a></p>)}
+      {row.evidence_links.map(link=><p key={link} style={{overflowWrap:"anywhere"}}><a href={link} target="_blank" rel="noopener noreferrer">{link}</a></p>)}
      </div>
     </article>)}
     {limit<rows.length && <button type="button" className="text-action" onClick={()=>setLimit(n=>n+5)}>Show earlier updates</button>}
