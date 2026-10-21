@@ -47,7 +47,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],manag
   return()=>{generation.current++;};
  },[scope,authorised,reload]);
 
- const managerOptions=managers.filter(row=>row.profile_id&&row.active&&row.profile_id!==me.id
+ const managerOptions=managers.filter(row=>row.profile_id&&row.active
   &&(row.role==="manager"||row.is_operational_manager)
   &&row.unit_id===form.primaryUnit);
  const valid=Boolean(updatedAt&&!loading&&!uncertain&&form.fullName.trim().length>=2
@@ -73,27 +73,30 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],manag
    if(result.data?.employee_id!==employeeId||result.data?.profile_id!==null||!result.data?.updated_at)
     throw new Error("The server did not confirm the intended employee record.");
    acknowledged=true;
-   const [detail,version]=await Promise.all([
+   const [detail,version,historyRead]=await Promise.all([
     supabase.rpc("admin_employee_roster_detail",{p_employee_id:employeeId}),
     supabase.from("employee_roster").select("updated_at,manager_profile_id,profile_id")
      .eq("org_id",me.org_id).eq("id",employeeId).single(),
+    supabase.from("employee_roster_change_events").select("id,recorded_at,reason,actor_id,before_record,after_record")
+     .eq("org_id",me.org_id).eq("employee_id",employeeId).order("recorded_at",{ascending:false}).limit(10),
    ]);
-   if(detail.error||version.error)throw detail.error||version.error;
+   if(detail.error||version.error||historyRead.error)throw detail.error||version.error||historyRead.error;
    if(detail.data?.employee?.full_name!==snapshot.fullName.trim()
      ||detail.data.employee.employment_type!==snapshot.employmentType
      ||detail.data.employee.employment_status!==snapshot.status
-     ||version.data?.profile_id!==null||version.data?.updated_at!==result.data.updated_at
+     ||version.data?.profile_id!==null||Date.parse(version.data?.updated_at)!==Date.parse(result.data.updated_at)
      ||(version.data?.manager_profile_id||"")!==snapshot.managerId
      ||JSON.stringify((detail.data.units||[]).map(unit=>unit.unit_id).sort())
       !==JSON.stringify([...snapshot.secondaryUnits,...(snapshot.primaryUnit?[snapshot.primaryUnit]:[])].sort()))
     throw new Error("The saved employee record could not be independently verified.");
    if(token!==generation.current)return;
    setEdit(false);setNotice("Employment and unit placement saved. HR history was retained.");
+   setUpdatedAt(version.data.updated_at);setHistory(historyRead.data||[]);
+   setForm({...snapshot,reason:""});
    onSaved?.({...detail.data.employee,roster_units:detail.data.units,
     employee_id:employeeId,manager_profile_id:version.data.manager_profile_id,
     unit_id:snapshot.primaryUnit||null,
     unit_name:units.find(u=>u.id===snapshot.primaryUnit)?.name||null});
-   setReload(i=>i+1);
   }catch(cause){
    if(token===generation.current){
     if(acknowledged)setUncertain(true);
