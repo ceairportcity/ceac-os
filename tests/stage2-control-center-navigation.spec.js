@@ -15,6 +15,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 900 
       await expect(center.getByRole('heading', { name: 'Control Center', exact: true })).toBeVisible();
       await expect(center.getByLabel('Find a setting')).toBeVisible();
       await expect(center.getByRole('heading', { name: 'Organisation', exact: true })).toHaveCount(1);
+      await page.screenshot({ path: "test-artifacts/stage2-control-center-" + viewport.width + ".png", fullPage: true });
       await center.getByLabel('Find a setting').fill('Office');
       await expect(center.getByRole('heading', { name: 'Organisation', exact: true })).toBeVisible();
       await expect(center.getByRole('heading', { name: 'People & access', exact: true })).toHaveCount(0);
