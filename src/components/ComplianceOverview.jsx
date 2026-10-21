@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { attendanceDate, startEvidence } from "../lib/attendance";
+import AdminWorkforceToday from "./AdminWorkforceToday";
 import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "./bits";
 import { WorkforceFactGrid, WorkforceRecordRow, WorkforceSection } from "../experience-v2/workforce-family/WorkforceFamilyV2";
 
@@ -41,6 +42,7 @@ export default function ComplianceOverview({
   onDateChange,
   onRefresh,
   rows,
+  units = [],
   loading,
   error,
   activePolicies,
@@ -65,6 +67,23 @@ export default function ComplianceOverview({
       noSession: rows.filter((row) => row.expected_today === true && !(row.sessions || []).length).length,
     };
   }, [rows, date]);
+
+  // Read ONLY the existing sanitised, role-scoped attendance response. The new
+  // start coordinate fields remain null without the protected Stage 2 migration.
+  const workforceMapRows = useMemo(() => {
+    const unitNames = new Map(units.map(unit => [unit.id, unit.name]));
+    return {
+      roster: rows.map(row => ({ id:row.employee_id || ("profile:" + row.profile_id),
+        profile_id:row.profile_id || null, full_name:row.name,
+        units:row.unit_id ? [{name:unitNames.get(row.unit_id) || "Unit not named"}] : [] })),
+      sessions: rows.flatMap(row => (row.profile_id ? (row.sessions || []).map(session => ({
+        id:session.id, profile_id:row.profile_id, started_at:session.started_at, ended_at:session.ended_at,
+        lat:session.start_lat, lng:session.start_lng, place:session.place,
+        location_captured_at:session.location_captured_at,
+        location_accuracy_m:session.start_location_accuracy_m,
+      })) : [])),
+    };
+  }, [rows, units]);
 
   const acknowledgementPolicies = activePolicies.filter((policy) =>
     requirements.some((requirement) => requirement.policy_version_id === policy.id && requirement.acknowledgement_required)
@@ -94,6 +113,9 @@ export default function ComplianceOverview({
       <span><b>{facts.leave}</b>Approved leave</span>
       <span><b>{facts.permissions}</b>Active permissions</span>
     </div>
+
+    {!loading && !error && <AdminWorkforceToday
+      roleLabel="Compliance" dateLabel={date} roster={workforceMapRows.roster} sessions={workforceMapRows.sessions} />}
 
     <div className="compliance-overview-layout">
       <WorkforceSection
