@@ -6,7 +6,7 @@ const buttonStyle={display:"block",width:"100%",textAlign:"left",background:"tra
 const goodCoordinate=(num)=>Number.isFinite(num);
 
 /** HR-only factual session evidence. A plotted point is a recorded start, NEVER live tracking. */
-export default function AdminWorkforceToday({roster=[],sessions=[],onOpenPeople}){
+export default function AdminWorkforceToday({roster=[],sessions=[],onOpenPeople,roleLabel="People & HR",dateLabel="today"}){
  const [term,setTerm]=useState(""),[filter,setFilter]=useState("started"),[selectedId,setSelectedId]=useState(null);
  const people=useMemo(()=>adminWorkforceToday(roster,sessions),[roster,sessions]);
  const results=useMemo(()=>people.filter(row=>{
@@ -27,10 +27,10 @@ export default function AdminWorkforceToday({roster=[],sessions=[],onOpenPeople}
  const withoutCoordinates=people.filter(row=>row.firstStart&&!goodCoordinate(row.latitude)).length;
  return <section aria-label="Today's workforce start locations" style={{marginTop:18,minWidth:0}}>
   <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",gap:12,flexWrap:"wrap",marginBottom:12}}>
-   <div><span className="eyebrow">People &amp; HR · recorded attendance</span>
-    <h2 style={{margin:"4px 0",fontSize:"1.15rem"}}>Where work was started today</h2>
+   <div><span className="eyebrow">{roleLabel} · recorded attendance</span>
+    <h2 style={{margin:"4px 0",fontSize:"1.15rem"}}>Where work was started {dateLabel==="today"?"today":"· "+dateLabel}</h2>
     <p className="screen-note" style={{margin:0}}>{started} employee{started===1?"":"s"} with recorded starts · {withoutCoordinates} start location{withoutCoordinates===1?"":"s"} unavailable.</p></div>
-   <button type="button" className="btn btn-ghost btn-sm" onClick={onOpenPeople}>People &amp; Access</button>
+   {onOpenPeople && <button type="button" className="btn btn-ghost btn-sm" onClick={onOpenPeople}>People &amp; Access</button>}
   </div>
   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
    <label className="small" style={{flex:"1 1 190px"}}>Find employee or unit
