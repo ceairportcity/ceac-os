@@ -33,6 +33,7 @@ tests=(
   employee_protected_hr_gate.sql
   payroll_stage13_gate.sql
   employee_roster_completeness_gate.sql
+  stage2_roster_only_employment_gate.sql
   goals_strategy_stage4_gate.sql
   work_management_stage5_gate.sql
   resource_workload_stage6_gate.sql
