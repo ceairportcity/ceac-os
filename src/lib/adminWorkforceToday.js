@@ -10,7 +10,7 @@ export function adminWorkforceToday(roster,sessions){
  const people=roster.filter(person=>person&&person.id).map(person=>{
   if(person.profile_id) linked.set(person.profile_id,person.id);
   return {id:person.id,profileId:person.profile_id||null,name:person.full_name||person.preferred_name||"Employee",
-   unit:(person.units||[]).map(unit=>typeof unit==="string"?unit:unit.name||unit.unit_name).filter(Boolean).join(", ")||"Unit not recorded",
+   unit:(Array.isArray(person.units)?person.units:[]).map(unit=>typeof unit==="string"?unit:unit?.name||unit?.unit_name).filter(Boolean).join(", ")||person.unit_name||"Unit not recorded",
    linked:!!person.profile_id,firstStart:null,sessionCount:0,open:false,place:null,latitude:null,longitude:null,
    locationCapturedAt:null,accuracyM:null};
  });
