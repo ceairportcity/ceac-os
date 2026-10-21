@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
 import AttendanceCorrectionWorkflow from "../components/AttendanceCorrectionWorkflow";
 import AttendanceCodeIssuer from "../components/AttendanceCodeIssuer";
+import WorkforceEmployeeScheduleWorkspace from "../components/WorkforceEmployeeScheduleWorkspace";
 import { dailyClocks } from "../lib/attendance";
 import { accraDayOffset } from "../lib/workforceDate";
 import { settleWorkforceDatasets } from "../lib/workforceQueries";
@@ -1156,12 +1157,15 @@ export default function Workforce({ me }) {
       {tab==="setup"&&canManage&&<>
         {Object.keys(datasetErrors).length>0&&<ProductNotice tone="error" title="Workforce data status">{Object.entries(datasetErrors).map(([name,message])=><div key={name}><strong>{human(name)}</strong>: {message}</div>)}</ProductNotice>}
         <div className="ev2wf-manager-scope workforce-data-status">Visible people: <strong>{people.length}</strong> · Active day types: <strong>{dayTypes.length}</strong></div>
+        <WorkforceEmployeeScheduleWorkspace me={me} />
         <div className="ev2wf-toolbar">
           <Button variant="secondary" onClick={()=>setDayTypeSheet(true)}>Add day type</Button>
-          <Button variant="secondary" disabled={busy||!dayTypes.length||!people.length} title={!people.length?"No visible active people loaded":!dayTypes.length?"No active day types loaded":""} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</Button>
+          <details><summary>Adjust one weekday (legacy)</summary>
+            <Button variant="secondary" disabled={busy||!dayTypes.length||!people.length} title={!people.length?"No visible active profiles loaded":!dayTypes.length?"No active day types loaded":""} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Open one-weekday editor</Button>
+          </details>
           <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
-        <AttendanceCodeIssuer me={me} />
+        <details className="ev2wf-admin-advanced" style={{margin:"12px 0"}}><summary>Duty-location check-in codes</summary><AttendanceCodeIssuer me={me} /></details>
         <WorkforceSection title="Day types" description="Organisation schedule vocabulary remains explicit and attributable." meta={dayTypes.length+" active"}>
           {dayTypes.map((d)=><WorkforceRecordRow key={d.id} icon="calendar" title={d.name} meta={d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} note={d.description||"No description"}/>)}
           {!dayTypes.length&&<WorkforceEmpty compact title="No active day types" description="Record a confirmed day type before creating schedules."/>}
