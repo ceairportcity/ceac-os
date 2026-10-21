@@ -3,8 +3,8 @@ const validCoordinate=(lat,lng)=>lat!==null&&lat!==undefined&&lng!==null&&lng!==
  && Number.isFinite(Number(lat))&&Number.isFinite(Number(lng))
  && Number(lat)>=-90&&Number(lat)<=90&&Number(lng)>=-180&&Number(lng)<=180;
 
-export function adminWorkforceToday(roster,sessions){
- if(!Array.isArray(roster)||!Array.isArray(sessions))
+export function adminWorkforceToday(roster,sessions,operationalProfiles=[]){
+ if(!Array.isArray(roster)||!Array.isArray(sessions)||!Array.isArray(operationalProfiles))
   throw new Error("Daily workforce evidence is incomplete.");
  const linked=new Map();
  const people=roster.filter(person=>person&&person.id).map(person=>{
@@ -15,14 +15,16 @@ export function adminWorkforceToday(roster,sessions){
    locationCapturedAt:null,accuracyM:null};
  });
  const byId=new Map(people.map(person=>[person.id,person]));
+ const accountByProfile=new Map(operationalProfiles.filter(p=>p?.profile_id&&p?.full_name).map(p=>[p.profile_id,p]));
  const byStart=[...sessions].filter(session=>session&&session.profile_id&&session.started_at)
   .sort((a,b)=>Date.parse(a.started_at)-Date.parse(b.started_at)||String(a.id||"").localeCompare(String(b.id||"")));
  for(const session of byStart){
   let row=byId.get(linked.get(session.profile_id));
   if(!row){
    // A real session can exist while the roster linkage is temporarily unresolved.
-   row={id:"profile:"+session.profile_id,profileId:session.profile_id,name:"Employee record unavailable",
-    unit:"Unit not recorded",linked:true,firstStart:null,sessionCount:0,open:false,place:null,
+   const account=accountByProfile.get(session.profile_id);
+   row={id:"profile:"+session.profile_id,profileId:session.profile_id,name:account?.full_name||"Employee record unavailable",
+    unit:account?.unit_name||"Unit not recorded",linked:false,firstStart:null,sessionCount:0,open:false,place:null,
     latitude:null,longitude:null,locationCapturedAt:null,accuracyM:null};
    byId.set(row.id,row);
   }
