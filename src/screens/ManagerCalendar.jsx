@@ -161,7 +161,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
     .slice(0,3);
 
   const openCalendarEvent=(event)=>{
-    if(event.itemId) return openItem(event.itemId);
+    if(event.itemId) return openItem(event.itemId,event.routineState?event.scheduledOn:null);
     if(event.meetingId) return openMeeting?.(event.meetingId);
     if(event.projectId) return openProject(event.projectId);
     if(event.leave) return setSelectedLeave(event.leave);
