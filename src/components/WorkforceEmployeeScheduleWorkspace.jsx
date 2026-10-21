@@ -33,7 +33,7 @@ export default function WorkforceEmployeeScheduleWorkspace({me}){
   return (String(row.full_name||row.preferred_name||"")+" "+units.map(unit=>typeof unit==="string"?unit:unit?.name||unit?.unit_name||"").join(" "))
     .toLocaleLowerCase().includes(search.toLocaleLowerCase());
  });
- const person=people.find(row=>row.id===selectedId)||null;
+ const person=matches.find(row=>row.id===selectedId)||null;
  return <WorkforceSection title="Employee working schedules" description="Set a complete, effective-dated working week for any employee, including people without CEAC login accounts. The existing approved HR schedule history is preserved.">
   <div className="workforce-setup-actions">
    <label className="small" style={{flex:"1 1 190px"}}>Find employee
