@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { OperationalFileList } from "./OperationalFiles";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
+import {validRoutineDate} from "../lib/routineDateRoute";
 import { readRoutineSchedulePreview } from "../lib/readRoutineSchedulePreview";
 import { readRoutineDateProgress, routineEvidenceLinks } from "../lib/routineDateProgress";
 
 const labels={in_progress:"In progress",waiting_on:"Waiting on",ready_for_review:"Ready for review"};
 /** One dated routine history, never the master task's checklist/completion. */
-export default function RoutineDateProgress({me,item,routine,steps,canRecord=false}) {
- const [date,setDate]=useState(()=>ghanaCalendarDate());
+export default function RoutineDateProgress({me,item,routine,steps,canRecord=false,initialDate=null}) {
+ const [date,setDate]=useState(()=>validRoutineDate(initialDate)||ghanaCalendarDate());
  const [history,setHistory]=useState([]),[verified,setVerified]=useState("");
  const [error,setError]=useState(""),[writeError,setWriteError]=useState("");
  const [status,setStatus]=useState("in_progress"),[done,setDone]=useState([]);
