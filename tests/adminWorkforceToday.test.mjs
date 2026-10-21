@@ -56,3 +56,30 @@ test("invalid coordinate, unknown profile and missing source array remain explic
  assert.equal(result.find(x=>x.id==="profile:unlinked-profile").name,"Employee record unavailable");
  assert.throws(()=>adminWorkforceToday(null,[]),/incomplete/);
 });
+
+
+test("authorised operational profile resolves unlinked staff without inventing a canonical roster record",()=>{
+ const rows=adminWorkforceToday(roster,[
+  {id:"earlier",profile_id:"operational-account",started_at:"2026-10-21T08:00:00Z",ended_at:"2026-10-21T09:00:00Z",lat:5.63,lng:-.18},
+  {id:"later",profile_id:"operational-account",started_at:"2026-10-21T10:00:00Z",ended_at:null,lat:6.2,lng:0.4},
+ ],[{profile_id:"operational-account",full_name:"Operational colleague",unit_name:"Creative Team"}]);
+ const match=rows.filter(row=>row.profileId==="operational-account");
+ assert.equal(match.length,1);
+ assert.equal(match[0].name,"Operational colleague");
+ assert.equal(match[0].unit,"Creative Team");
+ assert.equal(match[0].firstStart,"2026-10-21T08:00:00Z");
+ assert.equal(match[0].latitude,5.63);
+ assert.equal(match[0].sessionCount,2);
+ assert.equal(match[0].open,true);
+ assert.equal(match[0].linked,false);
+ assert.equal(rows.length,4);
+});
+test("canonical linked roster identity always outranks operational account projection",()=>{
+ const rows=adminWorkforceToday(roster,[
+  {id:"a",profile_id:"account-1",started_at:"2026-10-21T08:00:00Z",lat:5.6,lng:-.2},
+ ],[{profile_id:"account-1",full_name:"Conflicting operational spelling",unit_name:"Other"}]);
+ const canonical=rows.find(row=>row.profileId==="account-1");
+ assert.equal(canonical.id,"employee-1");
+ assert.equal(canonical.name,"Ama");
+ assert.equal(rows.length,3);
+});
