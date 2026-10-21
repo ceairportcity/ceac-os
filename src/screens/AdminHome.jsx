@@ -19,6 +19,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [watch, setWatch] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [employeeRoster, setEmployeeRoster] = useState([]);
+  const [dailySessionRows, setDailySessionRows] = useState([]);
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [payrollReadiness, setPayrollReadiness] = useState(null);
   const [msg, setMsg] = useState(null);
@@ -42,7 +43,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     setBusy(false);
     setUnits([]); setAlerts([]); setBlockers([]); setLeaveQueue([]);
     setChecks([]); setMine([]); setOffice(null);
-    setEmployeeRoster([]); setPendingInvitations([]); setPayrollReadiness(null);
+    setEmployeeRoster([]); setDailySessionRows([]); setPendingInvitations([]); setPayrollReadiness(null);
     setMeetings([]); setReporting(null); setWatch([]);
     setToday({ working: 0, leave: 0, notStarted: 0, headcount: 0 });
     setDelivery({ active: 0, closedThisMonth: 0, onTrack: 0, atRisk: 0, met: 0, notMet: 0, other: 0, objectives: 0 });
@@ -98,7 +99,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
           .not("status","in","(completed,self_certified,cancelled)"), "Administration work"),
         must(supabase.from("office_locations").select("id").eq("org_id", me.org_id).eq("is_primary",true).limit(1).maybeSingle(), "Office location"),
         must(supabase.from("profiles").select("id,full_name").eq("org_id", me.org_id).eq("active",true), "Active people"),
-        must(supabase.from("work_sessions").select("profile_id,started_at").eq("org_id", me.org_id).gte("started_at",dayStart.toISOString()).lt("started_at",tomorrow.toISOString()), "Today's sessions"),
+        must(supabase.from("work_sessions").select("id,profile_id,started_at,ended_at,place,lat,lng,location_captured_at,location_accuracy_m").eq("org_id", me.org_id).gte("started_at",dayStart.toISOString()).lt("started_at",tomorrow.toISOString()), "Today's sessions"),
         must(supabase.from("work_sessions").select("profile_id").eq("org_id", me.org_id).is("ended_at",null).lte("started_at",nowDate.toISOString()), "Active work sessions"),
         must(supabase.from("work_sessions").select("profile_id,started_at").eq("org_id", me.org_id).gte("started_at",weekAgo).lte("started_at",nowDate.toISOString()), "Recent sessions"),
         must(supabase.from("leave_requests").select("profile_id").eq("org_id", me.org_id).eq("status","approved").lte("start_date",todayStr).gte("end_date",todayStr), "Today's leave"),
@@ -144,6 +145,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       setMine(my || []);
       setOffice(o || null);
       setEmployeeRoster(Array.isArray(rosterRows) ? rosterRows : []);
+      setDailySessionRows(sessToday || []);
       setPendingInvitations(pi || []);
       if (myCapabilities.has("payroll.prepare") || myCapabilities.has("payroll.approve")) {
         const payroll = await must(supabase.rpc("payroll_readiness_summary"), "Payroll readiness");
@@ -291,6 +293,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       watch={verifiedSnapshot ? watch : []}
       meetings={verifiedSnapshot ? meetings : []}
       employeeRoster={verifiedSnapshot ? employeeRoster : []}
+      dailySessionRows={verifiedSnapshot ? dailySessionRows : []}
       pendingInvitations={verifiedSnapshot ? pendingInvitations : []}
       payrollReadiness={verifiedSnapshot ? payrollReadiness : null}
       canManagePeople={canManagePeople}
