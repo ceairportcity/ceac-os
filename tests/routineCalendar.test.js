@@ -5,7 +5,7 @@ import { readRoutineCalendar, routineCalendarStatus } from "../src/lib/readRouti
 const me = {id:"person",org_id:"org",unit_id:"unit"};
 const period = {scope:"own",fromDate:"2026-10-01",throughDate:"2026-10-31"};
 const work = index => ({id:"work-"+index,ref:"U-"+index,title:"Venue "+index,org_id:"org",unit_id:"unit",assignee_id:"person"});
-function provider(rows,{count=rows.length,foreignOperation=false,missingMaster=false}={}) {
+function provider(rows,{count=rows.length,foreignOperation=false,missingMaster=false,scenarioState="recorded"}={}) {
   const calls=[];
   return { calls, from(table) {
     const filters={};
@@ -30,7 +30,7 @@ function provider(rows,{count=rows.length,foreignOperation=false,missingMaster=f
     calls.push({rpc:name,params});
     const data=params.p_work_item_ids.map(id=>({
       operation_id:foreignOperation?"other-operation":"op-"+id,scheduled_on:"2026-10-25",
-      due_at:"2026-10-26T06:00:00Z",timezone:"America/Los_Angeles",due_time:"23:00:00",state:"recorded",
+      due_at:"2026-10-26T06:00:00Z",timezone:"America/Los_Angeles",due_time:"23:00:00",state:scenarioState,
     }));
     return {range:async(start,end)=>({data:data.slice(start,end+1),count:data.length})};
   }};
@@ -67,4 +67,17 @@ test("Unit Calendar uses current unit and owner-independent RLS reads without an
  const filters=client.calls.find(call=>call.table==="work_items").filters;
  assert.equal(filters.unit_id,"unit");assert.equal(filters.assignee_id,undefined);
  await assert.rejects(()=>readRoutineCalendar(client,{...me,unit_id:null},{...period,scope:"unit"}));
+});
+
+test("single-date exceptions remain visible as skipped, not missed, approved or completed",async()=>{
+ const dates=await readRoutineCalendar(provider([work(0)],{scenarioState:"skipped"}),me,period);
+ assert.equal(dates.length,1);
+ assert.equal(dates[0].routineState,"skipped");
+ assert.match(dates[0].meta,/Skipped by authorised exception/);
+ assert.doesNotMatch(dates[0].meta,/Outcome recorded|Not recorded|Approved|Completed/);
+ assert.equal(dates[0].scheduledOn,"2026-10-25");
+});
+test("unknown invented schedule outcome is rejected instead of presented as verified",async()=>{
+ await assert.rejects(()=>readRoutineCalendar(provider([work(0)],{scenarioState:"approved"}),me,period),
+  /Routine schedule dates are inconsistent/);
 });
