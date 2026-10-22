@@ -8,7 +8,7 @@ const blank=()=>({fullName:"",preferredName:"",jobTitle:"",employmentType:"not_r
 const timestamp=value=>value?new Date(value).toLocaleString("en-GB",{timeZone:"Africa/Accra"}):"Not recorded";
 
 /** HR employment/placement for roster-only staff. NEVER creates a login or grants a role. */
-export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSaved}){
+export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSaved,editRequest=0}){
  const authorised=Boolean(me.is_admin);
  const [form,setForm]=useState(blank),[updatedAt,setUpdatedAt]=useState(null);
  const [history,setHistory]=useState([]),[edit,setEdit]=useState(false);
@@ -17,6 +17,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
  const [error,setError]=useState(""),[notice,setNotice]=useState(""),[uncertain,setUncertain]=useState(false);
  const [reload,setReload]=useState(0),generation=useRef(0),sending=useRef(false);
  const scope=me.org_id+":"+me.id+":"+employeeId;
+ const consumedEditRequest=useRef(editRequest);
  useEffect(()=>{
   const token=++generation.current;setLoading(true);setEdit(false);setUpdatedAt(null);
   setHistory([]);setManagerMemberships([]);setManagerDirectory([]);setManagersVerified(false);setError("");setNotice("");setUncertain(false);
@@ -75,6 +76,15 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
   return()=>{generation.current++;};
  },[scope,authorised,reload]);
 
+ useEffect(()=>{
+  // Once-only navigation request from the selected employee summary. It cannot
+  // reopen a cancelled form or start an edit before the HR source was verified.
+  if(editRequest===consumedEditRequest.current || !authorised || loading || !updatedAt
+   || error || uncertain || busy || !managersVerified)return;
+  consumedEditRequest.current=editRequest;
+  setEdit(true);
+  setNotice("");
+ },[editRequest,authorised,loading,updatedAt,error,uncertain,busy,managersVerified]);
  const managerOptions=managersVerified?eligibleRosterManagers(managerDirectory,managerMemberships,form.primaryUnit):[];
  const valid=Boolean(updatedAt&&!loading&&!uncertain&&managersVerified&&form.fullName.trim().length>=2
   &&form.reason.trim().length>=8&&types.some(([value])=>value===form.employmentType)
