@@ -127,7 +127,8 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
    if(token!==generation.current)return;
    setEdit(false);setNotice("Employee, contact and unit placement changes saved. HR audit history retained.");
    setUpdatedAt(version.data.updated_at);setHistory(historyRead.data||[]);
-   setForm({...snapshot,reason:""});
+   setForm({...snapshot,contactEmail:version.data.hr_contact_email||"",
+    contactPhone:version.data.hr_contact_phone||"",startedOn:version.data.hr_started_on||"",reason:""});
    onSaved?.({...detail.data.employee,roster_units:detail.data.units,
     employee_id:employeeId,manager_profile_id:version.data.manager_profile_id,
     hr_contact_email:version.data.hr_contact_email,hr_contact_phone:version.data.hr_contact_phone,
