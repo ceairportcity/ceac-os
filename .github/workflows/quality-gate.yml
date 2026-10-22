@@ -84,15 +84,18 @@ jobs:
         run: bash scripts/ci/run-sql-security-gates.sh
 
   browser-shard:
-    name: Level B browser shard ${{ matrix.shard }}/4
+    name: Level B browser shard ${{ matrix.shard }}/8
     needs: classify
     if: needs.classify.outputs.level_b == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
       fail-fast: false
+      # Each isolated shard still replays schema and role fixtures; split the
+      # same complete suite into smaller pieces to avoid the previous 25-min
+      # job cancellation without suppressing any tests or weakening failure.
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     env:
       ROLE_FIXTURE_PASSWORD: Local-role-fixture-2026!
     steps:
@@ -132,7 +135,7 @@ jobs:
           exit 1
 
       - name: Run Playwright role smoke tests
-        run: npx playwright test --shard=${{ matrix.shard }}/4 --workers=1
+        run: npx playwright test --shard=${{ matrix.shard }}/8 --workers=1
 
       - name: Upload shard evidence
         if: always()
