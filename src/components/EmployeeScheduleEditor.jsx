@@ -45,7 +45,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
         ? supabase.from("workforce_schedule_versions")
             .select("id,effective_from,effective_to,day_map,clock_map,reason,created_at", { count:"exact" })
             .eq("org_id",me.org_id)
-            .or(profileId ? "employee_id.eq."+employeeId+",profile_id.eq."+profileId : "employee_id.eq."+employeeId)
+            .or(profileId ? "employee_id.eq."+employeeId+",and(employee_id.is.null,profile_id.eq."+profileId+")" : "employee_id.eq."+employeeId)
         : supabase.from("workforce_schedule_versions")
             .select("id,effective_from,effective_to,day_map,clock_map,reason,created_at", { count:"exact" })
             .eq("org_id",me.org_id).eq("profile_id",profileId))
