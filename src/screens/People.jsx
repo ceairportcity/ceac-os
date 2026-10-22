@@ -18,6 +18,7 @@ import { Button, ComposerDrawer } from "../experience-v2/components";
 import PeopleAccess from "../components/PeopleAccess";
 import EmployeeScheduleEditor from "../components/EmployeeScheduleEditor";
 import RosterOnlyEmploymentEditor from "../components/RosterOnlyEmploymentEditor";
+import EmployeeDossierRecords from "../components/EmployeeDossierRecords";
 import {
   PeopleAdminPersonRow,
   PeopleBackButton,
@@ -32,7 +33,7 @@ import {
 } from "../experience-v2/people-family/PeopleFamilyV2";
 
 const PEOPLE_VIEWS = [["directory","Directory"],["access","Access"],["organisation","Organisation"],["attention","Needs attention"]];
-const PERSON_TABS = [["overview","Overview"],["access","Access"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["documents","Documents"],["history","History"]];
+const PERSON_TABS = [["overview","Overview"],["access","Access"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["development","Development"],["learning","Learning"],["equipment","Equipment"],["documents","Documents"],["history","History"]];
 const FILTERS = [["all","Everyone"],["active","Active"],["on_leave","On leave"],["quiet","No submissions in 14 days"],["no_unit","No unit"]];
 const EMPLOYMENT_CHANGES = [
   ["employment_details_changed","Employment details changed"],
@@ -1006,6 +1007,12 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         </>}
       </PeopleWorkspaceSection>
       </>}
+
+      {["development","learning","equipment"].includes(personTab) && <EmployeeDossierRecords
+        key={`${me.org_id}:${me.id}:${person.employee_id}:${person.profile_id || "unlinked"}`}
+        me={me} employeeId={person.employee_id} profileId={person.profile_id}
+        section={personTab}
+      />}
 
       {personTab === "documents" && <PeopleWorkspaceSection
         title="Documents"
