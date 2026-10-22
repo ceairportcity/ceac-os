@@ -85,3 +85,17 @@ test("Executive quarter sources bind recorded proposals and evidence to the late
  assert.match(facts,/byReportId\.has\(row\.report_id\)/);
  assert.doesNotMatch(brief,/approved Executive decision recorded/i);
 });
+
+test("quarterly leadership briefing uses period-scoped real Work decisions, never invented Executive approval",()=>{
+ const screen=read("src/screens/ExecutiveReports.jsx");
+ const view=read("src/components/ExecutiveOutcomeBrief.jsx");
+ assert.match(screen,/\.from\("work_decisions"\)/);
+ assert.match(screen,/\.gte\("decided_at",selectedPeriod\.starts_on/);
+ assert.match(screen,/\.lt\("decided_at",exclusiveEnd\)/);
+ assert.match(screen,/\.select\("id,title,unit_id,project_id",\{count:"exact"\}\)/);
+ assert.match(screen,/itemRead\.count!==workIds\.length/);
+ assert.match(screen,/decisionRead\.count>500/);
+ assert.match(view,/decisions\.map\(decision=>/);
+ assert.match(view,/separate from quarterly Executive approvals/);
+ assert.match(view,/Recorded rationale:/);
+});
