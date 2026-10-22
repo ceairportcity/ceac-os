@@ -160,11 +160,11 @@ export default function Performance({ me }) {
     try {
       const requests = [
         supabase.from("appraisal_cycles").select("*").eq("org_id", me.org_id).order("starts_on", { ascending:false }),
-        supabase.from("appraisals").select("id,org_id,cycle_id,profile_id,manager_id,unit_id,status,created_at,shared_at,reviewer_assignment_reason,profiles!appraisals_profile_id_fkey(full_name,email,job_title),reviewer:profiles!appraisals_manager_id_fkey(full_name,email),units(name)").eq("org_id", me.org_id).order("created_at", { ascending:false }),
+        supabase.from("appraisals").select("id,org_id,cycle_id,profile_id,manager_id,unit_id,status,created_at,shared_at,reviewer_assignment_reason,profiles!appraisals_profile_id_fkey(full_name,email,job_title,is_admin,is_exec),reviewer:profiles!appraisals_manager_id_fkey(full_name,email),units(name)").eq("org_id", me.org_id).order("created_at", { ascending:false }),
       ];
       if (orgPerformanceAdmin) {
         requests.push(
-          supabase.from("profiles").select("id,full_name,email,is_admin,active").eq("org_id", me.org_id).eq("active", true).order("full_name"),
+          supabase.from("profiles").select("id,full_name,email,is_admin,is_exec,job_title,active").eq("org_id", me.org_id).eq("active", true).order("full_name"),
           supabase.from("unit_memberships").select("profile_id,unit_id,role").eq("org_id", me.org_id).eq("role","manager")
         );
       }
@@ -281,11 +281,18 @@ export default function Performance({ me }) {
   const currentConversation = latestEntry(entries, "conversation_record");
   const currentPlan = latestPlan(plans);
 
-  const reviewerCandidates = selectedCase ? profiles.filter((profile) =>
-    profile.is_admin || memberships.some((membership) =>
+  const reviewerCandidates = selectedCase ? profiles.filter((profile) => {
+    if (profile.id === selectedCase.profile_id) return false;
+    if (selectedCase.profiles?.is_admin) {
+      // The owner's single-case exception: Group Pastor may be assigned HR
+      // Head's appraisal. Identity/permission is revalidated on the server.
+      return profile.is_exec && !profile.is_admin
+        && profile.job_title?.trim().toLowerCase() === "group pastor";
+    }
+    return profile.is_admin || memberships.some((membership) =>
       membership.profile_id === profile.id && membership.unit_id === selectedCase.unit_id && membership.role === "manager"
-    )
-  ) : [];
+    );
+  }) : [];
 
   const evidenceGroups = Object.keys(CATEGORY_LABELS).map((key) => ({
     key,
@@ -504,7 +511,7 @@ export default function Performance({ me }) {
             <FieldGroup label="Reviewer">
               <select className="field" aria-label="Performance reviewer" value={reviewerId} onChange={(event) => setReviewerId(event.target.value)}>
                 <option value="">Choose reviewer</option>
-                {reviewerCandidates.map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name}{profile.is_admin ? " · Administration" : ""}</option>)}
+                {reviewerCandidates.map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name}{profile.is_admin ? " · Administration" : profile.is_exec ? " · Group Pastor · assigned review only" : ""}</option>)}
               </select>
             </FieldGroup>
             <FieldGroup label="Reason for assignment"><textarea className="field" aria-label="Reviewer assignment reason" rows="2" value={reviewerReason} onChange={(event) => setReviewerReason(event.target.value)} placeholder="Why this person is responsible for the review" /></FieldGroup>
@@ -621,7 +628,8 @@ export default function Performance({ me }) {
             <button className="btn btn-sm" disabled={busy || feedbackNote.trim().length < 3} onClick={recordFeedback}>Record feedback</button>
           </section>}
 
-          {hrReleaseAdmin && <div className="performance-share-bar">
+          {hrReleaseAdmin && isSelf && <ProductNotice tone="attention" title="Independent HR publication required">You cannot decide publication of your own appraisal. The Group Pastor may write the assigned assessment, but release must be decided by a separately authorised independent HR approver. The record remains restricted until then.</ProductNotice>}
+          {hrReleaseAdmin && !isSelf && <div className="performance-share-bar">
             <div><strong>HR publication decisions</strong>
               <span>Only HR may publish a completed manager narrative. Review the manager assessment above before deciding.</span>
             </div>
@@ -659,7 +667,7 @@ export default function Performance({ me }) {
       {cycleStep === 2 && <div className="form-grid two"><FieldGroup label="From"><input className="field" aria-label="Review period start" type="date" value={cycleStart} onChange={(event) => setCycleStart(event.target.value)} /></FieldGroup><FieldGroup label="To"><input className="field" aria-label="Review period end" type="date" min={cycleStart} value={cycleEnd} onChange={(event) => setCycleEnd(event.target.value)} /></FieldGroup></div>}
       {cycleStep === 3 && <>
         <FieldGroup label="Reason"><textarea className="field" aria-label="Review period reason" rows="3" value={cycleReason} onChange={(event) => setCycleReason(event.target.value)} placeholder="Why CEAC is opening this review period now" /></FieldGroup>
-        <div className="card small">Opening this period creates a review case for each active non-Administration, non-Executive employee and assembles factual evidence from recorded rows. It does not calculate a score.</div>
+        <div className="card small">Opening this period creates a review case for every active linked employee, including Administration, while excluding the Group Pastor. Administration’s own case requires a different assigned reviewer; it cannot self-review or self-publish. Factual evidence is assembled from recorded rows without a calculated score.</div>
       </>}
       <div className="guided-actions">
         {cycleStep > 1 && <button className="btn btn-ghost" disabled={busy} onClick={() => setCycleStep((step) => step-1)}>Back</button>}
