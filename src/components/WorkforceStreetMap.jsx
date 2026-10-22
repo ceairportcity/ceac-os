@@ -65,7 +65,7 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect}) {
    </div>:<>
     <div className="ceac-street-map-tiles" aria-hidden="true">
      {tileViews.map(tile=><img key={tile.key} src={tile.url}
-      loading="lazy" draggable="false" alt="" referrerPolicy="no-referrer"
+      loading="lazy" draggable="false" alt="" referrerPolicy="strict-origin-when-cross-origin"
       style={{position:"absolute",left:tile.x,top:tile.y,width:256,height:256}} />)}
     </div>
     <div className="ceac-street-map-overlay" aria-label="Recorded work-start markers">
