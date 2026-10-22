@@ -18,6 +18,8 @@ test("a single-date exception is append-only, stale-version and actor restricted
   "IF p_expected_version IS DISTINCT FROM v_version",
   "USING ERRCODE='40001'",
   "public.app_managed_units()",
+  "u.id=v_operation.unit_id",
+  "m.profile_id=auth.uid()",
   "v_operation.origin='self_created'",
   "public.operation_occurrences",
   "public.routine_date_progress",
