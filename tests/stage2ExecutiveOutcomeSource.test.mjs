@@ -69,3 +69,19 @@ test("Executive outcome sources require exact counts, not a potentially truncate
  assert.match(screen,/x\.count>500/);
  assert.match(screen,/nextOutcomeError="Leadership evidence could not be verified completely\. Detailed totals are withheld\."/);
 });
+
+test("Executive quarter sources bind recorded proposals and evidence to the latest issued unit revision only",()=>{
+ const screen=read("src/screens/ExecutiveReports.jsx");
+ const brief=read("src/components/ExecutiveOutcomeBrief.jsx");
+ const facts=read("src/lib/ministryReportingFacts.js");
+ assert.match(screen,/\.from\("report_targets"\)/);
+ assert.match(screen,/\.from\("report_evidence_refs"\)/);
+ assert.match(screen,/const latestIssued = Object\.values\(latestUnitReportStatus\(issued\.data \|\| \[\]\)\)/);
+ assert.match(screen,/\.in\("report_id",issuedIds\)/);
+ assert.match(screen,/response\.count>500/);
+ assert.match(brief,/unitTargets\.map/);
+ assert.match(brief,/unitEvidence\.map/);
+ assert.match(brief,/A proposed target is not an Executive approval/);
+ assert.match(facts,/byReportId\.has\(row\.report_id\)/);
+ assert.doesNotMatch(brief,/approved Executive decision recorded/i);
+});
