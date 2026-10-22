@@ -5,12 +5,14 @@ import { ghanaCalendarDate } from "../lib/dailyLandscape";
 import {validRoutineDate} from "../lib/routineDateRoute";
 import { readRoutineSchedulePreview } from "../lib/readRoutineSchedulePreview";
 import { readRoutineDateProgress, routineEvidenceLinks } from "../lib/routineDateProgress";
+import RoutineSingleDateException from "./RoutineSingleDateException";
 
 const labels={in_progress:"In progress",waiting_on:"Waiting on",ready_for_review:"Ready for review"};
 /** One dated routine history, never the master task's checklist/completion. */
-export default function RoutineDateProgress({me,item,routine,steps,canRecord=false,initialDate=null}) {
+export default function RoutineDateProgress({me,item,routine,steps,canRecord=false,canManageDates=false,initialDate=null}) {
  const [date,setDate]=useState(()=>validRoutineDate(initialDate)||ghanaCalendarDate());
  const [history,setHistory]=useState([]),[verified,setVerified]=useState("");
+ const [dateScheduleState,setDateScheduleState]=useState("");
  const [error,setError]=useState(""),[writeError,setWriteError]=useState("");
  const [status,setStatus]=useState("in_progress"),[done,setDone]=useState([]);
  const [note,setNote]=useState(""),[links,setLinks]=useState("");
@@ -22,11 +24,11 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
  const sending=useRef(false);
  const ready=verified===scope && !error;
  const rows=ready?history:[];
- const permitted=canRecord && routine.active && !routine.paused_at && item.visibility==="unit" && !item.confidential;
+ const permitted=canRecord && dateScheduleState!=="skipped" && routine.active && !routine.paused_at && item.visibility==="unit" && !item.confidential;
  const stepKey=steps.map(step=>step.id+":"+step.label).join("|");
  useEffect(()=>{
   let active=true;
-  setHistory([]);setVerified("");setError("");setWriteError("");setLimit(5);setHistoryOpen(false);
+  setHistory([]);setVerified("");setDateScheduleState("");setError("");setWriteError("");setLimit(5);setHistoryOpen(false);
   setDone([]);setNote("");setLinks("");setStatus("in_progress");
   (async()=>{
    try {
@@ -34,6 +36,11 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
     const dates=await readRoutineSchedulePreview(supabase,[item.id],{fromDate:date,throughDate:date});
     if(dates.length!==1 || dates[0].operationId!==routine.id)
      throw new Error("This date is not scheduled for this responsibility.");
+    if(dates[0].state==="skipped"){
+      if(!active)return;
+      setDateScheduleState("skipped");setHistory([]);setVerified(scope);return;
+    }
+    setDateScheduleState(dates[0].state);
     const result=await readRoutineDateProgress(supabase,{orgId:me.org_id,operationId:routine.id,date});
     if(!active) return;
     setHistory(result);
@@ -71,8 +78,10 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
   {verified!==scope && <p role="status">Checking this scheduled date…</p>}
   {error && verified===scope && <p role="alert">{error}</p>}
   <button type="button" className="text-action" disabled={busy} onClick={()=>setReload(n=>n+1)}>Refresh date</button>
+  <RoutineSingleDateException me={me} operationId={routine.id} workItemId={item.id} date={date}
+    canManage={canManageDates} onChanged={()=>setReload(n=>n+1)} />
   {ready && <>
-   <p className="small">{rows.length?labels[rows[0].status]:"No progress recorded for this date."} · Record the outcome separately when this date is finished.</p>
+   <p className="small">{dateScheduleState==="skipped"?"This occurrence was explicitly skipped. No progress or outcome is implied.":rows.length?labels[rows[0].status]:"No progress recorded for this date."} · Record the outcome separately when this date is finished.</p>
    {permitted && <form className="s2-routine-review-form" onSubmit={save}>
     <fieldset disabled={busy} style={{border:0,padding:0,margin:0,minWidth:0,display:"grid",gap:8}}><legend>Checklist for {date}</legend>
      {steps.length?steps.map(step=><label key={step.id} style={{display:"flex",gap:8,alignItems:"start"}}>
