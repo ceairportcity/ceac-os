@@ -62,6 +62,6 @@
 /* Print only the authorised personal report, never adjacent shell, drawer or HR context. */
 @media print{
   body:has(.s2-achievement) *{visibility:hidden!important}
-  .s2-achievement,.s2-achievement *{visibility:visible!important}
+  body .s2-achievement,body .s2-achievement *{visibility:visible!important}
   .s2-achievement{position:absolute!important;top:0!important;left:0!important;overflow:visible!important}
 }

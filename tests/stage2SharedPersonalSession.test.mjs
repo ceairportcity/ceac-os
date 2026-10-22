@@ -144,10 +144,12 @@ test("P3 uncertain Start Work and history reconciliation require an explicit rec
 test("P3 Manager and Admin Workforce do not fabricate zero session evidence on failed reads", () => {
  const source = read("src/screens/Workforce.jsx");
  assert.match(source, /const sessionReadFailed=Boolean\(datasetErrors\.sessions\)/);
- assert.equal((source.match(/meta=\{sessionReadFailed\?"Evidence unavailable":sessions\.length\+" records"\}/g) || []).length, 2);
+ assert.equal((source.match(/meta=\{sessionReadFailed\?"Evidence unavailable":sessions\.length\+" records"\}/g) || []).length, 1);
  assert.equal((source.match(/meta=\{sessionReadFailed\?"Evidence unavailable":flaggedSessions\.length\+" records"\}/g) || []).length, 2);
- assert.equal((source.match(/!sessions\.length&&!sessionReadFailed&&<WorkforceEmpty/g) || []).length, 2);
+ assert.equal((source.match(/!sessions\.length&&!sessionReadFailed&&<WorkforceEmpty/g) || []).length, 1);
  assert.equal((source.match(/!flaggedSessions\.length&&!sessionReadFailed&&<WorkforceEmpty/g) || []).length, 2);
+ assert.match(source, /meta=\{sessionReadFailed\?"Evidence unavailable":\(sessionProfileFocus\?sessions\.filter\(x=>x\.profile_id===sessionProfileFocus\):sessions\)\.length\+" records"\}/);
+ assert.match(source, /!\(sessionProfileFocus\?sessions\.some\(row=>row\.profile_id===sessionProfileFocus\):sessions\.length\)&&!sessionReadFailed&&<WorkforceEmpty/);
  assert.match(source, /sessionReadFailed\?"session evidence unavailable":facts\.first/);
 });
 

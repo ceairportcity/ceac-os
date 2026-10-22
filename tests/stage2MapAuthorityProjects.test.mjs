@@ -23,7 +23,7 @@ test("HR and Compliance use the same source-backed real map",()=>{
  const compliance=source("src/components/ComplianceOverview.jsx");
  assert.match(compliance,/<AdminWorkforceToday/);
  assert.match(compliance,/lat:session\.start_lat/);
- assert.match(map,/onSelect\?\.\(pin\.people\[0\]\.id\)/);
+ assert.match(map,/nextWorkforceClusterPersonId\(pin\.people,selectedId\)/);
 });
 test("People Access has one capability-gated employee-specific Authority link",()=>{
  assert.match(app,/onManagePermissions=\{canManageAuthority \? openAuthorityForPerson : null\}/);

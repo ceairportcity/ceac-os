@@ -165,6 +165,17 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261021235000_175_single_date_routine_exception.sql",
     "20261022041632_176_routine_single_date_cover.sql",
     "20261022044501_177_routine_cover_storage_scope.sql",
+    "20261022070000_178_compliance_attendance_casework.sql",
+    "20261022071000_179_verified_roster_account_link.sql",
+    "20261022072000_180_employee_published_development_read.sql",
+    "20261022090000_181_roster_only_hr_contact_start.sql",
+    "20261022094500_182_linked_person_hr_contact.sql",
+    "20261022100000_183_roster_week_server_validation.sql",
+    "20261022113000_184_annual_leave_active_policy_guard.sql",
+    "20261022114000_185_hr_create_roster_employee.sql",
+    "20261022115000_186_manual_unlinked_account_roster_reconciliation.sql",
+    "20261022121500_187_reject_already_linked_account_duplicate_employee.sql",
+
 
   ];
   for (const migration of stagedIntegratedSecurity) {
@@ -172,7 +183,7 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
   }
   assert.equal(migrations.filter((file) => !stagedIntegratedSecurity.includes(file)).length, 153,
     "Stage 1's 153 reviewed migrations remain identical; all Stage 2 additions are explicitly inventoried");
-  assert.equal(migrations.length, 182, "expected 153 reviewed Stage 1 plus 29 explicitly inventoried Stage 2 migrations");
+  assert.equal(migrations.length, 192, "expected 153 reviewed Stage 1 plus 39 explicitly inventoried Stage 2 migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";

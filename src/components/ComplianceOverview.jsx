@@ -104,7 +104,7 @@ export default function ComplianceOverview({
       </div>
       <div className="compliance-overview-actions">
         {openObservations && <button type="button" className="btn btn-sm" onClick={openObservations}>Review attendance observations</button>}
-        {openWork && <button className="btn btn-ghost btn-sm" onClick={openWork}>Open authorised work</button>
+        {openWork && <button className="btn btn-ghost btn-sm" onClick={openWork}>Open authorised work</button>}
         {openAnnouncements && <button className="btn btn-sm" onClick={openAnnouncements}>Publish policy instruction</button>}
       </div>
     </section>

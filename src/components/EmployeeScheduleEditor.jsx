@@ -206,7 +206,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     {loading && <p role="status">Loading the employee's schedule...</p>}
     {error && <p role="alert">{error}</p>}
     {!loading && error && !busy && <button type="button" className="btn btn-ghost btn-sm"
-      onClick={()=>void load()}>Reload authorised schedule</button>
+      onClick={()=>void load()}>Reload authorised schedule</button>}
     {notice && <p role="status">{notice}</p>}
     {verified && previous && <div className="ev2p-admin-schedule-history" style={{display:"grid",gap:12,minWidth:0,marginTop:12}}>
       <p className="screen-note"><strong>{inspected?.id === previous.id ? "Latest recorded version" : "Earlier saved version"}:</strong> {dateOf(inspected.effective_from)}{inspected.effective_to ? " to "+dateOf(inspected.effective_to) : " onward"}. This is a recorded HR pattern, not evidence of actual attendance.</p>

@@ -45,8 +45,12 @@ export function ministryPeriodEvidence({unitReports=[],objectives=[],milestones=
  // quarterly evidence source. Never treat previous report revisions as extra
  // commitments, and never derive commitments from unmatched references.
  const byReportId=new Map([...latest.values()].filter(report=>report.id).map(report=>[report.id,report]));
- const unique=(items)=>[...new Map(items.filter(row=>row?.id&&byReportId.has(row.report_id))
-   .map(row=>[row.id,{...row,unit_id:byReportId.get(row.report_id).unit_id}])).values()];
+ const unique=(items)=>{
+  const rows=new Map();
+  for(const row of items)if(row?.id&&byReportId.has(row.report_id)&&!rows.has(row.id))
+   rows.set(row.id,{...row,unit_id:byReportId.get(row.report_id).unit_id});
+  return [...rows.values()];
+ };
  const unitTargets=unique(targets).sort((a,b)=>String(a.unit_id).localeCompare(String(b.unit_id))
     || Number(a.position||0)-Number(b.position||0) || String(a.id).localeCompare(String(b.id)));
  const unitEvidence=unique(evidenceRefs).sort((a,b)=>String(a.unit_id).localeCompare(String(b.unit_id))

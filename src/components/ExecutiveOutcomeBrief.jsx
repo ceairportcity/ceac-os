@@ -1,14 +1,22 @@
-import {useMemo} from "react";
+import {useEffect,useMemo,useRef} from "react";
 import {ministryPeriodEvidence} from "../lib/ministryReportingFacts";
 import { verifiedReportingQuarter } from "../lib/quarterlyReportingWindow";
 import "./ExecutiveOutcomeBrief.css";
 
 export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],objectives=[],milestones=[],targets=[],evidenceRefs=[],decisions=[],readError=null}){
+ const brief=useRef(null);
+ useEffect(()=>{
+  const opened=new Set();
+  const before=()=>{for(const detail of brief.current?.querySelectorAll("details:not([open])")||[]){opened.add(detail);detail.open=true;}};
+  const after=()=>{for(const detail of opened)detail.open=false;opened.clear();};
+  window.addEventListener("beforeprint",before);window.addEventListener("afterprint",after);
+  return ()=>{window.removeEventListener("beforeprint",before);window.removeEventListener("afterprint",after);after();};
+ },[]);
  const facts=useMemo(()=>ministryPeriodEvidence({unitReports:issuedReports,objectives,milestones,targets,evidenceRefs,activeUnitIds:units.map(x=>x.id)}),[issuedReports,objectives,milestones,targets,evidenceRefs,units]);
  const names=Object.fromEntries(units.map(x=>[x.id,x.name]));
  const quarter=verifiedReportingQuarter(period);
  const print=()=>window.print();
- return <section className="s2-exec-brief" aria-label="Executive outcomes briefing">
+ return <section ref={brief} className="s2-exec-brief" aria-label="Executive outcomes briefing">
   <header className="s2-exec-brief-head">
     <div><span>Christ Embassy Airport City · Executive reporting</span><h2>{quarter ? "Quarterly ministry results and next decisions" : "Ministry reporting evidence (custom period)"}</h2>
       <p>{quarter ? quarter.label : period.label} · {period.starts_on} — {period.ends_on}. Issued organisational evidence, not automatic employee scoring.</p>

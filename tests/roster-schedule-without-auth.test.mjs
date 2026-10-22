@@ -29,7 +29,7 @@ test("HR schedule is always edited and reviewed as a full recorded week with rea
  assert.doesNotMatch(workforce,/<summary>Adjust one weekday \(legacy\)<\/summary>/);
  assert.match(workspace,/admin_employee_roster_summary/);
  assert.match(workspace,/employeeId=\{person\.id\}/);
- assert.match(editor,/workforceRecordedWeek\(inspected,dayTypes\)/);
+ assert.match(editor,/workforceRecordedWeek\(inspected,visibleTypes\)/);
  assert.match(editor,/Inspect a saved schedule version/);
  assert.match(editor,/p_supersedes_id:previous\?\.id/);
  assert.match(editor,/const refreshed=await load\(data\)/);

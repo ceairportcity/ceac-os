@@ -428,7 +428,9 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       {!annualLeaveStageReady ? <ProductNotice tone="attention" title="Working-day balance comes after migration acceptance">Existing leave requests and the approved request route remain available. CEAC OS will not invent a working-day balance until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice> : null}
 
       {annualLeaveStageReady && datasetErrors.annualLeaveSummary ? <ProductNotice tone="attention" title="Annual balance unavailable">{datasetErrors.annualLeaveSummary}</ProductNotice>
-        : annualLeft === null ? <ProductNotice tone="info" title="Annual balance needs complete records">{annualBalanceReason === "join_date_not_recorded"
+        : annualLeft === null ? <ProductNotice tone="info" title="Annual balance needs complete records">{annualBalanceReason === "annual_leave_policy_not_active"
+          ? "Administration/HR has not confirmed an active annual leave policy for this date. Your balance will remain unavailable until that policy is confirmed."
+          : annualBalanceReason === "join_date_not_recorded"
           ? "Your join date is not recorded yet, so CEAC OS will not invent an annual leave balance."
           : "CEAC OS needs attributable workforce schedule evidence for approved annual leave before it can show a reliable remaining working-day balance."}</ProductNotice>
         : null}
