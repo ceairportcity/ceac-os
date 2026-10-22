@@ -1043,8 +1043,9 @@ export default function Workforce({ me }) {
         </WorkforceSection>
       </>}
 
-      {tab==="sessions"&&<WorkforceSection title="Recorded sessions · last 31 days" description="Session history is factual activity context. It is not a performance score and it is not used as payroll time." meta={sessionReadFailed?"Evidence unavailable":sessions.length+" records"}>
-        {sessions.slice(0,160).map((session)=>{
+      {tab==="sessions"&&<WorkforceSection title="Recorded sessions · last 31 days" description="Session history is factual activity context. It is not a performance score and it is not used as payroll time." meta={sessionReadFailed?"Evidence unavailable":(sessionProfileFocus?sessions.filter(x=>x.profile_id===sessionProfileFocus):sessions).length+" records"}>
+        {sessionProfileFocus&&<div className="workforce-setup-actions"><p className="screen-note">Showing records for the selected staff account only.</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSessionProfileFocus("")}>All staff sessions</button></div>}
+        {(sessionProfileFocus?sessions.filter(row=>row.profile_id===sessionProfileFocus):sessions).slice(0,160).map((session)=>{
           const person=peopleById[session.profile_id];
           const diff=recordedDifferences(session);
           const sessionCorrections=effectiveCorrections(session.profile_id,isoDay(session.started_at)).filter((row)=>!row.work_session_id||row.work_session_id===session.id);
@@ -1058,7 +1059,7 @@ export default function Workforce({ me }) {
             note={(diff.length||sessionCorrections.length)?diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s"):null}
           />;
         })}
-        {!sessions.length&&!sessionReadFailed&&<WorkforceEmpty compact title="No sessions recorded in this period" description="Nothing is inferred from the absence of session rows."/>}
+        {!(sessionProfileFocus?sessions.some(row=>row.profile_id===sessionProfileFocus):sessions.length)&&!sessionReadFailed&&<WorkforceEmpty compact title="No sessions recorded in this selection" description="Nothing is inferred from the absence of session rows."/>}
         {sessionReadFailed&&<WorkforceEmpty compact title="Session evidence unavailable" description="Work-session records could not be verified. Retry Workforce data."/>}
       </WorkforceSection>}
 
