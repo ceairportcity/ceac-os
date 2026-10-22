@@ -24,33 +24,16 @@ export default function EmployeeDossierRecords({ me, employeeId, profileId, sect
       try {
         let rows = [], names = {};
         if (section === "development") {
-          // The employee-only published-ratings view deliberately filters to
-          // auth.uid(). HR must instead explicitly verify release decisions
-          // under the existing People/HR RLS before selecting human ratings.
-          const appraisals = complete(await supabase.from("appraisals")
-            .select("id,status,shared_at,development_notes", { count:"exact" })
-            .eq("org_id",me.org_id).eq("profile_id",profileId)
-            .in("status",["shared","closed"]).limit(500));
-          const ids = appraisals.map(row => row.id);
-          if (ids.length) {
-            const [releaseResponse,ratingResponse] = await Promise.all([
-              supabase.from("performance_review_release_requests")
-                .select("appraisal_id,requested_assessment_id,decided_at,state", { count:"exact" })
-                .eq("org_id",me.org_id).eq("state","approved").in("appraisal_id",ids).limit(500),
-              supabase.from("appraisal_human_rating_versions")
-                .select("id,appraisal_id,assessment_entry_id,cadence,overall_rating,overall_narrative,strengths,challenges,next_actions,created_at", { count:"exact" })
-                .eq("org_id",me.org_id).eq("profile_id",profileId).in("appraisal_id",ids).limit(500),
-            ]);
-            const releases = complete(releaseResponse);
-            const ratings = complete(ratingResponse);
-            const approved = new Map(releases.map(entry => [
-              `${entry.appraisal_id}:${entry.requested_assessment_id}`,entry.decided_at,
-            ]));
-            rows = ratings.filter(rating => {
-              const decidedAt = approved.get(`${rating.appraisal_id}:${rating.assessment_entry_id}`);
-              return decidedAt && String(decidedAt) >= String(rating.created_at);
-            });
+          // Filter independently released human ratings on the protected
+          // server side; raw unpublished appraisal versions never arrive
+          // in this employee's ordinary People/HR dossier browser payload.
+          const response = await supabase.rpc("admin_employee_published_development", {
+            p_profile_id:profileId,
+          });
+          if (response.error || !Array.isArray(response.data) || response.data.length > 500) {
+            throw new Error("The HR-published development source is unavailable.");
           }
+          rows = response.data;
         } else if (section === "learning") {
           rows = complete(await supabase.from("learning_assignments")
             .select("id,course_id,state,assigned_at,due_on,completed_at,assignment_reason", { count:"exact" })
