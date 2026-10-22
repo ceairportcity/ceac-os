@@ -57,3 +57,9 @@ test("invite entry carries selected roster identity into existing verified invit
  assert.ok(prefill.length>0);
  assert.doesNotMatch(prefill,/inviteByEmail|resendStaffInvitation/);
 });
+
+test("private roster invitation context cannot survive actor or externally selected access scope",()=>{
+ assert.match(people,/setAccessInviteRoster\(null\);\s*void load\(\);/);
+ assert.match(people,/setAccessFocusMode\(accessIntent\.mode \|\| null\);\s*setAccessInviteRoster\(null\);/);
+ assert.match(people,/setAccessInviteRoster\(profileId \? null : inviteRoster\);/);
+});
