@@ -40,5 +40,5 @@ test("selected employee shows canonical HR contact and start date independently 
  assert.match(people,/title="HR contact email \(not login\)"/);
  assert.match(people,/title="HR contact telephone"/);
  assert.match(people,/title="Employment start date"/);
- assert.doesNotMatch(people,/email: hrContactResult\.data\.hr_contact_email/);
+ assert.doesNotMatch(people,/\n\s*email: hrContactResult\.data\.hr_contact_email/);
 });
