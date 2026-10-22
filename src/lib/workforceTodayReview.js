@@ -1,0 +1,13 @@
+// Evidence categories are operational REVIEW FILTERS, never attendance findings.
+// An unavailable source must never be counted as an absent session.
+export function workforceTodayReviewCategory({configured=false,expected=null,started=false,
+ approvedLeave=false,sessionEvidenceUnavailable=false}={}) {
+ if(approvedLeave) return "approved_leave";
+ if(sessionEvidenceUnavailable) return "evidence_unavailable";
+ if(!configured || expected===null) return "schedule_unconfigured";
+ if(started) return "recorded_start";
+ if(expected===true) return "no_session_recorded";
+ return "no_session_expected";
+}
+export const workforceTodayReviewNeedsReview = category =>
+ ["evidence_unavailable","schedule_unconfigured","no_session_recorded"].includes(category);
