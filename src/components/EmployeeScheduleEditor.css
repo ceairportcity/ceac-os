@@ -1,0 +1,40 @@
+.ev2p-admin-schedule-history {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 12px;
+}
+.ev2p-admin-schedule-history > p { margin: 0; }
+.ev2p-admin-schedule-week {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ev2-line,var(--line));
+  border-radius: 8px;
+  background: var(--ev2-surface,#fff);
+}
+.ev2p-admin-schedule-week-head,
+.ev2p-admin-schedule-week-row {
+  display: grid;
+  grid-template-columns: minmax(82px, 0.65fr) minmax(120px, 1.3fr) minmax(120px, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ev2p-admin-schedule-week-head {
+  background: var(--ev2-surface-muted,#f3f4f4);
+  font-weight: 700;
+}
+.ev2p-admin-schedule-week-row + .ev2p-admin-schedule-week-row { border-top: 1px solid var(--ev2-line,var(--line)); }
+.ev2p-admin-schedule-week-row > span { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 440px) {
+ .ev2p-admin-schedule-week-head,
+ .ev2p-admin-schedule-week-row {
+   grid-template-columns: minmax(65px,0.6fr) minmax(87px,1.1fr) minmax(95px,1fr);
+   gap: 6px;
+   padding: 9px 7px;
+   font-size: 12px;
+ }
+}
