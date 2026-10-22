@@ -112,6 +112,9 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   }
 
   useEffect(() => {
+    // Invitation prefill may contain a person's private HR contact details.
+    // Never retain a selection when the signed HR actor or tenant changes.
+    setAccessInviteRoster(null);
     void load();
     return () => { rosterGeneration.current += 1; personGeneration.current += 1; };
   }, [me.id, me.org_id]);
@@ -137,6 +140,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     setAccessFocusProfileId(accessIntent.profileId || null);
     setAccessFocusUnitId(accessIntent.unitId || null);
     setAccessFocusMode(accessIntent.mode || null);
+    setAccessInviteRoster(null);
     setViewMode("access");
     onAccessIntentHandled?.();
   }, [accessIntent]);
