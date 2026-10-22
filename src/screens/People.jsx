@@ -18,6 +18,7 @@ import { Button, ComposerDrawer } from "../experience-v2/components";
 import PeopleAccess from "../components/PeopleAccess";
 import EmployeeScheduleEditor from "../components/EmployeeScheduleEditor";
 import RosterOnlyEmploymentEditor from "../components/RosterOnlyEmploymentEditor";
+import LinkedEmployeeContactEditor from "../components/LinkedEmployeeContactEditor";
 import RosterAccountLink from "../components/RosterAccountLink";
 import EmployeeDossierRecords from "../components/EmployeeDossierRecords";
 import EmployeeAttendanceObservations from "../components/EmployeeAttendanceObservations";
@@ -883,6 +884,14 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           {employmentCurrent?.exited_on && <PeopleFactRow icon="calendar" title="Exit date" subtitle={dateOnly(employmentCurrent.exited_on)} />}
         </div>
       </PeopleWorkspaceSection>
+
+      {hasLinkedProfile && <LinkedEmployeeContactEditor
+        key={`${me.org_id}:${me.id}:${person.profile_id}`} me={me} profileId={person.profile_id}
+        onSaved={(details)=>{
+          setPerson(current=>current?.profile_id===details.id?{...current,...details}:current);
+          void load({silent:true});
+        }}
+      />}
 
       {!hasLinkedProfile && <div id="roster-employee-editor"><RosterOnlyEmploymentEditor
         me={me} employeeId={person.employee_id} units={units}
