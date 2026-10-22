@@ -39,6 +39,7 @@ as $hrlinked$
 declare
  v_org uuid:=public.app_org_id();
  v_original public.profiles%rowtype;
+ v_event_id uuid;
  v_name text:=btrim(coalesce(p_full_name,''));
  v_preferred text:=nullif(btrim(coalesce(p_preferred_name,'')),'');
  v_phone text:=nullif(btrim(coalesce(p_phone,'')),'');
@@ -78,8 +79,8 @@ begin
   jsonb_build_object('full_name',v_original.full_name,'preferred_name',v_original.preferred_name,
     'phone',v_original.phone),
   jsonb_build_object('full_name',v_name,'preferred_name',v_preferred,'phone',v_phone)
- );
- return jsonb_build_object('profile_id',p_profile_id,'full_name',v_name,
+ ) returning id into v_event_id;
+ return jsonb_build_object('event_id',v_event_id,'profile_id',p_profile_id,'full_name',v_name,
     'preferred_name',v_preferred,'phone',v_phone);
 end;
 $hrlinked$;
