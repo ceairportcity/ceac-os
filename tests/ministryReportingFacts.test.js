@@ -55,3 +55,32 @@ test("same-version report revisions prefer the latest issued timestamp and never
  assert.equal(latest.a.narrative,"new");
  assert.equal(latest.b,undefined);
 });
+
+test("Executive quarterly brief binds targets and evidence only to latest independently issued revision",()=>{
+ const x=ministryPeriodEvidence({
+  unitReports:[
+   {id:"issued-old",unit_id:"u1",version:1,status:"submitted",narrative:"Original"},
+   {id:"issued-current",unit_id:"u1",version:2,status:"confirmed",narrative:"Revised issued"},
+   {id:"unissued",unit_id:"u2",version:3,status:"draft",narrative:"Private revision"},
+  ],
+  targets:[
+   {id:"t-old",report_id:"issued-old",name:"Superseded target"},
+   {id:"t-new",report_id:"issued-current",name:"Quarterly books",target_value:50,achieved_value:41,next_target_value:60,position:1},
+   {id:"t-new",report_id:"issued-current",name:"Quarterly books duplicated by join",position:1},
+   {id:"t-draft",report_id:"unissued",name:"Confidential unreleased next target"},
+   {id:"t-unrelated",report_id:"other-org",name:"Unscoped target"},
+  ],
+  evidenceRefs:[
+   {id:"e-current",report_id:"issued-current",label:"Verified in source workflow"},
+   {id:"e-old",report_id:"issued-old",label:"Superseded version attachment"},
+   {id:"e-draft",report_id:"unissued",label:"Private draft attachment"},
+  ],
+  activeUnitIds:["u1","u2"],
+ });
+ assert.deepEqual(x.unitTargets.map(t=>t.id),["t-new"]);
+ assert.deepEqual(x.unitTargets.map(t=>t.unit_id),["u1"]);
+ assert.equal(x.unitTargets[0].next_target_value,60);
+ assert.deepEqual(x.unitEvidence.map(e=>e.id),["e-current"]);
+ assert.deepEqual(x.filing.missing,["u2"]);
+ assert.equal(x.filedReports[0].id,"issued-current");
+});
