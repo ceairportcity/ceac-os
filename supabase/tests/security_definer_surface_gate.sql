@@ -167,6 +167,12 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.stage2_relink_own_work(p_work_item_id uuid, p_project_id uuid, p_objective_id uuid, p_phase_id uuid, p_reason text)'),
  ('public.stage2_record_project_person_assessment(p_project_id uuid, p_subject_profile_id uuid, p_narrative text, p_evidence_note text, p_next_action text, p_project_close_id uuid, p_period_start date, p_period_end date)');
 
+-- Additional owner-correction interfaces are individually enumerated and
+-- covered by roster and one-date negative-role gates; not a generic ceiling raise.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.admin_record_roster_employment(p_employee_id uuid, p_expected_updated_at timestamp with time zone, p_full_name text, p_preferred_name text, p_job_title text, p_employment_type text, p_employment_status text, p_primary_unit_id uuid, p_secondary_unit_ids uuid[], p_manager_profile_id uuid, p_reason text)'),
+ ('public.routine_change_single_date(p_work_item_id uuid, p_scheduled_on date, p_action text, p_reason text, p_expected_version integer)');
+
 do $allowlist$
 declare
   v_unexpected text;
@@ -214,7 +220,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>148 or v_expected<>148 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>150 or v_expected<>150 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
