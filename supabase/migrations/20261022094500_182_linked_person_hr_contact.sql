@@ -25,6 +25,7 @@ comment on table public.employee_linked_contact_change_events is
  'Append-only linked employee official name/contact HR edits; separate from Auth, role grants and self-updated personal details.';
 
 create function public.admin_record_linked_person_contact(
+ p_employee_id uuid,
  p_profile_id uuid,
  p_expected_full_name text,
  p_expected_preferred_name text,
@@ -39,7 +40,9 @@ as $hrlinked$
 declare
  v_org uuid:=public.app_org_id();
  v_original public.profiles%rowtype;
+ v_roster public.employee_roster%rowtype;
  v_event_id uuid;
+ v_roster_event_id uuid;
  v_name text:=btrim(coalesce(p_full_name,''));
  v_preferred text:=nullif(btrim(coalesce(p_preferred_name,'')),'');
  v_phone text:=nullif(btrim(coalesce(p_phone,'')),'');
@@ -48,7 +51,7 @@ begin
    or not public.app_stage2_universal_aal_allowed() then
   raise exception 'Only authorised HR can record employee personal details.' using errcode='42501';
  end if;
- if p_profile_id is null or length(v_name) not between 2 and 180
+ if p_profile_id is null or p_employee_id is null or length(v_name) not between 2 and 180
   or length(coalesce(v_preferred,''))>180
   or length(coalesce(v_phone,''))>40
   or (v_phone is not null and length(v_phone)<4)
@@ -59,6 +62,11 @@ begin
  where id=p_profile_id and org_id=v_org for update;
  if not found then
   raise exception 'Employee account is outside authorised HR scope.' using errcode='42501';
+ end if;
+ select * into v_roster from public.employee_roster
+ where id=p_employee_id and org_id=v_org and profile_id=p_profile_id for update;
+ if not found then
+  raise exception 'This account is not linked to the selected canonical employee record.' using errcode='42501';
  end if;
  if v_original.full_name is distinct from p_expected_full_name
    or v_original.preferred_name is distinct from nullif(btrim(coalesce(p_expected_preferred_name,'')),'')
@@ -72,6 +80,19 @@ begin
  end if;
  update public.profiles set full_name=v_name, preferred_name=v_preferred, phone=v_phone
  where id=p_profile_id and org_id=v_org;
+ update public.employee_roster
+  set full_name=v_name,preferred_name=v_preferred,
+      updated_at=clock_timestamp(),updated_by=auth.uid()
+ where id=p_employee_id and org_id=v_org and profile_id=p_profile_id;
+ insert into public.employee_roster_change_events(
+   org_id,employee_id,actor_id,reason,before_record,after_record
+ ) values(
+   v_org,p_employee_id,auth.uid(),btrim(p_reason),
+   jsonb_build_object('full_name',v_roster.full_name,'preferred_name',v_roster.preferred_name,
+    'linked_profile_id',v_roster.profile_id),
+   jsonb_build_object('full_name',v_name,'preferred_name',v_preferred,
+    'linked_profile_id',p_profile_id)
+ ) returning id into v_roster_event_id;
  insert into public.employee_linked_contact_change_events(
   org_id,profile_id,actor_id,reason,before_record,after_record
  ) values(
@@ -80,15 +101,16 @@ begin
     'phone',v_original.phone),
   jsonb_build_object('full_name',v_name,'preferred_name',v_preferred,'phone',v_phone)
  ) returning id into v_event_id;
- return jsonb_build_object('event_id',v_event_id,'profile_id',p_profile_id,'full_name',v_name,
+ return jsonb_build_object('event_id',v_event_id,'roster_event_id',v_roster_event_id,
+    'employee_id',p_employee_id,'profile_id',p_profile_id,'full_name',v_name,
     'preferred_name',v_preferred,'phone',v_phone);
 end;
 $hrlinked$;
 
 revoke all on function public.admin_record_linked_person_contact(
- uuid,text,text,text,text,text,text,text) from public,anon,authenticated;
+ uuid,uuid,text,text,text,text,text,text,text) from public,anon,authenticated;
 grant execute on function public.admin_record_linked_person_contact(
- uuid,text,text,text,text,text,text,text) to authenticated;
+ uuid,uuid,text,text,text,text,text,text,text) to authenticated;
 comment on function public.admin_record_linked_person_contact(
- uuid,text,text,text,text,text,text,text) is
- 'Tenant-checked HR-only exact-before-edit official name and contact update, audited; no Auth email, salary, access or role change.';
+ uuid,uuid,text,text,text,text,text,text,text) is
+ 'Tenant-checked exact employee/profile-linked official name/contact correction in both canonical stores, two auditable events; no Auth email, salary, access or role change.';
