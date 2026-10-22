@@ -35,14 +35,21 @@ SELECT '10000000-0000-4000-8000-000000000010',
 WHERE NOT EXISTS (SELECT 1 FROM public.capability_grants
  WHERE profile_id='31000000-0000-4000-8000-000000000005'
  AND capability='compliance.manage' AND scope_unit_id IS NULL AND revoked_at IS NULL);
+-- Resolve the immutable synthetic employee identifier BEFORE changing into the
+-- Compliance officer's restricted SQL role. Direct browser SELECT on the HR
+-- roster must remain denied; the authorised case RPC validates case visibility.
+SELECT set_config('ceac.test.staff_employee_id',(
+ SELECT id::text FROM public.employee_roster
+ WHERE org_id='10000000-0000-4000-8000-000000000010'
+   AND profile_id='31000000-0000-4000-8000-000000000001'
+ LIMIT 1),true);
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000005',true);
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000005","role":"authenticated","aal":"aal1"}',true);
 DO $officer$
 DECLARE v_employee uuid; v_id uuid; v_rows jsonb;
 BEGIN
- SELECT id INTO v_employee FROM public.employee_roster
-  WHERE profile_id='31000000-0000-4000-8000-000000000001' LIMIT 1;
+ v_employee:=nullif(current_setting('ceac.test.staff_employee_id',true),'')::uuid;
  IF v_employee IS NULL THEN
    RAISE EXCEPTION 'Compliance fixture missing linked employee';
  END IF;
