@@ -55,6 +55,19 @@ BEGIN
   OR NOT EXISTS(SELECT 1 FROM public.routine_schedule_preview(ARRAY[v_work],current_date+1,current_date+1) p
    WHERE p.state='scheduled')
  THEN RAISE EXCEPTION 'Single-date restoration failed to preserve immutable history'; END IF;
+ -- Skip a current, valid day and prove BOTH outcome and progress writers reject
+ -- it. These tests run inside this rollback-only transaction.
+ v_result:=public.routine_change_single_date(v_work,current_date,'skip','Verified current-date operational exception',0);
+ BEGIN
+  PERFORM public.record_routine_occurrence(v_work,current_date,null,'Forged skipped date');
+  RAISE EXCEPTION 'Skipped date permitted a recorded outcome';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN
+  INSERT INTO public.routine_date_progress(org_id,operation_id,scheduled_on,actor_id,status)
+  VALUES(public.app_org_id(),v_op,current_date,auth.uid(),'in_progress');
+  RAISE EXCEPTION 'Skipped date permitted checklist progress';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ v_result:=public.routine_change_single_date(v_work,current_date,'restore','Restoring original scheduled date',1);
  IF EXISTS(SELECT 1 FROM public.operation_occurrences WHERE operation_id=v_op)
   OR EXISTS(SELECT 1 FROM public.routine_date_progress WHERE operation_id=v_op)
  THEN RAISE EXCEPTION 'Date exceptions fabricated completion or checklist progress'; END IF;
