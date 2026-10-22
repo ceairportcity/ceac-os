@@ -97,7 +97,7 @@ begin
   ) returning id into v_id;
   return v_id;
 end;
-$function$
+$function$;
 
 COMMENT ON FUNCTION public.workforce_record_roster_pattern(uuid,date,date,jsonb,jsonb,text,uuid) IS
  'HR-only canonical employee schedule: seven approved day types, complete day clocks, hours required on session days and forbidden on nonwork days, audited successor history.';
