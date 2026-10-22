@@ -38,7 +38,7 @@ begin
      or (select count(*) from jsonb_object_keys(p_day_map))<>7
      or jsonb_typeof(p_clock_map) is distinct from 'object'
      or (select count(*) from jsonb_object_keys(p_clock_map))<>7 then
-    raise exception 'Choose valid dates, seven day types and an HR reason.';
+    raise exception 'Choose valid dates, seven day types and an HR reason.' using errcode='22023';
   end if;
   for v_day in select * from jsonb_each_text(p_day_map) loop
     if v_day.key not in ('mon','tue','wed','thu','fri','sat','sun')
