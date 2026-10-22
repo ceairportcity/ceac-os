@@ -9,8 +9,14 @@ const goodCoordinate=(num)=>Number.isFinite(num);
 /** HR-only factual session evidence. A plotted point is a recorded start, NEVER live tracking. */
 export default function AdminWorkforceToday({roster=[],sessions=[],operationalProfiles=[],onOpenPeople,onOpenPerson,onOpenAccess,roleLabel="People & HR",dateLabel="today"}){
  const [term,setTerm]=useState(""),[filter,setFilter]=useState("started"),[selectedId,setSelectedId]=useState(null);
+ const [unitFilter,setUnitFilter]=useState("");
  const people=useMemo(()=>adminWorkforceToday(roster,sessions,operationalProfiles),[roster,sessions,operationalProfiles]);
+ const rosterUnitNames=useMemo(()=>new Map(roster.map(row=>[row.id,
+  (Array.isArray(row.units)?row.units:[]).map(unit=>typeof unit==="string"?unit:unit?.name||unit?.unit_name).filter(Boolean)
+ ])),[roster]);
+ const unitNames=useMemo(()=>[...new Set([...rosterUnitNames.values()].flat())].sort((a,b)=>a.localeCompare(b)),[rosterUnitNames]);
  const results=useMemo(()=>people.filter(row=>{
+  if(unitFilter && !(rosterUnitNames.get(row.id)||[row.unit]).includes(unitFilter))return false;
   const search=(row.name+" "+row.unit).toLocaleLowerCase();
   if(term&&!search.includes(term.toLocaleLowerCase()))return false;
   if(filter==="started")return !!row.firstStart;
@@ -18,7 +24,7 @@ export default function AdminWorkforceToday({roster=[],sessions=[],operationalPr
   if(filter==="noSession")return !row.firstStart;
   if(filter==="noCoordinates")return !!row.firstStart&&!goodCoordinate(row.latitude);
   return true;
- }),[people,term,filter]);
+ }),[people,term,filter,unitFilter,rosterUnitNames]);
  const clusters=useMemo(()=>clusterWorkStartLocations(results),[results]);
  const selected=results.find(row=>row.id===selectedId)||results[0]||null;
  const started=people.filter(row=>row.firstStart).length;
@@ -33,6 +39,13 @@ export default function AdminWorkforceToday({roster=[],sessions=[],operationalPr
   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
    <label className="small" style={{flex:"1 1 190px"}}>Find employee or unit
     <input className="field" aria-label="Search daily workforce" type="search" value={term} onChange={event=>setTerm(event.target.value)} placeholder="Search staff or department"/>
+   </label>
+   <label className="small" style={{flex:"1 1 165px"}}>Department
+    <select className="field" aria-label="Filter daily workforce by department" value={unitFilter}
+     onChange={event=>setUnitFilter(event.target.value)}>
+     <option value="">All departments</option>
+     {unitNames.map(name=><option key={name} value={name}>{name}</option>)}
+    </select>
    </label>
    <label className="small" style={{flex:"0 1 210px"}}>Show
     <select className="field" aria-label="Filter daily workforce" value={filter} onChange={event=>setFilter(event.target.value)}>
