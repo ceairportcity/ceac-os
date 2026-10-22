@@ -879,7 +879,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : rosterManagerName} />
           <PeopleFactRow icon="people" title="Role / authority" subtitle={hasLinkedProfile ? (employmentCurrent?.membership_role || person.role || "staff").replaceAll("_", " ") : "Not inferred from workbook title"} />
           <PeopleFactRow icon="calendar" title="Working pattern" subtitle={hasLinkedProfile ? (employmentCurrent?.working_pattern?.kind || "not recorded").replaceAll("_", " ") : "Not recorded"} />
-          <PeopleFactRow icon="calendar" title="Joined" subtitle={employmentCurrent?.joined_on ? dateOnly(employmentCurrent.joined_on) : "Not recorded"} />
+          <PeopleFactRow icon="calendar" title={hasLinkedProfile ? "Joined" : "Recorded start date"} subtitle={hasLinkedProfile ? (employmentCurrent?.joined_on ? dateOnly(employmentCurrent.joined_on) : "Not recorded") : (person.hr_started_on ? dateOnly(person.hr_started_on) : "Not recorded")} />
           <PeopleFactRow icon="info" title="Employment status" subtitle={employmentState} />
           {employmentCurrent?.exited_on && <PeopleFactRow icon="calendar" title="Exit date" subtitle={dateOnly(employmentCurrent.exited_on)} />}
         </div>
