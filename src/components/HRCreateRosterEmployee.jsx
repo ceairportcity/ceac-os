@@ -92,7 +92,7 @@ export default function HRCreateRosterEmployee({me,units=[],employees=[],account
    setError(humanError(failure,"The HR employee record could not be confirmed. Review any existing record before retrying."));
   }finally{saving.current=false;setBusy(false);}
  }
- return <Sheet onClose={()=>{if(!busy)onClose?.();}}>
+ return <Sheet onClose={()=>onClose?.()}>
   <div className="eyebrow">People & Access · HR roster</div>
   <h2 className="h2">Add employee</h2>
   <p className="screen-note">Create one employee record without a CEAC login. Account invitations and access permissions are separate, verified actions.</p>
