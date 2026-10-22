@@ -17,7 +17,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
  const [error,setError]=useState(""),[notice,setNotice]=useState(""),[uncertain,setUncertain]=useState(false);
  const [reload,setReload]=useState(0),generation=useRef(0),sending=useRef(false);
  const scope=me.org_id+":"+me.id+":"+employeeId;
- const consumedEditRequest=useRef(editRequest);
+ const consumedEditRequest=useRef(0);
  useEffect(()=>{
   const token=++generation.current;setLoading(true);setEdit(false);setUpdatedAt(null);
   setHistory([]);setManagerMemberships([]);setManagerDirectory([]);setManagersVerified(false);setError("");setNotice("");setUncertain(false);
