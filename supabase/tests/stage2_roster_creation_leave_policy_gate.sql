@@ -13,6 +13,14 @@ BEGIN
  THEN RAISE EXCEPTION 'New employee privileged creation surface invalid'; END IF;
 END;
 $surface$;
+-- Ensure the test has a genuinely LINKED employee/account for the
+-- duplicate-account negative case. This test row is rollback-only.
+INSERT INTO public.employee_roster(
+ org_id,profile_id,full_name,employment_type,employment_status,identity_state,source_system)
+SELECT p.org_id,p.id,p.full_name,'permanent','active','linked','stage2_duplicate_account_gate'
+FROM public.profiles p
+WHERE p.id='31000000-0000-4000-8000-000000000001'
+ AND NOT EXISTS(SELECT 1 FROM public.employee_roster er WHERE er.profile_id=p.id);
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
@@ -59,6 +67,16 @@ BEGIN
    NULL,NULL,NULL,'Same person name requires independent verification',false);
  EXCEPTION WHEN unique_violation THEN v_denied:=true; END;
  IF NOT v_denied THEN RAISE EXCEPTION 'Unreviewed exact-name duplication accepted'; END IF;
+ -- Manual acknowledgement never permits a second roster record for an
+ -- existing account which is ALREADY linked to a canonical employee.
+ v_denied:=false;
+ BEGIN
+  PERFORM public.admin_create_roster_employee(
+   'Illegal duplicate linked account',NULL,NULL,'permanent','active',NULL,'{}'::uuid[],NULL,
+   (SELECT email FROM public.profiles WHERE id='31000000-0000-4000-8000-000000000001'),
+   NULL,NULL,'Manual verification cannot override an existing linked employee',true);
+ EXCEPTION WHEN unique_violation THEN v_denied:=true; END;
+ IF NOT v_denied THEN RAISE EXCEPTION 'Already-linked Auth account could create another employee'; END IF;
  v_denied:=false;
  BEGIN
   PERFORM public.admin_create_roster_employee(
