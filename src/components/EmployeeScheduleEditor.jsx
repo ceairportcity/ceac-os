@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { approvedOfficeWeekTemplate } from "../lib/approvedOfficeWeekTemplate";
 import { workforceRecordedWeek } from "../lib/workforceRecordedWeek";
-import "./EmployeeScheduleEditor.css";
 
 const DAYS = [
   ["mon","Monday"],["tue","Tuesday"],["wed","Wednesday"],
@@ -13,6 +12,10 @@ const emptyDays = () => Object.fromEntries(DAYS.map(([day]) => [day, {
   type:"", start:"", end:"",
 }]));
 const dateOf = (value) => value ? String(value).slice(0,10) : "";
+const recordedWeekRowStyle = {
+  display:"grid",gridTemplateColumns:"minmax(72px,.6fr) minmax(114px,1.2fr) minmax(105px,1fr)",
+  minWidth:315,gap:8,padding:"9px 10px",fontSize:12,lineHeight:1.4,alignItems:"center",
+};
 
 export default function EmployeeScheduleEditor({ me, profileId, employeeId, unitId, name }) {
   const authorised = Boolean(me?.is_admin) && (me.capabilities || []).includes("workforce.manage");
@@ -172,13 +175,13 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     {loading && <p role="status">Loading the employee's schedule...</p>}
     {error && <p role="alert">{error}</p>}
     {notice && <p role="status">{notice}</p>}
-    {!loading && previous && <div className="ev2p-admin-schedule-history">
+    {!loading && previous && <div className="ev2p-admin-schedule-history" style={{display:"grid",gap:12,minWidth:0,marginTop:12}}>
       <p className="screen-note"><strong>{inspected?.id === previous.id ? "Latest recorded version" : "Earlier saved version"}:</strong> {dateOf(inspected.effective_from)}{inspected.effective_to ? " to "+dateOf(inspected.effective_to) : " onward"}. This is a recorded HR pattern, not evidence of actual attendance.</p>
-      <div className="ev2p-admin-schedule-week" role="table" aria-label="Saved employee seven-day working week">
-        <div role="row" className="ev2p-admin-schedule-week-head">
+      <div className="ev2p-admin-schedule-week" role="table" aria-label="Saved employee seven-day working week" style={{minWidth:0,overflowX:"auto",border:"1px solid var(--ev2-line,var(--line))",borderRadius:8}}>
+        <div role="row" className="ev2p-admin-schedule-week-head" style={{...recordedWeekRowStyle,background:"var(--ev2-surface-muted,#f3f4f4)"}}>
           <strong role="columnheader">Day</strong><strong role="columnheader">Day type</strong><strong role="columnheader">Expected hours</strong>
         </div>
-        {previewDays.map(day=><div role="row" key={day.key} className="ev2p-admin-schedule-week-row">
+        {previewDays.map(day=><div role="row" key={day.key} className="ev2p-admin-schedule-week-row" style={{...recordedWeekRowStyle,borderTop:"1px solid var(--ev2-line,var(--line))"}}>
           <span role="cell">{day.label}</span><span role="cell">{day.typeName}</span><span role="cell">{day.hours}</span>
         </div>)}
       </div>
