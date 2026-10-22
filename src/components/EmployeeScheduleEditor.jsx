@@ -11,6 +11,21 @@ const emptyDays = () => Object.fromEntries(DAYS.map(([day]) => [day, {
 }]));
 const dateOf = (value) => value ? String(value).slice(0,10) : "";
 
+// No unapproved day-type IDs are invented. This voluntary HR starting template
+// appears only when the actual active CEAC Office and weekly-off types exist.
+export function approvedOfficeWeekTemplate(dayTypes = []) {
+  const office = dayTypes.filter(type => type.active && type.session_expected
+    && String(type.name).trim().toLowerCase() === "office");
+  const rest = dayTypes.filter(type => type.active && !type.session_expected
+    && ["weekly off","off day","rest day"].includes(String(type.name).trim().toLowerCase()));
+  if (office.length !== 1 || rest.length !== 1) return null;
+  return Object.fromEntries(DAYS.map(([day]) => [day,
+    ["sat","sun"].includes(day)
+      ? { type:rest[0].id,start:"",end:"" }
+      : { type:office[0].id,start:"10:00",end:"17:00" }
+  ]));
+}
+
 export default function EmployeeScheduleEditor({ me, profileId, employeeId, unitId, name }) {
   const authorised = Boolean(me?.is_admin) && (me.capabilities || []).includes("workforce.manage");
   const [dayTypes,setDayTypes] = useState([]);
@@ -72,6 +87,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
   if (!authorised || (!profileId && !employeeId)) return null;
 
   const previous = versions[0] || null;
+  const officeTemplate = approvedOfficeWeekTemplate(dayTypes);
   function beginEdit() {
     setDays(Object.fromEntries(DAYS.map(([key]) => [key,{
       type:previous?.day_map?.[key] || "",
@@ -161,6 +177,12 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
       <button type="button" className="btn btn-ghost" onClick={beginEdit}>Edit authorised work schedule</button>}
     {edit && <div className="ev2p-admin-schedule-editor">
       <p className="screen-note">Editing {name || "employee"}; all seven days must have a day type. Scheduled duty days also require start/end hours. Changes create a new version, not an overwrite.</p>
+      {officeTemplate && <div className="workforce-setup-actions">
+        <button className="btn btn-ghost btn-sm" type="button" onClick={()=>setDays(officeTemplate)}>
+          Fill approved normal office week
+        </button>
+        <p className="screen-note">Monday–Friday 10:00–17:00, lunch 13:00–14:00; weekends off. Review actual Office/Remote/Field, event and individual exceptions before saving. A template never publishes a schedule.</p>
+      </div>}
       <div className="form-grid two">
         <label>Effective from
           <input className="field" type="date" value={startDate} onChange={(e)=>setStartDate(e.target.value)}/>
