@@ -49,6 +49,10 @@ INSERT INTO public.routine_date_progress(org_id,operation_id,scheduled_on,actor_
 SELECT set_config('ceac.test.cover_progress',(SELECT id::text FROM public.routine_date_progress WHERE operation_id=current_setting('ceac.test.cover_op')::uuid),true);
 SELECT set_config('ceac.test.cover_outcome',public.record_routine_occurrence(current_setting('ceac.test.cover_work')::uuid,current_date,NULL,'Actual dated work by the cover person')::text,true);
 SELECT set_config('ceac.test.cover_file',(SELECT file_id::text FROM public.register_operational_file('routine_date_progress',current_setting('ceac.test.cover_progress')::uuid,'routine_evidence','cover-proof.txt','text/plain',12)),true);
+-- Exercise the actual Storage INSERT RLS boundary; this is metadata-only.
+-- The authenticated browser separately uploads and downloads genuine bytes.
+SELECT set_config('ceac.test.cover_storage_path',(SELECT storage_path FROM public.operational_files WHERE id=current_setting('ceac.test.cover_file')::uuid),true);
+INSERT INTO storage.objects(bucket_id,name,owner) VALUES('ceac-operational-private',current_setting('ceac.test.cover_storage_path'),auth.uid());
 DO $contributor$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.operation_occurrences WHERE id=current_setting('ceac.test.cover_outcome')::uuid AND recorded_by=auth.uid())
 
@@ -63,6 +67,7 @@ END; $preserve$;
 INSERT INTO public.routine_occurrence_reviews(org_id,occurrence_id,reviewer_id,decision,note) VALUES(public.app_org_id(),current_setting('ceac.test.cover_outcome')::uuid,auth.uid(),'accepted','Independent manager reviewed actual cover evidence');
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 DO $file_guard$ BEGIN
+ BEGIN INSERT INTO storage.objects(bucket_id,name,owner) VALUES('ceac-operational-private',current_setting('ceac.test.cover_storage_path'),auth.uid());RAISE EXCEPTION 'Original assignee inserted cover Storage evidence';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  BEGIN PERFORM public.register_operational_file('routine_date_progress',current_setting('ceac.test.cover_progress')::uuid,'routine_evidence','impersonation.txt','text/plain',12);RAISE EXCEPTION 'Original assignee attached to cover update';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
 END; $file_guard$;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000007',true);
