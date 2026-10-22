@@ -628,7 +628,7 @@ test("OCR6C Unit Rooms carry attributable communication and private media betwee
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page).toHaveURL(/roomKind=unit/);
     await expect(page.getByRole("heading", { name: "Test Unit A" })).toBeVisible();
     await page.reload();
@@ -647,7 +647,7 @@ test("OCR6C Unit Rooms carry attributable communication and private media betwee
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page.getByText(message, { exact: true })).toBeVisible();
     await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
@@ -660,7 +660,7 @@ test("Rooms 2.0 resolves real mentions and supports Sub-team context without DMs
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
 
     await expect(page.getByRole("button", { name: "Fixture Video Team", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Fixture Video Team", exact: true }).click();
@@ -686,7 +686,7 @@ test("Rooms 2.0 resolves real mentions and supports Sub-team context without DMs
   {
     const { context, page } = await openAs(browser, "sameunit@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page.getByRole("button", { name: "Fixture Video Team", exact: true })).toHaveCount(0);
     await context.close();
   }
@@ -1172,7 +1172,7 @@ test("Experience Stage 7 keeps work capture simple, staff-owned and manager-conf
     await expect(page.getByRole("heading", { name: proposalName, exact: true })).toBeVisible();
 
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     const composer = page.getByPlaceholder("Message your unit");
     await composer.fill(roomMessage);
     await page.getByRole("button", { name: "Send", exact: true }).click();
@@ -1190,7 +1190,7 @@ test("Experience Stage 7 keeps work capture simple, staff-owned and manager-conf
 
     await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).last().click();
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page.getByText(/Created .* from this message\./)).toBeVisible();
     await context.close();
   }
@@ -1620,16 +1620,18 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await go(page, "Workforce");
     await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
     await expect(page.getByText(dayTypeName, { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Record schedule", exact: true })).toBeEnabled();
-
-    await page.getByRole("button", { name: "Record schedule", exact: true }).click();
-    dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Schedule person").selectOption("31000000-0000-4000-8000-000000000001");
-    await dialog.getByLabel("Schedule weekday").selectOption(weekday);
-    await dialog.getByLabel("Schedule day type").selectOption({ label: dayTypeName });
-    await dialog.getByLabel("Schedule reason").fill(scheduleReason);
-    await dialog.getByRole("button", { name: "Record schedule", exact: true }).click();
-    await expect(page.getByText("Workforce schedule recorded.", { exact: true })).toBeVisible();
+    // HR now records a complete employee-id week through the unified editor.
+    await page.getByLabel("Choose employee working schedule").selectOption({label:"Staff Fixture"});
+    const scheduleEditor=page.locator(".ev2p-admin-schedule");
+    await scheduleEditor.getByRole("button",{name:"Edit authorised work schedule",exact:true}).click();
+    for(const dayLabel of ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]){
+      await scheduleEditor.getByLabel(dayLabel+" work arrangement",{exact:true}).selectOption({label:dayTypeName});
+      await scheduleEditor.getByLabel(dayLabel+" start",{exact:true}).fill("10:00");
+      await scheduleEditor.getByLabel(dayLabel+" end",{exact:true}).fill("17:00");
+    }
+    await scheduleEditor.getByLabel("HR schedule reason",{exact:true}).fill(scheduleReason);
+    await scheduleEditor.getByRole("button",{name:"Record HR-authorised schedule",exact:true}).click();
+    await expect(scheduleEditor.getByRole("table",{name:"Saved employee seven-day working week"})).toContainText(dayTypeName);
 
     await page.reload();
     await go(page, "Workforce");
@@ -2123,7 +2125,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(peopleMain.getByRole("tab", { name: "Overview", exact: true })).toBeVisible();
 
   await page.getByRole("tab", { name: "Time & Leave", exact: true }).click();
-  await expect(page.getByText(/entitlement not configured/i)).toBeVisible();
+  await expect(page.getByText(/active annual policy not configured/i)).toBeVisible();
 
   await page.getByRole("tab", { name: "Protected HR", exact: true }).click();
   await expect(peopleMain.getByRole("heading", { name: "Protected HR", exact: true })).toBeVisible();
@@ -2424,7 +2426,7 @@ test("Closure corridor preserves the Staff Fixture journey across CEAC OS", asyn
     await expect(page.locator(".staffv2").getByRole("button").filter({ hasText: "Acceptance unit meeting" })).toBeVisible();
 
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page.getByText("Room acceptance — confirm Sunday setup", { exact: true })).toBeVisible();
 
     await go(page, "Performance & development");

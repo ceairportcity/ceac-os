@@ -26,13 +26,16 @@ async function open(browser,email,route){
 }
 
 test('release personal monthly and quarterly PDFs contain visible authorised report content',async({browser})=>{
+ // Allow two actual exports and captures; the period selector includes option text
+ // in its accessible name, so use its stable role and Period prefix.
+ test.setTimeout(60000);
  const {page,context}=await open(browser,'staff@ceac.local.test','/?tab=achievements');
  try{
   const report=page.getByRole('main',{name:'My achievements'});
   await expect(report.getByRole('button',{name:'Print / Save as PDF'})).toBeEnabled();
   mkdirSync('test-artifacts',{recursive:true});
   for(const cadence of ['monthly','quarterly']){
-   await report.getByLabel('Period',{exact:true}).selectOption(cadence);
+   await report.getByRole('combobox',{name:/^Period/}).selectOption(cadence);
    await expect(report.getByRole('button',{name:'Print / Save as PDF'})).toBeEnabled();
    await page.emulateMedia({media:'print'});
    await expect(report.getByRole('heading',{name:'My achievements',exact:true})).toHaveCSS('visibility','visible');
@@ -58,6 +61,7 @@ test('release Executive PDF prints collapsed milestone content and restores its 
  const period=ok(await service.from('report_periods').insert({org_id:org,kind:'project',label:'Synthetic PDF acceptance Q4 2026',starts_on:'2026-10-01',ends_on:'2026-12-31'}).select('id').single());
  const {page,context}=await open(browser,'exec@ceac.local.test','/?tab=exec-reports');
  try{
+  await expect(page.locator('.s2-exec-brief')).toBeVisible();
   const picker=page.getByLabel('Reporting period',{exact:true});
   if(await picker.count())await picker.selectOption(period.id);
   const brief=page.locator('.s2-exec-brief');
@@ -74,6 +78,9 @@ test('release Executive PDF prints collapsed milestone content and restores its 
   mkdirSync('test-artifacts',{recursive:true});
   const pdf=await page.pdf({path:'test-artifacts/release-executive-quarter.pdf',format:'A4',printBackground:true,preferCSSPageSize:true});
   expect(pdf.subarray(0,5).toString()).toBe('%PDF-');expect(pdf.length).toBeGreaterThan(5000);
+  // This bounded synthetic briefing fits one A4 page; hidden screen layout
+  // must not create the two blank trailing pages found during PDF inspection.
+  expect((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length).toBe(1);
   const printEvidence=await page.evaluate(()=>window.__ceacReleasePrintEvidence);
   expect(printEvidence.opened).toBe(true);expect(printEvidence.visibility).toBe('visible');expect(printEvidence.content).toContain(milestoneName);
   writeFileSync('test-artifacts/release-executive-print-state.json',JSON.stringify(printEvidence,null,2));
@@ -145,6 +152,11 @@ test('release HR uploads private bytes and links existing identities without cre
   await link.getByLabel('HR reason, evidence and identity verification method').fill('Synthetic proof independently reviewed against the confirmed existing login and matching unit.');
   await link.getByRole('checkbox').check();
   await link.getByRole('button',{name:'Confirm verified existing identity'}).click();
+  await expect(employee).toHaveCount(0);
+  const linkedRow=page.locator('.fpg-people-roster-row').filter({has:page.getByText('Synthetic Link Acceptance Employee',{exact:true})});
+  await expect(linkedRow).not.toContainText('No account linked');
+  await linkedRow.click();
+  await expect(page.locator('.ev2-admin-person-workspace').getByRole('button',{name:'Account & permissions',exact:true})).toBeVisible();
   await expect.poll(async()=>ok(await admin.from('employee_roster').select('id,profile_id').eq('id',employeeId).single()).profile_id).toBe(personId);
   const after=ok(await service.auth.admin.getUserById(personId));
   expect(after.user.id).toBe(before.user.id);expect(after.user.email).toBe(before.user.email);
