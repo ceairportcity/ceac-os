@@ -205,7 +205,7 @@ export default function ControlCenter({me,go}){
       {
         key:"people",
         title:"People & access",
-        description:"Employee records, identity linking and protected access.",
+        description:"Employee records and invitations here; security permissions are reviewed through one protected Authority workspace.",
         status:peopleStatus,
         detail:peopleGaps.length
           ? `${peopleGaps.length} employee record${peopleGaps.length===1?" needs":"s need"} identity, employment or department details reviewed.`
@@ -214,6 +214,7 @@ export default function ControlCenter({me,go}){
             : "No employee data exception or pending Staff invitation is currently recorded.",
         actions:[
           {label:"People & Access",onClick:()=>go("people")},
+          ...(caps.has("authority.manage")?[{label:"Manage permissions",onClick:()=>go("authority")}]:[]),
           ...(caps.has("hr_private.access")?[{label:"Protected HR",onClick:()=>go("protected-hr")}]:[]),
         ],
       },
@@ -256,10 +257,10 @@ export default function ControlCenter({me,go}){
         description:"Explicit authority, versioned rules and consequential checks.",
         status:governanceStatus,
         detail:governanceStatus===STATUSES.available
-          ? "Review assigned permissions and organisation rules. Changes retain their recorded history."
+          ? "Review versioned organisation rules. Employee permissions are managed directly through People & Access."
           : "Permission management requires separately assigned access.",
         actions:[
-          ...(caps.has("authority.manage")?[{label:"Authority",onClick:()=>go("authority")},{label:"System rules",onClick:()=>go("policies")}]:[]),
+          ...(caps.has("authority.manage")?[{label:"System rules",onClick:()=>go("policies")}]:[]),
         ],
       },
       {
@@ -313,7 +314,7 @@ export default function ControlCenter({me,go}){
       eyebrow:"Organisation",
       title:"Organisation & people",
       description:"Durable structure, employee identity and access configuration.",
-      domainKeys:["organisation","people"],
+      domainKeys:["people","organisation"],
     },
     {
       key:"operations",
