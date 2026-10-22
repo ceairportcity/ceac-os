@@ -820,6 +820,8 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("documents")}>Documents</button>
           {!hasLinkedProfile&&<button type="button" className="btn btn-ghost" onClick={()=>openAccessAdministration(null,{
             employeeId:person.employee_id,
+            requestedBy:me.id,
+            orgId:me.org_id,
             name:person.full_name,
             contactEmail:person.hr_contact_email || "",
             unitId:(person.roster_units||[]).find(member=>member.is_primary)?.unit_id||"",
@@ -1341,7 +1343,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       initialProfileId={accessFocusProfileId}
       initialUnitId={accessFocusUnitId}
       initialMode={accessFocusMode}
-      initialInviteRoster={accessInviteRoster}
+      initialInviteRoster={accessInviteRoster?.requestedBy===me.id && accessInviteRoster?.orgId===me.org_id ? accessInviteRoster : null}
       onChanged={async () => { if (!(await load({ silent: true }))) throw new Error("People records could not be refreshed."); }}
       onLifecycle={(profileId, type) => openLifecycle?.(profileId, type)}
       onOpenPerson={(profileId) => {
