@@ -520,9 +520,9 @@ test("Work inspector and dated diary cannot display or submit stale actor/work c
 test("Work full-detail remounts its independent async state on account, department and responsibility changes",()=>{
   const item=source("src/screens/Item.jsx");
   assert.match(item,/export default function Item\(props\)/);
-  assert.match(item,/const scope = \[props\.me\?\.org_id, props\.me\?\.id, props\.me\?\.unit_id, props\.id\]\.join\(":"\)/);
+  assert.match(item,/const scope = \[props\.me\?\.org_id, props\.me\?\.id, props\.me\?\.unit_id, props\.id, props\.initialRoutineDate \|\| ""\]\.join\(":"\)/);
   assert.match(item,/<ItemDetail key=\{scope\} \{\.\.\.props\} \/>/);
-  assert.match(item,/function ItemDetail\(\{ id, me, session, isManager = false, openRoom, back \}\)/);
+  assert.match(item,/function ItemDetail\(\{ id, me, session, isManager = false, initialRoutineDate=null, openRoom, back \}\)/);
   assert.match(item,/record_routine_occurrence/);
   assert.match(item,/change_routine_schedule/);
 });

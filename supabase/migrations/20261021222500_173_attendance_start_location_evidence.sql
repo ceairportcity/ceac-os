@@ -53,7 +53,7 @@ begin
     or em.unit_id in(select public.app_managed_units()) or exists(select 1 from public.unit_memberships m where m.profile_id=emp.profile_id and m.org_id=v_org and m.unit_id in(select public.app_managed_units())));
   return v_result;
 end;
-$function$
+$function$;
 
 COMMENT ON FUNCTION public.attendance_day_evidence(date) IS
  'Existing sanitised day evidence with separately restricted historical start-GPS data; not live tracking.';
