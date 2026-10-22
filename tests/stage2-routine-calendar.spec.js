@@ -75,6 +75,33 @@ test("real organisational routine dates appear in Staff and Unit Calendar withou
   await expect(agenda).toContainText(colleagueTitle);
   await expect(agenda).toContainText("Outcome recorded");
   await expect(unit.page.getByText("Routine dates unavailable",{exact:true})).toHaveCount(0);
+  // An authorised unit head can skip exactly one future date; Staff can view
+  // its factual state but cannot claim date progress or grant itself a waiver.
+  const skipped=await manager.rpc("routine_change_single_date",{
+    p_work_item_id:id,p_scheduled_on:target,p_action:"skip",
+    p_reason:"Confirmed one-day exception in the test roster",p_expected_version:0,
+  });
+  expect(skipped.error,skipped.error?.message).toBeNull();
+  await own.page.reload();
+  await expect(own.page.getByRole("region",{name:"Progress for a routine date"}))
+    .toContainText("This occurrence was explicitly skipped");
+  await expect(own.page.getByRole("region",{name:"Progress for a routine date"}).getByRole("button",{name:"Save date progress"})).toHaveCount(0);
+  const forbidden=await staff.rpc("routine_change_single_date",{
+    p_work_item_id:id,p_scheduled_on:target,p_action:"restore",
+    p_reason:"Staff is not allowed to restore manager dates",p_expected_version:1,
+  });
+  expect(forbidden.error).toBeTruthy();
+  // Complete the same UI control that HR / Managers will use.
+  await unit.page.goto("/?tab=calendar&item="+id+"&routineDate="+target);
+  const oneDate=unit.page.getByRole("region",{name:"One-date routine exception"});
+  await expect(oneDate.getByRole("button",{name:"Restore this date"})).toBeVisible();
+  await oneDate.getByLabel("Reason for restoring this date").fill("Verified original staff schedule restored");
+  await oneDate.getByRole("button",{name:"Restore this date"}).click();
+  await expect(oneDate).toContainText("Date remains scheduled");
+  await own.page.reload();
+  await expect(own.page.getByRole("region",{name:"Progress for a routine date"}))
+    .not.toContainText("This occurrence was explicitly skipped");
+
   const after=await staff.from("work_items").select("status").eq("id",id).single();
   expect(after.error).toBeNull();expect(after.data.status).toBe(before.data.status);
   await unit.page.screenshot({path:"test-artifacts/routine-calendar-manager-unit.png",fullPage:true});
