@@ -18,10 +18,12 @@ test("HR employee opens the actual person's permissions in the existing Authorit
  const {page,context}=await adminPage(browser);
  await authenticate(page);
  await page.goto("/?tab=people");
- const staff=page.locator(".fpg-people-roster-row").filter({hasText:"Staff Fixture"}).first();
+ const staff=page.locator(".fpg-people-roster-row").filter({has:page.getByText("Staff Fixture",{exact:true})});
  await expect(staff).toBeVisible();
  await staff.click();
- await page.getByRole("tab",{name:"Access",exact:true}).click();
+ const employee=page.locator(".ev2-admin-person-workspace");
+ await expect(employee).toBeVisible();
+ await employee.getByRole("tab",{name:"Access",exact:true}).click();
  const manage=page.getByRole("button",{name:"Manage permissions",exact:true});
  await expect(manage).toBeVisible();
  await manage.click();

@@ -34,7 +34,8 @@ test("OCR5E Control Center is state-derived and never invents a numeric health s
   expect(control).toContain('person.identity_state==="needs_review"');
   expect(control).toContain('person.employment_type==="not_recorded"');
   expect(control).toContain('peopleGaps.some((person)=>person.identity_state==="needs_review")');
-  expect(control).toContain("Manager approval → Administration final approval");
+  expect(control).toContain("No active leave policy is recorded. Review the rules before assigning entitlements.");
+  expect(control).toContain('actions:[{label:"Workforce",onClick:()=>go("attendance")}]');
   expect(control).toContain("This is not a numeric health score.");
   expect(control).not.toContain("healthScore");
   expect(control).not.toContain("managed elsewhere");

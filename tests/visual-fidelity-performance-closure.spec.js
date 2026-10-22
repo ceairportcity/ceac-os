@@ -18,13 +18,9 @@ const budgets = {
   // retain narrow regression headroom rather than exempting the new product CSS.
   coreCssRaw: 534 * KIB,
   coreCssGzip: 80 * KIB,
-  // Measured combined 22 Oct Stage 2 HR, Compliance map, seven-day schedule,
-  // Work and People modules emit 634667 CSS bytes (Quality Gate 39820481733).
-  // Their owner-approved new surfaces supersede the 15-Oct 631310-byte
-  // reference. The exact 620 KiB ceiling leaves only 213 bytes headroom.
-  // Retain the core CSS/gzip and every per-route/vendor/JS budget unchanged:
-  // this is a narrow measured Stage 2 budget rebasing, not an unlimited waiver.
-  allCssRaw: 620 * KIB,
+  // Preserve the owner-locked aggregate limit. Retired Calendar/Inbox rules
+  // were removed rather than raising the guard for the integrated candidate.
+  allCssRaw: 617 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;

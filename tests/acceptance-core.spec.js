@@ -471,8 +471,9 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   const staff = await openAs(browser, "staff@ceac.local.test");
   await go(staff.page, "Work");
   for (const item of created.filter((entry) => entry.kind !== "Request")) {
-    // Dates for scheduled occurrences may repeat a routine title. Match
-    // the actual authored Work row, as reconciled in historical PR #117.
+    // The real register is paginated. Find each newly authored responsibility
+    // through its existing search before asserting the saved Staff row.
+    await staff.page.getByRole("searchbox", { name: "Find a responsibility" }).fill(item.title);
     await expect(staff.page.locator(".s2-register-row").getByText(item.title, { exact: true })).toBeVisible();
   }
   await staff.context.close();

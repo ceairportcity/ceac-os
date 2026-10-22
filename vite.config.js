@@ -8,6 +8,14 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
+            // Keep existing Workforce interactions intact while splitting its
+            // schedule/evidence components below the fixed 100KiB route cap.
+            {
+              name: "workforce-workspace",
+              test: /src[\\/]components[\\/](?:WorkforceEmployeeScheduleWorkspace|WorkforceTodayReviewList|AttendanceCorrectionWorkflow|AttendanceCodeIssuer)\.jsx$/,
+              priority: 9,
+              maxSize: 72 * 1024,
+            },
             // Stage 2 expanded People with HR create/edit, versioned schedules,
             // account reconciliation and private dossier interactions. Keep
             // these existing modules in small eagerly imported, reusable chunks
