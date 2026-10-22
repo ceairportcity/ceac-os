@@ -67,11 +67,12 @@ $definer_search_path$;
 -- workforce_request_leave SECURITY INVOKER wrapper. The integrated one-bundle release
 -- adds twelve reviewed caller-scoped interfaces and removes two obsolete direct
 -- execution grants (attendance correction and performance publication): 145.
--- The full 148-signature exact allowlist (145 frozen Stage 1 functions plus one
--- narrowly reviewed Stage 2 universal-TOTP assurance helper and two caller-scoped owner Work RPCs) and anon-denial checks
--- remain independently enforced in security_definer_surface_gate.sql,
--- admin_hr_security_gate.sql and privileged_mfa_aal2_gate.sql. Count alone is
--- insufficient evidence of security; never relax the signature allowlist.
+-- The currently reviewed authenticated-definer surface has 159 EXACT
+-- signatures, including later owner Work, attendance, roster and HR corrections.
+-- security_definer_surface_gate.sql locks the full named 159-signature set,
+-- separately from this regression count. The independent anon-denial and
+-- internal-helper revocation tests are retained; count alone is not a security
+-- allowlist, and future grants must be independently reviewed by signature.
 -- Phase 2 migration 112 adds six reviewed RPCs: capability-bound daily pattern
 -- versions, self-bound notices/returns/checkpoints, manager-bound responses and
 -- a sanitised evidence read. attendance_phase2_gate.sql tests their identities,
@@ -86,10 +87,10 @@ begin
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
 
-  -- Preserve the historical Stage 1 145-function allowlist and explicitly
-  -- admit only the reviewed Stage 2 TOTP/AAL2 RLS helper, not arbitrary grants.
-  if n<>148 then
-    raise exception 'Platform Kernel gate failure: expected 145 reviewed Stage 1 SECURITY DEFINER interfaces plus the Stage 2 TOTP helper and two owner Work RPCs (148 total); found %.',n;
+  -- This count must agree with the separately exact-enumerated 159-signature
+  -- security_definer_surface_gate.sql; never broaden approved EXECUTE grants.
+  if n<>159 then
+    raise exception 'Platform Kernel gate failure: expected 159 individually reviewed authenticated SECURITY DEFINER interfaces (exact signatures checked independently); found %.',n;
   end if;
 
   if to_regprocedure('public.app_stage2_universal_aal_allowed()') is null
