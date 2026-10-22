@@ -57,7 +57,7 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect}) {
    {!consent?<div className="ceac-street-map-optin">
     <span className="ceac-street-map-eyebrow">GEOGRAPHIC VIEW</span>
     <strong>View recorded work starts on a street map</strong>
-    <p>OpenStreetMap tiles show roads and nearby places. Loading them sends the visible map area and your IP address to OpenStreetMap. Staff identities and exact work-start records are not sent to the map provider.</p>
+    <p>OpenStreetMap tiles show roads and nearby places. Loading them sends the visible map area, the CEAC site origin and your IP address to OpenStreetMap. Staff identities and exact work-start records are not sent to the map provider.</p>
     <button type="button" className="btn btn-sm" disabled={!clusters.length} onClick={()=>{setTileWarning(false);setConsent(true);}}>
      Enable street map
     </button>
