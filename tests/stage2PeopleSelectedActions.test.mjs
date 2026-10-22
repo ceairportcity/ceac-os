@@ -19,7 +19,7 @@ test("selected roster-only employee has an in-record edit and separate account a
  assert.match(people,/onClick=\{\(\)=>editSelectedEmployment\(\)\}>Edit employee record/);
  assert.match(people,/onClick=\{\(\)=>editSelectedEmployment\("transferred"\)\}>Assign \/ transfer department/);
  assert.match(people,/onClick=\{\(\)=>setPersonTab\("time"\)\}>Work schedule/);
- assert.match(people,/!hasLinkedProfile&&<button[^>]*onClick=\{\(\)=>openAccessAdministration\(null\)\}>Invite account/);
+ assert.match(people,/!hasLinkedProfile&&<button[^>]*onClick=\{\(\)=>openAccessAdministration\(null,\{/);
  assert.match(people,/const \[rosterEditRequest,setRosterEditRequest\]/);
  assert.match(people,/editRequest=\{rosterEditRequest.employeeId===person.employee_id\?/);
  assert.match(editor,/editRequest=0/);
@@ -41,4 +41,17 @@ test("selected employee shows canonical HR contact and start date independently 
  assert.match(people,/title="HR contact telephone"/);
  assert.match(people,/title="Employment start date"/);
  assert.doesNotMatch(people,/\n\s*email: hrContactResult\.data\.hr_contact_email/);
+});
+
+test("invite entry carries selected roster identity into existing verified invitation form",()=>{
+ const access=read("src/components/PeopleAccess.jsx");
+ assert.match(people,/setAccessInviteRoster\(profileId \? null : inviteRoster\)/);
+ assert.match(people,/initialInviteRoster=\{accessInviteRoster\}/);
+ assert.match(people,/contactEmail:person\.hr_contact_email \|\| ""/);
+ assert.match(people,/unitId:\(person\.roster_units\|\|\[\]\)\.find\(member=>member\.is_primary\)\?\.unit_id/);
+ assert.match(access,/if \(!initialInviteRoster\?\.employeeId \|\| !canManage\) return/);
+ assert.match(access,/email: initialInviteRoster\.contactEmail \|\| ""/);
+ assert.match(access,/An invitation never links this employee automatically/);
+ assert.match(access,/existingAccountEmail \|\| existingInvitationEmail/);
+ assert.doesNotMatch(access,/useEffect\([\s\S]*?inviteByEmail\(/);
 });
