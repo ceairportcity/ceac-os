@@ -215,12 +215,16 @@ BEGIN
  IF NEW.scheduled_on IS NULL OR NEW.scheduled_on<current_date-370 OR NEW.scheduled_on>current_date+1 THEN
   RAISE EXCEPTION 'Choose a routine date within the past year.' USING ERRCODE='22023';
  END IF;
+ -- Lock the date BEFORE validating the schedule. This shares the same
+ -- transaction-level lock as routine_change_single_date: a concurrent skip
+ -- cannot race with a progress insert that read an earlier status.
+ PERFORM pg_catalog.pg_advisory_xact_lock(
+  pg_catalog.hashtextextended(NEW.operation_id::text||':'||NEW.scheduled_on::text,0));
  SELECT p.timezone INTO v_zone FROM public.routine_schedule_preview(ARRAY[v_work],NEW.scheduled_on,NEW.scheduled_on) p WHERE p.state<>'skipped';
  IF v_zone IS NULL OR NEW.scheduled_on>(clock_timestamp() AT TIME ZONE v_zone)::date THEN
   RAISE EXCEPTION 'Choose today or an earlier scheduled date.' USING ERRCODE='22023';
  END IF;
- -- Serialize updates for a date, and refuse stale forms instead of losing work.
- PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(NEW.operation_id::text||':'||NEW.scheduled_on::text,0));
+ -- The date lock above also serialises progress versions and stale saves.
  SELECT coalesce(max(p.entry_number),0) INTO v_previous FROM public.routine_date_progress p
   WHERE p.operation_id=NEW.operation_id AND p.scheduled_on=NEW.scheduled_on;
  IF NEW.entry_number IS DISTINCT FROM v_previous+1 THEN
@@ -292,6 +296,10 @@ BEGIN
   OR length(btrim(coalesce(p_reason,''))) NOT BETWEEN 8 AND 2000 OR p_expected_version IS NULL THEN
   RAISE EXCEPTION 'Choose one current or future scheduled date, a reason and its verified revision.' USING ERRCODE='22023';
  END IF;
+ -- The same lock is acquired before testing evidence and mutating a date.
+ -- A verified progress insert cannot race with this single-date change.
+ PERFORM pg_catalog.pg_advisory_xact_lock(
+  pg_catalog.hashtextextended(v_operation.id::text||':'||p_scheduled_on::text,0));
  IF EXISTS(SELECT 1 FROM public.operation_occurrences o
    WHERE o.operation_id=v_operation.id AND o.occurred_on=p_scheduled_on)
   OR EXISTS(SELECT 1 FROM public.routine_date_progress d
