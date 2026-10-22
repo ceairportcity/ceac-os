@@ -28,7 +28,7 @@ test.describe("Premium redesign R2 Manager",()=>{
     const {context,page}=await openAs(browser);
     await page.locator(".ev2s-sidebar").getByRole("button",{name:"Work",exact:true}).click();
     await expect(page.getByRole("heading",{name:"Work",exact:true})).toBeVisible();
-    for (const label of ["Given out","Needs review","Team work","My work"]) {
+    for (const label of ["Given out","For review","Team work","My work"]) {
       await expect(page.getByRole("tab",{name:new RegExp(label)})).toBeVisible();
     }
     await page.screenshot({path:"test-artifacts/redesign-r2-manager-work.png",fullPage:true});
@@ -37,8 +37,8 @@ test.describe("Premium redesign R2 Manager",()=>{
   test("Manager Team and person remain contextual",async({browser})=>{
     const {context,page}=await openAs(browser);
     await page.locator(".ev2s-sidebar").getByRole("button",{name:"Team",exact:true}).click();
-    await expect(page.getByRole("heading",{name:"People & volunteers",exact:true})).toBeVisible();
-    await expect(page.getByRole("button",{name:/Unit Room/})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Team",exact:true})).toBeVisible();
+    await expect(page.getByRole("button",{name:/Open room/})).toBeVisible();
     await expect(page.getByText("People & volunteers",{exact:true}).first()).toBeVisible();
     const person=page.locator(".ev2p-evidence-person").filter({hasText:"Staff Fixture"}).first();
     if(await person.count()) {

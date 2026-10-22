@@ -110,6 +110,23 @@ async function assignTask(page, title, step = null) {
   await expect(page.getByText(/is with them/)).toBeVisible();
 }
 
+
+async function openCompleteWorkRecord(page, title) {
+  // The owner-approved Work surface is a responsibility register + inspector,
+  // not the retired ev2w-row click-to-detail layout. Search by the exact
+  // authored title so register grouping and pagination cannot hide it.
+  const finder=page.getByPlaceholder("Find a task, project or reference…").first();
+  await expect(finder).toBeVisible({timeout:20000});
+  await finder.fill(title);
+  const row=page.locator(".s2-register-row").filter({hasText:title}).first();
+  await expect(row).toBeVisible({timeout:20000});
+  await row.getByRole("button").first().click();
+  const inspector=page.getByRole("complementary",{name:"Selected responsibility"});
+  await expect(inspector.getByRole("heading",{name:title})).toBeVisible({timeout:20000});
+  await inspector.getByRole("button",{name:/Open complete work record/}).click();
+  await expect(page.locator(".ev2-work-detail")).toBeVisible({timeout:20000});
+}
+
 test("Staff and Manager complete the real work loop, including return and approval", async ({ browser }) => {
   test.setTimeout(60_000);
   const title = "Acceptance task — review loop";
@@ -133,7 +150,7 @@ test("Staff and Manager complete the real work loop, including return and approv
     await expect(page.getByRole("button", { name: "End work" })).toBeVisible();
 
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await expect(page.getByText("Why this matters")).toBeVisible();
     await expect(page.getByText("What finished looks like")).toBeVisible();
     await page.getByRole("button", { name: new RegExp(step) }).click();
@@ -153,7 +170,7 @@ test("Staff and Manager complete the real work loop, including return and approv
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test");
     await go(page, "Work");
-    await page.getByRole("tab", { name: /Needs review/ }).click();
+    await page.getByRole("tab", { name: /For review/ }).click();
     const reviewRow = page.locator(".ev2w-review-row").filter({ hasText: title }).first();
     await expect(reviewRow).toBeVisible();
     await reviewRow.click();
@@ -165,7 +182,7 @@ test("Staff and Manager complete the real work loop, including return and approv
     await returnDialog.getByPlaceholder("Explain exactly what needs changing").fill("Please correct the acceptance item.");
     await returnDialog.getByRole("button", { name: "Return work", exact: true }).click();
     await go(page, "Work");
-    await page.getByRole("tab", { name: /Needs review/ }).click();
+    await page.getByRole("tab", { name: /For review/ }).click();
     await expect(page.locator(".ev2w-review-row").filter({ hasText: title })).toHaveCount(0);
     await context.close();
   }
@@ -173,7 +190,7 @@ test("Staff and Manager complete the real work loop, including return and approv
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await expect(page.getByText("Sent back by your manager")).toBeVisible();
     await expect(page.getByText("Please correct the acceptance item.")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/redesign-r7-stage10a3-returned-work.png", fullPage: true });
@@ -190,7 +207,7 @@ test("Staff and Manager complete the real work loop, including return and approv
       await dialog.getByRole("button", { name: "Start work", exact: true }).click();
       await expect(page.getByRole("button", { name: "End work" })).toBeVisible();
       await go(page, "Work");
-      await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+      await openCompleteWorkRecord(page, title);
       await page.getByRole("button", { name: new RegExp(step) }).click();
     }
 
@@ -205,7 +222,7 @@ test("Staff and Manager complete the real work loop, including return and approv
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test");
     await go(page, "Work");
-    await page.getByRole("tab", { name: /Needs review/ }).click();
+    await page.getByRole("tab", { name: /For review/ }).click();
     const reviewRow = page.locator(".ev2w-review-row").filter({ hasText: title });
     await expect(reviewRow).toBeVisible();
     await reviewRow.click();
@@ -245,7 +262,7 @@ test("A blocker can be raised, acknowledged by the manager, and resolved", async
     await expect(page.getByRole("button", { name: "Start work", exact: true })).toBeVisible();
 
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     const waitingAction = page.getByRole("button", { name: "I am waiting on someone" });
     await expect(waitingAction).toBeEnabled();
     await waitingAction.click();
@@ -274,7 +291,7 @@ test("A blocker can be raised, acknowledged by the manager, and resolved", async
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await expect(page.getByText(/Waiting on Test Unit A/)).toHaveCount(0);
     await page.getByRole("button", { name: "← Back" }).click();
     await go(page, "Home");
@@ -294,7 +311,7 @@ test("Nested Work navigation survives refresh and browser Back", async ({ browse
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await expect(page).toHaveURL(/(?:\?|&)item=/);
     await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
 
@@ -391,9 +408,7 @@ test("OCR6C work source attachment reaches the authorised Staff record", async (
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
-    const row = page.locator(".ev2w-row").filter({ hasText: title }).first();
-    await expect(row).toBeVisible();
-    await row.click();
+    await openCompleteWorkRecord(page, title);
     await expect(page.getByText("Source files", { exact: true })).toBeVisible();
     await expect(page.getByText(filename, { exact: true })).toBeVisible();
     await context.close();
@@ -452,7 +467,7 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   for (const item of created.filter((entry) => entry.kind !== "Request")) {
     // Dates for scheduled occurrences may repeat a routine title. Match
     // the actual authored Work row, as reconciled in historical PR #117.
-    await expect(staff.page.locator(".ev2w-row").getByText(item.title, { exact: true })).toBeVisible();
+    await expect(staff.page.locator(".s2-register-row").getByText(item.title, { exact: true })).toBeVisible();
   }
   await staff.context.close();
 });
@@ -1122,7 +1137,7 @@ test("Experience Stage 7 keeps work capture simple, staff-owned and manager-conf
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await page.getByLabel("Add my step").fill("Staff-owned breakdown step");
     await page.getByRole("button", { name: "Add step", exact: true }).click();
     await expect(page.getByRole("button", { name: /Staff-owned breakdown step/ })).toBeVisible();

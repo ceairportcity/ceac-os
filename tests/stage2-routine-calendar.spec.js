@@ -97,7 +97,8 @@ test("real organisational routine dates appear in Staff and Unit Calendar withou
   await expect(oneDate.getByRole("button",{name:"Restore this date"})).toBeVisible();
   await oneDate.getByLabel("Reason for restoring this date").fill("Verified original staff schedule restored");
   await oneDate.getByRole("button",{name:"Restore this date"}).click();
-  await expect(oneDate).toContainText("Date remains scheduled");
+  await expect(oneDate).toContainText("No active date exception");
+   await expect(oneDate).toContainText("Restored · version 2");
   await own.page.reload();
   await expect(own.page.getByRole("region",{name:"Progress for a routine date"}))
     .not.toContainText("This occurrence was explicitly skipped");

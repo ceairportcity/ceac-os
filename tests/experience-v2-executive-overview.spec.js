@@ -189,7 +189,7 @@ for (const viewport of [
     const executiveTabs = page.getByRole("tablist", { name: "Executive work views" });
     await expect(executiveTabs).toBeVisible();
     await expect(executiveTabs.getByRole("tab", { name: /Given out/ })).toBeVisible();
-    await expect(executiveTabs.getByRole("tab", { name: /Needs review/ })).toBeVisible();
+    await expect(executiveTabs.getByRole("tab", { name: /For review/ })).toBeVisible();
     await expect(executiveTabs.getByRole("tab", { name: /Mine/ })).toBeVisible();
     let overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);

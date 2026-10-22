@@ -132,7 +132,7 @@ test("Stage 10 Family B3 Manager Team preserves factual unit scope without scori
   expect(screen).toContain('rpc("swap_sub_team_positions"');
   expect(screen).toContain('rpc("save_unit_resource"');
   expect(screen).toContain('rpc("set_unit_resource_active"');
-  expect(screen).toContain("Volunteer is an engagement type, not a new CEAC role or authority level.");
+  expect(screen).toContain("Volunteers use the Staff experience. This invitation does not grant Unit Head, HR, Compliance, Administration or Executive authority.");
   expect(screen).not.toMatch(/productivity score|performance score|ranking/i);
   expect(css).toContain(".ev2p-evidence-person");
   expect(css).not.toContain("!important");
@@ -147,8 +147,8 @@ for (const viewport of [
   test(`Stage 10 Family B3 Manager Team composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openManagerTeam(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "People & volunteers", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Unit Room/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Open room/ })).toBeVisible();
     await expect(page.getByText("People & volunteers", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Work lanes", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Team setup", exact: true })).toBeVisible();
@@ -513,7 +513,7 @@ for (const viewport of [
     const { context, page } = await openAdminEmployee(browser, { width: viewport.width, height: viewport.height });
 
     await expect(page.getByRole("heading", { name: "Staff Fixture", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Identity & employment state", exact: true })).toBeVisible();
+    await expect(page.getByRole("tablist", { name: "Employee record sections" })).toBeVisible();
     await expect(page.getByLabel("Employee photo", { exact: true })).toBeVisible();
     for (const tab of ["Overview","Access","Employment","Work","Time & Leave","Documents","History","Protected HR"]) {
       await expect(page.getByRole("tab", { name: tab, exact: true })).toBeVisible();
@@ -691,7 +691,7 @@ test("VF3C Manager Team and Person workspace locks factual command composition",
   const person = readFileSync("src/screens/PersonDetail.jsx", "utf8");
   const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
 
-  expect(team).toContain("Volunteer is an engagement type, not a new CEAC role or authority level.");
+  expect(team).toContain("Volunteer request recorded for HR review. No activation email was sent yet.");
   expect(team).toContain("PeopleEvidencePerson");
   expect(person).toContain('className="ev2p-person-layout"');
   expect(person).toContain('className="ev2p-person-context-rail"');
@@ -717,7 +717,7 @@ test("VF4B Administration People and employee workspace lock operations-console 
   expect(screen).toContain('className="ev2p-admin-person-layout"');
   expect(screen).toContain('className="ev2p-admin-person-rail"');
   expect(screen).toContain('className="ev2p-admin-person-detail"');
-  expect(screen).toContain('className="ev2p-admin-identity-section"');
+  expect(screen).toContain('aria-label="Employee record sections"');
 
   expect(screen).toContain('rpc("admin_people_summary")');
   expect(screen).toContain('rpc("admin_person_detail"');

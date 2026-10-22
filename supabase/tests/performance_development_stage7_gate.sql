@@ -91,6 +91,12 @@ insert into public.training_records(
   'Historical training evidence only; Stage 8 learning is not being built here.'
 );
 
+-- Rollback-only fixture: the HR head is an active employee who requires independent appraisal.
+INSERT INTO public.employment_records(profile_id,org_id,employment_type,job_title,unit_id,membership_role,employment_status)
+VALUES ('31000000-0000-4000-8000-000000000003','10000000-0000-4000-8000-000000000010',
+  'staff','Head of HR','20000000-0000-4000-8000-000000000011','staff','active')
+ON CONFLICT(profile_id) DO UPDATE SET employment_status='active',unit_id=EXCLUDED.unit_id;
+
 -- Administration opens the review period through explicit capability authority.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
@@ -126,15 +132,22 @@ begin
     raise exception 'Stage 7 gate failure: reviewer/reporting-line snapshot is wrong.';
   end if;
 
+  -- Owner-approved update: employed Administration is reviewed, but not
+  -- by themselves. The Group Pastor is excluded as an appraisal subject.
+  if not exists(
+    select 1 from public.appraisals
+    where cycle_id=v_cycle
+      and profile_id='31000000-0000-4000-8000-000000000003'
+      and manager_id is null
+  ) then
+    raise exception 'Stage 7 gate failure: employed HR head did not receive an independently assignable appraisal.';
+  end if;
   if exists(
     select 1 from public.appraisals
     where cycle_id=v_cycle
-      and profile_id in (
-        '31000000-0000-4000-8000-000000000003',
-        '31000000-0000-4000-8000-000000000004'
-      )
+      and profile_id='31000000-0000-4000-8000-000000000004'
   ) then
-    raise exception 'Stage 7 gate failure: Admin or Executive received an in-system review case.';
+    raise exception 'Stage 7 gate failure: the Group Pastor received an employee appraisal case.';
   end if;
 
   select count(*) into v_evidence

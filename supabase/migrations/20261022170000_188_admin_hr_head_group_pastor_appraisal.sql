@@ -203,3 +203,96 @@ $function$;
 
 -- No grants, RLS policies or protected HR permissions are broadened here.
 -- Existing exact-signature security allowlist remains unchanged (159).
+
+-- Narrow self-case confidentiality: Administration still reviews OTHER
+-- employees' draft records, but their own review follows employee publication
+-- visibility. Assignment of the Group Pastor must not reveal his draft to
+-- the employee under review merely because that employee holds HR privileges.
+-- No role grants, new callable functions or broader RLS read permissions.
+ALTER POLICY stage7_entries_read ON public.appraisal_entries
+ USING (
+   org_id=public.app_org_id()
+   AND EXISTS(
+     SELECT 1 FROM public.appraisals a
+     WHERE a.id=appraisal_entries.appraisal_id AND a.org_id=appraisal_entries.org_id
+       AND (
+         a.manager_id=auth.uid()
+         OR (public.app_is_admin() AND public.app_has_capability('people.manage',NULL)
+             AND a.profile_id<>auth.uid())
+         OR (a.profile_id=auth.uid() AND (
+               appraisal_entries.entry_type NOT IN ('manager_assessment','conversation_record')
+               OR public.performance_employee_release_visible(a.id,appraisal_entries.created_at)
+             ))
+       )
+   )
+ );
+
+ALTER POLICY stage7_development_read ON public.development_plan_versions
+ USING (
+   org_id=public.app_org_id()
+   AND (
+     manager_id=auth.uid()
+     OR (public.app_is_admin() AND public.app_has_capability('people.manage',NULL)
+         AND profile_id<>auth.uid())
+     OR (profile_id=auth.uid() AND
+         public.performance_employee_release_visible(appraisal_id,created_at))
+   )
+ );
+
+ALTER POLICY stage2_appraisal_human_rating_select ON public.appraisal_human_rating_versions
+ USING (
+   org_id=public.app_org_id()
+   AND (
+     reviewer_id=auth.uid()
+     OR (public.app_is_admin() AND public.app_has_capability('people.manage',NULL)
+         AND profile_id<>auth.uid())
+     OR (profile_id=auth.uid() AND EXISTS(
+       SELECT 1 FROM public.performance_review_release_requests p
+       WHERE p.appraisal_id=appraisal_human_rating_versions.appraisal_id
+         AND p.org_id=appraisal_human_rating_versions.org_id
+         AND p.requested_assessment_id=appraisal_human_rating_versions.assessment_entry_id
+         AND p.state='approved'
+         AND p.decided_at>=appraisal_human_rating_versions.created_at
+     ))
+   )
+ );
+
+ALTER POLICY performance_release_request_read ON public.performance_review_release_requests
+ USING (
+   org_id=public.app_org_id()
+   AND (
+     (public.app_is_admin() AND public.app_has_capability('people.manage',NULL)
+      AND EXISTS(
+        SELECT 1 FROM public.appraisals a
+        WHERE a.id=performance_review_release_requests.appraisal_id
+          AND a.org_id=performance_review_release_requests.org_id
+          AND a.profile_id<>auth.uid()
+      ))
+     OR EXISTS(
+       SELECT 1 FROM public.appraisals a
+       WHERE a.id=performance_review_release_requests.appraisal_id
+         AND a.org_id=performance_review_release_requests.org_id
+         AND a.manager_id=auth.uid()
+     )
+   )
+ );
+
+ALTER POLICY stage2_appraisal_review_exception_read ON public.appraisal_review_exceptions
+ USING (
+   org_id=public.app_org_id()
+   AND (
+     (public.app_is_admin() AND public.app_has_capability('people.manage',NULL)
+      AND EXISTS(
+        SELECT 1 FROM public.appraisals a
+        WHERE a.id=appraisal_review_exceptions.appraisal_id
+          AND a.org_id=appraisal_review_exceptions.org_id
+          AND a.profile_id<>auth.uid()
+      ))
+     OR EXISTS(
+       SELECT 1 FROM public.appraisals a
+       WHERE a.id=appraisal_review_exceptions.appraisal_id
+         AND a.org_id=appraisal_review_exceptions.org_id
+         AND a.manager_id=auth.uid()
+     )
+   )
+ );

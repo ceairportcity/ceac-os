@@ -20,7 +20,7 @@ test("OCR5E Control Center is state-derived and never invents a numeric health s
     "Integrations",
     "Audit & records",
   ]) {
-    expect(control).toContain(`title:"${domain}"`);
+    expect(domain === "Payroll & Finance" ? control.includes('title:canPayroll ? "Payroll & Finance" : "Finance"') : control.includes(`title:"${domain}"`)).toBeTruthy();
   }
 
   expect(control).toContain('supabase.rpc("admin_employee_roster_summary")');

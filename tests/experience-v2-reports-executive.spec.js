@@ -126,13 +126,14 @@ test("VF5C Executive Reports is coverage-first with factual named filing status"
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({
+        headers: { "access-control-expose-headers": "content-range", "content-range": "0-0/1" },
+        body: JSON.stringify([{
           id: periodId,
           label: "September 2026",
           status: "open",
           starts_on: "2026-09-01",
           ends_on: "2026-09-30",
-        }),
+        }]),
       });
     });
     await page.route("**/rest/v1/units*", async (route) => {
@@ -140,16 +141,30 @@ test("VF5C Executive Reports is coverage-first with factual named filing status"
         headers: { "access-control-expose-headers": "content-range", "content-range": "0-2/3" }, body: JSON.stringify(units) });
     });
     await page.route("**/rest/v1/reports*", async (route) => {
+      const issued = new URL(route.request().url()).searchParams.get("select")?.includes("narrative");
+      const rows = issued
+        ? [{ id: "00000000-0000-4000-8000-000000000711", unit_id: units[0].id, status: "submitted",
+             version: 2, submitted_at: "2026-10-01T08:30:00Z", narrative: "Recorded service", challenges: "None" }]
+        : [
+            { unit_id: units[0].id, status: "submitted", version: 2, submitted_at: "2026-10-01T08:30:00Z" },
+            { unit_id: units[1].id, status: "draft", version: 1, submitted_at: null },
+          ];
       await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        headers: { "access-control-expose-headers": "content-range", "content-range": "0-1/2" },
-        body: JSON.stringify([
-          { unit_id: units[0].id, status: "submitted", version: 2, submitted_at: "2026-10-01T08:30:00Z" },
-          { unit_id: units[1].id, status: "draft", version: 1, submitted_at: null },
-        ]),
+        status: 200, contentType: "application/json",
+        headers: { "access-control-expose-headers": "content-range",
+          "content-range": issued ? "0-0/1" : "0-1/2" },
+        body: JSON.stringify(rows),
       });
     });
+    // Fully model the exact-count supporting sources required for factual
+    // totals; partial/missing responses must still fail the separate denial test.
+    for (const table of ["objectives","project_milestones","report_targets","report_evidence_refs","work_decisions"]) {
+      await page.route("**/rest/v1/" + table + "*", route => route.fulfill({
+        status: 200, contentType: "application/json",
+        headers: { "access-control-expose-headers": "content-range", "content-range": "*/0" },
+        body: "[]",
+      }));
+    }
 
     await page.goto("/?tab=exec-reports");
     await expect(page.locator(".ev2-reporting-executive")).toBeVisible({ timeout: 15000 });
@@ -239,8 +254,9 @@ test("Executive issued-outcome brief hides incomplete history rather than counti
   const periodId = "00000000-0000-4000-8000-000000000701";
   await page.route("**/rest/v1/report_periods*", route => route.fulfill({
     status: 200, contentType: "application/json",
-    body: JSON.stringify({ id: periodId, label: "September 2026", status: "open",
-      starts_on: "2026-09-01", ends_on: "2026-09-30" }),
+    headers: { "access-control-expose-headers": "content-range", "content-range": "0-0/1" },
+    body: JSON.stringify([{ id: periodId, label: "September 2026", status: "open",
+      starts_on: "2026-09-01", ends_on: "2026-09-30" }]),
   }));
   await page.route("**/rest/v1/units*", route => route.fulfill({
     status: 200, contentType: "application/json", headers: { "access-control-expose-headers": "content-range", "content-range": "0-0/1" },

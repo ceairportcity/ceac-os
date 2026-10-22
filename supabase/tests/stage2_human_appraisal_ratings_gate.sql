@@ -385,6 +385,27 @@ END
 $staff_no_hr_review$;
 RESET ROLE;
 
+-- Before any independent release, even the employee who is Administration
+-- may not inspect the Group Pastor's confidential draft or pending HR queue.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+DO $admin_employee_no_unreleased_view$
+DECLARE v_case uuid:=nullif(current_setting('ceac.hr_head_owner_case',true),'')::uuid;
+        v_request uuid:=nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid;
+BEGIN
+  IF EXISTS(SELECT 1 FROM public.appraisal_entries
+    WHERE appraisal_id=v_case AND entry_type='manager_assessment')
+  THEN RAISE EXCEPTION 'HR employee saw their own unpublished reviewer assessment'; END IF;
+  IF EXISTS(SELECT 1 FROM public.performance_review_release_requests
+    WHERE id=v_request)
+  THEN RAISE EXCEPTION 'HR employee accessed independent publication request for their own case'; END IF;
+  IF EXISTS(SELECT 1 FROM public.appraisal_human_rating_versions
+    WHERE appraisal_id=v_case)
+  THEN RAISE EXCEPTION 'HR employee accessed their own unpublished human ratings'; END IF;
+END
+$admin_employee_no_unreleased_view$;
+RESET ROLE;
+
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
 DO $hr_cannot_self_publish$

@@ -94,7 +94,15 @@ test("owner-approved HR head appraisal includes Administration and excludes Grou
  assert.match(migration,/UPDATE public\.appraisals\s+SET manager_id=v_reviewer\.id/);
  assert.match(migration,/AND um\.unit_id=v_appraisal\.unit_id AND um\.role='manager'/);
  assert.doesNotMatch(migration,/\bGRANT\s+(ALL|EXECUTE|SELECT|UPDATE|INSERT|DELETE)\b/i);
- assert.doesNotMatch(migration,/CREATE\s+POLICY|ALTER\s+POLICY/i);
+ assert.doesNotMatch(migration,/CREATE\s+POLICY/i);
+ // Existing policy reads are only tightened for the HR subject's own case.
+ for(const policy of ["stage7_entries_read","stage7_development_read",
+   "stage2_appraisal_human_rating_select","performance_release_request_read",
+   "stage2_appraisal_review_exception_read"]){
+   assert.match(migration,new RegExp("ALTER POLICY "+policy+" ON public\\."));
+ }
+ assert.match(migration,/a\.profile_id<>auth\.uid\(\)/);
+ assert.match(migration,/profile_id<>auth\.uid\(\)/);
 });
 test("Group Pastor receives a single-case review destination, not Admin or HR publication authority",()=>{
  const migration=read("supabase/migrations/20261022170000_188_admin_hr_head_group_pastor_appraisal.sql");

@@ -28,7 +28,7 @@ test.describe("Premium redesign R3 Administration",()=>{
     await page.goto("/?tab=work");
     await expect(page.locator(".admin-work")).toBeVisible();
     await expect(page.getByRole("heading",{name:"Work",exact:true})).toBeVisible();
-    for(const label of ["Given out","Needs review","Organisation","Mine"]) await expect(page.getByRole("tab",{name:new RegExp(label)})).toBeVisible();
+    for(const label of ["Given out","For review","Organisation","Mine"]) await expect(page.getByRole("tab",{name:new RegExp(label)})).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r3-admin-work.png",fullPage:true});
     await context.close();
   });
@@ -89,7 +89,7 @@ test.describe("Premium redesign R3 Administration",()=>{
       const {context,page}=await openAdmin(browser,{width:viewport.width,height:viewport.height});
       await page.goto("/?tab=settings");
       await expect(page.getByRole("heading",{name:"Control Center",exact:true})).toBeVisible();
-      await expect(page.getByText("Configuration attention",{exact:true})).toBeVisible();
+      await expect(page.getByText("Manage departments, people, policies and system access.",{exact:true})).toBeVisible();
       for(const label of [
         "Organisation & people",
         "Operational configuration",

@@ -26,7 +26,7 @@ test.describe("Premium redesign R1 Staff",()=>{
   test("Staff Work uses plain human categories",async({browser})=>{
     const {context,page}=await openStaff(browser);
     await side(page,"Work");
-    await expect(page.getByRole("heading",{name:"My work",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Work",exact:true})).toBeVisible();
     for(const label of ["Assigned","Agreed","Private"]) await expect(page.getByRole("tab",{name:label,exact:true})).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r1-staff-work.png",fullPage:true});
     await context.close();
