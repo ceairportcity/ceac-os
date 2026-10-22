@@ -27,3 +27,45 @@ Private evidence root: /workspace/scratch/38cbdd825b13/. Node22.16.0; pinned Pla
 ## Continue to release
 
 Finish browser runtime repair and acceptance of connected role/HR/private-storage/account-link and print journeys; preserve passed unaffected historical evidence. Freeze integrated candidate and execute complete mandated final acceptance once; fix observed defects with affected checks. Fresh recoverable production backup and restore rehearsal, ordered historical Google-only reconciliation, genuine existing-user password access and existing-project Vercel deployment/rollback/live checks remain mandatory. No release-ready, merged or live claim yet.
+
+
+## 22 October, 15:28 UTC — exact saved preview and real Auth/Storage continuation
+
+Continued sole PR #124 with head and base independently rechecked: candidate `abfa18da37c182e5f2900f3435b24302d980659c`, production/main `34f3c69818679f36c9a91161a40c31ec76ece468`. No application source, schema, role/capability, Auth-provider, production setting or deployment was changed in this continuation. No new branch, browser-runtime retry, paid compute, invitation email or repeated HR creation/schedule SQL suite.
+
+### Preserved previous-session evidence (read, not rerun)
+
+- `/workspace/scratch/38cbdd825b13/final-source.log/.exit`: actual complete native source run **601/601, exit 0**, replacing the older split-run limitation above. Exact source attribution remains the prior repair session; do not falsely call it a newly run required GitHub check.
+- `frozen-5767da72-build.log/.exit`: production bundle PASS, exit 0.
+- `frozen-5767da72-audit.log/.exit`: zero vulnerabilities, exit 0.
+- `print-source-affected.log/.exit`: 32/32, exit 0. This is source evidence, not rendered PDF acceptance.
+- Six previously completed staging SQL gates in the owner continuation remain valid historical stage evidence: roster creation/leave policy, SECURITY DEFINER surface, roster-only employment, roster required hours, roster identity linking and annual leave policy. They were not repeated.
+
+### Existing Vercel preview confirmed
+
+Existing deployment `dpl_9B4ipbDVSmHbvwpQoy8xeLixHEJw`, existing CEAC Hobby project `prj_bAv4ggX6umjp54UjjLqqGm7bBcIB`: dashboard shows **Ready**, Preview, exact source `abfa18da37c182e5f2900f3435b24302d980659c`, Node22.x, Standard Deployment Protection retained. Build log visibly records Vite built in2.20s, Build Completed, Deployment completed at15:12:06UTC. No replacement deployment was created.
+
+Preview opened through the existing authenticated Vercel cloud-browser session at https://ceac-5it958fbg-thestandardinst-6345s-projects.vercel.app/ and displayed the actual CEAC email/password screen; its recovery button displayed the recovery form. Neither is proof of successful browser authentication, sent recovery email, activation or completed recovery.
+
+The environment dashboard confirms all four new public client-config names are scoped ONLY to Preview branch `chatgpt/stage2-owner-contract-repair-20261019`, with separate pre-existing Production entries. Revealing the values demanded Vercel recovery-code verification; that prompt was dismissed. Therefore the values were **not independently revealed/reconfirmed**, and no security verification was bypassed. Independent unauthenticated HTTP asset inspection redirected to Vercel Login; deployment protection was preserved, not disabled or bypassed. Do not claim bundle-level staging-target proof from that HTTP attempt.
+
+### New actual synthetic Auth/REST/private-byte evidence
+
+Command: `python staging-api-acceptance.py` from private scratch `/workspace/scratch/48aa0a3fc141`; standard Python urllib requests only, publishable staging key + existing private synthetic password, no service-role bypass. Hard assertion restricts destination to `https://ugaifpxjgkclmcdvyppx.supabase.co`. Logs never print passwords, session tokens or signed URLs.
+
+- All seven existing synthetic identities actually authenticated with email/password and retrieved their own profile over REST: admin, staff, manager, exec, other, sameunit, managerb. This verifies genuine staging password Auth and profile access, **not** invitations, real production accounts, browser rendering or recovery.
+- HR read the canonical eight-entry roster. Staging remains195 migration receipts through20261022121427; existing184–187 receipts were preserved.
+- HR registered a synthetic `employee_document` on the existing roster-only fixture `41000000-0000-4000-8000-000000000178`; actually uploaded100 bytes to private Storage; finalised it; retrieved identical bytes both with authorised authenticated download and an HR-issued signed link. FileID `2da79cdf-e032-403e-bf4a-979d920325fb`, SHA256 `7bd4f49f9aad921c80db894f2843841187824d6999ffa5cc019809a4e7f7fc65`. Installed metadata independently confirms active state and100 bytes. No real HR material was uploaded.
+- Staff, Manager, unrelated-unit other, same-unit colleague and ManagerB each proved denied file metadata, authenticated download and signed-link issuance. Five role-negative triples PASS.
+- The combined runner then **failed, exit1**, because its final assertion incorrectly expected plain Executive status to download this Admin-only operational employee-document context. Do not relabel that combined run PASS. The reviewed `admin_hr_security_gate.sql` explicitly denies implicit Executive HR-private authority; operational employee documents and the separately capability-gated protected-HR domain must not be conflated. No permissions were widened to satisfy the assertion.
+- Corrected **only the affected Executive metadata expectation** in a separate private invocation: `staging-exec-document-boundary-corrected.log/.exit`, PASS exit0. Prior Executive byte-download HTTP400 is retained as denial evidence; Executive signed-link denial and separately capability-authorised protected-HR positive access are not certified by this correction.
+
+Raw private evidence: `staging-api-acceptance.log` (initial password/profile reads), `staging-storage-api-acceptance.log/.exit` (actual byte proof and five negative roles, overall failure retained), `staging-exec-document-boundary.log` (failed local module-import invocation, no application test), and `staging-exec-document-boundary-corrected.log/.exit`. The synthetic active file remains available for browser identity-link acceptance; no account or employee identity was changed or linked, and no permission was granted.
+
+### Verified execution blockers — no looping or invented green
+
+1. The cloud browser's supported `browserAuth` interface requires secure user credential entry and forbids sign-in values through model-visible Playwright/UI calls. It cannot import the existing private runtime fixture password. No secret was printed or requested in chat, no session injected, and no alternate lower-level sign-in attempted. Authenticated Work/Projects/role visual comparison, HR UI identity-link journey and actual combined-build personal/Executive PDF acceptance remain **PENDING**. The host socket restriction was not retried or bypassed.
+2. All four required exact-head GitHub Actions are terminal **failure**: Account Security39802516416, Quality Gate39802516426, Migration Replay39802516398, CI39802516309. CI build job119906804018 has **zero steps**. The actual run page https://github.com/ceairportcity/ceac-os/actions/runs/39802516309 explicitly says the job was not started because recent account payments failed or the spending limit needs increasing. Repository metadata currently reports PRIVATE. No payment, spending-limit, repository-visibility or protection change was made; no pointless rerun. Vercel success and local tests do not substitute these checks.
+3. Full final migration/security/role/Edge/password activation/recovery qualification, literal approved visual comparison, positive real existing-account link with stable employee/Auth IDs and unchanged grants, fresh recoverable production backup/restore rehearsal, ordered historical Google-hook reconciliation and production deployment/live acceptance are still outstanding. Staging has an ACTIVE integration-runtime Edge function; listing it is not Edge negative-authorisation acceptance.
+
+**NO-GO remains.** Preserve this evidence and the existing Ready preview; do not restart development or repeat completed HR tests. The next executable browser step requires a supported secure staging test-account sign-in; required Actions also need an authorised no-spend execution path. Do not change production while these acceptance prerequisites are unresolved.
