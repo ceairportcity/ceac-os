@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { approvedOfficeWeekTemplate } from "../lib/approvedOfficeWeekTemplate";
 import { workforceRecordedWeek } from "../lib/workforceRecordedWeek";
+import "./EmployeeScheduleEditor.css";
 
 const DAYS = [
   ["mon","Monday"],["tue","Tuesday"],["wed","Wednesday"],
