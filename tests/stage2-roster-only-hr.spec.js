@@ -57,3 +57,42 @@ test("ordinary Staff cannot open HR roster editing by direct URL",async({browser
  await expect(page.getByRole("button",{name:"Save HR record"})).toHaveCount(0);
  await context.close();
 });
+
+test("HR can retry a failed initial roster read without losing the employee context",async({browser})=>{
+ const context=await browser.newContext({viewport:{width:1366,height:768}});
+ const page=await context.newPage();
+ await page.goto("/");
+ expect(["localhost","127.0.0.1"]).toContain(new URL(page.url()).hostname);
+ await page.getByPlaceholder("Work email").fill("admin@ceac.local.test");
+ await page.getByPlaceholder("Password").fill(process.env.ROLE_FIXTURE_PASSWORD);
+ await page.getByRole("button",{name:"Sign in"}).click();
+ await expect(page.locator(".office-app")).toBeVisible({timeout:15000});
+ await page.goto("/?tab=people");
+ const employee=page.locator(".fpg-people-roster-row").filter({hasText:"Roster-only HR Fixture"}).first();
+ await expect(employee).toBeVisible();
+ await employee.click();
+ await expect(page.locator(".ev2-admin-person-workspace")).toBeVisible({timeout:15000});
+ let block=true;
+ await page.route("**/rest/v1/employment_records?*",async route=>{
+  const query=new URL(route.request().url()).searchParams.get("select");
+  if(block&&route.request().method()==="GET"&&query==="profile_id,employment_status"){
+   await route.fulfill({status:503,contentType:"application/json",body:JSON.stringify({message:"Simulated temporary HR records outage"})});
+   return;
+  }
+  await route.continue();
+ });
+ await page.getByRole("tab",{name:"Employment",exact:true}).click();
+ const editor=page.getByRole("region",{name:"Roster-only HR record and placement"});
+ await expect(editor.getByRole("alert")).toBeVisible();
+ const retry=editor.getByRole("button",{name:"Retry loading employee record"});
+ await expect(retry).toBeVisible();
+ await expect(editor.getByRole("button",{name:"Edit employee record"})).toHaveCount(0);
+ block=false;
+ await retry.click();
+ await expect(editor.getByRole("button",{name:"Edit employee record"})).toBeVisible();
+ await expect(editor.getByRole("alert")).toHaveCount(0);
+ await editor.getByRole("button",{name:"Edit employee record"}).click();
+ await expect(editor.getByLabel("Primary department")).toBeVisible();
+ await editor.getByRole("button",{name:"Cancel"}).click();
+ await context.close();
+});
