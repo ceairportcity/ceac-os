@@ -341,6 +341,7 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
       evidenceLatest={evidenceLatest}
       exceptionLatest={exceptionLatest}
       openWork={openWork}
+      openObservations={()=>setTab("observations")}
       openAnnouncements={canPublishInstruction?openAnnouncements:null}
     />}
 
