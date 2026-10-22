@@ -20,3 +20,24 @@ test("roster-only employee detail offers effective-dated HR editor",()=>{
   assert.match(editor,/p_employee_id:employeeId/);
   assert.match(sql,/workforce_roster_schedule_link/);
 });
+
+test("HR schedule is always edited and reviewed as a full recorded week with real version history",()=>{
+ const workforce=read("src/screens/Workforce.jsx");
+ const workspace=read("src/components/WorkforceEmployeeScheduleWorkspace.jsx");
+ const week=read("src/lib/workforceRecordedWeek.js");
+ assert.match(workforce,/<WorkforceEmployeeScheduleWorkspace me=\{me\}/);
+ assert.doesNotMatch(workforce,/<summary>Adjust one weekday \(legacy\)<\/summary>/);
+ assert.match(workspace,/admin_employee_roster_summary/);
+ assert.match(workspace,/employeeId=\{person\.id\}/);
+ assert.match(editor,/workforceRecordedWeek\(inspected,dayTypes\)/);
+ assert.match(editor,/Inspect a saved schedule version/);
+ assert.match(editor,/p_supersedes_id:previous\?\.id/);
+ assert.match(editor,/const refreshed=await load\(data\)/);
+ assert.match(week,/Recorded day type not available/);
+});
+test("Unlinked employee scheduling does not infer login, attendance or leave entitlement",()=>{
+ assert.match(editor,/employeeId \? "workforce_record_roster_pattern" : "workforce_record_pattern"/);
+ assert.match(editor,/The server returned a schedule reference, but its employee-history readback could not be verified/);
+ assert.match(editor,/Do not calculate historical leave or lateness from an unconfirmed schedule/);
+ assert.doesNotMatch(editor,/supabase\.auth\.signUp|insert\("auth\.users"\)/);
+});
