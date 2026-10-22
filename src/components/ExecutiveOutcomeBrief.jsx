@@ -3,7 +3,7 @@ import {ministryPeriodEvidence} from "../lib/ministryReportingFacts";
 import { verifiedReportingQuarter } from "../lib/quarterlyReportingWindow";
 import "./ExecutiveOutcomeBrief.css";
 
-export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],objectives=[],milestones=[],targets=[],evidenceRefs=[],readError=null}){
+export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],objectives=[],milestones=[],targets=[],evidenceRefs=[],decisions=[],readError=null}){
  const facts=useMemo(()=>ministryPeriodEvidence({unitReports:issuedReports,objectives,milestones,targets,evidenceRefs,activeUnitIds:units.map(x=>x.id)}),[issuedReports,objectives,milestones,targets,evidenceRefs,units]);
  const names=Object.fromEntries(units.map(x=>[x.id,x.name]));
  const quarter=verifiedReportingQuarter(period);
@@ -66,6 +66,14 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
       {facts.unitEvidence.map(ref=><div className="s2-exec-brief-unit" key={ref.id}>
         <strong>{names[ref.unit_id]||"Authorised department"} · {ref.label||"Recorded evidence reference"}</strong>
         <small>{String(ref.section||"Unit report").replaceAll("_"," ")} · {String(ref.object_type||"Source record").replaceAll("_"," ")} · reference only, not a source-file verification</small>
+      </div>)}
+      <h3>Recorded Work decisions within this reporting period</h3>
+      {!decisions.length&&<p>No accessible, independently recorded Work decision is available for these period dates. This does not imply that no leadership discussions occurred.</p>}
+      {decisions.map(decision=><div className="s2-exec-brief-unit" key={decision.work_item_id}>
+        <strong>{names[decision.unit_id]||"Authorised Work scope"} · {decision.work_title||"Recorded Work decision"}</strong>
+        <small>Work record · decided {decision.decided_at?.slice(0,10)||"date unavailable"} · separate from quarterly Executive approvals</small>
+        <p><b>Recorded decision:</b> {decision.decision_text||"Decision text not recorded"}</p>
+        {decision.rationale&&<p><b>Recorded rationale:</b> {decision.rationale}</p>}
       </div>)}
       <h3>Leadership decisions and follow-up</h3>
       <p>Issued department challenges are reproduced above. Unit next-target proposals are proposals, not decisions. This briefing does not invent an Executive decision, approval, accountable owner, funding commitment or due date when no independently approved decision source is connected.</p>
