@@ -7,7 +7,7 @@ const schedule = readFileSync(new URL("../src/components/EmployeeScheduleEditor.
 
 test("a new actor cannot see or mutate the previous employee HR profile before an authorised read",()=>{
  assert.match(source,/const scope=me\.org_id\+"\:"\+me\.id\+"\:"\+employeeId/);
- assert.match(source,/setVerifiedScope\(" "\)/.source? /not_a_test/ : /setVerifiedScope\("")/);
+ assert.match(source,/setVerifiedScope\("")/);
  assert.match(source,/setVerifiedScope\(scope\)/);
  assert.match(source,/const ready=authorised && verifiedScope===scope && !loading && !error/);
  assert.match(source,/const valid=Boolean\(ready&&/);
