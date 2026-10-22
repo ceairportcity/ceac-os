@@ -49,7 +49,7 @@ test("personal print/export hides the rest of the application, including protect
  const css=file("src/screens/PersonalAchievements.css");
  assert.match(css,/@media print/);
  assert.match(css,/body:has\(\.s2-achievement\) \*\{visibility:hidden!important\}/);
- assert.match(css,/\.s2-achievement,\.s2-achievement \*\{visibility:visible!important\}/);
+ assert.match(css,/body \.s2-achievement,body \.s2-achievement \*\{visibility:visible!important\}/);
  assert.match(css,/@page\{size:A4/);
 });
 
