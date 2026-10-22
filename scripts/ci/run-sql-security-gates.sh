@@ -70,6 +70,7 @@ tests=(
   stage2_self_routines_gate.sql
   stage2_routine_date_files_gate.sql
   stage2_routine_date_progress_gate.sql
+  stage2_single_date_routine_exception_gate.sql
   stage2_routine_occurrence_review_gate.sql
   stage2_routine_schedule_options_gate.sql
   stage2_routine_reminder_delivery_gate.sql
