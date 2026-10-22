@@ -34,6 +34,7 @@ tests=(
   payroll_stage13_gate.sql
   employee_roster_completeness_gate.sql
   stage2_roster_only_employment_gate.sql
+  stage2_roster_week_required_hours_gate.sql
   stage2_roster_identity_link_gate.sql
   stage2_verified_roster_link_gate.sql
   goals_strategy_stage4_gate.sql
