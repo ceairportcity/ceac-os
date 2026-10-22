@@ -329,6 +329,7 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
 
     {tab==="overview"&&canManage&&<ComplianceOverview
       date={overviewDate}
+      scopeKey={actorScope}
       onDateChange={setOverviewDate}
       onRefresh={()=>loadOverview(overviewDate)}
       rows={attendanceRows}
