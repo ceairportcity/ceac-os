@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from "react";
 import {supabase} from "../lib/supabase";
 import {validRoutineDate} from "../lib/routineDateRoute";
+import {ghanaCalendarDate} from "../lib/dailyLandscape";
 
 /**
  * An organisational routine can skip/restore one date without rewriting the
@@ -33,7 +34,7 @@ export default function RoutineSingleDateException({me,operationId,workItemId,da
  },[context,canManage,reload]);
  if(!canManage)return null;
  const current=history[0]||null,skipped=current?.action==="skip";
- const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Accra",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+ const today=ghanaCalendarDate();
  const futureOrToday=Boolean(validRoutineDate(date)&&date>=today&&date<=(()=>{let d=new Date(today+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+370);return d.toISOString().slice(0,10);})());
  const canSubmit=state==="verified"&&futureOrToday&&!busy&&reason.trim().length>=8;
  async function save(){
