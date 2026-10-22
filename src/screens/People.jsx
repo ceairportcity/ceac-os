@@ -252,6 +252,8 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       &&(!version.effective_to||version.effective_to>=asOf));
     const annualRule=(rulesResult.data||[]).find(rule=>rule.policy_version_id===activeVersion?.id
       &&rule.leave_kind==="annual"&&rule.complete
+      &&rule.entitlement_amount!==null&&rule.entitlement_amount!==undefined
+      &&rule.accrual_rate!==null&&rule.accrual_rate!==undefined
       &&Number.isFinite(Number(rule.entitlement_amount))
       &&Number.isFinite(Number(rule.accrual_rate)));
     setLeavePolicy(activeVersion&&annualRule
