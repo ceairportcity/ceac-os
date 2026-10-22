@@ -127,6 +127,7 @@ export default function App() {
   const [createIntent, setCreateIntent] = useState(null);
   const [guideContextTab, setGuideContextTab] = useState(null);
   const [peopleFocusId, setPeopleFocusId] = useState(null);
+  const [authorityFocusProfileId,setAuthorityFocusProfileId] = useState(null);
   const [peopleAccessIntent, setPeopleAccessIntent] = useState(null);
   const [lifecycleIntent, setLifecycleIntent] = useState(null);
   const [announcementFocusId, setAnnouncementFocusId] = useState(null);
@@ -231,6 +232,7 @@ export default function App() {
     setCreateIntent(null);
     setPeopleFocusId(null);
     setPeopleAccessIntent(null);
+    setAuthorityFocusProfileId(null);
     setAnnouncementFocusId(null);
   }
 
@@ -272,6 +274,7 @@ export default function App() {
 
   function go(t) {
     if (t !== "guide") setGuideContextTab(null);
+    setAuthorityFocusProfileId(null);
     navigate({ tab: t });
   }
 
@@ -282,6 +285,11 @@ export default function App() {
   function openLifecycle(profileId = null, type = "offboarding") {
     navigate({ tab: "lifecycle" });
     setLifecycleIntent(profileId ? { profileId, type } : null);
+  }
+  function openAuthorityForPerson(profileId) {
+    if (!canManageAuthority || !profileId) return;
+    navigate({tab:"authority"});
+    setAuthorityFocusProfileId(profileId);
   }
   function openPeopleAccess(intent = {}) {
     navigate({ tab: "people" });
@@ -488,6 +496,7 @@ export default function App() {
       onAccessIntentHandled={() => setPeopleAccessIntent(null)}
       initialEmployeeId={peopleFocusId}
       onInitialHandled={() => setPeopleFocusId(null)}
+      onManagePermissions={canManageAuthority ? openAuthorityForPerson : null}
     />;
     if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} initialProfileId={lifecycleIntent?.profileId || null} initialType={lifecycleIntent?.type || null} onInitialHandled={() => setLifecycleIntent(null)} />;
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR key={`${me.org_id}:${me.id}`} me={me} />;
@@ -501,7 +510,7 @@ export default function App() {
     if (tab === "workflows" && canUseWorkflows) return <AdminWorkflows me={me} />;
     if (tab === "policies" && canManageAuthority) return <AdminPolicies me={me} />;
     if (tab === "integrations" && canManageIntegrations) return <AdminIntegrations me={me} />;
-    if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} />;
+    if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} initialProfileId={authorityFocusProfileId} />;
     if (tab === "settings" && isAdmin) return <ControlCenter me={me} go={go} />;
     if (tab === "office-settings" && isAdmin) return <OfficeSettings me={me} openWorkforce={() => go("attendance")} />;
     return <MeScreen me={me} onOpenWork={openItem} onOpenAchievements={() => go("achievements")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
