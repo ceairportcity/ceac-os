@@ -14,7 +14,9 @@ test("staff Work includes only their assigned, unit-visible recurring responsibi
   assert.match(staff, /\.in\("work_item_id", templates\.map/);
   assert.match(staff, /readRoutineSchedulePreview\(supabase/);
   assert.match(staff, /item\.state==="unrecorded_past"/);
-  assert.match(staff, /onOpen\?\.\(item\.routine\.work_item_id\)/);
+  assert.match(staff, /onOpen\?\.\(item\.routine\.work_item_id,item\.date\)/);
+  assert.match(staff, /item\.state === "skipped"/);
+  assert.match(staff, /Skipped with authorised reason/);
   assert.doesNotMatch(staff, /\.insert\(|\.update\(|\.delete\(|\.rpc\(/);
 });
 
