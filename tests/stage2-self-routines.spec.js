@@ -256,9 +256,9 @@ test('Manager arranges one-date cover; colleague follows Work and Calendar, reco
   const recurring=coveredPage.getByRole('region',{name:'My scheduled recurring work',exact:true});await expect(recurring.getByRole('button').filter({hasText:title})).toBeVisible();
   await recurring.getByRole('button').filter({hasText:title}).click();
   const date=coveredPage.getByRole('region',{name:'Progress for a routine date',exact:true});await expect(date.getByText('Cover assigned to you. Other dates keep their own assignment.',{exact:true})).toBeVisible();
-  await coveredPage.goto('/?tab=calendar');
-  await expect(coveredPage.getByText(title,{exact:true}).first()).toBeVisible();
-  await coveredPage.getByText(title,{exact:true}).first().click();await expect(date.getByLabel('Scheduled date',{exact:true})).toHaveValue(today);
+  await coveredPage.goto('/?tab=staff-calendar');
+  const calendarCover=coveredPage.locator('.phase6-schedule-row button').filter({hasText:title});await expect(calendarCover).toBeVisible();
+  await calendarCover.click();await expect(date.getByLabel('Scheduled date',{exact:true})).toHaveValue(today);
   await date.getByLabel('Progress note',{exact:true}).fill('Actual cover inspection recorded by the colleague');
   await date.getByRole('combobox',{name:'Status for this date',exact:true}).selectOption('ready_for_review');
   await date.getByRole('button',{name:'Save date progress',exact:true}).click();await expect(date.getByText('1 recorded update for '+today,{exact:true})).toBeVisible();

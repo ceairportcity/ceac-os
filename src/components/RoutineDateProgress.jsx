@@ -90,9 +90,9 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
   <RoutineSingleDateException me={me} operationId={routine.id} workItemId={item.id} date={date}
     canManage={canManageDates} scheduleVerified={ready} onChanged={()=>setReload(n=>n+1)} />
   <RoutineDateCover key={scope} me={me} item={item} date={date} cover={cover} verified={ready}
-   canManage={canRecordAsReviewer} hasEvidence={rows.length>0||dateScheduleState==="recorded"||dateScheduleState==="skipped"} onChanged={()=>{setVerified("");setReload(n=>n+1);}} />
+   canManage={canRecordAsReviewer} hasEvidence={rows.length>0||dateScheduleState==="recorded"} skipped={dateScheduleState==="skipped"} onChanged={()=>{setVerified("");setReload(n=>n+1);}} />
   {ready && <>
-   <p className="small">{dateScheduleState==="skipped"?"This occurrence was explicitly skipped. No progress or outcome is implied.":rows.length?labels[rows[0].status]:"No progress recorded for this date."} · Record the outcome separately when this date is finished.</p>
+   <p className="small">{dateScheduleState==="skipped"?"This occurrence was explicitly skipped. No progress or outcome is implied.":(rows.length?labels[rows[0].status]:"No progress recorded for this date.")+" · Record the outcome separately when this date is finished."}</p>
    {permitted && <form className="s2-routine-review-form" onSubmit={save}>
     <fieldset disabled={busy} style={{border:0,padding:0,margin:0,minWidth:0,display:"grid",gap:8}}><legend>Checklist for {date}</legend>
      {steps.length?steps.map(step=><label key={step.id} style={{display:"flex",gap:8,alignItems:"start"}}>

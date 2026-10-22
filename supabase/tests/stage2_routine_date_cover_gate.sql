@@ -74,6 +74,21 @@ DO $other$ BEGIN
  BEGIN PERFORM public.routine_set_date_cover(current_setting('ceac.test.cover_work')::uuid,current_date+3,auth.uid(),'Unrelated department delegation',0);RAISE EXCEPTION 'Unrelated manager changed cover';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
 END; $other$;
 RESET ROLE;
+-- Shared-series recording authority returns only after explicit restoration.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal1"}',true);
+SELECT set_config('ceac.test.cover_shared',public.create_typed_work(p_kind=>'routine',p_unit_id=>'20000000-0000-4000-8000-000000000011',p_title=>'Rollback shared routine cover',p_assignee_id=>NULL,p_expected_outcome=>'Shared unit inspection',p_details=>jsonb_build_object('schedule_kind','daily','starts_on',current_date))::text,true);
+SELECT public.routine_set_date_cover(current_setting('ceac.test.cover_shared')::uuid,current_date,'31000000-0000-4000-8000-000000000006','One named colleague covers shared responsibility',0);
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+DO $shared_denial$ BEGIN
+ BEGIN PERFORM public.record_routine_occurrence(current_setting('ceac.test.cover_shared')::uuid,current_date,NULL,'Shared member cannot take named cover credit');RAISE EXCEPTION 'Shared member bypassed named date cover';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+END; $shared_denial$;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+SELECT public.routine_set_date_cover(current_setting('ceac.test.cover_shared')::uuid,current_date,NULL,'Restore shared department recording authority',1);
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+SELECT public.record_routine_occurrence(current_setting('ceac.test.cover_shared')::uuid,current_date,NULL,'Actual shared unit inspection after restoration');
+RESET ROLE;
 -- Reminder recipients use the effective date assignee's explicit working pattern.
 INSERT INTO public.workforce_day_types(id,org_id,name,session_expected,active) VALUES('71000000-0000-4000-8000-000000000176','10000000-0000-4000-8000-000000000010','Rollback cover reminder workday',true,true);
 INSERT INTO public.workforce_schedule_versions(org_id,schedule_key,version,profile_id,effective_from,source,day_map,expected_start,expected_end,reason,created_by)

@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from "react";
 import {supabase} from "../lib/supabase";
 import {ghanaCalendarDate} from "../lib/dailyLandscape";
 import {routineCoverLabel} from "../lib/routineDateCovers";
-export default function RoutineDateCover({me,item,date,cover,verified,canManage=false,hasEvidence=false,onChanged}){
+export default function RoutineDateCover({me,item,date,cover,verified,canManage=false,hasEvidence=false,skipped=false,onChanged}){
  const [people,setPeople]=useState([]),[peopleReady,setPeopleReady]=useState(false);
  const [target,setTarget]=useState(""),[reason,setReason]=useState(""),[error,setError]=useState("");
  const [busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
@@ -29,7 +29,7 @@ export default function RoutineDateCover({me,item,date,cover,verified,canManage=
  const covered=cover?.action==="assign";
  const eligibleDate=date>=ghanaCalendarDate();
  async function save(restore){
-  if(sending.current||busy||!verified||!canManage||!peopleReady||hasEvidence||!eligibleDate||reason.trim().length<8
+  if(sending.current||busy||!verified||!canManage||!peopleReady||hasEvidence||skipped||!eligibleDate||reason.trim().length<8
    ||!restore&&!people.some(person=>person.id===target))return;
   const requestScope=scope;const assignee=restore?null:target;const revision=cover?.version||0;
   sending.current=true;setBusy(true);setError("");
@@ -47,7 +47,7 @@ export default function RoutineDateCover({me,item,date,cover,verified,canManage=
   {!verified?<p role="status">Checking this date assignment…</p>:<>
    <p className="small">{covered?routineCoverLabel(cover,me):"Using the series assignment"}. Other dates keep their own assignment.</p>
    {canManage&&<details><summary>Arrange or restore date cover</summary>
-    {hasEvidence?<p className="small">Recorded work keeps its actual contributor. This date can no longer be reassigned.</p>:!eligibleDate?<p className="small">Past date assignments remain historical.</p>:<div style={{display:"grid",gap:8,marginTop:8}}>
+    {skipped?<p className="small">Restore this scheduled date before assigning cover.</p>:hasEvidence?<p className="small">Recorded work keeps its actual contributor. This date can no longer be reassigned.</p>:!eligibleDate?<p className="small">Past date assignments remain historical.</p>:<div style={{display:"grid",gap:8,marginTop:8}}>
      <label>Cover person<select className="field" value={target} disabled={busy||!peopleReady} onChange={event=>setTarget(event.target.value)}>
       <option value="">Choose an active department colleague</option>{people.map(person=><option key={person.id} value={person.id}>{person.full_name}</option>)}
      </select></label>
@@ -56,7 +56,7 @@ export default function RoutineDateCover({me,item,date,cover,verified,canManage=
      {covered&&<button type="button" className="text-action" disabled={busy||!peopleReady||reason.trim().length<8} onClick={()=>save(true)}>Restore series assignment</button>}
     </div>}
    </details>}
-   {cover?.history.length>0&&<details><summary>Assignment history</summary>{[...cover.history].reverse().map(event=><article key={event.id} className="small" style={{marginTop:8}}>
+   {cover?.history?.length>0&&<details><summary>Assignment history</summary>{[...cover.history].reverse().map(event=><article key={event.id} className="small" style={{marginTop:8}}>
     <strong>{event.action==="assign"?"Cover: "+(event.assignee?.full_name||"assigned colleague"):"Series assignment restored"}</strong>
     <p>{event.reason}</p><p>{event.actor?.full_name||"Author details unavailable"} · <time dateTime={event.recorded_at}>{new Date(event.recorded_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}</time></p>
    </article>)}</details>}
