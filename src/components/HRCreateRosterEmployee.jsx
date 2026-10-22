@@ -9,7 +9,7 @@ const empty={
  status:"active",primaryUnit:"",secondaryUnits:[],managerId:"",
  email:"",phone:"",startedOn:"",reason:"",confirmedDistinct:false,
 };
-export default function HRCreateRosterEmployee({units=[],employees=[],accounts=[],onCreated,onClose}){
+export default function HRCreateRosterEmployee({me,units=[],employees=[],accounts=[],onCreated,onClose}){
  const [form,setForm]=useState(empty),[busy,setBusy]=useState(false),[error,setError]=useState("");
  const saving=useRef(false);
  const set=(key,value)=>setForm(previous=>({...previous,[key]:value}));
@@ -54,14 +54,40 @@ export default function HRCreateRosterEmployee({units=[],employees=[],accounts=[
    if(writeError)throw writeError;
    if(!data?.created||!data.employee_id||data.profile_id!==null)
     throw new Error("HR creation did not return a verified roster-only employee identity.");
-   const {data:detail,error:readError}=await supabase.rpc("admin_employee_roster_detail",{
-    p_employee_id:data.employee_id,
-   });
-   if(readError||detail?.employee?.id!==data.employee_id
-     ||detail.employee.profile_id!==null
-     ||detail.employee.full_name!==form.fullName.trim())
-    throw new Error("Employee creation was recorded but the saved HR record could not be independently read back. Review the directory before retrying.");
-   await onCreated?.(detail.employee);
+   const [detailRead,recordRead,auditRead]=await Promise.all([
+    supabase.rpc("admin_employee_roster_detail",{p_employee_id:data.employee_id}),
+    supabase.from("employee_roster")
+     .select("id,org_id,profile_id,full_name,preferred_name,job_title,employment_type,employment_status,hr_contact_email,hr_contact_phone,hr_started_on")
+     .eq("id",data.employee_id).eq("org_id",me.org_id).single(),
+    supabase.from("employee_roster_change_events")
+     .select("id,actor_id,reason,after_record")
+     .eq("employee_id",data.employee_id).eq("org_id",me.org_id)
+     .order("recorded_at",{ascending:false}).limit(1),
+   ]);
+   const detail=detailRead.data, record=recordRead.data;
+   const actualUnits=(Array.isArray(detail?.units)?detail.units:[]);
+   const expectedIds=[form.primaryUnit,...form.secondaryUnits].filter(Boolean).sort();
+   const actualIds=actualUnits.map(item=>item.unit_id).sort();
+   const audit=auditRead.data?.[0];
+   if(detailRead.error||recordRead.error||auditRead.error
+    ||detail?.employee?.id!==data.employee_id
+    ||record?.id!==data.employee_id||record.org_id!==me.org_id||record.profile_id!==null
+    ||record.full_name!==form.fullName.trim()
+    ||(record.preferred_name||"")!==form.preferredName.trim()
+    ||(record.job_title||"")!==form.jobTitle.trim()
+    ||record.employment_type!==form.employmentType
+    ||record.employment_status!==form.status
+    ||(record.hr_contact_email||"")!==form.email.trim().toLowerCase()
+    ||(record.hr_contact_phone||"")!==form.phone.trim()
+    ||(record.hr_started_on||"")!==form.startedOn
+    ||JSON.stringify(actualIds)!==JSON.stringify(expectedIds)
+    ||actualUnits.filter(item=>item.is_primary).length!==Number(Boolean(form.primaryUnit))
+    ||(form.primaryUnit&&actualUnits.find(item=>item.is_primary)?.unit_id!==form.primaryUnit)
+    ||auditRead.data?.length!==1||audit?.actor_id!==me.id
+    ||audit.reason!==form.reason.trim()
+    ||audit.after_record?.event!=="employee_created")
+    throw new Error("Employee creation may have been recorded, but its complete HR record, placement or audit could not be independently confirmed. Review the directory before retrying.");
+   await onCreated?.(record);
   }catch(failure){
    setError(humanError(failure,"The HR employee record could not be confirmed. Review any existing record before retrying."));
   }finally{saving.current=false;setBusy(false);}
