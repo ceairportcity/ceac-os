@@ -24,11 +24,13 @@ export default function HRCreateRosterEmployee({units=[],employees=[],accounts=[
   const target=form.email.trim().toLocaleLowerCase();
   return target ? accounts.find(account=>String(account.email||"").trim().toLocaleLowerCase()===target)||null : null;
  },[accounts,form.email]);
+ const accountAlreadyLinked=Boolean(matchingAccount&&employees.some(
+  employee=>employee.profile_id===matchingAccount.id));
  const mustAcknowledge=nameMatches.length>0||Boolean(matchingAccount);
  const ready=form.fullName.trim().length>=2&&form.fullName.trim().length<=180
   &&form.reason.trim().length>=12&&form.reason.trim().length<=2000
   &&(!mustAcknowledge||form.confirmedDistinct)
-  &&!rosterEmailConflict&&!saving.current;
+  &&!rosterEmailConflict&&!accountAlreadyLinked&&!saving.current;
  async function save(event){
   event.preventDefault();
   if(!ready||saving.current)return;
@@ -103,6 +105,9 @@ export default function HRCreateRosterEmployee({units=[],employees=[],accounts=[
     </div>
    </FieldGroup>
    {rosterEmailConflict&&<ProductNotice tone="attention" title="Existing employee email">This contact email already belongs to an HR employee record. Open and review that employee instead of creating another roster identity.</ProductNotice>}
+   {accountAlreadyLinked&&<ProductNotice tone="attention" title="Account already linked to an employee">
+     This CEAC login is already assigned to an HR employee record. Open the existing employee rather than creating a duplicate. Confirmation cannot override this boundary.
+   </ProductNotice>}
    {mustAcknowledge&&<ProductNotice tone="attention" title="Manual identity review required">
     {nameMatches.length>0&&<p>{nameMatches.length} roster record(s) have this name. Confirm this is not a duplicate person.</p>}
     {matchingAccount&&<p>An existing CEAC login uses this email. If this account is missing its employee record, HR may create a separate roster record only after verifying the person. Account linking still requires independent evidence.</p>}
