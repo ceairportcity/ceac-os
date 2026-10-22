@@ -25,6 +25,8 @@ export default function ComplianceAttendanceCases({
   const [rows,setRows] = useState([]);
   const [loading,setLoading] = useState(true);
   const [busy,setBusy] = useState(false);
+  const attendanceRead = useRef(0);
+  const [dayEvidence,setDayEvidence] = useState({scope:"",loading:false,row:null,error:""});
   const [error,setError] = useState("");
   const [notice,setNotice] = useState("");
   const [selectedId,setSelectedId] = useState("");
@@ -43,6 +45,25 @@ export default function ComplianceAttendanceCases({
   const [referralTarget,setReferralTarget] = useState("manager");
 
   useEffect(() => { void load(); return () => { generation.current += 1; }; }, [scope]);
+  useEffect(() => {
+    const seq=++attendanceRead.current, context=`${scope}:${date}:${employeeId}`;
+    setDayEvidence({scope:"",loading:Boolean(employeeId && date),row:null,error:""});
+    if (!canManage || !employeeId || !date) return () => {attendanceRead.current+=1;};
+    (async()=>{
+      try {
+        const response=await supabase.rpc("attendance_day_evidence",{p_date:date});
+        if (response.error || !Array.isArray(response.data)) throw new Error("Attendance evidence could not be verified.");
+        if (seq!==attendanceRead.current) return;
+        const row=response.data.find(item=>item.employee_id===employeeId);
+        setDayEvidence({scope:context,loading:false,row:row||null,
+          error:row?"":"This employee is outside the authorised attendance evidence for the selected date."});
+      } catch {
+        if (seq===attendanceRead.current) setDayEvidence({scope:context,loading:false,row:null,
+          error:"The selected day's authorised attendance evidence could not be verified."});
+      }
+    })();
+    return ()=>{attendanceRead.current+=1;};
+  },[scope,employeeId,date,canManage]);
   async function load(selectId) {
     const expected = scope, seq = ++generation.current;
     const current = () => generation.current === seq && expected === scope;
@@ -70,14 +91,15 @@ export default function ComplianceAttendanceCases({
   ) : [],[rows,ready,statusFilter,search]);
   const selected = filtered.find(row => row.id === selectedId) || filtered[0] || null;
   const canRespond = selected && selected.status !== "resolved";
-  const selectedAttendance = attendanceRows.find(row => row.employee_id === employeeId);
+  const dayScope=`${scope}:${date}:${employeeId}`;
+  const selectedAttendance=dayEvidence.scope===dayScope && !dayEvidence.error && !dayEvidence.loading ? dayEvidence.row : null;
   const ownCase = Boolean(selected?.profile_id && selected.profile_id === me.id);
   const mayReview = Boolean(me.is_admin || me.role === "manager");
   const canRefer = canManage && selected && selected.status !== "resolved";
 
   async function submitObservation(event) {
     event.preventDefault();
-    if (!ready || !canManage || writePending.current || !employeeId || !date ||
+    if (!ready || !canManage || !selectedAttendance || writePending.current || !employeeId || !date ||
       facts.trim().length < 8 || interpretation.trim().length < 8) return;
     writePending.current = true;setBusy(true);setError("");setNotice("");
     try {
@@ -140,18 +162,30 @@ export default function ComplianceAttendanceCases({
           <option key={row.employee_id} value={row.employee_id}>{row.name}</option>)}
       </select></FieldGroup>
       <FieldGroup label="Attendance date"><input className="field" aria-label="Observation date" type="date" value={date} onChange={e=>setDate(e.target.value)} required /></FieldGroup>
-      {selectedAttendance && date === overviewDate && <p className="screen-note">
-        Expected: {selectedAttendance.expected_today === null ? "No verified schedule" : selectedAttendance.expected_today ? "Session expected" : "No session expected"} ·
-        Sessions recorded: {(selectedAttendance.sessions || []).length} ·
-        Approved leave records: {(selectedAttendance.approved_leave || []).length}. These are source facts, not a finding.
-      </p>}
+      {employeeId && dayEvidence.loading && <p role="status">Checking the selected date's authorised attendance…</p>}
+      {employeeId && dayEvidence.scope===dayScope && dayEvidence.error && <p role="alert">{dayEvidence.error}</p>}
+      {selectedAttendance && <div className="screen-note">
+        <p>Expected: {selectedAttendance.expected_today == null ? "No verified schedule" : selectedAttendance.expected_today ? "Session expected" : "No session expected"} ·
+          {selectedAttendance.expected_start || "Start not configured"}–{selectedAttendance.expected_end || "End not configured"} ·
+          Day type: {selectedAttendance.day_type || "Not configured"}</p>
+        <p>Actual recorded sessions: {(selectedAttendance.sessions || []).length} ·
+          Approved leave records: {(selectedAttendance.approved_leave || []).length} ·
+          Recorded notices: {(selectedAttendance.notices || []).length}</p>
+        {(selectedAttendance.sessions || []).map(item=><p key={item.id}>
+          Start: {item.started_at ? stamp(item.started_at) : "Not recorded"} ·
+          End: {item.ended_at ? stamp(item.ended_at) : "Not recorded"} ·
+          Location: {item.start_lat != null && item.start_lng != null ? `${item.start_lat}, ${item.start_lng}` : "No authorised start coordinates"} ·
+          Place: {item.place || "Not recorded"}
+        </p>)}
+        <p>The evidence is historical, not live employee tracking. Missing records or schedules do not establish misconduct, lateness, absence or pay adjustments.</p>
+      </div>}
       <FieldGroup label="Observation category"><select className="field" value={category} onChange={e=>setCategory(e.target.value)}>
         {CATEGORIES.map(([value,label])=><option value={value} key={value}>{label}</option>)}
       </select></FieldGroup>
       <FieldGroup label="Observed facts"><textarea className="field" value={facts} onChange={e=>setFacts(e.target.value)} maxLength={4000} rows={3} required /></FieldGroup>
       <FieldGroup label="Officer interpretation (separate)"><textarea className="field" value={interpretation} onChange={e=>setInterpretation(e.target.value)} maxLength={4000} rows={3} required /></FieldGroup>
       <FieldGroup label="Evidence reference (optional)"><input className="field" value={evidence} onChange={e=>setEvidence(e.target.value)} maxLength={2000} placeholder="Existing CEAC record or authorised evidence reference" /></FieldGroup>
-      <button type="submit" className="btn" disabled={busy || !employeeId || facts.trim().length < 8 || interpretation.trim().length < 8}>Record attributed observation</button>
+      <button type="submit" className="btn" disabled={busy || !selectedAttendance || facts.trim().length < 8 || interpretation.trim().length < 8}>Record attributed observation</button>
     </form>}
 
     {ready && <div className="card">
