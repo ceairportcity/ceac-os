@@ -431,7 +431,13 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   for (const item of created) {
     await page.getByLabel("Work type").selectOption({ label: item.intent });
 
-    if (item.kind === "Routine") await page.getByLabel("Repeating responsibility").fill(item.title);
+    if (item.kind === "Routine") {
+      await page.getByLabel("Repeating responsibility").fill(item.title);
+      // The owner-approved dated routine engine requires an explicit start
+      // date. Do not bypass its fail-closed validation just to click Create.
+      const start = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+      await page.getByLabel("Starts", { exact: true }).fill(start);
+    }
     if (item.kind === "Case") await page.getByLabel("Matter to track").fill(item.title);
     if (item.kind === "Request") await page.getByLabel("What you need").fill(item.title);
     if (item.kind === "Decision") {
