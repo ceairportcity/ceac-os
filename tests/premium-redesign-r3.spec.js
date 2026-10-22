@@ -28,7 +28,7 @@ test.describe("Premium redesign R3 Administration",()=>{
     await page.goto("/?tab=work");
     await expect(page.locator(".admin-work")).toBeVisible();
     await expect(page.getByRole("heading",{name:"Work",exact:true})).toBeVisible();
-    for(const label of ["Given out","For review","Organisation","Mine"]) await expect(page.getByRole("tab",{name:new RegExp(label)})).toBeVisible();
+    for(const label of ["Given out","For review","Organisation","My work"]) await expect(page.getByRole("tab",{name:new RegExp(label)})).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r3-admin-work.png",fullPage:true});
     await context.close();
   });
@@ -105,7 +105,7 @@ test.describe("Premium redesign R3 Administration",()=>{
         "Integrations",
         "Audit & records",
       ]) await expect(page.locator(".ev2-control-center .ev2-control-card").getByText(label,{exact:true}).first()).toBeVisible();
-      await expect(page.getByText(/not a numeric health score/i)).toBeVisible();
+      await expect(page.getByText("Manage departments, people, policies and system access.",{exact:true})).toBeVisible();
       await expect(page.locator(".ev2-control-center .phase5-control-group")).toHaveCount(3);
       const domainCards=page.locator(".ev2-control-center .ev2-control-card");
       await expect(domainCards).toHaveCount(8);

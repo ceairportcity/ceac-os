@@ -48,14 +48,14 @@ for (const viewport of [
     mkdirSync("test-artifacts", { recursive: true });
 
     await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "+ Add volunteer", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add volunteer", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: /Volunteers/ })).toBeVisible();
 
     await page.getByRole("tab", { name: /Volunteers/ }).click();
     await expect(page.getByText("Same Unit Fixture", { exact: true }).first()).toBeVisible();
     await page.screenshot({ path: `test-artifacts/phase6-reference-05-people-volunteers-${viewport.name}.png`, fullPage: true });
 
-    await page.getByRole("button", { name: "+ Add volunteer", exact: true }).click();
+    await page.getByRole("button", { name: "Add volunteer", exact: true }).click();
     await expect(page.getByText("Add volunteer", { exact: true }).first()).toBeVisible();
     for (const label of ["No attendance tracking","Event-based","Specific days","Custom schedule"]) {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();

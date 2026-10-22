@@ -27,7 +27,7 @@ test.describe("Premium redesign R1 Staff",()=>{
     const {context,page}=await openStaff(browser);
     await side(page,"Work");
     await expect(page.getByRole("heading",{name:"Work",exact:true})).toBeVisible();
-    for(const label of ["Assigned","Agreed","Private"]) await expect(page.getByRole("tab",{name:label,exact:true})).toBeVisible();
+    for(const label of ["Assigned","Created by me","Private"]) await expect(page.getByRole("tab",{name:label,exact:true})).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r1-staff-work.png",fullPage:true});
     await context.close();
   });

@@ -29,7 +29,11 @@ test("OCR5E Control Center is state-derived and never invents a numeric health s
   expect(control).toContain('from("integration_connectors")');
   expect(control).toContain('from("workflow_run_steps")');
   expect(control).toContain('from("platform_audit_events")');
-  expect(control).toContain("Roster-only status alone is not treated as an error.");
+  // Roster-only identity is not an error; only genuinely unresolved identity,
+  // missing job/unit/type or incomplete configuration may need attention.
+  expect(control).toContain('person.identity_state==="needs_review"');
+  expect(control).toContain('person.employment_type==="not_recorded"');
+  expect(control).toContain('peopleGaps.some((person)=>person.identity_state==="needs_review")');
   expect(control).toContain("Manager approval → Administration final approval");
   expect(control).toContain("This is not a numeric health score.");
   expect(control).not.toContain("healthScore");
