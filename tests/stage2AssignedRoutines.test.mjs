@@ -50,6 +50,8 @@ test("P4 assigned/Manager recurring work rejects incomplete provider pages and a
   assert.match(reader,/batchRows\.length<expected/);
   assert.doesNotMatch(assigned,/catch \{ return \[\]; \}/);
   assert.match(manager,/operationCount!==operations\.length/);
+  assert.match(manager,/openItem\?\.\(item\.operation\.work_item_id,item\.date\)/);
+  assert.match(manager,/Skipped with authorised reason/);
   assert.doesNotMatch(manager,/series\.filter\(\(operation\)=>!operation\.paused_at\)/);
   for (const view of [assigned,manager]) assert.match(view,/readRoutineSchedulePreview\(supabase/);
   assert.match(manager,/const items = !ready \? \[\] :/);
