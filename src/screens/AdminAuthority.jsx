@@ -18,12 +18,12 @@ function stamp(value) {
   });
 }
 
-export default function AdminAuthority({ me, refreshMe }) {
+export default function AdminAuthority({ me, refreshMe, initialProfileId=null }) {
   const [people, setPeople] = useState([]);
   const [definitions, setDefinitions] = useState([]);
   const [grants, setGrants] = useState([]);
   const [units, setUnits] = useState([]);
-  const [selectedId, setSelectedId] = useState(me.id);
+  const [selectedId, setSelectedId] = useState(initialProfileId || me.id);
   const [capability, setCapability] = useState("people.manage");
   const [scopeUnitId, setScopeUnitId] = useState("");
   const [reason, setReason] = useState("");
@@ -36,7 +36,8 @@ export default function AdminAuthority({ me, refreshMe }) {
   const [grantOpen, setGrantOpen] = useState(false);
   const [revokeGrantId, setRevokeGrantId] = useState(null);
 
-  useEffect(() => { load(); }, [me.id]);
+  useEffect(() => { load(); }, [me.id,me.org_id]);
+  useEffect(() => { if (initialProfileId) setSelectedId(initialProfileId); }, [initialProfileId]);
 
   async function load() {
     setLoading(true);
@@ -53,7 +54,9 @@ export default function AdminAuthority({ me, refreshMe }) {
       setLoading(false);
       return;
     }
-    setPeople(peopleResult.data || []);
+    const authorisedPeople=peopleResult.data || [];
+    setPeople(authorisedPeople);
+    setSelectedId(current=>authorisedPeople.some(person=>person.id===current)?current:me.id);
     setDefinitions(definitionsResult.data || []);
     setGrants(grantsResult.data || []);
     setUnits(unitsResult.data || []);
