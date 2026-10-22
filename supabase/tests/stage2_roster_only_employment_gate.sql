@@ -152,8 +152,24 @@ BEGIN
  THEN RAISE EXCEPTION 'Linked HR contact write policy exposed'; END IF;
  SELECT * INTO v_before FROM public.profiles WHERE id=v_staff;
  IF NOT FOUND THEN RAISE EXCEPTION 'Seeded ordinary staff is required for linked HR gate'; END IF;
- SELECT id INTO v_employee FROM public.employee_roster WHERE profile_id=v_staff;
- IF v_employee IS NULL THEN RAISE EXCEPTION 'Seeded profile must have a linked canonical roster employee'; END IF;
+ SELECT id INTO v_employee FROM public.employee_roster
+   WHERE org_id=(SELECT org_id FROM public.profiles WHERE id=v_staff)
+     AND profile_id=v_staff;
+ IF v_employee IS NULL THEN
+  -- The role fixture supplies a valid profile, not necessarily a historical
+  -- roster link. Create ONLY a rollback-scoped linked roster fixture: no
+  -- Auth user, operational membership or role grant is created here.
+  INSERT INTO public.employee_roster(
+   id,org_id,profile_id,full_name,preferred_name,employment_type,
+   employment_status,identity_state,source_system,source_row_key)
+  SELECT '41000000-0000-4000-8000-000000000182',p.org_id,p.id,
+    p.full_name,p.preferred_name,'not_recorded','active','linked',
+    'stage2_hr_linked_contact_gate','linked-contact-182'
+  FROM public.profiles p WHERE p.id=v_staff RETURNING id INTO v_employee;
+ END IF;
+ IF v_employee IS NULL THEN
+  RAISE EXCEPTION 'Linked profile and its rollback-only employee fixture were unavailable';
+ END IF;
  v_out:=public.admin_record_linked_person_contact(
   v_employee,v_staff,v_before.full_name,v_before.preferred_name,v_before.phone,
   'Verified updated employee','Updated preferred','+233 20 123 4567',
