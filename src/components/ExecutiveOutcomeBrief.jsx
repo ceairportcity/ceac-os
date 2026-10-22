@@ -3,8 +3,8 @@ import {ministryPeriodEvidence} from "../lib/ministryReportingFacts";
 import { verifiedReportingQuarter } from "../lib/quarterlyReportingWindow";
 import "./ExecutiveOutcomeBrief.css";
 
-export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],objectives=[],milestones=[],readError=null}){
- const facts=useMemo(()=>ministryPeriodEvidence({unitReports:issuedReports,objectives,milestones,activeUnitIds:units.map(x=>x.id)}),[issuedReports,objectives,milestones,units]);
+export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],objectives=[],milestones=[],targets=[],evidenceRefs=[],readError=null}){
+ const facts=useMemo(()=>ministryPeriodEvidence({unitReports:issuedReports,objectives,milestones,targets,evidenceRefs,activeUnitIds:units.map(x=>x.id)}),[issuedReports,objectives,milestones,targets,evidenceRefs,units]);
  const names=Object.fromEntries(units.map(x=>[x.id,x.name]));
  const quarter=verifiedReportingQuarter(period);
  const print=()=>window.print();
@@ -52,9 +52,24 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
         </div>)}</div>}
     </details>
     <div className="s2-exec-brief-section">
-      <h3>Leadership issues and next-quarter commitments</h3>
-      <p>Issues recorded in issued unit reports are shown above under each department's challenges. No independent Executive decision, approval, prioritised commitment or following-quarter plan is published in this evidence source unless recorded through its authoritative workflow.</p>
-      <p>Human-entered appraisals, attendance findings and KPI approvals are separate review-controlled evidence. This brief does not convert self-recorded activity or draft ratings into verified ministry outcomes.</p>
+      <h3>Reported targets and following-period proposals</h3>
+      {!facts.unitTargets.length&&<p>No quantified unit targets or next-period proposals are attached to the latest issued reports. A new commitment or decision is not implied.</p>}
+      {facts.unitTargets.map(target=><div className="s2-exec-brief-unit" key={target.id}>
+        <strong>{names[target.unit_id]||"Authorised department"} · {target.name}</strong>
+        <small>Issued unit-report target · {target.target_value==null?"Target not recorded":`Target ${target.target_value} ${target.target_unit||""}`}
+          {" · "}{target.achieved_value==null?"Achievement not recorded":`Recorded actual ${target.achieved_value} ${target.target_unit||""}`}</small>
+        {target.next_target_value!=null&&<p><b>Proposed next-period target:</b> {target.next_target_value} {target.target_unit||""}. A proposed target is not an Executive approval.</p>}
+        {target.note&&<p><b>Recorded unit explanation:</b> {target.note}</p>}
+      </div>)}
+      <h3>Linked evidence references</h3>
+      {!facts.unitEvidence.length&&<p>No linked evidence references are attached to the latest issued unit reports.</p>}
+      {facts.unitEvidence.map(ref=><div className="s2-exec-brief-unit" key={ref.id}>
+        <strong>{names[ref.unit_id]||"Authorised department"} · {ref.label||"Recorded evidence reference"}</strong>
+        <small>{String(ref.section||"Unit report").replaceAll("_"," ")} · {String(ref.object_type||"Source record").replaceAll("_"," ")} · reference only, not a source-file verification</small>
+      </div>)}
+      <h3>Leadership decisions and follow-up</h3>
+      <p>Issued department challenges are reproduced above. Unit next-target proposals are proposals, not decisions. This briefing does not invent an Executive decision, approval, accountable owner, funding commitment or due date when no independently approved decision source is connected.</p>
+      <p>Human-entered appraisals, attendance findings and KPI approvals remain separate review-controlled evidence. This brief does not convert self-recorded activity or draft ratings into verified ministry outcomes.</p>
     </div>
     <footer><strong>Evidence and scope</strong><p>{facts.coverageNote} {facts.noDoubleCount} This briefing shows current objective/milestone states and released unit narratives visible to this account, not a frozen verified outcome snapshot. Reviewer decisions, attendance and protected HR appraisals are separate.</p></footer>
   </>}
