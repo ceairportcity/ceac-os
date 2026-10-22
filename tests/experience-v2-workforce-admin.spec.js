@@ -183,16 +183,16 @@ test("Administration does not turn failed work-session reads into zero attendanc
     });
     await page.goto("/?tab=attendance");
     await expect(page.locator(".ev2-workforce-admin")).toBeVisible({timeout:15000});
-    await expect(page.getByText("Session evidence unavailable").first()).toBeVisible({timeout:20000});
-    // Judge the real Administration Today record states, not unrelated copy
-    // on a page with other descriptive "No session" explanations.
-    const statusRows = page.locator(".ev2-workforce-admin .workforce-person .ev2wf-row-state");
-    const count = await statusRows.count();
-    expect(count).toBeGreaterThan(0);
-    // Verified leave may still be shown independently when session reads fail.
-    // No row may claim a missing work session from unavailable evidence.
-    await expect(statusRows.getByText("Session evidence unavailable",{exact:true}).first()).toBeVisible();
-    await expect(statusRows.getByText("No session recorded",{exact:true})).toHaveCount(0);
+    // The approved compact Today queue is now source-strict. If its session
+    // dataset fails, withholding ALL employee classifications is safer than
+    // rendering old per-person badges that could imply no session or absence.
+    const evidenceGate = page.getByRole("alert").filter({
+      hasText:"A required roster, schedule, day-type or session source is unavailable.",
+    });
+    await expect(evidenceGate).toBeVisible({timeout:20000});
+    await expect(evidenceGate).toContainText("No employee is marked absent, unconfigured or started on incomplete evidence.");
+    await expect(page.locator(".ev2wf-today-review-list")).toHaveCount(0);
+    await expect(page.locator(".ev2wf-today-review-summary")).toHaveCount(0);
     await expect(page.getByRole("button",{name:"Retry Workforce data"})).toBeVisible();
   } finally {await context.close();}
 });
