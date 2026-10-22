@@ -153,10 +153,14 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     if (!silent) { setLoading(true); setVerifiedRosterScope(null); }
     setError(null);
     try {
-    const [rosterResult, peopleResult, leaveResult, unitsResult] = await Promise.all([
+    const [rosterResult, peopleResult, versionsResult, rulesResult, unitsResult] = await Promise.all([
       supabase.rpc("admin_employee_roster_summary"),
       supabase.rpc("admin_people_summary"),
-      supabase.from("leave_settings").select("annual_days,sick_days,max_carryover,updated_by,updated_at").eq("org_id", me.org_id).maybeSingle(),
+      supabase.from("leave_policy_versions").select("id,state,effective_from,effective_to,confirmed_at")
+        .eq("org_id",me.org_id).eq("state","active")
+        .order("effective_from",{ascending:false}),
+      supabase.from("leave_policy_rules").select("policy_version_id,leave_kind,entitlement_amount,accrual_rate,complete")
+        .eq("org_id",me.org_id).eq("leave_kind","annual"),
       supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("name"),
     ]);
     if (generation !== rosterGeneration.current) return false;
@@ -166,9 +170,9 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       setLoading(false);
       return false;
     }
-    if (leaveResult.error) {
+    if (versionsResult.error || rulesResult.error) {
       setVerifiedRosterScope(null);
-      setError(humanError(leaveResult.error, "Leave policy status could not load."));
+      setError(humanError(versionsResult.error || rulesResult.error, "The confirmed leave-policy source could not load."));
       setLoading(false);
       return false;
     }
@@ -240,7 +244,19 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       role:entry.role,
     })));
     setRows(rosterRows);
-    setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
+    // Only a dated active version with a complete annual rule can present
+    // entitlement. Legacy leave_settings values are not an activated policy.
+    const asOf=new Date().toISOString().slice(0,10);
+    const activeVersion=(versionsResult.data||[]).find(version=>version.confirmed_at
+      &&version.effective_from<=asOf
+      &&(!version.effective_to||version.effective_to>=asOf));
+    const annualRule=(rulesResult.data||[]).find(rule=>rule.policy_version_id===activeVersion?.id
+      &&rule.leave_kind==="annual"&&rule.complete
+      &&Number.isFinite(Number(rule.entitlement_amount))
+      &&Number.isFinite(Number(rule.accrual_rate)));
+    setLeavePolicy(activeVersion&&annualRule
+      ?{annual_days:Number(annualRule.entitlement_amount),confirmed_at:activeVersion.confirmed_at}
+      :null);
     setUnits(unitsResult.data || []);
     setLoading(false);
 
@@ -697,7 +713,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     const employmentCurrent = person.employment?.current || null;
     const employmentHistory = Array.isArray(person.employment?.history) ? person.employment.history : [];
     const taken = Number(person.balance?.annual_taken || 0);
-    const entitlement = leavePolicy ? Number(leavePolicy.annual_days || 0) + Number(person.balance?.carryover_from_last_year || 0) : null;
+    const entitlement = leavePolicy ? Number(leavePolicy.annual_days || 0) : null;
     const employmentState = (employmentCurrent?.employment_status || person.employment_status || (person.active ? "active" : "inactive")).replaceAll("_", " ");
     const rosterUnitNames = (person.roster_units || []).map((unit) => unit.unit_name).filter(Boolean);
     const rosterManagerName = person.manager_profile_id
@@ -1053,8 +1069,8 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
 
         <div className="ev2p-admin-leave-card">
           {leavePolicy
-            ? <ProgressMeter value={taken} max={entitlement} label="Annual leave used" detail={taken + " of " + entitlement + " configured days"} />
-            : <PeopleFactRow icon="calendar" title="Annual leave taken" subtitle={taken + " days recorded · entitlement not configured"} />}
+            ? <ProgressMeter value={taken} max={entitlement} label="Recorded annual leave taken" detail={taken + " recorded · annual policy entitlement " + entitlement + " days; not an accrued or available balance"} />
+            : <PeopleFactRow icon="calendar" title="Annual leave taken" subtitle={taken + " days recorded · active annual policy not configured"} />}
           <PeopleFactRow icon="calendar" title="Sick leave taken" subtitle={Number(person.balance?.sick_taken || 0) + " days recorded"} />
         </div>
         <button type="button" className="ev2p-link-row ev2p-admin-leave-link" onClick={() => setDrill({ label: "Leave history", kind: "leave", rows: person.leave })}>
