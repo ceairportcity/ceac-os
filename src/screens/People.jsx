@@ -59,6 +59,7 @@ function avgStartLabel(minutes) {
 
 export default function People({ me, openItem, go, openLifecycle, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
+  const [operationalDirectory, setOperationalDirectory] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
   const [personTab, setPersonTab] = useState("overview");
@@ -164,7 +165,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       setLoading(false);
       return false;
     }
-    const operationalByProfile = new Map((Array.isArray(peopleResult.data) ? peopleResult.data : []).map((entry) => [entry.id, entry]));
+    const operationalPeople = Array.isArray(peopleResult.data) ? peopleResult.data : [];
+    const operationalByProfile = new Map(operationalPeople.map((entry) => [entry.id, entry]));
     const rosterRows = (Array.isArray(rosterResult.data) ? rosterResult.data : []).map((employee) => {
       const operational = employee.profile_id ? operationalByProfile.get(employee.profile_id) : null;
       const rosterUnits = Array.isArray(employee.units) ? employee.units : [];
@@ -219,6 +221,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     // legitimate People & Access / HR actions or tempt anyone to bypass RLS.
     if (generation !== rosterGeneration.current) return false;
     setVerifiedRosterScope(scopeKey);
+    setOperationalDirectory(operationalPeople.map((entry)=>({id:entry.id,full_name:entry.full_name})));
     setRows(rosterRows);
     setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
     setUnits(unitsResult.data || []);
@@ -668,7 +671,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     const employmentState = (employmentCurrent?.employment_status || person.employment_status || (person.active ? "active" : "inactive")).replaceAll("_", " ");
     const rosterUnitNames = (person.roster_units || []).map((unit) => unit.unit_name).filter(Boolean);
     const rosterManagerName = person.manager_profile_id
-      ? rows.find((entry) => entry.profile_id === person.manager_profile_id)?.full_name || "Manager identity unavailable"
+      ? operationalDirectory.find((entry) => entry.id === person.manager_profile_id)?.full_name || "Manager identity unavailable"
       : "Not recorded";
     const positionLabel = hasLinkedProfile
       ? (person.is_exec ? "Group Pastor" : person.is_admin ? "Administration & HR" : person.role === "manager" ? "Unit head" : person.role === "sub_team_lead" ? "Team lead" : "Staff")
@@ -868,7 +871,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       </PeopleWorkspaceSection>
 
       {!hasLinkedProfile && <div id="roster-employee-editor"><RosterOnlyEmploymentEditor
-        me={me} employeeId={person.employee_id} units={units} managers={rows}
+        me={me} employeeId={person.employee_id} units={units}
         onSaved={(updated)=>{
           setPerson(current=>current?.employee_id===updated.employee_id?{...current,...updated,active:updated.employment_status==="active"}:current);
           void load({silent:true});
