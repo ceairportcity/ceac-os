@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useRef,useState} from "react";
-import {fitWorkforceMap,pointCoordinates,visibleStreetTiles,workforcePinPosition,worldPoint} from "../lib/workforceStreetMap";
+import {fitWorkforceMap,pointCoordinates,visibleStreetTiles,workforcePinPosition,worldPoint,nextWorkforceClusterPersonId} from "../lib/workforceStreetMap";
 import "./WorkforceStreetMap.css";
 
 /**
@@ -74,9 +74,9 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect}) {
       className={pin.people.some(person=>person.id===selectedId)?"ceac-street-map-marker is-selected":"ceac-street-map-marker"}
       style={{left:pin.position.x,top:pin.position.y}}
       aria-label={pin.people.length===1?`View recorded work start for ${pin.people[0].name}`:
-       `View ${pin.people.length} staff with a recorded start at this location`}
+       `Select a person at this shared work-start location (${pin.people.length} staff). Press again for next person`}
       onPointerDown={e=>e.stopPropagation()}
-      onClick={()=>onSelect?.(pin.people[0].id)}>
+      onClick={()=>onSelect?.(nextWorkforceClusterPersonId(pin.people,selectedId))}>
       {pin.people.length}
      </button>)}
     </div>
@@ -92,7 +92,7 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect}) {
    </>}
   </div>
   {consent&&<div className="ceac-street-map-after">
-   <span>{tileWarning?"Street tiles could not all load. Staff start records remain accessible in the list.":"Drag to explore. Use zoom controls to inspect streets. A pin opens the corresponding staff record below."}</span>
+   <span>{tileWarning?"Street tiles could not all load. Staff start records remain accessible in the list.":"Drag to explore. Use zoom controls to inspect streets. A pin opens a staff record; activate shared-location pins again to inspect every person there."}</span>
    <button className="btn btn-ghost btn-sm" type="button" onClick={()=>setConsent(false)}>Hide street map</button>
   </div>}
  </section>;
