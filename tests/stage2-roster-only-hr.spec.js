@@ -25,17 +25,26 @@ test("HR edits and reopens an unlinked employee's employment and department assi
  await expect(editor.getByText(/Edit this employee without creating an account/)).toBeVisible();
  await editor.getByRole("button",{name:"Edit employee record"}).click();
  await editor.getByLabel("Job title",{exact:true}).fill("Updated HR job title");
+ await editor.getByLabel("HR contact email (not login)").fill("roster.only@ceac.local.test");
+ await editor.getByLabel("HR contact phone").fill("+233 20 123 4567");
+ await editor.getByLabel("Employment start date").fill("2026-01-12");
  await editor.getByLabel("Primary department").selectOption("20000000-0000-4000-8000-000000000012");
  await editor.getByLabel("Reporting manager").selectOption("31000000-0000-4000-8000-000000000007");
  await editor.getByLabel("Reason for this HR change").fill("Verified reporting line and departmental assignment");
  await editor.getByRole("button",{name:"Save HR record"}).click();
- await expect(editor.getByText("Employment and unit placement saved. HR history was retained.")).toBeVisible();
+ await expect(editor.getByText("Employee, contact and unit placement changes saved. HR audit history retained.")).toBeVisible();
  await expect(editor.getByText("Updated HR job title")).toBeVisible();
+ await expect(editor.getByText("roster.only@ceac.local.test")).toBeVisible();
+ await expect(editor.getByText("+233 20 123 4567")).toBeVisible();
+ await expect(editor.getByText("2026-01-12")).toBeVisible();
  await expect(editor.getByText(/Manager B Fixture/)).toBeVisible();
  await expect(editor.locator("details").filter({hasText:/HR changes/})).toBeVisible();
  // Reopen the editor. It must display the server-confirmed fields, not invented defaults.
  await editor.getByRole("button",{name:"Edit employee record"}).click();
  await expect(editor.getByLabel("Job title",{exact:true})).toHaveValue("Updated HR job title");
+ await expect(editor.getByLabel("HR contact email (not login)")).toHaveValue("roster.only@ceac.local.test");
+ await expect(editor.getByLabel("HR contact phone")).toHaveValue("+233 20 123 4567");
+ await expect(editor.getByLabel("Employment start date")).toHaveValue("2026-01-12");
  await expect(editor.getByLabel("Primary department")).toHaveValue("20000000-0000-4000-8000-000000000012");
  await expect(editor.getByLabel("Reporting manager")).toHaveValue("31000000-0000-4000-8000-000000000007");
  await editor.getByRole("button",{name:"Cancel"}).click();
