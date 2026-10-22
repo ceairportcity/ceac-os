@@ -68,7 +68,7 @@ export default function EmployeeDossierRecords({ me, employeeId, profileId, sect
     return () => { current = false; };
   }, [scope]);
 
-  const active = result.scope === scope && !result.loading && Boolean(profileId);
+  const active = result.scope === scope && !result.loading && !result.error && Boolean(profileId);
   const { rows, names } = active ? result : { rows:[], names:{} };
   const title = section === "development" ? "Development"
     : section === "learning" ? "Learning" : "Equipment";
