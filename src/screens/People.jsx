@@ -18,6 +18,7 @@ import { Button, ComposerDrawer } from "../experience-v2/components";
 import PeopleAccess from "../components/PeopleAccess";
 import EmployeeScheduleEditor from "../components/EmployeeScheduleEditor";
 import RosterOnlyEmploymentEditor from "../components/RosterOnlyEmploymentEditor";
+import RosterAccountLink from "../components/RosterAccountLink";
 import EmployeeDossierRecords from "../components/EmployeeDossierRecords";
 import {
   PeopleAdminPersonRow,
@@ -816,13 +817,13 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       {personTab === "access" && <PeopleWorkspaceSection
         title="Access & responsibilities"
         description="Account access, organisational placement and authority remain separate from job title and employment facts."
-        meta={person.profile_id && onManagePermissions ? <button type="button" className="ev2p-admin-record-change" onClick={()=>onManagePermissions(person.profile_id)}>Manage permissions</button> : null}
         meta={<div className="phase5-person-access-actions">
+          {person.profile_id && onManagePermissions && <button type="button" className="ev2p-admin-record-change" onClick={()=>onManagePermissions(person.profile_id)}>Manage permissions</button>}
           <Button
             variant="secondary"
             size="compact"
             onClick={() => openAccessAdministration(person.profile_id || null)}
-          >Manage responsibilities</Button>
+          >{person.profile_id ? "Manage responsibilities" : "Invite account"}</Button>
           <Button
             variant="quiet"
             size="compact"
@@ -848,6 +849,11 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           </div>
           <Button variant="quiet" size="compact" onClick={() => openAccessAdministration(person.profile_id || null)}>Review invitation</Button>
         </div> : null}
+        {!person.profile_id && <RosterAccountLink
+          key={`${me.org_id}:${me.id}:${person.employee_id}`}
+          me={me} employee={person} documents={employeeFiles.documents}
+          onLinked={()=>{personGeneration.current+=1;setPerson(null);setDrill(null);void load();}}
+        />}
         <p className="phase5-person-access-note">
           Job title never grants application authority. Additional unit or team responsibility is recorded against the existing identity; access deactivation and offboarding use the controlled lifecycle workflow.
         </p>
