@@ -20,6 +20,7 @@ import EmployeeScheduleEditor from "../components/EmployeeScheduleEditor";
 import RosterOnlyEmploymentEditor from "../components/RosterOnlyEmploymentEditor";
 import RosterAccountLink from "../components/RosterAccountLink";
 import EmployeeDossierRecords from "../components/EmployeeDossierRecords";
+import EmployeeAttendanceObservations from "../components/EmployeeAttendanceObservations";
 import {
   PeopleAdminPersonRow,
   PeopleBackButton,
@@ -1012,6 +1013,8 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         </button>
         </>}
       </PeopleWorkspaceSection>
+      <EmployeeAttendanceObservations key={`${me.org_id}:${me.id}:${person.employee_id}`}
+        me={me} employeeId={person.employee_id} />
       </>}
 
       {["development","learning","equipment"].includes(personTab) && <EmployeeDossierRecords
