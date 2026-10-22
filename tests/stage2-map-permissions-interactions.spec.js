@@ -61,7 +61,7 @@ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
   await authenticate(page);
   const street=page.getByRole("region",{name:"Recorded workforce work-start street map"});
   await expect(street).toBeVisible({timeout:15000});
-  await expect(street.getByText(/visible map area and your IP address/)).toBeVisible();
+  await expect(street.getByText(/visible map area, the CEAC site origin and your IP address/)).toBeVisible();
   expect(requestedTiles).toBe(0);
   const enable=street.getByRole("button",{name:"Enable street map"});
   await expect(enable).toBeEnabled({timeout:15000});
