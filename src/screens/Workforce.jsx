@@ -80,6 +80,8 @@ export default function Workforce({ me }) {
 
   const [scheduleSheet,setScheduleSheet]=useState(false);
   const [schedulePerson,setSchedulePerson]=useState("");
+  const [scheduleEmployeeFocus,setScheduleEmployeeFocus]=useState("");
+  const [sessionProfileFocus,setSessionProfileFocus]=useState("");
   const [scheduleDayType,setScheduleDayType]=useState("");
   const [scheduleDay,setScheduleDay]=useState("mon");
   const [scheduleFrom,setScheduleFrom]=useState(isoDay(new Date()));
@@ -946,7 +948,10 @@ export default function Workforce({ me }) {
         <WorkforceSection title="Today · evidence needing review"
           description="A compact queue for account-linked employees: unconfigured schedules, missing or unavailable session evidence, recorded starts and approved leave remain distinct. No attendance finding is automatic."
           meta={people.length+" linked people"}>
-          <WorkforceTodayReviewList rows={people.map(row=>{
+          <WorkforceTodayReviewList me={me} date={today}
+          schedules={schedules} dayTypes={dayTypes}
+          sourceUnavailable={["people","sessions","schedules","day types","leave"].some(name=>Boolean(datasetErrors[name]))}
+          rows={people.map(row=>{
             const schedule=latestSchedule(row.profile_id);
             const dayType=currentDayType(row.profile_id);
             const facts=sessionFacts(row.profile_id);
@@ -969,8 +974,8 @@ export default function Workforce({ me }) {
               clockLabel,
             };
           })}
-          onSchedule={canManage?()=>setTab("setup"):null}
-          onSessions={()=>setTab("sessions")}
+          onSchedule={canManage?(employeeId)=>{setScheduleEmployeeFocus(employeeId);setTab("setup");}:null}
+          onSessions={(profileId)=>{setSessionProfileFocus(profileId);setTab("sessions");}}
           />
         </WorkforceSection>
       </>}
@@ -1155,7 +1160,7 @@ export default function Workforce({ me }) {
       {tab==="setup"&&canManage&&<>
         {Object.keys(datasetErrors).length>0&&<ProductNotice tone="error" title="Workforce data status">{Object.entries(datasetErrors).map(([name,message])=><div key={name}><strong>{human(name)}</strong>: {message}</div>)}</ProductNotice>}
         <div className="ev2wf-manager-scope workforce-data-status">Visible people: <strong>{people.length}</strong> · Active day types: <strong>{dayTypes.length}</strong></div>
-        <WorkforceEmployeeScheduleWorkspace me={me} />
+        <WorkforceEmployeeScheduleWorkspace me={me} initialEmployeeId={scheduleEmployeeFocus} />
         <div className="ev2wf-toolbar">
           <Button variant="secondary" onClick={()=>setDayTypeSheet(true)}>Add day type</Button>
           <p className="screen-note">Choose an employee above to review all seven days, change a weekday and confirm an effective-dated successor. Historical one-day schedule records remain preserved; new changes use the unified editor.</p>
