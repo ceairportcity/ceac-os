@@ -10,7 +10,7 @@ import "./WorkforceStreetMap.css";
  */
 export default function WorkforceStreetMap({clusters=[],selectedId,onSelect}) {
  const frame=useRef(null),drag=useRef(null);
- const [size,setSize]=useState({width:520,height:340}),[consent,setConsent]=useState(false);
+ const [size,setSize]=useState({width:520,height:340}),[consent,setConsent]=useState(false),[tileWarning,setTileWarning]=useState(false);
  const fitted=useMemo(()=>fitWorkforceMap(clusters,size.width,size.height),[clusters,size.width,size.height]);
  const [view,setView]=useState(fitted);
  useEffect(()=>{setView(fitted);},[fitted]);
@@ -58,7 +58,7 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect}) {
     <span className="ceac-street-map-eyebrow">GEOGRAPHIC VIEW</span>
     <strong>View recorded work starts on a street map</strong>
     <p>OpenStreetMap tiles show roads and nearby places. Loading them sends the visible map area and your IP address to OpenStreetMap. Staff identities and exact work-start records are not sent to the map provider.</p>
-    <button type="button" className="btn btn-sm" disabled={!clusters.length} onClick={()=>setConsent(true)}>
+    <button type="button" className="btn btn-sm" disabled={!clusters.length} onClick={()=>{setTileWarning(false);setConsent(true);}}>
      Enable street map
     </button>
     {!clusters.length&&<small>No recorded start GPS is available for these employees.</small>}
@@ -66,6 +66,7 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect}) {
     <div className="ceac-street-map-tiles" aria-hidden="true">
      {tileViews.map(tile=><img key={tile.key} src={tile.url}
       loading="lazy" draggable="false" alt="" referrerPolicy="strict-origin-when-cross-origin"
+      onError={event=>{event.currentTarget.style.visibility="hidden";setTileWarning(true);}}
       style={{position:"absolute",left:tile.x,top:tile.y,width:256,height:256}} />)}
     </div>
     <div className="ceac-street-map-overlay" aria-label="Recorded work-start markers">
@@ -91,7 +92,7 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect}) {
    </>}
   </div>
   {consent&&<div className="ceac-street-map-after">
-   <span>Drag to explore. Use zoom controls to inspect streets. A pin opens the corresponding staff record below.</span>
+   <span>{tileWarning?"Street tiles could not all load. Staff start records remain accessible in the list.":"Drag to explore. Use zoom controls to inspect streets. A pin opens the corresponding staff record below."}</span>
    <button className="btn btn-ghost btn-sm" type="button" onClick={()=>setConsent(false)}>Hide street map</button>
   </div>}
  </section>;
