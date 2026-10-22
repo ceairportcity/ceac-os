@@ -1333,7 +1333,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     />
 
     {creatingEmployee && <HRCreateRosterEmployee
-      units={units} employees={rows} accounts={operationalDirectory}
+      me={me} units={units} employees={rows} accounts={operationalDirectory}
       onClose={()=>setCreatingEmployee(false)}
       onCreated={async employee=>{
         if(!(await load({silent:true})))throw new Error("The employee was created but the directory did not refresh. Recheck existing employees before retrying.");
