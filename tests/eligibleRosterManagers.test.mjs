@@ -33,6 +33,23 @@ test("incomplete source is rejected instead of treated as all clear",()=>{
  assert.throws(()=>eligibleRosterManagers(people,null,"unit-b"),/incomplete/);
  assert.throws(()=>eligibleRosterManagers(people,[{profile_id:"manager-1",unit_id:"unit-b"}],"unit-b"),/inconsistent/);
 });
+test("an authorised operational manager without any linked HR roster record remains selectable",()=>{
+ const operational=[
+  {profile_id:"manager-2",full_name:"Manager B",active:true,account_active:true},
+  {profile_id:null,full_name:"Unlinked roster person titled Manager",active:true,account_active:false},
+ ];
+ // Neither roster membership nor a job title is the source of permission.
+ const results=eligibleRosterManagers(operational,memberships,"unit-b");
+ assert.deepEqual(results.map(person=>person.profile_id),["manager-2"]);
+});
+
+test("a manager with inactive employment or login is rejected regardless of unit membership",()=>{
+ const inactiveEmployment=[{profile_id:"manager-2",full_name:"Manager B",active:false,account_active:true}];
+ const disabledAccount=[{profile_id:"manager-2",full_name:"Manager B",active:true,account_active:false}];
+ assert.deepEqual(eligibleRosterManagers(inactiveEmployment,memberships,"unit-b"),[]);
+ assert.deepEqual(eligibleRosterManagers(disabledAccount,memberships,"unit-b"),[]);
+});
+
 test("unassigned primary department has no manager option",()=>{
  assert.deepEqual(eligibleRosterManagers(people,memberships,""),[]);
 });
