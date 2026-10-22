@@ -41,3 +41,13 @@ test("Unlinked employee scheduling does not infer login, attendance or leave ent
  assert.match(editor,/Do not calculate historical leave or lateness from an unconfirmed schedule/);
  assert.doesNotMatch(editor,/supabase\.auth\.signUp|insert\("auth\.users"\)/);
 });
+
+test("schedule closes stale HR employee evidence on account switch and incomplete day-type reads",()=>{
+ assert.match(editor,/const verified = verifiedScope === scope && !loading && !error/);
+ assert.match(editor,/setVerifiedScope\(null\)/);
+ assert.match(editor,/setVersions\(\[\]\)/);
+ assert.match(editor,/types\.count!==types\.data\.length/);
+ assert.match(editor,/Reload authorised schedule/);
+ assert.match(editor,/if \(!verified\) return/);
+ assert.match(editor,/writeBusy\.current \|\| !verified \|\| !valid/);
+});
