@@ -1,17 +1,21 @@
 import {useMemo} from "react";
 import {ministryPeriodEvidence} from "../lib/ministryReportingFacts";
+import { verifiedReportingQuarter } from "../lib/quarterlyReportingWindow";
 import "./ExecutiveOutcomeBrief.css";
 
 export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],objectives=[],milestones=[],readError=null}){
  const facts=useMemo(()=>ministryPeriodEvidence({unitReports:issuedReports,objectives,milestones,activeUnitIds:units.map(x=>x.id)}),[issuedReports,objectives,milestones,units]);
  const names=Object.fromEntries(units.map(x=>[x.id,x.name]));
+ const quarter=verifiedReportingQuarter(period);
  const print=()=>window.print();
  return <section className="s2-exec-brief" aria-label="Executive outcomes briefing">
   <header className="s2-exec-brief-head">
-    <div><span>Leadership evidence</span><h2>Results and next decisions</h2>
-      <p>{period.label} · {period.starts_on} — {period.ends_on}. Source-linked organisational context, not automatic employee scoring.</p></div>
-    <button className="s2-exec-brief-print" type="button" disabled={Boolean(readError)} onClick={print}>Print / Save PDF</button>
+    <div><span>Christ Embassy Airport City · Executive reporting</span><h2>Quarterly ministry results and next decisions</h2>
+      <p>{quarter ? quarter.label : period.label} · {period.starts_on} — {period.ends_on}. Issued organisational evidence, not automatic employee scoring.</p>
+      <p>Report prepared {new Date().toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"long",year:"numeric"})} · Source records may change after this print.</p></div>
+    <button className="s2-exec-brief-print" type="button" disabled={Boolean(readError)||!quarter} onClick={print}>Print / Save as PDF</button>
   </header>
+  {!quarter && <p role="status" className="s2-exec-brief-warning">This is not a verified full calendar quarter. Select a quarterly reporting period before printing a quarterly report.</p>}
   {readError?<p role="alert" className="s2-exec-brief-warning">Detailed outcome records could not be verified. No achievement figures have been inferred.</p>:<>
     <div className="s2-exec-brief-stats">
       <article><strong>{facts.filing.submitted} / {facts.filing.visibleUnits}</strong><span>Units with issued report</span><small>Filing status only</small></article>
@@ -47,6 +51,11 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
          <small>{m.completed_at?"Recorded completion "+m.completed_at.slice(0,10):m.target_on?"Target "+m.target_on:"No recorded date"}</small>
         </div>)}</div>}
     </details>
+    <div className="s2-exec-brief-section">
+      <h3>Leadership issues and next-quarter commitments</h3>
+      <p>Issues recorded in issued unit reports are shown above under each department's challenges. No independent Executive decision, approval, prioritised commitment or following-quarter plan is published in this evidence source unless recorded through its authoritative workflow.</p>
+      <p>Human-entered appraisals, attendance findings and KPI approvals are separate review-controlled evidence. This brief does not convert self-recorded activity or draft ratings into verified ministry outcomes.</p>
+    </div>
     <footer><strong>Evidence and scope</strong><p>{facts.coverageNote} {facts.noDoubleCount} This briefing shows current objective/milestone states and released unit narratives visible to this account, not a frozen verified outcome snapshot. Reviewer decisions, attendance and protected HR appraisals are separate.</p></footer>
   </>}
  </section>;
