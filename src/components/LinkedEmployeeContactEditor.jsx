@@ -6,9 +6,9 @@ const normalize=(value)=>String(value||"").trim();
 const date=(v)=>v?new Date(v).toLocaleString("en-GB",{timeZone:"Africa/Accra"}):"Unknown time";
 
 /** Existing linked employee only. Never edits Auth email or application authority. */
-export default function LinkedEmployeeContactEditor({me,profileId,onSaved}){
- const scope=me.org_id+":"+me.id+":"+profileId;
- const permitted=Boolean(me.is_admin&&profileId);
+export default function LinkedEmployeeContactEditor({me,employeeId,profileId,onSaved}){
+ const scope=me.org_id+":"+me.id+":"+employeeId+":"+profileId;
+ const permitted=Boolean(me.is_admin&&employeeId&&profileId);
  const [verifiedScope,setVerifiedScope]=useState("");
  const [baseline,setBaseline]=useState(null);
  const [form,setForm]=useState(blank);
@@ -28,16 +28,19 @@ export default function LinkedEmployeeContactEditor({me,profileId,onSaved}){
   if(!permitted){setLoading(false);return()=>{generation.current++;};}
   (async()=>{
    try{
-    const [person,events]=await Promise.all([
+    const [person,roster,events]=await Promise.all([
      supabase.from("profiles").select("id,org_id,full_name,preferred_name,phone")
       .eq("id",profileId).eq("org_id",me.org_id).single(),
+     supabase.from("employee_roster").select("id,org_id,profile_id,full_name,preferred_name")
+      .eq("id",employeeId).eq("org_id",me.org_id).eq("profile_id",profileId).single(),
      supabase.from("employee_linked_contact_change_events")
       .select("id,recorded_at,reason,before_record,after_record,actor_id",{count:"exact"})
       .eq("org_id",me.org_id).eq("profile_id",profileId)
       .order("recorded_at",{ascending:false}).limit(20),
     ]);
-    if(person.error||events.error)throw person.error||events.error;
+    if(person.error||roster.error||events.error)throw person.error||roster.error||events.error;
     if(person.data?.id!==profileId||person.data.org_id!==me.org_id
+      ||roster.data?.id!==employeeId||roster.data.profile_id!==profileId
       ||!Array.isArray(events.data)||!Number.isInteger(events.count)
       ||events.count<events.data.length)throw new Error("Authorised employee contact records are incomplete.");
     if(token!==generation.current)return;
@@ -67,32 +70,45 @@ export default function LinkedEmployeeContactEditor({me,profileId,onSaved}){
   let acknowledged=false;
   try{
    const {data,error:saveError}=await supabase.rpc("admin_record_linked_person_contact",{
-    p_profile_id:profileId,p_expected_full_name:expected.full_name,
+    p_employee_id:employeeId,p_profile_id:profileId,p_expected_full_name:expected.full_name,
     p_expected_preferred_name:expected.preferred_name,p_expected_phone:expected.phone,
     p_full_name:normalize(next.fullName),p_preferred_name:normalize(next.preferredName)||null,
     p_phone:normalize(next.phone)||null,p_reason:normalize(next.reason),
    });
    if(saveError)throw saveError;
-   if(data?.profile_id!==profileId||!data.event_id)
+   if(data?.employee_id!==employeeId||data?.profile_id!==profileId||!data.event_id||!data.roster_event_id)
     throw new Error("The protected HR update did not return a verified person/event identity.");
    acknowledged=true;
    if(token!==generation.current)return;
-   const [person,events]=await Promise.all([
+   const [person,roster,events,rosterEvents]=await Promise.all([
     supabase.from("profiles").select("id,org_id,full_name,preferred_name,phone")
      .eq("id",profileId).eq("org_id",me.org_id).single(),
+    supabase.from("employee_roster").select("id,org_id,profile_id,full_name,preferred_name")
+     .eq("id",employeeId).eq("org_id",me.org_id).eq("profile_id",profileId).single(),
     supabase.from("employee_linked_contact_change_events")
      .select("id,recorded_at,reason,before_record,after_record,actor_id",{count:"exact"})
      .eq("org_id",me.org_id).eq("profile_id",profileId)
      .order("recorded_at",{ascending:false}).limit(20),
+    supabase.from("employee_roster_change_events")
+     .select("id",{count:"exact"}).eq("org_id",me.org_id).eq("employee_id",employeeId)
+     .order("recorded_at",{ascending:false}).limit(20),
    ]);
-   if(person.error||events.error)throw person.error||events.error;
+   if(person.error||roster.error||events.error||rosterEvents.error)
+    throw person.error||roster.error||events.error||rosterEvents.error;
    if(person.data?.id!==profileId||person.data.org_id!==me.org_id
+     ||roster.data?.id!==employeeId||roster.data.org_id!==me.org_id
+     ||roster.data.profile_id!==profileId
+     ||roster.data.full_name!==data.full_name
+     ||(roster.data.preferred_name||null)!==(data.preferred_name||null)
      ||person.data.full_name!==data.full_name
      ||(person.data.preferred_name||null)!==(data.preferred_name||null)
      ||(person.data.phone||null)!==(data.phone||null)
      ||!Array.isArray(events.data)||!Number.isInteger(events.count)
      ||events.count<events.data.length
-     ||!events.data.some(event=>event.id===data.event_id))
+     ||!events.data.some(event=>event.id===data.event_id)
+     ||!Array.isArray(rosterEvents.data)||!Number.isInteger(rosterEvents.count)
+     ||rosterEvents.count<rosterEvents.data.length
+     ||!rosterEvents.data.some(event=>event.id===data.roster_event_id))
     throw new Error("The employee contact edit or the exact HR audit event could not be verified.");
    if(token!==generation.current)return;
    setBaseline(person.data);
@@ -100,7 +116,7 @@ export default function LinkedEmployeeContactEditor({me,profileId,onSaved}){
      phone:person.data.phone||"",reason:""});
    setHistory(events.data);setHistoryCount(events.count);
    setEdit(false);
-   setNotice("Employee name/contact correction verified in the authorised HR history.");
+   setNotice("Employee and account profile are reconciled; both official HR histories verified.");
    onSaved?.(person.data);
   }catch(cause){if(token===generation.current){
    setError(acknowledged
