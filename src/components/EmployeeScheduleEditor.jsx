@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { approvedOfficeWeekTemplate } from "../lib/approvedOfficeWeekTemplate";
 
 const DAYS = [
   ["mon","Monday"],["tue","Tuesday"],["wed","Wednesday"],
@@ -10,21 +11,6 @@ const emptyDays = () => Object.fromEntries(DAYS.map(([day]) => [day, {
   type:"", start:"", end:"",
 }]));
 const dateOf = (value) => value ? String(value).slice(0,10) : "";
-
-// No unapproved day-type IDs are invented. This voluntary HR starting template
-// appears only when the actual active CEAC Office and weekly-off types exist.
-export function approvedOfficeWeekTemplate(dayTypes = []) {
-  const office = dayTypes.filter(type => type.active && type.session_expected
-    && String(type.name).trim().toLowerCase() === "office");
-  const rest = dayTypes.filter(type => type.active && !type.session_expected
-    && ["weekly off","off day","rest day"].includes(String(type.name).trim().toLowerCase()));
-  if (office.length !== 1 || rest.length !== 1) return null;
-  return Object.fromEntries(DAYS.map(([day]) => [day,
-    ["sat","sun"].includes(day)
-      ? { type:rest[0].id,start:"",end:"" }
-      : { type:office[0].id,start:"10:00",end:"17:00" }
-  ]));
-}
 
 export default function EmployeeScheduleEditor({ me, profileId, employeeId, unitId, name }) {
   const authorised = Boolean(me?.is_admin) && (me.capabilities || []).includes("workforce.manage");
