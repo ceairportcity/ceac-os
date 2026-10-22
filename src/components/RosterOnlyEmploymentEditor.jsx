@@ -8,22 +8,22 @@ const blank=()=>({fullName:"",preferredName:"",jobTitle:"",employmentType:"not_r
 const timestamp=value=>value?new Date(value).toLocaleString("en-GB",{timeZone:"Africa/Accra"}):"Not recorded";
 
 /** HR employment/placement for roster-only staff. NEVER creates a login or grants a role. */
-export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],managers=[],onSaved}){
+export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSaved}){
  const authorised=Boolean(me.is_admin);
  const [form,setForm]=useState(blank),[updatedAt,setUpdatedAt]=useState(null);
  const [history,setHistory]=useState([]),[edit,setEdit]=useState(false);
- const [managerMemberships,setManagerMemberships]=useState([]),[managersVerified,setManagersVerified]=useState(false);
+ const [managerMemberships,setManagerMemberships]=useState([]),[managerDirectory,setManagerDirectory]=useState([]),[managersVerified,setManagersVerified]=useState(false);
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const [error,setError]=useState(""),[notice,setNotice]=useState(""),[uncertain,setUncertain]=useState(false);
  const [reload,setReload]=useState(0),generation=useRef(0),sending=useRef(false);
  const scope=me.org_id+":"+me.id+":"+employeeId;
  useEffect(()=>{
   const token=++generation.current;setLoading(true);setEdit(false);setUpdatedAt(null);
-  setHistory([]);setManagerMemberships([]);setManagersVerified(false);setError("");setNotice("");setUncertain(false);
+  setHistory([]);setManagerMemberships([]);setManagerDirectory([]);setManagersVerified(false);setError("");setNotice("");setUncertain(false);
   if(!authorised||!employeeId){setLoading(false);return()=>{generation.current++;};}
   (async()=>{
    try{
-    const [detail,row,events,managerRead]=await Promise.all([
+    const [detail,row,events,managerRead,profilesRead,employmentRead]=await Promise.all([
      supabase.rpc("admin_employee_roster_detail",{p_employee_id:employeeId}),
      supabase.from("employee_roster").select("id,org_id,profile_id,updated_at,manager_profile_id")
       .eq("org_id",me.org_id).eq("id",employeeId).single(),
@@ -33,13 +33,21 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],manag
      supabase.from("unit_memberships")
       .select("profile_id,unit_id,role",{count:"exact"})
       .eq("org_id",me.org_id).eq("role","manager").order("unit_id").order("profile_id").range(0,999),
+     supabase.from("profiles").select("id,full_name,active",{count:"exact"})
+      .eq("org_id",me.org_id).order("id").range(0,999),
+     supabase.from("employment_records").select("profile_id,employment_status",{count:"exact"})
+      .eq("org_id",me.org_id).order("profile_id").range(0,999),
     ]);
-    if(detail.error||row.error||events.error||managerRead.error)
-     throw detail.error||row.error||events.error||managerRead.error;
+    if(detail.error||row.error||events.error||managerRead.error||profilesRead.error||employmentRead.error)
+     throw detail.error||row.error||events.error||managerRead.error||profilesRead.error||employmentRead.error;
     if(!detail.data?.employee||row.data?.id!==employeeId||row.data?.profile_id!==null
       ||!row.data.updated_at||!Array.isArray(detail.data.units)||!Array.isArray(events.data)
       ||!Array.isArray(managerRead.data)||!Number.isInteger(managerRead.count)
-      ||managerRead.count!==managerRead.data.length)
+      ||managerRead.count!==managerRead.data.length
+      ||!Array.isArray(profilesRead.data)||!Number.isInteger(profilesRead.count)
+      ||profilesRead.count!==profilesRead.data.length
+      ||!Array.isArray(employmentRead.data)||!Number.isInteger(employmentRead.count)
+      ||employmentRead.count!==employmentRead.data.length)
      throw new Error("This unlinked employee record could not be verified.");
     if(token!==generation.current)return;
     const e=detail.data.employee, placements=detail.data.units;
@@ -48,8 +56,18 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],manag
      primaryUnit:placements.find(u=>u.is_primary)?.unit_id||"",
      secondaryUnits:placements.filter(u=>!u.is_primary).map(u=>u.unit_id),
      managerId:row.data.manager_profile_id||"",reason:""});
-    eligibleRosterManagers(managers,managerRead.data,placements.find(u=>u.is_primary)?.unit_id||"");
-    setManagerMemberships(managerRead.data);setManagersVerified(true);
+    // A manager may have a legitimate app account and operational unit-manager
+    // authority while HR has not linked that account to an imported roster row.
+    // Use the authorised operational directory and current employment records,
+    // not the employee roster or job title, for all manager options.
+    const employmentByProfile=new Map(employmentRead.data.map(record=>[record.profile_id,record.employment_status]));
+    const directory=profilesRead.data.map(profile=>({
+     profile_id:profile.id,full_name:profile.full_name,
+     account_active:profile.active===true,
+     active:employmentByProfile.get(profile.id)==="active",
+    }));
+    eligibleRosterManagers(directory,managerRead.data,placements.find(u=>u.is_primary)?.unit_id||"");
+    setManagerDirectory(directory);setManagerMemberships(managerRead.data);setManagersVerified(true);
     setUpdatedAt(row.data.updated_at);setHistory(events.data);
    }catch(cause){if(token===generation.current)setError(cause.message||"The employee record is unavailable.");}
    finally{if(token===generation.current)setLoading(false);}
@@ -57,7 +75,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],manag
   return()=>{generation.current++;};
  },[scope,authorised,reload]);
 
- const managerOptions=managersVerified?eligibleRosterManagers(managers,managerMemberships,form.primaryUnit):[];
+ const managerOptions=managersVerified?eligibleRosterManagers(managerDirectory,managerMemberships,form.primaryUnit):[];
  const valid=Boolean(updatedAt&&!loading&&!uncertain&&managersVerified&&form.fullName.trim().length>=2
   &&form.reason.trim().length>=8&&types.some(([value])=>value===form.employmentType)
   &&statuses.some(([value])=>value===form.status)
@@ -124,12 +142,12 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],manag
   {loading&&<p role="status">Verifying this employee's HR record…</p>}
   {error&&<p role="alert">{error}</p>}
   {notice&&!loading&&<p role="status">{notice}</p>}
-  {!loading&&uncertain&&<button type="button" className="btn btn-ghost" onClick={()=>setReload(n=>n+1)}>Verify saved record</button>}
+  {!loading&&error&&(!edit||uncertain)&&<button type="button" className="btn btn-ghost" onClick={()=>setReload(n=>n+1)}>{uncertain?"Verify saved record":"Retry loading employee record"}</button>}
   {!loading&&!error&&!edit&&<div className="ev2p-admin-record-grid">
    <div><strong>{form.fullName}</strong><p className="screen-note">{form.jobTitle||"No job title"} · {form.employmentType.replaceAll("_"," ")}</p></div>
    <div><strong>Primary unit</strong><p className="screen-note">{units.find(u=>u.id===form.primaryUnit)?.name||"Not assigned"}</p></div>
    <div><strong>Other units</strong><p className="screen-note">{form.secondaryUnits.map(id=>units.find(u=>u.id===id)?.name||"Unknown unit").join(", ")||"None recorded"}</p></div>
-   <div><strong>Reporting manager</strong><p className="screen-note">{managers.find(m=>m.profile_id===form.managerId)?.full_name||"Not recorded"}</p></div>
+   <div><strong>Reporting manager</strong><p className="screen-note">{managerDirectory.find(m=>m.profile_id===form.managerId)?.full_name||"Not recorded"}</p></div>
   </div>}
   {edit&&!loading&&<div className="ev2p-admin-schedule-editor">
    <div className="form-grid two">
