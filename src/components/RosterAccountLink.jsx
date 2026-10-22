@@ -10,7 +10,6 @@ export default function RosterAccountLink({ me, employee, documents = [], onLink
   const context = `${me.org_id}:${me.id}:${employee.id}`;
   const [scopeReady,setScopeReady] = useState("");
   const [accounts,setAccounts] = useState([]);
-  const [alreadyLinked,setAlreadyLinked] = useState([]);
   const [revision,setRevision] = useState(null);
   const [selectedId,setSelectedId] = useState("");
   const [fileId,setFileId] = useState("");
@@ -27,7 +26,7 @@ export default function RosterAccountLink({ me, employee, documents = [], onLink
 
   useEffect(()=>{
     const current=++seq.current;
-    setScopeReady("");setSelectedId("");setRevision(null);setAlreadyLinked([]);
+    setScopeReady("");setSelectedId("");setRevision(null);
     setAccounts([]);setLoading(true);setError("");setNotice("");
     if (!allowed) { setLoading(false);return () => {seq.current+=1;}; }
     (async()=>{
@@ -48,7 +47,6 @@ export default function RosterAccountLink({ me, employee, documents = [], onLink
         }
         if (current!==seq.current) return;
         const used=new Set(roster.data.map(row=>row.profile_id).filter(Boolean));
-        setAlreadyLinked([...used]);
         setAccounts(people.data.filter(row=>!used.has(row.id)));
         setRevision(record.data[0].updated_at);
         setScopeReady(context);
