@@ -16,16 +16,19 @@ export default function HRCreateRosterEmployee({units=[],employees=[],accounts=[
  const nameMatches=useMemo(()=>employees.filter(person=>
   String(person.full_name||"").trim().toLocaleLowerCase()===form.fullName.trim().toLocaleLowerCase()
   && form.fullName.trim().length>1),[employees,form.fullName]);
- const emailConflict=useMemo(()=>{
+ const rosterEmailConflict=useMemo(()=>{
   const target=form.email.trim().toLocaleLowerCase();
-  if(!target)return null;
-  return employees.find(person=>String(person.hr_contact_email||person.email||"").trim().toLocaleLowerCase()===target)
-   ||accounts.find(account=>String(account.email||"").trim().toLocaleLowerCase()===target)||null;
- },[employees,accounts,form.email]);
+  return target ? employees.find(person=>String(person.hr_contact_email||person.email||"").trim().toLocaleLowerCase()===target)||null : null;
+ },[employees,form.email]);
+ const matchingAccount=useMemo(()=>{
+  const target=form.email.trim().toLocaleLowerCase();
+  return target ? accounts.find(account=>String(account.email||"").trim().toLocaleLowerCase()===target)||null : null;
+ },[accounts,form.email]);
+ const mustAcknowledge=nameMatches.length>0||Boolean(matchingAccount);
  const ready=form.fullName.trim().length>=2&&form.fullName.trim().length<=180
   &&form.reason.trim().length>=12&&form.reason.trim().length<=2000
-  &&(!nameMatches.length||form.confirmedDistinct)
-  &&!emailConflict&&!saving.current;
+  &&(!mustAcknowledge||form.confirmedDistinct)
+  &&!rosterEmailConflict&&!saving.current;
  async function save(event){
   event.preventDefault();
   if(!ready||saving.current)return;
@@ -99,12 +102,13 @@ export default function HRCreateRosterEmployee({units=[],employees=[],accounts=[
      </label>)}
     </div>
    </FieldGroup>
-   {emailConflict&&<ProductNotice tone="attention" title="Existing account or employee email">This email already belongs to a recorded CEAC identity. Review the existing roster and account-linking workflow; do not create another employee.</ProductNotice>}
-   {nameMatches.length>0&&<ProductNotice tone="attention" title="Employee name already recorded">
-    {nameMatches.length} existing roster record(s) use this name. Review the directory before creating another person.
+   {rosterEmailConflict&&<ProductNotice tone="attention" title="Existing employee email">This contact email already belongs to an HR employee record. Open and review that employee instead of creating another roster identity.</ProductNotice>}
+   {mustAcknowledge&&<ProductNotice tone="attention" title="Manual identity review required">
+    {nameMatches.length>0&&<p>{nameMatches.length} roster record(s) have this name. Confirm this is not a duplicate person.</p>}
+    {matchingAccount&&<p>An existing CEAC login uses this email. If this account is missing its employee record, HR may create a separate roster record only after verifying the person. Account linking still requires independent evidence.</p>}
     <label style={{display:"flex",gap:8,alignItems:"flex-start",marginTop:8}}>
      <input type="checkbox" checked={form.confirmedDistinct} onChange={e=>set("confirmedDistinct",e.target.checked)}/>
-     I independently verified this is a different person, not an unlinked account or duplicate record.
+     I have checked existing roster records, verified this employee identity and understand that account access remains unlinked until a separate authorised verification.
     </label>
    </ProductNotice>}
    <FieldGroup label="Reason / HR source reference"><textarea className="field" aria-label="Employee creation reason" required minLength={12} maxLength={2000} rows={3}
