@@ -243,7 +243,7 @@ test('Manager arranges one-date cover; colleague follows Work and Calendar, reco
   const page=await signIn('manager',1366);await page.goto('/?tab=work&item='+id+'&routineDate='+today);
   const cover=page.getByRole('region',{name:'Cover for this routine date',exact:true});await expect(cover).toBeVisible();
   await cover.locator('summary').filter({hasText:'Arrange or restore date cover'}).click();
-  await cover.getByLabel('Cover person',{exact:true}).selectOption('31000000-0000-4000-8000-000000000006');
+  await cover.getByRole('combobox',{name:'Cover person',exact:true}).selectOption('31000000-0000-4000-8000-000000000006');
   await cover.getByLabel('Reason for date cover',{exact:true}).fill('Manager authorised colleague to inspect the venue today');
   await cover.getByRole('button',{name:'Assign date cover',exact:true}).click();await expect(cover.getByText('Cover: Same Unit Fixture. Other dates keep their own assignment.',{exact:true})).toBeVisible();
   const originalPage=await signIn('staff',390);await originalPage.goto('/?tab=work&item='+id+'&routineDate='+today);
@@ -279,5 +279,5 @@ test('Manager arranges one-date cover; colleague follows Work and Calendar, reco
   expect((await manager.from('work_items').select('assignee_id').eq('id',id).single()).data.assignee_id).toBe('31000000-0000-4000-8000-000000000001');
   expect(await coveredPage.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await coveredPage.screenshot({path:'test-artifacts/stage2-cover-colleague-phone.png',fullPage:true});await page.screenshot({path:'test-artifacts/stage2-cover-independent-manager.png',fullPage:true});
- }finally{for(const context of contexts)await context.close();}
+ }finally{await Promise.allSettled(contexts.map(context=>context.close()));}
 });
