@@ -79,7 +79,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
   {error && verified===scope && <p role="alert">{error}</p>}
   <button type="button" className="text-action" disabled={busy} onClick={()=>setReload(n=>n+1)}>Refresh date</button>
   <RoutineSingleDateException me={me} operationId={routine.id} workItemId={item.id} date={date}
-    canManage={canManageDates} onChanged={()=>setReload(n=>n+1)} />
+    canManage={canManageDates} scheduleVerified={ready} onChanged={()=>setReload(n=>n+1)} />
   {ready && <>
    <p className="small">{dateScheduleState==="skipped"?"This occurrence was explicitly skipped. No progress or outcome is implied.":rows.length?labels[rows[0].status]:"No progress recorded for this date."} · Record the outcome separately when this date is finished.</p>
    {permitted && <form className="s2-routine-review-form" onSubmit={save}>
