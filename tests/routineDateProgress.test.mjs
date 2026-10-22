@@ -33,3 +33,27 @@ test('evidence links remain bounded plain web references',()=>{
  assert.throws(()=>routineEvidenceLinks('https://example.org/a b'),/web links/);
  assert.throws(()=>routineEvidenceLinks(Array(6).fill('https://example.org').join('\n')),/web links/);
 });
+
+test('a delayed previous-date schedule cannot replace the selected skipped date',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const source=readFileSync('src/components/RoutineDateProgress.jsx','utf8');
+ const start=source.indexOf(' useEffect(()=>{');
+ const end=source.indexOf(' },[scope,stepKey,reload]);',start);
+ assert.ok(start>=0 && end>start);
+ const body=source.slice(start+' useEffect(()=>{'.length,end);
+ const setters=['setHistory','setVerified','setDateScheduleState','setError','setWriteError','setLimit','setHistoryOpen','setDone','setNote','setLinks','setStatus'];
+ const effect=new Function('context','const {'+['readRoutineSchedulePreview','readRoutineDateProgress','supabase','item','routine','date','me','scope','steps',...setters].join(',')+'}=context;'+body);
+ let resolveOld,progressReads=0; const state={};
+ const oldPreview=new Promise(resolve=>{resolveOld=resolve;});
+ const context={supabase:{},item:{id:'work'},routine:{id:'operation'},date:'2026-10-22',me:{org_id:'org'},scope:'old',steps:[],
+  readRoutineSchedulePreview:()=>oldPreview,
+  readRoutineDateProgress:async()=>{progressReads++;return [];}};
+ for(const name of setters) context[name]=value=>{state[name]=value;};
+ const cleanup=effect(context); cleanup();
+ effect({...context,date:'2026-10-23',scope:'selected',readRoutineSchedulePreview:async()=>[{operationId:'operation',state:'skipped'}]});
+ await new Promise(setImmediate);
+ assert.equal(state.setVerified,'selected');assert.equal(state.setDateScheduleState,'skipped');
+ resolveOld([{operationId:'operation',state:'scheduled'}]);await new Promise(setImmediate);
+ assert.equal(state.setDateScheduleState,'skipped');assert.equal(state.setVerified,'selected');
+ assert.equal(progressReads,0,'discard the old date before requesting its progress');
+});

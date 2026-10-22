@@ -34,6 +34,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
    try {
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Choose a valid scheduled date.");
     const dates=await readRoutineSchedulePreview(supabase,[item.id],{fromDate:date,throughDate:date});
+    if(!active) return;
     if(dates.length!==1 || dates[0].operationId!==routine.id)
      throw new Error("This date is not scheduled for this responsibility.");
     if(dates[0].state==="skipped"){
