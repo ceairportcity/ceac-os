@@ -66,6 +66,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
   const [personTab, setPersonTab] = useState("overview");
+  const [rosterEditRequest,setRosterEditRequest] = useState({ employeeId:null, seq:0 });
   const [searchText, setSearchText] = useState("");
   const [accessFocusProfileId, setAccessFocusProfileId] = useState(null);
   const [accessFocusUnitId, setAccessFocusUnitId] = useState(null);
@@ -698,6 +699,17 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     const responsibilitySummary = rosterUnitNames.length
       ? rosterUnitNames.join(" · ")
       : "No organisational responsibility recorded";
+    function editSelectedEmployment(changeType="employment_details_changed") {
+      setPersonTab("employment");
+      if (hasLinkedProfile) {
+        openEmploymentEditor();
+        if (changeType==="transferred") setEmploymentForm(form=>({...form,changeType:"transferred"}));
+      } else {
+        setRosterEditRequest(request=>({
+          employeeId:person.employee_id, seq:request.seq+1,
+        }));
+      }
+    }
 
     return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
       <PeopleBackButton onClick={() => { personGeneration.current += 1; employeeFileWriteBusy.current = false; setEmployeeFileBusy(false); setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
@@ -740,25 +752,10 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       {person.on_leave_now && <ProductNotice tone="attention" title="On approved leave">This employee is currently away on approved leave.</ProductNotice>}
       {!person.active && <ProductNotice tone="error" title="Inactive employee">This employee is marked inactive and cannot sign in.</ProductNotice>}
 
-      <PeopleWorkspaceSection
-        title="Identity & employment state"
-        description="Authorised identity context for this employee record."
-        className="ev2p-admin-identity-section"
-      >
-        <div className="ev2p-admin-record-grid">
-          <PeopleFactRow icon="people" title="Account" subtitle={person.email || identityLabel} />
-          {person.phone && <PeopleFactRow icon="info" title="Phone" subtitle={person.phone} />}
-          <PeopleFactRow icon="people" title={hasLinkedProfile ? "Authority context" : "Source position"} subtitle={positionLabel} />
-          <PeopleFactRow icon="info" title="Employee status" subtitle={person.active ? "Active" : "Inactive"} />
-          <PeopleFactRow icon="info" title="Identity state" subtitle={identityLabel} />
-          {!hasLinkedProfile && person.source_department_text && <PeopleFactRow icon="people" title="Source department" subtitle={person.source_department_text} />}
-          {!hasLinkedProfile && rosterUnitNames.length > 0 && <PeopleFactRow icon="people" title="Recorded units" subtitle={rosterUnitNames.join(" · ")} />}
-          {!hasLinkedProfile && person.responsibility_context?.length > 0 && <PeopleFactRow icon="work" title="Programme / responsibility context" subtitle={person.responsibility_context.join(" · ")} />}
-          {person.birthday && <PeopleFactRow icon="calendar" title="Birthday" subtitle={new Date(person.birthday).toLocaleDateString("en-GB", { timeZone: "Africa/Accra", day: "numeric", month: "long" })} />}
-        </div>
-      </PeopleWorkspaceSection>
 
-      <div className="ev2p-admin-master-list" aria-label="Employee directory">
+
+      <details className="ev2p-admin-master-list" aria-label="Employee directory">
+        <summary className="ev2p-admin-directory-trigger">Switch employee · search directory</summary>
         <FieldGroup label="Find employee">
           <input
             className="field"
@@ -787,10 +784,18 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
               onClick={() => openPerson(entry)}
             />)}
         </div>
-      </div>
+      </details>
         </aside>
 
         <div className="ev2p-admin-person-detail">
+        <div className="workforce-setup-actions ev2p-admin-person-primary-actions" role="group" aria-label="Employee record actions">
+          <button type="button" className="btn" onClick={()=>editSelectedEmployment()}>Edit employee record</button>
+          <button type="button" className="btn btn-ghost" onClick={()=>editSelectedEmployment("transferred")}>Assign / transfer department</button>
+          <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("time")}>Work schedule</button>
+          <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("documents")}>Documents</button>
+          {!hasLinkedProfile&&<button type="button" className="btn btn-ghost" onClick={()=>openAccessAdministration(null)}>Invite account</button>}
+          {hasLinkedProfile&&<button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("access")}>Account & permissions</button>}
+        </div>
         <div className="ev2p-filter-tabs" role="tablist" aria-label="Employee record sections">
           {[...PERSON_TABS, ...(canManageProtectedHr ? [["protected","Protected HR"]] : [])].map(([key, label]) => <button
             key={key}
@@ -881,6 +886,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
 
       {!hasLinkedProfile && <div id="roster-employee-editor"><RosterOnlyEmploymentEditor
         me={me} employeeId={person.employee_id} units={units}
+        editRequest={rosterEditRequest.employeeId===person.employee_id?rosterEditRequest.seq:0}
         onSaved={(updated)=>{
           setPerson(current=>current?.employee_id===updated.employee_id?{...current,...updated,active:updated.employment_status==="active"}:current);
           void load({silent:true});
