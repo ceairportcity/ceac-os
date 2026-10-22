@@ -72,6 +72,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   const [accessFocusProfileId, setAccessFocusProfileId] = useState(null);
   const [accessFocusUnitId, setAccessFocusUnitId] = useState(null);
   const [accessFocusMode, setAccessFocusMode] = useState(null);
+  const [accessInviteRoster,setAccessInviteRoster] = useState(null);
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [units, setUnits] = useState([]);
   const [person, setPerson] = useState(null);
@@ -426,7 +427,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     }
   }
 
-  function openAccessAdministration(profileId = null) {
+  function openAccessAdministration(profileId = null, inviteRoster = null) {
     personGeneration.current += 1;
     employeeFileWriteBusy.current = false;
     setEmployeeFileBusy(false);
@@ -436,6 +437,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     setAccessFocusProfileId(profileId);
     setAccessFocusUnitId(null);
     setAccessFocusMode(profileId ? "responsibility" : "invite");
+    setAccessInviteRoster(profileId ? null : inviteRoster);
     setPerson(null);
     setDrill(null);
     setViewMode("access");
@@ -812,7 +814,12 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           <button type="button" className="btn btn-ghost" onClick={()=>editSelectedEmployment("transferred")}>Assign / transfer department</button>
           <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("time")}>Work schedule</button>
           <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("documents")}>Documents</button>
-          {!hasLinkedProfile&&<button type="button" className="btn btn-ghost" onClick={()=>openAccessAdministration(null)}>Invite account</button>}
+          {!hasLinkedProfile&&<button type="button" className="btn btn-ghost" onClick={()=>openAccessAdministration(null,{
+            employeeId:person.employee_id,
+            name:person.full_name,
+            contactEmail:person.hr_contact_email || "",
+            unitId:(person.roster_units||[]).find(member=>member.is_primary)?.unit_id||"",
+          })}>Invite account</button>}
           {hasLinkedProfile&&<button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("access")}>Account & permissions</button>}
         </div>
         <div className="ev2p-filter-tabs" role="tablist" aria-label="Employee record sections">
@@ -1330,6 +1337,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       initialProfileId={accessFocusProfileId}
       initialUnitId={accessFocusUnitId}
       initialMode={accessFocusMode}
+      initialInviteRoster={accessInviteRoster}
       onChanged={async () => { if (!(await load({ silent: true }))) throw new Error("People records could not be refreshed."); }}
       onLifecycle={(profileId, type) => openLifecycle?.(profileId, type)}
       onOpenPerson={(profileId) => {
