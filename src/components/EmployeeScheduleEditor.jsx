@@ -150,10 +150,11 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
       recorded=true;
       if (token !== generation.current) return;
       setEdit(false);
-      setNotice("HR-authorised schedule version recorded. Existing schedule history was preserved.");
       const refreshed=await load(data);
-      if (!refreshed && token===generation.current-1)
-        setError("The schedule was recorded but its latest state could not be displayed.");
+      if (token === generation.current-1) {
+        if (refreshed) setNotice("HR-authorised schedule version verified in the employee history. Previous versions remain recorded.");
+        else setNotice("The server returned a schedule reference, but its employee-history readback could not be verified.");
+      }
     } catch (failure) {
       if (token===generation.current)
         setError(recorded
