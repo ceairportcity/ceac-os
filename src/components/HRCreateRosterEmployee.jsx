@@ -83,7 +83,7 @@ export default function HRCreateRosterEmployee({units=[],employees=[],accounts=[
     </select></FieldGroup>
     <FieldGroup label="Started on"><input className="field" aria-label="New employee start date" type="date" value={form.startedOn} onChange={e=>set("startedOn",e.target.value)}/></FieldGroup>
     <FieldGroup label="Primary unit"><select className="field" aria-label="New employee primary unit" value={form.primaryUnit}
-      onChange={e=>setForm(previous=>({...previous,primaryUnit:e.target.value,managerId:"",secondaryUnits:previous.secondaryUnits.filter(id=>id!==e.target.value)}))}>
+      onChange={e=>setForm(previous=>({...previous,primaryUnit:e.target.value,managerId:"",secondaryUnits:e.target.value?previous.secondaryUnits.filter(id=>id!==e.target.value):[]}))}>
      <option value="">Not assigned yet</option>{units.map(unit=><option value={unit.id} key={unit.id}>{unit.name}</option>)}
     </select></FieldGroup>
     <FieldGroup label="Reporting manager"><select className="field" aria-label="New employee manager" value={form.managerId} disabled={!form.primaryUnit} onChange={e=>set("managerId",e.target.value)}>
