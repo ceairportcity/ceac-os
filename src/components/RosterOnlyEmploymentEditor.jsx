@@ -125,7 +125,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
       !==JSON.stringify([...snapshot.secondaryUnits,...(snapshot.primaryUnit?[snapshot.primaryUnit]:[])].sort()))
     throw new Error("The saved employee record could not be independently verified.");
    if(token!==generation.current)return;
-   setEdit(false);setNotice("Employment and unit placement saved. HR history was retained.");
+   setEdit(false);setNotice("Employee, contact and unit placement changes saved. HR audit history retained.");
    setUpdatedAt(version.data.updated_at);setHistory(historyRead.data||[]);
    setForm({...snapshot,reason:""});
    onSaved?.({...detail.data.employee,roster_units:detail.data.units,
