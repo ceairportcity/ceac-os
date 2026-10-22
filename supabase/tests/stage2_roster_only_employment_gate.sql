@@ -89,6 +89,56 @@ BEGIN
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END;
 $admin$;
+
+-- Owner corrective extension: real HR email/phone/start date belong to the
+-- SAME roster ID and SAME atomic employment-placement save, not to an Auth user.
+DO $contact_profile$
+DECLARE
+ v_employee uuid:='41000000-0000-4000-8000-000000000179';
+ v_before timestamptz;
+ v_result jsonb;
+BEGIN
+ IF to_regprocedure('public.admin_record_roster_employment_profile(uuid,timestamptz,text,text,text,text,text,uuid,uuid[],uuid,text,text,date,text)') IS NULL
+  OR has_function_privilege('anon','public.admin_record_roster_employment_profile(uuid,timestamptz,text,text,text,text,text,uuid,uuid[],uuid,text,text,date,text)','EXECUTE')
+  OR has_table_privilege('authenticated','public.employee_roster','UPDATE') THEN
+  RAISE EXCEPTION 'HR contact/start protected function or base roster RLS invalid'; END IF;
+ SELECT updated_at INTO v_before FROM public.employee_roster WHERE id=v_employee;
+ v_result:=public.admin_record_roster_employment_profile(
+  v_employee,v_before,'Updated roster-only employee','Preferred','HR worker',
+  'permanent','active','20000000-0000-4000-8000-000000000012',
+  '{}'::uuid[],NULL,'Person@EXAMPLE.com','+233 20 123 4567','2026-10-20',
+  'HR verified contact and initial start date');
+ IF v_result->>'employee_id'<>v_employee::text
+ OR v_result->>'profile_id' IS NOT NULL
+ OR v_result->>'hr_contact_email'<>'person@example.com'
+ OR v_result->>'hr_started_on'<>'2026-10-20'
+ OR (SELECT hr_contact_phone FROM public.employee_roster WHERE id=v_employee)<>'+233 20 123 4567'
+ OR (SELECT count(*) FROM public.employee_roster_change_events WHERE employee_id=v_employee)<>4
+ OR NOT EXISTS(SELECT 1 FROM public.employee_roster_change_events
+  WHERE employee_id=v_employee AND actor_id=auth.uid()
+   AND after_record->>'hr_contact_email'='person@example.com'
+   AND after_record->>'hr_started_on'='2026-10-20')
+ THEN RAISE EXCEPTION 'Atomic HR roster contact/start history and readback are incomplete'; END IF;
+ BEGIN
+  PERFORM public.admin_record_roster_employment_profile(
+   v_employee,v_before,'Stale overwrite','Preferred','HR worker',
+   'permanent','active','20000000-0000-4000-8000-000000000012',
+   '{}'::uuid[],NULL,'person@example.com',NULL,NULL,'Stale employee overwrite');
+  RAISE EXCEPTION 'Stale contact editor overwrote current HR roster';
+ EXCEPTION WHEN serialization_failure THEN NULL; END;
+ BEGIN
+  PERFORM public.admin_record_roster_employment_profile(
+   v_employee,(SELECT updated_at FROM public.employee_roster WHERE id=v_employee),
+   'Invalid email','Preferred','HR worker','permanent','active',
+   '20000000-0000-4000-8000-000000000012','{}'::uuid[],NULL,
+   'not-an-email',NULL,NULL,'Contact validation negative');
+  RAISE EXCEPTION 'Invalid contact email was accepted';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ IF EXISTS(SELECT 1 FROM public.employee_roster WHERE id=v_employee AND profile_id IS NOT NULL) THEN
+  RAISE EXCEPTION 'HR contact edit incorrectly created or linked an Auth account'; END IF;
+END;
+$contact_profile$;
+
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1"}',true);
 DO $staff$
@@ -101,6 +151,13 @@ BEGIN
    current_setting('ceac.test.roster_original_version')::timestamptz,'Unapproved',null,null,
    'permanent','active',null,'{}'::uuid[],null,'Unapproved staff overwrite');
   RAISE EXCEPTION 'Ordinary staff edited an HR roster';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN
+  PERFORM public.admin_record_roster_employment_profile(
+   '41000000-0000-4000-8000-000000000179',clock_timestamp(),
+   'Unauthorised','No','Job','permanent','active',NULL,'{}'::uuid[],NULL,
+   'staff@example.com',NULL,NULL,'Staff attempted protected HR contact edit');
+  RAISE EXCEPTION 'Ordinary staff edited protected roster contact';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END;
 $staff$;
