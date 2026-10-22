@@ -53,18 +53,10 @@ BEGIN
  IF v_employee IS NULL THEN
    RAISE EXCEPTION 'Compliance fixture missing linked employee';
  END IF;
- IF NOT public.app_stage2_universal_aal_allowed() THEN
-   RAISE EXCEPTION 'Compliance fixture actor failed provider-neutral password assurance';
- END IF;
- IF NOT public.app_privileged_aal_allowed() THEN
-   RAISE EXCEPTION 'Compliance fixture actor failed privileged assurance with MFA flags OFF';
- END IF;
- IF NOT public.app_has_capability('compliance.manage',NULL) THEN
-   RAISE EXCEPTION 'Compliance fixture global capability grant was not effective';
- END IF;
- IF NOT public.compliance_attendance_case_visible(v_employee) THEN
-   RAISE EXCEPTION 'Compliance fixture case visibility did not include linked Staff';
- END IF;
+ -- These are intentionally revoked internal SECURITY DEFINER helpers:
+ -- authenticated clients may not call them directly. The following public
+ -- Compliance observation RPC must instead validate all assurance, capability
+ -- and case-scope guards together. Do not grant direct helper EXECUTE.
  v_id:=public.compliance_record_attendance_observation(
   v_employee,current_date,'missing_evidence',
   'No verified session recorded in the factual source',
