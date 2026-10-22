@@ -1,7 +1,7 @@
 import { readRoutineSchedulePreview, routineDueLabel } from "./readRoutineSchedulePreview.js";
 
 export const routineCalendarStatus = state => ({
-  recorded: "Outcome recorded", unrecorded_past: "Not recorded", scheduled: "Scheduled",
+  recorded: "Outcome recorded", unrecorded_past: "Not recorded", scheduled: "Scheduled", skipped: "Skipped by authorised exception",
 })[state] || "Routine";
 
 const error = () => new Error("The complete routine calendar could not be verified.");
