@@ -281,6 +281,127 @@ END;
 $other_employee$;
 RESET ROLE;
 
+-- Owner-authorised exception: Group Pastor may review the Head of HR's own
+-- enrolled employee appraisal, never other personnel's private reviews.
+-- The existing synthetic accounts/units are reused; all changes roll back.
+UPDATE public.profiles SET job_title='Group Pastor'
+WHERE id='31000000-0000-4000-8000-000000000004' AND is_exec AND active;
+
+INSERT INTO public.employment_records(
+ profile_id,org_id,employment_type,job_title,unit_id,membership_role,employment_status
+) VALUES
+ ('31000000-0000-4000-8000-000000000003','10000000-0000-4000-8000-000000000010',
+  'staff','Administration and Head of HR','20000000-0000-4000-8000-000000000011','staff','active'),
+ ('31000000-0000-4000-8000-000000000004','10000000-0000-4000-8000-000000000010',
+  'staff','Group Pastor','20000000-0000-4000-8000-000000000011','staff','active')
+ON CONFLICT(profile_id) DO UPDATE SET employment_status='active',
+ unit_id=EXCLUDED.unit_id, job_title=EXCLUDED.job_title;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+DO $hr_head_period$
+DECLARE v_cycle uuid; v_case uuid;
+BEGIN
+  v_cycle:=public.open_performance_review_cycle(
+    'Independent Head of HR August 2026','2026-08-01','2026-08-31',
+    'Owner-authorised independent appraisal review scope');
+  SELECT a.id INTO v_case FROM public.appraisals a
+    WHERE a.cycle_id=v_cycle AND a.profile_id='31000000-0000-4000-8000-000000000003';
+  IF v_case IS NULL THEN RAISE EXCEPTION 'Employed HR head missing from review period'; END IF;
+  IF EXISTS(SELECT 1 FROM public.appraisals a
+    WHERE a.cycle_id=v_cycle AND a.profile_id='31000000-0000-4000-8000-000000000004')
+  THEN RAISE EXCEPTION 'Group Pastor was wrongly enrolled in employee appraisal'; END IF;
+  IF (SELECT manager_id FROM public.appraisals WHERE id=v_case) IS NOT NULL
+  THEN RAISE EXCEPTION 'HR head review was auto-assigned without independent authorisation'; END IF;
+  BEGIN
+    PERFORM public.assign_performance_reviewer(v_case,'31000000-0000-4000-8000-000000000003',
+      'Self-review must be forbidden');
+    RAISE EXCEPTION 'HR head was permitted to review themselves';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN
+    PERFORM public.assign_performance_reviewer(v_case,'31000000-0000-4000-8000-000000000002',
+      'Ordinary unit Manager is not authorised for the HR head');
+    RAISE EXCEPTION 'Ordinary Manager received HR head review';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  PERFORM public.assign_performance_reviewer(v_case,'31000000-0000-4000-8000-000000000004',
+    'Owner approved Group Pastor as independent reviewer of this exact HR case');
+  IF (SELECT manager_id FROM public.appraisals WHERE id=v_case)
+        IS DISTINCT FROM '31000000-0000-4000-8000-000000000004'::uuid
+  THEN RAISE EXCEPTION 'Group Pastor reviewer assignment was not persisted'; END IF;
+  PERFORM set_config('ceac.hr_head_owner_case',v_case::text,true);
+  PERFORM set_config('ceac.hr_head_owner_cycle',v_cycle::text,true);
+END
+$hr_head_period$;
+RESET ROLE;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+DO $pastor_case_only$
+DECLARE v_case uuid:=nullif(current_setting('ceac.hr_head_owner_case',true),'')::uuid;
+        v_cycle uuid:=nullif(current_setting('ceac.hr_head_owner_cycle',true),'')::uuid;
+        v_other uuid;
+        v_entry uuid;
+        v_request uuid;
+BEGIN
+  IF (SELECT count(*) FROM public.appraisals WHERE cycle_id=v_cycle)<>1
+  THEN RAISE EXCEPTION 'Pastor can see appraisals other than specifically assigned HR head'; END IF;
+  IF (SELECT count(*) FROM public.appraisal_evidence_items WHERE appraisal_id=v_case)
+     <> (SELECT count(*) FROM public.appraisal_evidence_items e
+            WHERE e.appraisal_id=v_case)
+  THEN RAISE EXCEPTION 'Assigned evidence could not be inspected'; END IF;
+  SELECT id INTO v_other FROM public.appraisals WHERE profile_id='31000000-0000-4000-8000-000000000001'
+    AND cycle_id=v_cycle;
+  IF v_other IS NOT NULL THEN
+    RAISE EXCEPTION 'Pastor read unrelated Staff appraisal';
+  END IF;
+  BEGIN
+    PERFORM public.admin_employment_detail('31000000-0000-4000-8000-000000000003');
+    RAISE EXCEPTION 'Pastor acquired protected HR employee detail authority';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN
+    PERFORM public.assign_performance_reviewer(v_case,'31000000-0000-4000-8000-000000000004',
+      'Pastor may not self-assign other cases');
+    RAISE EXCEPTION 'Pastor acquired general reviewer assignment authority';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  v_entry:=public.record_appraisal_entry(v_case,'manager_assessment',
+     'I independently reviewed the Head of HR evidence and recorded this factual assessment.',NULL);
+  IF v_entry IS NULL THEN RAISE EXCEPTION 'Pastor could not record his assigned assessment'; END IF;
+  v_request:=public.performance_request_release(v_case,
+     'The individual assigned appraisal is ready for independently authorised HR review.');
+  IF v_request IS NULL THEN RAISE EXCEPTION 'Pastor assigned review cannot request independent HR publication'; END IF;
+  PERFORM set_config('ceac.hr_head_release_request',v_request::text,true);
+END
+$pastor_case_only$;
+RESET ROLE;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+DO $staff_no_hr_review$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.appraisals
+   WHERE id=nullif(current_setting('ceac.hr_head_owner_case',true),'')::uuid)
+ THEN RAISE EXCEPTION 'Staff viewed Head of HR protected appraisal'; END IF;
+END
+$staff_no_hr_review$;
+RESET ROLE;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+DO $hr_cannot_self_publish$
+DECLARE v_request uuid:=nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid;
+BEGIN
+  BEGIN
+    PERFORM public.performance_hr_decide_release(v_request,true,
+      'Subject HR head must not approve publication of their own appraisal.');
+    RAISE EXCEPTION 'HR head self-published appraisal';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  IF NOT EXISTS(SELECT 1 FROM public.performance_review_release_requests
+    WHERE id=v_request AND state='pending')
+  THEN RAISE EXCEPTION 'Self-decision mutated confidential pending HR release'; END IF;
+END
+$hr_cannot_self_publish$;
+RESET ROLE;
+
 -- Re-enabling universal MFA inside this rollback-only fixture must close the
 -- view's explicit AAL1 view-owner bypass before server/provider cutover.
 UPDATE public.organisations SET universal_totp_required=true
