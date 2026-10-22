@@ -13,7 +13,7 @@ export function worldPoint(lat,lng,zoom) {
 export function pointCoordinates(x,y,zoom) {
  const scale=MAP_TILE_SIZE*2**zoom;
  const latitude=Math.atan(Math.sinh(Math.PI*(1-2*clamp(y,0,scale)/scale)))*180/Math.PI;
- const longitude=(((x/scale*360)+180)%360+360)%360-180;
+ const longitude=((x/scale*360)%360+360)%360-180;
  return {lat:latitude,lng:longitude};
 }
 export function fitWorkforceMap(clusters,width=600,height=320) {
