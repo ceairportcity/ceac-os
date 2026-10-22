@@ -57,7 +57,7 @@ function avgStartLabel(minutes) {
   return String(Math.floor(value / 60)).padStart(2, "0") + ":" + String(value % 60).padStart(2, "0");
 }
 
-export default function People({ me, openItem, go, openLifecycle, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
+export default function People({ me, openItem, go, openLifecycle, onManagePermissions=null, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [operationalDirectory, setOperationalDirectory] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -815,6 +815,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       {personTab === "access" && <PeopleWorkspaceSection
         title="Access & responsibilities"
         description="Account access, organisational placement and authority remain separate from job title and employment facts."
+        meta={person.profile_id && onManagePermissions ? <button type="button" className="ev2p-admin-record-change" onClick={()=>onManagePermissions(person.profile_id)}>Manage permissions</button> : null}
         meta={<div className="phase5-person-access-actions">
           <Button
             variant="secondary"
