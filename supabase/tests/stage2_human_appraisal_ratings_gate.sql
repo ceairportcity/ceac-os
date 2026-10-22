@@ -416,12 +416,22 @@ BEGIN
       'Subject HR head must not approve publication of their own appraisal.');
     RAISE EXCEPTION 'HR head self-published appraisal';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
-  IF NOT EXISTS(SELECT 1 FROM public.performance_review_release_requests
-    WHERE id=v_request AND state='pending')
-  THEN RAISE EXCEPTION 'Self-decision mutated confidential pending HR release'; END IF;
+  -- The subject remains forbidden from seeing this independent HR request.
+  IF EXISTS(SELECT 1 FROM public.performance_review_release_requests WHERE id=v_request)
+  THEN RAISE EXCEPTION 'Denied self-decision exposed confidential HR request'; END IF;
 END
 $hr_cannot_self_publish$;
 RESET ROLE;
+-- Inspect unchanged state as the fixture owner, not as the subject whom RLS
+-- deliberately prevents from reading the pending request.
+DO $self_decision_preserved$
+BEGIN
+  IF NOT EXISTS(SELECT 1 FROM public.performance_review_release_requests
+    WHERE id=nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid
+      AND state='pending' AND decided_by IS NULL AND decided_at IS NULL)
+  THEN RAISE EXCEPTION 'Self-decision mutated confidential pending HR release'; END IF;
+END
+$self_decision_preserved$;
 
 -- Re-enabling universal MFA inside this rollback-only fixture must close the
 -- view's explicit AAL1 view-owner bypass before server/provider cutover.

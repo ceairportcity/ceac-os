@@ -8,7 +8,9 @@ import { test, expect } from "@playwright/test";
 
 const rolePassword = process.env.ROLE_FIXTURE_PASSWORD;
 
-test.describe.configure({ mode: "serial" });
+// Keep execution ordered (fullyParallel=false, one worker in CI), but report
+// every independent acceptance failure instead of skipping the remaining file.
+test.describe.configure({ mode: "default" });
 
 test("Authentication shell matches the PWA responsive contract", async ({ browser }) => {
   for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 900 }]) {
@@ -516,7 +518,8 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
 
     await go(page, "Team");
     await expect(page.locator(".ev2-people-page.ev2-people-manager")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "People & volunteers", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
+    await expect(page.locator(".ev2p-section-head").getByText("People & volunteers",{exact:true})).toBeVisible();
     const peopleSection = page.locator(".ev2p-section").filter({ hasText: /^People/ }).first();
     const setupHeading = page.getByRole("heading", { name: "Team setup", exact: true });
     await expect(peopleSection).toBeVisible();
@@ -538,8 +541,8 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Control Center");
-    await expect(page.getByText("Checks", { exact: true })).toBeVisible();
-    await page.getByText("Checks", { exact: true }).click();
+    await expect(page.getByRole("button", { name: "Checks & workflows", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Checks & workflows", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Checks", exact: true })).toBeVisible();
     await expect(page.getByText("Waiting for a decision", { exact: true })).toBeVisible();
     await context.close();
