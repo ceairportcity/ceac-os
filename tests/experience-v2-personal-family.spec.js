@@ -578,7 +578,9 @@ test("Stage 10 Family H1 keeps Control Center capability-filtered while aligning
   expect(control).toContain("Manage departments, people, policies and system access.");
   expect(control).not.toMatch(/numeric health score|overall health score/i);
   expect(control).toContain("DataPanel");
-  expect(control).toContain("QueueRow");
+  // Control Center now uses compact domain panels and a capability-filtered
+  // attention view; it no longer renders the retired QueueRow primitive.
+  expect(control).toContain("const attention=accessibleDomains.filter");
   expect(control).toContain("StatusBadge");
   expect(control).not.toContain('../components/primitives/Icon');
   expect(control).toContain("ev2-control-center");
