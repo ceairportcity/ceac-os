@@ -18,6 +18,8 @@ import {
 
 export default function ExecutiveReports({ me, openItem }) {
   const [period, setPeriod] = useState(null);
+  const [periodOptions, setPeriodOptions] = useState([]);
+  const [selectedPeriodId, setSelectedPeriodId] = useState("");
   const [reports, setReports] = useState([]);
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,24 +44,23 @@ export default function ExecutiveReports({ me, openItem }) {
   useEffect(() => {
     void load();
     return () => { requestSequence.current += 1; };
-  }, [me.org_id, me.id]);
+  }, [me.org_id, me.id, selectedPeriodId]);
 
   async function load() {
     const expected = identity;
     const request = ++requestSequence.current;
     const current = () => loadedActor.current === expected && requestSequence.current === request;
     setLoading(true); setReadyActor(null); setFailedActor(null); setError(null);
-    setPeriod(null); setUnits([]); setReports([]);
+    setPeriod(null); setPeriodOptions([]); setUnits([]); setReports([]);
     setOutcomeError(null);
     setOutcomeSources({issued:[],objectives:[],milestones:[]});
     try {
       const [periodResult, unitResult] = await Promise.all([
         supabase.from("report_periods")
-          .select("id,label,status,starts_on,ends_on")
+          .select("id,label,status,starts_on,ends_on", { count:"exact" })
           .eq("org_id", me.org_id)
           .order("starts_on", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
+          .limit(500),
         supabase.from("units")
           .select("id,name", { count: "exact" })
           .eq("org_id", me.org_id)
@@ -67,6 +68,12 @@ export default function ExecutiveReports({ me, openItem }) {
           .order("name"),
       ]);
       if (periodResult.error || unitResult.error) throw periodResult.error || unitResult.error;
+      if (!Array.isArray(periodResult.data) || typeof periodResult.count !== "number"
+        || periodResult.count !== periodResult.data.length || periodResult.count > 500) {
+        throw new Error("Reporting periods could not be completely verified.");
+      }
+      const selectedPeriod = periodResult.data.find((item) => item.id === selectedPeriodId)
+        || periodResult.data[0] || null;
       if (typeof unitResult.count !== "number"
         || unitResult.count !== (unitResult.data || []).length) {
         throw new Error("Active unit reporting context is incomplete. No filing totals can be verified.");
@@ -75,10 +82,10 @@ export default function ExecutiveReports({ me, openItem }) {
       let nextReports = [];
       let nextOutcomeError = null;
       let nextSources = {issued:[],objectives:[],milestones:[]};
-      if (periodResult.data) {
+      if (selectedPeriod) {
         const reportResult = await supabase.from("reports")
           .select("unit_id,status,version,submitted_at", { count: "exact" })
-          .eq("period_id", periodResult.data.id)
+          .eq("period_id", selectedPeriod.id)
           .eq("scope", "unit");
         if (reportResult.error) throw reportResult.error;
         if (typeof reportResult.count !== "number"
@@ -89,7 +96,7 @@ export default function ExecutiveReports({ me, openItem }) {
         // Only issued organisational reports; no draft narrative or HR ratings.
         const [issued,objectives,milestones] = await Promise.all([
           supabase.from("reports").select("id,unit_id,version,status,submitted_at,narrative,challenges", { count: "exact" })
-            .eq("period_id",periodResult.data.id).eq("scope","unit").in("status",["submitted","confirmed"]).limit(501),
+            .eq("period_id",selectedPeriod.id).eq("scope","unit").in("status",["submitted","confirmed"]).limit(501),
           supabase.from("objectives").select("id,name,status,project_id,unit_id,target_value,achieved_value,target_unit", { count: "exact" })
             .eq("org_id",me.org_id).limit(501),
           supabase.from("project_milestones").select("id,name,status,project_id,target_on,completed_at", { count: "exact" })
@@ -109,7 +116,8 @@ export default function ExecutiveReports({ me, openItem }) {
       }
       if (!current()) return;
       // Commit coherent reporting evidence only after every required read.
-      setPeriod(periodResult.data || null);
+      setPeriod(selectedPeriod);
+      setPeriodOptions(periodResult.data);
       setUnits(unitResult.data || []);
       setReports(nextReports);
       setOutcomeError(nextOutcomeError);
@@ -163,6 +171,16 @@ export default function ExecutiveReports({ me, openItem }) {
       />
 
       <QuarterlyReviewEventControl me={me} />
+
+      {!contextPending && !contextError && periodOptions.length > 1 && <div className="ev2rep-period-picker">
+        <label htmlFor="executive-report-period">Reporting period</label>
+        <select id="executive-report-period" className="field" value={period?.id || ""}
+          onChange={(event) => setSelectedPeriodId(event.target.value)}>
+          {periodOptions.map((item) => <option key={item.id} value={item.id}>
+            {item.label} ({item.starts_on} — {item.ends_on})
+          </option>)}
+        </select>
+      </div>}
 
       {contextPending ? (
         <div className="ev2rep-loading" aria-label="Loading reports" aria-busy="true">
