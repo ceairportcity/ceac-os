@@ -143,20 +143,31 @@ $contact_profile$;
 -- address, role, capability, salary or account status. All writes roll back.
 DO $linked_hr$
 DECLARE v_staff uuid:='31000000-0000-4000-8000-000000000001';
- v_before public.profiles%rowtype; v_after public.profiles%rowtype; v_out jsonb;
+ v_before public.profiles%rowtype; v_after public.profiles%rowtype;
+ v_employee uuid; v_roster public.employee_roster%rowtype; v_out jsonb;
 BEGIN
  IF has_function_privilege('anon',
-  'public.admin_record_linked_person_contact(uuid,text,text,text,text,text,text,text)','EXECUTE')
+  'public.admin_record_linked_person_contact(uuid,uuid,text,text,text,text,text,text,text)','EXECUTE')
  OR has_table_privilege('authenticated','public.employee_linked_contact_change_events','INSERT,UPDATE,DELETE')
  THEN RAISE EXCEPTION 'Linked HR contact write policy exposed'; END IF;
  SELECT * INTO v_before FROM public.profiles WHERE id=v_staff;
  IF NOT FOUND THEN RAISE EXCEPTION 'Seeded ordinary staff is required for linked HR gate'; END IF;
+ SELECT id INTO v_employee FROM public.employee_roster WHERE profile_id=v_staff;
+ IF v_employee IS NULL THEN RAISE EXCEPTION 'Seeded profile must have a linked canonical roster employee'; END IF;
  v_out:=public.admin_record_linked_person_contact(
-  v_staff,v_before.full_name,v_before.preferred_name,v_before.phone,
+  v_employee,v_staff,v_before.full_name,v_before.preferred_name,v_before.phone,
   'Verified updated employee','Updated preferred','+233 20 123 4567',
   'Official HR profile details independently verified');
  SELECT * INTO v_after FROM public.profiles WHERE id=v_staff;
- IF v_after.full_name<>'Verified updated employee'
+ SELECT * INTO v_roster FROM public.employee_roster WHERE id=v_employee;
+ IF v_roster.full_name<>'Verified updated employee'
+  OR v_roster.preferred_name<>'Updated preferred'
+  OR v_roster.profile_id IS DISTINCT FROM v_staff
+  OR (v_out->>'employee_id')::uuid IS DISTINCT FROM v_employee
+  OR NOT EXISTS(SELECT 1 FROM public.employee_roster_change_events
+    WHERE id=(v_out->>'roster_event_id')::uuid AND employee_id=v_employee
+      AND actor_id=auth.uid() AND after_record->>'full_name'='Verified updated employee')
+  OR v_after.full_name<>'Verified updated employee'
   OR v_after.phone<>'+233 20 123 4567'
   OR v_after.email IS DISTINCT FROM v_before.email
   OR v_after.is_admin IS DISTINCT FROM v_before.is_admin
@@ -171,17 +182,24 @@ BEGIN
   RAISE EXCEPTION 'Linked employee source, authority or history changed incorrectly'; END IF;
  BEGIN
   PERFORM public.admin_record_linked_person_contact(
-   v_staff,v_before.full_name,v_before.preferred_name,v_before.phone,
+   v_employee,v_staff,v_before.full_name,v_before.preferred_name,v_before.phone,
    'Old client overwrote','Preferred','+233 20 123 4567',
    'Old source revision attempted an overwrite');
   RAISE EXCEPTION 'Stale linked HR contact revision was accepted';
  EXCEPTION WHEN serialization_failure THEN NULL; END;
  BEGIN
   PERFORM public.admin_record_linked_person_contact(
-   v_staff,v_after.full_name,v_after.preferred_name,v_after.phone,
+   v_employee,v_staff,v_after.full_name,v_after.preferred_name,v_after.phone,
    'X','Preferred','+233 20 123 4567','Invalid short official name');
   RAISE EXCEPTION 'Invalid official employee name was accepted';
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+BEGIN
+  PERFORM public.admin_record_linked_person_contact(
+   '41000000-0000-4000-8000-000000000179',v_staff,
+   v_after.full_name,v_after.preferred_name,v_after.phone,
+   'Wrong roster','Other',NULL,'Unlinked identity cannot be silently replaced');
+  RAISE EXCEPTION 'Wrong employee identity was accepted for linked HR record';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END;
 $linked_hr$;
 
@@ -207,6 +225,7 @@ BEGIN
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN
   PERFORM public.admin_record_linked_person_contact(
+    '41000000-0000-4000-8000-000000000179',
     '31000000-0000-4000-8000-000000000002',NULL,NULL,NULL,
     'Employee','Staff',NULL,'Staff attempted to edit another person');
   RAISE EXCEPTION 'Ordinary staff edited official linked employee contact';
