@@ -30,8 +30,6 @@ SELECT '10000000-0000-4000-8000-000000000010',
 WHERE NOT EXISTS (SELECT 1 FROM public.capability_grants
  WHERE profile_id='31000000-0000-4000-8000-000000000005'
  AND capability='compliance.manage' AND scope_unit_id IS NULL AND revoked_at IS NULL);
-CREATE TEMP TABLE stage2_attendance_case_proof (case_id uuid NOT NULL);
-GRANT SELECT ON stage2_attendance_case_proof TO authenticated;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000005',true);
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000005","role":"authenticated","aal":"aal1"}',true);
@@ -81,7 +79,7 @@ BEGIN
   'Disputed inaccurate interpretation; review required',NULL,NULL);
  BEGIN
   PERFORM public.compliance_record_attendance_observation(
-   (SELECT employee_id FROM public.compliance_attendance_cases WHERE id=v_id),
+   (v_rows->0->>'employee_id')::uuid,
     current_date,'other','Unauthorised staff factual finding','Staff claims Compliance authority',NULL);
   RAISE EXCEPTION 'Staff submitted Compliance observation';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
