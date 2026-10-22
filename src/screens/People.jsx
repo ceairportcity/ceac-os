@@ -886,7 +886,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       </PeopleWorkspaceSection>
 
       {hasLinkedProfile && <LinkedEmployeeContactEditor
-        key={`${me.org_id}:${me.id}:${person.profile_id}`} me={me} profileId={person.profile_id}
+        key={`${me.org_id}:${me.id}:${person.profile_id}`} me={me} employeeId={person.employee_id} profileId={person.profile_id}
         onSaved={(details)=>{
           setPerson(current=>current?.profile_id===details.id?{...current,...details}:current);
           void load({silent:true});
