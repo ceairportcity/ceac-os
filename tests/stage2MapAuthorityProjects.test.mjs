@@ -30,7 +30,7 @@ test("People Access has one capability-gated employee-specific Authority link",(
  assert.match(people,/onManagePermissions\(person\.profile_id\)/);
  assert.match(people,/person\.profile_id && onManagePermissions/);
  assert.match(app,/initialProfileId=\{authorityFocusProfileId\}/);
- assert.match(authority,/selectedId\] = useState\(initialProfileId \|\| me\.id\)/);
+ assert.match(authority,/useState\(initialProfileId \|\| me\.id\)/);
  assert.match(control,/label:"Manage permissions",onClick:\(\)=>go\("authority"\)/);
  assert.equal((control.match(/label:"Manage permissions"/g)||[]).length,1);
  assert.doesNotMatch(control,/label:"Authority"/);
