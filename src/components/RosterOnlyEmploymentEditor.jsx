@@ -12,6 +12,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
  const authorised=Boolean(me.is_admin);
  const [form,setForm]=useState(blank),[updatedAt,setUpdatedAt]=useState(null);
  const [history,setHistory]=useState([]),[edit,setEdit]=useState(false);
+ const [verifiedScope,setVerifiedScope]=useState("");
  const [managerMemberships,setManagerMemberships]=useState([]),[managerDirectory,setManagerDirectory]=useState([]),[managersVerified,setManagersVerified]=useState(false);
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const [error,setError]=useState(""),[notice,setNotice]=useState(""),[uncertain,setUncertain]=useState(false);
@@ -19,7 +20,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
  const scope=me.org_id+":"+me.id+":"+employeeId;
  const consumedEditRequest=useRef(0);
  useEffect(()=>{
-  const token=++generation.current;setLoading(true);setEdit(false);setUpdatedAt(null);
+  const token=++generation.current;setLoading(true);setEdit(false);setUpdatedAt(null);setVerifiedScope("");
   setHistory([]);setManagerMemberships([]);setManagerDirectory([]);setManagersVerified(false);setError("");setNotice("");setUncertain(false);
   if(!authorised||!employeeId){setLoading(false);return()=>{generation.current++;};}
   (async()=>{
@@ -69,7 +70,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
     }));
     eligibleRosterManagers(directory,managerRead.data,placements.find(u=>u.is_primary)?.unit_id||"");
     setManagerDirectory(directory);setManagerMemberships(managerRead.data);setManagersVerified(true);
-    setUpdatedAt(row.data.updated_at);setHistory(events.data);
+    setUpdatedAt(row.data.updated_at);setHistory(events.data);setVerifiedScope(scope);
    }catch(cause){if(token===generation.current)setError(cause.message||"The employee record is unavailable.");}
    finally{if(token===generation.current)setLoading(false);}
   })();
@@ -79,14 +80,15 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
  useEffect(()=>{
   // Once-only navigation request from the selected employee summary. It cannot
   // reopen a cancelled form or start an edit before the HR source was verified.
-  if(editRequest===consumedEditRequest.current || !authorised || loading || !updatedAt
-   || error || uncertain || busy || !managersVerified)return;
+  if(editRequest===consumedEditRequest.current || !authorised || verifiedScope!==scope
+   || loading || !updatedAt || error || uncertain || busy || !managersVerified)return;
   consumedEditRequest.current=editRequest;
   setEdit(true);
   setNotice("");
- },[editRequest,authorised,loading,updatedAt,error,uncertain,busy,managersVerified]);
- const managerOptions=managersVerified?eligibleRosterManagers(managerDirectory,managerMemberships,form.primaryUnit):[];
- const valid=Boolean(updatedAt&&!loading&&!uncertain&&managersVerified&&form.fullName.trim().length>=2
+ },[editRequest,authorised,scope,verifiedScope,loading,updatedAt,error,uncertain,busy,managersVerified]);
+ const ready=authorised && verifiedScope===scope && !loading && !error && !uncertain && !!updatedAt && managersVerified;
+ const managerOptions=ready?eligibleRosterManagers(managerDirectory,managerMemberships,form.primaryUnit):[];
+ const valid=Boolean(ready&&form.fullName.trim().length>=2
   &&form.reason.trim().length>=8&&types.some(([value])=>value===form.employmentType)
   &&statuses.some(([value])=>value===form.status)
   &&(!form.contactEmail.trim()||(form.contactEmail.trim().length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail.trim())))
@@ -95,7 +97,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
   &&(!form.managerId||managerOptions.some(row=>row.profile_id===form.managerId)));
  const editValue=(name,value)=>setForm(old=>({...old,[name]:value}));
  async function save(){
-  if(!authorised||!edit||!valid||busy||sending.current)return;
+  if(!ready||!edit||!valid||busy||sending.current)return;
   const token=generation.current,snapshot={...form,secondaryUnits:[...form.secondaryUnits]};
   sending.current=true;setBusy(true);setError("");setNotice("");
   let acknowledged=false;
@@ -159,13 +161,13 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
   <div className="row-t" style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
    <div><h3 style={{margin:"0 0 4px"}}>Employment &amp; organisational placement</h3>
     <p className="screen-note" style={{margin:0}}>Edit this employee without creating an account. Unit and manager records do not grant app permissions.</p></div>
-   {!edit&&!loading&&!error&&<button type="button" className="btn btn-ghost" onClick={()=>{setEdit(true);setNotice("");}}>Edit employee record</button>}
+   {!edit&&ready&&<button type="button" className="btn btn-ghost" onClick={()=>{setEdit(true);setNotice("");}}>Edit employee record</button>}
   </div>
-  {loading&&<p role="status">Verifying this employee's HR record…</p>}
+  {!ready&&!error&&<p role="status">Verifying this employee's HR record…</p>}
   {error&&<p role="alert">{error}</p>}
   {notice&&!loading&&<p role="status">{notice}</p>}
-  {!loading&&error&&(!edit||uncertain)&&<button type="button" className="btn btn-ghost" onClick={()=>setReload(n=>n+1)}>{uncertain?"Verify saved record":"Retry loading employee record"}</button>}
-  {!loading&&!error&&!edit&&<div className="ev2p-admin-record-grid">
+  {!loading&&error&&!busy&&<button type="button" className="btn btn-ghost" onClick={()=>setReload(n=>n+1)}>{uncertain?"Verify saved record":"Retry loading employee record"}</button>}
+  {ready&&!edit&&<div className="ev2p-admin-record-grid">
    <div><strong>{form.fullName}</strong><p className="screen-note">{form.jobTitle||"No job title"} · {form.employmentType.replaceAll("_"," ")}</p></div>
    <div><strong>Primary unit</strong><p className="screen-note">{units.find(u=>u.id===form.primaryUnit)?.name||"Not assigned"}</p></div>
    <div><strong>Other units</strong><p className="screen-note">{form.secondaryUnits.map(id=>units.find(u=>u.id===id)?.name||"Unknown unit").join(", ")||"None recorded"}</p></div>
@@ -174,7 +176,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
    <div><strong>HR contact phone</strong><p className="screen-note">{form.contactPhone||"Not recorded"}</p></div>
    <div><strong>Employment start date</strong><p className="screen-note">{form.startedOn||"Not recorded"}</p></div>
   </div>}
-  {edit&&!loading&&<div className="ev2p-admin-schedule-editor">
+  {edit&&ready&&<div className="ev2p-admin-schedule-editor">
    <div className="form-grid two">
     <label>Full name<input className="field" value={form.fullName} maxLength={180} onChange={e=>editValue("fullName",e.target.value)}/></label>
     <label>Preferred name<input className="field" value={form.preferredName} maxLength={180} onChange={e=>editValue("preferredName",e.target.value)}/></label>
@@ -213,7 +215,7 @@ export default function RosterOnlyEmploymentEditor({me,employeeId,units=[],onSav
     <button type="button" className="btn btn-ghost" disabled={busy} onClick={()=>setReload(n=>n+1)}>Cancel</button>
    </div>
   </div>}
-  {!loading&&history.length>0&&<details style={{marginTop:12}}><summary>HR changes · {history.length} recent</summary>
+  {ready&&history.length>0&&<details style={{marginTop:12}}><summary>HR changes · {history.length} recent</summary>
    {history.map(row=><article className="row" key={row.id}><strong>{timestamp(row.recorded_at)}</strong>
     <p className="screen-note">{row.reason}</p></article>)}
   </details>}
