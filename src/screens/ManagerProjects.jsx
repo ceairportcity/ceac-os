@@ -419,10 +419,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           {detail.canManageObjectives && <button className="btn btn-sm" onClick={() => goAssign({ projectId: detail.id })}>+ Add task</button>}
         </div>
         <div className="fpg-viewbar" aria-label="Project work views">
-          <div className="fpg-view-switch">
-            <button type="button" disabled title="Board view is not connected to authoritative CEAC project behavior yet">Board view</button>
-            <button type="button" className="is-active" aria-pressed="true">Table view</button>
-            <button type="button" disabled title="Calendar view is not connected to authoritative CEAC project behavior yet">Calendar view</button>
+          <div className="fpg-view-switch" aria-label="Active project work presentation">
+            <span className="fpg-view-current" aria-current="true">Work register</span>
           </div>
           <div className="fpg-work-filters" aria-label="Work filters">
             <button type="button" className={workFilter === "all" ? "is-active" : ""} onClick={() => setWorkFilter("all")}>All</button>
