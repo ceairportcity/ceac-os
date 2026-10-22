@@ -82,10 +82,10 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
       <table><thead><tr><th>Scheduled date</th><th>Responsibility</th><th>Record</th></tr></thead><tbody>
         {items.map((item) => <tr key={item.operationId + ":" + item.date}>
           <td><time dateTime={item.date}>{item.date}</time><small style={{display:"block",fontSize:12}}>{routineDueLabel(item)}</small></td>
-          <td><button type="button" onClick={() => openItem?.(item.operation.work_item_id)}
+          <td><button type="button" onClick={() => openItem?.(item.operation.work_item_id,item.date)}
             disabled={!item.operation.work_item_id}>{item.operation.name}</button></td>
           <td><span className={"s2-routine-state is-" + item.state}>
-            {item.state === "recorded" ? "Recorded" : item.state === "unrecorded_past" ? "Not recorded" : "Scheduled"}
+            {item.state === "skipped" ? "Skipped with authorised reason" : item.state === "recorded" ? "Recorded" : item.state === "unrecorded_past" ? "Not recorded" : "Scheduled"}
           </span></td>
         </tr>)}
       </tbody></table>
