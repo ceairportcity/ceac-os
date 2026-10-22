@@ -24,11 +24,33 @@ export default function EmployeeDossierRecords({ me, employeeId, profileId, sect
       try {
         let rows = [], names = {};
         if (section === "development") {
-          // Published human assessments only. Draft/private review versions
-          // never enter this ordinary HR dossier or its client-side payload.
-          rows = complete(await supabase.from("stage2_employee_published_human_ratings")
-            .select("id,cadence,overall_rating,overall_narrative,strengths,challenges,next_actions,created_at", { count:"exact" })
-            .eq("profile_id", profileId).order("created_at", { ascending:false }).limit(500));
+          // The employee-only published-ratings view deliberately filters to
+          // auth.uid(). HR must instead explicitly verify release decisions
+          // under the existing People/HR RLS before selecting human ratings.
+          const appraisals = complete(await supabase.from("appraisals")
+            .select("id,status,shared_at,development_notes", { count:"exact" })
+            .eq("org_id",me.org_id).eq("profile_id",profileId)
+            .in("status",["shared","closed"]).limit(500));
+          const ids = appraisals.map(row => row.id);
+          if (ids.length) {
+            const [releaseResponse,ratingResponse] = await Promise.all([
+              supabase.from("performance_review_release_requests")
+                .select("appraisal_id,requested_assessment_id,decided_at,state", { count:"exact" })
+                .eq("org_id",me.org_id).eq("state","approved").in("appraisal_id",ids).limit(500),
+              supabase.from("appraisal_human_rating_versions")
+                .select("id,appraisal_id,assessment_entry_id,cadence,overall_rating,overall_narrative,strengths,challenges,next_actions,created_at", { count:"exact" })
+                .eq("org_id",me.org_id).eq("profile_id",profileId).in("appraisal_id",ids).limit(500),
+            ]);
+            const releases = complete(releaseResponse);
+            const ratings = complete(ratingResponse);
+            const approved = new Map(releases.map(entry => [
+              `${entry.appraisal_id}:${entry.requested_assessment_id}`,entry.decided_at,
+            ]));
+            rows = ratings.filter(rating => {
+              const decidedAt = approved.get(`${rating.appraisal_id}:${rating.assessment_entry_id}`);
+              return decidedAt && String(decidedAt) >= String(rating.created_at);
+            });
+          }
         } else if (section === "learning") {
           rows = complete(await supabase.from("learning_assignments")
             .select("id,course_id,state,assigned_at,due_on,completed_at,assignment_reason", { count:"exact" })
