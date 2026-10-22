@@ -215,7 +215,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         annual_taken: operational?.annual_taken || 0,
         sick_taken: operational?.sick_taken || 0,
         carryover_from_last_year: operational?.carryover_from_last_year || 0,
-        started_on: operational?.started_on || null,
+        started_on: operational?.started_on || employee.hr_started_on || null,
         contract_type: operational?.contract_type || employee.employment_type || "not_recorded",
         birthday: operational?.birthday || null,
         phone: operational?.phone || null,
@@ -283,11 +283,20 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     setPersonTab("overview");
 
     try {
-    const rosterDetailResult = await supabase.rpc("admin_employee_roster_detail", { p_employee_id: summary.id });
+    const [rosterDetailResult,hrContactResult] = await Promise.all([
+      supabase.rpc("admin_employee_roster_detail", { p_employee_id: summary.id }),
+      supabase.from("employee_roster")
+        .select("id,org_id,profile_id,hr_contact_email,hr_contact_phone,hr_started_on")
+        .eq("org_id",me.org_id).eq("id",summary.id).single(),
+    ]);
     if (generation !== personGeneration.current) return;
-    if (rosterDetailResult.error) {
+    if (rosterDetailResult.error || hrContactResult.error
+      || hrContactResult.data?.id !== summary.id
+      || hrContactResult.data.org_id !== me.org_id
+      || (hrContactResult.data.profile_id || null) !== (summary.profile_id || null)) {
       setDetailLoading(false);
-      setError(humanError(rosterDetailResult.error, "That employee record could not load."));
+      setError(humanError(rosterDetailResult.error || hrContactResult.error,
+        "That employee's authorised roster and HR contact records could not be reconciled."));
       return;
     }
 
@@ -381,6 +390,9 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     setPerson({
       ...summary,
       ...rosterEmployee,
+      hr_contact_email: hrContactResult.data.hr_contact_email || null,
+      hr_contact_phone: hrContactResult.data.hr_contact_phone || null,
+      hr_started_on: hrContactResult.data.hr_started_on || null,
       id: summary.id,
       employee_id: summary.id,
       profile_id: summary.profile_id || rosterEmployee.profile_id || null,
@@ -724,7 +736,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         subtitle={employmentCurrent?.job_title || person.job_title || "No job title recorded"}
         context={[
           person.email || identityLabel,
-          person.phone,
+          person.phone || person.hr_contact_phone,
           person.source_department_text,
           `Employment ${employmentState}`,
         ].filter(Boolean).join(" · ")}
@@ -750,6 +762,12 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       {!volunteerRecommendationsAvailable && <ProductNotice tone="attention" title="Volunteer recommendations pending">
         This feature is not yet installed in the approved database. The employee record is available; recommendation history and decisions remain unavailable until the Phase 6 migration passes release verification.
       </ProductNotice>}
+      {!hasLinkedProfile && (person.hr_contact_email || person.hr_contact_phone || person.hr_started_on) &&
+        <div className="ev2p-admin-record-grid" aria-label="HR contact and start date">
+          {person.hr_contact_email && <PeopleFactRow icon="info" title="HR contact email (not login)" subtitle={person.hr_contact_email} />}
+          {person.hr_contact_phone && <PeopleFactRow icon="info" title="HR contact telephone" subtitle={person.hr_contact_phone} />}
+          {person.hr_started_on && <PeopleFactRow icon="calendar" title="Employment start date" subtitle={dateOnly(person.hr_started_on)} />}
+        </div>}
       {person.on_leave_now && <ProductNotice tone="attention" title="On approved leave">This employee is currently away on approved leave.</ProductNotice>}
       {!person.active && <ProductNotice tone="error" title="Inactive employee">This employee is marked inactive and cannot sign in.</ProductNotice>}
 
