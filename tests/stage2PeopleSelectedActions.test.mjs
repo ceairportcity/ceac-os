@@ -53,5 +53,7 @@ test("invite entry carries selected roster identity into existing verified invit
  assert.match(access,/email: initialInviteRoster\.contactEmail \|\| ""/);
  assert.match(access,/An invitation never links this employee automatically/);
  assert.match(access,/existingAccountEmail \|\| existingInvitationEmail/);
- assert.doesNotMatch(access,/useEffect\([\s\S]*?inviteByEmail\(/);
+ const prefill=access.slice(access.indexOf("if (!initialInviteRoster?.employeeId"),access.indexOf("  async function load()"));
+ assert.ok(prefill.length>0);
+ assert.doesNotMatch(prefill,/inviteByEmail|resendStaffInvitation/);
 });
