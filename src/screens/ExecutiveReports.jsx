@@ -25,7 +25,7 @@ export default function ExecutiveReports({ me, openItem }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [view, setView] = useState("all");
-  const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[]});
+  const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[],decisions:[]});
   const [outcomeError,setOutcomeError] = useState(null);
 
   // An old Executive report response must never populate a newly signed-in
@@ -53,7 +53,7 @@ export default function ExecutiveReports({ me, openItem }) {
     setLoading(true); setReadyActor(null); setFailedActor(null); setError(null);
     setPeriod(null); setPeriodOptions([]); setUnits([]); setReports([]);
     setOutcomeError(null);
-    setOutcomeSources({issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[]});
+    setOutcomeSources({issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[],decisions:[]});
     try {
       const [periodResult, unitResult] = await Promise.all([
         supabase.from("report_periods")
@@ -81,7 +81,7 @@ export default function ExecutiveReports({ me, openItem }) {
 
       let nextReports = [];
       let nextOutcomeError = null;
-      let nextSources = {issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[]};
+      let nextSources = {issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[],decisions:[]};
       if (selectedPeriod) {
         const reportResult = await supabase.from("reports")
           .select("unit_id,status,version,submitted_at", { count: "exact" })
@@ -134,6 +134,40 @@ export default function ExecutiveReports({ me, openItem }) {
           } else {
             nextSources={issued:[],objectives:objectives.data||[],
               milestones:milestones.data||[],targets:[],evidenceRefs:[]};
+          }
+        }
+        if (!nextOutcomeError) {
+          // Work decisions are already a canonical, RLS-protected source.
+          // Restrict them to this reporting period. They are NOT a new
+          // Executive quarterly approval or automatically generated finding.
+          const exclusiveEnd = new Date(Date.parse(selectedPeriod.ends_on+"T00:00:00Z")+86400000).toISOString();
+          const decisionRead = await supabase.from("work_decisions")
+            .select("work_item_id,authority_profile_id,decision_text,rationale,decided_at,decided_by", {count:"exact"})
+            .gte("decided_at",selectedPeriod.starts_on+"T00:00:00Z")
+            .lt("decided_at",exclusiveEnd)
+            .order("decided_at",{ascending:false}).limit(501);
+          if (decisionRead.error || !Array.isArray(decisionRead.data)
+            || !Number.isInteger(decisionRead.count) || decisionRead.count!==decisionRead.data.length
+            || decisionRead.count>500) {
+            nextOutcomeError="Recorded work decisions could not be verified for this period. Detailed briefing is withheld.";
+          } else {
+            const workIds=[...new Set(decisionRead.data.map(item=>item.work_item_id).filter(Boolean))];
+            if (workIds.length) {
+              const itemRead=await supabase.from("work_items")
+                .select("id,title,unit_id,project_id",{count:"exact"})
+                .eq("org_id",me.org_id).in("id",workIds).limit(501);
+              if (itemRead.error || !Array.isArray(itemRead.data)
+                || !Number.isInteger(itemRead.count) || itemRead.count!==workIds.length) {
+                nextOutcomeError="Linked work decisions could not be reconciled to authorised work items.";
+              } else {
+                const byWorkId=new Map(itemRead.data.map(item=>[item.id,item]));
+                nextSources={...nextSources,decisions:decisionRead.data.map(decision=>({
+                  ...decision,work_title:byWorkId.get(decision.work_item_id).title,
+                  unit_id:byWorkId.get(decision.work_item_id).unit_id,
+                  project_id:byWorkId.get(decision.work_item_id).project_id,
+                }))};
+              }
+            }
           }
         }
       }
@@ -322,7 +356,7 @@ export default function ExecutiveReports({ me, openItem }) {
           <ExecutiveOutcomeBrief period={period} units={units}
             issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
             milestones={outcomeSources.milestones} targets={outcomeSources.targets}
-            evidenceRefs={outcomeSources.evidenceRefs} readError={outcomeError} />
+            evidenceRefs={outcomeSources.evidenceRefs} decisions={outcomeSources.decisions} readError={outcomeError} />
 
           <ExecutiveContributionDrilldown me={me} period={period} units={units} openItem={openItem} />
 
