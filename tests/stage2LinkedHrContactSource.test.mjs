@@ -24,7 +24,7 @@ test("linked HR contact changes never edit sign-in identity, account role or pay
  assert.match(migration,/revoke all on public\.employee_linked_contact_change_events/);
  assert.match(migration,/grant select on public\.employee_linked_contact_change_events to authenticated/);
  assert.match(migration,/returning id into v_event_id/);
- assert.match(allowlist,/admin_record_linked_person_contact\(p_profile_id uuid/);
+ assert.match(allowlist,/admin_record_linked_person_contact\(p_employee_id uuid, p_profile_id uuid/);
  assert.match(allowlist,/v_actual<>158 or v_expected<>158/);
 });
 test("linked HR editor binds verified employee and change event to actor and tenant",()=>{
