@@ -4,7 +4,7 @@ import EmployeeScheduleEditor from "./EmployeeScheduleEditor";
 import {WorkforceSection} from "../experience-v2/workforce-family/WorkforceFamilyV2";
 
 /** Reuses the canonical HR roster and secured employee-id schedule RPC for ALL staff. */
-export default function WorkforceEmployeeScheduleWorkspace({me}){
+export default function WorkforceEmployeeScheduleWorkspace({me,initialEmployeeId=""}){
  const authorised=Boolean(me?.is_admin)&&(me.capabilities||[]).includes("workforce.manage");
  const [people,setPeople]=useState([]),[selectedId,setSelectedId]=useState("");
  const [search,setSearch]=useState(""),[loading,setLoading]=useState(true),[error,setError]=useState("");
@@ -21,12 +21,13 @@ export default function WorkforceEmployeeScheduleWorkspace({me}){
      throw new Error("The authoritative employee directory could not be verified.");
     if(token!==generation.current)return;
     setPeople(result.data);
-    setSelectedId(current=>result.data.some(row=>row.id===current)?current:result.data[0]?.id||"");
+    setSelectedId(current=>result.data.some(row=>row.id===initialEmployeeId)?initialEmployeeId:
+     result.data.some(row=>row.id===current)?current:result.data[0]?.id||"");
    }catch(cause){if(token===generation.current)setError(cause.message||"The directory could not be loaded.");}
    finally{if(token===generation.current)setLoading(false);}
   })();
   return()=>{generation.current+=1;};
- },[scope,authorised,reload]);
+ },[scope,authorised,reload,initialEmployeeId]);
  if(!authorised)return null;
  const matches=people.filter(row=>{
   const units=Array.isArray(row.units)?row.units:[];
