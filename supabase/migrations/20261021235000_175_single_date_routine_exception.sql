@@ -409,4 +409,3 @@ begin
  return v_count;
 end;
 $worker$;
-
