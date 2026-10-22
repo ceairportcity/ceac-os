@@ -81,12 +81,12 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
   // preview for EVERY assigned routine, with missed work still visible.
   const byRoutine = new Map();
   for (const item of rows.filter((row) => row.state !== "recorded")) {
-    const bucket = byRoutine.get(item.operationId) || { past: [], future: [] };
-    (item.state === "unrecorded_past" ? bucket.past : bucket.future).push(item);
+    const bucket = byRoutine.get(item.operationId) || { past: [], future: [], skipped: [] };
+    (item.state === "skipped" ? bucket.skipped : item.state === "unrecorded_past" ? bucket.past : bucket.future).push(item);
     byRoutine.set(item.operationId, bucket);
   }
-  const upcoming = [...byRoutine.values()].flatMap(({ past, future }) => [
-    ...past.slice(-2), ...future.slice(0, 3),
+  const upcoming = [...byRoutine.values()].flatMap(({ past, future, skipped }) => [
+    ...past.slice(-2), ...future.slice(0, 3), ...skipped.slice(-2),
   ]).sort((a,b) => a.date.localeCompare(b.date) || a.routine.name.localeCompare(b.routine.name));
   if (ready && !rows.length) return null;
   return <section className="s2-assigned-routines" aria-label="My scheduled recurring work">
@@ -101,11 +101,11 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
         <time dateTime={item.date}>{item.date}</time>
         <strong>{item.routine.name}</strong>
         <small style={{fontSize:12}}>{routineDueLabel(item)}</small>
-        <span className={item.state==="unrecorded_past"?"is-missed":"is-upcoming"}>
-          {item.state==="unrecorded_past"?"Not recorded":"Scheduled"}
+        <span className={item.state==="skipped"?"is-exception":item.state==="unrecorded_past"?"is-missed":"is-upcoming"}>
+          {item.state==="skipped"?"Skipped with authorised reason":item.state==="unrecorded_past"?"Not recorded":"Scheduled"}
         </span>
       </button>)}
-      {!upcoming.length && <p>Every visible occurrence has a recorded outcome.</p>}
+      {!upcoming.length && <p>No outstanding scheduled dates or recorded single-date exceptions in this period.</p>}
     </div>}
   </section>;
 }
