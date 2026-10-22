@@ -393,7 +393,9 @@ export default function App() {
   const canUsePayroll = hasCapability("payroll.prepare") || hasCapability("payroll.approve");
   const canUseDelivery = isAdmin || isExec || isUnitManager || hasCapability("delivery.manage");
   const canUseWorkload = isUnitManager || hasCapability("resource.manage");
-  const canUsePerformance = !isExec && (isStaff || isUnitManager || hasOrgCapability("performance.admin"));
+  // Assigned Executive reviewers may open this route; appraisal RLS restricts them to their own case.
+  // Opening the route never grants performance.admin, Protected HR or publication rights.
+  const canUsePerformance = isExec || isStaff || isUnitManager || hasOrgCapability("performance.admin");
   const canUseLearning = !isExec && (isStaff || isUnitManager || hasOrgCapability("learning.manage"));
   const canUseWorkforce = !isExec && (isStaff || isUnitManager || hasOrgCapability("workforce.manage") || hasOrgCapability("attendance.correct") || hasOrgCapability("compliance.manage"));
   const canUseAssets = !isExec && (isStaff || isUnitManager || hasOrgCapability("asset.manage"));
