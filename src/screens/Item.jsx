@@ -69,7 +69,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   const [decisionText, setDecisionText] = useState("");
   const [meetingRecord, setMeetingRecord] = useState(null);
   const [deliverableRecord, setDeliverableRecord] = useState(null);
-  const [routineDate, setRoutineDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [routineDate, setRoutineDate] = useState(() => initialRoutineDate || ghanaCalendarDate());
   const [routineValue, setRoutineValue] = useState("");
   const [routineEffective, setRoutineEffective] = useState("");
   const [routineSchedule, setRoutineSchedule] = useState("weekly");
