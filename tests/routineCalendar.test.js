@@ -14,8 +14,8 @@ function provider(rows,{count=rows.length,foreignOperation=false,missingMaster=f
       eq(key,value){filters[key]=value;return query;},
       neq(key,value){filters["not-"+key]=value;return query;},
       in(key,value){filters[key]=value;return query;},
-      order(){return query;},
-      range:async(start,end)=>{calls.push({table,filters,start,end});return {data:rows.slice(start,end+1),count};},
+      order(){return query;},gte(){return query;},lte(){return query;},
+      range:async(start,end)=>{calls.push({table,filters,start,end});return table==="routine_date_covers"?{data:[],count:0}:{data:rows.slice(start,end+1),count};},
       then(resolve,reject) {
         assert.equal(table,"recurring_operations");
         calls.push({table,filters});

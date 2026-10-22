@@ -1,3 +1,4 @@
+import {readRoutineCovers,routineCoverKey,routineCoverLabel} from "../lib/routineDateCovers";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
@@ -52,12 +53,13 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
           .in("unit_id", unitIds).order("name");
         if (operationError || !Array.isArray(operations) || typeof operationCount!=="number" || operationCount!==operations.length)
           throw new Error("Unit routines are incomplete");
+        const covers=await readRoutineCovers(supabase,me,{fromDate:shiftDate(today,-14),throughDate:shiftDate(today,30)});
         const projected = await readRoutineSchedulePreview(supabase,operations.map(row=>row.work_item_id),{
           fromDate:shiftDate(today,-14),throughDate:shiftDate(today,30),
         });
         const known=new Set(operations.map(row=>row.id));
         if(projected.some(row=>!known.has(row.operationId))) throw new Error("Unrecognised unit routine date");
-        if (alive) { setSeries(operations); setDates(projected); setVerifiedIdentity(identity); }
+        if (alive) { setSeries(operations); setDates(projected.map(row=>({...row,cover:covers.get(routineCoverKey(row.operationId,row.date))}))); setVerifiedIdentity(identity); }
       } catch {
         if (alive) setError("Routine schedules or recorded occurrences could not be verified for this account.");
       } finally {
@@ -83,7 +85,7 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
         {items.map((item) => <tr key={item.operationId + ":" + item.date}>
           <td><time dateTime={item.date}>{item.date}</time><small style={{display:"block",fontSize:12}}>{routineDueLabel(item)}</small></td>
           <td><button type="button" onClick={() => openItem?.(item.operation.work_item_id,item.date)}
-            disabled={!item.operation.work_item_id}>{item.operation.name}</button></td>
+            disabled={!item.operation.work_item_id}>{item.operation.name}</button>{item.cover?.action==="assign"&&<small style={{display:"block"}}>{routineCoverLabel(item.cover,me)}</small>}</td>
           <td><span className={"s2-routine-state is-" + item.state}>
             {item.state === "skipped" ? "Skipped with authorised reason" : item.state === "recorded" ? "Recorded" : item.state === "unrecorded_past" ? "Not recorded" : "Scheduled"}
           </span></td>

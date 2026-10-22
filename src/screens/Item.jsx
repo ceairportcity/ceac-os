@@ -695,6 +695,8 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         {checks.length > 0 && <section aria-label="Routine method"><h3>Steps to repeat each time</h3><ol>{checks.map(step => <li key={step.id}>{step.label}</li>)}</ol></section>}
         <RoutineDateProgress me={me} item={item} routine={routine} steps={checks} initialDate={initialRoutineDate}
           canRecord={Boolean(item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin)}
+          canRecordAsReviewer={Boolean(me.is_admin || (me.memberships||[]).some(member=>member.role==="manager"&&member.unit_id===item.unit_id))}
+          onRecordOccurrence={(date)=>{setRoutineDate(date);setRoutineValue("");setNote("");setSheet("routine-record");}}
           canManageDates={Boolean(me.is_admin || isManager && item.unit_id===me.unit_id || item.origin==="self_created" && item.assignee_id===me.id && item.assigned_by===me.id)} />
         {routineOccurrences.length > 0 && <>
           <div className="sec"><span>Recent occurrences</span><span>{routineOccurrences.length}</span></div>
@@ -704,9 +706,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
               ? (date) => { setRoutineEvidenceDate(date); setRoutineEvidenceRequest((n) => n + 1); }
               : null} />
         </>}
-        {routine.active && routine.schedule_kind && (item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin) && <button className="btn" style={{ marginTop: 20 }} onClick={() => {
-          setRoutineDate(new Date().toISOString().slice(0, 10)); setRoutineValue(""); setNote(""); setSheet("routine-record");
-        }}>Record occurrence</button>}
+
         {!routine.active && <div className="flag flag-amber" style={{ marginTop: 16 }}><h4>Routine paused</h4>No new occurrence action is shown while this routine is paused.</div>}
         {(isManager || me.is_admin || item.origin === "self_created" && item.assignee_id === me.id && item.assigned_by === me.id) && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
           <button className="btn btn-ghost btn-sm" onClick={openRoutineSchedule}>{routine.schedule_kind ? "Change future schedule" : "Set schedule"}</button>

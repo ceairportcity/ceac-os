@@ -1,3 +1,4 @@
+import {readRoutineCovers,includeCoveredRoutineWork,routineCoverKey,routineCoverLabel} from "../lib/routineDateCovers";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
@@ -45,12 +46,14 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
       setLoading(true); setError(""); setRows([]); setVerifiedIdentity("");
       try {
         const source = await supabase.from("work_items")
-          .select("id,title,assignee_id",{count:"exact"})
-          .eq("assignee_id", me.id).eq("kind", "routine").eq("visibility", "unit")
+          .select("id,title,org_id,unit_id,assignee_id",{count:"exact"})
+          .eq("org_id",me.org_id).eq("assignee_id", me.id).eq("kind", "routine").eq("visibility", "unit")
           .in("status", ["not_started","in_progress","returned"]);
         if (source.error || !Array.isArray(source.data) || typeof source.count!=="number" || source.count!==source.data.length)
           throw new Error("Assigned work rows are incomplete");
-        const templates = source.data;
+        const covers=await readRoutineCovers(supabase,me,{fromDate:plusDays(today,-14),throughDate:plusDays(today,14)});
+        const templates = await includeCoveredRoutineWork(supabase,me,source.data,covers,"id,title,org_id,unit_id,assignee_id");
+        const workById=new Map(templates.map(row=>[row.id,row]));
         if (!templates.length) { if (active) { setRows([]); setVerifiedIdentity(identity); } return; }
         const result = await supabase.from("recurring_operations")
           .select("id,name,work_item_id,active,paused_at,starts_on,ends_on,schedule_kind,weekdays,day_of_month",{count:"exact"})
@@ -66,8 +69,9 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
         const projected = dates.map(item=>{
           const routine=byId.get(item.operationId);
           if(!routine) throw new Error("Unrecognised assigned routine date");
-          return {...item,routine};
-        }).sort((a,b) => a.date.localeCompare(b.date) || a.routine.name.localeCompare(b.routine.name));
+          const cover=covers.get(routineCoverKey(item.operationId,item.date));
+          return {...item,routine,cover,seriesAssignee:workById.get(routine.work_item_id)?.assignee_id};
+        }).filter(item=>item.seriesAssignee===me.id||item.cover?.action==="assign"&&item.cover.assignee_id===me.id).sort((a,b) => a.date.localeCompare(b.date) || a.routine.name.localeCompare(b.routine.name));
         if (active) { setRows(projected); setVerifiedIdentity(identity); }
       } catch {
         if (active) setError("Your assigned routine schedule could not be verified. Recorded work remains available.");
@@ -100,6 +104,7 @@ export default function AssignedRoutineOccurrences({ me, onOpen }) {
         disabled={!item.routine.work_item_id}>
         <time dateTime={item.date}>{item.date}</time>
         <strong>{item.routine.name}</strong>
+        {item.cover?.action==="assign"&&<small>{routineCoverLabel(item.cover,me)}</small>}
         <small style={{fontSize:12}}>{routineDueLabel(item)}</small>
         <span className={item.state==="skipped"?"is-exception":item.state==="unrecorded_past"?"is-missed":"is-upcoming"}>
           {item.state==="skipped"?"Skipped with authorised reason":item.state==="unrecorded_past"?"Not recorded":"Scheduled"}

@@ -223,3 +223,61 @@ test("custom self routine keeps exact interval/count/timezone and future edits p
   await page.screenshot({path:"test-artifacts/custom-routine-options-phone.png",fullPage:true});
  } finally {await client.auth.signOut();await context.close();}
 });
+
+
+test('Manager arranges one-date cover; colleague follows Work and Calendar, records actual private proof and receives independent review',async({browser})=>{
+ test.setTimeout(90000);
+ expect(process.env.SUPABASE_URL).toBe('http://127.0.0.1:54321');
+ const password=process.env.ROLE_FIXTURE_PASSWORD,today=new Date().toISOString().slice(0,10);
+ const manager=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false}});
+ const colleague=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false}});
+ const original=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false}});
+ for(const [client,email] of [[manager,'manager'],[colleague,'sameunit'],[original,'staff']])expect((await client.auth.signInWithPassword({email:email+'@ceac.local.test',password})).error).toBeNull();
+ const title='Dated cover venue '+Date.now();
+ const created=await manager.rpc('create_typed_work',{p_kind:'routine',p_unit_id:'20000000-0000-4000-8000-000000000011',p_title:title,p_assignee_id:'31000000-0000-4000-8000-000000000001',p_expected_outcome:'Inspect venue on each scheduled date',p_details:{schedule_kind:'daily',starts_on:today}});
+ expect(created.error,created.error?.message).toBeNull();const id=created.data;
+ const contexts=[];
+ async function signIn(email,width){const context=await browser.newContext({viewport:{width,height:844}});contexts.push(context);const page=await context.newPage();
+  await page.goto('/');await page.getByPlaceholder('Work email').fill(email+'@ceac.local.test');await page.getByPlaceholder('Password').fill(password);await page.getByRole('button',{name:'Sign in to CEAC OS',exact:true}).click();await expect(page.locator('.ev2s-workspace')).toBeVisible();return page;}
+ try{
+  const page=await signIn('manager',1366);await page.goto('/?tab=work&item='+id+'&routineDate='+today);
+  const cover=page.getByRole('region',{name:'Cover for this routine date',exact:true});await expect(cover).toBeVisible();
+  await cover.locator('summary').filter({hasText:'Arrange or restore date cover'}).click();
+  await cover.getByLabel('Cover person',{exact:true}).selectOption('31000000-0000-4000-8000-000000000006');
+  await cover.getByLabel('Reason for date cover',{exact:true}).fill('Manager authorised colleague to inspect the venue today');
+  await cover.getByRole('button',{name:'Assign date cover',exact:true}).click();await expect(cover.getByText('Cover: Same Unit Fixture. Other dates keep their own assignment.',{exact:true})).toBeVisible();
+  const originalPage=await signIn('staff',390);await originalPage.goto('/?tab=work&item='+id+'&routineDate='+today);
+  const originalDate=originalPage.getByRole('region',{name:'Progress for a routine date',exact:true});
+  await expect(originalDate.getByText('Cover: Same Unit Fixture. Other dates keep their own assignment.',{exact:true})).toBeVisible();
+  await expect(originalDate.getByRole('button',{name:'Save date progress',exact:true})).toHaveCount(0);
+  await expect(originalPage.getByRole('button',{name:'Record occurrence',exact:true})).toHaveCount(0);
+  expect((await original.rpc('record_routine_occurrence',{p_work_item_id:id,p_occurred_on:today,p_note:'Original cannot claim cover'})).error?.code).toBe('42501');
+  const coveredPage=await signIn('sameunit',390);await coveredPage.goto('/?tab=work');
+  const recurring=coveredPage.getByRole('region',{name:'My scheduled recurring work',exact:true});await expect(recurring.getByRole('button').filter({hasText:title})).toBeVisible();
+  await recurring.getByRole('button').filter({hasText:title}).click();
+  const date=coveredPage.getByRole('region',{name:'Progress for a routine date',exact:true});await expect(date.getByText('Cover assigned to you. Other dates keep their own assignment.',{exact:true})).toBeVisible();
+  await coveredPage.goto('/?tab=calendar');
+  await expect(coveredPage.getByText(title,{exact:true}).first()).toBeVisible();
+  await coveredPage.getByText(title,{exact:true}).first().click();await expect(date.getByLabel('Scheduled date',{exact:true})).toHaveValue(today);
+  await date.getByLabel('Progress note',{exact:true}).fill('Actual cover inspection recorded by the colleague');
+  await date.getByRole('combobox',{name:'Status for this date',exact:true}).selectOption('ready_for_review');
+  await date.getByRole('button',{name:'Save date progress',exact:true}).click();await expect(date.getByText('1 recorded update for '+today,{exact:true})).toBeVisible();
+  const operation=await colleague.from('recurring_operations').select('id').eq('work_item_id',id).single();expect(operation.error).toBeNull();
+  const progress=await colleague.from('routine_date_progress').select('id,actor_id,scheduled_on').eq('operation_id',operation.data.id).single();expect(progress.error).toBeNull();expect(progress.data.actor_id).toBe('31000000-0000-4000-8000-000000000006');
+  const bytes=Buffer.from('Actual colleague cover proof '+title),filename='dated-cover-proof.txt';
+  const files=date.locator('.operational-files').filter({hasText:'Evidence files for '+today});await files.locator('input[type=file]').setInputFiles({name:filename,mimeType:'text/plain',buffer:bytes});await expect(files.getByRole('button').filter({hasText:filename})).toBeVisible();
+  const linked=await colleague.from('operational_file_links').select('file:operational_files!inner(storage_bucket,storage_path)').eq('context_type','routine_date_progress').eq('context_id',progress.data.id).single();expect(linked.error).toBeNull();
+  const downloaded=await colleague.storage.from(linked.data.file.storage_bucket).download(linked.data.file.storage_path);expect(downloaded.error).toBeNull();expect(Buffer.from(await downloaded.data.arrayBuffer())).toEqual(bytes);
+  expect((await original.rpc('register_operational_file',{p_context_type:'routine_date_progress',p_context_id:progress.data.id,p_relation:'routine_evidence',p_filename:'impersonate.txt',p_mime_type:'text/plain',p_size_bytes:12})).error?.code).toBe('42501');
+  await date.getByRole('button',{name:'Record occurrence',exact:true}).click();const dialog=coveredPage.getByRole('dialog');await dialog.getByPlaceholder('Note (optional)').fill('Cover colleague completed the inspection');await dialog.getByRole('button',{name:'Record occurrence',exact:true}).click();await expect(dialog).toHaveCount(0);
+  const outcome=await colleague.from('operation_occurrences').select('id,recorded_by').eq('operation_id',operation.data.id).single();expect(outcome.error).toBeNull();expect(outcome.data.recorded_by).toBe('31000000-0000-4000-8000-000000000006');
+  expect((await colleague.from('routine_occurrence_reviews').insert({org_id:'10000000-0000-4000-8000-000000000010',occurrence_id:outcome.data.id,reviewer_id:outcome.data.recorded_by,decision:'accepted'})).error?.code).toBe('42501');
+  await page.reload();await page.getByRole('button',{name:'Review date',exact:true}).click();
+  const review=page.getByRole('region',{name:'Routine occurrence review history',exact:true});await review.getByLabel('Review note',{exact:true}).fill('Independently verified the dated cover evidence');await review.getByRole('button',{name:'Record human review',exact:true}).click();
+  await expect(page.getByText(/Reviewed · accepted/).first()).toBeVisible();
+  expect((await manager.rpc('routine_set_date_cover',{p_work_item_id:id,p_scheduled_on:today,p_assignee_id:null,p_reason:'Cannot replace actual recorded contributor',p_expected_version:1})).error?.code).toBe('22023');
+  expect((await manager.from('work_items').select('assignee_id').eq('id',id).single()).data.assignee_id).toBe('31000000-0000-4000-8000-000000000001');
+  expect(await coveredPage.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  await coveredPage.screenshot({path:'test-artifacts/stage2-cover-colleague-phone.png',fullPage:true});await page.screenshot({path:'test-artifacts/stage2-cover-independent-manager.png',fullPage:true});
+ }finally{for(const context of contexts)await context.close();}
+});

@@ -42,10 +42,10 @@ test('a delayed previous-date schedule cannot replace the selected skipped date'
  assert.ok(start>=0 && end>start);
  const body=source.slice(start+' useEffect(()=>{'.length,end);
  const setters=['setHistory','setVerified','setDateScheduleState','setError','setWriteError','setLimit','setHistoryOpen','setDone','setNote','setLinks','setStatus'];
- const effect=new Function('context','const {'+['readRoutineSchedulePreview','readRoutineDateProgress','supabase','item','routine','date','me','scope','steps',...setters].join(',')+'}=context;'+body);
+ const effect=new Function('context','const {'+['readRoutineSchedulePreview','readRoutineCovers','routineCoverKey','setCover','readRoutineDateProgress','supabase','item','routine','date','me','scope','steps',...setters].join(',')+'}=context;'+body);
  let resolveOld,progressReads=0; const state={};
  const oldPreview=new Promise(resolve=>{resolveOld=resolve;});
- const context={supabase:{},item:{id:'work'},routine:{id:'operation'},date:'2026-10-22',me:{org_id:'org'},scope:'old',steps:[],
+ const context={readRoutineCovers:async()=>new Map(),routineCoverKey:(id,date)=>id+':'+date,setCover:()=>{},supabase:{},item:{id:'work'},routine:{id:'operation'},date:'2026-10-22',me:{org_id:'org'},scope:'old',steps:[],
   readRoutineSchedulePreview:()=>oldPreview,
   readRoutineDateProgress:async()=>{progressReads++;return [];}};
  for(const name of setters) context[name]=value=>{state[name]=value;};

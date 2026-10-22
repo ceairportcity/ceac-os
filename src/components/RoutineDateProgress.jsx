@@ -1,3 +1,5 @@
+import RoutineDateCover from "./RoutineDateCover";
+import {readRoutineCovers,routineCoverKey,routineDateAssignee} from "../lib/routineDateCovers";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { OperationalFileList } from "./OperationalFiles";
@@ -9,10 +11,11 @@ import RoutineSingleDateException from "./RoutineSingleDateException";
 
 const labels={in_progress:"In progress",waiting_on:"Waiting on",ready_for_review:"Ready for review"};
 /** One dated routine history, never the master task's checklist/completion. */
-export default function RoutineDateProgress({me,item,routine,steps,canRecord=false,canManageDates=false,initialDate=null}) {
+export default function RoutineDateProgress({me,item,routine,steps,canRecord=false,canManageDates=false,canRecordAsReviewer=false,onRecordOccurrence,initialDate=null}) {
  const [date,setDate]=useState(()=>validRoutineDate(initialDate)||ghanaCalendarDate());
  const [history,setHistory]=useState([]),[verified,setVerified]=useState("");
  const [dateScheduleState,setDateScheduleState]=useState("");
+ const [cover,setCover]=useState(null);
  const [error,setError]=useState(""),[writeError,setWriteError]=useState("");
  const [status,setStatus]=useState("in_progress"),[done,setDone]=useState([]);
  const [note,setNote]=useState(""),[links,setLinks]=useState("");
@@ -24,19 +27,24 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
  const sending=useRef(false);
  const ready=verified===scope && !error;
  const rows=ready?history:[];
- const permitted=canRecord && dateScheduleState!=="skipped" && routine.active && !routine.paused_at && item.visibility==="unit" && !item.confidential;
+ const dateAssignee=routineDateAssignee(item,cover);
+ const permitted=(canRecordAsReviewer || (dateAssignee?dateAssignee===me.id:canRecord)) && dateScheduleState!=="skipped" && routine.active && !routine.paused_at && item.visibility==="unit" && !item.confidential;
  const stepKey=steps.map(step=>step.id+":"+step.label).join("|");
  useEffect(()=>{
   let active=true;
-  setHistory([]);setVerified("");setDateScheduleState("");setError("");setWriteError("");setLimit(5);setHistoryOpen(false);
+  setHistory([]);setVerified("");setCover(null);setDateScheduleState("");setError("");setWriteError("");setLimit(5);setHistoryOpen(false);
   setDone([]);setNote("");setLinks("");setStatus("in_progress");
   (async()=>{
    try {
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Choose a valid scheduled date.");
-    const dates=await readRoutineSchedulePreview(supabase,[item.id],{fromDate:date,throughDate:date});
+    const [dates,covers]=await Promise.all([
+     readRoutineSchedulePreview(supabase,[item.id],{fromDate:date,throughDate:date}),
+     readRoutineCovers(supabase,me,{fromDate:date,throughDate:date,workItemId:item.id}),
+    ]);
     if(!active) return;
     if(dates.length!==1 || dates[0].operationId!==routine.id)
      throw new Error("This date is not scheduled for this responsibility.");
+    setCover(covers.get(routineCoverKey(routine.id,date))||null);
     if(dates[0].state==="skipped"){
       if(!active)return;
       setDateScheduleState("skipped");setHistory([]);setVerified(scope);return;
@@ -81,6 +89,8 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
   <button type="button" className="text-action" disabled={busy} onClick={()=>setReload(n=>n+1)}>Refresh date</button>
   <RoutineSingleDateException me={me} operationId={routine.id} workItemId={item.id} date={date}
     canManage={canManageDates} scheduleVerified={ready} onChanged={()=>setReload(n=>n+1)} />
+  <RoutineDateCover key={scope} me={me} item={item} date={date} cover={cover} verified={ready}
+   canManage={canRecordAsReviewer} hasEvidence={rows.length>0||dateScheduleState==="recorded"||dateScheduleState==="skipped"} onChanged={()=>{setVerified("");setReload(n=>n+1);}} />
   {ready && <>
    <p className="small">{dateScheduleState==="skipped"?"This occurrence was explicitly skipped. No progress or outcome is implied.":rows.length?labels[rows[0].status]:"No progress recorded for this date."} · Record the outcome separately when this date is finished.</p>
    {permitted && <form className="s2-routine-review-form" onSubmit={save}>
@@ -99,6 +109,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
      {busy?"Saving date progress…":"Save date progress"}
     </button>
    </form>}
+   {permitted&&onRecordOccurrence&&dateScheduleState!=="recorded"&&date<=ghanaCalendarDate()&&<button type="button" className="btn" onClick={()=>onRecordOccurrence(date)}>Record occurrence</button>}
    {rows[0] && <OperationalFileList key={rows[0].id} contextType="routine_date_progress" contextId={rows[0].id}
     relation="routine_evidence" title={"Evidence files for "+date} emptyText="No files attached to this update."
     canUpload={permitted && rows[0].actor_id===me.id && !busy && !writeError} />}

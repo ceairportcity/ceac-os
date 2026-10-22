@@ -1,3 +1,4 @@
+import {readRoutineCovers,includeCoveredRoutineWork,routineCoverKey,routineCoverLabel} from "./routineDateCovers.js";
 import { readRoutineSchedulePreview, routineDueLabel } from "./readRoutineSchedulePreview.js";
 
 export const routineCalendarStatus = state => ({
@@ -31,16 +32,20 @@ async function readAll(query) {
 /** Read-only organisational projection. Never writes private Calendar instances. */
 export async function readRoutineCalendar(client, me, { scope, fromDate, throughDate }) {
   if (!me?.id || !me.org_id || !["own", "unit"].includes(scope) || scope === "unit" && !me.unit_id) throw error();
-  const work = await readAll(() => {
+  let work = await readAll(() => {
     let query = client.from("work_items")
       .select("id,ref,title,org_id,unit_id,assignee_id", { count: "exact" })
       .eq("org_id", me.org_id).eq("kind", "routine").neq("visibility", "private").order("id");
     return scope === "own" ? query.eq("assignee_id", me.id) : query.eq("unit_id", me.unit_id);
   });
+  if(work.some(row=>row.org_id!==me.org_id||(scope==="own"?row.assignee_id!==me.id:row.unit_id!==me.unit_id)))throw error();
+  const covers=await readRoutineCovers(client,me,{fromDate,throughDate});
+  const originalIds=new Set(work.map(row=>row.id));
+  if(scope==="own")work=await includeCoveredRoutineWork(client,me,work,covers,"id,ref,title,org_id,unit_id,assignee_id");
   const byId = new Map();
   for (const row of work) {
     if (!row.id || byId.has(row.id) || row.org_id !== me.org_id
-      || (scope === "own" ? row.assignee_id !== me.id : row.unit_id !== me.unit_id)) throw error();
+      || (scope === "own" ? originalIds.has(row.id)&&row.assignee_id !== me.id : row.unit_id !== me.unit_id)) throw error();
     byId.set(row.id, row);
   }
   const workIds = [...byId.keys()];
@@ -63,16 +68,19 @@ export async function readRoutineCalendar(client, me, { scope, fromDate, through
   }
   const dates = await readRoutineSchedulePreview(client, workIds, { fromDate, throughDate });
   if (dates.length > 20000) throw error();
-  return dates.map(item => {
+  return dates.flatMap(item => {
     const source = byOperation.get(item.operationId);
     if (!source) throw error();
-    return {
+    const cover=covers.get(routineCoverKey(item.operationId,item.date));
+    if(scope==="own"&&source.assignee_id!==me.id&&!(cover?.action==="assign"&&cover.assignee_id===me.id))return [];
+    const coverLabel=routineCoverLabel(cover,me);
+    return [{
       id: "routine-" + item.operationId + "-" + item.date,
       kind: "work", type: "tasks", date: calendarDay(item.dueAt),
       title: source.title, itemId: source.id, sortAt: item.dueAt,
       time: new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" }).format(new Date(item.dueAt)),
-      meta: source.ref + " · Routine · " + routineDueLabel(item) + " · " + routineCalendarStatus(item.state),
+      meta: source.ref + " · Routine · " + routineDueLabel(item) + " · " + routineCalendarStatus(item.state)+(coverLabel?" · "+coverLabel:""),
       routineState: item.state, scheduledOn: item.date,
-    };
+    }];
   });
 }
