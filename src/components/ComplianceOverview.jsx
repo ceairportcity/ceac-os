@@ -51,6 +51,7 @@ export default function ComplianceOverview({
   evidenceLatest,
   exceptionLatest,
   openWork,
+  openObservations,
   openAnnouncements,
 }) {
   const facts = useMemo(() => {
@@ -100,7 +101,8 @@ export default function ComplianceOverview({
         <p>Attendance evidence and policy attention remain separate. “No session recorded” is not an absence or misconduct finding.</p>
       </div>
       <div className="compliance-overview-actions">
-        {openWork && <button className="btn btn-ghost btn-sm" onClick={openWork}>Open authorised work</button>}
+        {openObservations && <button type="button" className="btn btn-sm" onClick={openObservations}>Review attendance observations</button>}
+        {openWork && <button className="btn btn-ghost btn-sm" onClick={openWork}>Open authorised work</button>
         {openAnnouncements && <button className="btn btn-sm" onClick={openAnnouncements}>Publish policy instruction</button>}
       </div>
     </section>
