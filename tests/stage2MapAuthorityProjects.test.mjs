@@ -12,7 +12,7 @@ const projects=source("src/screens/ManagerProjects.jsx");
 test("no external street tiles are requested before explicit viewer approval",()=>{
  assert.match(map,/consent\?visibleStreetTiles\(/);
  assert.match(map,/setConsent\(true\)/);
- assert.match(map,/referrerPolicy="no-referrer"/);
+ assert.match(map,/referrerPolicy="strict-origin-when-cross-origin"/);
  assert.match(map,/© OpenStreetMap contributors/);
  assert.match(map,/Staff identities and exact work-start records are not sent/);
  assert.doesNotMatch(map,/navigator\.geolocation/);
