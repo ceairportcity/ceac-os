@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { approvedOfficeWeekTemplate } from "../lib/approvedOfficeWeekTemplate";
+import { workforceRecordedWeek } from "../lib/workforceRecordedWeek";
 
 const DAYS = [
   ["mon","Monday"],["tue","Tuesday"],["wed","Wednesday"],
@@ -16,6 +17,8 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
   const authorised = Boolean(me?.is_admin) && (me.capabilities || []).includes("workforce.manage");
   const [dayTypes,setDayTypes] = useState([]);
   const [versions,setVersions] = useState([]);
+  const [historyCount,setHistoryCount] = useState(0);
+  const [previewId,setPreviewId] = useState("");
   const [days,setDays] = useState(emptyDays);
   const [startDate,setStartDate] = useState("");
   const [endDate,setEndDate] = useState("");
@@ -36,22 +39,24 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
         .eq("org_id",me.org_id).eq("active",true).order("name"),
       (employeeId
         ? supabase.from("workforce_schedule_versions")
-            .select("id,effective_from,effective_to,day_map,clock_map,reason,created_at")
+            .select("id,effective_from,effective_to,day_map,clock_map,reason,created_at", { count:"exact" })
             .eq("org_id",me.org_id)
             .or(profileId ? "employee_id.eq."+employeeId+",profile_id.eq."+profileId : "employee_id.eq."+employeeId)
         : supabase.from("workforce_schedule_versions")
-            .select("id,effective_from,effective_to,day_map,clock_map,reason,created_at")
+            .select("id,effective_from,effective_to,day_map,clock_map,reason,created_at", { count:"exact" })
             .eq("org_id",me.org_id).eq("profile_id",profileId))
         .order("created_at",{ascending:false}).limit(20),
     ]);
     if (token !== generation.current) return false;
     setLoading(false);
-    if (types.error || schedules.error) {
+    if (types.error || schedules.error || !Number.isInteger(schedules.count) || schedules.count < (schedules.data||[]).length) {
       setError("The employee's authoritative schedule could not be loaded. No change was made.");
       return false;
     }
     setDayTypes(types.data || []);
     setVersions(schedules.data || []);
+    setHistoryCount(schedules.count);
+    setPreviewId(old=>(schedules.data||[]).some(version=>version.id===old)?old:"");
     setError("");
     return true;
   }
@@ -60,6 +65,8 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     generation.current += 1;
     writeBusy.current = false;
     setEdit(false);
+    setPreviewId("");
+    setHistoryCount(0);
     setDays(emptyDays());
     setStartDate("");
     setEndDate("");
@@ -73,8 +80,11 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
   if (!authorised || (!profileId && !employeeId)) return null;
 
   const previous = versions[0] || null;
+  const inspected = versions.find(version=>version.id===previewId) || previous;
+  const previewDays = workforceRecordedWeek(inspected,dayTypes);
   const officeTemplate = approvedOfficeWeekTemplate(dayTypes);
   function beginEdit() {
+    setPreviewId("");
     setDays(Object.fromEntries(DAYS.map(([key]) => [key,{
       type:previous?.day_map?.[key] || "",
       start:dateOf(previous?.clock_map?.[key]?.start).slice(0,5),
@@ -155,8 +165,27 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     {loading && <p role="status">Loading the employee's schedule...</p>}
     {error && <p role="alert">{error}</p>}
     {notice && <p role="status">{notice}</p>}
-    {!loading && previous &&
-      <p className="screen-note">Latest recorded version: {dateOf(previous.effective_from)}{previous.effective_to ? " to "+dateOf(previous.effective_to) : " onward"}. Reason: {previous.reason || "Not available"}.</p>}
+    {!loading && previous && <div className="ev2p-admin-schedule-history">
+      <p className="screen-note"><strong>{inspected?.id === previous.id ? "Latest recorded version" : "Earlier saved version"}:</strong> {dateOf(inspected.effective_from)}{inspected.effective_to ? " to "+dateOf(inspected.effective_to) : " onward"}. This is a recorded HR pattern, not evidence of actual attendance.</p>
+      <div className="ev2p-admin-schedule-week" role="table" aria-label="Saved employee seven-day working week">
+        <div role="row" className="ev2p-admin-schedule-week-head">
+          <strong role="columnheader">Day</strong><strong role="columnheader">Day type</strong><strong role="columnheader">Expected hours</strong>
+        </div>
+        {previewDays.map(day=><div role="row" key={day.key} className="ev2p-admin-schedule-week-row">
+          <span role="cell">{day.label}</span><span role="cell">{day.typeName}</span><span role="cell">{day.hours}</span>
+        </div>)}
+      </div>
+      <p className="screen-note">Recorded reason: {inspected.reason || "Not available"}.</p>
+      {versions.length>1&&<label className="small">Inspect a saved schedule version
+        <select className="field" aria-label="Inspect recorded schedule version" value={inspected.id}
+         onChange={event=>setPreviewId(event.target.value)}>
+          {versions.map((version,index)=><option key={version.id} value={version.id}>
+            {index===0?"Latest":`Earlier #${index+1}`} · {dateOf(version.effective_from)} · {dateOf(version.created_at)}
+          </option>)}
+        </select>
+      </label>}
+      {historyCount>versions.length&&<p className="screen-note">Showing the {versions.length} most recently recorded of {historyCount} versions; older records remain in the authorised history.</p>}
+    </div>}
     {!loading && !previous && <p className="screen-note">No HR-authorised individual work schedule is recorded yet.</p>}
     {!loading && dayTypes.length===0 && <p className="screen-note">Administration must configure approved day types (including duty and weekly off-day) in Workforce before recording an individual pattern.</p>}
     {!loading && dayTypes.length>0 && !edit &&
