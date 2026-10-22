@@ -6,6 +6,11 @@
 
 # CEAC Engineering Operating Playbook
 
+### 22 October — qualify one-date assignment through the complete authority chain
+
+Use the existing routine engine and separate dated assignee from series owner, actual contributor and independent reviewer. Reuse the same date lock/authority at progress, outcome, file registration/finalisation AND the restrictive Storage INSERT policy; testing only metadata registration misses a real byte-upload denial. Test both individual/shared restoration, original-assignee denial, current account/unit checks and concurrent cover/proof. In a browser use the observed role's actual Calendar route (Staff: staff-calendar, Manager: calendar) and actual combobox role/name. A failed selector or wrong test route is not an application defect; inspect trace/page/API evidence before widening permissions. Raw failed runs remain failed. Read latest owner-repair entry for323e0f64 acceptance and private commands; frozen final182 replay/release is still pending.
+
+
 ### Local replay fidelity corrections
 
 The passing 52-gate run depends on reproducing the managed database execution context accurately:
