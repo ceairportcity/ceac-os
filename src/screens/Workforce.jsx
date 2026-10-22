@@ -864,18 +864,6 @@ export default function Workforce({ me }) {
         <button className="btn" style={{marginTop:14}} disabled={busy||dayTypeName.trim().length<2} onClick={recordDayType}>Record day type</button>
       </Sheet>}
 
-      {scheduleSheet&&canManage&&<Sheet onClose={()=>!busy&&setScheduleSheet(false)}>
-        <div className="h2">Record workforce schedule</div><p className="screen-note">Hours apply to the selected weekday only. Leave both clocks blank to record hours as unconfigured.</p>
-        <FieldGroup label="Person"><select className="field" aria-label="Schedule person" value={schedulePerson} onChange={e=>setSchedulePerson(e.target.value)}>{people.map(p=><option key={p.profile_id} value={p.profile_id}>{p.profiles?.full_name}</option>)}</select></FieldGroup>
-        <div className="form-grid two"><FieldGroup label="Day"><select className="field" aria-label="Schedule weekday" value={scheduleDay} onChange={e=>setScheduleDay(e.target.value)}>{DAY_KEYS.map(k=><option key={k} value={k}>{DAY_LABELS[k]}</option>)}</select></FieldGroup><FieldGroup label="Day type"><select className="field" aria-label="Schedule day type" value={scheduleDayType} onChange={e=>setScheduleDayType(e.target.value)}>{dayTypes.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></FieldGroup></div>
-        <div className="form-grid two"><FieldGroup label="Effective from"><input className="field" type="date" value={scheduleFrom} onChange={e=>setScheduleFrom(e.target.value)}/></FieldGroup><FieldGroup label="Effective to"><input className="field" type="date" value={scheduleTo} onChange={e=>setScheduleTo(e.target.value)}/></FieldGroup></div>
-        <div className="form-grid two"><FieldGroup label="Expected start"><input className="field" type="time" value={scheduleStart} onChange={e=>setScheduleStart(e.target.value)}/></FieldGroup><FieldGroup label="Expected end"><input className="field" type="time" value={scheduleEnd} onChange={e=>setScheduleEnd(e.target.value)}/></FieldGroup></div>
-        <FieldGroup label="Reason"><textarea className="field" aria-label="Schedule reason" rows="2" value={scheduleReason} onChange={e=>setScheduleReason(e.target.value)}/></FieldGroup>
-        <button className="btn" style={{marginTop:14}} disabled={busy||!schedulePerson||!scheduleDayType||scheduleReason.trim().length<3} onClick={recordSchedule}>Record schedule</button>
-      </Sheet>}
-
-
-
       {policySheet&&canManage&&<Sheet onClose={()=>!busy&&setPolicySheet(false)}>
         <div className="h2">{activePolicy?"Create leave policy revision":"Configure confirmed leave policy"}</div>
         <p className="screen-note">Enter only CEAC-confirmed values. Activating this version makes it the organisation policy record.</p>
@@ -1170,9 +1158,7 @@ export default function Workforce({ me }) {
         <WorkforceEmployeeScheduleWorkspace me={me} />
         <div className="ev2wf-toolbar">
           <Button variant="secondary" onClick={()=>setDayTypeSheet(true)}>Add day type</Button>
-          <details><summary>Adjust one weekday (legacy)</summary>
-            <Button variant="secondary" disabled={busy||!dayTypes.length||!people.length} title={!people.length?"No visible active profiles loaded":!dayTypes.length?"No active day types loaded":""} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Open one-weekday editor</Button>
-          </details>
+          <p className="screen-note">Choose an employee above to review all seven days, change a weekday and confirm an effective-dated successor. Historical one-day schedule records remain preserved; new changes use the unified editor.</p>
           <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
         <details className="ev2wf-admin-advanced" style={{margin:"12px 0"}}><summary>Duty-location check-in codes</summary><AttendanceCodeIssuer me={me} /></details>
