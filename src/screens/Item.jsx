@@ -694,7 +694,8 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         </div>}
         {checks.length > 0 && <section aria-label="Routine method"><h3>Steps to repeat each time</h3><ol>{checks.map(step => <li key={step.id}>{step.label}</li>)}</ol></section>}
         <RoutineDateProgress me={me} item={item} routine={routine} steps={checks} initialDate={initialRoutineDate}
-          canRecord={Boolean(item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin)} />
+          canRecord={Boolean(item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin)}
+          canManageDates={Boolean(me.is_admin || isManager && item.unit_id===me.unit_id || item.origin==="self_created" && item.assignee_id===me.id && item.assigned_by===me.id)} />
         {routineOccurrences.length > 0 && <>
           <div className="sec"><span>Recent occurrences</span><span>{routineOccurrences.length}</span></div>
           <RoutineOccurrenceReviews me={me} item={item} occurrences={routineOccurrences}
