@@ -20,6 +20,7 @@ import EmployeeScheduleEditor from "../components/EmployeeScheduleEditor";
 import RosterOnlyEmploymentEditor from "../components/RosterOnlyEmploymentEditor";
 import LinkedEmployeeContactEditor from "../components/LinkedEmployeeContactEditor";
 import RosterAccountLink from "../components/RosterAccountLink";
+import HRCreateRosterEmployee from "../components/HRCreateRosterEmployee";
 import EmployeeDossierRecords from "../components/EmployeeDossierRecords";
 import EmployeeAttendanceObservations from "../components/EmployeeAttendanceObservations";
 import {
@@ -63,6 +64,7 @@ function avgStartLabel(minutes) {
 
 export default function People({ me, openItem, go, openLifecycle, onManagePermissions=null, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
+  const [creatingEmployee,setCreatingEmployee] = useState(false);
   const [operationalDirectory, setOperationalDirectory] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
@@ -115,6 +117,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     // Invitation prefill may contain a person's private HR contact details.
     // Never retain a selection when the signed HR actor or tenant changes.
     setAccessInviteRoster(null);
+    setCreatingEmployee(false);
     void load();
     return () => { rosterGeneration.current += 1; personGeneration.current += 1; };
   }, [me.id, me.org_id]);
@@ -231,7 +234,11 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     // legitimate People & Access / HR actions or tempt anyone to bypass RLS.
     if (generation !== rosterGeneration.current) return false;
     setVerifiedRosterScope(scopeKey);
-    setOperationalDirectory(operationalPeople.map((entry)=>({id:entry.id,full_name:entry.full_name})));
+    setOperationalDirectory(operationalPeople.map((entry)=>({
+      id:entry.id,full_name:entry.full_name,email:entry.email||null,
+      active:entry.active,unit_id:entry.unit_id,unit_name:entry.unit_name,
+      role:entry.role,
+    })));
     setRows(rosterRows);
     setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
     setUnits(unitsResult.data || []);
@@ -1306,6 +1313,10 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     !entry.unit_id && !(entry.roster_units || []).length ? "No unit recorded" : null,
   ].filter(Boolean);
   const attentionRoster = roster.filter((entry) => attentionReasons(entry).length);
+  const unlinkedAccounts=operationalDirectory.filter(account=>account.active && !rows.some(entry=>entry.profile_id===account.id));
+  const unmatchedAccounts=unlinkedAccounts.filter(account=>!cleanSearch||[
+    account.full_name,account.email,account.unit_name,
+  ].filter(Boolean).some(value=>String(value).toLowerCase().includes(cleanSearch)));
   const unitsWithoutHead = units.filter((unit) => !rows.some((entry) =>
     entry.profile_id && entry.active && entry.role === "manager" && (
       entry.unit_id === unit.id || (entry.roster_units || []).some((membership) => membership.unit_id === unit.id)
@@ -1321,6 +1332,22 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       countLabel={rows.length === 1 ? "person" : "people"}
     />
 
+    {creatingEmployee && <HRCreateRosterEmployee
+      units={units} employees={rows} accounts={operationalDirectory}
+      onClose={()=>setCreatingEmployee(false)}
+      onCreated={async employee=>{
+        if(!(await load({silent:true})))throw new Error("The employee was created but the directory did not refresh. Recheck existing employees before retrying.");
+        setCreatingEmployee(false);
+        setSearchText("");
+        setFilter("all");
+        setViewMode("directory");
+        await openPerson({
+          id:employee.id,employee_id:employee.id,profile_id:null,
+          full_name:employee.full_name,employment_status:employee.employment_status,
+          job_title:employee.job_title,identity_state:"roster_only",active:employee.employment_status==="active",
+        });
+      }}
+    />}
     {error && <ProductNotice tone="error" title="People could not finish loading" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice>}
     {detailLoading && <LoadingState label="Opening employee record…" />}
     {!leavePolicy && <ProductNotice tone="attention" title="Leave policy not configured">People records show leave actually taken, but CEAC OS will not calculate entitlement or remaining leave until Administration confirms the policy.</ProductNotice>}
@@ -1354,6 +1381,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
 
     {viewMode === "directory" && <div className="ev2p-admin-control-band">
     <div className="ev2p-admin-toolbar">
+      <button type="button" className="btn" onClick={()=>setCreatingEmployee(true)}>Add employee</button>
       <FieldGroup label="Find a person">
         <input
           className="field"
@@ -1406,6 +1434,34 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           </span>
           <span className="fpg-people-roster-open" aria-hidden="true">›</span>
         </button>)}
+      </div>
+    </section>}
+
+    {(viewMode === "directory" || viewMode === "attention") && unlinkedAccounts.length>0 && <section
+      className="ev2p-account-reconciliation" aria-label="Operational accounts without linked employee records"
+      style={{marginTop:20,border:"1px solid var(--ev2-line,var(--line))",borderRadius:10,padding:16}}>
+      <header style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap",alignItems:"center"}}>
+        <div><span className="eyebrow">Identity reconciliation</span>
+          <h2 className="h3">Operational accounts without HR roster links</h2>
+          <p className="screen-note">These are existing CEAC accounts, not additional employees. Review the correct HR person and independent evidence before using the existing verified account-link workflow. No automatic matching or permission changes.</p>
+        </div>
+        <strong>{unlinkedAccounts.length} to review</strong>
+      </header>
+      <div style={{display:"grid",gap:8,marginTop:12}}>
+        {unmatchedAccounts.map(account=><article key={account.id}
+          style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",borderTop:"1px solid var(--ev2-line,var(--line))",paddingTop:9}}>
+          <div style={{display:"grid",gap:2,minWidth:0}}>
+            <strong>{account.full_name||"Operational account"}</strong>
+            <span className="screen-note">{account.email||"Account email unavailable"} · {account.unit_name||"Unit unrecorded"} · Employee link not verified</span>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={()=>{
+              setSearchText(account.full_name||"");setFilter("all");setViewMode("directory");
+            }}>Find roster person</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={()=>openAccessAdministration(account.id)}>Review account access</button>
+          </div>
+        </article>)}
+        {unmatchedAccounts.length===0&&<p className="screen-note">No unmatched accounts match the current search. Clear the search to review all accounts.</p>}
       </div>
     </section>}
 
