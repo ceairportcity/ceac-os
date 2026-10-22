@@ -18,13 +18,13 @@ const budgets = {
   // retain narrow regression headroom rather than exempting the new product CSS.
   coreCssRaw: 534 * KIB,
   coreCssGzip: 80 * KIB,
-  // The owner-approved Executive design and minimum 12px readable helper
-  // typography add a measured 526 bytes beyond the former 616 KiB aggregate
-  // ceiling (exact integrated CI: 631310 bytes on 15 Oct 2026).
-  // The narrowly revised 617 KiB ceiling leaves only 498 bytes headroom;
-  // core CSS, route CSS, JS chunks and vendor budgets remain unchanged.
-  // This is an explicit accessibility-driven measurement, not a blanket waiver.
-  allCssRaw: 617 * KIB,
+  // Measured combined 22 Oct Stage 2 HR, Compliance map, seven-day schedule,
+  // Work and People modules emit 634667 CSS bytes (Quality Gate 39820481733).
+  // Their owner-approved new surfaces supersede the 15-Oct 631310-byte
+  // reference. The exact 620 KiB ceiling leaves only 213 bytes headroom.
+  // Retain the core CSS/gzip and every per-route/vendor/JS budget unchanged:
+  // this is a narrow measured Stage 2 budget rebasing, not an unlimited waiver.
+  allCssRaw: 620 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;
