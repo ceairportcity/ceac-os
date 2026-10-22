@@ -18,6 +18,21 @@ INSERT INTO public.employee_roster
 VALUES('41000000-0000-4000-8000-000000000179','10000000-0000-4000-8000-000000000010',
  'Roster-only edit fixture','not_recorded','active','roster_only','stage2_roster_gate','roster-only-179',
  'Original imported reviewer note');
+-- Create the linked employee test row while the migration test harness
+-- still has its setup role; authenticated clients can never insert roster
+-- rows directly. The entire transaction is rolled back.
+INSERT INTO public.employee_roster(
+ id,org_id,profile_id,full_name,preferred_name,employment_type,
+ employment_status,identity_state,source_system,source_row_key)
+SELECT '41000000-0000-4000-8000-000000000182',p.org_id,p.id,
+ p.full_name,p.preferred_name,'not_recorded','active','linked',
+ 'stage2_hr_linked_contact_gate','linked-contact-182'
+FROM public.profiles p
+WHERE p.id='31000000-0000-4000-8000-000000000001'
+AND NOT EXISTS (
+ SELECT 1 FROM public.employee_roster r
+ WHERE r.org_id=p.org_id AND r.profile_id=p.id
+);
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
@@ -155,18 +170,7 @@ BEGIN
  SELECT id INTO v_employee FROM public.employee_roster
    WHERE org_id=(SELECT org_id FROM public.profiles WHERE id=v_staff)
      AND profile_id=v_staff;
- IF v_employee IS NULL THEN
-  -- The role fixture supplies a valid profile, not necessarily a historical
-  -- roster link. Create ONLY a rollback-scoped linked roster fixture: no
-  -- Auth user, operational membership or role grant is created here.
-  INSERT INTO public.employee_roster(
-   id,org_id,profile_id,full_name,preferred_name,employment_type,
-   employment_status,identity_state,source_system,source_row_key)
-  SELECT '41000000-0000-4000-8000-000000000182',p.org_id,p.id,
-    p.full_name,p.preferred_name,'not_recorded','active','linked',
-    'stage2_hr_linked_contact_gate','linked-contact-182'
-  FROM public.profiles p WHERE p.id=v_staff RETURNING id INTO v_employee;
- END IF;
+
  IF v_employee IS NULL THEN
   RAISE EXCEPTION 'Linked profile and its rollback-only employee fixture were unavailable';
  END IF;
