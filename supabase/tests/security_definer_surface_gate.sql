@@ -174,13 +174,14 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.routine_change_single_date(p_work_item_id uuid, p_scheduled_on date, p_action text, p_reason text, p_expected_version integer)'),
  ('public.routine_set_date_cover(p_work_item_id uuid, p_scheduled_on date, p_assignee_id uuid, p_reason text, p_expected_version integer)');
 
--- Precisely reviewed owner corrective HR and Compliance surfaces in 178–181.
+-- Precisely reviewed owner corrective HR and Compliance surfaces in 178–182.
 -- The internal Compliance visibility helper deliberately has NO authenticated
 -- execute grant and therefore MUST NOT be added to this REST allowlist.
 insert into s2_expected_authenticated_definers(signature) values
  ('public.admin_confirm_existing_roster_account_link(p_employee_id uuid, p_profile_id uuid, p_expected_updated_at timestamp with time zone, p_evidence_file_id uuid, p_confirmed_account_email text, p_independently_verified boolean, p_reason text)'),
  ('public.admin_employee_published_development(p_profile_id uuid)'),
  ('public.admin_record_roster_employment_profile(p_employee_id uuid, p_expected_updated_at timestamp with time zone, p_full_name text, p_preferred_name text, p_job_title text, p_employment_type text, p_employment_status text, p_primary_unit_id uuid, p_secondary_unit_ids uuid[], p_manager_profile_id uuid, p_contact_email text, p_contact_phone text, p_started_on date, p_reason text)'),
+ ('public.admin_record_linked_person_contact(p_profile_id uuid, p_expected_full_name text, p_expected_preferred_name text, p_expected_phone text, p_full_name text, p_preferred_name text, p_phone text, p_reason text)'),
  ('public.compliance_attendance_case_action(p_case_id uuid, p_expected_status text, p_action text, p_explanation text, p_evidence_reference text, p_referral_target text)'),
  ('public.compliance_attendance_case_register(p_date_from date, p_date_to date)'),
  ('public.compliance_record_attendance_observation(p_employee_id uuid, p_work_date date, p_category text, p_factual_note text, p_interpretation_note text, p_evidence_reference text)');
@@ -232,7 +233,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>157 or v_expected<>157 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>158 or v_expected<>158 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
