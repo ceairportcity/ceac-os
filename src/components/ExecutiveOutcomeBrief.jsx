@@ -10,7 +10,7 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
  const print=()=>window.print();
  return <section className="s2-exec-brief" aria-label="Executive outcomes briefing">
   <header className="s2-exec-brief-head">
-    <div><span>Christ Embassy Airport City · Executive reporting</span><h2>Quarterly ministry results and next decisions</h2>
+    <div><span>Christ Embassy Airport City · Executive reporting</span><h2>{quarter ? "Quarterly ministry results and next decisions" : "Ministry reporting evidence (custom period)"}</h2>
       <p>{quarter ? quarter.label : period.label} · {period.starts_on} — {period.ends_on}. Issued organisational evidence, not automatic employee scoring.</p>
       <p>Report prepared {new Date().toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"long",year:"numeric"})} · Source records may change after this print.</p></div>
     <button className="s2-exec-brief-print" type="button" disabled={Boolean(readError)||!quarter} onClick={print}>Print / Save as PDF</button>
