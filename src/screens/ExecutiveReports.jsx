@@ -25,7 +25,7 @@ export default function ExecutiveReports({ me, openItem }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [view, setView] = useState("all");
-  const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[]});
+  const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[]});
   const [outcomeError,setOutcomeError] = useState(null);
 
   // An old Executive report response must never populate a newly signed-in
@@ -53,7 +53,7 @@ export default function ExecutiveReports({ me, openItem }) {
     setLoading(true); setReadyActor(null); setFailedActor(null); setError(null);
     setPeriod(null); setPeriodOptions([]); setUnits([]); setReports([]);
     setOutcomeError(null);
-    setOutcomeSources({issued:[],objectives:[],milestones:[]});
+    setOutcomeSources({issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[]});
     try {
       const [periodResult, unitResult] = await Promise.all([
         supabase.from("report_periods")
@@ -81,7 +81,7 @@ export default function ExecutiveReports({ me, openItem }) {
 
       let nextReports = [];
       let nextOutcomeError = null;
-      let nextSources = {issued:[],objectives:[],milestones:[]};
+      let nextSources = {issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[]};
       if (selectedPeriod) {
         const reportResult = await supabase.from("reports")
           .select("unit_id,status,version,submitted_at", { count: "exact" })
@@ -111,7 +111,30 @@ export default function ExecutiveReports({ me, openItem }) {
         if (detailsError) {
           nextOutcomeError="Leadership evidence could not be verified completely. Detailed totals are withheld.";
         } else {
-          nextSources={issued:issued.data||[],objectives:objectives.data||[],milestones:milestones.data||[]};
+          // Only read the exact latest ISSUED revision per unit. A later draft
+          // or superseded published revision must not become a new commitment
+          // or double-count a previously filed target/evidence reference.
+          const latestIssued = Object.values(latestUnitReportStatus(issued.data || []))
+            .filter(isIssuedUnitReport);
+          const issuedIds = latestIssued.map(row=>row.id);
+          if (issuedIds.length) {
+            const [targets,refs] = await Promise.all([
+              supabase.from("report_targets")
+                .select("id,report_id,name,target_value,target_unit,achieved_value,next_target_value,note,position",{count:"exact"})
+                .in("report_id",issuedIds).order("position",{ascending:true}).limit(501),
+              supabase.from("report_evidence_refs")
+                .select("id,report_id,section,object_type,object_id,label",{count:"exact"})
+                .in("report_id",issuedIds).limit(501),
+            ]);
+            const invalid=[targets,refs].some(response=>response.error || !Array.isArray(response.data)
+              || !Number.isInteger(response.count) || response.count!==response.data.length || response.count>500);
+            if (invalid) nextOutcomeError="Issued unit target and evidence references could not be verified completely. No detailed briefing will be shown.";
+            else nextSources={issued:latestIssued,objectives:objectives.data||[],
+              milestones:milestones.data||[],targets:targets.data||[],evidenceRefs:refs.data||[]};
+          } else {
+            nextSources={issued:[],objectives:objectives.data||[],
+              milestones:milestones.data||[],targets:[],evidenceRefs:[]};
+          }
         }
       }
       if (!current()) return;
@@ -298,7 +321,8 @@ export default function ExecutiveReports({ me, openItem }) {
 
           <ExecutiveOutcomeBrief period={period} units={units}
             issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
-            milestones={outcomeSources.milestones} readError={outcomeError} />
+            milestones={outcomeSources.milestones} targets={outcomeSources.targets}
+            evidenceRefs={outcomeSources.evidenceRefs} readError={outcomeError} />
 
           <ExecutiveContributionDrilldown me={me} period={period} units={units} openItem={openItem} />
 
