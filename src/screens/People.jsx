@@ -789,7 +789,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         </aside>
 
         <div className="ev2p-admin-person-detail">
-        <div className="workforce-setup-actions ev2p-admin-person-primary-actions" role="group" aria-label="Employee record actions">
+        <div className="workforce-setup-actions ev2p-admin-person-primary-actions" role="group" aria-label="Employee record actions" style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8,marginBottom:16,minWidth:0}}>
           <button type="button" className="btn" onClick={()=>editSelectedEmployment()}>Edit employee record</button>
           <button type="button" className="btn btn-ghost" onClick={()=>editSelectedEmployment("transferred")}>Assign / transfer department</button>
           <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("time")}>Work schedule</button>
