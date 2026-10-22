@@ -23,7 +23,7 @@ export async function readRoutineSchedulePreview(client, workItemIds, {fromDate,
   const seen=new Set();
   return rows.map(row=>{
     const key=row.operation_id+":"+row.scheduled_on;
-    if(seen.has(key) || !["recorded","unrecorded_past","scheduled"].includes(row.state)
+    if(seen.has(key) || !["recorded","unrecorded_past","scheduled","skipped"].includes(row.state)
       || !/^\d{4}-\d{2}-\d{2}$/.test(row.scheduled_on) || !Number.isFinite(Date.parse(row.due_at)))
       throw new Error("Routine schedule dates are inconsistent.");
     seen.add(key);
