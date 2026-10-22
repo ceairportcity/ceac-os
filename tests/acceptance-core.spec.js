@@ -1629,6 +1629,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
       await scheduleEditor.getByLabel(dayLabel+" start",{exact:true}).fill("10:00");
       await scheduleEditor.getByLabel(dayLabel+" end",{exact:true}).fill("17:00");
     }
+    await scheduleEditor.getByLabel("Effective from",{exact:true}).fill(iso(today));
     await scheduleEditor.getByLabel("HR schedule reason",{exact:true}).fill(scheduleReason);
     await scheduleEditor.getByRole("button",{name:"Record HR-authorised schedule",exact:true}).click();
     await expect(scheduleEditor.getByRole("table",{name:"Saved employee seven-day working week"})).toContainText(dayTypeName);

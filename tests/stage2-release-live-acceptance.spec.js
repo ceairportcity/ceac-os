@@ -37,10 +37,23 @@ test('release personal monthly and quarterly PDFs contain visible authorised rep
   for(const cadence of ['monthly','quarterly']){
    await report.getByRole('combobox',{name:/^Period/}).selectOption(cadence);
    await expect(report.getByRole('button',{name:'Print / Save as PDF'})).toBeEnabled();
+   await page.setViewportSize({width:703,height:990});
    await page.emulateMedia({media:'print'});
    await expect(report.getByRole('heading',{name:'My achievements',exact:true})).toHaveCSS('visibility','visible');
    await expect(report.locator('.s2-achievement-print-head')).toContainText('Subject: Staff Fixture');
    await expect(report.locator('.s2-achievement-metrics')).toBeVisible();
+   const table=report.locator('.s2-achievement-table-scroll table');
+   await expect(table.getByRole('columnheader',{name:'State now',exact:true})).toBeVisible();
+   const geometry=await table.evaluate(node=>({
+    tableRight:node.getBoundingClientRect().right,
+    containerRight:node.parentElement.getBoundingClientRect().right,
+    overflow:node.scrollWidth-node.clientWidth,
+    columns:[...node.querySelectorAll('th')].map(cell=>cell.getBoundingClientRect().right),
+   }));
+   expect(geometry.columns).toHaveLength(4);
+   expect(Math.max(...geometry.columns)).toBeLessThanOrEqual(geometry.containerRight+1);
+   expect(geometry.overflow).toBeLessThanOrEqual(1);
+   writeFileSync(`test-artifacts/release-personal-${cadence}-table.json`,JSON.stringify(geometry,null,2));
    const pdf=await page.pdf({path:`test-artifacts/release-personal-${cadence}.pdf`,format:'A4',printBackground:true,preferCSSPageSize:true});
    expect(pdf.subarray(0,5).toString()).toBe('%PDF-');
    expect(pdf.length).toBeGreaterThan(5000);

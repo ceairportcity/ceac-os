@@ -54,9 +54,9 @@
   .s2-achievement .s2-achievement-insights{margin-top:10px}
   .s2-achievement .s2-achievement-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
   .s2-achievement .s2-achievement-table-scroll{overflow:visible}
-  .s2-achievement .s2-achievement-table-scroll table{min-width:0}
+  .s2-achievement .s2-achievement-table-scroll table{min-width:0;display:table;table-layout:fixed;white-space:normal;overflow-wrap:anywhere}
+  .s2-achievement th{white-space:normal}
   .s2-achievement .s2-achievement-evidence article,.s2-achievement .s2-achievement-panel,.s2-achievement .s2-achievement-metrics article{break-inside:avoid}
-  body:has(.s2-achievement) .ev2s-sidebar,body:has(.s2-achievement) .ev2s-topbar,body:has(.s2-achievement) .ev2s-mobile-nav,body:has(.s2-achievement) .ev2s-mobile-topbar{display:none!important}
 }
 
 /* Print only the authorised personal report, never adjacent shell, drawer or HR context. */
