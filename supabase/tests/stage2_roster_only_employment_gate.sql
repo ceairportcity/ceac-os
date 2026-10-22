@@ -139,6 +139,52 @@ BEGIN
 END;
 $contact_profile$;
 
+-- Linked employee HR contact corrections use existing profile IDs and never Auth
+-- address, role, capability, salary or account status. All writes roll back.
+DO $linked_hr$
+DECLARE v_staff uuid:='31000000-0000-4000-8000-000000000001';
+ v_before public.profiles%rowtype; v_after public.profiles%rowtype; v_out jsonb;
+BEGIN
+ IF has_function_privilege('anon',
+  'public.admin_record_linked_person_contact(uuid,text,text,text,text,text,text,text)','EXECUTE')
+ OR has_table_privilege('authenticated','public.employee_linked_contact_change_events','INSERT,UPDATE,DELETE')
+ THEN RAISE EXCEPTION 'Linked HR contact write policy exposed'; END IF;
+ SELECT * INTO v_before FROM public.profiles WHERE id=v_staff;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Seeded ordinary staff is required for linked HR gate'; END IF;
+ v_out:=public.admin_record_linked_person_contact(
+  v_staff,v_before.full_name,v_before.preferred_name,v_before.phone,
+  'Verified updated employee','Updated preferred','+233 20 123 4567',
+  'Official HR profile details independently verified');
+ SELECT * INTO v_after FROM public.profiles WHERE id=v_staff;
+ IF v_after.full_name<>'Verified updated employee'
+  OR v_after.phone<>'+233 20 123 4567'
+  OR v_after.email IS DISTINCT FROM v_before.email
+  OR v_after.is_admin IS DISTINCT FROM v_before.is_admin
+  OR v_after.is_exec IS DISTINCT FROM v_before.is_exec
+  OR v_after.active IS DISTINCT FROM v_before.active
+  OR v_after.job_title IS DISTINCT FROM v_before.job_title
+  OR (v_out->>'profile_id')::uuid IS DISTINCT FROM v_staff
+  OR NOT EXISTS(SELECT 1 FROM public.employee_linked_contact_change_events
+   WHERE id=(v_out->>'event_id')::uuid AND profile_id=v_staff
+    AND actor_id=auth.uid()
+    AND after_record->>'full_name'='Verified updated employee') THEN
+  RAISE EXCEPTION 'Linked employee source, authority or history changed incorrectly'; END IF;
+ BEGIN
+  PERFORM public.admin_record_linked_person_contact(
+   v_staff,v_before.full_name,v_before.preferred_name,v_before.phone,
+   'Old client overwrote','Preferred','+233 20 123 4567',
+   'Old source revision attempted an overwrite');
+  RAISE EXCEPTION 'Stale linked HR contact revision was accepted';
+ EXCEPTION WHEN serialization_failure THEN NULL; END;
+ BEGIN
+  PERFORM public.admin_record_linked_person_contact(
+   v_staff,v_after.full_name,v_after.preferred_name,v_after.phone,
+   'X','Preferred','+233 20 123 4567','Invalid short official name');
+  RAISE EXCEPTION 'Invalid official employee name was accepted';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+END;
+$linked_hr$;
+
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1"}',true);
 DO $staff$
@@ -159,6 +205,14 @@ BEGIN
    'staff@example.com',NULL,NULL,'Staff attempted protected HR contact edit');
   RAISE EXCEPTION 'Ordinary staff edited protected roster contact';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN
+  PERFORM public.admin_record_linked_person_contact(
+    '31000000-0000-4000-8000-000000000002',NULL,NULL,NULL,
+    'Employee','Staff',NULL,'Staff attempted to edit another person');
+  RAISE EXCEPTION 'Ordinary staff edited official linked employee contact';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ IF EXISTS(SELECT 1 FROM public.employee_linked_contact_change_events) THEN
+   RAISE EXCEPTION 'Staff read protected linked HR contact history'; END IF;
 END;
 $staff$;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
