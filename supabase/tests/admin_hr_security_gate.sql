@@ -138,8 +138,11 @@ begin
   where ns.nspname='public'
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  if n<>148 then
-    raise exception 'Security gate failure: authenticated SECURITY DEFINER surface differs from the reviewed Stage 1 145 plus Stage 2 TOTP predicate and two caller-scoped owner Work RPCs (148) to %.',n;
+  -- 158 functions already explicitly reviewed in the Stage 2 exact-signature
+  -- allowlist; migration185 adds one HR-only canonical roster creation RPC.
+  -- Any additional unreviewed function remains prohibited.
+  if n<>159 then
+    raise exception 'Security gate failure: expected 158 reviewed Stage 2 caller-scoped functions plus the one independently reviewed HR roster creation RPC (159), found %.',n;
   end if;
 end $$;
 
