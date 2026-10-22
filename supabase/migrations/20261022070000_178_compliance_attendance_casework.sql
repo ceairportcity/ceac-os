@@ -12,6 +12,7 @@ CREATE TABLE public.compliance_attendance_cases (
  opened_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  updated_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
+CREATE UNIQUE INDEX compliance_attendance_cases_active_unique ON public.compliance_attendance_cases(org_id,employee_id,work_date,category) WHERE status<>'resolved';
 CREATE INDEX compliance_attendance_cases_register_idx
  ON public.compliance_attendance_cases(org_id,work_date DESC,status,employee_id);
 CREATE TABLE public.compliance_attendance_case_events (
@@ -72,7 +73,7 @@ AS $visibility$
   );
 $visibility$;
 REVOKE ALL ON FUNCTION public.compliance_attendance_case_visible(uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.compliance_attendance_case_visible(uuid) TO authenticated;
+-- This internal authority predicate is never a browser-callable RPC.
 
 CREATE FUNCTION public.compliance_attendance_case_register(
  p_date_from date DEFAULT NULL,p_date_to date DEFAULT NULL)
