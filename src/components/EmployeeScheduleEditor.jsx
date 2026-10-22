@@ -21,6 +21,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
   const authorised = Boolean(me?.is_admin) && (me.capabilities || []).includes("workforce.manage");
   const [dayTypes,setDayTypes] = useState([]);
   const [versions,setVersions] = useState([]);
+  const [verifiedScope,setVerifiedScope] = useState(null);
   const [historyCount,setHistoryCount] = useState(0);
   const [previewId,setPreviewId] = useState("");
   const [days,setDays] = useState(emptyDays);
@@ -34,10 +35,18 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
   const [busy,setBusy] = useState(false);
   const generation = useRef(0);
   const writeBusy = useRef(false);
+  const scope = [me.org_id,me.id,employeeId||"",profileId||""].join(":");
 
   async function load(expectedVersionId = null) {
     const token = ++generation.current;
     setLoading(true);
+    setVerifiedScope(null);
+    setVersions([]);
+    setDayTypes([]);
+    setHistoryCount(0);
+    setPreviewId("");
+    setError("");
+    try {
     const [types, schedules] = await Promise.all([
       supabase.from("workforce_day_types").select("id,name,session_expected,active")
         .eq("org_id",me.org_id).eq("active",true).order("name"),
@@ -65,14 +74,28 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     setVersions(schedules.data || []);
     setHistoryCount(schedules.count);
     setPreviewId(old=>(schedules.data||[]).some(version=>version.id===old)?old:"");
+    setVerifiedScope(scope);
     setError("");
     return true;
+    } catch {
+      if (token === generation.current) {
+        setVersions([]);
+        setDayTypes([]);
+        setVerifiedScope(null);
+        setError("The employee's schedule source is unavailable. Reload and verify before editing or trying another save.");
+        setLoading(false);
+      }
+      return false;
+    }
   }
 
   useEffect(() => {
     generation.current += 1;
     writeBusy.current = false;
     setEdit(false);
+    setVerifiedScope(null);
+    setVersions([]);
+    setDayTypes([]);
     setPreviewId("");
     setHistoryCount(0);
     setDays(emptyDays());
@@ -87,11 +110,16 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
 
   if (!authorised || (!profileId && !employeeId)) return null;
 
-  const previous = versions[0] || null;
-  const inspected = versions.find(version=>version.id===previewId) || previous;
-  const previewDays = workforceRecordedWeek(inspected,dayTypes);
-  const officeTemplate = approvedOfficeWeekTemplate(dayTypes);
+  // Scope proof is checked during render, not just in useEffect: React may
+  // render a different signed actor before the old effect's cleanup runs.
+  const verified = verifiedScope === scope && !loading && !error;
+  const visibleTypes = verified ? dayTypes : [];
+  const previous = verified ? versions[0] || null : null;
+  const inspected = verified ? versions.find(version=>version.id===previewId) || previous : null;
+  const previewDays = workforceRecordedWeek(inspected,visibleTypes);
+  const officeTemplate = approvedOfficeWeekTemplate(visibleTypes);
   function beginEdit() {
+    if (!verified) return;
     setPreviewId("");
     setDays(Object.fromEntries(DAYS.map(([key]) => [key,{
       type:previous?.day_map?.[key] || "",
@@ -125,7 +153,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     && reason.trim().length>=8 && complete;
 
   async function save() {
-    if (writeBusy.current || !valid || (!profileId && !employeeId)) return;
+    if (writeBusy.current || !verified || !valid || (!profileId && !employeeId)) return;
     writeBusy.current=true;
     setBusy(true);
     setError("");
@@ -175,7 +203,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     {loading && <p role="status">Loading the employee's schedule...</p>}
     {error && <p role="alert">{error}</p>}
     {notice && <p role="status">{notice}</p>}
-    {!loading && previous && <div className="ev2p-admin-schedule-history" style={{display:"grid",gap:12,minWidth:0,marginTop:12}}>
+    {verified && previous && <div className="ev2p-admin-schedule-history" style={{display:"grid",gap:12,minWidth:0,marginTop:12}}>
       <p className="screen-note"><strong>{inspected?.id === previous.id ? "Latest recorded version" : "Earlier saved version"}:</strong> {dateOf(inspected.effective_from)}{inspected.effective_to ? " to "+dateOf(inspected.effective_to) : " onward"}. This is a recorded HR pattern, not evidence of actual attendance.</p>
       <div className="ev2p-admin-schedule-week" role="table" aria-label="Saved employee seven-day working week" style={{minWidth:0,overflowX:"auto",border:"1px solid var(--ev2-line,var(--line))",borderRadius:8}}>
         <div role="row" className="ev2p-admin-schedule-week-head" style={{...recordedWeekRowStyle,background:"var(--ev2-surface-muted,#f3f4f4)"}}>
@@ -196,11 +224,11 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
       </label>}
       {historyCount>versions.length&&<p className="screen-note">Showing the {versions.length} most recently recorded of {historyCount} versions; older records remain in the authorised history.</p>}
     </div>}
-    {!loading && !previous && <p className="screen-note">No HR-authorised individual work schedule is recorded yet.</p>}
-    {!loading && dayTypes.length===0 && <p className="screen-note">Administration must configure approved day types (including duty and weekly off-day) in Workforce before recording an individual pattern.</p>}
-    {!loading && dayTypes.length>0 && !edit &&
+    {verified && !previous && <p className="screen-note">No HR-authorised individual work schedule is recorded yet.</p>}
+    {verified && dayTypes.length===0 && <p className="screen-note">Administration must configure approved day types (including duty and weekly off-day) in Workforce before recording an individual pattern.</p>}
+    {verified && dayTypes.length>0 && !edit &&
       <button type="button" className="btn btn-ghost" onClick={beginEdit}>Edit authorised work schedule</button>}
-    {edit && <div className="ev2p-admin-schedule-editor">
+    {edit && verified && <div className="ev2p-admin-schedule-editor">
       <p className="screen-note">Editing {name || "employee"}; all seven days must have a day type. Scheduled duty days also require start/end hours. Changes create a new version, not an overwrite.</p>
       {officeTemplate && <div className="workforce-setup-actions">
         <button className="btn btn-ghost btn-sm" type="button" onClick={()=>setDays(officeTemplate)}>
