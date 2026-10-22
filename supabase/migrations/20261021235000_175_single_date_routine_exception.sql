@@ -286,8 +286,16 @@ BEGIN
   OR v_operation.visibility IS DISTINCT FROM 'unit' OR v_operation.confidential THEN
   RAISE EXCEPTION 'That organisational recurring responsibility is unavailable.' USING ERRCODE='42501';
  END IF;
+ -- Current membership and active unit are required at action time. A person
+ -- removed from their old department cannot skip dates using old self-work.
+ IF NOT EXISTS(SELECT 1 FROM public.units u WHERE u.id=v_operation.unit_id
+   AND u.org_id=v_org AND u.active) THEN
+  RAISE EXCEPTION 'This department is no longer active.' USING ERRCODE='42501';
+ END IF;
  v_is_self:=v_operation.origin='self_created'
-   AND v_operation.assignee_id=auth.uid() AND v_operation.assigned_by=auth.uid();
+   AND v_operation.assignee_id=auth.uid() AND v_operation.assigned_by=auth.uid()
+   AND EXISTS(SELECT 1 FROM public.unit_memberships m
+     WHERE m.org_id=v_org AND m.unit_id=v_operation.unit_id AND m.profile_id=auth.uid());
  IF NOT (public.app_is_admin() OR v_operation.unit_id IN (SELECT public.app_managed_units()) OR v_is_self) THEN
   RAISE EXCEPTION 'Only the creator, a managing department head or Administration may make a single-date exception.' USING ERRCODE='42501';
  END IF;
