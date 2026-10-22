@@ -32,7 +32,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
   const generation = useRef(0);
   const writeBusy = useRef(false);
 
-  async function load() {
+  async function load(expectedVersionId = null) {
     const token = ++generation.current;
     setLoading(true);
     const [types, schedules] = await Promise.all([
@@ -52,6 +52,10 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     setLoading(false);
     if (types.error || schedules.error || !Number.isInteger(schedules.count) || schedules.count < (schedules.data||[]).length) {
       setError("The employee's authoritative schedule could not be loaded. No change was made.");
+      return false;
+    }
+    if (expectedVersionId && !(schedules.data||[]).some(version=>version.id===expectedVersionId)) {
+      setError("A schedule write was acknowledged, but the saved version is not in the verified employee history. Do not retry before checking it.");
       return false;
     }
     setDayTypes(types.data || []);
@@ -141,12 +145,13 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
           : { ...shared,p_profile_id:profileId,p_unit_id:unitId || null },
       );
       if (failure) throw failure;
-      if (!data) throw new Error("The schedule write outcome was not confirmed.");
+      if (typeof data !== "string" || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(data))
+        throw new Error("The schedule write did not return an authoritative version identifier.");
       recorded=true;
       if (token !== generation.current) return;
       setEdit(false);
       setNotice("HR-authorised schedule version recorded. Existing schedule history was preserved.");
-      const refreshed=await load();
+      const refreshed=await load(data);
       if (!refreshed && token===generation.current-1)
         setError("The schedule was recorded but its latest state could not be displayed.");
     } catch (failure) {
