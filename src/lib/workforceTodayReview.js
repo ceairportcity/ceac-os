@@ -15,5 +15,5 @@ export function workforceTodayReviewCategory({configured=false,expected=null,sta
  return "no_session_expected";
 }
 export const workforceTodayReviewNeedsReview = category =>
- ["identity_unlinked","evidence_unavailable","schedule_source_unavailable",
+ ["identity_unlinked","no_login_account","evidence_unavailable","schedule_source_unavailable",
   "schedule_unconfigured","no_session_recorded"].includes(category);
