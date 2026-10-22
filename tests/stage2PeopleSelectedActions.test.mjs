@@ -46,8 +46,10 @@ test("selected employee shows canonical HR contact and start date independently 
 test("invite entry carries selected roster identity into existing verified invitation form",()=>{
  const access=read("src/components/PeopleAccess.jsx");
  assert.match(people,/setAccessInviteRoster\(profileId \? null : inviteRoster\)/);
- assert.match(people,/initialInviteRoster=\{accessInviteRoster\}/);
+ assert.match(people,/initialInviteRoster=\{accessInviteRoster\?\.requestedBy===me\.id && accessInviteRoster\?\.orgId===me\.org_id \? accessInviteRoster : null\}/);
  assert.match(people,/contactEmail:person\.hr_contact_email \|\| ""/);
+ assert.match(people,/requestedBy:me\.id/);
+ assert.match(people,/orgId:me\.org_id/);
  assert.match(people,/unitId:\(person\.roster_units\|\|\[\]\)\.find\(member=>member\.is_primary\)\?\.unit_id/);
  assert.match(access,/if \(!initialInviteRoster\?\.employeeId \|\| !canManage\) return/);
  assert.match(access,/email: initialInviteRoster\.contactEmail \|\| ""/);
