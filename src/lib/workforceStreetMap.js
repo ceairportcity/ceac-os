@@ -55,3 +55,12 @@ export function workforcePinPosition(cluster,center,zoom,width,height) {
  const wrappedX=((point.x-middle.x+world/2)%world+world)%world-world/2;
  return {x:Math.round(width/2+wrappedX),y:Math.round(height/2+point.y-middle.y)};
 }
+
+/** Repeated activation of a shared-coordinate marker reaches every real
+ * employee at that start point, without exposing identities to tile providers.
+ */
+export function nextWorkforceClusterPersonId(people,selectedId) {
+ if(!Array.isArray(people)||!people.length)return null;
+ const current=people.findIndex(person=>person?.id===selectedId);
+ return people[(current+1)%people.length]?.id||null;
+}
