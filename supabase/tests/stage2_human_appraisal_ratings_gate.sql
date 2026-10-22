@@ -209,6 +209,45 @@ END
 $independent_hr$;
 RESET ROLE;
 
+-- Owner correction: the ordinary People/HR dossier may only receive
+-- independently published human ratings. Manager/draft rating versions are
+-- never returned by this server-side source, even though HR can separately
+-- access protected reviewer work through its canonical adjudication route.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+DO $hr_dossier_published$
+DECLARE v_report jsonb;
+BEGIN
+ IF to_regprocedure('public.admin_employee_published_development(uuid)') IS NULL
+  OR has_function_privilege('anon','public.admin_employee_published_development(uuid)','EXECUTE') THEN
+  RAISE EXCEPTION 'Published-only HR dossier server boundary missing'; END IF;
+ v_report:=public.admin_employee_published_development(
+   '31000000-0000-4000-8000-000000000001');
+ IF jsonb_array_length(v_report)<>1 OR v_report->0->>'overall_rating'<>'3'
+  OR v_report->0->>'overall_narrative'<>'Manager independently selected this rating'
+ THEN RAISE EXCEPTION 'HR employee dossier did not return exact independent publication'; END IF;
+ IF jsonb_array_length(public.admin_employee_published_development(
+    '31000000-0000-4000-8000-000000000006'))<>0 THEN
+  RAISE EXCEPTION 'HR dossier inferred employee ratings from absent approvals'; END IF;
+END
+$hr_dossier_published$;
+RESET ROLE;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+DO $manager_dossier_denied$
+DECLARE v_denied boolean:=false;
+BEGIN
+ BEGIN
+  PERFORM public.admin_employee_published_development(
+   '31000000-0000-4000-8000-000000000001');
+ EXCEPTION WHEN insufficient_privilege THEN v_denied:=true;
+ END;
+ IF NOT v_denied THEN
+  RAISE EXCEPTION 'Manager bypassed protected People/HR published dossier boundary'; END IF;
+END
+$manager_dossier_denied$;
+RESET ROLE;
+
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 DO $employee_approved$
