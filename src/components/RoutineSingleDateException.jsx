@@ -8,7 +8,7 @@ import {ghanaCalendarDate} from "../lib/dailyLandscape";
  * recurring schedule. Server independently checks tenant, actor, due schedule,
  * recorded evidence and the expected revision. No client role grants.
  */
-export default function RoutineSingleDateException({me,operationId,workItemId,date,canManage=false,onChanged}) {
+export default function RoutineSingleDateException({me,operationId,workItemId,date,canManage=false,scheduleVerified=false,onChanged}) {
  const [history,setHistory]=useState([]),[state,setState]=useState("loading");
  const [reason,setReason]=useState(""),[error,setError]=useState("");
  const [busy,setBusy]=useState(false),[reload,setReload]=useState(0);
@@ -36,7 +36,7 @@ export default function RoutineSingleDateException({me,operationId,workItemId,da
  const current=history[0]||null,skipped=current?.action==="skip";
  const today=ghanaCalendarDate();
  const futureOrToday=Boolean(validRoutineDate(date)&&date>=today&&date<=(()=>{let d=new Date(today+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+370);return d.toISOString().slice(0,10);})());
- const canSubmit=state==="verified"&&futureOrToday&&!busy&&reason.trim().length>=8;
+ const canSubmit=state==="verified"&&scheduleVerified&&futureOrToday&&!busy&&reason.trim().length>=8;
  async function save(){
   if(!canSubmit||sending.current)return;
   const token=generation.current,expected=current?.version||0,action=skipped?"restore":"skip";
@@ -60,7 +60,7 @@ export default function RoutineSingleDateException({me,operationId,workItemId,da
   <p className="screen-note">This affects only {date}. It does not change other routine dates, a completed outcome, or the official recurring pattern.</p>
   {state==="loading"&&<p role="status">Checking date history…</p>}
   {state==="verified"&&<>
-   <p className="screen-note">{skipped?"Date skipped by an authorised person":"Date remains scheduled"} · {history.length?history.length+" recorded change"+(history.length===1?"":"s"):"No exceptions recorded"}</p>
+   <p className="screen-note">{skipped?"Date skipped by an authorised person":"No active date exception"} · {history.length?history.length+" recorded change"+(history.length===1?"":"s"):"No exceptions recorded"}</p>
    <label className="small">Reason for {skipped?"restoring":"skipping"} this date
     <textarea className="field" rows={2} maxLength={2000} value={reason} onChange={event=>setReason(event.target.value)}/>
    </label>
@@ -73,6 +73,7 @@ export default function RoutineSingleDateException({me,operationId,workItemId,da
     </article>)}
    </details>}
   </>}
+  {state==="verified"&&!scheduleVerified&&<p className="screen-note">The selected date is not yet verified as a scheduled occurrence. Recording changes is disabled.</p>}
   {state==="verified"&&!futureOrToday&&<p className="screen-note">Only today or future scheduled dates can be changed. Earlier records remain historical.</p>}
   {error&&<p role="alert">{error}</p>}
   {state==="unavailable"&&<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setReload(n=>n+1)}>Retry verifying date</button>}
