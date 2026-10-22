@@ -219,10 +219,11 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
-  // The one-bundle change records 12 additional guarded RPC/predicate surfaces
-  // and removes obsolete direct attendance-correction and performance-share grants.
-  // Fail closed at 148: 145 original, one TOTP helper and two explicitly inventoried owner Work RPCs.
-  assert.match(mfa, /callable_count<>148/);
+  // Independently fail closed at the current 159-signature reviewed surface.
+  // The exact allowlist and obsolete-grant denial remain enforced in the
+  // dedicated security_definer_surface_gate.sql (not just this count check).
+  assert.match(mfa, /callable_count<>159/);
+  assert.match(surface, /v_actual<>159 or v_expected<>159/);
   assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);
