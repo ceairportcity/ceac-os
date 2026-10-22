@@ -358,7 +358,7 @@ test("Staff personal details persist and private work stays out of another staff
     await privateDialog.getByLabel(/No steps needed/).check();
     await privateDialog.getByRole("button", { name: "Add private work" }).click();
     await expect(page.getByText(/added as private work/)).toBeVisible();
-    await expect(page.getByText(privateTitle, { exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: privateTitle, exact: true })).toBeVisible({ timeout: 15000 });
     await context.close();
   }
 

@@ -1,7 +1,12 @@
 \set ON_ERROR_STOP on
 -- Isolated transactional positive/negative roles; never run against live CEAC.
 BEGIN;
-UPDATE public.organisations SET universal_totp_required=false WHERE id='10000000-0000-4000-8000-000000000010';
+-- This synthetic Stage 2 release fixture uses the owner's default-OFF MFA
+-- method; real assurance enforcement is tested in the separate MFA gates.
+-- All changes roll back. Do not alter production organisation flags.
+UPDATE public.organisations SET universal_totp_required=false,
+ privileged_mfa_required=false
+ WHERE id='10000000-0000-4000-8000-000000000010';
 DO $surface$
 BEGIN
  IF to_regprocedure('public.compliance_record_attendance_observation(uuid,date,text,text,text,text)') IS NULL
@@ -38,6 +43,21 @@ DECLARE v_employee uuid; v_id uuid; v_rows jsonb;
 BEGIN
  SELECT id INTO v_employee FROM public.employee_roster
   WHERE profile_id='31000000-0000-4000-8000-000000000001' LIMIT 1;
+ IF v_employee IS NULL THEN
+   RAISE EXCEPTION 'Compliance fixture missing linked employee';
+ END IF;
+ IF NOT public.app_stage2_universal_aal_allowed() THEN
+   RAISE EXCEPTION 'Compliance fixture actor failed provider-neutral password assurance';
+ END IF;
+ IF NOT public.app_privileged_aal_allowed() THEN
+   RAISE EXCEPTION 'Compliance fixture actor failed privileged assurance with MFA flags OFF';
+ END IF;
+ IF NOT public.app_has_capability('compliance.manage',NULL) THEN
+   RAISE EXCEPTION 'Compliance fixture global capability grant was not effective';
+ END IF;
+ IF NOT public.compliance_attendance_case_visible(v_employee) THEN
+   RAISE EXCEPTION 'Compliance fixture case visibility did not include linked Staff';
+ END IF;
  v_id:=public.compliance_record_attendance_observation(
   v_employee,current_date,'missing_evidence',
   'No verified session recorded in the factual source',

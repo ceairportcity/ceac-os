@@ -575,7 +575,8 @@ test("Stage 10 Family H1 keeps Control Center capability-filtered while aligning
     "Integrations",
     "Audit & records",
   ]) expect(label === "Payroll & Finance" ? control.includes('title:canPayroll ? "Payroll & Finance" : "Finance"') : control.includes(`title:"${label}"`)).toBeTruthy();
-  expect(control).toContain("This is not a numeric health score.");
+  expect(control).toContain("Manage departments, people, policies and system access.");
+  expect(control).not.toMatch(/numeric health score|overall health score/i);
   expect(control).toContain("DataPanel");
   expect(control).toContain("QueueRow");
   expect(control).toContain("StatusBadge");

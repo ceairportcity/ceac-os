@@ -190,7 +190,7 @@ for (const viewport of [
     await expect(executiveTabs).toBeVisible();
     await expect(executiveTabs.getByRole("tab", { name: /Given out/ })).toBeVisible();
     await expect(executiveTabs.getByRole("tab", { name: /For review/ })).toBeVisible();
-    await expect(executiveTabs.getByRole("tab", { name: /Mine/ })).toBeVisible();
+    await expect(executiveTabs.getByRole("tab", { name: /My work/ })).toBeVisible();
     let overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
     await page.screenshot({

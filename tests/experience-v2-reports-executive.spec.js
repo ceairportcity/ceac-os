@@ -280,6 +280,6 @@ test("Executive issued-outcome brief hides incomplete history rather than counti
   await expect(page.locator(".ev2-reporting-executive")).toBeVisible();
   await expect(page.getByText("submitted units", { exact: true })).toBeVisible();
   await expect(page.getByText("Detailed outcome records could not be verified. No achievement figures have been inferred.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Print / Save PDF" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Print / Save as PDF" })).toBeDisabled();
   await context.close();
 });
