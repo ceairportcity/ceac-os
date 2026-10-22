@@ -5,6 +5,7 @@ const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence")
 import AttendanceCorrectionWorkflow from "../components/AttendanceCorrectionWorkflow";
 import AttendanceCodeIssuer from "../components/AttendanceCodeIssuer";
 import WorkforceEmployeeScheduleWorkspace from "../components/WorkforceEmployeeScheduleWorkspace";
+import WorkforceTodayReviewList from "../components/WorkforceTodayReviewList";
 import { dailyClocks } from "../lib/attendance";
 import { accraDayOffset } from "../lib/workforceDate";
 import { settleWorkforceDatasets } from "../lib/workforceQueries";
@@ -954,26 +955,35 @@ export default function Workforce({ me }) {
           {!waitingLeave.length&&<WorkforceEmpty compact title="No leave requests are waiting" description="New requests will appear here with their recorded route and history."/>}
         </WorkforceSection>
 
-        <WorkforceSection title="Today across the organisation" description="Configured schedule context and recorded activity remain separate facts. No missing record becomes an attendance or performance finding." meta={people.length+" people"}>
-          {people.map((row)=>{
-            const ctx=contextFor(row.profile_id);
+        <WorkforceSection title="Today · evidence needing review"
+          description="A compact queue for account-linked employees: unconfigured schedules, missing or unavailable session evidence, recorded starts and approved leave remain distinct. No attendance finding is automatic."
+          meta={people.length+" linked people"}>
+          <WorkforceTodayReviewList rows={people.map(row=>{
             const schedule=latestSchedule(row.profile_id);
             const dayType=currentDayType(row.profile_id);
             const facts=sessionFacts(row.profile_id);
-            const time=schedule?.expected_start?String(schedule.expected_start).slice(0,5)+(schedule?.expected_end?"–"+String(schedule.expected_end).slice(0,5):""):"No clock context";
-            return <WorkforceRecordRow
-              key={row.profile_id}
-              className="workforce-person"
-              icon="person"
-              eyebrow={dayType?.name||"Schedule not configured"}
-              title={row.profiles?.full_name||"Employee"}
-              meta={(row.units?.name||"Unit not recorded")+" · "+(row.profiles?.job_title||"Position not recorded")+" · "+time}
-              note={(sessionReadFailed?"Session evidence unavailable":facts.first?"First recorded "+clock(facts.first.started_at):"No session recorded")+" · "+ctx.detail}
-              statusLabel={ctx.label}
-              statusTone={ctx.tone}
-            />;
+            const approvedLeave=leave.some(item=>
+              item.profile_id===row.profile_id
+              &&item.status==="approved"&&item.start_date<=today&&item.end_date>=today);
+            const clockLabel=schedule?.expected_start
+              ?String(schedule.expected_start).slice(0,5)
+                 +(schedule.expected_end?"–"+String(schedule.expected_end).slice(0,5):"")
+              :null;
+            return {
+              profileId:row.profile_id,name:row.profiles?.full_name||"Employee",
+              unit:row.units?.name||"Unit not recorded",
+              configured:Boolean(schedule&&dayType),
+              dayType:dayType?.name||null,
+              expected:dayType?Boolean(dayType.session_expected):null,
+              started:!sessionReadFailed&&Boolean(facts.first),
+              firstStart:!sessionReadFailed?facts.first?.started_at:null,
+              approvedLeave,sessionEvidenceUnavailable:sessionReadFailed,
+              clockLabel,
+            };
           })}
-          {!people.length&&<WorkforceEmpty compact title="No workforce records in scope" description="Authorised organisation workforce records will appear here."/>}
+          onSchedule={canManage?()=>setTab("setup"):null}
+          onSessions={()=>setTab("sessions")}
+          />
         </WorkforceSection>
       </>}
 
