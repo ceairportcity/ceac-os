@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { attendanceDate, startEvidence } from "../lib/attendance";
 import AdminWorkforceToday from "./AdminWorkforceToday";
+import ComplianceCaseAttention from "./ComplianceCaseAttention";
 import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "./bits";
 import { WorkforceFactGrid, WorkforceRecordRow, WorkforceSection } from "../experience-v2/workforce-family/WorkforceFamilyV2";
 
@@ -41,6 +42,7 @@ export default function ComplianceOverview({
   date,
   onDateChange,
   onRefresh,
+  scopeKey,
   rows,
   units = [],
   loading,
@@ -169,6 +171,7 @@ export default function ComplianceOverview({
         <div className="compliance-attention-row"><span>Exception requests awaiting decision</span><b>{requestedExceptions}</b></div>
         <div className="compliance-attention-row"><span>People with upcoming approved leave</span><b>{facts.upcomingLeave}</b></div>
         <div className="compliance-attention-row"><span>Expected people with no session recorded</span><b>{facts.noSession}</b></div>
+        <ComplianceCaseAttention scopeKey={scopeKey} onOpen={openObservations} />
         <p className="screen-note">These counts organise recorded attention only. They do not calculate compliance, guilt, performance or disciplinary outcomes.</p>
       </aside>
     </div>
