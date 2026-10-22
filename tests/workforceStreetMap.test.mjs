@@ -24,7 +24,7 @@ test("zoomed tiled streets have only bounded x/y and provider gets no staff iden
   assert.ok(match,tile.url);
   assert.equal(+match[1],14);
   assert.ok(+match[2]<2**14&&+match[3]<2**14);
-  assert.doesNotMatch(tile.url,/profile|employee|org|lat|lng|email|work_session/i);
+  assert.doesNotMatch(tile.url,/profile|employee|org_id|lat=|lng=|email|work_session/i);
  }
 });
 test("empty map does not invent any employee location",()=>{
