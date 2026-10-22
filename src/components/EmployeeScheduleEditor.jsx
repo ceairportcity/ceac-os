@@ -48,7 +48,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     setError("");
     try {
     const [types, schedules] = await Promise.all([
-      supabase.from("workforce_day_types").select("id,name,session_expected,active")
+      supabase.from("workforce_day_types").select("id,name,session_expected,active", { count:"exact" }).limit(501)
         .eq("org_id",me.org_id).eq("active",true).order("name"),
       (employeeId
         ? supabase.from("workforce_schedule_versions")
@@ -62,7 +62,10 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     ]);
     if (token !== generation.current) return false;
     setLoading(false);
-    if (types.error || schedules.error || !Number.isInteger(schedules.count) || schedules.count < (schedules.data||[]).length) {
+    if (types.error || schedules.error || !Array.isArray(types.data)
+      || !Number.isInteger(types.count) || types.count!==types.data.length || types.count>500
+      || !Array.isArray(schedules.data) || !Number.isInteger(schedules.count)
+      || schedules.count < schedules.data.length) {
       setError("The employee's authoritative schedule could not be loaded. No change was made.");
       return false;
     }
@@ -202,6 +205,8 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     <p className="screen-note">Schedules vary by employee and include their approved office, remote, programme and weekly rest days. Do not calculate historical leave or lateness from an unconfirmed schedule.</p>
     {loading && <p role="status">Loading the employee's schedule...</p>}
     {error && <p role="alert">{error}</p>}
+    {!loading && error && !busy && <button type="button" className="btn btn-ghost btn-sm"
+      onClick={()=>void load()}>Reload authorised schedule</button>
     {notice && <p role="status">{notice}</p>}
     {verified && previous && <div className="ev2p-admin-schedule-history" style={{display:"grid",gap:12,minWidth:0,marginTop:12}}>
       <p className="screen-note"><strong>{inspected?.id === previous.id ? "Latest recorded version" : "Earlier saved version"}:</strong> {dateOf(inspected.effective_from)}{inspected.effective_to ? " to "+dateOf(inspected.effective_to) : " onward"}. This is a recorded HR pattern, not evidence of actual attendance.</p>
