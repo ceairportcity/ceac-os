@@ -21,7 +21,7 @@ export function workforceRecordedWeek(version,dayTypes=[]) {
       typeName:typeId?(dayType?.name||"Recorded day type not available"):"Day type not recorded",
       hours:dayType?.session_expected
         ?(start&&end?`${start}–${end}`:"Expected session hours not recorded")
-        :"No expected session hours",
+        :dayType?"No expected session hours":"Expected hours cannot be confirmed",
       configured:Boolean(typeId),
     };
   });
