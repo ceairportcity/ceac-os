@@ -1,5 +1,6 @@
 import {useMemo,useState} from "react";
 import {adminWorkforceToday,clusterWorkStartLocations} from "../lib/adminWorkforceToday";
+import WorkforceStreetMap from "./WorkforceStreetMap";
 
 const stamp=(value)=>value?new Date(value).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"}):"Not recorded";
 const buttonStyle={display:"block",width:"100%",textAlign:"left",background:"transparent",border:"1px solid var(--ev2-line,var(--line))",borderRadius:8,padding:"10px 12px",cursor:"pointer"};
@@ -20,9 +21,6 @@ export default function AdminWorkforceToday({roster=[],sessions=[],operationalPr
  }),[people,term,filter]);
  const clusters=useMemo(()=>clusterWorkStartLocations(results),[results]);
  const selected=results.find(row=>row.id===selectedId)||results[0]||null;
- const latitudes=clusters.map(row=>row.lat),longitudes=clusters.map(row=>row.lng);
- const minLat=Math.min(...latitudes),maxLat=Math.max(...latitudes),minLng=Math.min(...longitudes),maxLng=Math.max(...longitudes);
- const position=(n,min,max)=>max===min?.5:(n-min)/(max-min);
  const started=people.filter(row=>row.firstStart).length;
  const withoutCoordinates=people.filter(row=>row.firstStart&&!goodCoordinate(row.latitude)).length;
  return <section aria-label="Today's workforce start locations" style={{marginTop:18,minWidth:0}}>
@@ -45,28 +43,7 @@ export default function AdminWorkforceToday({roster=[],sessions=[],operationalPr
   </div>
   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,290px),1fr))",gap:14}}>
    <div style={{minWidth:0}}>
-    <div style={{border:"1px solid var(--ev2-line,var(--line))",borderRadius:10,overflow:"hidden",minHeight:250,background:"var(--ev2-surface,var(--card))"}}>
-     {clusters.length?<svg viewBox="0 0 600 300" role="group" aria-label="Recorded work-start coordinate plot, north at top" style={{width:"100%",maxHeight:300,display:"block"}}>
-      <text x="16" y="22" fill="currentColor" fontSize="13">N ↑</text>
-      <path d="M30 40 V270 H570" fill="none" stroke="currentColor" opacity=".17" strokeWidth="1"/>
-      {clusters.map(cluster=>{
-       const x=40+position(cluster.lng,minLng,maxLng)*520,y=260-position(cluster.lat,minLat,maxLat)*220;
-       const active=cluster.people.some(person=>person.id===selected?.id);
-       return <g key={cluster.key} tabIndex={0} role="button"
-        aria-label={cluster.people.map(person=>person.name).join(", ")+" recorded start"}
-        onClick={()=>setSelectedId(cluster.people[0].id)}
-        onKeyDown={event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();setSelectedId(cluster.people[0].id);}}}
-        style={{cursor:"pointer"}}>
-        <circle cx={x} cy={y} r={active?15:12} fill="var(--ev2-action,#366a58)" stroke="var(--ev2-surface,#fff)" strokeWidth="3"/>
-        <text x={x} y={y+4} fill="white" textAnchor="middle" fontSize="12" fontWeight="bold">{cluster.people.length}</text>
-        <title>{cluster.people.map(person=>person.name).join(", ")}</title>
-       </g>;
-      })}
-     </svg>:<div style={{minHeight:245,display:"grid",placeItems:"center",padding:18,textAlign:"center"}}>
-      <span className="screen-note">No recorded start coordinates in the selected view. Staff remain visible in the list.</span>
-     </div>}
-    </div>
-    <p className="screen-note" style={{fontSize:12,margin:"7px 0 0"}}>Relative coordinate plot, not a street map. Pins show first recorded work-start coordinates only; no continuous or current-location tracking. Multiple starts at one point are grouped.</p>
+    <WorkforceStreetMap clusters={clusters} selectedId={selected?.id || null} onSelect={setSelectedId} />
     {selected&&<div style={{padding:"12px 0",overflowWrap:"anywhere"}}>
      <strong>{selected.name}</strong>
      <p className="screen-note" style={{margin:"4px 0"}}>{selected.unit} · {selected.open?"Session open (not verified live presence)":selected.firstStart?"Session ended":"No session recorded"}</p>
