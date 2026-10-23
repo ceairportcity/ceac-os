@@ -59,7 +59,7 @@ export async function searchCeacRecords({ query, me, isAdmin = false, onPartial 
       .ilike("name", pattern)
       .limit(LIMIT),
     supabase.from("profiles")
-      .select("id,full_name,job_title,unit_id,active")
+      .select("id,full_name,job_title,active")
       .eq("org_id", me.org_id)
       .ilike("full_name", pattern)
       .limit(LIMIT),
