@@ -33,3 +33,11 @@ After leave correction, continue the broader operational demo cleanup, including
 ## Tool continuity
 
 GitHub public clone/fetch works; shell git push lacks credentials. Use connected CEAC GitHub tree/commit/ref operations for a single atomic reviewed candidate. Do not expose credentials or use another account. BrowserAct CLI installed, but its core command daemon failed readiness; no browser session/HR activation was obtained or claimed here. Native cloud browser may be needed for the genuine app UI after candidate release. No paid service or production impersonation authorised.
+
+## First frozen candidate release evidence and test correction
+
+PR #134, application/test head `8a33ba5ab3308f11afb3d9c6a7a43c327ce0ea74`, exact tree `7e9c716b78e6f915d8f6daf4e8ca792a06e4f597`. Official Node 22 CI `40008089750`, Migration Replay `40008089717`, Account Security `40008089715`, and Quality Gate SQL job `120601180964` PASS. Browser groups 1, 3, 4 and 5 passed at inspection; remaining groups are still allowed to finish rather than cancelling useful evidence. Group 6 failed eleven assertions: ten Manager viewport/source assertions expected the previous guidance phrase; one checklist test expected guide version 2026.10.07 instead of 2026.10.23. These missed expectations are corrected in two test files; no application, SQL, permission or policy payload changes. Manager authority/tenant/viewport, checklist persistence/expiry and all workflow assertions remain intact. The first failed browser result is NOT claimed passed. Final corrected candidate checks, production release and activation remain pending.
+
+Additional isolated October-7 joiner probe passed inside a rollback-only migration/test transaction: zero earned annual/shared days on 23 October, 3.51 annual and 2.10 shared earned by 31 December under the retained completed-quarter rule. Staging cleanup independently confirmed seven unchanged synthetic profiles, zero shared policy rules and no residual private pool helper.
+
+Actual live cloud browser is authenticated as the existing Administration account; current Time & Leave policy was read at 24/6 and remains unchanged. No new sign-in, production user impersonation or leave decision was performed.

@@ -117,7 +117,7 @@ test("Getting Started progress resumes and can be dismissed without storing busi
     return key ? JSON.parse(localStorage.getItem(key)) : null;
   });
   expect(stored?.completed?.length).toBe(1);
-  expect(stored?.version).toBe("2026.10.07");
+  expect(stored?.version).toBe("2026.10.23");
   expect(stored?.expiresAt).toBeGreaterThan(Date.now());
   expect(Object.keys(stored || {}).sort()).toEqual(["completed","dismissed","expiresAt","role","version"].sort());
 

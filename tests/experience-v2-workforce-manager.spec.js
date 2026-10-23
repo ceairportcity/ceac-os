@@ -29,7 +29,7 @@ test("Stage 10 Family D3 preserves Manager Workforce authority while establishin
   expect(workforce).toContain('leaveAction(l.id,"manager_approved")');
   expect(workforce).toContain('Manager approval → Administration final approval');
   expect(workforce).toContain('Confirmed leave process');
-  expect(workforce).toContain('Annual, Sick, Maternity, Paternity and Study leave are available for requests through');
+  expect(workforce).toContain('The 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance');
   expect(workforce).not.toContain('onClick={()=>leaveAction(l.id,"escalated")}');
   expect(workforce).toContain("Manager role alone does not grant this authority.");
   expect(workforce).toContain("never converted into an automatic absence or performance judgement");
@@ -53,7 +53,7 @@ for (const viewport of [
 
     await expect(page.getByRole("tab", { name: "Today", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Leave", exact: true })).toBeVisible();
-    await expect(page.getByText("Annual, Sick, Maternity, Paternity and Study leave are available for requests through Manager approval", { exact: false }).first()).toBeVisible();
+    await expect(page.getByText("The 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance", { exact: false }).first()).toBeVisible();
     await expect(page.getByRole("tab", { name: "Corrections", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Schedules & policy", exact: true })).toHaveCount(0);
 
