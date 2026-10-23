@@ -16,6 +16,49 @@ const attendanceCorrectionWorkflow = file("src/components/AttendanceCorrectionWo
 const compensation = file("src/lib/protectedCompensation.js");
 const notificationBrowser = file("tests/notification-work-state-phase4.spec.js");
 
+test("global search returns authorised account-only people using the live profile schema", async () => {
+  // These are ordinary live-schema profile fields. A department belongs to
+  // unit_memberships, not profiles; a bad projection must not erase people.
+  const profileFields = new Set(["id", "full_name", "job_title", "active"]);
+  const reads = [];
+  const person = { id: "profile-1", full_name: "Search Person", job_title: "Coordinator", active: true };
+  const client = {
+    from(table) {
+      const request = { table, fields: "", filters: [], limit: null };
+      reads.push(request);
+      const builder = {
+        select(fields) { request.fields = fields; return this; },
+        eq(...filter) { request.filters.push(filter); return this; },
+        ilike(...filter) { request.filters.push(filter); return this; },
+        limit(value) { request.limit = value; return this; },
+        order() { return this; },
+        then(resolve, reject) {
+          const invalid = table === "profiles" && request.fields.split(",").some((field) => !profileFields.has(field));
+          const result = invalid
+            ? { data: null, error: { code: "42703", message: "Unknown profile column" } }
+            : { data: table === "profiles" ? [person] : [], error: null };
+          return Promise.resolve(result).then(resolve, reject);
+        },
+      };
+      return builder;
+    },
+    rpc() { throw new Error("Non-administrative search must not read the HR roster"); },
+  };
+  const source = file("src/lib/globalSearch.js")
+    .replace(/^import \{ supabase \} from "\.\/supabase";\s*/, "")
+    .replace("export async function searchCeacRecords", "async function searchCeacRecords");
+  const search = new Function("supabase", source + "\nreturn searchCeacRecords;")(client);
+  const groups = await search({ query: "Search", me: { id: "actor", org_id: "org-1" } });
+  assert.deepEqual(groups.find((entry) => entry.key === "people")?.items, [{
+    kind: "person", id: person.id, profileId: person.id, employeeId: null,
+    title: person.full_name, meta: person.job_title, icon: "people",
+  }]);
+  const profileRead = reads.find((request) => request.table === "profiles");
+  assert.ok(profileRead.filters.some(([key, value]) => key === "org_id" && value === "org-1"));
+  assert.ok(profileRead.filters.some(([key, value]) => key === "full_name" && value === "%Search%"));
+  assert.equal(profileRead.limit, 6);
+});
+
 test("credentialed Playwright collection is safe when private fixtures are absent", () => {
   assert.match(notificationBrowser, /const hasFixtureEnvironment = Boolean/);
   assert.match(notificationBrowser, /hasFixtureEnvironment \? createClient/);
