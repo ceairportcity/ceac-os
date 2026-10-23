@@ -85,4 +85,3 @@ BEGIN
     'appraisal_id',v_review.id,'manager_assessment_id',v_latest);
 END;
 $function$;
-

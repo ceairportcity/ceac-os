@@ -1,3 +1,7 @@
+## 23 October 2026 — owner directs production cutover and waives fresh backup prerequisite
+
+The owner explicitly directed proceeding to release despite the incomplete fresh encrypted production backup and restore rehearsal. This supersedes the earlier requirement to wait for that backup before this cutover. No complete backup or successful restore is claimed. Preserve existing accounts, password hashes, profiles, roles, data and private Storage; retain invitation-controlled email/password and jointly deferred Google OAuth/mandatory MFA. Record actual migration, deployment and live verification results honestly; no fabricated checks or weakened permissions.
+
 ## 23 October 2026 — assigned Group Pastor may publish the HR head's review
 
 The owner answered **Yes** to: “May the Group Pastor also publish that assigned HR-head review only, without receiving broader HR access?” This narrowly extends the earlier conduct-review approval. The current assigned Group Pastor may make a separate, reasoned publication decision on the exact latest requested assessment of the active Administration/HR head. The HR subject cannot self-review or self-publish. Other employees retain independent HR publication; no general protected-HR, Payroll, reviewer-assignment or capability grant is conferred. Reassignment, stale assessment versions, unassigned Executive accounts and unrelated cases must be denied by the server. Existing release, backup and security safeguards remain binding.
