@@ -3,7 +3,7 @@
 .s2-project{color:#172b4b;font-size:13px;line-height:1.5}
 .s2-project-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid #e4edf7;border-radius:12px;background:#fff;margin:14px 0;overflow:hidden}
 .s2-project-metrics>div{padding:17px 18px;min-width:0;border-right:1px solid #e8eff8;display:flex;flex-direction:column;gap:3px}
-.s2-project-metrics span,.s2-project-metrics small{font-size:12px;color:#71849b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s2-project-metrics span,.s2-project-metrics small{font-size:12px;color:#71849b;white-space:normal;overflow-wrap:anywhere}
 .s2-project-metrics strong{font-size:27px;line-height:1.2;letter-spacing:-.045em;color:#123b69}
 .s2-project-metrics .s2-project-date{font-size:15px;letter-spacing:normal;margin:6px 0}
 .s2-project-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,320px);gap:13px;align-items:start;margin-top:14px}
@@ -71,8 +71,8 @@
 .s2-project-progress-ring{display:grid;place-items:center;position:relative;flex:none;width:66px;height:66px;border-radius:50%;background:conic-gradient(#1477ee calc(var(--s2-percent,0) * 1%), #e4eaf2 0);overflow:visible}
 .s2-project-progress-ring::before{content:"";position:absolute;inset:7px;border-radius:50%;background:white}
 .s2-project-progress-ring strong{z-index:1;font-size:15px;color:#174d9b;letter-spacing:normal}
-.s2-project-task-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:12px}
-.s2-project-task-facts strong{display:flex;flex-direction:column;font-size:24px;color:#173b67;letter-spacing:-.03em}
+.s2-project-task-facts{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:12px}
+.s2-project-task-facts strong{display:flex;flex:1 0 auto;flex-direction:column;font-size:24px;color:#173b67;letter-spacing:-.03em}
 .s2-project-task-facts strong small{font-size:12px;letter-spacing:normal;line-height:1.45;font-weight:500}
 .s2-project-task-facts .is-overdue{color:#d44347}
 .s2-project-stat-card>.s2-project-date{margin-top:10px;white-space:nowrap}
@@ -108,6 +108,7 @@
 .manager-projects.s2-owner-approved-projects .ev2p-back{margin:0 0 6px}
 .manager-projects.s2-owner-approved-projects .ev2p-workspace-header{
   margin-bottom:12px;
+  padding:20px 24px;
   box-shadow:none;
 }
 .manager-projects.s2-owner-approved-projects .ev2p-tabs{
@@ -141,7 +142,7 @@
 .manager-projects.s2-project-workflow .fpg-project-tree-stages button i{background:#97b8da}
 @media(max-width:640px){
   .manager-projects.s2-owner-approved-projects>.fpg-project-main{padding:0 0 24px}
-  .manager-projects.s2-owner-approved-projects .ev2p-workspace-header{border-radius:10px}
+  .manager-projects.s2-owner-approved-projects .ev2p-workspace-header{padding:18px 16px;border-radius:10px}
   .manager-projects.s2-owner-approved-projects .ev2p-tabs{overflow-x:auto}
 }
 
