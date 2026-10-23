@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
 import { Sheet, ProgressMeter, ProductNotice } from "../components/bits";
 import FinanceRequestQueue from "../components/FinanceRequestQueue";
+import FinanceDemoRecords from "../components/FinanceDemoRecords";
 import { Table } from "../components/primitives";
 import { Button, Skeleton, StatePanel } from "../experience-v2/components";
 import { FinanceCurrencyCard, FinanceEmpty, FinanceFootnote, FinancePageHeader, FinanceRecordRow, FinanceSection, FinanceTabs } from "../experience-v2/finance-family/FinanceFamilyV2";
@@ -72,8 +73,8 @@ export default function Finance({ me, openExpenses }) {
 
   useEffect(() => { load(); }, []);
 
-  async function load() {
-    setLoading(true);
+  async function load({ quiet = false } = {}) {
+    if (!quiet) setLoading(true);
     setLoadError(null);
     try {
       const results = await Promise.all([
@@ -96,7 +97,7 @@ export default function Finance({ me, openExpenses }) {
     } catch (error) {
       setLoadError(error?.message || "Finance records could not be loaded.");
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
   }
 
@@ -232,6 +233,7 @@ export default function Finance({ me, openExpenses }) {
         statusTone="neutral"
       />
       <FinanceTabs items={TABS} value={tab} onChange={setTab} label="Administration finance sections" />
+      {me.is_admin && <Button variant="secondary" onClick={() => setSheet("demo")}>Review demo finance records</Button>}
 
       {tab === "overview" && (<>
         <section className="fpg-finance-dashboard" aria-label="Recorded finance overview">
@@ -420,6 +422,8 @@ export default function Finance({ me, openExpenses }) {
           {msg && <div className="flag flag-brick" style={{ marginTop: 12 }}>{msg}</div>}
           <button className="btn" style={{ marginTop: 14 }} onClick={saveIncome} disabled={busy}>{busy ? "Saving..." : "Record it"}</button>
         </Sheet>)}
+
+      {sheet === "demo" && me.is_admin && <Sheet onClose={() => setSheet(null)}><FinanceDemoRecords onChanged={() => load({ quiet: true })} /></Sheet>}
 
       {sheet === "transfer" && (
         <Sheet onClose={() => setSheet(null)}>

@@ -141,8 +141,8 @@ begin
   -- 158 functions already explicitly reviewed in the Stage 2 exact-signature
   -- allowlist; migration185 adds one HR-only canonical roster creation RPC.
   -- Any additional unreviewed function remains prohibited.
-  if n<>159 then
-    raise exception 'Security gate failure: expected 158 reviewed Stage 2 caller-scoped functions plus the one independently reviewed HR roster creation RPC (159), found %.',n;
+  if n<>161 then
+    raise exception 'Security gate failure: expected 159 existing reviewed interfaces plus two Administration finance demo classification RPCs (161), found %.',n;
   end if;
 end $$;
 

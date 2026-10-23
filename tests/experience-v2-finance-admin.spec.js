@@ -3,6 +3,42 @@ import { expect, test } from "@playwright/test";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 
+test("A6 Administration can review, archive and restore demo finance without editing its amount", async ({ browser }) => {
+  const { context, page } = await openAdminFinance(browser, { width: 390, height: 844 });
+  let archived = false;
+  let revision = 0;
+  const calls = [];
+  await page.route("**/rest/v1/rpc/admin_finance_demo_records", (route) => route.fulfill({
+    status: 200, contentType: "application/json", body: JSON.stringify([{
+      record_table: "spend_lines", record_id: "aa600031-0000-4000-8000-000000000001",
+      description: "Demo · synthetic archive journey", amount_minor: 1200, currency: "CAD",
+      is_demo: archived, event_no: revision, fingerprint: "unchanged-source-revision", reason: "",
+    }]),
+  }));
+  await page.route("**/rest/v1/rpc/admin_set_finance_demo_record", (route) => {
+    const body = route.request().postDataJSON(); calls.push(body);
+    archived = body.p_is_demo; revision += 1;
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(revision) });
+  });
+  await page.getByRole("button", { name: "Review demo finance records" }).click();
+  const panel = page.getByRole("region", { name: "Demonstration finance records" });
+  await expect(panel.getByText(/Included in live records/)).toBeVisible();
+  await panel.getByRole("checkbox").check();
+  await panel.getByLabel("Reason for this classification (required)").fill("Confirmed synthetic demonstration record.");
+  await panel.getByRole("button", { name: "Archive selected demo records", exact: true }).click();
+  await expect(panel.getByText("Selected demo records are archived and excluded from live finance.", { exact: true })).toBeVisible();
+  await expect(panel.getByText(/Spend · CAD 12.00 · Archived demo/)).toBeVisible();
+  await panel.getByRole("checkbox").check();
+  await panel.getByLabel("Reason for this classification (required)").fill("Restore synthetic record after review.");
+  await panel.getByRole("button", { name: "Restore selected records", exact: true }).click();
+  await expect(panel.getByText("Selected records are restored to live finance.", { exact: true })).toBeVisible();
+  expect(calls.map((call) => call.p_is_demo)).toEqual([true, false]);
+  expect(calls.map((call) => call.p_expected_event_no)).toEqual([0, 1]);
+  expect(calls.every((call) => call.p_expected_fingerprint === "unchanged-source-revision")).toBe(true);
+  expect(calls.every((call) => !("amount_minor" in call))).toBe(true);
+  await context.close();
+});
+
 async function openAdminFinance(browser, viewport) {
   const context = await browser.newContext({ viewport });
   const page = await context.newPage();
