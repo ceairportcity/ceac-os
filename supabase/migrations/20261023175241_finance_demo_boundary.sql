@@ -112,9 +112,21 @@ grant execute on function public.admin_set_finance_demo_record(text,uuid,boolean
 -- Runs even within existing SECURITY DEFINER decision/fulfilment RPCs.
 create function public.guard_finance_demo_record()
 returns trigger language plpgsql security definer set search_path='' as $$
+declare v_org uuid;
 begin
-  if tg_op='UPDATE' and public.finance_record_is_demo(tg_table_name,old.id,old.org_id) then
-    raise exception 'Demonstration finance records cannot be changed or paid out. Review their classification first.';
+  -- Intermediate multi-stage approvals insert a decision without updating the
+  -- request. Guard that insert too, using the same parent-row lock as archival.
+  if tg_table_name='finance_request_decisions' then
+    select r.org_id into v_org from public.finance_requests r where r.id=new.request_id for update;
+    if public.finance_record_is_demo('finance_requests',new.request_id,v_org) then
+      raise exception 'Demonstration finance requests cannot be decided. Review their classification first.';
+    end if;
+    return new;
+  end if;
+  if tg_op='UPDATE' then
+    if public.finance_record_is_demo(tg_table_name,old.id,old.org_id) then
+      raise exception 'Demonstration finance records cannot be changed or paid out. Review their classification first.';
+    end if;
   end if;
   if tg_table_name='spend_lines' then
     if new.reverses_id is not null then
@@ -137,6 +149,7 @@ revoke all on function public.guard_finance_demo_record() from public,anon,authe
 create trigger finance_demo_spend_guard before insert or update on public.spend_lines for each row execute function public.guard_finance_demo_record();
 create trigger finance_demo_budget_guard before update on public.budgets for each row execute function public.guard_finance_demo_record();
 create trigger finance_demo_request_guard before insert or update on public.finance_requests for each row execute function public.guard_finance_demo_record();
+create trigger finance_demo_decision_guard before insert on public.finance_request_decisions for each row execute function public.guard_finance_demo_record();
 
 -- Definer aggregate applies the same classification explicitly.
 CREATE OR REPLACE FUNCTION public.unit_budget_position(p_unit_id uuid, p_year integer DEFAULT NULL::integer)

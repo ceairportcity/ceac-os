@@ -66,10 +66,16 @@ values('aa600030-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000
 insert into public.finance_requests(id,org_id,unit_id,requested_by,title,amount_minor,currency,state)
 values('aa600032-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000010',
  '20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000003','Demo · isolated request',500,'CAD','approved');
+insert into public.finance_requests(id,org_id,unit_id,requested_by,title,amount_minor,currency,state)
+values('aa600032-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000010',
+ '20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000003','Demo · multi-stage request',500,'CAD','submitted');
+insert into public.finance_approval_rules(org_id,currency,no_request_below_minor,admin_limit_minor,finance_limit_minor)
+ values('10000000-0000-4000-8000-000000000010','CAD',0,0,0)
+ on conflict(org_id,currency) do update set admin_limit_minor=0,finance_limit_minor=0;
 insert into demo_finance_baseline
  select 'spend_lines',s.id,md5(to_jsonb(s)::text) from public.spend_lines s where id='aa600031-0000-4000-8000-000000000001'
  union all select 'budgets',b.id,md5(to_jsonb(b)::text) from public.budgets b where id='aa600030-0000-4000-8000-000000000001'
- union all select 'finance_requests',r.id,md5(to_jsonb(r)::text) from public.finance_requests r where id='aa600032-0000-4000-8000-000000000001';
+ union all select 'finance_requests',r.id,md5(to_jsonb(r)::text) from public.finance_requests r where id in ('aa600032-0000-4000-8000-000000000001','aa600032-0000-4000-8000-000000000002');
 
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
@@ -91,7 +97,7 @@ begin
    or exists(select 1 from public.finance_requests where id='aa600032-0000-4000-8000-000000000001') then
    raise exception 'A6: archived demo financial rows remain in live reads';
  end if;
- if (select count(*) from public.admin_finance_demo_records() where record_id::text like 'aa6000%' and is_demo)<>3 then
+ if (select count(*) from public.admin_finance_demo_records() where record_id::text like 'aa6000%' and is_demo)<>4 then
    raise exception 'A6: archive lost its Administration review path';
  end if;
  if exists(select 1 from public.unit_budget_position('20000000-0000-4000-8000-000000000011',2099) where currency='CAD')
@@ -104,6 +110,14 @@ begin
  exception when raise_exception then
    if sqlerrm not like 'Demonstration finance records cannot%' then raise; end if;
  end;
+ perform set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000005","role":"authenticated","aal":"aal1"}',true);
+ begin
+   perform public.decide_finance_request('aa600032-0000-4000-8000-000000000002','approved','Blocked intermediate approval.');
+   raise exception 'A6: archived request received an intermediate approval';
+ exception when raise_exception then
+   if sqlerrm not like 'Demonstration finance requests cannot be decided%' then raise; end if;
+ end;
+ perform set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
  begin
    insert into public.spend_lines(org_id,unit_id,spent_on,description,amount_minor,entered_by,currency,reverses_id)
     values('10000000-0000-4000-8000-000000000010','20000000-0000-4000-8000-000000000011','2099-01-01','Forbidden live correction',1200,'31000000-0000-4000-8000-000000000003','CAD','aa600031-0000-4000-8000-000000000001');
@@ -153,8 +167,8 @@ begin
    execute format('select md5(to_jsonb(t)::text) from public.%I t where id=$1',r.record_table) into v_current using r.record_id;
    if v_current is distinct from r.fingerprint then raise exception 'A6: original financial record changed'; end if;
  end loop;
- if (select count(*) from public.finance_demo_events where record_id::text like 'aa6000%')<>6 then
-   raise exception 'A6: expected three archive and three restore audit events';
+ if (select count(*) from public.finance_demo_events where record_id::text like 'aa6000%')<>8 then
+   raise exception 'A6: expected four archive and four restore audit events';
  end if;
  if exists(select 1 from public.finance_demo_events where record_id::text like 'aa6000%' and recorded_by<>'31000000-0000-4000-8000-000000000003') then
    raise exception 'A6: classification audit attribution is wrong';
