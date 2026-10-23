@@ -22,7 +22,7 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack }) {
     (async () => {
       try {
         const projectResult = await supabase.from("projects")
-          .select("id,kind,name,purpose,status,starts_on,ends_on,lead_unit_id,units!projects_lead_unit_id_fkey(name)")
+          .select("id,org_id,kind,name,purpose,status,starts_on,ends_on,lead_unit_id,units!projects_lead_unit_id_fkey(name)")
           .eq("id", projectId).single();
         if (projectResult.error) throw projectResult.error;
         const [participation, phases, work, milestones] = await Promise.all([
