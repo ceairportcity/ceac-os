@@ -1,3 +1,7 @@
+## 23 October 2026 — assigned Group Pastor may publish the HR head's review
+
+The owner answered **Yes** to: “May the Group Pastor also publish that assigned HR-head review only, without receiving broader HR access?” This narrowly extends the earlier conduct-review approval. The current assigned Group Pastor may make a separate, reasoned publication decision on the exact latest requested assessment of the active Administration/HR head. The HR subject cannot self-review or self-publish. Other employees retain independent HR publication; no general protected-HR, Payroll, reviewer-assignment or capability grant is conferred. Reassignment, stale assessment versions, unassigned Executive accounts and unrelated cases must be denied by the server. Existing release, backup and security safeguards remain binding.
+
 ## 20 October 2026, 17:50 UTC — BINDING Stage 2 correction-to-release sequence (READ FIRST UNTIL RELEASE)
 
 Owner decision: finish and deliver the Stage 2 mockup designs and functionality already requested. The repair baseline is the owner's review of PR #124 at `0927766b`, reconciled forward with completed work and real evidence in the existing owner-repair ledger. Continue the actual existing PR #124; inspect its live HEAD and preserve newer/unpublished work. This decision supersedes conflicting older process, stage-closure and sequencing statements. It does not expand the approved product scope or waive security, data preservation or release safeguards.

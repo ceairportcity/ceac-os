@@ -394,7 +394,7 @@ export default function App() {
   const canUseDelivery = isAdmin || isExec || isUnitManager || hasCapability("delivery.manage");
   const canUseWorkload = isUnitManager || hasCapability("resource.manage");
   // Assigned Executive reviewers may open this route; appraisal RLS restricts them to their own case.
-  // Opening the route never grants performance.admin, Protected HR or publication rights.
+  // Opening the route never grants performance.admin or Protected HR. The assigned HR-head publication exception is checked per case by the server.
   const canUsePerformance = isExec || isStaff || isUnitManager || hasOrgCapability("performance.admin");
   const canUseLearning = !isExec && (isStaff || isUnitManager || hasOrgCapability("learning.manage"));
   const canUseWorkforce = !isExec && (isStaff || isUnitManager || hasOrgCapability("workforce.manage") || hasOrgCapability("attendance.correct") || hasOrgCapability("compliance.manage"));

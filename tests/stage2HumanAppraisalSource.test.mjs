@@ -104,7 +104,7 @@ test("owner-approved HR head appraisal includes Administration and excludes Grou
  assert.match(migration,/a\.profile_id<>auth\.uid\(\)/);
  assert.match(migration,/profile_id<>auth\.uid\(\)/);
 });
-test("Group Pastor receives a single-case review destination, not Admin or HR publication authority",()=>{
+test("Group Pastor receives only assigned HR-head review and publication, never general HR authority",()=>{
  const migration=read("supabase/migrations/20261022170000_188_admin_hr_head_group_pastor_appraisal.sql");
  const app=read("src/App.jsx");
  const personal=read("src/screens/Me.jsx");
@@ -120,5 +120,8 @@ test("Group Pastor receives a single-case review destination, not Admin or HR pu
  assert.match(review,/profile\.id === selectedCase\.profile_id/);
  assert.match(review,/profile\.is_exec && !profile\.is_admin/);
  assert.match(review,/hrReleaseAdmin && isSelf && <ProductNotice/);
- assert.match(review,/hrReleaseAdmin && !isSelf && <div className="performance-share-bar"/);
+ assert.match(review,/canDecidePublication && <div className="performance-share-bar"/);
+ assert.match(review,/!isSelf && \(hrReleaseAdmin \|\| assignedPastorPublication\)/);
+ assert.match(review,/review\.manager_id === me\.id/);
+ assert.match(review,/Publish assigned HR-head review/);
 });

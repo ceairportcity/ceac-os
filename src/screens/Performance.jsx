@@ -79,6 +79,11 @@ function CaseState({ status }) {
 
 export default function Performance({ me }) {
   const hrReleaseAdmin = Boolean(me.is_admin) && (me.capabilities || []).includes("people.manage");
+  const mayPublishAssignedHrHead = (review) => Boolean(
+    me.is_exec && !me.is_admin && me.job_title?.trim().toLowerCase() === "group pastor"
+    && review?.profiles?.is_admin && review.profile_id !== me.id
+    && review.manager_id === me.id && review.reviewer_assignment_reason
+  );
   const orgPerformanceAdmin = hrReleaseAdmin || (me.capability_grants || []).some((grant) =>
     grant.capability === "performance.admin" && !grant.scope_unit_id
   );
@@ -230,7 +235,7 @@ export default function Performance({ me }) {
       if (requestSerial !== caseRequestSerial.current) return;
       const failed = [e,en,p,f,fr].find((row) => row.error);
       if (failed) throw failed.error;
-      const releaseResult = hrReleaseAdmin
+      const releaseResult = hrReleaseAdmin || mayPublishAssignedHrHead(selected)
         ? await supabase.from("performance_review_release_requests")
             .select("id,requested_assessment_id,requested_by,request_reason,requested_at,state")
             .eq("org_id",me.org_id).eq("appraisal_id",caseId).eq("state","pending")
@@ -273,6 +278,8 @@ export default function Performance({ me }) {
   const selectedCase = cases.find((row) => row.id === selectedCaseId) || null;
   const isSelf = selectedCase?.profile_id === me.id;
   const isReviewer = selectedCase?.manager_id === me.id;
+  const assignedPastorPublication = mayPublishAssignedHrHead(selectedCase);
+  const canDecidePublication = !isSelf && (hrReleaseAdmin || assignedPastorPublication);
   const currentReflection = latestEntry(entries, "employee_reflection");
   const currentAssessment = latestEntry(entries, "manager_assessment");
   const currentReleaseRequest = releaseQueue.find((request) =>
@@ -361,8 +368,8 @@ export default function Performance({ me }) {
   }
 
   async function decideHRRelease(approved) {
-    if (!hrReleaseAdmin || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
-    if (currentReleaseRequest.requested_by === me.id) {
+    if (!canDecidePublication || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
+    if (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) {
       setError("An independent HR officer must authorise assessment publication.");
       return;
     }
@@ -370,7 +377,9 @@ export default function Performance({ me }) {
       p_request_id:currentReleaseRequest.id,
       p_approve:approved,
       p_reason:releaseDecisionNote.trim(),
-    }, approved
+    }, assignedPastorPublication
+      ? (approved ? "Group Pastor approved publication of the assigned HR-head assessment version." : "Group Pastor declined publication of the assigned HR-head assessment version.")
+      : approved
       ? "HR approved publication of this manager assessment version."
       : "HR declined publication; the manager assessment remains restricted.");
     if (confirmed) setReleaseDecisionNote("");
@@ -381,7 +390,7 @@ export default function Performance({ me }) {
     const submitted = await rpc("performance_request_release", {
       p_appraisal_id: selectedCase.id,
       p_reason: releaseReason.trim(),
-    }, "The manager's assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.");
+    }, assignedPastorPublication ? "The exact HR-head assessment version is ready for your separate publication decision." : "The manager's assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.");
     if (submitted) setReleaseReason("");
   }
 
@@ -628,10 +637,10 @@ export default function Performance({ me }) {
             <button className="btn btn-sm" disabled={busy || feedbackNote.trim().length < 3} onClick={recordFeedback}>Record feedback</button>
           </section>}
 
-          {hrReleaseAdmin && isSelf && <ProductNotice tone="attention" title="Independent HR publication required">You cannot decide publication of your own appraisal. The Group Pastor may write the assigned assessment, but release must be decided by a separately authorised independent HR approver. The record remains restricted until then.</ProductNotice>}
-          {hrReleaseAdmin && !isSelf && <div className="performance-share-bar">
-            <div><strong>HR publication decisions</strong>
-              <span>Only HR may publish a completed manager narrative. Review the manager assessment above before deciding.</span>
+          {hrReleaseAdmin && isSelf && <ProductNotice tone="attention" title="Your assigned reviewer decides publication">You cannot decide publication of your own appraisal. The assigned Group Pastor may conduct and publish this review under the owner-approved HR-head exception. The assessment remains restricted until that decision.</ProductNotice>}
+          {canDecidePublication && <div className="performance-share-bar">
+            <div><strong>{assignedPastorPublication ? "Assigned HR-head publication decision" : "HR publication decisions"}</strong>
+              <span>{assignedPastorPublication ? "You may publish only this assigned HR-head assessment. This does not grant access to other protected HR records." : "Only independent HR may publish this completed manager narrative. Review the manager assessment above before deciding."}</span>
             </div>
             {!releaseQueueAvailable && <p className="screen-note">Formal approval controls await the accepted database migration.</p>}
             {releaseQueueAvailable && !currentReleaseRequest && <p className="screen-note">No pending HR request matches the current manager assessment version.</p>}
@@ -641,20 +650,20 @@ export default function Performance({ me }) {
                 <textarea className="field" rows="2" aria-label="HR assessment publication decision reason"
                   value={releaseDecisionNote} onChange={(event)=>setReleaseDecisionNote(event.target.value)} />
               </FieldGroup>
-              <button className="btn btn-sm" disabled={busy || currentReleaseRequest.requested_by === me.id || releaseDecisionNote.trim().length < 8}
-                onClick={()=>decideHRRelease(true)}>HR approve publication</button>
-              <button className="btn btn-ghost btn-sm" disabled={busy || currentReleaseRequest.requested_by === me.id || releaseDecisionNote.trim().length < 8}
-                onClick={()=>decideHRRelease(false)}>HR decline with reason</button>
+              <button className="btn btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || releaseDecisionNote.trim().length < 8}
+                onClick={()=>decideHRRelease(true)}>{assignedPastorPublication ? "Publish assigned HR-head review" : "HR approve publication"}</button>
+              <button className="btn btn-ghost btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || releaseDecisionNote.trim().length < 8}
+                onClick={()=>decideHRRelease(false)}>{assignedPastorPublication ? "Decline assigned HR-head publication" : "HR decline with reason"}</button>
             </>}
           </div>}
 
           {isReviewer && selectedCase.status !== "closed" && <div className="performance-share-bar">
-            <div><strong>Request HR release</strong><span>Your assessment remains restricted to the assigned reviewer and authorised HR until HR approves its formal publication. New revisions require their own release approval.</span></div>
+            <div><strong>{assignedPastorPublication ? "Prepare HR-head publication" : "Request HR release"}</strong><span>{assignedPastorPublication ? "Record a release request for this exact assessment version, then make a separate reasoned publication decision above. New revisions require a new decision." : "Your assessment remains restricted to the assigned reviewer and authorised HR until HR approves its formal publication. New revisions require their own release approval."}</span></div>
             {!currentAssessment && <p className="screen-note">Record your assessment before requesting HR publication.</p>}
             <FieldGroup label="Reason to release this assessment">
               <textarea className="field" rows="2" value={releaseReason} onChange={(event) => setReleaseReason(event.target.value)} aria-label="Performance release request reason" />
             </FieldGroup>
-            <button className="btn btn-sm" disabled={busy || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>Submit release request to HR</button>
+            <button className="btn btn-sm" disabled={busy || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>{assignedPastorPublication ? "Prepare assigned HR-head publication" : "Submit release request to HR"}</button>
           </div>}
         </>}
       </section>

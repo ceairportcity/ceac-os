@@ -433,6 +433,183 @@ BEGIN
 END
 $self_decision_preserved$;
 
+-- 23 Oct owner approval: the current assigned Group Pastor may publish ONLY
+-- the HR-head case. Exercise the same endpoint as ordinary independent HR.
+-- An ordinary Staff case remains outside this exception, even for a Pastor.
+DO $ordinary_pending_fixture$
+DECLARE v_case uuid;
+BEGIN
+ SELECT id INTO v_case FROM public.appraisals
+ WHERE cycle_id=nullif(current_setting('ceac.hr_head_owner_cycle',true),'')::uuid
+   AND profile_id='31000000-0000-4000-8000-000000000001';
+ IF v_case IS NULL THEN RAISE EXCEPTION 'Ordinary review regression fixture absent'; END IF;
+ UPDATE public.appraisals SET manager_id='31000000-0000-4000-8000-000000000002' WHERE id=v_case;
+ PERFORM set_config('ceac.ordinary_case',v_case::text,true);
+END
+$ordinary_pending_fixture$;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+SELECT public.record_appraisal_entry(nullif(current_setting('ceac.ordinary_case',true),'')::uuid,
+ 'manager_assessment','Ordinary Staff review remains under independent HR publication.',NULL);
+SELECT set_config('ceac.ordinary_request',public.performance_request_release(
+ nullif(current_setting('ceac.ordinary_case',true),'')::uuid,
+ 'An ordinary review needs independent HR publication.')::text,true);
+RESET ROLE;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+DO $pastor_no_general_release$
+BEGIN
+ BEGIN
+  PERFORM public.performance_hr_decide_release(nullif(current_setting('ceac.ordinary_request',true),'')::uuid,
+    true,'Executive must not publish an ordinary Staff review.');
+  RAISE EXCEPTION 'Pastor acquired general publication authority';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END
+$pastor_no_general_release$;
+RESET ROLE;
+
+-- The new command authority must retain the dormant privileged-MFA gate.
+UPDATE public.organisations SET privileged_mfa_required=true
+ WHERE id='10000000-0000-4000-8000-000000000010';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal1","amr":[{"method":"password"}]}',true);
+DO $pastor_privileged_mfa_denied$
+BEGIN
+ BEGIN
+  PERFORM public.performance_hr_decide_release(nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid,
+    true,'Privileged MFA when enabled must still protect this publication command.');
+  RAISE EXCEPTION 'AAL1 Pastor bypassed privileged MFA publication gate';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END
+$pastor_privileged_mfa_denied$;
+RESET ROLE;
+UPDATE public.organisations SET privileged_mfa_required=false
+ WHERE id='10000000-0000-4000-8000-000000000010';
+SELECT set_config('request.jwt.claims','{}',true);
+
+-- Wrong-title Executive and non-Executive Manager cannot use the exception.
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+UPDATE public.profiles SET job_title='Executive colleague'
+ WHERE id='31000000-0000-4000-8000-000000000004';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+DO $wrong_title_denied$
+BEGIN
+ BEGIN
+  PERFORM public.performance_hr_decide_release(nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid,
+    true,'An Executive title alone must not authorise HR-head publication.');
+  RAISE EXCEPTION 'Unqualified Executive published HR head';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END
+$wrong_title_denied$;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+DO $manager_no_hr_head_publication$
+BEGIN
+ BEGIN
+  PERFORM public.performance_hr_decide_release(nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid,
+    true,'Ordinary Manager must not publish the HR head appraisal.');
+  RAISE EXCEPTION 'Manager published HR head';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END
+$manager_no_hr_head_publication$;
+RESET ROLE;
+UPDATE public.profiles SET job_title='Group Pastor'
+ WHERE id='31000000-0000-4000-8000-000000000004';
+
+-- Revoking assignment must immediately revoke publication, including decline.
+UPDATE public.appraisals SET manager_id=NULL
+ WHERE id=nullif(current_setting('ceac.hr_head_owner_case',true),'')::uuid;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+DO $revoked_assignment_denied$
+BEGIN
+ BEGIN
+  PERFORM public.performance_hr_decide_release(nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid,
+    false,'Former reviewer may not decide after assignment is revoked.');
+  RAISE EXCEPTION 'Revoked Pastor decided HR-head publication';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END
+$revoked_assignment_denied$;
+RESET ROLE;
+UPDATE public.appraisals SET manager_id='31000000-0000-4000-8000-000000000004'
+ WHERE id=nullif(current_setting('ceac.hr_head_owner_case',true),'')::uuid;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+DO $exact_version_then_publication$
+DECLARE v_case uuid:=nullif(current_setting('ceac.hr_head_owner_case',true),'')::uuid;
+        v_request uuid:=nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid;
+        v_prior uuid; v_latest uuid; v_result jsonb;
+BEGIN
+ SELECT requested_assessment_id INTO v_prior FROM public.performance_review_release_requests
+ WHERE id=v_request;
+ v_latest:=public.record_appraisal_entry(v_case,'manager_assessment',
+   'A revised factual assessment by the current assigned Group Pastor.',v_prior);
+ -- Transactions share now(); deterministic latest-version checks need distinct dates.
+ PERFORM set_config('ceac.hr_head_latest_entry',v_latest::text,true);
+END
+$exact_version_then_publication$;
+RESET ROLE;
+UPDATE public.appraisal_entries SET created_at=created_at-interval '1 second'
+ WHERE id=(SELECT requested_assessment_id FROM public.performance_review_release_requests
+ WHERE id=nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid);
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+DO $stale_denial_and_latest_publication$
+DECLARE v_case uuid:=nullif(current_setting('ceac.hr_head_owner_case',true),'')::uuid;
+        v_request uuid:=nullif(current_setting('ceac.hr_head_release_request',true),'')::uuid;
+        v_new uuid; v_result jsonb;
+BEGIN
+ BEGIN
+  PERFORM public.performance_hr_decide_release(v_request,true,
+    'An obsolete version must not publish after a recorded revision.');
+  RAISE EXCEPTION 'Pastor published stale assessment version';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM public.performance_hr_decide_release(v_request,false,
+    'Declined obsolete assessment; a revised version requires its own decision.');
+ v_new:=public.performance_request_release(v_case,
+    'The latest assigned HR-head assessment is ready for publication.');
+ v_result:=public.performance_hr_decide_release(v_new,true,
+    'Group Pastor approved the exact latest version under owner authority.');
+ IF v_result->>'manager_assessment_id' IS DISTINCT FROM current_setting('ceac.hr_head_latest_entry',true)
+ THEN RAISE EXCEPTION 'Publication did not bind the exact revised assessment'; END IF;
+ PERFORM set_config('ceac.hr_head_published_request',v_new::text,true);
+ BEGIN
+  PERFORM public.performance_hr_decide_release(v_new,true,
+    'A duplicate publication decision must not change a final request.');
+  RAISE EXCEPTION 'Final publication was decided twice';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END
+$stale_denial_and_latest_publication$;
+RESET ROLE;
+DO $publication_audit$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.appraisals
+   WHERE id=nullif(current_setting('ceac.hr_head_owner_case',true),'')::uuid
+     AND status='shared' AND shared_by='31000000-0000-4000-8000-000000000004')
+ OR NOT EXISTS(SELECT 1 FROM public.activity_events
+   WHERE object_id=nullif(current_setting('ceac.hr_head_owner_case',true),'')::uuid
+     AND verb='performance_hr_release_decided'
+     AND meta->>'authority_scope'='assigned_hr_head_group_pastor'
+     AND meta->>'approved'='true')
+ THEN RAISE EXCEPTION 'Exact-case Pastor publication/audit absent'; END IF;
+END
+$publication_audit$;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+DO $hr_employee_can_read_published_only$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.appraisal_entries
+   WHERE id=nullif(current_setting('ceac.hr_head_latest_entry',true),'')::uuid)
+ THEN RAISE EXCEPTION 'HR subject cannot read their authorised published assessment'; END IF;
+ PERFORM public.performance_hr_decide_release(nullif(current_setting('ceac.ordinary_request',true),'')::uuid,
+   true,'Independent HR still publishes ordinary employee reviews.');
+END
+$hr_employee_can_read_published_only$;
+RESET ROLE;
+
 -- Re-enabling universal MFA inside this rollback-only fixture must close the
 -- view's explicit AAL1 view-owner bypass before server/provider cutover.
 UPDATE public.organisations SET universal_totp_required=true
@@ -451,4 +628,4 @@ $mfa_no_published_view_bypass$;
 RESET ROLE;
 
 ROLLBACK;
-SELECT 'Stage 2 human quarterly rating, independent HR publication and AAL2 privacy gate PASSED' AS result;
+SELECT 'Stage 2 human ratings, independent HR and assigned HR-head publication, MFA privacy gate PASSED' AS result;
