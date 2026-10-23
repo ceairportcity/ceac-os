@@ -33,6 +33,14 @@ AND NOT EXISTS (
  SELECT 1 FROM public.employee_roster r
  WHERE r.org_id=p.org_id AND r.profile_id=p.id
 );
+-- Imported multi-unit roster with no primary: a date correction must retain it.
+INSERT INTO public.employee_roster
+ (id,org_id,full_name,employment_type,employment_status,identity_state,source_system,source_row_key)
+VALUES ('41000000-0000-4000-8000-000000000190','10000000-0000-4000-8000-000000000010',
+ 'Imported date fixture','not_recorded','active','roster_only','date_only_gate','date-only-190');
+INSERT INTO public.employee_unit_memberships(org_id,employee_id,unit_id,is_primary)
+SELECT '10000000-0000-4000-8000-000000000010','41000000-0000-4000-8000-000000000190',id,false
+FROM public.units WHERE id IN ('20000000-0000-4000-8000-000000000011','20000000-0000-4000-8000-000000000012');
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1"}',true);
@@ -153,6 +161,62 @@ BEGIN
   RAISE EXCEPTION 'HR contact edit incorrectly created or linked an Auth account'; END IF;
 END;
 $contact_profile$;
+
+DO $date_only$
+DECLARE
+ v_id uuid:='41000000-0000-4000-8000-000000000190';
+ v_old timestamptz;
+ v_units jsonb;
+ v_result jsonb;
+ v_selected uuid[]:=ARRAY['20000000-0000-4000-8000-000000000012','20000000-0000-4000-8000-000000000011']::uuid[];
+BEGIN
+ SELECT updated_at INTO v_old FROM public.employee_roster WHERE id=v_id;
+ SELECT jsonb_agg(to_jsonb(m) ORDER BY m.unit_id) INTO v_units
+ FROM public.employee_unit_memberships m WHERE employee_id=v_id;
+ v_result:=public.admin_record_roster_employment_profile(v_id,v_old,
+  'Imported date fixture',NULL,NULL,'not_recorded','active',NULL,v_selected,NULL,
+  NULL,NULL,'2026-10-07','Owner confirmed employee start date');
+ IF v_result->>'hr_started_on'<>'2026-10-07'
+  OR (SELECT hr_started_on FROM public.employee_roster WHERE id=v_id) IS DISTINCT FROM DATE '2026-10-07'
+  OR (SELECT jsonb_agg(to_jsonb(m) ORDER BY m.unit_id) FROM public.employee_unit_memberships m WHERE employee_id=v_id) IS DISTINCT FROM v_units
+  OR (SELECT count(*) FROM public.employee_roster_change_events WHERE employee_id=v_id)<>1
+  OR NOT EXISTS(SELECT 1 FROM public.employee_roster_change_events WHERE employee_id=v_id
+   AND actor_id=auth.uid() AND before_record->>'hr_started_on' IS NULL
+   AND after_record->>'hr_started_on'='2026-10-07')
+ THEN RAISE EXCEPTION 'Date-only edit altered imported placement or omitted audited date'; END IF;
+ BEGIN
+  PERFORM public.admin_record_roster_employment_profile(v_id,v_old,
+   'Imported date fixture',NULL,NULL,'not_recorded','active',NULL,v_selected,NULL,
+   NULL,NULL,'2026-10-08','Stale date correction rejected');
+  RAISE EXCEPTION 'Date-only correction accepted a stale revision';
+ EXCEPTION WHEN serialization_failure THEN NULL; END;
+ SELECT updated_at INTO v_old FROM public.employee_roster WHERE id=v_id;
+ BEGIN
+  PERFORM public.admin_record_roster_employment_profile(v_id,v_old,
+   'Imported date fixture',NULL,NULL,'not_recorded','active',NULL,v_selected,NULL,
+   NULL,NULL,'2026-10-08','short');
+  RAISE EXCEPTION 'Date-only correction accepted missing audit context';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN
+  PERFORM public.admin_record_roster_employment_profile(v_id,v_old,
+   'Imported date fixture',NULL,NULL,'not_recorded','active',NULL,v_selected[1:1],NULL,
+   NULL,NULL,'2026-10-08','Placement change must use existing validation');
+  RAISE EXCEPTION 'Date-only path accepted altered placement without primary';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN
+  PERFORM public.admin_record_roster_employment_profile(v_id,v_old,
+   'Imported date fixture',NULL,'Changed title','not_recorded','active',NULL,v_selected,NULL,
+   NULL,NULL,'2026-10-08','Employment change must use existing validation');
+  RAISE EXCEPTION 'Date-only path accepted an employment change';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN
+  PERFORM public.admin_record_roster_employment_profile(v_id,v_old,
+   'Imported date fixture',NULL,NULL,'not_recorded','active',NULL,v_selected||v_selected[1],NULL,
+   NULL,NULL,'2026-10-08','Duplicate departments must remain rejected');
+  RAISE EXCEPTION 'Date-only path accepted duplicate units';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+END;
+$date_only$;
 
 -- Linked employee HR contact corrections use existing profile IDs and never Auth
 -- address, role, capability, salary or account status. All writes roll back.
