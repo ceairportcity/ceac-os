@@ -18,13 +18,17 @@ begin
     'Exercise approved owner lock on clean replay',
     jsonb_build_array(jsonb_build_object(
       'leave_kind','annual',
-      'entitlement_amount',24,
+      'entitlement_amount',15,
       'entitlement_unit','days',
       'accrual_method','quarterly',
-      'accrual_rate',6,
+      'accrual_rate',3.75,
       'carryover_method','none',
       'approval_route','manager_then_admin',
       'opening_balance_required',false
+    ),jsonb_build_object(
+      'leave_kind','shared_other','entitlement_amount',9,'entitlement_unit','days',
+      'accrual_method','quarterly','accrual_rate',2.25,'carryover_method','none',
+      'approval_route','manager_then_admin','opening_balance_required',false
     )),
     true,null
   );
@@ -58,10 +62,10 @@ begin
   join public.leave_policy_versions p on p.id=r.policy_version_id
   where p.source_reference='CEAC_OWNER_LEAVE_ROUTING_2026-10-02'
     and r.leave_kind='annual'
-    and r.entitlement_amount=24
+    and r.entitlement_amount=15
     and r.entitlement_unit='days'
     and r.accrual_method='quarterly'
-    and r.accrual_rate=6
+    and r.accrual_rate=3.75
     and r.carryover_method='none'
     and r.carryover_limit is null
     and not r.opening_balance_required
@@ -219,9 +223,9 @@ begin
     date '2026-10-07'
   );
 
-  if (v_summary->>'annual_entitlement')::numeric<>24
-     or (v_summary->>'quarter_credit')::numeric<>6
-     or (v_summary->>'accrued_days')::numeric<>18
+  if (v_summary->>'annual_entitlement')::numeric<>15
+     or (v_summary->>'quarter_credit')::numeric<>3.75
+     or (v_summary->>'accrued_days')::numeric<>11.25
      or v_summary->>'accrual_method'<>'quarterly'
      or v_summary->>'carryover_method'<>'none'
      or coalesce((v_summary->>'balance_available')::boolean,false) is not true then
@@ -365,7 +369,7 @@ begin
     date '2026-03-31'
   );
 
-  if (v_summary->>'accrued_days')::numeric<>3
+  if (v_summary->>'accrued_days')::numeric<>1.88
      or coalesce((v_summary->>'joiner_proration_applied')::boolean,false) is not true
      or v_summary->>'proration_basis'<>'calendar-day portion of the completed join quarter' then
     raise exception 'Annual-leave gate failure: mid-quarter joiner pro-rating is incorrect: %',v_summary;
@@ -392,6 +396,93 @@ begin
 end
 $annual_staff_adjustment_denial$;
 
+reset role;
+
+-- Two request types consume one allowance, while annual remains independent.
+reset role;
+update public.employment_records set joined_on=date '2026-01-01'
+where profile_id='31000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+do $shared_requests$
+declare v_summary jsonb; v_sick uuid; v_study uuid;
+begin
+ v_summary:=public.workforce_annual_leave_summary(auth.uid(),date '2026-10-07');
+ if (v_summary->'shared_other'->>'entitlement_days')::numeric<>9
+   or (v_summary->'shared_other'->>'quarter_credit')::numeric<>2.25
+   or (v_summary->'shared_other'->>'accrued_days')::numeric<>6.75
+   or (v_summary->>'combined_entitlement')::numeric<>24 then
+   raise exception 'Shared allowance was not configured once at nine days: %',v_summary;
+ end if;
+ perform set_config('ceac.pool_annual_before',v_summary->>'available_days',true);
+ perform set_config('ceac.pool_shared_before',v_summary->'shared_other'->>'available_days',true);
+ v_sick:=public.workforce_request_leave('sick',date '2026-08-10',date '2026-08-12','Shared allowance sick test');
+ v_study:=public.workforce_request_leave('study',date '2026-08-13',date '2026-08-14','Shared allowance study test');
+ perform set_config('ceac.pool_sick',v_sick::text,true);
+ perform set_config('ceac.pool_study',v_study::text,true);
+ if (select working_days from public.leave_requests where id=v_sick)<>3
+    or (select working_days from public.leave_requests where id=v_study)<>2 then
+   raise exception 'Shared request working-day counts are wrong';
+ end if;
+ v_summary:=public.workforce_annual_leave_summary(auth.uid(),date '2026-10-07');
+ if (v_summary->'shared_other'->>'available_days')::numeric<>(current_setting('ceac.pool_shared_before'))::numeric then
+   raise exception 'Pending requests deducted from shared balance';
+ end if;
+end $shared_requests$;
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+select public.workforce_leave_action(current_setting('ceac.pool_sick')::uuid,'manager_approved','Manager approves sick test');
+select public.workforce_leave_action(current_setting('ceac.pool_study')::uuid,'manager_approved','Manager approves study test');
+do $manager_not_final$
+declare v_summary jsonb;
+begin
+ v_summary:=public.workforce_annual_leave_summary('31000000-0000-4000-8000-000000000001',date '2026-10-07');
+ if (v_summary->'shared_other'->>'available_days')::numeric<>(current_setting('ceac.pool_shared_before'))::numeric then
+   raise exception 'Manager approval prematurely deducted shared days';
+ end if;
+end $manager_not_final$;
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+select public.workforce_leave_action(current_setting('ceac.pool_sick')::uuid,'admin_approved','Administration final sick approval');
+select public.workforce_leave_action(current_setting('ceac.pool_study')::uuid,'admin_approved','Administration final study approval');
+do $shared_usage$
+declare v_summary jsonb;
+begin
+ v_summary:=public.workforce_annual_leave_summary('31000000-0000-4000-8000-000000000001',date '2026-10-07');
+ if (v_summary->'shared_other'->>'available_days')::numeric<>(current_setting('ceac.pool_shared_before'))::numeric-5
+   or (v_summary->>'available_days')::numeric<>(current_setting('ceac.pool_annual_before'))::numeric then
+   raise exception 'Three sick and two study days must deduct five shared days and zero annual days: %',v_summary;
+ end if;
+ perform public.workforce_leave_action(current_setting('ceac.pool_study')::uuid,'approval_reversed','Reverse study approval for shared-balance test');
+ v_summary:=public.workforce_annual_leave_summary('31000000-0000-4000-8000-000000000001',date '2026-10-07');
+ if (v_summary->'shared_other'->>'available_days')::numeric<>(current_setting('ceac.pool_shared_before'))::numeric-3 then
+   raise exception 'Reversal did not restore exactly two shared days';
+ end if;
+end $shared_usage$;
+reset role;
+update public.employment_records set joined_on=date '2026-02-15'
+where profile_id='31000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
+do $shared_proration$
+declare v_summary jsonb;
+begin
+ v_summary:=public.workforce_annual_leave_summary(auth.uid(),date '2026-03-31');
+ if (v_summary->>'accrued_days')::numeric<>1.88
+  or (v_summary->'shared_other'->>'accrued_days')::numeric<>1.12 then
+  raise exception 'Joined-quarter split must preserve the original three-day pro-rated combined credit: %',v_summary;
+ end if;
+ begin
+  perform private.workforce_leave_pool_summary_impl(auth.uid(),date '2026-03-31','shared_other');
+  raise exception 'Internal pool calculator unexpectedly callable directly';
+ exception when insufficient_privilege then null; end;
+ begin
+  perform public.workforce_annual_leave_summary('ffffffff-ffff-4fff-8fff-ffffffffffff',date '2026-03-31');
+  raise exception 'Cross-subject visibility escaped guarded calculator';
+ exception when insufficient_privilege then null; end;
+end $shared_proration$;
 reset role;
 
 rollback;

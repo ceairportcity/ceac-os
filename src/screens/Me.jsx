@@ -166,14 +166,16 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     return { errors };
   }
 
-  const annualEntitlement = annualLeaveSummary?.annual_entitlement == null ? 24 : Number(annualLeaveSummary.annual_entitlement);
+  const annualEntitlement = annualLeaveSummary?.annual_entitlement == null ? null : Number(annualLeaveSummary.annual_entitlement);
+  const sharedLeaveSummary = annualLeaveSummary?.shared_other;
+  const sharedLeft = sharedLeaveSummary?.balance_available && sharedLeaveSummary?.available_days != null ? Number(sharedLeaveSummary.available_days) : null;
   const annualAccrued = annualLeaveSummary?.accrued_days == null ? null : Number(annualLeaveSummary.accrued_days);
   const annualApproved = annualLeaveSummary?.approved_days == null ? null : Number(annualLeaveSummary.approved_days);
   const annualLeft = annualLeaveSummary?.balance_available && annualLeaveSummary?.available_days != null
     ? Number(annualLeaveSummary.available_days)
     : null;
   const annualBalanceReason = annualLeaveSummary?.reason || null;
-  const secondaryPolicyConfigured = Boolean(leavePolicy && leavePolicyRules.some((rule) => rule.leave_kind !== "annual" && rule.complete));
+  const secondaryPolicyConfigured = Boolean(leavePolicy && leavePolicyRules.some((rule) => rule.leave_kind === "shared_other" && rule.complete));
   const activeGoals = goals.filter((goal) => goal.status === "active");
   const achievedGoals = goals.filter((goal) => goal.status === "achieved");
   const hasProfileReadError = Boolean(datasetErrors.profile || datasetErrors.details);
@@ -423,7 +425,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       </div>}
     >
       <ProductNotice tone="info" title="Confirmed annual leave">
-        Annual leave is 24 working days per leave year, credited at 6 working days for each completed quarter. Joiners receive a pro-rated first completed-quarter credit, and ordinary unused days expire at year end subject to protected exceptions. Every leave request follows Manager approval → Administration final approval.
+        The confirmed 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance. Each completed quarter earns 3.75 annual days and 2.25 shared days. Joiners receive a pro-rated first completed-quarter credit, and ordinary unused days expire at year end subject to protected exceptions. Every leave request follows Manager approval → Administration final approval.
       </ProductNotice>
 
       {!annualLeaveStageReady ? <ProductNotice tone="attention" title="Working-day balance comes after migration acceptance">Existing leave requests and the approved request route remain available. CEAC OS will not invent a working-day balance until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice> : null}
@@ -437,13 +439,16 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
         : null}
 
       {datasetErrors.leavePolicy || datasetErrors.leaveRules ? <ProductNotice tone="attention" title="Secondary leave policy unavailable">{datasetErrors.leavePolicy || datasetErrors.leaveRules}</ProductNotice>
-        : !secondaryPolicyConfigured ? <ProductNotice tone="info" title="Secondary leave quantities not configured">Sick, Maternity, Paternity and Study requests remain available on the confirmed approval route, but CEAC OS does not invent their entitlement quantities.</ProductNotice>
+        : !secondaryPolicyConfigured ? <ProductNotice tone="info" title="Shared leave allowance not active">The shared sick/study allowance is not active yet. Requests remain available on the confirmed approval route; CEAC OS will not invent a balance. Maternity and paternity requests retain their separate policy treatment.</ProductNotice>
         : null}
 
       {annualLeaveStageReady && !datasetErrors.annualLeaveSummary ? <div className="ev2pf-facts">
         <PersonalFact value={annualLeft === null ? "—" : String(annualLeft)} label={annualLeft === null ? "annual balance unavailable" : "annual working days available"} />
         <PersonalFact value={annualAccrued === null ? "—" : String(annualAccrued)} label="annual working days accrued" />
-        <PersonalFact value={String(annualEntitlement)} label="annual working-day entitlement" />
+        <PersonalFact value={annualEntitlement === null ? "—" : String(annualEntitlement)} label="annual working-day entitlement" />
+        <PersonalFact value={sharedLeft === null ? "—" : String(sharedLeft)} label={sharedLeft === null ? "shared sick/study balance unavailable" : "shared sick/study working days available"} />
+        <PersonalFact value={sharedLeaveSummary?.accrued_days == null ? "—" : String(sharedLeaveSummary.accrued_days)} label="shared sick/study working days accrued" />
+        <PersonalFact value={sharedLeaveSummary?.entitlement_days == null ? "—" : String(sharedLeaveSummary.entitlement_days)} label="shared sick/study yearly entitlement" />
       </div> : null}
 
       {datasetErrors.leaveRequests ? <div className="ev2pf-partial-error"><StatePanel state="error" title="Leave requests could not be loaded" description={datasetErrors.leaveRequests} actionLabel="Try again" onAction={load} icon="error" /></div>
@@ -454,7 +459,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
             : request.status === "escalated" ? "With admin"
             : "Waiting";
           const kindLabel = request.kind ? request.kind.charAt(0).toUpperCase() + request.kind.slice(1) : "Leave";
-          const dayLabel = request.kind === "annual"
+          const dayLabel = ["annual", "sick", "study"].includes(request.kind)
             ? (request.working_days === null || request.working_days === undefined
               ? "Working-day count unavailable"
               : `${request.working_days} working day${Number(request.working_days) === 1 ? "" : "s"}`)

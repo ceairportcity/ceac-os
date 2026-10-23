@@ -17,7 +17,7 @@ test("CEAC Guide is static, versioned and does not create a data client", async 
   const content = fs.readFileSync("src/guide/guideContent.js", "utf8");
   const screen = fs.readFileSync("src/screens/Guide.jsx", "utf8");
 
-  expect(content).toContain('CEAC_GUIDE_VERSION = "2026.10.07"');
+  expect(content).toContain('CEAC_GUIDE_VERSION = "2026.10.23"');
   expect(content).toContain("24 working days per leave year");
   expect(content).toContain("Technical Support should diagnose");
   expect(screen).not.toContain("supabase");

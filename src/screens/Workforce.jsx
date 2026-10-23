@@ -1,5 +1,6 @@
 import { Fragment, Suspense, lazy, useEffect, useRef, useState } from "react";
 import { leaveStageLabel } from "../lib/leaveDecisionStage";
+import { confirmedLeaveSplitRules, hasConfirmedLeaveSplit, leavePoolLabel } from "../lib/leavePools";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
@@ -97,6 +98,8 @@ export default function Workforce({ me }) {
   const [dayTypeDescription,setDayTypeDescription]=useState("");
   const [dayTypeExpected,setDayTypeExpected]=useState(true);
 
+  const splitWriteBusy = useRef(false);
+  const [myLeaveSummary,setMyLeaveSummary]=useState(null);
   const [policySheet,setPolicySheet]=useState(false);
   const [policyName,setPolicyName]=useState("");
   const [policyFrom,setPolicyFrom]=useState(isoDay(new Date()));
@@ -130,6 +133,7 @@ export default function Workforce({ me }) {
       ["day types", supabase.from("workforce_day_types").select("*").eq("org_id",me.org_id).eq("active",true).order("name")],
       ["schedules", supabase.from("workforce_schedule_versions").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
       ["corrections", supabase.from("attendance_corrections").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
+      ["my leave balances", supabase.rpc("workforce_annual_leave_summary",{p_profile_id:me.id,p_as_of:isoDay(new Date())})],
       ["leave policies", supabase.from("leave_policy_versions").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false})],
       ["leave policy rules", supabase.from("leave_policy_rules").select("*").eq("org_id",me.org_id).order("leave_kind")],
       ["office location", supabase.from("office_locations").select("name,lat,lng,radius_meters").eq("org_id",me.org_id).eq("is_primary",true).limit(1).maybeSingle()],
@@ -163,6 +167,7 @@ export default function Workforce({ me }) {
     setDayTypes(!byName["day types"].error ? byName["day types"].data||[] : []);
     setSchedules(!byName.schedules.error ? byName.schedules.data||[] : []);
     setCorrections(!byName.corrections.error ? byName.corrections.data||[] : []);
+    setMyLeaveSummary(!byName["my leave balances"].error ? byName["my leave balances"].data : null);
     setPolicies(!byName["leave policies"].error ? byName["leave policies"].data||[] : []);
     setPolicyRules(!byName["leave policy rules"].error ? byName["leave policy rules"].data||[] : []);
     setOffice(!byName["office location"].error ? byName["office location"].data||null : null);
@@ -183,7 +188,7 @@ export default function Workforce({ me }) {
   const dayTypesById=Object.fromEntries(dayTypes.map((d)=>[d.id,d]));
   const activePolicy=policies.find((p)=>p.state==="active")||null;
   const activeRules=activePolicy?policyRules.filter((r)=>r.policy_version_id===activePolicy.id):[];
-  const confirmedLeaveSummary=<><ProductNotice tone="info" title="Confirmed leave process">Annual leave is 24 working days per leave year, credited at 6 working days per completed quarter with joiner pro-rating and ordinary year-end expiry. Annual, Sick, Maternity, Paternity and Study leave are available for requests through Manager approval → Administration final approval. Secondary leave quantities remain unconfigured.</ProductNotice>{!annualWorkingDayReady?<ProductNotice tone="attention" title="Working-day counts come after migration acceptance">Existing leave requests and approvals remain available. CEAC OS will not invent working-day calculations until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice>:null}</>;
+  const confirmedLeaveSummary=<><ProductNotice tone="info" title="Confirmed leave process">The 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance. Each completed quarter earns 3.75 annual days and 2.25 shared days, with joiner pro-rating and ordinary year-end expiry subject to protected exceptions. Every leave request follows Manager approval → Administration final approval. Maternity and paternity retain their separate policy treatment.</ProductNotice>{canManage&&!hasConfirmedLeaveSplit(activeRules)?<ProductNotice tone="attention" title="Apply the confirmed leave split">The recorded policy has not yet been aligned to 15 annual days plus one shared nine-day allowance. This records a new policy version and preserves existing requests and history. <button className="btn" disabled={busy||loading||Boolean(datasetErrors["leave policies"]||datasetErrors["leave policy rules"])} onClick={activateConfirmedLeaveSplit}>Activate confirmed 15 + 9 policy</button></ProductNotice>:null}{!canManage&&myLeaveSummary?<ProductNotice tone="info" title="Your recorded leave balances">Annual leave: {myLeaveSummary.balance_available?myLeaveSummary.available_days:"unavailable"} working days available. Shared sick/study allowance: {myLeaveSummary.shared_other?.balance_available?myLeaveSummary.shared_other.available_days:"unavailable"} working days available. Pending requests do not reduce either balance.</ProductNotice>:null}{datasetErrors["my leave balances"]?<ProductNotice tone="attention" title="Your leave balances could not load">{datasetErrors["my leave balances"]}</ProductNotice>:null}{!annualWorkingDayReady?<ProductNotice tone="attention" title="Working-day counts come after migration acceptance">Existing leave requests and approvals remain available. CEAC OS will not invent working-day calculations until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice>:null}</>;
 
   function rawSchedule(profileId,date=today){
     const rows=schedules.filter((s)=>s.profile_id===profileId && s.effective_from<=date && (!s.effective_to || s.effective_to>=date));
@@ -284,7 +289,21 @@ export default function Workforce({ me }) {
   async function leaveAction(id,action){
     const reason=window.prompt(action==="manager_approved"?"Reason for approval":"Reason for this leave decision");
     if(!reason) return;
-    await runRpc("workforce_leave_action",{p_leave_request_id:id,p_action:action,p_reason:reason},"Leave decision recorded.",["leave","leave history"]);
+    await runRpc("workforce_leave_action",{p_leave_request_id:id,p_action:action,p_reason:reason},"Leave decision recorded.",["leave","leave history","my leave balances"]);
+  }
+
+  async function activateConfirmedLeaveSplit(){
+    if(splitWriteBusy.current||busy||loading||!canManage||datasetErrors["leave policies"]||datasetErrors["leave policy rules"]) return;
+    splitWriteBusy.current=true;
+    try {
+      await runRpc("workforce_record_leave_policy",{
+        p_name:"CEAC leave: 15 annual + 9 shared sick/study days",
+        p_effective_from:today,p_effective_to:null,
+        p_source_reference:"CEAC owner clarification, 23 October 2026: 15 + shared 9, earned gradually",
+        p_reason:"Apply the owner-confirmed two-balance split using existing quarterly accrual and joiner pro-rating; preserve requests, protected leave and history.",
+        p_rules:confirmedLeaveSplitRules(activeRules),p_activate:true,p_supersedes_id:activePolicy?.id||null,
+      },"Confirmed 15 + 9 leave policy activated.",["leave policies","leave policy rules","my leave balances"]);
+    } finally { splitWriteBusy.current=false; }
   }
 
   async function recordPolicy(){
@@ -853,7 +872,7 @@ export default function Workforce({ me }) {
           {!dayTypes.length&&<WorkforceEmpty compact title="No active day types" description="No day types are visible in the current organisation scope."/>}
         </WorkforceSection>
         <WorkforceSection title="Leave policy status">
-          {activePolicy?<WorkforceRecordRow icon="record" eyebrow="Confirmed policy" title={activePolicy.name} meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})} note={activeRules.map((r)=>human(r.leave_kind)+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · route "+(r.approval_route?human(r.approval_route):"not configured")).join(" | ")} />:<WorkforceEmpty compact title="No confirmed CEAC leave policy is active" description="Legacy seeded defaults are not used as policy."/>}
+          {activePolicy?<WorkforceRecordRow icon="record" eyebrow="Confirmed policy" title={activePolicy.name} meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})} note={activeRules.map((r)=>(leavePoolLabel(r.leave_kind)||human(r.leave_kind))+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · route "+(r.approval_route?human(r.approval_route):"not configured")).join(" | ")} />:<WorkforceEmpty compact title="No confirmed CEAC leave policy is active" description="Legacy seeded defaults are not used as policy."/>}
         </WorkforceSection>
       </>}
 
@@ -1179,7 +1198,7 @@ export default function Workforce({ me }) {
             eyebrow="Confirmed policy"
             title={activePolicy.name}
             meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}
-            note={activeRules.map((r)=>human(r.leave_kind)+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · accrual "+(r.accrual_method?human(r.accrual_method):"not configured")+" · carry-over "+(r.carryover_method?human(r.carryover_method):"not configured")+" · route "+(r.approval_route?human(r.approval_route):"not configured")+(r.opening_balance_required?" · opening balance required":"")).join(" | ")}
+            note={activeRules.map((r)=>(leavePoolLabel(r.leave_kind)||human(r.leave_kind))+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · accrual "+(r.accrual_method?human(r.accrual_method):"not configured")+" · carry-over "+(r.carryover_method?human(r.carryover_method):"not configured")+" · route "+(r.approval_route?human(r.approval_route):"not configured")+(r.opening_balance_required?" · opening balance required":"")).join(" | ")}
             statusLabel="Active"
             statusTone="green"
           />:<WorkforceEmpty compact title="No confirmed CEAC leave policy is active" description="Legacy seeded defaults are not used as policy."/>}
@@ -1411,7 +1430,7 @@ export default function Workforce({ me }) {
       <div className="sec"><span>Day types</span><span>{dayTypes.length}</span></div>
       {dayTypes.map((d)=><div className="row" key={d.id}><div className="row-t">{d.name}</div><div className="row-m">{d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} · {d.description||"No description"}</div></div>)}
       <div className="sec"><span>Leave policy status</span></div>
-      {activePolicy?<div className="card workforce-policy"><strong>{activePolicy.name}</strong><span>Confirmed {new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}</span>{activeRules.map((r)=><small key={r.id}>{human(r.leave_kind)} · {r.complete?(String(r.entitlement_amount)+" "+r.entitlement_unit):"rule incomplete"} · accrual {r.accrual_method?human(r.accrual_method):"not configured"} · carry-over {r.carryover_method?human(r.carryover_method):"not configured"} · route {r.approval_route?human(r.approval_route):"not configured"}{r.opening_balance_required?" · opening balance required":""}</small>)}</div>:<div className="card small">No confirmed CEAC leave policy is active. Legacy seeded defaults are not used as policy.</div>}
+      {activePolicy?<div className="card workforce-policy"><strong>{activePolicy.name}</strong><span>Confirmed {new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}</span>{activeRules.map((r)=><small key={r.id}>{(leavePoolLabel(r.leave_kind)||human(r.leave_kind))} · {r.complete?(String(r.entitlement_amount)+" "+r.entitlement_unit):"rule incomplete"} · accrual {r.accrual_method?human(r.accrual_method):"not configured"} · carry-over {r.carryover_method?human(r.carryover_method):"not configured"} · route {r.approval_route?human(r.approval_route):"not configured"}{r.opening_balance_required?" · opening balance required":""}</small>)}</div>:<div className="card small">No confirmed CEAC leave policy is active. Legacy seeded defaults are not used as policy.</div>}
     </>}
 
     {dayTypeSheet&&<Sheet onClose={()=>!busy&&setDayTypeSheet(false)}>

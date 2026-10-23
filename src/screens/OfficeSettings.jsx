@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { classifyPreviewFeatureResult } from "../lib/pendingFeatureCompatibility";
 import { dateOnly } from "../lib/time";
+import { leavePoolLabel } from "../lib/leavePools";
 import { FieldGroup, ProductNotice, SectionHeader } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { StatusBadge } from "../experience-v2/components";
@@ -254,7 +255,7 @@ export default function OfficeSettings({ me, openWorkforce }) {
         </ProductNotice>}
         {leaveConfigured && <div className="office-policy-grid">
           {leaveRules.map((rule) => <div className="card small" key={rule.id}>
-            <strong>{rule.leave_kind}</strong><br />
+            <strong>{leavePoolLabel(rule.leave_kind)||rule.leave_kind}</strong><br />
             {rule.complete ? `${rule.entitlement_amount} ${rule.entitlement_unit}` : "Incomplete rule"} ·
             {" "}accrual {rule.accrual_method || "not configured"} ·
             {" "}carry-over {rule.carryover_method || "not configured"} ·
