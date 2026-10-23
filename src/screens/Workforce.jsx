@@ -1,4 +1,5 @@
 import { Fragment, Suspense, lazy, useEffect, useRef, useState } from "react";
+import { leaveStageLabel } from "../lib/leaveDecisionStage";
 import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
@@ -909,7 +910,7 @@ export default function Workforce({ me }) {
         title={name+" · "+l.days+" day"+(Number(l.days)===1?"":"s")}
         meta={niceDay(l.start_date)+" → "+niceDay(l.end_date)}
         note={route==="manager_then_admin"
-          ?l.status==="pending"?"Waiting for Manager approval":"Manager approved · Administration final decision required"
+          ?leaveStageLabel(l,route)
           :route?"Policy route: "+human(route):"No confirmed route for this leave kind"}
         statusLabel={human(l.status)}
         statusTone={l.status==="escalated"?"amber":"blue"}

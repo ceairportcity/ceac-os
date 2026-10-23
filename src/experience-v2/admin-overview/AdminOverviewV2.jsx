@@ -15,6 +15,7 @@ import {
 } from "../components";
 import { CeacIcon } from "../icons";
 import { dueLabel } from "../../lib/time";
+import { canAdminDecideLeave, leaveStageLabel } from "../../lib/leaveDecisionStage";
 
 function formatDate(value, options = {}) {
   if (!value) return "";
@@ -233,9 +234,9 @@ export default function AdminOverviewV2({
   // invented urgency, work ranking or additional authority is created.
   const suggestedAction = leaveQueue.length
     ? {
-      eyebrow: "Leave decision waiting",
+      eyebrow: canAdminDecideLeave(leaveQueue[0]) ? "Leave decision waiting" : "Leave request to review",
       title: `${leaveQueue[0].requester?.full_name || "Team member"} · ${leaveQueue[0].kind} leave`,
-      detail: "Open Time & Leave to review the recorded request and supporting context.",
+      detail: `${leaveStageLabel(leaveQueue[0])}. Open Time & Leave to review the request.`,
       action: onOpenAttendance,
       label: "Review request",
     }
@@ -322,7 +323,7 @@ export default function AdminOverviewV2({
             : <div className="adminv2-agenda-empty">No upcoming meetings were returned in this limited 14-day preview.</div>}
           {!loading && !loadFailed ? <div className="adminv2-agenda-foot">
             <span><strong>{pendingInvitations.length}</strong> invitations need follow-up</span>
-            <span><strong>{leaveQueue.length}</strong> leave decisions</span>
+            <span><strong>{leaveQueue.length}</strong> open leave requests</span>
           </div> : null}
         </aside>
       </header>
@@ -393,12 +394,14 @@ export default function AdminOverviewV2({
               key={request.id}
               icon="time"
               title={`${request.requester?.full_name || "Team member"} · ${request.days} day${Number(request.days) === 1 ? "" : "s"} ${request.kind} leave`}
-              meta={`${request.start_date} → ${request.end_date} · ${request.status === "escalated" ? "Escalated by manager" : "Waiting for Administration"}`}
-              status="Decision"
+              meta={`${request.start_date} → ${request.end_date} · ${leaveStageLabel(request)}`}
+              status={canAdminDecideLeave(request) ? "Decision" : "Awaiting approval"}
               statusTone="warning"
             >
-              <Button variant="secondary" size="compact" disabled={busy} onClick={() => onLeaveDecision?.(request, "declined")}>Decline</Button>
-              <Button size="compact" disabled={busy} onClick={() => onLeaveDecision?.(request, "approved")}>Approve</Button>
+              {canAdminDecideLeave(request) ? <>
+                <Button variant="secondary" size="compact" disabled={busy} onClick={() => onLeaveDecision?.(request, "declined")}>Decline</Button>
+                <Button size="compact" disabled={busy} onClick={() => onLeaveDecision?.(request, "approved")}>Approve</Button>
+              </> : <Button variant="secondary" size="compact" onClick={onOpenAttendance}>Review in Time & Leave</Button>}
             </AdminActionRow>)}
 
             {alerts.map((alert) => <AdminActionRow

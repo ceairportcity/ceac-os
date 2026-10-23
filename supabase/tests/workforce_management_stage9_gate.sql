@@ -445,6 +445,29 @@ $stage9_routed_leave_request$;
 
 reset role;
 
+-- Overview must not offer these actions while pending; the server must also
+-- reject an Administration client that attempts them directly. Synthetic only.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+do $stage9_no_admin_shortcut$
+declare
+  v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
+  v_action text;
+begin
+  foreach v_action in array array['admin_approved','declined','escalated'] loop
+    begin
+      perform public.workforce_leave_action(v_leave,v_action,'Administration before Manager denial probe');
+      raise exception 'Stage 9 gate failure: Administration skipped Manager using %',v_action;
+    exception when insufficient_privilege then null;
+    end;
+  end loop;
+  if not exists(select 1 from public.leave_requests where id=v_leave and status='pending') then
+    raise exception 'Stage 9 gate failure: denied Administration action changed request state';
+  end if;
+end
+$stage9_no_admin_shortcut$;
+reset role;
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
 

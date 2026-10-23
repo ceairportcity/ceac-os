@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
+import {canAdminDecideLeave, leaveStageLabel} from "../src/lib/leaveDecisionStage.js";
 
 const overview = readFileSync("src/experience-v2/admin-overview/AdminOverviewV2.jsx", "utf8");
 const stylesheet = readFileSync("src/experience-v2/admin-overview/admin-overview.css", "utf8");
@@ -51,7 +52,7 @@ test("mobile and desktop have separate first-class hierarchy and real screenshot
 
 test("the dominant next step contains real CEAC authority-preserving navigation", () => {
   assert.match(overview, /const suggestedAction = leaveQueue\.length/);
-  assert.match(overview, /eyebrow: "Leave decision waiting"/);
+  assert.match(overview, /eyebrow: canAdminDecideLeave\(leaveQueue\[0\]\) \? "Leave decision waiting" : "Leave request to review"/);
   assert.match(overview, /action: onOpenAttendance/);
   assert.match(overview, /action: onOpenWorkflows/);
   assert.match(overview, /pendingInvitations\.length && canManagePeople/);
@@ -61,6 +62,45 @@ test("the dominant next step contains real CEAC authority-preserving navigation"
   assert.match(overview, /adminv2-focus-strip/);
   assert.match(stylesheet, /Admin premium reference: dominant next-decision focus/);
   assert.doesNotMatch(overview, /automatically.*approve.*leave/i);
+});
+
+test("confirmed leave stages distinguish Manager approval from Administration final decision", () => {
+  for (const kind of ["annual", "sick", "maternity", "paternity", "study"]) {
+    const pending = {kind, status:"pending"};
+    assert.equal(leaveStageLabel(pending), "Waiting for Manager approval");
+    assert.equal(leaveStageLabel(pending, "admin"), "Waiting for Manager approval", "confirmed route overrides conflicting legacy defaults");
+    assert.equal(canAdminDecideLeave(pending), false);
+    const reviewed = {...pending, status:"escalated"};
+    assert.equal(leaveStageLabel(reviewed), "Manager approved · Administration final decision required");
+    assert.equal(canAdminDecideLeave(reviewed), true);
+    for (const status of ["approved", "declined", "cancelled", "", undefined]) {
+      assert.equal(canAdminDecideLeave({kind, status}), false);
+    }
+  }
+  assert.equal(canAdminDecideLeave({kind:"study",status:"pending",membership_role:"manager"}), false,
+    "a Manager subject is not an Administration stage override");
+});
+
+test("missing or custom route evidence cannot invent an Overview decision", () => {
+  for (const request of [null, {}, {kind:"custom",status:"pending"}, {kind:"custom",status:"escalated"}]) {
+    assert.equal(canAdminDecideLeave(request), false);
+    assert.doesNotMatch(leaveStageLabel(request), /Manager approved|Waiting for Administration/);
+  }
+  assert.equal(leaveStageLabel({kind:"custom",status:"pending"}, "admin"), "Waiting for Administration");
+  assert.equal(leaveStageLabel({kind:"custom",status:"pending"}, "manager"), "Waiting for Manager approval");
+});
+
+test("Overview stage guards protect both controls and the mutation handler", () => {
+  const home = readFileSync("src/screens/AdminHome.jsx", "utf8");
+  const workforce = readFileSync("src/screens/Workforce.jsx", "utf8");
+  assert.match(overview, /\{canAdminDecideLeave\(request\) \? <>/);
+  assert.match(overview, /onClick=\{onOpenAttendance\}>Review in Time & Leave/);
+  assert.match(overview, /leaveStageLabel\(request\)/);
+  assert.match(workforce, /leaveStageLabel\(l,route\)/);
+  const handler = home.slice(home.indexOf("async function decideLeave("), home.indexOf("const adminDate"));
+  const guard = handler.indexOf("!canAdminDecideLeave(request)");
+  assert.ok(guard >= 0 && guard < handler.indexOf('supabase.rpc("workforce_leave_action"'));
+  assert.match(handler, /!\["approved", "declined"\]\.includes\(decision\)/);
 });
 
 test("the Administration calendar is navigable without fabricating missing events", () => {
