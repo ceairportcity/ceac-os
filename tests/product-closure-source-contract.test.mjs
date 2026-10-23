@@ -268,7 +268,7 @@ test("Attendance writes are unavailable while required current evidence has fail
     assert.match(attendanceCorrectionWorkflow, new RegExp('supabase\\.rpc\\("'+rpc+'"'));
   }
   assert.match(attendanceCorrectionWorkflow, /No original work session was changed/);
-  assert.match(workforce, /"Leave decision recorded\.",\["leave","leave history"\]/);
+  assert.match(workforce, /"Leave decision recorded\.",\["leave","leave history","my leave balances"\]/);
   assert.match(workforce, /"Confirmed leave policy activated\.",\["leave policies","leave policy rules"\]/);
 });
 

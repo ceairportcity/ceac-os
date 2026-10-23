@@ -389,13 +389,17 @@ begin
     jsonb_build_array(
       jsonb_build_object(
         'leave_kind','annual',
-        'entitlement_amount',24,
+        'entitlement_amount',15,
         'entitlement_unit','days',
         'accrual_method','quarterly',
-        'accrual_rate',6,
+        'accrual_rate',3.75,
         'carryover_method','none',
         'approval_route','manager_then_admin',
         'opening_balance_required',false
+      ),jsonb_build_object(
+        'leave_kind','shared_other','entitlement_amount',9,'entitlement_unit','days',
+        'accrual_method','quarterly','accrual_rate',2.25,'carryover_method','none',
+        'approval_route','manager_then_admin','opening_balance_required',false
       )
     ),
     true,
@@ -414,10 +418,10 @@ begin
     where policy_version_id=v_policy
       and leave_kind='annual'
       and complete
-      and entitlement_amount=24
+      and entitlement_amount=15
       and entitlement_unit='days'
       and accrual_method='quarterly'
-      and accrual_rate=6
+      and accrual_rate=3.75
       and carryover_method='none'
       and approval_route='manager_then_admin'
   ) then

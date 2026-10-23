@@ -2278,7 +2278,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   // 24 days/year, 6 days per completed quarter, Manager then Administration.
   // Do not assert the old unconfigured prototype state or weaken any safeguards.
   await expect(page.getByText("Confirmed leave process", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Annual leave is 24 working days per leave year/i)).toBeVisible();
+  await expect(page.getByText(/24-day yearly allowance comprises 15 annual-leave days/i)).toBeVisible();
   await expect(page.getByText(/Manager approval.*Administration final approval/i)).toBeVisible();
   await expect(page.getByText(/never an automatic absence finding/i)).toBeVisible();
 

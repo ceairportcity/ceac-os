@@ -1,3 +1,5 @@
+> **23 October 2026 owner correction — current authority:** The yearly 24-day allowance consists of **15 annual-leave days plus ONE shared nine-day allowance**. The owner confirmed the shared allowance is earned gradually. Retain completed-quarter accrual and joiner pro-rating: **3.75 annual + 2.25 shared per full completed quarter**. Sick and study share the nine days; do not give each category its own nine days. Other category membership requires an explicit policy decision; maternity/paternity and protected entitlements are not silently capped. This correction supersedes the older 24-annual / 6-annual-quarter wording below. Runtime activation and release evidence are recorded separately, not implied by this contract.
+
 # CEAC Leave Rules v1
 
 Status: GO-LIVE ANNUAL-LEAVE POLICY CONFIRMED / SECONDARY LEAVE POLICIES PARTIALLY OPEN
@@ -17,8 +19,8 @@ Employee request → Manager approval → Administration final approval.
 Manager approval is not final approval. Administration owns the final leave decision.
 
 ## Confirmed annual-leave entitlement and accrual
-- Annual-leave entitlement is 24 working days per leave year for eligible CEAC staff under the confirmed organisation-wide rule.
-- Annual leave accrues quarterly at 6 working days per completed quarter.
+- Annual-leave entitlement is 15 working days per leave year for eligible CEAC staff under the confirmed organisation-wide rule.
+- Annual leave accrues quarterly at 3.75 working days per completed quarter.
 - A person joining during a quarter receives a pro-rated entitlement appropriate to the portion of the quarter served; CEAC must not award a full completed-quarter credit to a person who did not serve the full quarter.
 - Accrued unused days remain available during the same leave year.
 - Ordinary unused annual leave expires at the end of the applicable leave year. There is no routine automatic carry-forward.
@@ -42,8 +44,8 @@ Manager approval is not final approval. Administration owns the final leave deci
 ## Required leave-domain capabilities
 The data model and UI must preserve:
 - versioned leave types and policies;
-- the confirmed 24-day annual entitlement;
-- quarterly 6-day accrual and joiner pro-rating;
+- the confirmed 15-day annual entitlement and shared nine-day sick/study allowance;
+- quarterly 3.75 annual-day and 2.25 shared-day accrual and joiner pro-rating;
 - year-end expiry and exception handling;
 - balances;
 - request history;
@@ -56,9 +58,9 @@ The data model and UI must preserve:
 - attributable decision history.
 
 ## Still unresolved — do not invent
-- sick-leave entitlement quantity/rules beyond confirmed separation from annual leave;
+- additional categories beyond sick/study to include in the shared allowance;
 - maternity/paternity entitlement quantities and detailed eligibility;
-- study-leave quantity/rules;
+- detailed study-leave eligibility beyond participation in the shared allowance;
 - any organisation-wide formula for approved unpaid-leave salary treatment that has not passed the required human decision;
 - any automatic Payroll consequence of absence, attendance or leave.
 

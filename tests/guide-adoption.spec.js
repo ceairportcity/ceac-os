@@ -17,7 +17,7 @@ test("CEAC Guide is static, versioned and does not create a data client", async 
   const content = fs.readFileSync("src/guide/guideContent.js", "utf8");
   const screen = fs.readFileSync("src/screens/Guide.jsx", "utf8");
 
-  expect(content).toContain('CEAC_GUIDE_VERSION = "2026.10.07"');
+  expect(content).toContain('CEAC_GUIDE_VERSION = "2026.10.23"');
   expect(content).toContain("24 working days per leave year");
   expect(content).toContain("Technical Support should diagnose");
   expect(screen).not.toContain("supabase");
@@ -117,7 +117,7 @@ test("Getting Started progress resumes and can be dismissed without storing busi
     return key ? JSON.parse(localStorage.getItem(key)) : null;
   });
   expect(stored?.completed?.length).toBe(1);
-  expect(stored?.version).toBe("2026.10.07");
+  expect(stored?.version).toBe("2026.10.23");
   expect(stored?.expiresAt).toBeGreaterThan(Date.now());
   expect(Object.keys(stored || {}).sort()).toEqual(["completed","dismissed","expiresAt","role","version"].sort());
 

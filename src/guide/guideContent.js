@@ -1,4 +1,4 @@
-export const CEAC_GUIDE_VERSION = "2026.10.07";
+export const CEAC_GUIDE_VERSION = "2026.10.23";
 
 export const CEAC_GUIDE_ROUTE_LABELS = Object.freeze({
   home: "Home",
@@ -181,7 +181,7 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
       {
         title: "Annual leave",
         body: [
-          "The confirmed organisation-wide Annual rule is 24 working days per leave year, credited at 6 working days for each completed quarter.",
+          "The confirmed allowance is 24 working days per leave year: 15 annual days plus one shared nine-day sick/study allowance. A completed quarter credits 3.75 annual days and 2.25 shared days.",
           "A joiner receives a pro-rated credit for the portion of the first completed quarter served. Ordinary unused Annual leave expires at year end, subject to protected exceptions and already-approved cross-year leave.",
           "Annual leave usage is counted from attributable workforce schedule evidence. CEAC does not silently assume a Monday-Friday pattern when the required schedule is missing.",
         ],
@@ -197,7 +197,7 @@ export const CEAC_GUIDE_ARTICLES = Object.freeze([
       {
         title: "Other leave categories",
         body: [
-          "Sick, Maternity, Paternity and Study requests are available on the confirmed approval route, but their exact entitlement quantities remain unconfigured until CEAC approves them.",
+          "Sick and Study requests draw from the same shared nine-day yearly allowance; they do not each receive nine days. Only final approved requests reduce it. Maternity and Paternity keep their separate policy treatment; this shared allowance does not set their entitlements.",
         ],
       },
       {
