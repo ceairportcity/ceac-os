@@ -43,7 +43,11 @@ test('release personal monthly and quarterly PDFs contain visible authorised rep
    await expect(report.locator('.s2-achievement-print-head')).toContainText('Subject: Staff Fixture');
    await expect(report.locator('.s2-achievement-metrics')).toBeVisible();
    const table=report.locator('.s2-achievement-table-scroll table');
-   await expect(table.getByRole('columnheader',{name:'State now',exact:true})).toBeVisible();
+   await expect(table).toBeVisible();
+   // Assert all source labels; generic operational CSS renders headers uppercase.
+   // Do not rely on a case-sensitive accessible name after print media changes.
+   await expect(table.locator('thead th')).toHaveText(['Work record','Current project','Recorded outcome','State now']);
+   await expect(table.locator('thead th').last()).toBeVisible();
    const geometry=await table.evaluate(node=>({
     tableRight:node.getBoundingClientRect().right,
     containerRight:node.parentElement.getBoundingClientRect().right,

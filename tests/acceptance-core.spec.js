@@ -1636,9 +1636,13 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
 
     await page.reload();
     await go(page, "Workforce");
-    const staffCard = page.locator(".workforce-person").filter({ hasText: "Staff Fixture" });
+    // The current HR Today view is a review queue, not the retired person cards.
+    // Include employees whose configured schedule removes them from Needs review.
+    await page.getByLabel("Filter daily workforce records",{exact:true}).selectOption("all");
+    await page.getByLabel("Find workforce evidence",{exact:true}).fill("Staff Fixture");
+    const staffCard=page.locator(".ev2wf-today-review-entry").filter({hasText:"Staff Fixture"});
     await expect(staffCard).toBeVisible();
-    await expect(staffCard.getByText(dayTypeName, { exact: true })).toBeVisible();
+    await expect(staffCard).toContainText(dayTypeName);
 
     await page.getByRole("tab", { name: "Calendar", exact: true }).click();
     await expect(page.getByLabel("Workforce calendar unit filter")).toBeVisible();
