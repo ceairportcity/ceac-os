@@ -4,6 +4,7 @@ import SupportAccessApprovals from "../components/SupportAccessApprovals";
 import { humanError } from "../lib/productLanguage";
 import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
 import { summariseAdminToday, countRecordedSessionDays } from "../lib/adminTodaySummary";
+import { canAdminDecideLeave } from "../lib/leaveDecisionStage";
 
 export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, openSettings, openUnits, openPeopleAccess, openPerson, go }) {
   const [units, setUnits] = useState([]);
@@ -247,6 +248,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   }
 
   async function decideLeave(request, decision) {
+    if (!canAdminDecideLeave(request) || !["approved", "declined"].includes(decision)) return;
     if (busy || scopedLoading || loadError || leaveActionBusyRef.current) return;
     leaveActionBusyRef.current = true;
     const generation = readGeneration.current;
