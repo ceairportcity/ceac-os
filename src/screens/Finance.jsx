@@ -48,6 +48,7 @@ export default function Finance({ me, openExpenses }) {
   const [spend, setSpend] = useState([]);
   const [transfers, setTransfers] = useState([]);
   const [budgets, setBudgets] = useState([]);
+  const [demoRevision, setDemoRevision] = useState(0);
   const [canEnter, setCanEnter] = useState(false);
   const [myUnits, setMyUnits] = useState([]);
   const [sheet, setSheet] = useState(null);
@@ -284,7 +285,7 @@ export default function Finance({ me, openExpenses }) {
             </article>
           </div>
         </section>
-        <div className="ev2fin-authority"><FinanceRequestQueue me={me} authority="admin" canFulfil title="Requests needing Administration" /></div>
+        <div className="ev2fin-authority"><FinanceRequestQueue key={demoRevision} me={me} authority="admin" canFulfil title="Requests needing Administration" /></div>
         {(unconfirmed.length > 0 || disputed.length > 0) && <ProductNotice tone="attention" title={disputed.length ? "Transfers need review" : "Transfers awaiting confirmation"}>
           {unconfirmed.length} transfer{unconfirmed.length === 1 ? "" : "s"} not yet confirmed{disputed.length ? " · "+disputed.length+" disputed" : ""}. Money is only treated as confirmed once the receiving department confirms it.
         </ProductNotice>}
@@ -423,7 +424,7 @@ export default function Finance({ me, openExpenses }) {
           <button className="btn" style={{ marginTop: 14 }} onClick={saveIncome} disabled={busy}>{busy ? "Saving..." : "Record it"}</button>
         </Sheet>)}
 
-      {sheet === "demo" && me.is_admin && <Sheet onClose={() => setSheet(null)}><FinanceDemoRecords onChanged={() => load({ quiet: true })} /></Sheet>}
+      {sheet === "demo" && me.is_admin && <Sheet onClose={() => setSheet(null)}><FinanceDemoRecords onChanged={async () => { await load({ quiet: true }); setDemoRevision((value) => value + 1); }} /></Sheet>}
 
       {sheet === "transfer" && (
         <Sheet onClose={() => setSheet(null)}>
