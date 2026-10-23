@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { attendanceDate, startEvidence } from "../lib/attendance";
+import AdminWorkforceToday from "./AdminWorkforceToday";
+import ComplianceCaseAttention from "./ComplianceCaseAttention";
 import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "./bits";
 import { WorkforceFactGrid, WorkforceRecordRow, WorkforceSection } from "../experience-v2/workforce-family/WorkforceFamilyV2";
 
@@ -40,7 +42,9 @@ export default function ComplianceOverview({
   date,
   onDateChange,
   onRefresh,
+  scopeKey,
   rows,
+  units = [],
   loading,
   error,
   activePolicies,
@@ -49,6 +53,7 @@ export default function ComplianceOverview({
   evidenceLatest,
   exceptionLatest,
   openWork,
+  openObservations,
   openAnnouncements,
 }) {
   const facts = useMemo(() => {
@@ -66,6 +71,23 @@ export default function ComplianceOverview({
     };
   }, [rows, date]);
 
+  // Read ONLY the existing sanitised, role-scoped attendance response. The new
+  // start coordinate fields remain null without the protected Stage 2 migration.
+  const workforceMapRows = useMemo(() => {
+    const unitNames = new Map(units.map(unit => [unit.id, unit.name]));
+    return {
+      roster: rows.map(row => ({ id:row.employee_id || ("profile:" + row.profile_id),
+        profile_id:row.profile_id || null, full_name:row.name,
+        units:row.unit_id ? [{name:unitNames.get(row.unit_id) || "Unit not named"}] : [] })),
+      sessions: rows.flatMap(row => (row.profile_id ? (row.sessions || []).map(session => ({
+        id:session.id, profile_id:row.profile_id, started_at:session.started_at, ended_at:session.ended_at,
+        lat:session.start_lat, lng:session.start_lng, place:session.place,
+        location_captured_at:session.location_captured_at,
+        location_accuracy_m:session.start_location_accuracy_m,
+      })) : [])),
+    };
+  }, [rows, units]);
+
   const acknowledgementPolicies = activePolicies.filter((policy) =>
     requirements.some((requirement) => requirement.policy_version_id === policy.id && requirement.acknowledgement_required)
   ).length;
@@ -81,6 +103,7 @@ export default function ComplianceOverview({
         <p>Attendance evidence and policy attention remain separate. “No session recorded” is not an absence or misconduct finding.</p>
       </div>
       <div className="compliance-overview-actions">
+        {openObservations && <button type="button" className="btn btn-sm" onClick={openObservations}>Review attendance observations</button>}
         {openWork && <button className="btn btn-ghost btn-sm" onClick={openWork}>Open authorised work</button>}
         {openAnnouncements && <button className="btn btn-sm" onClick={openAnnouncements}>Publish policy instruction</button>}
       </div>
@@ -94,6 +117,9 @@ export default function ComplianceOverview({
       <span><b>{facts.leave}</b>Approved leave</span>
       <span><b>{facts.permissions}</b>Active permissions</span>
     </div>
+
+    {!loading && !error && <AdminWorkforceToday
+      roleLabel="Compliance" dateLabel={date} roster={workforceMapRows.roster} sessions={workforceMapRows.sessions} />}
 
     <div className="compliance-overview-layout">
       <WorkforceSection
@@ -145,6 +171,7 @@ export default function ComplianceOverview({
         <div className="compliance-attention-row"><span>Exception requests awaiting decision</span><b>{requestedExceptions}</b></div>
         <div className="compliance-attention-row"><span>People with upcoming approved leave</span><b>{facts.upcomingLeave}</b></div>
         <div className="compliance-attention-row"><span>Expected people with no session recorded</span><b>{facts.noSession}</b></div>
+        <ComplianceCaseAttention scopeKey={scopeKey} onOpen={openObservations} />
         <p className="screen-note">These counts organise recorded attention only. They do not calculate compliance, guilt, performance or disciplinary outcomes.</p>
       </aside>
     </div>

@@ -1,17 +1,29 @@
-import {useMemo} from "react";
+import {useEffect,useMemo,useRef} from "react";
 import {ministryPeriodEvidence} from "../lib/ministryReportingFacts";
+import { verifiedReportingQuarter } from "../lib/quarterlyReportingWindow";
 import "./ExecutiveOutcomeBrief.css";
 
-export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],objectives=[],milestones=[],readError=null}){
- const facts=useMemo(()=>ministryPeriodEvidence({unitReports:issuedReports,objectives,milestones,activeUnitIds:units.map(x=>x.id)}),[issuedReports,objectives,milestones,units]);
+export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],objectives=[],milestones=[],targets=[],evidenceRefs=[],decisions=[],readError=null}){
+ const brief=useRef(null);
+ useEffect(()=>{
+  const opened=new Set();
+  const before=()=>{for(const detail of brief.current?.querySelectorAll("details:not([open])")||[]){opened.add(detail);detail.open=true;}};
+  const after=()=>{for(const detail of opened)detail.open=false;opened.clear();};
+  window.addEventListener("beforeprint",before);window.addEventListener("afterprint",after);
+  return ()=>{window.removeEventListener("beforeprint",before);window.removeEventListener("afterprint",after);after();};
+ },[]);
+ const facts=useMemo(()=>ministryPeriodEvidence({unitReports:issuedReports,objectives,milestones,targets,evidenceRefs,activeUnitIds:units.map(x=>x.id)}),[issuedReports,objectives,milestones,targets,evidenceRefs,units]);
  const names=Object.fromEntries(units.map(x=>[x.id,x.name]));
+ const quarter=verifiedReportingQuarter(period);
  const print=()=>window.print();
- return <section className="s2-exec-brief" aria-label="Executive outcomes briefing">
+ return <section ref={brief} className="s2-exec-brief" aria-label="Executive outcomes briefing">
   <header className="s2-exec-brief-head">
-    <div><span>Leadership evidence</span><h2>Results and next decisions</h2>
-      <p>{period.label} · {period.starts_on} — {period.ends_on}. Source-linked organisational context, not automatic employee scoring.</p></div>
-    <button className="s2-exec-brief-print" type="button" disabled={Boolean(readError)} onClick={print}>Print / Save PDF</button>
+    <div><span>Christ Embassy Airport City · Executive reporting</span><h2>{quarter ? "Quarterly ministry results and next decisions" : "Ministry reporting evidence (custom period)"}</h2>
+      <p>{quarter ? quarter.label : period.label} · {period.starts_on} — {period.ends_on}. Issued organisational evidence, not automatic employee scoring.</p>
+      <p>Report prepared {new Date().toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"long",year:"numeric"})} · Source records may change after this print.</p></div>
+    <button className="s2-exec-brief-print" type="button" disabled={Boolean(readError)||!quarter} onClick={print}>Print / Save as PDF</button>
   </header>
+  {!quarter && <p role="status" className="s2-exec-brief-warning">This is not a verified full calendar quarter. Select a quarterly reporting period before printing a quarterly report.</p>}
   {readError?<p role="alert" className="s2-exec-brief-warning">Detailed outcome records could not be verified. No achievement figures have been inferred.</p>:<>
     <div className="s2-exec-brief-stats">
       <article><strong>{facts.filing.submitted} / {facts.filing.visibleUnits}</strong><span>Units with issued report</span><small>Filing status only</small></article>
@@ -47,6 +59,34 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
          <small>{m.completed_at?"Recorded completion "+m.completed_at.slice(0,10):m.target_on?"Target "+m.target_on:"No recorded date"}</small>
         </div>)}</div>}
     </details>
+    <div className="s2-exec-brief-section">
+      <h3>Reported targets and following-period proposals</h3>
+      {!facts.unitTargets.length&&<p>No quantified unit targets or next-period proposals are attached to the latest issued reports. A new commitment or decision is not implied.</p>}
+      {facts.unitTargets.map(target=><div className="s2-exec-brief-unit" key={target.id}>
+        <strong>{names[target.unit_id]||"Authorised department"} · {target.name}</strong>
+        <small>Issued unit-report target · {target.target_value==null?"Target not recorded":`Target ${target.target_value} ${target.target_unit||""}`}
+          {" · "}{target.achieved_value==null?"Achievement not recorded":`Recorded actual ${target.achieved_value} ${target.target_unit||""}`}</small>
+        {target.next_target_value!=null&&<p><b>Proposed next-period target:</b> {target.next_target_value} {target.target_unit||""}. A proposed target is not an Executive approval.</p>}
+        {target.note&&<p><b>Recorded unit explanation:</b> {target.note}</p>}
+      </div>)}
+      <h3>Linked evidence references</h3>
+      {!facts.unitEvidence.length&&<p>No linked evidence references are attached to the latest issued unit reports.</p>}
+      {facts.unitEvidence.map(ref=><div className="s2-exec-brief-unit" key={ref.id}>
+        <strong>{names[ref.unit_id]||"Authorised department"} · {ref.label||"Recorded evidence reference"}</strong>
+        <small>{String(ref.section||"Unit report").replaceAll("_"," ")} · {String(ref.object_type||"Source record").replaceAll("_"," ")} · reference only, not a source-file verification</small>
+      </div>)}
+      <h3>Recorded Work decisions within this reporting period</h3>
+      {!decisions.length&&<p>No accessible, independently recorded Work decision is available for these period dates. This does not imply that no leadership discussions occurred.</p>}
+      {decisions.map(decision=><div className="s2-exec-brief-unit" key={decision.work_item_id}>
+        <strong>{names[decision.unit_id]||"Authorised Work scope"} · {decision.work_title||"Recorded Work decision"}</strong>
+        <small>Work record · decided {decision.decided_at?.slice(0,10)||"date unavailable"} · separate from quarterly Executive approvals</small>
+        <p><b>Recorded decision:</b> {decision.decision_text||"Decision text not recorded"}</p>
+        {decision.rationale&&<p><b>Recorded rationale:</b> {decision.rationale}</p>}
+      </div>)}
+      <h3>Leadership decisions and follow-up</h3>
+      <p>Issued department challenges are reproduced above. Unit next-target proposals are proposals, not decisions. This briefing does not invent an Executive decision, approval, accountable owner, funding commitment or due date when no independently approved decision source is connected.</p>
+      <p>Human-entered appraisals, attendance findings and KPI approvals remain separate review-controlled evidence. This brief does not convert self-recorded activity or draft ratings into verified ministry outcomes.</p>
+    </div>
     <footer><strong>Evidence and scope</strong><p>{facts.coverageNote} {facts.noDoubleCount} This briefing shows current objective/milestone states and released unit narratives visible to this account, not a frozen verified outcome snapshot. Reviewer decisions, attendance and protected HR appraisals are separate.</p></footer>
   </>}
  </section>;

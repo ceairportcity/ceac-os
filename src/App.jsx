@@ -2,11 +2,13 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
+import { validRoutineDate } from "./lib/routineDateRoute";
 import SignIn from "./screens/SignIn";
 const AccountPassword = lazy(() => import("./screens/AccountPassword"));
 import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
 import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
+import ControlCenterTrail from "./components/ControlCenterTrail";
 import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
 import Stage2UniversalMfaGate from "./components/Stage2UniversalMfaGate";
 import { decideUniversalTotpAccess } from "./lib/Stage2UniversalMfaPolicy";
@@ -100,6 +102,7 @@ function routeFromLocation() {
   return {
     tab: params.get("tab") || "home",
     itemId: params.get("item"),
+    routineDate: params.get("item") ? validRoutineDate(params.get("routineDate")) : null,
     projectId: params.get("project"),
     meetingId: params.get("meeting"),
     roomContext,
@@ -113,6 +116,7 @@ export default function App() {
   const initialRoute = routeFromLocation();
   const [tab, setTab] = useState(initialRoute.tab);
   const [itemId, setItemId] = useState(initialRoute.itemId);
+  const [itemRoutineDate,setItemRoutineDate] = useState(initialRoute.routineDate);
   const [goalId, setGoalId] = useState(null);
   const [assigning, setAssigning] = useState(null);
   const [person, setPerson] = useState(null);
@@ -123,6 +127,7 @@ export default function App() {
   const [createIntent, setCreateIntent] = useState(null);
   const [guideContextTab, setGuideContextTab] = useState(null);
   const [peopleFocusId, setPeopleFocusId] = useState(null);
+  const [authorityFocusProfileId,setAuthorityFocusProfileId] = useState(null);
   const [peopleAccessIntent, setPeopleAccessIntent] = useState(null);
   const [lifecycleIntent, setLifecycleIntent] = useState(null);
   const [announcementFocusId, setAnnouncementFocusId] = useState(null);
@@ -216,6 +221,7 @@ export default function App() {
   function applyRoute(route) {
     setTab(route.tab || "home");
     setItemId(route.itemId || null);
+    setItemRoutineDate(route.itemId ? validRoutineDate(route.routineDate) : null);
     setProjectId(route.projectId || null);
     setMeetingId(route.meetingId || null);
     setRoomContext(route.roomContext || null);
@@ -226,6 +232,7 @@ export default function App() {
     setCreateIntent(null);
     setPeopleFocusId(null);
     setPeopleAccessIntent(null);
+    setAuthorityFocusProfileId(null);
     setAnnouncementFocusId(null);
   }
 
@@ -233,6 +240,7 @@ export default function App() {
     const next = {
       tab: route.tab || tab || "home",
       itemId: route.itemId || null,
+      routineDate: route.itemId ? validRoutineDate(route.routineDate) : null,
       projectId: route.projectId || null,
       meetingId: route.meetingId || null,
       roomContext: route.roomContext || null,
@@ -240,6 +248,7 @@ export default function App() {
     const params = new URLSearchParams();
     if (next.tab !== "home") params.set("tab", next.tab);
     if (next.itemId) params.set("item", next.itemId);
+    if (next.itemId && next.routineDate) params.set("routineDate",next.routineDate);
     if (next.projectId) params.set("project", next.projectId);
     if (next.meetingId) params.set("meeting", next.meetingId);
     if (next.roomContext) {
@@ -265,6 +274,7 @@ export default function App() {
 
   function go(t) {
     if (t !== "guide") setGuideContextTab(null);
+    setAuthorityFocusProfileId(null);
     navigate({ tab: t });
   }
 
@@ -276,11 +286,16 @@ export default function App() {
     navigate({ tab: "lifecycle" });
     setLifecycleIntent(profileId ? { profileId, type } : null);
   }
+  function openAuthorityForPerson(profileId) {
+    if (!canManageAuthority || !profileId) return;
+    navigate({tab:"authority"});
+    setAuthorityFocusProfileId(profileId);
+  }
   function openPeopleAccess(intent = {}) {
     navigate({ tab: "people" });
     setPeopleAccessIntent(intent);
   }
-  function openItem(id) { navigate({ tab, itemId: id }); }
+  function openItem(id,routineDate=null) { navigate({ tab, itemId: id, routineDate }); }
   function openProject(id) { navigate({ tab, projectId: id }); }
   function openMeeting(id) { navigate({ tab, meetingId: id }); }
 
@@ -378,7 +393,9 @@ export default function App() {
   const canUsePayroll = hasCapability("payroll.prepare") || hasCapability("payroll.approve");
   const canUseDelivery = isAdmin || isExec || isUnitManager || hasCapability("delivery.manage");
   const canUseWorkload = isUnitManager || hasCapability("resource.manage");
-  const canUsePerformance = !isExec && (isStaff || isUnitManager || hasOrgCapability("performance.admin"));
+  // Assigned Executive reviewers may open this route; appraisal RLS restricts them to their own case.
+  // Opening the route never grants performance.admin or Protected HR. The assigned HR-head publication exception is checked per case by the server.
+  const canUsePerformance = isExec || isStaff || isUnitManager || hasOrgCapability("performance.admin");
   const canUseLearning = !isExec && (isStaff || isUnitManager || hasOrgCapability("learning.manage"));
   const canUseWorkforce = !isExec && (isStaff || isUnitManager || hasOrgCapability("workforce.manage") || hasOrgCapability("attendance.correct") || hasOrgCapability("compliance.manage"));
   const canUseAssets = !isExec && (isStaff || isUnitManager || hasOrgCapability("asset.manage"));
@@ -401,8 +418,8 @@ export default function App() {
   }
 
   function pageForTab() {
-    // Unit Managers can lead several units. Remount current-unit content on
-    // a headship switch so previous-unit drafts and request state cannot leak.
+    // All Work roles remount on actor/tenant/unit changes. This invalidates
+    // previous-role drafts and pending state before any new request completes.
     const managerScopeKey = `${me.org_id}:${me.id}:${me.unit_id || "none"}`;
     if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
@@ -414,7 +431,7 @@ export default function App() {
     if (tab === "primitives" && isAdmin) return <DesignPrimitives me={me} />;
     if (tab === "home") {
       if (me.is_exec) return <ExecutiveHome key={me.org_id+":"+me.id} me={me} openMeeting={openMeeting} scheduleMeeting={startMeeting} go={go} />;
-      if (me.is_admin) return <AdminHome key={`${me.org_id}:${me.id}`} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} openSettings={() => go("settings")} openUnits={() => go("units")} openPeopleAccess={openPeopleAccess} go={go} />;
+      if (me.is_admin) return <AdminHome key={`${me.org_id}:${me.id}`} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} openSettings={() => go("settings")} openUnits={() => go("units")} openPeopleAccess={openPeopleAccess} openPerson={(employeeId) => openSearchPerson({ employeeId })} go={go} />;
       if (isManager) return <ManagerHome key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
       return <Home me={me} session={session} setSession={setSession} openItem={openItem} openMeeting={openMeeting} openRoom={openRoom} openWork={() => go("work")} openMe={() => go("me")} openAnnouncements={() => go("announcements")} openTeam={() => go("team")} openCalendar={() => go("staff-calendar")} />;
     }
@@ -422,10 +439,10 @@ export default function App() {
       ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
       : <StaffTeam me={me} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />;
     if (tab === "work") {
-      if (isExec) return <ExecutiveWork me={me} openItem={openItem} goAssign={startAssignment} />;
-      if (isAdmin) return <AdminWork me={me} openItem={openItem} goAssign={startAssignment} />;
+      if (isExec) return <ExecutiveWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
+      if (isAdmin) return <AdminWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
       if (isUnitManager) return <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
-      return <Work me={me} isManager={false} openItem={openItem} />;
+      return <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />;
     }
     if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} />;
     if (tab === "messages") return <Inbox
@@ -442,7 +459,7 @@ export default function App() {
     if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} />;
     if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation me={me} />;
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
-    if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} />;
+    if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} openItem={openItem} />;
     if (tab === "record") return <Record me={me} openItem={openItem} />;
     if (tab === "announcements") return <Announcements
       me={me}
@@ -481,6 +498,7 @@ export default function App() {
       onAccessIntentHandled={() => setPeopleAccessIntent(null)}
       initialEmployeeId={peopleFocusId}
       onInitialHandled={() => setPeopleFocusId(null)}
+      onManagePermissions={canManageAuthority ? openAuthorityForPerson : null}
     />;
     if (tab === "lifecycle" && canManagePeople) return <AdminLifecycle me={me} initialProfileId={lifecycleIntent?.profileId || null} initialType={lifecycleIntent?.type || null} onInitialHandled={() => setLifecycleIntent(null)} />;
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR key={`${me.org_id}:${me.id}`} me={me} />;
@@ -494,7 +512,7 @@ export default function App() {
     if (tab === "workflows" && canUseWorkflows) return <AdminWorkflows me={me} />;
     if (tab === "policies" && canManageAuthority) return <AdminPolicies me={me} />;
     if (tab === "integrations" && canManageIntegrations) return <AdminIntegrations me={me} />;
-    if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} />;
+    if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} initialProfileId={authorityFocusProfileId} />;
     if (tab === "settings" && isAdmin) return <ControlCenter me={me} go={go} />;
     if (tab === "office-settings" && isAdmin) return <OfficeSettings me={me} openWorkforce={() => go("attendance")} />;
     return <MeScreen me={me} onOpenWork={openItem} onOpenAchievements={() => go("achievements")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
@@ -588,6 +606,7 @@ export default function App() {
           onGuide={() => openGuide(true)}
         />
         <main className="app-content ev2s-content">
+          {isAdmin && !overlay && <ControlCenterTrail tab={tab} go={go} />}
           {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
             {me.legacyAuthorityVerified
               ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."
@@ -598,7 +617,7 @@ export default function App() {
           </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
-          {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} openRoom={openRoom} back={closeUrlOverlay} />
+          {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} back={closeUrlOverlay} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}
                 initialObjectiveId={assigning.objectiveId}

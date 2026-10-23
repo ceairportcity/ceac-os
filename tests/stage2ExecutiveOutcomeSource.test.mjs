@@ -69,3 +69,33 @@ test("Executive outcome sources require exact counts, not a potentially truncate
  assert.match(screen,/x\.count>500/);
  assert.match(screen,/nextOutcomeError="Leadership evidence could not be verified completely\. Detailed totals are withheld\."/);
 });
+
+test("Executive quarter sources bind recorded proposals and evidence to the latest issued unit revision only",()=>{
+ const screen=read("src/screens/ExecutiveReports.jsx");
+ const brief=read("src/components/ExecutiveOutcomeBrief.jsx");
+ const facts=read("src/lib/ministryReportingFacts.js");
+ assert.match(screen,/\.from\("report_targets"\)/);
+ assert.match(screen,/\.from\("report_evidence_refs"\)/);
+ assert.match(screen,/const latestIssued = Object\.values\(latestUnitReportStatus\(issued\.data \|\| \[\]\)\)/);
+ assert.match(screen,/\.in\("report_id",issuedIds\)/);
+ assert.match(screen,/response\.count>500/);
+ assert.match(brief,/unitTargets\.map/);
+ assert.match(brief,/unitEvidence\.map/);
+ assert.match(brief,/A proposed target is not an Executive approval/);
+ assert.match(facts,/byReportId\.has\(row\.report_id\)/);
+ assert.doesNotMatch(brief,/approved Executive decision recorded/i);
+});
+
+test("quarterly leadership briefing uses period-scoped real Work decisions, never invented Executive approval",()=>{
+ const screen=read("src/screens/ExecutiveReports.jsx");
+ const view=read("src/components/ExecutiveOutcomeBrief.jsx");
+ assert.match(screen,/\.from\("work_decisions"\)/);
+ assert.match(screen,/\.gte\("decided_at",selectedPeriod\.starts_on/);
+ assert.match(screen,/\.lt\("decided_at",exclusiveEnd\)/);
+ assert.match(screen,/\.select\("id,title,unit_id,project_id",\{count:"exact"\}\)/);
+ assert.match(screen,/itemRead\.count!==workIds\.length/);
+ assert.match(screen,/decisionRead\.count>500/);
+ assert.match(view,/decisions\.map\(decision=>/);
+ assert.match(view,/separate from quarterly Executive approvals/);
+ assert.match(view,/Recorded rationale:/);
+});

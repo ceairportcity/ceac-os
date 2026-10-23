@@ -32,7 +32,7 @@ test("weekly assigned routine is created once and appears on staff's future Work
   const followingSaturday = afterSaturday.toISOString().slice(0,10);
 
   const manager = await auth(browser,"manager@ceac.local.test");
-  const title = "Saturday venue inspection " + nextSaturday;
+  const title = "Saturday venue inspection " + nextSaturday + " " + Date.now();
   try {
     await manager.page.goto(BASE + "/?tab=work");
     await expect(manager.page.locator(".ev2-work-manager")).toBeVisible();
@@ -100,6 +100,79 @@ test("weekly assigned routine is created once and appears on staff's future Work
     );
     expect(projectedDates, "one occurrence per day, no duplicate Work item").toEqual(expectedDates);
     await expect(scheduled.getByText("Scheduled", {exact:true}).first()).toBeVisible();
+    // A normal authenticated manager changes FUTURE dates; the first Saturday
+    // remains due. Service-role writes must not fabricate schedule history.
+    const managerClient = (await import("@supabase/supabase-js")).createClient(
+      process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY,
+      { auth: { autoRefreshToken:false, persistSession:false } }
+    );
+    const signIn = await managerClient.auth.signInWithPassword({
+      email: "manager@ceac.local.test", password: process.env.ROLE_FIXTURE_PASSWORD,
+    });
+    expect(signIn.error, signIn.error?.message).toBeNull();
+    const sunday = new Date(nextSaturday+"T12:00:00Z");
+    sunday.setUTCDate(sunday.getUTCDate()+1);
+    const firstSunday = sunday.toISOString().slice(0,10);
+    try {
+      const changed = await managerClient.rpc("change_routine_schedule", {
+        p_work_item_id: actualWork.id, p_effective_from: firstSunday,
+        p_schedule_kind: "weekly", p_weekdays: [7],
+      });
+      expect(changed.error, changed.error?.message).toBeNull();
+      expect(changed.data).toBe(2);
+      await staff.page.reload();
+      const changedRows = staff.page.getByRole("region",{name:"My scheduled recurring work"})
+        .locator(".s2-assigned-routine-list > button").filter({hasText:title});
+      await expect(changedRows.locator(`time[datetime="${firstSunday}"]`)).toHaveCount(1,{timeout:20000});
+      await expect(changedRows.locator(`time[datetime="${nextSaturday}"]`)).toHaveCount(1);
+      await expect(changedRows.locator(`time[datetime="${followingSaturday}"]`)).toHaveCount(0);
+    } finally { await managerClient.auth.signOut(); }
     await staff.page.screenshot({path:"test-artifacts/stage2-recurring-staff-weekly-work.png",fullPage:true});
   } finally { await staff.context.close(); }
+});
+
+
+test("a pause keeps earlier missed Work dates visible to Staff and their Manager", async ({ browser }) => {
+  if (process.env.SUPABASE_URL !== "http://127.0.0.1:54321")
+    throw new Error("Pause history browser fixture must remain local.");
+  const { createClient } = await import("@supabase/supabase-js");
+  const client=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,
+    {auth:{persistSession:false,autoRefreshToken:false}});
+  const today=new Date().toISOString().slice(0,10);
+  const date=(offset)=>{const d=new Date(today+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+offset);return d.toISOString().slice(0,10);};
+  const title="Pause preserves real missed history "+Date.now();
+  const signed=await client.auth.signInWithPassword({email:"staff@ceac.local.test",password:process.env.ROLE_FIXTURE_PASSWORD});
+  expect(signed.error).toBeNull();
+  const created=await client.rpc("create_typed_work",{
+    p_kind:"routine",p_unit_id:"20000000-0000-4000-8000-000000000011",
+    p_title:title,p_assignee_id:signed.data.user.id,p_expected_outcome:"Check the venue",
+    p_details:{origin:"self_created",schedule_kind:"daily",starts_on:date(-3),steps:["Inspect venue"]},
+  });
+  expect(created.error,created.error?.message).toBeNull();
+  expect((await client.rpc("record_routine_occurrence",{p_work_item_id:created.data,p_occurred_on:date(-3),p_note:"Actual earlier inspection"})).error).toBeNull();
+  expect((await client.rpc("set_routine_paused",{p_work_item_id:created.data,p_paused:true,p_reason:"Venue temporarily unavailable"})).error).toBeNull();
+  const staff=await auth(browser,"staff@ceac.local.test");
+  try {
+    await staff.page.goto(BASE+"/?tab=work");
+    const rows=staff.page.getByRole("region",{name:"My scheduled recurring work"})
+      .locator(".s2-assigned-routine-list > button").filter({hasText:title});
+    await expect(rows).toHaveCount(2);
+    for(const offset of [-2,-1]) await expect(rows.locator('time[datetime="'+date(offset)+'"]')).toHaveCount(1);
+    await expect(rows.getByText("Not recorded",{exact:true})).toHaveCount(2);
+    const manager=await auth(browser,"manager@ceac.local.test");
+    try {
+      await manager.page.goto(BASE+"/?tab=work");
+      await manager.page.getByRole("tab",{name:"Routines",exact:true}).click();
+      const managerRows=manager.page.getByRole("region",{name:"Routine occurrence calendar"}).locator("tbody tr").filter({hasText:title});
+      await expect(managerRows).toHaveCount(3);
+      await expect(managerRows.getByText("Recorded",{exact:true})).toHaveCount(1);
+      await expect(managerRows.getByText("Not recorded",{exact:true})).toHaveCount(2);
+      await expect(managerRows.locator('time[datetime="'+today+'"]')).toHaveCount(0);
+    } finally {await manager.context.close();}
+    expect((await client.rpc("set_routine_paused",{p_work_item_id:created.data,p_paused:false,p_reason:"Venue available again"})).error).toBeNull();
+    await staff.page.reload();
+    await expect(rows).toHaveCount(5);
+    for(const offset of [-2,-1,0,1,2]) await expect(rows.locator('time[datetime="'+date(offset)+'"]')).toHaveCount(1);
+    await staff.page.screenshot({path:"test-artifacts/stage2-recurring-pause-history.png",fullPage:true});
+  } finally {await staff.context.close();await client.auth.signOut();}
 });

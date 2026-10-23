@@ -82,3 +82,46 @@ test("P6 protected human rating and HR exception writes fail closed on unavailab
  assert.match(source,/onClick=\{\(\)=>setReload\(n=>n\+1\)\}/);
  assert.match(source,/const recorded=rows\.find\(x=>x\.assessment_entry_id===assessment\?\.id\)/);
 });
+
+test("owner-approved HR head appraisal includes Administration and excludes Group Pastor without self-review",()=>{
+ const migration=read("supabase/migrations/20261022170000_188_admin_hr_head_group_pastor_appraisal.sql");
+ assert.match(migration,/AND NOT p\.is_exec/);
+ assert.doesNotMatch(migration,/AND NOT p\.is_admin/);
+ assert.match(migration,/IF v_subject\.is_admin THEN/);
+ assert.match(migration,/v_subject\.id=v_reviewer\.id/);
+ assert.match(migration,/v_reviewer\.is_exec/);
+ assert.match(migration,/lower\(btrim\(coalesce\(v_reviewer\.job_title,''\)\)\)='group pastor'/);
+ assert.match(migration,/UPDATE public\.appraisals\s+SET manager_id=v_reviewer\.id/);
+ assert.match(migration,/AND um\.unit_id=v_appraisal\.unit_id AND um\.role='manager'/);
+ assert.doesNotMatch(migration,/\bGRANT\s+(ALL|EXECUTE|SELECT|UPDATE|INSERT|DELETE)\b/i);
+ assert.doesNotMatch(migration,/CREATE\s+POLICY/i);
+ // Existing policy reads are only tightened for the HR subject's own case.
+ for(const policy of ["stage7_entries_read","stage7_development_read",
+   "stage2_appraisal_human_rating_select","performance_release_request_read",
+   "stage2_appraisal_review_exception_read"]){
+   assert.match(migration,new RegExp("ALTER POLICY "+policy+" ON public\\."));
+ }
+ assert.match(migration,/a\.profile_id<>auth\.uid\(\)/);
+ assert.match(migration,/profile_id<>auth\.uid\(\)/);
+});
+test("Group Pastor receives only assigned HR-head review and publication, never general HR authority",()=>{
+ const migration=read("supabase/migrations/20261022170000_188_admin_hr_head_group_pastor_appraisal.sql");
+ const app=read("src/App.jsx");
+ const personal=read("src/screens/Me.jsx");
+ const review=read("src/screens/Performance.jsx");
+ assert.match(migration,/v_actor=v_review\.profile_id/);
+ assert.match(migration,/v_actor=v_request\.requested_by/);
+ assert.match(migration,/NOT public\.app_is_admin\(\)/);
+ assert.match(migration,/NOT public\.app_has_capability\('people\.manage',NULL\)/);
+ assert.match(app,/const canUsePerformance = isExec \|\| isStaff \|\| isUnitManager/);
+ assert.match(personal,/title="Assigned appraisals"/);
+ assert.match(personal,/ariaLabel="My assigned appraisals"/);
+ assert.match(review,/selectedCase\.profiles\?\.is_admin/);
+ assert.match(review,/profile\.id === selectedCase\.profile_id/);
+ assert.match(review,/profile\.is_exec && !profile\.is_admin/);
+ assert.match(review,/hrReleaseAdmin && isSelf && <ProductNotice/);
+ assert.match(review,/canDecidePublication && <div className="performance-share-bar"/);
+ assert.match(review,/!isSelf && \(hrReleaseAdmin \|\| assignedPastorPublication\)/);
+ assert.match(review,/review\.manager_id === me\.id/);
+ assert.match(review,/Publish assigned HR-head review/);
+});

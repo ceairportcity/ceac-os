@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { LoadingState, ProductNotice } from "../components/bits";
 import { Button, DataPanel, QueueRow, SegmentedControl, StatePanel, StatusBadge } from "../experience-v2/components";
@@ -30,6 +30,7 @@ function titleCase(value = "") {
 }
 
 function actionPresentation(row) {
+  if (row.action_kind === "routine_due") return { icon: "notification", label: "Routine due", tone: "warning" };
   if (row.action_kind === "returned_work") {
     return { icon: "warning", label: "Correction required", tone: "danger" };
   }
@@ -46,6 +47,11 @@ function formattedAt(value) {
 }
 
 export default function Inbox({ me, openRoom, openItem, openAnnouncements, initialView = null, onInitialViewHandled }) {
+  const scopeKey=[me.org_id,me.id,me.unit_id||"",Boolean(me.is_exec)].join(":");
+  const liveScope=useRef(scopeKey);liveScope.current=scopeKey;
+  const request=useRef(0);
+  const [loadedScope,setLoadedScope]=useState("");
+  const verifiedScope=loadedScope===scopeKey;
   const [view, setView] = useState("all");
   const [actions, setActions] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -56,7 +62,12 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => { load(); }, [me.id, me.unit_id, me.is_exec]);
+  useEffect(() => {
+    load();
+    const refresh=()=>load();
+    window.addEventListener("focus",refresh);
+    return ()=>{request.current++;window.removeEventListener("focus",refresh);};
+  }, [scopeKey]);
   useEffect(() => {
     if (!initialView) return;
     setView(initialView);
@@ -64,6 +75,10 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
   }, [initialView]);
 
   async function load() {
+    const requestedScope=scopeKey;
+    const requested=++request.current;
+    const current=()=>requested===request.current&&requestedScope===liveScope.current;
+    setLoadedScope("");
     setLoading(true);
     setError(null);
     try {
@@ -122,6 +137,8 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
         return roomName(a).localeCompare(roomName(b));
       });
 
+      if(!current())return;
+      setLoadedScope(requestedScope);
       setActions(actionResult.data || []);
       setMessages(loadedMessages);
       setMentions(new Set(mentionIds));
@@ -129,12 +146,15 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
       setAnnouncements(announcementResult.data || []);
       setRoomDirectory(directory);
     } catch (err) {
+      if(!current())return;
+      setLoadedScope(requestedScope);
+      setAnnouncements([]);setMentions(new Set());setReads(new Map());
       setError(humanError(err, "Messages could not be loaded."));
       setActions([]);
       setMessages([]);
       setRoomDirectory([]);
     } finally {
-      setLoading(false);
+      if(current())setLoading(false);
     }
   }
 
@@ -189,8 +209,8 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
         <Button variant="secondary" size="compact" onClick={openAnnouncements}>Announcements</Button>
-        <StatusBadge tone={actions.length ? "warning" : "neutral"} icon={false}>{actions.length} need action</StatusBadge>
-        <StatusBadge tone={totalUnread ? "action" : "neutral"} icon={false}>{totalUnread} unread</StatusBadge>
+        <StatusBadge tone={actions.length ? "warning" : "neutral"} icon={false}>{verifiedScope?actions.length:0} need action</StatusBadge>
+        <StatusBadge tone={totalUnread ? "action" : "neutral"} icon={false}>{verifiedScope?totalUnread:0} unread</StatusBadge>
       </div>
     </header>
 
@@ -207,9 +227,9 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
       ]}
     />
 
-    {error && <ProductNotice tone="error" title="Could not load Messages">{error}</ProductNotice>}
+    {verifiedScope&&error && <ProductNotice tone="error" title="Could not load Messages">{error}</ProductNotice>}
 
-    {loading ? <LoadingState label="Loading Messages…" /> : <>
+    {loading||!verifiedScope ? <LoadingState label="Loading Messages…" /> : <>
       {showActions && <DataPanel
         eyebrow="Work state"
         title="Needs action"
@@ -218,11 +238,13 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
       >
         {actions.length ? actions.map((row) => {
           const presentation = actionPresentation(row);
-          const context = row.action_kind === "review_required"
+          const context = row.action_kind === "routine_due"
+            ? `Routine · Due ${formattedAt(row.action_at)} · Open the dated outcome in Work`
+            : row.action_kind === "review_required"
             ? `${row.assignee_name || "Team member"} submitted · ${formattedAt(row.action_at)}`
             : `${titleCase(row.work_kind)} · ${formattedAt(row.action_at)}${row.responsible_reviewer_name ? ` · Reviewer: ${row.responsible_reviewer_name}` : ""}`;
           return <QueueRow
-            key={`${row.action_kind}-${row.work_item_id}`}
+            key={`${row.action_kind}-${row.work_item_id}-${row.action_at}`}
             icon={presentation.icon}
             title={`${row.work_ref} · ${row.work_title}`}
             meta={context}

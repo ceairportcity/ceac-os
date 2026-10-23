@@ -27,7 +27,7 @@ export function latestUnitReportStatus(reports = []) {
   result[key] = issued.get(key) || drafts.get(key);
  return result;
 }
-export function ministryPeriodEvidence({unitReports=[],objectives=[],milestones=[],activeUnitIds=[]}={}){
+export function ministryPeriodEvidence({unitReports=[],objectives=[],milestones=[],targets=[],evidenceRefs=[],activeUnitIds=[]}={}){
  const latest=new Map();
  for(const report of unitReports){
   if(!report?.unit_id||!final(report.status))continue;
@@ -41,12 +41,28 @@ export function ministryPeriodEvidence({unitReports=[],objectives=[],milestones=
  for(const item of objectives)if(item?.id&&!objectiveMap.has(item.id))objectiveMap.set(item.id,item);
  const milestoneMap=new Map();
  for(const item of milestones)if(item?.id&&!milestoneMap.has(item.id))milestoneMap.set(item.id,item);
+ // Only the latest published report revision for each unit is a current
+ // quarterly evidence source. Never treat previous report revisions as extra
+ // commitments, and never derive commitments from unmatched references.
+ const byReportId=new Map([...latest.values()].filter(report=>report.id).map(report=>[report.id,report]));
+ const unique=(items)=>{
+  const rows=new Map();
+  for(const row of items)if(row?.id&&byReportId.has(row.report_id)&&!rows.has(row.id))
+   rows.set(row.id,{...row,unit_id:byReportId.get(row.report_id).unit_id});
+  return [...rows.values()];
+ };
+ const unitTargets=unique(targets).sort((a,b)=>String(a.unit_id).localeCompare(String(b.unit_id))
+    || Number(a.position||0)-Number(b.position||0) || String(a.id).localeCompare(String(b.id)));
+ const unitEvidence=unique(evidenceRefs).sort((a,b)=>String(a.unit_id).localeCompare(String(b.unit_id))
+    || String(a.section||"").localeCompare(String(b.section||""))
+    || String(a.id).localeCompare(String(b.id)));
  const units=[...new Set(activeUnitIds.filter(Boolean))];
  return {
    filedReports:[...latest.values()].sort((a,b)=>String(a.unit_id).localeCompare(String(b.unit_id))),
    filing:{submitted:units.filter(id=>latest.has(id)).length,visibleUnits:units.length,missing:units.filter(id=>!latest.has(id))},
    objectives:[...objectiveMap.values()],
    milestones:[...milestoneMap.values()],
+   unitTargets,unitEvidence,
    coverageNote:"Filing coverage is not a measure of performance; objective and milestone states are recorded, not independently verified here.",
    noDoubleCount:"Each distinct objective ID and milestone ID appears once, regardless of how many people or departments worked on it.",
  };

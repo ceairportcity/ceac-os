@@ -54,14 +54,14 @@
   .s2-achievement .s2-achievement-insights{margin-top:10px}
   .s2-achievement .s2-achievement-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
   .s2-achievement .s2-achievement-table-scroll{overflow:visible}
-  .s2-achievement .s2-achievement-table-scroll table{min-width:0}
+  .s2-achievement .s2-achievement-table-scroll table{min-width:0;display:table;table-layout:fixed;white-space:normal;overflow-wrap:anywhere}
+  .s2-achievement th{white-space:normal}
   .s2-achievement .s2-achievement-evidence article,.s2-achievement .s2-achievement-panel,.s2-achievement .s2-achievement-metrics article{break-inside:avoid}
-  body:has(.s2-achievement) .ev2s-sidebar,body:has(.s2-achievement) .ev2s-topbar,body:has(.s2-achievement) .ev2s-mobile-nav,body:has(.s2-achievement) .ev2s-mobile-topbar{display:none!important}
 }
 
 /* Print only the authorised personal report, never adjacent shell, drawer or HR context. */
-@media print{
+@media print{body:has(.s2-achievement) *:not(:has(.s2-achievement)):not(.s2-achievement):not(.s2-achievement *){display:none!important}body:has(.s2-achievement),body:has(.s2-achievement) *:has(.s2-achievement){display:block!important;position:static!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important}
   body:has(.s2-achievement) *{visibility:hidden!important}
-  .s2-achievement,.s2-achievement *{visibility:visible!important}
-  .s2-achievement{position:absolute!important;top:0!important;left:0!important;overflow:visible!important}
+  body .s2-achievement,body .s2-achievement *{visibility:visible!important}
+  .s2-achievement{position:static!important;overflow:visible!important}
 }

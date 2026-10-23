@@ -72,12 +72,14 @@ export default function Room({
   const [hasOlder, setHasOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
+  const [realtimeStatus, setRealtimeStatus] = useState("offline");
   const endRef = useRef(null);
   const unreadRef = useRef(null);
   const feedRef = useRef(null);
   const atBottomRef = useRef(true);
   const sendingRef = useRef(false);
   const roomOpenSerial = useRef(0);
+  const activeRoomIdRef = useRef(null);
   const messageLoadSerial = useRef(0);
   const PAGE_SIZE = 60;
 
@@ -93,25 +95,33 @@ export default function Room({
   }, [me.id, me.is_admin, me.is_exec]);
 
   useEffect(() => {
-    if (!room?.id) return undefined;
+    if (!room?.id) { setRealtimeStatus("offline"); return undefined; }
+    let active = true;
+    setRealtimeStatus("connecting");
     const channel = supabase.channel(`ceac-room-${room.id}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${room.id}`,
       }, async () => {
-        await loadMessages(room.id, false);
-        if (atBottomRef.current) {
+        const loaded = await loadMessages(room.id, false);
+        if (loaded && activeRoomIdRef.current === room.id && atBottomRef.current) {
           requestAnimationFrame(() => endRef.current?.scrollIntoView({ block: "end" }));
           await markRead(room.id);
         } else {
           setNewMessageCount((count) => count + 1);
         }
       })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      .subscribe((status) => {
+        if (!active) return;
+        if (status === "SUBSCRIBED") setRealtimeStatus("connected");
+        else if (status === "CHANNEL_ERROR" || status === "CLOSED" || status === "TIMED_OUT")
+          setRealtimeStatus("offline");
+        else setRealtimeStatus("connecting");
+      });
+    return () => { active = false; setRealtimeStatus("offline"); supabase.removeChannel(channel); };
   }, [room?.id]);
 
   useEffect(() => {
-    if (loading || !room?.id) return;
+    if (loading || !room?.id || error || activeRoomIdRef.current !== room.id) return;
     requestAnimationFrame(() => {
       if (unreadRef.current) unreadRef.current.scrollIntoView({ block: "center" });
       else endRef.current?.scrollIntoView({ block: "end" });
@@ -132,6 +142,7 @@ export default function Room({
 
   async function loadInitialRoom() {
     const openSerial = ++roomOpenSerial.current;
+    activeRoomIdRef.current = null;
     ++messageLoadSerial.current;
     setLoading(true); setError(null); setRoom(null); setMessages([]); setLastReadAt(null); setHasOlder(false); setNewMessageCount(0);
     try {
@@ -148,6 +159,10 @@ export default function Room({
   }
 
   async function selectRoom(nextRoom, initial = false) {
+    const openSerial = roomOpenSerial.current;
+    activeRoomIdRef.current = nextRoom.id;
+    // Clear prior-room identities/references before any asynchronous read.
+    setParticipants([]); setScopeRooms([]); setWorkOptions([]); setProjectOptions([]);
     setRoom(nextRoom);
     setPanel(null);
     setPendingFiles([]);
@@ -161,16 +176,18 @@ export default function Room({
       .eq("room_id", nextRoom.id)
       .eq("profile_id", me.id)
       .maybeSingle();
+    if (openSerial !== roomOpenSerial.current || activeRoomIdRef.current !== nextRoom.id) return;
     setLastReadAt(readResult.error ? null : readResult.data?.last_read_at || null);
     await Promise.all([
       loadMessages(nextRoom.id, true),
-      loadParticipants(nextRoom),
-      loadScopeRooms(nextRoom),
-      loadReferenceOptions(nextRoom),
+      loadParticipants(nextRoom, openSerial),
+      loadScopeRooms(nextRoom, openSerial),
+      loadReferenceOptions(nextRoom, openSerial),
     ]);
   }
 
-  async function loadScopeRooms(currentRoom) {
+  async function loadScopeRooms(currentRoom, openSerial) {
+    const current = () => openSerial === roomOpenSerial.current && activeRoomIdRef.current === currentRoom.id;
     if (!currentRoom?.unit_id || currentRoom.kind === "project") {
       setScopeRooms([]);
       return;
@@ -179,6 +196,7 @@ export default function Room({
       .select("id,kind,unit_id,sub_team_id,project_id,created_at,units(name),sub_teams(name,unit_id),projects(name,status)")
       .eq("unit_id", currentRoom.unit_id)
       .in("kind", ["unit","sub_team"]);
+    if (!current()) return;
     if (result.error) { setScopeRooms([]); return; }
     setScopeRooms((result.data || []).sort((a,b) => {
       if (a.kind === "unit") return -1;
@@ -187,7 +205,8 @@ export default function Room({
     }));
   }
 
-  async function loadParticipants(currentRoom) {
+  async function loadParticipants(currentRoom, openSerial) {
+    const current = () => openSerial === roomOpenSerial.current && activeRoomIdRef.current === currentRoom.id;
     try {
       let profileIds = [];
 
@@ -224,7 +243,7 @@ export default function Room({
             ...(projectResult.data.project_units || []).map((row) => row.unit_id),
           ].filter(Boolean))];
         }
-        if (!unitIds.length) { setParticipants([]); return; }
+        if (!unitIds.length) { if (current()) setParticipants([]); return; }
 
         const memberResult = await supabase.from("unit_memberships")
           .select("profile_id")
@@ -234,21 +253,24 @@ export default function Room({
       }
 
       const uniqueIds = [...new Set(profileIds)].filter((id) => id && id !== me.id);
-      if (!uniqueIds.length) { setParticipants([]); return; }
+      if (!uniqueIds.length) { if (current()) setParticipants([]); return; }
 
       const profileResult = await supabase.from("profiles")
         .select("id,full_name,active")
         .in("id", uniqueIds)
         .eq("active", true);
       if (profileResult.error) throw profileResult.error;
-      setParticipants(uniqueById(profileResult.data || []));
+      if (current()) setParticipants(uniqueById(profileResult.data || []));
     } catch (err) {
-      console.warn("Room participants unavailable", err?.message || err);
-      setParticipants([]);
+      if (current()) {
+        console.warn("Room participants unavailable", err?.message || err);
+        setParticipants([]);
+      }
     }
   }
 
-  async function loadReferenceOptions(currentRoom) {
+  async function loadReferenceOptions(currentRoom, openSerial) {
+    const current = () => openSerial === roomOpenSerial.current && activeRoomIdRef.current === currentRoom.id;
     try {
       let workQuery = supabase.from("work_items")
         .select("id,ref,title,status,unit_id,sub_team_id,project_id")
@@ -264,6 +286,7 @@ export default function Room({
       const [workResult, projectResult] = await Promise.all([workQuery, projectQuery]);
       if (workResult.error) throw workResult.error;
       if (projectResult.error) throw projectResult.error;
+      if (!current()) return;
       setWorkOptions(workResult.data || []);
 
       if (currentRoom.kind === "project") setProjectOptions([]);
@@ -272,8 +295,10 @@ export default function Room({
         || (project.project_units || []).some((unit) => unit.unit_id === currentRoom.unit_id)
       ));
     } catch {
-      setWorkOptions([]);
-      setProjectOptions([]);
+      if (current()) {
+        setWorkOptions([]);
+        setProjectOptions([]);
+      }
     }
   }
 
@@ -285,7 +310,7 @@ export default function Room({
   }
 
   async function loadMessages(roomId, showLoading = false) {
-    if (!roomId) return;
+    if (!roomId || activeRoomIdRef.current !== roomId) return false;
     const requestSerial = ++messageLoadSerial.current;
     if (showLoading) setLoading(true);
     try {
@@ -293,23 +318,28 @@ export default function Room({
         .select(messageSelect)
         .eq("room_id", roomId)
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(PAGE_SIZE);
       if (result.error) throw result.error;
       const hydrated = await hydrateMessageMedia(result.data || []);
-      if (requestSerial !== messageLoadSerial.current) return;
+      if (requestSerial !== messageLoadSerial.current || activeRoomIdRef.current !== roomId) return false;
       setMessages([...hydrated].reverse());
       setHasOlder((result.data || []).length === PAGE_SIZE);
+      return true;
     } catch (err) {
-      if (requestSerial === messageLoadSerial.current)
+      if (requestSerial === messageLoadSerial.current && activeRoomIdRef.current === roomId)
         setError(humanError(err, "Room messages could not be loaded."));
+      return false;
     } finally {
-      if (requestSerial === messageLoadSerial.current) setLoading(false);
+      if (requestSerial === messageLoadSerial.current && activeRoomIdRef.current === roomId) setLoading(false);
     }
   }
 
   async function loadOlder() {
     if (!room?.id || !messages.length || loadingOlder || !hasOlder) return;
     setLoadingOlder(true); setError(null);
+    const selectedRoomId = room.id;
+    const openSerial = roomOpenSerial.current;
     const feed = feedRef.current;
     const previousHeight = feed?.scrollHeight || 0;
     try {
@@ -317,11 +347,13 @@ export default function Room({
       const result = await supabase.from("room_messages")
         .select(messageSelect)
         .eq("room_id", room.id)
-        .lt("created_at", oldest.created_at)
+        .or(`created_at.lt.${oldest.created_at},and(created_at.eq.${oldest.created_at},id.lt.${oldest.id})`)
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(PAGE_SIZE);
       if (result.error) throw result.error;
       const hydrated = await hydrateMessageMedia(result.data || []);
+      if (openSerial !== roomOpenSerial.current || activeRoomIdRef.current !== selectedRoomId) return;
       const older = [...hydrated].reverse();
       setMessages((current) => [...older, ...current]);
       setHasOlder((result.data || []).length === PAGE_SIZE);
@@ -329,16 +361,18 @@ export default function Room({
         if (feed) feed.scrollTop += feed.scrollHeight - previousHeight;
       });
     } catch (err) {
-      setError(humanError(err, "Earlier Room messages could not be loaded."));
+      if (openSerial === roomOpenSerial.current && activeRoomIdRef.current === selectedRoomId)
+        setError(humanError(err, "Earlier Room messages could not be loaded."));
     } finally {
-      setLoadingOlder(false);
+      if (openSerial === roomOpenSerial.current && activeRoomIdRef.current === selectedRoomId)
+        setLoadingOlder(false);
     }
   }
 
   async function markRead(roomId = room?.id) {
-    if (!roomId) return;
+    if (!roomId || activeRoomIdRef.current !== roomId) return;
     const result = await supabase.rpc("mark_room_read", { p_room_id: roomId });
-    if (!result.error) setNewMessageCount(0);
+    if (!result.error && activeRoomIdRef.current === roomId) setNewMessageCount(0);
   }
 
   function handleFeedScroll() {
@@ -477,12 +511,15 @@ export default function Room({
 
   return <div className="body room-screen">
     <header className="room-head">
-      <button className="room-back" onClick={back}>←</button>
+      <button type="button" className="room-back" aria-label="Back from Room" onClick={back}>←</button>
       <div className="room-head-copy">
         <span>{roomLabel(room)}</span>
         <h1>{roomTitle(room)}</h1>
       </div>
-      <span className="room-live-dot" title="Live updates" aria-label="Live updates" />
+      <span className="room-live-status" role="status" data-state={realtimeStatus}>
+        <span className="room-live-dot" aria-hidden="true" />
+        {realtimeStatus === "connected" ? "Live updates" : realtimeStatus === "connecting" ? "Connecting" : "Updates offline"}
+      </span>
     </header>
 
     {error && <div className="flag flag-brick room-error"><h4>Room could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" onClick={loadInitialRoom}>Try again</button></div>}
@@ -615,7 +652,10 @@ export default function Room({
       />
 
       <div className="room-composer-row room-composer-v2">
-        <button className={"room-plus " + (panel ? "on" : "")} aria-label="Add context or action" onClick={() => setPanel((current) => current ? null : "actions")}>+</button>
+        <button type="button" className={"room-plus " + (panel ? "on" : "")}
+          aria-label={panel ? "Close Room actions" : "Add context or action"}
+          aria-expanded={Boolean(panel)} onClick={() => setPanel((current) => current ? null : "actions")}>
+          {panel ? "×" : "+"}</button>
         <div className="room-text-wrap">
           <textarea
             rows={1}

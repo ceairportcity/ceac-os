@@ -8,7 +8,9 @@ import { test, expect } from "@playwright/test";
 
 const rolePassword = process.env.ROLE_FIXTURE_PASSWORD;
 
-test.describe.configure({ mode: "serial" });
+// Keep execution ordered (fullyParallel=false, one worker in CI), but report
+// every independent acceptance failure instead of skipping the remaining file.
+test.describe.configure({ mode: "default" });
 
 test("Authentication shell matches the PWA responsive contract", async ({ browser }) => {
   for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 900 }]) {
@@ -110,6 +112,23 @@ async function assignTask(page, title, step = null) {
   await expect(page.getByText(/is with them/)).toBeVisible();
 }
 
+
+async function openCompleteWorkRecord(page, title) {
+  // The owner-approved Work surface is a responsibility register + inspector,
+  // not the retired ev2w-row click-to-detail layout. Search by the exact
+  // authored title so register grouping and pagination cannot hide it.
+  const finder=page.getByPlaceholder("Find a task, project or reference…").first();
+  await expect(finder).toBeVisible({timeout:20000});
+  await finder.fill(title);
+  const row=page.locator(".s2-register-row").filter({hasText:title}).first();
+  await expect(row).toBeVisible({timeout:20000});
+  await row.getByRole("button").first().click();
+  const inspector=page.getByRole("complementary",{name:"Selected responsibility"});
+  await expect(inspector.getByRole("heading",{name:title})).toBeVisible({timeout:20000});
+  await inspector.getByRole("button",{name:/Open complete work record/}).click();
+  await expect(page.locator(".ev2-work-detail")).toBeVisible({timeout:20000});
+}
+
 test("Staff and Manager complete the real work loop, including return and approval", async ({ browser }) => {
   test.setTimeout(60_000);
   const title = "Acceptance task — review loop";
@@ -133,7 +152,7 @@ test("Staff and Manager complete the real work loop, including return and approv
     await expect(page.getByRole("button", { name: "End work" })).toBeVisible();
 
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await expect(page.getByText("Why this matters")).toBeVisible();
     await expect(page.getByText("What finished looks like")).toBeVisible();
     await page.getByRole("button", { name: new RegExp(step) }).click();
@@ -153,7 +172,7 @@ test("Staff and Manager complete the real work loop, including return and approv
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test");
     await go(page, "Work");
-    await page.getByRole("tab", { name: /Needs review/ }).click();
+    await page.getByRole("tab", { name: /For review/ }).click();
     const reviewRow = page.locator(".ev2w-review-row").filter({ hasText: title }).first();
     await expect(reviewRow).toBeVisible();
     await reviewRow.click();
@@ -165,7 +184,7 @@ test("Staff and Manager complete the real work loop, including return and approv
     await returnDialog.getByPlaceholder("Explain exactly what needs changing").fill("Please correct the acceptance item.");
     await returnDialog.getByRole("button", { name: "Return work", exact: true }).click();
     await go(page, "Work");
-    await page.getByRole("tab", { name: /Needs review/ }).click();
+    await page.getByRole("tab", { name: /For review/ }).click();
     await expect(page.locator(".ev2w-review-row").filter({ hasText: title })).toHaveCount(0);
     await context.close();
   }
@@ -173,7 +192,7 @@ test("Staff and Manager complete the real work loop, including return and approv
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await expect(page.getByText("Sent back by your manager")).toBeVisible();
     await expect(page.getByText("Please correct the acceptance item.")).toBeVisible();
     await page.screenshot({ path: "test-artifacts/redesign-r7-stage10a3-returned-work.png", fullPage: true });
@@ -190,7 +209,7 @@ test("Staff and Manager complete the real work loop, including return and approv
       await dialog.getByRole("button", { name: "Start work", exact: true }).click();
       await expect(page.getByRole("button", { name: "End work" })).toBeVisible();
       await go(page, "Work");
-      await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+      await openCompleteWorkRecord(page, title);
       await page.getByRole("button", { name: new RegExp(step) }).click();
     }
 
@@ -205,7 +224,7 @@ test("Staff and Manager complete the real work loop, including return and approv
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test");
     await go(page, "Work");
-    await page.getByRole("tab", { name: /Needs review/ }).click();
+    await page.getByRole("tab", { name: /For review/ }).click();
     const reviewRow = page.locator(".ev2w-review-row").filter({ hasText: title });
     await expect(reviewRow).toBeVisible();
     await reviewRow.click();
@@ -245,7 +264,7 @@ test("A blocker can be raised, acknowledged by the manager, and resolved", async
     await expect(page.getByRole("button", { name: "Start work", exact: true })).toBeVisible();
 
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     const waitingAction = page.getByRole("button", { name: "I am waiting on someone" });
     await expect(waitingAction).toBeEnabled();
     await waitingAction.click();
@@ -274,7 +293,7 @@ test("A blocker can be raised, acknowledged by the manager, and resolved", async
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await expect(page.getByText(/Waiting on Test Unit A/)).toHaveCount(0);
     await page.getByRole("button", { name: "← Back" }).click();
     await go(page, "Home");
@@ -294,7 +313,7 @@ test("Nested Work navigation survives refresh and browser Back", async ({ browse
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await expect(page).toHaveURL(/(?:\?|&)item=/);
     await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
 
@@ -341,7 +360,7 @@ test("Staff personal details persist and private work stays out of another staff
     await privateDialog.getByLabel(/No steps needed/).check();
     await privateDialog.getByRole("button", { name: "Add private work" }).click();
     await expect(page.getByText(/added as private work/)).toBeVisible();
-    await expect(page.getByText(privateTitle, { exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: privateTitle, exact: true })).toBeVisible({ timeout: 15000 });
     await context.close();
   }
 
@@ -391,9 +410,7 @@ test("OCR6C work source attachment reaches the authorised Staff record", async (
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
-    const row = page.locator(".ev2w-row").filter({ hasText: title }).first();
-    await expect(row).toBeVisible();
-    await row.click();
+    await openCompleteWorkRecord(page, title);
     await expect(page.getByText("Source files", { exact: true })).toBeVisible();
     await expect(page.getByText(filename, { exact: true })).toBeVisible();
     await context.close();
@@ -416,7 +433,13 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   for (const item of created) {
     await page.getByLabel("Work type").selectOption({ label: item.intent });
 
-    if (item.kind === "Routine") await page.getByLabel("Repeating responsibility").fill(item.title);
+    if (item.kind === "Routine") {
+      await page.getByLabel("Repeating responsibility").fill(item.title);
+      // The owner-approved dated routine engine requires an explicit start
+      // date. Do not bypass its fail-closed validation just to click Create.
+      const start = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+      await page.getByLabel("Starts", { exact: true }).fill(start);
+    }
     if (item.kind === "Case") await page.getByLabel("Matter to track").fill(item.title);
     if (item.kind === "Request") await page.getByLabel("What you need").fill(item.title);
     if (item.kind === "Decision") {
@@ -450,9 +473,10 @@ test("Typed work can be created and reaches the Staff work surface", async ({ br
   const staff = await openAs(browser, "staff@ceac.local.test");
   await go(staff.page, "Work");
   for (const item of created.filter((entry) => entry.kind !== "Request")) {
-    // Dates for scheduled occurrences may repeat a routine title. Match
-    // the actual authored Work row, as reconciled in historical PR #117.
-    await expect(staff.page.locator(".ev2w-row").getByText(item.title, { exact: true })).toBeVisible();
+    // The real register is paginated. Find each newly authored responsibility
+    // through its existing search before asserting the saved Staff row.
+    await staff.page.getByRole("searchbox", { name: "Find a responsibility" }).fill(item.title);
+    await expect(staff.page.locator(".s2-register-row").getByText(item.title, { exact: true })).toBeVisible();
   }
   await staff.context.close();
 });
@@ -494,7 +518,8 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
 
     await go(page, "Team");
     await expect(page.locator(".ev2-people-page.ev2-people-manager")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "People & volunteers", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
+    await expect(page.locator(".ev2p-section-head").getByText("People & volunteers",{exact:true})).toBeVisible();
     const peopleSection = page.locator(".ev2p-section").filter({ hasText: /^People/ }).first();
     const setupHeading = page.getByRole("heading", { name: "Team setup", exact: true });
     await expect(peopleSection).toBeVisible();
@@ -516,8 +541,8 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Control Center");
-    await expect(page.getByText("Checks", { exact: true })).toBeVisible();
-    await page.getByText("Checks", { exact: true }).click();
+    await expect(page.getByRole("button", { name: "Checks & workflows", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Checks & workflows", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Checks", exact: true })).toBeVisible();
     await expect(page.getByText("Waiting for a decision", { exact: true })).toBeVisible();
     await context.close();
@@ -603,7 +628,7 @@ test("OCR6C Unit Rooms carry attributable communication and private media betwee
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page).toHaveURL(/roomKind=unit/);
     await expect(page.getByRole("heading", { name: "Test Unit A" })).toBeVisible();
     await page.reload();
@@ -622,7 +647,7 @@ test("OCR6C Unit Rooms carry attributable communication and private media betwee
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page.getByText(message, { exact: true })).toBeVisible();
     await expect(page.getByRole("img", { name: filename })).toBeVisible({ timeout: 15000 });
     await context.close();
@@ -635,7 +660,7 @@ test("Rooms 2.0 resolves real mentions and supports Sub-team context without DMs
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
 
     await expect(page.getByRole("button", { name: "Fixture Video Team", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Fixture Video Team", exact: true }).click();
@@ -661,7 +686,7 @@ test("Rooms 2.0 resolves real mentions and supports Sub-team context without DMs
   {
     const { context, page } = await openAs(browser, "sameunit@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page.getByRole("button", { name: "Fixture Video Team", exact: true })).toHaveCount(0);
     await context.close();
   }
@@ -1122,7 +1147,7 @@ test("Experience Stage 7 keeps work capture simple, staff-owned and manager-conf
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Work");
-    await page.locator(".ev2w-row").filter({ hasText: title }).first().click();
+    await openCompleteWorkRecord(page, title);
     await page.getByLabel("Add my step").fill("Staff-owned breakdown step");
     await page.getByRole("button", { name: "Add step", exact: true }).click();
     await expect(page.getByRole("button", { name: /Staff-owned breakdown step/ })).toBeVisible();
@@ -1147,7 +1172,7 @@ test("Experience Stage 7 keeps work capture simple, staff-owned and manager-conf
     await expect(page.getByRole("heading", { name: proposalName, exact: true })).toBeVisible();
 
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     const composer = page.getByPlaceholder("Message your unit");
     await composer.fill(roomMessage);
     await page.getByRole("button", { name: "Send", exact: true }).click();
@@ -1165,7 +1190,7 @@ test("Experience Stage 7 keeps work capture simple, staff-owned and manager-conf
 
     await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).last().click();
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page.getByText(/Created .* from this message\./)).toBeVisible();
     await context.close();
   }
@@ -1595,22 +1620,29 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await go(page, "Workforce");
     await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
     await expect(page.getByText(dayTypeName, { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Record schedule", exact: true })).toBeEnabled();
-
-    await page.getByRole("button", { name: "Record schedule", exact: true }).click();
-    dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Schedule person").selectOption("31000000-0000-4000-8000-000000000001");
-    await dialog.getByLabel("Schedule weekday").selectOption(weekday);
-    await dialog.getByLabel("Schedule day type").selectOption({ label: dayTypeName });
-    await dialog.getByLabel("Schedule reason").fill(scheduleReason);
-    await dialog.getByRole("button", { name: "Record schedule", exact: true }).click();
-    await expect(page.getByText("Workforce schedule recorded.", { exact: true })).toBeVisible();
+    // HR now records a complete employee-id week through the unified editor.
+    await page.getByLabel("Choose employee working schedule").selectOption({label:"Staff Fixture"});
+    const scheduleEditor=page.locator(".ev2p-admin-schedule");
+    await scheduleEditor.getByRole("button",{name:"Edit authorised work schedule",exact:true}).click();
+    for(const dayLabel of ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]){
+      await scheduleEditor.getByLabel(dayLabel+" work arrangement",{exact:true}).selectOption({label:dayTypeName});
+      await scheduleEditor.getByLabel(dayLabel+" start",{exact:true}).fill("10:00");
+      await scheduleEditor.getByLabel(dayLabel+" end",{exact:true}).fill("17:00");
+    }
+    await scheduleEditor.getByLabel("Effective from",{exact:true}).fill(iso(today));
+    await scheduleEditor.getByLabel("HR schedule reason",{exact:true}).fill(scheduleReason);
+    await scheduleEditor.getByRole("button",{name:"Record HR-authorised schedule",exact:true}).click();
+    await expect(scheduleEditor.getByRole("table",{name:"Saved employee seven-day working week"})).toContainText(dayTypeName);
 
     await page.reload();
     await go(page, "Workforce");
-    const staffCard = page.locator(".workforce-person").filter({ hasText: "Staff Fixture" });
+    // The current HR Today view is a review queue, not the retired person cards.
+    // Include employees whose configured schedule removes them from Needs review.
+    await page.getByLabel("Filter daily workforce records",{exact:true}).selectOption("all");
+    await page.getByLabel("Find workforce evidence",{exact:true}).fill("Staff Fixture");
+    const staffCard=page.locator(".ev2wf-today-review-entry").filter({hasText:"Staff Fixture"});
     await expect(staffCard).toBeVisible();
-    await expect(staffCard.getByText(dayTypeName, { exact: true })).toBeVisible();
+    await expect(staffCard).toContainText(dayTypeName);
 
     await page.getByRole("tab", { name: "Calendar", exact: true }).click();
     await expect(page.getByLabel("Workforce calendar unit filter")).toBeVisible();
@@ -2098,7 +2130,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(peopleMain.getByRole("tab", { name: "Overview", exact: true })).toBeVisible();
 
   await page.getByRole("tab", { name: "Time & Leave", exact: true }).click();
-  await expect(page.getByText(/entitlement not configured/i)).toBeVisible();
+  await expect(page.getByText(/active annual policy not configured/i)).toBeVisible();
 
   await page.getByRole("tab", { name: "Protected HR", exact: true }).click();
   await expect(peopleMain.getByRole("heading", { name: "Protected HR", exact: true })).toBeVisible();
@@ -2399,7 +2431,7 @@ test("Closure corridor preserves the Staff Fixture journey across CEAC OS", asyn
     await expect(page.locator(".staffv2").getByRole("button").filter({ hasText: "Acceptance unit meeting" })).toBeVisible();
 
     await go(page, "Team");
-    await page.getByRole("button", { name: /Unit Room/ }).click();
+    await page.getByRole("button", { name: /Open room|Unit Room/ }).click();
     await expect(page.getByText("Room acceptance — confirm Sunday setup", { exact: true })).toBeVisible();
 
     await go(page, "Performance & development");

@@ -1,0 +1,237 @@
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { RESPONSIBILITY_STATUS } from "../lib/responsibilityRegister";
+import "./WorkActivityDiary.css";
+
+function ghanaDay() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+const states = [
+  ["planned", "Planned"],
+  ["in_progress", "In progress"],
+  ["done", "Done"],
+  ["waiting", "Waiting"],
+  ["blocked", "Blocked"],
+];
+
+/** Source-backed contribution diary. A diary action never completes a parent
+ * responsibility, changes formal attendance or self-approves an objective. */
+export default function WorkActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact = false }) {
+  const [sourceHistory, setSourceHistory] = useState([]);
+  const [completedDiaryScope, setCompletedDiaryScope] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [unavailable, setUnavailable] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [editor, setEditor] = useState(false);
+  const [correctingId, setCorrectingId] = useState(null);
+  const [date, setDate] = useState(ghanaDay);
+  const [state, setState] = useState("done");
+  const [summary, setSummary] = useState("");
+  const [outcome, setOutcome] = useState("");
+  const [nextAction, setNextAction] = useState("");
+  const [minutes, setMinutes] = useState("");
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [reload, setReload] = useState(0);
+  const submitting = useRef(false);
+  const sectionRef = useRef(null);
+  const diaryScope = `${me.org_id}:${me.id}:${item.id}`;
+  const verified = completedDiaryScope === diaryScope && !loading && !error && !unavailable;
+  const history = verified ? sourceHistory : [];
+  const checking = loading || completedDiaryScope !== diaryScope;
+  const activeError = completedDiaryScope === diaryScope ? error : "";
+  const visibleSuccess = verified ? success : "";
+  // Reset the previous identity and its draft before a new scope can submit.
+  useEffect(() => {
+    setEditor(false); setCorrectingId(null); setDate(ghanaDay()); setState("done");
+    setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl("");
+    setSuccess(""); setError("");
+  }, [me.id, me.org_id, item.id]);
+  // Only user-invoked occurrence shortcuts set the entry date; an unrelated
+  // rerender or ordinary load never discards an editor's unsaved work.
+  useEffect(() => {
+    if (!prefillRequest || !/^\d{4}-\d{2}-\d{2}$/.test(prefillDate)) return;
+    setCorrectingId(null);
+    setDate(prefillDate);
+    setState("done");
+    setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl("");
+    setError(""); setSuccess("");
+    setEditor(true);
+    sectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  }, [prefillRequest, prefillDate]);
+
+  useEffect(() => {
+    let current = true;
+    setLoading(true); setCompletedDiaryScope("");
+    setError("");
+    setSourceHistory([]);
+    setUnavailable(false);
+    (async () => {
+      try {
+        let all = [];
+        let total = null;
+        for (let page = 0; page < 20; page++) {
+          const start = page * 200;
+          const read = await supabase.from("work_activity_records")
+            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
+            .eq("org_id", me.org_id).eq("work_item_id", item.id)
+            .order("recorded_at", { ascending: false })
+            .order("id", { ascending: false })
+            .range(start, start + 199);
+          if (read.error) throw read.error;
+          if (typeof read.count !== "number" || !Array.isArray(read.data))
+            throw new Error("Complete activity history could not be confirmed.");
+          if (total !== null && total !== read.count)
+            throw new Error("Activity history changed during reading. Please refresh.");
+          total = read.count;
+          all = [...all, ...read.data];
+          if (all.length === total) break;
+        }
+        if (all.length !== total) throw new Error("Activity history is incomplete. Please refresh.");
+        if (!current) return;
+        const revised = new Set(all.map((row) => row.supersedes_id).filter(Boolean));
+        setSourceHistory(all.filter((row) => !revised.has(row.id))
+          .sort((a,b) => b.activity_date.localeCompare(a.activity_date) || b.recorded_at.localeCompare(a.recorded_at)));
+      } catch (e) {
+        if (!current) return;
+        const message = String(e?.message || "");
+        if (/work_activity_records|PGRST205|42P01/.test(message)) {
+          setUnavailable(true);
+          setError("Dated activity recording is awaiting its authorised database migration.");
+        } else setError(message || "Activity records could not be verified.");
+      } finally {
+        if (current) { setCompletedDiaryScope(diaryScope); setLoading(false); }
+      }
+    })();
+    return () => { current = false; };
+  }, [me.id, me.org_id, item.id, reload]);
+
+  const completedActionCount = history.filter((action) => action.activity_state === "done").length;
+  const latestNextAction = history.find((action) => action.next_action?.trim())?.next_action || null;
+
+  const canRecord = verified && (item.assignee_id === me.id || (
+    item.visibility !== "private" && item.confidential !== true
+  ));
+
+  function correct(entry) {
+    if (entry.contributor_id !== me.id || busy || !verified) return;
+    setCorrectingId(entry.id);
+    setDate(entry.activity_date);
+    setState(entry.activity_state);
+    setSummary(entry.action_summary);
+    setOutcome(entry.outcome_note || "");
+    setNextAction(entry.next_action || "");
+    setMinutes(entry.duration_minutes == null ? "" : String(entry.duration_minutes));
+    setEvidenceUrl(entry.evidence_url || "");
+    setError(""); setSuccess(""); setEditor(true);
+  }
+
+  async function save(event) {
+    event.preventDefault();
+    if (busy || submitting.current || !verified || !canRecord || summary.trim().length < 3 || !date) return;
+    submitting.current = true;
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const fields = {
+        org_id: me.org_id, work_item_id: item.id, contributor_id: me.id,
+        activity_date: date, activity_state: state,
+        action_summary: summary.trim(),
+        outcome_note: outcome.trim() || null,
+        next_action: nextAction.trim() || null,
+        duration_minutes: minutes === "" ? null : Number(minutes),
+        evidence_url: evidenceUrl.trim() || null,
+        supersedes_id: correctingId || null,
+      };
+      const write = await supabase.from("work_activity_records").insert(fields).select("id").single();
+      if (write.error) throw write.error;
+      if (!write.data?.id)
+        throw new Error("The save outcome is uncertain. Inspect the activity history before trying again.");
+      const check = await supabase.from("work_activity_records")
+        .select("id,org_id,work_item_id,contributor_id,action_summary,activity_date,supersedes_id")
+        .eq("id", write.data.id).eq("org_id", me.org_id).eq("work_item_id", item.id).maybeSingle();
+      if (check.error || !check.data || check.data.contributor_id !== me.id
+        || check.data.action_summary !== fields.action_summary
+        || check.data.activity_date !== fields.activity_date
+        || (check.data.supersedes_id || null) !== fields.supersedes_id)
+        throw new Error("The record cannot be independently confirmed. Refresh before retrying.");
+      setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl("");
+      setCorrectingId(null); setDate(ghanaDay()); setState("done");
+      setSuccess(fields.supersedes_id
+        ? "Your activity correction was recorded. The earlier version remains preserved."
+        : "Your dated activity was recorded.");
+      setEditor(false);
+      setReload((n) => n + 1);
+    } catch (e) {
+      setError(e?.message || "The activity could not be saved.");
+    } finally {
+      submitting.current = false;
+      setBusy(false);
+    }
+  }
+
+  const recordAction = (verified && canRecord && <button type="button" className={compact ? "btn s2-work-inspector-open" : "btn btn-sm"}
+        onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl(""); setEditor((open) => !open); }}
+        >{editor ? "Close" : "+ Record an activity"}</button>);
+
+  return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
+    {compact && <dl className="s2-work-inspector-facts">
+      <div><dt>Work status</dt><dd>{RESPONSIBILITY_STATUS[item.status] || item.status?.replaceAll("_", " ") || "Not recorded"}</dd></div>
+      <div><dt>Recorded actions</dt><dd>{verified ? history.length : checking ? "Verifying…" : "Unavailable"}</dd></div>
+    </dl>}
+    {!compact && <header>
+      <div><span className="eyebrow">Individual contribution</span><h3>Activity record</h3>
+        <p>Keep each action, outcome and next step under this responsibility. This is not an attendance or performance score.</p>
+      </div>
+      {recordAction}
+    </header>}
+    {checking && <p role="status">Verifying activity records...</p>}
+    {activeError && <p className="s2-work-diary-error" role="alert">{activeError}
+      {!unavailable && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setReload((n) => n + 1)}>Retry</button>}
+    </p>}
+    {visibleSuccess && <p role="status">{visibleSuccess}</p>}
+    {!compact && verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
+      <div><span>Recorded actions</span><strong>{history.length}</strong></div>
+      <div><span>Recorded as done</span><strong>{completedActionCount}</strong></div>
+    </div>}
+    {verified && latestNextAction && <div className="s2-work-diary-next-action">
+      <span>Next action</span><p>{latestNextAction}</p>
+    </div>}
+    {compact && verified && <h3>Activity record</h3>}
+    {verified && history.length === 0 && <p>No dated activities have been recorded under this responsibility yet.</p>}
+    {verified && history.length > 0 && <ol className="s2-work-diary-timeline">
+      {history.map((entry) => <li key={entry.id}>
+        <div><strong>{entry.action_summary}</strong>
+          <small>{entry.activity_date} · {entry.contributor?.full_name || (entry.contributor_id === me.id ? "You" : "Authorised contributor")} · {states.find(([key]) => key === entry.activity_state)?.[1] || entry.activity_state}</small>
+        </div>
+        {entry.outcome_note && <p>{entry.outcome_note}</p>}
+        {entry.next_action && <p><b>Next:</b> {entry.next_action}</p>}
+        {entry.duration_minutes != null && <small>{entry.duration_minutes} minutes self-recorded (not attendance)</small>}
+        {entry.evidence_url && <a href={entry.evidence_url} target="_blank" rel="noopener noreferrer">Open evidence ↗</a>}
+        {entry.supersedes_id && <small>Corrected entry · prior version preserved</small>}
+        {entry.contributor_id === me.id && canRecord && <button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={() => correct(entry)}>Correct this entry</button>}
+      </li>)}
+    </ol>}
+    {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
+      {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail.</p>}
+      <label>Activity date <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></label>
+      <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
+        {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
+      </select></label>
+      <label className="wide">Action taken or planned <textarea value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
+      <label className="wide">Factual outcome <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
+      <label className="wide">Next action <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
+      <label>Minutes spent (optional, self-recorded) <input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
+      <label className="wide">Evidence link (optional, HTTPS) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
+      <button type="submit" className="btn" disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Record activity"}</button>
+    </form>}
+    {compact && recordAction}
+  </section>;
+}

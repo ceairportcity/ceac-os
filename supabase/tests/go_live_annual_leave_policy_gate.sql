@@ -13,7 +13,7 @@ declare v_policy uuid;
 begin
   v_policy:=public.workforce_record_leave_policy(
     'CEAC annual leave owner lock fixture',
-    current_date,current_date+365,
+    date '2026-01-01',date '2026-12-31',
     'CEAC_OWNER_LEAVE_ROUTING_2026-10-02',
     'Exercise approved owner lock on clean replay',
     jsonb_build_array(jsonb_build_object(

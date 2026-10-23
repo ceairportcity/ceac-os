@@ -20,7 +20,7 @@ test("OCR5E Control Center is state-derived and never invents a numeric health s
     "Integrations",
     "Audit & records",
   ]) {
-    expect(control).toContain(`title:"${domain}"`);
+    expect(domain === "Payroll & Finance" ? control.includes('title:canPayroll ? "Payroll & Finance" : "Finance"') : control.includes(`title:"${domain}"`)).toBeTruthy();
   }
 
   expect(control).toContain('supabase.rpc("admin_employee_roster_summary")');
@@ -29,9 +29,15 @@ test("OCR5E Control Center is state-derived and never invents a numeric health s
   expect(control).toContain('from("integration_connectors")');
   expect(control).toContain('from("workflow_run_steps")');
   expect(control).toContain('from("platform_audit_events")');
-  expect(control).toContain("Roster-only status alone is not treated as an error.");
-  expect(control).toContain("Manager approval → Administration final approval");
-  expect(control).toContain("This is not a numeric health score.");
+  // Roster-only identity is not an error; only genuinely unresolved identity,
+  // missing job/unit/type or incomplete configuration may need attention.
+  expect(control).toContain('person.identity_state==="needs_review"');
+  expect(control).toContain('person.employment_type==="not_recorded"');
+  expect(control).toContain('peopleGaps.some((person)=>person.identity_state==="needs_review")');
+  expect(control).toContain("No active leave policy is recorded. Review the rules before assigning entitlements.");
+  expect(control).toContain('actions:[{label:"Workforce",onClick:()=>go("attendance")}]');
+  expect(control).toContain('aria-label="Settings view"');
+  expect(control).toContain('[STATUSES.attention,STATUSES.partial,STATUSES.missing,STATUSES.policy].includes(domain.status)');
   expect(control).not.toContain("healthScore");
   expect(control).not.toContain("managed elsewhere");
   expect(control).toContain("Organisation & people");

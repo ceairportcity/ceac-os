@@ -1,30 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import AssignedRoutineOccurrences from "../components/AssignedRoutineOccurrences";
-import { dueLabel } from "../lib/time";
+import OrganisationalRepeatFields, { initialOrganisationalRepeat, organisationalRepeatDetails } from "../components/OrganisationalRepeatFields";
+import WorkRegisterLayout from "../components/WorkRegisterInspector";
+import ResponsibilityRegister from "../components/ResponsibilityRegister";
 import { humanError } from "../lib/productLanguage";
 import { Sheet, FieldGroup, ProductNotice, LoadingState } from "../components/bits";
 import {
   WorkActionStrip,
-  WorkEmpty,
-  WorkGroup,
   WorkPageHeader,
-  WorkRow,
   WorkTabs,
-  WorkToolbar,
 } from "../experience-v2/work-family/WorkFamilyV2";
 
 const MODES = [
+  ["all", "My work"],
   ["assigned", "Assigned"],
-  ["agreed", "Agreed"],
+  ["agreed", "Created by me"],
   ["private", "Private"],
-];
-
-const STATUS_FILTERS = [
-  ["active", "Active"],
-  ["waiting_on", "Waiting"],
-  ["in_review", "In review"],
-  ["completed", "Completed"],
 ];
 
 const BRAND_BOOK_DASHBOARD_CSS = `.fpg-brandbook-dashboard{display:grid;grid-template-columns:1.05fr .9fr 1fr;gap:10px;margin:12px 0 18px}
@@ -55,12 +47,13 @@ function minutesLabel(value) {
 }
 
 export default function Work({ me, isManager = false, openItem }) {
-  const viewKey = `ceac-work-view:${me.id}`;
+  const viewKey = `ceac-work-view:v2:${me.id}`;
   let savedView = null;
   try { savedView = JSON.parse(sessionStorage.getItem(viewKey) || "null"); } catch { savedView = null; }
-  const [mode, setMode] = useState(savedView?.mode || "assigned");
-  const [statusFilter, setStatusFilter] = useState(savedView?.statusFilter || "active");
+  const [mode, setMode] = useState(MODES.some(([value]) => value === savedView?.mode) ? savedView.mode : "all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [items, setItems] = useState([]);
+  const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -68,18 +61,26 @@ export default function Work({ me, isManager = false, openItem }) {
   const [sheet, setSheet] = useState(null);
   const [createVisibility, setCreateVisibility] = useState("unit");
   const [projectId, setProjectId] = useState("");
+  const [projectQuery, setProjectQuery] = useState("");
+  const [objectiveId, setObjectiveId] = useState("");
+  const [phaseId, setPhaseId] = useState("");
+  const [objectives, setObjectives] = useState([]);
+  const [phases, setPhases] = useState([]);
+  const [projectContextLoading, setProjectContextLoading] = useState(false);
+  const [projectContextError, setProjectContextError] = useState("");
+  const [verifiedProjectId, setVerifiedProjectId] = useState("");
   const [title, setTitle] = useState("");
   const [purpose, setPurpose] = useState("");
   const [expectedOutcome, setExpectedOutcome] = useState("");
   const [due, setDue] = useState("");
+  const [repeat, setRepeat] = useState(initialOrganisationalRepeat);
   const [steps, setSteps] = useState([""]);
   const [noStepsNeeded, setNoStepsNeeded] = useState(false);
   const [busy, setBusy] = useState(false);
   // Blocks two synchronous create clicks before React renders the busy state.
   const ownCreatePending = useRef(false);
   const [notice, setNotice] = useState(null);
-  const [queryText, setQueryText] = useState("");
-  const [sortMode, setSortMode] = useState("due");
+  const loadSerial = useRef(0);
   const [proposalName, setProposalName] = useState("");
   const [proposalPurpose, setProposalPurpose] = useState("");
   const [proposalStart, setProposalStart] = useState("");
@@ -88,31 +89,65 @@ export default function Work({ me, isManager = false, openItem }) {
   const [brandbookLoading, setBrandbookLoading] = useState(true);
   const [brandbookError, setBrandbookError] = useState(false);
 
-  useEffect(() => { load(); }, [mode, statusFilter, me.id, isManager]);
+  useEffect(() => { load(); return () => { loadSerial.current += 1; }; }, [mode, statusFilter, me.id, isManager]);
   useEffect(() => { loadProjects(); loadProposals(); }, [me.id, me.unit_id]);
+  useEffect(() => {
+    let current = true;
+    setObjectiveId(""); setPhaseId(""); setObjectives([]); setPhases([]);
+    setProjectContextError(""); setVerifiedProjectId("");
+    if (sheet !== "self" || createVisibility !== "unit" || !projectId) {
+      setProjectContextLoading(false);
+      return () => { current = false; };
+    }
+    setProjectContextLoading(true);
+    Promise.all([
+      supabase.from("objectives")
+        .select("id,ref,name,project_id,unit_id")
+        .eq("project_id", projectId).eq("unit_id", me.unit_id),
+      supabase.from("project_phases")
+        .select("id,name,project_id").eq("project_id", projectId).order("position"),
+    ]).then(([objectiveRead, phaseRead]) => {
+      if (!current) return;
+      if (objectiveRead.error || phaseRead.error) {
+        setProjectContextError("The selected project's objectives or phases could not be verified. Select another project or reopen this form.");
+        return;
+      }
+      setObjectives(objectiveRead.data || []);
+      setPhases(phaseRead.data || []);
+      setVerifiedProjectId(projectId);
+    }).catch(() => {
+      if (current) setProjectContextError("Project context could not be verified. Reopen this form to retry.");
+    }).finally(() => {
+      if (current) setProjectContextLoading(false);
+    });
+    return () => { current = false; };
+  }, [sheet, createVisibility, projectId, me.org_id, me.unit_id]);
   useEffect(() => { loadBrandbookContext(); }, [me.id]);
   useEffect(() => {
-    sessionStorage.setItem(viewKey, JSON.stringify({ mode, statusFilter }));
+    try { sessionStorage.setItem(viewKey, JSON.stringify({ mode })); } catch { /* Storage may be unavailable. */ }
   }, [viewKey, mode, statusFilter]);
 
   async function load(nextMode = mode, nextStatusFilter = statusFilter) {
+    const serial = ++loadSerial.current;
     setLoading(true);
     setLoadError(null);
     setItems([]);
 
     let query = supabase.from("work_items")
-      .select("id,ref,title,kind,status,due_at,visibility,origin,created_at,expected_outcome,projects(name)")
+      .select("id,ref,title,kind,status,due_at,visibility,origin,created_at,expected_outcome,project_id,unit_id,projects(name)")
       .eq("assignee_id", me.id);
 
+    if (nextMode === "all") query = query.neq("visibility", "private");
     if (nextMode === "assigned") query = query.eq("visibility", "unit").in("origin", ["assigned", "assigned_by_exec"]);
     if (nextMode === "agreed") query = query.eq("visibility", "unit").eq("origin", "self_created");
     if (nextMode === "private") query = query.eq("visibility", "private");
 
     if (nextStatusFilter === "active") query = query.in("status", ["not_started", "in_progress", "returned"]);
     else if (nextStatusFilter === "completed") query = query.in("status", ["completed", "self_certified"]);
-    else query = query.eq("status", nextStatusFilter);
+    else if (nextStatusFilter !== "all") query = query.eq("status", nextStatusFilter);
 
-    const { data, error } = await query.order("due_at", { ascending: true, nullsFirst: false });
+    const { data, error } = await query.order("due_at", { ascending: true, nullsFirst: false }).order("id");
+    if (serial !== loadSerial.current) return;
     if (error) {
       setLoadError(error.message);
       setLoading(false);
@@ -216,11 +251,14 @@ export default function Work({ me, isManager = false, openItem }) {
 
   function openCreate(visibility) {
     setCreateVisibility(visibility);
-    setProjectId("");
+    setProjectId(""); setProjectQuery("");
+    setObjectiveId(""); setPhaseId(""); setObjectives([]); setPhases([]);
+    setVerifiedProjectId(""); setProjectContextError("");
     setTitle("");
     setPurpose("");
     setExpectedOutcome("");
     setDue("");
+    setRepeat(initialOrganisationalRepeat());
     setSteps([""]);
     setNoStepsNeeded(false);
     setNotice(null);
@@ -231,6 +269,17 @@ export default function Work({ me, isManager = false, openItem }) {
     if (busy || ownCreatePending.current) return;
     const clean = noStepsNeeded ? [] : steps.map((step) => step.trim()).filter(Boolean);
     if (!title.trim() || !expectedOutcome.trim() || (!noStepsNeeded && !clean.length)) return;
+    if (createVisibility === "unit" && projectId &&
+        (projectContextLoading || projectContextError || verifiedProjectId !== projectId
+          || !projects.some(project => project.id === projectId)
+          || (objectiveId && !objectives.some(objective => objective.id === objectiveId))
+          || (phaseId && !phases.some(phase => phase.id === phaseId)))) {
+      setLoadError("The selected project context is not verified. Refresh the work form before saving.");
+      return;
+    }
+    const linkedProjectId = createVisibility === "unit" ? projectId || null : null;
+    const linkedObjectiveId = linkedProjectId && objectiveId ? objectiveId : null;
+    const linkedPhaseId = linkedProjectId && phaseId ? phaseId : null;
 
     ownCreatePending.current = true;
     setBusy(true);
@@ -238,15 +287,29 @@ export default function Work({ me, isManager = false, openItem }) {
     setNotice(null);
     try {
       const dueIso = due ? new Date(due).toISOString() : null;
-      const { data: created, error: createError } = await supabase.rpc("create_task_with_checklist", {
+      let created;
+      if (repeat.enabled && createVisibility === "unit") {
+        const result = await supabase.rpc("create_typed_work", {
+          p_kind: "routine", p_unit_id: me.unit_id, p_assignee_id: me.id, p_title: title.trim(),
+          p_expected_outcome: expectedOutcome.trim(), p_purpose: purpose.trim() || null, p_project_id: linkedProjectId,
+          p_objective_id: linkedObjectiveId, p_phase_id: linkedPhaseId,
+          p_visibility: "unit", p_details: organisationalRepeatDetails(repeat, clean),
+        });
+        if (result.error) throw result.error;
+        if (!result.data) throw new Error("Creation is uncertain. Check My work before retrying.");
+        const receipt = await supabase.from("work_items").select("id,ref").eq("id",result.data).single();
+        if (receipt.error) throw new Error("Creation could not be verified. Check My work before retrying.");
+        created = receipt.data;
+      } else {
+      const { data: taskData, error: createError } = await supabase.rpc("create_task_with_checklist", {
         p_unit_id: me.unit_id,
         p_assignee_id: me.id,
         p_title: title.trim(),
         p_expected_outcome: expectedOutcome.trim(),
         p_sub_team_id: null,
-        p_project_id: projectId || null,
-        p_objective_id: null,
-        p_phase_id: null,
+        p_project_id: linkedProjectId,
+        p_objective_id: linkedObjectiveId,
+        p_phase_id: linkedPhaseId,
         p_purpose: purpose.trim() || null,
         p_instructions: null,
         p_due_at: dueIso,
@@ -255,6 +318,8 @@ export default function Work({ me, isManager = false, openItem }) {
         p_steps: clean,
       });
       if (createError) throw createError;
+      created = taskData;
+      }
       // The server may have committed despite an incomplete client response.
       // Never claim a successful task or encourage a blind duplicate retry.
       if (typeof created?.ref !== "string" || !created.ref.trim()) {
@@ -262,23 +327,28 @@ export default function Work({ me, isManager = false, openItem }) {
         throw new Error("The work creation outcome is uncertain. Check your existing work before creating another task.");
       }
       const confirmation = await supabase.from("work_items")
-        .select("id,ref,org_id,assignee_id,origin,visibility")
+        .select("id,kind,ref,org_id,assignee_id,origin,visibility,project_id,objective_id,phase_id")
         .eq("ref", created.ref).eq("org_id", me.org_id)
         .eq("assignee_id", me.id).maybeSingle();
       if (confirmation.error || !confirmation.data?.id
+          || confirmation.data.kind !== (repeat.enabled && createVisibility === "unit" ? "routine" : "task")
           || confirmation.data.origin !== "self_created"
-          || confirmation.data.visibility !== createVisibility) {
+          || confirmation.data.visibility !== createVisibility
+          || (confirmation.data.project_id || null) !== linkedProjectId
+          || (confirmation.data.objective_id || null) !== linkedObjectiveId
+          || (confirmation.data.phase_id || null) !== linkedPhaseId) {
         setSheet(null);
         throw new Error("The new work record could not be independently verified. Check your work list before creating another task.");
       }
 
       setSheet(null);
+      setSelectedWorkId(confirmation.data.id);
       setMode(createVisibility === "private" ? "private" : "agreed");
-      setStatusFilter("active");
+      setStatusFilter("all");
       setNotice(createVisibility === "private"
         ? `${created.ref} added as private work. Only you can see it.`
-        : `${created.ref} added to your agreed work. It appears immediately in your record.`);
-      await load(createVisibility === "private" ? "private" : "agreed", "active");
+        : `${created.ref} added to My work. It appears immediately in your record.`);
+      await load(createVisibility === "private" ? "private" : "agreed", "all");
     } catch (error) {
       setLoadError(humanError(error, "The work could not be added."));
     } finally {
@@ -287,29 +357,12 @@ export default function Work({ me, isManager = false, openItem }) {
     }
   }
 
-  const cleanQuery = queryText.trim().toLowerCase();
-  const visibleItems = items
-    .filter((item) => !cleanQuery || [item.title,item.ref,item.kind,item.projects?.name,item.expected_outcome].filter(Boolean).some((value) => String(value).toLowerCase().includes(cleanQuery)))
-    .sort((left,right) => {
-      if (sortMode === "title") return left.title.localeCompare(right.title);
-      if (sortMode === "status") return String(left.status).localeCompare(String(right.status)) || left.title.localeCompare(right.title);
-      const a = left.due_at ? new Date(left.due_at).getTime() : Number.MAX_SAFE_INTEGER;
-      const b = right.due_at ? new Date(right.due_at).getTime() : Number.MAX_SAFE_INTEGER;
-      return a-b || left.title.localeCompare(right.title);
-    });
-
-  const grouped = {};
-  visibleItems.forEach((item) => {
-    const key = item.projects ? item.projects.name : "Not attached to a project";
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(item);
+  const visibleItems = [...items].sort((left, right) => {
+    const a = left.due_at ? new Date(left.due_at).getTime() : Number.MAX_SAFE_INTEGER;
+    const b = right.due_at ? new Date(right.due_at).getTime() : Number.MAX_SAFE_INTEGER;
+    return a - b || left.title.localeCompare(right.title);
   });
-
-  const modeNote = mode === "assigned"
-    ? "Formal work given to you."
-    : mode === "agreed"
-      ? "Work you already agreed to carry and recorded yourself."
-      : "Personal work visible only to you. It is not counted in formal CEAC reports.";
+  const selectedInView = selectedWorkId === "none" ? null : (visibleItems.some((item) => item.id === selectedWorkId) ? selectedWorkId : (visibleItems[0]?.id || null));
 
   const sessionDays = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
@@ -334,10 +387,40 @@ export default function Work({ me, isManager = false, openItem }) {
     <style data-fpg-brandbook-dashboard>{BRAND_BOOK_DASHBOARD_CSS}</style>
     <WorkPageHeader
       eyebrow={me.unit_name}
-      title="My work"
-      description="Everything you are carrying, organised by where it came from and what needs to happen next."
+      title="Work"
+      description="Plan, record, and finish your work. Keep every contribution connected to the right project."
+      actionLabel="Add my work"
+      onAction={() => openCreate("unit")}
     />
 
+    {notice && <ProductNotice tone="success" title="Work updated">{notice}</ProductNotice>}
+    {proposals.length > 0 && <details className="finance-section ev2w-inline-panel">
+      <summary><span>My project proposals</span><b>{proposals.length}</b></summary>
+      <div className="finance-section-body">
+        {proposals.map((proposal) => <div className="row" key={proposal.id}>
+          <div className="row-t">{proposal.name}</div>
+          <div className="row-m">{proposal.state === "submitted" ? "Waiting for Unit Head confirmation" : proposal.state === "approved" ? "Confirmed as a project" : "Not approved"}</div>
+          {proposal.review_note && <div className="row-note">{proposal.review_note}</div>}
+        </div>)}
+      </div>
+    </details>}
+
+
+    {loadError && <ProductNotice tone="error" title="Could not load your work">{loadError}</ProductNotice>}
+    {loading && <LoadingState label="Loading your work…" />}
+    {!loading && !loadError && <WorkRegisterLayout me={me} selectedId={selectedInView}
+      onClose={() => setSelectedWorkId("none")} openItem={openItem} recordCount={visibleItems.length}
+      tabs={<WorkTabs items={MODES} value={mode} onChange={nextMode=>{setMode(nextMode);setStatusFilter("all");}} ariaLabel="Work source" />}>
+      <ResponsibilityRegister key={mode} rows={visibleItems} selectedId={selectedInView}
+        onSelect={setSelectedWorkId} onAdd={()=>openCreate(mode === "private" ? "private" : "unit")} />
+    </WorkRegisterLayout>}
+    <WorkActionStrip actions={[
+      {label:"Add private work",icon:"lock",onClick:()=>openCreate("private")},
+      {label:"Propose project",icon:"projects",onClick:openProjectProposal},
+    ]} />
+    {(mode === "all" || mode === "assigned") && !loading && !loadError && <AssignedRoutineOccurrences me={me} onOpen={openItem} />}
+
+    <details className="s2-work-context"><summary>Schedule and recorded work context</summary>
     <section className="fpg-brandbook-dashboard" aria-label="Recorded work context">
       <article className="fpg-brandbook-card fpg-brandbook-schedule">
         <header><span>Weekly schedule</span><small>Next 7 days</small></header>
@@ -374,80 +457,7 @@ export default function Work({ me, isManager = false, openItem }) {
     </section>
     {brandbookError && <p className="fpg-brandbook-context-warning">Some recorded work context is unavailable. No missing value has been inferred.</p>}
 
-    <WorkTabs
-      items={MODES}
-      value={mode}
-      onChange={(nextMode) => { setMode(nextMode); setStatusFilter("active"); }}
-      ariaLabel="Work source"
-    />
-    <p className="ev2w-context-note">{modeNote}</p>
-
-    <WorkActionStrip actions={[
-      { label: "Add agreed work", icon: "create", onClick: () => openCreate("unit") },
-      { label: "Add private work", icon: "lock", onClick: () => openCreate("private") },
-      { label: "Propose project", icon: "projects", onClick: openProjectProposal },
-    ]} />
-
-    {notice && <ProductNotice tone="success" title="Work updated">{notice}</ProductNotice>}
-    {proposals.length > 0 && <details className="finance-section ev2w-inline-panel">
-      <summary><span>My project proposals</span><b>{proposals.length}</b></summary>
-      <div className="finance-section-body">
-        {proposals.map((proposal) => <div className="row" key={proposal.id}>
-          <div className="row-t">{proposal.name}</div>
-          <div className="row-m">{proposal.state === "submitted" ? "Waiting for Unit Head confirmation" : proposal.state === "approved" ? "Confirmed as a project" : "Not approved"}</div>
-          {proposal.review_note && <div className="row-note">{proposal.review_note}</div>}
-        </div>)}
-      </div>
-    </details>}
-
-    {mode === "assigned" && !loading && !loadError && <AssignedRoutineOccurrences me={me} onOpen={openItem} />}
-
-    <WorkTabs
-      items={STATUS_FILTERS}
-      value={statusFilter}
-      onChange={setStatusFilter}
-      ariaLabel="Work status"
-      compact
-    />
-
-    {items.length > 10 && <WorkToolbar>
-      <FieldGroup label="Find work"><input className="field" type="search" placeholder="Search title, reference or project" value={queryText} onChange={(event) => setQueryText(event.target.value)} /></FieldGroup>
-      <FieldGroup label="Sort by"><select className="field" value={sortMode} onChange={(event) => setSortMode(event.target.value)}><option value="due">Due date</option><option value="title">Title</option><option value="status">Status</option></select></FieldGroup>
-    </WorkToolbar>}
-
-    {loadError && <ProductNotice tone="error" title="Could not load your work">{loadError}</ProductNotice>}
-    {loading && <LoadingState label="Loading your work…" />}
-
-    {!loading && Object.keys(grouped).map((project) => <WorkGroup key={project} title={project} count={grouped[project].length}>
-      {grouped[project].map((item) => <WorkRow
-        key={item.id}
-        title={item.title}
-        refCode={item.ref}
-        kind={item.kind}
-        due={dueLabel(item.due_at)}
-        status={item.status}
-            recordedAt={item.created_at}
-            actionLabel={item.status === "not_started" ? "New assignment · Start work" : item.status === "returned" ? "Needs correction" : item.status === "in_review" ? "Waiting for reviewer" : null}
-        note={item.expected_outcome}
-        onClick={() => openItem(item.id)}
-      />)}
-    </WorkGroup>)}
-
-    {!loading && !loadError && items.length > 0 && visibleItems.length === 0 && <WorkEmpty
-      title="No matching work"
-      description="Try a different search or sort order."
-    />}
-
-    {!loading && !loadError && items.length === 0 && <WorkEmpty
-      title="Nothing here right now"
-      description={mode === "private"
-        ? "Private work you add will stay here and remain visible only to you."
-        : statusFilter === "active"
-          ? "There is no active work in this view."
-          : "There is no work in this status."}
-      actionLabel={mode === "private" ? "Add private work" : mode === "agreed" ? "Add agreed work" : undefined}
-      onAction={mode === "private" ? () => openCreate("private") : mode === "agreed" ? () => openCreate("unit") : undefined}
-    />}
+    </details>
 
     {sheet === "proposal" && <Sheet onClose={() => !busy && setSheet(null)}>
       <div className="eyebrow">Project proposal</div>
@@ -466,7 +476,7 @@ export default function Work({ me, isManager = false, openItem }) {
 
     {sheet === "self" && <Sheet onClose={() => !busy && setSheet(null)}>
       <div className="eyebrow">{createVisibility === "private" ? "Only you can see this" : "Your agreed CEAC work"}</div>
-      <div className="h2" style={{ marginTop: 5 }}>{createVisibility === "private" ? "Add private work" : "Add agreed work"}</div>
+      <div className="h2" style={{ marginTop: 5 }}>{createVisibility === "private" ? "Add private work" : "Add my work"}</div>
       <p className="screen-note">
         {createVisibility === "private"
           ? "Use this for work or planning you want to keep to yourself."
@@ -477,13 +487,45 @@ export default function Work({ me, isManager = false, openItem }) {
       <FieldGroup label="Why it matters" hint="Optional context."><textarea className="field" rows={2} placeholder="Why it matters" value={purpose} onChange={(event) => setPurpose(event.target.value)} /></FieldGroup>
       <FieldGroup label="Finished result"><textarea className="field" rows={3} placeholder="What should be true when this is finished?" value={expectedOutcome} onChange={(event) => setExpectedOutcome(event.target.value)} /></FieldGroup>
 
-      <select className="field" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-        <option value="">No project attached</option>
-        {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-      </select>
+      {createVisibility === "unit" && <FieldGroup label="Linked project (optional)">
+        <input className="field" type="search" aria-label="Search authorised projects"
+          placeholder="Search authorised projects" value={projectQuery}
+          onChange={(event) => setProjectQuery(event.target.value)} />
+        <select className="field" aria-label="Linked project" value={projectId}
+          onChange={(event) => {
+            setProjectId(event.target.value); setObjectiveId(""); setPhaseId("");
+            setObjectives([]); setPhases([]); setVerifiedProjectId("");
+          }}>
+          <option value="">No project attached</option>
+          {projects.filter((project) => project.id === projectId || project.name.toLowerCase().includes(projectQuery.trim().toLowerCase()))
+            .map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+        </select>
+      </FieldGroup>}
+      {createVisibility === "unit" && projectId && <>
+        {projectContextLoading && <p role="status">Checking authorised project details…</p>}
+        {projectContextError && <p role="alert">{projectContextError}</p>}
+        {verifiedProjectId === projectId && <details className="reference-disclosure">
+          <summary>Project objective and phase (optional)</summary>
+          <div className="reference-disclosure-body">
+            <FieldGroup label="Project objective">
+              <select className="field" aria-label="Project objective" value={objectiveId} onChange={(event) => setObjectiveId(event.target.value)}>
+                <option value="">No objective selected</option>
+                {objectives.map((objective) => <option key={objective.id} value={objective.id}>{objective.ref} · {objective.name}</option>)}
+              </select>
+            </FieldGroup>
+            <FieldGroup label="Project phase">
+              <select className="field" aria-label="Project phase" value={phaseId} onChange={(event) => setPhaseId(event.target.value)}>
+                <option value="">No phase selected</option>
+                {phases.map((phase) => <option key={phase.id} value={phase.id}>{phase.name}</option>)}
+              </select>
+            </FieldGroup>
+          </div>
+        </details>}
+      </>}
 
-      <label className="field-label">Due date (optional)</label>
-      <input className="field" type="datetime-local" value={due} onChange={(event) => setDue(event.target.value)} />
+      {createVisibility === "unit" && <OrganisationalRepeatFields value={repeat} onChange={setRepeat} disabled={busy} />}
+      {!repeat.enabled && <><label className="field-label">Due date (optional)</label>
+      <input className="field" type="datetime-local" value={due} onChange={(event) => setDue(event.target.value)} /></>}
 
       <label className="card small no-steps-option">
         <input type="checkbox" checked={noStepsNeeded} onChange={(event) => setNoStepsNeeded(event.target.checked)} />
@@ -491,7 +533,7 @@ export default function Work({ me, isManager = false, openItem }) {
       </label>
 
       {!noStepsNeeded && <>
-        <div className="small" style={{ marginTop: 12 }}>Completion steps</div>
+        <div className="small" style={{ marginTop: 12 }}>{repeat.enabled ? "Steps to repeat each time" : "Completion steps"}</div>
         {steps.map((step, index) => <div className="inline-step" key={index}>
           <input
             className="field"
@@ -509,7 +551,9 @@ export default function Work({ me, isManager = false, openItem }) {
       <button
         className="btn"
         style={{ marginTop: 16 }}
-        disabled={busy || !title.trim() || !expectedOutcome.trim() || (!noStepsNeeded && !steps.some((step) => step.trim()))}
+        disabled={busy || !title.trim() || !expectedOutcome.trim() || (!noStepsNeeded && !steps.some((step) => step.trim()))
+          || (createVisibility === "unit" && Boolean(projectId) &&
+            (projectContextLoading || Boolean(projectContextError) || verifiedProjectId !== projectId))}
         onClick={createOwnTask}
       >{busy ? "Adding..." : createVisibility === "private" ? "Add private work" : "Add to my work"}</button>
     </Sheet>}

@@ -4,6 +4,8 @@ import { supabase } from "../lib/supabase";
 const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence"));
 import AttendanceCorrectionWorkflow from "../components/AttendanceCorrectionWorkflow";
 import AttendanceCodeIssuer from "../components/AttendanceCodeIssuer";
+import WorkforceEmployeeScheduleWorkspace from "../components/WorkforceEmployeeScheduleWorkspace";
+import WorkforceTodayReviewList from "../components/WorkforceTodayReviewList";
 import { dailyClocks } from "../lib/attendance";
 import { accraDayOffset } from "../lib/workforceDate";
 import { settleWorkforceDatasets } from "../lib/workforceQueries";
@@ -78,6 +80,8 @@ export default function Workforce({ me }) {
 
   const [scheduleSheet,setScheduleSheet]=useState(false);
   const [schedulePerson,setSchedulePerson]=useState("");
+  const [scheduleEmployeeFocus,setScheduleEmployeeFocus]=useState("");
+  const [sessionProfileFocus,setSessionProfileFocus]=useState("");
   const [scheduleDayType,setScheduleDayType]=useState("");
   const [scheduleDay,setScheduleDay]=useState("mon");
   const [scheduleFrom,setScheduleFrom]=useState(isoDay(new Date()));
@@ -862,18 +866,6 @@ export default function Workforce({ me }) {
         <button className="btn" style={{marginTop:14}} disabled={busy||dayTypeName.trim().length<2} onClick={recordDayType}>Record day type</button>
       </Sheet>}
 
-      {scheduleSheet&&canManage&&<Sheet onClose={()=>!busy&&setScheduleSheet(false)}>
-        <div className="h2">Record workforce schedule</div><p className="screen-note">Hours apply to the selected weekday only. Leave both clocks blank to record hours as unconfigured.</p>
-        <FieldGroup label="Person"><select className="field" aria-label="Schedule person" value={schedulePerson} onChange={e=>setSchedulePerson(e.target.value)}>{people.map(p=><option key={p.profile_id} value={p.profile_id}>{p.profiles?.full_name}</option>)}</select></FieldGroup>
-        <div className="form-grid two"><FieldGroup label="Day"><select className="field" aria-label="Schedule weekday" value={scheduleDay} onChange={e=>setScheduleDay(e.target.value)}>{DAY_KEYS.map(k=><option key={k} value={k}>{DAY_LABELS[k]}</option>)}</select></FieldGroup><FieldGroup label="Day type"><select className="field" aria-label="Schedule day type" value={scheduleDayType} onChange={e=>setScheduleDayType(e.target.value)}>{dayTypes.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></FieldGroup></div>
-        <div className="form-grid two"><FieldGroup label="Effective from"><input className="field" type="date" value={scheduleFrom} onChange={e=>setScheduleFrom(e.target.value)}/></FieldGroup><FieldGroup label="Effective to"><input className="field" type="date" value={scheduleTo} onChange={e=>setScheduleTo(e.target.value)}/></FieldGroup></div>
-        <div className="form-grid two"><FieldGroup label="Expected start"><input className="field" type="time" value={scheduleStart} onChange={e=>setScheduleStart(e.target.value)}/></FieldGroup><FieldGroup label="Expected end"><input className="field" type="time" value={scheduleEnd} onChange={e=>setScheduleEnd(e.target.value)}/></FieldGroup></div>
-        <FieldGroup label="Reason"><textarea className="field" aria-label="Schedule reason" rows="2" value={scheduleReason} onChange={e=>setScheduleReason(e.target.value)}/></FieldGroup>
-        <button className="btn" style={{marginTop:14}} disabled={busy||!schedulePerson||!scheduleDayType||scheduleReason.trim().length<3} onClick={recordSchedule}>Record schedule</button>
-      </Sheet>}
-
-
-
       {policySheet&&canManage&&<Sheet onClose={()=>!busy&&setPolicySheet(false)}>
         <div className="h2">{activePolicy?"Create leave policy revision":"Configure confirmed leave policy"}</div>
         <p className="screen-note">Enter only CEAC-confirmed values. Activating this version makes it the organisation policy record.</p>
@@ -953,26 +945,38 @@ export default function Workforce({ me }) {
           {!waitingLeave.length&&<WorkforceEmpty compact title="No leave requests are waiting" description="New requests will appear here with their recorded route and history."/>}
         </WorkforceSection>
 
-        <WorkforceSection title="Today across the organisation" description="Configured schedule context and recorded activity remain separate facts. No missing record becomes an attendance or performance finding." meta={people.length+" people"}>
-          {people.map((row)=>{
-            const ctx=contextFor(row.profile_id);
+        <WorkforceSection title="Today · evidence needing review"
+          description="A compact queue for account-linked employees: unconfigured schedules, missing or unavailable session evidence, recorded starts and approved leave remain distinct. No attendance finding is automatic."
+          meta={people.length+" linked people"}>
+          <WorkforceTodayReviewList me={me} date={today}
+          schedules={schedules} dayTypes={dayTypes}
+          sourceUnavailable={["people","sessions","schedules","day types","leave"].some(name=>Boolean(datasetErrors[name]))}
+          rows={people.map(row=>{
             const schedule=latestSchedule(row.profile_id);
             const dayType=currentDayType(row.profile_id);
             const facts=sessionFacts(row.profile_id);
-            const time=schedule?.expected_start?String(schedule.expected_start).slice(0,5)+(schedule?.expected_end?"–"+String(schedule.expected_end).slice(0,5):""):"No clock context";
-            return <WorkforceRecordRow
-              key={row.profile_id}
-              className="workforce-person"
-              icon="person"
-              eyebrow={dayType?.name||"Schedule not configured"}
-              title={row.profiles?.full_name||"Employee"}
-              meta={(row.units?.name||"Unit not recorded")+" · "+(row.profiles?.job_title||"Position not recorded")+" · "+time}
-              note={(sessionReadFailed?"Session evidence unavailable":facts.first?"First recorded "+clock(facts.first.started_at):"No session recorded")+" · "+ctx.detail}
-              statusLabel={ctx.label}
-              statusTone={ctx.tone}
-            />;
+            const approvedLeave=leave.some(item=>
+              item.profile_id===row.profile_id
+              &&item.status==="approved"&&item.start_date<=today&&item.end_date>=today);
+            const clockLabel=schedule?.expected_start
+              ?String(schedule.expected_start).slice(0,5)
+                 +(schedule.expected_end?"–"+String(schedule.expected_end).slice(0,5):"")
+              :null;
+            return {
+              profileId:row.profile_id,name:row.profiles?.full_name||"Employee",
+              unit:row.units?.name||"Unit not recorded",
+              configured:Boolean(schedule&&dayType),
+              dayType:dayType?.name||null,
+              expected:dayType?Boolean(dayType.session_expected):null,
+              started:!sessionReadFailed&&Boolean(facts.first),
+              firstStart:!sessionReadFailed?facts.first?.started_at:null,
+              approvedLeave,sessionEvidenceUnavailable:sessionReadFailed,
+              clockLabel,
+            };
           })}
-          {!people.length&&<WorkforceEmpty compact title="No workforce records in scope" description="Authorised organisation workforce records will appear here."/>}
+          onSchedule={canManage?(employeeId)=>{setScheduleEmployeeFocus(employeeId);setTab("setup");}:null}
+          onSessions={(profileId)=>{setSessionProfileFocus(profileId);setTab("sessions");}}
+          />
         </WorkforceSection>
       </>}
 
@@ -1039,8 +1043,9 @@ export default function Workforce({ me }) {
         </WorkforceSection>
       </>}
 
-      {tab==="sessions"&&<WorkforceSection title="Recorded sessions · last 31 days" description="Session history is factual activity context. It is not a performance score and it is not used as payroll time." meta={sessionReadFailed?"Evidence unavailable":sessions.length+" records"}>
-        {sessions.slice(0,160).map((session)=>{
+      {tab==="sessions"&&<WorkforceSection title="Recorded sessions · last 31 days" description="Session history is factual activity context. It is not a performance score and it is not used as payroll time." meta={sessionReadFailed?"Evidence unavailable":(sessionProfileFocus?sessions.filter(x=>x.profile_id===sessionProfileFocus):sessions).length+" records"}>
+        {sessionProfileFocus&&<div className="workforce-setup-actions"><p className="screen-note">Showing records for the selected staff account only.</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSessionProfileFocus("")}>All staff sessions</button></div>}
+        {(sessionProfileFocus?sessions.filter(row=>row.profile_id===sessionProfileFocus):sessions).slice(0,160).map((session)=>{
           const person=peopleById[session.profile_id];
           const diff=recordedDifferences(session);
           const sessionCorrections=effectiveCorrections(session.profile_id,isoDay(session.started_at)).filter((row)=>!row.work_session_id||row.work_session_id===session.id);
@@ -1054,7 +1059,7 @@ export default function Workforce({ me }) {
             note={(diff.length||sessionCorrections.length)?diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s"):null}
           />;
         })}
-        {!sessions.length&&!sessionReadFailed&&<WorkforceEmpty compact title="No sessions recorded in this period" description="Nothing is inferred from the absence of session rows."/>}
+        {!(sessionProfileFocus?sessions.some(row=>row.profile_id===sessionProfileFocus):sessions.length)&&!sessionReadFailed&&<WorkforceEmpty compact title="No sessions recorded in this selection" description="Nothing is inferred from the absence of session rows."/>}
         {sessionReadFailed&&<WorkforceEmpty compact title="Session evidence unavailable" description="Work-session records could not be verified. Retry Workforce data."/>}
       </WorkforceSection>}
 
@@ -1156,12 +1161,13 @@ export default function Workforce({ me }) {
       {tab==="setup"&&canManage&&<>
         {Object.keys(datasetErrors).length>0&&<ProductNotice tone="error" title="Workforce data status">{Object.entries(datasetErrors).map(([name,message])=><div key={name}><strong>{human(name)}</strong>: {message}</div>)}</ProductNotice>}
         <div className="ev2wf-manager-scope workforce-data-status">Visible people: <strong>{people.length}</strong> · Active day types: <strong>{dayTypes.length}</strong></div>
+        <WorkforceEmployeeScheduleWorkspace me={me} initialEmployeeId={scheduleEmployeeFocus} />
         <div className="ev2wf-toolbar">
           <Button variant="secondary" onClick={()=>setDayTypeSheet(true)}>Add day type</Button>
-          <Button variant="secondary" disabled={busy||!dayTypes.length||!people.length} title={!people.length?"No visible active people loaded":!dayTypes.length?"No active day types loaded":""} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</Button>
+          <p className="screen-note">Choose an employee above to review all seven days, change a weekday and confirm an effective-dated successor. Historical one-day schedule records remain preserved; new changes use the unified editor.</p>
           <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
-        <AttendanceCodeIssuer me={me} />
+        <details className="ev2wf-admin-advanced" style={{margin:"12px 0"}}><summary>Duty-location check-in codes</summary><AttendanceCodeIssuer me={me} /></details>
         <WorkforceSection title="Day types" description="Organisation schedule vocabulary remains explicit and attributable." meta={dayTypes.length+" active"}>
           {dayTypes.map((d)=><WorkforceRecordRow key={d.id} icon="calendar" title={d.name} meta={d.session_expected?"Session ordinarily expected":"Session not ordinarily expected"} note={d.description||"No description"}/>)}
           {!dayTypes.length&&<WorkforceEmpty compact title="No active day types" description="Record a confirmed day type before creating schedules."/>}

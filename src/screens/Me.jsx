@@ -364,6 +364,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       <PersonalDestinationCard title="Work history" description="Completed work, feedback and recorded activity by month." ariaLabel="My work history" onClick={() => openRecord?.()} />
       <PersonalDestinationCard title="My achievements" description="Personal monthly and quarterly work contribution reports and PDF." ariaLabel="Open my achievements" onClick={() => onOpenAchievements?.()} />
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Development" description="Your review evidence, reflection, feedback and development plan." ariaLabel="Reviews & development" onClick={() => openPerformance?.()} /> : null}
+      {me.is_exec ? <PersonalDestinationCard title="Assigned appraisals" description="Review only the employee appraisal cases individually assigned to you. Protected HR records and publication decisions remain with independently authorised HR." ariaLabel="My assigned appraisals" onClick={() => openPerformance?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Time & leave" description="Open your wider Time & Leave workspace. Leave requests and confirmed policy context remain visible in the Leave tab below." ariaLabel="My workforce context" onClick={() => openWorkforce?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Learning" description="Assigned learning, resources and factual completion history." ariaLabel="Learning" onClick={() => openLearning?.()} /> : null}
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Equipment" description="CEAC equipment currently in your custody and your recorded custody history." ariaLabel="My assets" onClick={() => openAssets?.()} /> : null}
@@ -428,7 +429,9 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       {!annualLeaveStageReady ? <ProductNotice tone="attention" title="Working-day balance comes after migration acceptance">Existing leave requests and the approved request route remain available. CEAC OS will not invent a working-day balance until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice> : null}
 
       {annualLeaveStageReady && datasetErrors.annualLeaveSummary ? <ProductNotice tone="attention" title="Annual balance unavailable">{datasetErrors.annualLeaveSummary}</ProductNotice>
-        : annualLeft === null ? <ProductNotice tone="info" title="Annual balance needs complete records">{annualBalanceReason === "join_date_not_recorded"
+        : annualLeft === null ? <ProductNotice tone="info" title="Annual balance needs complete records">{annualBalanceReason === "annual_leave_policy_not_active"
+          ? "Administration/HR has not confirmed an active annual leave policy for this date. Your balance will remain unavailable until that policy is confirmed."
+          : annualBalanceReason === "join_date_not_recorded"
           ? "Your join date is not recorded yet, so CEAC OS will not invent an annual leave balance."
           : "CEAC OS needs attributable workforce schedule evidence for approved annual leave before it can show a reliable remaining working-day balance."}</ProductNotice>
         : null}

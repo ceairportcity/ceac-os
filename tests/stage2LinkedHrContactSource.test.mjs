@@ -1,0 +1,50 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
+const migration=read("supabase/migrations/20261022094500_182_linked_person_hr_contact.sql");
+const component=read("src/components/LinkedEmployeeContactEditor.jsx");
+const people=read("src/screens/People.jsx");
+const allowlist=read("supabase/tests/security_definer_surface_gate.sql");
+
+test("linked HR contact changes never edit sign-in identity, account role or payroll",()=>{
+ assert.match(migration,/security definer set search_path=''/);
+ assert.match(migration,/not public\.app_is_admin\(\)/);
+ assert.match(migration,/public\.app_org_id\(\)/);
+ assert.match(migration,/old|v_original/);
+ assert.match(migration,/old|v_original/);
+ assert.match(migration,/v_original\.full_name is distinct from p_expected_full_name/);
+ assert.match(migration,/update public\.profiles set full_name=v_name, preferred_name=v_preferred, phone=v_phone/);
+ assert.match(migration,/update public\.employee_roster/);
+ assert.match(migration,/where id=p_employee_id and org_id=v_org and profile_id=p_profile_id/);
+ assert.match(migration,/employee_roster_change_events/);
+ assert.match(migration,/returning id into v_roster_event_id/);
+ assert.doesNotMatch(migration,/update auth\.users|insert into auth\.users|grant_capability|update public\.unit_memberships|update public\.employment_records/i);
+ assert.match(migration,/employee_linked_contact_change_events/);
+ assert.match(migration,/revoke all on public\.employee_linked_contact_change_events/);
+ assert.match(migration,/grant select on public\.employee_linked_contact_change_events to authenticated/);
+ assert.match(migration,/returning id into v_event_id/);
+ assert.match(allowlist,/admin_record_linked_person_contact\(p_employee_id uuid, p_profile_id uuid/);
+ assert.match(allowlist,/v_actual<>158 or v_expected<>158/);
+});
+test("linked HR editor binds verified employee and change event to actor and tenant",()=>{
+ assert.match(component,/const scope=me\.org_id\+"\:"\+me\.id\+"\:"\+employeeId\+"\:"\+profileId/);
+ assert.match(component,/setVerifiedScope\(scope\)/);
+ assert.match(component,/const ready=permitted&&!loading&&verifiedScope===scope/);
+ assert.match(component,/if\(!ready\|\|!edit\|\|!valid\|\|busy\|\|writeBusy\.current\)return/);
+ assert.match(component,/p_employee_id:employeeId,p_profile_id:profileId/);
+ assert.match(component,/p_expected_full_name:expected\.full_name/);
+ assert.match(component,/\.eq\("org_id",me\.org_id\)\.eq\("profile_id",profileId\)/);
+ assert.match(component,/events\.data\.some\(event=>event\.id===data\.event_id\)/);
+ assert.match(component,/rosterEvents\.data\.some\(event=>event\.id===data\.roster_event_id\)/);
+ assert.match(component,/The server recorded a change, but its exact HR history could not be verified/);
+ assert.doesNotMatch(component,/supabase\.auth\.updateUser|supabase\.auth\.signUp|\.from\("unit_memberships"\)/);
+});
+test("linked and roster-only employees edit in the same selected record without a second people route",()=>{
+ assert.match(people,/\{hasLinkedProfile && <LinkedEmployeeContactEditor/);
+ assert.match(people,/employeeId=\{person\.employee_id\} profileId=\{person\.profile_id\}/);
+ assert.match(people,/\{!hasLinkedProfile && <div id="roster-employee-editor"><RosterOnlyEmploymentEditor/);
+ assert.match(people,/key=\{\`\$\{me\.org_id\}:\$\{me\.id\}:\$\{person\.profile_id\}\`\}/);
+ assert.match(people,/onSaved=\{\(details\)=>\{/);
+ assert.match(people,/void load\(\{silent:true\}\)/);
+});

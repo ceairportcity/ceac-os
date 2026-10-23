@@ -1,7 +1,8 @@
+import {readRoutineCovers,routineCoverKey,routineCoverLabel} from "../lib/routineDateCovers";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { ghanaCalendarDate } from "../lib/dailyLandscape";
-import { projectedRoutineDates } from "../lib/organisationRoutineSchedule";
+import { readRoutineSchedulePreview, routineDueLabel } from "../lib/readRoutineSchedulePreview";
 import "./ManagerRoutineOccurrences.css";
 
 function shiftDate(date, days) {
@@ -13,7 +14,7 @@ function shiftDate(date, days) {
 /** No synthetic completion, no new grants and no duplicate task records. */
 export default function ManagerRoutineOccurrences({ me, openItem }) {
   const [series, setSeries] = useState([]);
-  const [history, setHistory] = useState([]);
+  const [dates, setDates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [today,setToday] = useState(()=>ghanaCalendarDate());
@@ -44,7 +45,7 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
   useEffect(() => {
     let alive = true;
     (async () => {
-      setLoading(true); setError(""); setSeries([]); setHistory([]); setVerifiedIdentity("");
+      setLoading(true); setError(""); setSeries([]); setDates([]); setVerifiedIdentity("");
       try {
         if (!unitIds.length) { if (alive) setVerifiedIdentity(identity); return; }
         const { data: operations, error: operationError, count: operationCount } = await supabase.from("recurring_operations")
@@ -52,25 +53,13 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
           .in("unit_id", unitIds).order("name");
         if (operationError || !Array.isArray(operations) || typeof operationCount!=="number" || operationCount!==operations.length)
           throw new Error("Unit routines are incomplete");
-        const ids = operations.map((row) => row.id);
-        let records = [];
-        if (ids.length) {
-          const result = await supabase.from("operation_occurrences")
-            .select("id,operation_id,occurred_on",{count:"exact"})
-            .in("operation_id", ids)
-            .gte("occurred_on", shiftDate(today, -14))
-            .lte("occurred_on", shiftDate(today, 30));
-          if (result.error || !Array.isArray(result.data) || typeof result.count!=="number" || result.count!==result.data.length)
-            throw new Error("Unit routine history is incomplete");
-          records = result.data;
-        }
-        // Corrupt projection cannot silently remove a responsibility.
-        for (const operation of operations) if (operation.active && !operation.paused_at) {
-          projectedRoutineDates(operation, records, {
-            fromDate: shiftDate(today,-14), throughDate: shiftDate(today,30), today,
-          });
-        }
-        if (alive) { setSeries(operations); setHistory(records); setVerifiedIdentity(identity); }
+        const covers=await readRoutineCovers(supabase,me,{fromDate:shiftDate(today,-14),throughDate:shiftDate(today,30)});
+        const projected = await readRoutineSchedulePreview(supabase,operations.map(row=>row.work_item_id),{
+          fromDate:shiftDate(today,-14),throughDate:shiftDate(today,30),
+        });
+        const known=new Set(operations.map(row=>row.id));
+        if(projected.some(row=>!known.has(row.operationId))) throw new Error("Unrecognised unit routine date");
+        if (alive) { setSeries(operations); setDates(projected.map(row=>({...row,cover:covers.get(routineCoverKey(row.operationId,row.date))}))); setVerifiedIdentity(identity); }
       } catch {
         if (alive) setError("Routine schedules or recorded occurrences could not be verified for this account.");
       } finally {
@@ -80,11 +69,9 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
     return () => { alive = false; };
   }, [unitKey, today, me.id, me.org_id]);
 
-  const items = !ready ? [] : series.filter((operation)=>!operation.paused_at).flatMap((operation) =>
-    projectedRoutineDates(operation, history, {
-      fromDate: shiftDate(today,-14), throughDate: shiftDate(today,30), today,
-    }).map((item)=>({...item,operation}))
-  ).sort((a,b)=>a.date.localeCompare(b.date)||a.operation.name.localeCompare(b.operation.name));
+  const byId=new Map(series.map(row=>[row.id,row]));
+  const items = !ready ? [] : dates.map(item=>({...item,operation:byId.get(item.operationId)}))
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.operation.name.localeCompare(b.operation.name));
 
   return <section className="s2-routine-schedule" aria-label="Routine occurrence calendar">
     <header><div><h2>Scheduled occurrences</h2><p>Recorded outcomes and upcoming dates for your unit. Earlier unrecorded dates remain visible.</p></div>
@@ -96,11 +83,11 @@ export default function ManagerRoutineOccurrences({ me, openItem }) {
     {ready && items.length > 0 && <div className="s2-routine-scroll">
       <table><thead><tr><th>Scheduled date</th><th>Responsibility</th><th>Record</th></tr></thead><tbody>
         {items.map((item) => <tr key={item.operationId + ":" + item.date}>
-          <td><time dateTime={item.date}>{item.date}</time></td>
-          <td><button type="button" onClick={() => openItem?.(item.operation.work_item_id)}
-            disabled={!item.operation.work_item_id}>{item.operation.name}</button></td>
+          <td><time dateTime={item.date}>{item.date}</time><small style={{display:"block",fontSize:12}}>{routineDueLabel(item)}</small></td>
+          <td><button type="button" onClick={() => openItem?.(item.operation.work_item_id,item.date)}
+            disabled={!item.operation.work_item_id}>{item.operation.name}</button>{item.cover?.action==="assign"&&<small style={{display:"block"}}>{routineCoverLabel(item.cover,me)}</small>}</td>
           <td><span className={"s2-routine-state is-" + item.state}>
-            {item.state === "recorded" ? "Recorded" : item.state === "unrecorded_past" ? "Not recorded" : "Scheduled"}
+            {item.state === "skipped" ? "Skipped with authorised reason" : item.state === "recorded" ? "Recorded" : item.state === "unrecorded_past" ? "Not recorded" : "Scheduled"}
           </span></td>
         </tr>)}
       </tbody></table>

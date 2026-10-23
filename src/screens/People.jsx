@@ -17,6 +17,12 @@ import {
 import { Button, ComposerDrawer } from "../experience-v2/components";
 import PeopleAccess from "../components/PeopleAccess";
 import EmployeeScheduleEditor from "../components/EmployeeScheduleEditor";
+import RosterOnlyEmploymentEditor from "../components/RosterOnlyEmploymentEditor";
+import LinkedEmployeeContactEditor from "../components/LinkedEmployeeContactEditor";
+import RosterAccountLink from "../components/RosterAccountLink";
+import HRCreateRosterEmployee from "../components/HRCreateRosterEmployee";
+import EmployeeDossierRecords from "../components/EmployeeDossierRecords";
+import EmployeeAttendanceObservations from "../components/EmployeeAttendanceObservations";
 import {
   PeopleAdminPersonRow,
   PeopleBackButton,
@@ -31,7 +37,7 @@ import {
 } from "../experience-v2/people-family/PeopleFamilyV2";
 
 const PEOPLE_VIEWS = [["directory","Directory"],["access","Access"],["organisation","Organisation"],["attention","Needs attention"]];
-const PERSON_TABS = [["overview","Overview"],["access","Access"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["documents","Documents"],["history","History"]];
+const PERSON_TABS = [["overview","Overview"],["access","Access"],["employment","Employment"],["work","Work"],["time","Time & Leave"],["development","Development"],["learning","Learning"],["equipment","Equipment"],["documents","Documents"],["history","History"]];
 const FILTERS = [["all","Everyone"],["active","Active"],["on_leave","On leave"],["quiet","No submissions in 14 days"],["no_unit","No unit"]];
 const EMPLOYMENT_CHANGES = [
   ["employment_details_changed","Employment details changed"],
@@ -56,15 +62,19 @@ function avgStartLabel(minutes) {
   return String(Math.floor(value / 60)).padStart(2, "0") + ":" + String(value % 60).padStart(2, "0");
 }
 
-export default function People({ me, openItem, go, openLifecycle, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
+export default function People({ me, openItem, go, openLifecycle, onManagePermissions=null, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
+  const [creatingEmployee,setCreatingEmployee] = useState(false);
+  const [operationalDirectory, setOperationalDirectory] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
   const [personTab, setPersonTab] = useState("overview");
+  const [rosterEditRequest,setRosterEditRequest] = useState({ employeeId:null, seq:0 });
   const [searchText, setSearchText] = useState("");
   const [accessFocusProfileId, setAccessFocusProfileId] = useState(null);
   const [accessFocusUnitId, setAccessFocusUnitId] = useState(null);
   const [accessFocusMode, setAccessFocusMode] = useState(null);
+  const [accessInviteRoster,setAccessInviteRoster] = useState(null);
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [units, setUnits] = useState([]);
   const [person, setPerson] = useState(null);
@@ -104,6 +114,10 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
   }
 
   useEffect(() => {
+    // Invitation prefill may contain a person's private HR contact details.
+    // Never retain a selection when the signed HR actor or tenant changes.
+    setAccessInviteRoster(null);
+    setCreatingEmployee(false);
     void load();
     return () => { rosterGeneration.current += 1; personGeneration.current += 1; };
   }, [me.id, me.org_id]);
@@ -129,6 +143,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     setAccessFocusProfileId(accessIntent.profileId || null);
     setAccessFocusUnitId(accessIntent.unitId || null);
     setAccessFocusMode(accessIntent.mode || null);
+    setAccessInviteRoster(null);
     setViewMode("access");
     onAccessIntentHandled?.();
   }, [accessIntent]);
@@ -138,10 +153,14 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     if (!silent) { setLoading(true); setVerifiedRosterScope(null); }
     setError(null);
     try {
-    const [rosterResult, peopleResult, leaveResult, unitsResult] = await Promise.all([
+    const [rosterResult, peopleResult, versionsResult, rulesResult, unitsResult] = await Promise.all([
       supabase.rpc("admin_employee_roster_summary"),
       supabase.rpc("admin_people_summary"),
-      supabase.from("leave_settings").select("annual_days,sick_days,max_carryover,updated_by,updated_at").eq("org_id", me.org_id).maybeSingle(),
+      supabase.from("leave_policy_versions").select("id,state,effective_from,effective_to,confirmed_at")
+        .eq("org_id",me.org_id).eq("state","active")
+        .order("effective_from",{ascending:false}),
+      supabase.from("leave_policy_rules").select("policy_version_id,leave_kind,entitlement_amount,accrual_rate,complete")
+        .eq("org_id",me.org_id).eq("leave_kind","annual"),
       supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("name"),
     ]);
     if (generation !== rosterGeneration.current) return false;
@@ -151,9 +170,9 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       setLoading(false);
       return false;
     }
-    if (leaveResult.error) {
+    if (versionsResult.error || rulesResult.error) {
       setVerifiedRosterScope(null);
-      setError(humanError(leaveResult.error, "Leave policy status could not load."));
+      setError(humanError(versionsResult.error || rulesResult.error, "The confirmed leave-policy source could not load."));
       setLoading(false);
       return false;
     }
@@ -163,7 +182,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       setLoading(false);
       return false;
     }
-    const operationalByProfile = new Map((Array.isArray(peopleResult.data) ? peopleResult.data : []).map((entry) => [entry.id, entry]));
+    const operationalPeople = Array.isArray(peopleResult.data) ? peopleResult.data : [];
+    const operationalByProfile = new Map(operationalPeople.map((entry) => [entry.id, entry]));
     const rosterRows = (Array.isArray(rosterResult.data) ? rosterResult.data : []).map((employee) => {
       const operational = employee.profile_id ? operationalByProfile.get(employee.profile_id) : null;
       const rosterUnits = Array.isArray(employee.units) ? employee.units : [];
@@ -193,6 +213,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         role: operational?.role || null,
         is_admin: employee.is_admin || operational?.is_admin || false,
         is_exec: employee.is_exec || operational?.is_exec || false,
+        is_operational_manager: employee.is_operational_manager || operational?.role === "manager",
         on_leave_now: operational?.on_leave_now || false,
         quiet: operational?.quiet || false,
         done_count: operational?.done_count || 0,
@@ -206,7 +227,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         annual_taken: operational?.annual_taken || 0,
         sick_taken: operational?.sick_taken || 0,
         carryover_from_last_year: operational?.carryover_from_last_year || 0,
-        started_on: operational?.started_on || null,
+        started_on: operational?.started_on || employee.hr_started_on || null,
         contract_type: operational?.contract_type || employee.employment_type || "not_recorded",
         birthday: operational?.birthday || null,
         phone: operational?.phone || null,
@@ -217,8 +238,27 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     // legitimate People & Access / HR actions or tempt anyone to bypass RLS.
     if (generation !== rosterGeneration.current) return false;
     setVerifiedRosterScope(scopeKey);
+    setOperationalDirectory(operationalPeople.map((entry)=>({
+      id:entry.id,full_name:entry.full_name,email:entry.email||null,
+      active:entry.active,unit_id:entry.unit_id,unit_name:entry.unit_name,
+      role:entry.role,
+    })));
     setRows(rosterRows);
-    setLeavePolicy(leaveResult.data?.updated_by ? leaveResult.data : null);
+    // Only a dated active version with a complete annual rule can present
+    // entitlement. Legacy leave_settings values are not an activated policy.
+    const asOf=new Date().toISOString().slice(0,10);
+    const activeVersion=(versionsResult.data||[]).find(version=>version.confirmed_at
+      &&version.effective_from<=asOf
+      &&(!version.effective_to||version.effective_to>=asOf));
+    const annualRule=(rulesResult.data||[]).find(rule=>rule.policy_version_id===activeVersion?.id
+      &&rule.leave_kind==="annual"&&rule.complete
+      &&rule.entitlement_amount!==null&&rule.entitlement_amount!==undefined
+      &&rule.accrual_rate!==null&&rule.accrual_rate!==undefined
+      &&Number.isFinite(Number(rule.entitlement_amount))
+      &&Number.isFinite(Number(rule.accrual_rate)));
+    setLeavePolicy(activeVersion&&annualRule
+      ?{annual_days:Number(annualRule.entitlement_amount),confirmed_at:activeVersion.confirmed_at}
+      :null);
     setUnits(unitsResult.data || []);
     setLoading(false);
 
@@ -273,11 +313,20 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     setPersonTab("overview");
 
     try {
-    const rosterDetailResult = await supabase.rpc("admin_employee_roster_detail", { p_employee_id: summary.id });
+    const [rosterDetailResult,hrContactResult] = await Promise.all([
+      supabase.rpc("admin_employee_roster_detail", { p_employee_id: summary.id }),
+      supabase.from("employee_roster")
+        .select("id,org_id,profile_id,hr_contact_email,hr_contact_phone,hr_started_on")
+        .eq("org_id",me.org_id).eq("id",summary.id).single(),
+    ]);
     if (generation !== personGeneration.current) return;
-    if (rosterDetailResult.error) {
+    if (rosterDetailResult.error || hrContactResult.error
+      || hrContactResult.data?.id !== summary.id
+      || hrContactResult.data.org_id !== me.org_id
+      || (hrContactResult.data.profile_id || null) !== (summary.profile_id || null)) {
       setDetailLoading(false);
-      setError(humanError(rosterDetailResult.error, "That employee record could not load."));
+      setError(humanError(rosterDetailResult.error || hrContactResult.error,
+        "That employee's authorised roster and HR contact records could not be reconciled."));
       return;
     }
 
@@ -371,6 +420,9 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     setPerson({
       ...summary,
       ...rosterEmployee,
+      hr_contact_email: hrContactResult.data.hr_contact_email || null,
+      hr_contact_phone: hrContactResult.data.hr_contact_phone || null,
+      hr_started_on: hrContactResult.data.hr_started_on || null,
       id: summary.id,
       employee_id: summary.id,
       profile_id: summary.profile_id || rosterEmployee.profile_id || null,
@@ -404,7 +456,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     }
   }
 
-  function openAccessAdministration(profileId = null) {
+  function openAccessAdministration(profileId = null, inviteRoster = null) {
     personGeneration.current += 1;
     employeeFileWriteBusy.current = false;
     setEmployeeFileBusy(false);
@@ -414,6 +466,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     setAccessFocusProfileId(profileId);
     setAccessFocusUnitId(null);
     setAccessFocusMode(profileId ? "responsibility" : "invite");
+    setAccessInviteRoster(profileId ? null : inviteRoster);
     setPerson(null);
     setDrill(null);
     setViewMode("access");
@@ -662,12 +715,15 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     const employmentCurrent = person.employment?.current || null;
     const employmentHistory = Array.isArray(person.employment?.history) ? person.employment.history : [];
     const taken = Number(person.balance?.annual_taken || 0);
-    const entitlement = leavePolicy ? Number(leavePolicy.annual_days || 0) + Number(person.balance?.carryover_from_last_year || 0) : null;
+    const entitlement = leavePolicy ? Number(leavePolicy.annual_days || 0) : null;
     const employmentState = (employmentCurrent?.employment_status || person.employment_status || (person.active ? "active" : "inactive")).replaceAll("_", " ");
     const rosterUnitNames = (person.roster_units || []).map((unit) => unit.unit_name).filter(Boolean);
+    const rosterManagerName = person.manager_profile_id
+      ? operationalDirectory.find((entry) => entry.id === person.manager_profile_id)?.full_name || "Manager identity unavailable"
+      : "Not recorded";
     const positionLabel = hasLinkedProfile
       ? (person.is_exec ? "Group Pastor" : person.is_admin ? "Administration & HR" : person.role === "manager" ? "Unit head" : person.role === "sub_team_lead" ? "Team lead" : "Staff")
-      : (person.source_position || "Roster employee");
+      : (person.job_title || person.source_position || "Roster employee");
     const identityLabel = person.identity_state === "needs_review"
       ? "Identity review required"
       : hasLinkedProfile ? "Account linked" : "Roster only · no account linked";
@@ -687,6 +743,17 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     const responsibilitySummary = rosterUnitNames.length
       ? rosterUnitNames.join(" · ")
       : "No organisational responsibility recorded";
+    function editSelectedEmployment(changeType="employment_details_changed") {
+      setPersonTab("employment");
+      if (hasLinkedProfile) {
+        openEmploymentEditor();
+        if (changeType==="transferred") setEmploymentForm(form=>({...form,changeType:"transferred"}));
+      } else {
+        setRosterEditRequest(request=>({
+          employeeId:person.employee_id, seq:request.seq+1,
+        }));
+      }
+    }
 
     return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
       <PeopleBackButton onClick={() => { personGeneration.current += 1; employeeFileWriteBusy.current = false; setEmployeeFileBusy(false); setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
@@ -700,7 +767,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         subtitle={employmentCurrent?.job_title || person.job_title || "No job title recorded"}
         context={[
           person.email || identityLabel,
-          person.phone,
+          person.phone || person.hr_contact_phone,
           person.source_department_text,
           `Employment ${employmentState}`,
         ].filter(Boolean).join(" · ")}
@@ -726,28 +793,19 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       {!volunteerRecommendationsAvailable && <ProductNotice tone="attention" title="Volunteer recommendations pending">
         This feature is not yet installed in the approved database. The employee record is available; recommendation history and decisions remain unavailable until the Phase 6 migration passes release verification.
       </ProductNotice>}
+      {!hasLinkedProfile && (person.hr_contact_email || person.hr_contact_phone || person.hr_started_on) &&
+        <div className="ev2p-admin-record-grid" aria-label="HR contact and start date">
+          {person.hr_contact_email && <PeopleFactRow icon="info" title="HR contact email (not login)" subtitle={person.hr_contact_email} />}
+          {person.hr_contact_phone && <PeopleFactRow icon="info" title="HR contact telephone" subtitle={person.hr_contact_phone} />}
+          {person.hr_started_on && <PeopleFactRow icon="calendar" title="Employment start date" subtitle={dateOnly(person.hr_started_on)} />}
+        </div>}
       {person.on_leave_now && <ProductNotice tone="attention" title="On approved leave">This employee is currently away on approved leave.</ProductNotice>}
       {!person.active && <ProductNotice tone="error" title="Inactive employee">This employee is marked inactive and cannot sign in.</ProductNotice>}
 
-      <PeopleWorkspaceSection
-        title="Identity & employment state"
-        description="Authorised identity context for this employee record."
-        className="ev2p-admin-identity-section"
-      >
-        <div className="ev2p-admin-record-grid">
-          <PeopleFactRow icon="people" title="Account" subtitle={person.email || identityLabel} />
-          {person.phone && <PeopleFactRow icon="info" title="Phone" subtitle={person.phone} />}
-          <PeopleFactRow icon="people" title={hasLinkedProfile ? "Authority context" : "Source position"} subtitle={positionLabel} />
-          <PeopleFactRow icon="info" title="Employee status" subtitle={person.active ? "Active" : "Inactive"} />
-          <PeopleFactRow icon="info" title="Identity state" subtitle={identityLabel} />
-          {!hasLinkedProfile && person.source_department_text && <PeopleFactRow icon="people" title="Source department" subtitle={person.source_department_text} />}
-          {!hasLinkedProfile && rosterUnitNames.length > 0 && <PeopleFactRow icon="people" title="Recorded units" subtitle={rosterUnitNames.join(" · ")} />}
-          {!hasLinkedProfile && person.responsibility_context?.length > 0 && <PeopleFactRow icon="work" title="Programme / responsibility context" subtitle={person.responsibility_context.join(" · ")} />}
-          {person.birthday && <PeopleFactRow icon="calendar" title="Birthday" subtitle={new Date(person.birthday).toLocaleDateString("en-GB", { timeZone: "Africa/Accra", day: "numeric", month: "long" })} />}
-        </div>
-      </PeopleWorkspaceSection>
 
-      <div className="ev2p-admin-master-list" aria-label="Employee directory">
+
+      <details className="ev2p-admin-master-list" aria-label="Employee directory">
+        <summary className="ev2p-admin-directory-trigger">Switch employee · search directory</summary>
         <FieldGroup label="Find employee">
           <input
             className="field"
@@ -776,10 +834,25 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
               onClick={() => openPerson(entry)}
             />)}
         </div>
-      </div>
+      </details>
         </aside>
 
         <div className="ev2p-admin-person-detail">
+        <div className="workforce-setup-actions ev2p-admin-person-primary-actions" role="group" aria-label="Employee record actions" style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8,marginBottom:16,minWidth:0}}>
+          <button type="button" className="btn" onClick={()=>editSelectedEmployment()}>Edit employee record</button>
+          <button type="button" className="btn btn-ghost" onClick={()=>editSelectedEmployment("transferred")}>Assign / transfer department</button>
+          <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("time")}>Work schedule</button>
+          <button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("documents")}>Documents</button>
+          {!hasLinkedProfile&&<button type="button" className="btn btn-ghost" onClick={()=>openAccessAdministration(null,{
+            employeeId:person.employee_id,
+            requestedBy:me.id,
+            orgId:me.org_id,
+            name:person.full_name,
+            contactEmail:person.hr_contact_email || "",
+            unitId:(person.roster_units||[]).find(member=>member.is_primary)?.unit_id||"",
+          })}>Invite account</button>}
+          {hasLinkedProfile&&<button type="button" className="btn btn-ghost" onClick={()=>setPersonTab("access")}>Account & permissions</button>}
+        </div>
         <div className="ev2p-filter-tabs" role="tablist" aria-label="Employee record sections">
           {[...PERSON_TABS, ...(canManageProtectedHr ? [["protected","Protected HR"]] : [])].map(([key, label]) => <button
             key={key}
@@ -808,11 +881,12 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         title="Access & responsibilities"
         description="Account access, organisational placement and authority remain separate from job title and employment facts."
         meta={<div className="phase5-person-access-actions">
+          {person.profile_id && onManagePermissions && <button type="button" className="ev2p-admin-record-change" onClick={()=>onManagePermissions(person.profile_id)}>Manage permissions</button>}
           <Button
             variant="secondary"
             size="compact"
             onClick={() => openAccessAdministration(person.profile_id || null)}
-          >Manage responsibilities</Button>
+          >{person.profile_id ? "Manage responsibilities" : "Invite account"}</Button>
           <Button
             variant="quiet"
             size="compact"
@@ -826,7 +900,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           <PeopleFactRow icon="info" title="Access state" subtitle={accessState} />
           <PeopleFactRow icon="notification" title="Invitation" subtitle={invitationState} />
           <PeopleFactRow icon="people" title="Primary unit" subtitle={employmentCurrent?.unit_name || person.unit_name || "Not recorded"} />
-          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : "Not recorded · no authority inferred"} />
+          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : rosterManagerName} />
           <PeopleFactRow icon="people" title="Application role" subtitle={hasLinkedProfile ? (employmentCurrent?.membership_role || person.role || "staff").replaceAll("_", " ") : "Not inferred from job title"} />
           <PeopleFactRow icon="organisation" title="Recorded responsibilities" subtitle={responsibilitySummary} />
           <PeopleFactRow icon="info" title="Employee status" subtitle={employmentState} />
@@ -838,6 +912,11 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           </div>
           <Button variant="quiet" size="compact" onClick={() => openAccessAdministration(person.profile_id || null)}>Review invitation</Button>
         </div> : null}
+        {!person.profile_id && <RosterAccountLink
+          key={`${me.org_id}:${me.id}:${person.employee_id}`}
+          me={me} employee={person} documents={employeeFiles.documents}
+          onLinked={()=>{personGeneration.current+=1;setPerson(null);setDrill(null);void load();}}
+        />}
         <p className="phase5-person-access-note">
           Job title never grants application authority. Additional unit or team responsibility is recorded against the existing identity; access deactivation and offboarding use the controlled lifecycle workflow.
         </p>
@@ -847,20 +926,37 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       <PeopleWorkspaceSection
         title="Employment record"
         description="The current authorised employment record. Recording a change creates a new historical snapshot rather than overwriting the past."
-        meta={hasLinkedProfile ? <button type="button" className="ev2p-admin-record-change" onClick={openEmploymentEditor}>Record change</button> : "Roster context"}
+        meta={hasLinkedProfile ? <button type="button" className="ev2p-admin-record-change" onClick={openEmploymentEditor}>Record change</button> : <button type="button" className="ev2p-admin-record-change" onClick={()=>document.getElementById("roster-employee-editor")?.scrollIntoView({behavior:"smooth",block:"center"})}>Edit roster record below</button>}
       >
         <div className="ev2p-admin-record-grid">
           <PeopleFactRow icon="people" title="Employment type" subtitle={employmentCurrent?.employment_type || person.employment_type || person.contract_type || "Not recorded"} />
           <PeopleFactRow icon="work" title={hasLinkedProfile ? "Title" : "Source position"} subtitle={employmentCurrent?.job_title || person.job_title || person.source_position || "Not recorded"} />
           <PeopleFactRow icon="people" title={hasLinkedProfile ? "Primary unit" : "Recorded units"} subtitle={employmentCurrent?.unit_name || (rosterUnitNames.length ? rosterUnitNames.join(" · ") : "Not recorded")} />
-          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : "Not recorded · no authority inferred"} />
+          <PeopleFactRow icon="people" title="Manager" subtitle={hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : rosterManagerName} />
           <PeopleFactRow icon="people" title="Role / authority" subtitle={hasLinkedProfile ? (employmentCurrent?.membership_role || person.role || "staff").replaceAll("_", " ") : "Not inferred from workbook title"} />
           <PeopleFactRow icon="calendar" title="Working pattern" subtitle={hasLinkedProfile ? (employmentCurrent?.working_pattern?.kind || "not recorded").replaceAll("_", " ") : "Not recorded"} />
-          <PeopleFactRow icon="calendar" title="Joined" subtitle={employmentCurrent?.joined_on ? dateOnly(employmentCurrent.joined_on) : "Not recorded"} />
+          <PeopleFactRow icon="calendar" title={hasLinkedProfile ? "Joined" : "Recorded start date"} subtitle={hasLinkedProfile ? (employmentCurrent?.joined_on ? dateOnly(employmentCurrent.joined_on) : "Not recorded") : (person.hr_started_on ? dateOnly(person.hr_started_on) : "See verified HR record below")} />
           <PeopleFactRow icon="info" title="Employment status" subtitle={employmentState} />
           {employmentCurrent?.exited_on && <PeopleFactRow icon="calendar" title="Exit date" subtitle={dateOnly(employmentCurrent.exited_on)} />}
         </div>
       </PeopleWorkspaceSection>
+
+      {hasLinkedProfile && <LinkedEmployeeContactEditor
+        key={`${me.org_id}:${me.id}:${person.profile_id}`} me={me} employeeId={person.employee_id} profileId={person.profile_id}
+        onSaved={(details)=>{
+          setPerson(current=>current?.profile_id===details.id?{...current,...details}:current);
+          void load({silent:true});
+        }}
+      />}
+
+      {!hasLinkedProfile && <div id="roster-employee-editor"><RosterOnlyEmploymentEditor
+        me={me} employeeId={person.employee_id} units={units}
+        editRequest={rosterEditRequest.employeeId===person.employee_id?rosterEditRequest.seq:0}
+        onSaved={(updated)=>{
+          setPerson(current=>current?.employee_id===updated.employee_id?{...current,...updated,active:updated.employment_status==="active"}:current);
+          void load({silent:true});
+        }} />
+      </div>}
 
       {(employmentCurrent?.employment_type === "volunteer" || person.employment_type === "volunteer") && <PeopleWorkspaceSection
         title="Manager recommendations"
@@ -975,8 +1071,8 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
 
         <div className="ev2p-admin-leave-card">
           {leavePolicy
-            ? <ProgressMeter value={taken} max={entitlement} label="Annual leave used" detail={taken + " of " + entitlement + " configured days"} />
-            : <PeopleFactRow icon="calendar" title="Annual leave taken" subtitle={taken + " days recorded · entitlement not configured"} />}
+            ? <ProgressMeter value={taken} max={entitlement} label="Recorded annual leave taken" detail={taken + " recorded · annual policy entitlement " + entitlement + " days; not an accrued or available balance"} />
+            : <PeopleFactRow icon="calendar" title="Annual leave taken" subtitle={taken + " days recorded · active annual policy not configured"} />}
           <PeopleFactRow icon="calendar" title="Sick leave taken" subtitle={Number(person.balance?.sick_taken || 0) + " days recorded"} />
         </div>
         <button type="button" className="ev2p-link-row ev2p-admin-leave-link" onClick={() => setDrill({ label: "Leave history", kind: "leave", rows: person.leave })}>
@@ -988,7 +1084,15 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
         </button>
         </>}
       </PeopleWorkspaceSection>
+      <EmployeeAttendanceObservations key={`${me.org_id}:${me.id}:${person.employee_id}`}
+        me={me} employeeId={person.employee_id} />
       </>}
+
+      {["development","learning","equipment"].includes(personTab) && <EmployeeDossierRecords
+        key={`${me.org_id}:${me.id}:${person.employee_id}:${person.profile_id || "unlinked"}`}
+        me={me} employeeId={person.employee_id} profileId={person.profile_id}
+        section={personTab}
+      />}
 
       {personTab === "documents" && <PeopleWorkspaceSection
         title="Documents"
@@ -1227,6 +1331,10 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
     !entry.unit_id && !(entry.roster_units || []).length ? "No unit recorded" : null,
   ].filter(Boolean);
   const attentionRoster = roster.filter((entry) => attentionReasons(entry).length);
+  const unlinkedAccounts=operationalDirectory.filter(account=>account.active && !rows.some(entry=>entry.profile_id===account.id));
+  const unmatchedAccounts=unlinkedAccounts.filter(account=>!cleanSearch||[
+    account.full_name,account.email,account.unit_name,
+  ].filter(Boolean).some(value=>String(value).toLowerCase().includes(cleanSearch)));
   const unitsWithoutHead = units.filter((unit) => !rows.some((entry) =>
     entry.profile_id && entry.active && entry.role === "manager" && (
       entry.unit_id === unit.id || (entry.roster_units || []).some((membership) => membership.unit_id === unit.id)
@@ -1242,6 +1350,22 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       countLabel={rows.length === 1 ? "person" : "people"}
     />
 
+    {creatingEmployee && <HRCreateRosterEmployee
+      me={me} units={units} employees={rows} accounts={operationalDirectory}
+      onClose={()=>setCreatingEmployee(false)}
+      onCreated={async employee=>{
+        if(!(await load({silent:true})))throw new Error("The employee was created but the directory did not refresh. Recheck existing employees before retrying.");
+        setCreatingEmployee(false);
+        setSearchText("");
+        setFilter("all");
+        setViewMode("directory");
+        await openPerson({
+          id:employee.id,employee_id:employee.id,profile_id:null,
+          full_name:employee.full_name,employment_status:employee.employment_status,
+          job_title:employee.job_title,identity_state:"roster_only",active:employee.employment_status==="active",
+        });
+      }}
+    />}
     {error && <ProductNotice tone="error" title="People could not finish loading" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice>}
     {detailLoading && <LoadingState label="Opening employee record…" />}
     {!leavePolicy && <ProductNotice tone="attention" title="Leave policy not configured">People records show leave actually taken, but CEAC OS will not calculate entitlement or remaining leave until Administration confirms the policy.</ProductNotice>}
@@ -1264,6 +1388,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
       initialProfileId={accessFocusProfileId}
       initialUnitId={accessFocusUnitId}
       initialMode={accessFocusMode}
+      initialInviteRoster={accessInviteRoster?.requestedBy===me.id && accessInviteRoster?.orgId===me.org_id ? accessInviteRoster : null}
       onChanged={async () => { if (!(await load({ silent: true }))) throw new Error("People records could not be refreshed."); }}
       onLifecycle={(profileId, type) => openLifecycle?.(profileId, type)}
       onOpenPerson={(profileId) => {
@@ -1274,6 +1399,7 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
 
     {viewMode === "directory" && <div className="ev2p-admin-control-band">
     <div className="ev2p-admin-toolbar">
+      <button type="button" className="btn" onClick={()=>setCreatingEmployee(true)}>Add employee</button>
       <FieldGroup label="Find a person">
         <input
           className="field"
@@ -1326,6 +1452,34 @@ export default function People({ me, openItem, go, openLifecycle, accessIntent =
           </span>
           <span className="fpg-people-roster-open" aria-hidden="true">›</span>
         </button>)}
+      </div>
+    </section>}
+
+    {(viewMode === "directory" || viewMode === "attention") && unlinkedAccounts.length>0 && <section
+      className="ev2p-account-reconciliation" aria-label="Operational accounts without linked employee records"
+      style={{marginTop:20,border:"1px solid var(--ev2-line,var(--line))",borderRadius:10,padding:16}}>
+      <header style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap",alignItems:"center"}}>
+        <div><span className="eyebrow">Identity reconciliation</span>
+          <h2 className="h3">Operational accounts without HR roster links</h2>
+          <p className="screen-note">These are existing CEAC accounts, not additional employees. Review the correct HR person and independent evidence before using the existing verified account-link workflow. No automatic matching or permission changes.</p>
+        </div>
+        <strong>{unlinkedAccounts.length} to review</strong>
+      </header>
+      <div style={{display:"grid",gap:8,marginTop:12}}>
+        {unmatchedAccounts.map(account=><article key={account.id}
+          style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",borderTop:"1px solid var(--ev2-line,var(--line))",paddingTop:9}}>
+          <div style={{display:"grid",gap:2,minWidth:0}}>
+            <strong>{account.full_name||"Operational account"}</strong>
+            <span className="screen-note">{account.email||"Account email unavailable"} · {account.unit_name||"Unit unrecorded"} · Employee link not verified</span>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={()=>{
+              setSearchText(account.full_name||"");setFilter("all");setViewMode("directory");
+            }}>Find roster person</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={()=>openAccessAdministration(account.id)}>Review account access</button>
+          </div>
+        </article>)}
+        {unmatchedAccounts.length===0&&<p className="screen-note">No unmatched accounts match the current search. Clear the search to review all accounts.</p>}
       </div>
     </section>}
 

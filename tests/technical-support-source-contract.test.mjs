@@ -126,7 +126,7 @@ test("approved Executive stylesheet has exactly the same Git blob", () => {
   assert.equal(digest, "5613e38749322da28f6bfd6f4a584dd4bebd6d47");
 });
 
-test("canonical S3 migration and fourteen reviewed security migrations have unique ordered versions", () => {
+test("canonical S3 migration and fifteen reviewed security migrations have unique ordered versions", () => {
   const folder = "supabase/migrations";
   const migrations = readdirSync(folder).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
   const versions = migrations.map((file) => file.split("_")[0]);
@@ -145,13 +145,47 @@ test("canonical S3 migration and fourteen reviewed security migrations have uniq
     "20261016220000_155_stage2_published_human_rating_timestamp_integrity.sql",
     "20261017010000_156_stage2_provider_neutral_auth_storage_reconciliation.sql",
     "20261019160000_157_stage2_password_release_private_portraits.sql",
+    "20261019174500_158_owner_work_activity_diary.sql",
+    "20261019175500_159_owner_activity_project_attribution.sql",
+    "20261019181500_160_project_person_optional_assessments.sql",
+    "20261019183500_161_technical_support_under_it.sql",
+    "20261019213252_162_owner_activity_guard_reconciliation.sql",
+    "20261020031648_163_retire_legacy_google_rpc_grants.sql",
+    "20261020035143_164_self_created_organisational_routines.sql",
+    "20261020070455_165_published_rating_invoker_boundary.sql",
+    "20261020072046_166_routine_pause_history.sql",
+    "20261020095000_167_routine_occurrence_reviews.sql",
+  "20261020120556_168_organisational_schedule_options.sql",
+    "20261020124352_169_routine_reminder_delivery.sql",
+    "20261020125855_170_routine_reminder_explicit_hours_guard.sql",
+    "20261021205049_171_routine_date_progress.sql",
+    "20261021212537_172_routine_date_file_evidence.sql",
+    "20261021222500_173_attendance_start_location_evidence.sql",
+    "20261021224000_174_roster_only_hr_employment.sql",
+    "20261021235000_175_single_date_routine_exception.sql",
+    "20261022041632_176_routine_single_date_cover.sql",
+    "20261022044501_177_routine_cover_storage_scope.sql",
+    "20261022070000_178_compliance_attendance_casework.sql",
+    "20261022071000_179_verified_roster_account_link.sql",
+    "20261022072000_180_employee_published_development_read.sql",
+    "20261022090000_181_roster_only_hr_contact_start.sql",
+    "20261022094500_182_linked_person_hr_contact.sql",
+    "20261022100000_183_roster_week_server_validation.sql",
+    "20261022113000_184_annual_leave_active_policy_guard.sql",
+    "20261022114000_185_hr_create_roster_employee.sql",
+    "20261022115000_186_manual_unlinked_account_roster_reconciliation.sql",
+    "20261022121500_187_reject_already_linked_account_duplicate_employee.sql",
+    "20261022170000_188_admin_hr_head_group_pastor_appraisal.sql",
+    "20261022192119_published_hr_exact_assessment_boundary.sql",
+    "20261023052448_hr_head_assigned_pastor_publication.sql",
+    "20261023053351_hr_head_publication_privileged_session_guard.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
   }
   assert.equal(migrations.filter((file) => !stagedIntegratedSecurity.includes(file)).length, 153,
-    "Stage 1's 153 reviewed migrations remain identical; nine additional Stage 2 migrations are pending");
-  assert.equal(migrations.length, 162, "expected 153 reviewed Stage 1 plus nine integrated Stage 2 staged migrations");
+    "Stage 1's 153 reviewed migrations remain identical; all Stage 2 additions are explicitly inventoried");
+  assert.equal(migrations.length, 196, "expected 153 reviewed Stage 1 plus 43 explicitly inventoried Stage 2 migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
@@ -186,10 +220,11 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
-  // The one-bundle change records 12 additional guarded RPC/predicate surfaces
-  // and removes obsolete direct attendance-correction and performance-share grants.
-  // Fail closed at 146 (145 approved original + one approved universal TOTP helper); no rejected Manager publication or extra definer.
-  assert.match(mfa, /callable_count<>146/);
+  // Independently fail closed at the current 159-signature reviewed surface.
+  // The exact allowlist and obsolete-grant denial remain enforced in the
+  // dedicated security_definer_surface_gate.sql (not just this count check).
+  assert.match(mfa, /callable_count<>159/);
+  assert.match(surface, /v_actual<>159 or v_expected<>159/);
   assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);

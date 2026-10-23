@@ -2386,47 +2386,28 @@
 
 /* Phase 6A — Manager People & Volunteers */
 
-.phase6-manager-people-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ev2-space-3);
-  margin: var(--ev2-space-4) 0 var(--ev2-space-5);
-  padding: var(--ev2-space-3);
-  border: 1px solid var(--ev2-line);
-  border-radius: var(--ev2-radius-card);
-  background: var(--ev2-surface);
-}
-
-.phase6-manager-people-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ev2-space-1);
-}
-
-.phase6-manager-people-tabs button {
-  min-height: var(--ev2-control-min);
-  padding: 0 var(--ev2-space-3);
-  border: 1px solid transparent;
-  border-radius: var(--ev2-radius-pill);
-  background: transparent;
-  color: var(--ev2-text-secondary);
-  font: inherit;
-  font-size: var(--ev2-type-supporting);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.phase6-manager-people-tabs button.is-selected {
-  border-color: color-mix(in srgb, var(--ev2-action) 26%, var(--ev2-line));
-  background: var(--ev2-action-soft);
-  color: var(--ev2-action);
-}
-
-.phase6-add-volunteer {
-  flex: 0 0 auto;
-  min-height: var(--ev2-control-min);
-}
+/* 19 Oct owner correction: rejected live capture is NOT a visual reference. */
+.ev2-people-manager .ev2p-header{align-items:center;flex-wrap:wrap;gap:12px;padding:10px 0 12px}
+.ev2-people-manager .ev2p-header h1{font-size:clamp(23px,3vw,29px);line-height:1.2}
+.ev2-people-manager .ev2p-header p{font-size:13px;line-height:1.45;margin-top:4px}
+.ev2-people-manager .ev2p-count{display:inline-flex;align-items:baseline;gap:5px;min-width:0;padding:0;border:0;border-radius:0;background:transparent;text-align:left}
+.ev2-people-manager .ev2p-count strong{font-size:14px;line-height:1.4}
+.ev2-people-manager .ev2p-count span{font-size:12px}
+.s2-team-room-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--ev2-line);color:var(--ev2-text)}
+.s2-team-room-copy{display:grid;gap:2px;min-width:0}
+.s2-team-room-copy strong{font-size:14px}
+.s2-team-room-copy span{font-size:12px;line-height:1.4;color:var(--ev2-text-secondary)}
+.s2-team-room-open{flex:none;min-height:36px;padding:0 12px;border:1px solid var(--ev2-line);border-radius:6px;background:var(--ev2-surface);color:var(--ev2-action);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.s2-team-room-open:focus-visible{outline:3px solid rgba(12,93,249,.26);outline-offset:2px}
+.s2-team-room-open:hover{border-color:var(--ev2-action)}
+.phase6-manager-people-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 12px;padding:0;border:0;border-radius:0;border-bottom:1px solid var(--ev2-line);background:transparent}
+.phase6-manager-people-tabs{display:flex;flex-wrap:wrap;gap:12px}
+.phase6-manager-people-tabs button{min-height:40px;padding:0 2px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:var(--ev2-text-secondary);font:inherit;font-size:13px;font-weight:650;cursor:pointer}
+.phase6-manager-people-tabs button.is-selected{border-bottom-color:var(--ev2-action);background:transparent;color:var(--ev2-action)}
+.phase6-add-volunteer.btn{flex:0 0 auto;min-height:34px;width:auto;padding:0 12px;border-radius:6px;font-size:12px;line-height:1.2}
+.ev2-people-manager .ev2p-section{border-radius:8px;margin-top:12px}
+.ev2-people-manager .ev2p-section-head{min-height:54px;padding:10px 14px}
+.ev2-people-manager .ev2p-section-head strong{font-size:15px}
 
 .phase6-volunteer-sheet {
   display: grid;
@@ -2574,10 +2555,12 @@
 }
 
 @media (max-width: 760px) {
-  .phase6-manager-people-toolbar {
-    align-items: stretch;
-    flex-direction: column;
-  }
+  .ev2-people-manager .ev2p-header{display:flex;align-items:center;gap:8px;padding:6px 0 12px}
+  .ev2-people-manager .ev2p-header h1{font-size:25px}
+  .ev2-people-manager .ev2p-header-copy{flex:1 1 100%}
+  .ev2-people-manager .ev2p-header-side{width:auto;grid-column:auto}
+  .phase6-manager-people-toolbar{align-items:flex-end;flex-direction:row;flex-wrap:wrap}
+  .s2-team-room-entry{padding:10px 0}
 
   .phase6-manager-people-tabs {
     flex-wrap: nowrap;
@@ -2593,9 +2576,7 @@
     flex: 0 0 auto;
   }
 
-  .phase6-add-volunteer {
-    width: 100%;
-  }
+  .phase6-add-volunteer.btn{width:auto;min-height:34px;align-self:center}
 
   .phase6-volunteer-identity-grid,
   .phase6-time-grid {

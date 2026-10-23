@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import {
   Button,
   DataPanel,
-  QueueRow,
   Skeleton,
   StatePanel,
   StatusBadge,
   Surface,
 } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
+import "./ControlCenter.css";
 
 const STATUSES = {
   ready:"Ready",
@@ -17,6 +17,9 @@ const STATUSES = {
   partial:"Partly configured",
   missing:"Not configured",
   policy:"Awaiting policy",
+  restricted:"Access not assigned",
+  optional:"Optional",
+  available:"Available",
 };
 
 function statusTone(status){
@@ -29,7 +32,6 @@ function statusTone(status){
 function DomainCard({title,description,status,detail,actions=[]}){
   return <DataPanel
     title={title}
-    supporting={description}
     action={<StatusBadge tone={statusTone(status)} icon={false}>{status}</StatusBadge>}
     className="control-card ev2-control-card"
   >
@@ -53,8 +55,11 @@ export default function ControlCenter({me,go}){
   const [snapshot,setSnapshot]=useState(null);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
+  const [query,setQuery]=useState("");
+  const [attentionOnly,setAttentionOnly]=useState(false);
+  const loadSerial=useRef(0);
 
-  useEffect(()=>{ load(); },[me.id]);
+  useEffect(()=>{ load(); return ()=>{loadSerial.current+=1;}; },[me.id,me.org_id,canPayroll,canIntegrations,canAudit]);
 
   async function must(result,label){
     const resolved=await result;
@@ -63,8 +68,10 @@ export default function ControlCenter({me,go}){
   }
 
   async function load(){
+    const serial=++loadSerial.current;
     setLoading(true);
     setError(null);
+    setSnapshot(null);
     try{
       const [
         officeResult,
@@ -102,6 +109,7 @@ export default function ControlCenter({me,go}){
           : Promise.resolve({data:[]}),
       ]);
 
+      if(serial!==loadSerial.current) return;
       setSnapshot({
         office:officeResult.data||null,
         units:unitsResult.data||[],
@@ -116,9 +124,9 @@ export default function ControlCenter({me,go}){
         audit:auditResult.data||[],
       });
     }catch(loadError){
-      setError(humanError(loadError,"Control Center could not finish loading."));
+      if(serial===loadSerial.current) setError(humanError(loadError,"Control Center could not finish loading."));
     }finally{
-      setLoading(false);
+      if(serial===loadSerial.current) setLoading(false);
     }
   }
 
@@ -155,8 +163,8 @@ export default function ControlCenter({me,go}){
         ? STATUSES.partial
         : STATUSES.ready;
 
-    let payrollStatus=STATUSES.partial;
-    let payrollDetail="Payroll readiness cannot be reviewed from this account because no Payroll capability is assigned.";
+    let payrollStatus=STATUSES.restricted;
+    let payrollDetail="Payroll preparation and approval require separately assigned access.";
     if(snapshot.payroll){
       const identity=Number(snapshot.payroll.identity_review_count||0);
       const missingComp=Number(snapshot.payroll.compensation_missing_count||0);
@@ -169,28 +177,15 @@ export default function ControlCenter({me,go}){
           : "Protected compensation and payment readiness is recorded for the active employee roster. Finance remains separate by currency.";
     }
 
-    const governanceCapabilities=["authority.manage","audit.view"];
-    const governancePresent=governanceCapabilities.filter((capability)=>caps.has(capability)).length;
-    const governanceStatus=governancePresent===governanceCapabilities.length
-      ? STATUSES.ready
-      : governancePresent
-        ? STATUSES.partial
-        : STATUSES.missing;
+    const governanceStatus=caps.has("authority.manage") ? STATUSES.available : STATUSES.restricted;
 
     const connectorByProvider=new Map(snapshot.connectors.map((row)=>[row.provider_key,row]));
     const broken=snapshot.connectors.filter((row)=>["needs_reconnect","error"].includes(row.connection_state));
     const connected=snapshot.providers.filter((provider)=>connectorByProvider.get(provider.provider_key)?.connection_state==="connected");
-    const integrationsStatus=!canIntegrations || !snapshot.providers.length
-      ? STATUSES.missing
-      : broken.length
-        ? STATUSES.attention
-        : !connected.length
-          ? STATUSES.missing
-          : connected.length<snapshot.providers.length
-            ? STATUSES.partial
-            : STATUSES.ready;
+    const integrationsStatus=!canIntegrations ? STATUSES.restricted
+      : broken.length ? STATUSES.attention : connected.length ? STATUSES.ready : STATUSES.optional;
 
-    const auditStatus=canAudit ? STATUSES.ready : STATUSES.partial;
+    const auditStatus=canAudit ? STATUSES.available : STATUSES.restricted;
 
     return [
       {
@@ -210,15 +205,16 @@ export default function ControlCenter({me,go}){
       {
         key:"people",
         title:"People & access",
-        description:"Employee records, identity linking and protected access.",
+        description:"Employee records and invitations here; security permissions are reviewed through one protected Authority workspace.",
         status:peopleStatus,
         detail:peopleGaps.length
-          ? `${peopleGaps.length} employee record${peopleGaps.length===1?"":"s"} have an authoritative data gap. Roster-only status alone is not treated as an error.`
+          ? `${peopleGaps.length} employee record${peopleGaps.length===1?" needs":"s need"} identity, employment or department details reviewed.`
           : snapshot.invitations.length
             ? `${snapshot.invitations.length} Staff invitation${snapshot.invitations.length===1?" is":"s are"} still pending activation.`
             : "No employee data exception or pending Staff invitation is currently recorded.",
         actions:[
           {label:"People & Access",onClick:()=>go("people")},
+          ...(caps.has("authority.manage")?[{label:"Manage permissions",onClick:()=>go("authority")}]:[]),
           ...(caps.has("hr_private.access")?[{label:"Protected HR",onClick:()=>go("protected-hr")}]:[]),
         ],
       },
@@ -229,7 +225,7 @@ export default function ControlCenter({me,go}){
         status:workStatus,
         detail:snapshot.checks.length
           ? `${snapshot.checks.length} authorised check${snapshot.checks.length===1?" is":"s are"} waiting for action.`
-          : "No ready workflow check is waiting right now.",
+          : "No checks are waiting for action.",
         actions:[{label:"Checks & workflows",onClick:()=>go("workflows")}],
       },
       {
@@ -238,18 +234,18 @@ export default function ControlCenter({me,go}){
         description:"Daily workforce context stays separate from advanced schedule and policy setup.",
         status:leaveStatus,
         detail:!snapshot.leavePolicy
-          ? "The owner-confirmed leave route is active, but entitlement, accrual and carry-over policy values remain unconfigured."
+          ? "No active leave policy is recorded. Review the rules before assigning entitlements."
           : rules.some((rule)=>!rule.complete)
             ? "A confirmed Leave policy exists, but one or more rules remain incomplete."
-            : `Confirmed policy: ${snapshot.leavePolicy.name}. Manager approval → Administration final approval remains the route for owner-confirmed leave kinds.`,
+            : `Active policy: ${snapshot.leavePolicy.name}. Open Workforce to review its rules.`,
         actions:[{label:"Workforce",onClick:()=>go("attendance")}],
       },
       {
         key:"payroll",
-        title:"Payroll & Finance",
+        title:canPayroll ? "Payroll & Finance" : "Finance",
         description:"Protected Payroll readiness and separate financial records.",
-        status:payrollStatus,
-        detail:payrollDetail,
+        status:canPayroll ? payrollStatus : STATUSES.available,
+        detail:canPayroll ? payrollDetail : "View finance records available to your account.",
         actions:[
           ...(canPayroll?[{label:"Payroll",onClick:()=>go("payroll")}]:[]),
           {label:"Finance",onClick:()=>go("finance")},
@@ -260,12 +256,11 @@ export default function ControlCenter({me,go}){
         title:"Security & governance",
         description:"Explicit authority, versioned rules and consequential checks.",
         status:governanceStatus,
-        detail:governanceStatus===STATUSES.ready
-          ? "Authority management and audit review capabilities are available. Job titles do not grant permissions."
-          : "This account does not hold every governance capability; unavailable controls remain inaccessible.",
+        detail:governanceStatus===STATUSES.available
+          ? "Review versioned organisation rules. Employee permissions are managed directly through People & Access."
+          : "Permission management requires separately assigned access.",
         actions:[
-          ...(caps.has("authority.manage")?[{label:"Authority",onClick:()=>go("authority")},{label:"System rules",onClick:()=>go("policies")}]:[]),
-          ...(caps.has("audit.view")?[{label:"Checks",onClick:()=>go("workflows")}]:[]),
+          ...(caps.has("authority.manage")?[{label:"System rules",onClick:()=>go("policies")}]:[]),
         ],
       },
       {
@@ -277,9 +272,9 @@ export default function ControlCenter({me,go}){
           ? "Integration management is not assigned to this account."
           : broken.length
             ? `${broken.length} connection${broken.length===1?" needs":"s need"} attention or reconnection.`
-            : snapshot.providers.length
-              ? `${connected.length} of ${snapshot.providers.length} approved provider${snapshot.providers.length===1?" is":"s are"} connected.`
-              : "No active provider adapter is configured.",
+            : connected.length
+              ? `${connected.length} approved app connection${connected.length===1?" is":"s are"} active.`
+              : "App connections are optional. Connect an approved app when it is needed.",
         actions:canIntegrations?[{label:"Connected Apps",onClick:()=>go("integrations")}]:[],
       },
       {
@@ -289,8 +284,8 @@ export default function ControlCenter({me,go}){
         status:auditStatus,
         detail:canAudit
           ? snapshot.audit.length
-            ? `Audit is available. Latest ordinary-platform event: ${new Date(snapshot.audit[0].created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}.`
-            : "Audit is available; no ordinary-platform event is currently returned in the recent window."
+            ? `Latest recorded event: ${new Date(snapshot.audit[0].created_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}.`
+            : "No recent events are recorded."
           : "Audit review is not assigned to this account.",
         actions:canAudit?[
           {label:"Audit",onClick:()=>go("audit")},
@@ -300,7 +295,18 @@ export default function ControlCenter({me,go}){
     ];
   },[snapshot,caps,canPayroll,canIntegrations,canAudit,go]);
 
-  const attention=domains.filter((domain)=>domain.status!==STATUSES.ready);
+  // Non-actionable permission notices used to fill the Control Center with
+  // redundant cards. Keep every genuinely actionable domain, including
+  // Finance when Payroll is restricted; never create a fake access route.
+  const accessibleDomains=domains.filter((domain)=>
+    domain.status!==STATUSES.restricted || domain.actions.length>0
+  );
+  const attention=accessibleDomains.filter((domain)=>[STATUSES.attention,STATUSES.partial,STATUSES.missing,STATUSES.policy].includes(domain.status));
+  const visibleDomains=accessibleDomains.filter((domain)=>
+    (!attentionOnly || attention.includes(domain)) &&
+    (!query.trim() || [domain.title,domain.description,domain.detail,...domain.actions.map(action=>action.label)]
+      .some(text=>text.toLowerCase().includes(query.trim().toLowerCase())))
+  );
 
   const domainGroups=[
     {
@@ -308,7 +314,7 @@ export default function ControlCenter({me,go}){
       eyebrow:"Organisation",
       title:"Organisation & people",
       description:"Durable structure, employee identity and access configuration.",
-      domainKeys:["organisation","people"],
+      domainKeys:["people","organisation"],
     },
     {
       key:"operations",
@@ -331,9 +337,9 @@ export default function ControlCenter({me,go}){
       <div>
         <span className="eyebrow">Administration</span>
         <h1 className="h1">Control Center</h1>
-        <p className="screen-note">Durable organisation configuration, people access, policy readiness and governance from CEAC’s authoritative records. Operational monitoring stays on Overview.</p>
+        <p className="screen-note">Manage departments, people, policies and system access.</p>
       </div>
-      <StatusBadge tone="neutral" icon={false}>Governance workspace</StatusBadge>
+      <Button variant="quiet" size="compact" onClick={()=>go("home")}>← Overview</Button>
     </header>
 
     {error ? <StatePanel
@@ -350,42 +356,30 @@ export default function ControlCenter({me,go}){
     </div> : null}
 
     {!loading&&!error ? <>
-      <DataPanel
-        eyebrow="Configuration attention"
-        title={attention.length ? "Needs attention" : "No configuration exception recorded"}
-        supporting={attention.length
-          ? "These configuration domains are incomplete, awaiting policy, or have an actionable recorded exception. This is not a numeric health score."
-          : "Every configuration domain visible to this account currently reports its required state as ready."}
-        action={<StatusBadge tone={attention.length?"warning":"success"} icon={false}>
-          {attention.length ? `${attention.length} domain${attention.length===1?"":"s"}` : "Ready"}
-        </StatusBadge>}
-      >
-        {attention.length ? attention.map((domain)=><QueueRow
-          key={domain.key}
-          icon="warning"
-          title={domain.title}
-          meta={domain.detail}
-          status={domain.status}
-          statusTone={statusTone(domain.status)}
-          onClick={domain.actions[0]?.onClick}
-        />) : <StatePanel state="success" title="No configuration exception is waiting" description="Use the domain cards below to review authoritative settings." />}
-      </DataPanel>
+      <div className="control-settings-toolbar">
+        <label>Find a setting
+          <input type="search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="People, departments, leave, access…" />
+        </label>
+        <div className="control-settings-views" role="group" aria-label="Settings view">
+          <button type="button" aria-pressed={!attentionOnly} onClick={()=>setAttentionOnly(false)}>All settings</button>
+          <button type="button" aria-pressed={attentionOnly} onClick={()=>setAttentionOnly(true)}>Needs attention <span>{attention.length}</span></button>
+        </div>
+      </div>
 
       <div className="phase5-control-groups">
-        {domainGroups.map((group)=><section className="phase5-control-group" key={group.key} aria-labelledby={`phase5-control-${group.key}`}>
+        {domainGroups.filter(group=>group.domainKeys.some(key=>visibleDomains.some(domain=>domain.key===key))).map((group)=><section className="phase5-control-group" key={group.key} aria-labelledby={`phase5-control-${group.key}`}>
           <header className="phase5-control-group-head">
-            <span className="eyebrow">{group.eyebrow}</span>
             <h2 id={`phase5-control-${group.key}`}>{group.title}</h2>
-            <p>{group.description}</p>
           </header>
           <div className="phase5-control-ledger">
             {group.domainKeys
-              .map((key)=>domains.find((domain)=>domain.key===key))
+              .map((key)=>visibleDomains.find((domain)=>domain.key===key))
               .filter(Boolean)
               .map((domain)=><DomainCard key={domain.key}{...domain}/>)}
           </div>
         </section>)}
       </div>
+      {!visibleDomains.length && <StatePanel state="empty" title="No settings match" description="Try another search or show all settings." actionLabel="Show all settings" onAction={()=>{setQuery("");setAttentionOnly(false);}} />}
     </> : null}
   </div>;
 }

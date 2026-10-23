@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import StructuredAppraisalRatings from "../components/StructuredAppraisalRatings";
+import HRProjectContributionQueue from "../components/HRProjectContributionQueue";
+import FormalReviewProjectDrafts from "../components/FormalReviewProjectDrafts";
+import { includeProjectAssessment } from "../lib/projectAssessmentDraft";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Avatar } from "../experience-v2/components";
@@ -76,6 +79,11 @@ function CaseState({ status }) {
 
 export default function Performance({ me }) {
   const hrReleaseAdmin = Boolean(me.is_admin) && (me.capabilities || []).includes("people.manage");
+  const mayPublishAssignedHrHead = (review) => Boolean(
+    me.is_exec && !me.is_admin && me.job_title?.trim().toLowerCase() === "group pastor"
+    && review?.profiles?.is_admin && review.profile_id !== me.id
+    && review.manager_id === me.id && review.reviewer_assignment_reason
+  );
   const orgPerformanceAdmin = hrReleaseAdmin || (me.capability_grants || []).some((grant) =>
     grant.capability === "performance.admin" && !grant.scope_unit_id
   );
@@ -101,6 +109,8 @@ export default function Performance({ me }) {
   const baseRequestSerial = useRef(0);
   const selectedCaseRef = useRef("");
   const selectedCycleRef = useRef("");
+  const requestedPersonRef = useRef(new URLSearchParams(window.location.search).get("reviewPerson"));
+  const reviewPanelRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -155,11 +165,11 @@ export default function Performance({ me }) {
     try {
       const requests = [
         supabase.from("appraisal_cycles").select("*").eq("org_id", me.org_id).order("starts_on", { ascending:false }),
-        supabase.from("appraisals").select("id,org_id,cycle_id,profile_id,manager_id,unit_id,status,created_at,shared_at,reviewer_assignment_reason,profiles!appraisals_profile_id_fkey(full_name,email,job_title),reviewer:profiles!appraisals_manager_id_fkey(full_name,email),units(name)").eq("org_id", me.org_id).order("created_at", { ascending:false }),
+        supabase.from("appraisals").select("id,org_id,cycle_id,profile_id,manager_id,unit_id,status,created_at,shared_at,reviewer_assignment_reason,profiles!appraisals_profile_id_fkey(full_name,email,job_title,is_admin,is_exec),reviewer:profiles!appraisals_manager_id_fkey(full_name,email),units(name)").eq("org_id", me.org_id).order("created_at", { ascending:false }),
       ];
       if (orgPerformanceAdmin) {
         requests.push(
-          supabase.from("profiles").select("id,full_name,email,is_admin,active").eq("org_id", me.org_id).eq("active", true).order("full_name"),
+          supabase.from("profiles").select("id,full_name,email,is_admin,is_exec,job_title,active").eq("org_id", me.org_id).eq("active", true).order("full_name"),
           supabase.from("unit_memberships").select("profile_id,unit_id,role").eq("org_id", me.org_id).eq("role","manager")
         );
       }
@@ -176,6 +186,14 @@ export default function Performance({ me }) {
         setMemberships(results[3].data || []);
       }
       // An in-flight refresh must not undo an employee/cycle selected after it started.
+      const linkedReview = requestedPersonRef.current
+        ? caseRows.find(row => row.profile_id === requestedPersonRef.current && cycleRows.some(cycle => cycle.id === row.cycle_id && cycle.status === "open"))
+        : null;
+      if (linkedReview) {
+        selectedCaseRef.current = linkedReview.id;
+        selectedCycleRef.current = linkedReview.cycle_id;
+      }
+      requestedPersonRef.current = null;
       const requestedCycle = selectedCycleRef.current;
       const cycleId = requestedCycle && cycleRows.some((row) => row.id === requestedCycle)
         ? requestedCycle
@@ -217,7 +235,7 @@ export default function Performance({ me }) {
       if (requestSerial !== caseRequestSerial.current) return;
       const failed = [e,en,p,f,fr].find((row) => row.error);
       if (failed) throw failed.error;
-      const releaseResult = hrReleaseAdmin
+      const releaseResult = hrReleaseAdmin || mayPublishAssignedHrHead(selected)
         ? await supabase.from("performance_review_release_requests")
             .select("id,requested_assessment_id,requested_by,request_reason,requested_at,state")
             .eq("org_id",me.org_id).eq("appraisal_id",caseId).eq("state","pending")
@@ -260,6 +278,8 @@ export default function Performance({ me }) {
   const selectedCase = cases.find((row) => row.id === selectedCaseId) || null;
   const isSelf = selectedCase?.profile_id === me.id;
   const isReviewer = selectedCase?.manager_id === me.id;
+  const assignedPastorPublication = mayPublishAssignedHrHead(selectedCase);
+  const canDecidePublication = !isSelf && (hrReleaseAdmin || assignedPastorPublication);
   const currentReflection = latestEntry(entries, "employee_reflection");
   const currentAssessment = latestEntry(entries, "manager_assessment");
   const currentReleaseRequest = releaseQueue.find((request) =>
@@ -268,11 +288,18 @@ export default function Performance({ me }) {
   const currentConversation = latestEntry(entries, "conversation_record");
   const currentPlan = latestPlan(plans);
 
-  const reviewerCandidates = selectedCase ? profiles.filter((profile) =>
-    profile.is_admin || memberships.some((membership) =>
+  const reviewerCandidates = selectedCase ? profiles.filter((profile) => {
+    if (profile.id === selectedCase.profile_id) return false;
+    if (selectedCase.profiles?.is_admin) {
+      // The owner's single-case exception: Group Pastor may be assigned HR
+      // Head's appraisal. Identity/permission is revalidated on the server.
+      return profile.is_exec && !profile.is_admin
+        && profile.job_title?.trim().toLowerCase() === "group pastor";
+    }
+    return profile.is_admin || memberships.some((membership) =>
       membership.profile_id === profile.id && membership.unit_id === selectedCase.unit_id && membership.role === "manager"
-    )
-  ) : [];
+    );
+  }) : [];
 
   const evidenceGroups = Object.keys(CATEGORY_LABELS).map((key) => ({
     key,
@@ -341,8 +368,8 @@ export default function Performance({ me }) {
   }
 
   async function decideHRRelease(approved) {
-    if (!hrReleaseAdmin || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
-    if (currentReleaseRequest.requested_by === me.id) {
+    if (!canDecidePublication || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
+    if (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) {
       setError("An independent HR officer must authorise assessment publication.");
       return;
     }
@@ -350,7 +377,9 @@ export default function Performance({ me }) {
       p_request_id:currentReleaseRequest.id,
       p_approve:approved,
       p_reason:releaseDecisionNote.trim(),
-    }, approved
+    }, assignedPastorPublication
+      ? (approved ? "Group Pastor approved publication of the assigned HR-head assessment version." : "Group Pastor declined publication of the assigned HR-head assessment version.")
+      : approved
       ? "HR approved publication of this manager assessment version."
       : "HR declined publication; the manager assessment remains restricted.");
     if (confirmed) setReleaseDecisionNote("");
@@ -361,7 +390,7 @@ export default function Performance({ me }) {
     const submitted = await rpc("performance_request_release", {
       p_appraisal_id: selectedCase.id,
       p_reason: releaseReason.trim(),
-    }, "The manager's assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.");
+    }, assignedPastorPublication ? "The exact HR-head assessment version is ready for your separate publication decision." : "The manager's assessment release request was recorded for HR review. The employee cannot see the unpublished manager narrative.");
     if (submitted) setReleaseReason("");
   }
 
@@ -437,6 +466,19 @@ export default function Performance({ me }) {
       </div>
     </section>}
 
+    {hrReleaseAdmin && <HRProjectContributionQueue me={me} cases={cases} cycles={cycles} onOpenReview={reviewId => {
+      const review = cases.find(row => row.id === reviewId);
+      if (!review || !cycles.some(cycle => cycle.id === review.cycle_id)) return;
+      selectedCaseRef.current = review.id;
+      selectedCycleRef.current = review.cycle_id;
+      setSelectedCycleId(review.cycle_id);
+      setSelectedCaseId(review.id);
+      requestAnimationFrame(() => {
+        reviewPanelRef.current?.focus();
+        reviewPanelRef.current?.scrollIntoView({ block: "start" });
+      });
+    }} />}
+
     {cycles.length > 0 && <div className="performance-cycle-strip" aria-label="Review periods">
       {cycles.map((cycle) => <button key={cycle.id} className={selectedCycleId === cycle.id ? "on" : ""} onClick={() => {
         selectedCycleRef.current = cycle.id;
@@ -463,7 +505,7 @@ export default function Performance({ me }) {
         </button>)}
       </aside>
 
-      <section className="performance-review">
+      <section className="performance-review" ref={reviewPanelRef} tabIndex={-1} aria-label="Selected formal review">
         {!selectedCase ? <EmptyState title="Choose a review">Open a person to inspect the evidence and review record.</EmptyState> : caseLoading ? <LoadingState label="Opening review…" /> : <>
           <header className="performance-person-header">
             <Avatar name={selectedCase.profiles?.full_name} size="lg" />
@@ -478,7 +520,7 @@ export default function Performance({ me }) {
             <FieldGroup label="Reviewer">
               <select className="field" aria-label="Performance reviewer" value={reviewerId} onChange={(event) => setReviewerId(event.target.value)}>
                 <option value="">Choose reviewer</option>
-                {reviewerCandidates.map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name}{profile.is_admin ? " · Administration" : ""}</option>)}
+                {reviewerCandidates.map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name}{profile.is_admin ? " · Administration" : profile.is_exec ? " · Group Pastor · assigned review only" : ""}</option>)}
               </select>
             </FieldGroup>
             <FieldGroup label="Reason for assignment"><textarea className="field" aria-label="Reviewer assignment reason" rows="2" value={reviewerReason} onChange={(event) => setReviewerReason(event.target.value)} placeholder="Why this person is responsible for the review" /></FieldGroup>
@@ -516,6 +558,8 @@ export default function Performance({ me }) {
           <div className="performance-section-head"><div><span className="eyebrow">Reviewer narrative</span><h3>Manager assessment</h3></div></div>
           {currentAssessment && <div className="card performance-narrative"><p>{currentAssessment.body}</p><small>{currentAssessment.author?.full_name || "Reviewer"} · {new Date(currentAssessment.created_at).toLocaleString("en-GB")}</small></div>}
           {isReviewer && <>
+            <FormalReviewProjectDrafts key={selectedCase.id} me={me} review={selectedCase} cycle={selectedCycle}
+              disabled={busy || caseLoading} onInclude={note => setAssessment(body => includeProjectAssessment(body, note))} />
             <FieldGroup label={currentAssessment ? "Record a revised assessment" : "Manager assessment"} hint="Narrative judgement only. Do not add a score, rank or invented percentage.">
               <textarea className="field" aria-label="Manager assessment" rows="5" value={assessment} onChange={(event) => setAssessment(event.target.value)} />
             </FieldGroup>
@@ -593,9 +637,10 @@ export default function Performance({ me }) {
             <button className="btn btn-sm" disabled={busy || feedbackNote.trim().length < 3} onClick={recordFeedback}>Record feedback</button>
           </section>}
 
-          {hrReleaseAdmin && <div className="performance-share-bar">
-            <div><strong>HR publication decisions</strong>
-              <span>Only HR may publish a completed manager narrative. Review the manager assessment above before deciding.</span>
+          {hrReleaseAdmin && isSelf && <ProductNotice tone="attention" title="Your assigned reviewer decides publication">You cannot decide publication of your own appraisal. The assigned Group Pastor may conduct and publish this review under the owner-approved HR-head exception. The assessment remains restricted until that decision.</ProductNotice>}
+          {canDecidePublication && <div className="performance-share-bar">
+            <div><strong>{assignedPastorPublication ? "Assigned HR-head publication decision" : "HR publication decisions"}</strong>
+              <span>{assignedPastorPublication ? "You may publish only this assigned HR-head assessment. This does not grant access to other protected HR records." : "Only independent HR may publish this completed manager narrative. Review the manager assessment above before deciding."}</span>
             </div>
             {!releaseQueueAvailable && <p className="screen-note">Formal approval controls await the accepted database migration.</p>}
             {releaseQueueAvailable && !currentReleaseRequest && <p className="screen-note">No pending HR request matches the current manager assessment version.</p>}
@@ -605,20 +650,20 @@ export default function Performance({ me }) {
                 <textarea className="field" rows="2" aria-label="HR assessment publication decision reason"
                   value={releaseDecisionNote} onChange={(event)=>setReleaseDecisionNote(event.target.value)} />
               </FieldGroup>
-              <button className="btn btn-sm" disabled={busy || currentReleaseRequest.requested_by === me.id || releaseDecisionNote.trim().length < 8}
-                onClick={()=>decideHRRelease(true)}>HR approve publication</button>
-              <button className="btn btn-ghost btn-sm" disabled={busy || currentReleaseRequest.requested_by === me.id || releaseDecisionNote.trim().length < 8}
-                onClick={()=>decideHRRelease(false)}>HR decline with reason</button>
+              <button className="btn btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || releaseDecisionNote.trim().length < 8}
+                onClick={()=>decideHRRelease(true)}>{assignedPastorPublication ? "Publish assigned HR-head review" : "HR approve publication"}</button>
+              <button className="btn btn-ghost btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || releaseDecisionNote.trim().length < 8}
+                onClick={()=>decideHRRelease(false)}>{assignedPastorPublication ? "Decline assigned HR-head publication" : "HR decline with reason"}</button>
             </>}
           </div>}
 
           {isReviewer && selectedCase.status !== "closed" && <div className="performance-share-bar">
-            <div><strong>Request HR release</strong><span>Your assessment remains restricted to the assigned reviewer and authorised HR until HR approves its formal publication. New revisions require their own release approval.</span></div>
+            <div><strong>{assignedPastorPublication ? "Prepare HR-head publication" : "Request HR release"}</strong><span>{assignedPastorPublication ? "Record a release request for this exact assessment version, then make a separate reasoned publication decision above. New revisions require a new decision." : "Your assessment remains restricted to the assigned reviewer and authorised HR until HR approves its formal publication. New revisions require their own release approval."}</span></div>
             {!currentAssessment && <p className="screen-note">Record your assessment before requesting HR publication.</p>}
             <FieldGroup label="Reason to release this assessment">
               <textarea className="field" rows="2" value={releaseReason} onChange={(event) => setReleaseReason(event.target.value)} aria-label="Performance release request reason" />
             </FieldGroup>
-            <button className="btn btn-sm" disabled={busy || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>Submit release request to HR</button>
+            <button className="btn btn-sm" disabled={busy || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>{assignedPastorPublication ? "Prepare assigned HR-head publication" : "Submit release request to HR"}</button>
           </div>}
         </>}
       </section>
@@ -631,7 +676,7 @@ export default function Performance({ me }) {
       {cycleStep === 2 && <div className="form-grid two"><FieldGroup label="From"><input className="field" aria-label="Review period start" type="date" value={cycleStart} onChange={(event) => setCycleStart(event.target.value)} /></FieldGroup><FieldGroup label="To"><input className="field" aria-label="Review period end" type="date" min={cycleStart} value={cycleEnd} onChange={(event) => setCycleEnd(event.target.value)} /></FieldGroup></div>}
       {cycleStep === 3 && <>
         <FieldGroup label="Reason"><textarea className="field" aria-label="Review period reason" rows="3" value={cycleReason} onChange={(event) => setCycleReason(event.target.value)} placeholder="Why CEAC is opening this review period now" /></FieldGroup>
-        <div className="card small">Opening this period creates a review case for each active non-Administration, non-Executive employee and assembles factual evidence from recorded rows. It does not calculate a score.</div>
+        <div className="card small">Opening this period creates a review case for every active linked employee, including Administration, while excluding the Group Pastor. Administration’s own case requires a different assigned reviewer; it cannot self-review or self-publish. Factual evidence is assembled from recorded rows without a calculated score.</div>
       </>}
       <div className="guided-actions">
         {cycleStep > 1 && <button className="btn btn-ghost" disabled={busy} onClick={() => setCycleStep((step) => step-1)}>Back</button>}

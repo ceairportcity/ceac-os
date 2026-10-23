@@ -38,6 +38,8 @@ export function WorkPageHeader({
   actionLabel,
   onAction,
   actionIcon = "create",
+  secondaryActionLabel,
+  onSecondaryAction,
 }) {
   return (
     <header className="ev2w-header">
@@ -46,10 +48,16 @@ export function WorkPageHeader({
         <h1>{title}</h1>
         {description ? <p>{description}</p> : null}
       </div>
-      {actionLabel ? (
-        <Button className="ev2w-header-action" icon={actionIcon} onClick={onAction}>
-          {actionLabel}
-        </Button>
+      {(actionLabel || secondaryActionLabel) ? (
+        <div className="ev2w-header-actions">
+          {actionLabel ? <Button className="ev2w-header-action"
+            variant={secondaryActionLabel ? "secondary" : "primary"}
+            size={secondaryActionLabel ? "compact" : undefined}
+            icon={actionIcon} onClick={onAction}>{actionLabel}</Button> : null}
+          {secondaryActionLabel ? <Button className="ev2w-header-action"
+            variant="primary" size="compact" icon="create"
+            onClick={onSecondaryAction}>{secondaryActionLabel}</Button> : null}
+        </div>
       ) : null}
     </header>
   );

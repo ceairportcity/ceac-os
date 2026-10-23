@@ -54,15 +54,13 @@ begin
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
-  -- The post-S2 baseline was 132. Reviewed Phase 6C attendance adds four
-  -- caller-bound RPCs, with exact signature/authority checks enforced by
-  -- security_definer_surface_gate.sql and attendance_phase6_integrity_gate.sql.
-  -- Reviewed migrations 140-146 add 12 new caller-scoped interfaces and
-  -- revoke obsolete direct correction and performance-share grants: 145.
-  -- Keep this MFA gate strict on the reviewed final count; neither AAL2 nor
-  -- verified-factor authority checks below are relaxed.
-  if callable_count<>146 then
-    raise exception 'S1 MFA gate failure: authenticated SECURITY DEFINER count differs from the reviewed Stage 1 145 plus Stage 2 one verified-TOTP helper (146); found %.',callable_count;
+  -- Later reviewed Work, HR and attendance migrations expanded the
+  -- authenticated surface to 159 exact signatures. A separate test,
+  -- security_definer_surface_gate.sql, locks every signature by name.
+  -- This is only an independent count regression check: never relax the
+  -- anonymous-callability test or the verified-TOTP/AAL2 assertions below.
+  if callable_count<>159 then
+    raise exception 'S1 MFA gate failure: expected 159 independently reviewed authenticated SECURITY DEFINER interfaces; found %.',callable_count;
   end if;
 
   select count(*) into anon_count

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import useRoutineCalendar from "../lib/useRoutineCalendar";
+import { routineCalendarStatus } from "../lib/readRoutineCalendar.js";
 import { Sheet, ProductNotice, LoadingState } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button, Surface } from "../experience-v2/components";
@@ -17,7 +19,7 @@ const FILTERS = [
   { value:"all", label:"All", icon:"calendar" },
   { value:"meetings", label:"Meetings", icon:"meeting" },
   { value:"projects", label:"Projects", icon:"projects" },
-  { value:"tasks", label:"Tasks", icon:"work" },
+  { value:"tasks", label:"Work", icon:"work" },
   { value:"leave", label:"Leave", icon:"time" },
   { value:"activities", label:"Ministry/unit activities", icon:"ministry" },
 ];
@@ -61,13 +63,18 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
   const [error,setError]=useState(null);
   const [loading,setLoading]=useState(true);
 
+  const routineCalendar=useRoutineCalendar(me,{scope:"unit",enabled:calendarScope==="unit",
+    fromDate:dateKey(new Date(cursor.getFullYear(),cursor.getMonth()-1,1)),
+    throughDate:dateKey(new Date(cursor.getFullYear(),cursor.getMonth()+2,0))});
+  const calendarEvents=[...events,...routineCalendar.events];
+
   useEffect(()=>{ load(); },[me.id,me.unit_id]);
 
   async function load(){
     setLoading(true); setError(null);
     const [projects, work, members, leave, ministry, ministryNeeds, meetings] = await Promise.all([
       supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)"),
-      supabase.from("work_items").select("id,ref,title,due_at,status,project_id").eq("unit_id",me.unit_id).not("due_at","is",null).neq("visibility","private"),
+      supabase.from("work_items").select("id,ref,title,due_at,status,project_id").eq("unit_id",me.unit_id).not("due_at","is",null).neq("visibility","private").neq("kind","routine"),
       supabase.from("unit_memberships").select("profile_id").eq("unit_id",me.unit_id),
       supabase.from("leave_requests").select("id,profile_id,kind,start_date,end_date,status,profiles!leave_requests_profile_id_fkey(full_name)").eq("status","approved"),
       supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,notes,cancelled"),
@@ -146,7 +153,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
     const start=startOfWeek(first);
     return Array.from({length:42},(_,i)=>addDays(start,i));
   },[cursor,view]);
-  const visible=filter==="all"?events:events.filter(e=>e.type===filter);
+  const visible=filter==="all"?calendarEvents:calendarEvents.filter(e=>e.type===filter);
   const heading=view==="month"?`${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`:`${labelDate(dateKey(days[0]))} – ${labelDate(dateKey(days[6]))}`;
   const googleMeetings=events
     .filter((event)=>event.type==="meetings"&&event.meetingStatus!=="cancelled"&&event.startsAt&&new Date(event.startsAt)>=new Date())
@@ -154,7 +161,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
     .slice(0,3);
 
   const openCalendarEvent=(event)=>{
-    if(event.itemId) return openItem(event.itemId);
+    if(event.itemId) return openItem(event.itemId,event.routineState?event.scheduledOn:null);
     if(event.meetingId) return openMeeting?.(event.meetingId);
     if(event.projectId) return openProject(event.projectId);
     if(event.leave) return setSelectedLeave(event.leave);
@@ -177,7 +184,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
         :event.type==="projects"
           ?"Project"
           :event.type==="tasks"
-            ?"Due"
+            ?(event.routineState?routineCalendarStatus(event.routineState):"Due")
             :event.type==="leave"
               ?"Approved"
               :"Ministry",
@@ -227,7 +234,7 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
     <CalendarPageHeader
       eyebrow={me.unit_name}
       title="Calendar"
-      description="Meetings, project dates, task deadlines, approved leave and ministry activity in one place."
+      description="Meetings, project dates, routine dates, work deadlines, approved leave and ministry activity in one place."
       status="Unit schedule"
       statusTone="action"
       action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({ scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}>Schedule meeting</Button>}
@@ -236,6 +243,9 @@ export default function ManagerCalendar({ me, openItem, openProject, openMeeting
     {scopeControl}
 
     {error&&<ProductNotice tone="error" title="Could not load the calendar">{error}</ProductNotice>}
+
+    {routineCalendar.loading&&<p className="screen-note" role="status">Loading routine dates…</p>}
+    {routineCalendar.error&&<ProductNotice tone="error" title="Routine dates unavailable">{routineCalendar.error}<Button variant="secondary" onClick={routineCalendar.reload}>Retry routine dates</Button></ProductNotice>}
 
     <div className="ev2cal-toolbar">
       <CalendarViewTabs

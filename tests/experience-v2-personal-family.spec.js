@@ -574,10 +574,13 @@ test("Stage 10 Family H1 keeps Control Center capability-filtered while aligning
     "Security & governance",
     "Integrations",
     "Audit & records",
-  ]) expect(control).toContain(`title:"${label}"`);
-  expect(control).toContain("This is not a numeric health score.");
+  ]) expect(label === "Payroll & Finance" ? control.includes('title:canPayroll ? "Payroll & Finance" : "Finance"') : control.includes(`title:"${label}"`)).toBeTruthy();
+  expect(control).toContain("Manage departments, people, policies and system access.");
+  expect(control).not.toMatch(/numeric health score|overall health score/i);
   expect(control).toContain("DataPanel");
-  expect(control).toContain("QueueRow");
+  // Control Center now uses compact domain panels and a capability-filtered
+  // attention view; it no longer renders the retired QueueRow primitive.
+  expect(control).toContain("const attention=accessibleDomains.filter");
   expect(control).toContain("StatusBadge");
   expect(control).not.toContain('../components/primitives/Icon');
   expect(control).toContain("ev2-control-center");
@@ -666,7 +669,7 @@ for (const viewport of [
     const { context, page } = await openHub(browser, roles[2], { width: viewport.width, height: viewport.height });
     await page.goto("/?tab=settings");
     await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
-    await expect(page.getByText("Governance workspace", { exact: true })).toBeVisible();
+    await expect(page.getByText("Manage departments, people, policies and system access.", { exact: true })).toBeVisible();
     await expect(page.locator(".ev2-control-card").filter({ hasText: "Organisation" }).first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Control Center overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);

@@ -1,8 +1,17 @@
+import RoutineScheduleOptions from "../components/RoutineScheduleOptions";
+import { initialRoutineScheduleOptions, routineScheduleOptions } from "../lib/routineScheduleOptions";
 import { useEffect, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
+import WorkActivityDiary from "../components/WorkActivityDiary";
+import WorkProjectLink from "../components/WorkProjectLink";
+import RoutineDateProgress from "../components/RoutineDateProgress";
+import RoutineOccurrenceReviews from "../components/RoutineOccurrenceReviews";
+import { routineFutureChange, routineOccurrenceDetails } from "../lib/routineWriteValidation";
+import RoutineWeekdayPicker from "../components/RoutineWeekdayPicker";
+import { ghanaCalendarDate } from "../lib/dailyLandscape";
 import { OperationalFileList } from "../components/OperationalFiles";
 import {
   WorkDetailCopy,
@@ -20,7 +29,17 @@ const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space
 .fpg-brandbook-task-card>footer{padding:9px 15px;border-top:1px solid var(--ev2-line);color:var(--ev2-text-secondary);font-size:12px}
 .fpg-brandbook-task-card .staff-check-progress{margin:0 15px 8px;border-radius:999px}.fpg-brandbook-task-card .checklist-card{border:0;border-radius:0;box-shadow:none}`;
 
-export default function Item({ id, me, session, isManager = false, openRoom, back }) {
+/** Remount the detail's multi-query state for each actual work/user/unit.
+ * A late response from a previous account or work item must never populate
+ * another responsibility's detail, its routine proof or its review controls.
+ * The existing authoritative RPC/RLS write checks remain unchanged.
+ */
+export default function Item(props) {
+  const scope = [props.me?.org_id, props.me?.id, props.me?.unit_id, props.id, props.initialRoutineDate || ""].join(":");
+  return <ItemDetail key={scope} {...props} />;
+}
+
+function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=null, openRoom, back }) {
   const [item, setItem] = useState(null);
   const [canReview, setCanReview] = useState(false);
   const [responsibleReviewer, setResponsibleReviewer] = useState(null);
@@ -39,6 +58,10 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   const [units, setUnits] = useState([]);
   const [routine, setRoutine] = useState(null);
   const [routineOccurrences, setRoutineOccurrences] = useState([]);
+  // A dated evidence shortcut is UI context only; the authoritative evidence
+  // stays in append-only work_activity_records with normal contributor RLS.
+  const [routineEvidenceDate, setRoutineEvidenceDate] = useState("");
+  const [routineEvidenceRequest, setRoutineEvidenceRequest] = useState(0);
   const [caseRecord, setCaseRecord] = useState(null);
   const [requestRecord, setRequestRecord] = useState(null);
   const [requestResponses, setRequestResponses] = useState([]);
@@ -46,7 +69,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   const [decisionText, setDecisionText] = useState("");
   const [meetingRecord, setMeetingRecord] = useState(null);
   const [deliverableRecord, setDeliverableRecord] = useState(null);
-  const [routineDate, setRoutineDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [routineDate, setRoutineDate] = useState(() => initialRoutineDate || ghanaCalendarDate());
   const [routineValue, setRoutineValue] = useState("");
   const [routineEffective, setRoutineEffective] = useState("");
   const [routineSchedule, setRoutineSchedule] = useState("weekly");
@@ -54,6 +77,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
   const [routineWeekdays, setRoutineWeekdays] = useState([]);
   const [routineDayOfMonth, setRoutineDayOfMonth] = useState("");
   const [routineEnd, setRoutineEnd] = useState("");
+  const [routineOptions, setRoutineOptions] = useState(initialRoutineScheduleOptions);
   const [sheet, setSheet] = useState(null);
   const [note, setNote] = useState("");
   const [link, setLink] = useState("");
@@ -132,7 +156,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
     } else setCaseRecord(null);
     if (w.kind === "routine") {
       const routineResult = await supabase.from("recurring_operations")
-        .select("id,name,cadence,records_value,value_label,active,starts_on,ends_on,paused_at,schedule_kind,weekdays,day_of_month")
+        .select("id,name,cadence,records_value,value_label,active,starts_on,ends_on,paused_at,schedule_kind,weekdays,day_of_month,interval_count,timezone,due_time,occurrence_limit")
         .eq("work_item_id", id).single();
       if (routineResult.error) { setErr(`Routine: ${routineResult.error.message}`); return; }
       setRoutine(routineResult.data);
@@ -406,16 +430,11 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
     if (!routine) return;
     setBusy(true); setErr(null);
     try {
-      const numericValue = routine.records_value ? Number(routineValue) : null;
-      if (routine.records_value && (routineValue.trim() === "" || Number.isNaN(numericValue))) {
-        throw new Error(`Enter ${routine.value_label || "the routine value"}.`);
-      }
-      const { error } = await supabase.rpc("record_routine_occurrence", {
-        p_work_item_id: id,
-        p_occurred_on: routineDate,
-        p_value: routine.records_value ? numericValue : null,
-        p_note: note.trim() || null,
+      const details = routineOccurrenceDetails({
+        workId: id, date: routineDate, today: ghanaCalendarDate(),
+        numericValue: routineValue, recordsValue: routine.records_value, note,
       });
+      const { error } = await supabase.rpc("record_routine_occurrence", details);
       if (error) throw error;
       setSheet(null); setRoutineValue(""); setNote(""); await load();
     } catch (e) { setErr(e.message || "The routine occurrence could not be recorded."); }
@@ -430,23 +449,21 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
     setRoutineDayOfMonth(routine?.day_of_month ? String(routine.day_of_month) : "");
     setRoutineEnd(routine?.ends_on || "");
     setRoutineEffective(routine?.schedule_kind ? "" : today);
+    setRoutineOptions({interval:String(routine?.interval_count || 1),timezone:routine?.timezone || "Africa/Accra",
+      dueTime:routine?.due_time || "",limit:routine?.occurrence_limit == null ? "" : String(routine.occurrence_limit)});
     setSheet("routine-schedule");
   }
 
   async function saveRoutineSchedule() {
     setBusy(true); setErr(null);
     try {
-      const weekdays = routineSchedule === "weekly"
-        ? [Number(routineWeeklyDay)]
-        : routineSchedule === "weekdays" ? routineWeekdays.map(Number) : null;
-      const { error } = await supabase.rpc("change_routine_schedule", {
-        p_work_item_id: id,
-        p_effective_from: routineEffective,
-        p_schedule_kind: routineSchedule,
-        p_weekdays: weekdays,
-        p_day_of_month: routineSchedule === "monthly" ? Number(routineDayOfMonth) : null,
-        p_ends_on: routineEnd || null,
+      const details = routineFutureChange({
+        workId: id, effectiveFrom: routineEffective, schedule: routineSchedule,
+        weekday: routineWeeklyDay, weekdays: routineWeekdays,
+        monthDay: routineDayOfMonth, end: routineEnd, today: ghanaCalendarDate(),
+        hasReliableSchedule: Boolean(routine?.schedule_kind),
       });
+      const { error } = await supabase.rpc("change_routine_schedule_options", {p_work_item_id:details.p_work_item_id,p_effective_from:details.p_effective_from,p_options:{...routineScheduleOptions(routineOptions),schedule_kind:details.p_schedule_kind,...(details.p_weekdays ? {weekdays:details.p_weekdays} : {}),day_of_month:details.p_day_of_month,ends_on:details.p_ends_on}});
       if (error) throw error;
       setSheet(null); await load();
     } catch (e) { setErr(e.message || "The routine schedule could not be changed."); }
@@ -528,6 +545,7 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         status={item.status}
         onBack={back}
       />
+      <WorkProjectLink key={`${me.id}:${item.id}:${item.project_id || "unlinked"}`} me={me} item={item} onLinked={load} />
 
       {openRoom && (item.project_id || item.sub_team_id || item.unit_id) && <button className="work-room-entry" onClick={() => openRoom({
         ...(item.project_id
@@ -580,6 +598,9 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
       {item.instructions && <WorkDetailSection title="What to do">
         <WorkDetailCopy>{item.instructions}</WorkDetailCopy>
       </WorkDetailSection>}
+
+      <WorkActivityDiary key={`${me.id}:${item.id}`} me={me} item={item}
+        prefillDate={routineEvidenceDate} prefillRequest={routineEvidenceRequest} />
 
       {item.kind === "deliverable" && deliverableRecord && <>
         <div className="sec"><span>Deliverable evidence</span></div>
@@ -671,24 +692,29 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
         {!routine.schedule_kind && <div className="flag flag-amber" style={{ marginTop: 10 }}>
           <h4>Schedule not yet configured</h4>This is a reconciled legacy routine. Its old record only said “Weekly”, so CEAC OS did not invent a weekday.
         </div>}
+        {checks.length > 0 && <section aria-label="Routine method"><h3>Steps to repeat each time</h3><ol>{checks.map(step => <li key={step.id}>{step.label}</li>)}</ol></section>}
+        <RoutineDateProgress me={me} item={item} routine={routine} steps={checks} initialDate={initialRoutineDate}
+          canRecord={Boolean(item.assignee_id === me.id || !item.assignee_id || canReview || me.is_admin)}
+          canRecordAsReviewer={Boolean(me.is_admin || (me.memberships||[]).some(member=>member.role==="manager"&&member.unit_id===item.unit_id))}
+          onRecordOccurrence={(date)=>{setRoutineDate(date);setRoutineValue("");setNote("");setSheet("routine-record");}}
+          canManageDates={Boolean(me.is_admin || isManager && item.unit_id===me.unit_id || item.origin==="self_created" && item.assignee_id===me.id && item.assigned_by===me.id)} />
         {routineOccurrences.length > 0 && <>
           <div className="sec"><span>Recent occurrences</span><span>{routineOccurrences.length}</span></div>
-          {routineOccurrences.map((occurrence) => <div className="row" key={occurrence.id}>
-            <div className="row-t">{occurrence.occurred_on}{routine.records_value && occurrence.value !== null ? ` · ${occurrence.value} ${routine.value_label || ""}` : ""}</div>
-            {occurrence.note && <div className="row-m">{occurrence.note}</div>}
-          </div>)}
+          <RoutineOccurrenceReviews me={me} item={item} occurrences={routineOccurrences}
+            canReview={Boolean(isManager || me.is_admin || canReview)}
+            onRecordEvidence={item.assignee_id === me.id || item.visibility !== "private" && item.confidential !== true
+              ? (date) => { setRoutineEvidenceDate(date); setRoutineEvidenceRequest((n) => n + 1); }
+              : null} />
         </>}
-        {routine.active && routine.schedule_kind && <button className="btn" style={{ marginTop: 20 }} onClick={() => {
-          setRoutineDate(new Date().toISOString().slice(0, 10)); setRoutineValue(""); setNote(""); setSheet("routine-record");
-        }}>Record occurrence</button>}
+
         {!routine.active && <div className="flag flag-amber" style={{ marginTop: 16 }}><h4>Routine paused</h4>No new occurrence action is shown while this routine is paused.</div>}
-        {isManager && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+        {(isManager || me.is_admin || item.origin === "self_created" && item.assignee_id === me.id && item.assigned_by === me.id) && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
           <button className="btn btn-ghost btn-sm" onClick={openRoutineSchedule}>{routine.schedule_kind ? "Change future schedule" : "Set schedule"}</button>
           <button className="btn btn-ghost btn-sm" onClick={() => { setNote(""); setSheet("routine-pause"); }}>{routine.active ? "Pause routine" : "Resume routine"}</button>
         </div>}
       </>}
 
-      {checks.length > 0 && <><style data-fpg-brandbook-task>{BRAND_BOOK_TASK_CSS}</style><section className="fpg-brandbook-task-card" aria-label="Task checklist and progress">
+      {item.kind !== "routine" && checks.length > 0 && <><style data-fpg-brandbook-task>{BRAND_BOOK_TASK_CSS}</style><section className="fpg-brandbook-task-card" aria-label="Task checklist and progress">
         <header>
           <span><small>Task progress</small><strong>Completion checklist</strong></span>
           <b>{Math.round((done / checks.length) * 100)}%</b>
@@ -891,18 +917,11 @@ export default function Item({ id, me, session, isManager = false, openRoom, bac
           {routineSchedule === "weekly" && <select className="field" value={routineWeeklyDay} onChange={(e) => setRoutineWeeklyDay(e.target.value)}>
             {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day, index) => <option key={day} value={index + 1}>{day}</option>)}
           </select>}
-          {routineSchedule === "weekdays" && <div className="card small" style={{ marginTop: 10 }}>
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>Which days?</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day, index) => {
-                const value = index + 1; const on = routineWeekdays.includes(value);
-                return <button type="button" key={day} className={`btn btn-sm ${on ? "" : "btn-ghost"}`}
-                  onClick={() => setRoutineWeekdays((current) => on ? current.filter((d) => d !== value) : [...current, value].sort())}>{day}</button>;
-              })}
-            </div>
-          </div>}
+          {routineSchedule === "weekdays" && <RoutineWeekdayPicker value={routineWeekdays}
+             onChange={setRoutineWeekdays} label="Which days?" />}
           {routineSchedule === "monthly" && <input className="field" type="number" min="1" max="31" placeholder="Day of month (1–31)" value={routineDayOfMonth} onChange={(e) => setRoutineDayOfMonth(e.target.value)} />}
           <label className="small">Ends (optional)<input className="field" type="date" value={routineEnd} onChange={(e) => setRoutineEnd(e.target.value)} /></label>
+          <RoutineScheduleOptions value={routineOptions} onChange={setRoutineOptions} frequency={routineSchedule} />
           <button className="btn" style={{ marginTop: 14 }} onClick={saveRoutineSchedule}
             disabled={busy || !routineEffective || (routineSchedule === "weekdays" && routineWeekdays.length === 0)
               || (routineSchedule === "monthly" && !(Number(routineDayOfMonth) >= 1 && Number(routineDayOfMonth) <= 31))}>

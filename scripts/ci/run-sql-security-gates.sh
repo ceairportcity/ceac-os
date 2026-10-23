@@ -33,6 +33,11 @@ tests=(
   employee_protected_hr_gate.sql
   payroll_stage13_gate.sql
   employee_roster_completeness_gate.sql
+  stage2_roster_only_employment_gate.sql
+  stage2_roster_creation_leave_policy_gate.sql
+  stage2_roster_week_required_hours_gate.sql
+  stage2_roster_identity_link_gate.sql
+  stage2_verified_roster_link_gate.sql
   goals_strategy_stage4_gate.sql
   work_management_stage5_gate.sql
   resource_workload_stage6_gate.sql
@@ -52,8 +57,10 @@ tests=(
   operational_clarity_files_gate.sql
   onboarding_access_presence_gate.sql
   attendance_phase2_gate.sql
+  stage2_attendance_start_locations_gate.sql
   attendance_phase6_integrity_gate.sql
   compliance_phase3_gate.sql
+  stage2_compliance_attendance_casework_gate.sql
   notification_work_state_gate.sql
   technical_support_v1_gate.sql
   support_invoker_projection_gate.sql
@@ -64,6 +71,15 @@ tests=(
   stage2_private_portrait_totp_gate.sql
   stage2_universal_totp_all_roles_gate.sql
   stage2_human_appraisal_ratings_gate.sql
+  stage2_owner_activity_guard_gate.sql
+  stage2_self_routines_gate.sql
+  stage2_routine_date_files_gate.sql
+  stage2_routine_date_progress_gate.sql
+  stage2_single_date_routine_exception_gate.sql
+  stage2_routine_date_cover_gate.sql
+  stage2_routine_occurrence_review_gate.sql
+  stage2_routine_schedule_options_gate.sql
+  stage2_routine_reminder_delivery_gate.sql
 )
 
 for test_file in "${tests[@]}"; do

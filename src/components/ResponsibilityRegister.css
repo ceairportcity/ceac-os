@@ -1,0 +1,29 @@
+.s2-register-filters{display:grid;grid-template-columns:minmax(0,1fr) 155px 135px;gap:8px;padding:16px 22px;border-bottom:1px solid #e4ebf4}
+.s2-register-filters label{min-width:0}.s2-register-filters input,.s2-register-filters select{box-sizing:border-box;width:100%;min-height:36px;padding:8px 10px;border:1px solid #dce6f2;border-radius:6px;background:#fff;color:#52697f;font:inherit;font-size:12px}
+.s2-register-search input{border-color:transparent;padding-left:0}
+.s2-register-table-region{max-width:100%;overflow:auto;container-type:inline-size}
+.s2-work-register .s2-register-table{display:table;width:100%;border:0;border-radius:0;border-collapse:collapse;table-layout:fixed;white-space:normal;text-align:left;color:#52697f}
+.s2-register-table th,.s2-register-table td{box-sizing:border-box;border-bottom:1px solid #edf1f7;padding:16px 14px;overflow-wrap:anywhere;white-space:normal;vertical-align:middle;font-size:12px;font-weight:400}
+.s2-register-table thead th{background:#f6f9fd;color:#8397b0;font-size:12px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;padding-block:15px}
+.s2-register-table th:first-child{width:49%;padding-left:22px}.s2-register-table thead th:nth-child(2){width:23%}.s2-register-table thead th:nth-child(3){width:10%}.s2-register-table thead th:nth-child(4){width:18%}
+.s2-register-table .s2-register-group th{width:auto;padding:0;background:#fff;border-bottom:1px solid #edf1f7}
+.s2-register-group button{display:flex;align-items:center;gap:10px;width:100%;min-height:43px;padding:10px 22px;background:none;border:0;color:#344d5b;font:inherit;font-size:12px;font-weight:650;text-align:left;cursor:pointer}
+.s2-register-group button>span:last-child{color:#8fa0ad;font-size:12px}
+.s2-register-row>th>button{display:grid;gap:6px;width:100%;padding:0;border:0;background:none;font:inherit;color:#193d62;text-align:left;cursor:pointer}
+.s2-register-row strong{font-size:13px;line-height:1.4;font-weight:650}.s2-register-row small{font-size:12px;line-height:1.4;color:#8b9da8;font-weight:400}
+.s2-register-row.is-selected{background:#edf5ff}.s2-register-row.is-selected>th{box-shadow:inset 3px 0 #1687ff}
+.s2-register-row:hover{background:#f3f8ff}
+.s2-register-status{display:inline-flex;align-items:center;gap:6px;line-height:1.5;font-size:12px}
+.s2-register-status:before{content:'';flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:#879caf}
+.s2-register-status[data-state=in_progress]:before{background:#3298ef}.s2-register-status[data-state=in_review]:before{background:#817bff}
+.s2-register-status[data-state=waiting_on]:before,.s2-register-status[data-state=waiting]:before,.s2-register-status[data-state=blocked]:before{background:#dfa348}
+.s2-register-status[data-state=completed]:before,.s2-register-status[data-state=self_certified]:before{background:#2abd93}
+.s2-register-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:10px 22px;color:#8d9da9;font-size:12px}
+.s2-register-footer button,.s2-register-empty button{border:0;background:none;font:inherit;color:#087bf5;cursor:pointer;padding:5px 0}
+.s2-register-empty{padding:24px!important;text-align:center;font-size:12px!important}.s2-register-empty button{display:block;margin:8px auto 0}
+.s2-register-filters :focus-visible,.s2-register-table-region:focus-visible,.s2-register-table button:focus-visible,.s2-register-footer button:focus-visible{outline:2px solid #1687ff;outline-offset:3px}
+@container(max-width:560px){.s2-register-table .s2-register-project,.s2-register-table .s2-register-due{display:none}.s2-register-table th:first-child{width:69%}.s2-register-table th,.s2-register-table td{padding-inline:14px}.s2-register-table thead th:nth-child(4){width:31%}.s2-register-table th:first-child{padding-left:14px}.s2-register-group button{padding-left:14px}.s2-register-row strong{font-size:13px}}
+@media(max-width:650px){.s2-register-filters{grid-template-columns:1fr 1fr;padding:12px 14px}.s2-register-search{grid-column:1/-1}.s2-register-search input{padding-left:2px}.s2-register-footer{padding-inline:14px}}
+.s2-register-filters .sr-only,.s2-register-table .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+@media(max-width:650px){.s2-register-filters input,.s2-register-filters select{font-size:16px}.s2-register-row strong{font-size:14px}}

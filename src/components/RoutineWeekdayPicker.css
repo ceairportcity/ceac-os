@@ -1,0 +1,6 @@
+.s2-routine-weekdays{border:0;margin:8px 0;padding:0;min-width:0}
+.s2-routine-weekdays legend{padding:0;margin:0 0 6px;font-size:12px;font-weight:650}
+.s2-routine-weekday-options{display:flex;flex-wrap:wrap;gap:7px 16px}
+.s2-routine-weekday-options label{display:inline-flex;align-items:center;gap:6px;margin:0;min-height:28px;font-size:13px;line-height:18px;font-weight:450;white-space:nowrap;cursor:pointer}
+.s2-routine-weekday-options input{flex:none;width:16px;height:16px;margin:0;cursor:pointer}
+.s2-routine-weekdays[disabled] label,.s2-routine-weekdays[disabled] input{cursor:default}

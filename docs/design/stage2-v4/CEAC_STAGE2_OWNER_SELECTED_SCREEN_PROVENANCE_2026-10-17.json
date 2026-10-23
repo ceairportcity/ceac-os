@@ -1,10 +1,10 @@
 {
   "title": "CEAC Stage 2 owner-confirmed original screenshot identity manifest",
-  "updated_on": "2026-10-17",
+  "updated_on": "2026-10-19",
   "applicable_pr": 118,
   "source_of_truth": "docs/design/CEAC_STAGE2_VISUAL_REFERENCE_CORRECTION_2026-10-17.md",
   "user_originals_not_public_assets": true,
-  "note": "Owner-confirmed original design images may contain identifying mockup details. Preserve private originals outside temporarily public GitHub. The exact revised Projects original was recovered and privately verified; no literal app screenshot parity/P1 owner sign-off claimed.",
+  "note": "Owner-confirmed original design images may contain identifying mockup details. Preserve private originals outside temporarily public GitHub. The exact revised Projects original was recovered and privately verified; no literal app screenshot parity/P1 owner sign-off claimed. 19 Oct correction: actual live Technical Support mobile Team screenshot is REJECTED, not an owner-approved mockup; see rejected_live_team_capture. Do not silently promote a rejected live capture to the owner reference baseline.",
   "references": {
     "work_desktop": {
       "original_sha256": "c84f9ab01a43be444ac7e2364555a0bfe3cbf63dd3117c6d9001fda94192406b",
@@ -53,5 +53,29 @@
     "docs/design/stage2-v4/CEAC_STAGE2_P1_CONNECTED_ROLE_REVIEW.html"
   ],
   "p1_status": "in_progress",
-  "production_go": false
+  "production_go": false,
+  "rejected_live_team_capture": {
+    "decision_date": "2026-10-19",
+    "scope": "Manager Technical Support mobile Team / People & volunteers and Unit Room",
+    "status": "EXPLICITLY_REJECTED_NOT_A_MOCKUP",
+    "source": "User uploaded contemporaneous real production screenshot, not an approved visual proposal",
+    "never_use_as_design_baseline": true,
+    "prohibited_treatments": [
+      "prominent rounded person-count tile",
+      "large full-width Add volunteer button",
+      "pill-shaped All/Staff/Volunteers filters",
+      "oversized mint-outline Unit Room card",
+      "excessive intro paragraphs, whitespace and large rounded floating panels"
+    ],
+    "required_treatments": [
+      "small square-corner operating controls",
+      "compact tab underlines rather than pills",
+      "compact credible team count",
+      "properly integrated and functional Unit Room entry",
+      "reduced visual bulk and mobile spacing",
+      "existing approved Work desktop/mobile and Overview scenic design family as positive references"
+    ],
+    "privacy": "No binary of this real production screenshot should be added to the public repository.",
+    "supersedes_any_contrary_prior_approval": true
+  }
 }

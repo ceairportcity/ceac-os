@@ -114,6 +114,29 @@ for (const user of users) {
   assert.equal(rosterMembership.error, null, rosterMembership.error?.message);
 }
 
+// A synthetic roster-only employee has NO auth user or profile. This is the
+// real regression subject for HR employment/unit changes before invitation.
+const rosterOnlyId = "41000000-0000-4000-8000-000000000178";
+const rosterOnly = await service.from("employee_roster").insert({
+  id: rosterOnlyId,
+  org_id: orgId,
+  profile_id: null,
+  full_name: "Roster-only HR Fixture",
+  job_title: "Original roster title",
+  employment_type: "not_recorded",
+  employment_status: "active",
+  identity_state: "roster_only",
+  source_system: "role_fixture",
+  source_row_key: "roster-only-hr-acceptance",
+  review_note: "Preserve this imported review note",
+});
+assert.equal(rosterOnly.error, null, rosterOnly.error?.message);
+const rosterOnlyUnit = await service.from("employee_unit_memberships").insert({
+  org_id: orgId, employee_id: rosterOnlyId, unit_id: unitA, is_primary: true,
+  context_label: "Synthetic roster-only HR acceptance",
+});
+assert.equal(rosterOnlyUnit.error, null, rosterOnlyUnit.error?.message);
+
 const employmentFixtures = [
   { id: users[0].id, manager: users[1].id, role: "staff" },
   { id: users[1].id, manager: users[2].id, role: "manager" },

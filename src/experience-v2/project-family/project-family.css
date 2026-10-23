@@ -1226,9 +1226,7 @@
 .fpg-view-switch button.is-active,.fpg-work-filters button.is-active{
   background:#f1f2f4;border-color:#e3e5e8;color:#181b20
 }
-.fpg-view-switch button:disabled{
-  opacity:.42;cursor:not-allowed
-}
+.fpg-view-current{display:inline-flex;align-items:center;min-height:31px;padding:6px 10px;border-radius:7px;background:#f1f2f4;color:#181b20;font-size:12px;font-weight:650}
 .fpg-work-table-wrap{width:100%;overflow-x:auto}
 .fpg-work-table{width:100%;border-collapse:collapse;min-width:760px;table-layout:auto}
 .fpg-work-table th{

@@ -172,7 +172,7 @@ test("Manager review action and Work queue use the same per-item authority", asy
 
   await page.goto("/?tab=work");
   await expect(page.locator(".route-fallback")).toHaveCount(0, { timeout: 15_000 });
-  await page.getByRole("tab", { name: /Needs review/ }).click();
+  await page.getByRole("tab", { name: /For review/ }).click();
   await expect(page.getByText("Phase 4 Manager review required", { exact: true })).toBeVisible();
   await expect(page.getByText("Phase 4 Executive review required", { exact: true })).toHaveCount(0);
   await context.close();

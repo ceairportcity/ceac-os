@@ -1,0 +1,25 @@
+.s2-work-diary{padding:18px 16px;margin:20px 0;border:1px solid var(--ev2-line,#d9e1ea);border-radius:14px;background:var(--ev2-surface,#fff);color:var(--ev2-text,#172a3f)}
+.s2-work-diary>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.s2-work-diary h3{font-size:18px;margin:4px 0}
+.s2-work-diary header p{font-size:13px;line-height:1.5;margin:4px 0;color:var(--ev2-text-secondary,#617184)}
+.s2-work-diary-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px 0;border-top:1px solid #e4eaf1;border-bottom:1px solid #e4eaf1;margin:12px 0}
+.s2-work-diary-summary>div{display:grid;gap:4px;min-width:0}
+.s2-work-diary-summary span,.s2-work-diary-next-action>span{font-size:12px;font-weight:650;color:#718399}
+.s2-work-diary-summary strong{font-size:14px;color:#172c45}
+.s2-work-diary-next-action{margin:15px 0;padding:12px 14px;border-left:3px solid #2b8ce2;background:#edf4fd}
+.s2-work-diary-next-action>p{margin:6px 0 0;font-size:13px;line-height:1.5}
+.s2-work-diary-timeline{list-style:none;margin:12px 0 0;padding:0 0 0 15px;border-left:2px solid #c4d8d2}
+.s2-work-diary-timeline li{position:relative;padding:3px 0 19px 14px;font-size:13px}
+.s2-work-diary-timeline li::before{content:"";position:absolute;left:-21px;top:9px;width:9px;height:9px;border-radius:50%;background:#8cbcad;border:2px solid #fff}
+.s2-work-diary-timeline strong,.s2-work-diary-timeline small,.s2-work-diary-timeline a{display:block}
+.s2-work-diary-timeline small{font-size:12px;color:#64748b;margin:3px 0}
+.s2-work-diary-timeline p{margin:6px 0}
+.s2-work-diary-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.s2-work-diary-form label{display:grid;gap:5px;font-size:12px;font-weight:600}
+.s2-work-diary-form label.wide{grid-column:1/-1}
+.s2-work-diary-form :is(input,textarea,select){width:100%;min-width:0;box-sizing:border-box;padding:10px;border:1px solid #cdd9e5;border-radius:8px;background:#fff;color:#182b3c;font:inherit}
+.s2-work-diary-form button{justify-self:start}
+.s2-work-diary-error{padding:9px 10px;border:1px solid #d59d84;border-radius:8px}
+@media(max-width:650px){.s2-work-diary>header{flex-direction:column}.s2-work-diary-form{grid-template-columns:1fr}}
+
+@media(max-width:650px){.s2-work-diary-form :is(input,textarea,select){font-size:16px}}

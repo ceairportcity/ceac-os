@@ -66,7 +66,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   const finance = fs.readFileSync("src/screens/ExecutiveFinance.jsx", "utf8");
   const reports = fs.readFileSync("src/screens/ExecutiveReports.jsx", "utf8");
   const inbox = fs.readFileSync("src/screens/Inbox.jsx", "utf8");
-  expect(work).toContain("Give out work, track progress and support your teams.");
+  expect(work).toContain("Plan, record, and finish your work. Keep every contribution connected to the right project.");
   expect(ministry).toContain("Set direction, track objectives and keep ministry priorities connected to recorded delivery.");
   expect(ministry).toContain('executiveSurface ? "Objectives" : "Strategic hierarchy"');
   expect(portfolio).toContain("View ministry programmes and strategic initiatives.");

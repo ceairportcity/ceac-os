@@ -1,10 +1,14 @@
+import RoutineScheduleOptions from "../components/RoutineScheduleOptions";
+import { initialRoutineScheduleOptions, routineScheduleOptions } from "../lib/routineScheduleOptions";
 import { useEffect, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
+import { routineCreationDetails } from "../lib/routineWriteValidation";
 import VoiceInput from "../components/VoiceInput";
 import { parseWorkInput } from "../lib/parseTask";
 import { humanError } from "../lib/productLanguage";
 import { FieldGroup } from "../components/bits";
+import RoutineWeekdayPicker from "../components/RoutineWeekdayPicker";
 import { ComposerDrawer } from "../experience-v2/components";
 import { CeacIcon } from "../experience-v2/icons";
 import { PendingFilePicker } from "../components/OperationalFiles";
@@ -57,6 +61,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   const [routineDayOfMonth, setRoutineDayOfMonth] = useState("");
   const [routineStart, setRoutineStart] = useState("");
   const [routineEnd, setRoutineEnd] = useState("");
+  const [routineOptions, setRoutineOptions] = useState(initialRoutineScheduleOptions);
   const [routineRecordsValue, setRoutineRecordsValue] = useState(false);
   const [routineValueLabel, setRoutineValueLabel] = useState("");
   const [caseOpenedOn, setCaseOpenedOn] = useState(() => new Date().toISOString().slice(0, 10));
@@ -269,7 +274,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     if (kind === "decision") return !title.trim() || !decisionQuestion.trim() || !assignee;
     if (kind === "request") return !title.trim() || (!requestResponsibleUnit && !assignee);
     if (kind === "case") return !title.trim() || !assignee || !caseOpenedOn || Boolean(caseTargetOn && caseTargetOn < caseOpenedOn);
-    if (kind === "routine") return !title.trim() || !assignee
+    if (kind === "routine") return !title.trim() || !assignee || !routineStart || Boolean(routineEnd && routineEnd < routineStart)
       || (routineSchedule === "weekdays" && routineWeekdays.length === 0)
       || (routineSchedule === "monthly" && !(Number(routineDayOfMonth) >= 1 && Number(routineDayOfMonth) <= 31))
       || (routineRecordsValue && !routineValueLabel.trim());
@@ -442,16 +447,11 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       }
 
       if (kind === "routine") {
-        const details = {
-          schedule_kind: routineSchedule,
-          records_value: routineRecordsValue,
-        };
-        if (routineStart) details.starts_on = routineStart;
-        if (routineEnd) details.ends_on = routineEnd;
-        if (routineSchedule === "weekly") details.weekdays = [Number(routineWeeklyDay)];
-        if (routineSchedule === "weekdays") details.weekdays = routineWeekdays.map(Number);
-        if (routineSchedule === "monthly") details.day_of_month = Number(routineDayOfMonth);
-        if (routineRecordsValue) details.value_label = routineValueLabel.trim();
+        const details = routineCreationDetails({
+          schedule: routineSchedule, start: routineStart, end: routineEnd,
+          weekday: routineWeeklyDay, weekdays: routineWeekdays, monthDay: routineDayOfMonth,
+          recordsValue: routineRecordsValue, valueLabel: routineValueLabel,
+        });
 
         const { data: workId, error: routineError } = await supabase.rpc("create_typed_work", {
           p_kind: "routine",
@@ -468,7 +468,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           p_due_at: null,
           p_visibility: "unit",
           p_confidential: false,
-          p_details: details,
+          p_details: {...details, ...routineScheduleOptions(routineOptions)},
         });
         if (routineError) throw routineError;
         const createdResult = await supabase.from("work_items").select("ref").eq("id", workId).single();
@@ -744,23 +744,15 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             {routineSchedule === "weekly" && <select className="field" aria-label="Repeat weekday" value={routineWeeklyDay} onChange={(e) => setRoutineWeeklyDay(e.target.value)}>
               {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day, index) => <option key={day} value={index + 1}>{day}</option>)}
             </select>}
-            {routineSchedule === "weekdays" && <div className="card small" style={{ marginTop: 10 }}>
-              <div style={{ fontWeight: 700, marginBottom: 8 }}>Which days?</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day, index) => {
-                  const value = index + 1;
-                  const on = routineWeekdays.includes(value);
-                  return <button type="button" key={day} className={`btn btn-sm ${on ? "" : "btn-ghost"}`}
-                    onClick={() => setRoutineWeekdays((current) => on ? current.filter((d) => d !== value) : [...current, value].sort())}>{day}</button>;
-                })}
-              </div>
-            </div>}
+            {routineSchedule === "weekdays" && <RoutineWeekdayPicker value={routineWeekdays}
+              onChange={setRoutineWeekdays} label="Which days?" />}
             {routineSchedule === "monthly" && <input className="field" type="number" min="1" max="31" placeholder="Day of month (1–31)"
               value={routineDayOfMonth} onChange={(e) => setRoutineDayOfMonth(e.target.value)} />}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <label className="small">Starts<input className="field" type="date" value={routineStart} onChange={(e) => setRoutineStart(e.target.value)} /></label>
               <label className="small">Ends (optional)<input className="field" type="date" value={routineEnd} onChange={(e) => setRoutineEnd(e.target.value)} /></label>
             </div>
+            <RoutineScheduleOptions value={routineOptions} onChange={setRoutineOptions} frequency={routineSchedule} />
             <label className="card small" style={{ display: "flex", alignItems: "flex-start", gap: 9, marginTop: 10 }}>
               <input type="checkbox" checked={routineRecordsValue} onChange={(e) => setRoutineRecordsValue(e.target.checked)} />
               <span>Record a number each time this routine happens.</span>

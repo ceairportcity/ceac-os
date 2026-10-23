@@ -20,7 +20,7 @@ function invitationTone(state, revokedAt) {
   return "action";
 }
 
-export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, onLifecycle, initialProfileId = null, initialUnitId = null, initialMode = null }) {
+export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenPerson, onChanged, onLifecycle, initialProfileId = null, initialUnitId = null, initialMode = null, initialInviteRoster = null }) {
   const [snapshot, setSnapshot] = useState(null);
   const [snapshotScope, setSnapshotScope] = useState(null);
   const [mode, setMode] = useState("invite");
@@ -66,6 +66,20 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     if (initialMode === "invite" || initialMode === "responsibility" || initialMode === "invitations") setMode(initialMode);
     else if (initialProfileId) setMode("responsibility");
   }, [initialProfileId, initialUnitId, initialMode]);
+
+  useEffect(() => {
+    // Selected roster context is not proof of a verified account; prefill,
+    // but never send or change roles without a direct human action.
+    if (!initialInviteRoster?.employeeId || !canManage) return;
+    setForm(current => ({
+      ...current,
+      name: initialInviteRoster.name || "",
+      email: initialInviteRoster.contactEmail || "",
+      unit: initialInviteRoster.unitId || "",
+      person: "",
+    }));
+    setMode("invite");
+  }, [initialInviteRoster?.employeeId, me.id, me.org_id, canManage]);
 
   async function load() {
     const generation = ++loadGeneration.current;
@@ -278,6 +292,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
           supporting="New accounts always begin as Staff. Authority is assigned separately after activation; job title never grants application authority."
           className="phase5-access-panel"
         >
+          {initialInviteRoster?.employeeId && <div className="phase5-access-callout" role="note">
+            <strong>Existing employee record selected</strong>
+            <span>{initialInviteRoster.name || "Selected employee"} · Verify the recipient email and primary unit before inviting. The HR contact address is not proof of an activated account. An invitation never links this employee automatically; after activation, HR must independently verify and link the existing identity under that person's Account &amp; Access record.</span>
+          </div>}
           <div className="phase5-access-form-grid">
             <FieldGroup label="Full name"><input className="field" aria-label="Full name" value={form.name} onChange={set("name")} /></FieldGroup>
             <FieldGroup label="Work email"><input className="field" type="email" autoCapitalize="none" aria-label="Invitation email" value={form.email} onChange={set("email")} /></FieldGroup>

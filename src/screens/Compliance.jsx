@@ -5,6 +5,7 @@ import { humanError } from "../lib/productLanguage";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 import { attendanceDate } from "../lib/attendance";
 import ComplianceOverview from "../components/ComplianceOverview";
+import ComplianceAttendanceCases from "../components/ComplianceAttendanceCases";
 
 function human(value=""){ return String(value||"").replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase()); }
 function day(value){
@@ -294,10 +295,10 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
   }
 
   const tabs=canManage
-    ? [["overview","Overview"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
+    ? [["overview","Overview"],["observations","Attendance cases"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
     : isManager
-    ? [["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
-    : [["policies","Policies"],["evidence","My evidence"],["exceptions","My exceptions"]];
+    ? [["observations","Attendance cases"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
+    : [["observations","My attendance cases"],["policies","Policies"],["evidence","My evidence"],["exceptions","My exceptions"]];
 
   if(loading)return <div className="body"><LoadingState label="Loading compliance…" /></div>;
   if(!isVerified)return <div className="body">
@@ -328,9 +329,11 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
 
     {tab==="overview"&&canManage&&<ComplianceOverview
       date={overviewDate}
+      scopeKey={actorScope}
       onDateChange={setOverviewDate}
       onRefresh={()=>loadOverview(overviewDate)}
       rows={attendanceRows}
+      units={units}
       loading={overviewLoading}
       error={overviewError}
       activePolicies={currentPolicies.filter((policy)=>policy.state==="active"&&policy.effective_on<=today&&(!policy.expires_on||policy.expires_on>=today))}
@@ -339,7 +342,14 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
       evidenceLatest={evidenceLatest}
       exceptionLatest={exceptionLatest}
       openWork={openWork}
+      openObservations={()=>setTab("observations")}
       openAnnouncements={canPublishInstruction?openAnnouncements:null}
+    />}
+
+    {tab==="observations" && <ComplianceAttendanceCases
+      key={actorScope} me={me} canManage={canManage}
+      overviewDate={overviewDate} attendanceRows={canManage && !overviewLoading && !overviewError ? attendanceRows : []}
+      onOpenOverview={(date)=>{setOverviewDate(date);setTab("overview");}}
     />}
 
     {tab==="policies"&&<>

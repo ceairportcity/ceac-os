@@ -161,6 +161,37 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.workforce_record_roster_pattern(p_employee_id uuid, p_effective_from date, p_effective_to date, p_day_map jsonb, p_clock_map jsonb, p_reason text, p_supersedes_id uuid)'),
   ('public.workforce_record_schedule(p_profile_id uuid, p_unit_id uuid, p_effective_from date, p_effective_to date, p_source text, p_day_map jsonb, p_expected_start time without time zone, p_expected_end time without time zone, p_reason text, p_supersedes_id uuid)');
 
+-- Two explicitly scoped owner-correction interfaces, covered by the rollback-only
+-- stage2_owner_activity_guard_gate.sql. The original signatures remain unchanged.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.stage2_relink_own_work(p_work_item_id uuid, p_project_id uuid, p_objective_id uuid, p_phase_id uuid, p_reason text)'),
+ ('public.stage2_record_project_person_assessment(p_project_id uuid, p_subject_profile_id uuid, p_narrative text, p_evidence_note text, p_next_action text, p_project_close_id uuid, p_period_start date, p_period_end date)');
+
+-- Additional owner-correction interfaces are individually enumerated and
+-- covered by roster and one-date negative-role gates; not a generic ceiling raise.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.admin_record_roster_employment(p_employee_id uuid, p_expected_updated_at timestamp with time zone, p_full_name text, p_preferred_name text, p_job_title text, p_employment_type text, p_employment_status text, p_primary_unit_id uuid, p_secondary_unit_ids uuid[], p_manager_profile_id uuid, p_reason text)'),
+ ('public.routine_change_single_date(p_work_item_id uuid, p_scheduled_on date, p_action text, p_reason text, p_expected_version integer)'),
+ ('public.routine_set_date_cover(p_work_item_id uuid, p_scheduled_on date, p_assignee_id uuid, p_reason text, p_expected_version integer)');
+
+-- Precisely reviewed owner corrective HR and Compliance surfaces in 178–182.
+-- The internal Compliance visibility helper deliberately has NO authenticated
+-- execute grant and therefore MUST NOT be added to this REST allowlist.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.admin_confirm_existing_roster_account_link(p_employee_id uuid, p_profile_id uuid, p_expected_updated_at timestamp with time zone, p_evidence_file_id uuid, p_confirmed_account_email text, p_independently_verified boolean, p_reason text)'),
+ ('public.admin_employee_published_development(p_profile_id uuid)'),
+ ('public.admin_record_roster_employment_profile(p_employee_id uuid, p_expected_updated_at timestamp with time zone, p_full_name text, p_preferred_name text, p_job_title text, p_employment_type text, p_employment_status text, p_primary_unit_id uuid, p_secondary_unit_ids uuid[], p_manager_profile_id uuid, p_contact_email text, p_contact_phone text, p_started_on date, p_reason text)'),
+ ('public.admin_record_linked_person_contact(p_employee_id uuid, p_profile_id uuid, p_expected_full_name text, p_expected_preferred_name text, p_expected_phone text, p_full_name text, p_preferred_name text, p_phone text, p_reason text)'),
+ ('public.compliance_attendance_case_action(p_case_id uuid, p_expected_status text, p_action text, p_explanation text, p_evidence_reference text, p_referral_target text)'),
+ ('public.compliance_attendance_case_register(p_date_from date, p_date_to date)'),
+ ('public.compliance_record_attendance_observation(p_employee_id uuid, p_work_date date, p_category text, p_factual_note text, p_interpretation_note text, p_evidence_reference text)');
+
+-- Migration185 adds exactly one HR-only, audited, tenant-bound roster creation
+-- boundary. Exact signature, negative role and no-Auth-creation gates separately
+-- prove that no arbitrary RPC or anonymous grant is admitted.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.admin_create_roster_employee(p_full_name text, p_preferred_name text, p_job_title text, p_employment_type text, p_employment_status text, p_primary_unit_id uuid, p_secondary_unit_ids uuid[], p_manager_profile_id uuid, p_contact_email text, p_contact_phone text, p_started_on date, p_reason text, p_confirm_distinct_person boolean)');
+
 do $allowlist$
 declare
   v_unexpected text;
@@ -208,7 +239,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>146 or v_expected<>146 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>159 or v_expected<>159 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
@@ -233,6 +264,55 @@ begin
   end if;
 end
 $revoked_surface$;
+
+
+-- A reviewed private implementation reader supports the invoker publication
+-- view. It is additional trusted code, never part of the public REST inventory.
+do $private_published_reader$
+begin
+ if not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+   where n.nspname='private' and p.proname='stage2_self_published_human_ratings'
+     and p.pronargs=0 and p.prosecdef and p.provolatile='s'
+     and p.proconfig @> array['search_path=""'])
+   or has_function_privilege('anon','private.stage2_self_published_human_ratings()','EXECUTE')
+   or not has_function_privilege('authenticated','private.stage2_self_published_human_ratings()','EXECUTE') then
+  raise exception 'Unreviewed private published-rating reader boundary';
+ end if;
+end
+$private_published_reader$;
+
+-- Explicitly review the two NEW invoker APIs and private trusted writer;
+-- the older public SECURITY DEFINER allowlist is not a claim of no new API.
+do $routine_options_surface$
+begin
+ if exists(select 1 from pg_proc where oid in('public.routine_schedule_preview(uuid[],date,date)'::regprocedure,
+   'public.change_routine_schedule_options(uuid,date,jsonb)'::regprocedure) and prosecdef)
+  or has_function_privilege('anon','public.routine_schedule_preview(uuid[],date,date)','EXECUTE')
+  or has_function_privilege('anon','public.change_routine_schedule_options(uuid,date,jsonb)','EXECUTE')
+  or has_function_privilege('anon','private.change_routine_schedule_options(uuid,date,jsonb)','EXECUTE')
+  or not exists(select 1 from pg_proc where oid='private.change_routine_schedule_options(uuid,date,jsonb)'::regprocedure
+   and prosecdef and pronargs=3 and proconfig @> array['search_path=""'])
+  then raise exception 'Unreviewed routine options API boundary'; end if;
+end;
+$routine_options_surface$;
+
+-- Canonical schedule evaluation remains invoker/RLS, not a bypass. The NEW
+-- private delivery worker is executable only by its owner via controlled heartbeat.
+do $routine_reminder_surface$
+begin
+ if exists(select 1 from pg_proc where oid='private.routine_schedule_dates(uuid[],date,date,uuid)'::regprocedure and prosecdef)
+  or has_function_privilege('anon','private.routine_schedule_dates(uuid[],date,date,uuid)','EXECUTE')
+  or has_function_privilege('authenticated','private.deliver_routine_reminders()','EXECUTE')
+  or has_function_privilege('anon','private.deliver_routine_reminders()','EXECUTE')
+  or has_function_privilege('service_role','private.deliver_routine_reminders()','EXECUTE')
+  or not exists(select 1 from pg_proc where oid='private.deliver_routine_reminders()'::regprocedure
+    and prosecdef and proconfig @> array['search_path=""'])
+  or has_table_privilege('authenticated','public.routine_reminder_deliveries','INSERT')
+  or has_table_privilege('authenticated','public.routine_reminder_deliveries','UPDATE')
+  or has_table_privilege('authenticated','public.routine_reminder_deliveries','DELETE')
+ then raise exception 'Unreviewed routine reminder boundary'; end if;
+end;
+$routine_reminder_surface$;
 
 -- Ordinary Staff must not turn an arbitrary target identifier into a protected
 -- read/write or capability escalation.

@@ -7,15 +7,16 @@ const source = (path) => readFileSync(path,"utf8");
 test("staff Work includes only their assigned, unit-visible recurring responsibilities", () => {
   const staff = source("src/components/AssignedRoutineOccurrences.jsx");
   const parent = source("src/screens/Work.jsx");
-  assert.match(parent, /mode === "assigned" && !loading && !loadError && <AssignedRoutineOccurrences/);
+  assert.match(parent, /\(mode === "all" \|\| mode === "assigned"\) && !loading && !loadError && <AssignedRoutineOccurrences/);
   assert.match(staff, /\.eq\("assignee_id", me\.id\)/);
   assert.match(staff, /\.eq\("kind", "routine"\)/);
   assert.match(staff, /\.eq\("visibility", "unit"\)/);
   assert.match(staff, /\.in\("work_item_id", templates\.map/);
-  assert.match(staff, /\.from\("operation_occurrences"\)/);
-  assert.match(staff, /projectedRoutineDates\(routine, history\.data/);
+  assert.match(staff, /readRoutineSchedulePreview\(supabase/);
   assert.match(staff, /item\.state==="unrecorded_past"/);
-  assert.match(staff, /onOpen\?\.\(item\.routine\.work_item_id\)/);
+  assert.match(staff, /onOpen\?\.\(item\.routine\.work_item_id,item\.date\)/);
+  assert.match(staff, /item\.state === "skipped"/);
+  assert.match(staff, /Skipped with authorised reason/);
   assert.doesNotMatch(staff, /\.insert\(|\.update\(|\.delete\(|\.rpc\(/);
 });
 
@@ -43,11 +44,16 @@ test("P4 assigned/Manager recurring work rejects incomplete provider pages and a
   }
   assert.match(assigned,/source\.count!==source\.data\.length/);
   assert.match(assigned,/result\.count!==result\.data\.length/);
-  assert.match(assigned,/history\.count!==history\.data\.length/);
+  const reader=source("src/lib/readRoutineSchedulePreview.js");
+  assert.match(reader,/count:"exact"/);
+  assert.match(reader,/expected!==result\.count/);
+  assert.match(reader,/batchRows\.length<expected/);
   assert.doesNotMatch(assigned,/catch \{ return \[\]; \}/);
   assert.match(manager,/operationCount!==operations\.length/);
-  assert.match(manager,/result\.count!==result\.data\.length/);
-  assert.match(manager,/series\.filter\(\(operation\)=>!operation\.paused_at\)/);
+  assert.match(manager,/openItem\?\.\(item\.operation\.work_item_id,item\.date\)/);
+  assert.match(manager,/Skipped with authorised reason/);
+  assert.doesNotMatch(manager,/series\.filter\(\(operation\)=>!operation\.paused_at\)/);
+  for (const view of [assigned,manager]) assert.match(view,/readRoutineSchedulePreview\(supabase/);
   assert.match(manager,/const items = !ready \? \[\] :/);
   assert.doesNotMatch(manager,/catch \{\s*return \[\];\s*\}/);
 });
