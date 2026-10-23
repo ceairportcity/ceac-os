@@ -39,7 +39,7 @@ jobs:
           VERIFICATION_EVENT_NAME: ${{ github.event_name }}
         run: node scripts/ci/classify-verification.mjs
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: steps.classify.outputs.documentation_only != 'true'
         with:
           node-version: 22
@@ -94,7 +94,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
