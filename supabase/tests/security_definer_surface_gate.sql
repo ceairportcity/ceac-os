@@ -197,6 +197,11 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.admin_finance_demo_records()'),
  ('public.admin_set_finance_demo_record(p_table text, p_id uuid, p_is_demo boolean, p_expected_fingerprint text, p_expected_event_no bigint, p_reason text)');
 
+-- A6/A7: exact Administration operational archive reader and atomic writer.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.admin_operational_archive_records()'),
+ ('public.admin_apply_operational_archive(p_changes jsonb, p_reason text)');
+
 do $allowlist$
 declare
   v_unexpected text;
@@ -244,7 +249,7 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>161 or v_expected<>161 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>163 or v_expected<>163 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;

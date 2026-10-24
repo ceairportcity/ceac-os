@@ -50,6 +50,7 @@ tests=(
   integrations_stage12_gate.sql
   project_register_experience_stage5_gate.sql
   experience_stage6_finance_gate.sql
+  operational_archive_period_gate.sql
   experience_stage7_work_capture_gate.sql
   experience_stage8_interface_gate.sql
   fpg12_security_posture_gate.sql

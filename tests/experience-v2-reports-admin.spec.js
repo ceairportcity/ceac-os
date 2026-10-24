@@ -3,6 +3,47 @@ import { expect, test } from "@playwright/test";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 
+for (const width of [320, 1440]) {
+  test(`A6/A7 operational archive preserves reports and reconciles duplicates at ${width}px`, async ({ browser }) => {
+    const { context, page } = await openAdminReports(browser, { width, height: 900 });
+    const records = [
+      { record_table: "work_items", record_id: "aa610010-0000-4000-8000-000000000001", label: "Owner-confirmed test task", status: "not_started", archived: false, event_no: 0, fingerprint: "original-task", retained_reports: [] },
+      { record_table: "report_periods", record_id: "aa610100-0000-4000-8000-000000000001", label: "Canonical synthetic month", status: "open", archived: false, event_no: 0, fingerprint: "original-period", retained_reports: [] },
+      { record_table: "report_periods", record_id: "aa610100-0000-4000-8000-000000000002", label: "Duplicate synthetic month", status: "closed", archived: false, event_no: 0, fingerprint: "original-duplicate", retained_reports: [] },
+      { record_table: "report_periods", record_id: "aa610100-0000-4000-8000-000000000003", label: "Demo synthetic report month", status: "open", archived: true, event_no: 1, fingerprint: "original-report-period", retained_reports: [{ id: "retained-synthetic-report", scope: "unit", status: "submitted", version: 1, narrative: "Original demonstration report remains intact." }] },
+    ];
+    const calls = [];
+    await page.route("**/rest/v1/rpc/admin_operational_archive_records", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(records) }));
+    await page.route("**/rest/v1/rpc/admin_apply_operational_archive", (route) => {
+      const payload = route.request().postDataJSON(); calls.push(payload);
+      for (const change of payload.p_changes) Object.assign(records.find((row) => row.record_id === change.record_id), { archived: change.archived, canonical_period_id: change.canonical_period_id, event_no: records.find((row) => row.record_id === change.record_id).event_no + 1 });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(payload.p_changes.length) });
+    });
+    await page.getByRole("button", { name: "Review demo work & reporting archives", exact: true }).click();
+    const panel = page.getByRole("region", { name: "Operational archive review" });
+    await panel.getByRole("checkbox", { name: /Owner-confirmed test task/ }).check();
+    await panel.getByLabel("Reason for this change (required)").fill("Owner confirmed this is demonstration work.");
+    await panel.getByRole("button", { name: "Archive selected demo records", exact: true }).click();
+    await expect(panel.getByRole("checkbox", { name: /Owner-confirmed test task.*Archived demo/ })).toBeVisible();
+    await panel.getByRole("checkbox", { name: /Owner-confirmed test task/ }).check();
+    await panel.getByLabel("Reason for this change (required)").fill("Restore the synthetic task after review.");
+    await panel.getByRole("button", { name: "Restore selected records", exact: true }).click();
+    await expect(panel.getByRole("checkbox", { name: /Owner-confirmed test task.*Included in live records/ })).toBeVisible();
+    await panel.getByRole("checkbox", { name: /Duplicate synthetic month/ }).check();
+    await panel.getByLabel("Canonical period for duplicate reconciliation").selectOption(records[1].record_id);
+    await panel.getByLabel("Reason for this change (required)").fill("Retain the existing canonical reporting month.");
+    await panel.getByRole("button", { name: "Reconcile duplicate period", exact: true }).click();
+    await expect(panel.getByRole("checkbox", { name: /Duplicate synthetic month.*Reconciled duplicate/ })).toBeVisible();
+    await panel.getByText("1 retained report(s)", { exact: true }).click();
+    await expect(panel.getByText("Original demonstration report remains intact.", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    expect(calls.map((call) => call.p_changes[0].archived)).toEqual([true, false, true]);
+    expect(calls[2].p_changes[0].canonical_period_id).toBe(records[1].record_id);
+    expect(calls.every((call) => !("status" in call.p_changes[0]) && !("narrative" in call.p_changes[0]))).toBe(true);
+    await context.close();
+  });
+}
+
 async function openAdminReports(browser, viewport) {
   const context = await browser.newContext({ viewport });
   const page = await context.newPage();

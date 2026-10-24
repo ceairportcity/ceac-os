@@ -35,7 +35,9 @@ VALUES
   'week','Evidence gate positive',date '2026-10-05',date '2026-10-11','open'),
  ('23000000-0000-4000-8000-000000000097',
   '10000000-0000-4000-8000-000000000010',
-  'week','Evidence gate denial',date '2026-10-05',date '2026-10-11','open');
+  -- A distinct identity still contains every 6 October adversarial reference.
+  -- The live uniqueness contract must not be bypassed to set up this test.
+  'week','Evidence gate denial',date '2026-10-06',date '2026-10-12','open');
 
 -- Existing keys and FKs validate a work item's unit_id by UUID but do not
 -- guarantee it belongs to the work item's org. The definer must not rely on
