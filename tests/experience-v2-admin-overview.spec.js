@@ -144,7 +144,7 @@ test("HR daily workforce workspace routes into actual employee and permission ma
  await expect(workspace.getByRole("searchbox",{name:"Search daily workforce"})).toBeVisible();
  await workspace.getByRole("button",{name:"People & Access"}).click();
  await expect(page.locator(".ev2-people-page.ev2-people-admin")).toBeVisible({timeout:15000});
- await page.getByRole("tab",{name:"Access",exact:true}).first().click();
- await expect(page.getByRole("tab",{name:"Access",exact:true}).first()).toHaveAttribute("aria-selected","true");
+ await page.getByRole("tablist",{name:"People views"}).getByRole("tab",{name:/^Access(?: administration)?$/}).click();
+ await expect(page.getByRole("tablist",{name:"People views"}).getByRole("tab",{name:/^Access(?: administration)?$/})).toHaveAttribute("aria-selected","true");
  await context.close();
 });

@@ -22,6 +22,8 @@ for(const width of [1440,1366,390,320])test(`approved People list/detail navigat
  await page.goto("/tests/fixtures/people-layout.html");
  const rail=page.getByRole("complementary",{name:"Employee directory"});
  await expect(rail).toBeVisible();
+ await expect(rail.getByLabel("Show",{exact:true})).toHaveValue("all");
+ await expect(rail.getByRole("button",{name:/Ama Mensima/})).toContainText("Roster only");
  await rail.getByRole("button",{name:/Ama Mensima/}).click();
  await expect(page.getByRole("heading",{name:"Ama Mensima",exact:true})).toBeVisible();
  await expect(rail)[width>900?"toBeVisible":"toBeHidden"]();
@@ -39,6 +41,8 @@ for(const width of [1440,1366,390,320])test(`approved People list/detail navigat
  const views=page.getByRole("tablist",{name:"People views"});
  await views.getByRole("tab",{name:"Organisation",exact:true}).click();await expect(page.getByText("Recorded unit membership and role context only. Job titles never create authority.")).toBeVisible();
  await views.getByRole("tab",{name:"Needs attention",exact:true}).click();await expect(page.getByText("Organisation exceptions",{exact:true})).toBeVisible();
+ await views.getByRole("tab",{name:/^Access(?: administration)?$/}).click();
+ await expect(page.locator(".phase5-people-access")).toBeVisible();
  await views.getByRole("tab",{name:"Directory",exact:true}).click();await expect(rail).toBeVisible();
  await rail.getByRole("button",{name:/Ama Mensima/}).click();await expect(page.getByRole("heading",{name:"Ama Mensima",exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

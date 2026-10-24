@@ -786,13 +786,13 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
             <label>Department<select className="field" value={departmentFilter} onChange={event=>setDepartmentFilter(event.target.value)}>
               <option value="">All departments</option>{units.map(unit=><option key={unit.id} value={unit.id}>{unit.name}</option>)}
             </select></label>
-            <label>Show<select className="field" value={filter} onChange={event=>setFilter(event.target.value)}>{FILTERS.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
+            <label>Show<select aria-label="Show" className="field" value={filter} onChange={event=>setFilter(event.target.value)}>{FILTERS.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
           </div>
           <div className="pp-directory-list">
             {shown.map(entry=><button type="button" className={`pp-directory-row fpg-people-roster-row ${person?.id===entry.id?"is-selected":""}`} key={entry.id} aria-pressed={person?.id===entry.id} onClick={()=>openPerson(entry)}>
               <Avatar name={entry.full_name} src={entry.photo_url} size="md" />
               <span className="pp-directory-copy"><strong>{entry.full_name}</strong><span>{entry.job_title || entry.source_position || rankLabel(entry)}</span><small>{entry.unit_name || "No unit assigned"}</small></span>
-              <span className="pp-directory-state">{entry.on_leave_now?"On leave":entry.active?"Active":"Inactive"}</span>
+              <span className="pp-directory-state">{entry.on_leave_now?"On leave":entry.active?"Active":"Inactive"}<br/>{entry.identity_state==="needs_review"?"Identity review":entry.profile_id?"Account linked":"Roster only"}</span>
             </button>)}
             {!shown.length && <PeopleEmpty title="Nobody matches" description="Try a different filter or search term." />}
           </div>
@@ -1446,7 +1446,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     </section>}
 
     {viewMode === "directory" && shown.length === 0 && <div style={{ marginTop: "var(--ev2-space-5)" }}>
-      <PeopleEmpty title="Nobody matches" description="Try a different filter or search term." />
+      <PeopleEmpty title="No employee selected" description="Choose a person from the directory to view their record." />
     </div>}
 
     {viewMode === "organisation" && <div>

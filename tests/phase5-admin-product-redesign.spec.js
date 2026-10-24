@@ -52,7 +52,7 @@ for (const viewport of [
     await openPeople.click();
     await expect(page.locator(".ev2-people-admin")).toBeVisible({ timeout: 15000 });
 
-    await page.getByRole("tab", { name: "Access", exact: true }).click();
+    await page.getByRole("tablist", { name: "People views" }).getByRole("tab", { name: /^Access(?: administration)?$/ }).click();
     await expect(page.locator(".phase5-people-access")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Access administration", exact: true })).toBeVisible();
     for (const tab of ["Invite","Responsibilities","Invitations"]) {
