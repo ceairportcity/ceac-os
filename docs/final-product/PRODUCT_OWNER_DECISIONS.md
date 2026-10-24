@@ -211,3 +211,8 @@ Canonical Guide contract:
 - New announcement authority: compact narrow composer with Title → audience pills → Message → Attachments → availability/advanced options → one full-width primary action.
 - Existing RLS, capability authority, draft/publish workflow, strategy parent requirement, audit history, truthful data, Work Engine semantics and all protected security/domain rules remain binding. Visual conformity may not fabricate values or weaken workflow truth.
 - Mockup-only sample values, rich-text controls or actions that do not exist in CEAC OS must not be faked merely for visual similarity.
+
+
+## 24 October 2026 — approved HR Overview, shared map and Time & Leave
+
+The owner approved implementation after discussion of the latest HR proposal and OpenStreetMap. Binding scope and reference provenance: `docs/design/CEAC_APPROVED_HR_OVERVIEW_TIME_LEAVE_2026-10-24.md`. Requests, announcements and approvals precede the map; employee details are selection-only. Preserve Manager Overview while adopting the approved blended greeting and adjacent calendar treatment for HR. Use existing OpenStreetMap consent/privacy behavior and calendar-led leave presentation across roles, with existing authority and data contracts intact. This authorises implementation; acceptance remains subject to the required technical and product-fidelity gates.

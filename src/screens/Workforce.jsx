@@ -7,6 +7,7 @@ const AttendanceEvidence = lazy(() => import("../components/AttendanceEvidence")
 import AttendanceCorrectionWorkflow from "../components/AttendanceCorrectionWorkflow";
 import AttendanceCodeIssuer from "../components/AttendanceCodeIssuer";
 import WorkforceEmployeeScheduleWorkspace from "../components/WorkforceEmployeeScheduleWorkspace";
+import TimeLeavePlanner from "../components/TimeLeavePlanner";
 import WorkforceTodayReviewList from "../components/WorkforceTodayReviewList";
 import { dailyClocks } from "../lib/attendance";
 import { accraDayOffset } from "../lib/workforceDate";
@@ -473,9 +474,11 @@ export default function Workforce({ me }) {
       {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
+      {["today","calendar","leave"].includes(tab)?<TimeLeavePlanner rows={personLeave} scope="My" unavailable={Boolean(datasetErrors.leave)} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>:null}
+
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="My workforce sections"/>
 
-      {confirmedLeaveSummary}
+      <details className="timeleave-policy"><summary>Leave policy &amp; balances</summary>{confirmedLeaveSummary}</details>
 
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Your leave requests remain available. CEAC OS will not invent entitlement, accrual, carry-over or remaining-day figures from old seeded defaults.</ProductNotice>}
 
@@ -676,9 +679,11 @@ export default function Workforce({ me }) {
       {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
+      {["today","calendar","leave"].includes(tab)?<TimeLeavePlanner rows={leave} scope="Team" unavailable={Boolean(datasetErrors.leave)} renderDecision={managerLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>:null}
+
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Manager workforce sections"/>
 
-      {confirmedLeaveSummary}
+      <details className="timeleave-policy"><summary>Leave policy &amp; balances</summary>{confirmedLeaveSummary}</details>
 
       {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Leave decisions remain available on the existing route. CEAC OS will not invent entitlement, accrual, carry-over or remaining balance from old seeded defaults.</ProductNotice>}
 
@@ -957,9 +962,11 @@ export default function Workforce({ me }) {
       {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
+      {["today","calendar","leave"].includes(tab)?<TimeLeavePlanner rows={leave} scope="Organisation" unavailable={Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>:null}
+
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Administration workforce sections"/>
 
-      {confirmedLeaveSummary}
+      <details className="timeleave-policy"><summary>Leave policy &amp; balances</summary>{confirmedLeaveSummary}</details>
 
       {!activePolicy&&<ProductNotice tone="info" title="Secondary leave quantities not configured">The confirmed Annual rule is available independently of the incomplete secondary leave quantities. CEAC OS will not invent Sick, Maternity, Paternity or Study entitlement values.</ProductNotice>}
 

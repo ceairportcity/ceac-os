@@ -156,6 +156,9 @@ function UnitRow({ unit, onInvite }) {
 
 export default function AdminOverviewV2({
   me,
+  announcements = null,
+  onOpenAnnouncements,
+  supportApprovals,
   dateLabel,
   loading,
   loadFailed,
@@ -282,7 +285,7 @@ export default function AdminOverviewV2({
     }));
 
   return <div className="body admin-home">
-    <div className="adminv2">
+    <div className="adminv2 adminv2-approved">
       <header className="adminv2-intro adminv2-hero s2-landscape-hero" role="region" aria-label="Administration daily briefing"><DailyScenicPhoto />
         <div className="adminv2-hero-main">
           <div className="adminv2-context"><span>Administration &amp; HR</span><time>{dateLabel}</time></div>
@@ -295,7 +298,7 @@ export default function AdminOverviewV2({
                 : loadFailed
                   ? "The latest Administration priorities could not be verified. Retry the connection before making decisions."
                   : totalAttention
-                    ? `You have ${totalAttention} recorded item${totalAttention === 1 ? "" : "s"} to review. Start with what needs a decision, then move the work forward.`
+                    ? "Here’s what needs your attention today."
                     : "Your decision inbox is clear. Keep the people, work and organisation moving forward."}</p>
             </div>
           </div>
@@ -307,20 +310,11 @@ export default function AdminOverviewV2({
         </div>
         <aside className="adminv2-hero-agenda" aria-label="Upcoming commitments">
           <AdminCalendarRail meetings={meetings} />
-          <div className="adminv2-agenda-heading">
-            <span><CeacIcon name="calendar" size="row" decorative /> Coming up</span>
-            <button type="button" onClick={() => onScheduleMeeting?.({ scope: "organisation", organisation: true })} className="adminv2-agenda-add">Schedule <CeacIcon name="chevronRight" size="meta" decorative /></button>
-          </div>
-          {loadFailed ? <div className="adminv2-agenda-empty" role="status">Current meeting information could not be verified.</div>
-            : loading ? <div className="adminv2-agenda-empty">Loading your schedule…</div> : nextMeetings.length
-            ? <div className="adminv2-agenda-list">
-              {nextMeetings.map((meeting) => <button type="button" key={meeting.id} className="adminv2-agenda-item" onClick={() => onOpenMeeting?.(meeting.id)}>
-                <span className="adminv2-agenda-date">{formatDate(meeting.starts_at, {weekday:"short",hour:"2-digit",minute:"2-digit"})}</span>
-                <strong>{meeting.title}</strong>
-                <CeacIcon name="chevronRight" size="meta" decorative />
-              </button>)}
-            </div>
-            : <div className="adminv2-agenda-empty">No upcoming meetings were returned in this limited 14-day preview.</div>}
+          <div className="adminv2-agenda-heading"><span>Coming up</span><button type="button" className="adminv2-agenda-add" onClick={() => onScheduleMeeting?.({ scope: "organisation", organisation: true })}>Schedule →</button></div>
+          {loadFailed ? <div className="adminv2-agenda-empty">Current meeting information could not be verified.</div>
+            : loading ? <div className="adminv2-agenda-empty">Loading your schedule…</div>
+            : nextMeetings.length ? <div className="adminv2-agenda-list">{nextMeetings.map(meeting=><button type="button" key={meeting.id} className="adminv2-agenda-item" onClick={() => onOpenMeeting?.(meeting.id)}><time>{formatDate(meeting.starts_at,{hour:"2-digit",minute:"2-digit"})}</time><strong>{meeting.title}</strong></button>)}</div>
+            : <p className="adminv2-agenda-empty">No upcoming meeting is shown in this limited preview.</p>}
           {!loading && !loadFailed ? <div className="adminv2-agenda-foot">
             <span><strong>{pendingInvitations.length}</strong> invitations need follow-up</span>
             <span><strong>{leaveQueue.length}</strong> open leave requests</span>
@@ -347,19 +341,8 @@ export default function AdminOverviewV2({
 
       {!loading && !loadFailed ? <main className="adminv2-main">
         <section className="adminv2-focus-strip" aria-label="Next useful Administration step">
-          <div className="adminv2-focus-summary">
-            <span className="adminv2-focus-icon"><CeacIcon name={suggestedAction ? "notification" : "checkCircle"} size="feature" decorative /></span>
-            <div>
-              <span className="adminv2-focus-eyebrow">{suggestedAction?.eyebrow || "Decision inbox clear"}</span>
-              <h2>{suggestedAction?.title || "You are up to date on recorded Administration decisions."}</h2>
-              <p>{suggestedAction?.detail || "Keep an eye on your people, work and the next recorded commitments."}</p>
-            </div>
-            {suggestedAction?.action ? <Button icon="arrowRight" onClick={suggestedAction.action}>{suggestedAction.label}</Button> : null}
-          </div>
-          <div className="adminv2-focus-metrics" aria-label="Recorded organisation context">
-            <span><strong>{employeeRoster.length}</strong><small>Employees recorded</small></span>
-            <span><strong>{reporting ? `${reporting.submitted}/${reporting.total}` : "—"}</strong><small>Reports submitted</small></span>
-          </div>
+          <div className="adminv2-focus-summary"><h2>Needs your attention</h2><span>Requests · announcements · approvals</span></div>
+          <div className="adminv2-focus-metrics" aria-label="Recorded organisation context"><span><strong>{employeeRoster.length}</strong><small>Employees recorded</small></span><span><strong>{reporting ? `${reporting.submitted}/${reporting.total}` : "—"}</strong><small>Reports submitted</small></span></div>
         </section>
         <section className="adminv2-command-grid" aria-label="Administration actions and setup">
           <DataPanel
@@ -421,6 +404,23 @@ export default function AdminOverviewV2({
             <Button icon="control" onClick={onOpenSettings}>Control Center</Button>
           </div>
 
+          <aside className="adminv2-announcements" aria-label="Announcements and access approvals"><h2>Announcements</h2>
+            {announcements===null?<p>Current announcements could not be verified.</p>:announcements.length?announcements.slice(0,3).map(item=><button type="button" key={item.id} onClick={onOpenAnnouncements}>{item.title} →</button>):<p>No current announcement.</p>}
+            <Button variant="quiet" size="compact" onClick={onOpenAnnouncements}>Open announcements →</Button>
+            {supportApprovals}
+          </aside>
+        </section>
+
+        <AdminWorkforceToday roster={employeeRoster} sessions={dailySessionRows} operationalProfiles={operationalStarters} onOpenPeople={onOpenPeople} onOpenPerson={onOpenPerson} onOpenAccess={onOpenAccess} onOpenWorkforce={onOpenAttendance} />
+
+        <section className="adminv2-glance" aria-label="Organisation at a glance"><h2>Organisation at a glance</h2><div>
+          {canManagePeople?<button type="button" onClick={onOpenPeople}><span>People &amp; records</span><strong>{employeeRoster.length}</strong><small>Open employee records →</small></button>:null}
+          <button type="button" onClick={onOpenReports}><span>Reporting</span><strong>{reporting?`${reporting.submitted} of ${reporting.total}`:"No open period"}</strong><small>View reports →</small></button>
+          {canUsePayroll?<button type="button" onClick={onOpenPayroll}><span>Payroll readiness</span><strong>{payrollReadiness?"Review inputs":"Unavailable"}</strong><small>Open Payroll →</small></button>:null}
+          <button type="button" onClick={onOpenProjects}><span>Projects &amp; objectives</span><strong>{delivery?.active||0} active projects</strong><small>Open recorded progress →</small></button>
+        </div><footer><Button variant="quiet" size="compact" onClick={onOpenFinance}>Finance</Button><Button variant="quiet" size="compact" onClick={onOpenSettings}>Control Center</Button></footer></section>
+        <details className="adminv2-more-context"><summary>More organisation context · people, reporting, delivery and your work</summary>
+        <section className="adminv2-context-grid" aria-label="Employee records">
           <DataPanel
             className="adminv2-panel adminv2-setup adminv2-people"
             eyebrow="People & HR"
@@ -440,8 +440,6 @@ export default function AdminOverviewV2({
             </div>
           </DataPanel>
         </section>
-
-        <AdminWorkforceToday roster={employeeRoster} sessions={dailySessionRows} operationalProfiles={operationalStarters} onOpenPeople={onOpenPeople} onOpenPerson={onOpenPerson} onOpenAccess={onOpenAccess} />
 
         <section className="adminv2-context-grid" aria-label="People operations">
           <DataPanel
@@ -607,6 +605,7 @@ export default function AdminOverviewV2({
           </DataPanel> : null}
 
         </section>
+        </details>
       </main> : null}
     </div>
   </div>;

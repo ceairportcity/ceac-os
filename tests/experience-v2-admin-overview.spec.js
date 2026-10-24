@@ -82,6 +82,7 @@ for (const viewport of [
     await expect(page.locator(".adminv2-hero-title h1")).toContainText(/Good morning|Good afternoon|Good evening/);
     await expect(page.locator(".adminv2-context")).toContainText("Administration & HR");
     await expect(page.locator(".adminv2-inbox")).toBeVisible();
+    await page.locator(".adminv2-more-context > summary").click();
     await expect(page.locator(".adminv2-people")).toBeVisible();
     await expect(page.locator(".adminv2-reporting")).toBeVisible();
     await expect(page.locator(".adminv2-pulse")).toBeVisible();

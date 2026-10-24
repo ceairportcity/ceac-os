@@ -24,6 +24,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   const [operationalStarters, setOperationalStarters] = useState([]);
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [payrollReadiness, setPayrollReadiness] = useState(null);
+  const [announcements, setAnnouncements] = useState(null);
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -49,7 +50,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
     setMeetings([]); setReporting(null); setWatch([]);
     setToday({ working: 0, leave: 0, notStarted: 0, headcount: 0 });
     setDelivery({ active: 0, closedThisMonth: 0, onTrack: 0, atRisk: 0, met: 0, notMet: 0, other: 0, objectives: 0 });
-    setMsg(null);
+    setMsg(null); setAnnouncements(null);
     void load();
     return () => { readGeneration.current += 1; leaveActionBusyRef.current = false; };
   }, [me.id, me.org_id]);
@@ -240,6 +241,12 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       }));
       setWatch(rules.slice(0,12));
       setMeetings(meetingRows || []);
+      // Optional first-party announcements use the same existing table/RLS;
+      // failure is unknown, never a fabricated clear inbox.
+      const news=await supabase.from("announcements").select("id,title,published_at,expires_at")
+        .eq("org_id",me.org_id).eq("status","published").order("published_at",{ascending:false}).limit(8);
+      if(generation!==readGeneration.current)return;
+      setAnnouncements(news.error?null:(news.data||[]).filter(row=>!row.expires_at||Date.parse(row.expires_at)>Date.now()));
     } catch (error) {
       if (generation === readGeneration.current) setLoadError(humanError(error, "Administration records could not be verified. Please try again."));
     } finally {
@@ -289,6 +296,9 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   return <>
     <AdminOverviewV2
       me={me}
+      announcements={verifiedSnapshot ? announcements : null}
+      onOpenAnnouncements={() => go?.("announcements")}
+      supportApprovals={canManagePeople && verifiedSnapshot ? <SupportAccessApprovals me={me} authority="people_administration" /> : null}
       dateLabel={adminDate}
       loading={scopedLoading}
       loadFailed={loadedScope === scopeKey ? loadError : null}
@@ -334,7 +344,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenAttendance={() => go?.("attendance")}
       onLeaveDecision={decideLeave}
     />
-    {canManagePeople && verifiedSnapshot && <SupportAccessApprovals me={me} authority="people_administration" />}
+
 
   </>;
 }
