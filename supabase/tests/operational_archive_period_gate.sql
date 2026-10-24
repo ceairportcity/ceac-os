@@ -2,6 +2,10 @@
 \set ON_ERROR_STOP on
 BEGIN;
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',true);
+INSERT INTO public.organisations(id,name,short_code) VALUES('aa610000-0000-4000-8000-000000000099','Isolated archive foreign tenant','OPSF');
+INSERT INTO public.units(id,org_id,name,code) VALUES('aa610000-0000-4000-8000-000000000099','aa610000-0000-4000-8000-000000000099','Isolated archive foreign unit','OPSF');
+INSERT INTO public.projects(id,org_id,kind,name,lead_unit_id,created_by) VALUES
+ ('aa610001-0000-4000-8000-000000000099','aa610000-0000-4000-8000-000000000099','project','Demo · foreign project','aa610000-0000-4000-8000-000000000099',null);
 INSERT INTO public.projects(id,org_id,kind,name,lead_unit_id,created_by) VALUES
  ('aa610001-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000010','project','Demo · isolated project','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000003');
 INSERT INTO public.work_items(id,org_id,ref,kind,unit_id,project_id,title,visibility,status,assignee_id) VALUES
@@ -29,6 +33,10 @@ SET LOCAL ROLE authenticated;
 DO $gate$
 DECLARE r record; changes jsonb; before_events bigint; canonical uuid:='aa610100-0000-4000-8000-000000000001';
 BEGIN
+ IF EXISTS(SELECT 1 FROM public.admin_operational_archive_records() WHERE record_id='aa610001-0000-4000-8000-000000000099') THEN
+  RAISE EXCEPTION 'Archive reader crossed tenant boundary'; END IF;
+ BEGIN PERFORM public.admin_apply_operational_archive('[{"record_table":"projects","record_id":"aa610001-0000-4000-8000-000000000099","fingerprint":"forged","event_no":0,"archived":true}]','Foreign record must be rejected');
+  RAISE EXCEPTION 'Cross-tenant archive allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  IF EXISTS(SELECT 1 FROM public.admin_operational_archive_records() WHERE record_id='aa610010-0000-4000-8000-000000000003') THEN
   RAISE EXCEPTION 'Operational archive exposed another person private work'; END IF;
  SELECT jsonb_agg(jsonb_build_object('record_table',record_table,'record_id',record_id,'fingerprint',fingerprint,'event_no',event_no,'archived',true)) INTO changes
@@ -66,6 +74,11 @@ RESET ROLE;
 DO $immutability$
 DECLARE r record; actual text;
 BEGIN
+ -- Privileged/definer mutation paths must also respect the archived parent.
+ BEGIN UPDATE public.report_periods SET label='would change archive' WHERE id='aa610100-0000-4000-8000-000000000003';
+  RAISE EXCEPTION 'Privileged archived period mutation allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN UPDATE public.reports SET narrative='would change retained report' WHERE id='aa610101-0000-4000-8000-000000000001';
+  RAISE EXCEPTION 'Privileged archived report mutation allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  FOR r IN SELECT * FROM ops_original LOOP
   EXECUTE format('SELECT md5(to_jsonb(t)::text) FROM public.%I t WHERE id=$1',r.kind) INTO actual USING r.id;
   IF actual IS DISTINCT FROM r.fingerprint THEN RAISE EXCEPTION 'Archive rewrote source % %',r.kind,r.id; END IF;

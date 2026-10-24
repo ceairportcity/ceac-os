@@ -27,3 +27,13 @@ Reports has an Administration-only review/restore panel. It retains report narra
 ## Release status
 
 NOT LIVE at this checkpoint. Required exact-head CI, replay, security/SQL, all eight browser groups and final aggregate remain pending, as do production migration, deployment, genuine signed-in Administration classification, original-row fingerprint readback and actual live project/work/reporting checks. The completed finance and 15+9 leave corrections must not be reopened. Use the current PR description for the final frozen SHA, workflow IDs and subsequent executed release evidence.
+
+## First published candidate and fixture correction
+
+PR #135 first head `b70d6d9f8dcaae8a36a3e813130e154643f399de`, tree `b4646982ab9b8b341a3b2cb4c3277982c65adbb8`, matches local `fce3db5c8ebda087bd0fa53706b4ab8e8718a9db` exactly. Official Node 22 source/build completed before CI `40060790058` failed its changed-line whitespace check on one extra final blank line. The blank line is removed; no SQL semantics change.
+
+Migration Replay `40060790066` and Account Security `40060790044` passed. Quality Gate `40060790057` browser groups 2, 4, 6 and 7 passed at the inspection checkpoint. Group 4 job `120773647717` passed all 73 cases, including the actual new 320px and 1440px archive/restore/canonical/retained-report journeys. Other browser groups were allowed to finish gathering useful evidence rather than prematurely cancelled.
+
+The SQL job `120773647555` reached an older tenant-evidence fixture that creates two same-tenant weekly periods with identical dates; the new live uniqueness guard correctly rejected its setup. Only the denial fixture window changes from 5–11 October to 6–12 October, still containing all 6 October adversarial references. Every positive control, exact negative error and persisted-data assertion is retained. The corrected gate was executed against the isolated hosted staging with its missing standard synthetic work reference seeded inside the same rollback-only transaction: PASS. The archive gate was additionally executed with foreign-tenant reader/writer denial and privileged archived-period/report mutation attempts: PASS, original fingerprints preserved and fixtures rolled back.
+
+This first head is not a final release PASS. Publish the collected test/whitespace correction as one successor; all mandated final exact-head checks, production release and live classification remain required. The existing HR account has been securely signed in again and the live three-period baseline independently read in the UI. No account, record or policy classification has been changed in production.
