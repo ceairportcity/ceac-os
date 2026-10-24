@@ -71,6 +71,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   const [personTab, setPersonTab] = useState("overview");
   const [rosterEditRequest,setRosterEditRequest] = useState({ employeeId:null, seq:0 });
   const [searchText, setSearchText] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [accessFocusProfileId, setAccessFocusProfileId] = useState(null);
   const [accessFocusUnitId, setAccessFocusUnitId] = useState(null);
   const [accessFocusMode, setAccessFocusMode] = useState(null);
@@ -97,6 +98,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   const [error, setError] = useState(null);
   const scopeKey = `${me.org_id}:${me.id}`;
   const rosterGeneration = useRef(0);
+  const initialSelectionScope = useRef(null);
   const personGeneration = useRef(0);
   const protectedWriteBusy = useRef(false);
   const employmentWriteBusy = useRef(false);
@@ -116,8 +118,8 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   useEffect(() => {
     // Invitation prefill may contain a person's private HR contact details.
     // Never retain a selection when the signed HR actor or tenant changes.
-    setAccessInviteRoster(null);
     setCreatingEmployee(false);
+    setAccessInviteRoster(null);
     void load();
     return () => { rosterGeneration.current += 1; personGeneration.current += 1; };
   }, [me.id, me.org_id]);
@@ -147,6 +149,13 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     setViewMode("access");
     onAccessIntentHandled?.();
   }, [accessIntent]);
+
+  useEffect(() => {
+    if (verifiedRosterScope !== scopeKey || !rows.length || person || detailLoading || initialEmployeeId || accessIntent || viewMode !== "directory") return;
+    if (initialSelectionScope.current === scopeKey || !window.matchMedia("(min-width: 901px)").matches) return;
+    initialSelectionScope.current = scopeKey;
+    void openPerson(rows[0]);
+  }, [verifiedRosterScope, scopeKey, rows, person, detailLoading, initialEmployeeId, accessIntent, viewMode]);
 
   async function load({ silent = false } = {}) {
     const generation = ++rosterGeneration.current;
@@ -298,6 +307,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   }
 
   async function openPerson(summary) {
+    setViewMode("directory");
     const generation = ++personGeneration.current;
     employeeFileWriteBusy.current = false;
     setEmployeeFileBusy(false);
@@ -665,6 +675,137 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     }
   }
 
+  const cleanSearch = searchText.trim().toLowerCase();
+  const shown = rows.filter((p) => {
+    const matchesFilter =
+      filter === "all" ? true :
+      filter === "active" ? p.active :
+      filter === "on_leave" ? p.on_leave_now :
+      filter === "quiet" ? p.quiet :
+      filter === "no_unit" ? !p.unit_id : true;
+    const matchesSearch = !cleanSearch || [
+      p.full_name,p.source_display_name,p.email,p.job_title,p.source_position,p.source_department_text,p.unit_name,
+      ...(p.roster_units || []).map((unit) => unit.unit_name),
+      ...(p.responsibility_context || []),
+    ].filter(Boolean).some((value) => String(value).toLowerCase().includes(cleanSearch));
+    return matchesFilter && matchesSearch && (!departmentFilter || p.unit_id === departmentFilter || (p.roster_units || []).some(unit => unit.unit_id === departmentFilter));
+  });
+
+  function rank(p) {
+    if (!p.profile_id) return 4;
+    if (p.is_exec) return 0;
+    if (p.is_admin) return 1;
+    if (p.role === "manager") return 2;
+    if (p.role === "sub_team_lead") return 3;
+    return 4;
+  }
+  function rankLabel(p) {
+    if (!p.profile_id) return p.source_position || "Roster employee";
+    if (p.is_exec) return "Group Pastor";
+    if (p.is_admin) return "Administration & HR";
+    if (p.role === "manager") return "Unit head";
+    if (p.role === "sub_team_lead") return "Team lead";
+    return "Staff";
+  }
+
+  const byUnit = {};
+  shown.forEach((p) => {
+    const key = p.unit_name || "No unit yet";
+    (byUnit[key] = byUnit[key] || []).push(p);
+  });
+  const groups = Object.keys(byUnit)
+    .sort((a, b) => (a === "No unit yet" ? 1 : b === "No unit yet" ? -1 : a.localeCompare(b)))
+    .map((name) => ({
+      name,
+      people: byUnit[name].sort((a, b) =>
+        rank(a) - rank(b)
+        || String(a.started_on || "9999").localeCompare(String(b.started_on || "9999"))
+        || a.full_name.localeCompare(b.full_name)),
+    }));
+  const roster = groups.flatMap((group) => group.people);
+  const attentionReasons = (entry) => [
+    entry.identity_state === "needs_review" ? "Identity review required" : null,
+    entry.employment_type === "not_recorded" ? "Employment type not recorded" : null,
+    !(entry.job_title || entry.source_position) ? "Job title not recorded" : null,
+    !entry.unit_id && !(entry.roster_units || []).length ? "No unit recorded" : null,
+  ].filter(Boolean);
+  const attentionRoster = roster.filter((entry) => attentionReasons(entry).length);
+  const unlinkedAccounts=operationalDirectory.filter(account=>account.active && !rows.some(entry=>entry.profile_id===account.id));
+  const unmatchedAccounts=unlinkedAccounts.filter(account=>!cleanSearch||[
+    account.full_name,account.email,account.unit_name,
+  ].filter(Boolean).some(value=>String(value).toLowerCase().includes(cleanSearch)));
+  const unitsWithoutHead = units.filter((unit) => !rows.some((entry) =>
+    entry.profile_id && entry.active && entry.role === "manager" && (
+      entry.unit_id === unit.id || (entry.roster_units || []).some((membership) => membership.unit_id === unit.id)
+    )
+  ));
+
+
+  function leaveEmployeeRecord() {
+    personGeneration.current += 1;
+    employeeFileWriteBusy.current = false;
+    setEmployeeFileBusy(false);
+    clearEditorsForNavigation();
+    setPerson(null); setDrill(null); setDetailLoading(false);
+    setProtectedHr(null); setProtectedHrLoading(false);
+  }
+
+  function renderPeoplePage(content) {
+    const directory = viewMode === "directory";
+    return <div className="body ev2-people-page ev2-people-admin pp-split-page">
+      <PeoplePageHeader title="People & Access" description="Employee records and account access"
+        actionLabel="Add employee" onAction={()=>setCreatingEmployee(true)} />
+    {creatingEmployee && <HRCreateRosterEmployee
+      me={me} units={units} employees={rows} accounts={operationalDirectory}
+      onClose={()=>setCreatingEmployee(false)}
+      onCreated={async employee=>{
+        if(!(await load({silent:true})))throw new Error("The employee was created but the directory did not refresh. Recheck existing employees before retrying.");
+        setCreatingEmployee(false);
+        setSearchText("");
+        setFilter("all");
+        setViewMode("directory");
+        await openPerson({
+          id:employee.id,employee_id:employee.id,profile_id:null,
+          full_name:employee.full_name,employment_status:employee.employment_status,
+          job_title:employee.job_title,identity_state:"roster_only",active:employee.employment_status==="active",
+        });
+      }}
+    />}
+
+      <div className="ev2p-filter-tabs pp-page-tabs" role="tablist" aria-label="People views">
+        {PEOPLE_VIEWS.map(([key,label])=><button key={key} type="button" role="tab"
+          aria-selected={viewMode===key} className={viewMode===key?"ev2p-filter-tab is-selected":"ev2p-filter-tab"}
+          onClick={()=>{leaveEmployeeRecord(); if(key!=="access"){setAccessFocusProfileId(null);setAccessFocusUnitId(null);setAccessFocusMode(null);}setViewMode(key);}}>{person && key === "access" ? "Access administration" : label}</button>)}
+      </div>
+      {!leavePolicy && <ProductNotice tone="attention" title="Leave policy not configured">Leave entitlement remains unavailable until Administration confirms the policy.</ProductNotice>}
+      <div className={directory ? `pp-split-workspace ${person || detailLoading ? "has-selection" : ""}` : "pp-secondary-view"}>
+        {directory && <aside className="pp-directory-rail" aria-label="Employee directory">
+          <div className="pp-directory-controls">
+            <h2>Employees <span>{shown.length}</span></h2>
+            <label>Find a person<input className="field" type="search" placeholder="Name, email, job title or unit" value={searchText} onChange={event=>setSearchText(event.target.value)} /></label>
+            <label>Department<select className="field" value={departmentFilter} onChange={event=>setDepartmentFilter(event.target.value)}>
+              <option value="">All departments</option>{units.map(unit=><option key={unit.id} value={unit.id}>{unit.name}</option>)}
+            </select></label>
+            <label>Show<select className="field" value={filter} onChange={event=>setFilter(event.target.value)}>{FILTERS.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
+          </div>
+          <div className="pp-directory-list">
+            {shown.map(entry=><button type="button" className={`pp-directory-row fpg-people-roster-row ${person?.id===entry.id?"is-selected":""}`} key={entry.id} aria-pressed={person?.id===entry.id} onClick={()=>openPerson(entry)}>
+              <Avatar name={entry.full_name} src={entry.photo_url} size="md" />
+              <span className="pp-directory-copy"><strong>{entry.full_name}</strong><span>{entry.job_title || entry.source_position || rankLabel(entry)}</span><small>{entry.unit_name || "No unit assigned"}</small></span>
+              <span className="pp-directory-state">{entry.on_leave_now?"On leave":entry.active?"Active":"Inactive"}</span>
+            </button>)}
+            {!shown.length && <PeopleEmpty title="Nobody matches" description="Try a different filter or search term." />}
+          </div>
+          <button type="button" className="pp-review-link" onClick={()=>{leaveEmployeeRecord();setViewMode("attention");}}>Needs attention · {attentionRoster.length + unlinkedAccounts.length} to review</button>
+        </aside>}
+        <section className="pp-detail-pane" aria-label={directory?"Selected employee record":"People administration"} aria-busy={detailLoading}>
+          {detailLoading ? <LoadingState label="Opening employee record…" /> : content}
+          {!person && error && <ProductNotice tone="error" title="People could not finish loading" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice>}
+        </section>
+      </div>
+    </div>;
+  }
+
   if (loading) return <div className="body"><LoadingState label="Loading People…" /></div>;
   if (verifiedRosterScope !== scopeKey) return <div className="body">
     <ProductNotice tone="error" title="People records unavailable">{error || "The authorised People directory could not be verified."}</ProductNotice>
@@ -672,7 +813,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   </div>;
 
   if (person && drill) {
-    return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
+    return renderPeoplePage(<div className="ev2-person-workspace ev2-admin-person-workspace">
       <PeopleBackButton onClick={() => setDrill(null)} label={person.full_name} />
       <PeoplePersonHeader
         name={drill.label}
@@ -707,7 +848,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           meta={request.status}
         />)}
       </PeopleWorkspaceSection>
-    </div>;
+    </div>);
   }
 
   if (person) {
@@ -755,24 +896,23 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       }
     }
 
-    return <div className="body ev2-people-page ev2-person-workspace ev2-admin-person-workspace">
+    return renderPeoplePage(<div className="ev2-person-workspace ev2-admin-person-workspace">
       <PeopleBackButton onClick={() => { personGeneration.current += 1; employeeFileWriteBusy.current = false; setEmployeeFileBusy(false); setPerson(null); setDrill(null); }} label="All people" ariaLabel="← All people" />
 
-      <div className="ev2p-admin-person-layout">
-        <aside className="ev2p-admin-person-rail" aria-label="Employee context">
-      <PeoplePersonHeader
-        name={person.full_name}
-        src={person.photo_url}
-        eyebrow={`${employmentCurrent?.unit_name || person.unit_name || "No unit"} · ${positionLabel}`}
-        subtitle={employmentCurrent?.job_title || person.job_title || "No job title recorded"}
-        context={[
-          person.email || identityLabel,
-          person.phone || person.hr_contact_phone,
-          person.source_department_text,
-          `Employment ${employmentState}`,
-        ].filter(Boolean).join(" · ")}
-      />
-
+      <div className="pp-record-layout">
+        <div className="pp-record-identity" aria-label="Employee context">
+      <header className="pp-profile-heading">
+        <Avatar name={person.full_name} src={person.photo_url} size="lg" />
+        <div><h2>{person.full_name}</h2>
+          <p>{employmentCurrent?.job_title || person.job_title || person.source_position || "No job title recorded"}</p>
+          <small>{employmentCurrent?.unit_name || person.unit_name || "No unit recorded"} · {hasLinkedProfile ? (employmentCurrent?.manager_name ? `Reports to ${employmentCurrent.manager_name}` : positionLabel) : rosterManagerName}</small>
+        </div>
+        <div className="pp-record-status" aria-label="Employment and account status">
+          <span>Employment: <strong>{employmentState}</strong></span>
+          <span>Account: <strong>{hasLinkedProfile ? "Linked" : "Not linked"}</strong></span>
+        </div>
+      </header>
+      <details className="pp-photo-editor"><summary>Change employee photo</summary>
       <FieldGroup label="Employee photo">
         <input
           className="field"
@@ -787,7 +927,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           }}
         />
       </FieldGroup>
-      <p className="screen-note">Stored privately in CEAC. Initials remain the fallback when no photo is recorded.</p>
+      <p className="screen-note">Stored privately in CEAC. Initials remain the fallback when no photo is recorded.</p></details>
 
       {error && <ProductNotice tone="error" title="Employee record">{error}</ProductNotice>}
       {!volunteerRecommendationsAvailable && <ProductNotice tone="attention" title="Volunteer recommendations pending">
@@ -804,38 +944,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
 
 
 
-      <details className="ev2p-admin-master-list" aria-label="Employee directory">
-        <summary className="ev2p-admin-directory-trigger">Switch employee · search directory</summary>
-        <FieldGroup label="Find employee">
-          <input
-            className="field"
-            type="search"
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Name, title or unit"
-          />
-        </FieldGroup>
-        <div className="ev2p-link-list">
-          {rows
-            .filter((entry) => {
-              const query = searchText.trim().toLowerCase();
-              return !query || [entry.full_name, entry.job_title, entry.source_position, entry.unit_name]
-                .filter(Boolean).some((value) => String(value).toLowerCase().includes(query));
-            })
-            .slice(0, 18)
-            .map((entry) => <PeoplePersonRow
-              key={entry.id}
-              name={entry.full_name}
-              src={entry.photo_url}
-              subtitle={entry.job_title || entry.source_position || "No job title recorded"}
-              context={entry.unit_name || entry.source_department_text || "No unit recorded"}
-              status={entry.id === person.id ? "Selected" : undefined}
-              statusTone="action"
-              onClick={() => openPerson(entry)}
-            />)}
         </div>
-      </details>
-        </aside>
 
         <div className="ev2p-admin-person-detail">
         <div className="workforce-setup-actions ev2p-admin-person-primary-actions" role="group" aria-label="Employee record actions" style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8,marginBottom:16,minWidth:0}}>
@@ -864,17 +973,30 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           >{label}</button>)}
         </div>
 
-        {personTab === "overview" && <PeopleWorkspaceSection
-          title="Overview"
-          description="Current authorised employee context. Missing values remain missing until CEAC records them."
-        >
-          <div className="ev2p-admin-record-grid">
-            <PeopleFactRow icon="work" title="Current title" subtitle={employmentCurrent?.job_title || person.job_title || person.source_position || "Not recorded"} />
-            <PeopleFactRow icon="people" title="Primary unit" subtitle={employmentCurrent?.unit_name || person.unit_name || (rosterUnitNames.length ? rosterUnitNames.join(" · ") : "Not recorded")} />
-            <PeopleFactRow icon="people" title="Account" subtitle={person.email || identityLabel} />
-            <PeopleFactRow icon="info" title="Employment status" subtitle={employmentState} />
-            <PeopleFactRow icon="work" title="Open work" subtitle={hasLinkedProfile ? `${person.openWork.length} recorded` : "No linked operational account"} />
-            <PeopleFactRow icon="calendar" title="Leave records" subtitle={hasLinkedProfile ? `${person.leave.length} recorded` : "No linked operational account"} />
+        {personTab === "overview" && <PeopleWorkspaceSection title="Overview">
+          <div className="pp-overview-columns">
+            <div><h3>Employment details</h3><dl className="pp-key-values">
+              <div><dt>Current title</dt><dd>{employmentCurrent?.job_title || person.job_title || person.source_position || "Not recorded"}</dd></div>
+              <div><dt>Employment type</dt><dd>{employmentCurrent?.employment_type || person.employment_type || person.contract_type || "Not recorded"}</dd></div>
+              <div><dt>Start date</dt><dd>{employmentCurrent?.joined_on || person.hr_started_on ? dateOnly(employmentCurrent?.joined_on || person.hr_started_on) : "Not recorded"}</dd></div>
+              <div><dt>Employment status</dt><dd>{employmentState}</dd></div>
+            </dl></div>
+            <div><h3>Reporting & placement</h3><dl className="pp-key-values">
+              <div><dt>Primary unit</dt><dd>{employmentCurrent?.unit_name || person.unit_name || "Not recorded"}</dd></div>
+              <div><dt>Manager</dt><dd>{hasLinkedProfile ? (employmentCurrent?.manager_name || "Not recorded") : rosterManagerName}</dd></div>
+              <div><dt>Recorded units</dt><dd>{rosterUnitNames.join(" · ") || "Not recorded"}</dd></div>
+              <div><dt>Account</dt><dd>{person.email || identityLabel}</dd></div>
+            </dl></div>
+          </div>
+          <div className="pp-account-context"><span>Employee records exist independently of login access.</span>
+            <button type="button" onClick={()=>setPersonTab("access")}>Review account access →</button>
+          </div>
+          <div className="pp-recent-history"><h3>Recent record changes</h3>
+            {employmentHistory.length ? employmentHistory.slice(0,3).map((entry,index)=><div key={entry.id || index}>
+              <strong>{employmentChangeLabel(entry.change_type || entry.event_type || "Employment record")}</strong>
+              <span>{entry.effective_on ? dateOnly(entry.effective_on) : "Date not recorded"}</span>
+            </div>) : <p>No linked employment snapshots are available here. Open History or Employment for the existing record and change history.</p>}
+            <button type="button" onClick={()=>setPersonTab("history")}>View history →</button>
           </div>
         </PeopleWorkspaceSection>}
       {personTab === "access" && <PeopleWorkspaceSection
@@ -1273,114 +1395,10 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           {savingEmployment ? "Recording…" : "Record employment change"}
         </button>
       </Sheet>}
-    </div>;
+    </div>);
   }
 
-  const cleanSearch = searchText.trim().toLowerCase();
-  const shown = rows.filter((p) => {
-    const matchesFilter =
-      filter === "all" ? true :
-      filter === "active" ? p.active :
-      filter === "on_leave" ? p.on_leave_now :
-      filter === "quiet" ? p.quiet :
-      filter === "no_unit" ? !p.unit_id : true;
-    const matchesSearch = !cleanSearch || [
-      p.full_name,p.source_display_name,p.email,p.job_title,p.source_position,p.source_department_text,p.unit_name,
-      ...(p.roster_units || []).map((unit) => unit.unit_name),
-      ...(p.responsibility_context || []),
-    ].filter(Boolean).some((value) => String(value).toLowerCase().includes(cleanSearch));
-    return matchesFilter && matchesSearch;
-  });
-
-  function rank(p) {
-    if (!p.profile_id) return 4;
-    if (p.is_exec) return 0;
-    if (p.is_admin) return 1;
-    if (p.role === "manager") return 2;
-    if (p.role === "sub_team_lead") return 3;
-    return 4;
-  }
-  function rankLabel(p) {
-    if (!p.profile_id) return p.source_position || "Roster employee";
-    if (p.is_exec) return "Group Pastor";
-    if (p.is_admin) return "Administration & HR";
-    if (p.role === "manager") return "Unit head";
-    if (p.role === "sub_team_lead") return "Team lead";
-    return "Staff";
-  }
-
-  const byUnit = {};
-  shown.forEach((p) => {
-    const key = p.unit_name || "No unit yet";
-    (byUnit[key] = byUnit[key] || []).push(p);
-  });
-  const groups = Object.keys(byUnit)
-    .sort((a, b) => (a === "No unit yet" ? 1 : b === "No unit yet" ? -1 : a.localeCompare(b)))
-    .map((name) => ({
-      name,
-      people: byUnit[name].sort((a, b) =>
-        rank(a) - rank(b)
-        || String(a.started_on || "9999").localeCompare(String(b.started_on || "9999"))
-        || a.full_name.localeCompare(b.full_name)),
-    }));
-  const roster = groups.flatMap((group) => group.people);
-  const attentionReasons = (entry) => [
-    entry.identity_state === "needs_review" ? "Identity review required" : null,
-    entry.employment_type === "not_recorded" ? "Employment type not recorded" : null,
-    !(entry.job_title || entry.source_position) ? "Job title not recorded" : null,
-    !entry.unit_id && !(entry.roster_units || []).length ? "No unit recorded" : null,
-  ].filter(Boolean);
-  const attentionRoster = roster.filter((entry) => attentionReasons(entry).length);
-  const unlinkedAccounts=operationalDirectory.filter(account=>account.active && !rows.some(entry=>entry.profile_id===account.id));
-  const unmatchedAccounts=unlinkedAccounts.filter(account=>!cleanSearch||[
-    account.full_name,account.email,account.unit_name,
-  ].filter(Boolean).some(value=>String(value).toLowerCase().includes(cleanSearch)));
-  const unitsWithoutHead = units.filter((unit) => !rows.some((entry) =>
-    entry.profile_id && entry.active && entry.role === "manager" && (
-      entry.unit_id === unit.id || (entry.roster_units || []).some((membership) => membership.unit_id === unit.id)
-    )
-  ));
-
-  return <div className="body ev2-people-page ev2-people-admin">
-    <PeoplePageHeader
-      eyebrow="Employee records"
-      title="People & Access"
-      description="One administrative workspace for employee records, account access, organisational placement, employment, work and leave context. Protected HR remains behind a separate security boundary."
-      count={rows.length}
-      countLabel={rows.length === 1 ? "person" : "people"}
-    />
-
-    {creatingEmployee && <HRCreateRosterEmployee
-      me={me} units={units} employees={rows} accounts={operationalDirectory}
-      onClose={()=>setCreatingEmployee(false)}
-      onCreated={async employee=>{
-        if(!(await load({silent:true})))throw new Error("The employee was created but the directory did not refresh. Recheck existing employees before retrying.");
-        setCreatingEmployee(false);
-        setSearchText("");
-        setFilter("all");
-        setViewMode("directory");
-        await openPerson({
-          id:employee.id,employee_id:employee.id,profile_id:null,
-          full_name:employee.full_name,employment_status:employee.employment_status,
-          job_title:employee.job_title,identity_state:"roster_only",active:employee.employment_status==="active",
-        });
-      }}
-    />}
-    {error && <ProductNotice tone="error" title="People could not finish loading" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice>}
-    {detailLoading && <LoadingState label="Opening employee record…" />}
-    {!leavePolicy && <ProductNotice tone="attention" title="Leave policy not configured">People records show leave actually taken, but CEAC OS will not calculate entitlement or remaining leave until Administration confirms the policy.</ProductNotice>}
-
-    <div className="ev2p-filter-tabs" role="tablist" aria-label="People views">
-      {PEOPLE_VIEWS.map(([key, label]) => <button
-        key={key}
-        type="button"
-        role="tab"
-        aria-selected={viewMode === key}
-        className={viewMode === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
-        onClick={() => { if (key !== "access") { setAccessFocusProfileId(null); setAccessFocusUnitId(null); setAccessFocusMode(null); } setViewMode(key); }}
-      >{label}</button>)}
-    </div>
-
+  return renderPeoplePage(<>
     {viewMode === "access" && <PeopleAccess
       me={me}
       go={go}
@@ -1397,65 +1415,9 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
       }}
     />}
 
-    {viewMode === "directory" && <div className="ev2p-admin-control-band">
-    <div className="ev2p-admin-toolbar">
-      <button type="button" className="btn" onClick={()=>setCreatingEmployee(true)}>Add employee</button>
-      <FieldGroup label="Find a person">
-        <input
-          className="field"
-          type="search"
-          placeholder="Name, email, job title or unit"
-          value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
-        />
-      </FieldGroup>
-    </div>
+    {viewMode === "directory" && <PeopleEmpty title="Select an employee" description="Choose a person from the list to open their record." />}
 
-    <div className="ev2p-filter-tabs ev2p-admin-filters" role="tablist" aria-label="People filters">
-      {FILTERS.map(([key, label]) => <button
-        key={key}
-        type="button"
-        role="tab"
-        aria-selected={filter === key}
-        className={filter === key ? "ev2p-filter-tab is-selected" : "ev2p-filter-tab"}
-        onClick={() => setFilter(key)}
-      >{label}</button>)}
-    </div>
-    <p className="ev2p-admin-directory-note">
-      Work and submission counts are factual operating context only. They are not a performance score, ranking or disciplinary conclusion.
-    </p>
-    </div>}
-
-    {viewMode === "directory" && roster.length > 0 && <section className="fpg-people-roster" aria-label="Employee roster">
-      <header className="fpg-people-roster-head">
-        <div><span>Employees</span><h2>Employee roster</h2></div>
-        <div><b>{roster.length}</b><span>{filter === "all" ? "visible" : FILTERS.find(([key]) => key === filter)?.[1]}</span></div>
-      </header>
-      <div className="fpg-people-roster-columns" aria-hidden="true">
-        <span>Employee</span><span>Unit</span><span>Status</span><span>Recorded context</span><span />
-      </div>
-      <div className="fpg-people-roster-list">
-        {roster.map((p) => <button type="button" className="fpg-people-roster-row" key={p.id} onClick={() => openPerson(p)}>
-          <span className="fpg-people-roster-person">
-            <Avatar name={p.full_name} src={p.photo_url} size="md" />
-            <span><strong>{p.full_name}</strong><small>{rankLabel(p)}{p.job_title ? ` · ${p.job_title}` : ""}</small></span>
-          </span>
-          <span className="fpg-people-roster-unit">{p.unit_name || "No unit assigned"}</span>
-          <span className={p.identity_state === "needs_review" ? "fpg-people-roster-status is-leave" : !p.active ? "fpg-people-roster-status is-inactive" : "fpg-people-roster-status is-active"}>
-            {p.identity_state === "needs_review" ? "Identity review" : p.identity_state === "roster_only" ? "Roster only" : p.on_leave_now ? "On leave" : !p.active ? "Inactive" : "Active"}
-          </span>
-          <span className="fpg-people-roster-facts">
-            <strong>{!p.profile_id ? "No account linked" : p.quiet ? "Review context" : `${p.open_count || 0} open`}</strong>
-            <small>{!p.profile_id
-              ? `${(p.roster_units || []).length} unit membership${(p.roster_units || []).length === 1 ? "" : "s"} recorded`
-              : p.quiet ? "No submission recorded in 14 days" : `${p.done_count || 0} finished on record`}</small>
-          </span>
-          <span className="fpg-people-roster-open" aria-hidden="true">›</span>
-        </button>)}
-      </div>
-    </section>}
-
-    {(viewMode === "directory" || viewMode === "attention") && unlinkedAccounts.length>0 && <section
+    {viewMode === "attention" && unlinkedAccounts.length>0 && <section
       className="ev2p-account-reconciliation" aria-label="Operational accounts without linked employee records"
       style={{marginTop:20,border:"1px solid var(--ev2-line,var(--line))",borderRadius:10,padding:16}}>
       <header style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap",alignItems:"center"}}>
@@ -1539,7 +1501,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         {!unitsWithoutHead.length && <PeopleEmpty title="No Unit Head gap recorded" description="Every active unit has a recorded Unit Head." />}
       </PeopleSection>
     </div>}
-  </div>;
+  </>);
 }
 
 

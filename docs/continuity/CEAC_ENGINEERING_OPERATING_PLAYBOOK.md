@@ -173,3 +173,8 @@ A two-core runner is insufficient for this repository's full local Supabase boot
 The existing CEAC Codespace can be resized safely only when the personal account shows a USD 0 Codespaces budget with `Stop usage: Yes`. The verified 4-core option provides 16 GB RAM and 32 GB storage.
 
 Do not assume more Codespace capacity fixes the local Supabase issue. On 4 cores / 16 GB, PostgreSQL and Kong reached healthy state with low resource use, while Auth and Storage repeatedly timed out against PostgreSQL. Excluding Realtime produced the same failure. Stop after these two bounded attempts; do not resize further or loop the CLI. Continue Git-ancestry resilience checks independently and use a verified disposable Supabase project for Auth/Storage acceptance if the owner authorises one.
+
+
+## 24 October — People & Access visual replacement
+
+Canonical latest main a11e98e8 was cloned successfully through ordinary public Git HTTPS in the current Work runtime; older transport failures do not establish a current blocker. Node22.16.0 via package-scoped execution and existing Vite8 build work. Local Playwright1.56.1 and Chromium1194 were installed without editing package manifests/lockfiles. A tests/fixtures Vite entry can render the real People component with intercepted synthetic REST responses for bounded desktop/mobile presentation checks; it must not be confused with signed-in backend/RLS acceptance. See CEAC_PEOPLE_ACCESS_LAYOUT_2026-10-24.md for scope and actual evidence. The owner explicitly approved replacing the page and taking it live; retain standard required checks and existing security hardening. One replacement branch only, based on merged production main; old PR124 is merged historical work, not the active post-release lane.

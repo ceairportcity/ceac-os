@@ -16,9 +16,8 @@ test("HR can open a roster-only employee's edit directly from selected profile a
  await employee.click();
  const actions=page.getByRole("group",{name:"Employee record actions"});
  await expect(actions).toBeVisible();
- const chooser=page.getByText("Switch employee · search directory");
- await expect(chooser).toBeVisible();
- await expect(page.locator(".ev2p-admin-master-list")).not.toHaveAttribute("open","");
+ await expect(page.getByRole("complementary",{name:"Employee directory"})).toBeVisible();
+ await expect(page.getByRole("region",{name:"Selected employee record"})).toBeVisible();
  await actions.getByRole("button",{name:"Edit employee record"}).click();
  await expect(page.getByRole("tab",{name:"Employment",exact:true})).toHaveAttribute("aria-selected","true");
  const editor=page.getByRole("region",{name:"Roster-only HR record and placement"});
@@ -54,6 +53,7 @@ test("390px People record keeps complete HR action access without the long direc
  await expect(actions.getByRole("button",{name:"Edit employee record"})).toBeVisible();
  await expect(actions.getByRole("button",{name:"Assign / transfer department"})).toBeVisible();
  await expect(actions.getByRole("button",{name:"Invite account"})).toBeVisible();
- await expect(page.locator(".ev2p-admin-master-list")).not.toHaveAttribute("open","");
+ await expect(page.getByRole("complementary",{name:"Employee directory"})).toBeHidden();
+ await expect(page.getByRole("button",{name:"← All people"})).toBeVisible();
  await context.close();
 });
