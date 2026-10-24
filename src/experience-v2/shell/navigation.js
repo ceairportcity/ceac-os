@@ -117,6 +117,18 @@ export function getRoleName(context = {}) {
   return "Staff";
 }
 
+
+// Administration module links follow the same organisation-wide grants as App.
+// A unit-scoped grant never creates an organisation administration entry point.
+export function getAdministrationTools(me = {}) {
+  const grants = me.capability_grants || [];
+  return [
+    { key: "performance", label: "Reviews & Development", icon: "reports", group: "insight", capability: "performance.admin", searchTerms: "performance appraisal quarterly reviews" },
+    { key: "learning", label: "Learning", icon: "learning", group: "insight", capability: "learning.manage", searchTerms: "courses training" },
+    { key: "compliance", label: "Compliance", icon: "compliance", group: "insight", capability: "compliance.manage", searchTerms: "policies evidence" },
+  ].filter(item => grants.some(grant => grant.capability === item.capability && !grant.scope_unit_id));
+}
+
 export function getShellNavigation({ me, ...context } = {}) {
   const role = getRoleKey(context);
   const capabilities = new Set(me?.capabilities || []);
@@ -126,6 +138,10 @@ export function getShellNavigation({ me, ...context } = {}) {
   const destinations = [...ROLE_DESTINATIONS[role],
     { key: "technical-help", label: "Get technical help", icon: "help", group: "account" },
   ];
+  if (role === "admin") {
+    const index = destinations.findIndex(item => item.key === "settings");
+    destinations.splice(index, 0, ...getAdministrationTools(me));
+  }
   if (capabilities.has("support.case.manage")) {
     destinations.push({
       key: "technical-support", label: "Technical Support",
@@ -133,7 +149,7 @@ export function getShellNavigation({ me, ...context } = {}) {
     });
   }
   return destinations.filter(
-    (item) => !item.capability || capabilities.has(item.capability)
+    (item) => !item.capability || capabilities.has(item.capability) || (role === "admin" && getAdministrationTools(me).some(tool => tool.key === item.key))
   );
 }
 

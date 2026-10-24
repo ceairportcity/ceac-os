@@ -264,12 +264,17 @@ export default function Workforce({ me }) {
     }
   }
 
+  function beginDayType(){
+    setDayTypeName(""); setDayTypeDescription(""); setDayTypeExpected(true);
+    setDayTypeSheet(true);
+  }
+
   async function recordDayType(){
     const ok=await runRpc("workforce_record_day_type",{
       p_id:null,p_name:dayTypeName.trim(),p_description:dayTypeDescription.trim()||null,
       p_session_expected:dayTypeExpected,p_leave_overlay_allowed:true,p_active:true,
     },"Day type recorded.",["people","day types"]);
-    if(ok){ setDayTypeSheet(false); setDayTypeName(""); setDayTypeDescription(""); }
+    if(ok){ setDayTypeSheet(false); setDayTypeName(""); setDayTypeDescription(""); setDayTypeExpected(true); }
   }
 
   async function recordSchedule(){
@@ -862,7 +867,7 @@ export default function Workforce({ me }) {
         {Object.keys(datasetErrors).length>0&&<ProductNotice tone="error" title="Workforce data status">{Object.entries(datasetErrors).map(([name,message])=><div key={name}><strong>{human(name)}</strong>: {message}</div>)}</ProductNotice>}
         <p className="ev2wf-manager-scope">These controls appear only because workforce.manage is explicitly present. Manager role alone does not grant this authority.</p>
         <div className="ev2wf-toolbar">
-          <Button variant="secondary" onClick={()=>setDayTypeSheet(true)}>Add day type</Button>
+          <Button variant="secondary" onClick={beginDayType}>Add day type</Button>
           <Button variant="secondary" disabled={busy||!dayTypes.length||!people.length} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</Button>
           <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
@@ -1183,7 +1188,7 @@ export default function Workforce({ me }) {
         <div className="ev2wf-manager-scope workforce-data-status">Visible people: <strong>{people.length}</strong> · Active day types: <strong>{dayTypes.length}</strong></div>
         <WorkforceEmployeeScheduleWorkspace me={me} initialEmployeeId={scheduleEmployeeFocus} />
         <div className="ev2wf-toolbar">
-          <Button variant="secondary" onClick={()=>setDayTypeSheet(true)}>Add day type</Button>
+          <Button variant="secondary" onClick={beginDayType}>Add day type</Button>
           <p className="screen-note">Choose an employee above to review all seven days, change a weekday and confirm an effective-dated successor. Historical one-day schedule records remain preserved; new changes use the unified editor.</p>
           <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
@@ -1422,7 +1427,7 @@ export default function Workforce({ me }) {
       {Object.keys(datasetErrors).length>0&&<ProductNotice tone="error" title="Workforce data status">{Object.entries(datasetErrors).map(([name,message])=><div key={name}><strong>{human(name)}</strong>: {message}</div>)}</ProductNotice>}
       <div className="card small workforce-data-status">Visible people: <strong>{people.length}</strong> · Active day types: <strong>{dayTypes.length}</strong></div>
       <div className="workforce-setup-actions">
-        <button className="btn btn-ghost" onClick={()=>setDayTypeSheet(true)}>Add day type</button>
+        <button className="btn btn-ghost" onClick={beginDayType}>Add day type</button>
         <button className="btn btn-ghost" disabled={busy||!dayTypes.length||!people.length} title={!people.length?"No visible active people loaded":!dayTypes.length?"No active day types loaded":""} onClick={()=>{setSchedulePerson(people[0]?.profile_id||"");setScheduleDayType(dayTypes[0]?.id||"");setScheduleSheet(true)}}>Record schedule</button>
         <button className="btn" onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</button>
       </div>

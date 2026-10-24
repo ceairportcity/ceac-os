@@ -10,6 +10,7 @@ import {
 } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
 import "./ControlCenter.css";
+import {getAdministrationTools} from "../experience-v2/shell/navigation";
 
 const STATUSES = {
   ready:"Ready",
@@ -252,6 +253,14 @@ export default function ControlCenter({me,go}){
         ],
       },
       {
+        key:"development",
+        title:"Reviews, learning & compliance",
+        description:"Authorised employee development and policy workspaces.",
+        status:getAdministrationTools(me).length ? STATUSES.available : STATUSES.restricted,
+        detail:"Open the tools assigned to your account. Quarterly leadership scheduling is available in Reports; protected appraisal publication remains an independent HR decision.",
+        actions:getAdministrationTools(me).map(tool=>({label:tool.label,onClick:()=>go(tool.key)})),
+      },
+      {
         key:"governance",
         title:"Security & governance",
         description:"Explicit authority, versioned rules and consequential checks.",
@@ -293,7 +302,7 @@ export default function ControlCenter({me,go}){
         ]:[],
       },
     ];
-  },[snapshot,caps,canPayroll,canIntegrations,canAudit,go]);
+  },[snapshot,caps,canPayroll,canIntegrations,canAudit,go,me]);
 
   // Non-actionable permission notices used to fill the Control Center with
   // redundant cards. Keep every genuinely actionable domain, including
@@ -321,7 +330,7 @@ export default function ControlCenter({me,go}){
       eyebrow:"Operations",
       title:"Operational configuration",
       description:"Workflow, Time & Leave and Payroll / Finance readiness.",
-      domainKeys:["work","leave","payroll"],
+      domainKeys:["work","leave","development","payroll"],
     },
     {
       key:"governance",
