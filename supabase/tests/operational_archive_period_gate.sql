@@ -23,11 +23,17 @@ UPDATE public.report_periods SET starts_on='2098-01-01',ends_on='2098-01-31' WHE
 ALTER TABLE public.report_periods ENABLE TRIGGER report_period_identity_guard;
 INSERT INTO public.reports(id,org_id,period_id,scope,unit_id,narrative,status,submitted_by,submitted_at)
 VALUES('aa610101-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000010','aa610100-0000-4000-8000-000000000003','unit','20000000-0000-4000-8000-000000000011','Demo · original submitted report','submitted','31000000-0000-4000-8000-000000000003',now());
+INSERT INTO public.budgets(id,org_id,unit_id,project_id,year,amount_minor,currency,note)
+VALUES('aa610030-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000010','20000000-0000-4000-8000-000000000011','aa610001-0000-4000-8000-000000000001',2098,100,'CAD','Demo · isolated project budget');
+INSERT INTO public.spend_lines(id,org_id,unit_id,period_id,spent_on,description,amount_minor,currency,entered_by)
+VALUES('aa610031-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000010','20000000-0000-4000-8000-000000000011','aa610100-0000-4000-8000-000000000003','2098-03-01','Demo · isolated period spend',100,'CAD','31000000-0000-4000-8000-000000000003');
 CREATE TEMP TABLE ops_original AS
  SELECT 'projects'::text kind,id,md5(to_jsonb(p)::text) fingerprint FROM public.projects p WHERE id::text LIKE 'aa610001%'
  UNION ALL SELECT 'work_items',id,md5(to_jsonb(w)::text) FROM public.work_items w WHERE id::text LIKE 'aa610010%'
  UNION ALL SELECT 'report_periods',id,md5(to_jsonb(p)::text) FROM public.report_periods p WHERE id::text LIKE 'aa610100%'
- UNION ALL SELECT 'reports',id,md5(to_jsonb(r)::text) FROM public.reports r WHERE id::text LIKE 'aa610101%';
+ UNION ALL SELECT 'reports',id,md5(to_jsonb(r)::text) FROM public.reports r WHERE id::text LIKE 'aa610101%'
+ UNION ALL SELECT 'budgets',id,md5(to_jsonb(b)::text) FROM public.budgets b WHERE id::text LIKE 'aa610030%'
+ UNION ALL SELECT 'spend_lines',id,md5(to_jsonb(s)::text) FROM public.spend_lines s WHERE id::text LIKE 'aa610031%';
 GRANT SELECT ON ops_original TO authenticated;
 SET LOCAL ROLE authenticated;
 DO $gate$
@@ -50,12 +56,22 @@ BEGIN
  BEGIN PERFORM public.admin_apply_operational_archive(changes,'Synthetic stale batch must roll back'); RAISE EXCEPTION 'Stale batch allowed'; EXCEPTION WHEN serialization_failure THEN NULL; END;
  IF (SELECT count(*) FROM public.operational_archive_events)<>before_events THEN RAISE EXCEPTION 'Stale batch partially applied'; END IF;
  SELECT jsonb_agg(jsonb_build_object('record_table',record_table,'record_id',record_id,'fingerprint',fingerprint,'event_no',event_no,'archived',true)) INTO changes
+ FROM public.admin_operational_archive_records() WHERE record_id='aa610100-0000-4000-8000-000000000003';
+ BEGIN PERFORM public.admin_apply_operational_archive(changes,'Period with live spend must require review'); RAISE EXCEPTION 'Period with live finance archived'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ FOR r IN SELECT * FROM public.admin_finance_demo_records() WHERE record_id IN ('aa610030-0000-4000-8000-000000000001','aa610031-0000-4000-8000-000000000001') LOOP
+  PERFORM public.admin_set_finance_demo_record(r.record_table,r.record_id,true,r.fingerprint,r.event_no,'Synthetic demo finance before operational archive');
+ END LOOP;
+ SELECT jsonb_agg(jsonb_build_object('record_table',record_table,'record_id',record_id,'fingerprint',fingerprint,'event_no',event_no,'archived',true)) INTO changes
  FROM public.admin_operational_archive_records() WHERE record_id IN ('aa610001-0000-4000-8000-000000000001','aa610010-0000-4000-8000-000000000001','aa610010-0000-4000-8000-000000000002','aa610100-0000-4000-8000-000000000003');
  IF public.admin_apply_operational_archive(changes,'Synthetic owner-confirmed demonstration archive')<>4 THEN RAISE EXCEPTION 'Atomic archive count mismatch'; END IF;
  IF EXISTS(SELECT 1 FROM public.projects WHERE id='aa610001-0000-4000-8000-000000000001') OR EXISTS(SELECT 1 FROM public.work_items WHERE id::text LIKE 'aa610010%' AND id<>'aa610010-0000-4000-8000-000000000003')
   OR EXISTS(SELECT 1 FROM public.report_periods WHERE id='aa610100-0000-4000-8000-000000000003') OR EXISTS(SELECT 1 FROM public.reports WHERE id='aa610101-0000-4000-8000-000000000001') THEN
   RAISE EXCEPTION 'Archive leaked into live RLS reads'; END IF;
  IF public.app_can_see_item('aa610010-0000-4000-8000-000000000001') OR EXISTS(SELECT 1 FROM public.app_visible_projects() id WHERE id='aa610001-0000-4000-8000-000000000001') THEN RAISE EXCEPTION 'Definer visibility bypassed archive'; END IF;
+ FOR r IN SELECT * FROM public.admin_finance_demo_records() WHERE record_id IN ('aa610030-0000-4000-8000-000000000001','aa610031-0000-4000-8000-000000000001') LOOP
+  BEGIN PERFORM public.admin_set_finance_demo_record(r.record_table,r.record_id,false,r.fingerprint,r.event_no,'Finance must wait for restoration of parent');
+   RAISE EXCEPTION 'Finance restored under archived parent'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ END LOOP;
  SELECT * INTO r FROM public.admin_operational_archive_records() WHERE record_id='aa610100-0000-4000-8000-000000000003';
  IF jsonb_array_length(r.retained_reports)<>1 OR r.retained_reports->0->>'narrative'<>'Demo · original submitted report' THEN RAISE EXCEPTION 'Archived report unavailable to authorized reviewer'; END IF;
  SELECT jsonb_agg(jsonb_build_object('record_table',record_table,'record_id',record_id,'fingerprint',fingerprint,'event_no',event_no,'archived',true,'canonical_period_id',canonical)) INTO changes
@@ -69,6 +85,8 @@ BEGIN
  FROM public.admin_operational_archive_records() WHERE record_id IN ('aa610001-0000-4000-8000-000000000001','aa610010-0000-4000-8000-000000000001','aa610010-0000-4000-8000-000000000002');
  PERFORM public.admin_apply_operational_archive(changes,'Synthetic archive restoration proof');
  IF (SELECT count(*) FROM public.work_items WHERE id IN ('aa610010-0000-4000-8000-000000000001','aa610010-0000-4000-8000-000000000002'))<>2 THEN RAISE EXCEPTION 'Task restoration failed'; END IF;
+ SELECT * INTO r FROM public.admin_finance_demo_records() WHERE record_id='aa610030-0000-4000-8000-000000000001';
+ PERFORM public.admin_set_finance_demo_record(r.record_table,r.record_id,false,r.fingerprint,r.event_no,'Project restored; synthetic budget can be restored');
 END; $gate$;
 RESET ROLE;
 DO $immutability$
@@ -84,6 +102,18 @@ BEGIN
   IF actual IS DISTINCT FROM r.fingerprint THEN RAISE EXCEPTION 'Archive rewrote source % %',r.kind,r.id; END IF;
  END LOOP;
 END; $immutability$;
+SET LOCAL ROLE authenticated;
+DO $restore_period_finance$
+DECLARE j jsonb; r record;
+BEGIN
+ SELECT jsonb_build_array(jsonb_build_object('record_table',record_table,'record_id',record_id,'fingerprint',fingerprint,'event_no',event_no,'archived',false)) INTO j
+ FROM public.admin_operational_archive_records() WHERE record_id='aa610100-0000-4000-8000-000000000003';
+ PERFORM public.admin_apply_operational_archive(j,'Restore synthetic period before its finance');
+ SELECT * INTO r FROM public.admin_finance_demo_records() WHERE record_id='aa610031-0000-4000-8000-000000000001';
+ PERFORM public.admin_set_finance_demo_record(r.record_table,r.record_id,false,r.fingerprint,r.event_no,'Period restored; synthetic spend can be restored');
+ IF NOT EXISTS(SELECT 1 FROM public.reports WHERE id='aa610101-0000-4000-8000-000000000001' AND narrative='Demo · original submitted report') THEN RAISE EXCEPTION 'Restored period lost its original report'; END IF;
+END; $restore_period_finance$;
+RESET ROLE;
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal2"}',true);
 SET LOCAL ROLE authenticated;
 DO $denials$
@@ -92,7 +122,9 @@ BEGIN
  BEGIN PERFORM public.admin_apply_operational_archive('[]'::jsonb,'Staff may not classify records'); RAISE EXCEPTION 'Staff archive writer allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN INSERT INTO public.operational_archive_events(org_id,record_table,record_id,archived,reason,recorded_by) VALUES('10000000-0000-4000-8000-000000000010','projects','aa610001-0000-4000-8000-000000000001',true,'Direct write denied','31000000-0000-4000-8000-000000000001'); RAISE EXCEPTION 'Direct archive write allowed'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  IF has_function_privilege('anon','public.admin_apply_operational_archive(jsonb,text)','EXECUTE') OR has_function_privilege('anon','public.admin_operational_archive_records()','EXECUTE')
- OR has_function_privilege('authenticated','private.guard_operational_archive()','EXECUTE') THEN RAISE EXCEPTION 'Archive execution grants widened'; END IF;
+ OR has_function_privilege('authenticated','private.guard_operational_archive()','EXECUTE')
+ OR has_function_privilege('authenticated','private.guard_operational_finance_restore()','EXECUTE')
+ OR has_function_privilege('anon','private.guard_operational_finance_restore()','EXECUTE') THEN RAISE EXCEPTION 'Archive execution grants widened'; END IF;
 END; $denials$;
 RESET ROLE;
 ROLLBACK;
