@@ -9,8 +9,10 @@ export function adminWorkforceToday(roster,sessions,operationalProfiles=[],start
  const linked=new Map();
  const people=roster.filter(person=>person&&person.id).map(person=>{
   if(person.profile_id) linked.set(person.profile_id,person.id);
+  const unitNames=(Array.isArray(person.units)?person.units:[]).map(unit=>typeof unit==="string"?unit:unit?.name||unit?.unit_name).filter(Boolean);
+  if(!unitNames.length&&person.unit_name)unitNames.push(person.unit_name);
   return {id:person.id,profileId:person.profile_id||null,name:person.full_name||person.preferred_name||"Employee",
-   unit:(Array.isArray(person.units)?person.units:[]).map(unit=>typeof unit==="string"?unit:unit?.name||unit?.unit_name).filter(Boolean).join(", ")||person.unit_name||"Unit not recorded",
+   unitNames,unit:unitNames.join(", ")||"Unit not recorded",
    linked:!!person.profile_id,firstStart:null,sessionCount:0,open:false,place:null,latitude:null,longitude:null,
    locationCapturedAt:null,accuracyM:null,mapStart:null,startHistory:[]};
  });
@@ -24,7 +26,7 @@ export function adminWorkforceToday(roster,sessions,operationalProfiles=[],start
    // A real session can exist while the roster linkage is temporarily unresolved.
    const account=accountByProfile.get(session.profile_id);
    row={id:"profile:"+session.profile_id,profileId:session.profile_id,name:account?.full_name||"Employee record unavailable",
-    unit:account?.unit_name||"Unit not recorded",linked:false,firstStart:null,sessionCount:0,open:false,place:null,
+    unitNames:account?.unit_name?[account.unit_name]:[],unit:account?.unit_name||"Unit not recorded",linked:false,firstStart:null,sessionCount:0,open:false,place:null,
     latitude:null,longitude:null,locationCapturedAt:null,accuracyM:null,mapStart:null,startHistory:[]};
    byId.set(row.id,row);
   }

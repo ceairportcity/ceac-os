@@ -93,3 +93,12 @@ test("a missing latest capture is not replaced by an earlier GPS fix",()=>{
  const rows=adminWorkforceToday(roster,[{id:"a",profile_id:"account-1",started_at:"2026-10-24T08:00:00Z",lat:5.6,lng:-.2},{id:"b",profile_id:"account-1",started_at:"2026-10-24T10:00:00Z",lat:null,lng:null}]);
  assert.equal(rows[0].latitude,null);assert.equal(clusterWorkStartLocations(rows).length,0);assert.equal(rows[0].startHistory.length,2);
 });
+
+test("department labels preserve commas and multiple memberships for exact filtering",()=>{
+ const [person]=adminWorkforceToday([{id:"employee-comma",profile_id:null,full_name:"Synthetic colleague",units:[{name:"Facilities, Logistics and Procurement"},{name:"Operations"}]}],[]);
+ assert.deepEqual(person.unitNames,["Facilities, Logistics and Procurement","Operations"]);
+ assert.equal(person.unitNames.includes("Facilities, Logistics and Procurement"),true);
+ assert.equal(person.unitNames.includes("Facilities"),false);
+ const [fallback]=adminWorkforceToday([{id:"fallback",unit_name:"Facilities, Logistics and Procurement"}],[]);
+ assert.deepEqual(fallback.unitNames,["Facilities, Logistics and Procurement"]);
+});

@@ -50,6 +50,8 @@ for(const width of [1440,820,390,320]){
   await expect(map.locator(".workstart-unmapped-detail")).not.toContainText("Session ended");
   await map.getByRole("button",{name:"Close details",exact:true}).click();
   await expect(noSession).toBeFocused();
+  await map.getByRole("combobox",{name:"Filter daily workforce by department",exact:true}).selectOption("Facilities, Logistics and Procurement");
+  await expect(noSession).toBeVisible();
   await page.locator(".adminv2-more-context > summary").click();
   await expect(page.locator(".adminv2-reporting")).toBeVisible();
   await expect(page.locator(".adminv2-delivery")).toBeVisible();

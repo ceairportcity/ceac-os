@@ -9,8 +9,8 @@ export default function AdminWorkforceToday({roster=[],sessions=[],operationalPr
  const [term,setTerm]=useState(""),[filter,setFilter]=useState("started"),[selectedId,setSelectedId]=useState(null);
  const [unitFilter,setUnitFilter]=useState(""),[startChoice,setStartChoice]=useState("latest");
  const people=useMemo(()=>adminWorkforceToday(roster,sessions,operationalProfiles,startChoice),[roster,sessions,operationalProfiles,startChoice]);
- const unitNames=useMemo(()=>[...new Set(roster.flatMap(r=>(r.units||[]).map(u=>typeof u==="string"?u:u.name||u.unit_name)).filter(Boolean))].sort(),[roster]);
- const results=useMemo(()=>people.filter(r=>(!term||(r.name+" "+r.unit).toLowerCase().includes(term.toLowerCase()))&&(!unitFilter||r.unit.split(", ").includes(unitFilter))&&(filter==="started"?r.firstStart:filter==="open"?r.open:filter==="noSession"?!r.firstStart:filter==="noCoordinates"?r.firstStart&&!located(r):true)),[people,term,unitFilter,filter]);
+ const unitNames=useMemo(()=>[...new Set(people.flatMap(r=>r.unitNames))].sort(),[people]);
+ const results=useMemo(()=>people.filter(r=>(!term||(r.name+" "+r.unit).toLowerCase().includes(term.toLowerCase()))&&(!unitFilter||r.unitNames.includes(unitFilter))&&(filter==="started"?r.firstStart:filter==="open"?r.open:filter==="noSession"?!r.firstStart:filter==="noCoordinates"?r.firstStart&&!located(r):true)),[people,term,unitFilter,filter]);
  const clusters=useMemo(()=>clusterWorkStartLocations(results),[results]);
  const selected=results.find(r=>r.id===selectedId)||null;
  const started=people.filter(r=>r.firstStart),missing=started.filter(r=>!located(r));
