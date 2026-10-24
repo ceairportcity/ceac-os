@@ -12,6 +12,7 @@ tests=(
   report_row_tenant_invariant_gate.sql
   unit_budget_tenant_boundary_gate.sql
   security_definer_surface_gate.sql
+  browser_truncate_privilege_gate.sql
   privileged_mfa_aal2_gate.sql
   s6_hot_path_security_performance_gate.sql
   meeting_authority_gate.sql

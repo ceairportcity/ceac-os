@@ -4,6 +4,10 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   build: {
+    // Dynamic module-preload links do not inherit a hash-authorised script's
+    // CSP trust. Native module imports preserve on-demand loading without
+    // creating those unapproved preload requests.
+    modulePreload: false,
     rolldownOptions: {
       output: {
         codeSplitting: {
