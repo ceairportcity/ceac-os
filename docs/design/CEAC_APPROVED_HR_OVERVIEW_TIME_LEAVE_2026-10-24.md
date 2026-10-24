@@ -98,3 +98,30 @@ This deliberate `[vercel]` checkpoint changes only this ledger and is applicatio
 
 TECHNICALLY ACCEPTED: YES for application `ea9a60d` (all required exact-head gates passed).
 VISUALLY / PRODUCT-EXPERIENCE ACCEPTED: NO for release — synthetic visual/interaction acceptance passed; deployed-product verification pending.
+
+## Final live acceptance — 24 October 2026
+
+**Complete for this approved HR Overview, shared recorded-start map and calendar-led Time & Leave bundle.** PR [#140](https://github.com/ceairportcity/ceac-os/pull/140) merged as `d0bcc0f8ce62bbf14a73c51657b8ea8706bd15c1`. Its tree `78159f30646d376610b7c458e914909f99a77322` exactly matches the accepted deployment checkpoint `3b93c20fa3f3e62951e64b15529a97593723c8a8`; application source is equivalent to fully tested `ea9a60de3f6aab75bc9096a26bbb3129ec8a0b9a`.
+
+Deployment evidence:
+- Deliberate preview `dpl_DomSHBxSwUphyLMQfzjr9kCGtZv7`: READY; actual deployed CEAC sign-in loaded successfully. No CEAC-origin startup error observed (an unrelated browser-extension metadata error was excluded).
+- Production `dpl_QKesLmNkbtWja2aUdymHnt1eew4z`: READY at merged main `d0bcc0f`. Live URL: [CEAC OS](https://ceac-os-git.vercel.app/). Vercel's production alias matches that deployment.
+- Public production root returned HTTP 200 with CSP and `nosniff`; script policy contains neither `unsafe-inline` nor `unsafe-eval`.
+
+Actual existing Administration/HR session verification (read-only, 24 October):
+- Personalised greeting, loaded scenic photograph and adjacent calendar are present. Both requests and announcements end above the map. Secondary organisation context defaults collapsed; no selected-employee popup is present initially. Measured horizontal page overflow: 0.
+- Organisation leave calendar loads the two genuine pending requests. Selecting a current request shows its Manager-approval stage; Administration approval is not exposed at that stage. No leave decision was submitted.
+- The genuine department name containing commas returns its matching employee in the no-session filter. Selecting that record says **No session recorded**, does not say **Session ended**, and closing details restores employee-row focus. Default filters were restored afterwards.
+- Today had zero captured work-start GPS records during inspection. No staff pin or work session was fabricated. Valid-GPS, shared-pin and missing-GPS interactions are proven by the exact-head synthetic browser cases; actual provider cartography was not represented as a live staff-GPS verification on this empty day.
+- No employee, account, schedule, payroll, work-session or business-decision mutation was made during the live verification. Normal existing application activity telemetry is outside this statement. Other roles are covered by the complete isolated role suite; genuine production identities were not impersonated. Manager Overview source remains unchanged.
+
+Post-merge main qualification is also PASS:
+- [CI 40122371901](https://github.com/ceairportcity/ceac-os/actions/runs/40122371901).
+- [Migration Replay 40122371918](https://github.com/ceairportcity/ceac-os/actions/runs/40122371918).
+- [Account Security 40122371891](https://github.com/ceairportcity/ceac-os/actions/runs/40122371891).
+- [Quality Gate 40122371879](https://github.com/ceairportcity/ceac-os/actions/runs/40122371879): SQL/authority, all eight browser shards, merged exact-head product evidence and final `role-and-rls` coordinator PASS.
+
+This final record is documentation-only; it changes no accepted application source and may use the documented documentation-integrity fast path. Earlier failed, superseded or cancelled candidates remain historical evidence, not passes. This acceptance does not close unrelated historical audit deferrals or owner-deferred account-readiness work.
+
+TECHNICALLY ACCEPTED: **YES**.
+VISUALLY / PRODUCT-EXPERIENCE ACCEPTED: **YES**, for this approved bundle with the explicit live-GPS evidence boundary above.
