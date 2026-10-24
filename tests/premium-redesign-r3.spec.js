@@ -100,6 +100,7 @@ test.describe("Premium redesign R3 Administration",()=>{
         "People & access",
         "Work & operations",
         "Time & Leave",
+        "Reviews, learning & compliance",
         "Payroll & Finance",
         "Security & governance",
         "Integrations",
@@ -108,7 +109,9 @@ test.describe("Premium redesign R3 Administration",()=>{
       await expect(page.getByText("Manage departments, people, policies and system access.",{exact:true})).toBeVisible();
       await expect(page.locator(".ev2-control-center .phase5-control-group")).toHaveCount(3);
       const domainCards=page.locator(".ev2-control-center .ev2-control-card");
-      await expect(domainCards).toHaveCount(8);
+      await expect(domainCards).toHaveCount(9);
+      for(const label of ["Reviews & Development","Learning","Compliance"])
+        await expect(page.locator(".ev2-control-center").getByRole("button",{name:label,exact:true})).toBeVisible();
       const cardGeometry=await domainCards.evaluateAll((nodes)=>nodes.map((node)=>{
         const card=node.getBoundingClientRect();
         const body=node.querySelector(".ev2c-data-panel-body")?.getBoundingClientRect();

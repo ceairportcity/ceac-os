@@ -106,7 +106,7 @@ for (const role of roles) {
 
       await expect(page.getByRole("button", { name: "My work history", exact: true })).toBeVisible();
       for (const label of ["Reviews & development", "My workforce context", "Learning", "My assets", "My compliance"]) {
-        const button = page.getByRole("button", { name: label, exact: true });
+        const button = page.locator(".ev2-personal-hub").getByRole("button", { name: label, exact: true });
         if (role.personalDomains) await expect(button).toBeVisible();
         else await expect(button).toHaveCount(0);
       }
