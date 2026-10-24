@@ -55,3 +55,19 @@ Additional synthetic evidence inspected: shard 6 artifact `12569937590`, desktop
 Local correction verification (Node 22.16): 23 affected source tests PASS; final full source suite 620/620 PASS, exit 0 (`overview-corrections-source-full.log`); production build PASS (`overview-corrections-build-final.log`); aggregate CSS **631600 bytes**, below unchanged 631808 cap; `git diff --check` PASS. These local logs are pre-commit evidence, not a replacement for exact-head release checks.
 
 Next: freeze corrected candidate, complete all required gates and inspect its phone/laptop/desktop screenshots before acceptance/deployment.
+
+## Corrected candidate render review — 24 October, 18:16 UTC
+
+Application source is frozen at `b207b89be0435a110ce14e06384f0ecb66d1197f`. [CI 40118632960](https://github.com/ceairportcity/ceac-os/actions/runs/40118632960), [Migration Replay 40118632881](https://github.com/ceairportcity/ceac-os/actions/runs/40118632881), [Account Security 40118632840](https://github.com/ceairportcity/ceac-os/actions/runs/40118632840), SQL/authority and browser shards **1–7 passed**. [Quality Gate 40118632889](https://github.com/ceairportcity/ceac-os/actions/runs/40118632889) remains **FAIL** solely because Administration's comparator still represented the pre-correction spacing (mean RGB error 6.67 against unchanged <=6). All seven new map/calendar browser cases passed. The original reference threshold is preserved.
+
+Inspected corrected evidence:
+- Authenticated synthetic HR phone/laptop/desktop: shard 1 artifact `12571135305`, `admin-premium-briefing-*` and `redesign-r7-stage7-admin-*`. Existing multi-unit scheduling and the complete Administration/corridor journey now pass.
+- Selected map, missing GPS and initial states at 320/390/820/1440: shard 6 artifact `12569854389`. Shared pins are reachable with details open; closing restores marker focus. My/Team/Organisation phone leave calendars remain labelled and scoped.
+- Exact final Administration 1440x960 reference: shard 8 artifact `12569774709`, `visual-home-administration-desktop-1440.png`, SHA-256 `e9d15e4eb34c26a58cb7f457bdb2fbdb86468bb2d1c2a5111714868adc8e0a85`. This supersedes the preceding candidate's Administration fingerprint after the documented density corrections. No application source changes accompany this final reference correction. Staff/Manager/Executive arrays remain byte-equivalent as parsed values.
+
+Product comparison findings: personalised blended photo/calendar, personal work controls, HR priorities before the map, selection-only employee details and quieter lower organisation context match the approved hierarchy. Phone recomposes into one column; desktop retains adjacent calendar. Typography, overflow, controls, truthful loading/empty/missing-GPS states and retained destinations passed their browser checks. The map's tiles are deliberately stubbed in automated screenshots; these prove CEAC overlay interactions rather than the provider's cartography. Existing provider loading/attribution/consent code is preserved. No live employee or genuine HR screenshot is published.
+
+This checkpoint changes only the pinned reference and this ledger. It does not claim the failed gate passed. Next: run the required exact-head gate for the final reference correction, then the deliberate deployed acceptance checkpoint and production verification.
+
+TECHNICALLY ACCEPTED: NO — exact-head final reference gate pending.
+VISUALLY / PRODUCT-EXPERIENCE ACCEPTED: NO — deployed-product/release acceptance pending; corrected synthetic design review passed.
