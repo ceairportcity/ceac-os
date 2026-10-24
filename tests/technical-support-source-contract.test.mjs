@@ -182,13 +182,14 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261023160000_hr_date_only_preserve_placement.sql",
     "20261023175241_finance_demo_boundary.sql",
     "20261023183628_leave_annual_shared_pools.sql",
+    "20261023195406_operational_demo_and_report_period_reconciliation.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
   }
   assert.equal(migrations.filter((file) => !stagedIntegratedSecurity.includes(file)).length, 153,
     "Stage 1's 153 reviewed migrations remain identical; all Stage 2 additions are explicitly inventoried");
-  assert.equal(migrations.length, 199, "expected 153 reviewed Stage 1 plus 46 explicitly inventoried Stage 2 migrations");
+  assert.equal(migrations.length, 200, "expected 153 reviewed Stage 1 plus 47 explicitly inventoried Stage 2 migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
@@ -223,11 +224,11 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
-  // Independently fail closed at the current 161-signature reviewed surface.
+  // Independently fail closed at the current 163-signature reviewed surface.
   // The exact allowlist and obsolete-grant denial remain enforced in the
   // dedicated security_definer_surface_gate.sql (not just this count check).
-  assert.match(mfa, /callable_count<>161/);
-  assert.match(surface, /v_actual<>161 or v_expected<>161/);
+  assert.match(mfa, /callable_count<>163/);
+  assert.match(surface, /v_actual<>163 or v_expected<>163/);
   assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);

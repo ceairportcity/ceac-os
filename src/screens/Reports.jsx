@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
+import OperationalArchiveRecords from "../components/OperationalArchiveRecords";
 import { dateOnly } from "../lib/time";
 import { reportAccraDate, reportDateOnly, reportWeekRange, reportMonthRange } from "../lib/ghanaReportingDates";
 import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
@@ -30,6 +31,7 @@ export default function Reports({ me }) {
   const [periodCount, setPeriodCount] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   // The same mounted panel can receive a new authenticated actor or org.
   // A successful former-actor read must never become this actor's evidence.
   const actorScope = [me.org_id, me.id].join(":");
@@ -51,17 +53,19 @@ export default function Reports({ me }) {
     return () => { loadSequence.current += 1; };
   }, [me.org_id, me.id]);
 
-  async function load() {
+  async function load({ quiet = false } = {}) {
     const requestedActor = actorScope;
     const request = ++loadSequence.current;
     const isCurrent = () => request === loadSequence.current
       && currentActorScope.current === requestedActor;
-    setLoading(true);
-    setLoadedActor(null);
+    if (!quiet) {
+      setLoading(true);
+      setLoadedActor(null);
+      setPeriodCount(null);
+      setPeriods([]); setReports([]); setUnits([]);
+    }
     setLoadFailed(false);
     setMsg(null);
-    setPeriodCount(null);
-    setPeriods([]); setReports([]); setUnits([]);
     try {
       const [periodResult, reportResult, unitResult] = await Promise.all([
         // This page deliberately shows only the most recent 40 periods;
@@ -362,6 +366,11 @@ export default function Reports({ me }) {
       />
 
       <QuarterlyReviewEventControl me={me} />
+
+      {me.is_admin && <div className="ev2rep-actions"><Button variant="secondary" onClick={() => setArchiveOpen((value) => !value)}>
+        {archiveOpen ? "Hide work & reporting archives" : "Review demo work & reporting archives"}
+      </Button></div>}
+      {me.is_admin && archiveOpen && <OperationalArchiveRecords key={actorScope} onChanged={() => load({ quiet: true })} />}
 
       {msg && !sheet ? <ProductNotice tone="error" title="Reporting update">{msg}</ProductNotice> : null}
 
