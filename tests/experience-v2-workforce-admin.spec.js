@@ -36,7 +36,7 @@ test("Stage 10 Family D4 preserves Administration Workforce authority and factua
   expect(css).toContain(".ev2-workforce-admin .ev2wf-tabs");
   expect(css).toContain(".ev2-workforce-admin .ev2wf-row-state");
   expect(css).not.toContain("!important");
-  expect(literalCss).toContain(".fpg-people-roster-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))");
+  expect(literalCss).toContain(".pp-split-workspace{display:grid;grid-template-columns:290px minmax(0,1fr)");
   expect(literalCss).toContain(".fpg-absence-day.is-today");
   expect(literalCss).not.toContain("!important");
 });

@@ -5,9 +5,10 @@ const read=(p)=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
 const people=read("src/screens/People.jsx");
 const editor=read("src/components/RosterOnlyEmploymentEditor.jsx");
 
-test("approved selected-person screen keeps the real directory but collapses duplicate long rail",()=>{
- assert.match(people,/<details className="ev2p-admin-master-list" aria-label="Employee directory">/);
- assert.match(people,/<summary className="ev2p-admin-directory-trigger">Switch employee/);
+test("approved selected-person screen keeps the real directory alongside the record",()=>{
+ assert.match(people,/className="pp-directory-rail" aria-label="Employee directory"/);
+ assert.match(people,/aria-label=\{directory\?"Selected employee record"/);
+ assert.doesNotMatch(people,/<details className="ev2p-admin-master-list"/);
  assert.match(people,/const responsibilitySummary = rosterUnitNames/);
  assert.doesNotMatch(people,/title="Identity & employment state"/);
  assert.match(people,/\{personTab === "overview" && <PeopleWorkspaceSection/);

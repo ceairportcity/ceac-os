@@ -19,7 +19,7 @@ async function openStaffTeam(browser, viewport) {
 test("Stage 10 Family B2 Staff Team uses the shared People family without authority drift", () => {
   const screen = readFileSync("src/screens/StaffTeam.jsx", "utf8");
   const shared = readFileSync("src/experience-v2/people-family/PeopleFamilyV2.jsx", "utf8");
-  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
+  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8") + readFileSync("src/final-product/fpg7-people-workforce.css", "utf8");
   const main = readFileSync("src/main.jsx", "utf8");
 
   for (const symbol of [
@@ -116,7 +116,7 @@ async function openManagerTeam(browser, viewport) {
 test("Stage 10 Family B3 Manager Team preserves factual unit scope without scoring", () => {
   const screen = readFileSync("src/screens/Team.jsx", "utf8");
   const shared = readFileSync("src/experience-v2/people-family/PeopleFamilyV2.jsx", "utf8");
-  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
+  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8") + readFileSync("src/final-product/fpg7-people-workforce.css", "utf8");
 
   expect(shared).toContain("export function PeopleEvidencePerson");
   expect(screen).toContain("PeopleEvidencePerson");
@@ -224,7 +224,7 @@ async function openManagerPerson(browser, viewport) {
 test("Stage 10 Family B4 Manager Person preserves unit scope and visible feedback authority", () => {
   const screen = readFileSync("src/screens/PersonDetail.jsx", "utf8");
   const shared = readFileSync("src/experience-v2/people-family/PeopleFamilyV2.jsx", "utf8");
-  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
+  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8") + readFileSync("src/final-product/fpg7-people-workforce.css", "utf8");
 
   for (const symbol of [
     "PeopleBackButton",
@@ -332,7 +332,7 @@ async function openAdminPeople(browser, viewport) {
 test("Stage 10 Family B5A Administration People directory preserves HR authority without scoring", () => {
   const screen = readFileSync("src/screens/People.jsx", "utf8");
   const shared = readFileSync("src/experience-v2/people-family/PeopleFamilyV2.jsx", "utf8");
-  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
+  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8") + readFileSync("src/final-product/fpg7-people-workforce.css", "utf8");
 
   for (const symbol of [
     "PeopleAdminPersonRow",
@@ -348,8 +348,8 @@ test("Stage 10 Family B5A Administration People directory preserves HR authority
   expect(screen).toContain('rpc("admin_person_detail"');
   expect(screen).toContain('rpc("admin_employment_detail"');
   expect(screen).toContain('rpc("admin_update_employment"');
-  expect(screen).toContain("Protected HR remains behind a separate security boundary.");
-  expect(screen).toContain("They are not a performance score, ranking or disciplinary conclusion.");
+  expect(screen).toContain("canManageProtectedHr");
+  expect(screen).toContain("These records are not a productivity score, ranking, pay input or disciplinary conclusion.");
   expect(screen).toContain("No submissions in 14 days");
   expect(screen).toContain("PEOPLE_VIEWS");
   expect(screen).toContain('aria-label="People views"');
@@ -377,15 +377,15 @@ for (const viewport of [
     await expect(page.getByRole("tab", { name: "Directory", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Organisation", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Needs attention", exact: true })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Everyone", exact: true })).toBeVisible();
-    await expect(page.getByText(/not a performance score, ranking or disciplinary conclusion/i)).toBeVisible();
+    await expect(page.getByLabel("Show", {exact:true})).toHaveValue("all");
+    await expect(page.getByRole("complementary",{name:"Employee directory"})).toBeVisible();
 
     await page.getByRole("tab", { name: "Organisation", exact: true }).click();
     await expect(page.getByText(/Job titles never create authority/i).first()).toBeVisible();
     await page.getByRole("tab", { name: "Needs attention", exact: true }).click();
     await expect(page.getByText("Employee records needing attention", { exact: true })).toBeVisible();
     await page.getByRole("tab", { name: "Directory", exact: true }).click();
-    await expect(page.locator(".fpg-people-roster")).toBeVisible();
+    await expect(page.locator(".pp-directory-rail")).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
@@ -406,7 +406,7 @@ for (const viewport of [
     });
     expect(smallest).toBeGreaterThanOrEqual(12);
 
-    const filterButtons = page.locator(".ev2p-admin-filters button:visible");
+    const filterButtons = page.locator(".pp-directory-controls select:visible");
     const filterCount = await filterButtons.count();
     for (let index = 0; index < filterCount; index += 1) {
       const box = await filterButtons.nth(index).boundingBox();
@@ -440,7 +440,7 @@ async function openAdminEmployee(browser, viewport) {
 test("Stage 10 Family B5B Administration employee workspace preserves employment authority", () => {
   const screen = readFileSync("src/screens/People.jsx", "utf8");
   const shared = readFileSync("src/experience-v2/people-family/PeopleFamilyV2.jsx", "utf8");
-  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
+  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8") + readFileSync("src/final-product/fpg7-people-workforce.css", "utf8");
 
   for (const symbol of [
     "PeopleBackButton",
@@ -460,7 +460,7 @@ test("Stage 10 Family B5B Administration employee workspace preserves employment
 
   expect(screen).toContain("PERSON_TABS");
   expect(screen).toContain('aria-label="Employee record sections"');
-  expect(screen).toContain('className="ev2p-admin-master-list"');
+  expect(screen).toContain('className="pp-directory-rail"');
   expect(screen).toContain('personTab === "overview"');
   expect(screen).toContain('personTab === "employment"');
   expect(screen).toContain('personTab === "work"');
@@ -514,12 +514,13 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "Staff Fixture", exact: true })).toBeVisible();
     await expect(page.getByRole("tablist", { name: "Employee record sections" })).toBeVisible();
+    await page.getByText("Change employee photo",{exact:true}).click();
     await expect(page.getByLabel("Employee photo", { exact: true })).toBeVisible();
     for (const tab of ["Overview","Access","Employment","Work","Time & Leave","Documents","History","Protected HR"]) {
       await expect(page.getByRole("tab", { name: tab, exact: true })).toBeVisible();
     }
-    if (viewport.width > 760) await expect(page.locator(".ev2p-admin-master-list")).toBeVisible();
-    else await expect(page.locator(".ev2p-admin-master-list")).toBeHidden();
+    if (viewport.width > 900) await expect(page.locator(".pp-directory-rail")).toBeVisible();
+    else await expect(page.locator(".pp-directory-rail")).toBeHidden();
 
     await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
 
@@ -689,7 +690,7 @@ test("Stage 10 Family B5C Administration People states stay factual and usable",
 test("VF3C Manager Team and Person workspace locks factual command composition", () => {
   const team = readFileSync("src/screens/Team.jsx", "utf8");
   const person = readFileSync("src/screens/PersonDetail.jsx", "utf8");
-  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
+  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8") + readFileSync("src/final-product/fpg7-people-workforce.css", "utf8");
 
   expect(team).toContain("Volunteer request recorded for HR review. No activation email was sent yet.");
   expect(team).toContain("PeopleEvidencePerson");
@@ -710,12 +711,12 @@ test("VF3C Manager Team and Person workspace locks factual command composition",
 
 test("VF4B Administration People and employee workspace lock operations-console composition", () => {
   const screen = readFileSync("src/screens/People.jsx", "utf8");
-  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8");
+  const css = readFileSync("src/experience-v2/people-family/people-family.css", "utf8") + readFileSync("src/final-product/fpg7-people-workforce.css", "utf8");
 
-  expect(screen).toContain('className="ev2p-admin-control-band"');
+  expect(screen).toContain('className="pp-directory-controls"');
   expect(screen).not.toContain('className="ev2p-admin-control-band">\\n');
-  expect(screen).toContain('className="ev2p-admin-person-layout"');
-  expect(screen).toContain('className="ev2p-admin-person-rail"');
+  expect(screen).toContain('className="pp-record-layout"');
+  expect(screen).toContain('className="pp-directory-rail"');
   expect(screen).toContain('className="ev2p-admin-person-detail"');
   expect(screen).toContain('aria-label="Employee record sections"');
 
@@ -729,9 +730,9 @@ test("VF4B Administration People and employee workspace lock operations-console 
   expect(screen).toContain("Missing data remains explicitly missing until Administration records an authoritative value.");
 
   expect(css).toContain("/* VF4B — Administration People / Employee workspace fidelity.");
-  expect(css).toContain(".ev2p-admin-person-rail");
+  expect(css).toContain(".pp-directory-rail");
   expect(css).toContain("position: sticky");
-  expect(css).toContain("grid-template-columns: minmax(15.5rem, 18rem) minmax(0, 1fr)");
+  expect(css).toContain("grid-template-columns:290px minmax(0,1fr)");
   expect(css).toContain(".ev2-people-admin > .ev2p-section");
   expect(css).not.toContain("!important");
 });
