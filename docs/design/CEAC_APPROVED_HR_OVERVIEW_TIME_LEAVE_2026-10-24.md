@@ -71,3 +71,7 @@ This checkpoint changes only the pinned reference and this ledger. It does not c
 
 TECHNICALLY ACCEPTED: NO — exact-head final reference gate pending.
 VISUALLY / PRODUCT-EXPERIENCE ACCEPTED: NO — deployed-product/release acceptance pending; corrected synthetic design review passed.
+
+### Final missing-session edge case
+
+A subsequent source review found that selecting a roster record without any session in the collapsed employee browser could show “Session ended.” Correct this presentation to “No session recorded”; it must not infer an ended session from a missing start. Closing these fallback details now restores focus to the selected employee button. The existing four responsive map cases also assert this no-session state and focus return, using an additional synthetic roster entry without a session. No query, data, permission or map coordinate changes. This concrete defect invalidates the earlier source freeze and justifies superseding the short-running reference-only candidate `c493b08`; its cancelled checks must not be represented as passes. Final exact-head gates will cover the correction and final pinned reference together.

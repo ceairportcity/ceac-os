@@ -43,6 +43,13 @@ for(const width of [1440,820,390,320]){
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await page.evaluate(()=>window.scrollTo(0,0));
   await page.screenshot({path:`test-artifacts/hr-approved-overview-unavailable-${width}.png`,fullPage:true});
+  await map.getByRole("combobox",{name:"Filter daily workforce",exact:true}).selectOption("noSession");
+  const noSession=map.getByRole("button",{name:/Yaw Fixture/});
+  await noSession.click();
+  await expect(map.locator(".workstart-unmapped-detail")).toContainText("No session recorded");
+  await expect(map.locator(".workstart-unmapped-detail")).not.toContainText("Session ended");
+  await map.getByRole("button",{name:"Close details",exact:true}).click();
+  await expect(noSession).toBeFocused();
   await page.locator(".adminv2-more-context > summary").click();
   await expect(page.locator(".adminv2-reporting")).toBeVisible();
   await expect(page.locator(".adminv2-delivery")).toBeVisible();
