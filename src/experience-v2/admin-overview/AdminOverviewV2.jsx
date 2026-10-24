@@ -74,14 +74,14 @@ function AdminCalendarRail({ meetings }) {
         <span>{day.day}</span>{meetingDays.has(day.date) && <i aria-hidden="true" />}
       </button>)}
     </div>
-    <div className="adminv2-calendar-selection" role="status">
+    {(selectedDay!==todayIso||selectedMeetings.length>0)?<div className="adminv2-calendar-selection" role="status">
       <strong>{new Intl.DateTimeFormat("en-GB", {weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}).format(new Date(selectedDay+"T00:00:00Z"))}</strong>
       <span>{!withinLoadedWindow
         ? "This calendar previews at most six upcoming meetings within the next 14 days."
         : selectedMeetings.length
           ? `${selectedMeetings.length} recorded meeting${selectedMeetings.length === 1 ? "" : "s"}`
           : "No meeting is shown for this date in the limited upcoming preview."}</span>
-    </div>
+    </div>:null}
   </div>;
 }
 
@@ -310,7 +310,7 @@ export default function AdminOverviewV2({
         </div>
         <aside className="adminv2-hero-agenda" aria-label="Upcoming commitments">
           <AdminCalendarRail meetings={meetings} />
-          <div className="adminv2-agenda-heading"><span>Coming up</span><button type="button" className="adminv2-agenda-add" onClick={() => onScheduleMeeting?.({ scope: "organisation", organisation: true })}>Schedule →</button></div>
+          <div className="adminv2-agenda-heading"><span>Coming up</span><button type="button" className="adminv2-agenda-add" aria-label="Schedule" onClick={() => onScheduleMeeting?.({ scope: "organisation", organisation: true })}>Schedule →</button></div>
           {loadFailed ? <div className="adminv2-agenda-empty">Current meeting information could not be verified.</div>
             : loading ? <div className="adminv2-agenda-empty">Loading your schedule…</div>
             : nextMeetings.length ? <div className="adminv2-agenda-list">{nextMeetings.map(meeting=><button type="button" key={meeting.id} className="adminv2-agenda-item" onClick={() => onOpenMeeting?.(meeting.id)}><time>{formatDate(meeting.starts_at,{hour:"2-digit",minute:"2-digit"})}</time><strong>{meeting.title}</strong></button>)}</div>

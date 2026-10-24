@@ -2101,6 +2101,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.locator(".adminv2-hero-title h1")).toContainText(/Good morning|Good afternoon|Good evening/);
   await expect(page.locator(".adminv2-context")).toContainText("Administration & HR");
   await expect(page.getByText("Needs Administration", { exact: true })).toBeVisible();
+  await page.locator(".adminv2-more-context > summary").click();
   await expect(page.getByRole("heading", { name: "Finance & reporting", exact: true })).toBeVisible();
   await expect(page.getByText("Delivery signals", { exact: true })).toBeVisible();
   await expect(page.getByText("Administration could not finish loading", { exact: true })).toHaveCount(0);
@@ -2277,6 +2278,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   // The approved Stage 9 policy is active after the full 129-migration replay:
   // 24 days/year, 6 days per completed quarter, Manager then Administration.
   // Do not assert the old unconfigured prototype state or weaken any safeguards.
+  await page.locator(".timeleave-policy > summary").click();
   await expect(page.getByText("Confirmed leave process", { exact: true })).toBeVisible();
   await expect(page.getByText(/24-day yearly allowance comprises 15 annual-leave days/i)).toBeVisible();
   await expect(page.getByText(/Manager approval.*Administration final approval/i)).toBeVisible();

@@ -53,6 +53,7 @@ for (const viewport of [
 
     await expect(page.getByRole("tab", { name: "Today", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Leave", exact: true })).toBeVisible();
+    await page.locator(".timeleave-policy > summary").click();
     await expect(page.getByText("The 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance", { exact: false }).first()).toBeVisible();
     await expect(page.getByRole("tab", { name: "Corrections", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Schedules & policy", exact: true })).toHaveCount(0);

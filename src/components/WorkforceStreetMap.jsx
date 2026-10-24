@@ -18,7 +18,8 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect,sele
   if(!frame.current||typeof ResizeObserver==="undefined")return;
   const observer=new ResizeObserver(entries=>{
    const width=Math.max(200,Math.round(entries[0]?.contentRect?.width||520));
-   setSize(old=>old.width===width?old:{...old,width});
+   const height=Math.max(200,Math.round(entries[0]?.contentRect?.height||340));
+   setSize(old=>old.width===width&&old.height===height?old:{width,height});
   });
   observer.observe(frame.current);
   return ()=>observer.disconnect();
@@ -29,6 +30,12 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect,sele
   [clusters,view,size.width,size.height]).filter(p=>p.position.x>=-30&&p.position.x<=size.width+30
    &&p.position.y>=-30&&p.position.y<=size.height+30);
 
+ const selectedPin=pins.find(pin=>pin.people.some(person=>person.id===selectedId));
+ // Place the scrollable detail on the opposite side of the selected marker.
+ // Shared-location pins must remain reachable even on a narrow phone.
+ const popupEdge=selectedPin?.position.y<size.height/2?"top":"bottom";
+ const popupInset=Math.max(12,popupEdge==="top"?(selectedPin?.position.y||0)+32:size.height-(selectedPin?.position.y||size.height)+32);
+ const popupStyle={top:"auto",bottom:"auto",[popupEdge]:popupInset,maxHeight:Math.max(80,size.height-popupInset-28)};
  function closeSelection(){
   onSelect?.(null);
   selectedMarker.current?.focus();
@@ -84,7 +91,7 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect,sele
       {pin.people.length===1?<><span aria-hidden="true">●</span><span className="ceac-street-map-name">{pin.people[0].name}</span></>:pin.people.length}
      </button>)}
     </div>
-    {selectedContent&&<div className="ceac-street-map-popup" role="region" aria-label="Selected work start" onKeyDown={event=>{if(event.key==="Escape"){event.stopPropagation();closeSelection();}}} onPointerDown={e=>e.stopPropagation()}><button type="button" className="ceac-street-map-close" aria-label="Close selected work start" onClick={closeSelection}>×</button>{selectedContent}</div>}
+    {selectedContent&&<div className="ceac-street-map-popup" style={popupStyle} role="region" aria-label="Selected work start" onKeyDown={event=>{if(event.key==="Escape"){event.stopPropagation();closeSelection();}}} onPointerDown={e=>e.stopPropagation()}><button type="button" className="ceac-street-map-close" aria-label="Close selected work start" onClick={closeSelection}>×</button>{selectedContent}</div>}
     <div className="ceac-street-map-zoom">
      <button type="button" aria-label="Zoom in on street map" onPointerDown={e=>e.stopPropagation()} onClick={()=>changeZoom(1)}>+</button>
      <button type="button" aria-label="Zoom out of street map" onPointerDown={e=>e.stopPropagation()} onClick={()=>changeZoom(-1)}>−</button>

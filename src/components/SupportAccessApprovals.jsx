@@ -7,7 +7,7 @@ import "../role-styles/technical-support.css";
 // An inbox for existing business authorities, never for Technical Support.
 // SQL RLS and the state-machine trigger, not this component, decide who
 // may approve. No support capability or new role is granted by an approval.
-export default function SupportAccessApprovals({ me, authority }) {
+export default function SupportAccessApprovals({ me, authority, compact = false }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -96,9 +96,11 @@ export default function SupportAccessApprovals({ me, authority }) {
     }
   }
 
+  const explanation = <p className="screen-note">Your business decision authorises a bounded support action. It does not itself create an account, membership or permission. Technical Support must separately record what was actually done.</p>;
+
   return <section className="card ceac-support-approvals" aria-label="Business approvals for Technical Support">
     <h2>Technical access approvals</h2>
-    <p className="screen-note">Your business decision authorises a bounded support action. It does not itself create an account, membership or permission. Technical Support must separately record what was actually done.</p>
+    {compact ? <details><summary>What this approval authorises</summary>{explanation}</details> : explanation}
     {loading && <p role="status">Checking pending business decisions...</p>}
     {verified && stagePending && <p className="screen-note" role="status">Technical access approvals are not enabled in Stage 1. Existing Manager and Administration work remains available; no support-access decision can be recorded until the separately reviewed Technical Support migrations are approved.</p>}
     {verified && !stagePending && <button type="button" className="btn btn-ghost" disabled={busy}

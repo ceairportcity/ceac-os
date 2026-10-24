@@ -36,3 +36,22 @@ New real-component synthetic fixture and seven browser cases cover priority-befo
 
 TECHNICALLY ACCEPTED: NO — final release gate pending.
 VISUALLY / PRODUCT-EXPERIENCE ACCEPTED: NO — rendered comparison pending.
+
+## Candidate review and corrections — 24 October, 18:00 UTC
+
+Candidate `84e94d4de67be83209c3b1453105c21954201cff`, PR #140, complete Quality Gate [40117171896](https://github.com/ceairportcity/ceac-os/actions/runs/40117171896): **FAIL**, retained as evidence. CI [40117171831](https://github.com/ceairportcity/ceac-os/actions/runs/40117171831), Migration Replay [40117171893](https://github.com/ceairportcity/ceac-os/actions/runs/40117171893), Account Security [40117171811](https://github.com/ceairportcity/ceac-os/actions/runs/40117171811) and SQL/authority contracts passed. Browser shards 2/3/4/7 passed; 1/5/6/8 failed. No release or technical/visual acceptance is claimed from this run.
+
+Confirmed corrections for the next candidate:
+- Phone map details intercepted shared-pin activation. Details now occupy the opposite vertical side of the selected marker and scroll within the available map space; ResizeObserver tracks both actual viewport dimensions. No forced clicks or weakened assertions.
+- New calendar eyebrow/date labels and Administration weekday/work-strip text fell below the 12px minimum. Restore 12px throughout; preserve the minimum-size tests.
+- Existing shell, Manager Workforce and Administration corridor tests assumed permanently expanded policy/secondary context. They now open the real disclosures before the same assertions. A downstream corridor history failure followed its prerequisite Administration scenario stopping early, rather than a changed history implementation.
+- The visible Schedule arrow changed its accessible name; restore the established `Schedule` accessible label and preserve the multi-unit meeting test.
+- Reduce duplicate empty calendar context, make the personal work strip horizontal as designed, and place the long support-approval explanation in a disclosure in the HR Overview only. Pending support decision rows and actions remain visible; default rendering elsewhere is unchanged. Personal leave balances are shown in the policy summary without requiring expansion.
+
+Rendered comparison: inspected actual synthetic Administration product screenshot from shard 8 artifact `12570067136`, `visual-home-administration-desktop-1440.png`, SHA-256 `aeb48933e9c900d3871500a5d58b9375ea01e9b308934b902c2df34d55d6f5c7`. Its greeting/calendar, priority-before-map and selection-only composition follows the approved proposal. The old Administration comparator drifted by 16.54 against the intentionally changed design. Pin the observed whole-image 12x12 RGB fingerprint for **Administration only**; Staff, Manager and Executive arrays, all 330 role-content comparison channels and the <=6 threshold are preserved. This reference records the approved changed composition; the explicit interaction/readability corrections still require the next complete gate and rendered review. No runtime self-snapshot, blank baseline, masking or tolerance increase. No private image bytes committed.
+
+Additional synthetic evidence inspected: shard 6 artifact `12569937590`, desktop/tablet HR component renders and phone My/Team/Organisation leave calendars. Initial evidence lacked successful phone pin cycling; do not mark it PASS. Next candidate captures initial, selected-map and missing-location states separately and returns the page to the top before full-page captures.
+
+Local correction verification (Node 22.16): 23 affected source tests PASS; final full source suite 620/620 PASS, exit 0 (`overview-corrections-source-full.log`); production build PASS (`overview-corrections-build-final.log`); aggregate CSS **631600 bytes**, below unchanged 631808 cap; `git diff --check` PASS. These local logs are pre-commit evidence, not a replacement for exact-head release checks.
+
+Next: freeze corrected candidate, complete all required gates and inspect its phone/laptop/desktop screenshots before acceptance/deployment.

@@ -298,7 +298,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       me={me}
       announcements={verifiedSnapshot ? announcements : null}
       onOpenAnnouncements={() => go?.("announcements")}
-      supportApprovals={canManagePeople && verifiedSnapshot ? <SupportAccessApprovals me={me} authority="people_administration" /> : null}
+      supportApprovals={canManagePeople && verifiedSnapshot ? <SupportAccessApprovals me={me} authority="people_administration" compact /> : null}
       dateLabel={adminDate}
       loading={scopedLoading}
       loadFailed={loadedScope === scopeKey ? loadError : null}
