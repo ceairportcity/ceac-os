@@ -1,0 +1,13 @@
+# Roster-only attendance schedule evidence
+
+The live next-four audit setup saved and verified seventeen HR schedule versions through the genuine Rebecca HR UI, effective 24 October. A subsequent read found that the attendance-day evidence cards still displayed “Schedule not configured” for roster-only employees, although their schedule editor and canonical Today queue correctly showed the saved week.
+
+Production read-only inspection confirmed `attendance_day_evidence(date)` still joined schedule versions through `v.profile_id=e.profile_id`. Employees without a login profile cannot match that expression. Their source schedule records are intact; no account creation or schedule rewrite is needed.
+
+Forward migration `20261024092008_roster_attendance_schedule_evidence.sql` changes that single schedule subject lookup to the canonical employee ID, retaining the legacy profile lookup only for versions without an employee ID. It uses the roster's linked profile directly, so an employment-record join is not a prerequisite. The existing organisation constraint, current/future effective-date and supersession rules, attendance audience, restricted precise-location fields and private-notice redaction remain byte-for-byte unchanged. It replaces the existing function without changing its signature or grants and writes no employee or attendance records.
+
+The existing rollback-only Attendance Phase 2 gate now records a complete synthetic roster-only week, then a future rest-week successor. It requires the current week and hours today, the successor on its effective date, no historical backfill, no fabricated sessions and no fabricated profile. Existing staff isolation, manager boundaries, notice privacy, checkpoint immutability and anonymous-execution checks remain in the same gate.
+
+Execution so far: the added regression fails against the unchanged isolated staging function with the missing recorded-week assertion. The exact candidate function plus the complete gate passes in a rolled-back transaction. All 610 source tests pass. No production function has been replaced at this checkpoint. PR136 remains frozen and independently qualifying; do not rewrite its tested head to include this follow-up. Publish the bounded follow-up after PR136 merges, complete its required exact-head checks, compare the current production function against its captured definition, then apply the tested forward migration once and verify through the genuine HR attendance UI.
+
+Retain all seventeen saved schedules, Gabriel Rockson's flexible exception, all account/identity decisions and seven deferred account cases. This fix does not invent quarterly presentation dates, individual flexible hours, attendance findings, leave deductions or manager grants.

@@ -25,6 +25,27 @@ select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003'
 do $$ begin
  if not exists(select 1 from jsonb_array_elements(public.attendance_day_evidence(current_date)) r where r->>'employee_id'='41000000-0000-4000-8000-000000000112' and r->>'profile_id' is null and jsonb_array_length(r->'sessions')=0 and r->>'expected_today' is null) then raise exception 'Roster-only employee was omitted or fabricated attendance added'; end if;
 end $$;
+-- The saved employee week must remain readable without creating an Auth/profile identity.
+do $$ declare day_id uuid; rest_id uuid; pattern_id uuid; next_id uuid; days jsonb; clocks jsonb; rests jsonb; rest_clocks jsonb; begin
+ day_id:=public.workforce_record_day_type(null,'Isolated roster workday',null,true,true,true);
+ rest_id:=public.workforce_record_day_type(null,'Isolated roster rest day',null,false,true,true);
+ select jsonb_object_agg(k,day_id),jsonb_object_agg(k,jsonb_build_object('start','10:00','end','17:00')),jsonb_object_agg(k,rest_id),jsonb_object_agg(k,'{}'::jsonb)
+ into days,clocks,rests,rest_clocks from unnest(array['mon','tue','wed','thu','fri','sat','sun']) k;
+ pattern_id:=public.workforce_record_roster_pattern('41000000-0000-4000-8000-000000000112',current_date,null,days,clocks,'Isolated roster-only recorded week',null);
+ next_id:=public.workforce_record_roster_pattern('41000000-0000-4000-8000-000000000112',current_date+1,null,rests,rest_clocks,'Future roster rest-week version',pattern_id);
+ if not exists(select 1 from jsonb_array_elements(public.attendance_day_evidence(current_date)) r
+  where r->>'employee_id'='41000000-0000-4000-8000-000000000112' and r->>'profile_id' is null
+   and r->>'schedule_id'=pattern_id::text and r->>'expected_today'='true'
+   and r->>'expected_start'='10:00' and r->>'expected_end'='17:00' and jsonb_array_length(r->'sessions')=0)
+ then raise exception 'Roster-only recorded week is missing, future-displaced or fabricated attendance'; end if;
+ if not exists(select 1 from jsonb_array_elements(public.attendance_day_evidence(current_date+1)) r
+  where r->>'employee_id'='41000000-0000-4000-8000-000000000112' and r->>'schedule_id'=next_id::text
+   and r->>'expected_today'='false' and r->>'expected_start' is null and r->>'expected_end' is null)
+ then raise exception 'Roster-only future rest version is not selected on its effective date'; end if;
+ if exists(select 1 from jsonb_array_elements(public.attendance_day_evidence(current_date-1)) r
+  where r->>'employee_id'='41000000-0000-4000-8000-000000000112' and r->>'schedule_id' is not null)
+ then raise exception 'Roster-only schedule backfilled historical attendance context'; end if;
+end $$;
 do $$ declare day_id uuid; pattern_id uuid; next_id uuid; k text:=lower(to_char(current_date,'Dy')); begin
  day_id:=public.workforce_record_day_type(null,'Isolated phase2 workday',null,true,true,true);
  pattern_id:=public.workforce_record_pattern('31000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011',current_date,null,jsonb_build_object(k,day_id),jsonb_build_object(k,jsonb_build_object('start','00:00','end',(least(localtimestamp+interval '30 minutes',(current_date+1)::timestamp-interval '1 microsecond')::time)::text)),'Isolated per-day pattern',null);
