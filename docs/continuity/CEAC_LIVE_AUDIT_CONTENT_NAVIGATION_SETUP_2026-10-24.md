@@ -1,0 +1,55 @@
+# Live audit: demo content, Administration navigation and operational setup
+
+Owner requested the next four audit areas together: remaining demonstration content, Administration navigation, quarterly reviews and workforce schedules/department managers. The owner explicitly instructed using already-recorded repository answers rather than asking the questions again. This is one continuing batch after completed PR135; do not reopen the completed finance/work/September/leave fixes or the seven deferred account cases.
+
+## Source and policy reconciliation
+
+- Base protected main `3c7f2a54ee2cde57b855fd02c337dd48a2a99d82`; branch `chatgpt/live-audit-content-navigation-setup-20261024`. Existing other worktrees/unpublished files preserved.
+- `docs/continuity/CEAC_LOCKED_NEXT_RELEASE_EXECUTION_2026-10-14.md` records approved Work & Office Policy v1.0: weekday office 10:00–17:00 including 13:00–14:00 lunch; weekend/programme duty individually rostered, weekly rest and approved holidays. This later authority supersedes the October6 draft Monday-noon discussion. Individual signed terms/exceptions and attributable effective schedules remain distinct from the general policy. No historical attendance, leave, holiday or work session is invented.
+- `CEAC_OWNER_NEXT_RELEASE_DECISIONS_2026-10-14.md` requires HR confirmation of historical balances/schedules and conflict review. `CEAC_STAGE2_OWNER_REPAIR_2026-10-19.md` records the optional standard office-week draft helper; it does not claim existing individual schedules. Canonical employee IDs support roster-only schedules without new accounts.
+- `docs/product/CEAC_STAGE2_PERFORMANCE_REPORTING_APPRAISAL_LOCK_2026-10-16.md` supplies calendar-quarter formal reviews, required human Manager ratings/evidence, independent HR publication and Executive/authorised Administration leadership initiation. Quarterly presentation date and unit submission deadline are separate factual fields. The reviewed main repository text does not identify an actual upcoming event date; no date has been manufactured or asked again.
+- Current live unit-head memberships already name Frank Gyimah (Media), Gabriel Ato Rockson (Technical Support), Rebecca Arthur (HR), Joseph Nkrumah (Facility) and Pastor Catherine Enimpah (Compliance). Preserve these and Catherine's multiple responsibilities. Imported position labels are not capability grants. Keep seven deferred identity cases unchanged.
+
+## Implemented changes (not yet production released)
+
+Administration desktop navigation, mobile More and search expose Reviews & Development, Learning and Compliance only with the same organisation-scoped grants used by App routes. Flat/scoped grants do not become organisation access. Control Center has the same actionable links, and each workspace has a return trail. Search also recognises performance/appraisal, training and policy terms. No role grant or Staff/Manager/Executive navigation change.
+
+Forward migration `20261024051713_operational_content_archive.sql`, created by official CLI with documented telemetry opt-out, extends the existing archive ledger and the exact two Administration RPC signatures. It adds no production classification or source-row modification. Seven allowlisted content roots: announcements, courses, assets, appraisal cycles, meetings, policy versions and ministry objectives. Capability checks remain explicit for Learning, Assets, Performance, Compliance and Strategy.
+
+Forty root/dependency tables receive restrictive live-read boundaries and protected mutation triggers. Forty-four existing definer bodies retain their authority/decision code, with FROM/JOIN reads routed to private, ungranted security-invoker projections. Invoker functions keep their RLS-bound reads. A private, fixed-allowlist boolean policy helper avoids the hidden-parent/NOT-EXISTS leak; it exposes no source content and rejects missing actor/foreign row organisation. Internal fingerprint and trigger functions are not executable by browser roles. The public reviewed definer inventory remains 163. The existing operational feedback projection also excludes archived strategy parents.
+
+Content review fingerprints cover every retained descendant row, so a new learning/history decision invalidates a stale review. All rows are locked/reviewed before atomic classification. Genuine linked project/work dependencies and adopted policy successors fail closed. Source rows, original state, private notes, acknowledgement, learning completion, appraisal and custody histories remain stored. No permanent cleanup, title-prefix production rule, human scoring or implied financial transaction.
+
+The existing archive review UI labels these additional content kinds and retains restore actions. The workforce day-type form also resets name/description/session expectation for each new type, fixing a discovered carry-over from a rest-day checkbox into the next duty type.
+
+## Executed qualification so far
+
+- `npm ci` PASS in this worktree (host Node24; official release remains Node22).
+- Native full source suite 610/610 PASS and Vite build PASS; output outside repo in `ceac-next4-source.log` / `ceac-next4-build.log`. Migration inventory explicitly enumerates the one new forward file: 202 total =153 original +49 reviewed additions.
+- Exact DDL compiled rollback-only in CEAC-owned isolated staging, then applied there once as `operational_content_archive`. No production schema was changed.
+- New rollback-only content gate PASS: seven root archives/restores, original-row fingerprints, child visibility, definer context denial, stale root/dependency atomic rejection, privileged descendant write denial, staff/direct-internal execution denial. No fixture archive rows remain.
+- Existing security-definer, Learning Stage8, Assets Stage10, Compliance Stage11, operational-period/finance-restore and quarterly-human-rating gates PASS on installed new staging schema.
+- Existing Performance Stage7 initially failed because this sparse staging omitted the standard project and staff-manager fixture. With those exact synthetic inputs added inside the same rollback-only transaction, the unchanged complete gate PASS. No assertion or production record was changed.
+- Browser archive course/restore coverage added at320/1440px, plus existing all-role desktop/mobile navigation expectations and scoped-grant denial. Full exact-head CI/replay/security/all browser groups remain PENDING until the frozen branch is published.
+
+## Production setup actions already performed
+
+The actual signed-in Rebecca HR UI configured approved day-type vocabulary: Office (session expected), Weekly off (not expected), Remote (expected), and Field (expected). Remote initially inherited the prior unchecked rest-day control; before any schedule referenced it, its one new unused configuration row was corrected to expected via conditional system SQL, retaining its creation and audit history. No JWT/user impersonation was used. The form reset fix above prevents recurrence. Verify all resulting types and configure programme duty before publishing individual patterns.
+
+No employee schedule, new quarterly event, appraisal assessment, manager grant, account, salary or leave record has been written by this batch at this checkpoint. No claim that the four areas are all complete.
+
+## Release continuation
+
+Freeze the combined candidate, publish one PR, complete mandated exact-head qualification, compare production function bodies against captured current definitions, preserve full-row hashes, apply only the tested forward migration, merge/deploy and use genuine signed-in HR archive review for the18 explicit demo roots (3 announcements,2 courses,3 assets,1 cycle,4 meetings,2 policies,3 objectives). Keep the ordinary Mid-Week Preparation meeting. Check original/dependency hashes,17 accounts/profiles, previous finance8 and operational11 classifications,15+9 leave and October7 start dates.
+
+Continue operational setup from the approved source decisions above, verifying actual individual patterns and existing headships rather than inventing appointments or treating an optional template as a published schedule. Do not repeatedly request already-provided answers. Record actual completed setup and any exact unresolved source field honestly. Broader ID-only candidates/resource capacities, adopted references, protected historical leave and audit events are not authorised deletions.
+
+## First frozen-head results and bounded expectation reconciliation
+
+Remote head `987bc058d8130fc1c97e60ab1a19eccd2f0242f5` (tree identical to local33eff49) passed official CI40066777328, Migration Replay40066777327, Account Security40066777438 and complete SQL/authority job120791615177 in Quality Gate40066777364. Browser groups1,2,4,5,6,8 passed, including expanded course archive/restore and all-role desktop/mobile link journeys. Groups3/7 completed with three stale expectations: My Hub's personal Learning absence selector also matched the newly authorised sidebar entry; legacy Administration routing explicitly forbade Learning/Compliance; Control Center still expected8 domains after the requested ninth actionable domain. Scope the My Hub assertion to its existing personal workspace, positively require all3 requested Administration links, retain every unrelated absence check, and explicitly require all9 Control Center domains plus the3 new links. No application, SQL, authority, style, screenshot reference or tolerance changes in this correction. Full successor exact-head qualification remains required; the first aggregate is FAIL, not accepted.
+
+### Actual live setup and execution boundary
+
+Five day types now exist and were read back: Office/Remote/Field/Programme duty expect sessions; Weekly off does not. Through the actual signed-in Rebecca HR UI, six schedule versions were recorded and individually verified for Rebecca/Becky, Moses, Grace, Catherine, Benny and Erama. First4 had explicit existing full-time context. Last2 apply the already approved normal office policy where no individual exception is recorded, under the owner's current audit-setup authority. All versions begin24October, Monday–Friday10:00–17:00 and weekend rest; programme duty/individual exceptions require a later effective version. No historical schedule was backfilled, contract classification changed, attendance fabricated or absence/leave decision made. The owner was told the standard policy would be applied where no recorded exception exists, preserving Gabriel's flexible context.
+
+The next browser call for Eva/Frank/Martina was NOT EXECUTED. Automatic approval review reported its usage limit and could not complete review (retry time08:57AM). This was not an unsafe-action finding; do not bypass the review using direct SQL, another client or a different account for those pending live actions. The implementation/CI work can continue independently. Eleven standard-policy schedules plus the flexible exception remain unapplied. New content production DDL, classification and deployed UI verification are still pending. Preserve actual saved state; never repeat any of the six successful writes.

@@ -12,6 +12,7 @@ for (const width of [320, 1440]) {
       { record_table: "report_periods", record_id: "aa610100-0000-4000-8000-000000000002", label: "Duplicate synthetic month", status: "closed", archived: false, event_no: 0, fingerprint: "original-duplicate", retained_reports: [] },
       { record_table: "report_periods", record_id: "aa610100-0000-4000-8000-000000000003", label: "Demo synthetic report month", status: "open", archived: true, event_no: 1, fingerprint: "original-report-period", retained_reports: [{ id: "retained-synthetic-report", scope: "unit", status: "submitted", version: 1, narrative: "Original demonstration report remains intact." }] },
     ];
+    records.push({record_table:"learning_courses",record_id:"aa620002-0000-4000-8000-000000000001",label:"Demo synthetic course",status:"published",archived:false,event_no:0,fingerprint:"course-and-original-history",retained_reports:[]});
     const calls = [];
     await page.route("**/rest/v1/rpc/admin_operational_archive_records", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(records) }));
     await page.route("**/rest/v1/rpc/admin_apply_operational_archive", (route) => {
@@ -37,7 +38,16 @@ for (const width of [320, 1440]) {
     await panel.getByText("1 retained report(s)", { exact: true }).click();
     await expect(panel.getByText("Original demonstration report remains intact.", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-    expect(calls.map((call) => call.p_changes[0].archived)).toEqual([true, false, true]);
+    await panel.getByRole("checkbox", {name:/Demo synthetic course.*Course.*Included in live records/}).check();
+    await panel.getByLabel("Reason for this change (required)").fill("Archive synthetic course with original learning history retained.");
+    await panel.getByRole("button", {name:"Archive selected demo records",exact:true}).click();
+    await expect(panel.getByRole("checkbox", {name:/Demo synthetic course.*Course.*Archived demo/})).toBeVisible();
+    await panel.getByRole("checkbox", {name:/Demo synthetic course/}).check();
+    await panel.getByLabel("Reason for this change (required)").fill("Restore the original synthetic learning course and its history.");
+    await panel.getByRole("button", {name:"Restore selected records",exact:true}).click();
+    await expect(panel.getByRole("checkbox", {name:/Demo synthetic course.*Included in live records/})).toBeVisible();
+    expect(calls.map((call) => call.p_changes[0].archived)).toEqual([true, false, true, true, false]);
+    expect(calls[3].p_changes[0].fingerprint).toBe("course-and-original-history");
     expect(calls[2].p_changes[0].canonical_period_id).toBe(records[1].record_id);
     expect(calls.every((call) => !("status" in call.p_changes[0]) && !("narrative" in call.p_changes[0]))).toBe(true);
     await context.close();

@@ -39,6 +39,9 @@ test("Stage 4C capability and multi-unit policies remain explicit", async () => 
   const limitedAdminLabels = limitedAdmin.map((item) => item.label);
 
   expect(limitedAdminLabels).not.toContain("People & Access");
+  for (const label of ["Reviews & Development", "Learning", "Compliance"]) expect(limitedAdminLabels).not.toContain(label);
+  const scoped = getShellNavigation(roleContext("admin", {capabilities:["performance.admin"],capability_grants:[{capability:"performance.admin",scope_unit_id:unitA}]}));
+  expect(scoped.some(item=>item.key==="performance")).toBe(false);
   for (const label of [
     "Overview",
     "Work",

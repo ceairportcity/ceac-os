@@ -9,10 +9,10 @@ function staticSearchGroups(query, navigation, quickItems) {
     destinationsByKey.set("announcements", { key: "announcements", label: "Announcements", icon: "messages" });
   }
   const destinations = [...destinationsByKey.values()]
-    .filter((item) => !normalized || item.label.toLowerCase().includes(normalized))
+    .filter((item) => !normalized || [item.label, item.searchTerms].filter(Boolean).join(" ").toLowerCase().includes(normalized))
     .map((item) => ({ kind: "destination", id: item.key, title: item.label, icon: item.icon, destination: item.key }));
   const actions = quickItems
-    .filter((item) => !normalized || item.label.toLowerCase().includes(normalized))
+    .filter((item) => !normalized || [item.label, item.searchTerms].filter(Boolean).join(" ").toLowerCase().includes(normalized))
     .map((item) => ({ kind: "action", id: item.id, title: item.label, icon: item.icon, onSelect: item.onSelect }));
   return [
     actions.length ? { key: "actions", label: "Actions", items: actions } : null,

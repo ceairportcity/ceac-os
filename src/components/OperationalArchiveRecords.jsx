@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-const kinds = { projects: "Project", work_items: "Work", report_periods: "Reporting period" };
+const kinds = { projects: "Project", work_items: "Work", report_periods: "Reporting period", announcements: "Announcement", learning_courses: "Course", asset_items: "Asset", appraisal_cycles: "Appraisal cycle", meeting_sessions: "Meeting", compliance_policy_versions: "Policy version", strategy_nodes: "Ministry objective" };
 const key = (row) => `${row.record_table}:${row.record_id}`;
 
 export default function OperationalArchiveRecords({ onChanged }) {
@@ -67,7 +67,7 @@ export default function OperationalArchiveRecords({ onChanged }) {
 
   return <section aria-label="Operational archive review" aria-busy={loading || busy}>
     <h2>Demo work & reporting archives</h2>
-    <p className="screen-note">Review confirmed demonstration projects and tasks here. Archive preserves their original states and history; restore makes them available again. A demo title is a review suggestion. Duplicate periods keep their canonical link; a duplicate containing reports requires a separate report review.</p>
+    <p className="screen-note">Review confirmed demonstration work, announcements, courses, assets, meetings, policy versions, ministry objectives and appraisal cycles here. Original learning, acknowledgement, custody and review histories are retained. Only content covered by your existing administration access is listed. Archive preserves their original states and history; restore makes them available again. A demo title is a review suggestion. Duplicate periods keep their canonical link; a duplicate containing reports requires a separate report review.</p>
     {error && <p role="alert">{error}</p>}
     {notice && <p role="status">{notice}</p>}
     {loading ? <p role="status">Loading archive records…</p> : <form method="post" onSubmit={save}>
