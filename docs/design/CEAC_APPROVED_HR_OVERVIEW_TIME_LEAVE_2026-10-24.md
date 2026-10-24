@@ -79,3 +79,22 @@ A subsequent source review found that selecting a roster record without any sess
 ### Exact department filtering
 
 The same final map review found a concrete filter defect for department names containing commas: splitting the display string discarded the original department identity. Preserve structured unit labels in the existing presentation helper, build options from those labels (including authorised operational profiles), and filter by exact membership. The displayed unit text and all underlying records are unchanged. Add a source test for commas/multiple memberships and extend the responsive no-session browser case with a comma-bearing department. This justifies superseding `077a33c` before release; any cancelled checks remain unaccepted. No additional feature scope, provider, query, data or permission changes.
+
+## Application acceptance and deliberate deployment checkpoint
+
+Accepted application SHA: **`ea9a60de3f6aab75bc9096a26bbb3129ec8a0b9a`**. No subsequent application changes are included in this documentation checkpoint. Canonical main was refreshed and remains `5f2c0e7db7be41a7ad3078a9a740ec470bf0a2ec`.
+
+Exact-head acceptance:
+- [CI 40120753222](https://github.com/ceairportcity/ceac-os/actions/runs/40120753222): PASS, complete registered source suite and production build.
+- [Migration Replay 40120753285](https://github.com/ceairportcity/ceac-os/actions/runs/40120753285): PASS.
+- [Account Security 40120753249](https://github.com/ceairportcity/ceac-os/actions/runs/40120753249): PASS.
+- [Quality Gate 40120753318](https://github.com/ceairportcity/ceac-os/actions/runs/40120753318): PASS, complete SQL/authority contracts, all eight browser shards, merged exact-head evidence and final `role-and-rls` coordinator.
+- Administration visual regression PASS using the final reviewed Administration reference, unchanged 330 role-content channels and <=6 tolerance. Other role references are preserved.
+- Final responsive map cases PASS for shared selection, missing GPS, no-session truthfulness, focus return and exact comma-bearing department membership.
+
+Exact-head artifact pointers: authenticated HR route screenshots shard 1 `12571466957`; responsive map and three leave-scope presentations shard 6 `12570982911`; all-role visual inventory/reference comparison shard 8 `12570793585`; merged R7 product inspection `12570679302`. Synthetic design review and prior comparison evidence remain as recorded above. No genuine employee screenshot is committed.
+
+This deliberate `[vercel]` checkpoint changes only this ledger and is application-equivalent to the accepted SHA above. It enables the one intended acceptance deployment under the existing repository policy. Deployment readiness, protected-preview accessibility and the genuine existing HR production-session inspection are still to be recorded; a skipped/cancelled deployment is never PASS. The live production baseline before this bundle is Ready deployment `dpl_AMDoraGjDgnmAncbzh9RXBdJzjRi` at main `5f2c0e7`. No production data, authentication or schema changes have been made for this bundle.
+
+TECHNICALLY ACCEPTED: YES for application `ea9a60d` (all required exact-head gates passed).
+VISUALLY / PRODUCT-EXPERIENCE ACCEPTED: NO for release — synthetic visual/interaction acceptance passed; deployed-product verification pending.
