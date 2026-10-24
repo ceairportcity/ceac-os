@@ -176,7 +176,8 @@ test("attendance decisions and reporter submissions are single-flight", () => {
 test("all Administration direct reads have explicit organisation scope", () => {
   const queries = [...admin.matchAll(/\.from\("([a-z_]+)"\)\s*\.select\("[^"]*"\)/g)];
   const scoped = [...admin.matchAll(/\.from\("([a-z_]+)"\)\s*\.select\("[^"]*"\)\s*\.eq\("org_id",\s*me\.org_id\)/g)];
-  assert.equal(queries.length, 24, "the expected Administration data-query inventory changed");
+  assert.equal(queries.length, 25, "the expected Administration data-query inventory changed");
+  assert.match(admin, /from\("announcements"\)\.select\("id,title,published_at,expires_at"\)\s*\.eq\("org_id",\s*me\.org_id\)/);
   assert.equal(scoped.length, queries.length, "a direct Administration query lacks current-organisation filtering");
   assert.match(admin, /from\("profiles"\)\.select\("id,full_name"\)\.eq\("org_id", me\.org_id\)/);
   assert.match(admin, /from\("work_sessions"\)\.select\("profile_id"\)\.eq\("org_id", me\.org_id\)/);
