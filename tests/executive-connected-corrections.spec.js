@@ -50,7 +50,7 @@ for (const width of [320,390,430,1440]) {
     const department = page.getByRole('button',{name:/Test Unit A/});
     await expect(department).toBeVisible();
     expect(await department.evaluate(node => getComputedStyle(node.querySelector('.exec-redesign-icon')).color)).toBe('rgb(113, 72, 232)');
-    await page.screenshot({path:testInfo.outputPath(`organisation-${width}.png`),fullPage:true});
+    await page.screenshot({path:`test-artifacts/executive-connected-organisation-${width}.png`,fullPage:true});
     await department.click();
     await expect(page.getByRole('heading',{name:'Test Unit A',exact:true})).toBeVisible();
     await page.getByRole('button',{name:/^Staff Fixture/}).first().click();
@@ -86,7 +86,7 @@ for (const width of [320,390,430,1440]) {
       expect(await title.evaluate(node=>getComputedStyle(node).fontFamily)).toContain('Instrument Sans');
       expect(await title.evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBe(width<900?25:28);
       expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-      await page.screenshot({path:testInfo.outputPath(`${tab}-${width}.png`),fullPage:true});
+      await page.screenshot({path:`test-artifacts/executive-connected-${tab}-${width}.png`,fullPage:true});
     }
   });
 }
@@ -162,7 +162,7 @@ for (const width of [390,1440]) {
       expect(await title.evaluate(node=>getComputedStyle(node).fontFamily)).toContain('Instrument Sans');
       expect(await title.evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBe(width<900?25:28);
       expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-      await page.screenshot({path:testInfo.outputPath(`${tab}-${width}.png`),fullPage:true});
+      await page.screenshot({path:`test-artifacts/executive-connected-${tab}-${width}.png`,fullPage:true});
     }
   });
 }
@@ -254,3 +254,45 @@ test('Executive own-work failure preserves the draft and allows a deliberate ret
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
 });
+
+
+for (const width of [320,1440]) {
+  test(`Executive Calendar child forms retain the replacement design at ${width}px`,async ({page})=>{
+    await page.setViewportSize({width,height:960});
+    await signIn(page);
+    await page.goto('/?tab=exec-calendar');
+    await page.getByRole('tab',{name:'My calendar',exact:true}).click();
+    await page.getByRole('button',{name:'+ Add',exact:true}).click();
+    const planning=page.getByRole('dialog').filter({hasText:'Add to my workspace'});
+    await expect(planning).toBeVisible();
+    for (const kind of ['Event','Task','Note']) {
+      const tab=planning.getByRole('tab',{name:kind,exact:true});
+      await tab.click();
+      await expect(tab).toHaveAttribute('aria-selected','true');
+      expect(await tab.evaluate(node=>getComputedStyle(node).color)).toBe('rgb(113, 72, 232)');
+      const title=planning.getByRole('textbox',{name:'Planning title',exact:true});
+      await expect(title).toBeVisible();
+      expect(await title.evaluate(node=>getComputedStyle(node).fontFamily)).toContain('Instrument Sans');
+      if(width<900)expect(await title.evaluate(node=>getComputedStyle(node).fontSize)).toBe('16px');
+      expect(await planning.getByRole('button',{name:`Save ${kind.toLowerCase()}`,exact:true}).evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+      await page.screenshot({path:`test-artifacts/executive-calendar-${kind.toLowerCase()}-${width}.png`,fullPage:true});
+    }
+    await planning.getByRole('button',{name:'Cancel',exact:true}).click();
+    await expect(planning).toBeHidden();
+    await page.getByRole('tab',{name:'Church calendar',exact:true}).click();
+    await page.getByRole('button',{name:'Schedule meeting',exact:true}).click();
+    const meeting=page.getByRole('dialog',{name:'Schedule meeting',exact:true});
+    await expect(meeting.getByRole('button',{name:/Everyone in CEAC/})).toBeVisible();
+    const presentation=await meeting.locator('.meeting-scheduler-sheet').evaluate(node=>({background:getComputedStyle(node).backgroundColor,font:getComputedStyle(node).fontFamily}));
+    expect(presentation.background).toBe('rgb(255, 255, 255)');
+    expect(presentation.font).toContain('Instrument Sans');
+    const scope=meeting.getByRole('button',{name:'Organisation',exact:true});
+    expect(await scope.evaluate(node=>getComputedStyle(node).color)).toBe('rgb(113, 72, 232)');
+    expect((await scope.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    expect(await meeting.locator('.meeting-audience-head>small').evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(12);
+    await page.screenshot({path:`test-artifacts/executive-calendar-meeting-${width}.png`,fullPage:true});
+    await meeting.getByRole('button',{name:'Close meeting scheduler',exact:true}).click();
+    await expect(meeting).toBeHidden();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  });
+}

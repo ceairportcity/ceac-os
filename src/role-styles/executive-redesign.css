@@ -16,13 +16,6 @@
 /* Executive subpages now use executive-workspaces.css. */
 
 /* Work */
-.ev2-work-executive .ev2w-header-action,
-.ev2-executive-ministry .ev2ex-ministry-head .btn:not(.btn-ghost) {
-  min-height: 40px;
-  border-radius: 8px;
-  background: var(--exec-purple);
-  border-color: var(--exec-purple);
-}
 .ev2-work-executive .ev2w-group { margin-top: 12px; }
 .ev2-work-executive .ev2w-group-head { padding-inline: 2px; }
 .ev2-work-executive .ev2w-row { min-height: 62px; border-color: #eff1f5; }
@@ -114,8 +107,6 @@
   .ev2-work-executive > .ev2w-tabs { width: 100%; }
   .exec-redesign-tabs button,
   .ev2-work-executive > .ev2w-tabs button { flex: 1 0 auto; min-height: 44px; }
-  .ev2-work-executive .ev2w-header-action,
-  .ev2-executive-ministry .ev2ex-ministry-head .btn:not(.btn-ghost) { min-height: 44px; }
 }
 
 
@@ -182,16 +173,6 @@
 }
 
 /* Executive Payroll — preserve approval semantics, unify visible family */
-.executive-app .fpg-payroll {
-  width: 100%;
-  max-width: 86rem;
-  margin: 0 auto;
-  padding: 18px 20px 42px;
-}
-.executive-app .fpg-payroll-head {
-  padding: 2px 0 17px;
-  border-bottom: 0;
-}
 .executive-app .fpg-payroll-authority {
   border-radius: 999px;
   background: var(--exec-purple-soft);
@@ -236,11 +217,6 @@
   }
   .executive-app .ev2s-mobile-nav button.is-active svg {
     filter: drop-shadow(0 2px 4px rgba(113,72,232,.16));
-  }
-  .executive-app .ev2-project-delivery.is-executive,
-  .executive-app .ev2cal-admin-page,
-  .executive-app .fpg-payroll {
-    padding: 14px 14px calc(82px + env(safe-area-inset-bottom));
   }
 }
 
@@ -292,11 +268,6 @@
   background: linear-gradient(180deg, var(--exec-blue-soft) 0%, #fff 46%);
 }
 
-.executive-app .ev2cal-admin-page .ev2cal-page-head .ev2c-button-primary,
-.executive-app .ev2cal-admin-page .ev2cal-page-head .btn {
-  background: var(--exec-purple);
-  border-color: var(--exec-purple);
-}
 
 @media (max-width: 599px) {
   .executive-app .ev2-project-delivery.is-executive .ev2p-summary {

@@ -27,9 +27,9 @@ test("VF6D keeps Messages and Connected Apps factual while closing shared-surfac
   expect(inbox).toContain("Work actions, Rooms, mentions and announcements");
   expect(inbox).toContain("Choose a department or team to open its shared conversation.");
   expect(staffCss).toContain("/* VF6D — Messages operational-inbox closure.");
-  expect(staffCss).toContain(".inbox-page .premium-filter-row button");
+  expect(staffCss).toContain(".inbox-page .ev2c-segmented-item");
   expect(staffCss).toContain(".inbox-page .inbox-empty");
-  expect(staffCss).not.toContain(".staff-app .inbox-page .premium-filter-row button");
+  expect(staffCss).not.toContain(".staff-app .inbox-page .ev2c-segmented-item");
   expect(integrationCss).toContain("/* VF6D — Connected Apps operational-surface closure.");
   expect(integrationCss).not.toContain("!important");
   expect(integrations).toContain('type="password"');
