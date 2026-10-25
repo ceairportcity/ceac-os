@@ -23,9 +23,9 @@ function rowState(row,date) {
 }
 
 export default function ComplianceOverview({
-  date,onDateChange,onRefresh,scopeKey,rows,units=[],loading,error,
+  me,date,onDateChange,onRefresh,scopeKey,rows,units=[],loading,error,
   activePolicies,requirements,acknowledgements,evidenceLatest,exceptionLatest,
-  openWork,openObservations,openAnnouncements,onSection,onEvidence,onException,
+  openObservations,openAnnouncements,onSection,onEvidence,onException,
 }) {
   const unitNames=useMemo(()=>new Map(units.map(unit=>[unit.id,unit.name])),[units]);
   // Read ONLY the existing sanitised, role-scoped attendance response.
@@ -56,8 +56,7 @@ export default function ComplianceOverview({
           <p>{activePolicies.length} current policies · {requirements.length} recorded requirements · {acknowledgements.length} acknowledgements recorded</p>
           <p>These counts organise recorded attention only. They do not calculate compliance, guilt, performance or disciplinary outcomes.</p>
         </details>
-        {(openWork||openAnnouncements)&&<div className="cp-links">
-          {openWork&&<button className="cp-action" onClick={openWork}>Open authorised work →</button>}
+        {openAnnouncements&&<div className="cp-links">
           {openAnnouncements&&<button className="cp-action" onClick={openAnnouncements}>Publish policy instruction →</button>}
         </div>}
       </aside>
@@ -97,7 +96,7 @@ export default function ComplianceOverview({
       </div>:!error&&<EmptyState compact title="No attendance evidence in scope">The overview remains empty until authorised employee records are available.</EmptyState>}
       <p className="cp-fact">“No session recorded” is not an absence or misconduct finding.</p>
     </section>
-    {!loading&&!error&&<AdminWorkforceToday roleLabel="Compliance" dateLabel={date}
+    {!loading&&!error&&<AdminWorkforceToday me={me} roleLabel="Compliance" dateLabel={date}
       roster={workforceMapRows.roster} sessions={workforceMapRows.sessions}/>}
   </div>;
 }

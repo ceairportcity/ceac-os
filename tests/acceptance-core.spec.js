@@ -5,6 +5,7 @@
 // FPG7 exact-head Level B People Workforce parity checkpoint — CSS budget repair.
 // FPG2/FPG3 exact-head Level B parity evidence checkpoint.
 import { test, expect } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
 const rolePassword = process.env.ROLE_FIXTURE_PASSWORD;
 
@@ -1932,8 +1933,23 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
   const requestedUntil = new Date(today.getTime() + 30 * 86400000).toISOString().slice(0,10);
   const approvedUntil = new Date(today.getTime() + 14 * 86400000).toISOString().slice(0,10);
 
+  // Exercise the independent Compliance operator with an ordinary audited grant
+  // in the disposable loopback fixture, rather than rendering HR as Compliance.
+  expect(process.env.SUPABASE_URL).toBe("http://127.0.0.1:54321");
+  const authority = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY,
+    {auth:{persistSession:false,autoRefreshToken:false}});
+  const login=await authority.auth.signInWithPassword({email:"admin@ceac.local.test",password:rolePassword});
+  expect(login.error).toBeNull();
+  const grant=await authority.rpc("grant_capability",{p_profile_id:"31000000-0000-4000-8000-000000000005",p_capability:"compliance.manage",p_scope_unit_id:null,p_reason:"Isolated acceptance: existing non-HR Compliance operator"});
+  expect(grant.error).toBeNull();expect(grant.data?.id).toBeTruthy();
+  let grantActive=true;
+  async function revokeOperator(){
+    const result=await authority.rpc("revoke_capability",{p_grant_id:grant.data.id,p_reason:"Isolated Compliance workflow acceptance complete"});
+    expect(result.error).toBeNull();grantActive=false;
+  }
+  try {
   {
-    const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
+    const { context, page } = await openAs(browser, "other@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Compliance");
     await expect(page.getByRole("heading", { name: "Compliance", exact: true })).toBeVisible();
     await page.getByText("Recorded policy context", { exact: true }).click();
@@ -2032,14 +2048,14 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
   }
 
   {
-    const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
+    const { context, page } = await openAs(browser, "other@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Compliance");
     await page.getByRole("tab", { name: "Evidence", exact: true }).click();
     let row = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: requirementTitle }).first();
     await row.getByRole("button", { name: "Review evidence", exact: true }).click();
     let dialog = page.getByRole("dialog");
     await dialog.getByLabel("Compliance evidence decision").selectOption("verified");
-    await dialog.getByLabel("Compliance evidence reviewer note").fill("Acceptance evidence verified by Administration");
+    await dialog.getByLabel("Compliance evidence reviewer note").fill("Acceptance evidence verified by Compliance");
     await dialog.getByRole("button", { name: "Record evidence decision", exact: true }).click();
     await expect(page.getByText("Evidence review recorded.", { exact: true })).toBeVisible();
     row = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: requirementTitle }).first();
@@ -2074,9 +2090,11 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
     row = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: requirementTitle }).first();
     await expect(row).toContainText("Resolved");
     await expect(row.getByText(/Exception history · 3/)).toBeVisible();
-    await page.screenshot({ path: "test-artifacts/stage11-compliance-admin.png", fullPage: true });
+    await page.screenshot({ path: "test-artifacts/stage11-compliance-operator.png", fullPage: true });
     await context.close();
   }
+
+  await revokeOperator();
 
   {
     const { context, page } = await openAs(browser, "other@ceac.local.test", { width: 1280, height: 900 });
@@ -2091,6 +2109,10 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
     await page.goto("/?tab=compliance");
     await expect(page.getByRole("heading", { name: "Compliance", exact: true })).toHaveCount(0);
     await context.close();
+  }
+  } finally {
+    if(grantActive)await revokeOperator();
+    await authority.auth.signOut({scope:"local"});
   }
 });
 

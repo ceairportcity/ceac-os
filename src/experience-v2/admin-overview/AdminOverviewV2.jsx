@@ -411,7 +411,7 @@ export default function AdminOverviewV2({
           </aside>
         </section>
 
-        <AdminWorkforceToday roster={employeeRoster} sessions={dailySessionRows} operationalProfiles={operationalStarters} onOpenPeople={onOpenPeople} onOpenPerson={onOpenPerson} onOpenAccess={onOpenAccess} onOpenWorkforce={onOpenAttendance} />
+        <AdminWorkforceToday me={me} roster={employeeRoster} sessions={dailySessionRows} operationalProfiles={operationalStarters} onOpenPeople={onOpenPeople} onOpenPerson={onOpenPerson} onOpenAccess={onOpenAccess} onOpenWorkforce={onOpenAttendance} />
 
         <section className="adminv2-glance" aria-label="Organisation at a glance"><h2>Organisation at a glance</h2><div>
           {canManagePeople?<button type="button" onClick={onOpenPeople}><span>People &amp; records</span><strong>{employeeRoster.length}</strong><small>Open employee records →</small></button>:null}

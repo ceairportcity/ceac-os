@@ -64,3 +64,11 @@ export function nextWorkforceClusterPersonId(people,selectedId) {
  const current=people.findIndex(person=>person?.id===selectedId);
  return people[(current+1)%people.length]?.id||null;
 }
+
+/** Only a saved primary office is a reference; never infer it from staff GPS. */
+export function primaryOfficePoint(row) {
+ if(!row?.is_primary||row.lat==null||row.lng==null||String(row.lat).trim()===""||String(row.lng).trim()==="")return null;
+ const lat=Number(row.lat),lng=Number(row.lng);
+ if(!finite(lat)||!finite(lng)||Math.abs(lat)>90||Math.abs(lng)>180)return null;
+ return {lat,lng,name:row.name||"CEAC main office"};
+}

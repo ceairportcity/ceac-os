@@ -4,6 +4,7 @@ import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from
 import { humanError } from "../lib/productLanguage";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 import { attendanceDate } from "../lib/attendance";
+import {compliancePersonOptions,withCompliancePersonNames} from "../lib/complianceReviewQueue";
 import ComplianceOverview from "../components/ComplianceOverview";
 import ComplianceAttendanceCases from "../components/ComplianceAttendanceCases";
 import DailyScenicPhoto from "../components/DailyScenicPhoto";
@@ -30,16 +31,17 @@ function stateTone(state,expired=false){
   return "grey";
 }
 
-export default function Compliance({ me, openWork, openAnnouncements }) {
+export default function Compliance({ me, openAnnouncements }) {
   const hasOrgCapability=(capability)=>(me.capability_grants||[]).some((grant)=>grant.capability===capability&&!grant.scope_unit_id);
-  const canManage=hasOrgCapability("compliance.manage");
+  const departmentalUser=!me.is_admin&&!me.is_exec;
+  const canManage=departmentalUser&&hasOrgCapability("compliance.manage");
   const actorScope=me.org_id+":"+me.id+":"+String(canManage);
   const actorRef=useRef(actorScope); actorRef.current=actorScope;
   const readSequence=useRef(0);
   const overviewReadSequence=useRef(0);
   const [verifiedActor,setVerifiedActor]=useState(null);
   const isVerified=verifiedActor===actorScope;
-  const isManager=me.role==="manager";
+  const isManager=departmentalUser&&me.role==="manager";
   const canPublishInstruction=hasOrgCapability("post_announcement");
   const [tab,setTab]=useState(canManage?"overview":"policies");
   const [observationIntent,setObservationIntent]=useState({id:"",create:false});
@@ -134,6 +136,9 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
         supabase.from("compliance_evidence_versions").select("*, profile:profiles!compliance_evidence_versions_profile_id_fkey(full_name), requirement:compliance_requirements!compliance_evidence_versions_requirement_id_fkey(title,requirement_code,policy_version_id)",{count:"exact"}).order("created_at",{ascending:false}),
         supabase.from("compliance_exception_versions").select("*, profile:profiles!compliance_exception_versions_profile_id_fkey(full_name), requirement:compliance_requirements!compliance_exception_versions_requirement_id_fkey(title,requirement_code,policy_version_id)",{count:"exact"}).order("created_at",{ascending:false}),
       ];
+      // Administration may retain legacy server grants, but this route is personal
+      // policy access for HR; departmental operations belong to Compliance.
+      if(me.is_admin){for(const index of [3,4,5])queries[index]=queries[index].eq("profile_id",me.id);}
       if(canManage){
         queries.push(
           supabase.from("profiles").select("id,full_name,email,active",{count:"exact"}).eq("org_id",me.org_id).eq("active",true).order("full_name"),
@@ -165,8 +170,9 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
     const superseded=new Set(policies.map((p)=>p.supersedes_id).filter(Boolean));
     return policies.filter((p)=>!superseded.has(p.id)).sort((a,b)=>a.title.localeCompare(b.title));
   },[policies]);
-  const evidenceLatest=useMemo(()=>latestVersions(evidence,"evidence_key"),[evidence]);
-  const exceptionLatest=useMemo(()=>latestVersions(exceptions,"exception_key"),[exceptions]);
+  const scopedPeople=useMemo(()=>compliancePersonOptions(people,canManage?attendanceRows:[]),[people,canManage,attendanceRows]);
+  const evidenceLatest=useMemo(()=>withCompliancePersonNames(latestVersions(evidence,"evidence_key"),scopedPeople),[evidence,scopedPeople]);
+  const exceptionLatest=useMemo(()=>withCompliancePersonNames(latestVersions(exceptions,"exception_key"),scopedPeople),[exceptions,scopedPeople]);
   const policyById=Object.fromEntries(policies.map((p)=>[p.id,p]));
   const today=new Date().toISOString().slice(0,10);
   function openObservations(id="",create=false){
@@ -315,7 +321,7 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
     </ProductNotice>
   </div>;
 
-  const personalCompliance = !canManage && !isManager && !me.is_admin;
+  const personalCompliance = !canManage && !isManager;
   return <div className={`body compliance-page ${canManage ? "cp" : ""} ${personalCompliance ? "ev2-personal-page ev2-personal-compliance" : ""}`.trim()}>
     {canManage ? <>
       <section className="cp-welcome s2-landscape-hero" aria-label="Compliance department welcome">
@@ -358,7 +364,7 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
       acknowledgements={acknowledgements}
       evidenceLatest={evidenceLatest}
       exceptionLatest={exceptionLatest}
-      openWork={openWork}
+      me={me}
       openObservations={openObservations}
       openAnnouncements={canPublishInstruction?openAnnouncements:null}
       onSection={setTab}
@@ -471,7 +477,7 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
 
       <div className="sec"><span>Applicability</span><span>{scopes.length}</span></div>
       <div className="form-grid two"><FieldGroup label="Scope"><select className="field" aria-label="Compliance applicability kind" value={scopeKind} onChange={e=>{setScopeKind(e.target.value);setScopeValue("");}}><option value="organisation">Organisation</option><option value="unit">Unit</option><option value="person">Person</option><option value="employment_type">Employment type</option></select></FieldGroup>
-      <FieldGroup label="Value">{scopeKind==="unit"?<select className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)}><option value="">Choose unit</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select>:scopeKind==="person"?<select className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)}><option value="">Choose person</option>{people.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select>:scopeKind==="employment_type"?<input className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)} placeholder="e.g. full_time"/>:<input className="field" disabled value="All active people"/>}</FieldGroup></div>
+      <FieldGroup label="Value">{scopeKind==="unit"?<select className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)}><option value="">Choose unit</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select>:scopeKind==="person"?<select className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)}><option value="">Choose person</option>{scopedPeople.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select>:scopeKind==="employment_type"?<input className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)} placeholder="e.g. full_time"/>:<input className="field" disabled value="All active people"/>}</FieldGroup></div>
       <button className="btn btn-ghost btn-sm" onClick={addScope}>Add applicability</button>
       <div className="compliance-chip-list">{scopes.map((row,index)=><button type="button" key={index} onClick={()=>setScopes(scopes.filter((_,i)=>i!==index))}>{human(row.scope_kind)} · {row.label} ×</button>)}</div>
 

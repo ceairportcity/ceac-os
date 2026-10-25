@@ -71,7 +71,9 @@ test('project evidence reaches an employee only through the existing reviewer an
     await delivery.getByRole('combobox', { name: 'Delivery of responsibilities: human rating', exact: true }).selectOption('N/O');
     await delivery.getByRole('textbox', { name: 'Delivery of responsibilities: explanation', exact: true }).fill(ratingReason);
     await ratings.getByRole('button', { name: 'Record human ratings', exact: true }).click();
-    await expect(ratings.getByText(ratingReason, { exact: true })).toBeVisible();
+    // The editor already contains this text before its asynchronous insert.
+    // Wait for the fetched recorded version, then keep the database assertion.
+    await expect(ratings.locator('.s2-rating-summary').getByText(ratingReason, { exact: true })).toBeVisible();
     const ratingSaved = await manager.from('appraisal_human_rating_versions')
       .select('id,appraisal_id,profile_id').eq('profile_id', staffId)
       .contains('category_ratings', { delivery: { reason: ratingReason } }).single();
