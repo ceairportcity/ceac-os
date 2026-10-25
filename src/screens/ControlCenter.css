@@ -1,17 +1,30 @@
-.ev2-control-center .control-settings-toolbar{display:flex;align-items:end;justify-content:space-between;gap:18px;margin:22px 0 26px}
-.control-settings-toolbar>label{display:grid;gap:7px;flex:1;max-width:480px;font-size:12px;color:#5e738b}
-.control-settings-toolbar input{width:100%;min-height:40px;padding:9px 12px;border:1px solid #dce5f0;border-radius:6px;background:#fff;color:#173553;font:inherit}
-.control-settings-views{display:flex;gap:4px;border-bottom:1px solid #dce5f0}
-.control-settings-views button{padding:10px 12px;min-height:40px;border:0;border-bottom:2px solid transparent;background:none;color:#657b92;font:inherit;font-size:12px;cursor:pointer}
-.control-settings-views button[aria-pressed=true]{border-bottom-color:#087bf5;color:#087bf5}
-.control-settings-views span{margin-left:5px;font-size:12px}
-.ev2-control-center .phase5-control-group-head{margin-bottom:12px}
-.ev2-control-center .phase5-control-group-head h2{font-size:16px}
-.ev2-control-center .phase5-control-ledger{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.ev2-control-center .ev2-control-card{margin:0;border-radius:10px;box-shadow:none}
-.ev2-control-center .ev2-control-card .screen-note{font-size:13px;line-height:1.55}
-.ev2-control-center .phase5-control-groups{display:grid;gap:28px}
-.control-settings-toolbar input:focus-visible,.control-settings-views button:focus-visible{outline:2px solid #087bf5;outline-offset:3px}
-@media(max-width:700px){.ev2-control-center .control-settings-toolbar{display:grid;gap:12px}.control-settings-toolbar>label{max-width:none}.control-settings-views{justify-content:flex-start}.ev2-control-center .phase5-control-ledger{grid-template-columns:1fr}}
+.ev2-control-center{max-width:1050px;margin-inline:auto}
+.ev2-control-center .control-settings-toolbar{display:flex;align-items:end;justify-content:space-between;gap:18px;margin:22px 0 18px}
+.control-settings-toolbar>label{display:grid;gap:7px;flex:1;max-width:480px;font-size:14px;color:var(--ev2-text-secondary)}
+.control-settings-toolbar input{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--ev2-line);border-radius:6px;background:var(--ev2-surface,#fff);color:var(--ev2-text);font:inherit;font-size:16px}
+.control-settings-views{display:flex;gap:4px;border-bottom:1px solid var(--ev2-line)}
+.control-settings-views button{padding:10px 12px;min-height:44px;border:0;border-bottom:2px solid transparent;background:none;color:var(--ev2-text-secondary);font:inherit;font-size:14px;cursor:pointer}
+.control-settings-views button[aria-pressed=true]{border-bottom-color:var(--ev2-action);color:var(--ev2-action)}
+.control-settings-views span{margin-left:5px}
+.control-review-notice{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff4db;color:#775214;padding:10px 14px;border-radius:6px;margin-bottom:24px;font-size:14px}
+.control-review-notice button{border:0;background:none;color:var(--ev2-action);font:inherit;font-weight:600;min-height:44px;cursor:pointer}
+.control-setting-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+.control-setting-groups h2,.control-related-work h2{font-size:15px;font-weight:600;margin:0 0 10px;color:var(--ev2-text)}
+.control-setting-list{border:1px solid var(--ev2-line);border-radius:8px;background:var(--ev2-surface,#fff);overflow:hidden}
+.control-setting-row{display:flex;align-items:center;gap:12px;width:100%;min-height:76px;padding:14px 16px;border:0;border-bottom:1px solid var(--ev2-line);text-align:left;background:transparent;color:var(--ev2-text);font:inherit;cursor:pointer}
+.control-setting-row:last-child{border-bottom:0}
+.control-setting-row:hover{background:var(--ev2-surface-soft,#f4f8fc)}
+.control-setting-copy{display:grid;gap:4px;min-width:0;flex:1}
+.control-setting-copy strong{font-size:15px;font-weight:600;overflow-wrap:anywhere}
+.control-setting-copy>span{font-size:13px;line-height:1.5;color:var(--ev2-text-secondary);overflow-wrap:anywhere}
+.control-setting-status{font-size:12px;color:#775214;max-width:95px}
+.control-setting-chevron{font-size:24px;color:var(--ev2-text-secondary)}
+.control-related-work{border-top:1px solid var(--ev2-line);margin-top:30px;padding-top:20px;font-size:14px;color:var(--ev2-text-secondary);line-height:1.6}
+.control-related-work p{margin:8px 0}
+.control-related-work button{border:0;background:none;color:var(--ev2-action);font:inherit;padding:4px;min-height:44px;text-decoration:underline;cursor:pointer}
+.control-settings-toolbar input:focus-visible,.control-settings-views button:focus-visible,.control-setting-row:focus-visible,.control-related-work button:focus-visible,.control-review-notice button:focus-visible{outline:2px solid var(--ev2-action,#087bf5);outline-offset:-3px}
+@media(max-width:700px){.ev2-control-center .control-settings-toolbar{display:grid;gap:12px}.control-settings-toolbar>label{max-width:none}.control-setting-groups{grid-template-columns:1fr;gap:22px}}
 
-@media(max-width:700px){.control-settings-toolbar input{font-size:16px}}
+.ev2s-content:has(.ev2-control-center),.ev2s-content:has(.focused-settings){background:var(--ev2-surface,#fff)}
+.ev2-control-center .ev2-control-center-header{background:transparent;border:0;box-shadow:none;padding:0;border-radius:0}
+.ev2-control-center .control-setting-row>.ev2-icon{flex-shrink:0;color:var(--ev2-action,#087bf5)}

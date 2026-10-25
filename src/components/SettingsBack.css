@@ -1,0 +1,8 @@
+.settings-detail-page{position:relative;max-width:100%;padding-top:12px}
+.settings-back{display:inline-flex;align-items:center;min-height:44px;padding:8px 0;border:0;background:transparent;color:var(--ev2-action,#087bf5);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.settings-detail-page>.settings-back{margin-inline:24px}
+.settings-detail-page>.body{padding-top:4px}
+.settings-back:focus-visible{outline:2px solid var(--ev2-action,#087bf5);outline-offset:3px}
+@media(max-width:899px){.settings-detail-page>.settings-back{margin-inline:16px}}
+/* Department detail already owns its return to the department list. */
+.settings-detail-page:has(.admin-unit-detail)>.settings-back{display:none}

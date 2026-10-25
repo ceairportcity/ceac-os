@@ -5,56 +5,14 @@ const control = fs.readFileSync(new URL("../src/screens/ControlCenter.jsx", impo
 const units = fs.readFileSync(new URL("../src/screens/Units.jsx", import.meta.url), "utf8");
 const app = fs.readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 
-test("OCR5E Control Center is state-derived and never invents a numeric health score", () => {
-  for (const status of ["Ready","Needs attention","Partly configured","Not configured","Awaiting policy"]) {
-    expect(control).toContain(status);
-  }
-
-  for (const domain of [
-    "Organisation",
-    "People & access",
-    "Work & operations",
-    "Time & Leave",
-    "Payroll & Finance",
-    "Security & governance",
-    "Integrations",
-    "Audit & records",
-  ]) {
-    expect(domain === "Payroll & Finance" ? control.includes('title:canPayroll ? "Payroll & Finance" : "Finance"') : control.includes(`title:"${domain}"`)).toBeTruthy();
-  }
-
-  expect(control).toContain('supabase.rpc("admin_employee_roster_summary")');
-  expect(control).toContain('supabase.rpc("payroll_readiness_summary")');
-  expect(control).toContain('from("leave_policy_versions")');
-  expect(control).toContain('from("integration_connectors")');
-  expect(control).toContain('from("workflow_run_steps")');
-  expect(control).toContain('from("platform_audit_events")');
-  // Roster-only identity is not an error; only genuinely unresolved identity,
-  // missing job/unit/type or incomplete configuration may need attention.
-  expect(control).toContain('person.identity_state==="needs_review"');
-  expect(control).toContain('person.employment_type==="not_recorded"');
-  expect(control).toContain('peopleGaps.some((person)=>person.identity_state==="needs_review")');
-  expect(control).toContain("No active leave policy is recorded. Review the rules before assigning entitlements.");
-  expect(control).toContain('actions:[{label:"Workforce",onClick:()=>go("attendance")}]');
-  expect(control).toContain('aria-label="Settings view"');
-  expect(control).toContain('[STATUSES.attention,STATUSES.partial,STATUSES.missing,STATUSES.policy].includes(domain.status)');
+test("Control Center shows real setup needs and keeps independent daily work discoverable", () => {
+  for (const label of ["Departments & reporting","Attendance & locations","Leave rules","Access permissions","Organisation rules","Alerts & reminders","Connected apps","Activity history"]) expect(control).toContain(label);
+  for (const table of ["office_locations","units","unit_memberships","leave_policy_versions","integration_connectors"]) expect(control).toContain(`from("${table}")`);
   expect(control).not.toContain("healthScore");
-  expect(control).not.toContain("managed elsewhere");
-  expect(control).toContain("Organisation & people");
-  expect(control).toContain("Operational configuration");
-  expect(control).toContain("Security, integrations & records");
-  expect(control).not.toContain('{label:"People",onClick:()=>go("people")}');
+  expect(control).not.toContain("admin_employee_roster_summary");
+  expect(control).toContain("control-related-work");
+  expect(app).not.toContain("ControlCenterTrail");
 });
-
-test("OCR5E Control Center deep-links to authoritative configuration surfaces", () => {
-  for (const route of [
-    "office-settings","units","people","protected-hr","workflows","attendance",
-    "payroll","finance","authority","policies","integrations","audit","events",
-  ]) {
-    expect(control).toContain(`go("${route}")`);
-  }
-});
-
 
 test("Phase 5D centralises employee invitation and transfer work in People & Access", () => {
   expect(units).toContain("Manage people & access");
@@ -99,9 +57,9 @@ for (const viewport of [
     const { context, page } = await openAdminControlCenter(browser, { width: viewport.width, height: viewport.height });
 
     await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Organisation & people", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Operational configuration", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Security, integrations & records", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Workplace", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "System", exact: true })).toBeVisible();
     await expect(page.locator(".ev2-control-center").getByRole("button", { name: "People & Access", exact: true })).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

@@ -33,8 +33,8 @@ test("People Access has one capability-gated employee-specific Authority link",(
  assert.match(people,/person\.profile_id && onManagePermissions/);
  assert.match(app,/initialProfileId=\{authorityFocusProfileId\}/);
  assert.match(authority,/useState\(initialProfileId \|\| me\.id\)/);
- assert.match(control,/label:"Manage permissions",onClick:\(\)=>go\("authority"\)/);
- assert.equal((control.match(/label:"Manage permissions"/g)||[]).length,1);
+ assert.match(control,/title:"Access permissions"[^\n]*go\("authority"\)/);
+ assert.equal((control.match(/title:"Access permissions"/g)||[]).length,1);
  assert.doesNotMatch(control,/label:"Authority"/);
 });
 test("project work register has no non-functional Board/Calendar view actions",()=>{

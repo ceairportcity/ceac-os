@@ -344,7 +344,7 @@ export function MobileTopBar({
           <BrandMark size="sm" className="ev2s-brand-mark" />
           <span>
             <strong>CEAC OS</strong>
-            <small>{me?.unit_name || roleLabel} · {roleLabel}</small>
+            <small>{isAdmin ? "Administration & HR" : me?.unit_name && me.unit_name !== roleLabel ? `${me.unit_name} · ${roleLabel}` : roleLabel}</small>
           </span>
         </div>
 

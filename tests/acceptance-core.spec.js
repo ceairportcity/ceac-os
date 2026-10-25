@@ -542,9 +542,9 @@ test("Experience Stage 8 removes the known navigation, Team and Calendar defects
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Control Center");
-    await expect(page.getByRole("button", { name: "Checks & workflows", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Checks & workflows", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Checks", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Pending decisions", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Pending decisions", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Pending decisions", exact: true })).toBeVisible();
     await expect(page.getByText("Waiting for a decision", { exact: true })).toBeVisible();
     await context.close();
   }
@@ -2218,7 +2218,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByText("ACCEPTANCE-001", { exact: true })).toBeVisible();
 
   await go(page, "Checks");
-  await expect(page.getByRole("heading", { name: "Checks", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pending decisions", exact: true })).toBeVisible();
   const employmentWorkflow = page.getByRole("button", { name: /Review employment change/ }).first();
   await expect(employmentWorkflow).toBeVisible();
   await employmentWorkflow.click();
@@ -2228,22 +2228,22 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByText("Check completed.", { exact: true })).toBeVisible();
 
   await go(page, "Authority");
-  await expect(page.getByRole("heading", { name: "Authority", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Access permissions", exact: true })).toBeVisible();
   await page.getByLabel("Authority person").selectOption({ label: "Staff Fixture · staff@ceac.local.test" });
-  await page.getByRole("button", { name: "Grant capability", exact: true }).click();
-  const grantDialog = page.getByRole("dialog", { name: "Grant capability" });
+  await page.getByRole("button", { name: "Add permission", exact: true }).click();
+  const grantDialog = page.getByRole("dialog", { name: "Add permission" });
   await grantDialog.getByLabel("Capability", { exact: true }).selectOption("performance.admin");
   await grantDialog.getByLabel("Grant reason").fill("Acceptance temporary performance authority");
-  await grantDialog.getByRole("button", { name: "Grant capability", exact: true }).click();
+  await grantDialog.getByRole("button", { name: "Add permission", exact: true }).click();
   await expect(page.getByText("Capability granted.", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Revoke", exact: true }).click();
-  const revokeDialog = page.getByRole("dialog", { name: "Revoke capability" });
+  await page.getByRole("button", { name: "Remove permission", exact: true }).click();
+  const revokeDialog = page.getByRole("dialog", { name: "Remove permission" });
   await revokeDialog.getByLabel("Revocation reason").fill("Acceptance authority cleanup");
-  await revokeDialog.getByRole("button", { name: "Revoke", exact: true }).click();
+  await revokeDialog.getByRole("button", { name: "Remove permission", exact: true }).click();
   await expect(page.getByText("Capability revoked.", { exact: true })).toBeVisible();
 
   await go(page, "System rules");
-  await expect(page.getByRole("heading", { name: "Policies & rules", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Organisation rules", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Work quiet days/ }).click();
   await page.getByRole("button", { name: "Record new version", exact: true }).click();
   const policyDialog = page.getByRole("dialog", { name: "Record new policy version" });
@@ -2284,11 +2284,11 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await page.screenshot({ path: "test-artifacts/stage12-connected-apps-admin.png", fullPage: true });
 
   await go(page, "Audit");
-  await expect(page.getByRole("heading", { name: "Audit", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Activity history", exact: true })).toBeVisible();
   await expect(page.getByText("Recent changes", { exact: true })).toBeVisible();
   await expect(page.getByText(/Employment (Record · Update|History · Insert)/).first()).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Audit", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Activity history", exact: true })).toBeVisible();
 
   await go(page, "Events");
   await expect(page.getByRole("heading", { name: "System events", exact: true })).toBeVisible();
@@ -2309,21 +2309,20 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Office settings", exact: true }).click();
+  await page.getByRole("button", { name: /^Leave rules/ }).click();
   // The owner-confirmed 24-day process summary is guidance, not proof that
   // this synthetic organisation has completed a per-organisation policy record.
   // A fresh organisation has no active policy: don't invent entitlement data.
   await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
-  await expect(page.getByText("Awaiting CEAC policy", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Configure policy in Workforce", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Configure policy in Workforce", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Manage leave rules in Time & Leave", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Manage leave rules in Time & Leave", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Workforce", exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
   await expect(page.getByRole("button", { name: "Configure leave policy", exact: true })).toBeVisible();
 
   await go(page, "Settings");
-  await page.getByRole("button", { name: "Office settings", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Organisation settings", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /^Alerts & reminders/ }).click();
+  await expect(page.getByRole("heading", { name: "Alerts & reminders", exact: true })).toBeVisible();
 
   const attentionRule = page.locator(".office-threshold-row").filter({ hasText: "active work has not moved for" });
   const attentionInput = attentionRule.locator("input");
@@ -2334,7 +2333,8 @@ test("Administration surfaces use policy-safe HR states and real employee record
   const reloadedRule = page.locator(".office-threshold-row").filter({ hasText: "active work has not moved for" });
   await expect(reloadedRule.locator("input")).toHaveValue("9");
 
-  await expect(page.getByRole("button", { name: /Office location/ }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Back to Control Center", exact: true }).click();
+  await expect(page.getByRole("button", { name: /^Attendance & locations/ })).toBeVisible();
 
   await context.close();
 });

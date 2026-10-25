@@ -28,32 +28,26 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 900 
       await expect(center.getByRole('heading', { name: 'Organisation', exact: true })).toHaveCount(1);
       await page.screenshot({ path: "test-artifacts/stage2-control-center-" + viewport.width + ".png", fullPage: true });
       await center.getByLabel('Find a setting').fill('Office');
-      await expect(center.getByRole('heading', { name: 'Organisation', exact: true })).toBeVisible();
-      await expect(center.getByRole('heading', { name: 'People & access', exact: true })).toHaveCount(0);
-      await center.getByRole('button', { name: 'Office settings', exact: true }).click();
-      const returnLink = page.getByRole('navigation', { name: 'Settings navigation' }).getByRole('link', { name: /Control Center/ });
-      await expect(returnLink).toBeVisible();
+      await expect(center.locator('.control-setting-row')).toHaveCount(1);
+      await center.getByRole('button', { name: /^Attendance & locations/ }).click();
       await expect(page).toHaveURL(/tab=office-settings/);
-      await returnLink.click();
-      // App navigation retains the settings search, so returning restores
-      // the user's context. Clear it explicitly before opening another domain.
-      await expect(center.getByLabel('Find a setting')).toHaveValue('Office');
-      await center.getByLabel('Find a setting').fill('');
-      await center.getByRole('button', { name: 'Units', exact: true }).click();
+      await expect(page.getByRole('heading',{name:'Attendance & locations',exact:true})).toBeVisible();
+      await page.getByRole('button', {name:/^Office location/}).click();
+      await expect(page).toHaveURL(/setting=office/);
+      await expect(page.getByLabel('Office name',{exact:true})).toBeVisible();
+      await page.getByRole('button',{name:'Back to Attendance & locations',exact:true}).click();
+      await page.getByRole('button',{name:'Back to Control Center',exact:true}).click();
+      await expect(center.getByRole('heading',{name:'Control Center',exact:true})).toBeVisible();
+      await center.getByRole('button',{name:/^Departments & reporting/}).click();
       await expect(page).toHaveURL(/tab=units/);
-      await page.getByRole('navigation', { name: 'Settings navigation' }).getByRole('link', { name: /Control Center/ }).click();
-      await expect(center.getByRole('heading', { name: 'Control Center', exact: true })).toBeVisible();
-      const finance = center.locator(".control-card").filter({ has: page.getByRole("heading", { name: "Finance", exact: true }) });
-      await expect(finance).toBeVisible();
-      await expect(finance).toContainText("Available");
-      await expect(finance.getByRole("button", { name: "Payroll", exact: true })).toHaveCount(0);
-      await finance.getByRole("button", { name: "Finance", exact: true }).click();
+      await page.getByRole('button',{name:'Back to Control Center',exact:true}).click();
+      await expect(center.getByRole('button',{name:'Payroll',exact:true})).toHaveCount(0);
+      await center.getByRole('button',{name:'Finance',exact:true}).click();
       await expect(page).toHaveURL(/tab=finance/);
-      await page.getByRole("navigation", { name: "Settings navigation" }).getByRole("link", { name: /Control Center/ }).click();
-      await expect(center.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
+      await expect(page.getByRole('button',{name:'Back to Control Center',exact:true})).toHaveCount(0);
+      await expect(page.locator('.control-center-trail')).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-      await center.getByRole('button', { name: /Overview/ }).click();
-      await expect(center).toHaveCount(0);
+
     } finally { await context.close().catch(() => {}); }
   });
 }

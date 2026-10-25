@@ -671,7 +671,7 @@
 }
 
 @media (max-width: 899px) {
-  .ev2s-mobile-search-drawer{top:0;bottom:0;width:100%;max-width:none;max-height:100dvh;border:0;border-radius:0}
+  .ev2s-mobile-search-drawer{padding-top:calc(var(--ev2-space-4) + env(safe-area-inset-top, 0px));top:0;bottom:0;width:100%;max-width:none;max-height:100dvh;border:0;border-radius:0}
 
   .ev2s-sidebar,
   .ev2s-topbar {
@@ -686,6 +686,7 @@
   .ev2s-mobile-topbar {
     position: sticky;
     top: 0;
+    padding-top: var(--ceac-safe-area-top, env(safe-area-inset-top, 0px));
     z-index: 55;
     display: grid;
     min-width: 0;
@@ -931,3 +932,5 @@
 .s2-achievement-entry{display:flex;justify-content:flex-end;max-width:1480px;margin:0 auto;padding:7px 0 2px}
 .s2-achievement-entry button{font-size:12px;border:1px solid #d9e7f8;background:#f5faff;color:#126bc9;padding:8px 12px;border-radius:7px;cursor:pointer;font-weight:690}
 .s2-achievement-entry button:hover{background:#e7f2ff}
+
+@media(max-width:899px){.app.staff-app{padding-top:0}}

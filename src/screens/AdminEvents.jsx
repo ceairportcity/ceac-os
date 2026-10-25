@@ -94,7 +94,7 @@ export default function AdminEvents({ me }) {
 
   return <div className="body">
     <div style={{ paddingTop: 26 }}>
-      <div className="eyebrow">Platform foundation</div>
+      <div className="eyebrow">Control Center</div>
       <h1 className="h1">System events</h1>
       <p className="screen-note">Durable internal business events used by workflows, integrations, notifications and later intelligence.</p>
     </div>
