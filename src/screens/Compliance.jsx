@@ -4,6 +4,7 @@ import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from
 import { humanError } from "../lib/productLanguage";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 import { attendanceDate } from "../lib/attendance";
+import {compliancePersonOptions,withCompliancePersonNames} from "../lib/complianceReviewQueue";
 import ComplianceOverview from "../components/ComplianceOverview";
 import ComplianceAttendanceCases from "../components/ComplianceAttendanceCases";
 import DailyScenicPhoto from "../components/DailyScenicPhoto";
@@ -169,8 +170,9 @@ export default function Compliance({ me, openAnnouncements }) {
     const superseded=new Set(policies.map((p)=>p.supersedes_id).filter(Boolean));
     return policies.filter((p)=>!superseded.has(p.id)).sort((a,b)=>a.title.localeCompare(b.title));
   },[policies]);
-  const evidenceLatest=useMemo(()=>latestVersions(evidence,"evidence_key"),[evidence]);
-  const exceptionLatest=useMemo(()=>latestVersions(exceptions,"exception_key"),[exceptions]);
+  const scopedPeople=useMemo(()=>compliancePersonOptions(people,canManage?attendanceRows:[]),[people,canManage,attendanceRows]);
+  const evidenceLatest=useMemo(()=>withCompliancePersonNames(latestVersions(evidence,"evidence_key"),scopedPeople),[evidence,scopedPeople]);
+  const exceptionLatest=useMemo(()=>withCompliancePersonNames(latestVersions(exceptions,"exception_key"),scopedPeople),[exceptions,scopedPeople]);
   const policyById=Object.fromEntries(policies.map((p)=>[p.id,p]));
   const today=new Date().toISOString().slice(0,10);
   function openObservations(id="",create=false){
@@ -475,7 +477,7 @@ export default function Compliance({ me, openAnnouncements }) {
 
       <div className="sec"><span>Applicability</span><span>{scopes.length}</span></div>
       <div className="form-grid two"><FieldGroup label="Scope"><select className="field" aria-label="Compliance applicability kind" value={scopeKind} onChange={e=>{setScopeKind(e.target.value);setScopeValue("");}}><option value="organisation">Organisation</option><option value="unit">Unit</option><option value="person">Person</option><option value="employment_type">Employment type</option></select></FieldGroup>
-      <FieldGroup label="Value">{scopeKind==="unit"?<select className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)}><option value="">Choose unit</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select>:scopeKind==="person"?<select className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)}><option value="">Choose person</option>{people.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select>:scopeKind==="employment_type"?<input className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)} placeholder="e.g. full_time"/>:<input className="field" disabled value="All active people"/>}</FieldGroup></div>
+      <FieldGroup label="Value">{scopeKind==="unit"?<select className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)}><option value="">Choose unit</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select>:scopeKind==="person"?<select className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)}><option value="">Choose person</option>{scopedPeople.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select>:scopeKind==="employment_type"?<input className="field" aria-label="Compliance applicability value" value={scopeValue} onChange={e=>setScopeValue(e.target.value)} placeholder="e.g. full_time"/>:<input className="field" disabled value="All active people"/>}</FieldGroup></div>
       <button className="btn btn-ghost btn-sm" onClick={addScope}>Add applicability</button>
       <div className="compliance-chip-list">{scopes.map((row,index)=><button type="button" key={index} onClick={()=>setScopes(scopes.filter((_,i)=>i!==index))}>{human(row.scope_kind)} · {row.label} ×</button>)}</div>
 

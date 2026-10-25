@@ -21,3 +21,17 @@ export function complianceReviewQueue(cases = [], evidence = [], exceptions = []
     })),
   ];
 }
+
+/** Names already authorised by the existing scoped attendance response; never
+ * widen profiles RLS or infer a person from a similar name. */
+export function compliancePersonOptions(people=[],attendanceRows=[]) {
+ const names=new Map();
+ for(const person of people)if(person.id&&person.full_name)names.set(person.id,{id:person.id,full_name:person.full_name});
+ for(const row of attendanceRows)if(row.profile_id&&row.name)names.set(row.profile_id,{id:row.profile_id,full_name:row.name});
+ return [...names.values()].sort((a,b)=>a.full_name.localeCompare(b.full_name));
+}
+export function withCompliancePersonNames(records=[],people=[]) {
+ const names=new Map(people.map(person=>[person.id,person.full_name]));
+ return records.map(row=>row.profile?.full_name||!names.has(row.profile_id)?row:
+  {...row,profile:{full_name:names.get(row.profile_id)}});
+}

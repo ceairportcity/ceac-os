@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 const date=new Date().toISOString().slice(0,10);
-async function fixture(page,{failCases=false,failOffice=false,asAdmin=false}={}){
+async function fixture(page,{failCases=false,failOffice=false,asAdmin=false,hiddenProfile=false}={}){
  let tiles=0;
  await page.route('**/*',async route=>{
   const url=new URL(route.request().url());
@@ -22,6 +22,9 @@ async function fixture(page,{failCases=false,failOffice=false,asAdmin=false}={})
     compliance_exception_versions:[{id:'exception-a',state:'requested',created_at:date,profile:{full_name:'Employee C'},requirement:{title:'Temporary policy exception'}}],
     profiles:[{id:'person-a',full_name:'Employee A',active:true}],units:[{id:'unit-a',name:'Operations',active:true}],
    }[name]||[];
+   if(hiddenProfile&&['compliance_evidence_versions','compliance_exception_versions'].includes(name)){
+    for(const row of data){row.profile_id='person-a';row.profile=null;}
+   }
    return route.fulfill({status:200,headers:{'content-type':'application/json','access-control-allow-origin':'*','access-control-expose-headers':'content-range','content-range':data.length?`0-${data.length-1}/${data.length}`:'*/0'},body:JSON.stringify(data)});
   }
   if(!['localhost','127.0.0.1'].includes(url.hostname))return route.abort();
@@ -110,4 +113,15 @@ test('HR direct-link access remains personal even with its legacy organisation-w
  await expect(page.getByRole('region',{name:'Recorded workforce work-start street map'})).toHaveCount(0);
  await expect(page.getByText('My compliance',{exact:true})).toBeVisible();
  await expect(page.getByRole('tab',{name:'Policies',exact:true})).toBeVisible();
+});
+
+test('Compliance uses already-authorised names for cross-department evidence and exception reviews',async({page})=>{
+ await fixture(page,{hiddenProfile:true});
+ await page.getByRole('button',{name:'Review evidence for Employee A',exact:true}).click();
+ await expect(page.getByRole('dialog')).toContainText('Employee A');
+ await page.getByRole('button',{name:'Close dialog',exact:true}).click();
+ await page.getByRole('tab',{name:'Evidence',exact:true}).click();
+ const row=page.locator('.row').filter({hasText:'Safety evidence'}).filter({hasText:'Employee A'});
+ await row.getByRole('button',{name:'Review evidence',exact:true}).click();
+ await expect(page.getByRole('dialog')).toContainText('Employee A');
 });
