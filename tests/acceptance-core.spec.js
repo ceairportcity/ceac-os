@@ -2494,7 +2494,7 @@ test("Stage 12 Connected Apps keeps provider secrets server-bound on mobile", as
   const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 390, height: 844 });
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
-  await page.getByText("Connected Apps", { exact: true }).click();
+  await page.getByRole("button", { name: /^Connected apps/ }).click();
   await waitForRouteReady(page);
   await expect(page.getByRole("heading", { name: "Connected Apps", exact: true })).toBeVisible();
 

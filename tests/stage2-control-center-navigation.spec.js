@@ -35,6 +35,18 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 900 
       await page.getByRole('button', {name:/^Office location/}).click();
       await expect(page).toHaveURL(/setting=office/);
       await expect(page.getByLabel('Office name',{exact:true})).toBeVisible();
+      const officeName = page.getByLabel('Office name',{exact:true});
+      const originalName = await officeName.inputValue();
+      const updatedName = `Navigation acceptance office ${viewport.width}`;
+      await officeName.fill(updatedName);
+      await page.getByRole('button',{name:'Save changes',exact:true}).click();
+      await expect(page.getByText('Office location saved',{exact:true})).toBeVisible();
+      await page.reload();
+      await expect(page.getByLabel('Office name',{exact:true})).toHaveValue(updatedName);
+      // Restore this disposable organisation's name so later tests retain their fixture.
+      await page.getByLabel('Office name',{exact:true}).fill(originalName);
+      await page.getByRole('button',{name:'Save changes',exact:true}).click();
+      await expect(page.getByText('Office location saved',{exact:true})).toBeVisible();
       await page.getByRole('button',{name:'Back to Attendance & locations',exact:true}).click();
       await page.getByRole('button',{name:'Back to Control Center',exact:true}).click();
       await expect(center.getByRole('heading',{name:'Control Center',exact:true})).toBeVisible();

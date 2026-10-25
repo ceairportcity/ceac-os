@@ -78,10 +78,11 @@ test('unassigned settings and undeployed code issuer stay unavailable',async({pa
 test('mobile header reserves a simulated safe area without doubling staff padding',async({page})=>{
  await page.setViewportSize({width:390,height:844});await mockSettings(page);
  await page.goto('/tests/fixtures/control-center-design.html');
- await page.addStyleTag({content:':root{--ceac-safe-area-top:47px}'});
  await expect(page.locator('.ev2s-mobile-topbar')).toBeVisible();
+ await page.locator('.app').evaluate(node=>node.className='app staff-app');
+ const bodyPadding = await page.locator('.app .body').evaluate(node=>parseFloat(getComputedStyle(node).paddingTop));
+ await page.addStyleTag({content:':root{--ceac-safe-area-top:47px}'});
  expect(await page.locator('.ev2s-mobile-topbar').evaluate(node=>parseFloat(getComputedStyle(node).paddingTop))).toBe(47);
  const row=await page.locator('.ev2s-mobile-toprow').boundingBox();expect(row.y).toBeGreaterThanOrEqual(47);
- await page.locator('.app').evaluate(node=>node.className='app staff-app');
- expect(await page.locator('.app').evaluate(node=>parseFloat(getComputedStyle(node).paddingTop))).toBe(0);
+ expect(await page.locator('.app .body').evaluate(node=>parseFloat(getComputedStyle(node).paddingTop))).toBe(bodyPadding);
 });

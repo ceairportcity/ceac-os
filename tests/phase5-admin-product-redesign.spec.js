@@ -32,7 +32,9 @@ test("Phase 5 keeps Administration monitoring, People & Access and configuration
   expect(access).toContain('rpc("admin_access_invitations")');
   expect(access).toContain("resendStaffInvitation");
   expect(access).toContain('rpc("admin_revoke_staff_invitation"');
-  expect(control).toContain("Organisation & people");
+  expect(control).toContain('group:"Organisation"');
+  expect(control).toContain("Departments & reporting");
+  expect(control).toContain("control-related-work");
   expect(units).not.toContain("inviteByEmail");
   expect(units).not.toContain("admin_update_employment");
   expect(signedSecurityBaseline).toContain("privileged_mfa_required");

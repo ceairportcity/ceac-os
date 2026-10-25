@@ -54,11 +54,11 @@ test.describe("Premium redesign R3 Administration",()=>{
     const {context,page}=await openAdmin(browser);
     await page.locator(".ev2s-sidebar").getByRole("button",{name:"Control Center",exact:true}).click();
     await expect(page.getByRole("heading",{name:"Control Center",exact:true})).toBeVisible();
-    await expect(page.getByText("Connected Apps",{exact:true})).toBeVisible();
-    await expect(page.getByRole("heading",{name:"Security, integrations & records",exact:true})).toBeVisible();
+    await expect(page.getByRole("button",{name:/^Connected apps/})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"System",exact:true})).toBeVisible();
     await expect(page.getByText("System events",{exact:true})).toBeVisible();
-    await expect(page.getByRole("heading",{name:"Organisation & people",exact:true})).toBeVisible();
-    await expect(page.getByRole("heading",{name:"Operational configuration",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Organisation",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Workplace",exact:true})).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r3-admin-control-center.png",fullPage:true});
     await context.close();
   });

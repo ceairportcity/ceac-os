@@ -932,5 +932,3 @@
 .s2-achievement-entry{display:flex;justify-content:flex-end;max-width:1480px;margin:0 auto;padding:7px 0 2px}
 .s2-achievement-entry button{font-size:12px;border:1px solid #d9e7f8;background:#f5faff;color:#126bc9;padding:8px 12px;border-radius:7px;cursor:pointer;font-weight:690}
 .s2-achievement-entry button:hover{background:#e7f2ff}
-
-@media(max-width:899px){.app.staff-app{padding-top:0}}

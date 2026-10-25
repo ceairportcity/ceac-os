@@ -38,6 +38,7 @@ test("Phase 6C corroboration remains additive evidence with no automatic consequ
   const reconcile = readFileSync("supabase/migrations/20261007104000_124_phase6_attendance_integrity_reconcile.sql", "utf8");
   const evidence = readFileSync("src/components/AttendanceEvidence.jsx", "utf8");
   const settings = readFileSync("src/screens/OfficeSettings.jsx", "utf8");
+  const issuer = readFileSync("src/components/AttendanceCodeIssuer.jsx", "utf8");
 
   expect(base).toContain("attendance_corroboration_events");
   expect(base).toContain("attendance_record_network_corroboration");
@@ -48,8 +49,11 @@ test("Phase 6C corroboration remains additive evidence with no automatic consequ
   expect(reconcile).toContain("No absence, pay or disciplinary state was created");
   expect(reconcile).not.toContain("payroll_set_line");
   expect(reconcile).not.toContain("payroll_create_run");
-  expect(settings).toContain("attendance_set_office_code");
-  expect(settings).toContain("corroborating evidence only");
+  expect(settings).toContain("integrityAvailable?<AttendanceCodeIssuer me={me}");
+  expect(issuer).toContain('supabase.rpc("attendance_set_office_code"');
+  expect(issuer).toContain("p_office_location_id: locationId");
+  expect(issuer).toContain("corroborating evidence, not proof of physical presence or a disciplinary decision");
+  expect(settings).toContain("do not decide attendance, pay or disciplinary action");
   expect(evidence).toContain("attendance_verify_office_code");
   expect(evidence).toContain("attendance_corroboration_for_day");
   expect(evidence).toContain("attendance_integrity_status");
