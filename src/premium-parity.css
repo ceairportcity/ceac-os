@@ -1,10 +1,11 @@
+/* Migrated Executive destinations no longer inherit legacy parity. Selector specificity is unchanged. */
 /* CEAC OS shared premium parity layer — deliberately loaded after all role layers. */
 /* Visual parity rules now consume the canonical CEAC premium tokens. */
 html,body,#root{min-height:100%;background:var(--ceac-bg)}
 body{color:var(--ceac-text)}
 .app{background:var(--ceac-bg)}
-.app-content{max-width:none;padding:14px 18px 86px}
-.body{max-width:none}
+.app-content:not(:where(.exec-v2)){max-width:none;padding:14px 18px 86px}
+.body:not(:where(.exec-v2 *)){max-width:none}
 
 /* Sidebar */
 
@@ -14,8 +15,8 @@ body{color:var(--ceac-text)}
 .staff-home,.manager-home,.admin-home,.executive-home{position:relative}
 .home-panel,.admin-pulse-card,.executive-intelligence-card,.office-meeting-strip{background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 4px 14px rgba(38,65,99,.045)!important}
 .home-panel{padding:13px!important;margin:0!important}
-.row{border-color:#edf1f6!important}
-.row-t{font-size:12px!important;color:#16273e!important}.row-m,.row-note{font-size:12px!important;color:#7d8998!important}
+.row:not(:where(.exec-v2 *)){border-color:#edf1f6!important}
+.row-t:not(:where(.exec-v2 *)){font-size:12px!important;color:#16273e!important}.row-m:not(:where(.exec-v2 *)),.row-note:not(:where(.exec-v2 *)){font-size:12px!important;color:#7d8998!important}
 
 /* Right rail */
 .reference-calendar-grid span.today{background:#1475ff;color:#fff;font-weight:800;box-shadow:0 5px 12px rgba(20,117,255,.25)}
@@ -32,52 +33,56 @@ body{color:var(--ceac-text)}
 .executive-home>.sec,.executive-home>.metric-grid,.executive-home>.row,.executive-home>.screen-note{margin-right:320px!important}
 
 /* Global product language */
-.card,.panel,.sheet,.modal-card{border-color:var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 4px 15px rgba(38,65,99,.045)}
-.btn{border-radius:8px!important}.btn:not(.btn-ghost){background:linear-gradient(135deg,#1677ff,#0863ea)!important;border-color:#0d6cf0!important}
-.field{border-color:#dce5ef!important;border-radius:9px!important;background:#fff!important}.sec{color:#24364d!important}.pill{border-radius:999px!important}
+.card:not(:where(.exec-v2 *)),.panel:not(:where(.exec-v2 *)),.sheet:not(:where(.exec-v2 *)),.modal-card:not(:where(.exec-v2 *)){border-color:var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 4px 15px rgba(38,65,99,.045)}
+.btn:not(:where(.exec-v2 *)){border-radius:8px!important}.btn:not(.btn-ghost):not(:where(.exec-v2 *)){background:linear-gradient(135deg,#1677ff,#0863ea)!important;border-color:#0d6cf0!important}
+.field:not(:where(.exec-v2 *)){border-color:#dce5ef!important;border-radius:9px!important;background:#fff!important}.sec:not(:where(.exec-v2 *)){color:#24364d!important}.pill:not(:where(.exec-v2 *)){border-radius:999px!important}
 
-@media(max-width:900px){.app-content{padding:8px 9px 78px!important}
+@media(max-width:900px){.app-content:not(:where(.exec-v2)){padding:8px 9px 78px!important}
   .executive-home>.sec,.executive-home>.metric-grid,.executive-home>.row,.executive-home>.screen-note{margin-right:0!important}
 }
 
 
 
 /* Full-app parity layer: all routed screens inherit the approved workspace language */
-.app-content>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home){
+.app-content:not(:where(.exec-v2))>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home){
   width:100%;max-width:1480px;margin:0 auto;
 }
-.app-content>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home)>.eyebrow:first-child,
-.app-content>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home)>div:first-child>.eyebrow:first-child{
+.app-content:not(:where(.exec-v2))>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home)>.eyebrow:first-child,
+.app-content:not(:where(.exec-v2))>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home)>div:first-child>.eyebrow:first-child{
   color:#6d7f94!important;font-size:12px!important;font-weight:800!important;letter-spacing:.08em!important;text-transform:uppercase!important
 }
-.app-content>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home)>.h1,
-.premium-page-head .h1,.premium-page-heading .h1,.staff-page-intro .h1,.manager-page-header .h1,.manager-page-intro .h1,
-.admin-page-header .h1,.exec-page-head .h1,.person-identity-header .h1,.project-detail-hero .h1{
+.app-content:not(:where(.exec-v2))>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home)>.h1,
+.premium-page-head .h1,
+.premium-page-heading .h1,
+.staff-page-intro .h1,
+.manager-page-header .h1,
+.manager-page-intro .h1,
+.admin-page-header .h1,
+.exec-page-head .h1,
+.person-identity-header .h1,
+.project-detail-hero .h1{
   color:#0f2036!important;font-size:25px!important;line-height:1.08!important;letter-spacing:-.03em!important;font-weight:780!important
 }
-.premium-page-head,.premium-page-heading,.staff-page-intro,.manager-page-header,.manager-page-intro,.admin-page-header,.exec-page-head,
-.person-identity-header,.project-detail-hero,.project-command-surface{
+.premium-page-head,.premium-page-heading,.staff-page-intro,.manager-page-header,.manager-page-intro,.admin-page-header,.exec-page-head,.person-identity-header,.project-detail-hero,.project-command-surface{
   background:linear-gradient(135deg,#fff 0%,#f8fbff 58%,#eef5fb 100%)!important;
   border:1px solid var(--ceac-line)!important;border-radius:14px!important;
   padding:17px 18px!important;margin:0 0 12px!important;box-shadow:0 6px 22px rgba(30,61,98,.05)!important
 }
-.premium-page-head .screen-note,.premium-page-heading .screen-note,.staff-page-intro .screen-note,.manager-page-header .screen-note,
-.manager-page-intro .screen-note,.admin-page-header .screen-note,.exec-page-head .screen-note,.person-identity-header .screen-note{
+.premium-page-head .screen-note,.premium-page-heading .screen-note,.staff-page-intro .screen-note,.manager-page-header .screen-note,.manager-page-intro .screen-note,.admin-page-header .screen-note,.exec-page-head .screen-note,.person-identity-header .screen-note{
   color:#738197!important;font-size:12px!important;max-width:780px!important
 }
-.body>.sec,.premium-section-head{
+.body>.sec:not(:where(.exec-v2 *)),.premium-section-head{
   margin-top:15px!important;margin-bottom:8px!important;padding:0 2px!important;
   color:#31465f!important;font-size:12px!important;font-weight:800!important;letter-spacing:.02em!important
 }
-.body>.card,.body>.panel,.body>.row,.premium-surface,.team-section,.personal-area,
-.calendar-shell,.workforce-calendar,.report-leadership-overview,.report-outstanding-section,.exec-finance-panel,.exec-report-hero{
+.body>.card:not(:where(.exec-v2 *)),.body>.panel:not(:where(.exec-v2 *)),.body>.row:not(:where(.exec-v2 *)),.premium-surface,.team-section,.personal-area,.calendar-shell,.workforce-calendar,.report-leadership-overview,.report-outstanding-section,.exec-finance-panel,.exec-report-hero{
   background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;
   box-shadow:0 4px 14px rgba(33,61,96,.04)!important
 }
-.body>.row,.premium-list-row,.inbox-row,.manager-work-row,.manager-review-row,.admin-work-row,.admin-review-row,.exec-list>button,.exec-report-row{
+.body>.row:not(:where(.exec-v2 *)),.premium-list-row,.inbox-row,.manager-work-row,.manager-review-row,.admin-work-row,.admin-review-row,.exec-list>button,.exec-report-row{
   min-height:54px!important;background:#fff!important;border-color:#edf2f6!important;
 }
-.body button.row:hover,.premium-list-row:hover,.inbox-row:hover,.manager-work-row:hover,.manager-review-row:hover,.admin-work-row:hover,.exec-list>button:hover{
+.body button.row:hover:not(:where(.exec-v2 *)),.premium-list-row:hover,.inbox-row:hover,.manager-work-row:hover,.manager-review-row:hover,.admin-work-row:hover,.exec-list>button:hover{
   background:#f8fbff!important
 }
 .manager-work-tabs,.admin-work-tabs,.workforce-tabs,.exec-tabs,.status-filter{
@@ -89,13 +94,13 @@ body{color:var(--ceac-text)}
 .manager-work-tabs button.on,.admin-work-tabs button.on,.workforce-tabs button.on,.exec-tabs button.on,.status-filter button.on{
   background:#fff!important;color:#146af0!important;box-shadow:0 2px 8px rgba(43,70,104,.08)!important
 }
-.metric-grid,.finance-currency-grid,.finance-unit-grid,.manager-finance-position-grid,.exec-stat-grid,.exec-currency-grid,.workforce-grid,.exec-org-grid{
+.metric-grid:not(:where(.exec-v2 *)),.finance-currency-grid,.finance-unit-grid,.manager-finance-position-grid,.exec-stat-grid,.exec-currency-grid,.workforce-grid,.exec-org-grid{
   gap:10px!important
 }
-.metric,.finance-currency-card,.finance-unit-card,.manager-finance-position-card,.exec-currency-card,.workforce-person,.exec-org-grid article{
+.metric:not(:where(.exec-v2 *)),.finance-currency-card,.finance-unit-card,.manager-finance-position-card,.exec-currency-card,.workforce-person,.exec-org-grid article{
   background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:11px!important;box-shadow:0 4px 12px rgba(33,61,96,.035)!important
 }
-.metric b,.finance-currency-card strong,.manager-finance-position-card strong,.exec-currency-card strong{color:#132840!important}
+.metric b:not(:where(.exec-v2 *)),.finance-currency-card strong,.manager-finance-position-card strong,.exec-currency-card strong{color:#132840!important}
 /* VF4D: Control Center presentation is owned by the later governance-workspace layer. */
 .people-directory-name strong,.work-list-main strong,.manager-work-main strong,.admin-work-main strong,.inbox-copy>b{color:#172a41!important}
 .people-directory-context,.work-list-main span,.work-list-main small,.manager-work-main span,.manager-work-main small,.admin-work-main small,.inbox-context{color:#8490a0!important}
@@ -105,35 +110,32 @@ body{color:var(--ceac-text)}
 .work-list-row,.team-person-row,.team-compact-row,.team-resource-row,.goal-card,.reminder-row,.leave-request-row,.info-row{
   border-color:#edf1f5!important
 }
-.split{gap:12px!important}.split>.main-col,.split>.side-col{min-width:0}
-.sheet{border-radius:18px 18px 0 0!important;background:#fff!important;box-shadow:0 -18px 48px rgba(16,38,65,.18)!important}
+.split:not(:where(.exec-v2 *)){gap:12px!important}.split>.main-col:not(:where(.exec-v2 *)),.split>.side-col:not(:where(.exec-v2 *)){min-width:0}
+.sheet:not(:where(.exec-v2 *)){border-radius:18px 18px 0 0!important;background:#fff!important;box-shadow:0 -18px 48px rgba(16,38,65,.18)!important}
 .sheet-bg,.menu-bg{backdrop-filter:blur(4px)!important;background:rgba(7,21,38,.28)!important}
-.field,.body input:not([type="checkbox"]):not([type="radio"]),.body select,.body textarea{
+.field:not(:where(.exec-v2 *)),.body input:not([type="checkbox"]):not([type="radio"]):not(:where(.exec-v2 *)),.body select:not(:where(.exec-v2 *)),.body textarea:not(:where(.exec-v2 *)){
   border:1px solid #dce5ef!important;border-radius:9px!important;background:#fff!important;color:#1c3047!important
 }
-.field:focus,.body input:focus,.body select:focus,.body textarea:focus{border-color:#77aaf7!important;box-shadow:0 0 0 3px rgba(34,116,238,.10)!important;outline:none!important}
-.body table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--ceac-line);border-radius:11px;overflow:hidden}
-.body th{background:#f7f9fc;color:#64748a;font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding:10px;text-align:left}
-.body td{padding:10px;border-top:1px solid #edf1f5;color:#253950;font-size:12px}
-.product-notice{border-radius:10px!important}
-.flag{border-radius:10px!important}
-.back{color:#1c69dd!important;font-weight:750!important}
-.text-action{color:#1769df!important;font-weight:750!important}
-.manager-person-detail,.manager-projects,.manager-calendar,.manager-finance,.manager-reports,.manager-work,
-.staff-work,.staff-record,.staff-me,.admin-work,.workforce,.finance,.reports,.control-center{
+.field:focus:not(:where(.exec-v2 *)),.body input:focus:not(:where(.exec-v2 *)),.body select:focus:not(:where(.exec-v2 *)),.body textarea:focus:not(:where(.exec-v2 *)){border-color:#77aaf7!important;box-shadow:0 0 0 3px rgba(34,116,238,.10)!important;outline:none!important}
+.body table:not(:where(.exec-v2 *)){width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--ceac-line);border-radius:11px;overflow:hidden}
+.body th:not(:where(.exec-v2 *)){background:#f7f9fc;color:#64748a;font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding:10px;text-align:left}
+.body td:not(:where(.exec-v2 *)){padding:10px;border-top:1px solid #edf1f5;color:#253950;font-size:12px}
+.product-notice:not(:where(.exec-v2 *)){border-radius:10px!important}
+.flag:not(:where(.exec-v2 *)){border-radius:10px!important}
+.back:not(:where(.exec-v2 *)){color:#1c69dd!important;font-weight:750!important}
+.text-action:not(:where(.exec-v2 *)){color:#1769df!important;font-weight:750!important}
+.manager-person-detail,.manager-projects,.manager-calendar,.manager-finance,.manager-reports,.manager-work,.staff-work,.staff-record,.staff-me,.admin-work,.workforce,.finance,.reports,.control-center{
   width:100%!important;max-width:none!important
 }
 
 @media(max-width:900px){
-  .app-content>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home){max-width:none}
-  .premium-page-head,.premium-page-heading,.staff-page-intro,.manager-page-header,.manager-page-intro,.admin-page-header,.exec-page-head,
-  .person-identity-header,.project-detail-hero,.project-command-surface{padding:14px!important;border-radius:12px!important}
-  .premium-page-head .h1,.premium-page-heading .h1,.staff-page-intro .h1,.manager-page-header .h1,.manager-page-intro .h1,
-  .admin-page-header .h1,.exec-page-head .h1,.person-identity-header .h1,.project-detail-hero .h1{font-size:21px!important}
-  .metric-grid,.finance-currency-grid,.finance-unit-grid,.manager-finance-position-grid,.exec-stat-grid,.exec-currency-grid,.workforce-grid,.exec-org-grid{
+  .app-content:not(:where(.exec-v2))>.body:not(.staff-home):not(.manager-home):not(.admin-home):not(.executive-home){max-width:none}
+  .premium-page-head,.premium-page-heading,.staff-page-intro,.manager-page-header,.manager-page-intro,.admin-page-header,.exec-page-head,.person-identity-header,.project-detail-hero,.project-command-surface{padding:14px!important;border-radius:12px!important}
+  .premium-page-head .h1,.premium-page-heading .h1,.staff-page-intro .h1,.manager-page-header .h1,.manager-page-intro .h1,.admin-page-header .h1,.exec-page-head .h1,.person-identity-header .h1,.project-detail-hero .h1{font-size:21px!important}
+  .metric-grid:not(:where(.exec-v2 *)),.finance-currency-grid,.finance-unit-grid,.manager-finance-position-grid,.exec-stat-grid,.exec-currency-grid,.workforce-grid,.exec-org-grid{
     grid-template-columns:1fr!important
   }
-  .body table{display:block;overflow-x:auto;white-space:nowrap}
+  .body table:not(:where(.exec-v2 *)){display:block;overflow-x:auto;white-space:nowrap}
 }
 @media(max-width:900px){}
 
@@ -141,12 +143,12 @@ body{color:var(--ceac-text)}
 /* Visual parity pass 2: remove legacy desktop width caps and lock the approved composition. */
 @media(min-width:981px){
   .app{max-width:none!important;margin:0!important;width:100%!important;display:block!important}
-  .app-content{width:100%!important;max-width:none!important;padding:14px 18px 80px!important}
-  .app-content>.body,
-  .staff-app .app-content>.body,
-  .manager-app .app-content>.body,
-  .office-app .app-content>.body,
-  .executive-app .app-content>.body{
+  .app-content:not(:where(.exec-v2)){width:100%!important;max-width:none!important;padding:14px 18px 80px!important}
+  .app-content:not(:where(.exec-v2))>.body,
+  .staff-app .app-content:not(:where(.exec-v2))>.body,
+  .manager-app .app-content:not(:where(.exec-v2))>.body,
+  .office-app .app-content:not(:where(.exec-v2))>.body,
+  .executive-app .app-content:not(:where(.exec-v2))>.body{
     width:100%!important;max-width:none!important;margin:0!important;padding:14px 0 50px!important;
   }
 
@@ -156,7 +158,7 @@ body{color:var(--ceac-text)}
 
 /* Dense reference rhythm */
 @media(min-width:1280px){
-  .app-content{padding-left:18px!important;padding-right:18px!important}
+  .app-content:not(:where(.exec-v2)){padding-left:18px!important;padding-right:18px!important}
 }
 
 @media(min-width:981px){
@@ -171,11 +173,11 @@ body{color:var(--ceac-text)}
    product look physically smaller as the window widened. Keep the approved
    visual language, but restore deliberate desktop proportions. */
 @media(min-width:981px){
-  .app-content>.body,
-  .staff-app .app-content>.body,
-  .manager-app .app-content>.body,
-  .office-app .app-content>.body,
-  .executive-app .app-content>.body{
+  .app-content:not(:where(.exec-v2))>.body,
+  .staff-app .app-content:not(:where(.exec-v2))>.body,
+  .manager-app .app-content:not(:where(.exec-v2))>.body,
+  .office-app .app-content:not(:where(.exec-v2))>.body,
+  .executive-app .app-content:not(:where(.exec-v2))>.body{
     width:100%!important;
     max-width:1280px!important;
     margin-left:auto!important;
@@ -204,8 +206,8 @@ body{color:var(--ceac-text)}
   }
 
   /* Restore a normal laptop reading size without changing the visual system. */
-  .row-t{font-size:13px!important}
-  .row-m,.row-note{font-size:12px!important}
+  .row-t:not(:where(.exec-v2 *)){font-size:13px!important}
+  .row-m:not(:where(.exec-v2 *)),.row-note:not(:where(.exec-v2 *)){font-size:12px!important}
 }
 
 /* Narrow desktop / small laptop: one strong reading column is better than

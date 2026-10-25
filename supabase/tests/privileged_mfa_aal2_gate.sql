@@ -55,12 +55,12 @@ begin
   where n.nspname='public' and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
   -- Later reviewed Work, HR and attendance migrations expanded the
-  -- authenticated surface to 163 exact signatures. A separate test,
+  -- authenticated surface to 164 exact signatures, including the reviewed Executive project-department RPC. A separate test,
   -- security_definer_surface_gate.sql, locks every signature by name.
   -- This is only an independent count regression check: never relax the
   -- anonymous-callability test or the verified-TOTP/AAL2 assertions below.
-  if callable_count<>163 then
-    raise exception 'S1 MFA gate failure: expected 163 independently reviewed authenticated SECURITY DEFINER interfaces; found %.',callable_count;
+  if callable_count<>164 then
+    raise exception 'S1 MFA gate failure: expected 164 independently reviewed authenticated SECURITY DEFINER interfaces; found %.',callable_count;
   end if;
 
   select count(*) into anon_count

@@ -34,8 +34,10 @@ const WORK_INTENTS = [
   ["meeting_outcome", "Follow up from a meeting", "Turn an agreed meeting action into accountable work."],
 ];
 
-export default function Assign({ me, back, initialProjectId = "", initialObjectiveId = "", initialPhaseId = "", initialSubTeamId = "", initialMeetingId = "", initialKind = "", initialMeetingTitle = "", initialMeetingOn = "", initialMeetingNote = "", initialTitle = "", initialSourceRoomId = "", initialSourceMessageId = "" }) {
+export default function Assign({ me, back, initialProjectId = "", initialObjectiveId = "", initialPhaseId = "", initialSubTeamId = "", initialMeetingId = "", initialKind = "", initialMeetingTitle = "", initialMeetingOn = "", initialMeetingNote = "", initialTitle = "", initialSourceRoomId = "", initialSourceMessageId = "", selectedUnitId = null, initialAssigneeId = "", scopeControl = null }) {
+  const workUnitId = me.is_exec ? (selectedUnitId || me.unit_id) : me.unit_id;
   const [people, setPeople] = useState([]);
+  const [assignmentReady, setAssignmentReady] = useState(false);
   const [subTeams, setSubTeams] = useState([]);
   const [approvedLeave, setApprovedLeave] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -47,7 +49,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   const [instructions, setInstructions] = useState("");
   const [expectedOutcome, setExpectedOutcome] = useState("");
   const [kind, setKind] = useState("task");
-  const [assignee, setAssignee] = useState("");
+  const [assignee, setAssignee] = useState(initialAssigneeId);
   const [subTeam, setSubTeam] = useState(initialSubTeamId);
   const [project, setProject] = useState(initialProjectId);
   const [objective, setObjective] = useState(initialObjectiveId);
@@ -82,7 +84,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   const [sourceFiles, setSourceFiles] = useState([]);
   const [err, setErr] = useState(null);
 
-  useEffect(() => { load(); }, [me.unit_id]);
+  useEffect(() => { load(); }, [me.id, me.org_id, workUnitId]);
   useEffect(() => {
     setProject(initialProjectId);
     setObjective(initialObjectiveId);
@@ -99,33 +101,42 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     if (kind !== "task" || title.trim().length < 4) { setRecipeSteps([]); setRecipeSource(null); return; }
     const timer = setTimeout(() => loadRecipeSuggestion(title), 250);
     return () => clearTimeout(timer);
-  }, [kind, title, me.unit_id]);
+  }, [kind, title, workUnitId]);
 
   async function load() {
-    if (!me.unit_id) return;
+    if (!workUnitId) return;
+    setAssignmentReady(false);
     setErr(null);
+    const readOptions = me.is_exec ? {count:"exact"} : undefined;
     const [peopleResult, leaveResult, unitResult] = await Promise.all([
       supabase.from("unit_memberships")
-        .select("profile_id, profiles(full_name,active)").eq("unit_id", me.unit_id),
+        .select("profile_id, profiles(full_name,active)", readOptions).eq("org_id", me.org_id).eq("unit_id", workUnitId),
       supabase.from("leave_requests")
         .select("id,profile_id,kind,start_date,end_date,status")
         .eq("status", "approved"),
-      supabase.from("units").select("id,name").order("name"),
+      supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("name"),
     ]);
     if (peopleResult.error) { setErr(peopleResult.error.message); return; }
     if (leaveResult.error) { setErr(leaveResult.error.message); return; }
     if (unitResult.error) { setErr(unitResult.error.message); return; }
-    setPeople(peopleResult.data || []);
+    if (me.is_exec && (!Array.isArray(peopleResult.data) || peopleResult.count !== peopleResult.data.length)) {
+      setErr("The department's people could not be completely loaded. Close and try again."); return;
+    }
+    setPeople((peopleResult.data || []).filter(row => row.profiles?.active));
     setUnits(unitResult.data || []);
     const memberIds = new Set((peopleResult.data || []).map((row) => row.profile_id));
     setApprovedLeave((leaveResult.data || []).filter((row) => memberIds.has(row.profile_id)));
     const { data: st, error: teamError } = await supabase.from("sub_teams")
-      .select("id,name,code").eq("unit_id", me.unit_id).eq("active", true).order("position");
+      .select("id,name,code").eq("unit_id", workUnitId).eq("active", true).order("position");
     if (teamError) { setErr(teamError.message); return; }
     setSubTeams(st || []);
-    const { data: p, error: projectError } = await supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)").order("name");
+    const { data: p, error: projectError, count: projectCount } = await supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)", readOptions).eq("org_id",me.org_id).order("name");
     if (projectError) { setErr(projectError.message); return; }
-    setProjects((p || []).filter((row) => row.lead_unit_id === me.unit_id || (row.project_units || []).some((unit) => unit.unit_id === me.unit_id)));
+    if (me.is_exec && (!Array.isArray(p) || projectCount !== p.length)) {
+      setErr("Projects could not be completely loaded. Close and try again."); return;
+    }
+    setAssignmentReady(true);
+    setProjects((p || []).filter((row) => (me.is_exec ? ["planned","active"].includes(row.status) : row.lead_unit_id === workUnitId || (row.project_units || []).some((unit) => unit.unit_id === workUnitId))));
   }
 
   function normaliseWorkTitle(value) {
@@ -137,7 +148,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     if (!normalized) { setRecipeSteps([]); setRecipeSource(null); return; }
     const result = await supabase.from("work_items")
       .select("id,title,completed_at,checklist_items(label,position)")
-      .eq("unit_id", me.unit_id)
+      .eq("unit_id", workUnitId)
       .eq("kind", "task")
       .in("status", ["completed","self_certified"])
       .order("completed_at", { ascending: false, nullsFirst: false })
@@ -155,7 +166,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   async function loadProjectContext() {
     if (!project) { setObjectives([]); setPhases([]); setObjective(""); setPhase(""); return; }
     const [objectiveResult, phaseResult] = await Promise.all([
-      supabase.from("objectives").select("id, ref, name, unit_id, status").eq("project_id", project).eq("unit_id", me.unit_id).order("ref"),
+      supabase.from("objectives").select("id, ref, name, unit_id, status").eq("project_id", project).eq("unit_id", workUnitId).order("ref"),
       supabase.from("project_phases").select("id, name, position").eq("project_id", project).order("position"),
     ]);
     if (objectiveResult.error) { setErr(`Project objectives: ${objectiveResult.error.message}`); return; }
@@ -268,7 +279,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }
 
   function primaryActionDisabled() {
-    if (busy) return true;
+    if (busy || (me.is_exec && !assignmentReady)) return true;
     if (kind === "deliverable") return !title.trim() || !expectedOutcome.trim() || !assignee;
     if (kind === "meeting_outcome") return !title.trim() || !meetingTitle.trim() || !meetingOn || !assignee;
     if (kind === "decision") return !title.trim() || !decisionQuestion.trim() || !assignee;
@@ -282,6 +293,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }
 
   async function create() {
+    if (busy || (me.is_exec && !assignmentReady)) return;
     setBusy(true); setErr(null); setTraceWarning(null);
     try {
       const selectedKind = WORK_KINDS.find(([value]) => value === kind);
@@ -290,7 +302,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       if (kind === "deliverable") {
         const { data: workId, error: deliverableError } = await supabase.rpc("create_typed_work", {
           p_kind: "deliverable",
-          p_unit_id: me.unit_id,
+          p_unit_id: workUnitId,
           p_title: title.trim(),
           p_assignee_id: assignee || null,
           p_sub_team_id: subTeam || null,
@@ -322,7 +334,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       if (kind === "meeting_outcome") {
         const { data: workId, error: meetingError } = await supabase.rpc("create_typed_work", {
           p_kind: "meeting_outcome",
-          p_unit_id: me.unit_id,
+          p_unit_id: workUnitId,
           p_title: title.trim(),
           p_assignee_id: assignee || null,
           p_sub_team_id: subTeam || null,
@@ -356,7 +368,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       if (kind === "decision") {
         const { data: workId, error: decisionError } = await supabase.rpc("create_typed_work", {
           p_kind: "decision",
-          p_unit_id: me.unit_id,
+          p_unit_id: workUnitId,
           p_title: title.trim(),
           p_assignee_id: assignee || null,
           p_sub_team_id: subTeam || null,
@@ -385,7 +397,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       if (kind === "request") {
         const { data: workId, error: requestError } = await supabase.rpc("create_typed_work", {
           p_kind: "request",
-          p_unit_id: me.unit_id,
+          p_unit_id: workUnitId,
           p_title: title.trim(),
           p_assignee_id: assignee || null,
           p_sub_team_id: subTeam || null,
@@ -416,7 +428,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       if (kind === "case") {
         const { data: workId, error: caseError } = await supabase.rpc("create_typed_work", {
           p_kind: "case",
-          p_unit_id: me.unit_id,
+          p_unit_id: workUnitId,
           p_title: title.trim(),
           p_assignee_id: assignee || null,
           p_sub_team_id: subTeam || null,
@@ -455,7 +467,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
 
         const { data: workId, error: routineError } = await supabase.rpc("create_typed_work", {
           p_kind: "routine",
-          p_unit_id: me.unit_id,
+          p_unit_id: workUnitId,
           p_title: title.trim(),
           p_assignee_id: assignee || null,
           p_sub_team_id: subTeam || null,
@@ -487,7 +499,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
       const clean = noStepsNeeded ? [] : steps.map((step) => step.trim()).filter(Boolean);
       const dueIso = due ? new Date(due).toISOString() : null;
       const { data: created, error: taskError } = await supabase.rpc("create_task_with_checklist", {
-        p_unit_id: me.unit_id,
+        p_unit_id: workUnitId,
         p_assignee_id: assignee,
         p_title: title.trim(),
         p_expected_outcome: expectedOutcome.trim() || null,
@@ -563,6 +575,8 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
           <button className="btn btn-sm" onClick={() => applyVoiceProposal(voiceProposal)}>Apply proposal</button>
         </div>
       </div>}
+      {scopeControl?.(busy)}
+      {me.is_exec && project && projects.some(row => row.id === project && row.lead_unit_id !== workUnitId && !(row.project_units || []).some(unit => unit.unit_id === workUnitId)) && <p role="status" className="flag flag-amber">Saving this work will also add the selected department to the project. Its staff will be able to see shared project records allowed by their roles.</p>}
       {voiceHint && <div className="flag flag-green" style={{ marginTop: 10 }}>{voiceHint}</div>}
       {err && <div className="flag flag-brick" style={{ marginTop: 10 }}>{err}</div>}
 
@@ -586,7 +600,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
 
         <div className="reference-compact-fields">
           <FieldGroup label="Assignee *">
-            <select className="field" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+            <select className="field" aria-label="Responsible person" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
               <option value="">Choose someone</option>
               {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
             </select>
@@ -792,7 +806,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         </div>
         {kind === "deliverable" && <div className="side-col">
           <div className="sec"><span>Who owns the output</span></div>
-          <select className="field" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          <select className="field" aria-label="Responsible person" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
             <option value="">Choose owner</option>
             {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
@@ -818,7 +832,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         </div>}
         {kind === "meeting_outcome" && <div className="side-col">
           <div className="sec"><span>Who owns the commitment</span></div>
-          <select className="field" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          <select className="field" aria-label="Responsible person" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
             <option value="">Choose owner</option>
             {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
@@ -840,7 +854,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         </div>}
         {kind === "decision" && <div className="side-col">
           <div className="sec"><span>Who decides</span></div>
-          <select className="field" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          <select className="field" aria-label="Responsible person" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
             <option value="">Choose decision-maker</option>
             {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
@@ -866,11 +880,11 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
             <option value="">Choose responsible unit</option>
             {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
           </select>
-          <select className="field" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          <select className="field" aria-label="Responsible person" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
             <option value="">Named person (optional)</option>
-            {requestResponsibleUnit === me.unit_id && people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
+            {requestResponsibleUnit === workUnitId && people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
-          {requestResponsibleUnit && requestResponsibleUnit !== me.unit_id &&
+          {requestResponsibleUnit && requestResponsibleUnit !== workUnitId &&
             <div className="hint">This manager can send the request to that unit. Named people outside your authorised People view are intentionally not exposed here.</div>}
           <select className="field" value={project} onChange={(e) => { setProject(e.target.value); setObjective(""); setPhase(""); }}>
             <option value="">Part of a project (optional)</option>
@@ -886,7 +900,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         </div>}
         {kind === "case" && <div className="side-col">
           <div className="sec"><span>Case owner</span></div>
-          <select className="field" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          <select className="field" aria-label="Responsible person" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
             <option value="">Choose someone</option>
             {people.map((p) => <option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>)}
           </select>
@@ -910,7 +924,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         </div>}
         {kind === "routine" && <div className="side-col">
           <div className="sec"><span>Who owns it</span></div>
-          <select className="field" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          <select className="field" aria-label="Responsible person" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
             <option value="">Choose someone</option>
             {people.map((p) => (<option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>))}
           </select>
@@ -935,7 +949,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
         </div>}
         {kind === "task" && <div className="side-col">
           <div className="sec"><span>Who is doing it</span></div>
-          <select className="field" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          <select className="field" aria-label="Responsible person" value={assignee} onChange={(e) => setAssignee(e.target.value)}>
             <option value="">Choose someone</option>
             {people.map((p) => (<option key={p.profile_id} value={p.profile_id}>{p.profiles ? p.profiles.full_name : "—"}</option>))}
           </select>

@@ -24,7 +24,7 @@ function label(list, value) {
 function human(value = "") {
   return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase());
 }
-export default function Delivery({ me, initialProjectId = null, openItem }) {
+export default function Delivery({ me, initialProjectId = null, openItem, openProject, goAssign }) {
   const [projects,setProjects]=useState([]);
   const [groups,setGroups]=useState([]);
   const [groupLinks,setGroupLinks]=useState([]);
@@ -39,7 +39,8 @@ export default function Delivery({ me, initialProjectId = null, openItem }) {
   const [strategyLinks,setStrategyLinks]=useState([]);
   const [strategyNodes,setStrategyNodes]=useState([]);
   const [selectedProjectId,setSelectedProjectId]=useState("");
-  const [inspectProjectId,setInspectProjectId]=useState(null);
+  const inspectProjectId = me.is_exec ? initialProjectId : null;
+  const setInspectProjectId = id => openProject?.(id);
   const [showOperations,setShowOperations]=useState(false);
   const [sheet,setSheet]=useState(null);
   const [busy,setBusy]=useState(false);
@@ -324,14 +325,14 @@ export default function Delivery({ me, initialProjectId = null, openItem }) {
   });
 
   if (executiveSurface && inspectProjectId) return <div className="body ev2-project-page ev2-project-delivery is-executive">
-    <Stage2ProjectReader key={inspectProjectId} projectId={inspectProjectId} openItem={openItem} onBack={() => setInspectProjectId(null)} />
+    <Stage2ProjectReader key={inspectProjectId} projectId={inspectProjectId} openItem={openItem} onBack={() => setInspectProjectId(null)} goAssign={goAssign} me={me} />
   </div>;
 
   return <div className={"body ev2-project-page ev2-project-delivery"+(executiveSurface?" is-executive":"")}>
     <ProjectPageHeader
       eyebrow={executiveSurface ? "Strategic portfolio" : "Work Management 2.0"}
       title={executiveSurface ? "Portfolio" : "Delivery"}
-      description={executiveSurface ? "View ministry programmes and strategic initiatives. Health appears only when it is explicitly recorded; CEAC OS does not generate a hidden project score." : "Programmes, portfolios, milestones, dependencies, risks and issues. Health is an explicit management state; CEAC OS does not generate a hidden project score."}
+      description={executiveSurface ? "View ministry programmes and strategic initiatives, their departments and the work behind them." : "Programmes, portfolios, milestones, dependencies, risks and issues. Health is an explicit management state; CEAC OS does not generate a hidden project score."}
     />
 
     {error&&<ProductNotice tone="error" title="Delivery">{error}</ProductNotice>}
@@ -395,7 +396,7 @@ export default function Delivery({ me, initialProjectId = null, openItem }) {
             actions={[{label:"Open project",onClick:()=>setInspectProjectId(project.id)},{label:"Operational details",onClick:()=>{setSelectedProjectId(project.id);setShowOperations(true);}}]}
           />;
         })}
-      </div> : <ProjectEmpty title="No projects recorded" description="Authorised project records will appear here." />}
+      </div> : <ProjectEmpty title="No projects recorded" description={executiveSurface ? "Projects will appear here when they are recorded." : "Authorised project records will appear here."} />}
       <button className="btn btn-ghost" type="button" onClick={()=>setShowOperations((value)=>!value)}>
         {showOperations?"Hide operational details":"Open operational details"}
       </button>

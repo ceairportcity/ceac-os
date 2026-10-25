@@ -203,7 +203,7 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
         <h1 className="h1">Messages</h1>
         <p className="screen-note">
           {me.is_exec
-            ? "Your work actions, Room activity, mentions and announcements. Use the Room directory when you intentionally need to enter another Unit or Sub-team conversation."
+            ? "Find conversations, mentions, announcements and work needing a response."
             : "Work actions, Rooms, mentions and announcements in one operational queue. CEAC OS does not provide unrestricted direct messages."}
         </p>
       </div>
@@ -258,7 +258,7 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
       {me.is_exec && view === "rooms" && <DataPanel
         eyebrow="Leadership directory"
         title="Organisation Rooms"
-        supporting="Enter a Unit or Sub-team Room deliberately when the work requires it. This directory does not create direct messages."
+        supporting="Choose a department or team to open its shared conversation."
         action={<StatusBadge tone="neutral" icon={false}>{roomDirectory.length} rooms</StatusBadge>}
       >
         {roomDirectory.map((room) => <QueueRow

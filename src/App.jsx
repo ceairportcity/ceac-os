@@ -9,6 +9,8 @@ import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
 import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
 import SettingsBack from "./components/SettingsBack";
+import ExecutiveAssign from "./components/ExecutiveAssign";
+import { RolePresentationContext } from "./experience-v2/RolePresentationContext";
 import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
 import Stage2UniversalMfaGate from "./components/Stage2UniversalMfaGate";
 import { decideUniversalTotpAccess } from "./lib/Stage2UniversalMfaPolicy";
@@ -99,6 +101,7 @@ function routeFromLocation() {
     if (roomKind === "sub_team") roomContext = { kind: "sub_team", subTeamId: roomId };
     if (roomKind === "project") roomContext = { kind: "project", projectId: roomId };
   }
+  if (roomContext && /^[0-9a-f-]{36}$/i.test(params.get("mention") || "")) roomContext.mentionProfileId = params.get("mention");
   return {
     tab: params.get("tab") || "home",
     setting: params.get("setting") || null,
@@ -269,6 +272,7 @@ export default function App() {
       if (kind && id) {
         params.set("roomKind", kind);
         params.set("room", id);
+        if (next.roomContext.mentionProfileId) params.set("mention", next.roomContext.mentionProfileId);
       }
     }
     const query = params.toString();
@@ -279,7 +283,7 @@ export default function App() {
 
   function closeUrlOverlay() {
     if (window.history.state?.ceacRoute) window.history.back();
-    else navigate({ tab }, { replace: true });
+    else navigate({ tab, projectId }, { replace: true });
   }
 
   function go(t, options = {}) {
@@ -305,7 +309,7 @@ export default function App() {
     navigate({ tab: "people" });
     setPeopleAccessIntent(intent);
   }
-  function openItem(id,routineDate=null) { navigate({ tab, itemId: id, routineDate }); }
+  function openItem(id,routineDate=null) { navigate({ tab, itemId: id, routineDate, projectId }); }
   function openProject(id) { navigate({ tab, projectId: id }); }
   function openMeeting(id) { navigate({ tab, meetingId: id }); }
 
@@ -467,7 +471,7 @@ export default function App() {
     if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
     if (tab === "manager-finance" && isUnitManager) return <ManagerFinance key={managerScopeKey} me={me} openProject={openProject} />;
     if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} />;
-    if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation me={me} />;
+    if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation key={`${me.org_id}:${me.id}`} me={me} goAssign={startAssignment} openItem={openItem} openRoom={openRoom} />;
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
     if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} openItem={openItem} />;
     if (tab === "record") return <Record me={me} openItem={openItem} />;
@@ -484,7 +488,7 @@ export default function App() {
       createRequest={createIntent === "ministry_objective" ? "ministry_objective" : null}
       onCreateHandled={() => setCreateIntent(null)}
     />;
-    if (tab === "delivery" && canUseDelivery) return <Delivery me={me} initialProjectId={projectId} openItem={openItem} />;
+    if (tab === "delivery" && canUseDelivery) return <Delivery key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openItem={openItem} openProject={openProject} goAssign={startAssignment} />;
     if (tab === "workload" && canUseWorkload) return <ResourceWorkload me={me} />;
     if (tab === "performance" && canUsePerformance) return <Performance me={me} />;
     if (tab === "learning" && canUseLearning) return <Learning me={me} />;
@@ -516,7 +520,7 @@ export default function App() {
     if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} />;
     if (tab === "admin-projects" && isAdmin) return <AdminProjects me={me} scheduleMeeting={startMeeting} openItem={openItem} />;
     if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" />;
-    if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" />;
+    if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"delivery",projectId:id})} />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;
     if (tab === "events" && canViewAudit) return <AdminEvents me={me} />;
     if (tab === "workflows" && canUseWorkflows) return <AdminWorkflows me={me} />;
@@ -550,6 +554,7 @@ export default function App() {
 
   return (
     <ActiveMfaGate me={me} onVerified={boot}>
+    <RolePresentationContext.Provider value={isExec ? "executive" : null}>
     <div className={`app ${appModeClass}`}>
       {isExec ? <Suspense fallback={null}><ExecutiveRedesignStyles /></Suspense> : null}
       <SideNav
@@ -615,7 +620,7 @@ export default function App() {
           onOpenAnnouncement={openSearchAnnouncement}
           onGuide={() => openGuide(true)}
         />
-        <main className="app-content ev2s-content">
+        <main className={"app-content ev2s-content" + (isExec && (tab !== "home" || overlay) ? " exec-v2" : "")}>
           {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
             {me.legacyAuthorityVerified
               ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."
@@ -628,6 +633,7 @@ export default function App() {
           <Suspense fallback={<RouteFallback />}>
           <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
           {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} back={closeUrlOverlay} />
+            : assigning && isExec ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} back={() => setAssigning(null)} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}
                 initialObjectiveId={assigning.objectiveId}
@@ -645,7 +651,7 @@ export default function App() {
             : projectId && isUnitManager ? <ManagerProjects key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${projectId}`} me={me} initialProjectId={projectId} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(id, reference) => openRoom({ kind: "project", projectId: id, reference })} back={closeUrlOverlay} />
             : goalId ? <Goals id={goalId} me={me} back={() => setGoalId(null)} />
             : person && isManager ? <PersonDetail me={me} profileId={person.id} focus={person.focus} openItem={openItem} openProject={openProject} back={() => setPerson(null)} />
-            : roomContext ? <Room me={me} context={roomContext} back={closeRoom} openItem={openItem} openProject={openProject} scheduleMeeting={startMeeting} openAnnouncements={() => go("announcements")} onRoomChange={openRoom} startWorkFromMessage={isManager ? startAssignment : null} />
+            : roomContext ? <Room key={`${me.org_id}:${me.id}:${roomContext.mentionProfileId || ""}`} me={me} context={roomContext} back={closeRoom} openItem={openItem} openProject={openProject} scheduleMeeting={startMeeting} openAnnouncements={() => go("announcements")} onRoomChange={openRoom} startWorkFromMessage={isManager || isExec ? startAssignment : null} />
             : meetingDraft ? <MeetingScheduler me={me} context={meetingDraft} onClose={() => setMeetingDraft(null)} onCreated={(id) => { setMeetingDraft(null); openMeeting(id); }} />
             : meetingId ? <Meeting me={me} meetingId={meetingId} back={closeUrlOverlay} goAssign={startAssignment} openItem={openItem} openProject={openProject} openRoom={openRoom} />
             : pageForTab()}
@@ -656,5 +662,6 @@ export default function App() {
         {!overlay && <Tabs tab={tab} setTab={go} isManager={isUnitManager} isExec={isExec} isAdmin={isAdmin} me={me} onGuide={() => openGuide(false)} />}
       </div>
     </div>
+    </RolePresentationContext.Provider>
     </ActiveMfaGate>);
 }

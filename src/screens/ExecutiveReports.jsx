@@ -222,7 +222,7 @@ export default function ExecutiveReports({ me, openItem }) {
       <ReportingPageHeader
         eyebrow="Executive insight"
         title="Reports"
-        description="View submissions, reporting coverage and key recorded reports. Administration controls periods and report configuration; coverage is not a performance score."
+        description="Read department reports and the evidence behind them. Filter by period or filing status."
         statusLabel={statusLabel}
         statusTone={contextError ? "danger" : "neutral"}
       />

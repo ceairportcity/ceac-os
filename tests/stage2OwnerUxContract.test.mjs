@@ -119,7 +119,7 @@ test("stage 2 universal MFA is staged behind explicit cutover, Stage 1 unchanged
   assert.doesNotMatch(gate, /ceac_google_mfa_eligible|signInWithOAuth/);
 });
 
-test("Executive and Administration open the same authorised Projects workspace, without granting write authority", () => {
+test("Executive and Administration share authorised Projects; assignment actions require Executive authority", () => {
   const delivery = file("src/screens/Delivery.jsx");
   const admin = file("src/screens/AdminProjects.jsx");
   const reader = file("src/components/Stage2ProjectReader.jsx");
@@ -130,7 +130,8 @@ test("Executive and Administration open the same authorised Projects workspace, 
   assert.match(admin, /Stage2ProjectReader/);
   assert.match(reader, /canAssign=\{false\}/);
   assert.match(reader, /\.neq\("visibility", "private"\)/);
-  assert.match(app, /<Delivery me=\{me\} initialProjectId=\{projectId\} openItem=\{openItem\}/);
+  assert.match(app, /<Delivery key=\{`\$\{me.org_id\}:\$\{me.id\}`\} me=\{me\} initialProjectId=\{projectId\} openItem=\{openItem\}/);
+  assert.match(reader, /me\?\.is_exec && \["planned","active"\]\.includes\(project.status\)/);
 });
 
 test("switching units or selected projects invalidates previous Project responses and actions", () => {

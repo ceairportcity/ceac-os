@@ -24,6 +24,7 @@ async function openCreate(page, label) {
   await page.goto("/?tab=" + route[0]);
   await expect(page.locator(".executive-app")).toBeVisible();
   await page.getByRole("button", { name: route[1], exact: true }).first().click();
+  if (label === "Give out work") await page.getByRole("combobox", { name: "Assignment department" }).selectOption("20000000-0000-4000-8000-000000000011");
 }
 
 test.describe.configure({ mode: "serial" });
@@ -53,6 +54,9 @@ test("owner mockup: Give out work is a narrow progressive composer", async ({ pa
   await openCreate(page, "Give out work");
   const dialog = page.getByRole("dialog", { name: "Give out work" });
   await expect(dialog).toBeVisible();
+  const primary = dialog.locator('.ev2c-overlay-footer .btn').first();
+  expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect(await primary.evaluate(node => getComputedStyle(node).backgroundImage)).toBe('none');
   await expect(dialog.locator(".reference-kind-row")).toBeVisible();
   await expect(dialog.getByText("What needs doing *", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Assignee *", { exact: true })).toBeVisible();
@@ -78,6 +82,9 @@ test("owner mockup: Ministry objective is compact and hierarchy-first", async ({
   await openCreate(page, "Ministry objective");
   const dialog = page.getByRole("dialog", { name: "New ministry objective" });
   await expect(dialog).toBeVisible();
+  const primary = dialog.locator('.ev2c-overlay-footer .btn').first();
+  expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect(await primary.evaluate(node => getComputedStyle(node).backgroundImage)).toBe('none');
   await expect(dialog.getByText("Objective name *", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Statement *", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Measurement *", { exact: true })).toBeVisible();
@@ -99,6 +106,9 @@ test("owner mockup: Announcement uses audience pills and progressive options", a
   await openCreate(page, "Announcement");
   const dialog = page.getByRole("dialog", { name: "New announcement" });
   await expect(dialog).toBeVisible();
+  const primary = dialog.locator('.ev2c-overlay-footer .btn').first();
+  expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect(await primary.evaluate(node => getComputedStyle(node).backgroundImage)).toBe('none');
   await expect(dialog.getByText("Title *", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Audience *", { exact: true })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Everyone", exact: true })).toBeVisible();

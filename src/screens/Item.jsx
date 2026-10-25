@@ -541,7 +541,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
           item.projects?.name,
           item.sub_teams?.name,
         ].filter(Boolean).join(" · ")}
-        due={dueLabel(item.due_at)}
+        due={(["completed", "self_certified", "cancelled"].includes(item.status) && item.due_at) ? `Due date: ${new Date(item.due_at).toLocaleDateString("en-GB", {timeZone:"Africa/Accra", day:"numeric", month:"short", year:"numeric"})}` : dueLabel(item.due_at)}
         status={item.status}
         onBack={back}
       />

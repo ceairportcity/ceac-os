@@ -163,14 +163,16 @@ export default function Announcements({ me, back, createRequest = false, onCreat
     finally { setBusy(false); }
   }
 
-  return <div className="body">
-    <div style={{ paddingTop: 26 }}>
+  return <div className={me.is_exec ? "body exec-redesign-page exec-announcements" : "body"}>
+    <header className={me.is_exec ? "exec-redesign-shared-head" : undefined} style={me.is_exec ? undefined : { paddingTop: 26 }}>
+      <div>
       {back && <button className="back" onClick={back}>← Back</button>}
       <div className="eyebrow">Organisation communication</div>
-      <h1 className="h1" style={{ marginTop: 6 }}>Announcements</h1>
+      <h1 className="h1" style={me.is_exec ? undefined : { marginTop: 6 }}>Announcements</h1>
       <p className="screen-note">Important messages for the organisation, your role or your unit.</p>
-      {canPublish && <button className="btn" style={{ marginTop: 14 }} onClick={() => setForm(blankForm())}>New announcement</button>}
-    </div>
+      </div>
+      {canPublish && <button className="btn" style={me.is_exec ? undefined : { marginTop: 14 }} onClick={() => setForm(blankForm())}>New announcement</button>}
+    </header>
 
     {error && <div className="flag flag-brick" style={{ marginTop: 14 }}><h4>Could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={load}>Try again</button></div>}
     {loading && <div className="spin">Loading announcements...</div>}

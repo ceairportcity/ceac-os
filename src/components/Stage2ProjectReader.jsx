@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { LoadingState, ProductNotice } from "./bits";
+import ExecutiveProjectDepartments from "./ExecutiveProjectDepartments";
 import Stage2ProjectOverview from "./Stage2ProjectOverview";
 import { ProjectWorkspaceHeader } from "../experience-v2/project-family/ProjectFamilyV2";
 
 /**
- * Stage 2 factual, read-only cross-role project inspector.
+ * Stage 2 factual cross-role project inspector; explicit Executive actions
+ * use independently authorised server contracts.
  * PostgREST and database RLS determine visible records. This never upgrades
  * access, estimates unavailable cross-unit numbers, or shows private work.
  */
-export default function Stage2ProjectReader({ projectId, openItem, onBack }) {
+export default function Stage2ProjectReader({ projectId, openItem, onBack, me, goAssign }) {
+  const [reload, setReload] = useState(0);
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,7 +62,7 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack }) {
       }
     })();
     return () => { current = false; };
-  }, [projectId]);
+  }, [projectId, reload, me?.id, me?.org_id]);
 
   return <div className="ev2-project-page ev2-project-workspace s2-project-reader">
     {loading && <LoadingState label="Loading authorised project details…" />}
@@ -67,7 +70,8 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack }) {
     {project && <>
       <ProjectWorkspaceHeader kind={project.kind} title={project.name} purpose={project.purpose}
         status={project.status} context={project.units?.name || "Lead unit not recorded"} onBack={onBack} />
-      <p className="screen-note">Read-only project context. Figures reflect only project records your account is authorised to read.</p>
+      <p className="screen-note">Project progress uses the records your account can read.</p>
+      {me?.is_exec && ["planned","active"].includes(project.status) && <div className="exec-directory-actions"><button type="button" className="btn" onClick={() => goAssign?.({projectId:project.id})}>Give out work</button><ExecutiveProjectDepartments me={me} project={project} onSaved={() => setReload(n => n+1)} /></div>}
       <Stage2ProjectOverview key={project.id} project={project} openWork={openItem} canAssign={false} />
     </>}
     {!project && (loading || error) && <button type="button" className="btn btn-ghost" onClick={onBack}>Back to projects</button>}

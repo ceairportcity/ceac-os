@@ -272,7 +272,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
     </div>}
 
     <div className={executiveSurface ? "sec ev2ex-ministry-section-title" : "sec"}><span>{executiveSurface ? "Objectives" : "Strategic hierarchy"}</span><span>{nodes.length}</span></div>
-    {directions.length === 0 && <EmptyState title="No Ministry Direction recorded">An authorised strategy owner can record the first Ministry Direction without inventing a numeric score.</EmptyState>}
+    {directions.length === 0 && <EmptyState title="No Ministry Direction recorded">{executiveSurface ? "Add the church’s ministry direction, then connect its objectives." : "An authorised strategy owner can record the first Ministry Direction without inventing a numeric score."}</EmptyState>}
 
     {directions.map((direction) => <section className={executiveSurface ? "card ev2ex-ministry-direction" : "card"} key={direction.id} style={executiveSurface ? undefined : { padding: 18, marginBottom: 14 }}>
       <div className="eyebrow">{TYPE_LABELS[direction.node_type]} · {direction.status.replaceAll("_", " ")}</div>

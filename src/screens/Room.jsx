@@ -79,11 +79,25 @@ export default function Room({
   const atBottomRef = useRef(true);
   const sendingRef = useRef(false);
   const roomOpenSerial = useRef(0);
+  const contactApplied = useRef("");
   const activeRoomIdRef = useRef(null);
   const messageLoadSerial = useRef(0);
   const PAGE_SIZE = 60;
 
   const canCoordinate = Boolean(me.is_admin || me.is_exec || me.role === "manager");
+
+  useEffect(() => {
+    const target = context?.mentionProfileId;
+    const key = `${room?.id || ""}:${target || ""}`;
+    if (!me.is_exec || !room?.id || !target || contactApplied.current === key) return;
+    const person = participants.find(row => row.id === target);
+    if (!person) return;
+    // A URL is only an intent. Authorised room participants supply the name
+    // and mention identity; opening this composer never sends a message.
+    contactApplied.current = key;
+    setBody(current => current.trim() ? current : `@${person.full_name} `);
+    setMentions(current => current.includes(person.id) ? current : [...current,person.id]);
+  }, [room?.id,context?.mentionProfileId,participants,me.is_exec]);
 
   useEffect(() => { loadInitialRoom(); }, [context?.kind, context?.unitId, context?.subTeamId, context?.projectId]);
   useEffect(() => {
@@ -583,6 +597,7 @@ export default function Room({
                   title: message.body,
                   sourceRoomId: room.id,
                   sourceMessageId: message.id,
+                  unitId: room.unit_id || "",
                   projectId: room.kind === "project" ? room.project_id : "",
                   subTeamId: room.kind === "sub_team" ? room.sub_team_id : "",
                   kind: "task",
@@ -661,6 +676,7 @@ export default function Room({
             rows={1}
             value={body}
             maxLength={8000}
+            aria-label="Room message"
             placeholder={room?.kind === "project" ? "Message the project team" : room?.kind === "sub_team" ? `Message ${roomTitle(room)}` : "Message your unit"}
             onChange={(event) => updateBody(event.target.value)}
             onKeyDown={(event) => {
