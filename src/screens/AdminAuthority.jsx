@@ -185,7 +185,7 @@ export default function AdminAuthority({ me, refreshMe, initialProfileId=null })
 
     <ComposerDrawer open={Boolean(revokeGrantId)} onClose={()=>!busy&&setRevokeGrantId(null)} title="Remove permission"
       description="The person loses this permission. The original record and the reason for removal remain in history."
-      footer={<><Button variant="secondary" disabled={busy} onClick={()=>setRevokeGrantId(null)}>Cancel</Button><Button variant="danger" busy={busy} disabled={!revokeReason.trim()} onClick={()=>revoke(revokeGrantId)}>{busy?"Revoking…":"Revoke"}</Button></>}>
+      footer={<><Button variant="secondary" disabled={busy} onClick={()=>setRevokeGrantId(null)}>Cancel</Button><Button variant="danger" busy={busy} disabled={!revokeReason.trim()} onClick={()=>revoke(revokeGrantId)}>{busy?"Removing…":"Remove permission"}</Button></>}>
       <FieldGroup label="Reason for removal"><textarea className="field" aria-label="Revocation reason" rows="3" value={revokeReason} onChange={(event) => setRevokeReason(event.target.value)} placeholder="Why this access is being removed" /></FieldGroup>
       <p className="small" style={{ lineHeight: 1.5 }}>The final organisation authority manager cannot be removed through this flow.</p>
     </ComposerDrawer>

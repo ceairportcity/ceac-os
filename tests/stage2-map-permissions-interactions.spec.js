@@ -32,9 +32,10 @@ test("HR employee opens the actual person's permissions in the existing Authorit
  await expect(page.getByLabel("Authority person")).toHaveValue("31000000-0000-4000-8000-000000000001");
  await expect(page.getByText("Staff Fixture",{exact:true}).first()).toBeVisible();
  await page.goto("/?tab=settings");
- await expect(page.getByRole("button",{name:"Manage permissions",exact:true})).toBeVisible();
- await expect(page.getByRole("button",{name:"Access permissions",exact:true})).toHaveCount(0);
- await page.getByRole("button",{name:"Manage permissions",exact:true}).click();
+ const accessSetting=page.locator(".control-setting-row").filter({has:page.getByText("Access permissions",{exact:true})});
+ await expect(accessSetting).toHaveCount(1);
+ await expect(accessSetting).toBeVisible();
+ await accessSetting.click();
  await expect(page.getByLabel("Authority person")).toHaveValue("31000000-0000-4000-8000-000000000003");
  await context.close();
 });
