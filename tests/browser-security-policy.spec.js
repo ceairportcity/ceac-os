@@ -124,7 +124,7 @@ test('actual production bundle loads sign-in under the enforced script policy',a
 for (const [email,labels] of [
   ['staff@ceac.local.test',['Today','Work','My Hub']],
   ['manager@ceac.local.test',['Overview','Work','Reports']],
-  ['admin@ceac.local.test',['Overview','People & Access','Reviews & Development','Learning','Compliance']],
+  ['admin@ceac.local.test',['Overview','People & Access','Reviews & Development','Learning']],
   ['exec@ceac.local.test',['Overview','Ministry','Reports']],
 ]) test('built application and role navigation remain usable with CSP: '+email,async({page})=>{
   test.skip(!rolePassword||!backend,'Requires the existing isolated role fixtures');
@@ -140,8 +140,7 @@ for (const [email,labels] of [
   if (email.startsWith('admin@')) {
     await nav.getByRole('button',{name:'Learning',exact:true}).click();
     await expect(page.getByRole('heading',{name:'Learning',exact:true})).toBeVisible();
-    await nav.getByRole('button',{name:'Compliance',exact:true}).click();
-    await expect(page.getByRole('heading',{name:'Compliance',exact:true})).toBeVisible();
+    await expect(nav.getByRole('button',{name:'Compliance',exact:true})).toHaveCount(0);
   }
   expect(violations).toEqual([]);
 });
