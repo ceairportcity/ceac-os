@@ -28,3 +28,7 @@
 .ev2s-content:has(.ev2-control-center),.ev2s-content:has(.focused-settings){background:var(--ev2-surface,#fff)}
 .ev2-control-center .ev2-control-center-header{background:transparent;border:0;box-shadow:none;padding:0;border-radius:0}
 .ev2-control-center .control-setting-row>.ev2-icon{flex-shrink:0;color:var(--ev2-action,#087bf5)}
+
+.office-app .body.control-center,.office-app .body.focused-settings{background:var(--ev2-surface,#fff)}
+.office-app .body.control-center{padding-top:20px}
+.settings-page-title{margin:4px 0 8px;font-size:28px;line-height:1.15;font-weight:700;letter-spacing:-.035em;color:var(--ev2-text)}

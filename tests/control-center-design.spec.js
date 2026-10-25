@@ -31,6 +31,8 @@ for(const width of [320,390,430,1366])test(`approved settings journey renders an
  const hub=page.locator('.control-center');
  await expect(hub.getByRole('heading',{name:'Control Center',exact:true})).toBeVisible();
  await expect(hub.locator('.control-setting-row')).toHaveCount(9);
+ expect(await hub.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(255, 255, 255)');
+ expect(await hub.locator('header').evaluate(node=>getComputedStyle(node).backgroundImage)).toBe('none');
  await expect(page.locator('.control-center-trail')).toHaveCount(0);
  await page.screenshot({path:`test-artifacts/control-center-approved-${width}.png`,fullPage:true});
  await hub.getByLabel('Find a setting').fill('office');

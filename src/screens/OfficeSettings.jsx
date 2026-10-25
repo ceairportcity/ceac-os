@@ -192,7 +192,7 @@ export default function OfficeSettings({ me, openWorkforce, section: requestedSe
   return <div className="body office-settings ev2-office-settings focused-settings">
     <header className="focused-settings-header">
       <button type="button" className="settings-back" onClick={returnFromPage} disabled={saving} aria-label={section&&["office","locations","codes"].includes(section)?"Back to Attendance & locations":"Back to Control Center"}>← Back</button>
-      <h1 className="h1">{titles[section]||"Attendance & locations"}</h1>
+      <h1 className="settings-page-title">{titles[section]||"Attendance & locations"}</h1>
       <p className="screen-note">{descriptions[section]||"Choose what you want to set up."}</p>
     </header>
     {message&&<ProductNotice tone={message.tone} title={message.title}>{message.body}</ProductNotice>}

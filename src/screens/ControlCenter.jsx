@@ -117,8 +117,8 @@ export default function ControlCenter({me,go}){
   const attention=settings.filter(item=>needsReview(item.key));
 
   return <div className="body control-center premium-admin-page ev2-control-center">
-    <header className="admin-page-header ev2-control-center-header">
-      <div><h1 className="h1">Control Center</h1><p className="screen-note">Set up how CEAC works.</p></div>
+    <header className="ev2-control-center-header">
+      <div><h1 className="settings-page-title">Control Center</h1><p className="screen-note">Set up how CEAC works.</p></div>
     </header>
     {error?<StatePanel state="error" title="Settings could not load" description={error} actionLabel="Try again" onAction={load}/>:null}
     {loading?<div role="status" aria-label="Loading Control Center"><Skeleton width="80%"/><Skeleton width="60%"/></div>:null}

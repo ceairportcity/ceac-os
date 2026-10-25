@@ -36,3 +36,9 @@ Physical iPhone/Samsung status-bar rendering and externally hosted map tiles are
 ## Release gate and recovery
 
 Final candidate must pass the repository's full exact-head engineering/security/migration/browser gates. Do not waive failed tests, weaken privacy, or claim earlier source/synthetic checks are full acceptance. Release status is PENDING until those gates and deployment evidence exist. A code-only rollback target is the baseline main SHA above; there is no database rollback in this change.
+
+### Final visual comparison correction
+
+The initial published candidate `7309c5aad5cfe7b5d496838b00d8fee9a26fcdb2` passed source/build, Migration Replay and SQL/authority, but final screenshot comparison exposed older `admin-page-header` gradient/card rules and the role body background still overriding the new proposal. This is a concrete visual defect, so that candidate is superseded for release. Remove the legacy header class from these two settings surfaces, use the scoped settings heading, and give the settings body its approved white canvas. Add actual computed-style browser assertions for white background/no gradient; do not weaken other role styles or accept the initial candidate as final visual fidelity.
+
+After the correction, eight/eight synthetic browser cases PASS (Chromium, one worker, 8.0s) including all four widths and the 47px top-safe-area simulation. Screenshots of the corrected white hub and focused office editor were inspected. Node 22.12.0 source 627/627 and production build PASS again. These are cumulative changed-scope development results; the final published commit must still obtain its own required exact-head gates. Supabase save checks follow the existing `.select(...).single()` write verification contract; no server rule is changed.
