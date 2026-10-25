@@ -16,7 +16,7 @@ const stamp = (value) => value ? new Date(value).toLocaleString("en-GB", { timeZ
  * existing-account, tenant-checked human observation RPCs, never to sessions,
  * schedules, employee authority, payroll or scores. */
 export default function ComplianceAttendanceCases({
-  me, canManage, overviewDate, attendanceRows = [], onOpenOverview,
+  me, canManage, overviewDate, attendanceRows = [], onOpenOverview, initialCaseId = "", initialCreate = false,
 }) {
   const scope = `${me.org_id}:${me.id}:${canManage}`;
   const generation = useRef(0);
@@ -29,10 +29,10 @@ export default function ComplianceAttendanceCases({
   const [dayEvidence,setDayEvidence] = useState({scope:"",loading:false,row:null,error:""});
   const [error,setError] = useState("");
   const [notice,setNotice] = useState("");
-  const [selectedId,setSelectedId] = useState("");
+  const [selectedId,setSelectedId] = useState(initialCaseId);
   const [statusFilter,setStatusFilter] = useState("all");
   const [search,setSearch] = useState("");
-  const [creating,setCreating] = useState(false);
+  const [creating,setCreating] = useState(canManage && initialCreate);
   const [employeeId,setEmployeeId] = useState("");
   const [date,setDate] = useState(overviewDate);
   const [category,setCategory] = useState("missing_evidence");

@@ -6,6 +6,8 @@ import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFam
 import { attendanceDate } from "../lib/attendance";
 import ComplianceOverview from "../components/ComplianceOverview";
 import ComplianceAttendanceCases from "../components/ComplianceAttendanceCases";
+import DailyScenicPhoto from "../components/DailyScenicPhoto";
+import "../components/ComplianceWorkbench.css";
 
 function human(value=""){ return String(value||"").replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase()); }
 function day(value){
@@ -40,6 +42,7 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
   const isManager=me.role==="manager";
   const canPublishInstruction=hasOrgCapability("post_announcement");
   const [tab,setTab]=useState(canManage?"overview":"policies");
+  const [observationIntent,setObservationIntent]=useState({id:"",create:false});
   const [policies,setPolicies]=useState([]);
   const [applicability,setApplicability]=useState([]);
   const [requirements,setRequirements]=useState([]);
@@ -166,6 +169,10 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
   const exceptionLatest=useMemo(()=>latestVersions(exceptions,"exception_key"),[exceptions]);
   const policyById=Object.fromEntries(policies.map((p)=>[p.id,p]));
   const today=new Date().toISOString().slice(0,10);
+  function openObservations(id="",create=false){
+    setObservationIntent({id:typeof id==="string"?id:"",create});
+    setTab("observations");
+  }
 
   function policyReqs(policyId){return requirements.filter((r)=>r.policy_version_id===policyId);}
   function policyScopes(policyId){return applicability.filter((r)=>r.policy_version_id===policyId);}
@@ -309,8 +316,18 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
   </div>;
 
   const personalCompliance = !canManage && !isManager && !me.is_admin;
-  return <div className={`body compliance-page ${personalCompliance ? "ev2-personal-page ev2-personal-compliance" : ""}`.trim()}>
-    {personalCompliance ? <PersonalPageHeader
+  return <div className={`body compliance-page ${canManage ? "cp" : ""} ${personalCompliance ? "ev2-personal-page ev2-personal-compliance" : ""}`.trim()}>
+    {canManage ? <>
+      <section className="cp-welcome s2-landscape-hero" aria-label="Compliance department welcome">
+        <DailyScenicPhoto />
+        <div><h2>{new Date().getUTCHours()<12?"Good morning":new Date().getUTCHours()<18?"Good afternoon":"Good evening"}, {me.preferred_name||me.full_name?.replace(/^Pastor\s+/i,"").split(/\s+/)[0]||"colleague"}</h2>
+          <strong>Compliance department</strong><p>Evidence, policy and thoughtful follow-up.</p></div>
+        <time dateTime={today}>{day(today)}</time>
+      </section>
+      <header className="cp-title"><div><h1 className="h1">Compliance</h1><p>Manage attendance compliance, policy requirements and associated evidence.</p></div>
+        {tab!=="observations"&&<button type="button" className="btn btn-sm" onClick={()=>openObservations("",true)}>Record observation</button>}
+      </header>
+    </> : personalCompliance ? <PersonalPageHeader
       eyebrow="My Hub"
       title="Compliance"
       description="Policies that apply to you, your acknowledgements, factual evidence and approved exceptions. CEAC OS does not calculate a personal compliance score."
@@ -324,7 +341,7 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
     {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
     <div className="compliance-tabs" role="tablist" aria-label="Compliance sections">
-      {tabs.map(([key,label])=><button key={key} role="tab" aria-selected={tab===key} className={tab===key?"on":""} onClick={()=>setTab(key)}>{label}</button>)}
+      {tabs.map(([key,label])=><button key={key} role="tab" aria-selected={tab===key} className={tab===key?"on":""} onClick={()=>{setObservationIntent({id:"",create:false});setTab(key);}}>{label}</button>)}
     </div>
 
     {tab==="overview"&&canManage&&<ComplianceOverview
@@ -342,12 +359,16 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
       evidenceLatest={evidenceLatest}
       exceptionLatest={exceptionLatest}
       openWork={openWork}
-      openObservations={()=>setTab("observations")}
+      openObservations={openObservations}
       openAnnouncements={canPublishInstruction?openAnnouncements:null}
+      onSection={setTab}
+      onEvidence={(row)=>{setReviewSheet(row);setReviewAction("verified");setReviewNote("");}}
+      onException={(row)=>{setDecisionSheet(row);setDecisionAction("approved");setDecisionNote("");setDecisionUntil("");}}
     />}
 
     {tab==="observations" && <ComplianceAttendanceCases
       key={actorScope} me={me} canManage={canManage}
+      initialCaseId={observationIntent.id} initialCreate={observationIntent.create}
       overviewDate={overviewDate} attendanceRows={canManage && !overviewLoading && !overviewError ? attendanceRows : []}
       onOpenOverview={(date)=>{setOverviewDate(date);setTab("overview");}}
     />}

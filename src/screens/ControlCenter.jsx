@@ -254,8 +254,8 @@ export default function ControlCenter({me,go}){
       },
       {
         key:"development",
-        title:"Reviews, learning & compliance",
-        description:"Authorised employee development and policy workspaces.",
+        title:"Reviews & learning",
+        description:"Authorised employee development workspaces.",
         status:getAdministrationTools(me).length ? STATUSES.available : STATUSES.restricted,
         detail:"Open the tools assigned to your account. Quarterly leadership scheduling is available in Reports; protected appraisal publication remains an independent HR decision.",
         actions:getAdministrationTools(me).map(tool=>({label:tool.label,onClick:()=>go(tool.key)})),
