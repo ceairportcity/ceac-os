@@ -1,4 +1,5 @@
 import test from 'node:test';
+import './complianceReviewQueue.test.mjs';
 import assert from 'node:assert/strict';
 import {getAdministrationTools,getShellNavigation,getSecondaryNavigation,getMobilePrimaryNavigation} from '../src/experience-v2/shell/navigation.js';
 const grants=['performance.admin','learning.manage','compliance.manage'].map(capability=>({capability,scope_unit_id:null}));

@@ -1936,8 +1936,9 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Compliance");
     await expect(page.getByRole("heading", { name: "Compliance", exact: true })).toBeVisible();
+    await page.getByText("Recorded policy context", { exact: true }).click();
     await expect(page.getByText(/does not calculate an employee compliance score/i)).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Operational picture", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your review desk", exact: true })).toBeVisible();
     await expect(page.getByText(/is not an absence or misconduct finding/i)).toBeVisible();
     await page.getByRole("tab", { name: "Policies", exact: true }).click();
 
