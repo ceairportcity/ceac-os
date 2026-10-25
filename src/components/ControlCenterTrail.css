@@ -1,5 +1,0 @@
-.control-center-trail{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:1200px;margin:18px auto 0;padding:0 24px;font-size:12px;color:#6c8199}
-.control-center-trail a{display:inline-flex;align-items:center;min-height:36px;color:#1472d4;text-decoration:none;font-weight:650}
-.control-center-trail a:hover{text-decoration:underline}
-.control-center-trail a:focus-visible{outline:2px solid #087bf5;outline-offset:3px}
-@media(max-width:600px){.control-center-trail{margin-top:8px;padding-inline:16px}}

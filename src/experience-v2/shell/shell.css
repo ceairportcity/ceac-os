@@ -671,7 +671,7 @@
 }
 
 @media (max-width: 899px) {
-  .ev2s-mobile-search-drawer{top:0;bottom:0;width:100%;max-width:none;max-height:100dvh;border:0;border-radius:0}
+  .ev2s-mobile-search-drawer{padding-top:calc(var(--ev2-space-4) + env(safe-area-inset-top, 0px));top:0;bottom:0;width:100%;max-width:none;max-height:100dvh;border:0;border-radius:0}
 
   .ev2s-sidebar,
   .ev2s-topbar {
@@ -686,6 +686,7 @@
   .ev2s-mobile-topbar {
     position: sticky;
     top: 0;
+    padding-top: var(--ceac-safe-area-top, env(safe-area-inset-top, 0px));
     z-index: 55;
     display: grid;
     min-width: 0;

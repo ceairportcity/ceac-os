@@ -121,19 +121,19 @@ export default function AdminAuthority({ me, refreshMe, initialProfileId=null })
     if (selectedId === me.id) await refreshMe?.();
   }
 
-  if (loading) return <div className="body"><LoadingState label="Loading authority…" /></div>;
+  if (loading) return <div className="body"><LoadingState label="Loading access permissions…" /></div>;
 
   return <div className="body">
     <div style={{ paddingTop: 26 }}>
       <div className="eyebrow">Security & governance</div>
-      <h1 className="h1">Authority</h1>
-      <p className="screen-note">Sensitive access is granted explicitly. A role title by itself does not grant every Administration capability.</p>
+      <h1 className="h1">Access permissions</h1>
+      <p className="screen-note">Choose who can access information and what they can do. A job title does not automatically give sensitive access.</p>
     </div>
 
     {error && <ProductNotice tone="error" title="Authority">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Authority updated">{notice}</ProductNotice>}
 
-    <DataPanel eyebrow="Person record" title="Person" supporting="Choose a person to inspect explicit authority grants." action={<Button size="compact" onClick={()=>setGrantOpen(true)}>Grant capability</Button>}>
+    <DataPanel eyebrow="Person record" title="Person" supporting="Choose a person to review or change their permissions." action={<Button size="compact" onClick={()=>setGrantOpen(true)}>Add permission</Button>}>
       <FieldGroup label="Choose person">
         <select className="field" aria-label="Authority person" value={selectedId} onChange={(event) => { setSelectedId(event.target.value); setNotice(null); setError(null); }}>
           {people.map((person) => <option key={person.id} value={person.id}>{person.full_name} · {person.email}</option>)}
@@ -142,19 +142,19 @@ export default function AdminAuthority({ me, refreshMe, initialProfileId=null })
       {selected && <RecordRow name={selected.full_name} title={selected.full_name} meta={`${selected.job_title || "No job title"} · ${selected.active ? "Active" : "Inactive"}`} status={selected.active?"Active":"Inactive"} statusTone={selected.active?"success":"neutral"} />}
     </DataPanel>
 
-    <DataPanel eyebrow="Current authority" title="Active capabilities" supporting="Only explicit capability grants are shown. Job titles do not grant authority." action={<StatusBadge tone="neutral" icon={false}>{activeGrants.length} active</StatusBadge>}>
+    <DataPanel eyebrow="Current access" title="Active permissions" supporting="These permissions were assigned explicitly. Job titles do not grant access." action={<StatusBadge tone="neutral" icon={false}>{activeGrants.length} active</StatusBadge>}>
       {activeGrants.map((grant) => {
         const def = definitions.find((item) => item.capability === grant.capability);
         return <QueueRow key={grant.id} icon="shield" title={def?.label || grant.capability}
           meta={`${grant.scope_unit_id ? unitsById[grant.scope_unit_id] || "Unit scope" : "Organisation-wide"} · granted ${stamp(grant.granted_at)}${grant.granted_by ? " by " + (peopleById[grant.granted_by]?.full_name || "authorised user") : " · baseline"} · ${grant.grant_reason || "No reason recorded"}`}
           status="Active" statusTone="success"
-          trailing={<Button variant="quiet" size="compact" disabled={busy} onClick={()=>{setRevokeReason("");setRevokeGrantId(grant.id);}}>Revoke</Button>} />;
+          trailing={<Button variant="quiet" size="compact" disabled={busy} onClick={()=>{setRevokeReason("");setRevokeGrantId(grant.id);}}>Remove permission</Button>} />;
       })}
-      {activeGrants.length === 0 && <StatePanel state="empty" title="No active capabilities" description="This person currently has no explicit sensitive capability grants." />}
+      {activeGrants.length === 0 && <StatePanel state="empty" title="No active permissions" description="No sensitive permissions have been assigned to this person." />}
     </DataPanel>
 
-    <DataPanel eyebrow="History" title="Grant history" supporting="Revoked grants remain attributable and are collapsed until needed.">
-      <Button variant="quiet" size="compact" onClick={()=>setHistoryOpen((value)=>!value)}>{historyOpen?"Hide grant history":"Show grant history"}</Button>
+    <DataPanel eyebrow="History" title="Permission history" supporting="Review previous permissions, who removed them and why.">
+      <Button variant="quiet" size="compact" onClick={()=>setHistoryOpen((value)=>!value)}>{historyOpen?"Hide permission history":"Show permission history"}</Button>
       <MotionDisclosure open={historyOpen} ariaLabel="Authority grant history">
         {selectedGrants.filter((grant) => grant.revoked_at).map((grant) => <QueueRow key={grant.id} icon="history"
           title={definitions.find((item) => item.capability === grant.capability)?.label || grant.capability}
@@ -164,29 +164,29 @@ export default function AdminAuthority({ me, refreshMe, initialProfileId=null })
       </MotionDisclosure>
     </DataPanel>
 
-    <ComposerDrawer open={grantOpen} onClose={()=>!busy&&setGrantOpen(false)} title="Grant capability"
-      description="Grant only the authority that is required, with an attributable reason."
-      footer={<><Button variant="secondary" disabled={busy} onClick={()=>setGrantOpen(false)}>Cancel</Button><Button busy={busy} disabled={!selectedId||!reason.trim()} onClick={grant}>{busy?"Saving…":"Grant capability"}</Button></>}>
-      <FieldGroup label="Capability">
+    <ComposerDrawer open={grantOpen} onClose={()=>!busy&&setGrantOpen(false)} title="Add permission"
+      description="Add only the access this person needs and record why."
+      footer={<><Button variant="secondary" disabled={busy} onClick={()=>setGrantOpen(false)}>Cancel</Button><Button busy={busy} disabled={!selectedId||!reason.trim()} onClick={grant}>{busy?"Saving…":"Add permission"}</Button></>}>
+      <FieldGroup label="Permission">
         <select className="field" aria-label="Capability" value={capability} onChange={(event) => setCapability(event.target.value)}>
           {definitions.map((item) => <option key={item.capability} value={item.capability}>{item.label}</option>)}
         </select>
       </FieldGroup>
       {definition && <p className="small" style={{ lineHeight: 1.5 }}>{definition.description}</p>}
       {capability === "support.case.manage" && <p className="screen-note">Technical Support case access requires both an active Support membership recorded by People Administration and this separately approved, organisation-wide capability. Unit Head status alone is not sufficient. This grant cannot confer HR, Payroll or broader Administration authority.</p>}
-      <FieldGroup label="Scope">
+      <FieldGroup label="Who this covers">
         <select className="field" aria-label="Capability scope" value={scopeUnitId} disabled={ORG_ONLY.has(capability)} onChange={(event) => setScopeUnitId(event.target.value)}>
           <option value="">Organisation-wide</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
         </select>
       </FieldGroup>
-      {ORG_ONLY.has(capability) && <p className="small">This capability is organisation-scoped.</p>}
-      <FieldGroup label="Grant reason"><textarea className="field" aria-label="Grant reason" rows="3" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Why this authority is required" /></FieldGroup>
+      {ORG_ONLY.has(capability) && <p className="small">This permission applies across the organisation.</p>}
+      <FieldGroup label="Reason for access"><textarea className="field" aria-label="Grant reason" rows="3" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Why this access is needed" /></FieldGroup>
     </ComposerDrawer>
 
-    <ComposerDrawer open={Boolean(revokeGrantId)} onClose={()=>!busy&&setRevokeGrantId(null)} title="Revoke capability"
-      description="Revocation preserves the original grant and creates attributable history."
-      footer={<><Button variant="secondary" disabled={busy} onClick={()=>setRevokeGrantId(null)}>Cancel</Button><Button variant="danger" busy={busy} disabled={!revokeReason.trim()} onClick={()=>revoke(revokeGrantId)}>{busy?"Revoking…":"Revoke"}</Button></>}>
-      <FieldGroup label="Revocation reason"><textarea className="field" aria-label="Revocation reason" rows="3" value={revokeReason} onChange={(event) => setRevokeReason(event.target.value)} placeholder="Why this authority is being removed" /></FieldGroup>
+    <ComposerDrawer open={Boolean(revokeGrantId)} onClose={()=>!busy&&setRevokeGrantId(null)} title="Remove permission"
+      description="The person loses this permission. The original record and the reason for removal remain in history."
+      footer={<><Button variant="secondary" disabled={busy} onClick={()=>setRevokeGrantId(null)}>Cancel</Button><Button variant="danger" busy={busy} disabled={!revokeReason.trim()} onClick={()=>revoke(revokeGrantId)}>{busy?"Removing…":"Remove permission"}</Button></>}>
+      <FieldGroup label="Reason for removal"><textarea className="field" aria-label="Revocation reason" rows="3" value={revokeReason} onChange={(event) => setRevokeReason(event.target.value)} placeholder="Why this access is being removed" /></FieldGroup>
       <p className="small" style={{ lineHeight: 1.5 }}>The final organisation authority manager cannot be removed through this flow.</p>
     </ComposerDrawer>
   </div>;

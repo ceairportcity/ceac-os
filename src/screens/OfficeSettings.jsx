@@ -3,13 +3,19 @@ import { supabase } from "../lib/supabase";
 import { classifyPreviewFeatureResult } from "../lib/pendingFeatureCompatibility";
 import { dateOnly } from "../lib/time";
 import { leavePoolLabel } from "../lib/leavePools";
-import { FieldGroup, ProductNotice, SectionHeader } from "../components/bits";
+import { ProductNotice } from "../components/bits";
+import { CeacIcon } from "../experience-v2/icons";
 import { humanError } from "../lib/productLanguage";
-import { StatusBadge } from "../experience-v2/components";
 import DutyLocationSettings from "../components/DutyLocationSettings";
 import AttendanceCodeIssuer from "../components/AttendanceCodeIssuer";
+import "../components/SettingsBack.css";
+import "./ControlCenter.css";
+import "./OfficeSettings.css";
 
-export default function OfficeSettings({ me, openWorkforce }) {
+export default function OfficeSettings({ me, openWorkforce, section: requestedSection, openSection, back }) {
+  const section = ["office", "locations", "codes", "leave", "alerts"].includes(requestedSection) ? requestedSection : null;
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [office, setOffice] = useState(null);
   const [name, setName] = useState("CEAC main office");
   const [lat, setLat] = useState("");
@@ -25,71 +31,68 @@ export default function OfficeSettings({ me, openWorkforce }) {
   const [thresholds, setThresholds] = useState([]);
   // A late settings refresh must not replace unsaved local attention-rule edits.
   const thresholdDraftsRef = useRef(new Map());
-  const [pendingInvitations, setPendingInvitations] = useState([]);
-  const [integrity, setIntegrity] = useState(null);
-  const [integrityAvailable, setIntegrityAvailable] = useState(true);
-  const [integrityMinutes, setIntegrityMinutes] = useState(10);
-  const [integrityBusy, setIntegrityBusy] = useState(false);
 
-  useEffect(() => { load(); }, []);
+
+  const [integrityAvailable, setIntegrityAvailable] = useState(true);
+
+
+
+  const loadGeneration = useRef(0);
+  useEffect(() => { load(); return () => { loadGeneration.current += 1; }; }, [section]);
 
   async function load() {
+    const generation = ++loadGeneration.current;
     setMessage(null);
-    const [officeResult, leaveResult, thresholdResult, inviteResult, integrityResult] = await Promise.all([
-      supabase.from("office_locations").select("*").eq("is_primary", true).limit(1).maybeSingle(),
-      supabase.from("leave_policy_versions").select("id,name,state,confirmed_at,source_reference,reason,leave_policy_rules(id,leave_kind,employment_type,entitlement_amount,entitlement_unit,accrual_method,accrual_rate,carryover_method,carryover_limit,approval_route,opening_balance_required,complete)").eq("org_id", me.org_id).eq("state","active").order("confirmed_at",{ascending:false}).limit(1).maybeSingle(),
-      supabase.from("thresholds").select("name,label,value,unit_label").eq("org_id",me.org_id).neq("name","pay_change_pct").order("label"),
-      supabase.from("pending_invitations").select("id,email,full_name,unit_id,invited_at,expires_at,units(name)").is("resolved_at",null).gt("expires_at",new Date().toISOString()).order("invited_at",{ascending:false}),
-      supabase.rpc("attendance_integrity_status"),
+    setLoading(true);
+    setLoadError(false);
+    const [officeResult, leaveResult, thresholdResult, integrityResult] = await Promise.all([
+      (!section || section === "office") ? supabase.from("office_locations").select("*").eq("is_primary", true).limit(1).maybeSingle() : Promise.resolve({data:null}),
+      section === "leave" ? supabase.from("leave_policy_versions").select("id,name,state,confirmed_at,source_reference,reason,leave_policy_rules(id,leave_kind,employment_type,entitlement_amount,entitlement_unit,accrual_method,accrual_rate,carryover_method,carryover_limit,approval_route,opening_balance_required,complete)").eq("org_id", me.org_id).eq("state","active").order("confirmed_at",{ascending:false}).limit(1).maybeSingle() : Promise.resolve({data:null}),
+      section === "alerts" ? supabase.from("thresholds").select("name,label,value,unit_label").eq("org_id",me.org_id).neq("name","pay_change_pct").order("label") : Promise.resolve({data:[]}),
+      section === "codes" ? supabase.rpc("attendance_integrity_status") : Promise.resolve({data:null}),
     ]);
 
+    if (generation !== loadGeneration.current) return;
+    setLoading(false);
     const integrityFeature = classifyPreviewFeatureResult("attendanceIntegrity", integrityResult);
     if (officeResult.error) {
+      setLoadError(true);
       setMessage({ tone: "error", title: "Office settings could not load", body: humanError(officeResult.error) });
       return;
     }
     if (leaveResult.error) {
+      setLoadError(true);
       setMessage({ tone: "error", title: "Leave settings could not load", body: humanError(leaveResult.error) });
       return;
     }
     if (thresholdResult.error) {
-      setMessage({ tone: "error", title: "Attention rules could not load", body: humanError(thresholdResult.error) });
-      return;
-    }
-    if (inviteResult.error) {
-      setMessage({ tone: "error", title: "People & access status could not load", body: humanError(inviteResult.error) });
+      setLoadError(true);
+      setMessage({ tone: "error", title: "Alert rules could not load", body: humanError(thresholdResult.error) });
       return;
     }
     if (integrityFeature.error) {
+      setLoadError(true);
       setMessage({ tone: "error", title: "Attendance integrity status could not load", body: humanError(integrityFeature.error) });
       return;
     }
 
     const o = officeResult.data;
-    if (o) {
-      setOffice(o);
-      setName(o.name);
-      setLat(String(o.lat));
-      setLng(String(o.lng));
-      setRadius(o.radius_meters);
+    if (!section || section === "office") {
+      setOffice(o || null);
+      setName(o?.name || "CEAC main office");
+      setLat(o ? String(o.lat) : "");
+      setLng(o ? String(o.lng) : "");
+      setRadius(o?.radius_meters ?? 100);
     }
-
     setThresholds((thresholdResult.data || []).map((row) => ({
       ...row,
       value: thresholdDraftsRef.current.get(row.name) ?? String(row.value ?? ""),
     })));
-    setPendingInvitations(inviteResult.data || []);
     setIntegrityAvailable(integrityFeature.available);
-    setIntegrity(integrityFeature.data || null);
-    if (integrityFeature.data?.front_desk_code_ttl_minutes) setIntegrityMinutes(integrityFeature.data.front_desk_code_ttl_minutes);
 
     const policy = leaveResult.data || null;
     setLeavePolicy(policy);
     setLeaveRules(policy?.leave_policy_rules || []);
-  }
-
-  function jumpTo(id) {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function pickHere() {
@@ -119,7 +122,8 @@ export default function OfficeSettings({ me, openWorkforce }) {
     try {
       const lt = Number.parseFloat(lat);
       const ln = Number.parseFloat(lng);
-      if (!Number.isFinite(lt) || !Number.isFinite(ln)) throw new Error("Enter both latitude and longitude.");
+      if (!Number.isFinite(lt) || !Number.isFinite(ln) || lt < -90 || lt > 90 || ln < -180 || ln > 180) throw new Error("Choose a valid office location first.");
+      if (!Number.isInteger(Number(radius)) || Number(radius) < 10 || Number(radius) > 1000) throw new Error("Choose a check-in area between 10 and 1,000 metres.");
 
       const payload = {
         name: name.trim() || "CEAC main office",
@@ -131,10 +135,11 @@ export default function OfficeSettings({ me, openWorkforce }) {
       };
 
       const result = office
-        ? await supabase.from("office_locations").update(payload).eq("id", office.id)
-        : await supabase.from("office_locations").insert({ ...payload, org_id: me.org_id, is_primary: true });
+        ? await supabase.from("office_locations").update(payload).eq("org_id", me.org_id).eq("id", office.id).select("id,name,lat,lng,radius_meters").single()
+        : await supabase.from("office_locations").insert({ ...payload, org_id: me.org_id, is_primary: true }).select("id,name,lat,lng,radius_meters").single();
 
       if (result.error) throw result.error;
+      if (!result.data || result.data.name !== payload.name || Number(result.data.lat) !== lt || Number(result.data.lng) !== ln || Number(result.data.radius_meters) !== Number(radius)) throw new Error("The office location could not be confirmed. Please try again.");
       await load();
       setMessage({ tone: "success", title: "Office location saved", body: "Attendance can now distinguish the office from other work locations." });
     } catch (error) {
@@ -144,44 +149,13 @@ export default function OfficeSettings({ me, openWorkforce }) {
     }
   }
 
-  async function rotatePresenceCode(enabled = true) {
-    if (!integrityAvailable) return; // The pending RPC must never be invoked in preview compatibility mode.
-    setIntegrityBusy(true);
-    setMessage(null);
-    try {
-      const { data, error } = await supabase.rpc("attendance_set_office_code", {
-        p_enabled: enabled,
-        p_ttl_minutes: Math.max(5, Math.min(30, Number(integrityMinutes) || 10)),
-      });
-      if (error) throw error;
-      const status = await supabase.rpc("attendance_integrity_status");
-      if (status.error) throw status.error;
-      setIntegrity({
-        ...(status.data || {}),
-        front_desk_code: data?.code || status.data?.front_desk_code || null,
-        front_desk_code_valid_until: data?.valid_until || status.data?.front_desk_code_valid_until || null,
-      });
-      setMessage({
-        tone: "success",
-        title: enabled ? "Office presence code rotated" : "Office presence code disabled",
-        body: enabled
-          ? "The short-lived code is corroborating evidence only. It does not create attendance, pay or disciplinary conclusions."
-          : "Front-desk code corroboration is disabled. Existing evidence history remains preserved.",
-      });
-    } catch (error) {
-      setMessage({ tone: "error", title: "Office presence code was not changed", body: humanError(error) });
-    } finally {
-      setIntegrityBusy(false);
-    }
-  }
-
     async function saveThreshold(row) {
     setSaving(true);
     setMessage(null);
     try {
       const draft = thresholdDraftsRef.current.get(row.name) ?? row.value;
       const value = Number(draft);
-      if (!Number.isFinite(value) || value < 0) throw new Error("Enter a valid non-negative number.");
+      if (String(draft).trim() === "" || !Number.isFinite(value) || value < 0) throw new Error("Enter a valid non-negative number.");
       const result = await supabase.from("thresholds")
         .update({ value, updated_by: me.id, updated_at: new Date().toISOString() })
         .eq("org_id", me.org_id)
@@ -204,112 +178,66 @@ export default function OfficeSettings({ me, openWorkforce }) {
   const leaveConfigured = Boolean(leavePolicy);
   const mapSrc = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}&z=17&output=embed` : null;
 
-  return <div className="body office-settings ev2-office-settings">
-    <div className="office-page-intro ev2-office-settings-header">
-      <div><div className="eyebrow">Control room</div>
-      <h1 className="h1">Organisation settings</h1>
-      <p className="screen-note">Organisation rules CEAC can maintain without a developer. Unconfirmed policy stays visibly unconfigured rather than being guessed.</p></div>
-      <StatusBadge tone={leaveConfigured && office ? "success" : "warning"} icon={false}>{leaveConfigured && office ? "Core setup recorded" : "Setup needs attention"}</StatusBadge>
-    </div>
-
-    {message && <ProductNotice tone={message.tone} title={message.title}>{message.body}</ProductNotice>}
-
-    <div className="office-settings-grid">
-      <section id="office-location-settings" className="office-settings-card">
-        <SectionHeader eyebrow="Attendance context" title="Office location" />
-        <p className="screen-note">This location tells CEAC OS whether a work session began at the office or elsewhere. It does not determine productivity.</p>
-        <FieldGroup label="Location name">
-          <input className="field" value={name} onChange={(event) => setName(event.target.value)} placeholder="CEAC main office" />
-        </FieldGroup>
-        <button className="btn btn-ghost" onClick={pickHere} disabled={locating}>
-          {locating ? "Finding this device…" : lat && lng ? "Use where I am standing now instead" : "Use where I am standing now"}
-        </button>
-        {locErr && <ProductNotice tone="error" title="Location unavailable">{locErr}</ProductNotice>}
-        <FieldGroup label="Office radius" hint="The distance around the saved point that still counts as the office.">
-          <div className="office-inline-field"><input className="field" type="number" min="10" value={radius} onChange={(event) => setRadius(event.target.value)} /><span>metres</span></div>
-        </FieldGroup>
-        {mapSrc && <iframe title="Office location" src={mapSrc} className="office-settings-map" />}
-        <button className="btn" onClick={saveOffice} disabled={saving || !lat || !lng}>
-          {saving ? "Saving…" : office ? "Update office location" : "Save office location"}
-        </button>
-        {office && <div className="office-setting-footnote">Last confirmed {dateOnly(office.set_at)}.</div>}
-      </section>
-
-      <DutyLocationSettings me={me} />
-      <section id="attendance-integrity-settings" className="office-settings-card">
-        <SectionHeader eyebrow="Attendance integrity" title="Approved location codes" />
-        {!integrityAvailable && <ProductNotice tone="attention" title="Attendance codes awaiting backend acceptance">
-          The original Stage 1 database has not yet applied the reviewed attendance migrations. The code issuer cannot operate until the next one-bundle schema release is accepted.
-        </ProductNotice>}
-        {integrityAvailable && <AttendanceCodeIssuer me={me} />}
-        <p className="screen-note">Codes are issued separately for each authorised duty location. They expire automatically and are corroborating evidence only, never an automatic attendance, pay or disciplinary decision.</p>
-      </section>
-
-      <section id="leave-policy-settings" className="office-settings-card">
-        <SectionHeader eyebrow="Policy" title="Leave rules" />
-        {!leaveConfigured && <ProductNotice tone="attention" title="Leave policy not configured">
-          The old prototype leave defaults are not CEAC policy. Configure entitlement, accrual, carry-over and approval route explicitly in Workforce.
-        </ProductNotice>}
-        {leaveConfigured && <ProductNotice tone="success" title="Leave policy configured">
-          {leavePolicy.name} is the active confirmed Stage 9 policy. Historical prototype defaults are not used.
-        </ProductNotice>}
-        {leaveConfigured && <div className="office-policy-grid">
-          {leaveRules.map((rule) => <div className="card small" key={rule.id}>
-            <strong>{leavePoolLabel(rule.leave_kind)||rule.leave_kind}</strong><br />
-            {rule.complete ? `${rule.entitlement_amount} ${rule.entitlement_unit}` : "Incomplete rule"} ·
-            {" "}accrual {rule.accrual_method || "not configured"} ·
-            {" "}carry-over {rule.carryover_method || "not configured"} ·
-            {" "}route {rule.approval_route || "not configured"}
-            {rule.opening_balance_required ? " · opening balance required" : ""}
-          </div>)}
-        </div>}
-        <button className="btn" onClick={() => openWorkforce?.()}>
-          {leaveConfigured ? "Review policy in Workforce" : "Configure policy in Workforce"}
-        </button>
-      </section>
-
-      <section id="attention-rule-settings" className="office-settings-card office-settings-wide">
-        <SectionHeader eyebrow="Quiet by default" title="When to tell Administration" />
-        <p className="screen-note">These are deterministic rules already used by CEAC OS. Changing a value changes when an item becomes visible; it does not change the underlying work or create a score.</p>
-        <div className="office-threshold-list">
-          {thresholds.map((row) => <div key={row.name} className="office-threshold-row">
-            <div><strong>{row.label}</strong><span>{row.unit_label}</span></div>
-            <input aria-label={row.label} className="field" type="number" min="0" step={row.unit_label === "%" ? "1" : "1"} value={row.value} onChange={(event) => { const draft = event.target.value; thresholdDraftsRef.current.set(row.name, draft); setThresholds((current) => current.map((item) => item.name === row.name ? { ...item, value:draft } : item)); }} />
-            <button className="btn btn-ghost btn-sm" disabled={saving} onClick={() => saveThreshold(row)}>Save</button>
-          </div>)}
+  const titles = {office:"Office location",locations:"Duty locations",codes:"Check-in codes",leave:"Leave rules",alerts:"Alerts & reminders"};
+  const descriptions = {
+    office:"Set where office check-ins are recognised.", locations:"Manage other approved places to work.",
+    codes:"Issue a temporary code for an approved work location.",leave:"Review entitlements, balances and approval rules.",alerts:"Choose when an item is brought to HR’s attention.",
+  };
+  function returnFromPage() {
+    const officeDirty=section==="office"&&(name!==(office?.name||"CEAC main office")||lat!==String(office?.lat??"")||lng!==String(office?.lng??"")||Number(radius)!==Number(office?.radius_meters??100));
+    if ((officeDirty||thresholdDraftsRef.current.size>0)&&!window.confirm("Leave without saving your changes?")) return;
+    thresholdDraftsRef.current.clear();
+    if (["office","locations","codes"].includes(section)) openSection?.(null); else back?.();
+  }
+  return <div className="body office-settings ev2-office-settings focused-settings">
+    <header className="focused-settings-header">
+      <button type="button" className="settings-back" onClick={returnFromPage} disabled={saving} aria-label={section&&["office","locations","codes"].includes(section)?"Back to Attendance & locations":"Back to Control Center"}>← Back</button>
+      <h1 className="settings-page-title">{titles[section]||"Attendance & locations"}</h1>
+      <p className="screen-note">{descriptions[section]||"Choose what you want to set up."}</p>
+    </header>
+    {message&&<ProductNotice tone={message.tone} title={message.title}>{message.body}</ProductNotice>}
+    {loading?<p role="status">Loading settings…</p>:loadError?<button type="button" className="btn" onClick={load}>Try again</button>:<>
+      {!section?<>
+        <div className="control-setting-list">
+          {[["office","Office location","Set the office point and check-in area"],["locations","Duty locations","Manage other approved places to work"],["codes","Check-in codes","Issue temporary codes for a work location"]].map(([key,title,description])=><button type="button" key={key} className="control-setting-row" onClick={()=>openSection?.(key)}>
+            <CeacIcon name={key === "office" ? "organisation" : key === "locations" ? "location" : "record"} size="row" decorative/><span className="control-setting-copy"><strong>{title}</strong><span>{description}</span></span>
+            {key==="office"?<span className="control-setting-status">{office?"Configured":"Needs setup"}</span>:null}<span className="control-setting-chevron" aria-hidden="true">›</span>
+          </button>)}
         </div>
-      </section>
-
-      <section id="access-settings" className="office-settings-card office-settings-wide">
-        <SectionHeader eyebrow="People & access" title="Pending invitations" count={pendingInvitations.length} />
-        <p className="screen-note">New accounts always activate as Staff. Administration assigns official authority only after activation.</p>
-        {pendingInvitations.length === 0 && <div className="card small">No active invitations are waiting.</div>}
-        {pendingInvitations.map((invite) => <div key={invite.id} className="admin-evidence-row">
-          <div><strong>{invite.full_name || invite.email}</strong><span>{invite.email} · {invite.units?.name || "Unit"} · expires {dateOnly(invite.expires_at)}</span></div>
-        </div>)}
-      </section>
-
-      <section className="office-settings-card office-settings-wide">
-        <SectionHeader eyebrow="Administration & HR" title="Setup & configuration" />
-        <p className="screen-note">Open the settings CEAC can control here. Items that still need an approved CEAC policy remain clearly unavailable rather than pretending to be configurable.</p>
-        <div className="office-config-status">
-          <button type="button" className="office-config-card" onClick={() => jumpTo("office-location-settings")}>
-            <span>Office location</span><strong>{office ? "Configured" : "Needs setup"}</strong><small>{office ? "Review or change" : "Set up now"} ↑</small>
-          </button>
-          <button type="button" className="office-config-card" onClick={() => jumpTo("leave-policy-settings")}>
-            <span>Leave policy</span><strong>{leaveConfigured ? "Configured" : "Needs confirmation"}</strong><small>Managed in Workforce ↑</small>
-          </button>
-          <button type="button" className="office-config-card" onClick={() => jumpTo("attention-rule-settings")}>
-            <span>Attention rules</span><strong>{thresholds.length ? "Configurable" : "Needs setup"}</strong><small>Review rules ↑</small>
-          </button>
-          <button type="button" className="office-config-card" onClick={() => jumpTo("access-settings")}>
-            <span>People & access</span><strong>{pendingInvitations.length ? pendingInvitations.length + " invitation" + (pendingInvitations.length === 1 ? "" : "s") + " waiting" : "No invitations waiting"}</strong><small>Review access ↑</small>
-          </button>
-          <div className="office-config-card is-deferred"><span>Salary structure</span><strong>Awaiting CEAC policy</strong><small>Not enabled yet</small></div>
-          <div className="office-config-card is-deferred"><span>Payroll approval chain</span><strong>Awaiting CEAC policy</strong><small>Not enabled yet</small></div>
-          <div className="office-config-card is-deferred"><span>Protected HR storage</span><strong>Security foundation ready</strong><small>Protected HR is active and access-controlled</small></div>
-        </div>
-      </section>
-    </div>
+        <aside className="settings-help"><strong>Looking for today’s attendance?</strong><p>View staff attendance in Time & Leave.</p><button type="button" onClick={()=>openWorkforce?.()}>Open Time & Leave →</button></aside>
+      </>:null}
+      {section==="office"?<form className="focused-setting-editor" onSubmit={event=>{event.preventDefault();saveOffice();}}>
+        <label htmlFor="office-name">Office name</label><input id="office-name" className="field" value={name} onChange={event=>setName(event.target.value)} required maxLength={120}/>
+        {mapSrc?<iframe title="Office location" src={mapSrc} className="office-settings-map"/>:<p className="settings-help">Stand at the office and use your current location to set the office point.</p>}
+        <button type="button" className="btn btn-ghost" onClick={pickHere} disabled={locating||saving}>{locating?"Finding your location…":"Use my current location"}</button>
+        {locErr?<ProductNotice tone="error" title="Location unavailable">{locErr}</ProductNotice>:null}
+        <label htmlFor="office-radius">Check-in area</label><div className="office-inline-field"><input id="office-radius" aria-describedby="office-radius-help" className="field" type="number" min="10" max="1000" step="1" required value={radius} onChange={event=>setRadius(event.target.value)}/><span>metres</span></div>
+        <p id="office-radius-help" className="screen-note">Distance around the saved office point.</p>
+        <p className="settings-help">Location supports attendance review. It does not measure productivity.</p>
+        <div className="settings-editor-actions"><button type="submit" className="btn" disabled={saving||locating||!lat||!lng}>{saving?"Saving…":"Save changes"}</button><button type="button" className="btn btn-ghost" disabled={saving} onClick={returnFromPage}>Cancel</button></div>
+        {office?.set_at?<p className="office-setting-footnote">Last confirmed {dateOnly(office.set_at)}.</p>:null}
+      </form>:null}
+      {section==="locations"?<DutyLocationSettings me={me} />:null}
+      {section==="codes"?<section className="focused-setting-editor">
+        {integrityAvailable?<AttendanceCodeIssuer me={me}/>:<ProductNotice tone="attention" title="Check-in codes unavailable">Check-in codes are not enabled in this environment.</ProductNotice>}
+        <p className="screen-note">Each code belongs to one approved work location and expires automatically. Codes support a review; they do not decide attendance, pay or disciplinary action.</p>
+      </section>:null}
+      {section==="leave"?<section className="focused-setting-editor">
+        <ProductNotice tone={leaveConfigured?"success":"attention"} title={leaveConfigured?"Active leave policy":"Leave policy not configured"}>{leaveConfigured?leavePolicy.name:"Confirm CEAC’s leave rules before assigning entitlements."}</ProductNotice>
+        {leaveRules.map(rule=><div className="settings-leave-rule" key={rule.id}><h2>{leavePoolLabel(rule.leave_kind)||rule.leave_kind}</h2><dl>
+          <div><dt>Entitlement</dt><dd>{rule.complete?`${rule.entitlement_amount} ${rule.entitlement_unit}`:"Needs confirmation"}</dd></div>
+          <div><dt>How leave builds up</dt><dd>{(rule.accrual_method||"Not configured").replaceAll("_"," ")}</dd></div>
+          <div><dt>Unused leave</dt><dd>{(rule.carryover_method||"Not configured").replaceAll("_"," ")}</dd></div>
+          <div><dt>Approval route</dt><dd>{(rule.approval_route||"Not configured").replaceAll("_"," ")}</dd></div>
+        </dl></div>)}
+        <button type="button" className="btn" onClick={()=>openWorkforce?.()}>Manage leave rules in Time & Leave</button>
+      </section>:null}
+      {section==="alerts"?<section className="focused-setting-editor"><p className="screen-note">Changing these values changes when HR sees an item for review. It does not change the underlying work or create a score.</p>
+        <div className="office-threshold-list">{thresholds.map(row=><div key={row.name} className="office-threshold-row"><div><strong>{row.label}</strong><span>{row.unit_label}</span></div>
+          <input aria-label={row.label} className="field" type="number" min="0" step="1" value={row.value} onChange={event=>{const draft=event.target.value;thresholdDraftsRef.current.set(row.name,draft);setThresholds(current=>current.map(item=>item.name===row.name?{...item,value:draft}:item));}}/>
+          <button type="button" className="btn btn-ghost btn-sm" disabled={saving} onClick={()=>saveThreshold(row)}>Save</button>
+        </div>)}</div>{!thresholds.length?<p>No alert rules are configured.</p>:null}
+      </section>:null}
+    </>}
   </div>;
 }

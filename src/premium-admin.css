@@ -35,32 +35,13 @@
 /* Finance + Expenses */
 .office-app .body>.row{border-color:#e4e9ef!important;border-radius:11px!important;background:#fff!important}
 
-/* Control Center */
-.control-center{max-width:80rem!important}
-.control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.control-card{
-  border:1px solid #e0e6ee;background:#fff;border-radius:15px;padding:15px;
-  display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:13px;align-items:center;text-align:left;cursor:pointer;
-  box-shadow:0 7px 24px rgba(35,53,79,.035);transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
-}
-.control-card:hover{transform:translateY(-1px);border-color:#bfd2ef;box-shadow:0 11px 30px rgba(35,53,79,.07)}
-.control-advanced{margin-top:17px;padding:17px;border:1px solid #e2e7ee;border-radius:16px;background:#fff}
-.control-advanced h2{font-size:15px;margin:3px 0 5px;color:#1b3049}.control-advanced p{margin:0 0 12px;color:#8190a2;font-size:12px}
-.control-advanced>div:last-child{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.control-advanced button{border:1px solid #e6eaf0;background:#fafbfd;border-radius:12px;padding:12px;text-align:left;cursor:pointer}
-.control-advanced button strong{display:block;color:#253950;font-size:12px}.control-advanced button small{display:block;color:#8591a2;font-size:12px;line-height:1.4;margin-top:3px}.control-advanced button b{display:block;color:var(--ceac-action-blue);font-size:12px;margin-top:8px}
-
 @media(max-width:980px){
   .office-app .admin-command-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .control-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .office-app .workforce-tabs{top:64px}
 }
 @media(max-width:620px){
   .admin-page-header{display:block}.admin-page-header>.btn{margin-top:12px}
-  .control-grid{grid-template-columns:1fr 1fr;gap:6px}
   .office-app .split{display:block!important}
-  .control-card{grid-template-columns:38px minmax(0,1fr)}
-  .control-advanced>div:last-child{grid-template-columns:1fr}
 }
 
 
@@ -72,88 +53,7 @@
   margin-inline: auto;
 }
 
-.office-app .ev2-control-center .control-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
-  overflow: hidden;
-  margin-top: var(--ev2-space-5);
-  border: 1px solid var(--ev2-line);
-  border-radius: var(--ev2-radius-card);
-  background: var(--ev2-surface);
-}
 
-.office-app .ev2-control-center .control-card {
-  min-height: 4.75rem;
-  grid-template-columns: 2.5rem minmax(0, 1fr) minmax(8rem, auto);
-  gap: var(--ev2-space-3);
-  padding: var(--ev2-space-3) var(--ev2-space-4);
-  border: 0;
-  border-bottom: 1px solid var(--ev2-line);
-  border-radius: 0;
-  background: var(--ev2-surface);
-  box-shadow: none;
-  transform: none;
-}
-
-.office-app .ev2-control-center .control-card:last-child {
-  border-bottom: 0;
-}
-
-.office-app .ev2-control-center .control-card:hover {
-  transform: none;
-  border-color: transparent;
-  background: var(--ev2-surface-soft);
-  box-shadow: none;
-}
-
-.office-app .ev2-control-center .control-card:focus-visible {
-  outline: 3px solid rgba(12, 93, 249, .20);
-  outline-offset: -3px;
-}
-
-.office-app .ev2-control-center .control-advanced {
-  margin-top: var(--ev2-space-6);
-  padding: var(--ev2-space-4) 0 0;
-  border: 0;
-  border-top: 1px solid var(--ev2-line);
-  border-radius: 0;
-  background: transparent;
-}
-
-.office-app .ev2-control-center .control-advanced > div:last-child {
-  grid-template-columns: 1fr;
-  gap: 0;
-  overflow: hidden;
-  border: 1px solid var(--ev2-line);
-  border-radius: var(--ev2-radius-control);
-}
-
-.office-app .ev2-control-center .control-advanced button {
-  min-height: 4rem;
-  padding: var(--ev2-space-3) var(--ev2-space-4);
-  border: 0;
-  border-bottom: 1px solid var(--ev2-line);
-  border-radius: 0;
-  background: var(--ev2-surface-soft);
-}
-
-.office-app .ev2-control-center .control-advanced button:last-child {
-  border-bottom: 0;
-}
-
-@media (max-width: 620px) {
-  .office-app .ev2-control-center .control-grid {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .office-app .ev2-control-center .control-card {
-    grid-template-columns: 2.25rem minmax(0, 1fr);
-    min-height: 5rem;
-    padding-inline: var(--ev2-space-3);
-  }
-}
 
 
 /* FPG3 — Finance gold-standard layer.
@@ -206,104 +106,8 @@
 @media(max-width:620px){.office-app .fpg-finance-metric{min-height:112px;padding:12px}.office-app .fpg-finance-metric>strong{margin-top:16px}.office-app .fpg-finance-chart{height:150px}.office-app .fpg-recent-head,.office-app .fpg-recent-row{grid-template-columns:72px minmax(0,1fr) 92px}.office-app .fpg-recent-head span:nth-child(3),.office-app .fpg-recent-row span:nth-child(3){display:none}}
 
 
-/* Phase 5E — Control Center is a configuration workspace, not an Overview clone. */
-.office-app .ev2-control-center .phase5-control-groups {
-  display: grid;
-  gap: var(--ev2-space-6);
-  margin-top: var(--ev2-space-6);
-}
 
-.office-app .ev2-control-center .phase5-control-group {
-  display: grid;
-  grid-template-columns: minmax(13rem, .34fr) minmax(0, 1fr);
-  gap: var(--ev2-space-5);
-  align-items: start;
-}
 
-.office-app .ev2-control-center .phase5-control-group-head {
-  position: sticky;
-  top: calc(var(--ev2-space-6) + 3.5rem);
-  display: grid;
-  gap: var(--ev2-space-1);
-  min-width: 0;
-}
-
-.office-app .ev2-control-center .phase5-control-group-head h2 {
-  margin: 0;
-  color: var(--ev2-text);
-  font-size: var(--ev2-type-section-desktop);
-  line-height: 1.2;
-  letter-spacing: -.02em;
-}
-
-.office-app .ev2-control-center .phase5-control-group-head p {
-  margin: 0;
-  color: var(--ev2-text-secondary);
-  font-size: var(--ev2-type-supporting);
-  line-height: 1.5;
-}
-
-.office-app .ev2-control-center .phase5-control-ledger {
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--ev2-line);
-  border-radius: var(--ev2-radius-card);
-  background: var(--ev2-surface);
-}
-
-.office-app .ev2-control-center .phase5-control-ledger .control-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--ev2-space-2);
-  align-items: stretch;
-  margin: 0;
-  padding: var(--ev2-space-4);
-  border: 0;
-  border-bottom: 1px solid var(--ev2-line);
-  border-radius: 0;
-  background: var(--ev2-surface);
-  box-shadow: none;
-  cursor: default;
-  transform: none;
-}
-
-.office-app .ev2-control-center .phase5-control-ledger .control-card:last-child {
-  border-bottom: 0;
-}
-
-.office-app .ev2-control-center .phase5-control-ledger .ev2c-data-panel-head {
-  padding-bottom: var(--ev2-space-2);
-}
-
-.office-app .ev2-control-center .phase5-control-ledger .ev2c-data-panel-body {
-  padding-top: 0;
-}
-
-@media (max-width: 820px) {
-  .office-app .ev2-control-center .phase5-control-group {
-    grid-template-columns: 1fr;
-    gap: var(--ev2-space-3);
-  }
-
-  .office-app .ev2-control-center .phase5-control-group-head {
-    position: static;
-  }
-
-  .office-app .ev2-control-center .phase5-control-group-head h2 {
-    font-size: var(--ev2-type-section-mobile);
-  }
-}
-
-@media (max-width: 599px) {
-  .office-app .ev2-control-center .phase5-control-groups {
-    gap: var(--ev2-space-5);
-    margin-top: var(--ev2-space-5);
-  }
-
-  .office-app .ev2-control-center .phase5-control-ledger {
-    border-radius: var(--ev2-radius-control);
-  }
-}
 
 
 /* Phase 5F — employee lifecycle / access closure. */

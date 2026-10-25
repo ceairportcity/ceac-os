@@ -602,7 +602,7 @@ textarea{width:100%}
 /* Phone acceptance and safe-area behaviour */
 @media (max-width:819px){
   .staff-app .body{
-    padding-top:env(safe-area-inset-top);
+    padding-top:0; /* The shared mobile header owns the top safe area. */
     padding-bottom:calc(104px + env(safe-area-inset-bottom))
   }
   .staff-app .staff-work-detail{padding-bottom:calc(32px + env(safe-area-inset-bottom))}

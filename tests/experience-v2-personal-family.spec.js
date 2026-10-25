@@ -560,30 +560,14 @@ test("Stage 10 Family H1 keeps Control Center capability-filtered while aligning
   expect(control).toContain('caps.has("payroll.prepare")');
   expect(control).toContain('caps.has("payroll.approve")');
   expect(control).toContain('caps.has("hr_private.access")');
-  expect(control).toContain('supabase.rpc("admin_employee_roster_summary")');
   expect(control).toContain('supabase.from("leave_policy_versions")');
-  expect(control).toContain('supabase.rpc("payroll_readiness_summary")');
   expect(control).toContain('supabase.from("integration_connectors")');
-  expect(control).toContain('supabase.from("platform_audit_events")');
-  for (const label of [
-    "Organisation",
-    "People & access",
-    "Work & operations",
-    "Time & Leave",
-    "Payroll & Finance",
-    "Security & governance",
-    "Integrations",
-    "Audit & records",
-  ]) expect(label === "Payroll & Finance" ? control.includes('title:canPayroll ? "Payroll & Finance" : "Finance"') : control.includes(`title:"${label}"`)).toBeTruthy();
-  expect(control).toContain("Manage departments, people, policies and system access.");
+  for(const label of ["Departments & reporting","Attendance & locations","Leave rules","Access permissions","Organisation rules","Alerts & reminders","Connected apps","Activity history"]) expect(control).toContain(label);
+  expect(control).toContain("Set up how CEAC works.");
   expect(control).not.toMatch(/numeric health score|overall health score/i);
-  expect(control).toContain("DataPanel");
-  // Control Center now uses compact domain panels and a capability-filtered
-  // attention view; it no longer renders the retired QueueRow primitive.
-  expect(control).toContain("const attention=accessibleDomains.filter");
-  expect(control).toContain("StatusBadge");
-  expect(control).not.toContain('../components/primitives/Icon');
-  expect(control).toContain("ev2-control-center");
+  expect(control).toContain("control-setting-row");
+  expect(control).toContain("control-related-work");
+
 });
 
 
@@ -605,12 +589,12 @@ test("OCR5F Administration system surfaces use shared Queue Record Settings and 
 
   expect(authority).toContain("RecordRow");
   expect(authority).toContain("ComposerDrawer");
-  expect(authority).toContain("Show grant history");
-  expect(authority).toContain('title="Active capabilities"');
+  expect(authority).toContain("Show permission history");
+  expect(authority).toContain('title="Active permissions"');
 
   expect(policies).toContain("ComposerDrawer");
   expect(policies).toContain("Show version history");
-  expect(policies).toContain('title="Rule catalogue"');
+  expect(policies).toContain('title="Choose a rule"');
   expect(policies).toContain('title="Record new policy version"');
 });
 
@@ -619,12 +603,12 @@ test("Stage 10 Family H2 keeps Organisation settings factual and persistence-bac
   expect(settings).toContain('supabase.from("office_locations")');
   expect(settings).toContain('supabase.from("leave_policy_versions")');
   expect(settings).toContain('supabase.from("thresholds")');
-  expect(settings).toContain('supabase.from("pending_invitations")');
-  expect(settings).toContain("Unconfirmed policy stays visibly unconfigured rather than being guessed.");
-  expect(settings).toContain("Awaiting CEAC policy");
+  expect(settings).not.toContain('supabase.from("pending_invitations")');
+  expect(settings).toContain("Confirm CEAC’s leave rules before assigning entitlements.");
+  expect(settings).toContain("Leave policy not configured");
   expect(settings).toContain("does not change the underlying work or create a score");
   expect(settings).toContain("ev2-office-settings");
-  expect(settings).toContain("StatusBadge");
+  expect(settings).toContain('.select("id,name,lat,lng,radius_meters").single()');
 });
 
 
@@ -669,8 +653,8 @@ for (const viewport of [
     const { context, page } = await openHub(browser, roles[2], { width: viewport.width, height: viewport.height });
     await page.goto("/?tab=settings");
     await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
-    await expect(page.getByText("Manage departments, people, policies and system access.", { exact: true })).toBeVisible();
-    await expect(page.locator(".ev2-control-card").filter({ hasText: "Organisation" }).first()).toBeVisible();
+    await expect(page.getByText("Set up how CEAC works.", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button",{name:/^Departments & reporting/})).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Control Center overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);
     await page.screenshot({ path: `test-artifacts/redesign-r7-stage10h-control-${viewport.name}.png`, fullPage: true });
@@ -717,8 +701,10 @@ for (const viewport of [
   test(`Stage 10 Family H Administration Organisation settings composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openHub(browser, roles[2], { width: viewport.width, height: viewport.height });
     await page.goto("/?tab=office-settings");
-    await expect(page.getByRole("heading", { name: "Organisation settings", exact: true })).toBeVisible();
-    await expect(page.getByText(/Unconfirmed policy stays visibly unconfigured rather than being guessed/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Attendance & locations", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", {name:/^Office location/})).toBeVisible();
+    await expect(page.getByRole("button", {name:/^Duty locations/})).toBeVisible();
+    await expect(page.getByRole("button", {name:/^Check-in codes/})).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Organisation settings overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);
     await page.screenshot({ path: `test-artifacts/redesign-r7-stage10h-org-settings-${viewport.name}.png`, fullPage: true });
@@ -758,7 +744,7 @@ test("Stage 10 Family H Administration cannot be reached from ordinary Staff or 
     await page.goto("/?tab=units");
     await expect(page.getByRole("heading", { name: "Units", exact: true })).toHaveCount(0);
     await page.goto("/?tab=office-settings");
-    await expect(page.getByRole("heading", { name: "Organisation settings", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Attendance & locations", exact: true })).toHaveCount(0);
     await context.close();
   }
 });

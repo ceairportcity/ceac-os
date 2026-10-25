@@ -58,7 +58,7 @@ export default function AdminWorkflows({ me }) {
 
     const firstError = definitionsResult.error || runsResult.error || stepsResult.error;
     if (firstError) {
-      setError(humanError(firstError, "Checks could not load."));
+      setError(humanError(firstError, "Pending decisions could not load."));
       setLoading(false);
       return;
     }
@@ -137,8 +137,8 @@ export default function AdminWorkflows({ me }) {
   return <div className="body">
     <div style={{ paddingTop: 26 }}>
       <div className="eyebrow">Administration</div>
-      <h1 className="h1">Checks</h1>
-      <p className="screen-note">Decisions and confirmations CEAC is waiting for. Oldest items stay at the top.</p>
+      <h1 className="h1">Pending decisions</h1>
+      <p className="screen-note">Review requests waiting for a decision or confirmation. Oldest requests appear first.</p>
     </div>
 
     {error && <ProductNotice tone="error" title="Checks">{error}</ProductNotice>}
@@ -205,7 +205,7 @@ export default function AdminWorkflows({ me }) {
           </>}
         </DataPanel>
 
-        <DataPanel eyebrow="Context" title="How Checks work" supporting="Checks are attributable human decisions, not automatic approval.">
+        <DataPanel eyebrow="Context" title="How decisions are recorded" supporting="Each decision records who acted and when. Requests are not approved automatically.">
           <p className="small" style={{ lineHeight: 1.6, margin: 0 }}>CEAC opens a Check when a recorded change reaches a point that needs a human decision. Completing a Check can move the process forward. Choosing “No — I did not approve this” stops that run and keeps the decision in history.</p>
         </DataPanel>
       </div>

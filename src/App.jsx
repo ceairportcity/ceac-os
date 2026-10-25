@@ -8,7 +8,7 @@ const AccountPassword = lazy(() => import("./screens/AccountPassword"));
 import { AppTopBar, MobileTopBar, Tabs, SideNav } from "./experience-v2/shell";
 import RouteTransition from "./experience-v2/RouteTransition";
 import AuthFrame from "./components/AuthFrame";
-import ControlCenterTrail from "./components/ControlCenterTrail";
+import SettingsBack from "./components/SettingsBack";
 import PrivilegedMfaGate from "./components/PrivilegedMfaGate";
 import Stage2UniversalMfaGate from "./components/Stage2UniversalMfaGate";
 import { decideUniversalTotpAccess } from "./lib/Stage2UniversalMfaPolicy";
@@ -101,6 +101,8 @@ function routeFromLocation() {
   }
   return {
     tab: params.get("tab") || "home",
+    setting: params.get("setting") || null,
+    settingsReturn: params.get("settingsReturn") === "people" ? "people" : null,
     itemId: params.get("item"),
     routineDate: params.get("item") ? validRoutineDate(params.get("routineDate")) : null,
     projectId: params.get("project"),
@@ -115,6 +117,8 @@ export default function App() {
   const [bootError, setBootError] = useState(null);
   const initialRoute = routeFromLocation();
   const [tab, setTab] = useState(initialRoute.tab);
+  const [setting, setSetting] = useState(initialRoute.setting);
+  const [settingsReturn, setSettingsReturn] = useState(initialRoute.settingsReturn);
   const [itemId, setItemId] = useState(initialRoute.itemId);
   const [itemRoutineDate,setItemRoutineDate] = useState(initialRoute.routineDate);
   const [goalId, setGoalId] = useState(null);
@@ -220,6 +224,8 @@ export default function App() {
 
   function applyRoute(route) {
     setTab(route.tab || "home");
+    setSetting(route.setting || null);
+    setSettingsReturn(route.settingsReturn || null);
     setItemId(route.itemId || null);
     setItemRoutineDate(route.itemId ? validRoutineDate(route.routineDate) : null);
     setProjectId(route.projectId || null);
@@ -239,6 +245,8 @@ export default function App() {
   function navigate(route, { replace = false } = {}) {
     const next = {
       tab: route.tab || tab || "home",
+      setting: route.tab === "office-settings" ? route.setting || null : null,
+      settingsReturn: route.settingsReturn === "people" ? "people" : null,
       itemId: route.itemId || null,
       routineDate: route.itemId ? validRoutineDate(route.routineDate) : null,
       projectId: route.projectId || null,
@@ -247,6 +255,8 @@ export default function App() {
     };
     const params = new URLSearchParams();
     if (next.tab !== "home") params.set("tab", next.tab);
+    if (next.setting) params.set("setting", next.setting);
+    if (next.settingsReturn) params.set("settingsReturn", next.settingsReturn);
     if (next.itemId) params.set("item", next.itemId);
     if (next.itemId && next.routineDate) params.set("routineDate",next.routineDate);
     if (next.projectId) params.set("project", next.projectId);
@@ -272,10 +282,10 @@ export default function App() {
     else navigate({ tab }, { replace: true });
   }
 
-  function go(t) {
+  function go(t, options = {}) {
     if (t !== "guide") setGuideContextTab(null);
     setAuthorityFocusProfileId(null);
-    navigate({ tab: t });
+    navigate({ tab: t, setting: options.setting });
   }
 
   function openGuide(contextual = false) {
@@ -288,7 +298,7 @@ export default function App() {
   }
   function openAuthorityForPerson(profileId) {
     if (!canManageAuthority || !profileId) return;
-    navigate({tab:"authority"});
+    navigate({tab:"authority", settingsReturn:"people"});
     setAuthorityFocusProfileId(profileId);
   }
   function openPeopleAccess(intent = {}) {
@@ -514,7 +524,7 @@ export default function App() {
     if (tab === "integrations" && canManageIntegrations) return <AdminIntegrations me={me} />;
     if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} initialProfileId={authorityFocusProfileId} />;
     if (tab === "settings" && isAdmin) return <ControlCenter me={me} go={go} />;
-    if (tab === "office-settings" && isAdmin) return <OfficeSettings me={me} openWorkforce={() => go("attendance")} />;
+    if (tab === "office-settings" && isAdmin) return <OfficeSettings me={me} section={setting} openSection={(next) => go("office-settings", {setting:next})} back={() => go("settings")} openWorkforce={() => go("attendance")} />;
     return <MeScreen me={me} onOpenWork={openItem} onOpenAchievements={() => go("achievements")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
   }
 
@@ -606,7 +616,6 @@ export default function App() {
           onGuide={() => openGuide(true)}
         />
         <main className="app-content ev2s-content">
-          {isAdmin && !overlay && <ControlCenterTrail tab={tab} go={go} />}
           {me.capabilitySchemaReady === false && <div className="flag flag-amber" role="status">
             {me.legacyAuthorityVerified
               ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."
@@ -617,6 +626,7 @@ export default function App() {
           </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
+          <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
           {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} back={closeUrlOverlay} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}
@@ -639,6 +649,7 @@ export default function App() {
             : meetingDraft ? <MeetingScheduler me={me} context={meetingDraft} onClose={() => setMeetingDraft(null)} onCreated={(id) => { setMeetingDraft(null); openMeeting(id); }} />
             : meetingId ? <Meeting me={me} meetingId={meetingId} back={closeUrlOverlay} goAssign={startAssignment} openItem={openItem} openProject={openProject} openRoom={openRoom} />
             : pageForTab()}
+          </SettingsBack>
           </Suspense>
           </RouteTransition>
         </main>

@@ -64,16 +64,16 @@ export default function AdminPolicies({ me }) {
 
   return <div className="body">
     <div style={{paddingTop:26}}>
-      <div className="eyebrow">Platform foundation</div>
-      <h1 className="h1">Policies & rules</h1>
-      <p className="screen-note">Versioned organisation rules. Existing versions are never overwritten.</p>
+      <div className="eyebrow">Control Center</div>
+      <h1 className="h1">Organisation rules</h1>
+      <p className="screen-note">Review CEAC’s rules and record an updated version when a rule changes. Earlier versions stay in history.</p>
     </div>
     {error&&<ProductNotice tone="error" title="Policies & rules">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Policy updated">{notice}</ProductNotice>}
 
     <div className="split" style={{marginTop:18}}>
       <div className="main-col">
-        <DataPanel eyebrow="Settings" title="Rule catalogue" supporting="Select a rule to inspect its current recorded value and create a successor version." action={<StatusBadge tone="neutral" icon={false}>{defs.length} active</StatusBadge>}>
+        <DataPanel eyebrow="Settings" title="Choose a rule" supporting="Select a rule to see its current value, effective date and history." action={<StatusBadge tone="neutral" icon={false}>{defs.length} active</StatusBadge>}>
           {defs.map((item)=>{
             const rows=versions.filter((v)=>v.rule_key===item.rule_key);
             const latest=rows[0]||null;
@@ -104,7 +104,7 @@ export default function AdminPolicies({ me }) {
     </div>
 
     <ComposerDrawer open={revisionOpen} onClose={()=>!busy&&setRevisionOpen(false)} title="Record new policy version"
-      description={def ? "Create a successor version for " + def.label + ". Existing versions are preserved." : "Create a successor policy version."}
+      description={def ? "Update the rule for " + def.label + ". Existing versions are preserved." : "Record a new version of this rule."}
       footer={<><Button variant="secondary" disabled={busy} onClick={()=>setRevisionOpen(false)}>Cancel</Button><Button busy={busy} disabled={!def||value===""||!reason.trim()} onClick={save}>{busy?"Recording…":"Record new version"}</Button></>}>
       {def&&<>
         <FieldGroup label="New value">

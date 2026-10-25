@@ -54,11 +54,11 @@ test.describe("Premium redesign R3 Administration",()=>{
     const {context,page}=await openAdmin(browser);
     await page.locator(".ev2s-sidebar").getByRole("button",{name:"Control Center",exact:true}).click();
     await expect(page.getByRole("heading",{name:"Control Center",exact:true})).toBeVisible();
-    await expect(page.getByText("Connected Apps",{exact:true})).toBeVisible();
-    await expect(page.getByRole("heading",{name:"Security, integrations & records",exact:true})).toBeVisible();
+    await expect(page.getByRole("button",{name:/^Connected apps/})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"System",exact:true})).toBeVisible();
     await expect(page.getByText("System events",{exact:true})).toBeVisible();
-    await expect(page.getByRole("heading",{name:"Organisation & people",exact:true})).toBeVisible();
-    await expect(page.getByRole("heading",{name:"Operational configuration",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Organisation",exact:true})).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Workplace",exact:true})).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r3-admin-control-center.png",fullPage:true});
     await context.close();
   });
@@ -89,37 +89,18 @@ test.describe("Premium redesign R3 Administration",()=>{
       const {context,page}=await openAdmin(browser,{width:viewport.width,height:viewport.height});
       await page.goto("/?tab=settings");
       await expect(page.getByRole("heading",{name:"Control Center",exact:true})).toBeVisible();
-      await expect(page.getByText("Manage departments, people, policies and system access.",{exact:true})).toBeVisible();
-      for(const label of [
-        "Organisation & people",
-        "Operational configuration",
-        "Security, integrations & records",
-      ]) await expect(page.getByRole("heading",{name:label,exact:true})).toBeVisible();
-      for(const label of [
-        "Organisation",
-        "People & access",
-        "Work & operations",
-        "Time & Leave",
-        "Reviews & learning",
-        "Payroll & Finance",
-        "Security & governance",
-        "Integrations",
-        "Audit & records",
-      ]) await expect(page.locator(".ev2-control-center .ev2-control-card").getByText(label,{exact:true}).first()).toBeVisible();
-      await expect(page.getByText("Manage departments, people, policies and system access.",{exact:true})).toBeVisible();
-      await expect(page.locator(".ev2-control-center .phase5-control-group")).toHaveCount(3);
-      const domainCards=page.locator(".ev2-control-center .ev2-control-card");
-      await expect(domainCards).toHaveCount(9);
+      await expect(page.getByText("Set up how CEAC works.",{exact:true})).toBeVisible();
+      for(const label of ["Organisation","Workplace","Access & rules","System"])
+        await expect(page.getByRole("heading",{name:label,exact:true})).toBeVisible();
+      const rows=page.locator(".control-setting-row");
+      await expect(rows).toHaveCount(9);
+      await expect(page.locator(".control-center-trail")).toHaveCount(0);
       for(const label of ["Reviews & Development","Learning"])
         await expect(page.locator(".ev2-control-center").getByRole("button",{name:label,exact:true})).toBeVisible();
       await expect(page.locator(".ev2-control-center").getByRole("button",{name:"Compliance",exact:true})).toHaveCount(0);
-      const cardGeometry=await domainCards.evaluateAll((nodes)=>nodes.map((node)=>{
-        const card=node.getBoundingClientRect();
-        const body=node.querySelector(".ev2c-data-panel-body")?.getBoundingClientRect();
-        return {cardWidth:card.width,bodyWidth:body?.width||0};
-      }));
-      for(const geometry of cardGeometry){
-        expect(geometry.bodyWidth).toBeGreaterThan(geometry.cardWidth*.75);
+      for(const box of await rows.evaluateAll(nodes=>nodes.map(node=>{const rect=node.getBoundingClientRect();return {height:rect.height,width:rect.width};}))) {
+        expect(box.height).toBeGreaterThanOrEqual(44);
+        expect(box.width).toBeLessThanOrEqual(viewport.width);
       }
       expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({path:`test-artifacts/vf4d-admin-control-center-${viewport.name}.png`,fullPage:true});
@@ -130,16 +111,12 @@ test.describe("Premium redesign R3 Administration",()=>{
   test("VF4D Organisation settings uses one configuration workspace",async({browser})=>{
     const {context,page}=await openAdmin(browser,{width:1366,height:768});
     await page.goto("/?tab=office-settings");
-    await expect(page.getByRole("heading",{name:"Organisation settings",exact:true})).toBeVisible();
-    const grid=page.locator(".ev2-office-settings .office-settings-grid");
-    await expect(grid).toBeVisible();
-    const sections=grid.locator(":scope > .office-settings-card");
-    // Organisation Settings is loaded asynchronously after the route appears.
-    // Keep the accepted minimum of four real configuration cards, but wait
-    // for their actual rendered state instead of sampling the DOM too early.
-    await expect.poll(() => sections.count(), { timeout: 15000 }).toBeGreaterThanOrEqual(4);
-    const shadows=await sections.evaluateAll((nodes)=>nodes.map((node)=>getComputedStyle(node).boxShadow));
-    for(const shadow of shadows) expect(shadow).toBe("none");
+    await expect(page.getByRole("heading",{name:"Attendance & locations",exact:true})).toBeVisible();
+    await expect(page.locator(".control-setting-row")).toHaveCount(3);
+    await page.getByRole("button", {name:/^Office location/}).click();
+    await expect(page.getByRole("heading",{name:"Office location",exact:true})).toBeVisible();
+    await expect(page.getByLabel("Office name",{exact:true})).toBeVisible();
+    await expect(page.getByRole("button",{name:"Back to Attendance & locations",exact:true})).toBeVisible();
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
     await page.screenshot({path:"test-artifacts/vf4d-admin-organisation-settings-laptop.png",fullPage:true});

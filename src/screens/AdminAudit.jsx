@@ -103,8 +103,8 @@ export default function AdminAudit({ me }) {
   return <div className="body">
     <div style={{ paddingTop: 26 }}>
       <div className="eyebrow">Governance</div>
-      <h1 className="h1">Audit</h1>
-      <p className="screen-note">Append-only record of consequential ordinary-platform changes. Protected HR keeps a separate protected audit boundary.</p>
+      <h1 className="h1">Activity history</h1>
+      <p className="screen-note">See who changed a record and when. Previous entries cannot be edited. Confidential HR activity has its own protected history.</p>
     </div>
 
     {error && <ProductNotice tone="error" title="Audit could not finish loading" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice>}

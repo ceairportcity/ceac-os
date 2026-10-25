@@ -47,7 +47,7 @@ test("Stage 14C inventories accepted state and interaction coverage before addin
   expect(personal).toContain("keeps an activity read failure distinct from a truthful empty audit trail");
 
   // Partial/unconfigured and permission-limited states are already deterministic.
-  expect(personal).toContain("Unconfirmed policy stays visibly unconfigured rather than being guessed.");
+  expect(personal).toContain("Confirm CEAC’s leave rules before assigning entitlements.");
   expect(personal).toContain("Administration cannot be reached from ordinary Staff or Manager roles");
 
   // Completed/success evidence and destructive/reversal confirmation already exist in the
