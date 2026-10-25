@@ -75,13 +75,17 @@ for (const width of [320,390,430,1440]) {
       await page.goto(`/?tab=${tab}`);
       const title=page.getByRole('heading',{name:heading,exact:true}).first();
       await expect(title).toBeVisible();
-      if (tab === 'strategy') {
-        const primary=page.getByRole('button',{name:'New Ministry Objective',exact:true});
-        const secondary=page.getByRole('button',{name:'Add Ministry Direction',exact:true});
-        expect(await primary.evaluate(node=>getComputedStyle(node).backgroundImage)).toBe('none');
-        expect(await primary.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
-        expect(await primary.evaluate(node=>getComputedStyle(node).color)).toBe('rgb(255, 255, 255)');
-        expect(await secondary.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(255, 255, 255)');
+      if (tab === 'exec-reports') {
+        const governance=page.getByRole('region',{name:'Quarterly leadership review schedule',exact:true});
+        const schedule=governance.getByRole('button',{name:'Schedule quarterly review',exact:true});
+        await expect(schedule).toBeVisible();
+        expect(await schedule.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+        expect((await schedule.boundingBox()).height).toBeGreaterThanOrEqual(44);
+        await schedule.click();
+        const open=governance.getByRole('button',{name:'Open quarterly review',exact:true});
+        await expect(open).toBeDisabled();
+        expect(await open.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+        await governance.getByRole('button',{name:'Close',exact:true}).click();
       }
       expect(await title.evaluate(node=>getComputedStyle(node).fontFamily)).toContain('Instrument Sans');
       expect(await title.evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBe(width<900?25:28);
@@ -296,3 +300,30 @@ for (const width of [320,1440]) {
     expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   });
 }
+
+
+for(const width of [320,1440])test(`Executive report and personal print controls keep the role palette at ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:960});
+  await signIn(page);
+  // Read-only period fixture exercises the populated child component without
+  // creating a reporting period or changing server authority/issued records.
+  await page.route('**/rest/v1/report_periods?*',async route=>{
+    const response=await route.fetch();
+    await route.fulfill({response,status:200,headers:{...response.headers(),'content-range':'0-0/1'},json:[{id:'26000000-0000-4000-8000-000000000025',label:'Synthetic Q3 2026',status:'open',starts_on:'2026-07-01',ends_on:'2026-09-30'}]});
+  });
+  await page.goto('/?tab=exec-reports');
+  const brief=page.getByRole('region',{name:'Executive outcomes briefing',exact:true});
+  await expect(brief).toBeVisible();
+  const reportPrint=brief.getByRole('button',{name:'Print / Save as PDF',exact:true});
+  expect(await reportPrint.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect((await reportPrint.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await page.screenshot({path:`test-artifacts/executive-report-print-${width}.png`,fullPage:true});
+  await page.goto('/?tab=achievements');
+  await expect(page.getByRole('heading',{name:'My achievements',exact:true})).toBeVisible();
+  const ownPrint=page.locator('.s2-achievement-print');
+  await expect(ownPrint).toBeVisible();
+  expect(await ownPrint.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect((await ownPrint.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await page.screenshot({path:`test-artifacts/executive-own-print-${width}.png`,fullPage:true});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});

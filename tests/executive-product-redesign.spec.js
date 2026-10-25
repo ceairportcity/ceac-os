@@ -56,7 +56,8 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(css).toContain("/* Executive literal shell finishing */");
   expect(css).toContain(".executive-app .ev2s-profile-button > span:last-child");
   expect(css).toContain(".executive-app .ev2-project-delivery.is-executive");
-  expect(css).toContain(".executive-app .ev2cal-admin-page");
+  expect(css).toContain(".ev2cal-role-page");
+  expect(css).toContain("--ev2-action:var(--exec-purple)");
   expect(css).toContain(".executive-app .fpg-payroll");
   const work = fs.readFileSync("src/screens/ExecutiveWork.jsx", "utf8");
   const ministry = fs.readFileSync("src/screens/Strategy.jsx", "utf8");

@@ -3,7 +3,7 @@
 .s2-quarter-events header span{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#3473b4;font-weight:750}
 .s2-quarter-events h2{font-size:17px;color:#174476;margin:4px 0}
 .s2-quarter-events p{font-size:12px;line-height:1.5;color:#6a829c;margin:5px 0}
-.s2-quarter-events-action{border:0;border-radius:7px;background:#206ad3;padding:9px 12px;color:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.s2-quarter-events-action{border:0;border-radius:7px;background:var(--exec-purple,#206ad3);padding:9px 12px;min-height:var(--exec-control-min,0px);color:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .s2-quarter-events-action:disabled{opacity:.5;cursor:not-allowed}
 .s2-quarter-events-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:15px 0;padding:15px;border:1px solid #e1ebf7;border-radius:9px;background:#fafdff}
 .s2-quarter-events-form>label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:#3c5a79}

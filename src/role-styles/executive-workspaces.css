@@ -25,10 +25,7 @@
 .executive-app .room-scope-strip button.on,.executive-app .room-send{background:var(--exec-purple);border-color:var(--exec-purple);color:#fff}
 @media(max-width:899px){.executive-app .room-head h1{font-size:25px}.executive-app .exec-directory-actions>div{width:100%}.executive-app .exec-directory-actions>div>.btn{width:100%}}
 
-.executive-app .meeting-hero h1{font-size:28px;line-height:1.15;letter-spacing:-.03em;color:var(--ev2-text)}
-@media(max-width:899px){.executive-app .meeting-hero h1{font-size:25px}}
-@media screen{.executive-app .s2-achievement{font-family:var(--ev2-font-sans);color:var(--ev2-text)}.executive-app .s2-achievement-heading h1{font-size:28px;line-height:1.15;letter-spacing:-.03em}}
-@media screen and (max-width:899px){.executive-app .s2-achievement-heading h1{font-size:25px}}
+@media screen{.executive-app .s2-achievement{font-family:var(--ev2-font-sans);color:var(--ev2-text)}}
 
 .executive-app main.exec-v2{padding:0;min-width:0}
 
@@ -39,7 +36,7 @@
 @media screen and (max-width:899px){.executive-app .exec-v2 h1{font-size:25px}}
 
 /* Carry Executive action colour into Calendar and its existing child forms. */
-.executive-app .exec-v2{--ev2-action:var(--exec-purple);--ev2-action-hover:var(--exec-purple);--ev2-action-soft:var(--exec-purple-soft)}
+.executive-app .exec-v2{--ev2-action:var(--exec-purple);--ev2-action-hover:var(--exec-purple);--ev2-action-soft:var(--exec-purple-soft);--exec-control-min:44px}
 .executive-app .meeting-scheduler-sheet{background:var(--ev2-surface);color:var(--ev2-text);font:14px/1.5 var(--ev2-font-sans);border-radius:12px 12px 0 0}
 .executive-app .meeting-scheduler-head span{font-size:12px;color:var(--ev2-text-secondary);letter-spacing:.02em;text-transform:none}
 .executive-app .meeting-scheduler :is(.assistive-field-label>span,.meeting-time-grid>label,.meeting-audience-head>*,.meeting-audience-option strong,.meeting-audience-option small,.meeting-audience-option>b,.meeting-audience-subhead,.meeting-audience-selected button,.meeting-scheduler-note){font-size:12px;line-height:1.5;color:var(--ev2-text-secondary)}

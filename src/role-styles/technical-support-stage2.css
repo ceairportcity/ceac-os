@@ -6,7 +6,7 @@
 .ceac-support-page .s2-support-heading>p:last-child{color:#67819c;max-width:82ch;font-size:13px;margin-bottom:0}
 .ceac-support-page .ceac-support-nav{gap:20px;border-color:#e3ecf7;margin-bottom:14px;background:#fff;border-radius:9px;padding:0 15px;box-shadow:0 2px 15px rgba(34,76,128,.025)}
 .ceac-support-page .ceac-support-nav button{min-height:44px;padding:14px 0;border-color:transparent;font-size:12px;white-space:nowrap}
-.ceac-support-page .ceac-support-nav button.is-active{border-color:#1472e8;color:#166bd1}
+.ceac-support-page .ceac-support-nav button.is-active{border-color:var(--exec-purple,#1472e8);color:var(--exec-purple,#166bd1)}
 .ceac-support-page .s2-support-home{display:grid;gap:12px}
 .ceac-support-page .s2-support-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #e1eaf5;border-radius:12px;background:#fff;overflow:hidden}
 .ceac-support-page .s2-support-summary>div{padding:15px 18px;display:grid;gap:2px;min-width:0;border-right:1px solid #e8eef7}
