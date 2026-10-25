@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {fitWorkforceMap,pointCoordinates,visibleStreetTiles,worldPoint,workforcePinPosition} from "../src/lib/workforceStreetMap.js";
+import {fitWorkforceMap,pointCoordinates,visibleStreetTiles,worldPoint,workforcePinPosition,primaryOfficePoint} from "../src/lib/workforceStreetMap.js";
 
 test("real Web-Mercator geographically positions GPS recorded in Ghana",()=>{
  const p=worldPoint(5.6037,-0.1870,13);
@@ -37,4 +37,13 @@ test("invalid coordinate values and impossible zoom are rejected",()=>{
  assert.throws(()=>worldPoint(5.6,181,12),/Invalid geographic coordinate/);
  assert.throws(()=>worldPoint(null,0,12),/Invalid geographic coordinate/);
  assert.throws(()=>worldPoint(5.6,0,35),/Invalid geographic coordinate/);
+});
+
+test("saved primary office accepts database numerics but never fabricates missing coordinates",()=>{
+ const office=primaryOfficePoint({is_primary:true,name:"Saved office",lat:"5.61",lng:"-0.19"});
+ assert.deepEqual(office,{name:"Saved office",lat:5.61,lng:-0.19});
+ for(const row of [null,{}, {is_primary:false,lat:5.61,lng:-.19},{is_primary:true,lat:null,lng:0},{is_primary:true,lat:"",lng:0},{is_primary:true,lat:91,lng:0}])assert.equal(primaryOfficePoint(row),null);
+ const view=fitWorkforceMap([office],390,310);
+ const pin=workforcePinPosition(office,view,view.zoom,390,310);
+ assert.ok(pin.x>0&&pin.x<390&&pin.y>0&&pin.y<310);
 });

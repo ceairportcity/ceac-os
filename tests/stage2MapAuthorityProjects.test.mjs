@@ -9,14 +9,16 @@ const app=source("src/App.jsx");
 const authority=source("src/screens/AdminAuthority.jsx");
 const control=source("src/screens/ControlCenter.jsx");
 const projects=source("src/screens/ManagerProjects.jsx");
-test("no external street tiles are requested before explicit viewer approval",()=>{
+test("owner-approved street view defaults on with provider privacy and hide control",()=>{
  assert.match(map,/consent\?visibleStreetTiles\(/);
- assert.match(map,/setConsent\(true\)/);
+ assert.match(map,/\[consent,setConsent\]=useState\(true\)/);
+ assert.match(map,/setConsent\(false\)/);
+ assert.doesNotMatch(map,/disabled=\{!clusters.length\}/);
  assert.match(map,/referrerPolicy="strict-origin-when-cross-origin"/);
  assert.match(map,/© OpenStreetMap contributors/);
  assert.match(map,/Staff identities and exact work-start records are not sent/);
  assert.doesNotMatch(map,/navigator\.geolocation/);
- assert.match(hr,/<WorkforceStreetMap clusters=\{clusters\}/);
+ assert.match(hr,/<WorkforceStreetMap key=\{officeScope\} clusters=\{clusters\} office=\{office\}/);
  assert.doesNotMatch(hr,/Relative coordinate plot/);
 });
 test("HR and Compliance use the same source-backed real map",()=>{

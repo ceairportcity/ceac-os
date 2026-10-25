@@ -40,7 +40,7 @@ test("HR employee opens the actual person's permissions in the existing Authorit
 });
 
 for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
- test(`Admin Overview street map is opt-in and never sends employee identities (${viewport.width}px)`,async({browser})=>{
+ test(`Admin Overview street map defaults on and never sends employee identities (${viewport.width}px)`,async({browser})=>{
   const {page,context}=await adminPage(browser,viewport);
   const start=new Date().toISOString();
   let requestedTiles=0;
@@ -64,10 +64,7 @@ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
   const street=page.getByRole("region",{name:"Recorded workforce work-start street map"});
   await expect(street).toBeVisible({timeout:15000});
   await expect(street.getByText(/visible map area, the CEAC site origin and your IP address/)).toBeVisible();
-  expect(requestedTiles).toBe(0);
-  const enable=street.getByRole("button",{name:"Enable street map"});
-  await expect(enable).toBeEnabled({timeout:15000});
-  await enable.click();
+  await expect(street.getByRole("button",{name:"Enable street map"})).toHaveCount(0);
   await expect(street.getByRole("button",{name:/View recorded work start for Staff Fixture/})).toBeVisible();
   await expect.poll(()=>requestedTiles,{timeout:15000}).toBeGreaterThan(0);
   await expect(street.getByText(/© OpenStreetMap contributors/)).toBeVisible();

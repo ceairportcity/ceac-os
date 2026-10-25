@@ -30,7 +30,7 @@ function stateTone(state,expired=false){
   return "grey";
 }
 
-export default function Compliance({ me, openWork, openAnnouncements }) {
+export default function Compliance({ me, openAnnouncements }) {
   const hasOrgCapability=(capability)=>(me.capability_grants||[]).some((grant)=>grant.capability===capability&&!grant.scope_unit_id);
   const canManage=hasOrgCapability("compliance.manage");
   const actorScope=me.org_id+":"+me.id+":"+String(canManage);
@@ -358,7 +358,7 @@ export default function Compliance({ me, openWork, openAnnouncements }) {
       acknowledgements={acknowledgements}
       evidenceLatest={evidenceLatest}
       exceptionLatest={exceptionLatest}
-      openWork={openWork}
+      me={me}
       openObservations={openObservations}
       openAnnouncements={canPublishInstruction?openAnnouncements:null}
       onSection={setTab}

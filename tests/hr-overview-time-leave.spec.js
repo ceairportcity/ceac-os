@@ -16,17 +16,17 @@ async function fixture(page,scope="Organisation"){
  return ()=>tiles;
 }
 for(const width of [1440,820,390,320]){
- test(`approved HR hierarchy, on-demand map and responsive controls at ${width}px`,async({page})=>{
+ test(`approved HR hierarchy, default map and responsive controls at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1100});
   const tileCount=await fixture(page);
   const inbox=page.locator(".adminv2-inbox"),map=page.locator(".workstart-workspace");
   expect((await inbox.boundingBox()).y).toBeLessThan((await map.boundingBox()).y);
   await expect(page.getByRole("complementary",{name:"Upcoming commitments"})).toBeVisible();
   await expect(page.getByRole("region",{name:"Selected work start"})).toHaveCount(0);
-  expect(tileCount()).toBe(0);
+  await map.scrollIntoViewIfNeeded();
+  await expect.poll(tileCount).toBeGreaterThan(0);
   await page.evaluate(()=>window.scrollTo(0,0));
   await page.screenshot({path:`test-artifacts/hr-approved-overview-${width}.png`,fullPage:true});
-  await page.getByRole("button",{name:"Enable street map",exact:true}).click();
   const shared=page.getByRole("button",{name:/shared work-start location/});
   await shared.click();
   const popup=page.getByRole("region",{name:"Selected work start"});

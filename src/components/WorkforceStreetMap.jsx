@@ -2,16 +2,12 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import {fitWorkforceMap,pointCoordinates,visibleStreetTiles,workforcePinPosition,worldPoint,nextWorkforceClusterPersonId} from "../lib/workforceStreetMap";
 import "./WorkforceStreetMap.css";
 
-/**
- * The real street-map overlay uses OpenStreetMap's raster tiles only AFTER a
- * privileged viewer consciously enables it. The provider receives map tile
- * coordinates and the browser IP, never staff identities, GPS evidence, IDs or
- * the CEAC organisation identifier. All records remain in first-party memory.
- */
-export default function WorkforceStreetMap({clusters=[],selectedId,onSelect,selectedContent}) {
+/** Owner-approved default street view. Only tile area, site origin and browser IP
+ * reach OpenStreetMap; identities and staff records stay in first-party memory. */
+export default function WorkforceStreetMap({clusters=[],office=null,selectedId,onSelect,selectedContent}) {
  const frame=useRef(null),drag=useRef(null),selectedMarker=useRef(null);
- const [size,setSize]=useState({width:520,height:340}),[consent,setConsent]=useState(false),[tileWarning,setTileWarning]=useState(false);
- const fitted=useMemo(()=>fitWorkforceMap(clusters,size.width,size.height),[clusters,size.width,size.height]);
+ const [size,setSize]=useState({width:520,height:340}),[consent,setConsent]=useState(true),[tileWarning,setTileWarning]=useState(false);
+ const fitted=useMemo(()=>fitWorkforceMap(office?[...clusters,office]:clusters,size.width,size.height),[clusters,office,size.width,size.height]);
  const [view,setView]=useState(fitted);
  useEffect(()=>{setView(fitted);},[fitted]);
  useEffect(()=>{
@@ -69,7 +65,7 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect,sele
     <span className="ceac-street-map-eyebrow">GEOGRAPHIC VIEW</span>
     <strong>View recorded work starts on a street map</strong>
     <p>OpenStreetMap tiles show roads and nearby places. Loading them sends the visible map area, the CEAC site origin and your IP address to OpenStreetMap. Staff identities and exact work-start records are not sent to the map provider.</p>
-    <button type="button" className="btn btn-sm" disabled={!clusters.length} onClick={()=>{setTileWarning(false);setConsent(true);}}>
+    <button type="button" className="btn btn-sm" onClick={()=>{setTileWarning(false);setConsent(true);}}>
      Enable street map
     </button>
     {!clusters.length&&<small>No recorded start GPS is available for these employees.</small>}
@@ -81,6 +77,10 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect,sele
       style={{position:"absolute",left:tile.x,top:tile.y,width:256,height:256}} />)}
     </div>
     <div className="ceac-street-map-overlay" aria-label="Recorded work-start markers">
+     {office&&<span className="ceac-street-map-marker ceac-office-reference" role="img" aria-label={"CEAC main office · "+office.name+" · Reference only, not attendance proof"}
+      style={(()=>{const p=workforcePinPosition(office,view,view.zoom,size.width,size.height);return {left:p.x,top:p.y};})()}>
+      <span aria-hidden="true">◆</span><span className="ceac-street-map-name">CEAC main office</span>
+     </span>}
      {pins.map(pin=><button key={pin.key} type="button"
       className={pin.people.some(person=>person.id===selectedId)?"ceac-street-map-marker is-selected":"ceac-street-map-marker"}
       style={{left:pin.position.x,top:pin.position.y}}
@@ -103,6 +103,7 @@ export default function WorkforceStreetMap({clusters=[],selectedId,onSelect,sele
     </div>
    </>}
   </div>
+  {consent&&<p className="screen-note">OpenStreetMap receives the visible map area, the CEAC site origin and your IP address. Staff identities and exact work-start records are not sent to the map provider. {office?"The office pin is a saved reference, not attendance proof.":"No saved office reference is available."} {!clusters.length&&"No recorded start GPS is available for these employees."}</p>}
   {consent&&<div className="ceac-street-map-after">
    <span>{tileWarning?"Street tiles could not all load. Staff start records remain accessible through Browse employees.":"Drag to explore. Use zoom controls to inspect streets. A pin opens a staff record; activate shared-location pins again to inspect every person there."}</span>
    <button className="btn btn-ghost btn-sm" type="button" onClick={()=>setConsent(false)}>Hide street map</button>

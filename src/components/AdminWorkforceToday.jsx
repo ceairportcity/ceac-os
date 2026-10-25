@@ -1,11 +1,30 @@
-import {useMemo,useRef,useState} from "react";
+import {useEffect,useMemo,useRef,useState} from "react";
 import {adminWorkforceToday,clusterWorkStartLocations} from "../lib/adminWorkforceToday";
+import {supabase} from "../lib/supabase";
+import {primaryOfficePoint} from "../lib/workforceStreetMap";
 import WorkforceStreetMap from "./WorkforceStreetMap";
 const stamp=v=>v?new Date(v).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"}):"Not recorded";
 const located=r=>Number.isFinite(r?.latitude)&&Number.isFinite(r?.longitude);
 /** Role-scoped start snapshots. Identity and coordinates never go to the tile provider. */
-export default function AdminWorkforceToday({roster=[],sessions=[],operationalProfiles=[],onOpenPeople,onOpenPerson,onOpenAccess,onOpenWorkforce,roleLabel="People & HR",dateLabel="today"}){
+export default function AdminWorkforceToday({me,roster=[],sessions=[],operationalProfiles=[],onOpenPeople,onOpenPerson,onOpenAccess,onOpenWorkforce,roleLabel="People & HR",dateLabel="today"}){
  const lastListSelection=useRef(null);
+ const officeScope=me?.org_id&&me?.id?me.org_id+":"+me.id:"";
+ const [officeRead,setOfficeRead]=useState({scope:"",point:null,error:false});
+ useEffect(()=>{
+  let current=true;
+  if(!officeScope)return;
+  setOfficeRead({scope:officeScope,point:null,error:false});
+  async function loadOffice(){
+   try{
+    const {data,error}=await supabase.from("office_locations").select("name,lat,lng,is_primary")
+     .eq("org_id",me.org_id).eq("is_primary",true).limit(1).maybeSingle();
+    if(current)setOfficeRead({scope:officeScope,point:error?null:primaryOfficePoint(data),error:!!error});
+   }catch{if(current)setOfficeRead({scope:officeScope,point:null,error:true});}
+  }
+  void loadOffice();
+  return ()=>{current=false;};
+ },[officeScope]);
+ const office=officeRead.scope===officeScope?officeRead.point:null;
  const [term,setTerm]=useState(""),[filter,setFilter]=useState("started"),[selectedId,setSelectedId]=useState(null);
  const [unitFilter,setUnitFilter]=useState(""),[startChoice,setStartChoice]=useState("latest");
  const people=useMemo(()=>adminWorkforceToday(roster,sessions,operationalProfiles,startChoice),[roster,sessions,operationalProfiles,startChoice]);
@@ -32,7 +51,8 @@ export default function AdminWorkforceToday({roster=[],sessions=[],operationalPr
    <label>Recorded start<select className="field" aria-label="Recorded start to display" value={startChoice} onChange={e=>{setStartChoice(e.target.value);setSelectedId(null);}}><option value="latest">Latest start</option><option value="first">First start</option></select></label>
   </div>
   <div className="workstart-summary"><span>{started.length} employees with recorded starts · {started.length-missing.length} mapped</span><button type="button" onClick={()=>{setFilter("noCoordinates");setSelectedId(null);}}>{missing.length} start locations unavailable</button></div>
-  <WorkforceStreetMap clusters={clusters} selectedId={selected?.id||null} onSelect={setSelectedId} selectedContent={located(selected)?detail:null}/>
+  <WorkforceStreetMap key={officeScope} clusters={clusters} office={office} selectedId={selected?.id||null} onSelect={setSelectedId} selectedContent={located(selected)?detail:null}/>
+  {officeRead.scope===officeScope&&officeRead.error&&<p role="status">The saved office reference could not be loaded. Staff records remain available.</p>}
   {selected&&!located(selected)?<div className="workstart-unmapped-detail">{detail}<button className="btn btn-ghost btn-sm" type="button" onClick={()=>{setSelectedId(null);lastListSelection.current?.focus();}}>Close details</button></div>:null}
   <details className="workstart-accessible-list" open={filter==="noCoordinates"||filter==="noSession"||undefined}><summary>Browse employees ({results.length})</summary><div aria-label="Daily workforce employee list">{results.length?results.map(r=><button type="button" key={r.id} aria-pressed={r.id===selectedId} onClick={event=>{lastListSelection.current=event.currentTarget;setSelectedId(r.id);}}><strong>{r.name}</strong><span>{r.unit}</span><small>{r.mapStart?`Started ${stamp(r.mapStart)} · ${located(r)?"Location captured":"Start GPS not captured"}`:"No session recorded"}</small></button>):<p>No employees match this filter; no attendance conclusion is implied.</p>}</div></details>
  </section>;
