@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 const date=new Date().toISOString().slice(0,10);
-async function fixture(page,{failCases=false,failOffice=false}={}){
+async function fixture(page,{failCases=false,failOffice=false,asAdmin=false}={}){
  let tiles=0;
  await page.route('**/*',async route=>{
   const url=new URL(route.request().url());
@@ -27,8 +27,9 @@ async function fixture(page,{failCases=false,failOffice=false}={}){
   if(!['localhost','127.0.0.1'].includes(url.hostname))return route.abort();
   return route.continue();
  });
- await page.goto('/tests/fixtures/compliance-workbench.html');
- await expect(page.getByRole('heading',{name:'Your review desk'})).toBeVisible();
+ await page.goto('/tests/fixtures/compliance-workbench.html'+(asAdmin?'?role=admin':''));
+ await expect(page.getByRole('heading',{name:'Compliance',exact:true})).toBeVisible();
+ if(!asAdmin)await expect(page.getByRole('heading',{name:'Your review desk'})).toBeVisible();
  return ()=>tiles;
 }
 for(const width of [1440,820,390,320])test(`Compliance approved review-first layout and connected actions at ${width}px`,async({page})=>{
@@ -97,4 +98,16 @@ test('office read failure is explicit without blocking default map or exposing a
  await map.scrollIntoViewIfNeeded();await expect.poll(tileCount).toBeGreaterThan(0);
  await expect(page.getByRole('status')).toContainText('saved office reference could not be loaded');
  await expect(map.getByRole('img',{name:/CEAC main office/})).toHaveCount(0);
+});
+
+test('HR direct-link access remains personal even with its legacy organisation-wide Compliance grant',async({page})=>{
+ await fixture(page,{asAdmin:true});
+ await expect(page.getByRole('heading',{name:'Your review desk'})).toHaveCount(0);
+ await expect(page.getByRole('tab',{name:'Overview',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('tab',{name:'Attendance cases',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Record observation',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Publish policy',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('region',{name:'Recorded workforce work-start street map'})).toHaveCount(0);
+ await expect(page.getByText('My compliance',{exact:true})).toBeVisible();
+ await expect(page.getByRole('tab',{name:'Policies',exact:true})).toBeVisible();
 });

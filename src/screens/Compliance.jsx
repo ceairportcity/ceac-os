@@ -32,14 +32,15 @@ function stateTone(state,expired=false){
 
 export default function Compliance({ me, openAnnouncements }) {
   const hasOrgCapability=(capability)=>(me.capability_grants||[]).some((grant)=>grant.capability===capability&&!grant.scope_unit_id);
-  const canManage=hasOrgCapability("compliance.manage");
+  const departmentalUser=!me.is_admin&&!me.is_exec;
+  const canManage=departmentalUser&&hasOrgCapability("compliance.manage");
   const actorScope=me.org_id+":"+me.id+":"+String(canManage);
   const actorRef=useRef(actorScope); actorRef.current=actorScope;
   const readSequence=useRef(0);
   const overviewReadSequence=useRef(0);
   const [verifiedActor,setVerifiedActor]=useState(null);
   const isVerified=verifiedActor===actorScope;
-  const isManager=me.role==="manager";
+  const isManager=departmentalUser&&me.role==="manager";
   const canPublishInstruction=hasOrgCapability("post_announcement");
   const [tab,setTab]=useState(canManage?"overview":"policies");
   const [observationIntent,setObservationIntent]=useState({id:"",create:false});
@@ -134,6 +135,9 @@ export default function Compliance({ me, openAnnouncements }) {
         supabase.from("compliance_evidence_versions").select("*, profile:profiles!compliance_evidence_versions_profile_id_fkey(full_name), requirement:compliance_requirements!compliance_evidence_versions_requirement_id_fkey(title,requirement_code,policy_version_id)",{count:"exact"}).order("created_at",{ascending:false}),
         supabase.from("compliance_exception_versions").select("*, profile:profiles!compliance_exception_versions_profile_id_fkey(full_name), requirement:compliance_requirements!compliance_exception_versions_requirement_id_fkey(title,requirement_code,policy_version_id)",{count:"exact"}).order("created_at",{ascending:false}),
       ];
+      // Administration may retain legacy server grants, but this route is personal
+      // policy access for HR; departmental operations belong to Compliance.
+      if(me.is_admin){for(const index of [3,4,5])queries[index]=queries[index].eq("profile_id",me.id);}
       if(canManage){
         queries.push(
           supabase.from("profiles").select("id,full_name,email,active",{count:"exact"}).eq("org_id",me.org_id).eq("active",true).order("full_name"),
@@ -315,7 +319,7 @@ export default function Compliance({ me, openAnnouncements }) {
     </ProductNotice>
   </div>;
 
-  const personalCompliance = !canManage && !isManager && !me.is_admin;
+  const personalCompliance = !canManage && !isManager;
   return <div className={`body compliance-page ${canManage ? "cp" : ""} ${personalCompliance ? "ev2-personal-page ev2-personal-compliance" : ""}`.trim()}>
     {canManage ? <>
       <section className="cp-welcome s2-landscape-hero" aria-label="Compliance department welcome">
