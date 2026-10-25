@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { LoadingState, ProductNotice } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { CeacIcon } from "../experience-v2/icons";
+import { StatusBadge } from "../experience-v2/components";
 
 const ICONS = { department: ["organisation", "purple"], team: ["team", "green"], person: ["account", "blue"], work: ["work", "amber"] };
 function DirectoryRow({ kind, title, description, meta, onClick }) {
@@ -83,6 +84,7 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
   const unitName = id => units.find(row => row.id === id)?.name || "Department not recorded";
   const membersOf = id => people.filter(person => memberships.some(row => row.unit_id === id && row.profile_id === person.id));
   const headNames = id => people.filter(person => memberships.some(row => row.unit_id === id && row.profile_id === person.id && row.role === "manager")).map(person => person.full_name).join(", ");
+  const missingLeaders = units.filter(unit => !headNames(unit.id));
   const department = selected?.kind === "department" ? units.find(row => row.id === selected.id) : null;
   const team = selected?.kind === "team" ? teams.find(row => row.id === selected.id) : null;
   const person = people.find(row => row.id === personId);
@@ -99,11 +101,12 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
       <span>{person ? "Person" : team ? unitName(team.unit_id) : department ? "Department" : "Across CEAC"}</span>
       <h1 ref={heading} tabIndex={-1}>{person?.full_name || team?.name || department?.name || "Organisation"}</h1>
       <p>{person ? person.job_title || "Role not recorded" : team ? "People in this team and their recorded responsibilities." : department ? `Head: ${headNames(department.id) || "Not recorded"}` : "Explore departments, teams and people, then open the work behind them."}</p>
-    </div>{department && <button type="button" className="btn" onClick={() => goAssign?.({ unitId: department.id })}>Give out work</button>}</header>
+    </div>{!selected && ready && <StatusBadge tone={missingLeaders.length ? "warning" : "neutral"} icon={false}>{missingLeaders.length ? `${missingLeaders.length} leadership gap${missingLeaders.length === 1 ? "" : "s"}` : "Department heads recorded"}</StatusBadge>}{department && <button type="button" className="btn" onClick={() => goAssign?.({ unitId: department.id })}>Give out work</button>}</header>
     {!selected && <div className="exec-redesign-tabs" role="group" aria-label="Organisation views">{[["departments", "Departments"], ["teams", "Teams"], ["people", "People"]].map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} className={view === key ? "is-active" : ""} onClick={() => { setView(key); setQuery(""); }}>{label}</button>)}</div>}
     {loading && <LoadingState label="Loading organisation…" />}
     {error && <ProductNotice tone="error" title="Could not load Organisation" action={<button type="button" className="btn btn-ghost" onClick={() => setReload(n => n + 1)}>Try again</button>}>{error}</ProductNotice>}
     {ready && <>
+      {!selected && view === "departments" && missingLeaders.length > 0 && <ProductNotice tone="attention" title="Needs attention">{missingLeaders.map(unit => unit.name).join(", ")} {missingLeaders.length === 1 ? "has" : "have"} no active department head recorded.</ProductNotice>}
       {!person && <label className="exec-directory-search">Find {department || team ? "a person or team" : view}<input className="field" type="search" value={query} onChange={e => setQuery(e.target.value)} /></label>}
       {!selected && view === "departments" && list("Departments", units.filter(matches).map(row => <DirectoryRow key={row.id} kind="department" title={row.name} description={headNames(row.id) || "Head not recorded"} meta={`${membersOf(row.id).length} people`} onClick={() => enter("department", row.id)} />))}
       {!selected && view === "teams" && list("Teams", teams.filter(matches).map(row => <DirectoryRow key={row.id} kind="team" title={row.name} description={unitName(row.unit_id)} onClick={() => enter("team", row.id)} />))}

@@ -141,8 +141,9 @@ begin
   -- 158 functions already explicitly reviewed in the Stage 2 exact-signature
   -- allowlist; migration185 adds one HR-only canonical roster creation RPC.
   -- Any additional unreviewed function remains prohibited.
-  if n<>163 then
-    raise exception 'Security gate failure: expected 161 existing reviewed interfaces plus two Administration operational archive RPCs (163), found %.',n;
+  -- 25 October adds exactly one reviewed Executive department-assignment RPC.
+  if n<>164 then
+    raise exception 'Security gate failure: expected 163 existing reviewed interfaces plus the Executive project-department RPC (164), found %.',n;
   end if;
 end $$;
 

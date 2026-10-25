@@ -25,7 +25,7 @@ test("VF6D keeps Messages and Connected Apps factual while closing shared-surfac
 
   expect(inbox).not.toContain('className="premium-surface inbox-list"');
   expect(inbox).toContain("Work actions, Rooms, mentions and announcements");
-  expect(inbox).toContain("This directory does not create direct messages.");
+  expect(inbox).toContain("Choose a department or team to open its shared conversation.");
   expect(staffCss).toContain("/* VF6D — Messages operational-inbox closure.");
   expect(staffCss).toContain(".inbox-page .premium-filter-row button");
   expect(staffCss).toContain(".inbox-page .inbox-empty");
@@ -55,12 +55,13 @@ test("VF6D keeps Messages and Connected Apps factual while closing shared-surfac
       const inboxPage = page.locator(".inbox-page");
       await expect(inboxPage.getByRole("heading", { name: "Messages", exact: true })).toBeVisible();
       if (role.key === "executive") {
-        await expect(inboxPage.getByText(/intentionally need to enter another Unit or Sub-team conversation/i)).toBeVisible();
+        await expect(inboxPage.getByText(/Find conversations, mentions, announcements and work needing a response/i)).toBeVisible();
       } else {
         await expect(inboxPage.getByText(/does not provide unrestricted direct messages/i)).toBeVisible();
       }
 
-      const filters = inboxPage.locator(".premium-filter-row button");
+      const filters = inboxPage.getByRole("tablist", { name: "Message views", exact: true }).getByRole("tab");
+      await expect(filters).toHaveCount(5);
       const heights = await filters.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
       expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
 

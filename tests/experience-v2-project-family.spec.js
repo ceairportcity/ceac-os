@@ -307,7 +307,7 @@ for (const viewport of [
     const { context, page } = await openExecutivePortfolio(browser, { width: viewport.width, height: viewport.height });
 
     await expect(page.getByRole("heading", { name: "Portfolio", exact: true })).toBeVisible();
-    await expect(page.getByText(/does not generate a hidden project score/i)).toBeVisible();
+    await expect(page.getByText(/View ministry programmes and strategic initiatives, their departments and the work behind them/i)).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
     const leadershipRows = page.locator(".ev2p-context-list:visible > .ev2p-context-row");

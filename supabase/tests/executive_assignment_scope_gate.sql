@@ -68,9 +68,22 @@ BEGIN
   RAISE EXCEPTION 'Executive own task required invented membership';
  END IF;
  v_item:=public.create_typed_work(p_kind=>'routine',p_unit_id=>v_unit,p_assignee_id=>auth.uid(),
-  p_title=>'Executive own routine',p_expected_outcome=>'Own result',p_details=>'{"origin":"self_created","schedule_kind":"daily"}');
+  p_title=>'Executive own routine',p_expected_outcome=>'Own result',p_details=>jsonb_build_object(
+   'origin','self_created','schedule_kind','daily','starts_on',current_date,
+   'interval_count',2,'timezone','Europe/Amsterdam','due_time','09:30','occurrence_limit',3,'reminder_minutes_before',15));
  IF NOT EXISTS(SELECT 1 FROM public.work_items WHERE id=v_item AND origin='self_created' AND assignee_id=auth.uid()) THEN
   RAISE EXCEPTION 'Executive own routine required invented membership';
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.recurring_operations WHERE work_item_id=v_item AND interval_count=2
+   AND timezone='Europe/Amsterdam' AND due_time='09:30'::time AND occurrence_limit=3 AND reminder_minutes_before=15)
+   OR NOT EXISTS(SELECT 1 FROM public.routine_schedule_versions v JOIN public.recurring_operations r ON r.id=v.operation_id
+    WHERE r.work_item_id=v_item AND v.version=1 AND v.interval_count=2 AND v.timezone='Europe/Amsterdam'
+    AND v.due_time='09:30'::time AND v.occurrence_limit=3 AND v.reminder_minutes_before=15) THEN
+  RAISE EXCEPTION 'Executive own routine lost the released schedule or reminder options';
+ END IF;
+ IF (SELECT array_agg(scheduled_on ORDER BY scheduled_on) FROM public.routine_schedule_preview(ARRAY[v_item],current_date,current_date+10))
+    IS DISTINCT FROM ARRAY[current_date,current_date+2,current_date+4] THEN
+  RAISE EXCEPTION 'Executive own routine lost its interval or occurrence limit';
  END IF;
  v_denied:=false;
  BEGIN

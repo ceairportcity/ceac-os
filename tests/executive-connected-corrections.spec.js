@@ -21,6 +21,26 @@ async function signIn(page) {
   await expect(page.locator('.executive-app')).toBeVisible();
 }
 
+test('Executive directory shows missing-head context and keeps department navigation available',async ({page})=>{
+  await signIn(page);
+  // Read-only response fixture: no real membership or role is modified.
+  await page.route('**/rest/v1/unit_memberships?*',async route=>{
+    const response=await route.fetch();
+    const rows=await response.json();
+    if (!Array.isArray(rows)) return route.fulfill({response});
+    const visible=rows.filter(row=>!(row.unit_id===unitA && row.role==='manager'));
+    await route.fulfill({response,headers:{...response.headers(),'content-range':visible.length?`0-${visible.length-1}/${visible.length}`:'*/0'},json:visible});
+  });
+  await page.goto('/?tab=exec-organisation');
+  await expect(page.getByText(/leadership gap/)).toBeVisible();
+  await expect(page.getByText('Needs attention',{exact:true})).toBeVisible();
+  await expect(page.getByText(/Test Unit A.*no active department head recorded/)).toBeVisible();
+  await page.getByRole('button',{name:/Test Unit A/}).click();
+  await expect(page.getByRole('heading',{name:'Test Unit A',exact:true})).toBeVisible();
+  await expect(page.getByText('Head: Not recorded',{exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Give out work',exact:true})).toBeVisible();
+});
+
 for (const width of [320,390,430,1440]) {
   test(`Executive replacement destinations and directory journey at ${width}px`, async ({page},testInfo) => {
     await page.setViewportSize({width,height:960});
