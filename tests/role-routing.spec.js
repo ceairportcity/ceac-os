@@ -40,10 +40,10 @@ test("Manager gets a team command centre, not Administration authoring", async (
 test("Administration exposes operations, not internal architecture modules", async ({ browser }) => {
   const { context, page } = await openAs(browser, "admin@ceac.local.test");
   const nav = page.locator(".ev2s-sidebar-nav");
-  for (const label of ["Overview","People & Access","Work","Time & Leave","Finance","Reports","Reviews & Development","Learning","Compliance","Control Center","Messages"]) {
+  for (const label of ["Overview","People & Access","Work","Time & Leave","Finance","Reports","Reviews & Development","Learning","Control Center","Messages"]) {
     await expect(nav.getByRole("button", { name:label, exact:true })).toBeVisible();
   }
-  for (const label of ["Employee lifecycle","Protected HR","Audit","Authority","Events","Workflows","System rules","Integrations","Delivery","Workload","Performance & development","Assets & devices"]) {
+  for (const label of ["Compliance","Employee lifecycle","Protected HR","Audit","Authority","Events","Workflows","System rules","Integrations","Delivery","Workload","Performance & development","Assets & devices"]) {
     await expect(nav.getByRole("button", { name:label, exact:true })).toHaveCount(0);
   }
   await context.close();
