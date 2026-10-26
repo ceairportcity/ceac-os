@@ -328,6 +328,7 @@ export default function App() {
   }
 
   function openSearchProject(id) {
+    if (isAdmin) { navigate({tab:"admin-projects",projectId:id}); return; }
     if (isUnitManager) {
       navigate({ tab: "projects", projectId: id });
       return;
@@ -528,7 +529,7 @@ export default function App() {
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "payroll" && canUsePayroll) return <AdminPayroll key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
-    if (tab === "admin-projects" && isAdmin) return <AdminProjects key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openProject={openProject} scheduleMeeting={startMeeting} openItem={openItem} />;
+    if (tab === "admin-projects" && isAdmin) return <AdminProjects key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openProject={openProject} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id, reference) => openRoom({kind:"project",projectId:id,reference})} />;
     if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
     if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"delivery",projectId:id})} />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;
@@ -576,7 +577,7 @@ export default function App() {
         isManager={isUnitManager}
         onUnitChange={switchUnit}
         onMessages={() => go("messages")}
-        onComposeMessage={() => isExec ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
+        onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
         onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
         onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
         onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
@@ -594,7 +595,7 @@ export default function App() {
           onUnitChange={switchUnit}
           onNavigate={go}
           onMessages={() => go("messages")}
-          onComposeMessage={() => isExec ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
+          onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
           onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
@@ -617,7 +618,7 @@ export default function App() {
           isExec={isExec}
           isManager={isUnitManager}
           onMessages={() => go("messages")}
-          onComposeMessage={() => isExec ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
+          onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
           onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
@@ -643,7 +644,7 @@ export default function App() {
           <Suspense fallback={<RouteFallback />}>
           <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
           {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} back={closeUrlOverlay} />
-            : assigning && isExec ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} back={() => setAssigning(null)} />
+            : assigning && (isExec || isAdmin) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} back={() => setAssigning(null)} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}
                 initialObjectiveId={assigning.objectiveId}

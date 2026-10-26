@@ -111,16 +111,17 @@ for (const width of [390, 320]) {
   });
 }
 
-test("Administration shares the approved Projects design without editing rights", async ({ browser }) => {
+test("Administration uses the approved Projects workspace with owner-authorised editing", async ({ browser }) => {
   assertLocalEnvironment();
   const { context, page } = await openAs(browser, "admin@ceac.local.test");
   try {
     await page.goto(root + "/?tab=admin-projects");
     await expect(page.locator(".ev2-project-admin")).toBeVisible();
+    await expect(page.getByRole("button",{name:"Create project",exact:true})).toBeVisible();
     await page.getByRole("button", { name: "Open project", exact: true }).first().click();
-    await expect(page.locator(".s2-project-reader .s2-project-layout")).toBeVisible();
-    await expect(page.locator(".s2-project-reader .s2-project-primary")).toHaveCount(0);
-    await expect(page.locator(".s2-project-reader").getByRole("button", { name: "+ Add task" })).toHaveCount(0);
+    await expect(page.locator(".ev2-project-workspace .s2-project-layout")).toBeVisible();
+    await page.getByRole("tab",{name:/^Objectives/}).click();
+    await expect(page.getByRole("button",{name:"Add objective",exact:true})).toBeVisible();
     await page.screenshot({ path: "test-artifacts/stage2-approved-admin-project.png", fullPage: true });
   } finally { await context.close(); }
 });

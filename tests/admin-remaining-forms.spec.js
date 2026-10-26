@@ -13,7 +13,14 @@ for(const width of [390,1440]){
   await page.getByRole('button',{name:'Add employee',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Add employee',exact:true});
   await expect(dialog).toHaveClass(/ev2c-composer-drawer/);
-  await dialog.getByLabel('Employee full name',{exact:true}).fill('Synthetic new employee');
+  for(const [label,value] of [['Employee full name','Synthetic new employee'],['Preferred name','Synthetic preferred name'],['Employee job title','Operations coordinator'],['New employee HR email','synthetic@example.test'],['New employee HR phone','0200000000'],['Employee creation reason','Synthetic documented appointment']]) {
+   const field=dialog.getByLabel(label,{exact:true});await field.click();
+   await field.pressSequentially(value);
+   await expect(field).toBeFocused();await expect(field).toHaveValue(value);
+  }
+  await dialog.getByLabel('Employee full name',{exact:true}).press('Tab');
+  await expect(dialog.getByLabel('Preferred name',{exact:true})).toBeFocused();
+
   await dialog.getByLabel('Employee creation reason',{exact:true}).fill('Synthetic documented appointment');
   await dialog.getByRole('button',{name:'Save employee',exact:true}).click();
   await expect(dialog).toContainText('Synthetic employee creation denied');

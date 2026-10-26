@@ -1,3 +1,9 @@
+## 26 October 2026 — HR employee focus, organisation communication, work and Projects correction
+
+The owner reported Add employee fields losing focus after a character and HR unable to enter department rooms or address people. They explicitly confirmed HR may communicate with all organisation departments, heads and individuals, and assign work across departments. They added a visible Projects section with creation and the same operational project functions available to Managers. Correct the actual screens and server room authority; do not impersonate an Executive or invent department membership. The earlier read-only Administration project restriction is superseded for HR by this instruction. Keep contextual room conversations clearly shared, other roles and tenant/privacy boundaries intact, and preserve completed releases and independent PR #150. Continue through implementation, required qualification and live verification under the existing authorised Admin correction release scope. [Repair and verification ledger](../continuity/CEAC_HR_OPERATIONAL_REPAIR_2026-10-26.md).
+
+---
+
 ## 26 October 2026 — complete Administration audit, corrections and release before another panel
 
 Implementation status: Administration/HR corrections released through PR #149 at `7b9d504`, from qualified head `69d9323`, and verified using the existing HR account. [Final acceptance record](../design/CEAC_ADMIN_RELEASE_ACCEPTANCE_2026-10-26.md). Historical pending ledger entries are superseded by that release receipt; preserve newer main/PR work.

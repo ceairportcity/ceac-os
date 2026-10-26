@@ -36,14 +36,14 @@ for(const width of [390,1440])test(`Admin project filters, calendar link and det
  await expect(page.locator('.ev2p-context-list')).toContainText('Service Setup');
  await expect(page.locator('.ev2p-context-list')).not.toContainText('Next Conference');
  await page.getByRole('button',{name:'Open project',exact:true}).click();
- await expect(page.locator('.s2-project-reader')).toContainText('Service Setup');
+ await expect(page.locator('.ev2-project-workspace')).toContainText('Service Setup');
  await expect(page).toHaveURL(/project=project-a/);
- await page.reload();await expect(page.locator('.s2-project-reader')).toContainText('Prepare stage');
+ await page.reload();await page.getByRole('tab',{name:/^Work/}).click();await expect(page.locator('.ev2-project-workspace')).toContainText('Prepare stage');
  await page.getByRole('button',{name:'Back to Projects',exact:true}).click();
  await expect(page.locator('.ev2p-context-list')).toBeVisible();
  await page.goto('/tests/fixtures/hr-overview-review.html?audit=screen&screen=calendar');
  await page.getByRole('button',{name:/Service Setup starts/}).click();
- await expect(page.locator('.s2-project-reader')).toContainText('Service Setup');
+ await expect(page.locator('.ev2-project-workspace')).toContainText('Service Setup');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
  await page.screenshot({path:`test-artifacts/admin-project-journey-${width}.png`,fullPage:true});
 });
@@ -129,7 +129,7 @@ for(const width of [390,1440])test(`Admin department project opens the authorise
  await page.getByRole('navigation',{name:'Unit workspace'}).getByRole('button',{name:'Projects',exact:true}).click();
  await page.getByRole('button',{name:/^Service Setup/}).click();
  await expect(page).toHaveURL(/screen=projects.*project=project-a/);
- await expect(page.locator('.s2-project-reader')).toContainText('Service Setup');
- await page.reload();await expect(page.locator('.s2-project-reader')).toContainText('Prepare stage');
+ await expect(page.locator('.ev2-project-workspace')).toContainText('Service Setup');
+ await page.reload();await page.getByRole('tab',{name:/^Work/}).click();await expect(page.locator('.ev2-project-workspace')).toContainText('Prepare stage');
  expect(writes).toHaveLength(0);
 });
