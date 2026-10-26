@@ -87,7 +87,8 @@ jobs:
     name: Level B browser shard ${{ matrix.shard }}/8
     needs: classify
     if: needs.classify.outputs.level_b == 'true'
-    runs-on: ubuntu-latest
+    # Match the supported OS of pinned Playwright 1.56.1; latest may roll forward.
+    runs-on: ubuntu-24.04
     # A full late visual-inventory shard reached test 87/100 before the former
     # 25-minute cap killed its evidence; allow only 10 more minutes, retaining
     # identical tests, isolation, eight shards and fail-fast=false.

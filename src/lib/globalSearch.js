@@ -41,13 +41,18 @@ export async function searchCeacRecords({ query, me, isAdmin = false, onPartial 
   const cleaned = cleanQuery(query);
   if (cleaned.length < 2 || !me?.org_id) return [];
   const pattern = `%${cleaned}%`;
+  const workFields = "id,ref,title,status,project_id";
+  // Separate bound filters avoid interpreting punctuation in a search term as
+  // PostgREST OR syntax. Both reads keep the same tenant/RLS authority.
+  const workLookup = Promise.all(["title", "ref"].map(field =>
+    supabase.from("work_items").select(workFields).eq("org_id", me.org_id).ilike(field, pattern).limit(LIMIT)
+  )).then(([titles, references]) => ({
+    data: [...new Map([...safeData(references), ...safeData(titles)].map(row => [row.id, row])).values()].slice(0, LIMIT),
+    error: titles.error || references.error || null,
+  }));
 
   const tasks = [
-    supabase.from("work_items")
-      .select("id,ref,title,status,project_id")
-      .eq("org_id", me.org_id)
-      .ilike("title", pattern)
-      .limit(LIMIT),
+    workLookup,
     supabase.from("projects")
       .select("id,name,purpose,status,lead_unit_id")
       .eq("org_id", me.org_id)
@@ -98,6 +103,25 @@ export async function searchCeacRecords({ query, me, isAdmin = false, onPartial 
       .limit(LIMIT),
     isAdmin ? supabase.rpc("admin_employee_roster_summary") : Promise.resolve({ data: [], error: null }),
   ];
+
+  // People and Projects should arrive on their own authority-checked reads,
+  // rather than waiting for every unrelated file/meeting catalogue.
+  const profilePromise = Promise.resolve(tasks[3]);
+  const projectPromise = Promise.resolve(tasks[1]);
+  tasks[3] = profilePromise;
+  tasks[1] = projectPromise;
+  if (typeof onPartial === "function") {
+    void profilePromise.then(result => {
+      if (result.error) { onPartial([], {source:"people",error:"People lookup is unavailable. Other verified matches remain usable."}); return; }
+      const items = safeData(result).map(row => ({kind:"person",id:row.id,profileId:row.id,employeeId:null,title:row.full_name,meta:row.job_title || "CEAC person",icon:"people"}));
+      if (items.length) onPartial([group("people", "People", items)]);
+    }).catch(() => onPartial([], {source:"people",error:"People lookup is unavailable. Other verified matches remain usable."}));
+    void projectPromise.then(result => {
+      if (result.error) { onPartial([], {source:"projects",error:"Project lookup is unavailable. Other verified matches remain usable."}); return; }
+      const items = safeData(result).map(row => ({kind:"project",id:row.id,title:row.name,meta:[row.status,row.purpose].filter(Boolean).join(" · "),icon:"projects"}));
+      if (items.length) onPartial([group("projects", "Projects", items)]);
+    }).catch(() => onPartial([], {source:"projects",error:"Project lookup is unavailable. Other verified matches remain usable."}));
+  }
 
   // Expose authorised organisation results without waiting for unrelated slow
   // catalogues (or private HR roster reads). A PostgREST thenable must be

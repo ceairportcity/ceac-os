@@ -1277,7 +1277,7 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Performance & development");
     await expect(page.getByRole("heading", { name: "Reviews & development", exact: true })).toBeVisible();
-    await expect(page.getByText(/no employee score or ranking/i)).toBeVisible();
+    await expect(page.getByText(/does not calculate employee scores or rankings/i)).toBeVisible();
 
     await page.getByRole("button", { name: "Open review period", exact: true }).click();
     let dialog = page.getByRole("dialog");
@@ -1673,7 +1673,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await expect(dialog.getByLabel("Policy carryover method")).toHaveValue("");
     await expect(dialog.getByLabel("Policy approval route")).toHaveValue("");
     await expect(dialog.getByRole("button", { name: "Activate confirmed policy", exact: true })).toBeDisabled();
-    await dialog.getByRole("button", { name: "Close dialog", exact: true }).click();
+    await dialog.getByRole("button", { name: "Close", exact: true }).click();
 
     await page.screenshot({ path: "test-artifacts/stage9-workforce-admin.png", fullPage: true });
     await context.close();
@@ -1716,7 +1716,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Workforce");
     await page.getByRole("tab", { name: "Leave", exact: true }).click();
-    const administrationRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "Escalated" }).first();
+    const administrationRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "HR decision needed" }).first();
     await expect(administrationRow).toBeVisible();
     await expect(administrationRow.getByText(/Manager approved · Administration final decision required/i)).toBeVisible();
     page.once("dialog", (prompt) => prompt.accept("Acceptance Administration final approval"));
@@ -2167,7 +2167,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await page.getByRole("button", { name: "Record change", exact: true }).click();
   const employmentDialog = page.getByRole("dialog");
-  await expect(employmentDialog.locator(".h2").filter({ hasText: /^Record employment change$/ })).toBeVisible();
+  await expect(employmentDialog.getByRole("heading", { name: "Record employment change", exact: true })).toBeVisible();
   await employmentDialog.getByLabel("Change").selectOption("working_pattern_changed");
   await employmentDialog.getByLabel("Working pattern", { exact: true }).selectOption("flexible");
   await employmentDialog.getByLabel("Reason / context").fill("Acceptance employment history change");

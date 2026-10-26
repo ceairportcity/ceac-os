@@ -203,6 +203,7 @@ export default function AdminOverviewV2({
   onOpenStrategy,
   onOpenAttendance,
   onLeaveDecision,
+  onOpenLeaveRequest,
 }) {
   const decisionCount = alerts.length + leaveQueue.length + checks.length;
   const headlessUnits = units.filter((unit) => !unit.head);
@@ -240,7 +241,7 @@ export default function AdminOverviewV2({
       eyebrow: canAdminDecideLeave(leaveQueue[0]) ? "Leave decision waiting" : "Leave request to review",
       title: `${leaveQueue[0].requester?.full_name || "Team member"} · ${leaveQueue[0].kind} leave`,
       detail: `${leaveStageLabel(leaveQueue[0])}. Open Time & Leave to review the request.`,
-      action: onOpenAttendance,
+      action: () => onOpenLeaveRequest ? onOpenLeaveRequest(leaveQueue[0].id) : onOpenAttendance?.(),
       label: "Review request",
     }
     : checks.length
@@ -381,10 +382,11 @@ export default function AdminOverviewV2({
               status={canAdminDecideLeave(request) ? "Decision" : "Awaiting approval"}
               statusTone="warning"
             >
+              <Button variant="secondary" size="compact" onClick={() => onOpenLeaveRequest ? onOpenLeaveRequest(request.id) : onOpenAttendance?.()}>Review request</Button>
               {canAdminDecideLeave(request) ? <>
                 <Button variant="secondary" size="compact" disabled={busy} onClick={() => onLeaveDecision?.(request, "declined")}>Decline</Button>
                 <Button size="compact" disabled={busy} onClick={() => onLeaveDecision?.(request, "approved")}>Approve</Button>
-              </> : <Button variant="secondary" size="compact" onClick={onOpenAttendance}>Review in Time & Leave</Button>}
+              </> : <span className="screen-note">{leaveStageLabel(request)}</span>}
             </AdminActionRow>)}
 
             {alerts.map((alert) => <AdminActionRow

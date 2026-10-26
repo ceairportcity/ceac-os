@@ -1,0 +1,54 @@
+import {test,expect} from '@playwright/test';
+for(const width of [390,1440])test(`Admin asset drawers keep context and rejected drafts at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});const writes=[];
+ await page.route('**/*',route=>{
+  const req=route.request(),url=new URL(req.url());
+  if(!url.pathname.includes('/rest/v1/'))return ['localhost','127.0.0.1'].includes(url.hostname)?route.continue():route.abort();
+  if(req.method()!=='GET'){
+   writes.push({name:url.pathname.split('/').pop(),body:req.postDataJSON()});
+   return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({message:'Synthetic asset save denied'})});
+  }
+  const rows={asset_items:[{id:'available',asset_code:'TEST-001',category:'Laptop',current_status:'available'},{id:'assigned',asset_code:'TEST-002',category:'Camera',current_status:'assigned',current_assignee_profile_id:'person',assignee:{full_name:'Synthetic employee'}}],profiles:[{id:'person',full_name:'Synthetic employee'}],units:[{id:'unit',name:'Synthetic department'}]};
+  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(rows[url.pathname.split('/').pop()]||[])});
+ });
+ await page.goto('/tests/fixtures/hr-overview-review.html?audit=screen&screen=assets');
+ await expect(page.locator('.ev2w-header h1')).toHaveText('Assets & devices');
+ await page.getByRole('button',{name:'Add asset',exact:true}).click();
+ let dialog=page.getByRole('dialog',{name:'Add asset',exact:true});
+ await expect(dialog).toHaveClass(/ev2c-composer-drawer/);
+ await dialog.getByLabel('Asset code',{exact:true}).fill('TEST-DRAFT');
+ await dialog.getByLabel('Asset category',{exact:true}).fill('Laptop');
+ await dialog.getByRole('button',{name:'Add asset',exact:true}).click();
+ await expect(dialog).toContainText('Synthetic asset save denied');
+ await expect(dialog.getByLabel('Asset code',{exact:true})).toHaveValue('TEST-DRAFT');
+ expect(writes[0]).toMatchObject({name:'asset_record_item',body:{p_asset_id:null,p_asset_code:'TEST-DRAFT',p_category:'Laptop'}});
+ await dialog.getByRole('button',{name:'Close',exact:true}).click();
+ const available=page.locator('.asset-card').filter({hasText:'TEST-001'});
+ await available.getByRole('button',{name:'Edit details',exact:true}).click();
+ dialog=page.getByRole('dialog',{name:'Edit asset',exact:true});
+ await expect(dialog.getByLabel('Asset code',{exact:true})).toHaveValue('TEST-001');
+ await expect(dialog.getByText('Asset change not recorded',{exact:true})).toHaveCount(0);
+ await dialog.getByRole('button',{name:'Close',exact:true}).click();
+ await available.getByRole('button',{name:'Assign',exact:true}).click();
+ dialog=page.getByRole('dialog',{name:'Assign asset',exact:true});
+ await dialog.getByLabel('Asset assignee',{exact:true}).selectOption('person');
+ await dialog.getByLabel('Asset assignment reason',{exact:true}).fill('Synthetic handover');
+ await dialog.getByRole('button',{name:'Assign asset',exact:true}).click();
+ await expect(dialog).toContainText('Synthetic asset save denied');
+ expect(writes[1]).toMatchObject({name:'asset_assign',body:{p_asset_id:'available',p_profile_id:'person',p_reason:'Synthetic handover'}});
+ await dialog.getByRole('button',{name:'Close',exact:true}).click();
+ const assigned=page.locator('.asset-card').filter({hasText:'TEST-002'});
+ await assigned.getByRole('button',{name:'Transfer',exact:true}).click();
+ dialog=page.getByRole('dialog',{name:'Transfer custody',exact:true});
+ await expect(dialog.getByLabel('Asset assignee',{exact:true})).toHaveValue('person');
+ await dialog.getByRole('button',{name:'Close',exact:true}).click();
+ await assigned.getByRole('button',{name:'Return',exact:true}).click();
+ dialog=page.getByRole('dialog',{name:'Return asset',exact:true});
+ await expect(dialog.getByLabel('Asset return reason',{exact:true})).toBeVisible();
+ await dialog.getByRole('button',{name:'Close',exact:true}).click();
+ await available.getByRole('button',{name:'Start repair',exact:true}).click();
+ dialog=page.getByRole('dialog',{name:'Repair Started',exact:true});
+ await expect(dialog.getByLabel('Asset lifecycle reason',{exact:true})).toBeVisible();
+ expect(writes).toHaveLength(2);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+});

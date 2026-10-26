@@ -60,9 +60,10 @@ for(const width of [1440,820,390,320]){
 for(const scope of ["My","Team","Organisation"]){
  test(`calendar selection, pending/approved separation and request detail for ${scope}`,async({page})=>{
   await fixture(page,scope);
-  await page.getByRole("button",{name:"Review in Time & Leave",exact:true}).click();
+  await page.locator('.adminv2-inbox').getByRole("button",{name:"Review request",exact:true}).click();
   const planner=page.getByRole("region",{name:scope+" leave calendar",exact:true});
   await expect(planner).toBeVisible();
+  if(scope==='Organisation')await planner.getByRole('button',{name:'Back to requests',exact:true}).click();
   const today=new Date().toISOString().slice(0,10);
   await planner.getByRole("button",{name:today+" · 1 approved · 1 requested",exact:true}).click();
   const inspector=planner.getByRole("complementary",{name:"Leave selection and decisions"});

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { dateOnly, dueLabel } from "../lib/time";
-import { statusPill, ProductNotice, LoadingState, EmptyState, SectionHeader, Sheet, FieldGroup, StatusDistribution, ProgressMeter, Avatar } from "../components/bits";
+import { statusPill, ProductNotice, LoadingState, EmptyState, SectionHeader, FieldGroup, StatusDistribution, ProgressMeter, Avatar } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
-import { StatusBadge } from "../experience-v2/components";
+import { ComposerDrawer, StatusBadge } from "../experience-v2/components";
 
 function money(minor, currency = "GHS") {
   const value = Number(minor || 0) / 100;
@@ -23,7 +23,7 @@ function sumByCurrency(rows) {
   return totals;
 }
 
-export default function Units({ me, openItem, openPeopleAccess }) {
+export default function Units({ me, openItem, openPeopleAccess, openProject }) {
   const [units, setUnits] = useState([]);
   const [openUnitId, setOpenUnitId] = useState(null);
   const [area, setArea] = useState("overview");
@@ -145,9 +145,12 @@ export default function Units({ me, openItem, openPeopleAccess }) {
         owns_calendar: Boolean(unitForm.owns_calendar),
       };
       const result = unitSheet?.id
-        ? await supabase.from("units").update(payload).eq("id", unitSheet.id)
-        : await supabase.from("units").insert({ ...payload, org_id: me.org_id, active:true });
+        ? await supabase.from("units").update(payload).eq("id", unitSheet.id).eq("org_id",me.org_id).select("id,name,code,parent_id,handles_finance,owns_calendar").single()
+        : await supabase.from("units").insert({ ...payload, org_id: me.org_id, active:true }).select("id,name,code,parent_id,handles_finance,owns_calendar").single();
       if (result.error) throw result.error;
+      if (!result.data?.id || (unitSheet?.id && result.data.id !== unitSheet.id)
+          || Object.entries(payload).some(([key,value]) => result.data[key] !== value))
+        throw new Error("The unit setup could not be confirmed. Review the current organisation structure before trying again.");
       setUnitSheet(null);
       await load();
     } catch (e) {
@@ -291,9 +294,9 @@ export default function Units({ me, openItem, openPeopleAccess }) {
 
       {area === "projects" && <section className="admin-workspace-area">
         <SectionHeader eyebrow="Delivery" title="Projects led by this unit" count={openUnit.projects.length} />
-        {openUnit.projects.map((project) => <div key={project.id} className="admin-evidence-row">
+        {openUnit.projects.map((project) => <button type="button" key={project.id} className="admin-evidence-row admin-action-button" onClick={() => openProject?.(project.id)}>
           <div><strong>{project.name}</strong><span>{project.status}{project.ends_on ? ` · ends ${dateOnly(project.ends_on)}` : ""}</span></div>
-        </div>)}
+        </button>)}
         {openUnit.projects.length === 0 && <EmptyState compact title="No projects led by this unit">Cross-unit participation remains visible through the underlying project records.</EmptyState>}
       </section>}
 
@@ -364,12 +367,11 @@ export default function Units({ me, openItem, openPeopleAccess }) {
         </button>;
       })}
     </div>
-    {units.length === 0 && <EmptyState title="No active units">Create an organisation unit before assigning people or work.</EmptyState>}
+    {units.length === 0 && !error && <EmptyState title="No active units">Create an organisation unit before assigning people or work.</EmptyState>}
 
-    {unitSheet && <Sheet onClose={() => setUnitSheet(null)}>
-      <div className="eyebrow">Organisation setup</div>
-      <div className="h2">{unitSheet.id ? "Edit unit" : "Add unit"}</div>
-      <p className="screen-note">Structure belongs to CEAC. Renaming a unit preserves its work and history because the record keeps the same identity.</p>
+    {unitSheet && <ComposerDrawer open title={unitSheet.id ? "Edit unit" : "Add unit"}
+      onClose={() => { if (!savingUnit) setUnitSheet(null); }}
+      description="Renaming a unit preserves its work and history because the record keeps the same identity.">
       <FieldGroup label="Unit name"><input className="field" value={unitForm.name} onChange={(event) => setUnitForm((current) => ({ ...current, name:event.target.value }))} /></FieldGroup>
       <FieldGroup label="Short code" hint="Used in short work references and spoken identifiers."><input className="field" value={unitForm.code} onChange={(event) => setUnitForm((current) => ({ ...current, code:event.target.value }))} /></FieldGroup>
       <FieldGroup label="Parent unit" hint="Optional. Use only where CEAC actually has a parent-child unit relationship.">
@@ -382,6 +384,6 @@ export default function Units({ me, openItem, openPeopleAccess }) {
       <label className="office-check-row"><input type="checkbox" checked={unitForm.owns_calendar} onChange={(event) => setUnitForm((current) => ({ ...current, owns_calendar:event.target.checked }))} /><span><strong>Owns ministry calendar</strong><small>Marks the unit responsible for organisation calendar administration.</small></span></label>
       {error && <ProductNotice tone="error" title="Unit setup could not be saved">{error}</ProductNotice>}
       <button className="btn" disabled={savingUnit || !unitForm.name.trim() || !unitForm.code.trim()} onClick={saveUnitSetup}>{savingUnit ? "Saving…" : unitSheet.id ? "Save unit setup" : "Create unit"}</button>
-    </Sheet>}
+    </ComposerDrawer>}
   </div>;
 }

@@ -25,7 +25,7 @@ function SearchGroups({ groups, loading, error, query, onSelect }) {
   return <div className="ev2s-search-groups" aria-live="polite">
     {loading ? <div className="ev2s-search-state">Searching authorised CEAC records…</div> : null}
     {error ? <div className="ev2s-search-state is-error">{error}</div> : null}
-    {!loading && !hasItems ? <div className="ev2s-search-state">
+    {!loading && !error && !hasItems ? <div className="ev2s-search-state">
       {query.trim().length < 2 ? "Type at least 2 characters to search CEAC records." : "No matching authorised results."}
     </div> : null}
     {groups.map((group) => group.items.length ? <section key={group.key} className="ev2s-search-group" aria-label={group.label}>
@@ -87,7 +87,7 @@ export default function GlobalSearch({
           onPartial: (partialGroups, issue) => {
             if (cancelled) return;
             if (issue?.error) {
-              const category = issue.source === "organisation" ? "Organisation" : "Work";
+              const category = issue.source === "organisation" ? "Organisation" : issue.source === "people" ? "People" : issue.source === "projects" ? "Project" : "Work";
               setError(`${category} search could not be verified. ${issue.error}`);
               return;
             }
@@ -106,7 +106,8 @@ export default function GlobalSearch({
         if (!cancelled) setRecordGroups(groups);
       } catch (searchError) {
         if (!cancelled) {
-          setRecordGroups([]);
+          // Keep matches from independently verified partial catalogues. An
+          // unrelated failure is not permission to erase authorised results.
           setError(searchError?.message || "CEAC search could not load.");
         }
       } finally {

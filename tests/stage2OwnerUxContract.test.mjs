@@ -84,7 +84,9 @@ test("Administration project drilldown reads through existing authenticated RLS 
   const app = file("src/App.jsx");
   assert.match(admin, /Stage2ProjectReader/);
   assert.match(admin, /label:"Open project"/);
-  assert.match(app, /<AdminProjects me=\{me\} scheduleMeeting=\{startMeeting\} openItem=\{openItem\}/);
+  assert.match(app, /<AdminProjects[^\n]+me=\{me\} initialProjectId=\{projectId\} openProject=\{openProject\}/);
+  assert.match(admin, /const selectedProjectId = initialProjectId/);
+  assert.match(admin, /onBack=\{\(\) => openProject\?\.\(null\)\}/);
   assert.match(reader, /\.from\("work_items"\)/);
   assert.match(reader, /\.neq\("visibility", "private"\)/);
   assert.match(reader, /canAssign=\{false\}/);

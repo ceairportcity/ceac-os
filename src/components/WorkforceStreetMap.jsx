@@ -1,13 +1,15 @@
 import {useEffect,useMemo,useRef,useState} from "react";
 import {fitWorkforceMap,pointCoordinates,visibleStreetTiles,workforcePinPosition,worldPoint,nextWorkforceClusterPersonId} from "../lib/workforceStreetMap";
 import "./WorkforceStreetMap.css";
+const EMPTY_CLUSTERS=[];
 
 /** Owner-approved default street view. Only tile area, site origin and browser IP
  * reach OpenStreetMap; identities and staff records stay in first-party memory. */
-export default function WorkforceStreetMap({clusters=[],office=null,selectedId,onSelect,selectedContent}) {
+export default function WorkforceStreetMap({clusters=EMPTY_CLUSTERS,office=null,selectedId,onSelect,selectedContent,focusLocation=null,onChooseLocation}) {
+ const choosing=typeof onChooseLocation==="function";
  const frame=useRef(null),drag=useRef(null),selectedMarker=useRef(null);
  const [size,setSize]=useState({width:520,height:340}),[consent,setConsent]=useState(true),[tileWarning,setTileWarning]=useState(false);
- const fitted=useMemo(()=>fitWorkforceMap(office?[...clusters,office]:clusters,size.width,size.height),[clusters,office,size.width,size.height]);
+ const fitted=useMemo(()=>fitWorkforceMap(focusLocation?[focusLocation]:office?[...clusters,office]:clusters,size.width,size.height),[clusters,office,focusLocation,size.width,size.height]);
  const [view,setView]=useState(fitted);
  useEffect(()=>{setView(fitted);},[fitted]);
  useEffect(()=>{
@@ -56,8 +58,16 @@ export default function WorkforceStreetMap({clusters=[],office=null,selectedId,o
   if(event.currentTarget.hasPointerCapture?.(event.pointerId))
    event.currentTarget.releasePointerCapture(event.pointerId);
  }
- return <section className="ceac-street-map" aria-label="Recorded workforce work-start street map">
+ function panWithKeyboard(event){
+  if(!choosing||!consent||event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.target!==event.currentTarget)return;
+  const direction={ArrowLeft:[-80,0],ArrowRight:[80,0],ArrowUp:[0,-80],ArrowDown:[0,80]}[event.key];
+  if(!direction)return;
+  event.preventDefault();
+  setView(current=>{const middle=worldPoint(current.lat,current.lng,current.zoom);return {...current,...pointCoordinates(middle.x+direction[0],middle.y+direction[1],current.zoom)};});
+ }
+ return <section className="ceac-street-map" aria-label={choosing?"Choose duty venue on street map":"Recorded workforce work-start street map"}>
   <div ref={frame} className="ceac-street-map-viewport"
+   tabIndex={choosing?0:undefined} role={choosing?"group":undefined} aria-label={choosing?"Venue map. Use arrow keys to move the map centre.":undefined} onKeyDown={panWithKeyboard}
    onPointerDown={pointerDown} onPointerMove={pointerMove}
    onPointerUp={pointerEnd} onPointerCancel={pointerEnd}
    style={{touchAction:consent?"none":"auto"}}>
@@ -76,7 +86,8 @@ export default function WorkforceStreetMap({clusters=[],office=null,selectedId,o
       onError={event=>{event.currentTarget.style.visibility="hidden";setTileWarning(true);}}
       style={{position:"absolute",left:tile.x,top:tile.y,width:256,height:256}} />)}
     </div>
-    <div className="ceac-street-map-overlay" aria-label="Recorded work-start markers">
+    <div className="ceac-street-map-overlay" aria-label={choosing?"Venue reference and selection":"Recorded work-start markers"}>
+     {choosing&&<span className="ceac-street-map-marker is-selected" role="img" aria-label="Venue selection at map centre" style={{left:"50%",top:"50%",pointerEvents:"none"}}>+<span className="ceac-street-map-name">Venue point</span></span>}
      {office&&<span className="ceac-street-map-marker ceac-office-reference" role="img" aria-label={"CEAC main office · "+office.name+" · Reference only, not attendance proof"}
       style={(()=>{const p=workforcePinPosition(office,view,view.zoom,size.width,size.height);return {left:p.x,top:p.y};})()}>
       <span aria-hidden="true">◆</span><span className="ceac-street-map-name">CEAC main office</span>
@@ -95,18 +106,19 @@ export default function WorkforceStreetMap({clusters=[],office=null,selectedId,o
     <div className="ceac-street-map-zoom">
      <button type="button" aria-label="Zoom in on street map" onPointerDown={e=>e.stopPropagation()} onClick={()=>changeZoom(1)}>+</button>
      <button type="button" aria-label="Zoom out of street map" onPointerDown={e=>e.stopPropagation()} onClick={()=>changeZoom(-1)}>−</button>
-     <button type="button" aria-label="Fit staff start locations" onPointerDown={e=>e.stopPropagation()} onClick={()=>setView(fitted)}>⌖</button>
+     <button type="button" aria-label={choosing?"Return to saved location":"Fit staff start locations"} onPointerDown={e=>e.stopPropagation()} onClick={()=>setView(fitted)}>⌖</button>
     </div>
     <div className="ceac-street-map-footer">
-     <span>Recorded start · Not live tracking</span>
+     <span>{choosing?"Venue setup · Not attendance proof":"Recorded start · Not live tracking"}</span>
      <span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
     </div>
    </>}
   </div>
-  {consent&&<p className="screen-note">OpenStreetMap receives the visible map area, the CEAC site origin and your IP address. Staff identities and exact work-start records are not sent to the map provider. {office?"The office pin is a saved reference, not attendance proof.":"No saved office reference is available."} {!clusters.length&&"No recorded start GPS is available for these employees."}</p>}
+  {consent&&<p className="screen-note">OpenStreetMap receives the visible map area, the CEAC site origin and your IP address. Staff identities and exact work-start records are not sent to the map provider. {office?"The office pin is a saved reference, not attendance proof.":"No saved office reference is available."} {!choosing&&!clusters.length&&"No recorded start GPS is available for these employees."}</p>}
   {consent&&<div className="ceac-street-map-after">
-   <span>{tileWarning?"Street tiles could not all load. Staff start records remain accessible through Browse employees.":"Drag to explore. Use zoom controls to inspect streets. A pin opens a staff record; activate shared-location pins again to inspect every person there."}</span>
+   <span>{choosing?(tileWarning?"Street tiles could not all load. Check that the venue point is correct before saving.":"Drag the map, or focus it and use arrow keys. Place the venue under the centre marker, then choose that point."):tileWarning?"Street tiles could not all load. Staff start records remain accessible through Browse employees.":"Drag to explore. Use zoom controls to inspect streets. A pin opens a staff record; activate shared-location pins again to inspect every person there."}</span>
    <button className="btn btn-ghost btn-sm" type="button" onClick={()=>setConsent(false)}>Hide street map</button>
   </div>}
+  {choosing&&consent&&<button className="btn" type="button" onClick={()=>onChooseLocation({lat:view.lat,lng:view.lng})}>Use map centre for this venue</button>}
  </section>;
 }

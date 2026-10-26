@@ -593,7 +593,7 @@ test("Stage 10 Family B5B employment change editor keeps the audited record cont
   await page.getByRole("tab", { name: "Employment", exact: true }).click();
   await page.getByRole("button", { name: "Record change", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.locator(".h2").filter({ hasText: /^Record employment change$/ })).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "Record employment change", exact: true })).toBeVisible();
 
   for (const label of [
     "Change",
@@ -671,7 +671,7 @@ test("Stage 10 Family B5C Administration People states stay factual and usable",
   await page.getByRole("button", { name: "Record change", exact: true }).click();
 
   const dialog = page.getByRole("dialog");
-  await expect(dialog.locator(".h2").filter({ hasText: /^Record employment change$/ })).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "Record employment change", exact: true })).toBeVisible();
   await dialog.getByLabel("Employment status", { exact: true }).selectOption("exited");
   await expect(dialog.getByLabel("Exit date", { exact: true })).toBeVisible();
   await dialog.getByLabel("Change", { exact: true }).selectOption("correction");

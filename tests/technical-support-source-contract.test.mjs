@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import postcss from "postcss";
 import { join } from "node:path";
 
@@ -120,9 +120,13 @@ test("support authority is separate from ordinary employment role and client-sid
 
 test("approved Executive Overview, palette and shell rules remain identical while legacy destinations are replaced", () => {
   // 25 October owner scope replaces subpages, preserving the approved Overview.
-  // Compare every protected rule against the original pinned Git blob rather
+  // Retain the exact pinned Git blob as a hash-checked fixture for shallow builds.
+  // Compare every protected rule against the original approved reference rather
   // than rebaselining that render or freezing obsolete destination CSS.
-  const original = execFileSync("git", ["cat-file", "blob", "5613e38749322da28f6bfd6f4a584dd4bebd6d47"], {encoding:"utf8"});
+  const original = read("tests/fixtures/approved-executive-redesign-20261025.css");
+  const originalBytes = Buffer.from(original, "utf8");
+  const originalBlob = createHash("sha1").update(`blob ${originalBytes.length}\0`).update(originalBytes).digest("hex");
+  assert.equal(originalBlob,"5613e38749322da28f6bfd6f4a584dd4bebd6d47","the checked-in reference must be the exact original approved Git blob");
   const protectedSelector = /executivev2|ev2s-|exec-redesign-(?:mobile-)?notification|fpg9-(?:sidebar-quick|topbar-message)/;
   function protectedRules(css) {
     const rules=[];
