@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer, DataPanel, QueueRow, StatePanel, StatusBadge } from "../experience-v2/components";
@@ -33,6 +34,8 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState(null);
+  const [readError,setReadError]=useState(null);
+  const mutationBusy=useRef(false);
   const [notice,setNotice]=useState(null);
   const [createOpen,setCreateOpen]=useState(false);
 
@@ -46,14 +49,14 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
   },[initialProfileId,initialType]);
 
   async function load(){
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setReadError(null);
     const [p,c,s]=await Promise.all([
       supabase.from("profiles").select("id,full_name,email,job_title,active").eq("org_id",me.org_id).order("full_name"),
       supabase.from("employee_lifecycle_cases").select("*").eq("org_id",me.org_id).order("started_at",{ascending:false}).limit(200),
       supabase.from("employee_lifecycle_steps").select("*").eq("org_id",me.org_id).order("created_at",{ascending:false}).limit(800),
     ]);
     const first=p.error||c.error||s.error;
-    if(first){ setError(humanError(first,"Employee lifecycle could not load.")); setLoading(false); return; }
+    if(first){ setReadError(humanError(first,"Employee lifecycle could not load.")); setLoading(false); return; }
     setPeople(p.data||[]); setCases(c.data||[]); setSteps(s.data||[]);
     setProfileId((current)=>current || p.data?.[0]?.id || "");
     setSelectedCaseId((current)=>current || c.data?.[0]?.id || null);
@@ -67,7 +70,8 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
   const activeCaseCount=cases.filter((item)=>item.state==="active").length;
 
   async function startCase(){
-    if(!profileId||!reason.trim()||!effectiveOn) return;
+    if(mutationBusy.current||busy||readError||!profileId||!reason.trim()||!effectiveOn) return;
+    mutationBusy.current=true;
     setBusy(true); setError(null); setNotice(null);
     const {data,error:e}=await supabase.from("employee_lifecycle_cases").insert({
       org_id:me.org_id,
@@ -79,7 +83,8 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
       created_by:me.id,
     }).select("id").single();
     setBusy(false);
-    if(e){ setError(humanError(e,"The employee lifecycle case could not be started.")); return; }
+    mutationBusy.current=false;
+    if(e||!data?.id){ setError(humanError(e||new Error("No lifecycle case was returned."),"The employee lifecycle case could not be started.")); return; }
     setReason("");
     setSelectedCaseId(data?.id||null);
     setCreateOpen(false);
@@ -88,16 +93,18 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
   }
 
   async function completeReadyStep(){
-    if(!readyStep) return;
+    if(mutationBusy.current||busy||readError||!readyStep||selectedCase?.state!=="active") return;
+    mutationBusy.current=true;
     setBusy(true); setError(null); setNotice(null);
-    const {error:e}=await supabase.from("employee_lifecycle_steps").update({
+    const {data,error:e}=await supabase.from("employee_lifecycle_steps").update({
       state:"completed",
       completed_by:me.id,
       completed_at:new Date().toISOString(),
       note:note.trim()||null,
-    }).eq("id",readyStep.id);
+    }).eq("id",readyStep.id).eq("org_id",me.org_id).eq("state","ready").select("id,state,completed_by").maybeSingle();
     setBusy(false);
-    if(e){ setError(humanError(e,"The lifecycle step could not be completed.")); return; }
+    mutationBusy.current=false;
+    if(e||data?.id!==readyStep.id||data?.state!=="completed"||data?.completed_by!==me.id){ setError(humanError(e||new Error("The step was not confirmed as completed. Refresh the case before trying again."),"The lifecycle step could not be completed.")); return; }
     setNote("");
     setNotice("Lifecycle step completed.");
     await load();
@@ -106,19 +113,16 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
   if(loading) return <div className="body phase5-lifecycle"><LoadingState label="Loading employee lifecycle…" /></div>;
 
   return <div className="body phase5-lifecycle">
-    <header className="phase5-lifecycle-header">
-      <div>
-        <div className="eyebrow">People operations</div>
-        <h1 className="h1">Employee lifecycle</h1>
-        <p className="screen-note">Controlled onboarding and offboarding with ordered steps, employment history, events and audit. Completing offboarding is the authoritative path that deactivates operational access.</p>
-      </div>
-      <Button onClick={()=>setCreateOpen(true)}>Start lifecycle case</Button>
-    </header>
+    <WorkPageHeader eyebrow="People operations" title="Employee lifecycle"
+      description="Review onboarding and offboarding in order. Completing offboarding ends operational access."
+      actionLabel={readError ? undefined : "Start lifecycle case"} onAction={()=>{setError(null);setCreateOpen(true);}} />
+    {readError && <StatePanel state="error" title="Lifecycle records could not load" description={readError} actionLabel="Try again" onAction={load} />}
+
 
     {error&&<ProductNotice tone="error" title="Employee lifecycle">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Employee lifecycle">{notice}</ProductNotice>}
 
-    <div className="phase5-lifecycle-layout">
+    {!readError && <div className="phase5-lifecycle-layout">
       <div className="phase5-lifecycle-queue">
         <DataPanel
           eyebrow="Queue"
@@ -137,7 +141,7 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
               meta={`${humanize(item.state)} · effective ${item.planned_effective_on} · ${done}/${caseStepRows.length} steps · ${item.reason}`}
               status={humanize(item.state)}
               statusTone={item.state==="completed"?"success":item.state==="active"?"action":"neutral"}
-              onClick={()=>setSelectedCaseId(item.id)}
+              onClick={()=>{setSelectedCaseId(item.id);setNote("");setError(null);}}
             />;
           })}
           {!cases.length&&<StatePanel state="empty" title="No lifecycle cases" description="Start an onboarding or offboarding case when an employee lifecycle event is required." />}
@@ -164,17 +168,17 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
               statusTone={step.state==="completed"?"success":step.state==="ready"?"warning":"neutral"}
             />)}
             {!caseSteps.length&&<StatePanel state="empty" title="No case steps recorded" description="This case has no ordered lifecycle steps." />}
-            {readyStep?<>
+            {readyStep&&selectedCase.state==="active"?<>
               <FieldGroup label="Completion note"><textarea className="field" aria-label="Lifecycle completion note" rows="3" value={note} onChange={e=>setNote(e.target.value)} /></FieldGroup>
               <Button busy={busy} onClick={completeReadyStep}>{busy?"Completing…":"Complete current step"}</Button>
             </>:<p className="small">{selectedCase.state==="completed"?"This lifecycle case is complete.":"No step is currently ready."}</p>}
           </>}
         </DataPanel>
       </div>
-    </div>
+    </div>}
 
     <ComposerDrawer
-      open={createOpen}
+      open={createOpen&&!readError}
       onClose={()=>!busy&&setCreateOpen(false)}
       title="Start lifecycle case"
       description="Create an attributable onboarding or offboarding case. Existing lifecycle authority is unchanged."
@@ -183,6 +187,7 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
         <Button busy={busy} disabled={!profileId||!reason.trim()||!effectiveOn} onClick={startCase}>{busy?"Starting…":"Start lifecycle case"}</Button>
       </>}
     >
+      {error && <ProductNotice tone="error" title="Lifecycle case not started">{error}</ProductNotice>}
       <FieldGroup label="Employee">
         <select className="field" aria-label="Lifecycle employee" value={profileId} onChange={e=>setProfileId(e.target.value)}>
           {people.map(p=><option key={p.id} value={p.id}>{p.full_name} · {p.email}</option>)}

@@ -1,3 +1,4 @@
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
@@ -389,11 +390,7 @@ export default function AdminProtectedHR({ me }) {
   if(loading) return <div className="body"><LoadingState label="Loading protected HR…" /></div>;
 
   return <div className="body">
-    <header style={{paddingTop:26}}>
-      <div className="eyebrow">Protected employee records</div>
-      <h1 className="h1">Protected HR</h1>
-      <p className="screen-note">Sensitive identifiers, employment terms, compensation, payment details and protected documents. Access remains separately capability-gated and every view/change is attributable.</p>
-    </header>
+    <WorkPageHeader eyebrow="Protected employee records" title="Protected HR" description="Review confidential employee information and documents. Access and every change remain separately authorised and recorded." />
 
     {error&&<ProductNotice tone="error" title="Protected HR">{error}<Button variant="secondary" size="compact" onClick={()=>void loadPeople()} disabled={busy}>Retry protected employee roster</Button></ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Protected HR">{notice}</ProductNotice>}

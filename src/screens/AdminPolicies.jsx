@@ -1,3 +1,4 @@
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
@@ -70,11 +71,7 @@ export default function AdminPolicies({ me }) {
   if(loading) return <div className="body"><LoadingState label="Loading policies and rules…" /></div>;
 
   return <div className="body">
-    <div style={{paddingTop:26}}>
-      <div className="eyebrow">Control Center</div>
-      <h1 className="h1">Organisation rules</h1>
-      <p className="screen-note">Review CEAC’s rules and record an updated version when a rule changes. Earlier versions stay in history.</p>
-    </div>
+    <WorkPageHeader eyebrow="Control Center" title="Organisation rules" description="Review current rules and record a reasoned new version. Earlier versions remain in history." />
     {error&&<ProductNotice tone="error" title="Policies & rules">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Policy updated">{notice}</ProductNotice>}
 
@@ -113,6 +110,7 @@ export default function AdminPolicies({ me }) {
     <ComposerDrawer open={revisionOpen} onClose={()=>!busy&&setRevisionOpen(false)} title="Record new policy version"
       description={def ? "Update the rule for " + def.label + ". Existing versions are preserved." : "Record a new version of this rule."}
       footer={<><Button variant="secondary" disabled={busy} onClick={()=>setRevisionOpen(false)}>Cancel</Button><Button busy={busy} disabled={!def||value===""||!reason.trim()} onClick={save}>{busy?"Recording…":"Record new version"}</Button></>}>
+      {error&&<ProductNotice tone="error" title="Policy version not recorded">{error}</ProductNotice>}
       {def&&<>
         <FieldGroup label="New value">
           {def.value_type==="boolean"

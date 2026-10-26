@@ -1,3 +1,4 @@
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
@@ -124,11 +125,7 @@ export default function AdminAuthority({ me, refreshMe, initialProfileId=null })
   if (loading) return <div className="body"><LoadingState label="Loading access permissions…" /></div>;
 
   return <div className="body">
-    <div style={{ paddingTop: 26 }}>
-      <div className="eyebrow">Security & governance</div>
-      <h1 className="h1">Access permissions</h1>
-      <p className="screen-note">Choose who can access information and what they can do. A job title does not automatically give sensitive access.</p>
-    </div>
+    <WorkPageHeader eyebrow="Security & governance" title="Access permissions" description="Choose who can access information and what they can do. A job title does not automatically give sensitive access." />
 
     {error && <ProductNotice tone="error" title="Authority">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Authority updated">{notice}</ProductNotice>}
@@ -167,6 +164,7 @@ export default function AdminAuthority({ me, refreshMe, initialProfileId=null })
     <ComposerDrawer open={grantOpen} onClose={()=>!busy&&setGrantOpen(false)} title="Add permission"
       description="Add only the access this person needs and record why."
       footer={<><Button variant="secondary" disabled={busy} onClick={()=>setGrantOpen(false)}>Cancel</Button><Button busy={busy} disabled={!selectedId||!reason.trim()} onClick={grant}>{busy?"Saving…":"Add permission"}</Button></>}>
+      {error && <ProductNotice tone="error" title="Permission not added">{error}</ProductNotice>}
       <FieldGroup label="Permission">
         <select className="field" aria-label="Capability" value={capability} onChange={(event) => setCapability(event.target.value)}>
           {definitions.map((item) => <option key={item.capability} value={item.capability}>{item.label}</option>)}
@@ -186,6 +184,7 @@ export default function AdminAuthority({ me, refreshMe, initialProfileId=null })
     <ComposerDrawer open={Boolean(revokeGrantId)} onClose={()=>!busy&&setRevokeGrantId(null)} title="Remove permission"
       description="The person loses this permission. The original record and the reason for removal remain in history."
       footer={<><Button variant="secondary" disabled={busy} onClick={()=>setRevokeGrantId(null)}>Cancel</Button><Button variant="danger" busy={busy} disabled={!revokeReason.trim()} onClick={()=>revoke(revokeGrantId)}>{busy?"Removing…":"Remove permission"}</Button></>}>
+      {error && <ProductNotice tone="error" title="Permission not removed">{error}</ProductNotice>}
       <FieldGroup label="Reason for removal"><textarea className="field" aria-label="Revocation reason" rows="3" value={revokeReason} onChange={(event) => setRevokeReason(event.target.value)} placeholder="Why this access is being removed" /></FieldGroup>
       <p className="small" style={{ lineHeight: 1.5 }}>The final organisation authority manager cannot be removed through this flow.</p>
     </ComposerDrawer>
