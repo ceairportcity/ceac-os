@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { getPositionOnce } from "../src/lib/locationEvidence.js";
 import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
@@ -62,4 +63,43 @@ test("Administration registers programme venues with an explicit non-primary fla
   assert.match(venues, /Number\.isFinite\(longitude\)/);
   assert.match(venues, /busyRef\.current/);
   assert.match(settings, /<DutyLocationSettings me=\{me\} \/>/);
+});
+
+test("browser location falls back to standard accuracy after high-accuracy positioning fails", async () => {
+  const attempts = [];
+  const result = await getPositionOnce({
+    getCurrentPosition(ok, fail, options) {
+      attempts.push(options.enableHighAccuracy);
+      if (options.enableHighAccuracy) return fail({ code: 2 });
+      ok({ coords: { latitude: 5.6037, longitude: -0.1870, accuracy: 850 },
+        timestamp: Date.now() });
+    },
+  });
+  assert.deepEqual(attempts, [true, false]);
+  assert.equal(result.failure, undefined);
+  assert.equal(result.lat, 5.6037);
+  assert.equal(result.lng, -0.1870);
+  assert.equal(result.accuracy, 850, "Browser-provided accuracy must not be hidden or upgraded");
+  assert.ok(result.capturedAt);
+});
+
+test("browser location never retries a denied geolocation permission", async () => {
+  let attempts = 0;
+  const result = await getPositionOnce({
+    getCurrentPosition(_ok, fail) { attempts++; fail({ code: 1 }); },
+  });
+  assert.equal(attempts, 1);
+  assert.match(result.failure, /permission was denied/);
+  assert.equal(result.lat, undefined);
+});
+
+test("pre-insert location failure allows retry while uncertain Start writes remain fail-closed", () => {
+  const clock = read("../src/components/EmployeeWorkSession.jsx");
+  assert.match(session, /class WorkStartPreflightError extends Error/);
+  assert.match(session, /throw new WorkStartPreflightError/);
+  assert.match(clock, /e instanceof WorkStartPreflightError/);
+  assert.match(clock, /setVerified\(false\); setEditor\(false\); setReady\(false\)/);
+  assert.match(home, /err instanceof WorkStartPreflightError/);
+  assert.match(home, /setVerifiedSessionScope\(null\); setAsk\(false\)/);
+  assert.match(home, /\{error && <p role="alert" className="hint">\{error\}<\/p>\}/);
 });
