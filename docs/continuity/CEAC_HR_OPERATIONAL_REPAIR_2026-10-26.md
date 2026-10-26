@@ -1,6 +1,6 @@
 # HR employee entry, communication, assignment and Projects repair
 
-Status: implementation and focused verification in progress; not released.
+Status: original repair merged in #152; owner-reported department switching regression under correction. The historical pending entries below describe their recorded checkpoints, not the current merge status.
 
 Owner instruction, 26 October: fix employee fields losing focus after each character; HR must communicate in every authorised department/team room, address individual employees and heads, and give work to people across the organisation. The owner added that HR needs a visible Projects workspace with project creation and the operational features available to Managers. This supersedes the earlier read-only Administration project-surface restriction. It does not make HR an Executive identity or change other roles' rights. Existing contextual shared Rooms remain explicit; addressing an individual in a room is not presented as a private direct message.
 
@@ -67,3 +67,20 @@ Terminal Level B Quality Gate [40385778630](https://github.com/ceairportcity/cea
 Corrective delta on the SAME PR: reorder only the Admin raw Projects/Time & Leave entries to match the approved grouped visible order, align expected raw model, assert both raw and groupDestinations-rendered order plus group sections for staff, manager, Administration/HR and Executive. Keep existing role navigation, keyboard, privacy, layout and visual guards. Previous affected local HR browser 12/12 PASS, navigation contract 1/1 PASS, source 629/629 PASS, build/sealing PASS are earlier-workspace evidence; the prior local checkout/logs are unavailable in this runtime and are not misrepresented as newly executed.
 
 Next final-head acceptance MUST pass CI, Migration Replay, Account Security and a real full Level B browser/SQL/authority Quality Gate; only then guarded production room migration, expected-head merge, Vercel source/Ready and genuine signed-in no-write HR smoke. No production mutation or completed release is claimed by this ledger.
+
+## Owner-reported live department switching failure — correction after #152
+
+Base is released main `13379eb93da8054bb8d2b5e85fb02fc12d851680`, with complete tree `176ad4e75c71e3285a4dd787c50f72fb8b3f92e7`. Preserve independent #150 and all existing business records. Owner explicitly instructed fixing the live HR assignment failure; existing Administration correction/release authority remains applicable.
+
+Genuine signed-in HR observation: Work → Give out work opened with the actor's own department and only its person. Selecting two other departments left the same person list; another form change restored the original department selection. No assignment was submitted. The department switch was gated by `window.confirm`; native confirmation suppression/dismissal retained the old React department while the browser select could temporarily show another value. The prior fixture had no initial department and only one selectable department, so it never exercised this confirmation branch. Do not describe the prior mocked tests as genuine live assignment acceptance.
+
+Repair: replace only this native confirmation with an explicit in-drawer Change department / Keep current department choice. Keep the selected department and draft until confirmation; clear/remount into the new department only after confirmation. Disable assignment while that choice is pending. Existing actor identity, department membership reads, RPCs and server authority remain unchanged. No migration, production data repair, role expansion, package, CSS or reference change.
+
+Focused baseline regression at main's application source: Chromium 1194 / Playwright 1.56.1 / Node22.12, synthetic two-department fixture with HR's home department preselected and native confirms suppressed. One 390px case FAILS waiting for the missing in-app Keep choice (test timeout, exit1). Trace/error-context captured locally. The first redirected baseline attempt produced an incomplete summary and is not counted as passing evidence.
+
+Corrected development evidence (working tree derived from that exact base; final published SHA and hosted qualification still required):
+
+- Full focused `tests/hr-operations-repair.spec.js`: verify HR and Executive at 390/1440px; keep-draft cancellation, confirmed switch, old-person removal, new-person selection, pending-submit denial and exactly one synthetic assignment RPC carrying the new department/person and original role origin. Existing room, denied-draft and project journeys remain included. Final focused result: **10/10 PASS**, exit0, 16.6s; `assignment-final-browser.log`. These are real rendered components with synthetic intercepted APIs, not production business writes.
+- `npm run verify:source`: 629/629 PASS, exit0, Node22.12; `assignment-source-final.log`.
+- `npm run build`: PASS with script sealing, exit0, Node22.12; `assignment-build.log`. A prior build command failed because the reconstructed dependency directory lacked `.bin`; restoring the existing binary links resolved this without dependency/source changes.
+- No real employee, message, project, assignment, membership or permission was created/changed for testing. Production remains on #152 until the correction's required exact-head checks and deployment complete. Genuine post-deploy HR selection verification remains PENDING.

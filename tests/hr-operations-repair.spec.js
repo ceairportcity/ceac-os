@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';
 const org='10000000-0000-4000-8000-000000000010',unit='20000000-0000-4000-8000-000000000012',person='31000000-0000-4000-8000-000000000005';
-async function api(page){
+const homeUnit='20000000-0000-4000-8000-000000000011',homePerson='31000000-0000-4000-8000-000000000003';
+async function api(page,{switchDepartments=false,successfulAssignment=false}={}){
  const writes=[];let created=null;
  const project={id:'25000000-0000-4000-8000-000000000025',org_id:org,kind:'project',name:'Synthetic HR project',status:'planned',lead_unit_id:unit,purpose:'Synthetic coordination',units:{name:'Other department'}};
  const room={id:'26000000-0000-4000-8000-000000000025',kind:'unit',unit_id:unit,units:{name:'Other department'}};
@@ -12,12 +13,15 @@ async function api(page){
    const body=req.postDataJSON();writes.push({name,body});
    if(name==='create_project_with_participants'){created={...project,name:body.p_name};data=created.id;}
    if(name==='send_room_message')data='27000000-0000-4000-8000-000000000025';
-   if(name==='create_task_with_checklist')return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({message:'Synthetic assignment denied'})});
-  }else if(name==='units')data=[{id:unit,name:'Other department',active:true}];
+   if(name==='create_task_with_checklist'){
+    if(!successfulAssignment)return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({message:'Synthetic assignment denied'})});
+    data={id:'28000000-0000-4000-8000-000000000025',ref:'SYN-001'};
+   }
+  }else if(name==='units')data=[...(switchDepartments?[{id:homeUnit,name:'Home department',active:true}]:[]),{id:unit,name:'Other department',active:true}];
   else if(name==='projects')data=single?(created||project):[created||project];
   else if(name==='project_units')data=[{project_id:project.id,unit_id:unit,role:'lead',units:{name:'Other department'}}];
   else if(name==='profiles')data=[{id:person,full_name:'Other Department Person',active:true,unit_memberships:[{unit_id:unit,role:'manager',units:{name:'Other department'}}]}];
-  else if(name==='unit_memberships')data=[{profile_id:person,unit_id:unit,role:'manager',profiles:{full_name:'Other Department Person',active:true}}];
+  else if(name==='unit_memberships')data=switchDepartments&&url.searchParams.get('unit_id')===`eq.${homeUnit}`?[{profile_id:homePerson,unit_id:homeUnit,role:'staff',profiles:{full_name:'Home Department Person',active:true}}]:[{profile_id:person,unit_id:unit,role:'manager',profiles:{full_name:'Other Department Person',active:true}}];
   else if(name==='rooms')data=single?room:[room];
   else if(name==='room_reads')data=single?null:[];
   else if(name==='capabilities')data=single?null:[];
@@ -25,6 +29,48 @@ async function api(page){
  });return writes;
 }
 for(const width of [390,1440]){
+ for(const actor of ['HR','Executive'])test(`${actor} switches from its home department without a browser popup at ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:1000});
+  const writes=await api(page,{switchDepartments:true,successfulAssignment:true});
+  // Browsers can suppress native confirms. The application must expose its own
+  // deliberate discard/keep choice instead of silently retaining old people.
+  await page.addInitScript(()=>{window.confirm=()=>false;});
+  await page.goto(`/tests/fixtures/hr-operations-repair.html?screen=assign&homeDepartment=1&actor=${actor==='Executive'?'executive':'hr'}`);
+  const drawer=page.getByRole('dialog',{name:'Give out work',exact:true});
+  const department=drawer.getByLabel('Assignment department',{exact:true});
+  const assignee=drawer.getByLabel('Responsible person',{exact:true});
+  await expect(department).toHaveValue(homeUnit);
+  await expect(assignee).toContainText('Home Department Person');
+  await drawer.getByLabel('Work to complete',{exact:true}).fill('Keep this unsaved instruction');
+  await assignee.selectOption(homePerson);
+  await drawer.getByLabel('Due date *',{exact:true}).fill('2026-11-01T12:00');
+  await drawer.getByLabel('Why this matters *',{exact:true}).fill('Synthetic department change verification');
+  await expect(drawer.getByRole('button',{name:'Give it out',exact:true})).toBeEnabled();
+  await department.selectOption(unit);
+  await expect(drawer.getByRole('button',{name:'Give it out',exact:true})).toBeDisabled();
+  await drawer.getByRole('button',{name:'Keep current department',exact:true}).click();
+  await expect(department).toHaveValue(homeUnit);
+  await expect(drawer.getByLabel('Work to complete',{exact:true})).toHaveValue('Keep this unsaved instruction');
+  await department.selectOption(unit);
+  await drawer.getByRole('button',{name:'Change department',exact:true}).click();
+  await expect(department).toHaveValue(unit);
+  await expect(assignee).toContainText('Other Department Person');
+  await expect(assignee).not.toContainText('Home Department Person');
+  await expect(drawer.getByLabel('Work to complete',{exact:true})).toHaveValue('');
+  await assignee.selectOption(person);
+  await expect(assignee).toHaveValue(person);
+  await expect(drawer.getByRole('button',{name:'Give it out',exact:true})).toBeDisabled();
+  expect(writes).toHaveLength(0);
+  await drawer.getByLabel('Work to complete',{exact:true}).fill('Synthetic switched department assignment');
+  await drawer.getByLabel('Due date *',{exact:true}).fill('2026-11-01T12:00');
+  await drawer.getByLabel('Why this matters *',{exact:true}).fill('Synthetic end to end verification');
+  await drawer.getByText('Subtasks',{exact:true}).click();
+  await drawer.getByLabel('No steps needed',{exact:true}).check();
+  await drawer.getByRole('button',{name:'Give it out',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'Work sent',exact:true})).toContainText('SYN-001 is with them');
+  expect(writes.filter(x=>x.name==='create_task_with_checklist')).toHaveLength(1);
+  expect(writes.find(x=>x.name==='create_task_with_checklist').body).toMatchObject({p_unit_id:unit,p_assignee_id:person,p_origin:actor==='Executive'?'assigned_by_exec':'assigned'});
+ });
  test(`HR without department membership can open rooms and address a person at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});const writes=await api(page);
   await page.goto('/tests/fixtures/hr-operations-repair.html');

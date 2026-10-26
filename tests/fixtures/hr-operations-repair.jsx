@@ -12,7 +12,8 @@ import '../../src/experience-v2.css';
 import '../../src/experience-v2/components/components.css';
 import '../../src/experience-v2/project-family/project-family.css';
 import '../../src/experience-v2/work-family/work-family.css';
-const me={id:'31000000-0000-4000-8000-000000000003',org_id:'10000000-0000-4000-8000-000000000010',is_admin:true,is_exec:false,role:'staff',memberships:[],capabilities:['people.manage']};
+const executive=new URLSearchParams(location.search).get('actor')==='executive';
+const me={id:'31000000-0000-4000-8000-000000000003',org_id:'10000000-0000-4000-8000-000000000010',is_admin:!executive,is_exec:executive,role:'staff',memberships:[],capabilities:['people.manage'],unit_id:new URLSearchParams(location.search).get('homeDepartment')==='1'?'20000000-0000-4000-8000-000000000011':null};
 function Fixture(){
  const params=new URLSearchParams(location.search);
  const [room,setRoom]=useState(null),[assign,setAssign]=useState(params.get('screen')==='assign'?{}:null),[project,setProject]=useState(params.get('project'));
