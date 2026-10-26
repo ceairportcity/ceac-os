@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
+import { ComposerDrawer } from "../experience-v2/components";
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 
 function human(value=""){
@@ -21,6 +23,15 @@ function statusTone(status){
   if(status==="repair") return "amber";
   if(status==="retired") return "grey";
   return "grey";
+}
+
+// Presentation follows the active panel; server-side asset authority is unchanged.
+function AssetForm({ modern, title, description, error, onClose, children }) {
+  if (!modern) return <Sheet onClose={onClose}>{children}</Sheet>;
+  return <ComposerDrawer open title={title} description={description} onClose={onClose}>
+    {error && <ProductNotice tone="error" title="Asset change not recorded">{error}</ProductNotice>}
+    {children}
+  </ComposerDrawer>;
 }
 
 export default function Assets({ me }) {
@@ -113,6 +124,7 @@ export default function Assets({ me }) {
   }
 
   function openCreate(){
+    setError(null);
     setEditing(null);
     setAssetCode(""); setCategory(""); setManufacturer(""); setModel(""); setSerial("");
     setPurchaseDate(""); setPurchaseVendor(""); setPurchaseCost(""); setPurchaseCurrency("");
@@ -121,6 +133,7 @@ export default function Assets({ me }) {
   }
 
   function openEdit(asset){
+    setError(null);
     setEditing(asset);
     setAssetCode(asset.asset_code||""); setCategory(asset.category||"");
     setManufacturer(asset.manufacturer||""); setModel(asset.model||""); setSerial(asset.serial_number||"");
@@ -155,6 +168,7 @@ export default function Assets({ me }) {
   }
 
   function openAssign(asset){
+    setError(null);
     setAssignSheet(asset);
     setAssignPerson(asset.current_assignee_profile_id||"");
     setAssignUnit(asset.current_unit_id||"");
@@ -178,6 +192,7 @@ export default function Assets({ me }) {
   }
 
   function openReturn(asset){
+    setError(null);
     setReturnSheet(asset);
     setReturnLocation(asset.current_location||"");
     setReturnCondition(asset.current_condition_note||"");
@@ -195,6 +210,7 @@ export default function Assets({ me }) {
   }
 
   function openLifecycle(asset,action){
+    setError(null);
     setLifeSheet(asset); setLifeAction(action); setLifeNote(""); setLifeReason("");
   }
 
@@ -220,7 +236,7 @@ export default function Assets({ me }) {
       title="Assets & devices"
       description="CEAC equipment currently in your custody, with factual assignment and lifecycle history. This surface does not remotely manage your device."
       statusLabel="My custody"
-    /> : <div style={{paddingTop:26}}>
+    /> : me.is_admin ? <WorkPageHeader eyebrow="Enterprise asset register" title="Assets & devices" description="CEAC equipment, current custody, repairs and recorded history. This register does not remotely manage devices." /> : <div style={{paddingTop:26}}>
       <div className="eyebrow">Enterprise asset register</div>
       <h1 className="h1">Assets & devices</h1>
       <p className="screen-note">CEAC inventory, custody and lifecycle history. This module records operational facts; it does not remotely wipe, lock, configure or monitor device operating systems.</p>
@@ -306,9 +322,9 @@ export default function Assets({ me }) {
       {!assignments.length&&<EmptyState compact title="No custody history in your scope">Assignments, transfers and returns will appear here.</EmptyState>}
     </>}
 
-    {assetSheet&&<Sheet onClose={()=>!busy&&setAssetSheet(false)}>
-      <div className="eyebrow">{editing?"Edit asset":"New asset"}</div>
-      <div className="h2">{editing?"Update factual asset details":"Add asset to CEAC inventory"}</div>
+    {assetSheet&&<AssetForm modern={me.is_admin} title={editing?"Edit asset":"Add asset"} description="Record factual equipment details and the purchase currency, where known." error={error} onClose={()=>!busy&&setAssetSheet(false)}>
+      {!me.is_admin && <><div className="eyebrow">{editing?"Edit asset":"New asset"}</div>
+      <div className="h2">{editing?"Update factual asset details":"Add asset to CEAC inventory"}</div></>}
       <div className="form-grid two">
         <FieldGroup label="Asset ID / tag"><input className="field" aria-label="Asset code" value={assetCode} onChange={e=>setAssetCode(e.target.value)} placeholder="e.g. CEAC-LAP-014"/></FieldGroup>
         <FieldGroup label="Category"><input className="field" aria-label="Asset category" value={category} onChange={e=>setCategory(e.target.value)} placeholder="Laptop, camera, mixer…"/></FieldGroup>
@@ -326,11 +342,11 @@ export default function Assets({ me }) {
       <FieldGroup label="Condition note"><textarea className="field" aria-label="Asset condition note" rows="2" value={conditionNote} onChange={e=>setConditionNote(e.target.value)}/></FieldGroup>
       <FieldGroup label="Notes"><textarea className="field" aria-label="Asset notes" rows="2" value={assetNotes} onChange={e=>setAssetNotes(e.target.value)}/></FieldGroup>
       <button className="btn" style={{marginTop:14}} disabled={busy||assetCode.trim().length<2||category.trim().length<2||((purchaseCost==="")!== (purchaseCurrency===""))} onClick={saveAsset}>{busy?"Saving…":editing?"Update asset":"Add asset"}</button>
-    </Sheet>}
+    </AssetForm>}
 
-    {assignSheet&&<Sheet onClose={()=>!busy&&setAssignSheet(null)}>
-      <div className="eyebrow">{assignSheet.current_status==="assigned"?"Transfer custody":"Assign asset"}</div>
-      <div className="h2">{assignSheet.asset_code}</div>
+    {assignSheet&&<AssetForm modern={me.is_admin} title={assignSheet.current_status==="assigned"?"Transfer custody":"Assign asset"} description={assignSheet.asset_code} error={error} onClose={()=>!busy&&setAssignSheet(null)}>
+      {!me.is_admin && <><div className="eyebrow">{assignSheet.current_status==="assigned"?"Transfer custody":"Assign asset"}</div>
+      <div className="h2">{assignSheet.asset_code}</div></>}
       <FieldGroup label="Person"><select className="field" aria-label="Asset assignee" value={assignPerson} onChange={e=>{
         const id=e.target.value; setAssignPerson(id);
       }}><option value="">Unit custody only</option>{people.map(person=><option key={person.id} value={person.id}>{person.full_name}</option>)}</select></FieldGroup>
@@ -340,21 +356,21 @@ export default function Assets({ me }) {
       <FieldGroup label="Condition at handover"><textarea className="field" aria-label="Asset assignment condition" rows="2" value={assignCondition} onChange={e=>setAssignCondition(e.target.value)}/></FieldGroup>
       <FieldGroup label="Reason"><textarea className="field" aria-label="Asset assignment reason" rows="2" value={assignReason} onChange={e=>setAssignReason(e.target.value)}/></FieldGroup>
       <button className="btn" style={{marginTop:14}} disabled={busy||(!assignPerson&&!assignUnit)||assignReason.trim().length<3} onClick={assignAsset}>{busy?"Recording…":assignSheet.current_status==="assigned"?"Transfer custody":"Assign asset"}</button>
-    </Sheet>}
+    </AssetForm>}
 
-    {returnSheet&&<Sheet onClose={()=>!busy&&setReturnSheet(null)}>
-      <div className="eyebrow">Return asset</div><div className="h2">{returnSheet.asset_code}</div>
+    {returnSheet&&<AssetForm modern={me.is_admin} title="Return asset" description={returnSheet.asset_code} error={error} onClose={()=>!busy&&setReturnSheet(null)}>
+      {!me.is_admin && <><div className="eyebrow">Return asset</div><div className="h2">{returnSheet.asset_code}</div></>}
       <FieldGroup label="Return location"><input className="field" aria-label="Asset return location" value={returnLocation} onChange={e=>setReturnLocation(e.target.value)}/></FieldGroup>
       <FieldGroup label="Condition on return"><textarea className="field" aria-label="Asset return condition" rows="3" value={returnCondition} onChange={e=>setReturnCondition(e.target.value)}/></FieldGroup>
       <FieldGroup label="Reason"><textarea className="field" aria-label="Asset return reason" rows="2" value={returnReason} onChange={e=>setReturnReason(e.target.value)}/></FieldGroup>
       <button className="btn" style={{marginTop:14}} disabled={busy||returnReason.trim().length<3} onClick={returnAsset}>{busy?"Recording…":"Record return"}</button>
-    </Sheet>}
+    </AssetForm>}
 
-    {lifeSheet&&<Sheet onClose={()=>!busy&&setLifeSheet(null)}>
-      <div className="eyebrow">Asset lifecycle</div><div className="h2">{human(lifeAction)} · {lifeSheet.asset_code}</div>
+    {lifeSheet&&<AssetForm modern={me.is_admin} title={human(lifeAction)} description={lifeSheet.asset_code} error={error} onClose={()=>!busy&&setLifeSheet(null)}>
+      {!me.is_admin && <><div className="eyebrow">Asset lifecycle</div><div className="h2">{human(lifeAction)} · {lifeSheet.asset_code}</div></>}
       <FieldGroup label="Note"><textarea className="field" aria-label="Asset lifecycle note" rows="3" value={lifeNote} onChange={e=>setLifeNote(e.target.value)} placeholder="Repair details, warranty reference or retirement context"/></FieldGroup>
       <FieldGroup label="Reason"><textarea className="field" aria-label="Asset lifecycle reason" rows="2" value={lifeReason} onChange={e=>setLifeReason(e.target.value)}/></FieldGroup>
       <button className="btn" style={{marginTop:14}} disabled={busy||lifeReason.trim().length<3} onClick={lifecycleAction}>{busy?"Recording…":"Record "+human(lifeAction).toLowerCase()}</button>
-    </Sheet>}
+    </AssetForm>}
   </div>;
 }

@@ -109,3 +109,9 @@ Clean locked `npm ci`, production build and script sealing passed under Node 22.
 Still not a whole-panel release candidate: continue Assets' four legacy sheet workflows, protected HR and remaining employee/lifecycle/reporting/control children; verify resulting corrections and freeze once the complete Admin scope is covered. Production remains unchanged by PR #149.
 
 Cancelled-status follow-up: **2/2 PASS (2.8s)**, exit 0, `/tmp/ceac-admin-control-cancelled-browser.log`. Together the affected eight cases pass across 390/1440px. These synthetic component checks do not assert real SQL persistence or final exact-head release acceptance.
+
+### Admin asset form replacement
+
+Admin Assets now uses the existing WorkPageHeader and ComposerDrawer for factual create/edit, assign/transfer, return and service/lifecycle forms. Other roles retain their existing Sheet and personal header. Errors appear inside the active Admin drawer and rejected drafts remain intact; opening another form clears unrelated earlier errors. Asset RPCs, role gates, data schema and lifecycle rules are unchanged. No additional CSS.
+
+Affected synthetic browser journeys at 390/1440px: **2/2 PASS (7.6s)**, `/tmp/ceac-admin-assets-browser.log`, including all four drawer families, correct selected-asset/person context, exact captured create/assignment payloads, rejected-draft retention, cleared unrelated error and no overflow. Build and script sealing PASS, `/tmp/ceac-admin-assets-build.log`. These are component fixtures, not real persisted asset mutations. Production unchanged. Continue remaining protected-HR/lifecycle/employee and report/control child audit before freezing the Admin release.
