@@ -143,7 +143,7 @@ jobs:
 
       - name: Upload shard evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: quality-gate-browser-shard-${{ matrix.shard }}
           path: test-artifacts/
@@ -164,140 +164,140 @@ jobs:
           merge-multiple: true
 
       - name: Upload Stage 6 product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: stage6-product-inspection
           path: test-artifacts/stage6-workload-*.png
           if-no-files-found: ignore
 
       - name: Upload Stage 7 product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: stage7-product-inspection
           path: test-artifacts/stage7-performance-*.png
           if-no-files-found: ignore
 
       - name: Upload Stage 8 product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: stage8-product-inspection
           path: test-artifacts/stage8-learning-*.png
           if-no-files-found: ignore
 
       - name: Upload Stage 9 product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: stage9-product-inspection
           path: test-artifacts/stage9-workforce-*.png
           if-no-files-found: ignore
 
       - name: Upload Phase 2 attendance inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: phase2-attendance-inspection
           path: test-artifacts/phase2-attendance-*.png
           if-no-files-found: error
 
       - name: Upload Stage 10 product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: stage10-product-inspection
           path: test-artifacts/stage10-assets-*.png
           if-no-files-found: ignore
 
       - name: Upload Stage 11 product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: stage11-product-inspection
           path: test-artifacts/stage11-compliance-*.png
           if-no-files-found: ignore
 
       - name: Upload Stage 12 Connected Apps inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: stage12-connected-apps-inspection
           path: test-artifacts/stage12-connected-apps-*.png
           if-no-files-found: ignore
 
       - name: Upload laptop density inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: laptop-density-inspection
           path: test-artifacts/laptop-density-*.png
           if-no-files-found: ignore
 
       - name: Upload selective UX primitive inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: selective-ux-primitives
           path: test-artifacts/selective-ux-*.png
           if-no-files-found: ignore
 
       - name: Upload Experience V2 foundation inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: experience-v2-foundation
           path: test-artifacts/ev2-foundation-*.png
           if-no-files-found: ignore
 
       - name: Upload R0 premium redesign product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: redesign-r0-product-inspection
           path: test-artifacts/redesign-r0-*.png
           if-no-files-found: ignore
 
       - name: Upload R1 Staff product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: redesign-r1-product-inspection
           path: test-artifacts/redesign-r1-*.png
           if-no-files-found: ignore
 
       - name: Upload R2 Manager product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: redesign-r2-product-inspection
           path: test-artifacts/redesign-r2-*.png
           if-no-files-found: ignore
 
       - name: Upload R3 Administration product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: redesign-r3-product-inspection
           path: test-artifacts/redesign-r3-*.png
           if-no-files-found: ignore
 
       - name: Upload R4 Executive product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: redesign-r4-product-inspection
           path: test-artifacts/redesign-r4-*.png
           if-no-files-found: ignore
 
       - name: Upload R5 Communication product inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: redesign-r5-product-inspection
           path: test-artifacts/redesign-r5-*.png
           if-no-files-found: ignore
 
       - name: Upload R6 whole-system consistency inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: redesign-r6-product-inspection
           path: test-artifacts/redesign-r6-*.png
           if-no-files-found: ignore
 
       - name: Upload R7 closure inspection
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: redesign-r7-product-inspection
           path: test-artifacts/redesign-r7-*.png
           if-no-files-found: ignore
 
       - name: Upload full visual parity inventory
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: visual-parity-all-pages
           path: test-artifacts/visual-parity-*.png
