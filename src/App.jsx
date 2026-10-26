@@ -106,6 +106,7 @@ function routeFromLocation() {
     tab: params.get("tab") || "home",
     setting: params.get("setting") || null,
     settingsReturn: params.get("settingsReturn") === "people" ? "people" : null,
+    leaveRequestId: params.get("tab") === "attendance" ? params.get("leave") : null,
     itemId: params.get("item"),
     routineDate: params.get("item") ? validRoutineDate(params.get("routineDate")) : null,
     projectId: params.get("project"),
@@ -122,6 +123,7 @@ export default function App() {
   const [tab, setTab] = useState(initialRoute.tab);
   const [setting, setSetting] = useState(initialRoute.setting);
   const [settingsReturn, setSettingsReturn] = useState(initialRoute.settingsReturn);
+  const [leaveRequestId, setLeaveRequestId] = useState(initialRoute.leaveRequestId);
   const [itemId, setItemId] = useState(initialRoute.itemId);
   const [itemRoutineDate,setItemRoutineDate] = useState(initialRoute.routineDate);
   const [goalId, setGoalId] = useState(null);
@@ -229,6 +231,7 @@ export default function App() {
     setTab(route.tab || "home");
     setSetting(route.setting || null);
     setSettingsReturn(route.settingsReturn || null);
+    setLeaveRequestId(route.tab === "attendance" ? route.leaveRequestId || null : null);
     setItemId(route.itemId || null);
     setItemRoutineDate(route.itemId ? validRoutineDate(route.routineDate) : null);
     setProjectId(route.projectId || null);
@@ -250,6 +253,7 @@ export default function App() {
       tab: route.tab || tab || "home",
       setting: route.tab === "office-settings" ? route.setting || null : null,
       settingsReturn: route.settingsReturn === "people" ? "people" : null,
+      leaveRequestId: route.tab === "attendance" ? route.leaveRequestId || null : null,
       itemId: route.itemId || null,
       routineDate: route.itemId ? validRoutineDate(route.routineDate) : null,
       projectId: route.projectId || null,
@@ -260,6 +264,7 @@ export default function App() {
     if (next.tab !== "home") params.set("tab", next.tab);
     if (next.setting) params.set("setting", next.setting);
     if (next.settingsReturn) params.set("settingsReturn", next.settingsReturn);
+    if (next.leaveRequestId) params.set("leave", next.leaveRequestId);
     if (next.itemId) params.set("item", next.itemId);
     if (next.itemId && next.routineDate) params.set("routineDate",next.routineDate);
     if (next.projectId) params.set("project", next.projectId);
@@ -289,7 +294,7 @@ export default function App() {
   function go(t, options = {}) {
     if (t !== "guide") setGuideContextTab(null);
     setAuthorityFocusProfileId(null);
-    navigate({ tab: t, setting: options.setting });
+    navigate({ tab: t, setting: options.setting, leaveRequestId: options.leaveRequestId });
   }
 
   function openGuide(contextual = false) {
@@ -501,7 +506,7 @@ export default function App() {
     if (tab === "cost" && isAdmin) return <Cost me={me} />;
     if (tab === "finance" && isAdmin) return <Finance me={me} openExpenses={() => go("cost")} />;
     if (tab === "reporting" && isAdmin) return <Reports me={me} />;
-    if (tab === "attendance" && canUseWorkforce) return <Workforce key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${me.role || "none"}:${me.is_admin ? "admin" : "not-admin"}:${me.is_exec ? "exec" : "not-exec"}`} me={me} />;
+    if (tab === "attendance" && canUseWorkforce) return <Workforce key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${me.role || "none"}:${me.is_admin ? "admin" : "not-admin"}:${me.is_exec ? "exec" : "not-exec"}`} me={me} initialLeaveRequestId={leaveRequestId} />;
     if (tab === "people" && canManagePeople) return <People
       key={`${me.org_id}:${me.id}`}
       me={me}
@@ -518,8 +523,8 @@ export default function App() {
     if (tab === "protected-hr" && canAccessProtectedHR) return <AdminProtectedHR key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "payroll" && canUsePayroll) return <AdminPayroll key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} />;
-    if (tab === "admin-projects" && isAdmin) return <AdminProjects me={me} scheduleMeeting={startMeeting} openItem={openItem} />;
-    if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" />;
+    if (tab === "admin-projects" && isAdmin) return <AdminProjects key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openProject={openProject} scheduleMeeting={startMeeting} openItem={openItem} />;
+    if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
     if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"delivery",projectId:id})} />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;
     if (tab === "events" && canViewAudit) return <AdminEvents me={me} />;

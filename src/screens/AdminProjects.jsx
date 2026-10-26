@@ -12,9 +12,9 @@ import {
   ProjectSummary,
 } from "../experience-v2/project-family/ProjectFamilyV2";
 
-export default function AdminProjects({ me, scheduleMeeting, openItem }) {
+export default function AdminProjects({ me, scheduleMeeting, openItem, initialProjectId = null, openProject }) {
   const [projects,setProjects]=useState([]);
-  const [selectedProjectId,setSelectedProjectId]=useState(null);
+  const selectedProjectId = initialProjectId;
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
 
@@ -43,7 +43,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem }) {
 
   if(loading) return <div className="body admin-projects ev2-project-page ev2-project-admin"><LoadingState label="Loading organisation projects…" /></div>;
 
-  if (selectedProjectId) return <Stage2ProjectReader projectId={selectedProjectId} openItem={openItem} onBack={() => setSelectedProjectId(null)} />;
+  if (selectedProjectId) return <Stage2ProjectReader me={me} projectId={selectedProjectId} openItem={openItem} onBack={() => openProject?.(null)} />;
 
   const active=projects.filter((project)=>project.status==="active");
   const planned=projects.filter((project)=>project.status==="planned");
@@ -98,7 +98,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem }) {
           facts={facts}
           actions={[{
             label:"Open project",
-            onClick:()=>setSelectedProjectId(project.id),
+            onClick:()=>openProject?.(project.id),
           },{
             label:"Schedule project meeting",
             onClick:()=>scheduleMeeting?.({scope:"project",projectId:project.id,title:project.name+" meeting"}),

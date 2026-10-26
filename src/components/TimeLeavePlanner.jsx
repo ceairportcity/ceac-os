@@ -1,23 +1,30 @@
-import {useState} from "react";
+import {useEffect,useState} from "react";
 import {leaveCalendarDays,leaveOnCalendarDay} from "../lib/timeLeaveCalendar";
 import {leaveStageLabel} from "../lib/leaveDecisionStage";
 import "./TimeLeavePlanner.css";
 
 /** Presentation of already-authorised leave rows; existing decision renderers own every action. */
-export default function TimeLeavePlanner({rows=[],scope="My",unavailable=false,renderDecision,onOpenLeave,onOpenSessions}){
+export default function TimeLeavePlanner({rows=[],scope="My",unavailable=false,renderDecision,onOpenLeave,onOpenSessions,initialRequestId=null}){
  const today=new Date().toISOString().slice(0,10);
  const [month,setMonth]=useState(()=>today.slice(0,7)),[day,setDay]=useState(today),[selectedId,setSelectedId]=useState(null),[term,setTerm]=useState("");
+ useEffect(()=>{
+  if(!initialRequestId || unavailable)return;
+  const request=rows.find(row=>row.id===initialRequestId);
+  if(!request)return;
+  setTerm("");setSelectedId(request.id);setDay(request.start_date);setMonth(request.start_date.slice(0,7));
+ },[initialRequestId,rows,unavailable]);
  const [year,monthNumber]=month.split("-").map(Number);
  const title=new Date(Date.UTC(year,monthNumber-1,1)).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",month:"long",year:"numeric"});
- const visible=rows.filter(r=>!term||(r.profiles?.full_name||"").toLocaleLowerCase().includes(term.toLocaleLowerCase()));
- const selected=visible.find(r=>r.id===selectedId)||null;
+ const visible=unavailable?[]:rows.filter(r=>!term||(r.profiles?.full_name||"").toLocaleLowerCase().includes(term.toLocaleLowerCase()));
+ const selected=unavailable?null:visible.find(r=>r.id===selectedId)||null;
  const pending=visible.filter(r=>["pending","escalated"].includes(r.status));
  const daily=leaveOnCalendarDay(visible,day);
  const shift=amount=>{const next=new Date(Date.UTC(year,monthNumber-1+amount,1)).toISOString().slice(0,7);setMonth(next);setDay(next+"-01");setSelectedId(null);};
  return <section className="timeleave-planner" aria-label={scope+" leave calendar"}>
   <header className="timeleave-heading"><div><span>PLAN TIME · REVIEW REQUESTS</span><h2>{scope} leave calendar</h2><p>Approved leave and requests stay distinct. Pending requests do not reduce balances.</p></div><div className="timeleave-heading-actions"><button type="button" onClick={onOpenLeave}>Leave requests ({unavailable?"—":pending.length})</button><button type="button" onClick={onOpenSessions}>Recorded time →</button></div></header>
   {unavailable?<p role="status" className="timeleave-unavailable">Leave records could not be verified. Retry Workforce data; the calendar does not imply availability.</p>:null}
-  <div className="timeleave-layout"><div className="timeleave-calendar">
+  {initialRequestId&&!unavailable&&!rows.some(row=>row.id===initialRequestId)?<p role="status" className="timeleave-unavailable">The requested leave record is not available in your current access. No decision has been made.</p>:null}
+  <div className={"timeleave-layout"+(scope==="Organisation"&&selected?" is-focused-review":"")}><div className="timeleave-calendar">
    <div className="timeleave-month"><div><button type="button" aria-label="Previous leave month" onClick={()=>shift(-1)}>‹</button><strong aria-live="polite">{title}</strong><button type="button" aria-label="Next leave month" onClick={()=>shift(1)}>›</button></div><button type="button" onClick={()=>{setMonth(today.slice(0,7));setDay(today);setSelectedId(null);}}>Today</button></div>
    <div className="timeleave-legend"><span className="is-approved">Approved</span><span className="is-pending">Requested · not approved</span></div>
    <div className="timeleave-weekdays" aria-hidden="true">{["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(n=><span key={n}>{n}</span>)}</div>

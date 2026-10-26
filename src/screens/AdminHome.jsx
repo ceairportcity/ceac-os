@@ -342,6 +342,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       onOpenProjects={() => go?.("admin-projects")}
       onOpenStrategy={() => go?.("strategy")}
       onOpenAttendance={() => go?.("attendance")}
+      onOpenLeaveRequest={(requestId) => go?.("attendance", {leaveRequestId:requestId})}
       onLeaveDecision={decideLeave}
     />
 

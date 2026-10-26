@@ -1,3 +1,11 @@
+## 26 October 2026 — complete Administration audit, corrections and release before another panel
+
+After the Executive correction release (#148), the owner explicitly authorised a complete Administration/HR design and connected-workflow audit, implementation of the resulting corrections, verification and production release. Finish that scope before starting Manager or Staff. Staff is the owner's tentative next panel, not permission to start it now. No repeated implementation/release permission is required within the authorised Admin correction scope.
+
+Use the released Executive's design quality, typography, meaningful icons, spacing, interactions and complete child journeys as the reference, without copying its exact colours. Find and replace surviving legacy designs with the existing approved component families; preserve the accepted Overview, People & Access and Control Center identities. The owner specifically reports Overview leave requests showing pending/escalated states without a usable resolution path. Trace request selection, Manager-first approval, HR final review, reasons, persistence and return; do not bypass the existing server authority. Preserve released Executive code, accounts, data and deferred Auth choices. [Current audit and verification](../continuity/CEAC_ADMIN_CORRECTIONS_2026-10-26.md).
+
+---
+
 ## 25 October 2026 — Executive-first design and connected journeys
 
 The owner requires a comprehensive design and functional audit, followed by actual corrections: Executive completely, then Administration/HR, Manager and Staff. The approved current Executive Overview is the reference for fonts, colours, meaningful icons, motion and quality; preserve it while replacing legacy destination, subpage, Calendar, form and mobile treatments. Workflow-only repairs do not fulfil the request.

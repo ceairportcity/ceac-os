@@ -48,7 +48,7 @@ function metresBetween(aLat,aLng,bLat,bLng){
   return Math.round(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)));
 }
 
-export default function Workforce({ me }) {
+export default function Workforce({ me, initialLeaveRequestId = null }) {
   const caps=me.capabilities||[];
   const canManage=caps.includes("workforce.manage");
   const canCorrect=caps.includes("attendance.correct");
@@ -56,7 +56,8 @@ export default function Workforce({ me }) {
   const isStaffView=!me.is_admin && !me.is_exec && !isManager;
   const isManagerView=!me.is_admin && !me.is_exec && isManager;
   const isAdminView=Boolean(me.is_admin);
-  const [tab,setTab]=useState("today");
+  const [tab,setTab]=useState(initialLeaveRequestId ? "leave" : "today");
+  useEffect(() => { if (initialLeaveRequestId) setTab("leave"); }, [initialLeaveRequestId]);
   const [people,setPeople]=useState([]);
   const [sessions,setSessions]=useState([]);
   const [lastActivity,setLastActivity]=useState([]);
@@ -941,9 +942,11 @@ export default function Workforce({ me }) {
         note={route==="manager_then_admin"
           ?leaveStageLabel(l,route)
           :route?"Policy route: "+human(route):"No confirmed route for this leave kind"}
-        statusLabel={human(l.status)}
+        statusLabel={l.status==="escalated"?"HR decision needed":l.status==="pending"?"Awaiting approval":human(l.status)}
         statusTone={l.status==="escalated"?"amber":"blue"}
       >
+        <p className="screen-note">Request reason: {l.reason?.trim() || "No reason recorded."}</p>
+        {l.decision_note&&<p className="screen-note">Recorded decision: {l.decision_note}</p>}
         {l.status==="pending"&&route==="admin"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
         {l.status==="escalated"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
         {canManage&&((route==="manager_then_admin"&&l.status==="escalated")||(route!=="manager_then_admin"&&["pending","escalated"].includes(l.status)))&&<Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>}
@@ -962,7 +965,7 @@ export default function Workforce({ me }) {
       {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
-      {["today","calendar","leave"].includes(tab)?<TimeLeavePlanner rows={leave} scope="Organisation" unavailable={Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>:null}
+      {["today","calendar","leave"].includes(tab)?<TimeLeavePlanner rows={leave} scope="Organisation" initialRequestId={initialLeaveRequestId} unavailable={loading || Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>:null}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Administration workforce sections"/>
 
