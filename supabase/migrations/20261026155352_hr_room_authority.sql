@@ -345,7 +345,7 @@ begin
 
   return v_id;
 end;
-$function$
+$function$;
 
 revoke all on function public.send_room_message(uuid,text,uuid,jsonb,uuid[]) from public,anon;
 grant execute on function public.send_room_message(uuid,text,uuid,jsonb,uuid[]) to authenticated,service_role;

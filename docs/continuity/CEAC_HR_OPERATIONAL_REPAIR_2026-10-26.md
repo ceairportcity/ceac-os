@@ -38,3 +38,10 @@ Do not claim this repair is live, close it from source tests alone, send operati
 - Final local `npm run build` completed with script sealing, exit0; log `../ceac-hr-final-build.log`. Documentation integrity exited0; changed-line hygiene clean. No CSS/reference threshold, package or lockfile change.
 - The new fixture initially used inaccurate button/tab and select/count locators. The final focused run resolves controls by their actual semantics and asserts the complete same workflows. Failed authored-selector attempts are not product defects or passes.
 - Existing read-only Administration tests are updated only where the owner explicitly superseded that restriction; the Executive read-only reader, private-work exclusion, role isolation, responsiveness and visual/CSS assertions remain intact. No release check is bypassed.
+
+
+## First full qualification: migration syntax repaired before production
+
+Candidate `d0cf57ef7588007afe3216ba818eb2a9e830fff2`, complete tree `3d8cab2248c5a80fab7ebc21dc63b9eec1f38d93`, is published in PR #152. CI `40381645292` passed. Preview `dpl_9nhjAf954jRQEPq9GLk1vQ4u2UDj` was actually inspected Ready / Preview, source d0cf57e. Existing-account secure sign-in positively identified Rebecca Arthur / Administration & HR on the unchanged live application.
+
+Quality Gate `40381644629` failed during isolated setup, before SQL/role/browser assertions: the copied `pg_get_functiondef` declaration ended `$function$` without a statement semicolon, so the following REVOKE caused SQLSTATE42601. Exact SQL job121779279031 and browser job121779279131 logs independently show this same cause. Correct the terminator to `$function$;`; no role condition, business function body, UI, assertion or threshold changes. Run the required full qualification on the corrected exact head. Do not report the failed setup as role/browser coverage. No production migration, merge or business write occurred.
