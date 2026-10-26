@@ -6,7 +6,8 @@ import FormalReviewProjectDrafts from "../components/FormalReviewProjectDrafts";
 import { includeProjectAssessment } from "../lib/projectAssessmentDraft";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
-import { Avatar } from "../experience-v2/components";
+import { Avatar, ComposerDrawer } from "../experience-v2/components";
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 
 const CATEGORY_LABELS = {
@@ -75,6 +76,15 @@ function CaseState({ status }) {
     : status === "conversation_recorded" || status === "manager_draft" ? "amber"
     : "grey";
   return <Pill tone={tone}>{STATUS_LABELS[status] || sentence(status)}</Pill>;
+}
+
+function ReviewForm({ admin, error, resetError, children, ...props }) {
+  useEffect(() => { if (admin) resetError(null); }, [admin, resetError]);
+  const Dialog = admin ? ComposerDrawer : Sheet;
+  return <Dialog {...props}>
+    {admin && error && <ProductNotice tone="error" title="Review change not recorded">{error}</ProductNotice>}
+    {children}
+  </Dialog>;
 }
 
 export default function Performance({ me }) {
@@ -442,10 +452,14 @@ export default function Performance({ me }) {
         description="Your evidence, reflection, review conversation, development plan and visible feedback. CEAC OS does not score or rank you."
         statusLabel="Evidence-first review"
       />
-    : <div style={{ paddingTop:26 }}>
+    : me.is_admin ? <WorkPageHeader
+        eyebrow="People development"
+        title="Reviews & development"
+        description="Recorded evidence, human assessments and development plans. Reviewers enter ratings with explanations; CEAC OS does not calculate employee scores or rankings."
+      /> : <div style={{ paddingTop:26 }}>
         <div className="eyebrow">Evidence-first people development</div>
         <h1 className="h1">Reviews & development</h1>
-        <p className="screen-note">CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. There is no employee score or ranking.</p>
+        <p className="screen-note">{hrReleaseAdmin ? "CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. Reviewers enter ratings with explanations; the system does not calculate employee scores or rankings." : "CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. There is no employee score or ranking."}</p>
       </div>;
 
   return <div className={`body performance-page ${personalReview ? "ev2-personal-page ev2-personal-review" : ""}`.trim()}>
@@ -458,7 +472,7 @@ export default function Performance({ me }) {
       <div>
         <span className="eyebrow">Administration</span>
         <strong>Review periods</strong>
-        <small>Open a period when CEAC is ready to review a defined date range. No frequency is assumed.</small>
+        <small>{hrReleaseAdmin ? "Quarterly formal reviews require reviewer-entered ratings and explanations. Monthly ratings are optional. Choose the evidence dates for the review period." : "Open a period when CEAC is ready to review a defined date range. No frequency is assumed."}</small>
       </div>
       <div className="performance-admin-actions">
         {selectedCycle?.status === "open" && <button className="btn btn-ghost btn-sm" onClick={() => setCloseCycleFlow(true)}>Close selected period</button>}
@@ -669,7 +683,7 @@ export default function Performance({ me }) {
       </section>
     </div>}
 
-    {cycleFlow && <Sheet onClose={() => { if (!busy) { setCycleFlow(false); setCycleStep(1); } }}>
+    {cycleFlow && <ReviewForm admin={me.is_admin} error={error} resetError={setError} open title="Open review period" onClose={() => { if (!busy) { setCycleFlow(false); setCycleStep(1); } }}>
       <div className="eyebrow">Open review period · Step {cycleStep} of 3</div>
       <div className="h2">{cycleStep === 1 ? "Name the review period" : cycleStep === 2 ? "Choose the evidence dates" : "Confirm why this period is opening"}</div>
       {cycleStep === 1 && <FieldGroup label="Review period name"><input className="field" aria-label="Review period name" value={cycleName} onChange={(event) => setCycleName(event.target.value)} placeholder="e.g. July–September review" /></FieldGroup>}
@@ -684,17 +698,17 @@ export default function Performance({ me }) {
           ? <button className="btn" disabled={(cycleStep === 1 && cycleName.trim().length < 3) || (cycleStep === 2 && (!cycleStart || !cycleEnd))} onClick={() => setCycleStep((step) => step+1)}>Continue</button>
           : <button className="btn" disabled={busy || cycleReason.trim().length < 3} onClick={openCycle}>{busy ? "Opening…" : "Open review period"}</button>}
       </div>
-    </Sheet>}
+    </ReviewForm>}
 
-    {closeCycleFlow && <Sheet onClose={() => { if (!busy) setCloseCycleFlow(false); }}>
+    {closeCycleFlow && <ReviewForm admin={me.is_admin} error={error} resetError={setError} open title="Close review period" onClose={() => { if (!busy) setCloseCycleFlow(false); }}>
       <div className="eyebrow">Close review period</div>
       <div className="h2">Close {selectedCycle?.name || "this period"}?</div>
       <p className="screen-note">This closes the period itself. Reviews already shared are marked closed; incomplete reviews keep their factual workflow state so Administration can still see what was unfinished.</p>
       <FieldGroup label="Reason"><textarea className="field" aria-label="Review period close reason" rows="3" value={closeCycleReason} onChange={(event) => setCloseCycleReason(event.target.value)} placeholder="Why this review period is closing" /></FieldGroup>
       <button className="btn" style={{ marginTop:14 }} disabled={busy || closeCycleReason.trim().length < 3} onClick={closeCycle}>{busy ? "Closing…" : "Close review period"}</button>
-    </Sheet>}
+    </ReviewForm>}
 
-    {planFlow && <Sheet onClose={() => { if (!busy) { setPlanFlow(false); setPlanStep(1); } }}>
+    {planFlow && <ReviewForm admin={me.is_admin} error={error} resetError={setError} open title="Development plan" onClose={() => { if (!busy) { setPlanFlow(false); setPlanStep(1); } }}>
       <div className="eyebrow">Development plan · Step {planStep} of 3</div>
       <div className="h2">{planStep === 1 ? "What should develop?" : planStep === 2 ? "What will happen next?" : "Confirm the plan"}</div>
       {planStep === 1 && <>
@@ -714,6 +728,6 @@ export default function Performance({ me }) {
           ? <button className="btn" disabled={(planStep === 1 && (planFocus.trim().length < 3 || planOutcome.trim().length < 3)) || (planStep === 2 && planSteps.trim().length < 3)} onClick={() => setPlanStep((step) => step+1)}>Continue</button>
           : <button className="btn" disabled={busy || planReason.trim().length < 3} onClick={recordPlan}>{busy ? "Recording…" : currentPlan ? "Record plan revision" : "Record development plan"}</button>}
       </div>
-    </Sheet>}
+    </ReviewForm>}
   </div>;
 }

@@ -1277,7 +1277,7 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Performance & development");
     await expect(page.getByRole("heading", { name: "Reviews & development", exact: true })).toBeVisible();
-    await expect(page.getByText(/no employee score or ranking/i)).toBeVisible();
+    await expect(page.getByText(/does not calculate employee scores or rankings/i)).toBeVisible();
 
     await page.getByRole("button", { name: "Open review period", exact: true }).click();
     let dialog = page.getByRole("dialog");
@@ -1716,7 +1716,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Workforce");
     await page.getByRole("tab", { name: "Leave", exact: true }).click();
-    const administrationRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "Escalated" }).first();
+    const administrationRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "HR decision needed" }).first();
     await expect(administrationRow).toBeVisible();
     await expect(administrationRow.getByText(/Manager approved · Administration final decision required/i)).toBeVisible();
     page.once("dialog", (prompt) => prompt.accept("Acceptance Administration final approval"));
