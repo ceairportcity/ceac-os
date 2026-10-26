@@ -90,7 +90,7 @@ export default function Table({
           <thead>
             <tr>
               {columns.map((c) => (
-                <th key={c.key} style={{ width: c.width, textAlign: columnAlign(c) }}
+                <th key={c.key} scope="col" style={{ width: c.width, textAlign: columnAlign(c) }}
                     className={sort && sort.key === c.key ? "sorted" : ""}>
                   <button type="button" onClick={() => toggle(c.key)}>
                     {c.label}

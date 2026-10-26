@@ -503,7 +503,7 @@ export default function App() {
       openWork={() => go("work")}
       openAnnouncements={hasOrgCapability("post_announcement") ? () => startSurfaceCreate("announcements", "announcement") : null}
     />;
-    if (tab === "cost" && isAdmin) return <Cost me={me} />;
+    if (tab === "cost" && isAdmin) return <Cost key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "finance" && isAdmin) return <Finance me={me} openExpenses={() => go("cost")} />;
     if (tab === "reporting" && isAdmin) return <Reports me={me} />;
     if (tab === "attendance" && canUseWorkforce) return <Workforce key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${me.role || "none"}:${me.is_admin ? "admin" : "not-admin"}:${me.is_exec ? "exec" : "not-exec"}`} me={me} initialLeaveRequestId={leaveRequestId} />;

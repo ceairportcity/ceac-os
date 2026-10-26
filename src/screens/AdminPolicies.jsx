@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer, DataPanel, MotionDisclosure, QueueRow, StatePanel, StatusBadge } from "../experience-v2/components";
@@ -23,6 +23,7 @@ export default function AdminPolicies({ me }) {
   const [notice,setNotice]=useState(null);
   const [historyOpen,setHistoryOpen]=useState(false);
   const [revisionOpen,setRevisionOpen]=useState(false);
+  const mutationBusy=useRef(false);
 
   useEffect(()=>{ load(); },[me.id]);
 
@@ -41,20 +42,26 @@ export default function AdminPolicies({ me }) {
 
   const def=defs.find((item)=>item.rule_key===selected)||null;
   const history=versions.filter((item)=>item.rule_key===selected);
-  const current=history.find((item)=>new Date(item.effective_on+"T00:00:00")<=new Date())||history[0]||null;
+  const today=new Date().toISOString().slice(0,10);
+  const current=history.find((item)=>item.effective_on<=today)||null;
 
   async function save(){
-    if(!def||!reason.trim()||value==="") return;
+    if(mutationBusy.current||busy||loading||!def||!reason.trim()||value==="") return;
     let jsonValue;
-    if(def.value_type==="integer") jsonValue=Number.parseInt(value,10);
-    else if(def.value_type==="numeric") jsonValue=Number(value);
+    if(["integer","numeric"].includes(def.value_type)){
+      jsonValue=Number(value);
+      if(!value.trim()||!Number.isFinite(jsonValue)||(def.value_type==="integer"&&!Number.isSafeInteger(jsonValue))||(def.min_numeric!=null&&jsonValue<Number(def.min_numeric))||(def.max_numeric!=null&&jsonValue>Number(def.max_numeric))){setError("Enter a valid value within this rule’s recorded limits. Whole-number rules cannot contain a decimal.");return;}
+    }
     else if(def.value_type==="boolean") jsonValue=value==="true";
     else jsonValue=value;
+    if(!effectiveOn){setError("Choose the date when this rule should take effect.");return;}
+    mutationBusy.current=true;
     setBusy(true); setError(null); setNotice(null);
     const {error:insertError}=await supabase.from("policy_rule_versions").insert({
       org_id:me.org_id,rule_key:def.rule_key,value:jsonValue,effective_on:effectiveOn,
       reason:reason.trim(),recorded_by:me.id,
     });
+    mutationBusy.current=false;
     setBusy(false);
     if(insertError){setError(humanError(insertError,"The rule version could not be recorded.")); return;}
     setReason(""); setValue(""); setRevisionOpen(false); setNotice("Policy rule recorded."); await load();
@@ -76,7 +83,7 @@ export default function AdminPolicies({ me }) {
         <DataPanel eyebrow="Settings" title="Choose a rule" supporting="Select a rule to see its current value, effective date and history." action={<StatusBadge tone="neutral" icon={false}>{defs.length} active</StatusBadge>}>
           {defs.map((item)=>{
             const rows=versions.filter((v)=>v.rule_key===item.rule_key);
-            const latest=rows[0]||null;
+            const latest=rows.find(item=>item.effective_on<=today)||null;
             return <QueueRow key={item.rule_key} icon="settings" title={item.label}
               meta={`${item.domain} · ${formatValue(item,latest?.value)}${latest?" · effective "+latest.effective_on:""} · ${item.description}`}
               status={selected===item.rule_key?"Selected":undefined} statusTone="action"
@@ -96,7 +103,7 @@ export default function AdminPolicies({ me }) {
           <Button variant="quiet" size="compact" disabled={!def} onClick={()=>setHistoryOpen((open)=>!open)}>{historyOpen?"Hide version history":"Show version history"}</Button>
           <MotionDisclosure open={historyOpen} ariaLabel="Policy version history">
             {history.slice(0,10).map((item)=><QueueRow key={item.id} icon="history" title={formatValue(def,item.value)}
-              meta={`Effective ${item.effective_on} · ${item.reason}`} status={item.id===current?.id?"Current":"Previous"} statusTone={item.id===current?.id?"success":"neutral"} />)}
+              meta={`Effective ${item.effective_on} · ${item.reason}`} status={item.effective_on>today?"Scheduled":item.id===current?.id?"Current":"Previous"} statusTone={item.id===current?.id?"success":"neutral"} />)}
             {!history.length&&<StatePanel state="empty" title="No version history" description="No version has been recorded for this rule yet." />}
           </MotionDisclosure>
         </DataPanel>

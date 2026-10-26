@@ -448,6 +448,7 @@
 .ev2p-summary small {
   color: var(--ev2-text-tertiary);
 }
+.ev2p-summary-action{width:100%;min-height:44px;padding:0;border:0;background:transparent;text-align:left;font:inherit;cursor:pointer}.ev2p-summary-action:focus-visible{outline:3px solid var(--ev2-action);outline-offset:3px}
 
 .ev2p-empty {
   display: grid;
