@@ -1,6 +1,8 @@
+import { StatePanel } from "../experience-v2/components";
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
+import { EmptyState, FieldGroup, LoadingState } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Table } from "../components/primitives";
 
@@ -101,15 +103,11 @@ export default function AdminAudit({ me }) {
   if (loading) return <div className="body"><LoadingState label="Loading audit history…" /></div>;
 
   return <div className="body">
-    <div style={{ paddingTop: 26 }}>
-      <div className="eyebrow">Governance</div>
-      <h1 className="h1">Activity history</h1>
-      <p className="screen-note">See who changed a record and when. Previous entries cannot be edited. Confidential HR activity has its own protected history.</p>
-    </div>
+    <WorkPageHeader eyebrow="Governance" title="Activity history" description="See who changed a record and when. Showing up to 250 recent changes. Previous entries cannot be edited. Confidential HR activity has its own protected history." />
 
-    {error && <ProductNotice tone="error" title="Audit could not finish loading" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice>}
+    {error && <StatePanel state="error" title="Records could not load" description={error} actionLabel="Try again" onAction={load} />}
 
-    <div className="split" style={{ marginTop: 18 }}>
+    {!error && <div className="split" style={{ marginTop: 18 }}>
       <div className="main-col">
         <div className="sec"><span>Recent changes</span><span>{shown.length}</span></div>
         <Table
@@ -154,6 +152,6 @@ export default function AdminAudit({ me }) {
           </p>
         </div>
       </div>
-    </div>
+    </div>}
   </div>;
 }

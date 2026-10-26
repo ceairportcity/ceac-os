@@ -1,3 +1,4 @@
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
@@ -33,6 +34,7 @@ export default function AdminWorkflows({ me }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [readError, setReadError] = useState(null);
   const [notice, setNotice] = useState(null);
 
   useEffect(() => { load(); }, [me.id]);
@@ -40,6 +42,7 @@ export default function AdminWorkflows({ me }) {
   async function load() {
     setLoading(true);
     setError(null);
+    setReadError(null);
     const [definitionsResult, runsResult, stepsResult] = await Promise.all([
       supabase.from("workflow_definitions")
         .select("id,workflow_key,label,description,trigger_event_type,version,active")
@@ -58,7 +61,7 @@ export default function AdminWorkflows({ me }) {
 
     const firstError = definitionsResult.error || runsResult.error || stepsResult.error;
     if (firstError) {
-      setError(humanError(firstError, "Pending decisions could not load."));
+      setReadError(humanError(firstError, "Pending decisions could not load."));
       setLoading(false);
       return;
     }
@@ -77,7 +80,7 @@ export default function AdminWorkflows({ me }) {
         .select("id,full_name")
         .in("id", profileIds);
       if (profileError) {
-        setError(humanError(profileError, "Workflow people could not be resolved."));
+        setReadError(humanError(profileError, "Workflow people could not be resolved."));
         setLoading(false);
         return;
       }
@@ -112,7 +115,7 @@ export default function AdminWorkflows({ me }) {
 
   async function completeStep(decision = null) {
     const resolvedOutcome = decision || outcome.trim();
-    if (!selectedStep || !resolvedOutcome) return;
+    if (busy || readError || !selectedStep || selectedStep.state !== "ready" || !resolvedOutcome) return;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -135,16 +138,13 @@ export default function AdminWorkflows({ me }) {
   if (loading) return <div className="body"><LoadingState label="Loading workflows…" /></div>;
 
   return <div className="body">
-    <div style={{ paddingTop: 26 }}>
-      <div className="eyebrow">Administration</div>
-      <h1 className="h1">Pending decisions</h1>
-      <p className="screen-note">Review requests waiting for a decision or confirmation. Oldest requests appear first.</p>
-    </div>
+    <WorkPageHeader eyebrow="Administration" title="Pending decisions" description="Review requests waiting for a decision or confirmation. Oldest requests appear first." />
 
+    {readError && <StatePanel state="error" title="Checks could not load" description={readError} actionLabel="Try again" onAction={load} />}
     {error && <ProductNotice tone="error" title="Checks">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Check updated">{notice}</ProductNotice>}
 
-    <div className="split" style={{ marginTop: 18 }}>
+    {!readError && <div className="split" style={{ marginTop: 18 }}>
       <div className="main-col">
         <DataPanel
           eyebrow="Decision queue"
@@ -171,9 +171,9 @@ export default function AdminWorkflows({ me }) {
               icon={step.state==="ready"?"warning":"checkCircle"}
               title={step.label}
               meta={`${definition?.label || "Check"} · ${subject}`}
-              status={step.state==="ready"?"Waiting":step.outcome||"Completed"}
-              statusTone={step.state==="ready"?"warning":"success"}
-              onClick={() => setSelectedStepId(step.id)}
+              status={step.state==="ready"?"Waiting":step.state==="completed"?(step.outcome ? humanize(step.outcome) : "Completed"):humanize(step.state)}
+              statusTone={step.state==="ready"?"warning":step.state==="completed"&&step.outcome!=="not_approved"?"success":"neutral"}
+              onClick={() => { setSelectedStepId(step.id); setOutcome("reviewed"); setNote(""); setError(null); }}
             />;
           })}
           {shownSteps.length === 0 && <StatePanel
@@ -209,6 +209,6 @@ export default function AdminWorkflows({ me }) {
           <p className="small" style={{ lineHeight: 1.6, margin: 0 }}>CEAC opens a Check when a recorded change reaches a point that needs a human decision. Completing a Check can move the process forward. Choosing “No — I did not approve this” stops that run and keeps the decision in history.</p>
         </DataPanel>
       </div>
-    </div>
+    </div>}
   </div>;
 }
