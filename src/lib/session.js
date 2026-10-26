@@ -1,5 +1,11 @@
 import { supabase } from "./supabase";
 import { getPositionOnce } from "./locationEvidence";
+
+// This failure is known to occur before any work_sessions insert.
+// Callers may safely let the employee retry without a session recheck.
+export class WorkStartPreflightError extends Error {
+  constructor(message) { super(message); this.name = "WorkStartPreflightError"; }
+}
 export async function openSession(orgId, userId) {
   const { data, error } = await supabase.from("work_sessions")
     .select("id, started_at, last_confirmed_at, place, work_item_id")
@@ -32,7 +38,7 @@ export async function startWork(orgId, userId, place, workItemId, officeLocation
   }
   const pos = await getPositionOnce();
   if (place === "office" && pos.failure) {
-    throw new Error(`${pos.failure}. Allow location access and retry to verify an office start. No session was started.`);
+    throw new WorkStartPreflightError(`${pos.failure}. Turn on device location services and allow location for CEAC OS in browser site settings, then retry. No session was started.`);
   }
   let verifiedOfficeLocationId = null;
   if (place === "office") {
