@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { openSession, startWork, endWork, reconcileWorkSession } from "../lib/session";
+import { openSession, startWork, endWork, reconcileWorkSession, WorkStartPreflightError } from "../lib/session";
 import { Sheet } from "./bits";
 import "./EmployeeWorkSession.css";
 
@@ -106,6 +106,12 @@ export default function EmployeeWorkSession({ me }) {
       }
       setSession(current);setVerified(true);setEditor(false);setReady(false);
     } catch (e) {
+      // A geolocation failure is classified *before* the insert. Keep the
+      // editor and verified session state so location can be retried safely.
+      if (e instanceof WorkStartPreflightError) {
+        setError(e.message);
+        return;
+      }
       // startWork may have already created the server row before a network
       // error or an uncertain re-read. Never permit a duplicate Start until
       // the authoritative tenant-/actor-scoped session has been rechecked.
