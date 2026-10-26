@@ -23,7 +23,7 @@ function sumByCurrency(rows) {
   return totals;
 }
 
-export default function Units({ me, openItem, openPeopleAccess }) {
+export default function Units({ me, openItem, openPeopleAccess, openProject }) {
   const [units, setUnits] = useState([]);
   const [openUnitId, setOpenUnitId] = useState(null);
   const [area, setArea] = useState("overview");
@@ -294,9 +294,9 @@ export default function Units({ me, openItem, openPeopleAccess }) {
 
       {area === "projects" && <section className="admin-workspace-area">
         <SectionHeader eyebrow="Delivery" title="Projects led by this unit" count={openUnit.projects.length} />
-        {openUnit.projects.map((project) => <div key={project.id} className="admin-evidence-row">
+        {openUnit.projects.map((project) => <button type="button" key={project.id} className="admin-evidence-row admin-action-button" onClick={() => openProject?.(project.id)}>
           <div><strong>{project.name}</strong><span>{project.status}{project.ends_on ? ` · ends ${dateOnly(project.ends_on)}` : ""}</span></div>
-        </div>)}
+        </button>)}
         {openUnit.projects.length === 0 && <EmptyState compact title="No projects led by this unit">Cross-unit participation remains visible through the underlying project records.</EmptyState>}
       </section>}
 

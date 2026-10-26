@@ -1,5 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import WorkforceStreetMap from "./WorkforceStreetMap";
+import { primaryOfficePoint } from "../lib/workforceStreetMap";
+import { FieldGroup } from "./bits";
+import { Button, DataPanel } from "../experience-v2/components";
 
 // Administrative configuration only. The office_locations RLS write policy
 // requires app_is_admin(); listing venues grants no ability to verify presence.
@@ -19,6 +23,7 @@ function validLocation(form) {
 export default function DutyLocationSettings({ me }) {
   const [locations, setLocations] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [readFailed, setReadFailed] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [draft, setDraft] = useState(blank);
@@ -29,11 +34,14 @@ export default function DutyLocationSettings({ me }) {
   async function reload() {
     const token = ++generation.current;
     setLoaded(false);
+    setReadFailed(false);
     const { data, error: readError } = await supabase.from("office_locations")
       .select("id,name,lat,lng,radius_meters,is_primary")
       .eq("org_id", me.org_id).order("name");
     if (token !== generation.current) return false;
     if (readError) {
+      setLocations([]);
+      setReadFailed(true);
       setError("Authorised duty locations could not be loaded. No setting was changed.");
       setLoaded(true);
       return false;
@@ -72,7 +80,7 @@ export default function DutyLocationSettings({ me }) {
   }
 
   async function save() {
-    if (busyRef.current || !validLocation(draft)) return;
+    if (busyRef.current || !loaded || readFailed || !validLocation(draft)) return;
     busyRef.current = true;
     setBusy(true);
     setError("");
@@ -128,43 +136,40 @@ export default function DutyLocationSettings({ me }) {
     }
   }
 
-  return <section id="duty-location-settings" className="office-settings-card office-settings-wide">
-    <h2>Authorised duty locations</h2>
-    <p className="screen-note">Configure additional church-office or programme venues for on-site attendance. The primary office remains managed in Office location above. No venue selection alone proves someone attended.</p>
-    <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => { setError(""); void reload(); }}>Refresh locations</button>
+  const office=useMemo(()=>primaryOfficePoint(locations.find(location=>location.is_primary)),[locations]);
+  const chosen=String(draft.lat).trim()!==""&&String(draft.lng).trim()!=="";
+  const focusLocation=useMemo(()=>chosen?{lat:Number(draft.lat),lng:Number(draft.lng)}:office,[chosen,draft.lat,draft.lng,office]);
+  return <DataPanel id="duty-location-settings" className="office-settings-card office-settings-wide"
+    title="Authorised duty locations" supporting="Configure other church-office or programme venues. Manage the primary office in Office location. A venue selection never proves attendance."
+    action={<Button variant="secondary" disabled={busy} onClick={() => { setError(""); void reload(); }}>Refresh locations</Button>}>
     {!loaded && <p role="status">Loading approved locations...</p>}
     {error && <p role="alert" className="ceac-support-error">{error}</p>}
     {success && <p role="status">{success}</p>}
-    {loaded && locations.length === 0 && <p className="screen-note">No authorised locations are configured.</p>}
+    {loaded && !readFailed && locations.length === 0 && <p className="screen-note">No authorised locations are configured.</p>}
     {locations.map((location) => <div key={location.id} className="admin-evidence-row">
       <div><strong>{location.name}</strong><span>{location.is_primary ? "Primary office" : "Programme / duty venue"} · {location.radius_meters} m radius</span></div>
       {!location.is_primary && <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => editVenue(location)}>Edit</button>}
     </div>)}
     <div className="form-grid two">
-      <label>Venue name
+      <FieldGroup label="Venue name">
         <input className="field" aria-label="Duty venue name" maxLength={120} value={draft.name}
           onChange={(event) => change("name", event.target.value)}
           placeholder="Approved programme venue" />
-      </label>
-      <label>Location radius in metres
+      </FieldGroup>
+      <FieldGroup label="Check-in area (metres)">
         <input className="field" type="number" aria-label="Duty venue radius" min="10" max="1000"
           value={draft.radius} onChange={(event) => change("radius", event.target.value)} />
-      </label>
-      <label>Latitude
-        <input className="field" type="number" step="any" min="-90" max="90" aria-label="Duty venue latitude"
-          value={draft.lat} onChange={(event) => change("lat", event.target.value)} />
-      </label>
-      <label>Longitude
-        <input className="field" type="number" step="any" min="-180" max="180" aria-label="Duty venue longitude"
-          value={draft.lng} onChange={(event) => change("lng", event.target.value)} />
-      </label>
+      </FieldGroup>
     </div>
+    <p role="status">{chosen?"Venue point chosen. Check the map before saving.":"Choose the venue point on the map before saving."}</p>
+    {loaded&&!readFailed&&<WorkforceStreetMap office={office} focusLocation={focusLocation}
+      onChooseLocation={point=>{if(busy)return;setDraft(current=>({...current,lat:String(point.lat),lng:String(point.lng)}));setError("");setSuccess("");}} />}
     <div className="workforce-setup-actions">
-      <button className="btn" type="button" disabled={busy || !validLocation(draft)} onClick={save}>
+      <button className="btn" type="button" disabled={busy || !loaded || readFailed || !validLocation(draft)} onClick={save}>
         {busy ? "Saving venue..." : draft.id ? "Save venue changes" : "Add authorised venue"}
       </button>
       {draft.id && <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => setDraft(blank)}>Cancel edit</button>}
     </div>
-    <p className="screen-note">Only Administration can save these records. Coordinates and radius are configuration evidence; check-in location proof remains separately verified.</p>
-  </section>;
+    <p className="screen-note">Only Administration can save these records. A saved venue and check-in area support attendance review; choosing a venue never proves attendance.</p>
+  </DataPanel>;
 }
