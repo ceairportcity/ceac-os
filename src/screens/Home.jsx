@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
-import { openSession, startWork, endWork, reconcileWorkSession } from "../lib/session";
+import { openSession, startWork, endWork, reconcileWorkSession, WorkStartPreflightError } from "../lib/session";
 import { isOverdue } from "../lib/time";
 import { Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
@@ -334,7 +334,13 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
       if (!created?.id || current?.id !== created.id)
         throw new Error("Start was not verified against the current session.");
       setSession(current); setAsk(false); setSessionWorkItem("");
-    } catch {
+    } catch (err) {
+      // Location acquisition failed before any database insert; the selected
+      // location remains available so the employee can enable access and retry.
+      if (err instanceof WorkStartPreflightError) {
+        setError(err.message);
+        return;
+      }
       // A failed acknowledgement may follow a successful server insert:
       // another Start must remain disabled until an authoritative re-read.
       setVerifiedSessionScope(null); setAsk(false);
@@ -478,6 +484,7 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
         </select>
         <div className="hint">The location is attached to this work when you start. CEAC OS does not track you during the day.</div>
       </>}
+      {error && <p role="alert" className="hint">{error}</p>}
       <button className="btn" style={{ marginTop: 16 }} onClick={begin} disabled={busy || !sessionVerified || (place === "elsewhere" && !sessionWorkItem) || (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId))}>{busy ? "Starting..." : "Start work"}</button>
     </Sheet>}
     {recoveryOpen && sessionVerified && <Sheet onClose={() => !busy && setRecoveryOpen(false)}>
