@@ -236,7 +236,7 @@ export default function EmployeeWorkSession({ me }) {
         {ready&&ownWorkUnavailable&&<small role="alert">Your assigned work could not be loaded. Reopen the form to retry.</small>}
         {ready&&!ownWorkUnavailable&&ownWork.length===0&&<small role="status">No active responsibility is currently assigned to you. Record a genuine task in Work or ask your manager to assign one before starting off-site.</small>}
       </label>}
-      {error&&<p role="alert"{error}</p>}
+      {error&&<p role="alert">{error}</p>}
       <button type="button" className="btn" disabled={busy||!ready||!verified||(place==="office"?(locationsUnavailable||!locationId):(ownWorkUnavailable||!workId))} onClick={begin}>
         {busy?"Verifying location…":"Start work"}
       </button>
