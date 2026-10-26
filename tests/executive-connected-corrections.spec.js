@@ -98,7 +98,8 @@ for (const width of [320,390,430,1440]) {
 test('Executive without department can choose an assignment department and cancel self work',async ({page})=>{
   await signIn(page);
   await page.goto('/?tab=work');
-  await page.getByRole('button',{name:'Give out work',exact:true}).first().click();
+  await expect(page.locator('.ev2-work-executive .ev2w-header').getByRole('heading',{name:'Work',exact:true})).toBeVisible();
+  await page.locator('.ev2-work-executive .ev2w-header').getByRole('button',{name:'Give out work',exact:true}).click();
   let dialog=page.getByRole('dialog',{name:'Give out work'});
   await dialog.getByRole('combobox',{name:'Assignment department'}).selectOption(unitA);
   await expect(dialog.getByRole('combobox',{name:'Work type'})).toBeVisible();
@@ -108,7 +109,7 @@ test('Executive without department can choose an assignment department and cance
   await expect(dialog.getByRole('textbox',{name:'Work to complete'})).toHaveValue('');
   await expect(dialog.getByRole('combobox',{name:'Responsible person'}).locator('option[value="31000000-0000-4000-8000-000000000005"]')).toHaveCount(1);
   await page.keyboard.press('Escape');
-  await page.getByRole('button',{name:'Add my work',exact:true}).first().click();
+  await page.locator('.ev2-work-executive .ev2w-header').getByRole('button',{name:'Add my work',exact:true}).click();
   await expect(page.getByRole('combobox',{name:'Department for my work'})).toBeVisible();
   await page.getByRole('combobox',{name:'Department for my work'}).selectOption(unitA);
   await expect(page.getByText(/Your Executive role does not require department membership/)).toBeVisible();
@@ -235,7 +236,7 @@ test('Executive own-work failure preserves the draft and allows a deliberate ret
   await page.setViewportSize({width:390,height:844});
   await signIn(page);
   await page.goto('/?tab=work');
-  await page.getByRole('button',{name:'Add my work',exact:true}).first().click();
+  await page.locator('.ev2-work-executive .ev2w-header').getByRole('button',{name:'Add my work',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Add my work'});
   await dialog.getByRole('combobox',{name:'Department for my work'}).selectOption(unitA);
   await dialog.getByRole('textbox',{name:'My responsibility title'}).fill('Unsaved retry fixture');
