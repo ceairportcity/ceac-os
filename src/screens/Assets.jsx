@@ -236,7 +236,7 @@ export default function Assets({ me }) {
       title="Assets & devices"
       description="CEAC equipment currently in your custody, with factual assignment and lifecycle history. This surface does not remotely manage your device."
       statusLabel="My custody"
-    /> : me.is_admin ? <WorkPageHeader eyebrow="Enterprise asset register" title="Assets & devices" description="CEAC equipment, current custody, repairs and recorded history. This register does not remotely manage devices." /> : <div style={{paddingTop:26}}>
+    /> : me.is_admin ? <WorkPageHeader eyebrow="Enterprise asset register" title="Assets & devices" description="CEAC equipment, current custody, repairs and recorded history. This register does not remotely wipe, lock, configure or monitor device operating systems." /> : <div style={{paddingTop:26}}>
       <div className="eyebrow">Enterprise asset register</div>
       <h1 className="h1">Assets & devices</h1>
       <p className="screen-note">CEAC inventory, custody and lifecycle history. This module records operational facts; it does not remotely wipe, lock, configure or monitor device operating systems.</p>

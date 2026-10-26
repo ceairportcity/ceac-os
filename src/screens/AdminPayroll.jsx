@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer } from "../experience-v2/components";
+import { expenseAmountMinor } from "../lib/expenseAmount";
 
 const LINE_TYPES = [
   ["transport_allowance","addition","Transport allowance"],
@@ -34,8 +35,7 @@ function dateLabel(value) {
 }
 
 function amountToMinor(value) {
-  const number = Number(String(value || "").replace(/,/g, ""));
-  return Number.isFinite(number) ? Math.round(number * 100) : 0;
+  return expenseAmountMinor(value) ?? 0;
 }
 
 function statusLabel(status) {
@@ -196,6 +196,11 @@ export default function AdminPayroll({ me }) {
   async function saveLine(form) {
     const runId = detail?.run?.id;
     if (!runId || selectedRunRef.current !== runId || !form.employeeId || busy || lineWriteBusyRef.current) return;
+    const amountMinor = amountToMinor(form.amount);
+    if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
+      setError("Enter a positive amount with no more than two decimal places.");
+      return;
+    }
     lineWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
     let recorded = false;
@@ -207,7 +212,7 @@ export default function AdminPayroll({ me }) {
         p_category: form.category,
         p_direction: form.direction,
         p_label: form.label.trim(),
-        p_amount_minor: amountToMinor(form.amount),
+        p_amount_minor: amountMinor,
         p_note: form.note.trim() || null,
       });
       if (error) {
@@ -486,16 +491,16 @@ export default function AdminPayroll({ me }) {
       </main>
     </div>
 
-    {visibleSheet?.type === "create" && <CreateRunSheet busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
-    {visibleSheet?.type === "entry" && <EntrySheet entry={visibleSheet.entry} busy={busy} onClose={() => setSheet(null)} onSave={saveLine} onRemove={removeLine} />}
+    {visibleSheet?.type === "create" && <CreateRunSheet error={error} busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
+    {visibleSheet?.type === "entry" && <EntrySheet error={error} entry={visibleSheet.entry} busy={busy} onClose={() => setSheet(null)} onSave={saveLine} onRemove={removeLine} />}
     {visibleSheet?.type === "view" && <ViewEntrySheet entry={visibleSheet.entry} onClose={() => setSheet(null)} />}
-    {visibleSheet?.type === "submit" && <DecisionSheet title="Submit Payroll" action="Submit for approval" busy={busy} onClose={() => setSheet(null)} onSave={submitRun} />}
-    {visibleSheet?.type === "approve" && <DecisionSheet title="Approve Payroll" action="Approve and lock" busy={busy} onClose={() => setSheet(null)} onSave={approveRun} />}
-    {visibleSheet?.type === "correction" && <DecisionSheet title="Create correction" action="Create correction draft" busy={busy} onClose={() => setSheet(null)} onSave={createCorrection} />}
+    {visibleSheet?.type === "submit" && <DecisionSheet error={error} title="Submit Payroll" action="Submit for approval" busy={busy} onClose={() => setSheet(null)} onSave={submitRun} />}
+    {visibleSheet?.type === "approve" && <DecisionSheet error={error} title="Approve Payroll" action="Approve and lock" busy={busy} onClose={() => setSheet(null)} onSave={approveRun} />}
+    {visibleSheet?.type === "correction" && <DecisionSheet error={error} title="Create correction" action="Create correction draft" busy={busy} onClose={() => setSheet(null)} onSave={createCorrection} />}
   </div>;
 }
 
-function CreateRunSheet({ busy, onClose, onSave }) {
+function CreateRunSheet({ error, busy, onClose, onSave }) {
   const [label,setLabel]=useState("");
   const [start,setStart]=useState("");
   const [end,setEnd]=useState("");
@@ -516,6 +521,7 @@ function CreateRunSheet({ busy, onClose, onSave }) {
       </Button>
     </>}
   >
+    {error && <ProductNotice tone="error" title="Payroll was not recorded">{error}</ProductNotice>}
     <FieldGroup label="Period label"><input className="field" value={label} onChange={(event)=>setLabel(event.target.value)} placeholder="October 2026 Payroll" /></FieldGroup>
     <div className="fpg-payroll-form-grid">
       <FieldGroup label="Period start"><input className="field" type="date" value={start} onChange={(event)=>setStart(event.target.value)} /></FieldGroup>
@@ -530,7 +536,7 @@ function CreateRunSheet({ busy, onClose, onSave }) {
   </ComposerDrawer>;
 }
 
-function EntrySheet({ entry, busy, onClose, onSave, onRemove }) {
+function EntrySheet({ error, entry, busy, onClose, onSave, onRemove }) {
   const [category,setCategory]=useState("transport_allowance");
   const initial=LINE_TYPES.find(([key])=>key===category);
   const [direction,setDirection]=useState(initial?.[1] || "addition");
@@ -563,6 +569,7 @@ function EntrySheet({ entry, busy, onClose, onSave, onRemove }) {
       </Button>
     </>}
   >
+    {error && <ProductNotice tone="error" title="Payroll line was not recorded">{error}</ProductNotice>}
     <div className="fpg-payroll-entry-summary">
       <span>Additions <b>{money(entry.additions_minor,entry.currency)}</b></span>
       <span>Deductions <b>{money(entry.deductions_minor,entry.currency)}</b></span>
@@ -605,7 +612,7 @@ function ViewEntrySheet({ entry, onClose }) {
   </ComposerDrawer>;
 }
 
-function DecisionSheet({ title, action, busy, onClose, onSave }) {
+function DecisionSheet({ error, title, action, busy, onClose, onSave }) {
   const [note,setNote]=useState("");
   const valid=note.trim().length>=3;
   return <ComposerDrawer
@@ -618,6 +625,7 @@ function DecisionSheet({ title, action, busy, onClose, onSave }) {
       <Button onClick={()=>onSave(note)} busy={busy} disabled={!valid}>{action}</Button>
     </>}
   >
+    {error && <ProductNotice tone="error" title="Payroll decision was not recorded">{error}</ProductNotice>}
     <FieldGroup label="Decision note"><textarea className="field" rows="4" value={note} onChange={(event)=>setNote(event.target.value)} placeholder="Record the reason and review context" /></FieldGroup>
     <p className="screen-note">Approved Payroll is immutable. Corrections create a new attributable successor revision.</p>
   </ComposerDrawer>;

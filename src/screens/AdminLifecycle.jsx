@@ -114,7 +114,7 @@ export default function AdminLifecycle({ me, initialProfileId = null, initialTyp
 
   return <div className="body phase5-lifecycle">
     <WorkPageHeader eyebrow="People operations" title="Employee lifecycle"
-      description="Review onboarding and offboarding in order. Completing offboarding ends operational access."
+      description="Review onboarding and offboarding in order. Completing offboarding is the authoritative path that deactivates operational access."
       actionLabel={readError ? undefined : "Start lifecycle case"} onAction={()=>{setError(null);setCreateOpen(true);}} />
     {readError && <StatePanel state="error" title="Lifecycle records could not load" description={readError} actionLabel="Try again" onAction={load} />}
 

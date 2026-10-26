@@ -3,7 +3,7 @@ import "../final-product/fpg7-people-workforce.css";
 import { supabase } from "../lib/supabase";
 import { classifyPreviewFeatureResult } from "../lib/pendingFeatureCompatibility";
 import { dateOnly, dueLabel } from "../lib/time";
-import { statusPill, ProductNotice, LoadingState, FieldGroup, EmptyState, Avatar, ProgressMeter, Sheet } from "../components/bits";
+import { statusPill, ProductNotice, LoadingState, FieldGroup, EmptyState, Avatar, ProgressMeter } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { protectedMoney, amountToMinor } from "../lib/protectedCompensation";
 import {
@@ -1316,10 +1316,9 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         onSave={saveProtectedRecord}
       />}
 
-      {hasLinkedProfile && employmentEditor && employmentForm && <Sheet onClose={() => { if (!savingEmployment) { setEmploymentEditor(false); setEmploymentForm(null); } }}>
-        <div className="eyebrow">People & employment</div>
-        <div className="h2">Record employment change</div>
-        <p className="screen-note">This writes a new historical snapshot. Earlier employment history is not overwritten.</p>
+      {hasLinkedProfile && employmentEditor && employmentForm && <ComposerDrawer open title="Record employment change"
+        description="This records a new historical snapshot. Earlier employment history is preserved."
+        onClose={() => { if (!savingEmployment) { setEmploymentEditor(false); setEmploymentForm(null); } }}>
 
         <FieldGroup label="Change">
           <select className="field" aria-label="Change" value={employmentForm.changeType} onChange={(event) => setEmploymentForm({ ...employmentForm, changeType: event.target.value })}>
@@ -1394,7 +1393,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           disabled={savingEmployment || !employmentForm.effectiveOn || !employmentForm.employmentType.trim() || (employmentForm.status === "exited" && !employmentForm.exitedOn) || (employmentForm.changeType === "correction" && !employmentForm.correctionOf)}>
           {savingEmployment ? "Recording…" : "Record employment change"}
         </button>
-      </Sheet>}
+      </ComposerDrawer>}
     </div>);
   }
 

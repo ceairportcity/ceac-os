@@ -5,8 +5,8 @@ import OperationalArchiveRecords from "../components/OperationalArchiveRecords";
 import { dateOnly } from "../lib/time";
 import { reportAccraDate, reportDateOnly, reportWeekRange, reportMonthRange } from "../lib/ghanaReportingDates";
 import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
-import { Sheet, ProductNotice } from "../components/bits";
-import { Button, Skeleton, StatePanel } from "../experience-v2/components";
+import { ProductNotice } from "../components/bits";
+import { Button, ComposerDrawer, Skeleton, StatePanel } from "../experience-v2/components";
 import {
   ReportingEvidenceCard,
   ReportingEvidenceGrid,
@@ -425,9 +425,8 @@ export default function Reports({ me }) {
       </ReportingFootnote>
 
       {sheet === "new" ? (
-        <Sheet onClose={() => setSheet(null)}>
-          <div className="h2">Open a reporting period</div>
-          <p className="screen-note">Managers file against this period. The name and dates become part of the reporting record.</p>
+        <ComposerDrawer open title="Open a reporting period" onClose={() => { if (!busy) setSheet(null); }}
+          description="Managers file against this period. The name and dates become part of the reporting record.">
 
           <div className="ev2rep-kind-picker" role="group" aria-label="Reporting period kind">
             {KINDS.map(([key, text]) => (
@@ -460,7 +459,7 @@ export default function Reports({ me }) {
 
           {msg ? <ProductNotice tone="error" title="Reporting period">{msg}</ProductNotice> : null}
           <Button onClick={openPeriod} disabled={busy}>{busy ? "Opening…" : "Open period"}</Button>
-        </Sheet>
+        </ComposerDrawer>
       ) : null}
     </div>
   );

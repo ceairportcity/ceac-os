@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { FieldGroup, Sheet } from "../components/bits";
+import { FieldGroup, ProductNotice, Sheet } from "../components/bits";
 import { ComposerDrawer } from "../experience-v2/components";
 import VoiceInput from "../components/VoiceInput";
 import { OperationalFileList, PendingFilePicker } from "../components/OperationalFiles";
@@ -163,6 +163,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
     finally { setBusy(false); }
   }
 
+  const DetailSurface = me.is_admin ? ComposerDrawer : Sheet;
   return <div className={me.is_exec ? "body exec-redesign-page exec-announcements" : "body"}>
     <header className={me.is_exec ? "exec-redesign-shared-head" : undefined} style={me.is_exec ? undefined : { paddingTop: 26 }}>
       <div>
@@ -177,7 +178,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
     {error && <div className="flag flag-brick" style={{ marginTop: 14 }}><h4>Could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={load}>Try again</button></div>}
     {loading && <div className="spin">Loading announcements...</div>}
     {!loading && <div style={{ marginTop: 18 }}>
-      {rows.length === 0 && <div className="card small">There are no current announcements for you.</div>}
+      {rows.length === 0 && !error && <div className="card small">There are no current announcements for you.</div>}
       {rows.map((announcement) => {
         const receipt = receiptFor(announcement);
         const unread = announcement.status === "published" && !receipt;
@@ -196,9 +197,10 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       })}
     </div>}
 
-    {selected && <Sheet onClose={() => setSelected(null)}>
+    {selected && <DetailSurface open title={me.is_admin ? selected.title : undefined} onClose={() => { if (!busy) setSelected(null); }}>
+      {me.is_admin && error && <ProductNotice tone="error" title="Announcement update">{error}</ProductNotice>}
       <div className="eyebrow">{selected.priority}{selected.status !== "published" ? ` · ${selected.status}` : ""}</div>
-      <div className="h2" style={{ marginTop: 5 }}>{selected.title}</div>
+      {!me.is_admin && <div className="h2" style={{ marginTop: 5 }}>{selected.title}</div>}
       <div className="row-m">{selected.profiles?.full_name || "CEAC"} · {formatDate(selected.published_at || selected.created_at)}</div>
       <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, marginTop: 18 }}>{selected.body}</div>
       <OperationalFileList
@@ -212,7 +214,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       {selected.requires_acknowledgement && !receiptFor(selected)?.acknowledged_at && selected.status === "published" &&
         <button className="btn" style={{ marginTop: 18 }} onClick={acknowledge} disabled={busy}>{busy ? "Saving..." : "I acknowledge this message"}</button>}
       {receiptFor(selected)?.acknowledged_at && <div className="flag flag-green" style={{ marginTop: 18 }}><h4>Acknowledged</h4>{formatDate(receiptFor(selected).acknowledged_at)}</div>}
-    </Sheet>}
+    </DetailSurface>}
 
     {form && <ComposerDrawer
       open
@@ -222,6 +224,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       panelClassName="reference-composer reference-announcement-composer"
       footer={<button className="btn" onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : form.id ? "Save changes" : "Save draft"}</button>}
     >
+      {me.is_admin && error && <ProductNotice tone="error" title="Announcement draft not saved">{error}</ProductNotice>}
       <label className="label" htmlFor="announcement-title">Title *</label>
       <div className="assistive-inline">
         <input id="announcement-title" className="field" placeholder="e.g. Sunday Service Update" value={form.title} onChange={(event) => { const value = event.target.value; setForm((current) => ({ ...current, title: value })); }} />

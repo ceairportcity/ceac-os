@@ -1,5 +1,6 @@
-import {useMemo,useRef,useState} from "react";
-import {Sheet,FieldGroup,ProductNotice} from "./bits";
+import {useEffect,useMemo,useRef,useState} from "react";
+import {FieldGroup,ProductNotice} from "./bits";
+import {ComposerDrawer} from "../experience-v2/components";
 import {supabase} from "../lib/supabase";
 import {humanError} from "../lib/productLanguage";
 
@@ -12,6 +13,8 @@ const empty={
 export default function HRCreateRosterEmployee({me,units=[],employees=[],accounts=[],onCreated,onClose}){
  const [form,setForm]=useState(empty),[busy,setBusy]=useState(false),[error,setError]=useState("");
  const saving=useRef(false);
+ const errorFocus=useRef(null);
+ useEffect(()=>{if(error)errorFocus.current?.focus();},[error]);
  const set=(key,value)=>setForm(previous=>({...previous,[key]:value}));
  const nameMatches=useMemo(()=>employees.filter(person=>
   String(person.full_name||"").trim().toLocaleLowerCase()===form.fullName.trim().toLocaleLowerCase()
@@ -92,11 +95,9 @@ export default function HRCreateRosterEmployee({me,units=[],employees=[],account
    setError(humanError(failure,"The HR employee record could not be confirmed. Review any existing record before retrying."));
   }finally{saving.current=false;setBusy(false);}
  }
- return <Sheet onClose={()=>onClose?.()}>
-  <div className="eyebrow">People & Access · HR roster</div>
-  <h2 className="h2">Add employee</h2>
-  <p className="screen-note">Create one employee record without a CEAC login. Account invitations and access permissions are separate, verified actions.</p>
-  {error&&<ProductNotice tone="error" title="Employee creation">{error}</ProductNotice>}
+ return <ComposerDrawer open title="Add employee" onClose={()=>{if(!busy)onClose?.();}}
+  description="Create one employee record without a CEAC login. Account invitations and access permissions remain separate, verified actions.">
+  {error&&<div ref={errorFocus} tabIndex={-1} role="region" aria-label="Employee creation error"><ProductNotice tone="error" title="Employee creation">{error}</ProductNotice></div>}
   <form onSubmit={save} aria-label="Add employee record" style={{display:"grid",gap:12}}>
    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:12}}>
     <FieldGroup label="Legal or full name"><input className="field" aria-label="Employee full name" required maxLength={180} value={form.fullName} onChange={e=>set("fullName",e.target.value)}/></FieldGroup>
@@ -150,5 +151,5 @@ export default function HRCreateRosterEmployee({me,units=[],employees=[],account
     <button type="submit" className="btn" disabled={busy||!ready}>{busy?"Saving employee…":"Save employee"}</button>
    </div>
   </form>
- </Sheet>;
+ </ComposerDrawer>;
 }

@@ -72,7 +72,7 @@ export default function AdminPolicies({ me }) {
 
   return <div className="body">
     <WorkPageHeader eyebrow="Control Center" title="Organisation rules" description="Review current rules and record a reasoned new version. Earlier versions remain in history." />
-    {error&&<ProductNotice tone="error" title="Policies & rules">{error}</ProductNotice>}
+    {error&&!revisionOpen&&<ProductNotice tone="error" title="Policies & rules">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Policy updated">{notice}</ProductNotice>}
 
     <div className="split" style={{marginTop:18}}>
