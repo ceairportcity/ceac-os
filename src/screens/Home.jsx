@@ -63,6 +63,8 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
   const [officeLocationId, setOfficeLocationId] = useState("");
   const [officeLocationStatus, setOfficeLocationStatus] = useState("loading");
   const [sessionWorkItem, setSessionWorkItem] = useState("");
+  const [offsiteWork, setOffsiteWork] = useState([]);
+  const [offsiteWorkStatus, setOffsiteWorkStatus] = useState("idle");
   const sessionScope = me.org_id + ":" + me.id;
   const [verifiedSessionScope, setVerifiedSessionScope] = useState(sessionScope);
   const sessionVerified = verifiedSessionScope === sessionScope;
@@ -94,6 +96,27 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
       }, () => { if (active) setOfficeLocationStatus("error"); });
     return () => { active = false; };
   }, [me.id, me.org_id]);
+
+  // Off-site eligibility must be checked independently of the Overview's
+  // calendars, alerts and other optional datasets. No stale list is trusted.
+  useEffect(() => {
+    if (!ask || place !== "elsewhere") return;
+    let active = true;
+    setOffsiteWork([]);
+    setSessionWorkItem("");
+    setOffsiteWorkStatus("loading");
+    Promise.resolve(
+      supabase.from("work_items").select("id,ref,title,status")
+        .eq("org_id",me.org_id).eq("assignee_id",me.id)
+        .in("status",["not_started","in_progress","returned"])
+        .order("created_at",{ascending:false}).limit(100)
+    ).then(({ data, error: workError }) => {
+      if (!active) return;
+      setOffsiteWork(workError ? [] : (data || []));
+      setOffsiteWorkStatus(workError ? "error" : "ready");
+    }).catch(() => { if (active) { setOffsiteWork([]); setOffsiteWorkStatus("error"); } });
+    return () => { active = false; };
+  }, [ask, place, me.org_id, me.id]);
 
   async function load() {
     setLoading(true);
@@ -325,7 +348,10 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
     if (busy || !sessionVerified) return;
     setBusy(true); setError(null);
     try {
-      if (place === "elsewhere" && !sessionWorkItem) throw new Error("Choose the work you are doing off-site before you start.");
+      if (place === "elsewhere" &&
+          (offsiteWorkStatus !== "ready" || !offsiteWork.some((item) => item.id === sessionWorkItem))) {
+        throw new WorkStartPreflightError("Choose an available active responsibility before starting off-site. No session was started.");
+      }
       if (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId)) {
         throw new Error("Choose the authorised office or programme location before you start.");
       }
@@ -478,14 +504,23 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
         <p className="hint">Your selected duty location is recorded with this work session. Verification still requires evidence; selecting it does not prove presence.</p>
       </>}
       {place === "elsewhere" && <>
-        <select className="field" aria-label="Work being done off-site" value={sessionWorkItem} onChange={(event) => setSessionWorkItem(event.target.value)}>
+        <label className="screen-note" htmlFor="ceac-offsite-active-work">Active responsibility</label>
+        <select className="field" id="ceac-offsite-active-work" aria-label="Work being done off-site"
+          value={sessionWorkItem} disabled={offsiteWorkStatus !== "ready"}
+          onChange={(event) => { setSessionWorkItem(event.target.value); setError(null); }}>
           <option value="">Choose the work you are doing</option>
-          {items.filter((item) => ["not_started", "in_progress", "returned"].includes(item.status)).map((item) => <option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}
+          {offsiteWork.map((item) => <option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}
         </select>
-        <div className="hint">The location is attached to this work when you start. CEAC OS does not track you during the day.</div>
+        {offsiteWorkStatus === "loading" && <p className="hint" role="status">Checking your active responsibilities…</p>}
+        {offsiteWorkStatus === "error" && <p className="hint" role="alert">Your active responsibilities could not be verified. Close and reopen Start Work to retry.</p>}
+        {offsiteWorkStatus === "ready" && offsiteWork.length === 0 && <div className="hint" role="status">
+          No active responsibility is assigned to you. Record a genuine task in Work or ask your manager to assign one before starting off-site.
+          <button type="button" onClick={() => { setAsk(false); openWork?.(); }}>Open Work</button>
+        </div>}
+        <div className="hint">Off-site Start Work must be linked to your active work. If location is unavailable, the session is recorded with unverified location evidence, not a verified office presence.</div>
       </>}
       {error && <p role="alert" className="hint">{error}</p>}
-      <button className="btn" style={{ marginTop: 16 }} onClick={begin} disabled={busy || !sessionVerified || (place === "elsewhere" && !sessionWorkItem) || (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId))}>{busy ? "Starting..." : "Start work"}</button>
+      <button className="btn" style={{ marginTop: 16 }} onClick={begin} disabled={busy || !sessionVerified || (place === "elsewhere" && (offsiteWorkStatus !== "ready" || !offsiteWork.some((item) => item.id === sessionWorkItem))) || (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId))}>{busy ? "Starting..." : "Start work"}</button>
     </Sheet>}
     {recoveryOpen && sessionVerified && <Sheet onClose={() => !busy && setRecoveryOpen(false)}>
       <div className="h2">Close the earlier work session</div>
