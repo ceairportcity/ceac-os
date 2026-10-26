@@ -30,6 +30,8 @@ export default function EmployeeWorkSession({ me }) {
   const [locations, setLocations] = useState([]);
   const [workId, setWorkId] = useState("");
   const [ownWork, setOwnWork] = useState([]);
+  const [locationsUnavailable, setLocationsUnavailable] = useState(false);
+  const [ownWorkUnavailable, setOwnWorkUnavailable] = useState(false);
   const [endedAt, setEndedAt] = useState("");
   const [correctionReason, setCorrectionReason] = useState("");
   const [ready, setReady] = useState(false);
@@ -72,28 +74,35 @@ export default function EmployeeWorkSession({ me }) {
     if (!editor) return;
     let alive = true;
     setReady(false); setLocations([]); setOwnWork([]);
+    setLocationsUnavailable(false); setOwnWorkUnavailable(false);
     (async () => {
-      try {
-        const [locationResult,workResult] = await Promise.all([
-          supabase.from("office_locations").select("id,name")
-            .eq("org_id",me.org_id).order("name"),
-          supabase.from("work_items").select("id,ref,title").eq("assignee_id",me.id)
-            .in("status",["not_started","in_progress","returned"])
-            .order("created_at",{ascending:false}).limit(100),
-        ]);
-        if (locationResult.error || workResult.error) throw (locationResult.error || workResult.error);
-        if (alive) {
-          setLocations(locationResult.data || []); setOwnWork(workResult.data || []);
-          setReady(true);
-        }
-      } catch { if (alive) setError("Authorised duty locations or your own work could not be verified."); }
+      // An unavailable office catalogue must not prevent authorised off-site
+      // selection, and an unavailable work list must not block an office start.
+      const [locationResult, workResult] = await Promise.allSettled([
+        supabase.from("office_locations").select("id,name")
+          .eq("org_id",me.org_id).order("name"),
+        supabase.from("work_items").select("id,ref,title")
+          .eq("org_id",me.org_id).eq("assignee_id",me.id)
+          .in("status",["not_started","in_progress","returned"])
+          .order("created_at",{ascending:false}).limit(100),
+      ]);
+      if (!alive) return;
+      const locationValue = locationResult.status === "fulfilled" ? locationResult.value : { error: true };
+      const workValue = workResult.status === "fulfilled" ? workResult.value : { error: true };
+      setLocationsUnavailable(Boolean(locationValue.error));
+      setOwnWorkUnavailable(Boolean(workValue.error));
+      setLocations(locationValue.error ? [] : (locationValue.data || []));
+      setOwnWork(workValue.error ? [] : (workValue.data || []));
+      setReady(true);
     })();
     return () => { alive = false; };
   }, [editor,me.org_id,me.id]);
 
   async function begin() {
     if (busy || !ready || !verified) return;
+    if (place === "office" && locationsUnavailable) { setError("Authorised duty locations could not be loaded. Reopen this form to retry."); return; }
     if (place === "office" && !locationId) { setError("Choose an authorised duty location."); return; }
+    if (place === "elsewhere" && ownWorkUnavailable) { setError("Your assigned work could not be loaded. Reopen this form to retry."); return; }
     if (place === "elsewhere" && !workId) { setError("Choose one of your own assigned responsibilities."); return; }
     setBusy(true);setError("");
     try {
@@ -210,22 +219,25 @@ export default function EmployeeWorkSession({ me }) {
       <h2>Start your work session</h2>
       <p>Choose your actual working location. Location evidence is checked when you begin. The system does not continuously track your position.</p>
       <fieldset><legend>Working location</legend>
-        <label><input type="radio" name="s2-own-place" checked={place==="office"} onChange={()=>setPlace("office")}/> Authorised office or programme venue</label>
-        <label><input type="radio" name="s2-own-place" checked={place==="elsewhere"} onChange={()=>setPlace("elsewhere")}/> Off-site work on my responsibility</label>
+        <label><input type="radio" name="s2-own-place" checked={place==="office"} onChange={()=>{setPlace("office");setError("");}}/> Authorised office or programme venue</label>
+        <label><input type="radio" name="s2-own-place" checked={place==="elsewhere"} onChange={()=>{setPlace("elsewhere");setError("");}}/> Off-site work on my responsibility</label>
       </fieldset>
       {place==="office"?<label>Duty location
-        <select value={locationId} onChange={e=>setLocationId(e.target.value)} disabled={!ready}>
+        <select value={locationId} onChange={e=>setLocationId(e.target.value)} disabled={!ready||locationsUnavailable}>
           <option value="">Choose a verified CEAC location</option>
           {locations.map(loc=><option key={loc.id} value={loc.id}>{loc.name}</option>)}
         </select>
+        {ready&&locationsUnavailable&&<small role="alert">Duty locations could not be verified. Reopen the form to retry.</small>}
       </label>:<label>My responsibility
-        <select value={workId} onChange={e=>setWorkId(e.target.value)} disabled={!ready}>
+        <select value={workId} onChange={e=>setWorkId(e.target.value)} disabled={!ready||ownWorkUnavailable}>
           <option value="">Choose your own work</option>
           {ownWork.map(item=><option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}
         </select>
+        {ready&&ownWorkUnavailable&&<small role="alert">Your assigned work could not be loaded. Reopen the form to retry.</small>}
+        {ready&&!ownWorkUnavailable&&ownWork.length===0&&<small role="status">No active responsibility is currently assigned to you. Record a genuine task in Work or ask your manager to assign one before starting off-site.</small>}
       </label>}
-      {error&&<p role="alert">{error}</p>}
-      <button type="button" className="btn" disabled={busy||!ready||!verified||(place==="office"?!locationId:!workId)} onClick={begin}>
+      {error&&<p role="alert"{error}</p>}
+      <button type="button" className="btn" disabled={busy||!ready||!verified||(place==="office"?(locationsUnavailable||!locationId):(ownWorkUnavailable||!workId))} onClick={begin}>
         {busy?"Verifying location…":"Start work"}
       </button>
     </Sheet>}
