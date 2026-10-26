@@ -13,168 +13,9 @@
   --exec-red-soft: #feecec;
 }
 
-.exec-redesign-page,
-.ev2-work-executive,
-.ev2-finance-executive,
-.ev2-reporting-executive,
-.ev2-executive-ministry {
-  --exec-purple: #7148e8;
-  --exec-purple-soft: #f1edff;
-  --exec-green: #25a86b;
-  --exec-green-soft: #e7f8ef;
-  --exec-amber: #e79024;
-  --exec-amber-soft: #fff2dd;
-  --exec-blue: #2e86e6;
-  --exec-blue-soft: #e9f3ff;
-  --exec-red: #e85252;
-  --exec-red-soft: #feecec;
-  width: 100%;
-  max-width: 86rem;
-  margin: 0 auto;
-  padding: 18px 20px 42px;
-  color: var(--ev2-text);
-}
-
-.exec-redesign-head,
-.ev2-work-executive .ev2w-header,
-.ev2-finance-executive .ev2fin-header,
-.ev2-reporting-executive .ev2rep-header,
-.ev2-executive-ministry .ev2ex-ministry-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 2px 0 17px;
-  border-bottom: 0;
-}
-.exec-redesign-head > div,
-.ev2-work-executive .ev2w-header-copy,
-.ev2-finance-executive .ev2fin-header-copy,
-.ev2-reporting-executive .ev2rep-header-copy,
-.ev2-executive-ministry .ev2ex-ministry-head-copy { min-width: 0; max-width: 52rem; }
-
-.exec-redesign-head > div > span,
-.ev2-work-executive .ev2w-eyebrow,
-.ev2-finance-executive .ev2fin-eyebrow,
-.ev2-reporting-executive .ev2rep-eyebrow,
-.ev2-executive-ministry .eyebrow {
-  display: block;
-  margin-bottom: 4px;
-  color: #687386;
-  font-size: 11px;
-  line-height: 1.3;
-  font-weight: 750;
-  letter-spacing: .04em;
-  text-transform: none;
-}
-.exec-redesign-head h1,
-.ev2-work-executive .ev2w-header h1,
-.ev2-finance-executive .ev2fin-header h1,
-.ev2-reporting-executive .ev2rep-header h1,
-.ev2-executive-ministry .ev2ex-ministry-head .h1 {
-  margin: 0;
-  color: #171c28;
-  font-size: clamp(1.55rem, 2vw, 1.9rem);
-  line-height: 1.08;
-  letter-spacing: -.03em;
-}
-.exec-redesign-head p,
-.ev2-work-executive .ev2w-header p,
-.ev2-finance-executive .ev2fin-header p,
-.ev2-reporting-executive .ev2rep-header p,
-.ev2-executive-ministry .ev2ex-ministry-head .screen-note {
-  max-width: 72ch;
-  margin: 5px 0 0;
-  color: #687386;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.exec-redesign-tabs,
-.ev2-work-executive > .ev2w-tabs {
-  display: flex;
-  width: fit-content;
-  max-width: 100%;
-  gap: 4px;
-  margin: 4px 0 14px;
-  padding: 4px;
-  overflow-x: auto;
-  border: 1px solid #e6e8ee;
-  border-radius: 9px;
-  background: #f6f7fa;
-}
-.exec-redesign-tabs button,
-.ev2-work-executive > .ev2w-tabs button {
-  min-height: 34px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: #616a79;
-  font: inherit;
-  font-weight: 650;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.exec-redesign-tabs button.is-active,
-.ev2-work-executive > .ev2w-tabs button.is-selected {
-  background: #fff;
-  color: #33226f;
-  box-shadow: 0 2px 8px rgba(25,34,53,.08);
-}
-
-.exec-redesign-list,
-.ev2-work-executive .ev2w-list,
-.ev2-finance-executive .ev2fin-list,
-.ev2-reporting-executive .ev2rep-list {
-  overflow: hidden;
-  border: 1px solid #e4e7ee;
-  border-radius: 11px;
-  background: #fff;
-  box-shadow: 0 3px 12px rgba(26,36,57,.045);
-}
-.exec-redesign-list-row {
-  min-height: 62px;
-  display: grid;
-  grid-template-columns: 36px minmax(0,1fr) auto 12px;
-  align-items: center;
-  gap: 11px;
-  padding: 9px 12px;
-  border-top: 1px solid #eff1f5;
-}
-.exec-redesign-list-row:first-child { border-top: 0; }
-.exec-redesign-row-copy { min-width: 0; display: grid; gap: 2px; }
-.exec-redesign-row-copy strong { font-size: 12px; line-height: 1.3; }
-.exec-redesign-row-copy small { color: #6d7685; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.exec-redesign-row-meta { color: #667080; font-size: 11px; font-weight: 650; white-space: nowrap; }
-.exec-redesign-icon {
-  width: 34px;
-  height: 34px;
-  display: inline-grid;
-  place-items: center;
-  border-radius: 9px;
-}
-.exec-redesign-icon.is-purple { background: var(--exec-purple-soft); color: var(--exec-purple); }
-.exec-redesign-icon.is-green { background: var(--exec-green-soft); color: var(--exec-green); }
-.exec-redesign-icon.is-blue { background: var(--exec-blue-soft); color: var(--exec-blue); }
-.exec-redesign-icon.is-amber { background: var(--exec-amber-soft); color: var(--exec-amber); }
-.exec-redesign-empty {
-  min-height: 120px;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  color: #737c8b;
-  text-align: center;
-}
+/* Executive subpages now use executive-workspaces.css. */
 
 /* Work */
-.ev2-work-executive .ev2w-header-action,
-.ev2-executive-ministry .ev2ex-ministry-head .btn {
-  min-height: 40px;
-  border-radius: 8px;
-  background: var(--exec-purple);
-  border-color: var(--exec-purple);
-}
 .ev2-work-executive .ev2w-group { margin-top: 12px; }
 .ev2-work-executive .ev2w-group-head { padding-inline: 2px; }
 .ev2-work-executive .ev2w-row { min-height: 62px; border-color: #eff1f5; }
@@ -256,33 +97,16 @@
 }
 
 @media (max-width: 900px) {
-  .exec-redesign-page,
-  .ev2-work-executive,
-  .ev2-finance-executive,
-  .ev2-reporting-executive,
-  .ev2-executive-ministry { padding: 14px 14px calc(82px + env(safe-area-inset-bottom)); }
   .ev2-finance-executive .ev2fin-executive-brief,
   .ev2-reporting-executive .ev2rep-executive-brief,
   .ev2-reporting-executive .ev2rep-executive-empty-brief { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 599px) {
-  .exec-redesign-head,
-  .ev2-work-executive .ev2w-header,
-  .ev2-finance-executive .ev2fin-header,
-  .ev2-reporting-executive .ev2rep-header,
-  .ev2-executive-ministry .ev2ex-ministry-head {
-    display: grid;
-    gap: 10px;
-  }
   .exec-redesign-tabs,
   .ev2-work-executive > .ev2w-tabs { width: 100%; }
   .exec-redesign-tabs button,
   .ev2-work-executive > .ev2w-tabs button { flex: 1 0 auto; min-height: 44px; }
-  .exec-redesign-list-row { grid-template-columns: 34px minmax(0,1fr) 12px; min-height: 66px; }
-  .exec-redesign-row-meta { display: none; }
-  .ev2-work-executive .ev2w-header-action,
-  .ev2-executive-ministry .ev2ex-ministry-head .btn { min-height: 44px; }
 }
 
 
@@ -348,89 +172,7 @@
   background: var(--exec-purple-soft);
 }
 
-/* Executive Portfolio */
-.executive-app .ev2-project-delivery.is-executive {
-  width: 100%;
-  max-width: 86rem;
-  margin: 0 auto;
-  padding: 18px 20px 42px;
-}
-.executive-app .ev2-project-delivery.is-executive .ev2p-header {
-  padding: 2px 0 17px;
-  border-bottom: 0;
-}
-.executive-app .ev2-project-delivery.is-executive .ev2p-header h1 {
-  font-size: clamp(1.55rem, 2vw, 1.9rem);
-  letter-spacing: -.03em;
-}
-.executive-app .ev2-project-delivery.is-executive .ev2p-summary {
-  gap: 10px;
-}
-.executive-app .ev2-project-delivery.is-executive .ev2p-summary > * ,
-.executive-app .ev2-project-delivery.is-executive .ev2p-context-list,
-.executive-app .ev2-project-delivery.is-executive .ev2p-attention-list,
-.executive-app .ev2-project-delivery.is-executive .ev2p-portfolio-card {
-  border-color: #e4e7ee;
-  border-radius: 11px;
-  background: #fff;
-  box-shadow: 0 3px 12px rgba(26,36,57,.045);
-}
-.executive-app .ev2-project-delivery.is-executive .ev2p-context-row {
-  border-color: #eff1f5;
-}
-.executive-app .ev2-project-delivery.is-executive .ev2p-context-icon,
-.executive-app .ev2-project-delivery.is-executive .ev2p-row-icon {
-  border-radius: 8px;
-  background: var(--exec-purple-soft);
-  color: var(--exec-purple);
-}
-
-/* Executive Calendar — shared Phase 6 engine, Executive presentation */
-.executive-app .ev2cal-admin-page {
-  width: 100%;
-  max-width: 86rem;
-  margin: 0 auto;
-  padding: 18px 20px 42px;
-}
-.executive-app .ev2cal-admin-page .ev2cal-page-head {
-  padding-top: 2px;
-}
-.executive-app .ev2cal-admin-page .phase6-calendar-scope {
-  padding: 4px;
-  border: 1px solid #e6e8ee;
-  border-radius: 9px;
-  background: #f6f7fa;
-}
-.executive-app .ev2cal-admin-page .phase6-calendar-scope button {
-  min-height: 34px;
-  border-radius: 7px;
-}
-.executive-app .ev2cal-admin-page .phase6-calendar-scope button.is-selected {
-  background: #fff;
-  color: #33226f;
-  box-shadow: 0 2px 8px rgba(25,34,53,.08);
-}
-.executive-app .ev2cal-admin-page .ev2cal-timeline,
-.executive-app .ev2cal-admin-page .phase6-day-workspace {
-  border-color: #e4e7ee;
-  box-shadow: 0 3px 12px rgba(26,36,57,.045);
-}
-
 /* Executive Payroll — preserve approval semantics, unify visible family */
-.executive-app .fpg-payroll {
-  width: 100%;
-  max-width: 86rem;
-  margin: 0 auto;
-  padding: 18px 20px 42px;
-}
-.executive-app .fpg-payroll-head {
-  padding: 2px 0 17px;
-  border-bottom: 0;
-}
-.executive-app .fpg-payroll-head h1 {
-  font-size: clamp(1.55rem, 2vw, 1.9rem);
-  letter-spacing: -.03em;
-}
 .executive-app .fpg-payroll-authority {
   border-radius: 999px;
   background: var(--exec-purple-soft);
@@ -448,17 +190,6 @@
 .executive-app .fpg-payroll-runs button.is-selected {
   border-color: #d8d0fa;
   background: var(--exec-purple-soft);
-}
-
-/* Shared personal/account destinations keep the Executive shell continuity. */
-.executive-app .ev2-personal-page {
-  width: 100%;
-  max-width: 86rem;
-  margin: 0 auto;
-}
-.executive-app .ev2-personal-page .ev2pf-header,
-.executive-app .ev2-personal-page .ev2pf-section {
-  border-color: #e4e7ee;
 }
 
 /* Mobile Executive reference */
@@ -486,11 +217,6 @@
   }
   .executive-app .ev2s-mobile-nav button.is-active svg {
     filter: drop-shadow(0 2px 4px rgba(113,72,232,.16));
-  }
-  .executive-app .ev2-project-delivery.is-executive,
-  .executive-app .ev2cal-admin-page,
-  .executive-app .fpg-payroll {
-    padding: 14px 14px calc(82px + env(safe-area-inset-bottom));
   }
 }
 
@@ -542,11 +268,6 @@
   background: linear-gradient(180deg, var(--exec-blue-soft) 0%, #fff 46%);
 }
 
-.executive-app .ev2cal-admin-page .ev2cal-page-head .ev2c-button-primary,
-.executive-app .ev2cal-admin-page .ev2cal-page-head .btn {
-  background: var(--exec-purple);
-  border-color: var(--exec-purple);
-}
 
 @media (max-width: 599px) {
   .executive-app .ev2-project-delivery.is-executive .ev2p-summary {
@@ -554,121 +275,6 @@
   }
   .executive-app .fpg-payroll-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-
-/* Executive shared destinations — Messages / My Hub / Account */
-.executive-app .inbox-page,
-.executive-app .ev2-personal-page {
-  width: 100%;
-  max-width: 86rem;
-  margin: 0 auto;
-  padding: 18px 20px 42px;
-}
-.executive-app .inbox-page .premium-page-head,
-.executive-app .inbox-page .exec-redesign-shared-head,
-.executive-app .ev2-personal-page .ev2pf-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 2px 0 17px;
-  border-bottom: 0;
-}
-.executive-app .inbox-page .premium-page-head h1,
-.executive-app .inbox-page .exec-redesign-shared-head h1,
-.executive-app .ev2-personal-page .ev2pf-header h1 {
-  margin: 0;
-  color: #171c28;
-  font-size: clamp(1.55rem, 2vw, 1.9rem);
-  line-height: 1.08;
-  letter-spacing: -.03em;
-}
-.executive-app .inbox-page .premium-page-head .eyebrow,
-.executive-app .inbox-page .exec-redesign-shared-head .eyebrow,
-.executive-app .ev2-personal-page .ev2pf-header .ev2pf-eyebrow {
-  color: #687386;
-  font-size: 11px;
-  font-weight: 750;
-  letter-spacing: .04em;
-  text-transform: none;
-}
-.executive-app .inbox-page .premium-page-head .screen-note,
-.executive-app .inbox-page .exec-redesign-shared-head .screen-note,
-.executive-app .ev2-personal-page .ev2pf-header p {
-  margin-top: 5px;
-  color: #687386;
-  font-size: 12px;
-  line-height: 1.45;
-}
-.executive-app .inbox-page > .ev2c-segmented {
-  width: fit-content;
-  max-width: 100%;
-  margin: 4px 0 14px;
-  padding: 4px;
-  overflow-x: auto;
-  border: 1px solid #e6e8ee;
-  border-radius: 9px;
-  background: #f6f7fa;
-}
-.executive-app .inbox-page > .ev2c-segmented .ev2c-segmented-item {
-  min-height: 34px;
-  border-radius: 7px;
-}
-.executive-app .inbox-page > .ev2c-segmented .ev2c-segmented-item.is-selected {
-  color: #33226f;
-}
-.executive-app .inbox-page .ev2c-data-panel,
-.executive-app .ev2-personal-page .ev2pf-section,
-.executive-app .ev2-personal-page .ev2pf-destination-card,
-.executive-app .ev2-personal-page .ev2pf-record-row {
-  border-color: #e4e7ee;
-  border-radius: 11px;
-  background: #fff;
-  box-shadow: 0 3px 12px rgba(26,36,57,.045);
-}
-.executive-app .inbox-page .ev2c-data-panel { margin-top: 12px; box-shadow: none; }
-.executive-app .inbox-page .ev2c-row-icon {
-  border-radius: 8px;
-  background: var(--exec-purple-soft);
-  color: var(--exec-purple);
-}
-.executive-app .inbox-page .ev2c-data-panel:nth-of-type(2) .ev2c-row-icon {
-  background: var(--exec-blue-soft);
-  color: var(--exec-blue);
-}
-.executive-app .ev2-personal-page .ev2pf-destination-card:hover {
-  border-color: #d8d0fa;
-  background: #fbfaff;
-}
-.executive-app .ev2-personal-page .ev2pf-inline-actions .ev2c-button-primary,
-.executive-app .ev2-personal-page .ev2pf-inline-actions .btn:not(.btn-ghost) {
-  background: var(--exec-purple);
-  border-color: var(--exec-purple);
-}
-
-@media (max-width: 899px) {
-  .executive-app .inbox-page,
-  .executive-app .ev2-personal-page {
-    padding: 14px 14px calc(82px + env(safe-area-inset-bottom));
-  }
-}
-@media (max-width: 599px) {
-  .executive-app .inbox-page .premium-page-head,
-  .executive-app .inbox-page .exec-redesign-shared-head,
-  .executive-app .ev2-personal-page .ev2pf-header {
-    display: grid;
-    gap: 10px;
-  }
-  .executive-app .inbox-page > .ev2c-segmented {
-    width: 100%;
-  }
-  .executive-app .inbox-page > .ev2c-segmented .ev2c-segmented-item {
-    min-height: 44px;
-  }
-  .executive-app .inbox-page .ev2c-queue-row {
-    min-height: 66px;
   }
 }
 

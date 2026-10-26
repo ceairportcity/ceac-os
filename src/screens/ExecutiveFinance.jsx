@@ -122,7 +122,7 @@ export default function ExecutiveFinance({ me }) {
       <FinancePageHeader
         eyebrow="Executive insight"
         title="Finance"
-        description="View financial overview and key recorded information. Currencies stay separate. Requests that specifically require Group Pastor authority appear below; other records remain contextual."
+        description="Review income, spending and requests awaiting your decision. Each currency stays separate."
         statusLabel={statusLabel}
         statusTone={error ? "danger" : "neutral"}
       />
@@ -153,7 +153,7 @@ export default function ExecutiveFinance({ me }) {
             <FinanceSection
               eyebrow="Recorded context"
               title="Financial context by currency"
-              description="Recorded income, budget, actual spend and request context remain separate by currency. No currency conversion is performed."
+              description="Compare income, budget and spending in each recorded currency."
             >
               <div className="ev2fin-card-grid">
                 {currencies.length === 0 ? (
@@ -193,7 +193,7 @@ export default function ExecutiveFinance({ me }) {
           <FinanceSection
             eyebrow="Units"
             title="Recorded spend by unit"
-            description="Reversal-aware recorded spend grouped by unit and currency for leadership context. This is factual ledger context, not a performance score or ranking."
+            description="See spending by department and currency. Reversed entries are accounted for."
           >
             {unitSpendRows.length === 0 ? (
               <FinanceEmpty

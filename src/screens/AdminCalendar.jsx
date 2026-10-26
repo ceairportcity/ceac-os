@@ -23,7 +23,7 @@ const RANGE_ITEMS = [
   { value:"90", label:"Next 90 days", icon:"calendar" },
 ];
 
-export default function AdminCalendar({ me, openItem, openMeeting, scheduleMeeting, roleMode="admin" }) {
+export default function AdminCalendar({ me, openItem, openMeeting, scheduleMeeting, roleMode="admin", openProject }) {
   const [calendarScope,setCalendarScope]=useState("organisation");
   const [events,setEvents]=useState([]);
   const [loading,setLoading]=useState(true);
@@ -49,8 +49,8 @@ export default function AdminCalendar({ me, openItem, openMeeting, scheduleMeeti
       (meetings.data||[]).forEach((meeting)=>rows.push({id:"m-"+meeting.id,type:"Meeting",at:meeting.starts_at,title:meeting.title,meta:`${meeting.scope} · ${meeting.provider}`,meetingId:meeting.id}));
       (ministry.data||[]).filter((event)=>!event.cancelled).forEach((event)=>rows.push({id:"e-"+event.id,type:"Ministry activity",at:event.starts_at,title:event.title,meta:event.location||"Location not recorded"}));
       (projects.data||[]).forEach((project)=>{
-        if(project.starts_on&&new Date(project.starts_on)>=now) rows.push({id:"ps-"+project.id,type:"Project",at:project.starts_on+"T00:00:00Z",title:project.name+" starts",meta:project.status});
-        if(project.ends_on&&new Date(project.ends_on)>=now) rows.push({id:"pe-"+project.id,type:"Project",at:project.ends_on+"T00:00:00Z",title:project.name+" ends",meta:project.status});
+        if(project.starts_on&&project.starts_on>=dateKey(now)) rows.push({id:"ps-"+project.id,type:"Project",at:project.starts_on+"T00:00:00Z",title:project.name+" starts",meta:project.status,projectId:project.id});
+        if(project.ends_on&&project.ends_on>=dateKey(now)) rows.push({id:"pe-"+project.id,type:"Project",at:project.ends_on+"T00:00:00Z",title:project.name+" ends",meta:project.status,projectId:project.id});
       });
       (leave.data||[]).forEach((request)=>rows.push({id:"l-"+request.id,type:"Approved leave",at:request.start_date+"T00:00:00Z",title:request.profiles?.full_name||"CEAC member",meta:`${request.start_date} → ${request.end_date}`}));
       setEvents(rows.sort((a,b)=>new Date(a.at)-new Date(b.at)));
@@ -76,10 +76,10 @@ export default function AdminCalendar({ me, openItem, openMeeting, scheduleMeeti
         meta:event.type==="Meeting"?labelDate(event.at):event.meta,
         status:event.type,
         statusTone:event.type==="Meeting"?"action":event.type==="Approved leave"?"success":"neutral",
-        onClick:event.meetingId?()=>openMeeting?.(event.meetingId):undefined,
+        onClick:event.meetingId?()=>openMeeting?.(event.meetingId):event.projectId&&openProject?()=>openProject(event.projectId):undefined,
       })),
     }));
-  },[visible,openMeeting]);
+  },[visible,openMeeting,openProject]);
 
   const personalLabel=roleMode==="executive"?"Group Pastor · My calendar":"Administration · My calendar";
   const sharedLabel=roleMode==="executive"?"Church calendar":"Organisation calendar";
@@ -100,7 +100,7 @@ export default function AdminCalendar({ me, openItem, openMeeting, scheduleMeeti
     <CalendarPageHeader
       eyebrow={roleMode==="executive"?"Church schedule":"Organisation schedule"}
       title="Calendar"
-      description={roleMode==="executive"?"Your meetings, ministry events and key recorded dates in one Executive calendar.":"Upcoming meetings, ministry activities, project dates and approved leave in one chronological operating view."}
+      description={roleMode==="executive"?"Your meetings, ministry events and project dates in one calendar.":"Upcoming meetings, ministry activities, project dates and approved leave in one chronological operating view."}
       status={roleMode==="executive"?"Church timeline":"Organisation timeline"}
       statusTone="action"
       action={<Button icon="meeting" onClick={()=>scheduleMeeting?.({scope:"organisation",organisation:true})}>Schedule meeting</Button>}

@@ -43,7 +43,7 @@ button,input,select,textarea{font:inherit}
   min-height:100vh;
   background:var(--ceac-bg)!important;
 }
-.app-content{
+.app-content:not(:where(.exec-v2)){
   max-width:none!important;
   min-height:calc(100vh - var(--ceac-topbar));
   padding:22px 24px 94px!important;
@@ -51,38 +51,40 @@ button,input,select,textarea{font:inherit}
 }
 .premium-icon{display:block;flex:none}
 
+/* Executive replacement destinations opt out via exec-v2. :where keeps
+   unchanged specificity for the approved Overview and other role surfaces. */
 /* Transitional legacy-screen polish: R0 keeps business screens intact but prevents visual regression while they migrate. */
-.app-content .body{
+.app-content:not(:where(.exec-v2)) .body{
   max-width:1280px!important;
   margin:0 auto!important;
   padding:8px 0 40px!important;
 }
-.app-content .h1{
+.app-content:not(:where(.exec-v2)) .h1{
   color:#152238!important;
   letter-spacing:-.035em!important;
   line-height:1.03!important;
 }
-.app-content .screen-note{color:#7c8796!important;line-height:1.55!important}
-.app-content .card,
-.app-content .row,
-.app-content .metric,
-.app-content .product-notice,
-.app-content .empty-state,
-.app-content .field{
+.app-content:not(:where(.exec-v2)) .screen-note{color:#7c8796!important;line-height:1.55!important}
+.app-content:not(:where(.exec-v2)) .card,
+.app-content:not(:where(.exec-v2)) .row,
+.app-content:not(:where(.exec-v2)) .metric,
+.app-content:not(:where(.exec-v2)) .product-notice,
+.app-content:not(:where(.exec-v2)) .empty-state,
+.app-content:not(:where(.exec-v2)) .field{
   border-color:#e2e7ee!important;
 }
-.app-content .card,
-.app-content .metric,
-.app-content .product-notice,
-.app-content .empty-state{
+.app-content:not(:where(.exec-v2)) .card,
+.app-content:not(:where(.exec-v2)) .metric,
+.app-content:not(:where(.exec-v2)) .product-notice,
+.app-content:not(:where(.exec-v2)) .empty-state{
   box-shadow:0 5px 18px rgba(37,55,82,.045)!important;
 }
-.app-content .btn:not(.btn-ghost){
+.app-content:not(:where(.exec-v2)) .btn:not(.btn-ghost){
   background:var(--ceac-blue)!important;border-color:var(--ceac-blue)!important;color:#fff!important;
 }
-.app-content .btn{border-radius:10px!important}
-.app-content .row{border-radius:12px!important}
-.app-content .sheet{border-left:1px solid #e3e8ef!important;box-shadow:-18px 0 48px rgba(30,48,72,.13)!important}
+.app-content:not(:where(.exec-v2)) .btn{border-radius:10px!important}
+.app-content:not(:where(.exec-v2)) .row{border-radius:12px!important}
+.app-content:not(:where(.exec-v2)) .sheet{border-left:1px solid #e3e8ef!important;box-shadow:-18px 0 48px rgba(30,48,72,.13)!important}
 
 /* Responsive shell */
 /* Modal surfaces must sit above fixed navigation and message menus. */
@@ -91,45 +93,45 @@ button,input,select,textarea{font:inherit}
 
 @media (max-width: 980px){
   :root{--ceac-sidebar:0px;--ceac-topbar:56px}
-  .app-content{padding:0 0 92px!important;min-height:calc(100vh - 56px)}
-  .app-content .body{width:100%!important;max-width:none!important;box-sizing:border-box!important;padding:14px 12px 40px!important}
+  .app-content:not(:where(.exec-v2)){padding:0 0 92px!important;min-height:calc(100vh - 56px)}
+  .app-content:not(:where(.exec-v2)) .body{width:100%!important;max-width:none!important;box-sizing:border-box!important;padding:14px 12px 40px!important}
 }
 @media (max-width:520px){
-  .app-content .body{padding:10px 10px 40px!important}
-  .app-content .h1{font-size:30px!important}
+  .app-content:not(:where(.exec-v2)) .body{padding:10px 10px 40px!important}
+  .app-content:not(:where(.exec-v2)) .h1{font-size:30px!important}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.001ms!important;animation-duration:.001ms!important;animation-iteration-count:1!important}
 }
 
 /* R0 visual corrections from browser inspection */
-.app-content .staff-home-hero .h1,
-.app-content .manager-command-hero .h1,
-.app-content .admin-command-hero .h1,
-.app-content .executive-command-hero .h1,
-.app-content [class*="home-hero"] .h1 {
+.app-content:not(:where(.exec-v2)) .staff-home-hero .h1,
+.app-content:not(:where(.exec-v2)) .manager-command-hero .h1,
+.app-content:not(:where(.exec-v2)) .admin-command-hero .h1,
+.app-content:not(:where(.exec-v2)) .executive-command-hero .h1,
+.app-content:not(:where(.exec-v2)) [class*="home-hero"] .h1 {
   color:#f8fbff!important;
 }
-.app-content .staff-home-hero .screen-note,
-.app-content .manager-command-hero .screen-note,
-.app-content .admin-command-hero .screen-note,
-.app-content .executive-command-hero .screen-note,
-.app-content [class*="home-hero"] .screen-note {
+.app-content:not(:where(.exec-v2)) .staff-home-hero .screen-note,
+.app-content:not(:where(.exec-v2)) .manager-command-hero .screen-note,
+.app-content:not(:where(.exec-v2)) .admin-command-hero .screen-note,
+.app-content:not(:where(.exec-v2)) .executive-command-hero .screen-note,
+.app-content:not(:where(.exec-v2)) [class*="home-hero"] .screen-note {
   color:#9fb0c3!important;
 }
 @media (max-width:980px){
 }
 
-.app-content .staff-command-surface .h1,
-.app-content .manager-command-surface .h1,
-.app-content .admin-command-surface .h1,
-.app-content .executive-command-surface .h1 {
+.app-content:not(:where(.exec-v2)) .staff-command-surface .h1,
+.app-content:not(:where(.exec-v2)) .manager-command-surface .h1,
+.app-content:not(:where(.exec-v2)) .admin-command-surface .h1,
+.app-content:not(:where(.exec-v2)) .executive-command-surface .h1 {
   color:#f8fbff!important;
 }
-.app-content .staff-command-surface .screen-note,
-.app-content .manager-command-surface .screen-note,
-.app-content .admin-command-surface .screen-note,
-.app-content .executive-command-surface .screen-note {
+.app-content:not(:where(.exec-v2)) .staff-command-surface .screen-note,
+.app-content:not(:where(.exec-v2)) .manager-command-surface .screen-note,
+.app-content:not(:where(.exec-v2)) .admin-command-surface .screen-note,
+.app-content:not(:where(.exec-v2)) .executive-command-surface .screen-note {
   color:#a7b5c6!important;
 }
 
@@ -139,8 +141,8 @@ button,input,select,textarea{font:inherit}
 
 /* R0 narrow-screen shell geometry: content owns its own padding; the Admin body spans the viewport. */
 @media (max-width:980px){
-  .office-app .app-content{padding-left:0!important;padding-right:0!important}
-  .office-app .app-content>.body{width:100%!important;max-width:none!important;box-sizing:border-box!important;margin-left:0!important;margin-right:0!important}
+  .office-app .app-content:not(:where(.exec-v2)){padding-left:0!important;padding-right:0!important}
+  .office-app .app-content:not(:where(.exec-v2))>.body{width:100%!important;max-width:none!important;box-sizing:border-box!important;margin-left:0!important;margin-right:0!important}
 }
 
 

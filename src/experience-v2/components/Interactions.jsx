@@ -2,6 +2,7 @@ import {
   cloneElement,
   isValidElement,
   useEffect,
+  useContext,
   useId,
   useRef,
   useState,
@@ -12,6 +13,7 @@ import { CeacIcon } from "../icons";
 import { EV2_TRANSITIONS } from "../motion";
 import { Button, IconButton } from "./Button";
 import { Surface } from "./Surface";
+import { RolePresentationContext } from "../RolePresentationContext";
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -225,6 +227,7 @@ function OverlayShell({
 }) {
   const titleId = useId();
   const descriptionId = useId();
+  const presentation = useContext(RolePresentationContext);
   const panelRef = useRef(null);
 
   useOverlayFocus(open, panelRef, onClose, returnFocusRef);
@@ -235,7 +238,7 @@ function OverlayShell({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="ev2c-overlay"
+          className={presentation === "executive" ? "ev2c-overlay executive-app" : "ev2c-overlay"}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -253,7 +256,7 @@ function OverlayShell({
             className={
               (kind === "drawer"
                 ? `ev2c-drawer ev2c-drawer-${placement}`
-                : "ev2c-modal") + (panelClassName ? ` ${panelClassName}` : "")
+                : "ev2c-modal") + (panelClassName ? ` ${panelClassName}` : "") + (presentation === "executive" ? " exec-v2" : "")
             }
             initial={
               kind === "drawer"

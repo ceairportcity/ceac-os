@@ -89,7 +89,7 @@
 
 /* VF6D — Messages operational-inbox closure.
    Communication scope remains Rooms / Mentions / linked Work / Announcements; no DM capability is added. */
-.inbox-page .premium-filter-row button {
+.inbox-page .ev2c-segmented-item {
   min-height: 44px;
 }
 

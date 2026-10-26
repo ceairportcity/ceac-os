@@ -22,7 +22,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(fs.existsSync(contract), contract).toBeTruthy();
 
   const lock = fs.readFileSync(contract, "utf8");
-  const css = fs.readFileSync("src/role-styles/executive-redesign.css", "utf8");
+  const css = fs.readFileSync("src/role-styles/executive-redesign.css", "utf8") + fs.readFileSync("src/role-styles/executive-workspaces.css", "utf8");
   const overview = fs.readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx", "utf8");
   const home = fs.readFileSync("src/screens/ExecutiveHome.jsx", "utf8");
   const shell = fs.readFileSync("src/experience-v2/shell/ShellV2.jsx", "utf8");
@@ -56,7 +56,8 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(css).toContain("/* Executive literal shell finishing */");
   expect(css).toContain(".executive-app .ev2s-profile-button > span:last-child");
   expect(css).toContain(".executive-app .ev2-project-delivery.is-executive");
-  expect(css).toContain(".executive-app .ev2cal-admin-page");
+  expect(css).toContain(".ev2cal-role-page");
+  expect(css).toContain("--ev2-action:var(--exec-purple)");
   expect(css).toContain(".executive-app .fpg-payroll");
   const work = fs.readFileSync("src/screens/ExecutiveWork.jsx", "utf8");
   const ministry = fs.readFileSync("src/screens/Strategy.jsx", "utf8");
@@ -69,21 +70,21 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(work).toContain("Plan, record, and finish your work. Keep every contribution connected to the right project.");
   expect(ministry).toContain("Set direction, track objectives and keep ministry priorities connected to recorded delivery.");
   expect(ministry).toContain('executiveSurface ? "Objectives" : "Strategic hierarchy"');
-  expect(portfolio).toContain("View ministry programmes and strategic initiatives.");
-  expect(organisation).toContain("View departments, teams and people across the recorded CEAC structure.");
-  expect(calendar).toContain("Your meetings, ministry events and key recorded dates in one Executive calendar.");
-  expect(finance).toContain("View financial overview and key recorded information.");
+  expect(portfolio).toContain("View ministry programmes and strategic initiatives, their departments and the work behind them.");
+  expect(organisation).toContain("Explore departments, teams and people, then open the work behind them.");
+  expect(calendar).toContain("Your meetings, ministry events and project dates in one calendar.");
+  expect(finance).toContain("Review income, spending and requests awaiting your decision. Each currency stays separate.");
   expect(finance).toContain('supabase.from("income_lines")');
   expect(finance).toContain('label: "Received"');
   expect(finance).toContain("Reversal-aware recorded income");
   expect(css).toContain(".executive-app {");
   expect(css).toContain("/* Literal semantic summary accents */");
   expect(css).toContain(".fpg-payroll-metrics article:nth-child(1)");
-  expect(css).toContain(".executive-app .inbox-page");
+  expect(css).toContain(".inbox-page");
   expect(inbox).toContain('me.is_exec ? "body inbox-page exec-redesign-shared"');
   expect(inbox).toContain('me.is_exec ? "exec-redesign-shared-head"');
   expect(css).toContain(".exec-redesign-shared-head");
-  expect(css).toContain(".executive-app .ev2-personal-page");
+  expect(css).toContain(".ev2-personal-page");
   expect(reports).toContain('aria-label="Report filters"');
   expect(reports).toContain('["submitted", "Submitted"');
   expect(reports).toContain('["draft", "Drafts"');

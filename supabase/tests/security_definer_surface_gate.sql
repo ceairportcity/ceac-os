@@ -81,6 +81,7 @@ insert into s2_expected_authenticated_definers(signature) values
   ('public.decide_finance_request(p_request_id uuid, p_decision text, p_note text)'),
   ('public.end_work_session_with_location(p_session_id uuid, p_lat double precision, p_lng double precision, p_accuracy_m double precision, p_captured_at timestamp with time zone, p_device_time timestamp with time zone, p_failure text)'),
   ('public.end_work_session(p_session_id uuid)'),
+  ('public.executive_assign_project_department(p_project_id uuid, p_unit_id uuid, p_reason text)'),
   ('public.finalize_operational_file(p_file_id uuid)'),
   ('public.follow_up_blocker(p_blocker_id uuid)'),
   ('public.follow_up_work_review(p_work_item_id uuid)'),
@@ -249,7 +250,8 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  if v_actual<>163 or v_expected<>163 or v_unexpected is not null or v_missing is not null then
+  -- 25 October: one reviewed Executive department-assignment RPC, exact signature above.
+  if v_actual<>164 or v_expected<>164 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;

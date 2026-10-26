@@ -1,3 +1,11 @@
+## 25 October 2026 — Executive-first design and connected journeys
+
+The owner requires a comprehensive design and functional audit, followed by actual corrections: Executive completely, then Administration/HR, Manager and Staff. The approved current Executive Overview is the reference for fonts, colours, meaningful icons, motion and quality; preserve it while replacing legacy destination, subpage, Calendar, form and mobile treatments. Workflow-only repairs do not fulfil the request.
+
+The Executive/Group Pastor is the overall organisation head and can assign any active person or department within the organisation to projects without holding department membership. This supersedes the older Executive manager/HR-only assignment/contact restriction. It does not authorise access to another person's private planning, protected HR, unrelated payroll or another organisation. Preserve existing released work, records, role boundaries and release qualification. [Current corrections and evidence](../continuity/CEAC_EXECUTIVE_CORRECTIONS_2026-10-25.md).
+
+---
+
 ## 25 October 2026 — independent Compliance workspace and street-map follow-up
 
 Compliance is the existing department headed by Pastor Catherine, separate from Administration/HR. The owner approved its existing-style review workspace and removal of the HR Compliance entry, with the existing head's specific organisation-wide Compliance authority. PR #142 contains that released correction; no duplicate department or unrelated HR authority is authorised.

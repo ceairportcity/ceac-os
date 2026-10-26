@@ -67,9 +67,9 @@ $definer_search_path$;
 -- workforce_request_leave SECURITY INVOKER wrapper. The integrated one-bundle release
 -- adds twelve reviewed caller-scoped interfaces and removes two obsolete direct
 -- execution grants (attendance correction and performance publication): 145.
--- The currently reviewed authenticated-definer surface has 163 EXACT
+-- The currently reviewed authenticated-definer surface has 164 EXACT
 -- signatures, including later owner Work, attendance, roster and HR corrections.
--- security_definer_surface_gate.sql locks the full named 163-signature set,
+-- security_definer_surface_gate.sql locks the full named 164-signature set,
 -- separately from this regression count. The independent anon-denial and
 -- internal-helper revocation tests are retained; count alone is not a security
 -- allowlist, and future grants must be independently reviewed by signature.
@@ -87,10 +87,10 @@ begin
     and p.prosecdef
     and has_function_privilege('authenticated',p.oid,'EXECUTE');
 
-  -- This count must agree with the separately exact-enumerated 163-signature
+  -- This count must agree with the separately exact-enumerated 164-signature
   -- security_definer_surface_gate.sql; never broaden approved EXECUTE grants.
-  if n<>163 then
-    raise exception 'Platform Kernel gate failure: expected 163 individually reviewed authenticated SECURITY DEFINER interfaces (exact signatures checked independently); found %.',n;
+  if n<>164 then
+    raise exception 'Platform Kernel gate failure: expected 164 individually reviewed authenticated SECURITY DEFINER interfaces (exact signatures checked independently); found %.',n;
   end if;
 
   if to_regprocedure('public.app_stage2_universal_aal_allowed()') is null

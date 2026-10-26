@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
-import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import postcss from "postcss";
 import { join } from "node:path";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
@@ -117,13 +118,28 @@ test("support authority is separate from ordinary employment role and client-sid
   assert.doesNotMatch(supportPanel, /supabase\.rpc\("grant_capability"/);
 });
 
-test("approved Executive stylesheet has exactly the same Git blob", () => {
-  const css = read("src/role-styles/executive-redesign.css");
-  const digest = createHash("sha1")
-    .update("blob " + Buffer.byteLength(css) + "\0")
-    .update(css)
-    .digest("hex");
-  assert.equal(digest, "5613e38749322da28f6bfd6f4a584dd4bebd6d47");
+test("approved Executive Overview, palette and shell rules remain identical while legacy destinations are replaced", () => {
+  // 25 October owner scope replaces subpages, preserving the approved Overview.
+  // Compare every protected rule against the original pinned Git blob rather
+  // than rebaselining that render or freezing obsolete destination CSS.
+  const original = execFileSync("git", ["cat-file", "blob", "5613e38749322da28f6bfd6f4a584dd4bebd6d47"], {encoding:"utf8"});
+  const protectedSelector = /executivev2|ev2s-|exec-redesign-(?:mobile-)?notification|fpg9-(?:sidebar-quick|topbar-message)/;
+  function protectedRules(css) {
+    const rules=[];
+    postcss.parse(css).walkRules(rule => {
+      if (rule.selector.trim() !== ".executive-app" && !protectedSelector.test(rule.selector)) return;
+      const scope=[];
+      for (let parent=rule.parent; parent; parent=parent.parent)
+        if (parent.type === "atrule") scope.unshift([parent.name,parent.params]);
+      rules.push({scope,selector:rule.selector,declarations:rule.nodes.map(node=>node.toString())});
+    });
+    return rules;
+  }
+  const approved=protectedRules(original);
+  assert.equal(approved.length,36,"all original Overview, palette and shell rules must be protected");
+  assert.deepEqual(protectedRules(read("src/role-styles/executive-redesign.css")),approved);
+  assert.match(app, /isExec && \(tab !== "home" \|\| overlay\)/);
+  assert.doesNotMatch(read("src/role-styles/executive-workspaces.css"), /\.executivev2/);
 });
 
 test("canonical S3 migration and fifteen reviewed security migrations have unique ordered versions", () => {
@@ -187,13 +203,15 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261024051713_operational_content_archive.sql",
     "20261024092008_roster_attendance_schedule_evidence.sql",
     "20261024100121_browser_truncate_privilege_hardening.sql",
+    "20261025123639_executive_assignment_scope.sql",
+    "20261025180606_executive_routine_options_preservation.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
   }
   assert.equal(migrations.filter((file) => !stagedIntegratedSecurity.includes(file)).length, 153,
     "Stage 1's 153 reviewed migrations remain identical; all Stage 2 additions are explicitly inventoried");
-  assert.equal(migrations.length, 204, "expected 153 reviewed Stage 1 plus 51 explicitly inventoried Stage 2 migrations");
+  assert.equal(migrations.length, 206, "expected 153 reviewed Stage 1 plus 53 explicitly inventoried Stage 2 migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
@@ -228,11 +246,14 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
-  // Independently fail closed at the current 163-signature reviewed surface.
+  // Independently fail closed at the current 164-signature reviewed surface.
   // The exact allowlist and obsolete-grant denial remain enforced in the
   // dedicated security_definer_surface_gate.sql (not just this count check).
-  assert.match(mfa, /callable_count<>163/);
-  assert.match(surface, /v_actual<>163 or v_expected<>163/);
+  assert.match(mfa, /callable_count<>164/);
+  assert.match(surface, /v_actual<>164 or v_expected<>164/);
+  assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>164 then/);
+  assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>164 then/);
+  assert.ok(surface.includes("public.executive_assign_project_department(p_project_id uuid, p_unit_id uuid, p_reason text)"));
   assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
   assert.match(surface, /p_expires_at timestamp with time zone/);

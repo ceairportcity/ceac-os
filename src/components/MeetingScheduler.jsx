@@ -210,11 +210,11 @@ export default function MeetingScheduler({
     && (scope !== "project" || projectId);
 
   return <div className="meeting-scheduler" role="dialog" aria-modal="true" aria-label="Schedule meeting">
-    <button className="meeting-scheduler-bg" aria-label="Close meeting scheduler" onClick={onClose} />
+    <button type="button" className="meeting-scheduler-bg" aria-hidden="true" tabIndex={-1} onClick={onClose} />
     <section className="meeting-scheduler-sheet">
       <header className="meeting-scheduler-head">
         <div><span>CEAC meeting</span><h2>Schedule meeting</h2></div>
-        <button className="sheet-close" onClick={onClose}>×</button>
+        <button type="button" className="sheet-close" aria-label="Close meeting scheduler" onClick={onClose}>×</button>
       </header>
 
       {error && <div className="flag flag-brick"><h4>Could not schedule meeting</h4>{error}</div>}

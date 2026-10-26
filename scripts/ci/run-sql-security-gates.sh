@@ -75,6 +75,7 @@ tests=(
   stage2_universal_totp_all_roles_gate.sql
   stage2_human_appraisal_ratings_gate.sql
   stage2_owner_activity_guard_gate.sql
+  executive_assignment_scope_gate.sql
   stage2_self_routines_gate.sql
   stage2_routine_date_files_gate.sql
   stage2_routine_date_progress_gate.sql

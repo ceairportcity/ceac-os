@@ -612,11 +612,13 @@ test("Stage 10 Family H2 keeps Organisation settings factual and persistence-bac
 });
 
 
-test("Stage 10 Family H3 keeps Executive Organisation read-only leadership context", async () => {
+test("Stage 10 Family H3 keeps Executive directory records read-only with authorised assignment navigation", async () => {
   const organisation = readFileSync("src/screens/ExecutiveOrganisation.jsx", "utf8");
   expect(organisation).toContain('supabase.from("units")');
   expect(organisation).toContain('supabase.from("unit_memberships")');
-  expect(organisation).toContain("Administration remains responsible for structural changes.");
+  expect(organisation).toContain("Explore departments, teams and people, then open the work behind them.");
+  expect(organisation).toContain("goAssign?.");
+  expect(organisation).toContain("openRoom?.");
   expect(organisation).toContain("Needs attention");
   expect(organisation).toContain("leadership gap");
   expect(organisation).not.toContain(".insert(");
@@ -677,8 +679,8 @@ for (const viewport of [
     const { context, page } = await openHub(browser, roles[3], { width: viewport.width, height: viewport.height });
     await page.goto("/?tab=exec-organisation");
     await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toBeVisible();
-    await expect(page.getByText(/Structural exceptions are shown first/i)).toBeVisible();
-    await expect(page.getByText(/Leadership recorded|leadership gap/i).first()).toBeVisible();
+    await expect(page.getByText(/Explore departments, teams and people/i)).toBeVisible();
+    await expect(page.getByText(/Department heads recorded|leadership gap/i).first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Executive Organisation overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);
     await page.screenshot({ path: `test-artifacts/redesign-r7-stage10h-exec-org-${viewport.name}.png`, fullPage: true });

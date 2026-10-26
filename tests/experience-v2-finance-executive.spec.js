@@ -123,7 +123,7 @@ for (const viewport of [
     const { context, page } = await openExecutiveFinance(browser, { width: viewport.width, height: viewport.height });
 
     await expect(page.getByText("Requests needing Group Pastor", { exact: true })).toBeVisible();
-    await expect(page.getByText(/Currencies stay separate/i).first()).toBeVisible();
+    await expect(page.getByText(/Each currency stays separate/i).first()).toBeVisible();
     await expect(page.getByText(/not a bank balance/i).last()).toBeVisible();
     await expect(page.getByText("Recorded spend by unit", { exact: true })).toBeVisible();
 

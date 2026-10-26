@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, Sheet } from "./bits";
+import { ComposerDrawer } from "../experience-v2/components";
 import OrganisationalRepeatFields, { initialOrganisationalRepeat, organisationalRepeatDetails } from "./OrganisationalRepeatFields";
 
 /**
@@ -10,9 +11,24 @@ import OrganisationalRepeatFields, { initialOrganisationalRepeat, organisational
  * This form cannot impersonate Staff or approve its own achievement.
  */
 export default function SelfWorkComposer({ me, onClose, onCreated }) {
-  const memberships = (me.memberships || []).filter((member) => member.unit_id);
+  const [executiveUnits, setExecutiveUnits] = useState([]);
+  const [unitsError, setUnitsError] = useState("");
+  const [unitsReload, setUnitsReload] = useState(0);
+  const [unitsScope, setUnitsScope] = useState("");
+  const actorScope = `${me.org_id}:${me.id}`;
+  const memberships = me.is_exec ? (unitsScope === actorScope ? executiveUnits : []) : (me.memberships || []).filter((member) => member.unit_id);
+  useEffect(() => {
+    let current = true;
+    setExecutiveUnits([]); setUnitsError(""); setUnitsScope("");
+    if (me.is_exec) supabase.from("units").select("id,name", { count:"exact" }).eq("org_id",me.org_id).eq("active",true).order("name").then(result => {
+      if (!current) return;
+      if (result.error || !Array.isArray(result.data) || result.count !== result.data.length) setUnitsError("Departments could not be loaded. Try again.");
+      else { setExecutiveUnits(result.data.map(unit => ({unit_id:unit.id,unit_name:unit.name}))); setUnitsScope(actorScope); }
+    });
+    return () => { current = false; };
+  }, [me.id,me.org_id,me.is_exec,unitsReload]);
   const [unitId, setUnitId] = useState(
-    memberships.some((member) => member.unit_id === me.unit_id)
+    me.is_exec ? (me.unit_id || "") : memberships.some((member) => member.unit_id === me.unit_id)
       ? me.unit_id : (memberships[0]?.unit_id || "")
   );
   const [title, setTitle] = useState("");
@@ -33,6 +49,8 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
   const [loadingRelations, setLoadingRelations] = useState(false);
   const [projectError, setProjectError] = useState("");
   const [error, setError] = useState("");
+  const [relationsError, setRelationsError] = useState("");
+  const [relationsReload, setRelationsReload] = useState(0);
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);
 
@@ -56,7 +74,7 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
         if (!current) return;
         if (readError) setProjectError("Authorised projects could not be loaded. You can still create unlinked work.");
         else setProjects((data || []).filter((project) =>
-          project.lead_unit_id === unitId ||
+          me.is_exec || project.lead_unit_id === unitId ||
           (project.project_units || []).some((entry) => entry.unit_id === unitId)
         ));
         setLoadingProjects(false);
@@ -71,8 +89,10 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
     setObjectives([]);
     setPhases([]);
     setError("");
+    setRelationsError("");
     if (!projectId || !unitId) { setLoadingRelations(false); return () => { current = false; }; }
     setLoadingRelations(true);
+    setRelationsError("");
     Promise.all([
       supabase.from("objectives")
         .select("id,project_id,unit_id,ref,name").eq("project_id", projectId).eq("unit_id", unitId),
@@ -81,20 +101,21 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
     ]).then(([objectivesRead, phasesRead]) => {
       if (!current) return;
       if (objectivesRead.error || phasesRead.error) {
-        setError("Project objectives or phases could not be verified. Select no project or retry.");
+        setRelationsError("Project objectives or phases could not be verified. Select no project or retry.");
       } else {
         setError("");
+        setRelationsError("");
         setObjectives(objectivesRead.data || []);
         setPhases(phasesRead.data || []);
       }
       setLoadingRelations(false);
     });
     return () => { current = false; };
-  }, [unitId, projectId]);
+  }, [me.id,me.org_id,unitId,projectId,relationsReload]);
 
   const cleanSteps = noSteps ? [] : steps.map((step) => step.trim()).filter(Boolean);
-  const canSubmit = Boolean(unitId && title.trim() && outcome.trim() && (noSteps || cleanSteps.length))
-    && !saving && !loadingRelations && !error;
+  const canSubmit = Boolean(memberships.some(member => member.unit_id === unitId) && !unitsError && title.trim() && outcome.trim() && (noSteps || cleanSteps.length))
+    && !saving && !loadingRelations && !relationsError;
 
   async function submit(event) {
     event.preventDefault();
@@ -160,17 +181,22 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
     }
   }
 
-  return <Sheet onClose={() => { if (!saving) onClose?.(); }}>
+  const WorkSheet = me.is_exec ? ComposerDrawer : Sheet;
+  return <WorkSheet open title={me.is_exec ? "Add my work" : undefined} panelClassName={me.is_exec ? "reference-composer" : undefined} onClose={() => { if (!saving) onClose?.(); }}>
     <div className="eyebrow">My responsibilities</div>
-    <h2 className="h2">Add my work</h2>
+    {!me.is_exec && <h2 className="h2">Add my work</h2>}
     <p className="screen-note">Record a responsibility you personally carry. It is not an approved result until reviewed under CEAC's existing rules.</p>
-    {!memberships.length && <p role="alert">No authorised department membership is recorded for this account. Administration must assign membership before creating organisational work.</p>}
+    {!me.is_exec && !memberships.length && <p role="alert">No authorised department membership is recorded for this account. Administration must assign membership before creating organisational work.</p>}
+    {unitsError && <div role="alert">{unitsError}<button type="button" className="btn btn-ghost" onClick={() => setUnitsReload(n=>n+1)}>Retry departments</button></div>}
+    {me.is_exec && <p className="screen-note">Choose the department this responsibility supports. Your Executive role does not require department membership.</p>}
     {projectError && <p role="status">{projectError}</p>}
-    {error && <p role="alert" className="flag flag-amber">{error}</p>}
+    {me.is_exec && projectId && projects.some(project => project.id === projectId && project.lead_unit_id !== unitId && !(project.project_units || []).some(row => row.unit_id === unitId)) && <p role="status" className="flag flag-amber">Saving this work will also add the selected department to the project. Its staff will see shared project records allowed by their roles.</p>}
+    {(relationsError || error) && <div role="alert" className="flag flag-amber">{relationsError || error}{relationsError && <button type="button" className="btn btn-ghost" onClick={() => setRelationsReload(n=>n+1)}>Retry project details</button>}</div>}
     <form onSubmit={submit}>
-      {memberships.length > 1 && <FieldGroup label="Department">
+      {(me.is_exec || memberships.length > 1) && <FieldGroup label="Department">
         <select className="field" aria-label="Department for my work" value={unitId}
           onChange={(e) => setUnitId(e.target.value)}>
+          <option value="">Choose a department</option>
           {memberships.map((m) => <option key={m.unit_id} value={m.unit_id}>{m.unit_name || "Authorised department"}</option>)}
         </select>
       </FieldGroup>}
@@ -233,5 +259,5 @@ export default function SelfWorkComposer({ me, onClose, onCreated }) {
       </div>
       <button type="submit" className="btn" disabled={!canSubmit}>{saving ? "Saving..." : "Add my work"}</button>
     </form>
-  </Sheet>;
+  </WorkSheet>;
 }

@@ -117,7 +117,7 @@ export default function ExecutiveWork({ me, openItem, goAssign }) {
     </WorkRegisterLayout>}
 
     {view === "given" && <WorkFootnote>
-      “Given out” reflects the current recorded assigner. CEAC OS does not invent a delegation chain that is not stored.
+      Work you assigned, with its current owner and status.
     </WorkFootnote>}
   </div>;
 }
