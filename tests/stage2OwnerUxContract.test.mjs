@@ -78,15 +78,16 @@ test("Stage 2 does not substitute Google-only identity for existing password sig
   assert.match(policy, /Supabase AAL2/);
 });
 
-test("Administration project drilldown reads through existing authenticated RLS and remains read only", () => {
+test("Administration project drilldown uses the owner-authorised manager workspace with authenticated RLS", () => {
   const admin = file("src/screens/AdminProjects.jsx");
   const reader = file("src/components/Stage2ProjectReader.jsx");
   const app = file("src/App.jsx");
-  assert.match(admin, /Stage2ProjectReader/);
+  assert.match(admin, /ManagerProjects/);
+  assert.match(admin, /projectUnitId=\{selected.lead_unit_id\}/);
   assert.match(admin, /label:"Open project"/);
   assert.match(app, /<AdminProjects[^\n]+me=\{me\} initialProjectId=\{projectId\} openProject=\{openProject\}/);
   assert.match(admin, /const selectedProjectId = initialProjectId/);
-  assert.match(admin, /onBack=\{\(\) => openProject\?\.\(null\)\}/);
+  assert.match(admin, /back=\{\(\)=>openProject\?\.\(null\)\}/);
   assert.match(reader, /\.from\("work_items"\)/);
   assert.match(reader, /\.neq\("visibility", "private"\)/);
   assert.match(reader, /canAssign=\{false\}/);
@@ -121,7 +122,7 @@ test("stage 2 universal MFA is staged behind explicit cutover, Stage 1 unchanged
   assert.doesNotMatch(gate, /ceac_google_mfa_eligible|signInWithOAuth/);
 });
 
-test("Executive and Administration share authorised Projects; assignment actions require Executive authority", () => {
+test("Executive reader remains isolated while Administration uses its authorised project management workspace", () => {
   const delivery = file("src/screens/Delivery.jsx");
   const admin = file("src/screens/AdminProjects.jsx");
   const reader = file("src/components/Stage2ProjectReader.jsx");
@@ -129,7 +130,8 @@ test("Executive and Administration share authorised Projects; assignment actions
   assert.match(delivery, /Stage2ProjectReader/);
   assert.match(delivery, /label:"Open project"/);
   assert.match(delivery, /inspectProjectId/);
-  assert.match(admin, /Stage2ProjectReader/);
+  assert.match(admin, /ManagerProjects/);
+  assert.match(admin, /projectUnitId=\{selected.lead_unit_id\}/);
   assert.match(reader, /canAssign=\{false\}/);
   assert.match(reader, /\.neq\("visibility", "private"\)/);
   assert.match(app, /<Delivery key=\{`\$\{me.org_id\}:\$\{me.id\}`\} me=\{me\} initialProjectId=\{projectId\} openItem=\{openItem\}/);
@@ -426,7 +428,7 @@ test("P0 executable census captures all mapped screen and direct data sources wi
   const audit = collectP0SourceInventory();
   assert.equal(audit.status, "SOURCE_INVENTORY_ONLY");
   assert.equal(audit.routeCount, 47);
-  assert.deepEqual(audit.roleNavigationCounts, { staff: 8, manager: 11, admin: 12, executive: 12 });
+  assert.deepEqual(audit.roleNavigationCounts, { staff: 8, manager: 11, admin: 13, executive: 12 });
   assert.equal(audit.overlays.length, 9);
   assert.ok(audit.routes.every((r) => r.components.length > 0
     && r.components.every((c) => c.path.startsWith("src/screens/"))));

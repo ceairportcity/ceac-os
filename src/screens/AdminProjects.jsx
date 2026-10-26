@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import Stage2ProjectReader from "../components/Stage2ProjectReader";
+import ManagerProjects from "./ManagerProjects";
+import AdminProjectComposer from "../components/AdminProjectComposer";
 import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
 import { LoadingState, ProductNotice } from "../components/bits";
@@ -13,8 +14,10 @@ import {
   ProjectSummary,
 } from "../experience-v2/project-family/ProjectFamilyV2";
 
-export default function AdminProjects({ me, scheduleMeeting, openItem, initialProjectId = null, openProject }) {
+export default function AdminProjects({ me, scheduleMeeting, openItem, initialProjectId = null, openProject, goAssign, openRoom }) {
   const [projects,setProjects]=useState([]);
+  const [units,setUnits]=useState([]);
+  const [creating,setCreating]=useState(false);
   const selectedProjectId = initialProjectId;
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
@@ -27,13 +30,14 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     try{
       const [projectResult,unitResult,objectiveResult,projectUnitResult]=await Promise.all([
         supabase.from("projects").select("id,name,status,lead_unit_id,starts_on,ends_on,purpose").eq("org_id",me.org_id).order("ends_on",{ascending:true,nullsFirst:false}),
-        supabase.from("units").select("id,name").eq("org_id",me.org_id),
+        supabase.from("units").select("id,name,active").eq("org_id",me.org_id),
         supabase.from("objectives").select("id,project_id,status").eq("org_id",me.org_id),
         supabase.from("project_units").select("project_id,unit_id"),
       ]);
       const failed=[projectResult,unitResult,objectiveResult,projectUnitResult].find((row)=>row.error);
       if(failed) throw failed.error;
       const unitById=Object.fromEntries((unitResult.data||[]).map((unit)=>[unit.id,unit.name]));
+      setUnits(unitResult.data||[]);
       setProjects((projectResult.data||[]).map((project)=>{
         const objectives=(objectiveResult.data||[]).filter((row)=>row.project_id===project.id);
         const participating=(projectUnitResult.data||[]).filter((row)=>row.project_id===project.id).map((row)=>unitById[row.unit_id]).filter(Boolean);
@@ -43,10 +47,15 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     finally{setLoading(false);}
   }
 
-  if (selectedProjectId) return <Stage2ProjectReader me={me} projectId={selectedProjectId} openItem={openItem} onBack={() => openProject?.(null)} />;
 
   if(loading) return <div className="body admin-projects ev2-project-page ev2-project-admin"><LoadingState label="Loading organisation projects…" /></div>;
   if(error) return <div className="body admin-projects ev2-project-page ev2-project-admin"><ProductNotice tone="error" title="Projects could not finish loading" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice></div>;
+
+  const selected = projects.find(project => project.id === selectedProjectId);
+  if (selectedProjectId && !selected) return <div className="body admin-projects"><button className="back" onClick={()=>openProject?.(null)}>← Projects</button><ProductNotice tone="error" title="Project unavailable">This project could not be verified in your organisation.</ProductNotice></div>;
+  if (selected) return <ManagerProjects key={`${me.org_id}:${me.id}:${selected.id}`} me={me} projectUnitId={selected.lead_unit_id}
+    initialProjectId={selected.id} back={()=>openProject?.(null)} openItem={openItem}
+    goAssign={context=>goAssign?.({...context,unitId:selected.lead_unit_id})} openRoom={openRoom} scheduleMeeting={scheduleMeeting} />;
 
   const active=projects.filter((project)=>project.status==="active");
   const planned=projects.filter((project)=>project.status==="planned");
@@ -58,8 +67,11 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     <ProjectPageHeader
       eyebrow="Organisation delivery"
       title="Projects"
-      description="Organisation-wide project movement, objective status and participating units. Detailed unit execution remains in the unit workspace."
+      description="Create projects and coordinate objectives, work, people and evidence across departments."
+      actionLabel="Create project" onAction={()=>setCreating(true)}
     />
+
+    {creating&&<AdminProjectComposer me={me} units={units.filter(unit=>unit.active!==false)} onClose={()=>setCreating(false)} onCreated={async id=>{setCreating(false);await load();openProject?.(id);}}/>}
 
     {error&&<ProductNotice tone="error" title="Projects could not finish loading" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice>}
 
@@ -72,7 +84,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     <ProjectSectionHeader eyebrow="Delivery" title={filter==="all"?"Organisation projects":filter==="attention"?"Projects needing objective attention":filter==="active"?"Active projects":"Planned projects"} count={visible.length} />
     {filter!=="all"&&<Button variant="secondary" onClick={()=>setFilter("all")}>Show all projects</Button>}
 
-    {projects.length===0&&<ProjectEmpty title="No projects recorded" description="Projects created by authorised managers will appear here." />}
+    {projects.length===0&&<ProjectEmpty title="No projects recorded" description="Create a project to begin planning objectives and work." />}
     {projects.length>0&&visible.length===0&&<ProjectEmpty title="No projects match this view" description="Choose another summary or show all projects." />}
 
     <div className="ev2p-context-list">

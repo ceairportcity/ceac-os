@@ -5,7 +5,7 @@ import { ComposerDrawer } from "../experience-v2/components";
 const Assign = lazy(() => import("../screens/Assign"));
 
 // The selected department is assignment context, never an invented membership
-// or a change to the authenticated Executive's profile/authority.
+// or a change to the authenticated actor's profile/authority.
 export default function ExecutiveAssign({ me, context = {}, back }) {
   const [units, setUnits] = useState([]);
   const [unitId, setUnitId] = useState(context.unitId || me.unit_id || "");
@@ -26,7 +26,7 @@ export default function ExecutiveAssign({ me, context = {}, back }) {
     if (!unitId || window.confirm("Changing department clears unsaved work details. Continue?")) setUnitId(next);
   }}><option value="">Choose a department</option>{units.map(unit => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></FieldGroup>;
   const unit = ready && units.find(row => row.id === unitId);
-  if (!me.is_exec) return null;
+  if (!me.is_exec && !me.is_admin) return null;
   if (!unit) return <ComposerDrawer open onClose={back} title="Give out work" description="Choose the department responsible, then the person and project.">
     {error ? <ProductNotice tone="error" title="Departments unavailable">{error}</ProductNotice> : !ready ? <LoadingState label="Loading departments…" /> : <>{picker(false)}{!units.length && <p>No active departments are recorded.</p>}</>}
   </ComposerDrawer>;

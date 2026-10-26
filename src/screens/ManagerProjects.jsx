@@ -86,7 +86,7 @@ function CostSummary({ rows, emptyText = "No project cost has been recorded." })
   </div>);
 }
 
-export default function ManagerProjects({ me, initialProjectId = null, openItem, goAssign, openRoom, openMeeting, scheduleMeeting, back }) {
+export default function ManagerProjects({ me, initialProjectId = null, openItem, goAssign, openRoom, openMeeting, scheduleMeeting, back, projectUnitId = me.unit_id }) {
   const [projects, setProjects] = useState([]);
   const [proposals, setProposals] = useState([]);
   const [selectedId, setSelectedId] = useState(initialProjectId);
@@ -102,7 +102,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
   const [workFilter, setWorkFilter] = useState("all");
   const [phaseFilter, setPhaseFilter] = useState("all");
   // A unit switch must invalidate old async reads as well as their visible data.
-  const scope = [me.org_id, me.id, me.unit_id].join(":");
+  const scope = [me.org_id, me.id, projectUnitId].join(":");
   const listRequestRef = useRef(0);
   const detailRequestRef = useRef(0);
   const proposalRequestRef = useRef(0);
@@ -112,7 +112,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
   const visibleProposals = proposalScope === scope ? proposals : [];
 
 
-  useEffect(() => { loadList(); loadProposals(); }, [me.id, me.unit_id, me.org_id]);
+  useEffect(() => { loadList(); loadProposals(); }, [me.id, projectUnitId, me.org_id]);
   useEffect(() => { setSelectedId(initialProjectId); }, [initialProjectId]);
   useEffect(() => {
     if (!selectedId) { setArea("overview"); return; }
@@ -122,7 +122,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
   useEffect(() => {
     if (selectedId) sessionStorage.setItem(`ceac-project-area:${me.id}:${selectedId}`, area);
   }, [selectedId, me.id, area]);
-  useEffect(() => { if (selectedId) loadDetail(selectedId); else { detailRequestRef.current += 1; setDetail(null); setDetailScope(null); } }, [selectedId, me.unit_id, me.id, me.org_id]);
+  useEffect(() => { if (selectedId) loadDetail(selectedId); else { detailRequestRef.current += 1; setDetail(null); setDetailScope(null); } }, [selectedId, projectUnitId, me.id, me.org_id]);
   useEffect(() => { setSelectedWorkId(null); setWorkFilter("all"); setPhaseFilter("all"); }, [selectedId]);
 
   async function loadProposals() {
@@ -130,7 +130,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     const requestScope = scope;
     const result = await supabase.from("project_proposals")
       .select("id,name,purpose,starts_on,ends_on,state,project_id,review_note,created_at,proposed_by,profiles!project_proposals_proposed_by_fkey(full_name)")
-      .eq("unit_id", me.unit_id)
+      .eq("unit_id", projectUnitId)
       .order("created_at", { ascending: false });
     if (request !== proposalRequestRef.current) return;
     if (result.error) {
@@ -179,7 +179,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       if (!ids.length) {
         if (request === listRequestRef.current) {
           setProjects([]);
-          setCanCreate(Boolean(capabilityResult.data));
+          setCanCreate(Boolean(me.is_admin || capabilityResult.data));
           setUnits(availableUnits);
           setListScope(requestScope);
         }
@@ -189,20 +189,20 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         supabase.from("project_units").select("project_id, unit_id, role").in("project_id", ids),
         supabase.from("objectives").select("id, project_id, status").in("project_id", ids),
         supabase.from("work_items").select("id, project_id, kind, status").in("project_id", ids),
-        supabase.from("budgets").select("id, project_id, currency, amount_minor").in("project_id", ids).eq("unit_id", me.unit_id),
-        supabase.from("spend_lines").select("id, project_id, currency, amount_minor, reverses_id").in("project_id", ids).eq("unit_id", me.unit_id),
+        supabase.from("budgets").select("id, project_id, currency, amount_minor").in("project_id", ids).eq("unit_id", projectUnitId),
+        supabase.from("spend_lines").select("id, project_id, currency, amount_minor, reverses_id").in("project_id", ids).eq("unit_id", projectUnitId),
       ]);
       const projectUnits = requireResult(unitResultRows, "Project units");
       const objectives = requireResult(objectiveResult, "Objectives");
       const work = requireResult(workResult, "Project work");
       const budgets = requireResult(budgetResult, "Project budgets");
       const spend = requireResult(spendResult, "Project spend");
-      const currentUnitProjects = visibleProjects.filter((project) => project.lead_unit_id === me.unit_id || projectUnits.some((row) => row.project_id === project.id && row.unit_id === me.unit_id));
+      const currentUnitProjects = visibleProjects.filter((project) => project.lead_unit_id === projectUnitId || projectUnits.some((row) => row.project_id === project.id && row.unit_id === projectUnitId));
       const nextProjects = currentUnitProjects.map((project) => {
         const tasks = work.filter((item) => item.project_id === project.id && item.kind === "task");
         return {
           ...project,
-          role: project.lead_unit_id === me.unit_id ? "lead" : projectUnits.find((row) => row.project_id === project.id && row.unit_id === me.unit_id)?.role,
+          role: project.lead_unit_id === projectUnitId ? "lead" : projectUnits.find((row) => row.project_id === project.id && row.unit_id === projectUnitId)?.role,
           objectives: objectives.filter((objective) => objective.project_id === project.id),
           taskCount: tasks.length,
           completedTasks: tasks.filter((task) => ["completed", "self_certified"].includes(task.status)).length,
@@ -211,7 +211,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       });
       if (request === listRequestRef.current) {
         setProjects(nextProjects);
-        setCanCreate(Boolean(capabilityResult.data));
+        setCanCreate(Boolean(me.is_admin || capabilityResult.data));
         setUnits(availableUnits);
         setListScope(requestScope);
       }
@@ -240,14 +240,14 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           .select("id, ref, title, kind, status, created_at, due_at, purpose, instructions, expected_outcome, objective_id, phase_id, unit_id, assignee_id, profiles!work_items_assignee_id_fkey(full_name), checklist_items(id,label,position), submissions(id, submitted_at, note, submission_files(id, url))")
           .eq("project_id", projectId).neq("visibility", "private").order("due_at", { ascending: true, nullsFirst: false }),
         supabase.from("budgets").select("id, currency, amount_minor, year, note")
-          .eq("project_id", projectId).eq("unit_id", me.unit_id),
+          .eq("project_id", projectId).eq("unit_id", projectUnitId),
         supabase.from("spend_lines").select("id, currency, amount_minor, reverses_id, spent_on, description")
-          .eq("project_id", projectId).eq("unit_id", me.unit_id),
+          .eq("project_id", projectId).eq("unit_id", projectUnitId),
         supabase.from("project_milestones").select("id,name,status,target_on,completed_at")
           .eq("project_id", projectId).order("target_on", { ascending: true, nullsFirst: false }),
       ]);
       const participants = requireResult(participantResult, "Participating units");
-      if (projectResult.data.lead_unit_id !== me.unit_id && !participants.some((row) => row.unit_id === me.unit_id)) throw new Error("This project is not part of your current unit.");
+      if (projectResult.data.lead_unit_id !== projectUnitId && !participants.some((row) => row.unit_id === projectUnitId)) throw new Error("This project is not part of your current unit.");
       const phases = requireResult(phaseResult, "Project phases");
       const objectives = requireResult(objectiveResult, "Objectives");
       const work = requireResult(workResult, "Project work");
@@ -258,8 +258,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         ...projectResult.data, participants, phases, objectives, work,
         milestones: milestoneResult.error ? null : milestoneResult.data || [],
         costs: costRows(budgets, spend),
-        canManageProject: projectResult.data.lead_unit_id === me.unit_id,
-        canManageObjectives: participants.some((row) => row.unit_id === me.unit_id) || projectResult.data.lead_unit_id === me.unit_id,
+        canManageProject: projectResult.data.lead_unit_id === projectUnitId,
+        canManageObjectives: participants.some((row) => row.unit_id === projectUnitId) || projectResult.data.lead_unit_id === projectUnitId,
       });
       setDetailScope(requestScope);
     } catch (err) { if (request === detailRequestRef.current) setError(humanError(err, "Project detail could not be loaded.")); }
@@ -269,7 +269,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     setBusy(true); setError(null);
     try {
       const { data: projectId, error: createError } = await supabase.rpc("create_project_with_participants", {
-        p_lead_unit_id: me.unit_id,
+        p_lead_unit_id: projectUnitId,
         p_name: form.name.trim(),
         p_purpose: form.purpose.trim() || null,
         p_starts_on: form.startsOn || null,
@@ -291,13 +291,13 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       if (!form.id) {
         const refResult = await supabase.rpc("next_objective_ref", {
           p_project_id: detail.id,
-          p_unit_id: me.unit_id,
+          p_unit_id: projectUnitId,
         });
         if (refResult.error) throw new Error(`Objective reference: ${refResult.error.message}`);
         objectiveRef = refResult.data;
       }
       const payload = {
-        org_id: me.org_id, project_id: detail.id, unit_id: me.unit_id,
+        org_id: me.org_id, project_id: detail.id, unit_id: projectUnitId,
         ref: objectiveRef, name: form.name.trim(), statement: form.statement.trim() || null,
         measure: form.measure.trim() || null,
         status: form.status, target_value: form.targetValue === "" ? null : Number(form.targetValue),
@@ -306,7 +306,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         closed_note: form.closedNote.trim() || null,
       };
       const result = form.id
-        ? await supabase.from("objectives").update(payload).eq("id", form.id).eq("unit_id", me.unit_id).select("id").single()
+        ? await supabase.from("objectives").update(payload).eq("id", form.id).eq("unit_id", projectUnitId).select("id").single()
         : await supabase.from("objectives").insert(payload).select("id").single();
       if (result.error) throw result.error;
       await loadDetail(detail.id); await loadList();
@@ -406,7 +406,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           {!detail.phases.length && <div className="card small">No operational phases have been recorded.</div>}
         </>}
 
-        <div className="sec"><span>Your unit cost · read only</span></div>
+        <div className="sec"><span>{me.is_admin?"Lead department cost · read only":"Your unit cost · read only"}</span></div>
         <p className="screen-note">Currencies are shown separately. No conversion is applied.</p>
         <div style={{ marginTop: 8 }}><CostSummary rows={detail.costs} /></div>
           </div>
@@ -468,7 +468,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
             <div className="row-note">{completed} of {tasks.length} project tasks completed</div>
             {objective.target_value !== null && <div className="row-note">Target: {objective.target_value} {objective.target_unit || ""}{objective.achieved_value !== null ? ` · Result: ${objective.achieved_value} ${objective.target_unit || ""}` : " · No result recorded"}</div>}
             {objective.closed_note && <div className="row-note">Close note: {objective.closed_note}</div>}
-            {objective.unit_id === me.unit_id && <div style={{ display: "flex", gap: 7, marginTop: 10, flexWrap: "wrap" }}>
+            {objective.unit_id === projectUnitId && <div style={{ display: "flex", gap: 7, marginTop: 10, flexWrap: "wrap" }}>
               <button className="btn btn-ghost btn-sm" onClick={() => setSheet({ type: "objective", value: objective })}>Edit objective</button>
               <button className="btn btn-sm" onClick={() => goAssign({ projectId: detail.id, objectiveId: objective.id, phaseId: objective.phase_id })}>Add work</button>
             </div>}
@@ -514,6 +514,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         <div className="project-area-head"><div><span className="eyebrow">Record</span><h2>Close & record</h2></div></div>
         <ManagerProjectClose
           me={me}
+          projectUnitId={projectUnitId}
           project={detail}
           objectives={detail.objectives}
           work={detail.work}
@@ -574,7 +575,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       </div>
       {projects.length === 0 && <ProjectEmpty title="No unit projects yet" description="Projects where your unit leads or participates will appear here." />}
     </>}
-    {sheet?.type === "project" && <ProjectSheet units={units.filter((unit) => unit.id !== me.unit_id)} busy={busy} onClose={() => setSheet(null)} onCreate={createProject} />}
+    {sheet?.type === "project" && <ProjectSheet units={units.filter((unit) => unit.id !== projectUnitId)} busy={busy} onClose={() => setSheet(null)} onCreate={createProject} />}
   </div>;
 }
 

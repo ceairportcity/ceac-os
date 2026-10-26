@@ -35,7 +35,8 @@ const WORK_INTENTS = [
 ];
 
 export default function Assign({ me, back, initialProjectId = "", initialObjectiveId = "", initialPhaseId = "", initialSubTeamId = "", initialMeetingId = "", initialKind = "", initialMeetingTitle = "", initialMeetingOn = "", initialMeetingNote = "", initialTitle = "", initialSourceRoomId = "", initialSourceMessageId = "", selectedUnitId = null, initialAssigneeId = "", scopeControl = null }) {
-  const workUnitId = me.is_exec ? (selectedUnitId || me.unit_id) : me.unit_id;
+  const organisationAssignment = Boolean(me.is_exec || me.is_admin);
+  const workUnitId = organisationAssignment ? (selectedUnitId || me.unit_id) : me.unit_id;
   const [people, setPeople] = useState([]);
   const [assignmentReady, setAssignmentReady] = useState(false);
   const [subTeams, setSubTeams] = useState([]);
@@ -107,7 +108,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     if (!workUnitId) return;
     setAssignmentReady(false);
     setErr(null);
-    const readOptions = me.is_exec ? {count:"exact"} : undefined;
+    const readOptions = organisationAssignment ? {count:"exact"} : undefined;
     const [peopleResult, leaveResult, unitResult] = await Promise.all([
       supabase.from("unit_memberships")
         .select("profile_id, profiles(full_name,active)", readOptions).eq("org_id", me.org_id).eq("unit_id", workUnitId),
@@ -119,7 +120,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     if (peopleResult.error) { setErr(peopleResult.error.message); return; }
     if (leaveResult.error) { setErr(leaveResult.error.message); return; }
     if (unitResult.error) { setErr(unitResult.error.message); return; }
-    if (me.is_exec && (!Array.isArray(peopleResult.data) || peopleResult.count !== peopleResult.data.length)) {
+    if (organisationAssignment && (!Array.isArray(peopleResult.data) || peopleResult.count !== peopleResult.data.length)) {
       setErr("The department's people could not be completely loaded. Close and try again."); return;
     }
     setPeople((peopleResult.data || []).filter(row => row.profiles?.active));
@@ -132,7 +133,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
     setSubTeams(st || []);
     const { data: p, error: projectError, count: projectCount } = await supabase.from("projects").select("id,name,starts_on,ends_on,status,lead_unit_id,project_units(unit_id)", readOptions).eq("org_id",me.org_id).order("name");
     if (projectError) { setErr(projectError.message); return; }
-    if (me.is_exec && (!Array.isArray(p) || projectCount !== p.length)) {
+    if (organisationAssignment && (!Array.isArray(p) || projectCount !== p.length)) {
       setErr("Projects could not be completely loaded. Close and try again."); return;
     }
     setAssignmentReady(true);
@@ -279,7 +280,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }
 
   function primaryActionDisabled() {
-    if (busy || (me.is_exec && !assignmentReady)) return true;
+    if (busy || (organisationAssignment && !assignmentReady)) return true;
     if (kind === "deliverable") return !title.trim() || !expectedOutcome.trim() || !assignee;
     if (kind === "meeting_outcome") return !title.trim() || !meetingTitle.trim() || !meetingOn || !assignee;
     if (kind === "decision") return !title.trim() || !decisionQuestion.trim() || !assignee;
@@ -293,7 +294,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }
 
   async function create() {
-    if (busy || (me.is_exec && !assignmentReady)) return;
+    if (busy || (organisationAssignment && !assignmentReady)) return;
     setBusy(true); setErr(null); setTraceWarning(null);
     try {
       const selectedKind = WORK_KINDS.find(([value]) => value === kind);

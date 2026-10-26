@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { test, expect } from "@playwright/test";
-import { getShellNavigation } from "../src/experience-v2/shell/navigation.js";
+import { getShellNavigation, groupDestinations } from "../src/experience-v2/shell/navigation.js";
 
 const password = process.env.ROLE_FIXTURE_PASSWORD;
 
@@ -85,6 +85,7 @@ const roles = [
       ["home", "Overview"],
       ["people", "People & Access"],
       ["work", "Work"],
+      ["admin-projects", "Projects"],
       ["attendance", "Time & Leave"],
       ["admin-calendar", "Calendar"],
       ["finance", "Finance"],
@@ -106,6 +107,7 @@ const roles = [
     ],
     secondary: [
       ["work", "Work"],
+      ["admin-projects", "Projects"],
       ["admin-calendar", "Calendar"],
       ["payroll", "Payroll"],
       ["reporting", "Reports"],
@@ -183,7 +185,18 @@ test("Stage 4D approved destination model matches the runtime route contract", a
 
   for (const role of roles) {
     const actual = getShellNavigation(role.context).map((item) => [item.key, item.label]);
-    expect(actual, role.key).toEqual(role.destinations);
+    expect(actual, role.key + " raw navigation").toEqual(role.destinations);
+    // The sidebar consumes grouped navigation, not just the raw model.
+    const groups = groupDestinations(getShellNavigation(role.context));
+    const grouped = groups.flatMap((group) => group.items.map((item) => [item.key, item.label]));
+    expect(grouped, role.key + " rendered order").toEqual(role.destinations);
+    const expectedSections = {
+      staff: ["workspace", "planning", "communication", "account"],
+      manager: ["workspace", "planning", "insight", "communication", "account"],
+      admin: ["workspace", "planning", "insight", "system", "communication", "account"],
+      executive: ["workspace", "planning", "insight", "communication", "account"],
+    };
+    expect(groups.map((group) => group.key), role.key + " section order").toEqual(expectedSections[role.key]);
 
     for (const [key] of role.destinations) {
       if (key === "me") continue;
