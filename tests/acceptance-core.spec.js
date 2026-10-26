@@ -1673,7 +1673,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await expect(dialog.getByLabel("Policy carryover method")).toHaveValue("");
     await expect(dialog.getByLabel("Policy approval route")).toHaveValue("");
     await expect(dialog.getByRole("button", { name: "Activate confirmed policy", exact: true })).toBeDisabled();
-    await dialog.getByRole("button", { name: "Close dialog", exact: true }).click();
+    await dialog.getByRole("button", { name: "Close", exact: true }).click();
 
     await page.screenshot({ path: "test-artifacts/stage9-workforce-admin.png", fullPage: true });
     await context.close();
