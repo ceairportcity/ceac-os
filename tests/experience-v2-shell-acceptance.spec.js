@@ -86,6 +86,7 @@ const roles = [
       ["people", "People & Access"],
       ["work", "Work"],
       ["attendance", "Time & Leave"],
+      ["admin-projects", "Projects"],
       ["admin-calendar", "Calendar"],
       ["finance", "Finance"],
       ["payroll", "Payroll"],
@@ -106,6 +107,7 @@ const roles = [
     ],
     secondary: [
       ["work", "Work"],
+      ["admin-projects", "Projects"],
       ["admin-calendar", "Calendar"],
       ["payroll", "Payroll"],
       ["reporting", "Reports"],

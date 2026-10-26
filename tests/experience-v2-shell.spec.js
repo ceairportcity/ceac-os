@@ -183,7 +183,7 @@ test("OCR6C Executive Messages chooses an authorised Sub-team before communicati
   await expect(roomsTab).toHaveAttribute("aria-selected", "true");
   const roomDirectory = page.locator(".ev2c-data-panel").filter({ hasText: "Organisation Rooms" }).first();
   await expect(roomDirectory).toBeVisible();
-  await expect(page.getByText("Choose a department or team to open its shared conversation.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Choose a room, then mention a person to address them in that shared conversation.", { exact: false })).toBeVisible();
 
   const subTeam = roomDirectory.locator("button.ev2c-queue-row").filter({ hasText: "Fixture Video Team" }).first();
   await expect(subTeam).toBeVisible();
