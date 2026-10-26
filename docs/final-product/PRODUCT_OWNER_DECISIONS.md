@@ -1,5 +1,7 @@
 ## 26 October 2026 — complete Administration audit, corrections and release before another panel
 
+Implementation status: Administration/HR corrections released through PR #149 at `7b9d504`, from qualified head `69d9323`, and verified using the existing HR account. [Final acceptance record](../design/CEAC_ADMIN_RELEASE_ACCEPTANCE_2026-10-26.md). Historical pending ledger entries are superseded by that release receipt; preserve newer main/PR work.
+
 After the Executive correction release (#148), the owner explicitly authorised a complete Administration/HR design and connected-workflow audit, implementation of the resulting corrections, verification and production release. Finish that scope before starting Manager or Staff. Staff is the owner's tentative next panel, not permission to start it now. No repeated implementation/release permission is required within the authorised Admin correction scope.
 
 The owner additionally flagged repeated laptop navigation/action icons and explicitly requested comparison with the phone layout. Distinguish different Admin destinations and actions using the existing consistent icon set; preserve shared symbols for the same action and do not change other roles merely to resolve this Admin finding.
