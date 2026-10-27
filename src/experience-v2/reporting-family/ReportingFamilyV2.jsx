@@ -39,10 +39,10 @@ export function ReportingEvidenceGrid({ children }) {
   return <div className="ev2rep-evidence-grid">{children}</div>;
 }
 
-export function ReportingEvidenceCard({ value, label, detail = "Why?", onClick, tone = "neutral" }) {
+export function ReportingEvidenceCard({ value, label, detail = "Why?", onClick, tone = "neutral", icon = true }) {
   const Component = onClick ? "button" : "article";
   return <Component type={onClick ? "button" : undefined} className={`ev2rep-evidence is-${tone} ${onClick ? "is-interactive" : ""}`.trim()} onClick={onClick}>
-    <span className="ev2rep-evidence-icon"><CeacIcon name="reports" size="row" decorative /></span>
+    {icon && <span className="ev2rep-evidence-icon"><CeacIcon name="reports" size="row" decorative /></span>}
     <strong>{value}</strong>
     <span>{label}</span>
     {detail ? <small>{detail}</small> : null}

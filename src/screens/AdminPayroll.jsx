@@ -57,6 +57,8 @@ export default function AdminPayroll({ me }) {
   const [runs, setRuns] = useState([]);
   const [readiness, setReadiness] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  const [entrySearch,setEntrySearch] = useState("");
+  const [entryFilter,setEntryFilter] = useState("all");
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -77,6 +79,7 @@ export default function AdminPayroll({ me }) {
     setSelectedId(id);
   }
 
+  useEffect(() => { setEntrySearch(""); setEntryFilter("all"); }, [selectedId,me.id,me.org_id]);
   useEffect(() => {
     void loadRuns();
     return () => {
@@ -389,6 +392,7 @@ export default function AdminPayroll({ me }) {
   const visibleSheet = sheet?.type === "create" ? sheet
     : run && sheet?.runId === selectedId ? sheet : null;
   const flagged = useMemo(() => entries.filter((entry) => Array.isArray(entry.flags) && entry.flags.length), [entries]);
+  const visibleEntries = entries.filter(entry => (entryFilter !== "flagged" || entry.flags?.length) && String(entry.employee_name || "").toLocaleLowerCase().includes(entrySearch.trim().toLocaleLowerCase()));
 
   if (loading) return <div className="body fpg-payroll"><LoadingState label="Loading Payroll…" /></div>;
 
@@ -410,7 +414,8 @@ export default function AdminPayroll({ me }) {
     {error && <ProductNotice tone="error" title="Payroll">{error} {!runs.length && <button type="button" className="btn btn-ghost" onClick={() => void loadRuns()}>Retry Payroll access</button>}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Payroll">{notice}</ProductNotice>}
 
-    {readiness && <section className="fpg-payroll-table-card">
+    {readiness && <details className="fpg-payroll-table-card">
+      <summary className="fpg-payroll-table-head"><strong>Payroll setup · {readiness.employee_count || 0} salary-eligible employees</strong><small>{readiness.compensation_missing_count || 0} salary records missing · {readiness.payment_missing_count || 0} payment details missing · View setup</small></summary>
       <div className="fpg-payroll-table-head">
         <div><span>Payroll readiness</span><h3>{readiness.employee_count || 0} salary-eligible employee{readiness.employee_count === 1 ? "" : "s"}</h3></div>
         <small>{readiness.linked_count || 0} linked account{readiness.linked_count === 1 ? "" : "s"} · {readiness.roster_only_count || 0} roster only</small>
@@ -427,7 +432,7 @@ export default function AdminPayroll({ me }) {
       {(readiness.volunteer_count || 0) > 0 && <ProductNotice tone="info" title="Volunteer payroll boundary">
         {readiness.volunteer_count} active volunteer{readiness.volunteer_count === 1 ? "" : "s"} excluded from this ordinary salary-payroll population. Stipend or support does not silently convert a volunteer into a salaried employee.
       </ProductNotice>}
-    </section>}
+    </details>}
 
     <div className="fpg-payroll-layout">
       <aside className="fpg-payroll-runs" aria-label="Payroll runs">
@@ -453,11 +458,10 @@ export default function AdminPayroll({ me }) {
             <span className={"fpg-payroll-status " + statusTone(run.status)}>{statusLabel(run.status)}</span>
           </section>
 
-          <section className="fpg-payroll-metrics">
+          <section className="fpg-payroll-metrics" aria-label="Recorded payroll totals">
+            <article><span>Net payroll</span><strong>{money(run.total_net_minor, run.currency)}</strong><small>{entries.length} employee entries · this run</small></article>
             <article><span>Total additions</span><strong>{money(run.total_additions_minor, run.currency)}</strong><small>Recorded employee additions</small></article>
             <article><span>Total deductions</span><strong>{money(run.total_deductions_minor, run.currency)}</strong><small>Recorded employee deductions</small></article>
-            <article><span>Net payroll</span><strong>{money(run.total_net_minor, run.currency)}</strong><small>Recorded additions minus deductions</small></article>
-            <article className={flagged.length ? "has-flags" : ""}><span>Needs review</span><strong>{flagged.length}</strong><small>Employee entries with factual flags</small></article>
           </section>
 
           <div className="fpg-payroll-actions">
@@ -468,11 +472,17 @@ export default function AdminPayroll({ me }) {
           </div>
 
           <section className="fpg-payroll-table-card">
-            <div className="fpg-payroll-table-head"><div><span>Employee payroll</span><h3>{entries.length} employee entr{entries.length === 1 ? "y" : "ies"}</h3></div><small>Protected data · {run.currency}</small></div>
-            <div className="fpg-payroll-table-wrap">
+            <div className="fpg-payroll-table-head"><div><span>Employee payroll</span><h3>{visibleEntries.length} of {entries.length} employee entries</h3></div><small>Protected data · {run.currency}</small></div>
+            <div className="fpg-payroll-actions" role="group" aria-label="Employee payroll filters">
+              <input className="field" type="search" aria-label="Find payroll employee" placeholder="Find an employee" value={entrySearch} onChange={event=>setEntrySearch(event.target.value)}/>
+              <button type="button" className="btn btn-ghost" aria-pressed={entryFilter === "all"} onClick={()=>setEntryFilter("all")}>All entries ({entries.length})</button>
+              <button type="button" className="btn btn-ghost" aria-pressed={entryFilter === "flagged"} onClick={()=>setEntryFilter("flagged")}>Needs review ({flagged.length})</button>
+            </div>
+            {visibleEntries.length === 0 && <EmptyState compact title="No matching employee entries">Change the employee search or review filter.</EmptyState>}
+            <div className="fpg-payroll-table-wrap" role="region" aria-label="Employee payroll table" tabIndex="0">
               <table className="fpg-payroll-table">
                 <thead><tr><th>Employee</th><th>Additions</th><th>Deductions</th><th>Net</th><th>Review</th><th /></tr></thead>
-                <tbody>{entries.map((entry) => <tr key={entry.id}>
+                <tbody>{visibleEntries.map((entry) => <tr key={entry.id}>
                   <td><div className="fpg-payroll-person"><Avatar name={entry.employee_name} size="sm" /><span><strong>{entry.employee_name}</strong><small>{entry.payment_detail_id ? "Payment detail recorded" : "Payment detail missing"}</small></span></div></td>
                   <td>{money(entry.additions_minor, entry.currency)}</td>
                   <td>{money(entry.deductions_minor, entry.currency)}</td>
@@ -484,7 +494,7 @@ export default function AdminPayroll({ me }) {
             </div>
           </section>
 
-          <ProductNotice tone="info" title="Output policy not invented">
+          <ProductNotice tone="info" title="Payment and export availability">
             Payslip distribution, payment export, statutory calculation and automatic deductions remain unavailable until CEAC confirms those policies. This screen records only authoritative Payroll data and decisions.
           </ProductNotice>
         </>}

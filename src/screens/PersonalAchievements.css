@@ -10,14 +10,14 @@
 .s2-achievement-actions button:disabled{opacity:.55;cursor:not-allowed}
 .s2-achievement-filters{display:grid;grid-template-columns:140px 155px minmax(170px,1fr) minmax(185px,1.15fr);gap:10px;margin-bottom:15px;border:1px solid #e3eaf4;border-radius:12px;background:#fff;padding:16px}
 .s2-achievement-filters label{display:grid;gap:6px;color:#647b98;font-size:12px;font-weight:650;min-width:0}
-.s2-achievement-filters input,.s2-achievement-filters select{display:block;width:100%;min-width:0;min-height:var(--exec-control-min,39px);padding:8px 10px;border:1px solid #d8e4f2;border-radius:7px;background:white;color:#1d3e63;font-size:12px}
+.s2-achievement-filters input,.s2-achievement-filters select{display:block;width:100%;min-width:0;min-height:var(--exec-control-min,39px);padding:8px 10px;border:1px solid #d8e4f2;border-radius:7px;background:#fff;color:#1d3e63;font-size:12px}
 .s2-achievement-print-head{display:grid;gap:4px;margin:2px 0 13px;color:#7790aa;font-size:12px}
 .s2-achievement-print-head strong{font-size:14px;color:#1f466f}
-.s2-achievement-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
-.s2-achievement-metrics article{display:flex;flex-direction:column;gap:7px;background:#fff;border:1px solid #e2ebf5;border-radius:11px;padding:15px;min-height:124px}
+.s2-achievement-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:20px;border:1px solid #e2ebf5;border-radius:12px;background:#fff;overflow:hidden}
+.s2-achievement-metrics article{display:flex;flex-direction:column;gap:9px;border-inline-end:1px solid #e2ebf5;padding:20px;min-height:124px}
 .s2-achievement-metrics span{font-size:12px;color:#657f9b}
-.s2-achievement-metrics strong{font-size:28px;line-height:1.1;font-weight:720;color:#1667c7}
-.s2-achievement-metrics small{font-size:12px;color:#8497a9;line-height:1.4}
+.s2-achievement-metrics strong{font-size:32px;line-height:1.1;font-weight:650;color:var(--ev2-text);font-variant-numeric:tabular-nums}
+.s2-achievement-metrics small{font-size:12px;color:var(--ev2-text-secondary);line-height:1.4}
 .s2-achievement-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(255px,.9fr);align-items:start;gap:12px}
 .s2-achievement-panel{background:#fff;border:1px solid #e2eaf6;border-radius:12px;padding:17px 17px 20px;min-width:0}
 .s2-achievement-panel header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
@@ -27,7 +27,7 @@
 .s2-achievement table{border-collapse:collapse;width:100%;min-width:600px;text-align:left}
 .s2-achievement th{padding:10px 8px;font-size:12px;color:#7891a9;background:#f6f9fc;font-weight:650;white-space:nowrap}
 .s2-achievement td{padding:12px 8px;border-top:1px solid #eef2f7;color:#3f5772;line-height:1.45;font-size:12px;vertical-align:top}
-.s2-achievement td button{padding:0;text-align:left;color:var(--exec-purple,#185ba2);background:none;border:0;cursor:pointer;font-size:12px;font-weight:680}
+.s2-achievement :is(td,article) button{padding:0;text-align:left;color:var(--exec-purple,#185ba2);background:none;border:0;cursor:pointer;font-size:12px;font-weight:680}
 .s2-achievement td button small{display:block;margin-top:4px;color:#8ba0b6;font-weight:450;font-size:12px}
 .s2-achievement-insights dl{display:grid;gap:8px;margin:0}
 .s2-achievement-insights dl div{display:flex;justify-content:space-between;border-bottom:1px solid #e8eef5;padding:6px 0;gap:8px}
@@ -45,7 +45,7 @@
 .s2-achievement-error button{display:block;border:none;background:none;color:#9c3434;text-decoration:underline;margin-top:8px}
 @media(max-width:1000px){.s2-achievement-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2-achievement-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.s2-achievement-heading{align-items:flex-start;flex-direction:column}.s2-achievement-layout{grid-template-columns:1fr}.s2-achievement-evidence article{grid-template-columns:1fr 1fr}.s2-achievement-evidence article p{grid-column:1/-1}}
-@media(max-width:440px){.s2-achievement-heading h1{font-size:27px}.s2-achievement-filters{grid-template-columns:1fr}.s2-achievement-actions{width:100%}.s2-achievement-actions button{flex:1}.s2-achievement-metrics{gap:7px}.s2-achievement-metrics article{padding:12px;min-height:117px}.s2-achievement-metrics strong{font-size:22px}}
+@media(max-width:440px){.s2-achievement-heading h1{font-size:27px}.s2-achievement-filters{grid-template-columns:1fr}.s2-achievement-actions{width:100%}.s2-achievement-actions button{flex:1}.s2-achievement-metrics article{padding:12px;min-height:117px}.s2-achievement-metrics strong{font-size:22px}}
 @media print{
   @page{size:A4 portrait;margin:12mm}
   .s2-achievement{width:100%;max-width:100%;padding:0!important;font-family:Arial,sans-serif;color:#173254;-webkit-print-color-adjust:exact;print-color-adjust:exact}

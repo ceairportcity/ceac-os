@@ -239,3 +239,7 @@ button,input,select,textarea{font:inherit}
   .fpg-payroll-form-grid{grid-template-columns:1fr}
   .fpg-payroll-entry-summary{grid-template-columns:1fr}
 }
+
+.fpg-payroll-main .fpg-payroll-metrics{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+.fpg-payroll-main .fpg-payroll-metrics article:first-child>strong{font-size:28px;font-variant-numeric:tabular-nums}
+.fpg-payroll-actions .field{flex:1 1 12rem;width:auto;margin:0}

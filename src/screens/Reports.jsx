@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import ReportingFilingOverview from "../components/ExecutiveFilingOverview";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import OperationalArchiveRecords from "../components/OperationalArchiveRecords";
 import { dateOnly } from "../lib/time";
@@ -8,13 +9,12 @@ import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryRepor
 import { ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer, Skeleton, StatePanel } from "../experience-v2/components";
 import {
-  ReportingEvidenceCard,
-  ReportingEvidenceGrid,
   ReportingEmpty,
   ReportingFootnote,
   ReportingPageHeader,
   ReportingRecordRow,
   ReportingSection,
+  ReportingTabs,
   ReportingStatusBadge,
 } from "../experience-v2/reporting-family/ReportingFamilyV2";
 
@@ -25,6 +25,7 @@ export default function Reports({ me }) {
   const [reports, setReports] = useState([]);
   const [units, setUnits] = useState([]);
   const [open, setOpen] = useState(null);
+  const [filingFilter,setFilingFilter] = useState("all");
   const [sheet, setSheet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -52,6 +53,8 @@ export default function Reports({ me }) {
     void load();
     return () => { loadSequence.current += 1; };
   }, [me.org_id, me.id]);
+
+  useEffect(() => { setFilingFilter("all"); }, [open, actorScope]);
 
   async function load({ quiet = false } = {}) {
     const requestedActor = actorScope;
@@ -248,6 +251,8 @@ export default function Reports({ me }) {
     const drafting = units.filter((unit) => byUnit[unit.id] && byUnit[unit.id].status === "draft");
     const missing = units.filter((unit) => !byUnit[unit.id]);
     const challengesRecorded = filed.filter((unit) => byUnit[unit.id]?.challenges).length;
+    const visibleDrafts = filingFilter === "waiting" ? [] : drafting;
+    const visibleMissing = filingFilter === "draft" ? [] : missing;
 
     return (
       <div className="body ev2-reporting-page ev2-reporting-admin">
@@ -268,24 +273,17 @@ export default function Reports({ me }) {
 
         {msg ? <ProductNotice tone="error" title="Reporting update">{msg}</ProductNotice> : null}
 
-        <ReportingSection
-          eyebrow="Coverage"
-          title="Reporting status by unit"
-          description="Submitted, draft and missing are filing states only. They are not performance ratings."
-        >
-          <ReportingEvidenceGrid>
-            <ReportingEvidenceCard value={String(filed.length)} label="submitted units" detail={`${filed.length} of ${units.length} units`} tone="success" />
-            <ReportingEvidenceCard value={String(drafting.length)} label="drafts" detail="Started, not submitted" tone="warning" />
-            <ReportingEvidenceCard value={String(missing.length)} label="nothing yet" detail="Named follow-up below" />
-            <ReportingEvidenceCard value={String(challengesRecorded)} label="submitted challenges" detail="Recorded narrative context" />
-          </ReportingEvidenceGrid>
-        </ReportingSection>
+        <ReportingFilingOverview key={actorScope + ":" + period.id} period={period}
+          rows={units.map(unit => ({unit,state:isIssuedUnitReport(byUnit[unit.id]) ? "submitted" : byUnit[unit.id]?.status === "draft" ? "draft" : "waiting"}))}
+          onFilter={setFilingFilter} />
+        <ReportingTabs label="Department report views" value={filingFilter} onChange={setFilingFilter}
+          items={[["all","All departments"],["submitted",`Submitted (${filed.length})`],["draft",`Drafts (${drafting.length})`],["waiting",`Not started (${missing.length})`]]} />
 
-        <ReportingSection
+        {(filingFilter === "all" || filingFilter === "submitted") && <ReportingSection
           eyebrow="Submitted reports"
           title="What units reported"
           description="Submitted narratives and recorded challenges from the latest filed version for each unit."
-          meta={String(filed.length)}
+          meta={`${filed.length} reports · ${challengesRecorded} with challenges`}
         >
           {filed.length === 0 ? (
             <ReportingEmpty
@@ -312,19 +310,19 @@ export default function Reports({ me }) {
               })}
             </div>
           )}
-        </ReportingSection>
+        </ReportingSection>}
 
-        <ReportingSection
+        {filingFilter !== "submitted" && <ReportingSection
           eyebrow="Follow-up"
           title="Still outstanding"
           description="Units stay named so Administration can follow up directly instead of relying on a bare completion percentage."
-          meta={String(drafting.length + missing.length)}
+          meta={String(visibleDrafts.length + visibleMissing.length)}
         >
-          {drafting.length === 0 && missing.length === 0 ? (
-            <ReportingEmpty title="Every unit has filed" description="There is no reporting follow-up required for this period." />
+          {visibleDrafts.length === 0 && visibleMissing.length === 0 ? (
+            <ReportingEmpty title={filingFilter === "all" ? "Every unit has filed" : "No departments in this view"} description={filingFilter === "all" ? "There is no reporting follow-up required for this period." : "Choose another filing status to inspect its departments."} />
           ) : (
             <div className="ev2rep-list">
-              {drafting.map((unit) => (
+              {visibleDrafts.map((unit) => (
                 <ReportingRecordRow
                   key={`draft-${unit.id}`}
                   eyebrow="Draft"
@@ -334,7 +332,7 @@ export default function Reports({ me }) {
                   statusTone="warning"
                 />
               ))}
-              {missing.map((unit) => (
+              {visibleMissing.map((unit) => (
                 <ReportingRecordRow
                   key={`missing-${unit.id}`}
                   eyebrow="No report"
@@ -345,7 +343,7 @@ export default function Reports({ me }) {
               ))}
             </div>
           )}
-        </ReportingSection>
+        </ReportingSection>}
 
         <ReportingFootnote>
           Reporting coverage is operational filing context. CEAC OS does not infer unit performance, staff performance, achievement or an overall score from submission status.

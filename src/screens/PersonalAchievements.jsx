@@ -24,6 +24,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
   const [period,setPeriod] = useState(today.slice(0,7));
   const [projectId,setProjectId] = useState("");
   const [search,setSearch] = useState("");
+  const [contributionView,setContributionView] = useState("list");
   const [works,setWorks] = useState([]);
   const [submissions,setSubmissions] = useState([]);
   const [activities,setActivities] = useState([]);
@@ -36,7 +37,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
   const range = useMemo(() => reportingRange(cadence, safePeriod+"-01"),[cadence,safePeriod]);
   // A previous employee or period must never briefly display as the new report
   // while the new authorised source read has not yet completed.
-  const reportKey = `${me.id}:${range.start}:${range.end}`;
+  const reportKey = `${me.org_id}:${me.id}:${range.start}:${range.end}`;
   const verifiedLoad = completeLoad && loadedKey===reportKey && !busy && !error;
   const preview = useMemo(() => individualAchievementFacts({
     works, submissions, range, projectId:projectId||null, asOf:new Date(asOf)
@@ -70,7 +71,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
   const activeProjectIds = new Set([...preview.projectIds, ...attributableActions.map((a) => a.source_project_id).filter(Boolean)]);
 
   // A new employee must not inherit another employee's project filter.
-  useEffect(() => { setProjectId(""); }, [me.id]);
+  useEffect(() => { setProjectId(""); }, [me.id,me.org_id]);
 
   // Live overdue indicators must advance after Ghana midnight and timestamped
   // deadlines without requiring a new sign-in or reloading confidential data.
@@ -125,7 +126,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
       finally{if(alive)setBusy(false);}
     })();
     return()=>{alive=false;};
-  },[me.id,range.start,range.end,retryToken]);
+  },[me.org_id,me.id,range.start,range.end,retryToken]);
 
   const print = () => { if(verifiedLoad) window.print(); };
   return <main className="body s2-achievement report-print" aria-label="My achievements">
@@ -168,14 +169,17 @@ export default function PersonalAchievements({ me, back, openItem }) {
           ["Due during period",preview.due.length+"", preview.cancelled.length+" cancelled commitments excluded"],
           ["Contributions recorded",preview.contributions.length+"", preview.submissions.length+" recorded submissions"],
           ["Distinct projects with recorded evidence",activeProjectIds.size+"", "Unique project IDs from work and activity, not membership"],
-          ["Dated activities recorded",activityRows.length+"", "Self-recorded actions, not approved outputs"],
         ].map(([label,value,explain])=><article key={label}><span>{label}</span><strong>{value}</strong><small>{explain}</small></article>)}
       </div>
       <div className="s2-achievement-layout">
         <section className="s2-achievement-panel">
-          <header><h2>My recorded contribution</h2><span>{contributions.length} records</span></header>
+          <header><div><h2>My recorded contribution</h2><span>{contributions.length} records · {activityRows.length} dated activities</span></div>
+            <div className="s2-achievement-actions" role="group" aria-label="Contribution display">
+              {[['list','List'],['table','Table']].map(([key,label])=><button type="button" key={key} aria-pressed={contributionView===key} className={contributionView===key?"s2-achievement-print":""} onClick={()=>setContributionView(key)}>{label}</button>)}
+            </div>
+          </header>
           {!contributions.length && <p className="s2-achievement-empty">No attributable completion or submission is recorded for these filters. This is not evidence of no work.</p>}
-          {contributions.length>0 && <div className="s2-achievement-table-scroll"><table><thead><tr>
+          {contributions.length>0 && contributionView === "table" && <div className="s2-achievement-table-scroll" role="region" aria-label="My contribution table" tabIndex="0"><table><thead><tr>
             <th>Work record</th><th>Current project</th><th>Recorded outcome</th><th>State now</th>
           </tr></thead><tbody>{contributions.map((w)=><tr key={w.id}>
             <td><button type="button" onClick={()=>openItem?.(w.id)}>{w.title}<small>{w.ref}</small></button></td>
@@ -185,6 +189,13 @@ export default function PersonalAchievements({ me, back, openItem }) {
               : "Attributable submission; outcome not independently verified"}</td>
             <td>{status(w.status)}{w.status==="self_certified"?" (self-certified)":""}</td>
           </tr>)}</tbody></table></div>}
+          {contributions.length>0 && contributionView === "list" && <div className="s2-achievement-evidence" role="list" aria-label="Recorded contributions">
+            {contributions.map(w=><article key={w.id} role="listitem">
+              <span>{w.ref}<br/>{status(w.status)}</span>
+              <span>{w.projects?.name||"No linked project"}</span>
+              <p><button type="button" onClick={()=>openItem?.(w.id)}>{w.title}</button><br/>{w.completed_at && preview.completed.some(c=>c.id===w.id) ? "Completed "+niceDay(w.completed_at) : "Submission recorded · outcome not independently verified"}</p>
+            </article>)}
+          </div>}
         </section>
         <aside className="s2-achievement-panel s2-achievement-insights">
           <header><h2>Outstanding now</h2><span>Not a retrospective snapshot</span></header>
@@ -195,8 +206,8 @@ export default function PersonalAchievements({ me, back, openItem }) {
             <div><dt>Waiting / In review</dt><dd>{preview.waiting.length} / {preview.inReview.length}</dd></div>
           </dl>
           <h3>On-time delivery evidence</h3><p>{preview.onTimeDisplay}</p>
-          <h3>Attendance and Compliance</h3><p>These are independently authorised factual records. No attendance or Compliance score is inferred by this personal Work summary.</p>
-          <h3>Reporting boundary</h3><p>This is a live view of your current authorised records, not a frozen monthly filing, published HR appraisal or verified organisational output.</p>
+          <details><summary>About these figures</summary><h3>Attendance and Compliance</h3><p>These are independently authorised factual records. No attendance or Compliance score is inferred by this personal Work summary.</p>
+          <h3>Reporting boundary</h3><p>This is a live view of your current authorised records, not a frozen monthly filing, published HR appraisal or verified organisational output.</p></details>
         </aside>
       </div>
       <section className="s2-achievement-panel s2-achievement-evidence">

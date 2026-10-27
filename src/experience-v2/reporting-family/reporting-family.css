@@ -1,7 +1,7 @@
 /* CEAC OS Experience V2 — Stage 10 Family F: Reports */
 .ev2-reporting-page{width:min(100%,80rem);margin:0 auto;padding:var(--ev2-space-5) var(--ev2-space-5) var(--ev2-space-10);color:var(--ev2-text);font-family:var(--ev2-font-sans)}
 .ev2rep-header{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--ev2-space-5);padding:var(--ev2-space-5) 0;border-bottom:1px solid var(--ev2-line)}
-.ev2rep-header-copy{min-width:0;max-width:52rem}
+.ev2rep-header-copy{min-width:0}
 .ev2rep-eyebrow,.ev2rep-section-head>div>span{display:block;color:var(--ev2-text-tertiary);font-size:var(--ev2-type-label);line-height:1.3;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
 .ev2rep-eyebrow{margin-bottom:var(--ev2-space-2)}
 .ev2rep-header h1{margin:0;color:var(--ev2-text);font-size:var(--ev2-type-page-mobile);line-height:1.05;letter-spacing:-.025em}
@@ -123,7 +123,7 @@
 .filing-overview header,.filing-view-head,.filing-overview footer,.filing-primary{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .filing-overview h2{font-size:22px;margin:6px 0 0}.filing-overview h3{font-size:14px;margin:0}
 .filing-kicker,.filing-period-state,.filing-overview small,.filing-overview footer{font-size:12px;color:var(--ev2-text-secondary)}
-.filing-composition{display:grid;gap:24px;padding:24px 0}.filing-primary{justify-content:flex-start}
+.filing-composition{display:grid;gap:24px;padding:24px 0;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}.filing-primary{justify-content:flex-start}
 .filing-ring{position:relative;flex:0 0 132px;height:132px}.filing-ring svg{width:100%;height:100%;transform:rotate(-90deg);fill:none;stroke:var(--ev2-line);stroke-width:7}.filing-ring .filing-ring-value{stroke:var(--exec-blue,var(--ev2-action));stroke-linecap:round}
 .filing-ring>div{position:absolute;inset:0;display:grid;align-content:center;text-align:center;gap:4px;font-size:13px}
 .filing-ring strong{font-size:36px;line-height:1;letter-spacing:-.04em}.filing-ring strong span{font-size:18px}
@@ -137,5 +137,8 @@
 @media(max-width:760px){.filing-overview{padding:18px}.filing-ring{flex-basis:112px;height:112px}}
 
 .filing-register{padding:0 14px;border:1px solid var(--ev2-line);border-radius:12px;background:var(--ev2-surface)}
-.filing-register table{min-width:320px}.filing-register :is(th,td){padding-block:17px;font-weight:400}
+.filing-register :is(th,td){padding-block:17px;font-weight:400}
 .filing-state{font-size:12px;color:var(--ev2-text-secondary)}.filing-state.is-submitted{color:var(--ev2-success)}.filing-state.is-draft{color:var(--ev2-warning)}
+
+.ev2-reporting-manager .ev2rep-evidence{display:flex;flex-direction:column;gap:7px}
+.ev2-reporting-manager .ev2rep-evidence>strong{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums}

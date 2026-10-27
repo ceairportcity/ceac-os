@@ -44,7 +44,7 @@ export default function ExecutiveWorkReview({id, me, back, openRoom}) {
   if(loading)return <div className="body"><LoadingState label="Opening work summary…"/></div>;
   if(error)return <div className="body"><button className="back" onClick={back}>← Back</button><ProductNotice tone="error" title="Work summary unavailable" action={<button type="button" className="btn" onClick={()=>setReload(n=>n+1)}>Try again</button>}>{error}</ProductNotice></div>;
   return <div className="body ev2-work-detail" aria-label="Work review">
-    <WorkDetailHeader refCode={item.ref} kind={item.kind} title={item.title} status={item.status} onBack={back}/>
+    <WorkDetailHeader refCode={item.ref} kind={item.kind} title={item.title} context="Outcome review" due={item.due_at ? `Due ${new Date(item.due_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short",year:"numeric"})}` : "No due date recorded"} status={item.status} onBack={back}/>
     <p className="screen-note">Review only · Private working activity and completion checklists are not shown here.</p>
     {item.expected_outcome&&<WorkDetailSection title="Expected outcome"><WorkDetailCopy>{item.expected_outcome}</WorkDetailCopy></WorkDetailSection>}
     <WorkDetailSection title="Submitted outcome">

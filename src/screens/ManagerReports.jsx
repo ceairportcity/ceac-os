@@ -49,7 +49,7 @@ function distinctAttendanceDays(rows) {
 }
 
 function EvidenceMetric({ value, label, onClick }) {
-  return <ReportingEvidenceCard value={value} label={label} detail="Why?" onClick={onClick} />;
+  return <ReportingEvidenceCard value={value} label={label} detail="View source records ↗" icon={false} onClick={onClick} />;
 }
 
 // A submitted report's evidence is immutable. Never substitute today's live
@@ -751,8 +751,8 @@ export default function ManagerReports({ me, openItem }) {
       >
         <div className="report-analysis-toggle">
           <div>
-            <strong>Supporting analysis</strong>
-            <span>Open this only when a pattern helps explain the report evidence.</span>
+            <strong>Charts and tables</strong>
+            <span>Explore recorded trends or read the underlying records.</span>
           </div>
           <Button
             variant="quiet"
@@ -761,7 +761,7 @@ export default function ManagerReports({ me, openItem }) {
             aria-expanded={showAnalysis}
             aria-controls="manager-report-supporting-analysis"
             onClick={() => setShowAnalysis((value) => !value)}
-          >{showAnalysis ? "Hide analysis" : "Show analysis"}</Button>
+          >{showAnalysis ? "Hide charts and tables" : "Show charts and tables"}</Button>
         </div>
 
         <MotionDisclosure open={showAnalysis} ariaLabel="Supporting analysis">

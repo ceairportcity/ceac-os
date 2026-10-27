@@ -153,7 +153,9 @@ test("P6 personal reporting hides raw provider diagnostics, validates dates and 
  const source=file("src/screens/PersonalAchievements.jsx");
  assert.match(source,/if \(!Number\.isFinite\(parsed\.getTime\(\)\)\) return "Unverified date"/);
  assert.match(source,/typeof date === "string"/);
- assert.match(source,/setProjectId\(""\); \}, \[me\.id\]/);
+ assert.match(source,/setProjectId\(""\); \}, \[me\.id,me\.org_id\]/);
+ assert.match(source,/const reportKey = `\$\{me\.org_id\}:\$\{me\.id\}/);
+ assert.match(source,/\[me\.org_id,me\.id,range\.start,range\.end,retryToken\]/);
  assert.match(source,/Report source records could not be verified\. Retry records or contact Administration\./);
  assert.doesNotMatch(source,/String\(e\.message\|\|"Please retry\."\)/);
  assert.match(source,/Too many records to verify accurately\. Contact Administration for a verified report/);

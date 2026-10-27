@@ -216,28 +216,6 @@
 .executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(3) { border-top: 2px solid var(--exec-blue); }
 .executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(4) { border-top: 2px solid var(--exec-amber); }
 
-.executive-app .fpg-payroll-metrics article:nth-child(1) {
-  border-top: 3px solid var(--exec-green);
-  background: linear-gradient(180deg, var(--exec-green-soft) 0%, #fff 46%);
-}
-.executive-app .fpg-payroll-metrics article:nth-child(2) {
-  border-top: 3px solid var(--exec-amber);
-  background: linear-gradient(180deg, var(--exec-amber-soft) 0%, #fff 46%);
-}
-.executive-app .fpg-payroll-metrics article:nth-child(3) {
-  border-top: 3px solid var(--exec-purple);
-  background: linear-gradient(180deg, var(--exec-purple-soft) 0%, #fff 46%);
-}
-.executive-app .fpg-payroll-metrics article:nth-child(4) {
-  border-top: 3px solid var(--exec-red);
-  background: linear-gradient(180deg, var(--exec-red-soft) 0%, #fff 46%);
-}
-.executive-app .fpg-payroll-metrics article:not(.has-flags):nth-child(4) {
-  border-top-color: var(--exec-blue);
-  background: linear-gradient(180deg, var(--exec-blue-soft) 0%, #fff 46%);
-}
-
-
 @media (max-width: 599px) {
   .executive-app .ev2-project-delivery.is-executive .ev2p-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
