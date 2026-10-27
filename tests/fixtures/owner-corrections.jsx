@@ -1,6 +1,7 @@
 // Synthetic local-only fixture: all remote requests are intercepted by tests.
 import React, {useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import ExecutiveReports from '../../src/screens/ExecutiveReports';
 import Learning from '../../src/screens/Learning';
 import EmployeeScheduleEditor from '../../src/components/EmployeeScheduleEditor';
 import Meeting from '../../src/screens/Meeting';
@@ -9,6 +10,8 @@ import Item from '../../src/screens/Item';
 import PeopleAccess from '../../src/components/PeopleAccess';
 import ExecutiveOrganisation from '../../src/screens/ExecutiveOrganisation';
 import '../../src/styles.css';
+import '../../src/role-styles/executive-redesign.css';
+import '../../src/role-styles/executive-workspaces.css';
 import '../../src/premium.css';
 import '../../src/premium-admin.css';
 import '../../src/experience-v2.css';
@@ -17,7 +20,7 @@ const me={id:'actor',org_id:'org',is_admin:true,is_exec:true,capabilities:['peop
 function Fixture(){
  const params=new URLSearchParams(location.search);
  const [actor,setActor]=useState({...me,is_admin:params.get('actor')!=='executive',is_exec:params.get('actor')!=='admin'});
- return <main><button onClick={()=>setActor({...me,id:'new-actor'})}>Switch fixture actor</button>{params.get('screen')==='learning'?<Learning me={actor}/>:params.get('screen')==='schedule'?<EmployeeScheduleEditor me={actor} profileId="person" unitId="unit" name="Synthetic colleague"/>:params.get('screen')==='meeting'?<Meeting me={actor} meetingId="meeting" back={()=>{}}/>:params.get('screen')==='review'?<Item me={actor} id="work" reviewOnly back={()=>{}}/>:params.get('screen')==='performance'?<Performance me={actor}/>:params.get('screen')==='directory'
+ return <main className={params.get('screen')==='reports'?'executive-app':undefined}><button onClick={()=>setActor({...me,id:'new-actor'})}>Switch fixture actor</button>{params.get('screen')==='reports'?<ExecutiveReports me={actor} openItem={()=>{}}/>:params.get('screen')==='learning'?<Learning me={actor}/>:params.get('screen')==='schedule'?<EmployeeScheduleEditor me={actor} profileId="person" unitId="unit" name="Synthetic colleague"/>:params.get('screen')==='meeting'?<Meeting me={actor} meetingId="meeting" back={()=>{}}/>:params.get('screen')==='review'?<Item me={actor} id="work" reviewOnly back={()=>{}}/>:params.get('screen')==='performance'?<Performance me={actor}/>:params.get('screen')==='directory'
   ?<ExecutiveOrganisation key={actor.id} me={actor} openItem={()=>{}}/>
   :<PeopleAccess me={actor}/>}</main>;
 }

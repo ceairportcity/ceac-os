@@ -66,40 +66,9 @@
 .ev2-finance-executive .ev2fin-facts > div,
 .ev2-finance-executive .ev2fin-facts > button { background: #fbfcfe; }
 
-/* Reports */
-.ev2-reporting-executive .ev2rep-executive-brief {
-  display: grid;
-  grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr);
-  gap: 14px;
-  align-items: start;
-}
-.ev2-reporting-executive .ev2rep-section { margin-top: 12px; }
-.ev2-reporting-executive .ev2rep-evidence {
-  min-height: 92px;
-  padding: 12px;
-  border-color: #e4e7ee;
-  border-radius: 10px;
-  box-shadow: 0 3px 12px rgba(26,36,57,.04);
-}
-.ev2-reporting-executive .ev2rep-evidence-icon { border-radius: 8px; background: var(--exec-blue-soft); color: var(--exec-blue); }
-.ev2-reporting-executive .ev2rep-row-icon { border-radius: 8px; background: var(--exec-purple-soft); color: var(--exec-purple); }
-.ev2-reporting-executive .ev2rep-executive-empty-brief {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) 19rem;
-  gap: 14px;
-}
-.ev2-reporting-executive .ev2rep-executive-authority {
-  margin-top: 12px;
-  padding: 16px;
-  border: 1px solid #e4e7ee;
-  border-radius: 11px;
-  background: #fff;
-}
-
+/* Reports are composed in reporting-family.css. */
 @media (max-width: 900px) {
-  .ev2-finance-executive .ev2fin-executive-brief,
-  .ev2-reporting-executive .ev2rep-executive-brief,
-  .ev2-reporting-executive .ev2rep-executive-empty-brief { grid-template-columns: 1fr; }
+  .ev2-finance-executive .ev2fin-executive-brief { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 599px) {

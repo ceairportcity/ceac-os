@@ -23,7 +23,7 @@
 .ev2rep-section-head>strong{flex:0 0 auto;color:var(--ev2-text-secondary);font-size:var(--ev2-type-supporting);font-weight:650}
 .ev2rep-section-body{min-width:0}
 .ev2rep-evidence-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--ev2-space-3)}
-.ev2rep-evidence{min-width:0;min-height:8rem;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto auto;column-gap:var(--ev2-space-3);align-content:start;padding:var(--ev2-space-4);border:1px solid var(--ev2-line);border-radius:var(--ev2-radius-card);background:var(--ev2-surface);color:var(--ev2-text);text-align:left;font:inherit;box-shadow:var(--ev2-shadow-1)}
+.ev2rep-evidence{min-width:0;min-height:8rem;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:var(--ev2-space-3);align-content:start;padding:var(--ev2-space-4);border:1px solid var(--ev2-line);border-radius:var(--ev2-radius-card);background:var(--ev2-surface);color:var(--ev2-text);text-align:left;font:inherit;box-shadow:var(--ev2-shadow-1)}
 .ev2rep-evidence.is-interactive{cursor:pointer}
 .ev2rep-evidence.is-interactive:hover{border-color:var(--ev2-line-strong);background:var(--ev2-surface-soft)}
 .ev2rep-evidence.is-interactive:focus-visible{outline:3px solid rgba(12,93,249,.20);outline-offset:2px}
@@ -40,7 +40,7 @@
 .ev2rep-row-icon{width:2.25rem;height:2.25rem;display:inline-grid;place-items:center;border-radius:var(--ev2-radius-control);background:var(--ev2-surface-muted);color:var(--ev2-text-secondary)}
 .ev2rep-row-copy{min-width:0;display:grid;gap:var(--ev2-space-1)}
 .ev2rep-row-copy>strong{color:var(--ev2-text);font-size:var(--ev2-type-row-mobile);line-height:1.35}
-.ev2rep-row-copy>span,.ev2rep-row-copy>p,.ev2rep-row-copy>small{margin:0;color:var(--ev2-text-secondary);font-size:var(--ev2-type-supporting);line-height:1.45;overflow-wrap:anywhere}
+.ev2rep-row-copy>:is(span,p,small){margin:0;color:var(--ev2-text-secondary);font-size:var(--ev2-type-supporting);line-height:1.45;overflow-wrap:anywhere}
 .ev2rep-row-actions{display:flex;align-items:center;gap:var(--ev2-space-2)}
 .ev2rep-empty{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--ev2-space-3);align-items:center;padding:var(--ev2-space-5);border:1px solid var(--ev2-line);border-radius:var(--ev2-radius-card);background:var(--ev2-surface-soft)}
 .ev2rep-empty>span{width:2.5rem;height:2.5rem;display:inline-grid;place-items:center;border-radius:var(--ev2-radius-control);background:var(--ev2-surface);color:var(--ev2-text-secondary)}
@@ -93,12 +93,6 @@
   box-shadow: none;
 }
 
-.ev2-reporting-manager .ev2rep-control-panel,
-.ev2-reporting-manager .report-analysis-toggle,
-.ev2-reporting-manager .report-record-card {
-  box-shadow: none;
-}
-
 .ev2-reporting-manager .ev2rep-ministry-context {
   margin-top: var(--ev2-space-6);
   padding-top: var(--ev2-space-4);
@@ -116,133 +110,32 @@
   }
 }
 
-@media (max-width: 760px) {
-  .ev2-reporting-manager .ev2rep-evidence-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+/* Executive reporting retains the role shell and source register. */
+.ev2-reporting-executive{width:min(100%,86rem);--ev2-type-label:12px}
+.ev2-reporting-executive .ev2rep-executive-brief{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(19rem,.75fr);gap:16px;align-items:start;margin-top:24px}
+.ev2-reporting-executive .ev2rep-executive-brief>.ev2rep-section{margin-top:0}
+.ev2rep-executive-empty-brief{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}
+.ev2rep-executive-authority{padding:16px;border:1px solid var(--ev2-line);border-radius:11px;background:var(--ev2-surface)}
+.ev2-reporting-admin{--ev2-type-label:12px}
+@media(max-width:960px){.ev2-reporting-executive .ev2rep-executive-brief,.ev2rep-executive-empty-brief{grid-template-columns:1fr}}
+/* Owner correction: contextual figures with equivalent chart and table. */
+.filing-overview{padding:24px;border:1px solid var(--ev2-line);border-radius:14px;background:var(--ev2-surface);min-width:0}
+.filing-overview header,.filing-view-head,.filing-overview footer,.filing-primary{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.filing-overview h2{font-size:22px;margin:6px 0 0}.filing-overview h3{font-size:14px;margin:0}
+.filing-kicker,.filing-period-state,.filing-overview small,.filing-overview footer{font-size:12px;color:var(--ev2-text-secondary)}
+.filing-composition{display:grid;gap:24px;padding:24px 0}.filing-primary{justify-content:flex-start}
+.filing-ring{position:relative;flex:0 0 132px;height:132px}.filing-ring svg{width:100%;height:100%;transform:rotate(-90deg);fill:none;stroke:var(--ev2-line);stroke-width:7}.filing-ring .filing-ring-value{stroke:var(--exec-blue,var(--ev2-action));stroke-linecap:round}
+.filing-ring>div{position:absolute;inset:0;display:grid;align-content:center;text-align:center;gap:4px;font-size:13px}
+.filing-ring strong{font-size:36px;line-height:1;letter-spacing:-.04em}.filing-ring strong span{font-size:18px}
+.filing-total{display:grid;gap:7px;font-size:13px}.filing-total>strong{font-size:28px}.filing-total>strong>span{font-size:20px;font-weight:400;color:var(--ev2-text-secondary)}
+.filing-overview strong{font-variant-numeric:tabular-nums;font-weight:650}
+.filing-overview button{font:inherit;cursor:pointer;color:inherit;border:0;background:transparent}.filing-view-head{margin-bottom:16px}.filing-view-head>div{display:flex;background:var(--ev2-surface-soft);border-radius:7px;padding:3px}.filing-view-head button{min-height:36px;padding:0 12px;font-size:12px;border-radius:5px}.filing-view-head button[aria-pressed=true]{background:var(--ev2-surface);box-shadow:var(--ev2-shadow-1)}
+.filing-bars{display:grid;gap:16px}.filing-bar{display:grid;grid-template-columns:1fr auto;gap:8px;text-align:left;padding:0}.filing-track{grid-column:1/-1;height:6px;border-radius:4px;background:var(--ev2-surface-muted);overflow:hidden}.filing-track>span{display:block;height:100%;background:var(--exec-blue,var(--ev2-action))}.is-draft .filing-track>span{background:var(--ev2-warning)}.is-pending .filing-track>span{background:var(--ev2-text-tertiary)}
+.filing-table{overflow:auto}.filing-table table{width:100%;border-collapse:collapse;font-size:13px}.filing-table th,.filing-table td{padding:10px 4px;border-bottom:1px solid var(--ev2-line);text-align:right}.filing-table th:first-child{text-align:left}.filing-table button{text-decoration:underline;padding:0}
+.filing-overview footer{padding-top:16px;border-top:1px solid var(--ev2-line);flex-wrap:wrap}.filing-overview footer button{min-height:36px}
+.filing-overview button:focus-visible,.filing-table:focus-visible{outline:2px solid var(--ev2-action);outline-offset:4px}
+@media(max-width:760px){.filing-overview{padding:18px}.filing-ring{flex-basis:112px;height:112px}}
 
-@media (max-width: 359px) {
-  .ev2-reporting-manager .ev2rep-evidence-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* VF5C — Executive reporting briefing composition.
-   Coverage remains filing-status evidence, never a unit or employee score. */
-.ev2-reporting-executive {
-  width: min(100%, 86rem);
-}
-
-.ev2-reporting-executive .ev2rep-executive-brief {
-  display: grid;
-  grid-template-columns: minmax(21rem, .8fr) minmax(0, 1.2fr);
-  gap: var(--ev2-space-4);
-  align-items: start;
-  margin-top: var(--ev2-space-6);
-}
-
-.ev2-reporting-executive .ev2rep-executive-brief > .ev2rep-section {
-  margin-top: 0;
-}
-
-.ev2-reporting-executive .ev2rep-evidence-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px;
-  overflow: hidden;
-  border: 1px solid var(--ev2-line);
-  border-radius: var(--ev2-radius-card);
-  background: var(--ev2-line);
-}
-
-.ev2-reporting-executive .ev2rep-evidence {
-  min-height: 7rem;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.ev2-reporting-executive .ev2rep-list {
-  box-shadow: none;
-  border-radius: var(--ev2-radius-sm);
-}
-
-.ev2-reporting-executive .ev2rep-executive-empty-brief {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(18rem, .7fr);
-  gap: var(--ev2-space-4);
-  align-items: stretch;
-  margin-top: var(--ev2-space-6);
-}
-
-.ev2-reporting-executive .ev2rep-executive-empty-brief > .ev2rep-section {
-  margin-top: 0;
-}
-
-.ev2-reporting-executive .ev2rep-executive-authority {
-  display: grid;
-  align-content: center;
-  gap: var(--ev2-space-2);
-  padding: var(--ev2-space-5);
-  border-left: 3px solid var(--ev2-identity);
-  background: var(--ev2-surface-soft);
-}
-
-.ev2-reporting-executive .ev2rep-executive-authority > span {
-  color: var(--ev2-text-tertiary);
-  font-size: var(--ev2-type-label);
-  font-weight: 750;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.ev2-reporting-executive .ev2rep-executive-authority > strong {
-  color: var(--ev2-text);
-  font-size: var(--ev2-type-card-mobile);
-  line-height: 1.25;
-}
-
-.ev2-reporting-executive .ev2rep-executive-authority > p {
-  margin: 0;
-  color: var(--ev2-text-secondary);
-  font-size: var(--ev2-type-supporting);
-  line-height: 1.5;
-}
-
-@media (max-width: 960px) {
-  .ev2-reporting-executive .ev2rep-executive-brief,
-  .ev2-reporting-executive .ev2rep-executive-empty-brief {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .ev2-reporting-executive .ev2rep-executive-brief,
-  .ev2-reporting-executive .ev2rep-executive-empty-brief {
-    gap: var(--ev2-space-3);
-    margin-top: var(--ev2-space-4);
-  }
-
-  .ev2-reporting-executive .ev2rep-evidence-grid {
-    display: flex;
-    gap: 1px;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: thin;
-  }
-
-  .ev2-reporting-executive .ev2rep-evidence {
-    flex: 0 0 min(78%, 17rem);
-    min-height: 6.5rem;
-  }
-
-  .ev2-reporting-executive .ev2rep-executive-authority {
-    padding: var(--ev2-space-4);
-  }
-}
-
-/* Preserve the approved 12px operational readability floor for visible
-   governance labels in Administration and Executive reports without reducing
-   larger headings or loosening the browser accessibility tests. */
-.ev2-reporting-admin,.ev2-reporting-executive{--ev2-type-label:12px}
+.filing-register{padding:0 14px;border:1px solid var(--ev2-line);border-radius:12px;background:var(--ev2-surface)}
+.filing-register table{min-width:320px}.filing-register :is(th,td){padding-block:17px;font-weight:400}
+.filing-state{font-size:12px;color:var(--ev2-text-secondary)}.filing-state.is-submitted{color:var(--ev2-success)}.filing-state.is-draft{color:var(--ev2-warning)}
