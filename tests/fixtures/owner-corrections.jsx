@@ -7,6 +7,7 @@ import ExecutiveReports from '../../src/screens/ExecutiveReports';
 import PersonalAchievements from '../../src/screens/PersonalAchievements';
 import AdminPayroll from '../../src/screens/AdminPayroll';
 import Learning from '../../src/screens/Learning';
+import Announcements from '../../src/screens/Announcements';
 import EmployeeScheduleEditor from '../../src/components/EmployeeScheduleEditor';
 import Meeting from '../../src/screens/Meeting';
 import Performance from '../../src/screens/Performance';
@@ -49,6 +50,7 @@ function Fixture(){
   achievements:<PersonalAchievements me={actor} back={()=>{}} openItem={()=>{}}/>,
   payroll:<AdminPayroll me={{...actor,capabilities:[...actor.capabilities,'payroll.prepare']}}/>,
   learning:<Learning me={actor}/>,
+  announcements:<Announcements me={actor}/>,
   schedule:<EmployeeScheduleEditor me={actor} profileId="person" unitId="unit" name="Synthetic colleague"/>,
   meeting:<Meeting me={actor} meetingId="meeting" back={()=>{}}/>,
   review:<Item me={actor} id="work" reviewOnly back={()=>{}}/>,
