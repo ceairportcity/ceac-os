@@ -34,7 +34,7 @@ const WORK_INTENTS = [
   ["meeting_outcome", "Follow up from a meeting", "Turn an agreed meeting action into accountable work."],
 ];
 
-export default function Assign({ me, back, initialProjectId = "", initialObjectiveId = "", initialPhaseId = "", initialSubTeamId = "", initialMeetingId = "", initialKind = "", initialMeetingTitle = "", initialMeetingOn = "", initialMeetingNote = "", initialTitle = "", initialSourceRoomId = "", initialSourceMessageId = "", selectedUnitId = null, initialAssigneeId = "", scopeControl = null }) {
+export default function Assign({ me, back, initialProjectId = "", initialObjectiveId = "", initialPhaseId = "", initialSubTeamId = "", initialMeetingId = "", initialKind = "", initialMeetingTitle = "", initialMeetingOn = "", initialMeetingNote = "", initialTitle = "", initialSourceRoomId = "", initialSourceMessageId = "", selectedUnitId = null, initialAssigneeId = "", scopeControl = null, scopeChangePending = false }) {
   const organisationAssignment = Boolean(me.is_exec || me.is_admin);
   const workUnitId = organisationAssignment ? (selectedUnitId || me.unit_id) : me.unit_id;
   const [people, setPeople] = useState([]);
@@ -280,7 +280,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }
 
   function primaryActionDisabled() {
-    if (busy || (organisationAssignment && !assignmentReady)) return true;
+    if (busy || scopeChangePending || (organisationAssignment && !assignmentReady)) return true;
     if (kind === "deliverable") return !title.trim() || !expectedOutcome.trim() || !assignee;
     if (kind === "meeting_outcome") return !title.trim() || !meetingTitle.trim() || !meetingOn || !assignee;
     if (kind === "decision") return !title.trim() || !decisionQuestion.trim() || !assignee;
@@ -294,7 +294,7 @@ export default function Assign({ me, back, initialProjectId = "", initialObjecti
   }
 
   async function create() {
-    if (busy || (organisationAssignment && !assignmentReady)) return;
+    if (busy || scopeChangePending || (organisationAssignment && !assignmentReady)) return;
     setBusy(true); setErr(null); setTraceWarning(null);
     try {
       const selectedKind = WORK_KINDS.find(([value]) => value === kind);

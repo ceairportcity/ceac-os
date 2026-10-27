@@ -104,8 +104,8 @@ test('Executive without department can choose an assignment department and cance
   await dialog.getByRole('combobox',{name:'Assignment department'}).selectOption(unitA);
   await expect(dialog.getByRole('combobox',{name:'Work type'})).toBeVisible();
   await dialog.getByRole('textbox',{name:'Work to complete'}).fill('Unsaved department context');
-  page.once('dialog',confirmation=>confirmation.accept());
   await dialog.getByRole('combobox',{name:'Assignment department'}).selectOption('20000000-0000-4000-8000-000000000012');
+  await dialog.getByRole('button',{name:'Change department',exact:true}).click();
   await expect(dialog.getByRole('textbox',{name:'Work to complete'})).toHaveValue('');
   await expect(dialog.getByRole('combobox',{name:'Responsible person'}).locator('option[value="31000000-0000-4000-8000-000000000005"]')).toHaveCount(1);
   await page.keyboard.press('Escape');
