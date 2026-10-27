@@ -6,7 +6,7 @@
 .s2-achievement-heading p{margin:0;max-width:73ch;font-size:13px;color:#7388a2}
 .s2-achievement-actions{display:flex;gap:8px;align-items:center}
 .s2-achievement-actions button{border:1px solid #d4e3f4;border-radius:9px;min-height:var(--exec-control-min,39px);padding:9px 13px;font-size:12px;background:#fff;color:var(--exec-purple,#2564a5);cursor:pointer;white-space:nowrap}
-.s2-achievement-actions .s2-achievement-print{border-color:var(--exec-purple,#126ede);background:var(--exec-purple,#126ede);color:white;font-weight:650}
+.s2-achievement-actions :is(.s2-achievement-print,[aria-pressed=true]){border-color:var(--exec-purple,#126ede);background:var(--exec-purple,#126ede);color:white;font-weight:650}
 .s2-achievement-actions button:disabled{opacity:.55;cursor:not-allowed}
 .s2-achievement-filters{display:grid;grid-template-columns:140px 155px minmax(170px,1fr) minmax(185px,1.15fr);gap:10px;margin-bottom:15px;border:1px solid #e3eaf4;border-radius:12px;background:#fff;padding:16px}
 .s2-achievement-filters label{display:grid;gap:6px;color:#647b98;font-size:12px;font-weight:650;min-width:0}
@@ -45,7 +45,7 @@
 .s2-achievement-error button{display:block;border:none;background:none;color:#9c3434;text-decoration:underline;margin-top:8px}
 @media(max-width:1000px){.s2-achievement-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2-achievement-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.s2-achievement-heading{align-items:flex-start;flex-direction:column}.s2-achievement-layout{grid-template-columns:1fr}.s2-achievement-evidence article{grid-template-columns:1fr 1fr}.s2-achievement-evidence article p{grid-column:1/-1}}
-@media(max-width:440px){.s2-achievement-heading h1{font-size:27px}.s2-achievement-filters{grid-template-columns:1fr}.s2-achievement-actions{width:100%}.s2-achievement-actions button{flex:1}.s2-achievement-metrics article{padding:12px;min-height:117px}.s2-achievement-metrics strong{font-size:22px}}
+@media(max-width:440px){.s2-achievement-heading h1{font-size:27px}.s2-achievement-actions{width:100%}.s2-achievement-actions button{flex:1}.s2-achievement-metrics article{padding:12px;min-height:117px}.s2-achievement-metrics strong{font-size:22px}}
 @media print{
   @page{size:A4 portrait;margin:12mm}
   .s2-achievement{width:100%;max-width:100%;padding:0!important;font-family:Arial,sans-serif;color:#173254;-webkit-print-color-adjust:exact;print-color-adjust:exact}

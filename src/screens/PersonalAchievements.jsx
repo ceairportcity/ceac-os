@@ -133,7 +133,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
     <header className="s2-achievement-heading">
       <div><span className="s2-achievement-eyebrow">MY WORK / PERSONAL ACHIEVEMENTS</span>
         <h1>My achievements</h1>
-        <p>Your attributed work and recorded evidence. Factual reporting is separate from confidential Manager appraisal.</p>
+        <p>Your completed work, contributions and supporting evidence.</p>
       </div>
       <div className="s2-achievement-actions">
         <button type="button" className="s2-achievement-back" onClick={back}>Back to My Hub</button>
@@ -175,7 +175,7 @@ export default function PersonalAchievements({ me, back, openItem }) {
         <section className="s2-achievement-panel">
           <header><div><h2>My recorded contribution</h2><span>{contributions.length} records · {activityRows.length} dated activities</span></div>
             <div className="s2-achievement-actions" role="group" aria-label="Contribution display">
-              {[['list','List'],['table','Table']].map(([key,label])=><button type="button" key={key} aria-pressed={contributionView===key} className={contributionView===key?"s2-achievement-print":""} onClick={()=>setContributionView(key)}>{label}</button>)}
+              {[['list','List'],['table','Table']].map(([key,label])=><button type="button" key={key} aria-pressed={contributionView===key} onClick={()=>setContributionView(key)}>{label}</button>)}
             </div>
           </header>
           {!contributions.length && <p className="s2-achievement-empty">No attributable completion or submission is recorded for these filters. This is not evidence of no work.</p>}

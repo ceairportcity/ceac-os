@@ -714,11 +714,6 @@ export default function ManagerReports({ me, openItem }) {
           These figures were fixed when this version was submitted{frozenReport.submitted_at ? " on " + new Date(frozenReport.submitted_at).toLocaleString("en-GB") : ""}. Later activity remains separate.
         </div>}
 
-        {!viewingFrozen && <div className="ev2rep-live-state">
-          <strong>Live preview</strong>
-          These counts are calculated from currently recorded work. They are not a filed report until submission freezes an evidence snapshot.
-        </div>}
-
         <ReportingEvidenceGrid>
           <EvidenceMetric value={displayCounts.completed || 0} label="completed in period" onClick={() => viewingFrozen ? openFrozenSection("completed", "Completed work") : openLive("completed", "Completed work", evidence.completed, "work")} />
           <EvidenceMetric value={displayCounts.submissions || 0} label="submissions" onClick={() => viewingFrozen ? openFrozenSection("submissions", "Submissions") : openLive("submissions", "Submissions", evidence.periodSubmissions, "submission")} />

@@ -142,3 +142,4 @@
 
 .ev2-reporting-manager .ev2rep-evidence{display:flex;flex-direction:column;gap:7px}
 .ev2-reporting-manager .ev2rep-evidence>strong{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums}
+.ev2rep-status-tabs span{margin-inline-start:6px;font-variant-numeric:tabular-nums}

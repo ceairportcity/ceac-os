@@ -434,6 +434,12 @@ export default function AdminPayroll({ me }) {
       </ProductNotice>}
     </details>}
 
+    <label className="fpg-payroll-mobile-period">Payroll period
+      <select className="field" aria-label="Payroll period" value={selectedId || ""} onChange={event=>selectRun(event.target.value,true)}>
+        {!runs.length && <option value="">No payroll runs</option>}
+        {runs.map(row=><option key={row.id} value={row.id}>{row.label} · {statusLabel(row.status)}</option>)}
+      </select>
+    </label>
     <div className="fpg-payroll-layout">
       <aside className="fpg-payroll-runs" aria-label="Payroll runs">
         <div className="fpg-payroll-side-title"><span>Payroll periods</span><b>{runs.length}</b></div>

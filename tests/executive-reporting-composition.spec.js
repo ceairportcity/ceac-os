@@ -78,11 +78,17 @@ for(const width of [390,1440])test(`Personal achievements offers list and table 
  await page.getByLabel('Reporting month').fill('2026-10');
  await expect(page.getByRole('list',{name:'Recorded contributions'})).toContainText('Prepare the synthetic service guide');
  await expect(page.locator('.s2-achievement-metrics article')).toHaveCount(4);
+ await expect(page.locator('.s2-achievement-print')).toHaveCount(1);
+ await expect(page.getByRole('button',{name:'Print / Save as PDF',exact:true})).toHaveClass('s2-achievement-print');
  await page.getByRole('button',{name:'Table',exact:true}).click();
  await expect(page.getByRole('region',{name:'My contribution table'})).toContainText('Prepare the synthetic service guide');
  await expect(page.getByRole('list',{name:'Recorded contributions'})).toHaveCount(0);
  await page.getByRole('button',{name:'List',exact:true}).click();
  await expect(page.getByRole('list',{name:'Recorded contributions'})).toContainText('SYN-1');
+ await page.emulateMedia({media:'print'});
+ await expect(page.getByRole('list',{name:'Recorded contributions'})).toBeVisible();
+ await expect(page.getByRole('list',{name:'Recorded contributions'})).toContainText('Prepare the synthetic service guide');
+ await page.emulateMedia({media:'screen'});
  await page.getByRole('searchbox').fill('No matching work');
  await expect(page.getByRole('list',{name:'Recorded contributions'})).toHaveCount(0);
  await expect(page.getByText('No attributable completion or submission is recorded for these filters. This is not evidence of no work.')).toBeVisible();
@@ -105,6 +111,7 @@ for(const width of [390,1440])test(`Payroll foregrounds run totals and filters e
  const totals=page.getByRole('region',{name:'Recorded payroll totals'});
  await expect(totals).toContainText('3,000.00');
  await expect(page.getByRole('heading',{name:'3 of 3 employee entries'})).toBeVisible();
+ if(width===390)await expect(page.getByLabel('Payroll period',{exact:true})).toHaveValue('run');
  await page.getByRole('button',{name:'Needs review (1)',exact:true}).click();
  await expect(page.getByRole('heading',{name:'1 of 3 employee entries'})).toBeVisible();
  await expect(page.getByRole('region',{name:'Employee payroll table'})).toContainText('Synthetic colleague B');
@@ -144,6 +151,22 @@ for(const width of [390,1440])test(`Manager figures open source records and expo
  await expect(chart.getByRole('table')).toBeVisible();
  await chart.getByRole('button',{name:'Show Completed work trend as chart',exact:true}).click();
  await expect(chart.getByRole('img',{name:'Completed work trend',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Hide charts and tables',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Show charts and tables',exact:true})).toHaveAttribute('aria-expanded','false');
+ await expect(chart).not.toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
  await page.screenshot({path:`test-artifacts/manager-reporting-redesign-${width}.png`,fullPage:true});
+});
+for(const width of [320,1440])test(`Executive Achievements keeps one original Print control alongside view choices at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await records(page);
+ await page.goto('/tests/fixtures/owner-corrections.html?screen=achievements&full=1&actor=executive');
+ await expect(page.locator('.s2-achievement-metrics')).toBeVisible();
+ const print=page.locator('.s2-achievement-print');
+ await expect(print).toHaveCount(1);
+ await expect(print).toHaveText('Print / Save as PDF');
+ expect(await print.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+ expect((await print.boundingBox()).height).toBeGreaterThanOrEqual(44);
+ await expect(page.getByRole('button',{name:'List',exact:true})).not.toHaveClass(/s2-achievement-print/);
+ await expect(page.getByRole('button',{name:'Table',exact:true})).not.toHaveClass(/s2-achievement-print/);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
