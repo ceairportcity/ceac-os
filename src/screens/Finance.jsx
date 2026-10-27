@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
 import { Sheet, ProgressMeter, ProductNotice } from "../components/bits";
 import FinanceRequestQueue from "../components/FinanceRequestQueue";
+import AdminFinanceRequests from "../components/AdminFinanceRequests";
 import FinanceDemoRecords from "../components/FinanceDemoRecords";
 import { Table } from "../components/primitives";
 import { Button, ComposerDrawer, Skeleton, StatePanel } from "../experience-v2/components";
@@ -244,6 +245,7 @@ export default function Finance({ me, openExpenses }) {
       />
       <FinanceTabs items={TABS} value={tab} onChange={setTab} label="Administration finance sections" />
       {msg&&!sheet&&<ProductNotice tone="error" title="Finance action could not be confirmed">{msg}</ProductNotice>}
+      {me.is_admin && <AdminFinanceRequests key={`${me.org_id}:${me.id}`} me={me} units={units.filter(unit=>myUnits.includes(unit.id))} />}
       {me.is_admin && <Button variant="secondary" onClick={() => setSheet("demo")}>Review demo finance records</Button>}
 
       {tab === "overview" && (<>

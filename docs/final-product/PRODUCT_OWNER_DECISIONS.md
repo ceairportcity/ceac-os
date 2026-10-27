@@ -1,3 +1,7 @@
+## 27 October 2026 — finish all requested corrections and work through release
+
+The owner explicitly directs: “Work towards release and ensure all the fixes I asked for are done!” Continue existing PR155, close the outstanding implementation and connected-workflow gaps, and take the completed candidate through required qualification, migration/deployment and actual live verification. Do not stop at a partial draft or ask again for routine implementation/release permission within this scope. Preserve the original role colours, accepted panels, real accounts/data and existing authorities. This direction does not waive required checks or declare the current designs owner-approved by implication.
+
 ## 27 October 2026 — implement accepted mockups; preserve original role panels
 
 The owner directs implementation from the released current repository, using the focused change-impact testing policy. Preserve the original role panel colours and the accepted Overview, People & Access and Control Center designs; the successive pale/plum/teal PDF revisions are not implementation authorities. Do not apply a replacement application shell or restart the build. The original supplied comparison/mockup PDF has SHA256 `c83d072a270035373ba6f3100a2bc2128ad15d436f8e13e2a9802f46028cf5af`; its private bytes are not published in this repository.

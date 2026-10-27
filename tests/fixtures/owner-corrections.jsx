@@ -7,6 +7,8 @@ import ExecutiveReports from '../../src/screens/ExecutiveReports';
 import PersonalAchievements from '../../src/screens/PersonalAchievements';
 import AdminPayroll from '../../src/screens/AdminPayroll';
 import Learning from '../../src/screens/Learning';
+import Finance from '../../src/screens/Finance';
+import Cost from '../../src/screens/Cost';
 import Announcements from '../../src/screens/Announcements';
 import EmployeeScheduleEditor from '../../src/components/EmployeeScheduleEditor';
 import Meeting from '../../src/screens/Meeting';
@@ -30,6 +32,7 @@ import '../../src/experience-v2/admin-overview/admin-overview.css';
 import '../../src/experience-v2/work-family/work-family.css';
 import '../../src/experience-v2/executive-overview/executive-surfaces.css';
 import '../../src/experience-v2/project-family/project-family.css';
+import '../../src/experience-v2/people-family/people-family.css';
 import '../../src/experience-v2/workforce-family/workforce-family.css';
 import '../../src/experience-v2/finance-family/finance-family.css';
 import '../../src/experience-v2/personal-family/personal-family.css';
@@ -50,6 +53,8 @@ function Fixture(){
   achievements:<PersonalAchievements me={actor} back={()=>{}} openItem={()=>{}}/>,
   payroll:<AdminPayroll me={{...actor,capabilities:[...actor.capabilities,'payroll.prepare']}}/>,
   learning:<Learning me={actor}/>,
+  finance:<Finance me={actor}/>,
+  cost:<Cost me={actor}/>,
   announcements:<Announcements me={actor}/>,
   schedule:<EmployeeScheduleEditor me={actor} profileId="person" unitId="unit" name="Synthetic colleague"/>,
   meeting:<Meeting me={actor} meetingId="meeting" back={()=>{}}/>,
@@ -59,9 +64,9 @@ function Fixture(){
  };
  const content=screens[screen]||<PeopleAccess me={actor}/>;
  if(params.get('full')==='1'){
-  const isExec=params.get('actor')==='executive'||['reports','review'].includes(screen),isAdmin=['department-reports','payroll'].includes(screen),isManager=screen==='manager-reports';
+  const isExec=params.get('actor')==='executive'||['reports','review'].includes(screen),isAdmin=['department-reports','payroll','finance','cost','learning','access'].includes(screen),isManager=screen==='manager-reports';
   const roleClass=isExec?'executive-app':isAdmin?'office-app':isManager?'manager-app':'staff-app';
-  const tab={reports:'exec-reports','department-reports':'reporting','manager-reports':'manager-reports',achievements:'achievements',payroll:'payroll',review:'item'}[screen];
+  const tab={reports:'exec-reports','department-reports':'reporting','manager-reports':'manager-reports',achievements:'achievements',payroll:'payroll',review:'item',finance:'finance',cost:'cost',learning:'learning',access:'settings'}[screen];
   const noop=()=>{};
   const roleProps={me:actor,isExec,isAdmin,isManager,tab};
   return <div className={'app '+roleClass}>
@@ -74,7 +79,7 @@ function Fixture(){
    </div>
   </div>;
  }
- return <main className={screen==='reports'?'executive-app':undefined}>
+ return <main className={screen==='reports'?'executive-app':params.get('actor')==='admin'?'office-app':undefined}>
   <button onClick={()=>setActor({...me,id:'new-actor'})}>Switch fixture actor</button>
   {content}
  </main>;

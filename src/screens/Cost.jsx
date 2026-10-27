@@ -5,6 +5,7 @@ import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer } from "../experience-v2/components";
 import { Table } from "../components/primitives";
 import { expenseAmountMinor } from "../lib/expenseAmount";
+import { OperationalFileList } from "../components/OperationalFiles";
 import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 
 // Cost. Spec section 10 — what does this unit cost, and what did it
@@ -41,6 +42,7 @@ export default function Cost({ me }) {
   const [spend, setSpend] = useState([]);
   const [periods, setPeriods] = useState([]);
   const [canEnter, setCanEnter] = useState(false);
+  const [financeUnits,setFinanceUnits]=useState([]),[receiptExpense,setReceiptExpense]=useState(null);
   const [open, setOpen] = useState(null);
   const [sheet, setSheet] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -79,6 +81,7 @@ export default function Cost({ me }) {
       setLoading(false); return;
     }
     setUnits(us.data || []); setBudgets(bs.data || []); setSpend(sp.data || []); setPeriods(pr.data || []);
+    setFinanceUnits((fin.data||[]).filter(m=>m.units?.handles_finance).map(m=>m.unit_id));
     setCanEnter(me.is_admin || (fin.data || []).some((m) => m.units && m.units.handles_finance));
     setLoading(false);
   }
@@ -138,6 +141,9 @@ export default function Cost({ me }) {
   if (loading) return <div className="body"><LoadingState label="Loading expenses…" /></div>;
   if (loadError) return <div className="body"><ProductNotice tone="error" title="Expenses unavailable" action={<button className="btn btn-ghost" onClick={load}>Try again</button>}>{loadError}</ProductNotice></div>;
 
+  const receiptPanel=receiptExpense&&<ComposerDrawer open title="Expense receipts" description={`${receiptExpense.description} · ${money(receiptExpense.amount_minor,receiptExpense.currency)}. Receipts are optional and do not change the recorded amount.`} onClose={()=>setReceiptExpense(null)}>
+    <OperationalFileList key={`${me.org_id}:${me.id}:${receiptExpense.id}`} contextType="spend_line" contextId={receiptExpense.id} relation="expense_receipt" canUpload={me.is_admin||financeUnits.includes(receiptExpense.unit_id)} title="Receipts" emptyText="No receipt attached."/>
+  </ComposerDrawer>;
   if (open) {
     const u = units.find((x) => x.id === open);
     const rows = spend.filter((s) => s.unit_id === open).sort((a, b) => b.spent_on.localeCompare(a.spent_on));
@@ -157,8 +163,10 @@ export default function Cost({ me }) {
             { key:"source_note",label:"Source",render:(row)=>row.source_note || "—" },
             { key:"amount_minor",label:"Amount",align:"right",render:(row)=>money(row.amount_minor,row.currency),sortValue:(row)=>Number(row.amount_minor)||0,csv:(row)=>(Number(row.amount_minor)/100).toFixed(2) },
             { key:"currency",label:"Currency",width:90 },
+            { key:"receipt",label:"Receipts",render:(row)=><button className="text-action" onClick={()=>setReceiptExpense(row)}>View receipts</button> },
           ]}
         />
+        {receiptPanel}
       </div>);
   }
 
@@ -251,7 +259,7 @@ export default function Cost({ me }) {
             <b>{lines.some(l=>l.amount.trim()&&toMinor(l.amount)===null)?"Check entered amounts":money(lines.reduce((t, l) => t + (l.amount ? toMinor(l.amount) || 0 : 0), 0), bCur)}</b>
           </div>
           {msg && <div className="flag flag-brick" style={{ marginTop: 12 }}>{msg}</div>}
-          <div className="hint">Check the total against the paper before saving.</div>
+          <div className="hint">Check the total against the paper before saving. After saving, open department spending to attach an optional receipt to each expense.</div>
         </ComposerDrawer>)}
     </div>);
 }

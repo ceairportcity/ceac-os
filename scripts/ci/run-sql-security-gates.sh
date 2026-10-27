@@ -52,6 +52,7 @@ tests=(
   integrations_stage12_gate.sql
   project_register_experience_stage5_gate.sql
   experience_stage6_finance_gate.sql
+  finance_independent_requests_receipts_gate.sql
   operational_archive_period_gate.sql
   operational_content_archive_gate.sql
   experience_stage7_work_capture_gate.sql

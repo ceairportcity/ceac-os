@@ -24,6 +24,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const [snapshot, setSnapshot] = useState(null);
   const [snapshotScope, setSnapshotScope] = useState(null);
   const [mode, setMode] = useState("invite");
+  const [invitationFilter,setInvitationFilter]=useState("all");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
   const inviteDraft = useRef(form);
   inviteDraft.current = form;
@@ -53,6 +54,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     setRevokeTarget(null);
     setEndMembershipTarget(null);
     setRevokeReason("");
+    setInvitationFilter("all");
     setForm({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
     if (canManage) void load();
     return () => { loadGeneration.current += 1; identityGeneration.current += 1; actionBusyRef.current = false; };
@@ -258,6 +260,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const pendingInvitationCount = snapshot?.invitations.filter((invitation) =>
     !invitation.revoked_at && invitation.activation_state !== "verified" && invitation.activation_state !== "expired"
   ).length || 0;
+  const visibleInvitations=(snapshot?.invitations||[]).filter(invitation=>{
+    const state=invitation.revoked_at?"cancelled":invitation.activation_state==="verified"?"verified":invitation.activation_state==="expired"?"expired":"pending";
+    return invitationFilter==="all"||state===invitationFilter;
+  });
   // The roster is not proof that every account is activated, but an identical
   // email must not be invited blindly a second time.
   const { accountExists: existingAccountEmail, invitationPending: existingInvitationEmail } =
@@ -454,8 +460,12 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
           className="phase5-access-panel"
           action={<StatusBadge tone={pendingInvitationCount ? "action" : "success"}>{pendingInvitationCount ? String(pendingInvitationCount) + " to review" : "No outstanding"}</StatusBadge>}
         >
-          {!snapshot.invitations.length ? <div className="phase5-access-empty">No invitations are recorded.</div> : <div className="phase5-invitation-list">
-            {snapshot.invitations.map((invitation) => {
+          <FieldGroup label="Invitation status"><select className="field" aria-label="Invitation status" style={{maxWidth:280}} value={invitationFilter} onChange={e=>setInvitationFilter(e.target.value)}>
+            <option value="all">All invitations</option><option value="pending">Awaiting activation</option><option value="expired">Expired</option><option value="verified">Activated</option><option value="cancelled">Cancelled</option>
+          </select></FieldGroup>
+          <p className="screen-note">{visibleInvitations.length} of {snapshot.invitations.length} invitations</p>
+          {!visibleInvitations.length ? <div className="phase5-access-empty">{snapshot.invitations.length?"No invitations match this status.":"No invitations are recorded."}</div> : <div className="phase5-invitation-list">
+            {visibleInvitations.map((invitation) => {
               const unit = snapshot.units.find((entry) => entry.id === invitation.unit_id);
               const cancellable = !invitation.revoked_at && invitation.activation_state !== "verified";
               return <article className="phase5-invitation-row" key={invitation.id}>
