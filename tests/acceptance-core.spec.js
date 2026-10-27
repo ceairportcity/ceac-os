@@ -1651,7 +1651,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await expect(page.getByLabel("Workforce calendar person filter")).toBeVisible();
     await page.getByLabel("Workforce calendar person filter").selectOption("31000000-0000-4000-8000-000000000001");
 
-    await page.getByRole("tab", { name: "Sessions", exact: true }).click();
+    await page.getByRole("tab", { name: "Work sessions", exact: true }).click();
     await expect(page.getByText(/Session history is factual activity context/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Recorded differences", exact: true }).click();
@@ -1715,7 +1715,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Workforce");
-    await page.getByRole("tab", { name: "Leave", exact: true }).click();
+    await page.getByRole("tab", { name: "Leave requests", exact: true }).click();
     const administrationRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "HR decision needed" }).first();
     await expect(administrationRow).toBeVisible();
     await expect(administrationRow.getByText(/Manager approved · Administration final decision required/i)).toBeVisible();

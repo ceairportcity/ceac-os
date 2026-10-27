@@ -1,3 +1,4 @@
+import { Table } from "../components/primitives";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { LoadingState, ProductNotice } from "../components/bits";
@@ -110,7 +111,11 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
     {ready && <>
       {!selected && view === "departments" && missingLeaders.length > 0 && <ProductNotice tone="attention" title="Needs attention">{missingLeaders.map(unit => unit.name).join(", ")} {missingLeaders.length === 1 ? "has" : "have"} no active department head recorded.</ProductNotice>}
       {!person && <label className="exec-directory-search">Find {department || team ? "a person or team" : view}<input className="field" type="search" value={query} onChange={e => setQuery(e.target.value)} /></label>}
-      {!selected && view === "departments" && list("Departments", units.filter(matches).map(row => <DirectoryRow key={row.id} kind="department" title={row.name} description={headNames(row.id) || "Head not recorded"} meta={`${membersOf(row.id).length} people`} onClick={() => enter("department", row.id)} />))}
+      {!selected && view === "departments" && <section aria-label="Departments"><Table caption="Departments" rows={units.filter(matches)} empty="No departments match this view." columns={[
+        {key:"name",label:"Department"},{key:"head",label:"Head",render:row=>headNames(row.id)||"Head not recorded"},
+        {key:"people",label:"People",render:row=>membersOf(row.id).length},
+        {key:"open",label:"Open",render:row=><button type="button" className="btn btn-ghost btn-sm" aria-label={`Open ${row.name}`} onClick={()=>enter("department",row.id)}>Open</button>}
+      ]}/></section>}
       {!selected && view === "teams" && list("Teams", teams.filter(matches).map(row => <DirectoryRow key={row.id} kind="team" title={row.name} description={unitName(row.unit_id)} onClick={() => enter("team", row.id)} />))}
       {!selected && view === "people" && list("People", peopleRows(people))}
       {department && <><h2>People</h2>{list("People", peopleRows(membersOf(department.id)))}<h2>Teams</h2>{list("Teams", teams.filter(row => row.unit_id === department.id).filter(matches).map(row => <DirectoryRow key={row.id} kind="team" title={row.name} description={unitName(row.unit_id)} onClick={() => enter("team", row.id)} />))}<button type="button" className="btn btn-ghost" onClick={() => openRoom?.({ kind: "unit", unitId: department.id })}>Open department room</button></>}

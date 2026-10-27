@@ -32,7 +32,7 @@ for(const width of [390,1440]){
  test(`directory reads work only after deliberate opening and closes on re-entry at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});const {reads}=await api(page);
   await page.goto('/tests/fixtures/owner-corrections.html?screen=directory');
-  await page.getByRole('button',{name:'People',exact:true}).click();
+  await page.getByRole('group',{name:'Organisation views',exact:true}).getByRole('button',{name:'People',exact:true}).click();
   await page.getByRole('button',{name:/Synthetic colleague/}).click();
   await expect(page.getByRole('button',{name:'View assigned work',exact:true})).toBeVisible();
   expect(reads.filter(x=>x.name==='work_items')).toHaveLength(0);
@@ -114,6 +114,7 @@ for(const width of [390,1440]){
  test(`HR approves without typing while decline keeps its reason requirement at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});const {writes}=await api(page);
   await page.goto('/tests/fixtures/owner-corrections.html?screen=performance');
+  await page.getByRole('tab',{name:'3 · Publication',exact:true}).click();
   const approve=page.getByRole('button',{name:'HR approve publication',exact:true}),decline=page.getByRole('button',{name:'HR decline with reason',exact:true}),note=page.getByLabel('HR assessment publication decision reason',{exact:true});
   await expect(approve).toBeEnabled();await expect(decline).toBeDisabled();
   await note.fill('short');await expect(approve).toBeDisabled();
@@ -134,6 +135,7 @@ for(const width of [390,1440]){
  test(`course builder previews real content without author or completion controls at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});const {writes}=await api(page);
   await page.goto('/tests/fixtures/owner-corrections.html?screen=learning');
+  await page.getByRole('button',{name:/Synthetic orientation.*modules/}).click();
   await expect(page.getByRole('region',{name:'Course builder',exact:true})).toContainText('1 prepared');
   await expect(page.getByRole('button',{name:'Publish course',exact:true})).toBeEnabled();
   await page.getByRole('button',{name:'Learner preview',exact:true}).click();
@@ -166,3 +168,26 @@ for(const width of [390,1440]){
   expect(Object.keys(writes[0].body.p_day_map)).toHaveLength(7);
  });
 }
+
+for(const width of [390,1440])test(`retained mockup compositions render with real component families at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await api(page);
+ for(const screen of ['directory','learning','performance','meeting','announcements']){
+  await page.goto(`/tests/fixtures/owner-corrections.html?screen=${screen}&actor=${['directory','meeting'].includes(screen)?'executive':'admin'}&full=1`);
+  if(screen==='directory')await expect(page.getByRole('table')).toContainText('Synthetic department');
+  if(screen==='learning'){
+   await expect(page.getByRole('button',{name:/Synthetic orientation.*Continue building/})).toBeVisible();
+   await expect(page.getByRole('region',{name:'Course builder',exact:true})).not.toBeVisible();
+  }
+  if(screen==='performance'){
+   await expect(page.getByRole('tab',{name:'1 · Prepare',exact:true})).toBeVisible();
+   await expect(page.getByRole('heading',{name:'Manager assessment',exact:true})).not.toBeVisible();
+  }
+  if(screen==='meeting')await expect(page.getByRole('complementary',{name:'Meeting details',exact:true})).toContainText('Viewer mode');
+  if(screen==='announcements'){
+   await expect(page.getByRole('tablist',{name:'Announcement views'})).toBeVisible();
+   await expect(page.getByRole('complementary',{name:'Announcement publishing checklist'})).toBeVisible();
+  }
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth),screen).toBeLessThanOrEqual(1);
+  await page.screenshot({path:`test-artifacts/retained-${screen}-${width}.png`,fullPage:true,animations:'disabled'});
+ }
+});

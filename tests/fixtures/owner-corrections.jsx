@@ -64,7 +64,7 @@ function Fixture(){
  };
  const content=screens[screen]||<PeopleAccess me={actor}/>;
  if(params.get('full')==='1'){
-  const isExec=params.get('actor')==='executive'||['reports','review'].includes(screen),isAdmin=['department-reports','payroll','finance','cost','learning','access'].includes(screen),isManager=screen==='manager-reports';
+  const isExec=params.get('actor')==='executive'||['reports','review'].includes(screen),isAdmin=['department-reports','payroll','finance','cost','learning','access','performance','announcements'].includes(screen),isManager=screen==='manager-reports';
   const roleClass=isExec?'executive-app':isAdmin?'office-app':isManager?'manager-app':'staff-app';
   const tab={reports:'exec-reports','department-reports':'reporting','manager-reports':'manager-reports',achievements:'achievements',payroll:'payroll',review:'item',finance:'finance',cost:'cost',learning:'learning',access:'settings'}[screen];
   const noop=()=>{};

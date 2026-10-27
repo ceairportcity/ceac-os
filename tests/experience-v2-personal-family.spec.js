@@ -497,8 +497,10 @@ test("Stage 10 Family G7 keeps a sessions read failure distinct from a truthful 
 
   await page.goto("/?tab=account");
   await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
+  await page.getByRole("tab",{name:"Sessions",exact:true}).click();
   await expect(page.getByText("Signed-in devices could not load", { exact: true })).toBeVisible();
   await expect(page.getByText("No signed-in device is recorded", { exact: true })).toHaveCount(0);
+  await page.getByRole("tab",{name:"Account activity",exact:true}).click();
   await expect(page.getByRole("heading", { name: "Recent activity", exact: true })).toBeVisible();
   await context.close();
 });
@@ -515,8 +517,10 @@ test("Stage 10 Family G7 keeps an activity read failure distinct from a truthful
 
   await page.goto("/?tab=account");
   await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
+  await page.getByRole("tab",{name:"Account activity",exact:true}).click();
   await expect(page.getByText("Recent account activity could not load", { exact: true })).toBeVisible();
   await expect(page.getByText("Nothing recorded yet", { exact: true })).toHaveCount(0);
+  await page.getByRole("tab",{name:"Sessions",exact:true}).click();
   await expect(page.getByRole("heading", { name: "Signed in devices", exact: true })).toBeVisible();
   await context.close();
 });
@@ -538,8 +542,9 @@ for (const viewport of [
     await page.goto("/?tab=account");
 
     await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
-    await expect(page.getByText("Self-only security", { exact: true })).toBeVisible();
+    await expect(page.getByText("Your account only", { exact: true })).toBeVisible();
     await expect(page.getByText(/Only you can see this/i)).toBeVisible();
+    await page.getByRole("tab",{name:"Sessions",exact:true}).click();
     await expect(page.getByRole("button", { name: "Sign out on this device", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out on every device", exact: true })).toBeVisible();
 

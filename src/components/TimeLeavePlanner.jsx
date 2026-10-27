@@ -4,8 +4,9 @@ import {leaveStageLabel} from "../lib/leaveDecisionStage";
 import "./TimeLeavePlanner.css";
 
 /** Presentation of already-authorised leave rows; existing decision renderers own every action. */
-export default function TimeLeavePlanner({rows=[],scope="My",unavailable=false,renderDecision,onOpenLeave,onOpenSessions,initialRequestId=null}){
+export default function TimeLeavePlanner({rows=[],scope="My",unavailable=false,renderDecision,onOpenLeave,onOpenSessions,initialRequestId=null,compact=false,children}){
  const today=new Date().toISOString().slice(0,10);
+ const [showDay,setShowDay]=useState(false);
  const [month,setMonth]=useState(()=>today.slice(0,7)),[day,setDay]=useState(today),[selectedId,setSelectedId]=useState(null),[term,setTerm]=useState("");
  useEffect(()=>{
   if(!initialRequestId || unavailable)return;
@@ -20,22 +21,26 @@ export default function TimeLeavePlanner({rows=[],scope="My",unavailable=false,r
  const pending=visible.filter(r=>["pending","escalated"].includes(r.status));
  const daily=leaveOnCalendarDay(visible,day);
  const shift=amount=>{const next=new Date(Date.UTC(year,monthNumber-1+amount,1)).toISOString().slice(0,7);setMonth(next);setDay(next+"-01");setSelectedId(null);};
- return <section className="timeleave-planner" aria-label={scope+" leave calendar"}>
+ return <section className={"timeleave-planner"+(compact?" timeleave-compact":"")} aria-label={scope+" leave calendar"}>
+  {!compact&&<>
   <header className="timeleave-heading"><div><span>PLAN TIME · REVIEW REQUESTS</span><h2>{scope} leave calendar</h2><p>Approved leave and requests stay distinct. Pending requests do not reduce balances.</p></div><div className="timeleave-heading-actions"><button type="button" onClick={onOpenLeave}>Leave requests ({unavailable?"—":pending.length})</button><button type="button" onClick={onOpenSessions}>Recorded time →</button></div></header>
+  </>}
   {unavailable?<p role="status" className="timeleave-unavailable">Leave records could not be verified. Retry Workforce data; the calendar does not imply availability.</p>:null}
   {initialRequestId&&!unavailable&&!rows.some(row=>row.id===initialRequestId)?<p role="status" className="timeleave-unavailable">The requested leave record is not available in your current access. No decision has been made.</p>:null}
   <div className={"timeleave-layout"+(scope==="Organisation"&&selected?" is-focused-review":"")}><div className="timeleave-calendar">
+   {compact&&<h2 className="h2">Team availability</h2>}
    <div className="timeleave-month"><div><button type="button" aria-label="Previous leave month" onClick={()=>shift(-1)}>‹</button><strong aria-live="polite">{title}</strong><button type="button" aria-label="Next leave month" onClick={()=>shift(1)}>›</button></div><button type="button" onClick={()=>{setMonth(today.slice(0,7));setDay(today);setSelectedId(null);}}>Today</button></div>
    <div className="timeleave-legend"><span className="is-approved">Approved</span><span className="is-pending">Requested · not approved</span></div>
    <div className="timeleave-weekdays" aria-hidden="true">{["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(n=><span key={n}>{n}</span>)}</div>
    <div className="timeleave-days" role="group" aria-label={title+" leave dates"}>{leaveCalendarDays(year,monthNumber-1).map(cell=>{
     const records=unavailable?[]:leaveOnCalendarDay(visible,cell.date),approved=records.filter(r=>r.status==="approved").length,requested=records.length-approved;
-    return <button type="button" key={cell.date} aria-label={cell.date+(unavailable?" · leave unavailable":` · ${approved} approved · ${requested} requested`)} aria-pressed={day===cell.date} className={[cell.inMonth?"":"is-outside",cell.date===today?"is-today":"",day===cell.date?"is-selected":""].join(" ")} onClick={()=>{setDay(cell.date);setSelectedId(null);}}><time dateTime={cell.date}>{cell.number}</time>{approved?<span className="is-approved">{approved} approved</span>:null}{requested?<span className="is-pending">{requested} requested</span>:null}</button>;
+    return <button type="button" key={cell.date} aria-label={cell.date+(unavailable?" · leave unavailable":` · ${approved} approved · ${requested} requested`)} aria-pressed={day===cell.date} className={[cell.inMonth?"":"is-outside",cell.date===today?"is-today":"",day===cell.date?"is-selected":""].join(" ")} onClick={()=>{setDay(cell.date);setSelectedId(null);setShowDay(true);}}><time dateTime={cell.date}>{cell.number}</time>{approved?<span className="is-approved">{approved} approved</span>:null}{requested?<span className="is-pending">{requested} requested</span>:null}</button>;
    })}</div>
    <footer>Showing recorded leave only; an empty date is not proof that someone is available.</footer>
   </div><aside className="timeleave-inspector" aria-label="Leave selection and decisions">
    <label>Find employee<input type="search" value={term} onChange={e=>{setTerm(e.target.value);setSelectedId(null);}} placeholder="Search visible requests"/></label>
-   {selected?<><div className="timeleave-inspector-heading"><h3>Selected request</h3><button type="button" onClick={()=>setSelectedId(null)}>Back to requests</button></div>{renderDecision?renderDecision(selected):<div className="timeleave-request-detail"><strong>{selected.kind} leave</strong><p>{selected.start_date} → {selected.end_date}</p><p>{selected.status==="approved"?"Approved":leaveStageLabel(selected)}</p><p>{selected.decision_note||"No decision note recorded."}</p><a href="?tab=me">Open My Hub for leave requests and cancellations →</a></div>}</>:<><h3>{day}</h3><p className="timeleave-selection-note">Select a request to view its details and available actions.</p><div className="timeleave-request-list">{daily.map(r=><button type="button" key={r.id} onClick={()=>setSelectedId(r.id)}><strong>{r.profiles?.full_name||"My leave"}</strong><span>{r.kind} · {r.status==="approved"?"Approved":leaveStageLabel(r)}</span></button>)}{!unavailable&&!daily.length?<p>No recorded leave on this date.</p>:null}</div><h3>Requests to review ({unavailable?"—":pending.length})</h3><div className="timeleave-request-list">{!unavailable?pending.map(r=><button type="button" key={r.id} onClick={()=>{setSelectedId(r.id);setDay(r.start_date);setMonth(r.start_date.slice(0,7));}}><strong>{r.profiles?.full_name||"My leave"}</strong><span>{r.kind} · {r.start_date}</span><small>{leaveStageLabel(r)}</small></button>):null}{!unavailable&&!pending.length?<p>No requests waiting in your visible scope.</p>:null}</div></>}
+   {selected?<><div className="timeleave-inspector-heading"><h3>Selected request</h3><button type="button" onClick={()=>setSelectedId(null)}>Back to requests</button></div>{renderDecision?renderDecision(selected):<div className="timeleave-request-detail"><strong>{selected.kind} leave</strong><p>{selected.start_date} → {selected.end_date}</p><p>{selected.status==="approved"?"Approved":leaveStageLabel(selected)}</p><p>{selected.decision_note||"No decision note recorded."}</p><a href="?tab=me">Open My Hub for leave requests and cancellations →</a></div>}</>:<>{(!compact||showDay)&&<><h3>{day}</h3><p className="timeleave-selection-note">Select a request to view its details and available actions.</p><div className="timeleave-request-list">{daily.map(r=><button type="button" key={r.id} onClick={()=>setSelectedId(r.id)}><strong>{r.profiles?.full_name||"My leave"}</strong><span>{r.kind} · {r.status==="approved"?"Approved":leaveStageLabel(r)}</span></button>)}{!unavailable&&!daily.length?<p>No recorded leave on this date.</p>:null}</div></>}<h3>{compact?"Next decisions":"Requests to review"} ({unavailable?"—":pending.length})</h3><div className="timeleave-request-list">{!unavailable?pending.map(r=><button type="button" key={r.id} onClick={()=>{setSelectedId(r.id);setDay(r.start_date);setMonth(r.start_date.slice(0,7));}}><strong>{r.profiles?.full_name||"My leave"}</strong><span>{r.kind} · {r.start_date}</span><small>{leaveStageLabel(r)}</small></button>):null}{!unavailable&&!pending.length?<p>No requests waiting in your visible scope.</p>:null}</div></>}
+   {children}
   </aside></div>
  </section>;
 }

@@ -185,6 +185,7 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
 
     {error && <div className="flag flag-brick"><h4>Could not complete that</h4>{error}</div>}
 
+    <div className="form-grid two">
     <section className="meeting-panel">
       <div className="meeting-section-head"><div><span>Before</span><h2>Agenda</h2></div><small>{meetingStarted ? "Meeting started" : "Preparation"}</small></div>
       {!meetingStarted && canManage
@@ -198,6 +199,12 @@ function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, o
         {participants.length > 1 && <div>{participants.slice(0,8).map((participant) => <b key={participant.profile_id}>{participant.profiles?.full_name || "CEAC member"}</b>)}</div>}
       </div>}
     </section>
+    <aside className="meeting-panel" aria-label="Meeting details"><div className="meeting-section-head"><div><span>Meeting details</span><h2>{canManage?"Organiser view":"Viewer mode"}</h2></div></div>
+      <p><strong>Organiser</strong><br/>{participants.filter(row=>row.role==="organiser"||row.profile_id===meeting.created_by).map(row=>row.profiles?.full_name).filter(Boolean).join(", ")||"Name not recorded"}</p>
+      <p><strong>When</strong><br/>{whenLabel(meeting.starts_at)}</p>
+      {meeting.location&&<p><strong>Location</strong><br/>{meeting.location}</p>}
+      <p>{canManage?"You can prepare the agenda before the meeting starts.":"The organiser prepares the agenda. Your personal notes stay private."}</p>
+    </aside></div>
 
     <section className="meeting-panel">
       <div className="meeting-section-head">

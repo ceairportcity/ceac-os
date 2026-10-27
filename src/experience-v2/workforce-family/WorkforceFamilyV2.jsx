@@ -29,6 +29,7 @@ export function WorkforcePageHeader({
   description,
   statusLabel,
   statusTone: tone,
+  action,
 }) {
   return (
     <header className="ev2wf-header">
@@ -37,7 +38,7 @@ export function WorkforcePageHeader({
         <h1>{title}</h1>
         {description ? <p>{description}</p> : null}
       </div>
-      {statusLabel ? <WorkforceContextBadge label={statusLabel} tone={tone} /> : null}
+      {action || (statusLabel ? <WorkforceContextBadge label={statusLabel} tone={tone} /> : null)}
     </header>
   );
 }

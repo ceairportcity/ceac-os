@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import { SegmentedControl } from "../experience-v2/components";
 import AccountMfaSetup from "../components/AccountMfaSetup";
 import {
   PersonalBoundary,
@@ -31,6 +32,12 @@ const when = (t) => new Date(t).toLocaleString("en-GB",
   { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 export default function AccountActivity({ me }) {
+  return <AccountWorkspace key={`${me.org_id}:${me.id}`} me={me}/>;
+}
+
+function AccountWorkspace({ me }) {
+  const [section,setSection]=useState("security");
+  const readGeneration=useRef(0);
   const [sessions, setSessions] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,9 +46,10 @@ export default function AccountActivity({ me }) {
   const [activityError, setActivityError] = useState(null);
   const [actionError, setActionError] = useState(null);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); return ()=>{readGeneration.current+=1;}; }, []);
 
   async function load() {
+    const generation=++readGeneration.current;
     setLoading(true);
     setSessionError(null);
     setActivityError(null);
@@ -49,6 +57,7 @@ export default function AccountActivity({ me }) {
       supabase.rpc("my_sessions"),
       supabase.rpc("my_account_activity", { p_limit: 50 }),
     ]);
+    if(generation!==readGeneration.current)return;
     setSessionError(s.error ? humanError(s.error, "Signed-in device records could not be loaded.") : null);
     setActivityError(a.error ? humanError(a.error, "Recent account activity could not be loaded.") : null);
     setSessions(s.error ? [] : (s.data || []));
@@ -91,19 +100,28 @@ export default function AccountActivity({ me }) {
         eyebrow="Account security"
         title="Your account"
         description="Where you are signed in, and what has happened under your name. Only you can see this."
-        statusLabel="Self-only security"
+        statusLabel="Your account only"
       />
+
+      <SegmentedControl ariaLabel="Account sections" value={section} onChange={setSection} items={[{value:"security",label:"Security"},{value:"sessions",label:"Sessions"},{value:"activity",label:"Account activity"}]}/>
 
       {actionError && <div className="flag flag-brick ev2pf-partial-error"><h4>Account action was not completed</h4>{actionError}</div>}
 
+      <div hidden={section!=="security"}>
+      <div className="form-grid two">
+        <PersonalSection title="Signed-in sessions"><p>{sessionError?"Device records unavailable":`${sessions.length} recorded sessions`}</p><button className="btn btn-ghost btn-sm" onClick={()=>setSection("sessions")}>Review devices</button></PersonalSection>
+        <PersonalSection title="Latest account activity"><p>{activityError?"Account activity unavailable":events[0]?String(events[0].action).replace(/[._]/g," "):"No activity recorded"}</p><button className="btn btn-ghost btn-sm" onClick={()=>setSection("activity")}>View full history</button></PersonalSection>
+      </div>
       <PersonalSection
         eyebrow="Account protection"
         title="Authenticator app"
-        description="Manage your own two-step sign-in. Privileged CEAC access must be verified before MFA enforcement is enabled."
+        description="Your own authenticator settings. Mandatory two-step sign-in is deferred for this release."
       >
-        <AccountMfaSetup />
+        <AccountMfaSetup key={`${me.org_id}:${me.id}`}/>
       </PersonalSection>
 
+      </div>
+      <div hidden={section!=="sessions"}>
       <PersonalSection
         eyebrow="Sessions"
         title="Signed in devices"
@@ -141,6 +159,8 @@ export default function AccountActivity({ me }) {
         </p>
       </PersonalSection>
 
+      </div>
+      <div hidden={section!=="activity"}>
       <PersonalSection
         eyebrow="Audit trail"
         title="Recent activity"
@@ -158,11 +178,14 @@ export default function AccountActivity({ me }) {
         ))}
       </PersonalSection>
 
+      </div>
+      <div hidden={section!=="security"}>
       <PersonalSection eyebrow="Security" title="Staying safe">
         <PersonalBoundary title="CEAC will not ask for your password">
           Nobody from CEAC will email or message you asking you to sign in, confirm your password, or open a link to “verify your account”. If you receive one, tell Administration rather than replying to it.
         </PersonalBoundary>
       </PersonalSection>
+      </div>
     </div>
   );
 }

@@ -50,6 +50,7 @@ for (const width of [390, 1440]) {
     const writes = await fixtureApi(page);
     await page.goto('/tests/fixtures/hr-overview-review.html?audit=screen&screen=learning');
     await expect(page.locator('.ev2w-header')).toContainText('Learning');
+    await page.getByRole('button',{name:/Draft orientation.*modules/}).click();
     await expect(page.getByRole('button', { name: 'Publish course', exact: true })).toBeDisabled();
     await expect(page.getByText('Before publishing, add at least one required module and a resource to every module.', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Create course', exact: true }).click();
@@ -119,6 +120,7 @@ for (const width of [390, 1440]) {
     dialog = page.getByRole('dialog', { name: 'Close review period', exact: true });
     await expect(dialog.getByRole('button', { name: 'Close review period', exact: true })).toBeDisabled();
     await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+    await page.getByRole('tab',{name:'2 · Assessment',exact:true}).click();
     await page.getByRole('button', { name: 'Create plan', exact: true }).click();
     dialog = page.getByRole('dialog', { name: 'Development plan', exact: true });
     await expect(dialog.getByLabel('Development focus', { exact: true })).toBeVisible();
