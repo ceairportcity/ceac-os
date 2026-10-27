@@ -1,3 +1,4 @@
+import LearningDraftEditor from "../components/LearningDraftEditor";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
@@ -41,7 +42,11 @@ function LearningForm({ admin, error, resetError, children, ...props }) {
   </Dialog>;
 }
 
-export default function Learning({ me }) {
+export default function Learning(props) {
+  return <LearningWorkspace key={`${props.me.org_id}:${props.me.id}`} {...props}/>;
+}
+
+function LearningWorkspace({ me }) {
   const learningAdmin = (me.capability_grants || []).some((grant) =>
     grant.capability === "learning.manage" && !grant.scope_unit_id
   );
@@ -63,6 +68,8 @@ export default function Learning({ me }) {
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [draftEdit,setDraftEdit]=useState(null);
+  const [builderView, setBuilderView] = useState("outline");
   const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
 
   const [courseFlow, setCourseFlow] = useState(false);
@@ -103,6 +110,7 @@ export default function Learning({ me }) {
   const [adminReason, setAdminReason] = useState("");
 
   useEffect(() => { load(); }, [me.id]);
+  useEffect(() => { setBuilderView("outline"); }, [me.id, me.org_id, selectedCourseId]);
 
   async function load() {
     setLoading(true);
@@ -400,7 +408,7 @@ export default function Learning({ me }) {
     </button>;
   }
 
-  function CourseDetail({ course, assignment = null }) {
+  function CourseDetail({ course, assignment = null, preview = false }) {
     if (!course) return null;
     const rows = courseModules(course.id);
     const facts = assignment ? assignmentProgress(assignment) : null;
@@ -435,24 +443,27 @@ export default function Learning({ me }) {
               {resource.resource_type === "text"
                 ? <p>{resource.body_text}</p>
                 : <a href={resource.resource_url} target="_blank" rel="noreferrer">Open resource</a>}
+              {me.is_admin && learningAdmin && !preview && course.state === "draft" && <button type="button" className="text-action" aria-label={`Edit resource ${resource.title}`} onClick={()=>setDraftEdit({kind:"resource",row:resource})}>Edit resource</button>}
             </div>)}
             {!moduleResources(module.id).length && <div className="small">No learning resource has been added yet.</div>}
           </div>
 
           {selfAssignment && assignment.state !== "withdrawn" && !moduleDone && <button className="btn btn-sm learning-complete" disabled={busy} onClick={() => completeModule(module.id)}>Complete module</button>}
-          {learningAdmin && course.state === "draft" && <button className="text-action" onClick={() => { setResourceModuleId(module.id); setResourceFlow(true); }}>Add resource</button>}
-          {learningAdmin && assignment && moduleDone && <button className="text-action" onClick={() => { setAdminReason(""); setAdminAction({ action:"reopen_module", assignmentId:assignment.id, moduleId:module.id, label:module.title }); }}>Correct completion</button>}
+          {me.is_admin && learningAdmin && !preview && course.state === "draft" && <button type="button" className="text-action" aria-label={`Edit module ${module.title}`} onClick={()=>setDraftEdit({kind:"module",row:module})}>Edit module</button>}
+          {learningAdmin && !preview && course.state === "draft" && <button className="text-action" onClick={() => { setResourceModuleId(module.id); setResourceFlow(true); }}>Add resource</button>}
+          {learningAdmin && !preview && assignment && moduleDone && <button className="text-action" onClick={() => { setAdminReason(""); setAdminAction({ action:"reopen_module", assignmentId:assignment.id, moduleId:module.id, label:module.title }); }}>Correct completion</button>}
         </article>;
       })}
 
       {!rows.length && <EmptyState compact title="No modules yet">Add the first module before publishing this course.</EmptyState>}
 
-      {learningAdmin && course.state === "draft" && <div className="learning-author-actions">
+      {learningAdmin && !preview && course.state === "draft" && <div className="learning-author-actions">
+        {me.is_admin && <button type="button" className="btn btn-ghost btn-sm" onClick={()=>setDraftEdit({kind:"course",row:course})}>Edit course details</button>}
         <button className="btn btn-ghost btn-sm" onClick={() => { setModuleCourseId(course.id); setModuleFlow(true); }}>Add module</button>
         <button className="btn btn-sm" disabled={busy || (me.is_admin && (!rows.some(module => module.required) || rows.some(module => !moduleResources(module.id).length)))} onClick={() => changeCourseState(course,"published")}>Publish course</button>
         {me.is_admin && (!rows.some(module => module.required) || rows.some(module => !moduleResources(module.id).length)) && <p className="screen-note">Before publishing, add at least one required module and a resource to every module.</p>}
       </div>}
-      {learningAdmin && course.state === "published" && <div className="learning-author-actions">
+      {learningAdmin && !preview && course.state === "published" && <div className="learning-author-actions">
         <button className="btn btn-ghost btn-sm" onClick={() => openRule(course.id)}>Create assignment rule</button>
         <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => changeCourseState(course,"archived")}>Archive course</button>
       </div>}
@@ -521,7 +532,23 @@ export default function Learning({ me }) {
           </button>)}
           {!courses.length && <EmptyState title="No learning in the catalogue">{learningAdmin ? "Create the first draft course." : "Published learning will appear here when Administration makes it available."}</EmptyState>}
         </div>
-        <div><CourseDetail course={selectedCourse} /></div>
+        <div>
+          {learningAdmin && selectedCourse && <section aria-label="Course builder">
+            <div className="learning-section-title"><div><span className="eyebrow">Course builder</span><h2>{selectedCourse.state === "draft" ? "Prepare your course" : "Course and learner preview"}</h2></div></div>
+            <div className="learning-mode-tabs" role="group" aria-label="Course builder views">
+              <button type="button" className={builderView === "outline" ? "on" : ""} aria-pressed={builderView === "outline"} onClick={() => setBuilderView("outline")}>Course outline</button>
+              <button type="button" className={builderView === "preview" ? "on" : ""} aria-pressed={builderView === "preview"} onClick={() => setBuilderView("preview")}>Learner preview</button>
+            </div>
+            {builderView === "outline" && <div className="learning-assignment-context" aria-label="Course preparation">
+              <span><strong>Details</strong> · {selectedCourse.title}</span>
+              <span><strong>Modules</strong> · {courseModules(selectedCourse.id).length} prepared</span>
+              <span><strong>Resources</strong> · {courseModules(selectedCourse.id).reduce((count, module) => count + moduleResources(module.id).length, 0)} added</span>
+              <span><strong>Audience</strong> · {selectedCourse.state === "published" ? "Use an assignment rule" : "Choose after publishing"}</span>
+            </div>}
+          </section>}
+          {builderView === "preview" && learningAdmin && <p className="screen-note">Learner preview · Review the course content before publishing.</p>}
+          <CourseDetail course={selectedCourse} preview={learningAdmin && builderView === "preview"} />
+        </div>
       </div>
     </>}
 
@@ -587,6 +614,8 @@ export default function Learning({ me }) {
         {!activeTraining.filter((row) => learningAdmin || isManager || row.profile_id === me.id).length && <EmptyState title="No completed learning recorded">Completed course and historical training records will appear here.</EmptyState>}
       </div>
     </>}
+
+    {draftEdit && me.is_admin && learningAdmin && <LearningDraftEditor key={`${me.org_id}:${me.id}:${draftEdit.kind}:${draftEdit.row.id}`} me={me} edit={draftEdit} onClose={()=>setDraftEdit(null)} onSaved={async()=>{setDraftEdit(null);await load();setNotice("Draft content updated.");}}/>}
 
     {courseFlow && <LearningForm admin={me.is_admin} error={error} resetError={setError} open title="Create a draft course" onClose={() => !busy && setCourseFlow(false)}>
       <div className="eyebrow">New learning course</div>

@@ -126,7 +126,7 @@ for (const viewport of [
     await page.goto("/?tab=manager-reports");
 
     await expect(page.locator(".ev2-reporting-manager")).toBeVisible({ timeout:15000 });
-    await page.getByRole("button", { name:"Show analysis", exact:true }).click();
+    await page.getByRole("button", { name:"Show charts and tables", exact:true }).click();
     const charts = page.locator(".report-analysis .ev2dv-chart");
     await expect(charts).toHaveCount(4);
     await expect(page.getByText("Completed work trend", { exact:true })).toBeVisible();

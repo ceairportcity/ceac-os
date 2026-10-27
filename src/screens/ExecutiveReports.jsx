@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import ExecutiveFilingOverview from "../components/ExecutiveFilingOverview";
 import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
 import ExecutiveContributionDrilldown from "../components/ExecutiveContributionDrilldown";
 import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
@@ -7,12 +8,9 @@ import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventContr
 import { humanError } from "../lib/productLanguage";
 import { Skeleton, StatePanel } from "../experience-v2/components";
 import {
-  ReportingEvidenceCard,
-  ReportingEvidenceGrid,
   ReportingEmpty,
   ReportingFootnote,
   ReportingPageHeader,
-  ReportingRecordRow,
   ReportingSection,
 } from "../experience-v2/reporting-family/ReportingFamilyV2";
 
@@ -190,12 +188,6 @@ export default function ExecutiveReports({ me, openItem }) {
     }
   }
 
-  const filed = useMemo(() => reports.filter(isIssuedUnitReport), [reports]);
-  const drafting = useMemo(() => reports.filter((report) => report.status === "draft"), [reports]);
-  const waiting = useMemo(
-    () => units.filter((unit) => !reports.some((report) => report.unit_id === unit.id && isIssuedUnitReport(report))),
-    [units, reports],
-  );
   const unitStatusRows = useMemo(
     () => units.map((unit) => {
       const report = reports.find((row) => row.unit_id === unit.id);
@@ -214,7 +206,7 @@ export default function ExecutiveReports({ me, openItem }) {
     : contextError
       ? "Context unavailable"
       : period
-        ? period.status === "open" ? "Latest period open" : "Latest period closed"
+        ? period.status === "open" ? "Period open" : "Period closed"
         : "No period recorded";
 
   return (
@@ -226,8 +218,6 @@ export default function ExecutiveReports({ me, openItem }) {
         statusLabel={statusLabel}
         statusTone={contextError ? "danger" : "neutral"}
       />
-
-      <QuarterlyReviewEventControl me={me} />
 
       {!contextPending && !contextError && periodOptions.length > 1 && <div className="ev2rep-period-picker">
         <label htmlFor="executive-report-period">Reporting period</label>
@@ -278,9 +268,9 @@ export default function ExecutiveReports({ me, openItem }) {
           <div className="exec-redesign-tabs ev2rep-status-tabs" role="tablist" aria-label="Report filters">
             {[
               ["all", "All", units.length],
-              ["submitted", "Submitted", filed.length],
-              ["draft", "Drafts", drafting.length],
-              ["waiting", "Waiting", waiting.length],
+              ["submitted", "Submitted", unitStatusRows.filter(row => row.state === "submitted").length],
+              ["draft", "Drafts", unitStatusRows.filter(row => row.state === "draft").length],
+              ["waiting", "Waiting", unitStatusRows.filter(row => row.state === "waiting").length],
             ].map(([key, label, count]) => <button
               key={key}
               type="button"
@@ -291,32 +281,7 @@ export default function ExecutiveReports({ me, openItem }) {
             >{label}<span>{count}</span></button>)}
           </div>
           <div className="ev2rep-executive-brief">
-            <ReportingSection
-              eyebrow="Latest period"
-              title={period.label}
-              description={`${period.starts_on} — ${period.ends_on}. Administration controls period configuration.`}
-              meta={period.status === "open" ? "Open" : "Closed"}
-            >
-              <ReportingEvidenceGrid>
-                <ReportingEvidenceCard
-                  value={String(filed.length)}
-                  label="submitted units"
-                  detail={`${filed.length} of ${units.length} units`}
-                  tone="success"
-                />
-                <ReportingEvidenceCard
-                  value={String(drafting.length)}
-                  label="drafts"
-                  detail="Started, not submitted"
-                  tone="warning"
-                />
-                <ReportingEvidenceCard
-                  value={String(waiting.length)}
-                  label="waiting"
-                  detail="No submitted report recorded"
-                />
-              </ReportingEvidenceGrid>
-            </ReportingSection>
+            <ExecutiveFilingOverview key={identity + ":" + period.id} rows={unitStatusRows} period={period} onFilter={setView} />
 
             <ReportingSection
               eyebrow="Named unit status"
@@ -329,25 +294,15 @@ export default function ExecutiveReports({ me, openItem }) {
                   description={units.length ? "Choose another factual filing-state filter to see recorded units." : "Unit reporting status will appear when active organisation units are available."}
                 />
               ) : (
-                <div className="ev2rep-list">
-                  {visibleUnitRows.map(({ unit, report, state }) => {
-                    const isFiled = state === "submitted";
-                    const isDraft = state === "draft";
-                    return (
-                      <ReportingRecordRow
-                        key={unit.id}
-                        eyebrow={isFiled ? "Submitted" : isDraft ? "Draft" : "No submitted report"}
-                        title={unit.name}
-                        meta={isFiled && report.submitted_at
-                          ? `Submitted ${new Date(report.submitted_at).toLocaleDateString("en-GB")}`
-                          : isDraft
-                            ? "Draft exists but has not been submitted"
-                            : "No submitted report recorded"}
-                        statusLabel={isFiled ? "Filed" : isDraft ? "Started" : "Waiting"}
-                        statusTone={isFiled ? "success" : isDraft ? "warning" : "neutral"}
-                      />
-                    );
-                  })}
+                <div className="filing-table filing-register" role="region" aria-label="Department filing register" tabIndex="0">
+                  <table><caption>Active departments · {period.label}</caption>
+                    <thead><tr><th scope="col">Department</th><th scope="col">Status</th><th scope="col">Filed on</th></tr></thead>
+                    <tbody>{visibleUnitRows.map(({unit,report,state}) => <tr key={unit.id}>
+                      <th scope="row">{unit.name}</th>
+                      <td><span className={`filing-state is-${state}`}>{state === "submitted" ? "Filed" : state === "draft" ? "Started" : "Waiting"}</span></td>
+                      <td>{state === "submitted" && report.submitted_at ? new Date(report.submitted_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}) : "—"}</td>
+                    </tr>)}</tbody>
+                  </table>
                 </div>
               )}
             </ReportingSection>
@@ -365,6 +320,7 @@ export default function ExecutiveReports({ me, openItem }) {
           </ReportingFootnote>
         </>
       )}
+      <QuarterlyReviewEventControl me={me} />
     </div>
   );
 }

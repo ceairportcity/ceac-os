@@ -16,6 +16,7 @@ tests=(
   privileged_mfa_aal2_gate.sql
   s6_hot_path_security_performance_gate.sql
   meeting_authority_gate.sql
+  meeting_organiser_write_gate.sql
   employment_history_gate.sql
   platform_audit_gate.sql
   capability_authority_gate.sql
@@ -51,6 +52,7 @@ tests=(
   integrations_stage12_gate.sql
   project_register_experience_stage5_gate.sql
   experience_stage6_finance_gate.sql
+  finance_independent_requests_receipts_gate.sql
   operational_archive_period_gate.sql
   operational_content_archive_gate.sql
   experience_stage7_work_capture_gate.sql

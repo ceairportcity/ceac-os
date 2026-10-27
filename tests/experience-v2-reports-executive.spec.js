@@ -170,12 +170,12 @@ test("VF5C Executive Reports is coverage-first with factual named filing status"
     await expect(page.locator(".ev2-reporting-executive")).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("September 2026", { exact: true })).toBeVisible();
     await expect(page.getByText("1", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("submitted units", { exact: true })).toBeVisible();
-    await expect(page.getByText("drafts", { exact: true })).toBeVisible();
-    await expect(page.getByText("waiting", { exact: true })).toBeVisible();
+    await expect(page.locator(".filing-total")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Show draft in progress: 1 of 3 departments" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Show not started: 1 of 3 departments" })).toBeVisible();
     // Issued reporting units must appear in the actual unit-status register;
     // their names may legitimately appear again in the Executive evidence brief.
-    const unitRows = page.locator(".ev2-reporting-executive .ev2rep-row");
+    const unitRows = page.locator(".ev2-reporting-executive .filing-register tbody tr");
     for (const unitName of ["Media", "Technical", "First Timers"]) {
       await expect(unitRows.getByText(unitName, { exact: true })).toBeVisible();
     }
@@ -195,16 +195,14 @@ test("VF5C Executive Reports is coverage-first with factual named filing status"
       expect(layout.columns.split(" ").filter(Boolean)).toHaveLength(1);
     }
 
-    if (viewport.width <= 760) {
-      const evidence = page.locator(".ev2rep-evidence-grid");
-      const rail = await evidence.evaluate((node) => ({
-        display: getComputedStyle(node).display,
-        scrollWidth: node.scrollWidth,
-        clientWidth: node.clientWidth,
-      }));
-      expect(rail.display).toBe("flex");
-      expect(rail.scrollWidth).toBeGreaterThan(rail.clientWidth);
-    }
+    // The owner rejected the offscreen metric rail. Both views now use the
+    // same verified register and remain fully usable on the phone.
+    const overview = page.locator(".filing-overview");
+    await overview.getByRole("button", { name: "Table", exact: true }).click();
+    await expect(overview.getByRole("row", { name: "Submitted 1 33%" })).toBeVisible();
+    await expect(overview.getByRole("row", { name: "Draft in progress 1 33%" })).toBeVisible();
+    await overview.getByRole("button", { name: "Chart", exact: true }).click();
+    await expect(overview.getByRole("button", { name: "Show submitted: 1 of 3 departments" })).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
@@ -278,7 +276,7 @@ test("Executive issued-outcome brief hides incomplete history rather than counti
   }
   await page.goto("/?tab=exec-reports");
   await expect(page.locator(".ev2-reporting-executive")).toBeVisible();
-  await expect(page.getByText("submitted units", { exact: true })).toBeVisible();
+  await expect(page.locator(".filing-total")).toBeVisible();
   await expect(page.getByText("Detailed outcome records could not be verified. No achievement figures have been inferred.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Print / Save as PDF" })).toBeDisabled();
   await context.close();

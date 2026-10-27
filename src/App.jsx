@@ -510,7 +510,7 @@ export default function App() {
       openAnnouncements={hasOrgCapability("post_announcement") ? () => startSurfaceCreate("announcements", "announcement") : null}
     />;
     if (tab === "cost" && isAdmin) return <Cost key={`${me.org_id}:${me.id}`} me={me} />;
-    if (tab === "finance" && isAdmin) return <Finance me={me} openExpenses={() => go("cost")} />;
+    if (tab === "finance" && isAdmin) return <Finance key={`${me.org_id}:${me.id}`} me={me} openExpenses={() => go("cost")} />;
     if (tab === "reporting" && isAdmin) return <Reports me={me} />;
     if (tab === "attendance" && canUseWorkforce) return <Workforce key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${me.role || "none"}:${me.is_admin ? "admin" : "not-admin"}:${me.is_exec ? "exec" : "not-exec"}`} me={me} initialLeaveRequestId={leaveRequestId} initialSection={workforceSection} />;
     if (tab === "people" && canManagePeople) return <People
@@ -643,7 +643,7 @@ export default function App() {
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
           <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
-          {itemId ? <Item id={itemId} me={me} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} back={closeUrlOverlay} />
+          {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} back={closeUrlOverlay} />
             : assigning && (isExec || isAdmin) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} back={() => setAssigning(null)} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}

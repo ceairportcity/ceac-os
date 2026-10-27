@@ -7,6 +7,7 @@ import { QueueRow, byOldest } from "./primitives";
 const money=(minor,currency)=>(currency||"GHS")+" "+(Number(minor||0)/100).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2});
 
 function pathFor(request,rules){
+  if(Array.isArray(request.independent_path)&&request.independent_path.length)return request.independent_path;
   const rule=rules.find(row=>row.currency===request.currency);
   if(!rule) return ["finance","exec"];
   if(Number(request.amount_minor)<=Number(rule.admin_limit_minor)) return ["admin"];
@@ -40,10 +41,10 @@ export default function FinanceRequestQueue({me,authority,canFulfil=false,title=
     setLoading(true);setError(null);
     const [r,d,rule]=await Promise.all([
       supabase.from("finance_requests")
-        .select("id,org_id,unit_id,project_id,requested_by,title,justification,amount_minor,currency,needed_by,state,created_at,decided_at,fulfilled_spend_id,units(name)")
+        .select("id,org_id,unit_id,project_id,requested_by,title,justification,amount_minor,currency,needed_by,state,created_at,decided_at,fulfilled_spend_id,independent_path,units(name)")
         .eq("org_id",me.org_id).order("created_at",{ascending:false}).limit(250),
       supabase.from("finance_request_decisions")
-        .select("id,request_id,stage,authority,decision,note,decided_at")
+        .select("id,request_id,stage,authority,decider_id,decision,note,decided_at")
         .order("decided_at",{ascending:true}).limit(500),
       supabase.from("finance_approval_rules")
         .select("currency,admin_limit_minor,finance_limit_minor")
@@ -54,7 +55,7 @@ export default function FinanceRequestQueue({me,authority,canFulfil=false,title=
     setRequests(r.data||[]);setDecisions(d.data||[]);setRules(rule.data||[]);setLoading(false);
   }
 
-  const pending=useMemo(()=>byOldest(requests.filter(request=>nextAuthority(request,decisions,rules)===authority),"created_at"),[requests,decisions,rules,authority]);
+  const pending=useMemo(()=>byOldest(requests.filter(request=>request.requested_by!==me.id&&!decisions.some(d=>d.request_id===request.id&&d.decider_id===me.id)&&nextAuthority(request,decisions,rules)===authority),"created_at"),[requests,decisions,rules,authority,me.id]);
   const fulfil=useMemo(()=>canFulfil?requests.filter(request=>request.state==="approved"&&!request.fulfilled_spend_id):[],[requests,canFulfil]);
 
   async function decide(decision){

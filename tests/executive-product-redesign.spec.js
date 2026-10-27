@@ -79,7 +79,11 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(finance).toContain("Reversal-aware recorded income");
   expect(css).toContain(".executive-app {");
   expect(css).toContain("/* Literal semantic summary accents */");
-  expect(css).toContain(".fpg-payroll-metrics article:nth-child(1)");
+  // The owner rejected the Payroll presentation on 27 October; keep the
+  // accepted shell/palette above, and require the new recorded-net hierarchy.
+  expect(css).not.toContain(".fpg-payroll-metrics article:nth-child(1)");
+  expect(fs.readFileSync("src/premium.css", "utf8")).toContain(".fpg-payroll-main .fpg-payroll-metrics article:first-child>strong");
+  expect(fs.readFileSync("src/screens/AdminPayroll.jsx", "utf8")).toContain('aria-label="Recorded payroll totals"');
   expect(css).toContain(".inbox-page");
   expect(inbox).toContain('me.is_exec ? "body inbox-page exec-redesign-shared"');
   expect(inbox).toContain('me.is_exec ? "exec-redesign-shared-head"');
