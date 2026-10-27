@@ -92,7 +92,7 @@ test('real isolated Admin receipt stores and retrieves the same private bytes',a
  await page.goto('/');
  await page.getByPlaceholder('Work email').fill('admin@ceac.local.test');
  await page.getByPlaceholder('Password',{exact:true}).fill(password);
- await page.getByRole('button',{name:'Sign in',exact:true}).click();
+ await page.getByRole('button',{name:'Sign in to CEAC OS',exact:true}).click();
  await expect(page.locator('.office-app')).toBeVisible();
  await page.goto('/?tab=cost');
  await page.getByRole('button',{name:'Record expenses',exact:true}).click();
@@ -119,7 +119,7 @@ test('real isolated Admin receipt stores and retrieves the same private bytes',a
  expect(Buffer.from(downloaded.bytes)).toEqual(bytes);
  const staffContext=await browser.newContext();const staff=await staffContext.newPage();
  await staff.goto('/');await staff.getByPlaceholder('Work email').fill('staff@ceac.local.test');
- await staff.getByPlaceholder('Password',{exact:true}).fill(password);await staff.getByRole('button',{name:'Sign in',exact:true}).click();
+ await staff.getByPlaceholder('Password',{exact:true}).fill(password);await staff.getByRole('button',{name:'Sign in to CEAC OS',exact:true}).click();
  await expect(staff.locator('.staff-app')).toBeVisible();
  const denied=await staff.evaluate(async(file)=>{
   const {supabase}=await import('/src/lib/supabase.js');
