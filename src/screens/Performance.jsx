@@ -378,7 +378,10 @@ export default function Performance({ me }) {
   }
 
   async function decideHRRelease(approved) {
-    if (!canDecidePublication || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
+    const decisionNote = releaseDecisionNote.trim();
+    if (!canDecidePublication || !currentReleaseRequest
+        || (!approved && decisionNote.length < 8)
+        || (decisionNote && decisionNote.length < 8)) return;
     if (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) {
       setError("An independent HR officer must authorise assessment publication.");
       return;
@@ -386,7 +389,7 @@ export default function Performance({ me }) {
     const confirmed = await rpc("performance_hr_decide_release", {
       p_request_id:currentReleaseRequest.id,
       p_approve:approved,
-      p_reason:releaseDecisionNote.trim(),
+      p_reason:decisionNote || "Assessment reviewed and approved for publication.",
     }, assignedPastorPublication
       ? (approved ? "Group Pastor approved publication of the assigned HR-head assessment version." : "Group Pastor declined publication of the assigned HR-head assessment version.")
       : approved
@@ -660,11 +663,11 @@ export default function Performance({ me }) {
             {releaseQueueAvailable && !currentReleaseRequest && <p className="screen-note">No pending HR request matches the current manager assessment version.</p>}
             {releaseQueueAvailable && currentReleaseRequest && <>
               <p className="screen-note">Manager's reason: {currentReleaseRequest.request_reason}</p>
-              <FieldGroup label="HR approval or decline reason">
+              <FieldGroup label="Decision note" hint="Optional when approving a reviewed assessment. Explain a decline in at least 8 characters.">
                 <textarea className="field" rows="2" aria-label="HR assessment publication decision reason"
                   value={releaseDecisionNote} onChange={(event)=>setReleaseDecisionNote(event.target.value)} />
               </FieldGroup>
-              <button className="btn btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || releaseDecisionNote.trim().length < 8}
+              <button className="btn btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || (releaseDecisionNote.trim().length > 0 && releaseDecisionNote.trim().length < 8)}
                 onClick={()=>decideHRRelease(true)}>{assignedPastorPublication ? "Publish assigned HR-head review" : "HR approve publication"}</button>
               <button className="btn btn-ghost btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || releaseDecisionNote.trim().length < 8}
                 onClick={()=>decideHRRelease(false)}>{assignedPastorPublication ? "Decline assigned HR-head publication" : "HR decline with reason"}</button>

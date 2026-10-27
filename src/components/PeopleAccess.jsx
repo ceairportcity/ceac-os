@@ -25,6 +25,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const [snapshotScope, setSnapshotScope] = useState(null);
   const [mode, setMode] = useState("invite");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
+  const inviteDraft = useRef(form);
+  inviteDraft.current = form;
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
   const [error, setError] = useState(null);
@@ -163,6 +165,22 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
         actionBusyRef.current = false;
         setBusy(false);
       }
+    }
+  }
+
+  async function sendInvitation() {
+    const submitted = inviteDraft.current;
+    const identity = identityGeneration.current;
+    const recorded = await action(
+      () => inviteByEmail({ email: submitted.email, fullName: submitted.name, unitId: submitted.unit }),
+      "Invitation recorded and activation email requested. Delivery has not been independently confirmed."
+    );
+    // Clear only a confirmed, unchanged create draft. A failed send, an unknown
+    // outcome, newer typing or another account must keep its current values.
+    if (recorded && identity === identityGeneration.current) {
+      setForm(current => current === submitted
+        ? { ...current, name: "", email: "", unit: "", lane: "" }
+        : current);
     }
   }
 
@@ -321,10 +339,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             <Button
               busy={busy}
               disabled={busy || form.name.trim().length < 2 || !isPlausibleInvitationEmail(form.email) || !form.unit || existingAccountEmail || existingInvitationEmail}
-              onClick={() => action(
-                () => inviteByEmail({ email: form.email, fullName: form.name, unitId: form.unit }),
-                "Activation email requested. The recipient must verify their email and set a password; delivery has not been independently confirmed."
-              )}
+              onClick={sendInvitation}
             >Send Staff invitation</Button>
           </div>
         </DataPanel>}

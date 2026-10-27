@@ -1,3 +1,4 @@
+import ExecutiveWorkReview from "../components/ExecutiveWorkReview";
 import RoutineScheduleOptions from "../components/RoutineScheduleOptions";
 import { initialRoutineScheduleOptions, routineScheduleOptions } from "../lib/routineScheduleOptions";
 import { useEffect, useRef, useState } from "react";
@@ -35,6 +36,7 @@ const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space
  * The existing authoritative RPC/RLS write checks remain unchanged.
  */
 export default function Item(props) {
+  if (props.reviewOnly && props.me?.is_exec) return <ExecutiveWorkReview key={`${props.me.org_id}:${props.me.id}:${props.id}`} id={props.id} me={props.me} back={props.back} openRoom={props.openRoom} />;
   const scope = [props.me?.org_id, props.me?.id, props.me?.unit_id, props.id, props.initialRoutineDate || ""].join(":");
   return <ItemDetail key={scope} {...props} />;
 }

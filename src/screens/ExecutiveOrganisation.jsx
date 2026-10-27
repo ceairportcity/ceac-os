@@ -37,12 +37,14 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
   const [reload, setReload] = useState(0);
   const [loadedScope, setLoadedScope] = useState("");
   const [work, setWork] = useState([]);
+  const [expandedWorkScope, setExpandedWorkScope] = useState("");
   const [workState, setWorkState] = useState({ scope: "", loading: false, error: null });
   const heading = useRef(null);
   const scope = `${me.org_id}:${me.id}`;
   const selected = path.at(-1);
   const personId = selected?.kind === "person" ? selected.id : null;
   const personScope = `${scope}:${personId || ""}`;
+  const showAssignedWork = Boolean(personId && expandedWorkScope === personScope);
   useEffect(() => {
     let current = true;
     setLoading(true); setError(null); setLoadedScope(""); setDirectory(emptyDirectory);
@@ -67,8 +69,8 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
   }, [me.org_id, me.id, reload]);
   useEffect(() => {
     let current = true;
-    setWork([]); setWorkState({ scope: personScope, loading: Boolean(personId), error: null });
-    if (personId) (async () => {
+    setWork([]); setWorkState({ scope: personScope, loading: showAssignedWork, error: null });
+    if (showAssignedWork) (async () => {
       try {
         const result = await supabase.from("work_items").select("id,ref,title,status,due_at,unit_id,project_id", { count: "exact" }).eq("org_id", me.org_id).eq("assignee_id", personId).neq("visibility", "private").order("due_at", { ascending: true, nullsFirst: false });
         const rows = complete(result, "Assigned work");
@@ -76,7 +78,7 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
       } catch (e) { if (current) setWorkState({ scope: personScope, loading: false, error: humanError(e, "Assigned work could not be loaded.") }); }
     })();
     return () => { current = false; };
-  }, [personId, personScope, me.org_id]);
+  }, [showAssignedWork, personId, personScope, me.org_id]);
   useEffect(() => { if (path.length) heading.current?.focus(); }, [path]);
 
   const ready = loadedScope === scope && !loading && !error;
@@ -89,8 +91,8 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
   const team = selected?.kind === "team" ? teams.find(row => row.id === selected.id) : null;
   const person = people.find(row => row.id === personId);
   const placements = person ? memberships.filter(row => row.profile_id === person.id && units.some(unit => unit.id === row.unit_id)) : [];
-  const enter = (kind, id) => { setPath(current => [...current, { kind, id }].slice(-20)); setQuery(""); };
-  const back = () => { setPath(current => current.slice(0, -1)); setQuery(""); };
+  const enter = (kind, id) => { setExpandedWorkScope(""); setPath(current => [...current, { kind, id }].slice(-20)); setQuery(""); };
+  const back = () => { setExpandedWorkScope(""); setPath(current => current.slice(0, -1)); setQuery(""); };
   const matches = row => !query.trim() || `${row.name || row.full_name || ""} ${row.job_title || ""}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
   const peopleRows = rows => rows.filter(matches).map(row => <DirectoryRow key={row.id} kind="person" title={row.full_name || "Recorded person"} description={row.job_title || "Role not recorded"} onClick={() => enter("person", row.id)} />);
   const list = (label, children) => <section aria-label={label} className="exec-redesign-list">{children.length ? children : <p className="exec-redesign-empty">No {label.toLowerCase()} match this view.</p>}</section>;
@@ -116,8 +118,14 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
       {person && <><h2>Departments</h2>{list("Departments", placements.map(row => <DirectoryRow key={row.unit_id} kind="department" title={unitName(row.unit_id)} description={row.role === "manager" ? "Department head" : "Department member"} onClick={() => enter("department", row.unit_id)} />))}
         <div className="exec-directory-actions">{placements.map(row => <div key={row.unit_id}><button type="button" className="btn" onClick={() => goAssign?.({ unitId: row.unit_id, assigneeId: person.id })}>Give work in {unitName(row.unit_id)}</button><button type="button" className="btn btn-ghost" onClick={() => openRoom?.({ kind:"unit",unitId:row.unit_id,mentionProfileId:person.id })}>Message in {unitName(row.unit_id)} room</button></div>)}</div>
         {placements.length > 0 && <p className="screen-note">Room messages are shared with the department. The selected person is mentioned after their room access is verified.</p>}
-        <h2>Assigned work</h2><p className="screen-note">Shared work visible to your account. Private planning and confidential HR records stay separate.</p>
-        {(workState.scope !== personScope || workState.loading) ? <LoadingState label="Loading assigned work…" /> : workState.error ? <ProductNotice tone="error" title="Assigned work unavailable">{workState.error}</ProductNotice> : list("Assigned work", work.map(row => <DirectoryRow key={row.id} kind="work" title={`${row.ref} · ${row.title}`} description={unitName(row.unit_id)} meta={row.status.replaceAll("_", " ")} onClick={() => openItem?.(row.id)} />))}
+        <h2>Assigned work</h2><p className="screen-note">Open this person's shared work when needed. Private planning and confidential HR records stay separate.</p>
+        <button type="button" className="btn btn-ghost" aria-expanded={showAssignedWork} aria-controls="directory-assigned-work"
+          onClick={() => setExpandedWorkScope(showAssignedWork ? "" : personScope)}>{showAssignedWork ? "Hide assigned work" : "View assigned work"}</button>
+        {showAssignedWork && <div id="directory-assigned-work">
+          {(workState.scope !== personScope || workState.loading) ? <LoadingState label="Loading assigned work…" /> : workState.error
+            ? <ProductNotice tone="error" title="Assigned work unavailable" action={<button type="button" className="btn btn-ghost" onClick={() => { setExpandedWorkScope(""); }}>Close assigned work</button>}>{workState.error}</ProductNotice>
+            : list("Assigned work", work.map(row => <DirectoryRow key={row.id} kind="work" title={`${row.ref} · ${row.title}`} description={unitName(row.unit_id)} meta={row.status.replaceAll("_", " ")} onClick={() => openItem?.(row.id)} />))}
+        </div>}
       </>}
     </>}
   </div>;
