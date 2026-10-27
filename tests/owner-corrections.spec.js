@@ -6,6 +6,7 @@ async function api(page,{deny=false,deliveryFailure=false,hold=false}={}){
   const req=route.request(),u=new URL(req.url()),name=u.pathname.split('/').pop();
   if(!u.pathname.includes('/rest/v1/')&&!u.pathname.includes('/auth/v1/'))return ['localhost','127.0.0.1'].includes(u.hostname)?route.continue():route.abort();
   const reply=(data,status=200)=>route.fulfill({status,contentType:'application/json',headers:{'content-range':`0-0/${Array.isArray(data)?data.length:1}`,'access-control-expose-headers':'content-range'},body:JSON.stringify(data)});
+  if(name==='workforce_record_pattern'){writes.push({name,body:req.postDataJSON()});return reply({message:'Synthetic schedule denied'},403);}
   if(name==='performance_hr_decide_release'){writes.push({name,body:req.postDataJSON()});return deny?reply({message:'Synthetic approval denied'},403):reply(null);}
   if(name==='create_pending_invitation'){
    writes.push(req.postDataJSON());if(hold)await wait;
@@ -15,7 +16,7 @@ async function api(page,{deny=false,deliveryFailure=false,hold=false}={}){
   if(name==='otp')return deliveryFailure?reply({message:'Synthetic provider rejected',error_code:'unexpected_failure'},500):reply({});
   reads.push({name,query:u.search});
   const params=new URL(page.url()).searchParams;
-  const rows={meeting_sessions:{id:'meeting',org_id:'org',scope:'organisation',title:'Synthetic future meeting',agenda:'Owner supplied agenda',starts_at:'2099-11-01T09:00:00Z',ends_at:'2099-11-01T10:00:00Z',created_by:'organiser'},meeting_participants:[{profile_id:'actor',role:params.get('organiser')==='1'?'organiser':'participant'}],meeting_private_notes:null,appraisal_cycles:[{id:'cycle',name:'Synthetic cycle',status:'open',starts_on:'2026-10-01',ends_on:'2026-10-31'}],appraisals:[{id:'appraisal',cycle_id:'cycle',profile_id:params.get('self')==='1'?'actor':'person',manager_id:'manager',status:'manager_draft',profiles:{full_name:'Synthetic subject'}}],appraisal_entries:[{id:'assessment',entry_type:'manager_assessment',body:'Synthetic assessment',created_at:'2026-10-27T09:00:00Z'}],performance_review_release_requests:[{id:'release',requested_assessment_id:'assessment',requested_by:'manager',request_reason:'Synthetic reviewer request',state:'pending'}],submissions:[{id:'submission',work_item_id:'work',note:'Synthetic submitted outcome',submitted_at:'2026-10-26T09:00:00Z',profiles:{full_name:'Synthetic colleague'},submission_files:[]}],units:[{id:'unit',name:'Synthetic department',active:true}],profiles:[{id:'person',full_name:'Synthetic colleague',email:'existing@example.org',active:true}],unit_memberships:[{id:'membership',profile_id:'person',unit_id:'unit',role:'staff'}],work_items:[{id:'work',ref:'SYN-1',title:'Synthetic assigned work',unit_id:'unit',status:'in_progress'}],admin_access_invitations:pending?[{id:'invitation',email:'new@example.org',activation_state:'pending'}]:[]};
+  const rows={workforce_day_types:[{id:'office',name:'Office',active:true,session_expected:true},{id:'off',name:'Weekly off',active:true,session_expected:false}],learning_courses:[{id:'course',title:'Synthetic orientation',summary:'An example learner course',state:'draft'}],learning_modules:[{id:'module',course_id:'course',title:'Synthetic module',required:true,position:1}],learning_resources:[{id:'resource',module_id:'module',resource_type:'text',title:'Synthetic resource',body_text:'Synthetic learner content'}],meeting_sessions:{id:'meeting',org_id:'org',scope:'organisation',title:'Synthetic future meeting',agenda:'Owner supplied agenda',starts_at:'2099-11-01T09:00:00Z',ends_at:'2099-11-01T10:00:00Z',created_by:'organiser'},meeting_participants:[{profile_id:'actor',role:params.get('organiser')==='1'?'organiser':'participant'}],meeting_private_notes:null,appraisal_cycles:[{id:'cycle',name:'Synthetic cycle',status:'open',starts_on:'2026-10-01',ends_on:'2026-10-31'}],appraisals:[{id:'appraisal',cycle_id:'cycle',profile_id:params.get('self')==='1'?'actor':'person',manager_id:'manager',status:'manager_draft',profiles:{full_name:'Synthetic subject'}}],appraisal_entries:[{id:'assessment',entry_type:'manager_assessment',body:'Synthetic assessment',created_at:'2026-10-27T09:00:00Z'}],performance_review_release_requests:[{id:'release',requested_assessment_id:'assessment',requested_by:'manager',request_reason:'Synthetic reviewer request',state:'pending'}],submissions:[{id:'submission',work_item_id:'work',note:'Synthetic submitted outcome',submitted_at:'2026-10-26T09:00:00Z',profiles:{full_name:'Synthetic colleague'},submission_files:[]}],units:[{id:'unit',name:'Synthetic department',active:true}],profiles:[{id:'person',full_name:'Synthetic colleague',email:'existing@example.org',active:true}],unit_memberships:[{id:'membership',profile_id:'person',unit_id:'unit',role:'staff'}],work_items:[{id:'work',ref:'SYN-1',title:'Synthetic assigned work',unit_id:'unit',status:'in_progress'}],admin_access_invitations:pending?[{id:'invitation',email:'new@example.org',activation_state:'pending'}]:[]};
   if(name==='work_items'&&(req.headers().accept||'').includes('vnd.pgrst.object'))return reply({id:'work',org_id:'org',ref:'SYN-1',title:'Synthetic assigned work',status:'in_review',expected_outcome:'Synthetic expected outcome'});
   return reply(rows[name]===null?null:rows[name]||[]);
  });
@@ -126,5 +127,42 @@ for(const width of [390,1440]){
   await page.goto('/tests/fixtures/owner-corrections.html?screen=performance&self=1');
   await expect(page.getByText('Synthetic subject',{exact:true}).first()).toBeVisible();
   await expect(page.getByRole('button',{name:'HR approve publication',exact:true})).toHaveCount(0);
+ });
+}
+
+for(const width of [390,1440]){
+ test(`course builder previews real content without author or completion controls at ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:1000});const {writes}=await api(page);
+  await page.goto('/tests/fixtures/owner-corrections.html?screen=learning');
+  await expect(page.getByRole('region',{name:'Course builder',exact:true})).toContainText('1 prepared');
+  await expect(page.getByRole('button',{name:'Publish course',exact:true})).toBeEnabled();
+  await page.getByRole('button',{name:'Learner preview',exact:true}).click();
+  await expect(page.getByText('Synthetic learner content',{exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Publish course',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Add module',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Complete module',exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'Course outline',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Add module',exact:true})).toBeVisible();
+  expect(writes).toHaveLength(0);
+ });
+ test(`weekly schedule grid retains all days and a denied draft at ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:1000});const {writes}=await api(page);
+  await page.goto('/tests/fixtures/owner-corrections.html?screen=schedule');
+  await page.getByRole('button',{name:'Edit authorised work schedule',exact:true}).click();
+  await page.getByRole('button',{name:'Fill approved normal office week',exact:true}).click();
+  await expect(page.getByRole('table',{name:'Seven-day working week',exact:true}).getByRole('row')).toHaveCount(8);
+  await expect(page.getByLabel('Saturday start',{exact:true})).toBeDisabled();
+  await page.getByLabel('Monday start',{exact:true}).fill('09:30');
+  await page.getByLabel('Effective from',{exact:true}).fill('2026-11-01');
+  await page.getByLabel('HR schedule reason',{exact:true}).fill('Synthetic employee agreement');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+  await page.getByRole('button',{name:'Record HR-authorised schedule',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('could not be confirmed');
+  await expect(page.getByLabel('Monday start',{exact:true})).toHaveValue('09:30');
+  await expect(page.getByRole('button',{name:'Record HR-authorised schedule',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Reload authorised schedule',exact:true})).toBeVisible();
+  expect(writes).toHaveLength(1);
+  expect(writes[0].body.p_clock_map.mon).toEqual({start:'09:30',end:'17:00'});
+  expect(Object.keys(writes[0].body.p_day_map)).toHaveLength(7);
  });
 }

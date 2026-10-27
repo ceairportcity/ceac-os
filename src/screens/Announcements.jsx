@@ -172,7 +172,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       <h1 className="h1" style={me.is_exec ? undefined : { marginTop: 6 }}>Announcements</h1>
       <p className="screen-note">Important messages for the organisation, your role or your unit.</p>
       </div>
-      {canPublish && <button className="btn" style={me.is_exec ? undefined : { marginTop: 14 }} onClick={() => setForm(blankForm())}>New announcement</button>}
+      {canPublish && <button className="btn" style={me.is_exec ? undefined : { marginTop: 14, width: "fit-content", alignSelf: "flex-start" }} onClick={() => setForm(blankForm())}>New announcement</button>}
     </header>
 
     {error && <div className="flag flag-brick" style={{ marginTop: 14 }}><h4>Could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={load}>Try again</button></div>}

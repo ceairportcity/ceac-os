@@ -16,6 +16,7 @@ tests=(
   privileged_mfa_aal2_gate.sql
   s6_hot_path_security_performance_gate.sql
   meeting_authority_gate.sql
+  meeting_organiser_write_gate.sql
   employment_history_gate.sql
   platform_audit_gate.sql
   capability_authority_gate.sql
