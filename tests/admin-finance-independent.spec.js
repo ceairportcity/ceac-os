@@ -20,6 +20,9 @@ async function api(page,{deny=false,uploadDenied=false}={}){
   }
   if(name==='finalize_operational_file'){calls.push({kind:'finalise',body:req.postDataJSON()});fileActive=true;return reply('receipt');}
   if(req.method()!=='GET')calls.push({kind:name});
+  // Real permission reads are asynchronous. A file chooser remains disabled
+  // until that read finishes; immediate mock responses hid the automation race.
+  if(name==='operational_file_links'&&!fileActive)await new Promise(resolve=>setTimeout(resolve,500));
   const rows={units:[{id:'unit',name:'Synthetic department',active:true}],unit_memberships:[{unit_id:'unit',role:'manager',units:{name:'Synthetic department',handles_finance:false}}],spend_lines:[{id:'spend',org_id:'org',unit_id:'unit',spent_on:`${year}-01-01`,description:'Synthetic recorded expense',amount_minor:12500,currency:'GHS'}],finance_requests:recorded?[recorded]:[],operational_file_links:fileActive?[{id:'link',relation:'expense_receipt',file:{id:'receipt',filename:'synthetic-receipt.pdf',mime_type:'application/pdf',size_bytes:4,storage_bucket:'ceac-operational-private',storage_path:'org/expense-receipt/spend/receipt/file.pdf',state:'active'}}]:[]};
   return reply(rows[name]||[]);
  });
@@ -65,7 +68,9 @@ for(const width of [390,1440]){
   await page.getByRole('button',{name:'View receipts',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Expense receipts',exact:true});
   await expect(dialog).toContainText('Receipts are optional');
-  await dialog.getByLabel('Upload file',{exact:true}).setInputFiles({name:'synthetic-receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('test')});
+  const upload=dialog.getByLabel('Upload file',{exact:true});
+  await expect(upload).toBeEnabled();
+  await upload.setInputFiles({name:'synthetic-receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('test')});
   await expect(dialog.getByRole('button',{name:/synthetic-receipt.pdf/})).toBeVisible();
   expect(calls.map(c=>c.kind)).toEqual(['register','storage','finalise']);
   await page.screenshot({path:`test-artifacts/expense-receipts-${width}.png`,fullPage:false,animations:"disabled"});
@@ -78,7 +83,9 @@ test('failed optional receipt upload does not finalise or re-record the expense'
  await page.goto('/tests/fixtures/owner-corrections.html?full=1&screen=cost&actor=admin');
  await page.getByRole('button',{name:'See spending',exact:true}).click();
  await page.getByRole('button',{name:'View receipts',exact:true}).click();
- await page.getByRole('dialog').getByLabel('Upload file',{exact:true}).setInputFiles({name:'synthetic-receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('test')});
+ const upload=page.getByRole('dialog').getByLabel('Upload file',{exact:true});
+ await expect(upload).toBeEnabled();
+ await upload.setInputFiles({name:'synthetic-receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('test')});
  await expect(page.getByRole('alert')).toContainText('Synthetic upload denied');
  expect(calls.map(c=>c.kind)).toEqual(['register','storage']);
  await expect(page.getByRole('dialog').getByRole('button',{name:'Retry private files',exact:true})).toBeVisible();
@@ -106,8 +113,12 @@ test('real isolated Admin receipt stores and retrieves the same private bytes',a
  await page.getByRole('row').filter({hasText:title}).getByRole('button',{name:'View receipts',exact:true}).click();
  const bytes=Buffer.from('%PDF-1.4\nCEAC isolated receipt bytes\n%%EOF');
  const filename=`isolated-receipt-${Date.now()}.pdf`;
- await page.getByRole('dialog').getByLabel('Upload file',{exact:true}).setInputFiles({name:filename,mimeType:'application/pdf',buffer:bytes});
- await expect(page.getByRole('dialog').getByRole('button',{name:new RegExp(filename)})).toBeVisible();
+ const receipts=page.getByRole('dialog'),upload=receipts.getByLabel('Upload file',{exact:true});
+ // setInputFiles can dispatch into a disabled input; wait for the same verified
+ // upload state a person must reach before opening their file chooser.
+ await expect.poll(async()=>({ready:await upload.isEnabled(),errors:await receipts.getByRole('alert').allTextContents()})).toEqual({ready:true,errors:[]});
+ await upload.setInputFiles({name:filename,mimeType:'application/pdf',buffer:bytes});
+ await expect.poll(async()=>({visible:await receipts.getByRole('button',{name:new RegExp(filename)}).isVisible(),errors:await receipts.getByRole('alert').allTextContents()})).toEqual({visible:true,errors:[]});
  const downloaded=await page.evaluate(async(name)=>{
   const {supabase}=await import('/src/lib/supabase.js');
   const links=await supabase.from('operational_files').select('storage_bucket,storage_path').eq('filename',name).single();
