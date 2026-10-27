@@ -110,6 +110,7 @@ for(const width of [390,1440])test(`Payroll foregrounds run totals and filters e
  await page.goto('/tests/fixtures/owner-corrections.html?screen=payroll&actor=admin');
  const totals=page.getByRole('region',{name:'Recorded payroll totals'});
  await expect(totals).toContainText('3,000.00');
+ expect(await totals.locator('article>strong').evaluateAll(nodes=>nodes.every(node=>node.scrollWidth<=node.clientWidth+1))).toBe(true);
  await expect(page.getByRole('heading',{name:'3 of 3 employee entries'})).toBeVisible();
  if(width===390)await expect(page.getByLabel('Payroll period',{exact:true})).toHaveValue('run');
  await page.getByRole('button',{name:'Needs review (1)',exact:true}).click();
