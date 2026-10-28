@@ -22,6 +22,7 @@ for(const width of [390,1440]){
   await expect(page.getByRole('heading',{name:'Team availability',exact:true})).toBeVisible();
   const register=page.getByRole('table',{name:'Recorded work sessions today'});await expect(register).toContainText('Ama Fixture');await expect(register).toContainText('Kojo Roster');
   await expect(page.getByText('No CEAC login account',{exact:true})).toBeVisible();
+  expect(await register.locator('small').evaluateAll(nodes=>nodes.every(node=>parseFloat(getComputedStyle(node).fontSize)>=12))).toBe(true);
   await expect(page.getByLabel('Attendance evidence date')).not.toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await page.screenshot({path:`test-artifacts/timeleave-repaired-${width}.png`,fullPage:true});

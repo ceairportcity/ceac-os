@@ -971,7 +971,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Administration workforce sections"/>
 
-      {tab==="leave"&&<TimeLeavePlanner rows={leave} scope="Organisation" initialRequestId={initialLeaveRequestId} unavailable={Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>}
+      {tab==="leave"&&<TimeLeavePlanner compact rows={leave} scope="Organisation" initialRequestId={initialLeaveRequestId} unavailable={Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>}
 
 
 

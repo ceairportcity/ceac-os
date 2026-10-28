@@ -70,6 +70,6 @@ test('a setup URL does not expose policy controls without workforce management p
   return ['localhost','127.0.0.1'].includes(url.hostname)?route.continue():route.abort();
  });
  await page.goto('/tests/fixtures/control-center-design.html?tab=attendance&workforce=setup&access=limited');
- await expect(page.getByRole('tab',{name:'Today',exact:true})).toHaveAttribute('aria-selected','true');
+ await expect(page.getByRole('tab',{name:'Overview',exact:true})).toHaveAttribute('aria-selected','true');
  await expect(page.getByRole('tab',{name:'Schedules & policy',exact:true})).toHaveCount(0);
 });

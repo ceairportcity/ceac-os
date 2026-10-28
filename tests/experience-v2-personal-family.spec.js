@@ -470,7 +470,7 @@ test("Stage 10 Family G7 keeps account activity self-only while aligning it with
   expect(account).toContain('supabase.auth.signOut({ scope: "local" })');
   expect(account).toContain('supabase.auth.signOut({ scope: "global" })');
   expect(account).toContain("Only you can see this.");
-  expect(account).toContain('statusLabel="Self-only security"');
+  expect(account).toContain('statusLabel="Your account only"');
   expect(account).toContain("ev2-personal-account");
   expect(account).toContain("This is not a colleague-monitoring surface.");
   expect(account).toContain("Signed-in devices could not load");

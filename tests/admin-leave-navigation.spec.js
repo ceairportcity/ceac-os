@@ -37,7 +37,7 @@ for(const width of [390,1440])test(`Admin selected leave review and reasoned dec
  await expect(inspector).toContainText('Kojo Review');
  await expect(inspector).toContainText('Family appointment');
  await expect(inspector).toContainText('HR decision needed');
- await expect(page.getByRole('tab',{name:'Leave',exact:true})).toHaveAttribute('aria-selected','true');
+ await expect(page.getByRole('tab',{name:'Leave requests',exact:true})).toHaveAttribute('aria-selected','true');
  await expect(inspector.getByRole('button',{name:'Admin approve',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
  await page.screenshot({path:`test-artifacts/admin-selected-leave-${width}.png`,fullPage:true});

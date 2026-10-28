@@ -1414,6 +1414,7 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     const staffCase = page.locator(".performance-case-row").filter({ hasText: "Staff Fixture" }).first();
     await expect(staffCase).toBeVisible({ timeout: 15000 });
     await staffCase.click();
+    await page.getByRole("tab", {name:"3 · Publication",exact:true}).click();
     const approve = page.getByRole("button", { name: "HR approve publication", exact: true });
     await expect(approve).toBeVisible({ timeout: 15000 });
     await page.getByLabel("HR assessment publication decision reason").fill(
@@ -1517,7 +1518,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
 
     await page.getByRole("button", { name: "Publish course", exact: true }).click();
     await expect(page.getByText("Course published.", { exact: true })).toBeVisible();
-    await expect(page.getByText("Published", { exact: true }).first()).toBeVisible();
+    await expect(page.locator(".learning-course-detail").getByText("Published", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Create assignment rule", exact: true }).click();
     dialog = page.getByRole("dialog");
@@ -1604,8 +1605,8 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Workforce");
-    await expect(page.getByRole("heading", { name: "Workforce", exact: true })).toBeVisible();
-    await expect(page.getByText(/never an automatic absence finding/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Time & Leave", exact: true })).toBeVisible();
+    await expect(page.getByText(/never infer absence from missing sessions/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
     await page.getByRole("button", { name: "Add day type", exact: true }).click();
@@ -2302,11 +2303,11 @@ test("Administration surfaces use policy-safe HR states and real employee record
   // The approved Stage 9 policy is active after the full 129-migration replay:
   // 24 days/year, 6 days per completed quarter, Manager then Administration.
   // Do not assert the old unconfigured prototype state or weaken any safeguards.
-  await page.locator(".timeleave-policy > summary").click();
+  await page.locator(".timeleave-policy > summary").filter({hasText:"Leave policy & balances"}).click();
   await expect(page.getByText("Confirmed leave process", { exact: true })).toBeVisible();
   await expect(page.getByText(/24-day yearly allowance comprises 15 annual-leave days/i)).toBeVisible();
   await expect(page.getByText(/Manager approval.*Administration final approval/i)).toBeVisible();
-  await expect(page.getByText(/never an automatic absence finding/i)).toBeVisible();
+  await expect(page.getByText(/never infer absence from missing sessions/i)).toBeVisible();
 
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
@@ -2317,7 +2318,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Manage leave rules in Time & Leave", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Manage leave rules in Time & Leave", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Workforce", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Time & Leave", exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
   await expect(page.getByRole("button", { name: "Configure leave policy", exact: true })).toBeVisible();
 
