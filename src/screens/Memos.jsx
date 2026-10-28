@@ -63,7 +63,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn);
   },[dirty,pendingFiles.length,reply]);
   useEffect(()=>{
-    if(!selected)return;const serial=++request.current;let current=true;setDetailKey("");
+    if(!selected)return;const serial=++request.current;let current=true;if(detailKey!==selected)setDetailKey("");
     (async()=>{
       try{
         const [m,e]=await Promise.all([

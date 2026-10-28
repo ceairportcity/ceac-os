@@ -61,6 +61,7 @@ for(const width of [1440,390])test(`Memo composition retains failed send and res
  await page.getByLabel('Subject',{exact:true}).fill('Digital initiative');await page.getByLabel('Message',{exact:true}).fill('A proposal for review.');
  await page.getByLabel('Decision required',{exact:true}).check();await page.getByLabel('Proposal scope').selectOption('cross_department');await page.getByLabel('Decision-maker').selectOption('pastor');
  await page.screenshot({path:`test-results/messages-memo-compose-${width}.png`,fullPage:true});
+ if(width===390)expect(await page.getByRole('button',{name:'Send Memo',exact:true}).evaluate(el=>el.clientWidth)).toBeLessThan(180);
  await page.getByRole('button',{name:'Send Memo',exact:true}).click();await expect(page.getByText('Synthetic memo send denied')).toBeVisible();await expect(page.getByLabel('Subject',{exact:true})).toHaveValue('Digital initiative');
  const saved=writes.find(w=>w.name==='save_memo_draft');expect(saved.body.p_to).toEqual(['pastor']);expect(saved.body.p_decision_scope).toBe('cross_department');expect(saved.body.p_decision_maker_id).toBe('pastor');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
@@ -72,7 +73,10 @@ test('Memo refresh retains a clarification draft and section changes protect uns
  await page.getByRole('button',{name:/Media Team Digital Transformation Initiative/}).click();
  const response=page.getByRole('textbox',{name:/Reply or clarification/});
  await response.fill('Please retain this clarification while refreshing.');
+ const refreshed=page.waitForResponse(r=>r.url().includes('/rpc/mark_memo_read'));
  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await refreshed;
+ await expect(response).toBeFocused();
  await expect(response).toHaveValue('Please retain this clarification while refreshing.');
  await response.fill('');
  await page.getByRole('button',{name:'New Memo',exact:true}).first().click();
