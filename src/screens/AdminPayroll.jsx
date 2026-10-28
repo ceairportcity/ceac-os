@@ -83,6 +83,12 @@ export default function AdminPayroll({ me }) {
     setSelectedId(id);
   }
 
+  useEffect(() => {
+    salaryReadGeneration.current += 1;
+    setSheet(current=>current?.type === "salary" ? null : current);
+    setSalarySetup(null);
+  },[canRecordSalary]);
+
   useEffect(() => { setEntrySearch(""); setEntryFilter("all"); }, [selectedId,me.id,me.org_id]);
   useEffect(() => {
     void loadRuns();
@@ -544,7 +550,7 @@ export default function AdminPayroll({ me }) {
     </div>
 
     {visibleSheet?.type === "create" && <CreateRunSheet error={error} busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
-    {visibleSheet?.type === "salary" && <RecordedSalarySheet
+    {canRecordSalary && visibleSheet?.type === "salary" && <RecordedSalarySheet
       entry={visibleSheet.entry} salary={visibleSheet.salary} loading={visibleSheet.loading} readError={visibleSheet.readError} error={error} busy={busy}
       onClose={()=>{salaryReadGeneration.current += 1;setSheet(null);}}
       onOpenProtected={()=>{salaryReadGeneration.current += 1;setSheet(null);setSalarySetup({employeeId:visibleSheet.entry.employee_id});}}

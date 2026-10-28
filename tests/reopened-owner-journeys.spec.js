@@ -88,3 +88,20 @@ for(const mode of ['missing','currency'])test(`salary application is withheld fo
  await expect(drawer.getByRole('textbox')).toHaveCount(0);
  await expect(drawer.getByRole('button',{name:'Update salary in Protected HR',exact:true})).toBeVisible();
 });
+test('revoked protected-HR access closes a salary preview and cannot revive it on restoration',async({page})=>{
+ await payrollApi(page);
+ await page.goto('/tests/fixtures/owner-corrections.html?screen=payroll&actor=admin&permissiontest=1');
+ await page.getByRole('button',{name:'Review recorded salary',exact:true}).click();
+ await expect(page.getByRole('dialog',{name:'Use recorded salary'})).toContainText('1,234.56');
+ await page.getByRole('button',{name:'Cancel',exact:true}).click();
+ // Delay the next source read so it completes after permission was revoked.
+ let release;const pending=new Promise(resolve=>{release=resolve;});
+ await page.route('**/rest/v1/rpc/hr_employee_protected_summary',async route=>{await pending;return route.fulfill({contentType:'application/json',body:JSON.stringify({compensation:[{id:'stale',status:'active',amount_minor:99999,currency:'GHS',effective_on:'2026-10-01'}]})});});
+ await page.getByRole('button',{name:'Review recorded salary',exact:true}).click();
+ await page.getByRole('button',{name:'Toggle review permission',exact:true}).dispatchEvent('click');
+ await expect(page.getByRole('dialog',{name:'Use recorded salary'})).toHaveCount(0);
+ release();
+ await page.getByRole('button',{name:'Toggle review permission',exact:true}).dispatchEvent('click');
+ await expect(page.getByRole('button',{name:'Review recorded salary',exact:true})).toBeVisible();
+ await expect(page.getByRole('dialog',{name:'Use recorded salary'})).toHaveCount(0);
+});

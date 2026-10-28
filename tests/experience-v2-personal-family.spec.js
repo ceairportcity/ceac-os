@@ -591,7 +591,7 @@ test("OCR5F Administration system surfaces use shared Queue Record Settings and 
   expect(workflows).toContain('title="Waiting for a decision"');
   expect(workflows).toContain('eyebrow="Selected request"');
   expect(workflows).toContain("WorkflowChangeContext");
-  expect(workflows).toContain("contextVerified !== selectedStep.id");
+  expect(workflows).toContain("contextVerified !== reviewScope");
   expect(workflows).not.toContain('import { QueueRow, byOldest } from "../components/primitives"');
 
   expect(authority).toContain("RecordRow");

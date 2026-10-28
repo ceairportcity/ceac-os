@@ -1,6 +1,7 @@
 // Synthetic local-only fixture: all remote requests are intercepted by tests.
 import React, {useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import AdminWorkflows from "../../src/screens/AdminWorkflows";
 import PersonalRecurringTaskComposer from "../../src/components/PersonalRecurringTaskComposer";
 import WorkforceStreetMap from "../../src/components/WorkforceStreetMap";
 import "../../src/experience-v2/calendar/calendar.css";
@@ -48,7 +49,7 @@ const me={full_name:'Design preview',role:'staff',memberships:[],managed_units:[
 function Fixture(){
  const params=new URLSearchParams(location.search);
  const screen=params.get('screen');
- const [actor,setActor]=useState({...me,is_admin:params.get('actor')!=='executive',is_exec:params.get('actor')!=='admin'});
+ const [actor,setActor]=useState({...me,capabilities:[...me.capabilities,...(params.get("permissiontest")==="1"?["hr_private.access"]:[])],is_admin:params.get('actor')!=='executive',is_exec:params.get('actor')!=='admin'});
  const screens={
   'department-reports':<Reports me={actor}/>,
   reports:<ExecutiveReports me={actor} openItem={()=>{}}/>,
@@ -56,6 +57,7 @@ function Fixture(){
   achievements:<PersonalAchievements me={actor} back={()=>{}} openItem={()=>{}}/>,
   payroll:<AdminPayroll me={{...actor,capabilities:[...actor.capabilities,'payroll.prepare']}}/>,
   learning:<Learning me={actor}/>,
+  workflows:<AdminWorkflows me={actor}/>,
   recurrence:<div className="phase6-day-workspace" style={{width:340,maxWidth:"100%"}}><PersonalRecurringTaskComposer me={actor} ready selectedDate="2026-10-28" /></div>,
   map:<WorkforceStreetMap clusters={[{key:"point",lat:5.6,lng:-.18,people:[{id:"person",name:"Synthetic colleague"}]}]} onSelect={id=>setActor(current=>({...current,selectedId:id}))} selectedId={actor.selectedId} selectedContent={actor.selectedId?<p>Synthetic work-start record</p>:null}/>,
   finance:<Finance me={actor}/>,
@@ -86,6 +88,7 @@ function Fixture(){
  }
  return <main className={screen==='reports'?'executive-app':params.get('actor')==='admin'?'office-app':undefined}>
   <button onClick={()=>setActor({...me,id:'new-actor'})}>Switch fixture actor</button>
+  {params.get("permissiontest")==="1"&&<button onClick={()=>setActor(current=>{const permission=screen==="payroll"?"hr_private.access":"people.manage";return {...current,capabilities:current.capabilities.includes(permission)?current.capabilities.filter(value=>value!==permission):[...current.capabilities,permission]};})}>Toggle review permission</button>}
   {content}
  </main>;
 }

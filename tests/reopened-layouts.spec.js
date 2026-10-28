@@ -72,3 +72,23 @@ test('a check with unverified original details cannot be marked reviewed',async(
  await expect(page.getByRole('button',{name:'Confirm review',exact:true})).toBeDisabled();
  await expect(page.getByRole('button',{name:'Flag for follow-up',exact:true})).toBeDisabled();
 });
+test('restoring review authority requires fresh original-change verification',async({page})=>{
+ const change={id:'event',created_at:'2026-10-27T09:00Z',effective_on:'2026-10-27',employment_type:'permanent',change_type:'employment_details_changed'};
+ await api(page,{workflow_definitions:[{id:'definition',workflow_key:'employment-change-review'}],workflow_runs:[{id:'run',workflow_definition_id:'definition',source_event_id:'source',subject_profile_id:'person'}],workflow_run_steps:[{id:'step',workflow_run_id:'run',label:'Review employment change',required_capability:'people.manage',state:'ready',created_at:'2026-10-27T09:00Z'}],platform_events:{id:'source',event_type:'employment.changed',idempotency_key:'employment:event'}});
+ let allowed=true,hold=null;
+ await page.route('**/rest/v1/rpc/admin_employment_detail',async route=>{
+  if(!allowed)return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({message:'Synthetic authority revoked'})});
+  if(hold)await hold;
+  return route.fulfill({contentType:'application/json',body:JSON.stringify({history:[change]})});
+ });
+ await page.goto('/tests/fixtures/owner-corrections.html?screen=workflows&actor=admin&permissiontest=1');
+ await page.getByRole('button',{name:/Review employment change/}).click();
+ await expect(page.getByRole('button',{name:'Confirm review',exact:true})).toBeEnabled();
+ allowed=false;await page.getByRole('button',{name:'Toggle review permission',exact:true}).dispatchEvent('click');
+ await expect(page.getByRole('button',{name:'Confirm review',exact:true})).toHaveCount(0);
+ await expect(page.getByText('The employment history could not be verified. No review has been recorded.',{exact:true})).toBeVisible();
+ let release;hold=new Promise(resolve=>{release=resolve;});allowed=true;
+ await page.getByRole('button',{name:'Toggle review permission',exact:true}).dispatchEvent('click');
+ await expect(page.getByRole('button',{name:'Confirm review',exact:true})).toBeDisabled();
+ release();await expect(page.getByRole('button',{name:'Confirm review',exact:true})).toBeEnabled();
+});

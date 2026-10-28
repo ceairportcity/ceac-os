@@ -119,11 +119,16 @@ export default function AdminWorkflows({ me }) {
 
   const selectedStep = steps.find((step) => step.id === selectedStepId) || null;
   const selectedRun = selectedStep ? runsById[selectedStep.workflow_run_id] : null;
+  const reviewCapabilities=[...(me.capabilities || [])].sort().join("|");
+  // A restored permission starts a fresh verification, even if its values
+  // match an earlier grant. The object token cannot revive an old read.
+  const reviewScope=useMemo(()=>({key:`${me.org_id}:${me.id}:${reviewCapabilities}:${selectedStep?.id || ""}`}),
+    [me.org_id,me.id,reviewCapabilities,selectedStep?.id]);
   const canReview = selectedStep && (!selectedStep.required_capability || (me.capabilities || []).includes(selectedStep.required_capability));
 
   async function completeStep(decision = null) {
     const resolvedOutcome = decision || "reviewed";
-    if (busy || readError || !canReview || !selectedStep || contextVerified !== selectedStep.id || selectedStep.state !== "ready" || !resolvedOutcome) return;
+    if (busy || readError || !canReview || !selectedStep || contextVerified !== reviewScope || selectedStep.state !== "ready" || !resolvedOutcome) return;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -200,12 +205,12 @@ export default function AdminWorkflows({ me }) {
           {selectedStep && <>
             <strong>{selectedStep.label}</strong>
             <p className="screen-note">Requested {stamp(selectedStep.created_at)} · {selectedStep.state === "ready" ? "Waiting for your review" : humanize(selectedStep.state)}</p>
-            <WorkflowChangeContext key={`${me.org_id}:${me.id}:${selectedStep.id}`} me={me} run={selectedRun} onVerified={()=>setContextVerified(selectedStep.id)} />
+            <WorkflowChangeContext key={reviewScope.key} me={me} run={selectedRun} onVerified={()=>setContextVerified(reviewScope)} />
             {selectedStep.state === "ready" && canReview && <>
               <FieldGroup label="Comment (optional)"><textarea className="field" aria-label="Check review note" rows="3" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional context for the record" /></FieldGroup>
               <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:12 }}>
-                <Button busy={busy} disabled={contextVerified !== selectedStep.id} onClick={() => completeStep()}>{busy ? "Saving…" : "Confirm review"}</Button>
-                <Button variant="secondary" disabled={busy || contextVerified !== selectedStep.id} onClick={() => completeStep("not_approved")}>Flag for follow-up</Button>
+                <Button busy={busy} disabled={contextVerified !== reviewScope} onClick={() => completeStep()}>{busy ? "Saving…" : "Confirm review"}</Button>
+                <Button variant="secondary" disabled={busy || contextVerified !== reviewScope} onClick={() => completeStep("not_approved")}>Flag for follow-up</Button>
               </div>
             </>}
             {selectedStep.state === "ready" && !canReview && <p className="screen-note">An authorised colleague must record this review.</p>}
