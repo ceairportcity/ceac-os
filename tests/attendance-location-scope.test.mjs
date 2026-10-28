@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { getPositionOnce } from "../src/lib/locationEvidence.js";
 import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
@@ -62,4 +63,96 @@ test("Administration registers programme venues with an explicit non-primary fla
   assert.match(venues, /Number\.isFinite\(longitude\)/);
   assert.match(venues, /busyRef\.current/);
   assert.match(settings, /<DutyLocationSettings me=\{me\} \/>/);
+});
+
+test("browser location falls back to standard accuracy after high-accuracy positioning fails", async () => {
+  const attempts = [];
+  const result = await getPositionOnce({
+    getCurrentPosition(ok, fail, options) {
+      attempts.push(options.enableHighAccuracy);
+      if (options.enableHighAccuracy) return fail({ code: 2 });
+      ok({ coords: { latitude: 5.6037, longitude: -0.1870, accuracy: 850 },
+        timestamp: Date.now() });
+    },
+  });
+  assert.deepEqual(attempts, [true, false]);
+  assert.equal(result.failure, undefined);
+  assert.equal(result.lat, 5.6037);
+  assert.equal(result.lng, -0.1870);
+  assert.equal(result.accuracy, 850, "Browser-provided accuracy must not be hidden or upgraded");
+  assert.ok(result.capturedAt);
+});
+
+test("browser location never retries a denied geolocation permission", async () => {
+  let attempts = 0;
+  const result = await getPositionOnce({
+    getCurrentPosition(_ok, fail) { attempts++; fail({ code: 1 }); },
+  });
+  assert.equal(attempts, 1);
+  assert.match(result.failure, /permission was denied/);
+  assert.equal(result.lat, undefined);
+});
+
+test("a silent high-accuracy browser request falls back and ignores its late callback", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const attempts = [];
+  let lateHigh, completeFallback;
+  const pending = getPositionOnce({ getCurrentPosition(ok, _fail, options) {
+    attempts.push(options.enableHighAccuracy);
+    if(options.enableHighAccuracy) lateHigh=ok; else completeFallback=ok;
+  }});
+  t.mock.timers.tick(6500);
+  assert.deepEqual(attempts,[true,false]);
+  lateHigh({coords:{latitude:0,longitude:0,accuracy:1},timestamp:Date.now()});
+  completeFallback({coords:{latitude:5.6037,longitude:-0.187,accuracy:850},timestamp:Date.now()});
+  const result=await pending;
+  assert.equal(result.lat,5.6037);
+  assert.equal(result.accuracy,850);
+});
+
+test("two silent browser requests end with a bounded failure rather than a stuck Start", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const attempts=[];
+  const pending=getPositionOnce({getCurrentPosition(_ok,_fail,options){attempts.push(options.enableHighAccuracy);}});
+  t.mock.timers.tick(6500);t.mock.timers.tick(6500);
+  assert.deepEqual(attempts,[true,false]);
+  assert.match((await pending).failure,/timed out/);
+});
+
+test("invalid browser coordinates are not used and fall back to a fresh real result", async () => {
+  const result=await getPositionOnce({getCurrentPosition(ok,_fail,options){
+    ok({coords:{latitude:options.enableHighAccuracy?999:5.6037,longitude:-0.187,accuracy:900},timestamp:Date.now()});
+  }});
+  assert.equal(result.lat,5.6037);assert.equal(result.accuracy,900);
+});
+
+test("pre-insert location failure allows retry while uncertain Start writes remain fail-closed", () => {
+  const clock = read("../src/components/EmployeeWorkSession.jsx");
+  assert.match(session, /class WorkStartPreflightError extends Error/);
+  assert.match(session, /throw new WorkStartPreflightError/);
+  assert.match(clock, /e instanceof WorkStartPreflightError/);
+  assert.match(clock, /setVerified\(false\); setEditor\(false\); setReady\(false\)/);
+  assert.match(home, /err instanceof WorkStartPreflightError/);
+  assert.match(home, /setVerifiedSessionScope\(null\); setAsk\(false\)/);
+  assert.match(home, /\{error && <p role="alert" className="hint">\{error\}<\/p>\}/);
+});
+
+test("manager and HR off-site work remains available if office locations fail to load", () => {
+  const ownSession = read("../src/components/EmployeeWorkSession.jsx");
+  assert.match(ownSession, /Promise\.allSettled\(/);
+  assert.match(ownSession, /setLocationsUnavailable\(Boolean\(locationValue\.error\)\)/);
+  assert.match(ownSession, /setOwnWorkUnavailable\(Boolean\(workValue\.error\)\)/);
+  assert.match(ownSession, /place==="office"\?\(locationsUnavailable\|\|!locationId\):\(ownWorkUnavailable\|\|!workId\)/);
+  assert.match(ownSession, /No active responsibility is currently assigned to you/);
+});
+
+test("staff off-site picker reads authorised live work independently of Overview widgets", () => {
+  assert.match(home, /setOffsiteWorkStatus\("loading"\)/);
+  assert.match(home, /supabase\.from\("work_items"\)\.select\("id,ref,title,status"\)/);
+  assert.match(home, /\.eq\("org_id",me\.org_id\)\.eq\("assignee_id",me\.id\)/);
+  assert.match(home, /offsiteWork\.map\(\(item\) =>/);
+  assert.match(home, /offsiteWorkStatus === "error"/);
+  assert.match(home, /offsiteWorkStatus === "ready" && offsiteWork\.length === 0/);
+  assert.match(home, /openWork\?\.\(\)/);
+  assert.match(home, /offsiteWork\.some\(\(item\) => item\.id === sessionWorkItem\)/);
 });

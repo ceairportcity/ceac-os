@@ -133,7 +133,7 @@ test("P3 uncertain Start Work and history reconciliation require an explicit rec
  const continued = screen.match(/async function continueOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
  const closed = screen.match(/async function closeOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
  assert.ok(begin && continued && closed);
- assert.match(begin, /if \(busy \|\| !ready \|\| !verified\) return/);
+ assert.match(begin, /if \(starting\.current \|\| busy \|\| !ready \|\| !verified\) return/);
  assert.match(begin, /setVerified\(false\); setEditor\(false\); setReady\(false\)/);
  assert.match(screen, /disabled=\{busy\|\|!ready\|\|!verified\|\|\(place/);
  assert.match(continued, /setVerified\(false\); setRecover\(false\)/);
@@ -170,7 +170,7 @@ test("P3 Start Work refuses unknown places and rejects other employees' or tenan
 test("P3 Staff session actions require authoritative exact-row verification before another Start or End",()=>{
  const home=read("src/screens/Home.jsx");
  const view=read("src/experience-v2/staff-today/StaffTodayV2.jsx");
- assert.match(home,/import \{ openSession, startWork, endWork, reconcileWorkSession \} from/);
+ assert.match(home,/import \{ openSession, startWork, endWork, reconcileWorkSession, WorkStartPreflightError \} from/);
  assert.match(home,/const sessionVerified = verifiedSessionScope === sessionScope/);
  assert.match(home,/const created = await startWork/);
  assert.match(home,/const current = await openSession\(me\.org_id,me\.id\)/);
