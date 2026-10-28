@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { openSession, startWork, endWork, reconcileWorkSession, WorkStartPreflightError } from "../lib/session";
 import { isOverdue } from "../lib/time";
 import { Sheet } from "../components/bits";
+import StartWorkDialog from "../components/StartWorkDialog";
 import { humanError } from "../lib/productLanguage";
 import StaffTodayV2 from "../experience-v2/staff-today/StaffTodayV2";
 import MinistryNumbers from "../components/MinistryNumbers";
@@ -492,47 +493,18 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
 
     {session?.place==="elsewhere"&&session.flags?.offsite_location_name&&<p className="screen-note">Working from: {session.flags.offsite_location_name}</p>}
     {!sessionVerified && <div role="alert" className="flag flag-amber">Work session status requires verification. <button type="button" disabled={busy} onClick={verifyCurrentSession}>Retry session verification</button></div>}
-    {ask && sessionVerified && <Sheet onClose={() => !busy && setAsk(false)}>
-      <form onSubmit={event=>{event.preventDefault();begin();}}>
-      <div className="h2">Where are you working?</div>
-      <p className="screen-note" style={{ marginBottom: 10 }}>Your current location is recorded when you start.</p>
-      <button type="button" className="opt" disabled={busy} onClick={() => { setPlace("office"); setSessionWorkItem(""); }}><span className={`rd ${place === "office" ? "on" : ""}`} /> At an authorised office or programme location</button>
-      <button type="button" className="opt" disabled={busy} onClick={() => setPlace("elsewhere")}><span className={`rd ${place === "elsewhere" ? "on" : ""}`} /> Somewhere else</button>
-      {place === "office" && <>
-        <label className="screen-note" htmlFor="ceac-attendance-office-location">Authorised duty location</label>
-        <select className="field" id="ceac-attendance-office-location" aria-label="Authorised duty location"
-          value={officeLocationId} disabled={busy || officeLocationStatus !== "ready"}
-          onChange={(event) => setOfficeLocationId(event.target.value)}>
-          <option value="">Choose your office or programme location</option>
-          {officeLocations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-        </select>
-        {officeLocationStatus === "error" && <p className="hint" role="alert">Approved locations could not be loaded.</p>}
-        {officeLocationStatus === "ready" && officeLocations.length === 0 && <p className="hint">No authorised duty location has been recorded. Ask Administration to configure the location.</p>}
-        <p className="hint">Your selected duty location is recorded with this work session. Verification still requires evidence; selecting it does not prove presence.</p>
-      </>}
-      {place === "elsewhere" && <>
-        <label className="screen-note" htmlFor="ceac-offsite-place-name">Where are you working from?</label>
-        <input className="field" id="ceac-offsite-place-name" name="offsite_location_name" required value={offsiteLocationName} maxLength={200} disabled={busy}
-          onChange={event=>{setOffsiteLocationName(event.target.value);setError(null);}} placeholder="For example, home or a client’s office" />
-        <label className="screen-note" htmlFor="ceac-offsite-active-work">Responsibility (optional)</label>
-        <select className="field" id="ceac-offsite-active-work" aria-label="Work being done off-site"
-          value={sessionWorkItem} disabled={busy || offsiteWorkStatus !== "ready"}
-          onChange={(event) => { setSessionWorkItem(event.target.value); setError(null); }}>
-          <option value="">No responsibility linked</option>
-          {offsiteWork.map((item) => <option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}
-        </select>
-        {offsiteWorkStatus === "loading" && <p className="hint" role="status">Checking your active responsibilities…</p>}
-        {offsiteWorkStatus === "error" && <p className="hint" role="alert">Responsibilities could not be loaded. You can still start without linking one.</p>}
-        {offsiteWorkStatus === "ready" && offsiteWork.length === 0 && <div className="hint" role="status">
-          No responsibility is required to start off-site.
-        </div>}
-        <div className="hint">Your current location and the place you enter will be recorded. Linking a responsibility is optional.</div>
-      </>}
-      <button type="button" disabled={busy} onClick={()=>{setError(null);setStartOptionsAttempt(value=>value+1);}}>Reload start options</button>
-      {error && <p role="alert" className="hint">{error}</p>}
-      <button type="submit" className="btn" style={{ marginTop: 16 }} disabled={busy || !sessionVerified || (place === "elsewhere" && (!offsiteLocationName.trim() || Boolean(sessionWorkItem && (offsiteWorkStatus !== "ready" || !offsiteWork.some((item) => item.id === sessionWorkItem))))) || (place === "office" && (officeLocationStatus !== "ready" || !officeLocationId))}>{busy ? "Starting..." : "Start work"}</button>
-      </form>
-    </Sheet>}
+    {ask && sessionVerified && <StartWorkDialog
+      place={place} onPlaceChange={value=>{setPlace(value);setError(null);if(value==="office")setSessionWorkItem("");}}
+      locationName={offsiteLocationName} onLocationNameChange={value=>{setOffsiteLocationName(value);setError(null);}}
+      locationId={officeLocationId} onLocationChange={value=>{setOfficeLocationId(value);setError(null);}}
+      locations={officeLocations} locationStatus={officeLocationStatus}
+      workId={sessionWorkItem} onWorkChange={value=>{setSessionWorkItem(value);setError(null);}}
+      workItems={offsiteWork} workStatus={offsiteWorkStatus}
+      busy={busy} error={error}
+      canStart={sessionVerified && !(place === "elsewhere" && (!offsiteLocationName.trim() || Boolean(sessionWorkItem && (offsiteWorkStatus !== "ready" || !offsiteWork.some((item) => item.id === sessionWorkItem))))) && !(place === "office" && (officeLocationStatus !== "ready" || !officeLocationId))}
+      onReload={()=>{setError(null);setStartOptionsAttempt(value=>value+1);}}
+      onStart={begin} onClose={()=>!busy&&setAsk(false)}
+    />}
     {recoveryOpen && sessionVerified && <Sheet onClose={() => !busy && setRecoveryOpen(false)}>
       <div className="h2">Close the earlier work session</div>
       <p className="screen-note">Enter when you actually stopped. The original start, this correction and who made it remain in the history.</p>

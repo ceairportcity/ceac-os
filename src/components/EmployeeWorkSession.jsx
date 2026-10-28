@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { openSession, startWork, endWork, reconcileWorkSession, WorkStartPreflightError } from "../lib/session";
 import { Sheet } from "./bits";
+import StartWorkDialog from "./StartWorkDialog";
 import "./EmployeeWorkSession.css";
 
 const ghanaDay = (value) => {
@@ -33,6 +34,7 @@ export default function EmployeeWorkSession({ me }) {
   const [ownWork, setOwnWork] = useState([]);
   const [locationsUnavailable, setLocationsUnavailable] = useState(false);
   const [ownWorkUnavailable, setOwnWorkUnavailable] = useState(false);
+  const [ownWorkLoading, setOwnWorkLoading] = useState(true);
   const [endedAt, setEndedAt] = useState("");
   const [correctionReason, setCorrectionReason] = useState("");
   const [ready, setReady] = useState(false);
@@ -78,7 +80,7 @@ export default function EmployeeWorkSession({ me }) {
     if (!editor) return;
     let alive = true;
     setReady(false); setLocations([]); setOwnWork([]);setLocationId("");setWorkId("");
-    setLocationsUnavailable(false); setOwnWorkUnavailable(false);
+    setLocationsUnavailable(false); setOwnWorkUnavailable(false); setOwnWorkLoading(true);
     // Optional responsibility loading cannot hold up location-only attendance.
     Promise.resolve(supabase.from("office_locations").select("id,name")
       .eq("org_id",me.org_id).order("name"))
@@ -88,8 +90,8 @@ export default function EmployeeWorkSession({ me }) {
       .eq("org_id",me.org_id).eq("assignee_id",me.id)
       .in("status",["not_started","in_progress","returned"])
       .order("created_at",{ascending:false}).limit(100))
-      .then(({data,error})=>{if(alive){setOwnWork(error?[]:(data||[]));setOwnWorkUnavailable(Boolean(error));}})
-      .catch(()=>{if(alive)setOwnWorkUnavailable(true);});
+      .then(({data,error})=>{if(alive){setOwnWork(error?[]:(data||[]));setOwnWorkUnavailable(Boolean(error));setOwnWorkLoading(false);}})
+      .catch(()=>{if(alive){setOwnWorkUnavailable(true);setOwnWorkLoading(false);}});
     return () => { alive = false; };
   }, [editor,me.org_id,me.id,optionsAttempt]);
 
@@ -211,42 +213,18 @@ export default function EmployeeWorkSession({ me }) {
         </button>}
     </div>
     {error&&<p className="s2-own-work-session-error" role="alert">{error}{!verified&&<button type="button" onClick={()=>setRecheck((v)=>v+1)} disabled={loading}>Retry session verification</button>}</p>}
-    {editor&&<Sheet onClose={()=>!busy&&setEditor(false)}>
-      <form className="s2-work-start-form" onSubmit={event=>{event.preventDefault();begin();}}>
-      <h2>Start your work session</h2>
-      <p>Choose your actual working location. Location evidence is checked when you begin. The system does not continuously track your position.</p>
-      <fieldset disabled={busy}><legend>Working location</legend>
-        <label><input type="radio" name="s2-own-place" checked={place==="office"} onChange={()=>{setPlace("office");setError("");}}/> Authorised office or programme venue</label>
-        <label><input type="radio" name="s2-own-place" checked={place==="elsewhere"} onChange={()=>{setPlace("elsewhere");setError("");}}/> Off-site work</label>
-      </fieldset>
-      {place==="office"?<label>Duty location
-        <select value={locationId} onChange={e=>setLocationId(e.target.value)} disabled={busy||!ready||locationsUnavailable}>
-          <option value="">Choose a verified CEAC location</option>
-          {locations.map(loc=><option key={loc.id} value={loc.id}>{loc.name}</option>)}
-        </select>
-        {ready&&locationsUnavailable&&<small role="alert">Duty locations could not be verified.</small>}
-      </label>:<>
-        <label>Where are you working from?
-          <input className="field" name="offsite_location_name" required value={offsiteLocationName} maxLength={200} disabled={busy}
-            onChange={e=>{setOffsiteLocationName(e.target.value);setError("");}} placeholder="For example, home or a client’s office" />
-        </label>
-        <label>Responsibility (optional)
-          <select className="field" value={workId} onChange={e=>{setWorkId(e.target.value);setError("");}} disabled={busy||ownWorkUnavailable}>
-            <option value="">No responsibility linked</option>
-            {ownWork.map(item=><option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}
-          </select>
-        </label>
-        {ownWorkUnavailable&&<small role="status">Responsibilities could not be loaded. You can still start without linking one.</small>}
-        {!ownWorkUnavailable&&ownWork.length===0&&<small role="status">No responsibility is required to start off-site.</small>}
-        <p>Your current location and the place you enter will be recorded when you start.</p>
-      </>}
-      <button type="button" disabled={busy} onClick={()=>{setError("");setOptionsAttempt(value=>value+1);}}>Reload start options</button>
-      {error&&<p role="alert">{error}</p>}
-      <button type="submit" className="btn" disabled={busy||!verified||(place==="office"?(!ready||locationsUnavailable||!locationId):(!offsiteLocationName.trim()||Boolean(workId&&(ownWorkUnavailable||!ownWork.some(item=>item.id===workId)))))}>
-        {busy?"Verifying location…":"Start work"}
-      </button>
-      </form>
-    </Sheet>}
+    {editor&&<StartWorkDialog
+      place={place} onPlaceChange={value=>{setPlace(value);setError("");}}
+      locationName={offsiteLocationName} onLocationNameChange={value=>{setOffsiteLocationName(value);setError("");}}
+      locationId={locationId} onLocationChange={value=>{setLocationId(value);setError("");}}
+      locations={locations} locationStatus={!ready?"loading":locationsUnavailable?"error":"ready"}
+      workId={workId} onWorkChange={value=>{setWorkId(value);setError("");}}
+      workItems={ownWork} workStatus={ownWorkLoading?"loading":ownWorkUnavailable?"error":"ready"}
+      busy={busy} error={error}
+      canStart={verified&&(place==="office"?(ready&&!locationsUnavailable&&Boolean(locationId)):(Boolean(offsiteLocationName.trim())&&!(workId&&(ownWorkUnavailable||!ownWork.some(item=>item.id===workId)))))}
+      onReload={()=>{setError("");setOptionsAttempt(value=>value+1);}}
+      onStart={begin} onClose={()=>!busy&&setEditor(false)}
+    />}
     {recover&&<Sheet onClose={()=>!busy&&setRecover(false)}>
       <h2>Review your earlier session</h2>
       <p>The original start and any corrections remain recorded. Do not invent an end time.</p>

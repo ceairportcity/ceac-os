@@ -84,3 +84,68 @@ For a later authorised release, apply the forward database trigger before the
 frontend, verify exact deployed SHA and use a real employee's own device/location
 without fabricating attendance. Rolling the frontend back retains the database
 recorded evidence and new requirements; plan the schema compatibility window.
+
+## Approved popup implementation — 28 October continuation
+
+The owner approved the refined popup (identity and exact instruction recorded in
+PRODUCT_OWNER_DECISIONS.md). Continued the existing PR159 branch from exact head
+`fd26884d443bbeb91ed3dd991f0bfb669edf8a1c`; no new implementation branch, reset,
+force-push or replacement of the independent Messages/Memos workspace.
+
+- Added one shared StartWorkDialog presentation for Staff and the existing
+  Manager/Administration/Executive EmployeeWorkSession. Header, paired native
+  location radios, conditional place/venue field, collapsed optional work link,
+  foreground-location note and Cancel/Start footer match the approved structure.
+- All colours come from current CEAC tokens and existing primary-button styles.
+  No global palette, unrelated page, geofence, session API or database guard was
+  changed by the popup implementation. A truthful independent loading state is
+  now shown inside the optional responsibility section of the shared form.
+- Sheet accepts opt-in naming/placement and busy-dismiss protection; existing
+  consumers retain their defaults. Keyboard focus includes summaries and excludes
+  hidden fields inside closed details. Cancel and Close never post attendance;
+  Escape/backdrop cannot hide an in-progress location capture.
+- Static layout styles are shared local React style objects; only responsive
+  placement overrides enter CSS. Actual emitted aggregate CSS is 631552 bytes,
+  within the unchanged 631808 limit. No budgets, dependencies or build policy
+  changed, and unrelated styles were not removed to make room.
+
+### Actual local verification and corrections
+
+Node 22.23.4; clean npm ci; sealed production build: PASS, exit 0.
+`npm run verify:source`: final 650/650 PASS, exit 0.
+`playwright test tests/start-work-recovery.spec.js tests/visual-fidelity-performance-closure.spec.js --workers=2`:
+48/48 PASS, exit 0: 46 Start Work cases and both actual production/performance
+checks. All remote requests/geolocation are intercepted synthetic evidence, not
+physical or production attendance. Four-role 320/390/1440 layouts, collapsed
+optional fields, native radio/keyboard controls, cancel/focus return, duplicate
+clicks, office/off-site validation, unavailable lists, location denial/retry and
+uncertain-write read-back are covered. Synthetic screenshots under test-artifacts
+were visually inspected against the approved proposal; no private employee
+screenshot is committed.
+
+The first browser attempt exposed an older desktop Sheet top-position rule
+moving the new form outside the viewport. Fixed through scoped placement
+specificity, with later role/width geometry checks passing. The first full-source
+run was 649/650 because an error-message source assertion still expected the
+pre-extraction markup. It now binds to the shared component's error and guarded
+submit instead; no guard was weakened. The first location of these 31 focused
+source checks ran on host Node24 and is historical only; the final build/source
+and browser acceptance used the installed Node22 runtime.
+
+The earlier PR159 full run 40746884432 was FAILED, not accepted: shard1
+123023112328 had 131 passed / 1 deferred MFA skip / 1 failed. The failure was the
+Phase2 foreground pre-close fixture inserting an off-site start without the new
+required place/GPS evidence (tests/attendance-phase2.spec.js:68). The fixture now
+supplies fresh synthetic location and a descriptive place while retaining its
+original older-start/pre-close/permission-denial assertions. The application
+validation was preserved. Seven other shards, SQL, CI, Migration Replay and
+Account Security passed at that old head; they remain historical evidence, not
+checks on this updated popup. Exact new-head full CI remains required.
+
+Logs: /tmp/start-popup-install.log, start-popup-all-source-corrected.log,
+start-popup-build-final.log, start-popup-final-browser.log. Initial failed or
+interrupted diagnostics remain separately named /tmp/start-popup-source.log,
+start-popup-all-source.log and start-popup-browser.log; no failed attempt was
+relabeled as a pass. Latest source and this ledger must be pushed together after
+rechecking the remote expected head. No production business record, migration,
+Auth setting or Vercel configuration was changed. Production release is pending.

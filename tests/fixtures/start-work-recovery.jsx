@@ -8,14 +8,16 @@ import '../../src/premium.css';
 import '../../src/premium-staff.css';
 import '../../src/premium-admin.css';
 import '../../src/premium-parity.css';
+import '../../src/experience-v2.css';
 import '../../src/experience-v2/components/components.css';
 import '../../src/experience-v2/staff-today/staff-today.css';
 function Fixture(){
- const staff=new URLSearchParams(location.search).get('role')==='staff';
- const me={id:'employee',org_id:'org',unit_id:'unit',full_name:'Synthetic colleague',role:staff?'staff':'manager',is_admin:!staff,is_exec:false,memberships:[],capabilities:[],capability_grants:[]};
+ const role=new URLSearchParams(location.search).get('role')||'staff';
+ const staff=role==='staff';
+ const me={id:'employee',org_id:'org',unit_id:'unit',full_name:'Synthetic colleague',role:staff?'staff':role==='manager'?'manager':'employee',is_admin:role==='employee',is_exec:role==='executive',memberships:[],capabilities:[],capability_grants:[]};
  const [session,setSession]=useState(null),[workOpened,setWorkOpened]=useState(false);
  const noop=()=>{};
- return <div className={staff?'app staff-app':'app office-app'}><main className="app-content">
+ return <div className={`app ${staff?'staff-app':role==='manager'?'manager-app':role==='executive'?'executive-app':'office-app'}`}><main className="app-content">
   {workOpened?<p role="status">Work destination opened</p>:staff?<Home me={me} session={session} setSession={setSession} openWork={()=>setWorkOpened(true)} openItem={noop} openMeeting={noop} openRoom={noop} openMe={noop} openAnnouncements={noop} openTeam={noop} openCalendar={noop}/>:<EmployeeWorkSession me={me}/>}
  </main></div>;
 }

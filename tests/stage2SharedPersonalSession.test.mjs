@@ -135,7 +135,10 @@ test("P3 uncertain Start Work and history reconciliation require an explicit rec
  assert.ok(begin && continued && closed);
  assert.match(begin, /if \(starting\.current \|\| busy \|\| !verified\) return/);
  assert.match(begin, /setVerified\(false\); setEditor\(false\); setReady\(false\)/);
- assert.match(screen, /disabled=\{busy\|\|!verified\|\|\(place/);
+ assert.match(screen, /canStart=\{verified&&\(place/);
+ const dialog=read("src/components/StartWorkDialog.jsx");
+ assert.match(dialog, /disabled=\{busy \|\| !canStart\}/);
+ assert.match(dialog, /if \(!busy && canStart\) onStart\(\)/);
  assert.match(continued, /setVerified\(false\); setRecover\(false\)/);
  assert.match(closed, /setVerified\(false\); setRecover\(false\)/);
  assert.match(screen, /Retry session verification/);

@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+import {mkdirSync} from 'node:fs';
 
 async function fixture(page,role,{officeFail=false,workFail=false,empty=false,uncertain=false,rejectVenue=false,workExpired=false}={}){
  const state={writes:[],reads:[],officeFail,workFail,persisted:null,readFailure:false};
@@ -7,6 +8,7 @@ async function fixture(page,role,{officeFail=false,workFail=false,empty=false,un
   Object.defineProperty(navigator,'geolocation',{configurable:true,value:{getCurrentPosition(ok,fail,options){
    window.positionAttempts.push(options.enableHighAccuracy);
    if(window.positionMode==='denied')return fail({code:1});
+   if(window.positionMode==='pending'){window.resumePosition=()=>ok({coords:{latitude:5.6037,longitude:-0.187,accuracy:20},timestamp:Date.now()});return;}
    if(options.enableHighAccuracy)return fail({code:2});
    ok({coords:{latitude:5.6037,longitude:-0.187,accuracy:850},timestamp:Date.now()});
   }}});
@@ -40,11 +42,28 @@ async function fixture(page,role,{officeFail=false,workFail=false,empty=false,un
  const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
  return {state,dialog};
 }
+for(const role of ['staff','employee','manager','executive'])for(const width of [320,390,1440]){
+ test(`${role} approved Start Work layout fits ${width}px with native location and optional-work controls`,async({page})=>{
+  await page.setViewportSize({width,height:840});const {state,dialog}=await fixture(page,role,{empty:true});
+  await offsite(page,dialog,role);
+  await expect(dialog.getByRole('heading',{name:'Start work',exact:true})).toBeVisible();
+  await expect(dialog.getByRole('combobox',{name:'Your responsibility',exact:true})).not.toBeVisible();
+  const box=await dialog.boundingBox();expect(box.x).toBeGreaterThanOrEqual(-1);expect(box.x+box.width).toBeLessThanOrEqual(width+1);
+  const choices=await dialog.locator('.cw-choice').all();
+  for(const choice of choices){const b=await choice.boundingBox();expect(b.x).toBeGreaterThanOrEqual(box.x);expect(b.x+b.width).toBeLessThanOrEqual(box.x+box.width);}
+  if(width>600)expect(Math.abs(box.x+box.width/2-width/2)).toBeLessThanOrEqual(1);
+  await expect(dialog.getByRole('button',{name:'Start work',exact:true})).toBeInViewport();
+  expect(await dialog.locator('input[name="offsite_location_name"]').evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(16);
+  expect(await dialog.evaluate(e=>e.scrollWidth-e.clientWidth)).toBeLessThanOrEqual(1);
+  await dialog.getByRole('heading').click();mkdirSync('test-artifacts',{recursive:true});
+  await dialog.screenshot({path:`test-artifacts/start-work-${role}-${width}.png`});
+  expect(state.writes).toHaveLength(0);
+ });
+}
 async function office(page,dialog,role){await dialog.getByRole('combobox').selectOption('venue');return dialog.getByRole('button',{name:'Start work',exact:true});}
 async function offsite(page,dialog,role){
- if(role==='staff')await dialog.getByRole('button',{name:'Somewhere else',exact:true}).click();
- else await dialog.getByRole('radio',{name:'Off-site work',exact:true}).check();
- await dialog.getByRole('textbox',{name:'Where are you working from?'}).fill('Synthetic remote office');
+ await dialog.getByRole('radio',{name:'Off-site',exact:true}).check();
+ await dialog.getByRole('textbox',{name:'Place name',exact:true}).fill('Synthetic remote office');
 }
 for(const role of ['staff','employee'])for(const width of [390,1440]){
  test(`${role} Start Work falls back without hiding accuracy at ${width}px`,async({page})=>{
@@ -65,6 +84,33 @@ for(const role of ['staff','employee'])for(const width of [390,1440]){
  });
 }
 for(const role of ['staff','employee']){
+ test(`${role} popup cancellation and keyboard navigation never record attendance`,async({page})=>{
+  const {state,dialog}=await fixture(page,role);await offsite(page,dialog,role);
+  const summary=dialog.locator('summary');
+  await expect(dialog.getByRole('combobox',{name:'Your responsibility',exact:true})).not.toBeVisible();
+  await summary.focus();await page.keyboard.press('Enter');
+  await expect(dialog.getByRole('combobox',{name:'Your responsibility',exact:true})).toBeVisible();
+  await page.keyboard.press('Enter');
+  const cancel=dialog.getByRole('button',{name:'Cancel',exact:true});await cancel.focus();await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('button',{name:'Start work',exact:true})).toBeFocused();
+  await page.keyboard.press('Tab');await expect(dialog.getByRole('button',{name:'Close dialog',exact:true})).toBeFocused();
+  await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'Start work',exact:true})).toBeFocused();
+  await cancel.click();await expect(dialog).toHaveCount(0);expect(state.writes).toHaveLength(0);
+  await expect(page.getByRole('button',{name:'Start work',exact:true})).toBeFocused();
+ });
+ test(`${role} Start Work stays visible and prevents dismissal during location capture`,async({page})=>{
+  const {state,dialog}=await fixture(page,role);await office(page,dialog,role);
+  await page.evaluate(()=>{window.positionMode='pending';});
+  await dialog.getByRole('button',{name:'Start work',exact:true}).click();
+  await expect(dialog.getByRole('button',{name:'Cancel',exact:true})).toBeDisabled();
+  await expect(dialog.getByRole('button',{name:'Close dialog',exact:true})).toBeDisabled();
+  await page.keyboard.press('Escape');await expect(dialog).toBeVisible();
+  await page.mouse.click(2,2);await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('radio',{name:'Off-site',exact:true})).toBeDisabled();
+  expect(state.writes).toHaveLength(0);
+  await page.evaluate(()=>window.resumePosition());
+  await expect(page.getByRole('button',{name:'End work',exact:true})).toBeVisible();expect(state.writes).toHaveLength(1);
+ });
  test(`${role} repeated Start clicks are a single write`,async({page})=>{
   const {state,dialog}=await fixture(page,role);
   const start=await office(page,dialog,role);
@@ -74,7 +120,7 @@ for(const role of ['staff','employee']){
  });
  test(`${role} off-site start is independent of a failed office list`,async({page})=>{
   const {state,dialog}=await fixture(page,role,{officeFail:true});await offsite(page,dialog,role);
-  await dialog.getByRole('combobox').selectOption('responsibility');await dialog.getByRole('button',{name:'Start work',exact:true}).click();
+  await dialog.locator('summary').click();await dialog.getByRole('combobox',{name:'Your responsibility',exact:true}).selectOption('responsibility');await dialog.getByRole('button',{name:'Start work',exact:true}).click();
   await expect(page.getByRole('button',{name:'End work',exact:true})).toBeVisible();
   expect(state.writes[0].body).toMatchObject({place:'elsewhere',work_item_id:'responsibility',office_location_id:null});
   expect(state.reads.some(row=>row.name==='work_items'&&row.query.includes('org_id=eq.org')&&row.query.includes('assignee_id=eq.employee'))).toBe(true);
@@ -90,6 +136,7 @@ for(const role of ['staff','employee']){
   await page.setViewportSize({width,height:1000});
   const {state,dialog}=await fixture(page,role,{empty:true});await offsite(page,dialog,role);
   await page.screenshot({path:`/tmp/offsite-${role}-${width}.png`,fullPage:true});
+  await dialog.locator('summary').click();
   await expect(dialog.getByRole('status')).toContainText('No responsibility is required');
   await dialog.getByRole('button',{name:'Start work',exact:true}).click();
   await expect(page.getByRole('button',{name:'End work',exact:true})).toBeVisible();
@@ -108,7 +155,7 @@ for(const role of ['staff','employee']){
   await dialog.getByRole('button',{name:'Start work',exact:true}).click();
   await expect(dialog.getByRole('alert').filter({hasText:'permission was denied'})).toBeVisible();
   expect(state.writes).toHaveLength(0);
-  await expect(dialog.getByRole('textbox',{name:'Where are you working from?'})).toHaveValue('Synthetic remote office');
+  await expect(dialog.getByRole('textbox',{name:'Place name',exact:true})).toHaveValue('Synthetic remote office');
   await page.evaluate(()=>{window.positionMode='fallback';});
   await dialog.getByRole('button',{name:'Start work',exact:true}).click();
   await expect(page.getByRole('button',{name:'End work',exact:true})).toBeVisible();
@@ -116,16 +163,15 @@ for(const role of ['staff','employee']){
  });
  test(`${role} blank off-site place cannot start and switching modes preserves the draft`,async({page})=>{
   const {state,dialog}=await fixture(page,role,{empty:true});await offsite(page,dialog,role);
-  const name=dialog.getByRole('textbox',{name:'Where are you working from?'});
+  const name=dialog.getByRole('textbox',{name:'Place name',exact:true});
   await name.fill('   ');await expect(dialog.getByRole('button',{name:'Start work',exact:true})).toBeDisabled();
   await name.fill('Synthetic remote office');
-  if(role==='staff')await dialog.getByRole('button',{name:'At an authorised office or programme location',exact:true}).click();
-  else await dialog.getByRole('radio',{name:'Authorised office or programme venue',exact:true}).check();
+  await dialog.getByRole('radio',{name:'CEAC location',exact:true}).check();
   await offsite(page,dialog,role);await expect(name).toHaveValue('Synthetic remote office');
   expect(state.writes).toHaveLength(0);
  });
  test(`${role} expired responsibility is a pre-insert failure and keeps retry available`,async({page})=>{
-  const {state,dialog}=await fixture(page,role,{workExpired:true});await offsite(page,dialog,role);await dialog.getByRole('combobox').selectOption('responsibility');
+  const {state,dialog}=await fixture(page,role,{workExpired:true});await offsite(page,dialog,role);await dialog.locator('summary').click();await dialog.getByRole('combobox',{name:'Your responsibility',exact:true}).selectOption('responsibility');
   await dialog.getByRole('button',{name:'Start work',exact:true}).click();await expect(dialog.getByRole('alert').filter({hasText:'no longer an authorised'})).toBeVisible();
   await expect(dialog.getByRole('button',{name:'Reload start options',exact:true})).toBeEnabled();expect(state.writes).toHaveLength(0);
  });

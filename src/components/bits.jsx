@@ -96,14 +96,15 @@ export function statusPill(status) {
   if (status === "self_certified") return <Pill tone="green">Self-certified</Pill>;
   return <Pill tone="grey">Not started</Pill>;
 }
-export function Sheet({ children, onClose }) {
+export function Sheet({ children, onClose, className = "", ariaLabel, dismissDisabled = false }) {
   const dialogRef = useRef(null);
   const onCloseRef = useRef(onClose);
+  const dismissDisabledRef = useRef(dismissDisabled);
   const [open, setOpen] = useState(true);
   const reduceMotion = useReducedMotion();
-  const requestClose = useCallback(() => setOpen(false), []);
+  const requestClose = useCallback(() => { if (!dismissDisabledRef.current) setOpen(false); }, []);
 
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => { onCloseRef.current = onClose; dismissDisabledRef.current = dismissDisabled; }, [onClose, dismissDisabled]);
 
   useEffect(() => {
     const previousFocus = document.activeElement;
@@ -111,7 +112,8 @@ export function Sheet({ children, onClose }) {
     function onKeyDown(event) {
       if (event.key === "Escape") { requestClose(); return; }
       if (event.key !== "Tab" || !dialogRef.current) return;
-      const focusable = [...dialogRef.current.querySelectorAll("button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href], [tabindex]:not([tabindex='-1'])")];
+      const focusable = [...dialogRef.current.querySelectorAll("button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), summary, a[href], [tabindex]:not([tabindex='-1'])")]
+        .filter((element) => element.getClientRects().length > 0);
       if (!focusable.length) { event.preventDefault(); return; }
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -143,8 +145,9 @@ export function Sheet({ children, onClose }) {
         <motion.div
           key="sheet-panel"
           ref={dialogRef}
-          className="sheet"
+          className={`sheet ${className}`.trim()}
           role="dialog"
+          aria-label={ariaLabel}
           aria-modal="true"
           tabIndex={-1}
           initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
@@ -152,7 +155,7 @@ export function Sheet({ children, onClose }) {
           exit={{ opacity: 0 }}
           transition={panelTransition}
         >
-          <button className="sheet-close" aria-label="Close dialog" onClick={requestClose}>×</button>
+          <button type="button" className="sheet-close" aria-label="Close dialog" disabled={dismissDisabled} onClick={requestClose}>×</button>
           {children}
         </motion.div>,
       ] : null}

@@ -1,0 +1,4 @@
+/* Scoped placement overrides retain the existing Sheet and role-colour system. */
+.app .sheet.ceac-start-work-sheet{width:min(480px,100%);max-width:480px;padding:0!important;border-radius:16px!important;top:50%;bottom:auto;left:50%;right:auto;transform:translate(-50%,-50%)!important;max-height:calc(100dvh - 32px)}
+@media(max-width:600px){.app .sheet.ceac-start-work-sheet{width:100%;max-width:none;left:0;right:0;bottom:0;top:auto;transform:none!important;border-radius:16px 16px 0 0!important}}
+.ceac-start-work-sheet summary::-webkit-details-marker{display:none}
