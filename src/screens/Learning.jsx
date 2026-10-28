@@ -1,4 +1,5 @@
 import LearningDraftEditor from "../components/LearningDraftEditor";
+import { Table } from "../components/primitives";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
@@ -555,6 +556,19 @@ function LearningWorkspace({ me }) {
           <CourseDetail course={selectedCourse} preview={learningAdmin && builderView === "preview"} />
         </div>
       </div>
+      {me.is_admin && learningAdmin && !catalogueOpen && !error && <section className="card" aria-label="Course assignment follow-up">
+        <h2 className="h2">Assignment follow-up</h2>
+        <Table rows={courses.filter(course=>assignments.some(row=>row.course_id===course.id && row.state!=="withdrawn"))}
+          empty="No current course assignments recorded." columns={[
+            {key:"title",label:"Course"},
+            {key:"assigned",label:"Assigned",render:course=>assignments.filter(row=>row.course_id===course.id && row.state!=="withdrawn").length},
+            {key:"completed",label:"Completed",render:course=>assignments.filter(row=>row.course_id===course.id && row.state==="completed").length},
+            {key:"open",label:"Learners",render:course=><button className="btn btn-ghost btn-sm" aria-label={`View learners for ${course.title}`} onClick={()=>{
+              setSelectedAssignmentId(assignments.find(row=>row.course_id===course.id && row.state!=="withdrawn")?.id||"");setMode("progress");
+            }}>View learners</button>}
+          ]}/>
+        <p className="screen-note">Current assignments include completed learning; withdrawn assignments are excluded. Completion comes from recorded assignment state.</p>
+      </section>}
     </>}
 
     {mode === "assignments" && learningAdmin && <>

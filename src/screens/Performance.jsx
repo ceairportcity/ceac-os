@@ -485,19 +485,6 @@ export default function Performance({ me }) {
       </div>
     </section>}
 
-    {hrReleaseAdmin && <HRProjectContributionQueue me={me} cases={cases} cycles={cycles} onOpenReview={reviewId => {
-      const review = cases.find(row => row.id === reviewId);
-      if (!review || !cycles.some(cycle => cycle.id === review.cycle_id)) return;
-      selectedCaseRef.current = review.id;
-      selectedCycleRef.current = review.cycle_id;
-      setSelectedCycleId(review.cycle_id);
-      setSelectedCaseId(review.id);
-      requestAnimationFrame(() => {
-        reviewPanelRef.current?.focus();
-        reviewPanelRef.current?.scrollIntoView({ block: "start" });
-      });
-    }} />}
-
     {cycles.length > 0 && <div className="performance-cycle-strip" aria-label="Review periods">
       {cycles.map((cycle) => <button key={cycle.id} className={selectedCycleId === cycle.id ? "on" : ""} onClick={() => {
         selectedCycleRef.current = cycle.id;
@@ -696,6 +683,19 @@ export default function Performance({ me }) {
         </>}
       </section>
     </div>}
+
+    {hrReleaseAdmin && <HRProjectContributionQueue me={me} cases={cases} cycles={cycles} onOpenReview={reviewId => {
+      const review = cases.find(row => row.id === reviewId);
+      if (!review || !cycles.some(cycle => cycle.id === review.cycle_id)) return;
+      selectedCaseRef.current = review.id;
+      selectedCycleRef.current = review.cycle_id;
+      setSelectedCycleId(review.cycle_id);
+      setSelectedCaseId(review.id);
+      requestAnimationFrame(() => {
+        reviewPanelRef.current?.focus();
+        reviewPanelRef.current?.scrollIntoView({ block: "start" });
+      });
+    }} />}
 
     {cycleFlow && <ReviewForm admin={me.is_admin} error={error} resetError={setError} open title="Open review period" onClose={() => { if (!busy) { setCycleFlow(false); setCycleStep(1); } }}>
       <div className="eyebrow">Open review period · Step {cycleStep} of 3</div>

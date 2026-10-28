@@ -191,3 +191,27 @@ for(const width of [390,1440])test(`retained mockup compositions render with rea
   await page.screenshot({path:`test-artifacts/retained-${screen}-${width}.png`,fullPage:true,animations:'disabled'});
  }
 });
+
+for(const width of [390,1440])test(`catalogue follow-up counts current records and opens real learner progress at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await api(page);
+ await page.route('**/rest/v1/learning_assignments?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
+  {id:'active',course_id:'course',profile_id:'person',state:'assigned'},
+  {id:'complete',course_id:'course',profile_id:'person-b',state:'completed'},
+  {id:'withdrawn',course_id:'course',profile_id:'person-c',state:'withdrawn'}
+ ])}));
+ await page.route('**/rest/v1/learning_courses?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{id:'course',title:'Synthetic orientation',summary:'An example learner course',state:'published'}])}));
+ await page.route('**/rest/v1/learning_module_progress?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{assignment_id:'complete',module_id:'module',state:'completed'}])}));
+ await page.goto('/tests/fixtures/owner-corrections.html?screen=learning');
+ const followup=page.getByRole('region',{name:'Course assignment follow-up',exact:true});
+ const row=followup.getByRole('row').filter({hasText:'Synthetic orientation'});
+ await expect(row.getByRole('cell').nth(1)).toHaveText('2');
+ await expect(row.getByRole('cell').nth(2)).toHaveText('1');
+ await row.getByRole('button',{name:'View learners for Synthetic orientation',exact:true}).click();
+ await expect(page.getByText('Organisation learning progress',{exact:true})).toBeVisible();
+ await expect(page.locator('.learning-course-detail')).toContainText('Synthetic orientation');
+ await page.goto('/tests/fixtures/owner-corrections.html?screen=performance');
+ const review=page.getByRole('region',{name:'Selected formal review',exact:true});
+ const queue=page.getByRole('region',{name:'Restricted project contribution reviews',exact:true});
+ await expect(review).toContainText('Synthetic subject');await expect(queue).toBeVisible();
+ expect((await review.boundingBox()).y).toBeLessThan((await queue.boundingBox()).y);
+});
