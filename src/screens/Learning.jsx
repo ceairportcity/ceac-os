@@ -1,4 +1,5 @@
 import LearningDraftEditor from "../components/LearningDraftEditor";
+import LearningCourseBuilder from "../components/LearningCourseBuilder";
 import { Table } from "../components/primitives";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -116,8 +117,8 @@ function LearningWorkspace({ me }) {
   useEffect(() => { load(); }, [me.id]);
   useEffect(() => { setBuilderView("outline"); }, [me.id, me.org_id, selectedCourseId]);
 
-  async function load() {
-    setLoading(true);
+  async function load({quiet=false}={}) {
+    if(!quiet)setLoading(true);
     setError(null);
     try {
       const requests = [
@@ -222,7 +223,7 @@ function LearningWorkspace({ me }) {
     try {
       await operation();
       setNotice(success);
-      await load();
+      await load({quiet:me.is_admin && catalogueOpen && mode === "catalogue"});
       return true;
     } catch (err) {
       setError(humanError(err, "That learning change could not be recorded."));
@@ -479,18 +480,19 @@ function LearningWorkspace({ me }) {
   if (loading) return <div className="body"><LoadingState label="Loading learning…" /></div>;
 
   const personalLearning = !learningAdmin && !me.is_admin;
+  const inBuilder=me.is_admin && learningAdmin && mode === "catalogue" && catalogueOpen;
   return <div className={`body learning-page ${personalLearning ? "ev2-personal-page ev2-personal-learning" : ""}`.trim()}>
     {personalLearning ? <PersonalPageHeader
       eyebrow="My Hub"
       title="Learning"
       description="Your assigned learning, catalogue access and factual completion history. Learning activity is not converted into a skill, performance or potential score."
       statusLabel="Personal learning"
-    /> : me.is_admin ? <WorkPageHeader
+    /> : me.is_admin ? (!inBuilder && <WorkPageHeader
       eyebrow="People development"
       title="Learning"
       description="Build useful learning programmes. Help people find their next step."
       actionLabel={learningAdmin ? "Create course" : undefined} onAction={()=>setCourseFlow(true)}
-    /> : <div style={{ paddingTop:26 }}>
+    />) : <div style={{ paddingTop:26 }}>
       <div className="eyebrow">Learning</div>
       <h1 className="h1">Learning</h1>
       <p className="screen-note">Structured courses, resources and factual completion. CEAC OS does not turn learning activity into a skill, performance or potential score.</p>
@@ -499,7 +501,7 @@ function LearningWorkspace({ me }) {
     {error && <ProductNotice tone="error" title="Learning">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
-    <SegmentedControl ariaLabel="Learning views" value={mode} onChange={setMode} items={modes.map(([value,label])=>({value,label}))} />
+    {!inBuilder && <SegmentedControl ariaLabel="Learning views" value={mode} onChange={setMode} items={modes.map(([value,label])=>({value,label}))} />}
 
     {mode === "mine" && <>
       <div className="sec"><span>My assigned learning</span><span>{mine.length}</span></div>
@@ -525,10 +527,10 @@ function LearningWorkspace({ me }) {
     </>}
 
     {mode === "catalogue" && <>
-      <div className="learning-section-title">
+      {!inBuilder && <div className="learning-section-title">
         <div><span className="eyebrow">Catalogue</span><h2>Courses</h2></div>
         {learningAdmin && !me.is_admin && <button className="btn btn-sm" onClick={() => setCourseFlow(true)}>Create course</button>}
-      </div>
+      </div>}
       {!catalogueOpen && <div className="learning-section-title" role="group" aria-label="Find courses">
         <input className="field" type="search" aria-label="Search courses" placeholder="Search courses" value={courseSearch} onChange={event=>setCourseSearch(event.target.value)} />
         <select className="field" aria-label="Course status" value={courseState} onChange={event=>setCourseState(event.target.value)}><option value="all">All courses ({courses.length})</option>{["draft","published","archived"].map(state=><option value={state} key={state}>{sentence(state)} ({courses.filter(course=>course.state===state).length})</option>)}</select>
@@ -547,21 +549,21 @@ function LearningWorkspace({ me }) {
         </div>
         <div hidden={me.is_admin&&!catalogueOpen}>
           {me.is_admin&&<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setCatalogueOpen(false)}>Back to course catalogue</button>}
-          {learningAdmin && selectedCourse && <section aria-label="Course builder">
-            <div className="learning-section-title"><div><span className="eyebrow">Course builder</span><h2>{selectedCourse.state === "draft" ? "Prepare your course" : "Course and learner preview"}</h2></div></div>
-            <div className="learning-mode-tabs" role="group" aria-label="Course builder views">
-              <button type="button" className={builderView === "outline" ? "on" : ""} aria-pressed={builderView === "outline"} onClick={() => setBuilderView("outline")}>Course outline</button>
-              <button type="button" className={builderView === "preview" ? "on" : ""} aria-pressed={builderView === "preview"} onClick={() => setBuilderView("preview")}>Learner preview</button>
-            </div>
-            {builderView === "outline" && <div className="learning-assignment-context" aria-label="Course preparation">
-              <span><strong>Details</strong> · {selectedCourse.title}</span>
-              <span><strong>Modules</strong> · {courseModules(selectedCourse.id).length} prepared</span>
-              <span><strong>Resources</strong> · {courseModules(selectedCourse.id).reduce((count, module) => count + moduleResources(module.id).length, 0)} added</span>
-              <span><strong>Audience</strong> · {selectedCourse.state === "published" ? "Use an assignment rule" : "Choose after publishing"}</span>
-            </div>}
-          </section>}
-          {builderView === "preview" && learningAdmin && <p className="screen-note">Learner preview · Review the course content before publishing.</p>}
-          <CourseDetail course={selectedCourse} preview={learningAdmin && builderView === "preview"} />
+          {me.is_admin && learningAdmin && selectedCourse ? <LearningCourseBuilder
+            key={selectedCourse.id} me={me} course={selectedCourse} modules={courseModules(selectedCourse.id)}
+            resources={resources.filter(resource=>courseModules(selectedCourse.id).some(module=>module.id===resource.module_id))}
+            rules={rules} profiles={profiles} units={units} busy={busy}
+            preview={builderView === "preview"} onPreview={value=>setBuilderView(value?"preview":"outline")}
+            onSaved={async()=>{await load({quiet:true});setNotice("Draft content updated.");}}
+            onAddModule={()=>{setModuleCourseId(selectedCourse.id);setModuleFlow(true);}}
+            onAddResource={moduleId=>{setResourceModuleId(moduleId);setResourceFlow(true);}}
+            onEditResource={resource=>setDraftEdit({kind:"resource",row:resource})}
+            onAssign={()=>openRule(selectedCourse.id)}
+            onPublish={()=>changeCourseState(selectedCourse,"published")}
+            onArchive={()=>changeCourseState(selectedCourse,"archived")}
+          ><CourseDetail course={selectedCourse} preview /></LearningCourseBuilder>
+            : <CourseDetail course={selectedCourse} />}
+
         </div>
       </div>
       {me.is_admin && learningAdmin && !catalogueOpen && !error && <section className="card" aria-label="Course assignment follow-up">
@@ -645,7 +647,7 @@ function LearningWorkspace({ me }) {
       </div>
     </>}
 
-    {draftEdit && me.is_admin && learningAdmin && <LearningDraftEditor key={`${me.org_id}:${me.id}:${draftEdit.kind}:${draftEdit.row.id}`} me={me} edit={draftEdit} onClose={()=>setDraftEdit(null)} onSaved={async()=>{setDraftEdit(null);await load();setNotice("Draft content updated.");}}/>}
+    {draftEdit && me.is_admin && learningAdmin && <LearningDraftEditor key={`${me.org_id}:${me.id}:${draftEdit.kind}:${draftEdit.row.id}`} me={me} edit={draftEdit} onClose={()=>setDraftEdit(null)} onSaved={async()=>{setDraftEdit(null);await load({quiet:true});setNotice("Draft content updated.");}}/>}
 
     {courseFlow && <LearningForm admin={me.is_admin} error={error} resetError={setError} open title="Create a draft course" onClose={() => !busy && setCourseFlow(false)}>
       <div className="eyebrow">New learning course</div>

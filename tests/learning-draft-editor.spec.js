@@ -21,14 +21,14 @@ async function fixture(page,{deny=false,published=false,full=false}={}){
 for(const width of [390,1440]){
  test(`draft course, module and resource can be edited with recorded identities at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});const writes=await fixture(page,{full:true});
-  await page.getByRole('button',{name:'Edit course details',exact:true}).click();
-  await page.getByLabel('Draft content title',{exact:true}).fill('Updated course');
-  await page.getByRole('button',{name:'Save changes',exact:true}).click();
+  await page.getByRole('button',{name:'1 · Course details',exact:true}).click();
+  await page.getByRole('region',{name:'Course details',exact:true}).getByLabel('Draft content title',{exact:true}).fill('Updated course');
+  await page.getByRole('button',{name:'Save course details',exact:true}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'Updated course',exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'Edit module Synthetic module',exact:true}).click();
-  await page.getByLabel('Draft content title',{exact:true}).fill('Updated module');
-  await page.getByRole('button',{name:'Save changes',exact:true}).click();
+  await page.getByRole('button',{name:'2 · Modules & resources',exact:true}).click();
+  await page.getByRole('region',{name:'Selected module editor',exact:true}).getByLabel('Draft content title',{exact:true}).fill('Updated module');
+  await page.getByRole('button',{name:'Save module',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Updated module',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Edit resource Synthetic resource',exact:true}).click();
   await page.getByLabel('Draft resource text',{exact:true}).fill('Updated learner text');
@@ -59,10 +59,11 @@ for(const width of [390,1440]){
 
 test('account transition closes an old draft editor before another account works',async({page})=>{
  await fixture(page);
- await page.getByRole('button',{name:'Edit course details',exact:true}).click();
- await page.getByLabel('Draft content title',{exact:true}).fill('Private unsaved course draft');
+ await page.getByRole('button',{name:'1 · Course details',exact:true}).click();
+ await page.getByRole('region',{name:'Course details',exact:true}).getByLabel('Draft content title',{exact:true}).fill('Private unsaved course draft');
  await page.getByText('Switch fixture actor',{exact:true}).evaluate(button=>button.click());
  await expect(page.getByRole('dialog')).toHaveCount(0);
  await page.getByRole('button',{name:/Synthetic course.*modules/}).click();
- await expect(page.getByRole('button',{name:'Edit course details',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'1 · Course details',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Course details',exact:true}).getByLabel('Draft content title',{exact:true})).not.toHaveValue('Private unsaved course draft');
 });
