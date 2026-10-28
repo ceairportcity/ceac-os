@@ -2231,23 +2231,6 @@ button.office-config-card:active{background:#EEF5F4}
 .record-period-control>button{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink-soft)}
 .record-period-selects{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:7px}
 .record-period-selects select{min-width:0;height:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:12px}
-.calendar-window-switch{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
-.calendar-window-switch button{padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink-soft);font-size:10.5px}
-.calendar-window-switch button.on{background:var(--ink);border-color:var(--ink);color:#fff}
-.admin-calendar-timeline{display:grid;gap:18px}
-.admin-calendar-day{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px}
-.admin-calendar-day>time{padding-top:10px;font-size:10.5px;font-weight:650;color:var(--ink-soft)}
-.admin-calendar-day>div{display:grid;gap:7px}
-.admin-calendar-event{display:grid;gap:3px;width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;text-align:left}
-.admin-calendar-event:hover{border-color:#C9D7D9}
-.admin-calendar-event strong{font-size:12.5px}
-.admin-calendar-event small{font-size:10px;color:var(--ink-soft)}
-@media(max-width:700px){
-  .admin-calendar-day{grid-template-columns:1fr;gap:6px}
-  .admin-calendar-day>time{padding-top:0}
-}
-
-
 /* Stage 7 Performance & Development */
 .performance-page{min-width:0}
 .performance-admin-bar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:18px;padding:14px 15px;border:1px solid var(--line);border-radius:12px;background:var(--card)}

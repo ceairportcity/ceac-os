@@ -13,7 +13,7 @@ async function openAdminWorkforce(browser, viewport) {
   await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
   await page.goto("/?tab=attendance");
   await expect(page.locator(".ev2-workforce-admin")).toBeVisible({ timeout: 15000 });
-  await expect(page.getByRole("heading", { name: "Workforce", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Time & Leave", exact: true })).toBeVisible();
   return { context, page };
 }
 
@@ -55,8 +55,8 @@ for (const viewport of [
   test(`Stage 10 Family D4 Administration Workforce composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openAdminWorkforce(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("tab", { name: "Today", exact: true })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Leave", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Overview", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Leave requests", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Corrections", exact: true })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Schedules & policy", exact: true })).toBeVisible();
 
@@ -91,7 +91,7 @@ for (const viewport of [
     });
     expect(smallest).toBeGreaterThanOrEqual(12);
 
-    await page.getByRole("tab", { name: "Today", exact: true }).click();
+    await page.getByRole("tab", { name: "Overview", exact: true }).click();
     const rootBox = await page.locator(".ev2-workforce-admin").boundingBox();
     const stateBoxes = await page.locator(".ev2-workforce-admin .ev2wf-row-state:visible").evaluateAll((nodes) =>
       nodes.map((node) => {
@@ -110,7 +110,7 @@ for (const viewport of [
     });
 
     if (viewport.name === "phone-390" || viewport.name === "laptop-1366") {
-      await page.getByRole("tab", { name: "Leave", exact: true }).click();
+      await page.getByRole("tab", { name: "Leave requests", exact: true }).click();
       await page.screenshot({
         path: `test-artifacts/vf4c-admin-workforce-leave-${viewport.name}.png`,
         fullPage: true,

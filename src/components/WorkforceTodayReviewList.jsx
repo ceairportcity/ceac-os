@@ -33,9 +33,9 @@ function localTime(value) {
  * Workforce linked-profile facts. Missing source reads FAIL CLOSED.
  * No second employee store, session engine or attendance finding. */
 export default function WorkforceTodayReviewList({
- me,date,rows=[],schedules=[],dayTypes=[],sourceUnavailable=false,onSchedule,onSessions,
+ me,date,rows=[],schedules=[],dayTypes=[],sourceUnavailable=false,onSchedule,onSessions,overview=false,renderPlanner,requestsToReview=null,approvedToday=null,
 }){
- const [text,setText]=useState(""),[view,setView]=useState("review");
+ const [text,setText]=useState(""),[view,setView]=useState(overview?"all":"review");
  const [reload,setReload]=useState(0);
  const [directory,setDirectory]=useState({scope:"",loading:true,rows:[],error:""});
  const scope=`${me.org_id}:${me.id}`;
@@ -74,8 +74,9 @@ export default function WorkforceTodayReviewList({
    <p className="screen-note">{directory.error||"A required roster, schedule, day-type or session source is unavailable. No employee is marked absent, unconfigured or started on incomplete evidence."}</p>
    <button className="btn btn-ghost btn-sm" type="button" onClick={()=>setReload(v=>v+1)}>Retry roster verification</button>
   </div>;
+ const scheduleAttention=normalized.filter(row=>row.active!==false&&["schedule_unconfigured","schedule_source_unavailable"].includes(row.category)).length;
  const attention=normalized.filter(row=>workforceTodayReviewNeedsReview(row.category)).length;
- const started=normalized.filter(row=>row.category==="recorded_start").length;
+ const started=normalized.filter(row=>row.started&&!row.sessionEvidenceUnavailable).length;
  const linked=normalized.filter(row=>Boolean(row.profileId)&&Boolean(row.employeeId)).length;
  const unlinked=normalized.filter(row=>!row.profileId&&Boolean(row.employeeId)).length;
  const matching=normalized.filter(row=>{
@@ -86,9 +87,16 @@ export default function WorkforceTodayReviewList({
   return true;
  });
  return <div className="ev2wf-today-review" style={{display:"grid",gap:12,minWidth:0}} aria-label="Workforce factual evidence review queue">
+  {overview&&<div className="timeleave-summary" aria-label="Time and leave summary">
+   <div><span>Requests to review</span><strong>{requestsToReview??"Unavailable"}</strong><small>Includes requests awaiting a Manager</small></div>
+   <div><span>Approved leave today</span><strong>{approvedToday??"Unavailable"}</strong><small>Recorded approved requests</small></div>
+   <div><span>Schedules need attention</span><strong>{scheduleAttention}</strong><small>Not an absence finding</small></div>
+  </div>}
+  {overview&&renderPlanner?.({scheduleAttention})}
+  {overview&&<h2>Recorded work sessions · today</h2>}
   <div className="ev2wf-today-review-summary" style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",padding:"10px 12px",border:"1px solid var(--ev2-line,var(--line))",borderRadius:8}}>
    <strong>{attention} contexts to review</strong>
-   <span>{started} verified start{started===1?"":"s"} · {linked} linked HR roster · {unlinked} without login · {normalized.length} records (including unmatched accounts)</span>
+   <span>{started} recorded start{started===1?"":"s"} · {linked} linked HR roster · {unlinked} without login · {normalized.length} records (including unmatched accounts)</span>
   </div>
   <div className="ev2wf-today-review-controls" style={{display:"flex",flexWrap:"wrap",gap:12}}>
    <label className="small" style={{flex:"1 1 170px",minWidth:0}}>Review filter
@@ -101,23 +109,22 @@ export default function WorkforceTodayReviewList({
    </label>
   </div>
   {!matching.length&&<p className="screen-note" role="status">No authorised records match this filter. Missing evidence is not an attendance finding.</p>}
-  <div className="ev2wf-today-review-list" style={{display:"grid",overflow:"hidden",border:"1px solid var(--ev2-line,var(--line))",borderRadius:8}}>
-   {matching.map(row=><article key={row.employeeId||"profile:"+row.profileId} className="ev2wf-today-review-entry"
-     style={{display:"flex",flexWrap:"wrap",justifyContent:"space-between",alignItems:"center",gap:12,minWidth:0,padding:"10px 12px",borderBottom:"1px solid var(--ev2-line,var(--line))"}}>
-    <div style={{display:"grid",gap:3,flex:"1 1 210px",minWidth:0}}>
-     <strong>{row.name||"Employee"}</strong>
-     <span>{row.unit||"Unit not recorded"} · {row.dayType||"Day type not recorded"}
-      {!row.profileId&&" · No CEAC login account"}</span>
-     <small>{row.started?("First start "+localTime(row.firstStart)):"No verified work start shown"}{row.clockLabel?" · Expected "+row.clockLabel:""}</small>
-    </div>
-    <div className="ev2wf-today-review-decision" style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",justifyContent:"flex-start",flex:"0 1 auto"}}>
-     <span>{LABELS[row.category]||"Evidence unavailable"}</span>
-     {["schedule_unconfigured","no_login_account"].includes(row.category)&&row.employeeId&&onSchedule&&
+  <div className="ev2wf-today-review-list tbl-scroll timeleave-register" role="region" aria-label="Daily employee session register" tabIndex={0}>
+   <table className="tbl" aria-label="Recorded work sessions today">
+    <thead><tr><th scope="col">Person</th><th scope="col">Scheduled</th><th scope="col">Recorded start</th><th scope="col">State</th><th scope="col">Action</th></tr></thead>
+    <tbody>{matching.map(row=><tr key={row.employeeId||"profile:"+row.profileId} className="ev2wf-today-review-entry">
+     <th scope="row">{row.name||"Employee"}<small>{row.unit||"Unit not recorded"}</small>{!row.profileId&&<small>No CEAC login account</small>}</th>
+     <td>{row.dayType||"Not configured"}{row.clockLabel&&<small>{row.clockLabel}</small>}</td>
+     <td>{row.started?localTime(row.firstStart):row.profileId?"No start recorded":"No login account"}</td>
+     <td>{LABELS[row.category]||"Evidence unavailable"}</td>
+     <td>
+      {["schedule_unconfigured","no_login_account"].includes(row.category)&&row.employeeId&&onSchedule&&
        <button type="button" className="btn btn-ghost btn-sm" onClick={()=>onSchedule(row.employeeId)}>Review week</button>}
-     {["no_session_recorded","evidence_unavailable"].includes(row.category)&&row.profileId&&onSessions&&
+      {row.profileId&&onSessions&&
        <button type="button" className="btn btn-ghost btn-sm" onClick={()=>onSessions(row.profileId)}>Inspect sessions</button>}
-    </div>
-   </article>)}
+     </td>
+    </tr>)}</tbody>
+   </table>
   </div>
   <p className="screen-note">Roster facts, account access, approved schedules and recorded sessions are separate sources. “Needs review” does not establish absence, lateness, discipline, payroll consequences or a KPI score.</p>
  </div>;

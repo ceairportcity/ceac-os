@@ -14,6 +14,7 @@ async function fixture(page,{deny=false,published=false,full=false}={}){
   return reply(rows[name]||[]);
  });
  await page.goto('/tests/fixtures/owner-corrections.html?screen=learning&actor=admin'+(full?'&full=1':''));
+ await page.getByRole('button',{name:/Synthetic course.*modules/}).click();
  await expect(page.getByRole('region',{name:'Course builder'})).toBeVisible();
  return writes;
 }
@@ -62,5 +63,6 @@ test('account transition closes an old draft editor before another account works
  await page.getByLabel('Draft content title',{exact:true}).fill('Private unsaved course draft');
  await page.getByText('Switch fixture actor',{exact:true}).evaluate(button=>button.click());
  await expect(page.getByRole('dialog')).toHaveCount(0);
+ await page.getByRole('button',{name:/Synthetic course.*modules/}).click();
  await expect(page.getByRole('button',{name:'Edit course details',exact:true})).toBeVisible();
 });

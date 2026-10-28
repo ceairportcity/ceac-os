@@ -6,7 +6,7 @@ import FormalReviewProjectDrafts from "../components/FormalReviewProjectDrafts";
 import { includeProjectAssessment } from "../lib/projectAssessmentDraft";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
-import { Avatar, ComposerDrawer } from "../experience-v2/components";
+import { Avatar, ComposerDrawer, SegmentedControl } from "../experience-v2/components";
 import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 
@@ -103,6 +103,8 @@ export default function Performance({ me }) {
   const [memberships, setMemberships] = useState([]);
   const [selectedCycleId, setSelectedCycleId] = useState("");
   const [selectedCaseId, setSelectedCaseId] = useState("");
+  const [reviewStep,setReviewStep]=useState("prepare");
+  useEffect(()=>{setReviewStep("prepare");},[selectedCaseId]);
   const [evidence, setEvidence] = useState([]);
   const [entries, setEntries] = useState([]);
   const [releaseQueue, setReleaseQueue] = useState([]);
@@ -483,19 +485,6 @@ export default function Performance({ me }) {
       </div>
     </section>}
 
-    {hrReleaseAdmin && <HRProjectContributionQueue me={me} cases={cases} cycles={cycles} onOpenReview={reviewId => {
-      const review = cases.find(row => row.id === reviewId);
-      if (!review || !cycles.some(cycle => cycle.id === review.cycle_id)) return;
-      selectedCaseRef.current = review.id;
-      selectedCycleRef.current = review.cycle_id;
-      setSelectedCycleId(review.cycle_id);
-      setSelectedCaseId(review.id);
-      requestAnimationFrame(() => {
-        reviewPanelRef.current?.focus();
-        reviewPanelRef.current?.scrollIntoView({ block: "start" });
-      });
-    }} />}
-
     {cycles.length > 0 && <div className="performance-cycle-strip" aria-label="Review periods">
       {cycles.map((cycle) => <button key={cycle.id} className={selectedCycleId === cycle.id ? "on" : ""} onClick={() => {
         selectedCycleRef.current = cycle.id;
@@ -530,6 +519,8 @@ export default function Performance({ me }) {
             <CaseState status={selectedCase.status} />
           </header>
 
+          {me.is_admin&&<SegmentedControl ariaLabel="Review stages" value={reviewStep} onChange={setReviewStep} items={[{value:"prepare",label:"1 · Prepare"},{value:"assessment",label:"2 · Assessment"},{value:"publication",label:"3 · Publication"},{value:"response",label:"4 · Response"}]}/>}
+          <div hidden={me.is_admin&&reviewStep!=="prepare"}>
           {!selectedCase.manager_id && <ProductNotice tone="attention" title="Reviewer not assigned">Administration must assign an authorised reviewer. The evidence remains visible to the employee.</ProductNotice>}
 
           {orgPerformanceAdmin && <section className="card performance-authority-card">
@@ -560,6 +551,8 @@ export default function Performance({ me }) {
           </details>)}
           {!evidence.length && <EmptyState compact title="No evidence rows in this period">CEAC OS will not create placeholder evidence. Review the date range or record the work first.</EmptyState>}
 
+          </div>
+          <div hidden={me.is_admin&&reviewStep!=="assessment"}>
           <div className="performance-section-head"><div><span className="eyebrow">Employee voice</span><h3>Your reflection</h3></div></div>
           {isSelf ? <>
             <FieldGroup label={currentReflection ? "Revise your reflection" : "Your reflection"} hint="Write what happened, what you learned and what you need next.">
@@ -622,6 +615,8 @@ export default function Performance({ me }) {
             {plans.map((plan) => <div key={plan.id}><strong>Version {plan.version} · {plan.focus}</strong><span>{sentence(plan.state)} · {plan.change_reason}</span></div>)}
           </details>}
 
+          </div>
+          <div hidden={me.is_admin&&reviewStep!=="response"}>
           <div className="performance-section-head"><div><span className="eyebrow">Right of reply</span><h3>Employee response</h3></div></div>
           {entries.filter((entry) => entry.entry_type === "staff_response").map((entry) => <div className="row" key={entry.id}><div className="row-t">{entry.body}</div><div className="row-m">{new Date(entry.created_at).toLocaleString("en-GB")}</div></div>)}
           {isSelf && <>
@@ -654,6 +649,8 @@ export default function Performance({ me }) {
             <button className="btn btn-sm" disabled={busy || feedbackNote.trim().length < 3} onClick={recordFeedback}>Record feedback</button>
           </section>}
 
+          </div>
+          <div hidden={me.is_admin&&reviewStep!=="publication"}>
           {hrReleaseAdmin && isSelf && <ProductNotice tone="attention" title="Your assigned reviewer decides publication">You cannot decide publication of your own appraisal. The assigned Group Pastor may conduct and publish this review under the owner-approved HR-head exception. The assessment remains restricted until that decision.</ProductNotice>}
           {canDecidePublication && <div className="performance-share-bar">
             <div><strong>{assignedPastorPublication ? "Assigned HR-head publication decision" : "HR publication decisions"}</strong>
@@ -682,9 +679,23 @@ export default function Performance({ me }) {
             </FieldGroup>
             <button className="btn btn-sm" disabled={busy || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>{assignedPastorPublication ? "Prepare assigned HR-head publication" : "Submit release request to HR"}</button>
           </div>}
+          </div>
         </>}
       </section>
     </div>}
+
+    {hrReleaseAdmin && <HRProjectContributionQueue me={me} cases={cases} cycles={cycles} onOpenReview={reviewId => {
+      const review = cases.find(row => row.id === reviewId);
+      if (!review || !cycles.some(cycle => cycle.id === review.cycle_id)) return;
+      selectedCaseRef.current = review.id;
+      selectedCycleRef.current = review.cycle_id;
+      setSelectedCycleId(review.cycle_id);
+      setSelectedCaseId(review.id);
+      requestAnimationFrame(() => {
+        reviewPanelRef.current?.focus();
+        reviewPanelRef.current?.scrollIntoView({ block: "start" });
+      });
+    }} />}
 
     {cycleFlow && <ReviewForm admin={me.is_admin} error={error} resetError={setError} open title="Open review period" onClose={() => { if (!busy) { setCycleFlow(false); setCycleStep(1); } }}>
       <div className="eyebrow">Open review period · Step {cycleStep} of 3</div>

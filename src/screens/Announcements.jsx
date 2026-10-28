@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, ProductNotice, Sheet } from "../components/bits";
-import { ComposerDrawer } from "../experience-v2/components";
+import { ComposerDrawer, SegmentedControl } from "../experience-v2/components";
 import VoiceInput from "../components/VoiceInput";
 import { OperationalFileList, PendingFilePicker } from "../components/OperationalFiles";
 import { uploadOperationalFiles } from "../lib/operationalFiles";
@@ -34,6 +34,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [savedDraft, setSavedDraft] = useState(null);
+  const [listView,setListView]=useState("all");
   const savePending = useRef(false), mounted = useRef(false);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
@@ -198,9 +199,14 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
     {error && <div className="flag flag-brick" style={{ marginTop: 14 }}><h4>Could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={load}>Try again</button></div>}
     {savedDraft && !form && <p role="status" className="screen-note">Announcement draft saved.</p>}
     {loading && <div className="spin">Loading announcements...</div>}
-    {!loading && <div style={{ marginTop: 18 }}>
+    {me.is_admin&&!loading&&!error&&<SegmentedControl ariaLabel="Announcement views" value={listView} onChange={setListView} items={[
+      {value:"all",label:`All · ${rows.length}`},{value:"published",label:`Published · ${rows.filter(row=>row.status==="published").length}`},
+      {value:"draft",label:`Drafts · ${rows.filter(row=>row.status==="draft").length}`},{value:"closed",label:`Closed · ${rows.filter(row=>row.status==="closed").length}`}
+    ]}/>}
+    {!loading && <div className={me.is_admin?"form-grid two":undefined} style={{ marginTop: 18 }}><div>
       {rows.length === 0 && !error && <div className="card small">There are no current announcements for you.</div>}
-      {rows.map((announcement) => {
+      {me.is_admin&&!error&&rows.length>0&&!rows.some(row=>listView==="all"||row.status===listView)&&<p role="status">No announcements match this view.</p>}
+      {rows.filter(row=>!me.is_admin||listView==="all"||row.status===listView).map((announcement) => {
         const receipt = receiptFor(announcement);
         const unread = announcement.status === "published" && !receipt;
         return <div className={`row ${unread ? "home-tone-info" : ""}`} key={announcement.id}>
@@ -216,7 +222,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
           </div>}
         </div>;
       })}
-    </div>}
+    </div>{me.is_admin&&<aside className="card" aria-label="Announcement publishing checklist"><h2 className="h2">Publishing checklist</h2><p>Choose the audience.</p><p>Preview the message before saving.</p><p>Saving creates a draft. Publish it when ready.</p></aside>}</div>}
 
     {selected && <DetailSurface open title={me.is_admin ? selected.title : undefined} onClose={() => { if (!busy) setSelected(null); }}>
       {me.is_admin && error && <ProductNotice tone="error" title="Announcement update">{error}</ProductNotice>}
@@ -274,6 +280,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
         <VoiceInput compact label="Speak announcement message" onResult={(text) => setForm((current) => ({ ...current, body: current.body ? current.body + " " + text : text }))} />
       </div>
 
+      {me.is_admin&&<details className="reference-disclosure"><summary>Preview message</summary><div className="reference-disclosure-body"><h2>{form.title||"Untitled draft"}</h2><p style={{whiteSpace:"pre-wrap"}}>{form.body||"Write a message to preview it here."}</p><small>{form.allOrg?"Everyone in the organisation":form.unitIds.length?`${form.unitIds.length} selected departments`:form.roles.length?`${form.roles.length} selected roles`:"Choose an audience"}</small></div></details>}
       <details className="reference-disclosure">
         <summary><span>Attachments</span><span>+ Add file · {(form.files || []).length}</span></summary>
         <div className="reference-disclosure-body">

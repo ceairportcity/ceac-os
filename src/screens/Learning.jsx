@@ -1,4 +1,5 @@
 import LearningDraftEditor from "../components/LearningDraftEditor";
+import { Table } from "../components/primitives";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
@@ -70,6 +71,7 @@ function LearningWorkspace({ me }) {
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [draftEdit,setDraftEdit]=useState(null);
   const [builderView, setBuilderView] = useState("outline");
+  const [catalogueOpen,setCatalogueOpen]=useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
 
   const [courseFlow, setCourseFlow] = useState(false);
@@ -238,7 +240,7 @@ function LearningWorkspace({ me }) {
         updated_by: me.id,
       }).select("id").single();
       if (insertError) throw insertError;
-      setSelectedCourseId(data.id);
+      setSelectedCourseId(data.id); setCatalogueOpen(true);
     }, "Draft course created.");
     if (ok) {
       setCourseFlow(false); setCourseTitle(""); setCourseSummary(""); setCourseMinutes("");
@@ -524,15 +526,19 @@ function LearningWorkspace({ me }) {
         <div><span className="eyebrow">Catalogue</span><h2>Courses</h2></div>
         {learningAdmin && <button className="btn btn-sm" onClick={() => setCourseFlow(true)}>Create course</button>}
       </div>
-      <div className="learning-two-col">
-        <div className="learning-catalogue-list">
-          {courses.map((course) => <button type="button" className={"learning-course-row"+(selectedCourseId === course.id ? " on" : "")} key={course.id} onClick={() => setSelectedCourseId(course.id)}>
+      <div className={me.is_admin?"owner-learning-workspace":"learning-two-col"}>
+        <div className={me.is_admin?"learning-catalogue-list owner-learning-catalogue":"learning-catalogue-list"} hidden={me.is_admin&&catalogueOpen}>
+          {courses.map((course) => <button type="button" className={"learning-course-row"+(selectedCourseId === course.id ? " on" : "")} key={course.id} onClick={() => {setSelectedCourseId(course.id);setCatalogueOpen(true);}}>
+            {me.is_admin&&<span className="owner-course-cover" aria-hidden="true">CEAC · Learning</span>}
             <span><strong>{course.title}</strong><small>{course.summary}</small></span>
             <Pill tone={stateTone(course.state)}>{sentence(course.state)}</Pill>
+            {me.is_admin&&<small>{courseModules(course.id).length} modules · {courseModules(course.id).reduce((count,module)=>count+moduleResources(module.id).length,0)} resources</small>}
+            {me.is_admin&&<span>{course.state==="draft"?"Continue building":"View course"} →</span>}
           </button>)}
           {!courses.length && <EmptyState title="No learning in the catalogue">{learningAdmin ? "Create the first draft course." : "Published learning will appear here when Administration makes it available."}</EmptyState>}
         </div>
-        <div>
+        <div hidden={me.is_admin&&!catalogueOpen}>
+          {me.is_admin&&<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setCatalogueOpen(false)}>Back to course catalogue</button>}
           {learningAdmin && selectedCourse && <section aria-label="Course builder">
             <div className="learning-section-title"><div><span className="eyebrow">Course builder</span><h2>{selectedCourse.state === "draft" ? "Prepare your course" : "Course and learner preview"}</h2></div></div>
             <div className="learning-mode-tabs" role="group" aria-label="Course builder views">
@@ -550,6 +556,22 @@ function LearningWorkspace({ me }) {
           <CourseDetail course={selectedCourse} preview={learningAdmin && builderView === "preview"} />
         </div>
       </div>
+      {me.is_admin && learningAdmin && !catalogueOpen && !error && <section className="card" aria-label="Course assignment follow-up">
+        <h2 className="h2">Assignment follow-up</h2>
+        <Table rows={courses.map(course=>({...course,
+          assigned:assignments.filter(row=>row.course_id===course.id && row.state!=="withdrawn").length,
+          completed:assignments.filter(row=>row.course_id===course.id && row.state==="completed").length,
+        })).filter(course=>course.assigned>0)}
+          empty="No current course assignments recorded." columns={[
+            {key:"title",label:"Course"},
+            {key:"assigned",label:"Assigned"},
+            {key:"completed",label:"Completed"},
+            {key:"open",label:"Learners",render:course=><button className="btn btn-ghost btn-sm" aria-label={`View learners for ${course.title}`} onClick={()=>{
+              setSelectedAssignmentId(assignments.find(row=>row.course_id===course.id && row.state!=="withdrawn")?.id||"");setMode("progress");
+            }}>View learners</button>}
+          ]}/>
+        <p className="screen-note">Counts cover visible current assignments, including completed learning. Withdrawn assignments are excluded; completion uses recorded state.</p>
+      </section>}
     </>}
 
     {mode === "assignments" && learningAdmin && <>

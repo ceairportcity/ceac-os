@@ -442,7 +442,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
   const flaggedSessions=sessions.map((session)=>({session,differences:recordedDifferences(session)})).filter((row)=>row.differences.length);
   const staffTabs=[["today","Today"],["calendar","My week"],["leave","Leave"],["sessions","Sessions"],["differences","Recorded differences"],["corrections","Corrections"]];
   const managerTabs=[["today","Today"],["leave","Leave"],["calendar","Calendar"],["sessions","Sessions"],["differences","Recorded differences"],["corrections","Corrections"],...(canManage?[["setup","Schedules & policy"]]:[])];
-  const adminTabs=[["today","Today"],["calendar","Calendar"],["sessions","Sessions"],["differences","Recorded differences"],["leave","Leave"],["corrections","Corrections"],...(canManage?[["setup","Schedules & policy"]]:[])];
+  const adminTabs=[["today","Overview"],["leave","Leave requests"],["sessions","Work sessions"],...(canManage?[["setup","Schedules & policy"]]:[]),["calendar","Calendar"],["differences","Recorded differences"],["corrections","Corrections"]];
   const tabs=isStaffView?staffTabs:isManagerView?managerTabs:adminTabs;
 
   const locationPanel=<Suspense fallback={<LoadingState label="Loading attendance evidence…"/>}><AttendanceEvidence me={me}/></Suspense>;
@@ -959,34 +959,35 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
     return <div className="body ev2-workforce-page ev2-workforce-admin workforce-page">
       <WorkforcePageHeader
         eyebrow="Organisation time & leave"
-        title="Workforce"
-        description="Organisation-wide schedule, recorded-session, leave and attributable correction context. “No session recorded” is descriptive context only and is never an automatic absence finding or performance judgement."
-        statusLabel={people.length+" people visible"}
+        title="Time & Leave"
+        action={<Button size="compact" onClick={()=>setTab("leave")}>Review requests · {datasetErrors.leave?"Unavailable":waitingLeave.length}</Button>}
+        description="See availability, review requests and inspect recorded work sessions."
+        statusLabel={datasetErrors.people?"Employment records unavailable":people.length+" active employment accounts"}
         statusTone="neutral"
       />
 
       {error&&!dayTypeSheet&&!scheduleSheet&&!policySheet&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
-      {["today","calendar","leave"].includes(tab)?<TimeLeavePlanner rows={leave} scope="Organisation" initialRequestId={initialLeaveRequestId} unavailable={loading || Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>:null}
-
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Administration workforce sections"/>
 
-      <details className="timeleave-policy"><summary>Leave policy &amp; balances{!canManage&&myLeaveSummary?<span> · Annual: {myLeaveSummary.balance_available?myLeaveSummary.available_days:"unavailable"} days · Sick/study: {myLeaveSummary.shared_other?.balance_available?myLeaveSummary.shared_other.available_days:"unavailable"} days</span>:null}</summary>{confirmedLeaveSummary}</details>
+      {tab==="leave"&&<TimeLeavePlanner compact rows={leave} scope="Organisation" initialRequestId={initialLeaveRequestId} unavailable={Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>}
+
+
 
       {!activePolicy&&<ProductNotice tone="info" title="Secondary leave quantities not configured">The confirmed Annual rule is available independently of the incomplete secondary leave quantities. CEAC OS will not invent Sick, Maternity, Paternity or Study entitlement values.</ProductNotice>}
 
       {tab==="today"&&<>
-        {locationPanel}
-        <WorkforceSection title="Administration actions" description="Leave items requiring a recorded decision are presented before organisation context. Existing policy routes and server authority remain decisive." meta={waitingLeave.length+" waiting"}>
-          {waitingLeave.map(adminLeaveRow)}
-          {!waitingLeave.length&&<WorkforceEmpty compact title="No leave requests are waiting" description="New requests will appear here with their recorded route and history."/>}
-        </WorkforceSection>
-
-        <WorkforceSection title="Today · evidence needing review"
-          description="A compact queue for account-linked employees: unconfigured schedules, missing or unavailable session evidence, recorded starts and approved leave remain distinct. No attendance finding is automatic."
-          meta={people.length+" linked people"}>
-          <WorkforceTodayReviewList me={me} date={today}
+        <WorkforceTodayReviewList overview me={me} date={today}
+          requestsToReview={datasetErrors.leave?null:waitingLeave.length}
+          approvedToday={datasetErrors.leave?null:leave.filter(row=>row.status==="approved"&&row.start_date<=today&&row.end_date>=today).length}
+          renderPlanner={({scheduleAttention})=><TimeLeavePlanner compact rows={leave} scope="Organisation"
+            unavailable={Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow}
+            onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}>
+            <section className="timeleave-readiness"><h3>Schedule readiness</h3><p>{scheduleAttention} active employee schedule{scheduleAttention===1?" needs":"s need"} attention for today.</p>
+              {canManage&&<Button variant="quiet" size="compact" onClick={()=>setTab("setup")}>Review schedules</Button>}
+            </section>
+          </TimeLeavePlanner>}
           schedules={schedules} dayTypes={dayTypes}
           sourceUnavailable={["people","sessions","schedules","day types","leave"].some(name=>Boolean(datasetErrors[name]))}
           rows={people.map(row=>{
@@ -1015,7 +1016,8 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
           onSchedule={canManage?(employeeId)=>{setScheduleEmployeeFocus(employeeId);setTab("setup");}:null}
           onSessions={(profileId)=>{setSessionProfileFocus(profileId);setTab("sessions");}}
           />
-        </WorkforceSection>
+      <details className="timeleave-policy"><summary>Leave policy &amp; balances{!canManage&&myLeaveSummary?<span> · Annual: {myLeaveSummary.balance_available?myLeaveSummary.available_days:"unavailable"} days · Sick/study: {myLeaveSummary.shared_other?.balance_available?myLeaveSummary.shared_other.available_days:"unavailable"} days</span>:null}</summary>{confirmedLeaveSummary}</details>
+        <details className="timeleave-policy"><summary>Location evidence &amp; attendance notices</summary>{locationPanel}</details>
       </>}
 
       {tab==="calendar"&&<>

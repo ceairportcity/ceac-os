@@ -49,7 +49,7 @@ for (const width of [320,390,430,1440]) {
     await expect(page.getByRole('heading',{name:'Organisation',exact:true})).toBeVisible();
     const department = page.getByRole('button',{name:/Test Unit A/});
     await expect(department).toBeVisible();
-    expect(await department.evaluate(node => getComputedStyle(node.querySelector('.exec-redesign-icon')).color)).toBe('rgb(113, 72, 232)');
+    expect(await department.evaluate(node => getComputedStyle(node).color)).toBe('rgb(113, 72, 232)');
     await page.screenshot({path:`test-artifacts/executive-connected-organisation-${width}.png`,fullPage:true});
     await department.click();
     await expect(page.getByRole('heading',{name:'Test Unit A',exact:true})).toBeVisible();
