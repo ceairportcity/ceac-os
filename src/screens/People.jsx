@@ -735,10 +735,10 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
   const attentionRoster = rows.filter((entry) => attentionReasons(entry).length);
   const unlinkedAccounts=operationalDirectory.filter(account=>account.active && !rows.some(entry=>entry.profile_id===account.id));
   const unmatchedAccounts=unlinkedAccounts;
-  const unitsWithoutHead = units.filter((unit) => !(unit.unit_memberships || []).some(member=>member.role === "manager" && member.profiles?.active) && !operationalDirectory.some(account=>account.active && account.role === "manager" && account.unit_id === unit.id) && !rows.some((entry) =>
-    entry.profile_id && entry.active && entry.role === "manager" && (
-      entry.unit_id === unit.id || (entry.roster_units || []).some((membership) => membership.unit_id === unit.id)
-    )
+  // Unit authority comes from this unit's active recorded manager membership.
+  // A manager's separate roster placements do not make them head of those units.
+  const unitsWithoutHead = units.filter((unit) => !(unit.unit_memberships || []).some(
+    member=>member.role === "manager" && member.profiles?.active
   ));
 
 

@@ -429,7 +429,7 @@ export default function AdminPayroll({ me }) {
 
   if (salarySetup && canRecordSalary) return <>
     <div className="body"><Button variant="secondary" onClick={()=>{setSalarySetup(null);void loadRuns();if(selectedRunRef.current)void loadDetail(selectedRunRef.current);}}>Back to Payroll</Button>
-      <p className="screen-note">Protected HR is the only place to record salary and payment details. Existing payroll drafts keep their recorded figures until you deliberately apply updated details.</p>
+      <p className="screen-note">Protected HR is the only place to record salary and payment details. Review and apply a recorded salary to update an existing draft. Payment details are captured when a payroll run is created.</p>
     </div>
     <AdminProtectedHR key={`${me.org_id}:${me.id}:${salarySetup.employeeId || "all"}`} me={me} initialEmployeeId={salarySetup.employeeId || null} />
   </>;

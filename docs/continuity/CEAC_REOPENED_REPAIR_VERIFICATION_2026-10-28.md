@@ -82,3 +82,13 @@ Read-only review found two new preview-cache windows while the same actor's perm
 The prior useful full run was allowed to finish; no checks were cancelled to publish this correction. The correction has 3/3 focused permission/source-contract checks and 17/17 complete salary/decision/layout browser cases PASS, plus 640/640 source tests and sealed production build PASS (Node 22.12, Chromium headless shell 1194). Logs: test-artifacts/permission-delta-browser.log, permission-final-browser.log, permission-source.log and permission-build.log. Exact-head qualification is required for the final code before merge. Production remains unchanged.
 
 Map investigation in the signed-in production browser confirmed all ten street-background images failed while the map/office marker container rendered. The page's image CSP permits HTTPS; this evidence distinguishes external background loading from missing attendance data, but does not establish a specific cause on the owner's individual PCs. No claim that older hardware is the cause is made.
+
+## Permission correction qualified — 2135fab5b392b4738aceeb6fb4afb82c7f8bf073
+
+Tree f7050bad558aa3dc33e55bce1d64c453ac772515 (local d79d8625ac27a41ddbd8beb24e5afdeda7ec1a2d). All four required workflows terminal SUCCESS: CI 40662995307, Account Security 40662995241, Migration Replay 40662995249, full Quality Gate 40662995126. All eight browser shards, evidence merge 122736918362 and final role-and-rls 122737199257 passed. No useful in-flight check was cancelled.
+
+## Final unit-head source reconciliation
+
+A further production read-only aggregate found 16 active units without an active recorded head, including three that the legacy roster-placement fallback incorrectly treated as covered. The display now uses only the active manager membership recorded for the specific unit; neither being a manager elsewhere nor roster placement implies unit authority. The new regression fixture includes an actual head in one unit and a staff-only membership in another, and verifies the second unit still appears for review. No actual head, role, membership or permission was assigned or changed.
+
+All six affected People browser cases passed (including four layout widths), all 640 registered source tests passed, and the sealed build passed after the final correction. Logs: test-artifacts/head-source-browser.log, head-final-source.log and head-final-build.log. Payroll copy also explicitly distinguishes applying a recorded salary to a draft from payment snapshots captured when a run is created; payment refresh is not falsely offered. The final code must pass its own exact-head required checks before release; prior green SHAs remain historical evidence only. Production is still unchanged at this checkpoint.

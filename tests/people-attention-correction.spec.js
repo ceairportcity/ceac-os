@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 for(const width of [390,1440])test(`saved linked employment clears the roster warning and long queues scroll at ${width}`,async({page})=>{
  await page.setViewportSize({width,height:1000});
  const org='00000000-0000-4000-8000-000000000002';
- const employee={id:'employee',org_id:org,profile_id:'person',full_name:'Linked employee fixture',employment_type:'not_recorded',job_title:'Coordinator',employment_status:'active',identity_state:'linked',units:[{unit_id:'unit',unit_name:'Recorded-head unit',is_primary:true}]};
+ const employee={id:'employee',org_id:org,profile_id:'person',full_name:'Linked employee fixture',employment_type:'not_recorded',job_title:'Coordinator',employment_status:'active',identity_state:'linked',units:[{unit_id:'unit',unit_name:'Recorded-head unit',is_primary:true},{unit_id:'member-only',unit_name:'Member-only unit'}]};
  let type='not_recorded';const writes=[];
  const current=()=>({employment_type:type,job_title:'Coordinator',employment_status:'active',membership_role:'staff',unit_id:'unit',unit_name:'Recorded-head unit'});
  await page.route('**/*',route=>{
@@ -12,8 +12,8 @@ for(const width of [390,1440])test(`saved linked employment clears the roster wa
   if(name==='admin_update_employment'){writes.push(request.postDataJSON());type=request.postDataJSON().p_employment_type;return route.fulfill({contentType:'application/json',body:JSON.stringify({current:current(),history:[]})});}
   const data={
    admin_employee_roster_summary:[employee,...Array.from({length:30},(_,i)=>({...employee,id:'roster-'+i,profile_id:null,identity_state:'roster_only',full_name:'Roster colleague '+i}))],
-   admin_people_summary:[{id:'person',full_name:employee.full_name,active:true,contract_type:type,unit_id:'unit',unit_name:'Recorded-head unit'},...Array.from({length:20},(_,i)=>({id:'account-'+i,full_name:'Unlinked account '+i,active:true}))],
-   units:[{id:'unit',name:'Recorded-head unit',unit_memberships:[{profile_id:'head-account',role:'manager',profiles:{active:true}}]},...Array.from({length:30},(_,i)=>({id:'vacant-'+i,name:'Vacant-head unit '+i,unit_memberships:[]}))],
+   admin_people_summary:[{id:'person',full_name:employee.full_name,active:true,contract_type:type,role:'manager',unit_id:'unit',unit_name:'Recorded-head unit'},...Array.from({length:20},(_,i)=>({id:'account-'+i,full_name:'Unlinked account '+i,active:true}))],
+   units:[{id:'unit',name:'Recorded-head unit',unit_memberships:[{profile_id:'person',role:'manager',profiles:{active:true}}]},{id:'member-only',name:'Member-only unit',unit_memberships:[{profile_id:'person',role:'staff',profiles:{active:true}}]},...Array.from({length:30},(_,i)=>({id:'vacant-'+i,name:'Vacant-head unit '+i,unit_memberships:[]}))],
    admin_employee_roster_detail:{employee,units:employee.units},employee_roster:employee,admin_person_detail:{work:[],sessions:[],leave:[]},admin_employment_detail:{current:current(),history:[]},
   };
   return route.fulfill({contentType:'application/json',body:JSON.stringify(data[name]||[])});
@@ -28,6 +28,7 @@ for(const width of [390,1440])test(`saved linked employment clears the roster wa
   await region.focus();expect(await region.evaluate(node=>document.activeElement===node)).toBe(true);
  }
  await expect(page.getByRole('region',{name:'Units without a recorded head',exact:true})).not.toContainText('Recorded-head unit');
+ await expect(page.getByRole('region',{name:'Units without a recorded head',exact:true})).toContainText('Member-only unit');
  await gaps.getByRole('button').filter({hasText:'Linked employee fixture'}).click();
  await page.getByRole('tab',{name:'Employment',exact:true}).click();
  await page.getByRole('button',{name:'Record change',exact:true}).click();
