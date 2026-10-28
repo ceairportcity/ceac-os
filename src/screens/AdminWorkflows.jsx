@@ -1,5 +1,5 @@
 import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, DataPanel, QueueRow, SegmentedControl, StatePanel, StatusBadge } from "../experience-v2/components";
@@ -28,7 +28,7 @@ export default function AdminWorkflows({ me }) {
   const [steps, setSteps] = useState([]);
   const [people, setPeople] = useState({});
   const [selectedStepId, setSelectedStepId] = useState(null);
-  const [outcome, setOutcome] = useState("reviewed");
+  const [contextVerified,setContextVerified] = useState(null);
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState("ready");
   const [loading, setLoading] = useState(true);
@@ -36,10 +36,16 @@ export default function AdminWorkflows({ me }) {
   const [error, setError] = useState(null);
   const [readError, setReadError] = useState(null);
   const [notice, setNotice] = useState(null);
+  const readGeneration=useRef(0);
 
-  useEffect(() => { load(); }, [me.id]);
+  useEffect(() => {
+    setSelectedStepId(null);setContextVerified(null);setRuns([]);setSteps([]);setPeople({});
+    void load();
+    return ()=>{readGeneration.current += 1;};
+  }, [me.id,me.org_id]);
 
   async function load() {
+    const generation=++readGeneration.current;
     setLoading(true);
     setError(null);
     setReadError(null);
@@ -59,6 +65,7 @@ export default function AdminWorkflows({ me }) {
         .limit(400),
     ]);
 
+    if(generation !== readGeneration.current)return;
     const firstError = definitionsResult.error || runsResult.error || stepsResult.error;
     if (firstError) {
       setReadError(humanError(firstError, "Pending decisions could not load."));
@@ -79,6 +86,7 @@ export default function AdminWorkflows({ me }) {
         .from("profiles")
         .select("id,full_name")
         .in("id", profileIds);
+      if(generation !== readGeneration.current)return;
       if (profileError) {
         setReadError(humanError(profileError, "Workflow people could not be resolved."));
         setLoading(false);
@@ -111,11 +119,16 @@ export default function AdminWorkflows({ me }) {
 
   const selectedStep = steps.find((step) => step.id === selectedStepId) || null;
   const selectedRun = selectedStep ? runsById[selectedStep.workflow_run_id] : null;
-  const selectedDefinition = selectedRun ? definitionsById[selectedRun.workflow_definition_id] : null;
+  const reviewCapabilities=[...(me.capabilities || [])].sort().join("|");
+  // A restored permission starts a fresh verification, even if its values
+  // match an earlier grant. The object token cannot revive an old read.
+  const reviewScope=useMemo(()=>({key:`${me.org_id}:${me.id}:${reviewCapabilities}:${selectedStep?.id || ""}`}),
+    [me.org_id,me.id,reviewCapabilities,selectedStep?.id]);
+  const canReview = selectedStep && (!selectedStep.required_capability || (me.capabilities || []).includes(selectedStep.required_capability));
 
   async function completeStep(decision = null) {
-    const resolvedOutcome = decision || outcome.trim();
-    if (busy || readError || !selectedStep || selectedStep.state !== "ready" || !resolvedOutcome) return;
+    const resolvedOutcome = decision || "reviewed";
+    if (busy || readError || !canReview || !selectedStep || contextVerified !== reviewScope || selectedStep.state !== "ready" || !resolvedOutcome) return;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -131,7 +144,7 @@ export default function AdminWorkflows({ me }) {
     }
     setSelectedStepId(null);
     setNote("");
-    setNotice(resolvedOutcome === "not_approved" ? "Check not approved. The remaining checks in this run were cancelled." : "Check completed.");
+    setNotice(resolvedOutcome === "not_approved" ? "Flagged for follow-up. This review process was stopped; the underlying recorded change has not been reversed." : "Check completed.");
     await load();
   }
 
@@ -162,6 +175,7 @@ export default function AdminWorkflows({ me }) {
               {value:"all",label:"All"},
             ]}
           />
+          <div role="region" aria-label="Decision queue" tabIndex={0} style={{maxHeight:560,overflow:"auto",overscrollBehavior:"contain"}}>
           {shownSteps.map((step) => {
             const run = runsById[step.workflow_run_id];
             const definition = run ? definitionsById[run.workflow_definition_id] : null;
@@ -173,9 +187,10 @@ export default function AdminWorkflows({ me }) {
               meta={`${definition?.label || "Check"} · ${subject}`}
               status={step.state==="ready"?"Waiting":step.state==="completed"?(step.outcome ? humanize(step.outcome) : "Completed"):humanize(step.state)}
               statusTone={step.state==="ready"?"warning":step.state==="completed"&&step.outcome!=="not_approved"?"success":"neutral"}
-              onClick={() => { setSelectedStepId(step.id); setOutcome("reviewed"); setNote(""); setError(null); }}
+              onClick={() => { setSelectedStepId(step.id); setContextVerified(null); setNote(""); setError(null); }}
             />;
           })}
+          </div>
           {shownSteps.length === 0 && <StatePanel
             state="empty"
             title={filter === "ready" ? "No check is waiting" : "No checks match"}
@@ -185,30 +200,74 @@ export default function AdminWorkflows({ me }) {
       </div>
 
       <div className="side-col">
-        <DataPanel eyebrow="Record" title="Check" supporting="Inspect the decision and its recorded context before completing it.">
+        <DataPanel eyebrow="Selected request" title={selectedStep ? people[selectedRun?.subject_profile_id] || "Recorded change" : "Review a change"} supporting="Read the recorded change before confirming your review.">
           {!selectedStep && <StatePanel state="info" title="Choose a check" description="Select a queue item to inspect the decision and its context." />}
           {selectedStep && <>
-            <strong>{selectedDefinition?.label || "Check"}</strong>
-            <p className="small" style={{ lineHeight: 1.5 }}>{selectedDefinition?.description || "Review what CEAC is asking you to decide."}</p>
-            <div className="small">Decision: {selectedStep.label}</div>
-            <div className="small">Who can decide: {selectedStep.required_capability ? humanize(selectedStep.required_capability) : "Signed-in user"}</div>
-            <div className="small">State: {humanize(selectedStep.state)}</div>
-            {selectedStep.state === "ready" && <>
-              <FieldGroup label="Decision / result"><input className="field" aria-label="Check outcome" value={outcome} onChange={(event) => setOutcome(event.target.value)} /></FieldGroup>
-              <FieldGroup label="Reason / context"><textarea className="field" aria-label="Check review note" rows="3" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional context for the record" /></FieldGroup>
+            <strong>{selectedStep.label}</strong>
+            <p className="screen-note">Requested {stamp(selectedStep.created_at)} · {selectedStep.state === "ready" ? "Waiting for your review" : humanize(selectedStep.state)}</p>
+            <WorkflowChangeContext key={reviewScope.key} me={me} run={selectedRun} onVerified={()=>setContextVerified(reviewScope)} />
+            {selectedStep.state === "ready" && canReview && <>
+              <FieldGroup label="Comment (optional)"><textarea className="field" aria-label="Check review note" rows="3" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional context for the record" /></FieldGroup>
               <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:12 }}>
-                <Button busy={busy} disabled={!outcome.trim()} onClick={() => completeStep()}>{busy ? "Saving…" : "Complete check"}</Button>
-                <Button variant="secondary" disabled={busy} onClick={() => completeStep("not_approved")}>No — I did not approve this</Button>
+                <Button busy={busy} disabled={contextVerified !== reviewScope} onClick={() => completeStep()}>{busy ? "Saving…" : "Confirm review"}</Button>
+                <Button variant="secondary" disabled={busy || contextVerified !== reviewScope} onClick={() => completeStep("not_approved")}>Flag for follow-up</Button>
               </div>
             </>}
+            {selectedStep.state === "ready" && !canReview && <p className="screen-note">An authorised colleague must record this review.</p>}
             {selectedStep.state === "completed" && <p className="small" style={{ lineHeight: 1.5 }}>Outcome: {selectedStep.outcome || "Completed"}{selectedStep.note ? " · " + selectedStep.note : ""}</p>}
           </>}
         </DataPanel>
 
         <DataPanel eyebrow="Context" title="How decisions are recorded" supporting="Each decision records who acted and when. Requests are not approved automatically.">
-          <p className="small" style={{ lineHeight: 1.6, margin: 0 }}>CEAC opens a Check when a recorded change reaches a point that needs a human decision. Completing a Check can move the process forward. Choosing “No — I did not approve this” stops that run and keeps the decision in history.</p>
+          <p className="small" style={{ lineHeight: 1.6, margin: 0 }}>CEAC opens a Check when a recorded change reaches a point that needs a human decision. Completing a Check can move the process forward. Confirm review records your acknowledgement. Flag for follow-up stops this review process and preserves the issue in history; it does not reverse the underlying change.</p>
         </DataPanel>
       </div>
     </div>}
   </div>;
+}
+
+
+function WorkflowChangeContext({me,run,onVerified}) {
+  const [context,setContext]=useState(null);
+  const [error,setError]=useState("");
+  useEffect(()=>{
+    let active=true;
+    (async()=>{
+      try {
+        if(!run?.source_event_id) throw new Error("The original change is unavailable. Leave this review open until its source can be verified.");
+        const result=await supabase.from("platform_events").select("id,event_type,actor_id,payload,idempotency_key,occurred_at").eq("org_id",me.org_id).eq("id",run.source_event_id).single();
+        if(result.error || !result.data) throw new Error("The original change could not be loaded. Leave this review open and try again later.");
+        const event=result.data;
+        let snapshot=null,previous=null;
+        if(event.event_type === "employment.changed") {
+          const response=await supabase.rpc("admin_employment_detail",{p_profile_id:run.subject_profile_id});
+          if(response.error) throw new Error("The employment history could not be verified. No review has been recorded.");
+          const id=event.idempotency_key?.startsWith("employment:") ? event.idempotency_key.slice(11) : null;
+          const history=[...(response.data?.history || [])].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+          const index=history.findIndex(item=>item.id===id);
+          if(index<0) throw new Error("The original employment change was not found in this person's history. Leave this review open for investigation.");
+          snapshot=history[index];previous=history[index-1] || null;
+        }
+        let actor="Recorded user";
+        if(event.actor_id){const response=await supabase.from("profiles").select("full_name").eq("id",event.actor_id).eq("org_id",me.org_id).maybeSingle();actor=response.data?.full_name || actor;}
+        if(active){setContext({event,snapshot,previous,actor});onVerified();}
+      } catch(failure){if(active)setError(failure.message);}
+    })();
+    return ()=>{active=false;};
+  },[me.id,me.org_id,run?.source_event_id]);
+  if(error)return <ProductNotice tone="attention" title="Change details unavailable">{error}</ProductNotice>;
+  if(!context)return <p role="status">Loading the original change…</p>;
+  const {event,snapshot,previous,actor}=context;
+  const fields=[["employment_type","Employment type"],["job_title","Job title"],["unit_name","Unit"],["manager_name","Manager"],["membership_role","Responsibility"],["employment_status","Employment status"],["joined_on","Start date"],["exited_on","Exit date"]];
+  const changes=snapshot?fields.filter(([key])=>!previous || snapshot[key]!==previous[key]):[];
+  return <section aria-label="Original change" style={{marginBlock:16}}>
+    <p><strong>{snapshot?humanize(snapshot.change_type):humanize(event.event_type.replaceAll("."," "))}</strong><br/>Recorded by {snapshot?.actor_name || actor} · {stamp(snapshot?.created_at || event.occurred_at)}</p>
+    {snapshot&&<><p>Effective {snapshot.effective_on}</p>
+      <div style={{overflow:"auto"}}><table className="tbl"><thead><tr><th>Detail</th><th>Before</th><th>Recorded change</th></tr></thead><tbody>{changes.map(([key,label])=><tr key={key}><th scope="row">{label}</th><td>{previous ? humanize(previous[key] || "Not recorded") : "No earlier record"}</td><td>{humanize(snapshot[key] || "Not recorded")}</td></tr>)}</tbody></table></div>
+      {!changes.length&&<p>No change to the listed employment details. Review the recorded reason and employment history.</p>}
+      {snapshot.reason&&<p><strong>Reason:</strong> {snapshot.reason}</p>}
+    </>}
+    {!snapshot&&<p>Permission: {event.payload?.capability || "Not recorded"}<br/>Scope: {event.payload?.scope_unit_id ? "A specific unit" : "Organisation"}</p>}
+    <p className="screen-note">This change has already been recorded. Confirm that you reviewed it, or flag it for follow-up. Your decision does not undo the original change.</p>
+  </section>;
 }

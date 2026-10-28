@@ -51,7 +51,7 @@ for(const width of [390,1440]){
   await page.screenshot({path:`test-artifacts/admin-unit-setup-${width}.png`,fullPage:true});
   await dialog.getByRole('button',{name:'Create unit',exact:true}).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.locator('.admin-unit-card').filter({hasText:'Synthetic department'})).toBeVisible();
+  await expect(page.getByRole('row').filter({hasText:'Synthetic department'})).toBeVisible();
  });
  test(`Admin announcement record and rejected draft use modern surfaces at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});const writes=[];

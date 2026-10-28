@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer } from "../experience-v2/components";
 import { expenseAmountMinor } from "../lib/expenseAmount";
+import AdminProtectedHR from "./AdminProtectedHR";
 
 const LINE_TYPES = [
   ["transport_allowance","addition","Transport allowance"],
@@ -54,6 +55,8 @@ export default function AdminPayroll({ me }) {
   const capabilities = new Set(me.capabilities || []);
   const canPrepare = capabilities.has("payroll.prepare");
   const canApprove = capabilities.has("payroll.approve");
+  const canRecordSalary = canPrepare && capabilities.has("hr_private.access");
+  const [salarySetup,setSalarySetup] = useState(null);
   const [runs, setRuns] = useState([]);
   const [readiness, setReadiness] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -71,6 +74,7 @@ export default function AdminPayroll({ me }) {
   const decisionWriteBusyRef = useRef(false);
   const creationWriteBusyRef = useRef(false);
   const lineWriteBusyRef = useRef(false);
+  const salaryReadGeneration = useRef(0);
   const selectedRunRef = useRef(null);
   const manualSelectionGeneration = useRef(0);
   function selectRun(id, intentional = false) {
@@ -79,15 +83,23 @@ export default function AdminPayroll({ me }) {
     setSelectedId(id);
   }
 
+  useEffect(() => {
+    salaryReadGeneration.current += 1;
+    setSheet(current=>current?.type === "salary" ? null : current);
+    setSalarySetup(null);
+  },[canRecordSalary]);
+
   useEffect(() => { setEntrySearch(""); setEntryFilter("all"); }, [selectedId,me.id,me.org_id]);
   useEffect(() => {
     void loadRuns();
     return () => {
       runsReadGeneration.current += 1;
       detailReadGeneration.current += 1;
+      salaryReadGeneration.current += 1;
     };
-  }, [me.id]);
+  }, [me.id,me.org_id]);
   useEffect(() => {
+    salaryReadGeneration.current += 1;
     setSheet(null);
     if (selectedId) void loadDetail(selectedId);
     else { detailReadGeneration.current += 1; setDetail(null); }
@@ -196,6 +208,25 @@ export default function AdminPayroll({ me }) {
     }
   }
 
+  async function reviewRecordedSalary(entry) {
+    const runId=selectedRunRef.current;
+    if(!canRecordSalary || !entry.employee_id || !runId || detail?.run?.status !== "draft")return;
+    const generation=++salaryReadGeneration.current;
+    setError(null);setSheet({type:"salary",runId,entry,loading:true});
+    try {
+      const response=await supabase.rpc("hr_employee_protected_summary",{p_employee_id:entry.employee_id});
+      if(generation !== salaryReadGeneration.current || selectedRunRef.current !== runId)return;
+      if(response.error)throw response.error;
+      const salary=(response.data?.compensation || []).filter(row=>row.status === "active"
+        && row.effective_on <= detail.run.period_end && (!row.ends_on || row.ends_on >= detail.run.period_start))
+        .sort((a,b)=>String(b.effective_on).localeCompare(String(a.effective_on)) || String(b.recorded_at).localeCompare(String(a.recorded_at)))[0] || null;
+      setSheet({type:"salary",runId,entry,salary,loading:false});
+    } catch {
+      if(generation === salaryReadGeneration.current && selectedRunRef.current === runId)
+        setSheet({type:"salary",runId,entry,loading:false,readError:"The protected salary could not be verified. No payroll change has been made."});
+    }
+  }
+
   async function saveLine(form) {
     const runId = detail?.run?.id;
     if (!runId || selectedRunRef.current !== runId || !form.employeeId || busy || lineWriteBusyRef.current) return;
@@ -226,7 +257,7 @@ export default function AdminPayroll({ me }) {
       recorded = true;
       if (selectedRunRef.current !== runId) return;
       setSheet(null);
-      setNotice("Payroll line recorded.");
+      setNotice(form.category === "base_salary" ? "Recorded salary applied to this draft." : "Payroll line recorded.");
       await Promise.all([loadDetail(runId), loadRuns(runId)]);
     } catch (failure) {
       if (selectedRunRef.current === runId)
@@ -396,6 +427,13 @@ export default function AdminPayroll({ me }) {
 
   if (loading) return <div className="body fpg-payroll"><LoadingState label="Loading Payroll…" /></div>;
 
+  if (salarySetup && canRecordSalary) return <>
+    <div className="body"><Button variant="secondary" onClick={()=>{setSalarySetup(null);void loadRuns();if(selectedRunRef.current)void loadDetail(selectedRunRef.current);}}>Back to Payroll</Button>
+      <p className="screen-note">Protected HR is the only place to record salary and payment details. Review and apply a recorded salary to update an existing draft. Payment details are captured when a payroll run is created.</p>
+    </div>
+    <AdminProtectedHR key={`${me.org_id}:${me.id}:${salarySetup.employeeId || "all"}`} me={me} initialEmployeeId={salarySetup.employeeId || null} />
+  </>;
+
   return <div className="body fpg-payroll">
     <header className="fpg-payroll-head">
       <div>
@@ -407,6 +445,7 @@ export default function AdminPayroll({ me }) {
       </div>
       <div className="fpg-payroll-head-actions">
         <span className="fpg-payroll-authority">{canPrepare ? "Administration prepares" : "Group Pastor approves"}</span>
+        {canRecordSalary && <button className="btn btn-ghost" onClick={()=>setSalarySetup({})}>Salary & payment setup</button>}
         {canPrepare && <button className="btn" onClick={() => setSheet({ type:"create" })}>Create payroll run</button>}
       </div>
     </header>
@@ -494,7 +533,10 @@ export default function AdminPayroll({ me }) {
                   <td>{money(entry.deductions_minor, entry.currency)}</td>
                   <td><strong>{money(entry.net_minor, entry.currency)}</strong></td>
                   <td>{entry.flags?.length ? <span className="fpg-payroll-flags">{entry.flags.map((flag) => flag.replaceAll("_"," ")).join(" · ")}</span> : <span className="fpg-payroll-clear">Clear</span>}</td>
-                  <td>{canPrepare && run.status === "draft" ? <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"entry", runId:run.id, entry })}>Adjust</button> : <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"view", runId:run.id, entry })}>Review</button>}</td>
+                  <td>{canPrepare && run.status === "draft" ? <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"entry", runId:run.id, entry })}>Adjust</button> : <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"view", runId:run.id, entry })}>Review</button>}
+                    {canRecordSalary && entry.employee_id && run.status === "draft" && <button type="button" className="fpg-payroll-row-action" onClick={()=>void reviewRecordedSalary(entry)}>Review recorded salary</button>}
+                    {canRecordSalary && entry.employee_id && <button type="button" className="fpg-payroll-row-action" onClick={()=>setSalarySetup({employeeId:entry.employee_id})}>Salary & payment details</button>}
+                  </td>
                 </tr>)}</tbody>
               </table>
             </div>
@@ -508,6 +550,11 @@ export default function AdminPayroll({ me }) {
     </div>
 
     {visibleSheet?.type === "create" && <CreateRunSheet error={error} busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
+    {canRecordSalary && visibleSheet?.type === "salary" && <RecordedSalarySheet
+      entry={visibleSheet.entry} salary={visibleSheet.salary} loading={visibleSheet.loading} readError={visibleSheet.readError} error={error} busy={busy}
+      onClose={()=>{salaryReadGeneration.current += 1;setSheet(null);}}
+      onOpenProtected={()=>{salaryReadGeneration.current += 1;setSheet(null);setSalarySetup({employeeId:visibleSheet.entry.employee_id});}}
+      onApply={()=>saveLine({employeeId:visibleSheet.entry.employee_id,category:"base_salary",direction:"addition",label:"Base salary",amount:String(Number(visibleSheet.salary.amount_minor)/100),note:`Applied protected salary record ${visibleSheet.salary.id}, effective ${visibleSheet.salary.effective_on}, after review for this draft.`})} />}
     {visibleSheet?.type === "entry" && <EntrySheet error={error} entry={visibleSheet.entry} busy={busy} onClose={() => setSheet(null)} onSave={saveLine} onRemove={removeLine} />}
     {visibleSheet?.type === "view" && <ViewEntrySheet entry={visibleSheet.entry} onClose={() => setSheet(null)} />}
     {visibleSheet?.type === "submit" && <DecisionSheet error={error} title="Submit Payroll" action="Submit for approval" busy={busy} onClose={() => setSheet(null)} onSave={submitRun} />}
@@ -644,5 +691,21 @@ function DecisionSheet({ error, title, action, busy, onClose, onSave }) {
     {error && <ProductNotice tone="error" title="Payroll decision was not recorded">{error}</ProductNotice>}
     <FieldGroup label="Decision note"><textarea className="field" rows="4" value={note} onChange={(event)=>setNote(event.target.value)} placeholder="Record the reason and review context" /></FieldGroup>
     <p className="screen-note">Approved Payroll is immutable. Corrections create a new attributable successor revision.</p>
+  </ComposerDrawer>;
+}
+
+
+function RecordedSalarySheet({entry,salary,loading,readError,error,busy,onClose,onApply,onOpenProtected}) {
+  const applicable=salary && salary.id && salary.amount_minor != null && salary.currency === entry.currency && Number.isSafeInteger(Number(salary.amount_minor)) && Number(salary.amount_minor)>=0;
+  return <ComposerDrawer open title="Use recorded salary" onClose={busy?undefined:onClose}
+    description={`${entry.employee_name} · This applies Protected HR's recorded salary to this draft only. The employee's salary record and approved payroll runs remain unchanged.`}
+    footer={<><Button variant="secondary" disabled={busy} onClick={onClose}>Cancel</Button><Button busy={busy} disabled={loading || Boolean(readError) || !applicable} onClick={onApply}>Apply salary to this draft</Button></>}>
+    {loading?<LoadingState label="Loading protected salary…"/>:readError?<ProductNotice tone="error" title="Salary unavailable">{readError}</ProductNotice>:salary?<>
+      <dl><dt>Recorded base salary</dt><dd>{money(salary.amount_minor,salary.currency)}</dd><dt>Basis</dt><dd>{salary.basis_label}</dd><dt>Effective date</dt><dd>{dateLabel(salary.effective_on)}</dd></dl>
+      {!applicable&&<ProductNotice tone="attention" title="Salary cannot be applied">The recorded salary must have a valid amount in {entry.currency}. Currencies are never converted automatically.</ProductNotice>}
+    </>:<ProductNotice tone="attention" title="No salary recorded for this period">Record the salary in Protected HR with an effective date covering this payroll period, then return to review it.</ProductNotice>}
+    {error&&<ProductNotice tone="error" title="Salary was not applied">{error}</ProductNotice>}
+    <Button variant="secondary" disabled={busy} onClick={onOpenProtected}>Update salary in Protected HR</Button>
+    <p className="screen-note">Review the amount before applying it. Existing allowances and deductions stay in this draft; the salary application is recorded in payroll history.</p>
   </ComposerDrawer>;
 }

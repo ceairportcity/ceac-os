@@ -4,6 +4,7 @@ import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../lib/inv
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
 import SupportTeamMemberships from "./SupportTeamMemberships";
+import SupportAccessApprovals from "./SupportAccessApprovals";
 import VolunteerActivationApprovals from "./VolunteerActivationApprovals";
 
 const ACCESS_MODES = [
@@ -451,7 +452,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
           </DataPanel>
         </div>}
 
-        {mode === "technical-support" && <SupportTeamMemberships me={me} people={snapshot.people} units={snapshot.units} />}
+        {mode === "technical-support" && <><SupportAccessApprovals me={me} authority="people_administration" /><SupportTeamMemberships me={me} people={snapshot.people} units={snapshot.units} /></>}
 
         {mode === "invitations" && <DataPanel
           eyebrow="Account activation"

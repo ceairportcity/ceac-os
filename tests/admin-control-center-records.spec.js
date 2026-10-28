@@ -17,7 +17,7 @@ for(const width of [390,1440]) {
   await expect(page.locator('.ev2w-header h1')).toHaveText(heading);
   await expect(page.getByRole('button',{name:'Try again',exact:true})).toBeVisible();
   await expect(page.getByText(empty,{exact:true})).toHaveCount(0);
-  await expect(page.getByRole('button',{name:'Complete check',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Confirm review',exact:true})).toHaveCount(0);
   denied=false;await page.getByRole('button',{name:'Try again',exact:true}).click();
   await expect(page.getByText(empty,{exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
@@ -35,6 +35,6 @@ for(const width of [390,1440]) {
   await page.getByRole('tab',{name:'All',exact:true}).click();
   const row=page.getByRole('button',{name:/Stopped check/});
   await expect(row).toContainText('Cancelled');await expect(row).not.toContainText('Completed');
-  await row.click();await expect(page.getByRole('button',{name:'Complete check',exact:true})).toHaveCount(0);
+  await row.click();await expect(page.getByRole('button',{name:'Confirm review',exact:true})).toHaveCount(0);
  });
 }

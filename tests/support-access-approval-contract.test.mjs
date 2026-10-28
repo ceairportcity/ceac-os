@@ -12,6 +12,8 @@ const supportActions=read("src/components/SupportAccessCaseActions.jsx");
 const approvals=read("src/components/SupportAccessApprovals.jsx");
 const admin=read("src/screens/AdminHome.jsx");
 const manager=read("src/screens/ManagerHome.jsx");
+const peopleAccess=read("src/components/PeopleAccess.jsx");
+const technicalHelp=read("src/screens/TechnicalHelp.jsx");
 
 test("business approval and support execution are different attributable transitions",()=>{
   assert.match(migration,/CREATE TABLE public\.support_access_requests/);
@@ -73,8 +75,10 @@ test("UI separates business decisions from technical assistance and never sugges
   assert.match(approvals,/\.eq\("state", "pending"\)/);
   assert.match(approvals,/\.eq\("version", request\.version\)/);
   assert.match(approvals,/Approving|Approve support action/);
-  assert.match(admin,/SupportAccessApprovals me=\{me\} authority="people_administration"/);
-  assert.match(manager,/SupportAccessApprovals me=\{me\} authority="unit_manager"/);
+  assert.doesNotMatch(admin,/SupportAccessApprovals/);
+  assert.doesNotMatch(manager,/SupportAccessApprovals/);
+  assert.match(peopleAccess,/mode === "technical-support"[\s\S]*SupportAccessApprovals me=\{me\} authority="people_administration"/);
+  assert.match(technicalHelp,/SupportAccessApprovals me=\{me\} authority="unit_manager"/);
   assert.match(support,/SupportAccessCaseActions item=\{item\}/);
   assert.match(support,/accessLedger/);
   assert.doesNotMatch(supportActions,/\.from\("capability_grants"\)\.(?:insert|update)/);

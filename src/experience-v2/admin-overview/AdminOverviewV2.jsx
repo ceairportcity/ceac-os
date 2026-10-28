@@ -158,7 +158,6 @@ export default function AdminOverviewV2({
   me,
   announcements = null,
   onOpenAnnouncements,
-  supportApprovals,
   dateLabel,
   loading,
   loadFailed,
@@ -406,10 +405,9 @@ export default function AdminOverviewV2({
             <Button icon="control" onClick={onOpenSettings}>Control Center</Button>
           </div>
 
-          <aside className="adminv2-announcements" aria-label="Announcements and access approvals"><h2>Announcements</h2>
+          <aside className="adminv2-announcements" aria-label="Announcements"><h2>Announcements</h2>
             {announcements===null?<p>Current announcements could not be verified.</p>:announcements.length?announcements.slice(0,3).map(item=><button type="button" key={item.id} onClick={onOpenAnnouncements}>{item.title} →</button>):<p>No current announcement.</p>}
             <Button variant="quiet" size="compact" onClick={onOpenAnnouncements}>Open announcements →</Button>
-            {supportApprovals}
           </aside>
         </section>
 

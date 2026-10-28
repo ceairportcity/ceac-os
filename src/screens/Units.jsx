@@ -3,7 +3,9 @@ import { supabase } from "../lib/supabase";
 import { dateOnly, dueLabel } from "../lib/time";
 import { statusPill, ProductNotice, LoadingState, EmptyState, SectionHeader, FieldGroup, StatusDistribution, ProgressMeter, Avatar } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
-import { ComposerDrawer, StatusBadge } from "../experience-v2/components";
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
+import { Table } from "../components/primitives";
+import { ComposerDrawer, SegmentedControl } from "../experience-v2/components";
 
 function money(minor, currency = "GHS") {
   const value = Number(minor || 0) / 100;
@@ -25,6 +27,7 @@ function sumByCurrency(rows) {
 
 export default function Units({ me, openItem, openPeopleAccess, openProject }) {
   const [units, setUnits] = useState([]);
+  const [search,setSearch] = useState("");
   const [openUnitId, setOpenUnitId] = useState(null);
   const [area, setArea] = useState("overview");
   const [headChoice, setHeadChoice] = useState({});
@@ -91,7 +94,7 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
         return {
           ...unit,
           people,
-          head: people.find((row) => row.role === "manager") || null,
+          head: people.find((row) => row.role === "manager" && row.profiles?.active) || null,
           work,
           openWork: work.filter((row) => !["completed","self_certified","cancelled"].includes(row.status)),
           completedThisMonth: completed.filter((row) => row.completed_at && new Date(row.completed_at) >= monthStart),
@@ -189,6 +192,23 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
     if (openUnitId) sessionStorage.setItem(`ceac-admin-unit-area:${openUnitId}`, area);
   }, [openUnitId, area]);
 
+  const unitComposer = unitSheet && <ComposerDrawer open title={unitSheet.id ? "Edit unit" : "Add unit"}
+      onClose={() => { if (!savingUnit) setUnitSheet(null); }}
+      description="Renaming a unit preserves its work and history because the record keeps the same identity.">
+      <FieldGroup label="Unit name"><input className="field" value={unitForm.name} onChange={(event) => setUnitForm((current) => ({ ...current, name:event.target.value }))} /></FieldGroup>
+      <FieldGroup label="Short code" hint="Used in short work references and spoken identifiers."><input className="field" value={unitForm.code} onChange={(event) => setUnitForm((current) => ({ ...current, code:event.target.value }))} /></FieldGroup>
+      <FieldGroup label="Parent unit" hint="Optional. Use only where CEAC actually has a parent-child unit relationship.">
+        <select className="field" value={unitForm.parent_id} onChange={(event) => setUnitForm((current) => ({ ...current, parent_id:event.target.value }))}>
+          <option value="">No parent unit</option>
+          {units.filter((unit) => unit.id !== unitSheet.id).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+        </select>
+      </FieldGroup>
+      <label className="office-check-row"><input type="checkbox" checked={unitForm.handles_finance} onChange={(event) => setUnitForm((current) => ({ ...current, handles_finance:event.target.checked }))} /><span><strong>Handles finance</strong><small>This unit may receive finance-entry capabilities where the product explicitly allows them.</small></span></label>
+      <label className="office-check-row"><input type="checkbox" checked={unitForm.owns_calendar} onChange={(event) => setUnitForm((current) => ({ ...current, owns_calendar:event.target.checked }))} /><span><strong>Owns ministry calendar</strong><small>Marks the unit responsible for organisation calendar administration.</small></span></label>
+      {error && <ProductNotice tone="error" title="Unit setup could not be saved">{error}</ProductNotice>}
+      <button className="btn" disabled={savingUnit || !unitForm.name.trim() || !unitForm.code.trim()} onClick={saveUnitSetup}>{savingUnit ? "Saving…" : unitSheet.id ? "Save unit setup" : "Create unit"}</button>
+    </ComposerDrawer>;
+
   if (loading) return <div className="body"><LoadingState label="Loading Units…" /></div>;
 
   if (openUnit) {
@@ -201,47 +221,48 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
 
     return <div className="body admin-unit-detail">
       <button className="back" onClick={() => setOpenUnitId(null)}>← All units</button>
-      <div className="admin-unit-identity"><div><div className="eyebrow">{openUnit.code || "Unit"}</div>
-      <h1 className="h1">{openUnit.name}</h1></div><StatusBadge tone={openUnit.head ? "success" : "warning"} icon={false}>{openUnit.head ? "Unit Head recorded" : "Unit Head needed"}</StatusBadge></div>
-      <div className="admin-unit-title-row">
-        <p className="screen-note">{openUnit.head ? `Led by ${openUnit.head.profiles?.full_name || "Unit Head"}` : "No Unit Head assigned"} · {openUnit.people.length} {openUnit.people.length === 1 ? "person" : "people"}.</p>
-        <button className="btn btn-ghost btn-sm" onClick={() => openUnitSetup(openUnit)}>Edit setup</button>
-      </div>
+      <WorkPageHeader eyebrow={`Organisation · ${openUnit.code || "Unit"}`} title={openUnit.name}
+        description={`${openUnit.head ? `Led by ${openUnit.head.profiles?.full_name || "Unit Head"}` : "Unit Head not assigned"} · ${openUnit.people.length} ${openUnit.people.length === 1 ? "person" : "people"}`}
+        actionIcon="edit" actionLabel="Edit setup" onAction={()=>openUnitSetup(openUnit)} />
 
       {!openUnit.head && <ProductNotice tone="attention" title="Unit Head not assigned">Administration should assign an existing member as Unit Head after their account is active.</ProductNotice>}
 
-      <nav className="admin-workspace-nav" aria-label="Unit workspace">
-        {[
-          ["overview","Overview"],["people","People"],["work","Work"],["objectives","Objectives"],["projects","Projects"],["reporting","Reporting"],["attendance","Attendance"],["cost","Cost"],
-        ].map(([key,label]) => <button key={key} className={area === key ? "on" : ""} onClick={() => setArea(key)}>{label}</button>)}
-      </nav>
+      <nav aria-label="Unit workspace"><SegmentedControl ariaLabel="Unit sections" value={area} onChange={setArea} items={[
+        ["overview","Overview"],["people","People"],["work","Work"],["objectives","Objectives"],["projects","Projects"],["reporting","Reporting"],["attendance","Attendance"],["cost","Cost"],
+      ].map(([value,label])=>({value,label}))} /></nav>
+      <div role="region" aria-label={`${openUnit.name} ${area}`} tabIndex={0} style={{maxHeight:640,overflow:"auto",overscrollBehavior:"contain",marginTop:20}}>
+
 
       {area === "overview" && <section className="admin-workspace-area">
         <div className="admin-unit-overview-grid">
           <article className="admin-unit-overview-card">
-            <span>Objectives</span>
-            <strong>{openUnit.objectives.length} recorded</strong>
-            <StatusDistribution label="Unit objective status" segments={[
-              { key:"track", label:"On track / met", value:openUnit.objectivesOnTrack.length, tone:"success" },
-              { key:"risk", label:"At risk", value:openUnit.objectives.filter((row) => row.status === "at_risk").length, tone:"attention" },
-              { key:"not-met", label:"Not met", value:openUnit.objectives.filter((row) => row.status === "not_met").length, tone:"danger" },
-              { key:"other", label:"Other", value:Math.max(0, openUnit.objectives.length - openUnit.objectivesOnTrack.length - openUnit.objectives.filter((row) => row.status === "at_risk").length - openUnit.objectives.filter((row) => row.status === "not_met").length), tone:"neutral" },
-            ]} />
+            <span>People & responsibility</span>
+            <strong>{openUnit.people.length} {openUnit.people.length === 1 ? "person" : "people"} in this unit</strong>
+            <small>{openUnit.head ? `${openUnit.head.profiles?.full_name || "Recorded head"} · Unit Head` : "Choose a Unit Head from the People section."}</small>
+            <button className="btn btn-ghost btn-sm" onClick={()=>setArea("people")}>View people →</button>
           </article>
           <article className="admin-unit-overview-card">
-            <span>Delivery</span>
-            <strong>{openUnit.activeProjects.length} active project{openUnit.activeProjects.length === 1 ? "" : "s"}</strong>
-            <div className="admin-unit-overview-pair"><div><b>{openUnit.openWork.length}</b><small>open work</small></div><div><b>{openUnit.completedThisMonth.length}</b><small>completed this month</small></div></div>
+            <span>Work & delivery</span>
+            <strong>{openUnit.openWork.length} open work {openUnit.openWork.length === 1 ? "item" : "items"}</strong>
+            <small>{openUnit.completedThisMonth.length} completed this month · {openUnit.activeProjects.length} active projects</small>
+            <div className="admin-unit-title-row"><button className="btn btn-ghost btn-sm" onClick={()=>setArea("work")}>View work →</button><button className="btn btn-ghost btn-sm" onClick={()=>setArea("projects")}>View projects →</button></div>
           </article>
           <article className="admin-unit-overview-card">
             <span>Reporting</span>
             <strong>{reportingLabel}</strong>
-            <small>{openUnit.currentPeriod?.label || "No open reporting period"}</small>
+            <small>{openUnit.currentPeriod?.label || "Reports can be prepared when Administration opens a reporting period."}</small>
+            <button className="btn btn-ghost btn-sm" onClick={()=>setArea("reporting")}>View reporting →</button>
           </article>
           <article className="admin-unit-overview-card">
-            <span>People</span>
-            <strong>{openUnit.people.length} on record</strong>
-            <small>{openUnit.head ? `Led by ${openUnit.head.profiles?.full_name || "Unit Head"}` : "No Unit Head assigned"}</small>
+            <span>Objectives</span>
+            <strong>{openUnit.objectives.length ? `${openUnit.objectivesOnTrack.length} of ${openUnit.objectives.length} on track or met` : "No objectives recorded"}</strong>
+            {openUnit.objectives.length > 0 ? <StatusDistribution label="Unit objective status" segments={[
+              { key:"track", label:"On track / met", value:openUnit.objectivesOnTrack.length, tone:"success" },
+              { key:"risk", label:"At risk", value:openUnit.objectives.filter((row) => row.status === "at_risk").length, tone:"attention" },
+              { key:"not-met", label:"Not met", value:openUnit.objectives.filter((row) => row.status === "not_met").length, tone:"danger" },
+              { key:"other", label:"Other", value:Math.max(0, openUnit.objectives.length - openUnit.objectivesOnTrack.length - openUnit.objectives.filter((row) => row.status === "at_risk").length - openUnit.objectives.filter((row) => row.status === "not_met").length), tone:"neutral" },
+            ]} /> : <small>Objectives linked to this unit will appear here.</small>}
+            <button className="btn btn-ghost btn-sm" onClick={()=>setArea("objectives")}>View objectives →</button>
           </article>
         </div>
         <SectionHeader eyebrow="Today" title="Operational context" />
@@ -327,6 +348,8 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
           <div><strong>{currency}</strong><span>{money(spendTotals[currency] || 0,currency)} spent · {budgetTotals[currency] ? `${money(budgetTotals[currency],currency)} budget` : "no budget set"}</span></div>
         </div>)}
       </section>}
+      </div>
+      {unitComposer}
     </div>;
   }
 
@@ -340,50 +363,24 @@ export default function Units({ me, openItem, openPeopleAccess, openProject }) {
       <button className="btn btn-sm" onClick={() => openUnitSetup(null)}>Add unit</button>
     </div>
     {error && <ProductNotice tone="error" title="Units need attention" action={<button className="btn btn-ghost btn-sm" onClick={load}>Try again</button>}>{error}</ProductNotice>}
-    <div className="admin-unit-list">
-      {units.map((unit) => {
-        const objectiveAttention = unit.objectives.filter((row) => ["at_risk","not_met"].includes(row.status)).length;
-        const reportState = unit.currentPeriod ? (["submitted","confirmed"].includes(unit.report?.status) ? "Report in" : unit.report ? "Report draft" : "Report missing") : "No open reporting period";
-        return <button key={unit.id} className="admin-unit-card" onClick={() => setOpenUnitId(unit.id)}>
-          <div className="admin-unit-card-head">
-            <div><strong>{unit.name}</strong><span>{unit.head ? unit.head.profiles?.full_name : "No Unit Head"}</span></div>
-            {unit.people.length === 1 && <span className="pill p-grey">Unit of one</span>}
-          </div>
-          <div className="admin-unit-card-status">
-            <span><b>{unit.people.length}</b><small>people</small></span>
-            <span><b>{unit.activeProjects.length}</b><small>active projects</small></span>
-            <span><b>{unit.openWork.length}</b><small>open work</small></span>
-            <span><b>{objectiveAttention}</b><small>objectives needing attention</small></span>
-          </div>
-          {unit.objectives.length > 0 && <StatusDistribution label={unit.name + " objective status"} segments={[
-            { key:"track", label:"On track / met", value:unit.objectivesOnTrack.length, tone:"success" },
-            { key:"attention", label:"Attention", value:objectiveAttention, tone:"attention" },
-            { key:"other", label:"Other", value:Math.max(0,unit.objectives.length-unit.objectivesOnTrack.length-objectiveAttention), tone:"neutral" },
-          ]} />}
-          <div className="admin-unit-card-foot">
-            <span>{reportState}</span>
-            <b aria-hidden="true">→</b>
-          </div>
-        </button>;
-      })}
-    </div>
+    <section className="card" aria-label="Unit directory">
+      <div className="admin-unit-title-row"><h2>Organisation units <small>{units.length}</small></h2>
+        <input className="field" type="search" aria-label="Find a unit" placeholder="Find a unit or head" value={search} onChange={event=>setSearch(event.target.value)} />
+      </div>
+      <div role="region" aria-label="Organisation units register" tabIndex={0} style={{maxHeight:560,overflow:"auto",overscrollBehavior:"contain"}}>
+        <Table caption="Select a unit to view its people, work and reporting." rows={units.filter(unit=>[unit.name,unit.head?.profiles?.full_name].filter(Boolean).join(" ").toLowerCase().includes(search.toLowerCase())).map(unit=>({
+          ...unit, headName:unit.head?.profiles?.full_name || "Not assigned", peopleCount:unit.people.length,
+          projectCount:unit.activeProjects.length, workCount:unit.openWork.length, objectiveAttention:unit.objectives.filter(row=>["at_risk","not_met"].includes(row.status)).length,
+          reporting:!unit.currentPeriod?"No open period":["submitted","confirmed"].includes(unit.report?.status)?"Submitted":unit.report?"Draft":"Not submitted",
+        }))} columns={[
+          {key:"name",label:"Unit",render:unit=><><strong>{unit.name}</strong><div className="screen-note">{unit.code}</div></>},
+          {key:"headName",label:"Unit Head"},{key:"peopleCount",label:"People"},{key:"projectCount",label:"Active projects"},{key:"workCount",label:"Open work"},{key:"objectiveAttention",label:"Objectives needing attention"},{key:"reporting",label:"Reporting"},
+          {key:"open",label:"",render:unit=><button type="button" className="btn btn-ghost btn-sm" aria-label={`Open ${unit.name}`} onClick={()=>setOpenUnitId(unit.id)}>Open →</button>},
+        ]} onRowClick={unit=>setOpenUnitId(unit.id)} empty="No units match this search." />
+      </div>
+    </section>
     {units.length === 0 && !error && <EmptyState title="No active units">Create an organisation unit before assigning people or work.</EmptyState>}
 
-    {unitSheet && <ComposerDrawer open title={unitSheet.id ? "Edit unit" : "Add unit"}
-      onClose={() => { if (!savingUnit) setUnitSheet(null); }}
-      description="Renaming a unit preserves its work and history because the record keeps the same identity.">
-      <FieldGroup label="Unit name"><input className="field" value={unitForm.name} onChange={(event) => setUnitForm((current) => ({ ...current, name:event.target.value }))} /></FieldGroup>
-      <FieldGroup label="Short code" hint="Used in short work references and spoken identifiers."><input className="field" value={unitForm.code} onChange={(event) => setUnitForm((current) => ({ ...current, code:event.target.value }))} /></FieldGroup>
-      <FieldGroup label="Parent unit" hint="Optional. Use only where CEAC actually has a parent-child unit relationship.">
-        <select className="field" value={unitForm.parent_id} onChange={(event) => setUnitForm((current) => ({ ...current, parent_id:event.target.value }))}>
-          <option value="">No parent unit</option>
-          {units.filter((unit) => unit.id !== unitSheet.id).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
-        </select>
-      </FieldGroup>
-      <label className="office-check-row"><input type="checkbox" checked={unitForm.handles_finance} onChange={(event) => setUnitForm((current) => ({ ...current, handles_finance:event.target.checked }))} /><span><strong>Handles finance</strong><small>This unit may receive finance-entry capabilities where the product explicitly allows them.</small></span></label>
-      <label className="office-check-row"><input type="checkbox" checked={unitForm.owns_calendar} onChange={(event) => setUnitForm((current) => ({ ...current, owns_calendar:event.target.checked }))} /><span><strong>Owns ministry calendar</strong><small>Marks the unit responsible for organisation calendar administration.</small></span></label>
-      {error && <ProductNotice tone="error" title="Unit setup could not be saved">{error}</ProductNotice>}
-      <button className="btn" disabled={savingUnit || !unitForm.name.trim() || !unitForm.code.trim()} onClick={saveUnitSetup}>{savingUnit ? "Saving…" : unitSheet.id ? "Save unit setup" : "Create unit"}</button>
-    </ComposerDrawer>}
+    {unitComposer}
   </div>;
 }
