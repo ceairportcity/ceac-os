@@ -43,7 +43,8 @@ async function fixture(page,role,{officeFail=false,workFail=false,empty=false,un
 async function office(page,dialog,role){await dialog.getByRole('combobox').selectOption('venue');return dialog.getByRole('button',{name:'Start work',exact:true});}
 async function offsite(page,dialog,role){
  if(role==='staff')await dialog.getByRole('button',{name:'Somewhere else',exact:true}).click();
- else await dialog.getByRole('radio',{name:'Off-site work on my responsibility',exact:true}).check();
+ else await dialog.getByRole('radio',{name:'Off-site work',exact:true}).check();
+ await dialog.getByRole('textbox',{name:'Where are you working from?'}).fill('Synthetic remote office');
 }
 for(const role of ['staff','employee'])for(const width of [390,1440]){
  test(`${role} Start Work falls back without hiding accuracy at ${width}px`,async({page})=>{
@@ -85,11 +86,42 @@ for(const role of ['staff','employee']){
   await dialog.getByRole('button',{name:'Reload start options',exact:true}).click();
   await dialog.getByRole('combobox').selectOption('venue');await expect(dialog.getByRole('button',{name:'Start work',exact:true})).toBeEnabled();expect(state.writes).toHaveLength(0);
  });
- test(`${role} missing off-site responsibility remains explicit and cannot start`,async({page})=>{
+ for(const width of [390,1440])test(`${role} no responsibility starts off-site with actual location and a place name at ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:1000});
   const {state,dialog}=await fixture(page,role,{empty:true});await offsite(page,dialog,role);
-  await expect(dialog.getByRole('status')).toContainText('No active responsibility');await expect(dialog.getByRole('button',{name:'Start work',exact:true})).toBeDisabled();
-  if(role==='staff'){await dialog.getByRole('button',{name:'Open Work',exact:true}).click();await expect(page.getByRole('status')).toContainText('Work destination opened');}
-  else await expect(dialog.getByRole('link',{name:'Open Work',exact:true})).toHaveAttribute('href','?tab=work');
+  await page.screenshot({path:`/tmp/offsite-${role}-${width}.png`,fullPage:true});
+  await expect(dialog.getByRole('status')).toContainText('No responsibility is required');
+  await dialog.getByRole('button',{name:'Start work',exact:true}).click();
+  await expect(page.getByRole('button',{name:'End work',exact:true})).toBeVisible();
+  expect(state.writes).toHaveLength(1);
+  expect(state.writes[0].body).toMatchObject({place:'elsewhere',work_item_id:null,lat:5.6037,lng:-0.187,flags:{offsite_location_name:'Synthetic remote office'}});
+ });
+ test(`${role} failed optional work list does not block off-site attendance`,async({page})=>{
+  const {state,dialog}=await fixture(page,role,{workFail:true});await offsite(page,dialog,role);
+  await dialog.getByRole('button',{name:'Start work',exact:true}).click();
+  await expect(page.getByRole('button',{name:'End work',exact:true})).toBeVisible();
+  expect(state.writes[0].body.work_item_id).toBeNull();
+ });
+ test(`${role} off-site location denial retains place name for retry`,async({page})=>{
+  const {state,dialog}=await fixture(page,role,{empty:true});await offsite(page,dialog,role);
+  await page.evaluate(()=>{window.positionMode='denied';});
+  await dialog.getByRole('button',{name:'Start work',exact:true}).click();
+  await expect(dialog.getByRole('alert').filter({hasText:'permission was denied'})).toBeVisible();
+  expect(state.writes).toHaveLength(0);
+  await expect(dialog.getByRole('textbox',{name:'Where are you working from?'})).toHaveValue('Synthetic remote office');
+  await page.evaluate(()=>{window.positionMode='fallback';});
+  await dialog.getByRole('button',{name:'Start work',exact:true}).click();
+  await expect(page.getByRole('button',{name:'End work',exact:true})).toBeVisible();
+  expect(state.writes).toHaveLength(1);
+ });
+ test(`${role} blank off-site place cannot start and switching modes preserves the draft`,async({page})=>{
+  const {state,dialog}=await fixture(page,role,{empty:true});await offsite(page,dialog,role);
+  const name=dialog.getByRole('textbox',{name:'Where are you working from?'});
+  await name.fill('   ');await expect(dialog.getByRole('button',{name:'Start work',exact:true})).toBeDisabled();
+  await name.fill('Synthetic remote office');
+  if(role==='staff')await dialog.getByRole('button',{name:'At an authorised office or programme location',exact:true}).click();
+  else await dialog.getByRole('radio',{name:'Authorised office or programme venue',exact:true}).check();
+  await offsite(page,dialog,role);await expect(name).toHaveValue('Synthetic remote office');
   expect(state.writes).toHaveLength(0);
  });
  test(`${role} expired responsibility is a pre-insert failure and keeps retry available`,async({page})=>{

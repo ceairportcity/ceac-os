@@ -270,3 +270,16 @@ The owner approved implementation after discussion of the latest HR proposal and
 ## 25 October 2026 — approved Control Center redesign and mobile header correction
 
 The owner approved the three connected mockups and explicitly instructed implementation. Replace the mixed settings/card catalogue with grouped searchable destinations and focused category/edit pages; simplify repeated/technical language. Remove the permanent Control Center breadcrumb from independent workspaces. Back is contextual inside deeper settings and returns to the appropriate parent. Reserve phone system-bar space in the shared mobile shell across roles, including iPhone and Android. Preserve existing supported settings, protected permissions and real data; do not invent mockup values or a new workflow designer. Implementation/evidence contract: `docs/continuity/CEAC_CONTROL_CENTER_DESIGN_2026-10-25.md`. This is a post-release correction based on the already merged PR #144, not a restart of Stage 2.
+
+## 28 October 2026 — off-site attendance independent of responsibility
+
+The owner clarified in voice that off-site Start Work must capture the employee's
+current location and where they are working from, without requiring a linked
+project. The owner explicitly approved implementing this change. This supersedes
+the mandatory active-responsibility requirement retained by PR150. A selected
+responsibility remains optional and must belong to the employee and organisation
+and be active. No project/task is fabricated. New off-site starts require fresh
+location evidence and a place name; location failures retain a retryable form.
+Office geofence, actor/tenant isolation, uncertain-write read-back, one-open-session
+protection, End Work and historical records remain unchanged. This implementation
+approval does not claim production deployment or physical-device acceptance.

@@ -139,11 +139,11 @@ test("pre-insert location failure allows retry while uncertain Start writes rema
 
 test("manager and HR off-site work remains available if office locations fail to load", () => {
   const ownSession = read("../src/components/EmployeeWorkSession.jsx");
-  assert.match(ownSession, /Promise\.allSettled\(/);
-  assert.match(ownSession, /setLocationsUnavailable\(Boolean\(locationValue\.error\)\)/);
-  assert.match(ownSession, /setOwnWorkUnavailable\(Boolean\(workValue\.error\)\)/);
-  assert.match(ownSession, /place==="office"\?\(locationsUnavailable\|\|!locationId\):\(ownWorkUnavailable\|\|!workId\)/);
-  assert.match(ownSession, /No active responsibility is currently assigned to you/);
+  assert.match(ownSession, /Optional responsibility loading cannot hold up/);
+  assert.match(ownSession, /setLocationsUnavailable\(Boolean\(error\)\)/);
+  assert.match(ownSession, /setOwnWorkUnavailable\(Boolean\(error\)\)/);
+  assert.match(ownSession, /!offsiteLocationName\.trim\(\)/);
+  assert.match(ownSession, /No responsibility is required to start off-site/);
 });
 
 test("staff off-site picker reads authorised live work independently of Overview widgets", () => {
@@ -153,6 +153,6 @@ test("staff off-site picker reads authorised live work independently of Overview
   assert.match(home, /offsiteWork\.map\(\(item\) =>/);
   assert.match(home, /offsiteWorkStatus === "error"/);
   assert.match(home, /offsiteWorkStatus === "ready" && offsiteWork\.length === 0/);
-  assert.match(home, /openWork\?\.\(\)/);
+  assert.match(home, /No responsibility linked/);
   assert.match(home, /offsiteWork\.some\(\(item\) => item\.id === sessionWorkItem\)/);
 });

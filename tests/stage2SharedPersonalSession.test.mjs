@@ -133,9 +133,9 @@ test("P3 uncertain Start Work and history reconciliation require an explicit rec
  const continued = screen.match(/async function continueOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
  const closed = screen.match(/async function closeOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
  assert.ok(begin && continued && closed);
- assert.match(begin, /if \(starting\.current \|\| busy \|\| !ready \|\| !verified\) return/);
+ assert.match(begin, /if \(starting\.current \|\| busy \|\| !verified\) return/);
  assert.match(begin, /setVerified\(false\); setEditor\(false\); setReady\(false\)/);
- assert.match(screen, /disabled=\{busy\|\|!ready\|\|!verified\|\|\(place/);
+ assert.match(screen, /disabled=\{busy\|\|!verified\|\|\(place/);
  assert.match(continued, /setVerified\(false\); setRecover\(false\)/);
  assert.match(closed, /setVerified\(false\); setRecover\(false\)/);
  assert.match(screen, /Retry session verification/);
@@ -156,11 +156,11 @@ test("P3 Manager and Admin Workforce do not fabricate zero session evidence on f
 
 test("P3 Start Work refuses unknown places and rejects other employees' or tenants' off-site tasks before location capture",()=>{
  const api=read("src/lib/session.js");
- const body=api.match(/export async function startWork\(orgId, userId, place, workItemId, officeLocationId = null\) \{([\s\S]*?)\n\}/)?.[1];
+ const body=api.match(/export async function startWork\(orgId, userId, place, workItemId, officeLocationId = null, offsiteLocationName = ""\) \{([\s\S]*?)\n\}/)?.[1];
  assert.ok(body);
  assert.match(body,/place !== "office" && place !== "elsewhere"/);
- assert.match(body,/if \(place === "elsewhere"\)/);
- assert.match(body,/if \(!workItemId\) throw/);
+ assert.match(body,/if \(place === "elsewhere" && workItemId\)/);
+ assert.doesNotMatch(body,/if \(!workItemId\) throw/);
  assert.match(body,/\.eq\("org_id",orgId\)\.eq\("assignee_id",userId\)\.eq\("id",workItemId\)/);
  assert.match(body,/\.in\("status",\["not_started","in_progress","returned"\]\)/);
  assert.match(body,/if \(assignmentError \|\| !assigned\?\.id\)/);

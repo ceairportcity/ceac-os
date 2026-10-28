@@ -63,6 +63,7 @@ tests=(
   onboarding_access_presence_gate.sql
   attendance_phase2_gate.sql
   stage2_attendance_start_locations_gate.sql
+  offsite_location_optional_responsibility_gate.sql
   attendance_phase6_integrity_gate.sql
   compliance_phase3_gate.sql
   stage2_compliance_attendance_casework_gate.sql
