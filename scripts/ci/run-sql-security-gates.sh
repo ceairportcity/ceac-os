@@ -66,6 +66,7 @@ tests=(
   attendance_phase6_integrity_gate.sql
   compliance_phase3_gate.sql
   stage2_compliance_attendance_casework_gate.sql
+  messages_memos_gate.sql
   notification_work_state_gate.sql
   technical_support_v1_gate.sql
   support_invoker_projection_gate.sql

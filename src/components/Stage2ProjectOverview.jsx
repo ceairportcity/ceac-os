@@ -1,3 +1,4 @@
+import MemoProjectOrigin from "./MemoProjectOrigin";
 import { useEffect, useMemo, useState } from "react";
 import { deadlineOverdue } from "../lib/stage2AchievementMetrics";
 import { currentProjectActions, visibleProjectPeople } from "../lib/projectContributionPeople";
@@ -122,6 +123,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
     (scopedUnit === "all" || item.unit_id === scopedUnit) &&
     [item.title, item.ref, item.profiles?.full_name].some((value) => String(value || "").toLowerCase().includes(scopedSearch.trim().toLowerCase())));
   return <div className="s2-project">
+    <MemoProjectOrigin project={project} />
     <div className="s2-project-layout">
       <div className="s2-project-content">
     <section className="s2-project-metrics" aria-label="Recorded project metrics">

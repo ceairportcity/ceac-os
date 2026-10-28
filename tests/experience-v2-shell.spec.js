@@ -174,18 +174,18 @@ test("OCR6C Executive Messages chooses an authorised Sub-team before communicati
   // Wait for the lazy-loaded Messages route and its session-scoped data to
   // settle before exercising its segmented control. A shell mount alone is
   // not a loaded Messages page and can otherwise race a route replacement.
-  const messages = page.locator(".inbox-page");
+  const messages = page.locator(".msg-workspace");
   await expect(messages.getByRole("heading", { name: "Messages", exact: true })).toBeVisible({ timeout: 15000 });
-  await expect(messages.getByText("Loading Messages…", { exact: true })).toBeHidden({ timeout: 15000 });
-  const roomsTab = messages.getByRole("tab", { name: "Rooms", exact: true });
+  await expect(messages.getByText("Loading Rooms…", { exact: true })).toBeHidden({ timeout: 15000 });
+  const roomsTab = messages.getByRole("navigation",{name:"Messages sections"}).getByRole("button", { name: "Rooms", exact: true });
   await expect(roomsTab).toBeVisible();
   await roomsTab.click();
-  await expect(roomsTab).toHaveAttribute("aria-selected", "true");
-  const roomDirectory = page.locator(".ev2c-data-panel").filter({ hasText: "Organisation Rooms" }).first();
+  await expect(roomsTab).toHaveAttribute("aria-current", "page");
+  const roomDirectory = page.getByRole("complementary",{name:"Rooms",exact:true});
   await expect(roomDirectory).toBeVisible();
-  await expect(page.getByText("Choose a room, then mention a person to address them in that shared conversation.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("searchbox",{name:"Search Rooms"})).toBeVisible();
 
-  const subTeam = roomDirectory.locator("button.ev2c-queue-row").filter({ hasText: "Fixture Video Team" }).first();
+  const subTeam = roomDirectory.locator("button.msg-row").filter({ hasText: "Fixture Video Team" }).first();
   await expect(subTeam).toBeVisible();
   await subTeam.click();
   await expect(page.getByText("Sub-team Room", { exact: true })).toBeVisible();

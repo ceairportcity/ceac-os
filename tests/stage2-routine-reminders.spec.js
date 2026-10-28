@@ -64,14 +64,15 @@ test("an opted-in routine is delivered once through CEAC Messages and clears onl
   const foreign=await colleague.from("routine_reminder_deliveries").select("id").eq("work_item_id",work.data.id);
   expect(foreign.error).toBeNull();expect(foreign.data).toEqual([]);
   await own.page.goto("/?tab=messages");
-  const row=own.page.locator(".inbox-page button").filter({hasText:title});
+  await own.page.getByRole("button",{name:/Work actions/}).click();
+  const row=own.page.locator(".msg-workspace button").filter({hasText:title});
   await expect(row).toContainText("Routine due");
   await expect(row).not.toContainText("New assignment");
   expect(await own.page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await own.page.screenshot({path:"test-artifacts/routine-reminder-staff-phone.png",fullPage:true});
   expect((await staff.rpc("record_routine_occurrence",{p_work_item_id:work.data.id,p_occurred_on:today,p_note:"Actual venue inspection"})).error).toBeNull();
   await own.page.reload();
-  await expect(own.page.locator(".inbox-page button").filter({hasText:title})).toHaveCount(0);
+  await expect(own.page.locator(".msg-workspace button").filter({hasText:title})).toHaveCount(0);
   const after=await staff.from("work_items").select("status").eq("id",work.data.id).single();
   expect(after.error).toBeNull();expect(after.data.status).toBe(work.data.status);
   const receipt=await staff.from("routine_reminder_deliveries").select("id").eq("work_item_id",work.data.id);

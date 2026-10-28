@@ -85,8 +85,8 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(fs.readFileSync("src/premium.css", "utf8")).toContain(".fpg-payroll-main .fpg-payroll-metrics article:first-child>strong");
   expect(fs.readFileSync("src/screens/AdminPayroll.jsx", "utf8")).toContain('aria-label="Recorded payroll totals"');
   expect(css).toContain(".inbox-page");
-  expect(inbox).toContain('me.is_exec ? "body inbox-page exec-redesign-shared"');
-  expect(inbox).toContain('me.is_exec ? "exec-redesign-shared-head"');
+  expect(inbox).toContain('className="msg-workspace"');
+  expect(inbox).toContain('aria-label="Messages sections"');
   expect(css).toContain(".exec-redesign-shared-head");
   expect(css).toContain(".ev2-personal-page");
   expect(reports).toContain('aria-label="Report filters"');
@@ -179,7 +179,7 @@ const destinations = [
   ["exec-finance", ".ev2-finance-executive", "Finance"],
   ["payroll", ".fpg-payroll", "Payroll"],
   ["exec-reports", ".ev2-reporting-executive", "Reports"],
-  ["messages", ".inbox-page", "Messages"],
+  ["messages", ".msg-workspace", "Messages"],
   ["me", ".ev2-personal-hub", "My Hub"],
   ["account", ".ev2-personal-account", "Your account"],
 ];

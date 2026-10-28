@@ -55,7 +55,7 @@ test.describe("Premium redesign R1 Staff",()=>{
     const {context,page}=await openStaff(browser);
     await side(page,"Messages");
     await expect(page.getByRole("heading",{name:"Messages",exact:true})).toBeVisible();
-    for(const label of ["All","Rooms","Mentions","Work","Announcements"]) await expect(page.getByRole("tab",{name:label,exact:true})).toBeVisible();
+    for(const label of ["Rooms","Memos"]) await expect(page.getByRole("navigation",{name:"Messages sections"}).getByRole("button",{name:label,exact:true})).toBeVisible();
     await page.screenshot({path:"test-artifacts/redesign-r1-staff-messages.png",fullPage:true});
     await context.close();
   });

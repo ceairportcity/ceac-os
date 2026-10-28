@@ -1,0 +1,10 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import Inbox from '../../src/screens/Inbox';
+import '../../src/styles.css';
+import '../../src/premium.css';
+import '../../src/experience-v2.css';
+import '../../src/experience-v2/components/components.css';
+const actor=new URLSearchParams(location.search).get('actor') || 'sender';
+const me={id:actor,org_id:'org',full_name:actor==='pastor'?'Group Pastor':'Gabriel Rockson',role:'manager',unit_id:'it',memberships:[{unit_id:'it',role:'manager'}],is_admin:false,is_exec:actor==='pastor',capabilities:[]};
+createRoot(document.getElementById('root')).render(<Inbox me={me} openItem={()=>{}} openProject={()=>{}} openRoom={()=>{}} openAnnouncements={()=>{}}/>);

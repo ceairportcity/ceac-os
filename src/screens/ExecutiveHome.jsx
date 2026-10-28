@@ -1,3 +1,4 @@
+import { EXECUTIVE_EXCEPTION_VERBS } from "../lib/executiveExceptions";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import ExecutiveOverviewV2 from "../experience-v2/executive-overview/ExecutiveOverviewV2";
@@ -66,11 +67,12 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
           .select("id,name,value_label,unit_id,units(name)", { count: "exact" })
           .eq("org_id",me.org_id).eq("active",true).eq("records_value",true)
           .order("name"),
-        supabase.from("employment_records").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").eq("employment_type", "volunteer"),
-        supabase.from("employment_records").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").neq("employment_type", "volunteer"),
+        supabase.from("employment_records").select("profile_id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").eq("employment_type", "volunteer"),
+        supabase.from("employment_records").select("profile_id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").neq("employment_type", "volunteer"),
         supabase.from("sub_teams").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("active", true),
         supabase.from("activity_events")
           .select("id,actor_id,verb,object_type,object_id,at")
+          .in("verb", EXECUTIVE_EXCEPTION_VERBS)
           .eq("org_id", me.org_id)
           .order("at", { ascending: false })
           .limit(12),

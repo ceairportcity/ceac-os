@@ -1,3 +1,4 @@
+import { canSelfCertifyOwnWork } from "../lib/workCompletion";
 import ExecutiveWorkReview from "../components/ExecutiveWorkReview";
 import RoutineScheduleOptions from "../components/RoutineScheduleOptions";
 import { initialRoutineScheduleOptions, routineScheduleOptions } from "../lib/routineScheduleOptions";
@@ -228,7 +229,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   const done = checks.filter((c) => ticks[c.id]).length;
   const allDone = checks.length > 0 && done === checks.length;
   const gated = !session;
-  const managerOwnWork = isManager && item && item.assignee_id === me.id && item.origin !== "assigned_by_exec" && (item.origin === "self_created" || item.assigned_by === me.id);
+  const managerOwnWork = canSelfCertifyOwnWork(me, item);
   const managerSubmissionBlocked = managerOwnWork && !MANAGER_SELF_CERTIFICATION_READY;
 
   async function addMyStep() {
@@ -948,6 +949,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
             ? "This records your submission as self-certified. It will not enter your review queue."
             : `${responsibleReviewer?.full_name || "The responsible reviewer"} will receive this in their review queue.`}</p>
           {gated && <div className="flag flag-amber"><h4>No work session is open</h4>This submission will still be accepted and recorded as outside a session.</div>}
+          <p className="screen-note">This finishes the whole assignment. If only today’s activity is finished, close this form and record an activity with its next action instead.</p>
           <AssistiveTextarea className="field" rows={3} placeholder="Anything they should know (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
           <input className="field" placeholder={item.kind === "deliverable" && deliverableRecord?.evidence_required ? "Evidence link (required)" : "Paste a link to the file (optional)"} value={link} onChange={(e) => setLink(e.target.value)} />
           <p className="small" style={{ marginTop: 8 }}>Large files — video especially — should be a link rather than an upload.</p>

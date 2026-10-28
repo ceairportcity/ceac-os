@@ -297,31 +297,32 @@ test("recorded routine dates can open a factual evidence entry without certifyin
   assert.doesNotMatch(diary, /autoApprove|markObjectiveAchieved|record_routine_occurrence/);
 });
 
-test("unit coordination Room uses compact square controls and readable light-blue visual hierarchy",()=>{
-  const css=source("src/styles.css");
+test("approved Messages timeline replaces bubbles with compact contextual controls",()=>{
+  const css=source("src/screens/MessagesWorkspace.css");
   const room=source("src/screens/Room.jsx");
-  assert.match(css,/\.room-head\{[\s\S]*?color:#173D63;background:#FFFFFF;/);
-  assert.match(css,/\.room-scope-strip button\{[\s\S]*?border-bottom:2px solid transparent;border-radius:0/);
-  assert.match(css,/\.room-message\.mine\{[\s\S]*?border-radius:6px;background:#F1F7FF/);
-  assert.match(css,/\.room-plus\{[\s\S]*?width:36px;height:42px;[^}]*border-radius:6px/);
-  assert.match(css,/\.room-person-avatar\{[\s\S]*?border-radius:6px/);
-  assert.doesNotMatch(css,/\.room-scope-strip button\{[^}]*border-radius:999px/);
+  assert.match(css,/\.msg-room \.room-message\{/);
+  assert.match(css,/\.msg-room \.room-message\{[^}]*max-width:none/);
+  assert.match(css,/\.msg-room \.room-message\{[^}]*width:auto/);
+  assert.match(css,/\.msg-room \.room-message\.mine>p\{/);
+  assert.match(css,/\.msg-details\{/);
+  assert.match(room,/aria-label="Room details"/);
   assert.match(room,/aria-label="Back from Room"/);
   assert.match(room,/aria-label="Unit conversations"/);
+  assert.doesNotMatch(room,/VoiceInput|microphone|Speak message/);
 });
 
 test("compact Room action control makes open/close state visible without circular rotation",()=>{
   const room=source("src/screens/Room.jsx");
-  const css=source("src/styles.css");
+  const css=source("src/screens/MessagesWorkspace.css");
   assert.match(room,/aria-expanded=\{Boolean\(panel\)\}/);
   assert.match(room,/panel \? "×" : "\+"/);
   assert.match(room,/panel \? "Close Room actions" : "Add context or action"/);
-  assert.match(css,/\.room-plus\.on\{transform:none/);
+  assert.doesNotMatch(css,/\.room-plus[^}]*rotate\(/);
 });
 
 test("Room live badge describes the actual subscribed connection, never a permanent false-green indicator",()=>{
   const room=source("src/screens/Room.jsx");
-  const css=source("src/styles.css");
+  const css=source("src/screens/MessagesWorkspace.css");
   assert.match(room,/const \[realtimeStatus, setRealtimeStatus\] = useState\("offline"\)/);
   assert.match(room,/\.subscribe\(\(status\) =>/);
   assert.match(room,/status === "SUBSCRIBED"/);
@@ -346,7 +347,7 @@ test("Room switching never restores stale participants or work links, and failed
   assert.match(room,/if \(loaded && activeRoomIdRef.current === room.id && atBottomRef.current\)/);
   assert.match(room,/if \(loading \|\| !room\?\.id \|\| error \|\| activeRoomIdRef.current !== room.id\) return;/);
   assert.match(room,/if \(requestSerial !== messageLoadSerial.current \|\| activeRoomIdRef.current !== roomId\) return false;/);
-  assert.match(room,/if \(!result.error && activeRoomIdRef.current === roomId\) setNewMessageCount\(0\)/);
+  assert.match(room,/if \(!result.error && activeRoomIdRef.current === roomId\) \{\s*setNewMessageCount\(0\);\s*onMessagesChanged\?\.\(\);\s*\}/);
 });
 
 test("Room message history uses a deterministic same-timestamp cursor without silently skipping messages",()=>{
@@ -374,7 +375,7 @@ test("Projects shows real dated project contributions, not merely recently creat
 });
 
 test("Unit Room keeps helper labels at least 12px with compact non-pill controls",()=>{
-  const css=source("src/styles.css");
+  const css=source("src/screens/MessagesWorkspace.css");
   const rules=[...css.matchAll(/([^{}]*\.room-[^{}]+)\{([^{}]*)\}/g)];
   assert.ok(rules.length>35,"Expected broad Room family coverage");
   for(const [,selector,body] of rules){

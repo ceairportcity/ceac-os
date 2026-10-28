@@ -46,6 +46,7 @@ async function openAs(browser, email, viewport = { width: 1280, height: 900 }) {
   await expect(page.locator(".app")).toBeVisible({ timeout: 15_000 });
   await expect(page.locator(".route-fallback")).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Messages", exact: true })).toBeVisible();
+  await page.getByRole("button",{name:/Work actions/}).click();
   return { context, page };
 }
 
@@ -117,15 +118,14 @@ test("Staff sees independent work actions and unread updates without read-throug
   expect(receiptBefore).toHaveLength(0);
 
   const { context, page } = await openAs(browser, "staff@ceac.local.test");
-  await expect(page.getByText("Needs action", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button",{name:/Work actions/})).toHaveAttribute("aria-expanded","true");
   const newAction = page.getByRole("button", { name: /P4-UI-NEW-411.*New assignment/ });
   const returnedAction = page.getByRole("button", { name: /P4-UI-RETURN-412.*Correction required/ });
   await expect(newAction.getByText("P4-UI-NEW-411 · Phase 4 visible new assignment", { exact: true })).toBeVisible();
   await expect(newAction.getByText("New assignment", { exact: true })).toBeVisible();
   await expect(returnedAction.getByText("P4-UI-RETURN-412 · Phase 4 visible returned work", { exact: true })).toBeVisible();
   await expect(returnedAction.getByText("Correction required", { exact: true })).toBeVisible();
-  await expect(page.getByText("Phase 4 policy update", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Unread means not opened.*independent of the Needs action queue/i)).toBeVisible();
+  await expect(page.getByRole("button",{name:"Announcements",exact:true})).toBeVisible();
 
   await newAction.click();
   await expect(page.locator(".ev2-work-detail")).toBeVisible();
@@ -139,7 +139,7 @@ test("Staff sees independent work actions and unread updates without read-throug
 
   await page.goto("/?tab=messages");
   await expect(page.getByRole("heading", { name: "Messages", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: /Phase 4 policy update.*Unread/ }).click();
+  await page.getByRole("button", { name: "Announcements",exact:true }).click();
   await expect(page.getByRole("heading", { name: "Announcements", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /New · Phase 4 policy update/ }).click();
   await expect(page.getByText("This known fixture proves that unread communication remains separate from work action state.", { exact: true })).toBeVisible();

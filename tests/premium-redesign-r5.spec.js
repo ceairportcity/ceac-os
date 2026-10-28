@@ -29,12 +29,11 @@ test.describe("Premium redesign R5 Communication", () => {
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await page.locator(".ev2s-sidebar").getByRole("button", { name: "Messages", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Messages", exact: true })).toBeVisible();
-    await expect(page.getByText(/does not provide unrestricted direct messages/i)).toBeVisible();
-    for (const label of ["All", "Rooms", "Mentions", "Work", "Announcements"]) {
-      await expect(page.getByRole("tab", { name: label, exact: true })).toBeVisible();
+    for (const label of ["Rooms", "Memos"]) {
+      await expect(page.getByRole("navigation", {name:"Messages sections"}).getByRole("button", { name: label, exact: true })).toBeVisible();
     }
-    await expect(page.getByText("Updates", { exact: true })).toBeVisible();
-    await expect(page.locator(".ev2c-data-panel").first()).toBeVisible();
+    await expect(page.getByRole("button", {name:"Direct Messages",exact:true})).toHaveCount(0);
+    await expect(page.getByRole("searchbox", {name:"Search Rooms"})).toBeVisible();
     await page.screenshot({ path: "test-artifacts/redesign-r5-messages.png", fullPage: true });
     await context.close();
   });

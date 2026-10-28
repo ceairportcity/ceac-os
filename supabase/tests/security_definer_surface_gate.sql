@@ -203,6 +203,19 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.admin_operational_archive_records()'),
  ('public.admin_apply_operational_archive(p_changes jsonb, p_reason text)');
 
+-- 28 October: ten explicitly enumerated participant/author-bound Messages interfaces.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.app_room_message_is_visible(p_message_id uuid)'),
+ ('public.remove_own_room_message(p_message_id uuid)'),
+ ('public.app_can_access_memo(p_memo_id uuid)'),
+ ('public.memo_recipient_directory()'),
+ ('public.save_memo_draft(p_id uuid, p_version_id uuid, p_subject text, p_body text, p_to uuid[], p_cc uuid[], p_decision_required boolean, p_decision_scope text, p_unit_id uuid, p_decision_maker_id uuid, p_expected_updated_at timestamp with time zone)'),
+ ('public.send_memo(p_id uuid, p_version_id uuid)'),
+ ('public.respond_to_memo(p_id uuid, p_version_id uuid, p_exchange_id uuid, p_action text, p_body text)'),
+ ('public.mark_memo_read(p_id uuid)'),
+ ('public.create_project_from_memo(p_id uuid, p_version_id uuid, p_lead_unit_id uuid, p_participant_unit_ids uuid[], p_project_name text, p_project_summary text)'),
+ ('public.remove_memo_draft_attachment(p_link_id uuid)');
+
 do $allowlist$
 declare
   v_unexpected text;
@@ -251,7 +264,7 @@ begin
   where a.signature is null;
 
   -- 25 October: one reviewed Executive department-assignment RPC, exact signature above.
-  if v_actual<>164 or v_expected<>164 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>174 or v_expected<>174 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;

@@ -9,6 +9,7 @@ async function api(page,{switchDepartments=false,successfulAssignment=false}={})
   const req=route.request(),url=new URL(req.url());
   if(!url.pathname.includes('/rest/v1/'))return ['localhost','127.0.0.1'].includes(url.hostname)?route.continue():route.abort();
   const name=url.pathname.split('/').pop(),single=(req.headers().accept||'').includes('vnd.pgrst.object');let data=[];
+  if(name==='my_room_directory')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{...room,name:'Other department',unread_count:0}])});
   if(req.method()==='POST'){
    const body=req.postDataJSON();writes.push({name,body});
    if(name==='create_project_with_participants'){created={...project,name:body.p_name};data=created.id;}
@@ -74,13 +75,12 @@ for(const width of [390,1440]){
  test(`HR without department membership can open rooms and address a person at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});const writes=await api(page);
   await page.goto('/tests/fixtures/hr-operations-repair.html');
-  await page.getByRole('tab',{name:'Rooms',exact:true}).click();
+  await page.getByRole('navigation',{name:'Messages sections'}).getByRole('button',{name:'Rooms',exact:true}).click();
   await page.getByRole('button',{name:/Other department/}).click();
   await expect(page.getByPlaceholder('Message your unit')).toBeVisible();
-  await page.getByRole('button',{name:'Back from Room',exact:true}).click();
-  await page.getByRole('tab',{name:'People',exact:true}).click();
-  await page.getByRole('button',{name:/Other Department Person/}).click();
   const input=page.getByPlaceholder('Message your unit');
+  await input.fill('@Other');
+  await page.locator('.room-inline-mentions').getByRole('button',{name:'Other Department Person',exact:true}).click();
   await expect(input).toHaveValue('@Other Department Person ');
   await input.pressSequentially('Synthetic coordination only');
   await expect(input).toHaveValue('@Other Department Person Synthetic coordination only');
