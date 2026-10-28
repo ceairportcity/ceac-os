@@ -1606,7 +1606,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Workforce");
     await expect(page.getByRole("heading", { name: "Time & Leave", exact: true })).toBeVisible();
-    await expect(page.getByText(/never infer absence from missing sessions/i)).toBeVisible();
+    await expect(page.getByText(/does not rank people, score attendance, infer absence from missing sessions/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
     await page.getByRole("button", { name: "Add day type", exact: true }).click();
@@ -2307,7 +2307,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByText("Confirmed leave process", { exact: true })).toBeVisible();
   await expect(page.getByText(/24-day yearly allowance comprises 15 annual-leave days/i)).toBeVisible();
   await expect(page.getByText(/Manager approval.*Administration final approval/i)).toBeVisible();
-  await expect(page.getByText(/never infer absence from missing sessions/i)).toBeVisible();
+  await expect(page.getByText(/does not rank people, score attendance, infer absence from missing sessions/i)).toBeVisible();
 
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();

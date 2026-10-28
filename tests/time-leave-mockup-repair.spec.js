@@ -16,6 +16,7 @@ for(const width of [390,1440]){
   await page.setViewportSize({width,height:1000});await sources(page);
   await page.goto('/tests/fixtures/control-center-design.html?tab=attendance');
   await expect(page.getByRole('heading',{name:'Time & Leave',exact:true})).toBeVisible();
+  await expect(page.getByText(/does not rank people, score attendance, infer absence from missing sessions/i)).toBeVisible();
   const tabs=page.getByRole('tablist',{name:'Administration workforce sections'}),summary=page.getByLabel('Time and leave summary');
   await expect(summary).toBeVisible();expect((await tabs.boundingBox()).y).toBeLessThan((await summary.boundingBox()).y);
   await expect(summary).toContainText('Schedules need attention');await expect(summary.locator('strong')).toHaveText(['1','1','1']);

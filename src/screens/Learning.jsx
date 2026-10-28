@@ -567,7 +567,7 @@ function LearningWorkspace({ me }) {
               setSelectedAssignmentId(assignments.find(row=>row.course_id===course.id && row.state!=="withdrawn")?.id||"");setMode("progress");
             }}>View learners</button>}
           ]}/>
-        <p className="screen-note">Current assignments include completed learning; withdrawn assignments are excluded. Completion comes from recorded assignment state.</p>
+        <p className="screen-note">Counts cover visible current assignments, including completed learning. Withdrawn assignments are excluded; completion uses recorded state.</p>
       </section>}
     </>}
 
