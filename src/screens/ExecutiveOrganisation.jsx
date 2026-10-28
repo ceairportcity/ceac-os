@@ -111,9 +111,9 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
     {ready && <>
       {!selected && view === "departments" && missingLeaders.length > 0 && <ProductNotice tone="attention" title="Needs attention">{missingLeaders.map(unit => unit.name).join(", ")} {missingLeaders.length === 1 ? "has" : "have"} no active department head recorded.</ProductNotice>}
       {!person && <label className="exec-directory-search">Find {department || team ? "a person or team" : view}<input className="field" type="search" value={query} onChange={e => setQuery(e.target.value)} /></label>}
-      {!selected && view === "departments" && <section aria-label="Departments"><Table caption="Departments" rows={units.filter(matches)} empty="No departments match this view." columns={[
-        {key:"name",label:"Department"},{key:"head",label:"Head",render:row=>headNames(row.id)||"Head not recorded"},
-        {key:"people",label:"People",render:row=>membersOf(row.id).length},
+      {!selected && view === "departments" && <section aria-label="Departments"><Table caption="Departments" rows={units.filter(matches).map(row=>({...row,head:headNames(row.id)||"Head not recorded",people:membersOf(row.id).length}))} empty="No departments match this view." columns={[
+        {key:"name",label:"Department"},{key:"head",label:"Head"},
+        {key:"people",label:"People"},
         {key:"open",label:"Open",render:row=><button type="button" className="btn btn-ghost btn-sm" aria-label={`Open ${row.name}`} onClick={()=>enter("department",row.id)}>Open</button>}
       ]}/></section>}
       {!selected && view === "teams" && list("Teams", teams.filter(matches).map(row => <DirectoryRow key={row.id} kind="team" title={row.name} description={unitName(row.unit_id)} onClick={() => enter("team", row.id)} />))}

@@ -197,15 +197,24 @@ for(const width of [390,1440])test(`catalogue follow-up counts current records a
  await page.route('**/rest/v1/learning_assignments?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
   {id:'active',course_id:'course',profile_id:'person',state:'assigned'},
   {id:'complete',course_id:'course',profile_id:'person-b',state:'completed'},
-  {id:'withdrawn',course_id:'course',profile_id:'person-c',state:'withdrawn'}
+  {id:'withdrawn',course_id:'course',profile_id:'person-c',state:'withdrawn'},
+  ...Array.from({length:10},(_,i)=>({id:'ten-'+i,course_id:'course-ten',profile_id:'learner-'+i,state:'assigned'}))
  ])}));
- await page.route('**/rest/v1/learning_courses?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{id:'course',title:'Synthetic orientation',summary:'An example learner course',state:'published'}])}));
+ await page.route('**/rest/v1/learning_courses?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{id:'course',title:'Synthetic orientation',summary:'An example learner course',state:'published'},{id:'course-ten',title:'Ten learners',summary:'A second published course',state:'published'}])}));
  await page.route('**/rest/v1/learning_module_progress?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{assignment_id:'complete',module_id:'module',state:'completed'}])}));
  await page.goto('/tests/fixtures/owner-corrections.html?screen=learning');
  const followup=page.getByRole('region',{name:'Course assignment follow-up',exact:true});
  const row=followup.getByRole('row').filter({hasText:'Synthetic orientation'});
  await expect(row.getByRole('cell').nth(1)).toHaveText('2');
  await expect(row.getByRole('cell').nth(2)).toHaveText('1');
+ await followup.getByRole('columnheader',{name:/Assigned/}).getByRole('button').click();
+ await expect(followup.locator('tbody tr').first().getByRole('cell').nth(1)).toHaveText('2');
+ await followup.getByRole('columnheader',{name:/Assigned/}).getByRole('button').click();
+ await expect(followup.locator('tbody tr').first().getByRole('cell').nth(1)).toHaveText('10');
+ expect(await row.getByRole('cell').nth(1).evaluate(node=>getComputedStyle(node).textAlign)).toBe('right');
+ await followup.getByRole('columnheader',{name:/Completed/}).getByRole('button').click();
+ await expect(followup.locator('tbody tr').first().getByRole('cell').nth(2)).toHaveText('0');
+
  await row.getByRole('button',{name:'View learners for Synthetic orientation',exact:true}).click();
  await expect(page.getByText('Organisation learning progress',{exact:true})).toBeVisible();
  await expect(page.locator('.learning-course-detail')).toContainText('Synthetic orientation');
@@ -214,4 +223,25 @@ for(const width of [390,1440])test(`catalogue follow-up counts current records a
  const queue=page.getByRole('region',{name:'Restricted project contribution reviews',exact:true});
  await expect(review).toContainText('Synthetic subject');await expect(queue).toBeVisible();
  expect((await review.boundingBox()).y).toBeLessThan((await queue.boundingBox()).y);
+});
+
+for(const width of [390,1440])test(`department register sorts recorded people counts numerically and keeps opening connected at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await api(page);
+ const people=Array.from({length:12},(_,i)=>({id:'sort-person-'+i,full_name:i===0?'Zed head':i===2?'Ada head':'Member '+i,active:true}));
+ const units=[{id:'unit-two',name:'Two members',active:true},{id:'unit-ten',name:'Ten members',active:true}];
+ const memberships=people.map((person,i)=>({unit_id:i<2?'unit-two':'unit-ten',profile_id:person.id,role:[0,2].includes(i)?'manager':'staff'}));
+ for(const [name,rows] of [['units',units],['profiles',people],['unit_memberships',memberships]])await page.route(`**/rest/v1/${name}?*`,route=>route.fulfill({status:200,contentType:'application/json',headers:{'content-range':`0-${rows.length-1}/${rows.length}`,'access-control-expose-headers':'content-range'},body:JSON.stringify(rows)}));
+ await page.goto('/tests/fixtures/owner-corrections.html?screen=directory&actor=executive');
+ const register=page.getByRole('region',{name:'Departments',exact:true});
+ await expect(register.getByRole('button',{name:'Open Two members',exact:true})).toBeVisible();
+ await register.getByRole('columnheader',{name:/People/}).getByRole('button').click();
+ await expect(register.locator('tbody tr').first().getByRole('cell').nth(2)).toHaveText('2');
+ await register.getByRole('columnheader',{name:/People/}).getByRole('button').click();
+ await expect(register.locator('tbody tr').first().getByRole('cell').nth(2)).toHaveText('10');
+ expect(await register.locator('tbody tr').first().getByRole('cell').nth(2).evaluate(node=>getComputedStyle(node).textAlign)).toBe('right');
+ await register.getByRole('columnheader',{name:/Head/}).getByRole('button').click();
+ await expect(register.locator('tbody tr').first().getByRole('cell').nth(1)).toHaveText('Ada head');
+ await register.getByRole('button',{name:'Open Two members',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Two members',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:/Zed head/})).toBeVisible();
 });
