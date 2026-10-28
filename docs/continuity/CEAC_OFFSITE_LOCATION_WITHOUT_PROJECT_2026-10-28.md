@@ -149,3 +149,36 @@ start-popup-all-source.log and start-popup-browser.log; no failed attempt was
 relabeled as a pass. Latest source and this ledger must be pushed together after
 rechecking the remote expected head. No production business record, migration,
 Auth setting or Vercel configuration was changed. Production release is pending.
+
+### Exact-head full verification follow-up (c88f3ca)
+
+Popup tree `6c3042af9abda7dea1ad735ebaa9446657fcd578` was submitted as
+`c88f3ca73eb708493817b555ef018a37322695f4`. CI 40750953155, Migration Replay
+40750953326, Account Security 40750953294 and SQL job 123037249871 all PASSED.
+Full Quality Gate 40750953159 FAILED; do not describe it as accepted.
+Six browser shards passed; the two remaining logs show three test failures and
+one existing deferred MFA skip, with 1075 actual passed cases overall:
+
+- Shard1 123037250205: 143 PASS, 2 FAIL, 1 SKIP. The real review-loop test still
+  clicked the removed button text at acceptance-core.spec.js:150, and therefore
+  did not create the completed record needed by its later closure-corridor test.
+  Both office-start selections now use the approved native `CEAC location` radio;
+  all real review, approval, session and closure assertions remain unchanged.
+- Shard8 123037250195: 124 PASS, 1 FAIL. The personal PDF test expected a nonempty
+  contribution table but never supplied an attributable contribution. The fresh
+  shard seed has no completed work/submission; sharding changes exposed its
+  dependence on unrelated earlier tests. This test now inserts its own uniquely
+  named current-period completed-work fixture using the existing strictly
+  localhost-only service test client and asserts that exact title in each PDF
+  table before retaining all existing column/geometry/PDF assertions. No report
+  application source, permissions or actual CEAC record was changed.
+
+The Phase2 pre-close fixture repaired earlier passed in this full run. All 46
+Start Work browser cases passed in shard8. The follow-up changes touch two
+browser test files and this ledger only; they do not invalidate the unchanged
+650 native source checks, 48 focused browser/performance checks or sealed build
+as historical application evidence. Node22 collection for both edited test files
+passed (47 cases). Full new-head verification remains required. This repeat is
+justified by actual recorded failures; no application test was skipped, given
+extra retries or weakened to manufacture success. Raw GitHub failure evidence
+and downloaded synthetic shard artifact remain available; production unchanged.
