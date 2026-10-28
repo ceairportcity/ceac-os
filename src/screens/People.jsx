@@ -170,7 +170,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         .order("effective_from",{ascending:false}),
       supabase.from("leave_policy_rules").select("policy_version_id,leave_kind,entitlement_amount,accrual_rate,complete")
         .eq("org_id",me.org_id).eq("leave_kind","annual"),
-      supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("name"),
+      supabase.from("units").select("id,name,unit_memberships(profile_id,role,profiles(active))").eq("org_id", me.org_id).eq("active", true).order("name"),
     ]);
     if (generation !== rosterGeneration.current) return false;
     if (rosterResult.error || peopleResult.error) {
@@ -208,7 +208,9 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         source_department_text: employee.source_department_text || null,
         source_position: employee.source_position || null,
         job_title: employee.job_title || operational?.job_title || null,
-        employment_type: employee.employment_type || "not_recorded",
+        // Linked employment edits update profiles.contract_type atomically with
+        // employment_records; the independent roster can retain its import value.
+        employment_type: operational?.contract_type || employee.employment_type || "not_recorded",
         employment_status: employee.employment_status || "active",
         identity_state: employee.identity_state,
         responsibility_context: Array.isArray(employee.responsibility_context) ? employee.responsibility_context : [],
@@ -658,6 +660,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         unit_name: current.unit_name,
         role: current.membership_role,
         job_title: current.job_title,
+        employment_type: current.employment_type,
         contract_type: current.employment_type,
         started_on: current.joined_on,
         active: current.employment_status === "active",
@@ -729,12 +732,10 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     !(entry.job_title || entry.source_position) ? "Job title not recorded" : null,
     !entry.unit_id && !(entry.roster_units || []).length ? "No unit recorded" : null,
   ].filter(Boolean);
-  const attentionRoster = roster.filter((entry) => attentionReasons(entry).length);
+  const attentionRoster = rows.filter((entry) => attentionReasons(entry).length);
   const unlinkedAccounts=operationalDirectory.filter(account=>account.active && !rows.some(entry=>entry.profile_id===account.id));
-  const unmatchedAccounts=unlinkedAccounts.filter(account=>!cleanSearch||[
-    account.full_name,account.email,account.unit_name,
-  ].filter(Boolean).some(value=>String(value).toLowerCase().includes(cleanSearch)));
-  const unitsWithoutHead = units.filter((unit) => !rows.some((entry) =>
+  const unmatchedAccounts=unlinkedAccounts;
+  const unitsWithoutHead = units.filter((unit) => !(unit.unit_memberships || []).some(member=>member.role === "manager" && member.profiles?.active) && !operationalDirectory.some(account=>account.active && account.role === "manager" && account.unit_id === unit.id) && !rows.some((entry) =>
     entry.profile_id && entry.active && entry.role === "manager" && (
       entry.unit_id === unit.id || (entry.roster_units || []).some((membership) => membership.unit_id === unit.id)
     )
@@ -1427,6 +1428,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         <strong>{unlinkedAccounts.length} to review</strong>
       </header>
       <div style={{display:"grid",gap:8,marginTop:12}}>
+        <div role="region" aria-label="Accounts without employee links" tabIndex={0} style={{maxHeight:360,overflow:"auto",overscrollBehavior:"contain"}}>
         {unmatchedAccounts.map(account=><article key={account.id}
           style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",borderTop:"1px solid var(--ev2-line,var(--line))",paddingTop:9}}>
           <div style={{display:"grid",gap:2,minWidth:0}}>
@@ -1440,6 +1442,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
             <button type="button" className="btn btn-ghost btn-sm" onClick={()=>openAccessAdministration(account.id)}>Review account access</button>
           </div>
         </article>)}
+        </div>
         {unmatchedAccounts.length===0&&<p className="screen-note">No unmatched accounts match the current search. Clear the search to review all accounts.</p>}
       </div>
     </section>}
@@ -1476,6 +1479,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
         meta={`${attentionRoster.length} recorded`}
         description="Only authoritative gaps are shown. Roster-only status by itself is not treated as a problem."
       >
+        <div role="region" aria-label="Employee record gaps" tabIndex={0} style={{maxHeight:440,overflow:"auto",overscrollBehavior:"contain"}}>
         {attentionRoster.map((entry) => <PeopleAdminPersonRow
           key={entry.id}
           name={entry.full_name}
@@ -1488,15 +1492,18 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           secondaryFact={attentionReasons(entry).slice(1).join(" · ")}
           onClick={() => openPerson(entry)}
         />)}
+        </div>
         {!attentionRoster.length && <PeopleEmpty title="No employee record gaps are waiting" description="Roster-only employees remain valid employee records and are not treated as errors." />}
       </PeopleSection>
 
       <PeopleSection
-        title="Organisation exceptions"
-        meta={`${unitsWithoutHead.length} recorded`}
-        description="Unit Head authority is based on recorded CEAC authority, not workbook titles."
+        title="Units without a recorded head"
+        meta={`${unitsWithoutHead.length} to review`}
+        description="These units have no active account assigned as Unit Head. A job title alone does not grant that responsibility. Review the unit before changing its head."
       >
+        <div role="region" aria-label="Units without a recorded head" tabIndex={0} style={{maxHeight:360,overflow:"auto",overscrollBehavior:"contain"}}>
         {unitsWithoutHead.map((unit) => <PeopleFactRow key={unit.id} icon="people" title={unit.name} subtitle="No active recorded Unit Head" meta="Review Units" tone="warning" />)}
+        </div>
         {!unitsWithoutHead.length && <PeopleEmpty title="No Unit Head gap recorded" description="Every active unit has a recorded Unit Head." />}
       </PeopleSection>
     </div>}

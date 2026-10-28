@@ -1,6 +1,9 @@
 // Synthetic local-only fixture: all remote requests are intercepted by tests.
 import React, {useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import PersonalRecurringTaskComposer from "../../src/components/PersonalRecurringTaskComposer";
+import WorkforceStreetMap from "../../src/components/WorkforceStreetMap";
+import "../../src/experience-v2/calendar/calendar.css";
 import ManagerReports from '../../src/screens/ManagerReports';
 import Reports from '../../src/screens/Reports';
 import ExecutiveReports from '../../src/screens/ExecutiveReports';
@@ -53,6 +56,8 @@ function Fixture(){
   achievements:<PersonalAchievements me={actor} back={()=>{}} openItem={()=>{}}/>,
   payroll:<AdminPayroll me={{...actor,capabilities:[...actor.capabilities,'payroll.prepare']}}/>,
   learning:<Learning me={actor}/>,
+  recurrence:<div className="phase6-day-workspace" style={{width:340,maxWidth:"100%"}}><PersonalRecurringTaskComposer me={actor} ready selectedDate="2026-10-28" /></div>,
+  map:<WorkforceStreetMap clusters={[{key:"point",lat:5.6,lng:-.18,people:[{id:"person",name:"Synthetic colleague"}]}]} onSelect={id=>setActor(current=>({...current,selectedId:id}))} selectedId={actor.selectedId} selectedContent={actor.selectedId?<p>Synthetic work-start record</p>:null}/>,
   finance:<Finance me={actor}/>,
   cost:<Cost me={actor}/>,
   announcements:<Announcements me={actor}/>,

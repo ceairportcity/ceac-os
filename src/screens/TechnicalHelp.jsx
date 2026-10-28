@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import SupportAccessApprovals from "../components/SupportAccessApprovals";
 import { HELP_CATEGORIES, supportCategoryLabel, supportUnavailableMessage } from "../lib/technicalSupport";
 import "../role-styles/technical-support.css";
 
@@ -121,6 +122,7 @@ export default function TechnicalHelp({ me }) {
       <h1>Get technical help</h1>
       <p>Tell Technical Support what is preventing you from working. Do not include passwords, verification codes, financial records or confidential employee information.</p>
     </header>
+    {(me.memberships || []).some(membership=>membership.role === "manager") && <SupportAccessApprovals me={me} authority="unit_manager" />}
     <div className="ceac-support-layout">
       <section className="ceac-support-main" aria-labelledby="support-new-request">
         <h2 id="support-new-request">Describe the problem</h2>

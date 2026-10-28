@@ -118,3 +118,43 @@ test("base salary lines remain immutable through removeLine UI", async () => {
   assert.equal(h.requests.length, 0);
   assert.equal(h.events.busy.length, 0);
 });
+
+function salaryReviewHarness(canRecordSalary=true) {
+  const requests=[],sheets=[];
+  const selectedRunRef={current:'run-A'},salaryReadGeneration={current:0};
+  const context={canRecordSalary,selectedRunRef,salaryReadGeneration,
+    detail:{run:{id:'run-A',status:'draft',period_start:'2026-10-01',period_end:'2026-10-31'}},
+    setError:()=>{},setSheet:value=>sheets.push(value),
+    supabase:{rpc:(name,args)=>{const pending=deferred();requests.push({...pending,name,args});return pending.promise;}},
+  };
+  return {requests,sheets,selectedRunRef,salaryReadGeneration,
+    review:runInNewContext('('+getHandler('reviewRecordedSalary')+')',context,{timeout:1000})};
+}
+test('salary review chooses the latest active protected record covering this draft period',async()=>{
+  const h=salaryReviewHarness(),pending=h.review({employee_id:'employee-A'});
+  assert.equal(h.requests[0].name,'hr_employee_protected_summary');
+  assert.equal(h.requests[0].args.p_employee_id,'employee-A');
+  h.requests[0].resolve({data:{compensation:[
+    {id:'old',status:'active',effective_on:'2026-01-01',ends_on:'2026-09-30'},
+    {id:'future',status:'active',effective_on:'2026-11-01'},
+    {id:'replaced',status:'replaced',effective_on:'2026-10-10'},
+    {id:'current',status:'active',effective_on:'2026-10-01',recorded_at:'2026-10-02'},
+  ]}});await pending;
+  assert.equal(h.sheets.at(-1).salary.id,'current');
+});
+for(const change of ['run','close'])test('salary read cannot restore a closed or different draft: '+change,async()=>{
+  const h=salaryReviewHarness(),pending=h.review({employee_id:'employee-A'});
+  if(change==='run')h.selectedRunRef.current='run-B';else h.salaryReadGeneration.current++;
+  h.requests[0].resolve({data:{compensation:[]}});await pending;
+  assert.equal(h.sheets.length,1);assert.equal(h.sheets[0].loading,true);
+});
+test('salary review without protected-HR authority makes no private read',async()=>{
+  const h=salaryReviewHarness(false);await h.review({employee_id:'employee-A'});
+  assert.equal(h.requests.length,0);assert.equal(h.sheets.length,0);
+});
+test('failed protected salary read never supplies an applicable amount',async()=>{
+  const h=salaryReviewHarness(),pending=h.review({employee_id:'employee-A'});
+  h.requests[0].resolve({error:new Error('denied')});await pending;
+  assert.match(h.sheets.at(-1).readError,/could not be verified/);
+  assert.equal(h.sheets.at(-1).salary,undefined);
+});

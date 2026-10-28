@@ -11,9 +11,16 @@ export default function WorkforceStreetMap({clusters=EMPTY_CLUSTERS,office=null,
  const [size,setSize]=useState({width:520,height:340}),[consent,setConsent]=useState(true),[tileWarning,setTileWarning]=useState(false);
  const fitted=useMemo(()=>fitWorkforceMap(focusLocation?[focusLocation]:office?[...clusters,office]:clusters,size.width,size.height),[clusters,office,focusLocation,size.width,size.height]);
  const [view,setView]=useState(fitted);
+ const [tileAttempt,setTileAttempt]=useState(0);
+ const failedTiles=useRef(new Set());
  useEffect(()=>{setView(fitted);},[fitted]);
  useEffect(()=>{
-  if(!frame.current||typeof ResizeObserver==="undefined")return;
+  if(!frame.current)return;
+  if(typeof ResizeObserver==="undefined"){
+   const measure=()=>{const rect=frame.current?.getBoundingClientRect();if(rect)setSize({width:Math.max(200,Math.round(rect.width)),height:Math.max(200,Math.round(rect.height))});};
+   measure();window.addEventListener("resize",measure);
+   return ()=>window.removeEventListener("resize",measure);
+  }
   const observer=new ResizeObserver(entries=>{
    const width=Math.max(200,Math.round(entries[0]?.contentRect?.width||520));
    const height=Math.max(200,Math.round(entries[0]?.contentRect?.height||340));
@@ -24,6 +31,8 @@ export default function WorkforceStreetMap({clusters=EMPTY_CLUSTERS,office=null,
  },[]);
  const tileViews=useMemo(()=>consent?visibleStreetTiles(view,view.zoom,size.width,size.height):[],
   [consent,view,size.width,size.height]);
+ const tileScope=tileViews.map(tile=>tile.key).join("|")+":"+tileAttempt;
+ useEffect(()=>{failedTiles.current.clear();setTileWarning(false);},[tileScope]);
  const pins=useMemo(()=>clusters.map(cluster=>({...cluster,position:workforcePinPosition(cluster,view,view.zoom,size.width,size.height)})),
   [clusters,view,size.width,size.height]).filter(p=>p.position.x>=-30&&p.position.x<=size.width+30
    &&p.position.y>=-30&&p.position.y<=size.height+30);
@@ -81,9 +90,10 @@ export default function WorkforceStreetMap({clusters=EMPTY_CLUSTERS,office=null,
     {!clusters.length&&<small>No recorded start GPS is available for these employees.</small>}
    </div>:<>
     <div className="ceac-street-map-tiles" aria-hidden="true">
-     {tileViews.map(tile=><img key={tile.key} src={tile.url}
-      loading="lazy" draggable="false" alt="" referrerPolicy="strict-origin-when-cross-origin"
-      onError={event=>{event.currentTarget.style.visibility="hidden";setTileWarning(true);}}
+     {tileViews.map(tile=><img key={`${tile.key}:${tileAttempt}`} src={tile.url}
+      loading="eager" draggable="false" alt="" referrerPolicy="strict-origin-when-cross-origin"
+      onError={event=>{event.currentTarget.style.visibility="hidden";failedTiles.current.add(tile.key);setTileWarning(true);}}
+      onLoad={event=>{event.currentTarget.style.visibility="visible";failedTiles.current.delete(tile.key);setTileWarning(failedTiles.current.size>0);}}
       style={{position:"absolute",left:tile.x,top:tile.y,width:256,height:256}} />)}
     </div>
     <div className="ceac-street-map-overlay" aria-label={choosing?"Venue reference and selection":"Recorded work-start markers"}>
@@ -116,7 +126,8 @@ export default function WorkforceStreetMap({clusters=EMPTY_CLUSTERS,office=null,
   </div>
   {consent&&<p className="screen-note">OpenStreetMap receives the visible map area, the CEAC site origin and your IP address. Staff identities and exact work-start records are not sent to the map provider. {office?"The office pin is a saved reference, not attendance proof.":"No saved office reference is available."} {!choosing&&!clusters.length&&"No recorded start GPS is available for these employees."}</p>}
   {consent&&<div className="ceac-street-map-after">
-   <span>{choosing?(tileWarning?"Street tiles could not all load. Check that the venue point is correct before saving.":"Drag the map, or focus it and use arrow keys. Place the venue under the centre marker, then choose that point."):tileWarning?"Street tiles could not all load. Staff start records remain accessible through Browse employees.":"Drag to explore. Use zoom controls to inspect streets. A pin opens a staff record; activate shared-location pins again to inspect every person there."}</span>
+   <span>{choosing?(tileWarning?"Street tiles could not all load. Check that the venue point is correct before saving.":"Drag the map, or focus it and use arrow keys. Place the venue under the centre marker, then choose that point."):tileWarning?"The street background could not load from OpenStreetMap. Check this PC’s connection or content-blocking settings, then retry. Employee records remain available through Browse employees.":"Drag to explore. Use zoom controls to inspect streets. A pin opens a staff record; activate shared-location pins again to inspect every person there."}</span>
+   {tileWarning&&<button className="btn btn-ghost btn-sm" type="button" onClick={()=>setTileAttempt(attempt=>attempt+1)}>Retry street map</button>}
    <button className="btn btn-ghost btn-sm" type="button" onClick={()=>setConsent(false)}>Hide street map</button>
   </div>}
   {choosing&&consent&&<button className="btn" type="button" onClick={()=>onChooseLocation({lat:view.lat,lng:view.lng})}>Use map centre for this venue</button>}

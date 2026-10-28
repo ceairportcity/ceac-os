@@ -1,5 +1,9 @@
 # Retained mockup repair — 27 October 2026
 
+## 28 October — reopened owner defects (active)
+
+PR156 is released at main d82baab58b4be1b6f6fb2835ecd2db31c9156794. Its previous mapping and green tests did not establish completeness of the owner journeys. The owner supplied concrete unresolved Calendar recurrence layout, People warning/read-write mismatch and unbounded queues, unclear unit-head gaps, Overview support approvals, incomplete decision context, legacy Units/detail screens, inaccessible payroll salary remediation, map tile failures and Learning usability. All remain OPEN until changed-area verification and the final exact-head release checks establish their respective results. Broader notification changes are discussion only. Preserve role colours, data, security and independent PR150. Continue the existing correction branch; no production business records are created for testing.
+
 ## Owner correction and starting point
 
 The owner rejected the blanket completion claim after PR155: Time & Leave still showed its old workspace, and other agreed screens were omitted. The instruction is to find and implement all retained mockups, preserving the existing role colours, accepted Overview, People & Access, Control Center, real data and authorities. This is continued authorised implementation/release work, not a new design programme.

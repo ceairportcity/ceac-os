@@ -66,9 +66,9 @@ test.describe("Premium redesign R3 Administration",()=>{
     const {context,page}=await openAdmin(browser,{width:1366,height:768});
     await page.goto("/?tab=units");
     await expect(page.getByRole("heading",{name:"Units",exact:true})).toBeVisible();
-    const list=page.locator(".admin-unit-list");
+    const list=page.getByRole("region",{name:"Organisation units register"});
     await expect(list).toBeVisible();
-    const rows=page.locator(".admin-unit-card");
+    const rows=page.getByRole("region",{name:"Organisation units register"}).locator("tbody tr");
     expect(await rows.count()).toBeGreaterThan(1);
     const firstTwo=await rows.evaluateAll((nodes)=>nodes.slice(0,2).map((node)=>{
       const rect=node.getBoundingClientRect();

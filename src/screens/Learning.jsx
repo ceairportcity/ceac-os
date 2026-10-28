@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
-import { ComposerDrawer } from "../experience-v2/components";
+import { ComposerDrawer, SegmentedControl } from "../experience-v2/components";
 import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 
 function day(value) {
@@ -56,6 +56,8 @@ function LearningWorkspace({ me }) {
   const defaultMode = learningAdmin ? "catalogue" : "mine";
   const [mode, setMode] = useState(defaultMode);
   const [courses, setCourses] = useState([]);
+  const [courseSearch,setCourseSearch]=useState("");
+  const [courseState,setCourseState]=useState("all");
   const [modules, setModules] = useState([]);
   const [resources, setResources] = useState([]);
   const [rules, setRules] = useState([]);
@@ -199,6 +201,8 @@ function LearningWorkspace({ me }) {
     };
   }
 
+  const visibleCourses=courses.filter(course=>(courseState === "all" || course.state === courseState)
+    && `${course.title} ${course.summary || ""}`.toLowerCase().includes(courseSearch.toLowerCase()));
   const selectedCourse = courseById[selectedCourseId] || null;
   const selectedAssignment = assignments.find((row) => row.id === selectedAssignmentId) || null;
   const selectedAssignmentCourse = selectedAssignment ? courseById[selectedAssignment.course_id] : null;
@@ -484,7 +488,8 @@ function LearningWorkspace({ me }) {
     /> : me.is_admin ? <WorkPageHeader
       eyebrow="People development"
       title="Learning"
-      description="Structured courses, resources and factual completion. CEAC OS does not turn learning activity into a skill, performance or potential score."
+      description="Build useful learning programmes. Help people find their next step."
+      actionLabel={learningAdmin ? "Create course" : undefined} onAction={()=>setCourseFlow(true)}
     /> : <div style={{ paddingTop:26 }}>
       <div className="eyebrow">Learning</div>
       <h1 className="h1">Learning</h1>
@@ -494,9 +499,7 @@ function LearningWorkspace({ me }) {
     {error && <ProductNotice tone="error" title="Learning">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
-    <div className="learning-mode-tabs" aria-label="Learning views">
-      {modes.map(([key,label]) => <button key={key} className={mode === key ? "on" : ""} onClick={() => setMode(key)}>{label}</button>)}
-    </div>
+    <SegmentedControl ariaLabel="Learning views" value={mode} onChange={setMode} items={modes.map(([value,label])=>({value,label}))} />
 
     {mode === "mine" && <>
       <div className="sec"><span>My assigned learning</span><span>{mine.length}</span></div>
@@ -524,17 +527,22 @@ function LearningWorkspace({ me }) {
     {mode === "catalogue" && <>
       <div className="learning-section-title">
         <div><span className="eyebrow">Catalogue</span><h2>Courses</h2></div>
-        {learningAdmin && <button className="btn btn-sm" onClick={() => setCourseFlow(true)}>Create course</button>}
+        {learningAdmin && !me.is_admin && <button className="btn btn-sm" onClick={() => setCourseFlow(true)}>Create course</button>}
       </div>
+      {!catalogueOpen && <div className="learning-section-title" role="group" aria-label="Find courses">
+        <input className="field" type="search" aria-label="Search courses" placeholder="Search courses" value={courseSearch} onChange={event=>setCourseSearch(event.target.value)} />
+        <select className="field" aria-label="Course status" value={courseState} onChange={event=>setCourseState(event.target.value)}><option value="all">All courses ({courses.length})</option>{["draft","published","archived"].map(state=><option value={state} key={state}>{sentence(state)} ({courses.filter(course=>course.state===state).length})</option>)}</select>
+      </div>}
       <div className={me.is_admin?"owner-learning-workspace":"learning-two-col"}>
         <div className={me.is_admin?"learning-catalogue-list owner-learning-catalogue":"learning-catalogue-list"} hidden={me.is_admin&&catalogueOpen}>
-          {courses.map((course) => <button type="button" className={"learning-course-row"+(selectedCourseId === course.id ? " on" : "")} key={course.id} onClick={() => {setSelectedCourseId(course.id);setCatalogueOpen(true);}}>
+          {visibleCourses.map((course) => <article className="learning-course-row" key={course.id}>
             {me.is_admin&&<span className="owner-course-cover" aria-hidden="true">CEAC · Learning</span>}
-            <span><strong>{course.title}</strong><small>{course.summary}</small></span>
+            <div className="owner-course-heading"><h3>{course.title}</h3><p>{course.summary || "Add a course summary to help learners understand its purpose."}</p></div>
             <Pill tone={stateTone(course.state)}>{sentence(course.state)}</Pill>
             {me.is_admin&&<small>{courseModules(course.id).length} modules · {courseModules(course.id).reduce((count,module)=>count+moduleResources(module.id).length,0)} resources</small>}
-            {me.is_admin&&<span>{course.state==="draft"?"Continue building":"View course"} →</span>}
-          </button>)}
+            <button type="button" aria-label={`${course.title} · ${courseModules(course.id).length} modules · ${course.state === "draft" ? "Continue building" : "View course"}`} className={course.state === "draft" ? "btn btn-sm" : "btn btn-ghost btn-sm"} onClick={()=>{setSelectedCourseId(course.id);setCatalogueOpen(true);}}>{course.state==="draft"?"Continue building":"View course"} →</button>
+          </article>)}
+          {courses.length > 0 && !visibleCourses.length && <EmptyState title="No courses match">Change the search or status filter to see more courses.</EmptyState>}
           {!courses.length && <EmptyState title="No learning in the catalogue">{learningAdmin ? "Create the first draft course." : "Published learning will appear here when Administration makes it available."}</EmptyState>}
         </div>
         <div hidden={me.is_admin&&!catalogueOpen}>

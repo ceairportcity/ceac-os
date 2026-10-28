@@ -1985,16 +1985,6 @@ textarea{width:100%}
 .admin-unit-missing{color:var(--brick)!important}
 
 .admin-unit-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
-.admin-unit-card{display:grid;gap:12px;padding:16px;border:1px solid var(--line);border-radius:13px;background:#fff;text-align:left;box-shadow:var(--shadow-sm)}
-.admin-unit-card-head{display:flex;justify-content:space-between;gap:10px}
-.admin-unit-card-head>div{display:grid;gap:3px}
-.admin-unit-card-head strong{font-size:15px}
-.admin-unit-card-head span{font-size:11.5px;color:var(--ink-faint)}
-.admin-unit-card-facts{display:flex;gap:10px;flex-wrap:wrap}
-.admin-unit-card-facts span{font-size:10.5px;color:var(--ink-soft)}
-.admin-unit-card-facts b{color:var(--ink);font-size:12.5px}
-.admin-unit-card-foot{display:flex;justify-content:space-between;gap:10px;padding-top:10px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-faint)}
-.admin-unit-card-foot b{color:var(--green)}
 .admin-workspace-nav{
   display:flex;gap:6px;overflow-x:auto;margin:18px 0 8px;padding-bottom:4px;scrollbar-width:none
 }
@@ -2169,14 +2159,8 @@ button.office-config-card:active{background:#EEF5F4}
 .admin-unit-person-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:7px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fff}
 .admin-unit-person-row strong{display:block;font-size:12.5px}
 .admin-unit-person-row span:not(.pill){display:block;margin-top:2px;font-size:10.5px;color:var(--ink-faint)}
-.admin-unit-card-status{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:11px}
-.admin-unit-card-status>span{display:block;padding:8px;border-radius:9px;background:#F6F8F8;text-align:left}
-.admin-unit-card-status b{display:block;font-size:16px}
-.admin-unit-card-status small{display:block;margin-top:4px;font-size:9px;line-height:1.2;color:var(--ink-soft)}
-.admin-unit-card .status-distribution{margin-top:11px}
 @media(max-width:650px){
   .admin-unit-overview-grid{grid-template-columns:1fr}
-  .admin-unit-card-status{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 

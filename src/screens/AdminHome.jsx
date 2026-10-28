@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
-import SupportAccessApprovals from "../components/SupportAccessApprovals";
 import { humanError } from "../lib/productLanguage";
 import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
 import { summariseAdminToday, countRecordedSessionDays } from "../lib/adminTodaySummary";
@@ -298,7 +297,6 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
       me={me}
       announcements={verifiedSnapshot ? announcements : null}
       onOpenAnnouncements={() => go?.("announcements")}
-      supportApprovals={canManagePeople && verifiedSnapshot ? <SupportAccessApprovals me={me} authority="people_administration" compact /> : null}
       dateLabel={adminDate}
       loading={scopedLoading}
       loadFailed={loadedScope === scopeKey ? loadError : null}

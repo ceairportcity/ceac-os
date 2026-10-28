@@ -1548,7 +1548,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
     await expect(page.getByText(courseTitle, { exact: true }).first()).toBeVisible();
     await expect(page.getByText("1 of 1 required modules complete", { exact: true })).toBeVisible();
 
-    await page.locator(".learning-mode-tabs").getByRole("button", { name: "Completed learning", exact: true }).click();
+    await page.getByRole("tablist", {name:"Learning views"}).getByRole("tab", { name: "Completed learning", exact: true }).click();
     await expect(page.getByText(courseTitle, { exact: true })).toBeVisible();
     await expect(page.getByText("CEAC OS course", { exact: true })).toBeVisible();
 
@@ -1561,7 +1561,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Learning");
-    await page.locator(".learning-mode-tabs").getByRole("button", { name: "Team learning", exact: true }).click();
+    await page.getByRole("tablist", {name:"Learning views"}).getByRole("tab", { name: "Team learning", exact: true }).click();
     const staffLearning = page.locator(".learning-assignment-card").filter({ hasText: "Staff Fixture" });
     await expect(staffLearning).toBeVisible();
     await expect(staffLearning.getByText(courseTitle, { exact: true })).toBeVisible();
@@ -1573,7 +1573,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Learning");
-    await page.locator(".learning-mode-tabs").getByRole("button", { name: "Progress", exact: true }).click();
+    await page.getByRole("tablist", {name:"Learning views"}).getByRole("tab", { name: "Progress", exact: true }).click();
     const staffLearning = page.locator(".learning-assignment-card").filter({ hasText: "Staff Fixture" });
     await expect(staffLearning).toBeVisible();
     await staffLearning.click();
@@ -2134,16 +2134,16 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Units");
   await expect(page.getByRole("heading", { name: "Units", exact: true })).toBeVisible();
-  const unitCard = page.locator(".admin-unit-card").filter({ hasText: "Test Unit A" });
+  const unitCard = page.getByRole("button", {name:"Open Test Unit A",exact:true});
   await expect(unitCard).toBeVisible();
   await unitCard.click();
   const unitWorkspace = page.getByRole("navigation", { name: "Unit workspace" });
   await expect(unitWorkspace).toBeVisible();
-  await expect(unitWorkspace.getByRole("button", { name: "Reporting", exact: true })).toBeVisible();
-  await expect(unitWorkspace.getByRole("button", { name: "Attendance", exact: true })).toBeVisible();
-  await expect(unitWorkspace.getByRole("button", { name: "Cost", exact: true })).toBeVisible();
+  await expect(unitWorkspace.getByRole("tab", { name: "Reporting", exact: true })).toBeVisible();
+  await expect(unitWorkspace.getByRole("tab", { name: "Attendance", exact: true })).toBeVisible();
+  await expect(unitWorkspace.getByRole("tab", { name: "Cost", exact: true })).toBeVisible();
 
-  await unitWorkspace.getByRole("button", { name: "People", exact: true }).click();
+  await unitWorkspace.getByRole("tab", { name: "People", exact: true }).click();
   await page.getByRole("button", { name: "Manage people & access", exact: true }).click();
   await expect(page.getByRole("heading", { name: "People & Access", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Access administration", exact: true })).toBeVisible();
@@ -2225,8 +2225,8 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(employmentWorkflow).toBeVisible();
   await employmentWorkflow.click();
   await page.getByLabel("Check review note").fill("Acceptance workflow review");
-  await expect(page.getByRole("button", { name: "No — I did not approve this", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Complete check", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Flag for follow-up", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm review", exact: true }).click();
   await expect(page.getByText("Check completed.", { exact: true })).toBeVisible();
 
   await go(page, "Authority");

@@ -228,38 +228,38 @@ export default function PersonalRecurringTaskComposer({
       </div>
     </div>)}
 
-    {showForm && seriesVerified && <div className="phase6-private-task-compose">
+    {showForm && seriesVerified && <div className="phase6-private-task-compose" style={{gridTemplateColumns:"minmax(0,1fr)"}}>
       <h4>{editing ? "Edit repeating task details" : "Create private repetition"}</h4>
-      <label>Task title
+      <label style={{display:"grid",gap:6,minWidth:0}}>Task title
         <input className="field" aria-label="Recurring task title" maxLength={220}
           value={form.title} onChange={e => set("title", e.target.value)} />
       </label>
-      <label>Details (optional)
+      <label style={{display:"grid",gap:6,minWidth:0}}>Details (optional)
         <textarea className="field" aria-label="Recurring task details"
           maxLength={4000} value={form.details} onChange={e => set("details", e.target.value)} />
       </label>
-      <label>Time (optional)
+      <label style={{display:"grid",gap:6,minWidth:0}}>Time (optional)
         <input className="field" aria-label="Recurring task time" type="time"
           value={form.planned_time} onChange={e => set("planned_time", e.target.value)} />
       </label>
       {!editing && <>
-        <label>First occurrence
+        <label style={{display:"grid",gap:6,minWidth:0}}>First occurrence
           <input className="field" aria-label="Recurring task starts" type="date"
             value={form.start_date} onChange={e => set("start_date", e.target.value)} />
         </label>
-        <label>Repeat
+        <label style={{display:"grid",gap:6,minWidth:0}}>Repeat
           <select className="field" aria-label="Recurring task frequency"
             value={form.cadence} onChange={e => set("cadence", e.target.value)}>
             {cadenceOptions.map(([key,label]) => <option key={key} value={key}>{label}</option>)}
           </select>
         </label>
         {form.cadence === "custom" && <div className="phase6-composer-grid">
-          <label>Every
+          <label style={{display:"grid",gap:6,minWidth:0}}>Every
             <input className="field" aria-label="Recurring task interval" type="number"
               min={1} max={365} value={form.interval_count}
               onChange={e => set("interval_count", e.target.value)} />
           </label>
-          <label>Interval
+          <label style={{display:"grid",gap:6,minWidth:0}}>Interval
             <select className="field" aria-label="Recurring task interval unit"
               value={form.custom_unit} onChange={e => set("custom_unit", e.target.value)}>
               <option value="days">Days</option><option value="weeks">Weeks</option>
@@ -267,7 +267,7 @@ export default function PersonalRecurringTaskComposer({
             </select>
           </label>
         </div>}
-        <label>Repetition ends
+        <label style={{display:"grid",gap:6,minWidth:0}}>Repetition ends
           <select className="field" aria-label="Recurring task ending"
             value={form.ends_when} onChange={e => set("ends_when", e.target.value)}>
             <option value="never">Never</option>
@@ -275,11 +275,11 @@ export default function PersonalRecurringTaskComposer({
             <option value="after_count">After a number of occurrences</option>
           </select>
         </label>
-        {form.ends_when === "on_date" && <label>Last date
+        {form.ends_when === "on_date" && <label style={{display:"grid",gap:6,minWidth:0}}>Last date
           <input className="field" aria-label="Recurring task end date" type="date"
             min={form.start_date} value={form.end_date} onChange={e => set("end_date", e.target.value)} />
         </label>}
-        {form.ends_when === "after_count" && <label>Number of occurrences
+        {form.ends_when === "after_count" && <label style={{display:"grid",gap:6,minWidth:0}}>Number of occurrences
           <input className="field" aria-label="Recurring task occurrence count" type="number"
             min={1} max={5000} value={form.occurrence_limit}
             onChange={e => set("occurrence_limit", e.target.value)} />

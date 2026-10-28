@@ -17,7 +17,7 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
-function harness(initialRemembered = "") {
+function harness(initialRemembered = "", initialEmployeeId = null) {
   const calls = [];
   const seen = { loading: [], errors: [], people: [], selected: [], contexts: [], clearedSummary: 0, clearedLoaded: 0, clearedHistory: 0, closed: 0 };
   const rosterReadGeneration = { current: 0 };
@@ -38,6 +38,7 @@ function harness(initialRemembered = "") {
     setComposerOpen: () => { seen.closed++; },
     setEmployeeId: id => seen.selected.push(id),
     employeeId: "",
+    initialEmployeeId,
     me: { id: "hr-fixture" },
     sessionStorage: { getItem: () => initialRemembered },
     humanError: (_error, fallback) => fallback,
@@ -153,4 +154,21 @@ test("failed refreshed roster revokes previously displayed confidential selectio
   assert.equal(h.seen.clearedSummary, 1);
   assert.equal(h.seen.clearedLoaded, 1);
   assert.equal(h.seen.closed, 1);
+});
+
+test("payroll employee link takes precedence over a remembered different employee", async () => {
+  const h = harness("employee-A", "employee-B");
+  const pending = h.loadPeople();
+  h.calls[0].resolve({data:[{id:"employee-A"},{id:"employee-B"}],error:null});
+  await pending;
+  assert.deepEqual(h.seen.selected,["employee-B"]);
+});
+
+test("unavailable payroll employee never silently selects somebody else's salary", async () => {
+  const h = harness("employee-A", "outside-roster");
+  const pending = h.loadPeople();
+  h.calls[0].resolve({data:[{id:"employee-A"}],error:null});
+  await pending;
+  assert.deepEqual(h.seen.selected,[""]);
+  assert.equal(h.scopeRef.current.snapshot().employeeId,null);
 });

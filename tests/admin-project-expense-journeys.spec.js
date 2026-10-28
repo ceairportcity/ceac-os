@@ -125,8 +125,8 @@ test('rule reviews distinguish future versions and do not truncate invalid whole
 for(const width of [390,1440])test(`Admin department project opens the authorised workspace at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:1000});const {writes}=await api(page);
  await page.goto('/tests/fixtures/hr-overview-review.html?audit=screen&screen=units');
- await page.getByRole('button',{name:/^Operations/}).click();
- await page.getByRole('navigation',{name:'Unit workspace'}).getByRole('button',{name:'Projects',exact:true}).click();
+ await page.getByRole('button',{name:'Open Operations',exact:true}).click();
+ await page.getByRole('navigation',{name:'Unit workspace'}).getByRole('tab',{name:'Projects',exact:true}).click();
  await page.getByRole('button',{name:/^Service Setup/}).click();
  await expect(page).toHaveURL(/screen=projects.*project=project-a/);
  await expect(page.locator('.ev2-project-workspace')).toContainText('Service Setup');
