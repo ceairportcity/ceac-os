@@ -1500,7 +1500,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
     await dialog.getByRole("button", { name: "Create draft course", exact: true }).click();
     await expect(page.getByText("Draft course created.", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Add module", exact: true }).click();
+    await page.getByRole("button", { name: "+ Add module", exact: true }).click();
     dialog = page.getByRole("dialog");
     await dialog.getByLabel("Learning module title").fill(moduleTitle);
     await dialog.getByLabel("Learning module summary").fill("One required module with one reviewed resource.");
@@ -1516,10 +1516,12 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
     await dialog.getByRole("button", { name: "Add resource", exact: true }).click();
     await expect(page.getByText("Learning resource added.", { exact: true })).toBeVisible();
 
+    await page.getByRole("button", { name: "Review & publish", exact: true }).click();
     await page.getByRole("button", { name: "Publish course", exact: true }).click();
     await expect(page.getByText("Course published.", { exact: true })).toBeVisible();
-    await expect(page.locator(".learning-course-detail").getByText("Published", { exact: true })).toBeVisible();
+    await expect(page.getByRole("region",{name:"Course builder",exact:true}).getByText("Published", { exact: true })).toBeVisible();
 
+    await page.getByRole("button", { name: "3 · Audience", exact: true }).click();
     await page.getByRole("button", { name: "Create assignment rule", exact: true }).click();
     dialog = page.getByRole("dialog");
     await dialog.getByLabel("Learning target kind").selectOption("person");

@@ -136,15 +136,17 @@ for(const width of [390,1440]){
   await page.setViewportSize({width,height:1000});const {writes}=await api(page);
   await page.goto('/tests/fixtures/owner-corrections.html?screen=learning');
   await page.getByRole('button',{name:/Synthetic orientation.*modules/}).click();
-  await expect(page.getByRole('region',{name:'Course builder',exact:true})).toContainText('1 prepared');
+  await expect(page.getByRole('region',{name:'Course outline',exact:true})).toContainText('Synthetic module');
+  await page.getByRole('button',{name:'Review & publish',exact:true}).click();
   await expect(page.getByRole('button',{name:'Publish course',exact:true})).toBeEnabled();
   await page.getByRole('button',{name:'Learner preview',exact:true}).click();
-  await expect(page.getByText('Synthetic learner content',{exact:true})).toBeVisible();
-  await expect(page.getByRole('button',{name:'Publish course',exact:true})).toHaveCount(0);
-  await expect(page.getByRole('button',{name:'Add module',exact:true})).toHaveCount(0);
+  await expect(page.getByText('Synthetic learner content',{exact:true}).filter({visible:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Publish course',exact:true})).toBeHidden();
+  await expect(page.getByRole('button',{name:'+ Add module',exact:true})).toBeHidden();
   await expect(page.getByRole('button',{name:'Complete module',exact:true})).toHaveCount(0);
-  await page.getByRole('button',{name:'Course outline',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Add module',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Back to builder',exact:true}).click();
+  await page.getByRole('button',{name:'2 · Modules & resources',exact:true}).click();
+  await expect(page.getByRole('button',{name:'+ Add module',exact:true})).toBeVisible();
   expect(writes).toHaveLength(0);
  });
  test(`weekly schedule grid retains all days and a denied draft at ${width}px`,async({page})=>{

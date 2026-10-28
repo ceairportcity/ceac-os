@@ -51,8 +51,10 @@ for (const width of [390, 1440]) {
     await page.goto('/tests/fixtures/hr-overview-review.html?audit=screen&screen=learning');
     await expect(page.locator('.ev2w-header')).toContainText('Learning');
     await page.getByRole('button',{name:/Draft orientation.*modules/}).click();
+    await page.getByRole('button',{name:'Review & publish',exact:true}).click();
     await expect(page.getByRole('button', { name: 'Publish course', exact: true })).toBeDisabled();
-    await expect(page.getByText('Before publishing, add at least one required module and a resource to every module.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Add a resource to every module', { exact: true })).toBeVisible();
+    await page.getByRole('button',{name:'Back to course catalogue',exact:true}).click();
     await page.getByRole('button', { name: 'Create course', exact: true }).click();
     let dialog = page.getByRole('dialog', { name: 'Create a draft course', exact: true });
     await expect(dialog).toHaveClass(/ev2c-composer-drawer/);
@@ -64,7 +66,9 @@ for (const width of [390, 1440]) {
     expect(writes[0]).toMatchObject({ name: 'learning_courses', body: { title: 'Retain this draft', state: 'draft' } });
     await page.screenshot({ path: `test-artifacts/admin-learning-draft-${width}.png`, fullPage: true });
     await dialog.getByRole('button', { name: 'Close', exact: true }).click();
-    await page.getByRole('button', { name: 'Add module', exact: true }).click();
+    await page.getByRole('button',{name:/Draft orientation.*modules/}).click();
+    await page.getByRole('button',{name:'2 · Modules & resources',exact:true}).click();
+    await page.getByRole('button', { name: '+ Add module', exact: true }).click();
     dialog = page.getByRole('dialog', { name: 'Add a module', exact: true });
     await expect(dialog.getByLabel('Learning module title', { exact: true })).toBeVisible();
     await expect(dialog.getByText('Learning change not recorded', { exact: true })).toHaveCount(0);
@@ -75,6 +79,7 @@ for (const width of [390, 1440]) {
     await expect(dialog.getByLabel('Learning resource text', { exact: true })).toBeVisible();
     await expect(dialog.getByLabel('Learning resource URL', { exact: true })).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+    await page.getByRole('button',{name:'Back to course catalogue',exact:true}).click();
     await page.getByRole('tab', { name: 'Assignment rules', exact: true }).click();
     await page.getByRole('button', { name: 'Create assignment rule', exact: true }).click();
     dialog = page.getByRole('dialog', { name: 'Create an assignment rule', exact: true });
