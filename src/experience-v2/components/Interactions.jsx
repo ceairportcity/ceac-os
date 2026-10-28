@@ -19,10 +19,13 @@ const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
 function useOverlayFocus(open, containerRef, onClose, returnFocusRef) {
+  // Callback identity changes while typing are not an overlay lifecycle change.
+  const latest = useRef({ onClose, returnFocusRef });
+  useEffect(() => { latest.current = { onClose, returnFocusRef }; });
   useEffect(() => {
     if (!open) return undefined;
 
-    const previous = returnFocusRef?.current || document.activeElement;
+    const previous = latest.current.returnFocusRef?.current || document.activeElement;
     const node = containerRef.current;
     const first = node?.querySelector(FOCUSABLE);
     first?.focus();
@@ -30,7 +33,7 @@ function useOverlayFocus(open, containerRef, onClose, returnFocusRef) {
     function onKeyDown(event) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose?.();
+        latest.current.onClose?.();
         return;
       }
 
@@ -62,7 +65,7 @@ function useOverlayFocus(open, containerRef, onClose, returnFocusRef) {
       document.removeEventListener("keydown", onKeyDown);
       queueMicrotask(() => previous?.focus?.());
     };
-  }, [open, containerRef, onClose, returnFocusRef]);
+  }, [open, containerRef]);
 }
 
 export function Tooltip({ label, children, placement = "top" }) {

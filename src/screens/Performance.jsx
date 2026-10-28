@@ -6,7 +6,8 @@ import FormalReviewProjectDrafts from "../components/FormalReviewProjectDrafts";
 import { includeProjectAssessment } from "../lib/projectAssessmentDraft";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
-import { Avatar } from "../experience-v2/components";
+import { Avatar, ComposerDrawer, SegmentedControl } from "../experience-v2/components";
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 
 const CATEGORY_LABELS = {
@@ -77,6 +78,15 @@ function CaseState({ status }) {
   return <Pill tone={tone}>{STATUS_LABELS[status] || sentence(status)}</Pill>;
 }
 
+function ReviewForm({ admin, error, resetError, children, ...props }) {
+  useEffect(() => { if (admin) resetError(null); }, [admin, resetError]);
+  const Dialog = admin ? ComposerDrawer : Sheet;
+  return <Dialog {...props}>
+    {admin && error && <ProductNotice tone="error" title="Review change not recorded">{error}</ProductNotice>}
+    {children}
+  </Dialog>;
+}
+
 export default function Performance({ me }) {
   const hrReleaseAdmin = Boolean(me.is_admin) && (me.capabilities || []).includes("people.manage");
   const mayPublishAssignedHrHead = (review) => Boolean(
@@ -93,6 +103,8 @@ export default function Performance({ me }) {
   const [memberships, setMemberships] = useState([]);
   const [selectedCycleId, setSelectedCycleId] = useState("");
   const [selectedCaseId, setSelectedCaseId] = useState("");
+  const [reviewStep,setReviewStep]=useState("prepare");
+  useEffect(()=>{setReviewStep("prepare");},[selectedCaseId]);
   const [evidence, setEvidence] = useState([]);
   const [entries, setEntries] = useState([]);
   const [releaseQueue, setReleaseQueue] = useState([]);
@@ -368,7 +380,10 @@ export default function Performance({ me }) {
   }
 
   async function decideHRRelease(approved) {
-    if (!canDecidePublication || !currentReleaseRequest || releaseDecisionNote.trim().length < 8) return;
+    const decisionNote = releaseDecisionNote.trim();
+    if (!canDecidePublication || !currentReleaseRequest
+        || (!approved && decisionNote.length < 8)
+        || (decisionNote && decisionNote.length < 8)) return;
     if (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) {
       setError("An independent HR officer must authorise assessment publication.");
       return;
@@ -376,7 +391,7 @@ export default function Performance({ me }) {
     const confirmed = await rpc("performance_hr_decide_release", {
       p_request_id:currentReleaseRequest.id,
       p_approve:approved,
-      p_reason:releaseDecisionNote.trim(),
+      p_reason:decisionNote || "Assessment reviewed and approved for publication.",
     }, assignedPastorPublication
       ? (approved ? "Group Pastor approved publication of the assigned HR-head assessment version." : "Group Pastor declined publication of the assigned HR-head assessment version.")
       : approved
@@ -442,10 +457,14 @@ export default function Performance({ me }) {
         description="Your evidence, reflection, review conversation, development plan and visible feedback. CEAC OS does not score or rank you."
         statusLabel="Evidence-first review"
       />
-    : <div style={{ paddingTop:26 }}>
+    : me.is_admin ? <WorkPageHeader
+        eyebrow="People development"
+        title="Reviews & development"
+        description="Recorded evidence, human assessments and development plans. Reviewers enter ratings with explanations; CEAC OS does not calculate employee scores or rankings."
+      /> : <div style={{ paddingTop:26 }}>
         <div className="eyebrow">Evidence-first people development</div>
         <h1 className="h1">Reviews & development</h1>
-        <p className="screen-note">CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. There is no employee score or ranking.</p>
+        <p className="screen-note">{hrReleaseAdmin ? "CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. Reviewers enter ratings with explanations; the system does not calculate employee scores or rankings." : "CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. There is no employee score or ranking."}</p>
       </div>;
 
   return <div className={`body performance-page ${personalReview ? "ev2-personal-page ev2-personal-review" : ""}`.trim()}>
@@ -458,26 +477,13 @@ export default function Performance({ me }) {
       <div>
         <span className="eyebrow">Administration</span>
         <strong>Review periods</strong>
-        <small>Open a period when CEAC is ready to review a defined date range. No frequency is assumed.</small>
+        <small>{hrReleaseAdmin ? "Quarterly formal reviews require reviewer-entered ratings and explanations. Monthly ratings are optional. Choose the evidence dates for the review period." : "Open a period when CEAC is ready to review a defined date range. No frequency is assumed."}</small>
       </div>
       <div className="performance-admin-actions">
         {selectedCycle?.status === "open" && <button className="btn btn-ghost btn-sm" onClick={() => setCloseCycleFlow(true)}>Close selected period</button>}
         <button className="btn btn-sm" onClick={() => setCycleFlow(true)}>Open review period</button>
       </div>
     </section>}
-
-    {hrReleaseAdmin && <HRProjectContributionQueue me={me} cases={cases} cycles={cycles} onOpenReview={reviewId => {
-      const review = cases.find(row => row.id === reviewId);
-      if (!review || !cycles.some(cycle => cycle.id === review.cycle_id)) return;
-      selectedCaseRef.current = review.id;
-      selectedCycleRef.current = review.cycle_id;
-      setSelectedCycleId(review.cycle_id);
-      setSelectedCaseId(review.id);
-      requestAnimationFrame(() => {
-        reviewPanelRef.current?.focus();
-        reviewPanelRef.current?.scrollIntoView({ block: "start" });
-      });
-    }} />}
 
     {cycles.length > 0 && <div className="performance-cycle-strip" aria-label="Review periods">
       {cycles.map((cycle) => <button key={cycle.id} className={selectedCycleId === cycle.id ? "on" : ""} onClick={() => {
@@ -513,6 +519,8 @@ export default function Performance({ me }) {
             <CaseState status={selectedCase.status} />
           </header>
 
+          {me.is_admin&&<SegmentedControl ariaLabel="Review stages" value={reviewStep} onChange={setReviewStep} items={[{value:"prepare",label:"1 · Prepare"},{value:"assessment",label:"2 · Assessment"},{value:"publication",label:"3 · Publication"},{value:"response",label:"4 · Response"}]}/>}
+          <div hidden={me.is_admin&&reviewStep!=="prepare"}>
           {!selectedCase.manager_id && <ProductNotice tone="attention" title="Reviewer not assigned">Administration must assign an authorised reviewer. The evidence remains visible to the employee.</ProductNotice>}
 
           {orgPerformanceAdmin && <section className="card performance-authority-card">
@@ -543,6 +551,8 @@ export default function Performance({ me }) {
           </details>)}
           {!evidence.length && <EmptyState compact title="No evidence rows in this period">CEAC OS will not create placeholder evidence. Review the date range or record the work first.</EmptyState>}
 
+          </div>
+          <div hidden={me.is_admin&&reviewStep!=="assessment"}>
           <div className="performance-section-head"><div><span className="eyebrow">Employee voice</span><h3>Your reflection</h3></div></div>
           {isSelf ? <>
             <FieldGroup label={currentReflection ? "Revise your reflection" : "Your reflection"} hint="Write what happened, what you learned and what you need next.">
@@ -605,6 +615,8 @@ export default function Performance({ me }) {
             {plans.map((plan) => <div key={plan.id}><strong>Version {plan.version} · {plan.focus}</strong><span>{sentence(plan.state)} · {plan.change_reason}</span></div>)}
           </details>}
 
+          </div>
+          <div hidden={me.is_admin&&reviewStep!=="response"}>
           <div className="performance-section-head"><div><span className="eyebrow">Right of reply</span><h3>Employee response</h3></div></div>
           {entries.filter((entry) => entry.entry_type === "staff_response").map((entry) => <div className="row" key={entry.id}><div className="row-t">{entry.body}</div><div className="row-m">{new Date(entry.created_at).toLocaleString("en-GB")}</div></div>)}
           {isSelf && <>
@@ -637,6 +649,8 @@ export default function Performance({ me }) {
             <button className="btn btn-sm" disabled={busy || feedbackNote.trim().length < 3} onClick={recordFeedback}>Record feedback</button>
           </section>}
 
+          </div>
+          <div hidden={me.is_admin&&reviewStep!=="publication"}>
           {hrReleaseAdmin && isSelf && <ProductNotice tone="attention" title="Your assigned reviewer decides publication">You cannot decide publication of your own appraisal. The assigned Group Pastor may conduct and publish this review under the owner-approved HR-head exception. The assessment remains restricted until that decision.</ProductNotice>}
           {canDecidePublication && <div className="performance-share-bar">
             <div><strong>{assignedPastorPublication ? "Assigned HR-head publication decision" : "HR publication decisions"}</strong>
@@ -646,11 +660,11 @@ export default function Performance({ me }) {
             {releaseQueueAvailable && !currentReleaseRequest && <p className="screen-note">No pending HR request matches the current manager assessment version.</p>}
             {releaseQueueAvailable && currentReleaseRequest && <>
               <p className="screen-note">Manager's reason: {currentReleaseRequest.request_reason}</p>
-              <FieldGroup label="HR approval or decline reason">
+              <FieldGroup label="Decision note" hint="Optional when approving a reviewed assessment. Explain a decline in at least 8 characters.">
                 <textarea className="field" rows="2" aria-label="HR assessment publication decision reason"
                   value={releaseDecisionNote} onChange={(event)=>setReleaseDecisionNote(event.target.value)} />
               </FieldGroup>
-              <button className="btn btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || releaseDecisionNote.trim().length < 8}
+              <button className="btn btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || (releaseDecisionNote.trim().length > 0 && releaseDecisionNote.trim().length < 8)}
                 onClick={()=>decideHRRelease(true)}>{assignedPastorPublication ? "Publish assigned HR-head review" : "HR approve publication"}</button>
               <button className="btn btn-ghost btn-sm" disabled={busy || (currentReleaseRequest.requested_by === me.id && !assignedPastorPublication) || releaseDecisionNote.trim().length < 8}
                 onClick={()=>decideHRRelease(false)}>{assignedPastorPublication ? "Decline assigned HR-head publication" : "HR decline with reason"}</button>
@@ -665,11 +679,25 @@ export default function Performance({ me }) {
             </FieldGroup>
             <button className="btn btn-sm" disabled={busy || !currentAssessment || releaseReason.trim().length < 8} onClick={requestRelease}>{assignedPastorPublication ? "Prepare assigned HR-head publication" : "Submit release request to HR"}</button>
           </div>}
+          </div>
         </>}
       </section>
     </div>}
 
-    {cycleFlow && <Sheet onClose={() => { if (!busy) { setCycleFlow(false); setCycleStep(1); } }}>
+    {hrReleaseAdmin && <HRProjectContributionQueue me={me} cases={cases} cycles={cycles} onOpenReview={reviewId => {
+      const review = cases.find(row => row.id === reviewId);
+      if (!review || !cycles.some(cycle => cycle.id === review.cycle_id)) return;
+      selectedCaseRef.current = review.id;
+      selectedCycleRef.current = review.cycle_id;
+      setSelectedCycleId(review.cycle_id);
+      setSelectedCaseId(review.id);
+      requestAnimationFrame(() => {
+        reviewPanelRef.current?.focus();
+        reviewPanelRef.current?.scrollIntoView({ block: "start" });
+      });
+    }} />}
+
+    {cycleFlow && <ReviewForm admin={me.is_admin} error={error} resetError={setError} open title="Open review period" onClose={() => { if (!busy) { setCycleFlow(false); setCycleStep(1); } }}>
       <div className="eyebrow">Open review period · Step {cycleStep} of 3</div>
       <div className="h2">{cycleStep === 1 ? "Name the review period" : cycleStep === 2 ? "Choose the evidence dates" : "Confirm why this period is opening"}</div>
       {cycleStep === 1 && <FieldGroup label="Review period name"><input className="field" aria-label="Review period name" value={cycleName} onChange={(event) => setCycleName(event.target.value)} placeholder="e.g. July–September review" /></FieldGroup>}
@@ -684,17 +712,17 @@ export default function Performance({ me }) {
           ? <button className="btn" disabled={(cycleStep === 1 && cycleName.trim().length < 3) || (cycleStep === 2 && (!cycleStart || !cycleEnd))} onClick={() => setCycleStep((step) => step+1)}>Continue</button>
           : <button className="btn" disabled={busy || cycleReason.trim().length < 3} onClick={openCycle}>{busy ? "Opening…" : "Open review period"}</button>}
       </div>
-    </Sheet>}
+    </ReviewForm>}
 
-    {closeCycleFlow && <Sheet onClose={() => { if (!busy) setCloseCycleFlow(false); }}>
+    {closeCycleFlow && <ReviewForm admin={me.is_admin} error={error} resetError={setError} open title="Close review period" onClose={() => { if (!busy) setCloseCycleFlow(false); }}>
       <div className="eyebrow">Close review period</div>
       <div className="h2">Close {selectedCycle?.name || "this period"}?</div>
       <p className="screen-note">This closes the period itself. Reviews already shared are marked closed; incomplete reviews keep their factual workflow state so Administration can still see what was unfinished.</p>
       <FieldGroup label="Reason"><textarea className="field" aria-label="Review period close reason" rows="3" value={closeCycleReason} onChange={(event) => setCloseCycleReason(event.target.value)} placeholder="Why this review period is closing" /></FieldGroup>
       <button className="btn" style={{ marginTop:14 }} disabled={busy || closeCycleReason.trim().length < 3} onClick={closeCycle}>{busy ? "Closing…" : "Close review period"}</button>
-    </Sheet>}
+    </ReviewForm>}
 
-    {planFlow && <Sheet onClose={() => { if (!busy) { setPlanFlow(false); setPlanStep(1); } }}>
+    {planFlow && <ReviewForm admin={me.is_admin} error={error} resetError={setError} open title="Development plan" onClose={() => { if (!busy) { setPlanFlow(false); setPlanStep(1); } }}>
       <div className="eyebrow">Development plan · Step {planStep} of 3</div>
       <div className="h2">{planStep === 1 ? "What should develop?" : planStep === 2 ? "What will happen next?" : "Confirm the plan"}</div>
       {planStep === 1 && <>
@@ -714,6 +742,6 @@ export default function Performance({ me }) {
           ? <button className="btn" disabled={(planStep === 1 && (planFocus.trim().length < 3 || planOutcome.trim().length < 3)) || (planStep === 2 && planSteps.trim().length < 3)} onClick={() => setPlanStep((step) => step+1)}>Continue</button>
           : <button className="btn" disabled={busy || planReason.trim().length < 3} onClick={recordPlan}>{busy ? "Recording…" : currentPlan ? "Record plan revision" : "Record development plan"}</button>}
       </div>
-    </Sheet>}
+    </ReviewForm>}
   </div>;
 }

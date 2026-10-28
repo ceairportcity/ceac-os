@@ -38,6 +38,8 @@ test('release personal monthly and quarterly PDFs contain visible authorised rep
    await report.getByRole('combobox',{name:/^Period/}).selectOption(cadence);
    await expect(report.getByRole('button',{name:'Print / Save as PDF'})).toBeEnabled();
    await page.setViewportSize({width:703,height:990});
+   // The report now offers List/Table; explicitly choose the tabular export.
+   await report.getByRole('button',{name:'Table',exact:true}).click();
    await page.emulateMedia({media:'print'});
    await expect(report.getByRole('heading',{name:'My achievements',exact:true})).toHaveCSS('visibility','visible');
    await expect(report.locator('.s2-achievement-print-head')).toContainText('Subject: Staff Fixture');

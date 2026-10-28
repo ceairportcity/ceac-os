@@ -1,0 +1,849 @@
+/* Executive Product Redesign — literal owner-approved reference family */
+
+.executive-app {
+  --exec-purple: #7148e8;
+  --exec-purple-soft: #f1edff;
+  --exec-green: #25a86b;
+  --exec-green-soft: #e7f8ef;
+  --exec-amber: #e79024;
+  --exec-amber-soft: #fff2dd;
+  --exec-blue: #2e86e6;
+  --exec-blue-soft: #e9f3ff;
+  --exec-red: #e85252;
+  --exec-red-soft: #feecec;
+}
+
+.exec-redesign-page,
+.ev2-work-executive,
+.ev2-finance-executive,
+.ev2-reporting-executive,
+.ev2-executive-ministry {
+  --exec-purple: #7148e8;
+  --exec-purple-soft: #f1edff;
+  --exec-green: #25a86b;
+  --exec-green-soft: #e7f8ef;
+  --exec-amber: #e79024;
+  --exec-amber-soft: #fff2dd;
+  --exec-blue: #2e86e6;
+  --exec-blue-soft: #e9f3ff;
+  --exec-red: #e85252;
+  --exec-red-soft: #feecec;
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+  padding: 18px 20px 42px;
+  color: var(--ev2-text);
+}
+
+.exec-redesign-head,
+.ev2-work-executive .ev2w-header,
+.ev2-finance-executive .ev2fin-header,
+.ev2-reporting-executive .ev2rep-header,
+.ev2-executive-ministry .ev2ex-ministry-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 2px 0 17px;
+  border-bottom: 0;
+}
+.exec-redesign-head > div,
+.ev2-work-executive .ev2w-header-copy,
+.ev2-finance-executive .ev2fin-header-copy,
+.ev2-reporting-executive .ev2rep-header-copy,
+.ev2-executive-ministry .ev2ex-ministry-head-copy { min-width: 0; max-width: 52rem; }
+
+.exec-redesign-head > div > span,
+.ev2-work-executive .ev2w-eyebrow,
+.ev2-finance-executive .ev2fin-eyebrow,
+.ev2-reporting-executive .ev2rep-eyebrow,
+.ev2-executive-ministry .eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: #687386;
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 750;
+  letter-spacing: .04em;
+  text-transform: none;
+}
+.exec-redesign-head h1,
+.ev2-work-executive .ev2w-header h1,
+.ev2-finance-executive .ev2fin-header h1,
+.ev2-reporting-executive .ev2rep-header h1,
+.ev2-executive-ministry .ev2ex-ministry-head .h1 {
+  margin: 0;
+  color: #171c28;
+  font-size: clamp(1.55rem, 2vw, 1.9rem);
+  line-height: 1.08;
+  letter-spacing: -.03em;
+}
+.exec-redesign-head p,
+.ev2-work-executive .ev2w-header p,
+.ev2-finance-executive .ev2fin-header p,
+.ev2-reporting-executive .ev2rep-header p,
+.ev2-executive-ministry .ev2ex-ministry-head .screen-note {
+  max-width: 72ch;
+  margin: 5px 0 0;
+  color: #687386;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.exec-redesign-tabs,
+.ev2-work-executive > .ev2w-tabs {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  margin: 4px 0 14px;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid #e6e8ee;
+  border-radius: 9px;
+  background: #f6f7fa;
+}
+.exec-redesign-tabs button,
+.ev2-work-executive > .ev2w-tabs button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #616a79;
+  font: inherit;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.exec-redesign-tabs button.is-active,
+.ev2-work-executive > .ev2w-tabs button.is-selected {
+  background: #fff;
+  color: #33226f;
+  box-shadow: 0 2px 8px rgba(25,34,53,.08);
+}
+
+.exec-redesign-list,
+.ev2-work-executive .ev2w-list,
+.ev2-finance-executive .ev2fin-list,
+.ev2-reporting-executive .ev2rep-list {
+  overflow: hidden;
+  border: 1px solid #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+.exec-redesign-list-row {
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: 36px minmax(0,1fr) auto 12px;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-top: 1px solid #eff1f5;
+}
+.exec-redesign-list-row:first-child { border-top: 0; }
+.exec-redesign-row-copy { min-width: 0; display: grid; gap: 2px; }
+.exec-redesign-row-copy strong { font-size: 12px; line-height: 1.3; }
+.exec-redesign-row-copy small { color: #6d7685; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exec-redesign-row-meta { color: #667080; font-size: 11px; font-weight: 650; white-space: nowrap; }
+.exec-redesign-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 9px;
+}
+.exec-redesign-icon.is-purple { background: var(--exec-purple-soft); color: var(--exec-purple); }
+.exec-redesign-icon.is-green { background: var(--exec-green-soft); color: var(--exec-green); }
+.exec-redesign-icon.is-blue { background: var(--exec-blue-soft); color: var(--exec-blue); }
+.exec-redesign-icon.is-amber { background: var(--exec-amber-soft); color: var(--exec-amber); }
+.exec-redesign-empty {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  color: #737c8b;
+  text-align: center;
+}
+
+/* Work */
+.ev2-work-executive .ev2w-header-action,
+.ev2-executive-ministry .ev2ex-ministry-head .btn {
+  min-height: 40px;
+  border-radius: 8px;
+  background: var(--exec-purple);
+  border-color: var(--exec-purple);
+}
+.ev2-work-executive .ev2w-group { margin-top: 12px; }
+.ev2-work-executive .ev2w-group-head { padding-inline: 2px; }
+.ev2-work-executive .ev2w-row { min-height: 62px; border-color: #eff1f5; }
+.ev2-work-executive .ev2w-row-icon,
+.ev2-work-executive .ev2w-review-icon { border-radius: 8px; background: var(--exec-purple-soft); color: var(--exec-purple); }
+.ev2-work-executive .ev2w-empty {
+  border: 1px solid #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+}
+
+/* Ministry */
+.ev2-executive-ministry { gap: 0; }
+.ev2-executive-ministry .ev2ex-ministry-section-title { margin-top: 10px; }
+.ev2-executive-ministry .ev2ex-ministry-direction {
+  margin-top: 10px;
+  padding: 15px 16px;
+  border: 1px solid #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+.ev2-executive-ministry .ev2ex-ministry-objective { border-top-color: #eff1f5; }
+.ev2-executive-ministry .ev2ex-unit-objective {
+  border-color: #e7e9ef;
+  border-radius: 9px;
+  background: #fafbfe;
+}
+
+/* Finance */
+.ev2-finance-executive .ev2fin-executive-brief {
+  display: grid;
+  grid-template-columns: minmax(18rem,.72fr) minmax(0,1.28fr);
+  gap: 14px;
+  align-items: start;
+}
+.ev2-finance-executive .ev2fin-authority,
+.ev2-finance-executive .ev2fin-section { margin-top: 12px; }
+.ev2-finance-executive .ev2fin-currency-card,
+.ev2-finance-executive .ev2fin-empty,
+.ev2-finance-executive .ev2fin-drill {
+  border-color: #e4e7ee;
+  border-radius: 11px;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+.ev2-finance-executive .ev2fin-currency-head { background: #fff; }
+.ev2-finance-executive .ev2fin-facts { background: #eff1f5; }
+.ev2-finance-executive .ev2fin-facts > div,
+.ev2-finance-executive .ev2fin-facts > button { background: #fbfcfe; }
+
+/* Reports */
+.ev2-reporting-executive .ev2rep-executive-brief {
+  display: grid;
+  grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr);
+  gap: 14px;
+  align-items: start;
+}
+.ev2-reporting-executive .ev2rep-section { margin-top: 12px; }
+.ev2-reporting-executive .ev2rep-evidence {
+  min-height: 92px;
+  padding: 12px;
+  border-color: #e4e7ee;
+  border-radius: 10px;
+  box-shadow: 0 3px 12px rgba(26,36,57,.04);
+}
+.ev2-reporting-executive .ev2rep-evidence-icon { border-radius: 8px; background: var(--exec-blue-soft); color: var(--exec-blue); }
+.ev2-reporting-executive .ev2rep-row-icon { border-radius: 8px; background: var(--exec-purple-soft); color: var(--exec-purple); }
+.ev2-reporting-executive .ev2rep-executive-empty-brief {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 19rem;
+  gap: 14px;
+}
+.ev2-reporting-executive .ev2rep-executive-authority {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+}
+
+@media (max-width: 900px) {
+  .exec-redesign-page,
+  .ev2-work-executive,
+  .ev2-finance-executive,
+  .ev2-reporting-executive,
+  .ev2-executive-ministry { padding: 14px 14px calc(82px + env(safe-area-inset-bottom)); }
+  .ev2-finance-executive .ev2fin-executive-brief,
+  .ev2-reporting-executive .ev2rep-executive-brief,
+  .ev2-reporting-executive .ev2rep-executive-empty-brief { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 599px) {
+  .exec-redesign-head,
+  .ev2-work-executive .ev2w-header,
+  .ev2-finance-executive .ev2fin-header,
+  .ev2-reporting-executive .ev2rep-header,
+  .ev2-executive-ministry .ev2ex-ministry-head {
+    display: grid;
+    gap: 10px;
+  }
+  .exec-redesign-tabs,
+  .ev2-work-executive > .ev2w-tabs { width: 100%; }
+  .exec-redesign-tabs button,
+  .ev2-work-executive > .ev2w-tabs button { flex: 1 0 auto; min-height: 44px; }
+  .exec-redesign-list-row { grid-template-columns: 34px minmax(0,1fr) 12px; min-height: 66px; }
+  .exec-redesign-row-meta { display: none; }
+  .ev2-work-executive .ev2w-header-action,
+  .ev2-executive-ministry .ev2ex-ministry-head .btn { min-height: 44px; }
+}
+
+
+/* Executive shell */
+.executive-app .ev2s-sidebar {
+  background: linear-gradient(180deg, #111f34 0%, #0d1a2c 100%);
+  border-right-color: rgba(255,255,255,.06);
+}
+.executive-app .ev2s-brand-copy strong,
+.executive-app .ev2s-sidebar-profile-copy strong { color: #f7f9fd; }
+.executive-app .ev2s-brand-copy span,
+.executive-app .ev2s-sidebar-profile-copy small { color: #95a6ba; }
+.executive-app .ev2s-sidebar-nav button {
+  min-height: 40px;
+  border-radius: 7px;
+  color: #c7d2df;
+}
+.executive-app .ev2s-sidebar-nav button:hover {
+  background: rgba(255,255,255,.055);
+  color: #fff;
+}
+.executive-app .ev2s-sidebar-nav button.is-active {
+  background: linear-gradient(90deg, #6f52e5 0%, #5f47d5 100%);
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(72,52,170,.24);
+}
+.executive-app .ev2s-sidebar-profile {
+  border-top-color: rgba(255,255,255,.08);
+  color: #f7f9fd;
+}
+.executive-app .fpg9-sidebar-quick {
+  border-color: rgba(255,255,255,.07);
+  background: rgba(255,255,255,.025);
+}
+.executive-app .fpg9-sidebar-quick button { border-color: rgba(255,255,255,.07); }
+.executive-app .ev2s-topbar {
+  background: rgba(255,255,255,.94);
+  border-bottom-color: #e7e9ef;
+  backdrop-filter: blur(18px);
+}
+.executive-app .fpg9-topbar-message:hover,
+.executive-app .ev2s-profile-button:hover {
+  border-color: #e3e6ed;
+  background: #f8f9fc;
+}
+
+.executive-app .exec-redesign-notification {
+  color: #273144;
+  border-color: #e3e6ed;
+  background: #fff;
+  border-radius: 8px;
+}
+.executive-app .exec-redesign-notification:hover {
+  color: var(--exec-purple);
+  border-color: #d8d0fa;
+  background: var(--exec-purple-soft);
+}
+.executive-app .exec-redesign-mobile-notification {
+  color: #273144;
+}
+.executive-app .exec-redesign-mobile-notification:hover {
+  color: var(--exec-purple);
+  background: var(--exec-purple-soft);
+}
+
+/* Executive Portfolio */
+.executive-app .ev2-project-delivery.is-executive {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+  padding: 18px 20px 42px;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-header {
+  padding: 2px 0 17px;
+  border-bottom: 0;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-header h1 {
+  font-size: clamp(1.55rem, 2vw, 1.9rem);
+  letter-spacing: -.03em;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary {
+  gap: 10px;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > * ,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-list,
+.executive-app .ev2-project-delivery.is-executive .ev2p-attention-list,
+.executive-app .ev2-project-delivery.is-executive .ev2p-portfolio-card {
+  border-color: #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row {
+  border-color: #eff1f5;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-row-icon {
+  border-radius: 8px;
+  background: var(--exec-purple-soft);
+  color: var(--exec-purple);
+}
+
+/* Executive Calendar — shared Phase 6 engine, Executive presentation */
+.executive-app .ev2cal-admin-page {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+  padding: 18px 20px 42px;
+}
+.executive-app .ev2cal-admin-page .ev2cal-page-head {
+  padding-top: 2px;
+}
+.executive-app .ev2cal-admin-page .phase6-calendar-scope {
+  padding: 4px;
+  border: 1px solid #e6e8ee;
+  border-radius: 9px;
+  background: #f6f7fa;
+}
+.executive-app .ev2cal-admin-page .phase6-calendar-scope button {
+  min-height: 34px;
+  border-radius: 7px;
+}
+.executive-app .ev2cal-admin-page .phase6-calendar-scope button.is-selected {
+  background: #fff;
+  color: #33226f;
+  box-shadow: 0 2px 8px rgba(25,34,53,.08);
+}
+.executive-app .ev2cal-admin-page .ev2cal-timeline,
+.executive-app .ev2cal-admin-page .phase6-day-workspace {
+  border-color: #e4e7ee;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+
+/* Executive Payroll — preserve approval semantics, unify visible family */
+.executive-app .fpg-payroll {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+  padding: 18px 20px 42px;
+}
+.executive-app .fpg-payroll-head {
+  padding: 2px 0 17px;
+  border-bottom: 0;
+}
+.executive-app .fpg-payroll-head h1 {
+  font-size: clamp(1.55rem, 2vw, 1.9rem);
+  letter-spacing: -.03em;
+}
+.executive-app .fpg-payroll-authority {
+  border-radius: 999px;
+  background: var(--exec-purple-soft);
+  color: #5a3db6;
+}
+.executive-app .fpg-payroll-table-card,
+.executive-app .fpg-payroll-runs,
+.executive-app .fpg-payroll-main,
+.executive-app .fpg-payroll-metrics article {
+  border-color: #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+.executive-app .fpg-payroll-runs button.is-selected {
+  border-color: #d8d0fa;
+  background: var(--exec-purple-soft);
+}
+
+/* Shared personal/account destinations keep the Executive shell continuity. */
+.executive-app .ev2-personal-page {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+}
+.executive-app .ev2-personal-page .ev2pf-header,
+.executive-app .ev2-personal-page .ev2pf-section {
+  border-color: #e4e7ee;
+}
+
+/* Mobile Executive reference */
+@media (max-width: 899px) {
+  .executive-app .ev2s-mobile-topbar {
+    border-bottom: 1px solid #e8eaf0;
+    background: rgba(255,255,255,.98);
+    color: #171c28;
+  }
+  .executive-app .ev2s-mobile-identity strong { color: #171c28; }
+  .executive-app .ev2s-mobile-identity small { color: #737d8c; }
+  .executive-app .ev2s-mobile-topbar .ev2c-avatar {
+    border-color: #dedaf4;
+    background: var(--exec-purple-soft);
+    color: var(--exec-purple);
+  }
+  .executive-app .ev2s-mobile-profile:hover { background: #f5f6fa; }
+  .executive-app .ev2s-mobile-nav {
+    border-top-color: #e5e7ee;
+    background: rgba(255,255,255,.98);
+  }
+  .executive-app .ev2s-mobile-nav button.is-active {
+    background: transparent;
+    color: var(--exec-purple);
+  }
+  .executive-app .ev2s-mobile-nav button.is-active svg {
+    filter: drop-shadow(0 2px 4px rgba(113,72,232,.16));
+  }
+  .executive-app .ev2-project-delivery.is-executive,
+  .executive-app .ev2cal-admin-page,
+  .executive-app .fpg-payroll {
+    padding: 14px 14px calc(82px + env(safe-area-inset-bottom));
+  }
+}
+
+
+/* Literal semantic summary accents */
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > * {
+  border-top: 3px solid #d9dfea;
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > *:nth-child(1) {
+  border-top-color: var(--exec-purple);
+  background: linear-gradient(180deg, var(--exec-purple-soft) 0%, #fff 42%);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > *:nth-child(2) {
+  border-top-color: var(--exec-red);
+  background: linear-gradient(180deg, var(--exec-red-soft) 0%, #fff 42%);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > *:nth-child(3) {
+  border-top-color: var(--exec-amber);
+  background: linear-gradient(180deg, var(--exec-amber-soft) 0%, #fff 42%);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-summary > *:nth-child(4) {
+  border-top-color: var(--exec-blue);
+  background: linear-gradient(180deg, var(--exec-blue-soft) 0%, #fff 42%);
+}
+
+.executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(1) { border-top: 2px solid var(--exec-purple); }
+.executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(2) { border-top: 2px solid var(--exec-green); }
+.executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(3) { border-top: 2px solid var(--exec-blue); }
+.executive-app .ev2-finance-executive .ev2fin-facts > *:nth-child(4) { border-top: 2px solid var(--exec-amber); }
+
+.executive-app .fpg-payroll-metrics article:nth-child(1) {
+  border-top: 3px solid var(--exec-green);
+  background: linear-gradient(180deg, var(--exec-green-soft) 0%, #fff 46%);
+}
+.executive-app .fpg-payroll-metrics article:nth-child(2) {
+  border-top: 3px solid var(--exec-amber);
+  background: linear-gradient(180deg, var(--exec-amber-soft) 0%, #fff 46%);
+}
+.executive-app .fpg-payroll-metrics article:nth-child(3) {
+  border-top: 3px solid var(--exec-purple);
+  background: linear-gradient(180deg, var(--exec-purple-soft) 0%, #fff 46%);
+}
+.executive-app .fpg-payroll-metrics article:nth-child(4) {
+  border-top: 3px solid var(--exec-red);
+  background: linear-gradient(180deg, var(--exec-red-soft) 0%, #fff 46%);
+}
+.executive-app .fpg-payroll-metrics article:not(.has-flags):nth-child(4) {
+  border-top-color: var(--exec-blue);
+  background: linear-gradient(180deg, var(--exec-blue-soft) 0%, #fff 46%);
+}
+
+.executive-app .ev2cal-admin-page .ev2cal-page-head .ev2c-button-primary,
+.executive-app .ev2cal-admin-page .ev2cal-page-head .btn {
+  background: var(--exec-purple);
+  border-color: var(--exec-purple);
+}
+
+@media (max-width: 599px) {
+  .executive-app .ev2-project-delivery.is-executive .ev2p-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .executive-app .fpg-payroll-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* Executive shared destinations — Messages / My Hub / Account */
+.executive-app .inbox-page,
+.executive-app .ev2-personal-page {
+  width: 100%;
+  max-width: 86rem;
+  margin: 0 auto;
+  padding: 18px 20px 42px;
+}
+.executive-app .inbox-page .premium-page-head,
+.executive-app .inbox-page .exec-redesign-shared-head,
+.executive-app .ev2-personal-page .ev2pf-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 2px 0 17px;
+  border-bottom: 0;
+}
+.executive-app .inbox-page .premium-page-head h1,
+.executive-app .inbox-page .exec-redesign-shared-head h1,
+.executive-app .ev2-personal-page .ev2pf-header h1 {
+  margin: 0;
+  color: #171c28;
+  font-size: clamp(1.55rem, 2vw, 1.9rem);
+  line-height: 1.08;
+  letter-spacing: -.03em;
+}
+.executive-app .inbox-page .premium-page-head .eyebrow,
+.executive-app .inbox-page .exec-redesign-shared-head .eyebrow,
+.executive-app .ev2-personal-page .ev2pf-header .ev2pf-eyebrow {
+  color: #687386;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .04em;
+  text-transform: none;
+}
+.executive-app .inbox-page .premium-page-head .screen-note,
+.executive-app .inbox-page .exec-redesign-shared-head .screen-note,
+.executive-app .ev2-personal-page .ev2pf-header p {
+  margin-top: 5px;
+  color: #687386;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.executive-app .inbox-page > .ev2c-segmented {
+  width: fit-content;
+  max-width: 100%;
+  margin: 4px 0 14px;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid #e6e8ee;
+  border-radius: 9px;
+  background: #f6f7fa;
+}
+.executive-app .inbox-page > .ev2c-segmented .ev2c-segmented-item {
+  min-height: 34px;
+  border-radius: 7px;
+}
+.executive-app .inbox-page > .ev2c-segmented .ev2c-segmented-item.is-selected {
+  color: #33226f;
+}
+.executive-app .inbox-page .ev2c-data-panel,
+.executive-app .ev2-personal-page .ev2pf-section,
+.executive-app .ev2-personal-page .ev2pf-destination-card,
+.executive-app .ev2-personal-page .ev2pf-record-row {
+  border-color: #e4e7ee;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(26,36,57,.045);
+}
+.executive-app .inbox-page .ev2c-data-panel { margin-top: 12px; box-shadow: none; }
+.executive-app .inbox-page .ev2c-row-icon {
+  border-radius: 8px;
+  background: var(--exec-purple-soft);
+  color: var(--exec-purple);
+}
+.executive-app .inbox-page .ev2c-data-panel:nth-of-type(2) .ev2c-row-icon {
+  background: var(--exec-blue-soft);
+  color: var(--exec-blue);
+}
+.executive-app .ev2-personal-page .ev2pf-destination-card:hover {
+  border-color: #d8d0fa;
+  background: #fbfaff;
+}
+.executive-app .ev2-personal-page .ev2pf-inline-actions .ev2c-button-primary,
+.executive-app .ev2-personal-page .ev2pf-inline-actions .btn:not(.btn-ghost) {
+  background: var(--exec-purple);
+  border-color: var(--exec-purple);
+}
+
+@media (max-width: 899px) {
+  .executive-app .inbox-page,
+  .executive-app .ev2-personal-page {
+    padding: 14px 14px calc(82px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 599px) {
+  .executive-app .inbox-page .premium-page-head,
+  .executive-app .inbox-page .exec-redesign-shared-head,
+  .executive-app .ev2-personal-page .ev2pf-header {
+    display: grid;
+    gap: 10px;
+  }
+  .executive-app .inbox-page > .ev2c-segmented {
+    width: 100%;
+  }
+  .executive-app .inbox-page > .ev2c-segmented .ev2c-segmented-item {
+    min-height: 44px;
+  }
+  .executive-app .inbox-page .ev2c-queue-row {
+    min-height: 66px;
+  }
+}
+
+
+/* Work semantic state accents */
+.executive-app .ev2-work-executive .ev2w-row[data-status="in_progress"] .ev2w-row-icon,
+.executive-app .ev2-work-executive .ev2w-row[data-status="in_review"] .ev2w-row-icon {
+  background: var(--exec-blue-soft);
+  color: var(--exec-blue);
+}
+.executive-app .ev2-work-executive .ev2w-row[data-status="waiting_on"] .ev2w-row-icon,
+.executive-app .ev2-work-executive .ev2w-row[data-status="returned"] .ev2w-row-icon {
+  background: var(--exec-amber-soft);
+  color: var(--exec-amber);
+}
+.executive-app .ev2-work-executive .ev2w-row[data-status="completed"] .ev2w-row-icon,
+.executive-app .ev2-work-executive .ev2w-row[data-status="self_certified"] .ev2w-row-icon {
+  background: var(--exec-green-soft);
+  color: var(--exec-green);
+}
+.executive-app .ev2-work-executive .ev2w-row.is-attention .ev2w-row-icon {
+  background: var(--exec-red-soft);
+  color: var(--exec-red);
+}
+
+
+/* Portfolio semantic health accents */
+.executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="on_track"] .ev2p-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="on_track"] .ev2p-context-row-icon {
+  background: var(--exec-green-soft);
+  color: var(--exec-green);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="watch"] .ev2p-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="at_risk"] .ev2p-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="watch"] .ev2p-context-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="at_risk"] .ev2p-context-row-icon {
+  background: var(--exec-amber-soft);
+  color: var(--exec-amber);
+}
+.executive-app .ev2-project-delivery.is-executive .ev2p-row[data-health="blocked"] .ev2p-row-icon,
+.executive-app .ev2-project-delivery.is-executive .ev2p-context-row[data-health="blocked"] .ev2p-context-row-icon {
+  background: var(--exec-red-soft);
+  color: var(--exec-red);
+}
+
+
+/* Executive literal top frame */
+.executive-app .fpg9-sidebar-quick {
+  display: none;
+}
+.executive-app .ev2s-topbar-actions > .ev2c-popover,
+.executive-app .ev2s-accra-time {
+  display: none;
+}
+.executive-app .ev2s-topbar {
+  grid-template-columns: minmax(20rem, 1fr) auto;
+}
+.executive-app .ev2s-destination-search {
+  width: min(100%, 38rem);
+  border-color: #e2e5ec;
+  border-radius: 9px;
+  background: #fff;
+}
+
+
+/* Executive literal shell finishing */
+.executive-app .ev2s-brand-copy > span {
+  display: none;
+}
+.executive-app .ev2s-topbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.executive-app .ev2s-destination-search {
+  width: min(100%, 17.5rem);
+  justify-self: end;
+  min-height: 2.4rem;
+}
+.executive-app .ev2s-destination-search kbd {
+  display: none;
+}
+.executive-app .ev2s-profile-button {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  max-width: 2.5rem;
+  min-height: 2.5rem;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 0;
+  border-color: #e3e6ed;
+  background: #fff;
+  border-radius: 50%;
+}
+.executive-app .ev2s-profile-button > span:last-child {
+  display: none;
+}
+.executive-app .ev2s-topbar-actions {
+  gap: 10px;
+}
+.executive-app .ev2s-sidebar-profile {
+  margin-top: auto;
+}
+
+
+/* Executive phone Payroll cards */
+@media (max-width: 599px) {
+  .executive-app .fpg-payroll-table-wrap {
+    overflow: visible;
+  }
+  .executive-app .fpg-payroll-table {
+    min-width: 0;
+    width: 100%;
+    display: block;
+  }
+  .executive-app .fpg-payroll-table thead {
+    display: none;
+  }
+  .executive-app .fpg-payroll-table tbody {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+  }
+  .executive-app .fpg-payroll-table tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 11px 12px;
+    border: 1px solid #e6e8ee;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 3px 10px rgba(26,36,57,.04);
+  }
+  .executive-app .fpg-payroll-table td {
+    min-width: 0;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    border: 0;
+  }
+  .executive-app .fpg-payroll-table td + td {
+    border-top: 1px solid #f0f1f4;
+  }
+  .executive-app .fpg-payroll-table td:first-child {
+    display: block;
+    padding-top: 0;
+    padding-bottom: 10px;
+  }
+  .executive-app .fpg-payroll-table td:nth-child(2)::before { content: "Additions"; }
+  .executive-app .fpg-payroll-table td:nth-child(3)::before { content: "Deductions"; }
+  .executive-app .fpg-payroll-table td:nth-child(4)::before { content: "Net"; }
+  .executive-app .fpg-payroll-table td:nth-child(5)::before { content: "Review"; }
+  .executive-app .fpg-payroll-table td:nth-child(n+2):nth-child(-n+5)::before {
+    color: #7d8794;
+    font-size: 11px;
+    font-weight: 650;
+  }
+  .executive-app .fpg-payroll-table td:last-child {
+    justify-content: flex-start;
+    padding-bottom: 0;
+  }
+  .executive-app .fpg-payroll-person {
+    min-width: 0;
+  }
+  .executive-app .fpg-payroll-person > span:last-child {
+    min-width: 0;
+  }
+  .executive-app .fpg-payroll-person strong,
+  .executive-app .fpg-payroll-person small {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .executive-app .fpg-payroll-row-action {
+    min-height: 44px;
+    padding-inline: 13px;
+  }
+}

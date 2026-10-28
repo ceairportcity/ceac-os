@@ -470,7 +470,7 @@ test("Stage 10 Family G7 keeps account activity self-only while aligning it with
   expect(account).toContain('supabase.auth.signOut({ scope: "local" })');
   expect(account).toContain('supabase.auth.signOut({ scope: "global" })');
   expect(account).toContain("Only you can see this.");
-  expect(account).toContain('statusLabel="Self-only security"');
+  expect(account).toContain('statusLabel="Your account only"');
   expect(account).toContain("ev2-personal-account");
   expect(account).toContain("This is not a colleague-monitoring surface.");
   expect(account).toContain("Signed-in devices could not load");
@@ -497,8 +497,10 @@ test("Stage 10 Family G7 keeps a sessions read failure distinct from a truthful 
 
   await page.goto("/?tab=account");
   await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
+  await page.getByRole("tab",{name:"Sessions",exact:true}).click();
   await expect(page.getByText("Signed-in devices could not load", { exact: true })).toBeVisible();
   await expect(page.getByText("No signed-in device is recorded", { exact: true })).toHaveCount(0);
+  await page.getByRole("tab",{name:"Account activity",exact:true}).click();
   await expect(page.getByRole("heading", { name: "Recent activity", exact: true })).toBeVisible();
   await context.close();
 });
@@ -515,8 +517,10 @@ test("Stage 10 Family G7 keeps an activity read failure distinct from a truthful
 
   await page.goto("/?tab=account");
   await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
+  await page.getByRole("tab",{name:"Account activity",exact:true}).click();
   await expect(page.getByText("Recent account activity could not load", { exact: true })).toBeVisible();
   await expect(page.getByText("Nothing recorded yet", { exact: true })).toHaveCount(0);
+  await page.getByRole("tab",{name:"Sessions",exact:true}).click();
   await expect(page.getByRole("heading", { name: "Signed in devices", exact: true })).toBeVisible();
   await context.close();
 });
@@ -538,8 +542,9 @@ for (const viewport of [
     await page.goto("/?tab=account");
 
     await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
-    await expect(page.getByText("Self-only security", { exact: true })).toBeVisible();
+    await expect(page.getByText("Your account only", { exact: true })).toBeVisible();
     await expect(page.getByText(/Only you can see this/i)).toBeVisible();
+    await page.getByRole("tab",{name:"Sessions",exact:true}).click();
     await expect(page.getByRole("button", { name: "Sign out on this device", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out on every device", exact: true })).toBeVisible();
 
@@ -584,7 +589,9 @@ test("OCR5F Administration system surfaces use shared Queue Record Settings and 
 
   expect(workflows).toContain("SegmentedControl");
   expect(workflows).toContain('title="Waiting for a decision"');
-  expect(workflows).toContain('title="Check"');
+  expect(workflows).toContain('eyebrow="Selected request"');
+  expect(workflows).toContain("WorkflowChangeContext");
+  expect(workflows).toContain("contextVerified !== reviewScope");
   expect(workflows).not.toContain('import { QueueRow, byOldest } from "../components/primitives"');
 
   expect(authority).toContain("RecordRow");
@@ -635,8 +642,9 @@ test("Stage 10 Family H4 keeps Units evidence-backed and Administration-owned", 
   expect(units).toContain("Session and leave facts are context only. They do not measure output.");
   expect(units).toContain("Currencies remain separate; CEAC OS does not invent exchange rates.");
   expect(units).toContain("Administration can inspect the record but does not enter the Manager’s review queue.");
-  expect(units).toContain("Unit Head needed");
-  expect(units).toContain("StatusBadge");
+  expect(units).toContain("Unit Head not assigned");
+  expect(units).toContain("Table");
+  expect(units).toContain('aria-label="Organisation units register"');
 });
 
 

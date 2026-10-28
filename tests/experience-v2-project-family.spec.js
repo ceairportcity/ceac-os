@@ -160,7 +160,7 @@ async function openAdminProjects(browser, viewport) {
   return { context, page };
 }
 
-test("Stage 10 Family C3 keeps Administration Projects contextual and read-only", async () => {
+test("Administration Projects keeps contextual records and uses owner-authorised creation and management", async () => {
   const shared = readFileSync("src/experience-v2/project-family/ProjectFamilyV2.jsx", "utf8");
   const admin = readFileSync("src/screens/AdminProjects.jsx", "utf8");
 
@@ -171,15 +171,14 @@ test("Stage 10 Family C3 keeps Administration Projects contextual and read-only"
   expect(admin).toContain('supabase.from("project_units")');
   expect(admin).toContain("scheduleMeeting?.({scope:\"project\"");
 
-  for (const managerOnlyPath of [
-    "create_project_with_participants",
-    "decide_project_proposal",
-    "save_and_submit_project_close",
-    "close_project",
-    "reopen_project",
-  ]) {
-    expect(admin).not.toContain(managerOnlyPath);
-  }
+  const composer = readFileSync("src/components/AdminProjectComposer.jsx", "utf8");
+  const app = readFileSync("src/App.jsx", "utf8");
+  expect(admin).toContain("ManagerProjects");
+  expect(admin).toContain("AdminProjectComposer");
+  expect(admin).toContain("projectUnitId={selected.lead_unit_id}");
+  expect(composer).toContain('supabase.rpc("create_project_with_participants"');
+  expect(composer).toContain('p_lead_unit_id:form.leadUnitId');
+  expect(app).toContain('tab === "admin-projects" && isAdmin');
 
   expect(admin).not.toMatch(/\.rpc\(/);
   expect(admin).not.toMatch(/\.insert\(/);
@@ -211,7 +210,7 @@ for (const viewport of [
     const empty = page.locator(".ev2-project-admin .ev2p-empty");
     await expect.poll(async () => (await rows.count()) > 0 || await empty.isVisible(),
       { timeout: 15000 }).toBe(true);
-    await expect(page.getByRole("button", { name: "Create project", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Create project", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /Add objective/i })).toHaveCount(0);
 
     if (await rows.count()) {

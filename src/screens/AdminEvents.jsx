@@ -1,6 +1,8 @@
+import { StatePanel } from "../experience-v2/components";
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
+import { EmptyState, FieldGroup, LoadingState } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 
 function eventTime(value) {
@@ -93,15 +95,11 @@ export default function AdminEvents({ me }) {
   if (loading) return <div className="body"><LoadingState label="Loading system events…" /></div>;
 
   return <div className="body">
-    <div style={{ paddingTop: 26 }}>
-      <div className="eyebrow">Control Center</div>
-      <h1 className="h1">System events</h1>
-      <p className="screen-note">Durable internal business events used by workflows, integrations, notifications and later intelligence.</p>
-    </div>
+    <WorkPageHeader eyebrow="Control Center" title="System events" description="Review recorded system notifications and the changes that caused them. Showing up to 250 recent events." />
 
-    {error && <ProductNotice tone="error" title="System events">{error}</ProductNotice>}
+    {error && <StatePanel state="error" title="Records could not load" description={error} actionLabel="Try again" onAction={load} />}
 
-    <div className="split" style={{ marginTop: 18 }}>
+    {!error && <div className="split" style={{ marginTop: 18 }}>
       <div className="main-col">
         <div className="sec"><span>Event stream</span><span>{shown.length}</span></div>
         {shown.map((event) => <div className="row" key={event.id}>
@@ -121,7 +119,7 @@ export default function AdminEvents({ me }) {
           {Object.keys(event.payload || {}).length > 0 && <div className="small" style={{ marginTop: 6 }}>
             {Object.entries(event.payload).map(([key, value]) => humanize(key) + ": " + String(value ?? "—")).join(" · ")}
           </div>}
-          <div className="small" style={{ marginTop: 6 }}>Correlation: {event.correlation_id.slice(0, 8)}</div>
+          <div className="small" style={{ marginTop: 6 }}>Related event: {event.correlation_id?.slice(0, 8) || "Not recorded"}</div>
         </div>)}
         {shown.length === 0 && <EmptyState title="No system events match">Change the event filter or search.</EmptyState>}
       </div>
@@ -148,6 +146,6 @@ export default function AdminEvents({ me }) {
           </p>
         </div>
       </div>
-    </div>
+    </div>}
   </div>;
 }

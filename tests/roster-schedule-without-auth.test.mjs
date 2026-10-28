@@ -49,5 +49,5 @@ test("schedule closes stale HR employee evidence on account switch and incomplet
  assert.match(editor,/types\.count!==types\.data\.length/);
  assert.match(editor,/Reload authorised schedule/);
  assert.match(editor,/if \(!verified\) return/);
- assert.match(editor,/writeBusy\.current \|\| !verified \|\| !valid/);
+ assert.match(editor,/writeBusy\.current \|\| writeError \|\| !verified \|\| !valid/);
 });

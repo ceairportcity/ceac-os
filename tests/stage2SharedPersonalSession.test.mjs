@@ -133,7 +133,7 @@ test("P3 uncertain Start Work and history reconciliation require an explicit rec
  const continued = screen.match(/async function continueOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
  const closed = screen.match(/async function closeOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
  assert.ok(begin && continued && closed);
- assert.match(begin, /if \(busy \|\| !ready \|\| !verified\) return/);
+ assert.match(begin, /if \(starting\.current \|\| busy \|\| !ready \|\| !verified\) return/);
  assert.match(begin, /setVerified\(false\); setEditor\(false\); setReady\(false\)/);
  assert.match(screen, /disabled=\{busy\|\|!ready\|\|!verified\|\|\(place/);
  assert.match(continued, /setVerified\(false\); setRecover\(false\)/);

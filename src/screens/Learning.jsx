@@ -1,8 +1,13 @@
+import LearningDraftEditor from "../components/LearningDraftEditor";
+import LearningCourseBuilder from "../components/LearningCourseBuilder";
+import { Table } from "../components/primitives";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
+import { ComposerDrawer, SegmentedControl } from "../experience-v2/components";
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 
 function day(value) {
   if (!value) return "No date";
@@ -30,7 +35,20 @@ function numberOrNull(value) {
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : null;
 }
 
-export default function Learning({ me }) {
+function LearningForm({ admin, error, resetError, children, ...props }) {
+  useEffect(() => { if (admin) resetError(null); }, [admin, resetError]);
+  const Dialog = admin ? ComposerDrawer : Sheet;
+  return <Dialog {...props}>
+    {admin && error && <ProductNotice tone="error" title="Learning change not recorded">{error}</ProductNotice>}
+    {children}
+  </Dialog>;
+}
+
+export default function Learning(props) {
+  return <LearningWorkspace key={`${props.me.org_id}:${props.me.id}`} {...props}/>;
+}
+
+function LearningWorkspace({ me }) {
   const learningAdmin = (me.capability_grants || []).some((grant) =>
     grant.capability === "learning.manage" && !grant.scope_unit_id
   );
@@ -39,6 +57,8 @@ export default function Learning({ me }) {
   const defaultMode = learningAdmin ? "catalogue" : "mine";
   const [mode, setMode] = useState(defaultMode);
   const [courses, setCourses] = useState([]);
+  const [courseSearch,setCourseSearch]=useState("");
+  const [courseState,setCourseState]=useState("all");
   const [modules, setModules] = useState([]);
   const [resources, setResources] = useState([]);
   const [rules, setRules] = useState([]);
@@ -52,6 +72,9 @@ export default function Learning({ me }) {
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [draftEdit,setDraftEdit]=useState(null);
+  const [builderView, setBuilderView] = useState("outline");
+  const [catalogueOpen,setCatalogueOpen]=useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
 
   const [courseFlow, setCourseFlow] = useState(false);
@@ -92,9 +115,10 @@ export default function Learning({ me }) {
   const [adminReason, setAdminReason] = useState("");
 
   useEffect(() => { load(); }, [me.id]);
+  useEffect(() => { setBuilderView("outline"); }, [me.id, me.org_id, selectedCourseId]);
 
-  async function load() {
-    setLoading(true);
+  async function load({quiet=false}={}) {
+    if(!quiet)setLoading(true);
     setError(null);
     try {
       const requests = [
@@ -178,6 +202,8 @@ export default function Learning({ me }) {
     };
   }
 
+  const visibleCourses=courses.filter(course=>(courseState === "all" || course.state === courseState)
+    && `${course.title} ${course.summary || ""}`.toLowerCase().includes(courseSearch.toLowerCase()));
   const selectedCourse = courseById[selectedCourseId] || null;
   const selectedAssignment = assignments.find((row) => row.id === selectedAssignmentId) || null;
   const selectedAssignmentCourse = selectedAssignment ? courseById[selectedAssignment.course_id] : null;
@@ -197,7 +223,7 @@ export default function Learning({ me }) {
     try {
       await operation();
       setNotice(success);
-      await load();
+      await load({quiet:me.is_admin && catalogueOpen && mode === "catalogue"});
       return true;
     } catch (err) {
       setError(humanError(err, "That learning change could not be recorded."));
@@ -219,7 +245,7 @@ export default function Learning({ me }) {
         updated_by: me.id,
       }).select("id").single();
       if (insertError) throw insertError;
-      setSelectedCourseId(data.id);
+      setSelectedCourseId(data.id); setCatalogueOpen(true);
     }, "Draft course created.");
     if (ok) {
       setCourseFlow(false); setCourseTitle(""); setCourseSummary(""); setCourseMinutes("");
@@ -389,7 +415,7 @@ export default function Learning({ me }) {
     </button>;
   }
 
-  function CourseDetail({ course, assignment = null }) {
+  function CourseDetail({ course, assignment = null, preview = false }) {
     if (!course) return null;
     const rows = courseModules(course.id);
     const facts = assignment ? assignmentProgress(assignment) : null;
@@ -424,23 +450,27 @@ export default function Learning({ me }) {
               {resource.resource_type === "text"
                 ? <p>{resource.body_text}</p>
                 : <a href={resource.resource_url} target="_blank" rel="noreferrer">Open resource</a>}
+              {me.is_admin && learningAdmin && !preview && course.state === "draft" && <button type="button" className="text-action" aria-label={`Edit resource ${resource.title}`} onClick={()=>setDraftEdit({kind:"resource",row:resource})}>Edit resource</button>}
             </div>)}
             {!moduleResources(module.id).length && <div className="small">No learning resource has been added yet.</div>}
           </div>
 
           {selfAssignment && assignment.state !== "withdrawn" && !moduleDone && <button className="btn btn-sm learning-complete" disabled={busy} onClick={() => completeModule(module.id)}>Complete module</button>}
-          {learningAdmin && course.state === "draft" && <button className="text-action" onClick={() => { setResourceModuleId(module.id); setResourceFlow(true); }}>Add resource</button>}
-          {learningAdmin && assignment && moduleDone && <button className="text-action" onClick={() => { setAdminReason(""); setAdminAction({ action:"reopen_module", assignmentId:assignment.id, moduleId:module.id, label:module.title }); }}>Correct completion</button>}
+          {me.is_admin && learningAdmin && !preview && course.state === "draft" && <button type="button" className="text-action" aria-label={`Edit module ${module.title}`} onClick={()=>setDraftEdit({kind:"module",row:module})}>Edit module</button>}
+          {learningAdmin && !preview && course.state === "draft" && <button className="text-action" onClick={() => { setResourceModuleId(module.id); setResourceFlow(true); }}>Add resource</button>}
+          {learningAdmin && !preview && assignment && moduleDone && <button className="text-action" onClick={() => { setAdminReason(""); setAdminAction({ action:"reopen_module", assignmentId:assignment.id, moduleId:module.id, label:module.title }); }}>Correct completion</button>}
         </article>;
       })}
 
       {!rows.length && <EmptyState compact title="No modules yet">Add the first module before publishing this course.</EmptyState>}
 
-      {learningAdmin && course.state === "draft" && <div className="learning-author-actions">
+      {learningAdmin && !preview && course.state === "draft" && <div className="learning-author-actions">
+        {me.is_admin && <button type="button" className="btn btn-ghost btn-sm" onClick={()=>setDraftEdit({kind:"course",row:course})}>Edit course details</button>}
         <button className="btn btn-ghost btn-sm" onClick={() => { setModuleCourseId(course.id); setModuleFlow(true); }}>Add module</button>
-        <button className="btn btn-sm" disabled={busy} onClick={() => changeCourseState(course,"published")}>Publish course</button>
+        <button className="btn btn-sm" disabled={busy || (me.is_admin && (!rows.some(module => module.required) || rows.some(module => !moduleResources(module.id).length)))} onClick={() => changeCourseState(course,"published")}>Publish course</button>
+        {me.is_admin && (!rows.some(module => module.required) || rows.some(module => !moduleResources(module.id).length)) && <p className="screen-note">Before publishing, add at least one required module and a resource to every module.</p>}
       </div>}
-      {learningAdmin && course.state === "published" && <div className="learning-author-actions">
+      {learningAdmin && !preview && course.state === "published" && <div className="learning-author-actions">
         <button className="btn btn-ghost btn-sm" onClick={() => openRule(course.id)}>Create assignment rule</button>
         <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => changeCourseState(course,"archived")}>Archive course</button>
       </div>}
@@ -450,13 +480,19 @@ export default function Learning({ me }) {
   if (loading) return <div className="body"><LoadingState label="Loading learning…" /></div>;
 
   const personalLearning = !learningAdmin && !me.is_admin;
+  const inBuilder=me.is_admin && learningAdmin && mode === "catalogue" && catalogueOpen;
   return <div className={`body learning-page ${personalLearning ? "ev2-personal-page ev2-personal-learning" : ""}`.trim()}>
     {personalLearning ? <PersonalPageHeader
       eyebrow="My Hub"
       title="Learning"
       description="Your assigned learning, catalogue access and factual completion history. Learning activity is not converted into a skill, performance or potential score."
       statusLabel="Personal learning"
-    /> : <div style={{ paddingTop:26 }}>
+    /> : me.is_admin ? (!inBuilder && <WorkPageHeader
+      eyebrow="People development"
+      title="Learning"
+      description="Build useful learning programmes. Help people find their next step."
+      actionLabel={learningAdmin ? "Create course" : undefined} onAction={()=>setCourseFlow(true)}
+    />) : <div style={{ paddingTop:26 }}>
       <div className="eyebrow">Learning</div>
       <h1 className="h1">Learning</h1>
       <p className="screen-note">Structured courses, resources and factual completion. CEAC OS does not turn learning activity into a skill, performance or potential score.</p>
@@ -465,9 +501,7 @@ export default function Learning({ me }) {
     {error && <ProductNotice tone="error" title="Learning">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
-    <div className="learning-mode-tabs" aria-label="Learning views">
-      {modes.map(([key,label]) => <button key={key} className={mode === key ? "on" : ""} onClick={() => setMode(key)}>{label}</button>)}
-    </div>
+    {!inBuilder && <SegmentedControl ariaLabel="Learning views" value={mode} onChange={setMode} items={modes.map(([value,label])=>({value,label}))} />}
 
     {mode === "mine" && <>
       <div className="sec"><span>My assigned learning</span><span>{mine.length}</span></div>
@@ -493,20 +527,61 @@ export default function Learning({ me }) {
     </>}
 
     {mode === "catalogue" && <>
-      <div className="learning-section-title">
+      {!inBuilder && <div className="learning-section-title">
         <div><span className="eyebrow">Catalogue</span><h2>Courses</h2></div>
-        {learningAdmin && <button className="btn btn-sm" onClick={() => setCourseFlow(true)}>Create course</button>}
-      </div>
-      <div className="learning-two-col">
-        <div className="learning-catalogue-list">
-          {courses.map((course) => <button type="button" className={"learning-course-row"+(selectedCourseId === course.id ? " on" : "")} key={course.id} onClick={() => setSelectedCourseId(course.id)}>
-            <span><strong>{course.title}</strong><small>{course.summary}</small></span>
+        {learningAdmin && !me.is_admin && <button className="btn btn-sm" onClick={() => setCourseFlow(true)}>Create course</button>}
+      </div>}
+      {!catalogueOpen && <div className="learning-section-title" role="group" aria-label="Find courses">
+        <input className="field" type="search" aria-label="Search courses" placeholder="Search courses" value={courseSearch} onChange={event=>setCourseSearch(event.target.value)} />
+        <select className="field" aria-label="Course status" value={courseState} onChange={event=>setCourseState(event.target.value)}><option value="all">All courses ({courses.length})</option>{["draft","published","archived"].map(state=><option value={state} key={state}>{sentence(state)} ({courses.filter(course=>course.state===state).length})</option>)}</select>
+      </div>}
+      <div className={me.is_admin?"owner-learning-workspace":"learning-two-col"}>
+        <div className={me.is_admin?"learning-catalogue-list owner-learning-catalogue":"learning-catalogue-list"} hidden={me.is_admin&&catalogueOpen}>
+          {visibleCourses.map((course) => <article className="learning-course-row" key={course.id}>
+            {me.is_admin&&<span className="owner-course-cover" aria-hidden="true">CEAC · Learning</span>}
+            <div className="owner-course-heading"><h3>{course.title}</h3><p>{course.summary || "Add a course summary to help learners understand its purpose."}</p></div>
             <Pill tone={stateTone(course.state)}>{sentence(course.state)}</Pill>
-          </button>)}
+            {me.is_admin&&<small>{courseModules(course.id).length} modules · {courseModules(course.id).reduce((count,module)=>count+moduleResources(module.id).length,0)} resources</small>}
+            <button type="button" aria-label={`${course.title} · ${courseModules(course.id).length} modules · ${course.state === "draft" ? "Continue building" : "View course"}`} className={course.state === "draft" ? "btn btn-sm" : "btn btn-ghost btn-sm"} onClick={()=>{setSelectedCourseId(course.id);setCatalogueOpen(true);}}>{course.state==="draft"?"Continue building":"View course"} →</button>
+          </article>)}
+          {courses.length > 0 && !visibleCourses.length && <EmptyState title="No courses match">Change the search or status filter to see more courses.</EmptyState>}
           {!courses.length && <EmptyState title="No learning in the catalogue">{learningAdmin ? "Create the first draft course." : "Published learning will appear here when Administration makes it available."}</EmptyState>}
         </div>
-        <div><CourseDetail course={selectedCourse} /></div>
+        <div hidden={me.is_admin&&!catalogueOpen}>
+          {me.is_admin&&<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setCatalogueOpen(false)}>Back to course catalogue</button>}
+          {me.is_admin && learningAdmin && selectedCourse ? <LearningCourseBuilder
+            key={selectedCourse.id} me={me} course={selectedCourse} modules={courseModules(selectedCourse.id)}
+            resources={resources.filter(resource=>courseModules(selectedCourse.id).some(module=>module.id===resource.module_id))}
+            rules={rules} profiles={profiles} units={units} busy={busy}
+            preview={builderView === "preview"} onPreview={value=>setBuilderView(value?"preview":"outline")}
+            onSaved={async()=>{await load({quiet:true});setNotice("Draft content updated.");}}
+            onAddModule={()=>{setModuleCourseId(selectedCourse.id);setModuleFlow(true);}}
+            onAddResource={moduleId=>{setResourceModuleId(moduleId);setResourceFlow(true);}}
+            onEditResource={resource=>setDraftEdit({kind:"resource",row:resource})}
+            onAssign={()=>openRule(selectedCourse.id)}
+            onPublish={()=>changeCourseState(selectedCourse,"published")}
+            onArchive={()=>changeCourseState(selectedCourse,"archived")}
+          ><CourseDetail course={selectedCourse} preview /></LearningCourseBuilder>
+            : <CourseDetail course={selectedCourse} />}
+
+        </div>
       </div>
+      {me.is_admin && learningAdmin && !catalogueOpen && !error && <section className="card" aria-label="Course assignment follow-up">
+        <h2 className="h2">Assignment follow-up</h2>
+        <Table rows={courses.map(course=>({...course,
+          assigned:assignments.filter(row=>row.course_id===course.id && row.state!=="withdrawn").length,
+          completed:assignments.filter(row=>row.course_id===course.id && row.state==="completed").length,
+        })).filter(course=>course.assigned>0)}
+          empty="No current course assignments recorded." columns={[
+            {key:"title",label:"Course"},
+            {key:"assigned",label:"Assigned"},
+            {key:"completed",label:"Completed"},
+            {key:"open",label:"Learners",render:course=><button className="btn btn-ghost btn-sm" aria-label={`View learners for ${course.title}`} onClick={()=>{
+              setSelectedAssignmentId(assignments.find(row=>row.course_id===course.id && row.state!=="withdrawn")?.id||"");setMode("progress");
+            }}>View learners</button>}
+          ]}/>
+        <p className="screen-note">Counts cover visible current assignments, including completed learning. Withdrawn assignments are excluded; completion uses recorded state.</p>
+      </section>}
     </>}
 
     {mode === "assignments" && learningAdmin && <>
@@ -572,40 +647,42 @@ export default function Learning({ me }) {
       </div>
     </>}
 
-    {courseFlow && <Sheet onClose={() => !busy && setCourseFlow(false)}>
+    {draftEdit && me.is_admin && learningAdmin && <LearningDraftEditor key={`${me.org_id}:${me.id}:${draftEdit.kind}:${draftEdit.row.id}`} me={me} edit={draftEdit} onClose={()=>setDraftEdit(null)} onSaved={async()=>{setDraftEdit(null);await load({quiet:true});setNotice("Draft content updated.");}}/>}
+
+    {courseFlow && <LearningForm admin={me.is_admin} error={error} resetError={setError} open title="Create a draft course" onClose={() => !busy && setCourseFlow(false)}>
       <div className="eyebrow">New learning course</div>
-      <div className="h2">Create a draft course</div>
+      {!me.is_admin && <div className="h2">Create a draft course</div>}
       <p className="screen-note">Draft learning is visible only to authorised Learning Administration until it is published.</p>
       <FieldGroup label="Course title"><input className="field" aria-label="Learning course title" value={courseTitle} onChange={(event) => setCourseTitle(event.target.value)} /></FieldGroup>
       <FieldGroup label="What this course is for"><textarea className="field" aria-label="Learning course summary" rows="4" value={courseSummary} onChange={(event) => setCourseSummary(event.target.value)} /></FieldGroup>
       <FieldGroup label="Estimated minutes" hint="Optional factual estimate."><input className="field" aria-label="Learning course minutes" type="number" min="1" value={courseMinutes} onChange={(event) => setCourseMinutes(event.target.value)} /></FieldGroup>
       <button className="btn" style={{ marginTop:14 }} disabled={busy || courseTitle.trim().length < 3 || courseSummary.trim().length < 3} onClick={createCourse}>{busy ? "Creating…" : "Create draft course"}</button>
-    </Sheet>}
+    </LearningForm>}
 
-    {moduleFlow && <Sheet onClose={() => !busy && setModuleFlow(false)}>
+    {moduleFlow && <LearningForm admin={me.is_admin} error={error} resetError={setError} open title="Add a module" onClose={() => !busy && setModuleFlow(false)}>
       <div className="eyebrow">Course module</div>
-      <div className="h2">Add a module</div>
+      {!me.is_admin && <div className="h2">Add a module</div>}
       <FieldGroup label="Module title"><input className="field" aria-label="Learning module title" value={moduleTitle} onChange={(event) => setModuleTitle(event.target.value)} /></FieldGroup>
       <FieldGroup label="Module summary"><textarea className="field" aria-label="Learning module summary" rows="3" value={moduleSummary} onChange={(event) => setModuleSummary(event.target.value)} /></FieldGroup>
       <FieldGroup label="Estimated minutes"><input className="field" aria-label="Learning module minutes" type="number" min="1" value={moduleMinutes} onChange={(event) => setModuleMinutes(event.target.value)} /></FieldGroup>
       <label className="check"><input aria-label="Required learning module" type="checkbox" checked={moduleRequired} onChange={(event) => setModuleRequired(event.target.checked)} /><span>Required for course completion</span></label>
       <button className="btn" style={{ marginTop:14 }} disabled={busy || moduleTitle.trim().length < 2} onClick={addModule}>Add module</button>
-    </Sheet>}
+    </LearningForm>}
 
-    {resourceFlow && <Sheet onClose={() => !busy && setResourceFlow(false)}>
+    {resourceFlow && <LearningForm admin={me.is_admin} error={error} resetError={setError} open title="Add a resource" onClose={() => !busy && setResourceFlow(false)}>
       <div className="eyebrow">Learning resource</div>
-      <div className="h2">Add a resource</div>
+      {!me.is_admin && <div className="h2">Add a resource</div>}
       <FieldGroup label="Resource type"><select className="field" aria-label="Learning resource type" value={resourceType} onChange={(event) => setResourceType(event.target.value)}><option value="link">Link</option><option value="video">Video link</option><option value="document">Document link</option><option value="text">Text</option></select></FieldGroup>
       <FieldGroup label="Title"><input className="field" aria-label="Learning resource title" value={resourceTitle} onChange={(event) => setResourceTitle(event.target.value)} /></FieldGroup>
       {resourceType === "text"
         ? <FieldGroup label="Text"><textarea className="field" aria-label="Learning resource text" rows="5" value={resourceText} onChange={(event) => setResourceText(event.target.value)} /></FieldGroup>
         : <FieldGroup label="Secure URL" hint="Use an HTTPS link."><input className="field" aria-label="Learning resource URL" type="url" placeholder="https://…" value={resourceUrl} onChange={(event) => setResourceUrl(event.target.value)} /></FieldGroup>}
       <button className="btn" style={{ marginTop:14 }} disabled={busy || resourceTitle.trim().length < 2 || (resourceType === "text" ? !resourceText.trim() : !resourceUrl.trim().startsWith("https://"))} onClick={addResource}>Add resource</button>
-    </Sheet>}
+    </LearningForm>}
 
-    {ruleFlow && <Sheet onClose={() => !busy && setRuleFlow(false)}>
+    {ruleFlow && <LearningForm admin={me.is_admin} error={error} resetError={setError} open title="Create an assignment rule" onClose={() => !busy && setRuleFlow(false)}>
       <div className="eyebrow">Learning assignment</div>
-      <div className="h2">Create an assignment rule</div>
+      {!me.is_admin && <div className="h2">Create an assignment rule</div>}
       <FieldGroup label="Course"><select className="field" aria-label="Learning rule course" value={ruleCourseId} onChange={(event) => setRuleCourseId(event.target.value)}>{courses.filter((course) => course.state === "published").map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}</select></FieldGroup>
       <FieldGroup label="Assign by"><select className="field" aria-label="Learning target kind" value={targetKind} onChange={(event) => setTargetKind(event.target.value)}><option value="person">Person</option><option value="unit">Unit</option><option value="role">Employment role</option><option value="onboarding">Onboarding template</option></select></FieldGroup>
       {targetKind === "person" && <FieldGroup label="Person"><select className="field" aria-label="Learning target person" value={targetProfileId} onChange={(event) => setTargetProfileId(event.target.value)}><option value="">Choose person</option>{profiles.filter((profile) => !profile.is_exec).map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name}</option>)}</select></FieldGroup>}
@@ -615,25 +692,25 @@ export default function Learning({ me }) {
       <FieldGroup label="Due days after assignment" hint="Optional."><input className="field" aria-label="Learning due days" type="number" min="1" value={dueDays} onChange={(event) => setDueDays(event.target.value)} /></FieldGroup>
       <FieldGroup label="Reason"><textarea className="field" aria-label="Learning assignment reason" rows="3" value={ruleReason} onChange={(event) => setRuleReason(event.target.value)} placeholder="Why this learning should be assigned to this group" /></FieldGroup>
       <button className="btn" style={{ marginTop:14 }} disabled={busy || !ruleCourseId || ruleReason.trim().length < 3 || (targetKind === "person" && !targetProfileId) || (targetKind === "unit" && !targetUnitId)} onClick={createRule}>Create assignment rule</button>
-    </Sheet>}
+    </LearningForm>}
 
-    {historyFlow && <Sheet onClose={() => !busy && setHistoryFlow(false)}>
+    {historyFlow && <LearningForm admin={me.is_admin} error={error} resetError={setError} open title="Record historical completion" onClose={() => !busy && setHistoryFlow(false)}>
       <div className="eyebrow">Completed learning</div>
-      <div className="h2">Record historical completion</div>
+      {!me.is_admin && <div className="h2">Record historical completion</div>}
       <p className="screen-note">Use this for learning completed before the structured CEAC OS catalogue. Do not use it to manufacture a course completion.</p>
       <FieldGroup label="Person"><select className="field" aria-label="Historical learning person" value={historyProfileId} onChange={(event) => setHistoryProfileId(event.target.value)}><option value="">Choose person</option>{profiles.filter((profile) => !profile.is_exec).map((profile) => <option key={profile.id} value={profile.id}>{profile.full_name}</option>)}</select></FieldGroup>
       <FieldGroup label="Training name"><input className="field" aria-label="Historical learning name" value={historyName} onChange={(event) => setHistoryName(event.target.value)} /></FieldGroup>
       <FieldGroup label="Completed on"><input className="field" aria-label="Historical learning date" type="date" value={historyDate} onChange={(event) => setHistoryDate(event.target.value)} /></FieldGroup>
       <FieldGroup label="Note"><textarea className="field" aria-label="Historical learning note" rows="3" value={historyNote} onChange={(event) => setHistoryNote(event.target.value)} /></FieldGroup>
       <button className="btn" style={{ marginTop:14 }} disabled={busy || !historyProfileId || historyName.trim().length < 2 || !historyDate} onClick={recordHistorical}>Record completion</button>
-    </Sheet>}
+    </LearningForm>}
 
-    {adminAction && <Sheet onClose={() => !busy && setAdminAction(null)}>
+    {adminAction && <LearningForm admin={me.is_admin} error={error} resetError={setError} open title="Learning record correction" onClose={() => !busy && setAdminAction(null)}>
       <div className="eyebrow">Learning record correction</div>
       <div className="h2">{adminAction.action === "reopen_module" ? "Correct module completion" : adminAction.action === "withdraw" ? "Withdraw assignment" : "Restore assignment"}</div>
       <p className="screen-note">{adminAction.label || "Learning assignment"}. This change is attributable and the history is preserved.</p>
       <FieldGroup label="Reason"><textarea className="field" aria-label="Learning administration reason" rows="3" value={adminReason} onChange={(event) => setAdminReason(event.target.value)} /></FieldGroup>
       <button className="btn" style={{ marginTop:14 }} disabled={busy || adminReason.trim().length < 3} onClick={submitAdminAction}>Record change</button>
-    </Sheet>}
+    </LearningForm>}
   </div>;
 }

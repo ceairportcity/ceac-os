@@ -1,8 +1,10 @@
+import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { createProtectedHrRequestScope } from "../lib/protectedHrRequestScope";
+import { expenseAmountMinor } from "../lib/expenseAmount";
 import {
   Button,
   ComposerDrawer,
@@ -51,10 +53,7 @@ function protectedMoney(minor, currency = "GHS") {
 }
 
 function amountToMinor(value) {
-  const cleaned=String(value ?? "").replace(/,/g,"").trim();
-  if(!cleaned) return null;
-  const number=Number(cleaned);
-  return Number.isFinite(number) ? Math.round(number * 100) : null;
+  return expenseAmountMinor(value);
 }
 
 function currentAndHistory(rows = []) {
@@ -124,7 +123,7 @@ function fieldsFromRecord(type,row) {
   };
 }
 
-export default function AdminProtectedHR({ me }) {
+export default function AdminProtectedHR({ me, initialEmployeeId = null }) {
   const [people,setPeople]=useState([]);
   const [employeeId,setEmployeeId]=useState("");
   const [summary,setSummary]=useState(null);
@@ -185,7 +184,8 @@ export default function AdminProtectedHR({ me }) {
     if((currentId || rows.length) && !rows.some(person=>person.id===currentId)){
       let remembered="";
       try { remembered=sessionStorage.getItem(`ceac:protected-hr:employee:${me.id}`)||""; } catch {}
-      const next=rows.some(person=>person.id===remembered) ? remembered : rows[0]?.id || "";
+      const requested=initialEmployeeId && !currentId ? initialEmployeeId : remembered;
+      const next=rows.some(person=>person.id===requested) ? requested : initialEmployeeId && !currentId ? "" : rows[0]?.id || "";
       scopeRef.current.select(next);
       setEmployeeId(next);
       setSummary(null);
@@ -270,7 +270,7 @@ export default function AdminProtectedHR({ me }) {
     };
     if(recordType==="compensation") return {
       amount_minor:amountToMinor(fields.amount),
-      currency:(fields.currency||"").toUpperCase(),
+      currency:(fields.currency||"GHS").toUpperCase(),
       basis_label:fields.basisLabel||"",
       effective_on:fields.effectiveOn||"",
       ends_on:fields.endsOn||"",
@@ -291,7 +291,7 @@ export default function AdminProtectedHR({ me }) {
     if(recordType==="identifier") return Boolean(fields.identifierType?.trim() && fields.identifierValue?.trim());
     if(recordType==="employment_term") return Boolean(fields.termType?.trim() && fields.summary?.trim() && fields.startsOn);
     if(recordType==="compensation") return amountToMinor(fields.amount)!==null
-      && Boolean(fields.currency?.trim().length===3 && fields.basisLabel?.trim() && fields.effectiveOn);
+      && Boolean((fields.currency||"GHS").trim().length===3 && fields.basisLabel?.trim() && fields.effectiveOn);
     if(recordType==="payment_detail") return Boolean(fields.paymentType?.trim() && fields.providerName?.trim() && fields.accountName?.trim() && fields.accountReference?.trim());
     if(recordType==="document") return Boolean(file && fields.documentType?.trim() && fields.title?.trim());
     return false;
@@ -389,11 +389,7 @@ export default function AdminProtectedHR({ me }) {
   if(loading) return <div className="body"><LoadingState label="Loading protected HR…" /></div>;
 
   return <div className="body">
-    <header style={{paddingTop:26}}>
-      <div className="eyebrow">Protected employee records</div>
-      <h1 className="h1">Protected HR</h1>
-      <p className="screen-note">Sensitive identifiers, employment terms, compensation, payment details and protected documents. Access remains separately capability-gated and every view/change is attributable.</p>
-    </header>
+    <WorkPageHeader eyebrow="Protected employee records" title="Protected HR" description="Review confidential employee information and documents. Access and every change remain separately authorised and recorded." />
 
     {error&&<ProductNotice tone="error" title="Protected HR">{error}<Button variant="secondary" size="compact" onClick={()=>void loadPeople()} disabled={busy}>Retry protected employee roster</Button></ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Protected HR">{notice}</ProductNotice>}
@@ -428,6 +424,7 @@ export default function AdminProtectedHR({ me }) {
             resetForm("identifier");
           }}
         >
+          {!employeeId && <option value="">Choose an authorised employee</option>}
           {people.map((person)=><option key={person.id} value={person.id}>
             {person.full_name} · {person.account_email || "Roster only"}
           </option>)}
@@ -447,7 +444,7 @@ export default function AdminProtectedHR({ me }) {
           supporting={current.length
             ? `${current.length} active record${current.length===1?"":"s"}. Earlier versions remain preserved below.`
             : "No active value is recorded. Missing protected data remains explicitly missing."}
-          action={<Button variant="secondary" size="compact" onClick={()=>openComposer(type)}>Add</Button>}
+          action={<Button variant="secondary" size="compact" disabled={!employeeId||loadedEmployeeId!==employeeId} onClick={()=>openComposer(type)}>{type === "compensation" ? "Record salary" : "Add"}</Button>}
         >
           {current.length ? current.map((row)=>{
             const presentation=recordPresentation(type,row);

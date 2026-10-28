@@ -47,7 +47,8 @@ function formattedAt(value) {
 }
 
 export default function Inbox({ me, openRoom, openItem, openAnnouncements, initialView = null, onInitialViewHandled }) {
-  const scopeKey=[me.org_id,me.id,me.unit_id||"",Boolean(me.is_exec)].join(":");
+  const organisationRooms = Boolean(me.is_exec || me.is_admin);
+  const scopeKey=[me.org_id,me.id,me.unit_id||"",Boolean(me.is_exec),Boolean(me.is_admin)].join(":");
   const liveScope=useRef(scopeKey);liveScope.current=scopeKey;
   const request=useRef(0);
   const [loadedScope,setLoadedScope]=useState("");
@@ -59,6 +60,7 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
   const [reads, setReads] = useState(new Map());
   const [announcements, setAnnouncements] = useState([]);
   const [roomDirectory, setRoomDirectory] = useState([]);
+  const [peopleDirectory,setPeopleDirectory]=useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -82,21 +84,24 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
     setLoading(true);
     setError(null);
     try {
-      const [actionResult, mentionResult, readResult, announcementResult, directoryResult] = await Promise.all([
+      const [actionResult, mentionResult, readResult, announcementResult, directoryResult, peopleResult] = await Promise.all([
         supabase.rpc("my_work_attention_queue"),
         supabase.from("room_mentions").select("message_id").eq("profile_id", me.id).order("created_at", { ascending: false }).limit(120),
         supabase.from("room_reads").select("room_id,last_read_at").eq("profile_id", me.id),
         supabase.from("announcements")
           .select("id,title,body,priority,requires_acknowledgement,published_at,profiles!announcements_author_id_fkey(full_name),announcement_receipts(profile_id,read_at,acknowledged_at)")
           .order("published_at", { ascending: false }).limit(40),
-        me.is_exec
+        organisationRooms
           ? supabase.from("rooms")
               .select("id,kind,unit_id,sub_team_id,project_id,units(name),sub_teams(name),projects(name)")
-              .in("kind", ["unit", "sub_team"])
+              .eq("org_id", me.org_id)
+              .in("kind", me.is_admin ? ["unit", "sub_team", "project"] : ["unit", "sub_team"])
           : Promise.resolve({ data: [], error: null }),
+        me.is_admin ? supabase.from("profiles").select("id,full_name,is_admin,is_exec,unit_memberships(unit_id,role,units(name))")
+          .eq("org_id",me.org_id).eq("active",true).order("full_name") : Promise.resolve({data:[],error:null}),
       ]);
 
-      const first = [actionResult.error, mentionResult.error, readResult.error, announcementResult.error, directoryResult.error].find(Boolean);
+      const first = [actionResult.error, mentionResult.error, readResult.error, announcementResult.error, directoryResult.error, peopleResult.error].find(Boolean);
       if (first) throw first;
 
       const mentionIds = [...new Set((mentionResult.data || []).map((row) => row.message_id).filter(Boolean))];
@@ -145,6 +150,7 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
       setReads(new Map((readResult.data || []).map((row) => [row.room_id, row.last_read_at])));
       setAnnouncements(announcementResult.data || []);
       setRoomDirectory(directory);
+      setPeopleDirectory(peopleResult.data||[]);
     } catch (err) {
       if(!current())return;
       setLoadedScope(requestedScope);
@@ -152,7 +158,7 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
       setError(humanError(err, "Messages could not be loaded."));
       setActions([]);
       setMessages([]);
-      setRoomDirectory([]);
+      setRoomDirectory([]);setPeopleDirectory([]);
     } finally {
       if(current())setLoading(false);
     }
@@ -202,7 +208,7 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
         <span className="eyebrow">Communication</span>
         <h1 className="h1">Messages</h1>
         <p className="screen-note">
-          {me.is_exec
+          {organisationRooms
             ? "Find conversations, mentions, announcements and work needing a response."
             : "Work actions, Rooms, mentions and announcements in one operational queue. CEAC OS does not provide unrestricted direct messages."}
         </p>
@@ -221,6 +227,7 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
       items={[
         { value:"all", label:"All" },
         { value:"rooms", label:"Rooms" },
+        ...(me.is_admin?[{value:"people",label:"People"}]:[]),
         { value:"mentions", label:"Mentions" },
         { value:"work", label:"Work" },
         { value:"announcements", label:"Announcements" },
@@ -255,20 +262,27 @@ export default function Inbox({ me, openRoom, openItem, openAnnouncements, initi
         }) : <StatePanel state="empty" title="No work action is waiting" description="New assignments, returned work and submissions you are authorised to review will appear here." />}
       </DataPanel>}
 
-      {me.is_exec && view === "rooms" && <DataPanel
-        eyebrow="Leadership directory"
+      {me.is_admin && view === "people" && <DataPanel eyebrow="People" title="Address a person" supporting="Choose their department to address them by name in its shared room. Room participants can read the conversation.">
+        {peopleDirectory.filter(person=>person.id!==me.id).flatMap(person=>(person.unit_memberships?.length?person.unit_memberships:(person.is_admin||person.is_exec)?roomDirectory.filter(room=>room.kind==="unit").map(room=>({unit_id:room.unit_id,units:room.units,role:"leadership"})):[]).filter(membership=>roomDirectory.some(room=>room.kind==="unit"&&room.unit_id===membership.unit_id)).map(membership=><QueueRow
+          key={`${person.id}:${membership.unit_id}`} icon="person" title={person.full_name}
+          meta={`${membership.role==="manager"?"Department head":"Team member"} · ${membership.units?.name||"Department"} · Shared room`}
+          onClick={()=>openRoom?.({kind:"unit",unitId:membership.unit_id,mentionProfileId:person.id})}/>))}
+      </DataPanel>}
+
+      {organisationRooms && view === "rooms" && <DataPanel
+        eyebrow="Room directory"
         title="Organisation Rooms"
-        supporting="Choose a department or team to open its shared conversation."
+        supporting="Choose a room, then mention a person to address them in that shared conversation."
         action={<StatusBadge tone="neutral" icon={false}>{roomDirectory.length} rooms</StatusBadge>}
       >
         {roomDirectory.map((room) => <QueueRow
           key={room.id}
           icon="messages"
           title={roomName(room)}
-          meta={`${room.kind === "unit" ? "Unit Room" : "Sub-team Room"} · ${room.units?.name || "Unit"}`}
+          meta={`${room.kind === "unit" ? "Unit Room" : room.kind === "project" ? "Project Room" : "Sub-team Room"} · ${room.units?.name || "Unit"}`}
           onClick={() => openRoom?.(contextFor(room))}
         />)}
-        {!roomDirectory.length && <StatePanel state="empty" title="No organisational Rooms are available" description="Only active Unit and Sub-team Rooms authorised by CEAC appear here." />}
+        {!roomDirectory.length && <StatePanel state="empty" title="No organisational Rooms are available" description="Rooms authorised by CEAC appear here." />}
       </DataPanel>}
 
       <DataPanel

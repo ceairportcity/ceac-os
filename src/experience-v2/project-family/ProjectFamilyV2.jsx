@@ -235,13 +235,16 @@ export function ProjectSectionHeader({ eyebrow, title, count, actionLabel, onAct
 }
 
 export function ProjectSummary({ items }) {
+  const content = (item) => <>
+    <strong>{item.value}</strong>
+    <span>{item.label}</span>
+    {item.detail ? <small>{item.detail}</small> : null}
+  </>;
   return (
     <div className="ev2p-summary">
       {items.map((item) => (
         <div key={item.label}>
-          <strong>{item.value}</strong>
-          <span>{item.label}</span>
-          {item.detail ? <small>{item.detail}</small> : null}
+          {item.onClick ? <button type="button" className="ev2p-summary-action" aria-pressed={Boolean(item.selected)} onClick={item.onClick}>{content(item)}</button> : content(item)}
         </div>
       ))}
     </div>

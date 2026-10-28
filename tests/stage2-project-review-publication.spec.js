@@ -99,6 +99,7 @@ test('project evidence reaches an employee only through the existing reviewer an
     const queueNote = hrPage.locator('.s2-hr-project-reviews details').filter({ hasText: narrative });
     await queueNote.locator('summary').click();
     await queueNote.getByRole('button', { name: `Open formal review · ${cycleName}`, exact: true }).click();
+    await hrPage.getByRole('tab',{name:'3 · Publication',exact:true}).click();
     await hrPage.getByLabel('HR assessment publication decision reason').fill('Independent HR review confirmed the factual evidence and approved this specific narrative version.');
     await hrPage.getByRole('button', { name: 'HR approve publication', exact: true }).click();
     await expect(hrPage.getByText('HR approved publication of this manager assessment version.', { exact: true })).toBeVisible();
@@ -177,6 +178,7 @@ test('assigned Group Pastor publishes only the HR head exact review without broa
     expect(published).toEqual({state:'approved',decided_by:pastorId,requested_by:pastorId});
     expect((await pastor.rpc('admin_employment_detail',{p_profile_id:hrId})).error?.code).toBe('42501');
     await before.reload();
+    await before.getByRole("tab",{name:"2 · Assessment",exact:true}).click();
     await expect(before.locator('.performance-narrative p').filter({hasText:narrative})).toBeVisible();
     await page.screenshot({path:'test-artifacts/assigned-hr-head-pastor-publication.png',fullPage:true});
     await page.setViewportSize({width:390,height:844});

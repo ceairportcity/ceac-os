@@ -49,7 +49,7 @@ for (const width of [320,390,430,1440]) {
     await expect(page.getByRole('heading',{name:'Organisation',exact:true})).toBeVisible();
     const department = page.getByRole('button',{name:/Test Unit A/});
     await expect(department).toBeVisible();
-    expect(await department.evaluate(node => getComputedStyle(node.querySelector('.exec-redesign-icon')).color)).toBe('rgb(113, 72, 232)');
+    expect(await department.evaluate(node => getComputedStyle(node).color)).toBe('rgb(113, 72, 232)');
     await page.screenshot({path:`test-artifacts/executive-connected-organisation-${width}.png`,fullPage:true});
     await department.click();
     await expect(page.getByRole('heading',{name:'Test Unit A',exact:true})).toBeVisible();
@@ -104,8 +104,8 @@ test('Executive without department can choose an assignment department and cance
   await dialog.getByRole('combobox',{name:'Assignment department'}).selectOption(unitA);
   await expect(dialog.getByRole('combobox',{name:'Work type'})).toBeVisible();
   await dialog.getByRole('textbox',{name:'Work to complete'}).fill('Unsaved department context');
-  page.once('dialog',confirmation=>confirmation.accept());
   await dialog.getByRole('combobox',{name:'Assignment department'}).selectOption('20000000-0000-4000-8000-000000000012');
+  await dialog.getByRole('button',{name:'Change department',exact:true}).click();
   await expect(dialog.getByRole('textbox',{name:'Work to complete'})).toHaveValue('');
   await expect(dialog.getByRole('combobox',{name:'Responsible person'}).locator('option[value="31000000-0000-4000-8000-000000000005"]')).toHaveCount(1);
   await page.keyboard.press('Escape');

@@ -1277,7 +1277,7 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Performance & development");
     await expect(page.getByRole("heading", { name: "Reviews & development", exact: true })).toBeVisible();
-    await expect(page.getByText(/no employee score or ranking/i)).toBeVisible();
+    await expect(page.getByText(/does not calculate employee scores or rankings/i)).toBeVisible();
 
     await page.getByRole("button", { name: "Open review period", exact: true }).click();
     let dialog = page.getByRole("dialog");
@@ -1414,6 +1414,7 @@ test("Stage 7 Reviews & development keeps appraisal evidence factual, visible an
     const staffCase = page.locator(".performance-case-row").filter({ hasText: "Staff Fixture" }).first();
     await expect(staffCase).toBeVisible({ timeout: 15000 });
     await staffCase.click();
+    await page.getByRole("tab", {name:"3 · Publication",exact:true}).click();
     const approve = page.getByRole("button", { name: "HR approve publication", exact: true });
     await expect(approve).toBeVisible({ timeout: 15000 });
     await page.getByLabel("HR assessment publication decision reason").fill(
@@ -1489,7 +1490,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Learning");
     await expect(page.getByRole("heading", { name: "Learning", exact: true })).toBeVisible();
-    await expect(page.getByText(/does not turn learning activity into a skill, performance or potential score/i)).toBeVisible();
+    await expect(page.getByText("Build useful learning programmes. Help people find their next step.",{exact:true})).toBeVisible();
 
     await page.getByRole("button", { name: "Create course", exact: true }).click();
     let dialog = page.getByRole("dialog");
@@ -1499,7 +1500,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
     await dialog.getByRole("button", { name: "Create draft course", exact: true }).click();
     await expect(page.getByText("Draft course created.", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Add module", exact: true }).click();
+    await page.getByRole("button", { name: "+ Add module", exact: true }).click();
     dialog = page.getByRole("dialog");
     await dialog.getByLabel("Learning module title").fill(moduleTitle);
     await dialog.getByLabel("Learning module summary").fill("One required module with one reviewed resource.");
@@ -1515,10 +1516,12 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
     await dialog.getByRole("button", { name: "Add resource", exact: true }).click();
     await expect(page.getByText("Learning resource added.", { exact: true })).toBeVisible();
 
+    await page.getByRole("button", { name: "Review & publish", exact: true }).click();
     await page.getByRole("button", { name: "Publish course", exact: true }).click();
     await expect(page.getByText("Course published.", { exact: true })).toBeVisible();
-    await expect(page.getByText("Published", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("region",{name:"Course builder",exact:true}).getByText("Published", { exact: true })).toBeVisible();
 
+    await page.getByRole("button", { name: "3 · Audience", exact: true }).click();
     await page.getByRole("button", { name: "Create assignment rule", exact: true }).click();
     dialog = page.getByRole("dialog");
     await dialog.getByLabel("Learning target kind").selectOption("person");
@@ -1547,7 +1550,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
     await expect(page.getByText(courseTitle, { exact: true }).first()).toBeVisible();
     await expect(page.getByText("1 of 1 required modules complete", { exact: true })).toBeVisible();
 
-    await page.locator(".learning-mode-tabs").getByRole("button", { name: "Completed learning", exact: true }).click();
+    await page.getByRole("tablist", {name:"Learning views"}).getByRole("tab", { name: "Completed learning", exact: true }).click();
     await expect(page.getByText(courseTitle, { exact: true })).toBeVisible();
     await expect(page.getByText("CEAC OS course", { exact: true })).toBeVisible();
 
@@ -1560,7 +1563,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Learning");
-    await page.locator(".learning-mode-tabs").getByRole("button", { name: "Team learning", exact: true }).click();
+    await page.getByRole("tablist", {name:"Learning views"}).getByRole("tab", { name: "Team learning", exact: true }).click();
     const staffLearning = page.locator(".learning-assignment-card").filter({ hasText: "Staff Fixture" });
     await expect(staffLearning).toBeVisible();
     await expect(staffLearning.getByText(courseTitle, { exact: true })).toBeVisible();
@@ -1572,7 +1575,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Learning");
-    await page.locator(".learning-mode-tabs").getByRole("button", { name: "Progress", exact: true }).click();
+    await page.getByRole("tablist", {name:"Learning views"}).getByRole("tab", { name: "Progress", exact: true }).click();
     const staffLearning = page.locator(".learning-assignment-card").filter({ hasText: "Staff Fixture" });
     await expect(staffLearning).toBeVisible();
     await staffLearning.click();
@@ -1604,8 +1607,8 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Workforce");
-    await expect(page.getByRole("heading", { name: "Workforce", exact: true })).toBeVisible();
-    await expect(page.getByText(/never an automatic absence finding/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Time & Leave", exact: true })).toBeVisible();
+    await expect(page.getByText(/does not rank people, score attendance, infer absence from missing sessions/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
     await page.getByRole("button", { name: "Add day type", exact: true }).click();
@@ -1651,7 +1654,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await expect(page.getByLabel("Workforce calendar person filter")).toBeVisible();
     await page.getByLabel("Workforce calendar person filter").selectOption("31000000-0000-4000-8000-000000000001");
 
-    await page.getByRole("tab", { name: "Sessions", exact: true }).click();
+    await page.getByRole("tab", { name: "Work sessions", exact: true }).click();
     await expect(page.getByText(/Session history is factual activity context/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Recorded differences", exact: true }).click();
@@ -1673,7 +1676,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await expect(dialog.getByLabel("Policy carryover method")).toHaveValue("");
     await expect(dialog.getByLabel("Policy approval route")).toHaveValue("");
     await expect(dialog.getByRole("button", { name: "Activate confirmed policy", exact: true })).toBeDisabled();
-    await dialog.getByRole("button", { name: "Close dialog", exact: true }).click();
+    await dialog.getByRole("button", { name: "Close", exact: true }).click();
 
     await page.screenshot({ path: "test-artifacts/stage9-workforce-admin.png", fullPage: true });
     await context.close();
@@ -1715,8 +1718,8 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
   {
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Workforce");
-    await page.getByRole("tab", { name: "Leave", exact: true }).click();
-    const administrationRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "Escalated" }).first();
+    await page.getByRole("tab", { name: "Leave requests", exact: true }).click();
+    const administrationRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "HR decision needed" }).first();
     await expect(administrationRow).toBeVisible();
     await expect(administrationRow.getByText(/Manager approved · Administration final decision required/i)).toBeVisible();
     page.once("dialog", (prompt) => prompt.accept("Acceptance Administration final approval"));
@@ -2133,16 +2136,16 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Units");
   await expect(page.getByRole("heading", { name: "Units", exact: true })).toBeVisible();
-  const unitCard = page.locator(".admin-unit-card").filter({ hasText: "Test Unit A" });
+  const unitCard = page.getByRole("button", {name:"Open Test Unit A",exact:true});
   await expect(unitCard).toBeVisible();
   await unitCard.click();
   const unitWorkspace = page.getByRole("navigation", { name: "Unit workspace" });
   await expect(unitWorkspace).toBeVisible();
-  await expect(unitWorkspace.getByRole("button", { name: "Reporting", exact: true })).toBeVisible();
-  await expect(unitWorkspace.getByRole("button", { name: "Attendance", exact: true })).toBeVisible();
-  await expect(unitWorkspace.getByRole("button", { name: "Cost", exact: true })).toBeVisible();
+  await expect(unitWorkspace.getByRole("tab", { name: "Reporting", exact: true })).toBeVisible();
+  await expect(unitWorkspace.getByRole("tab", { name: "Attendance", exact: true })).toBeVisible();
+  await expect(unitWorkspace.getByRole("tab", { name: "Cost", exact: true })).toBeVisible();
 
-  await unitWorkspace.getByRole("button", { name: "People", exact: true }).click();
+  await unitWorkspace.getByRole("tab", { name: "People", exact: true }).click();
   await page.getByRole("button", { name: "Manage people & access", exact: true }).click();
   await expect(page.getByRole("heading", { name: "People & Access", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Access administration", exact: true })).toBeVisible();
@@ -2167,7 +2170,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await page.getByRole("button", { name: "Record change", exact: true }).click();
   const employmentDialog = page.getByRole("dialog");
-  await expect(employmentDialog.locator(".h2").filter({ hasText: /^Record employment change$/ })).toBeVisible();
+  await expect(employmentDialog.getByRole("heading", { name: "Record employment change", exact: true })).toBeVisible();
   await employmentDialog.getByLabel("Change").selectOption("working_pattern_changed");
   await employmentDialog.getByLabel("Working pattern", { exact: true }).selectOption("flexible");
   await employmentDialog.getByLabel("Reason / context").fill("Acceptance employment history change");
@@ -2224,8 +2227,8 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(employmentWorkflow).toBeVisible();
   await employmentWorkflow.click();
   await page.getByLabel("Check review note").fill("Acceptance workflow review");
-  await expect(page.getByRole("button", { name: "No — I did not approve this", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Complete check", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Flag for follow-up", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm review", exact: true }).click();
   await expect(page.getByText("Check completed.", { exact: true })).toBeVisible();
 
   await go(page, "Authority");
@@ -2302,11 +2305,11 @@ test("Administration surfaces use policy-safe HR states and real employee record
   // The approved Stage 9 policy is active after the full 129-migration replay:
   // 24 days/year, 6 days per completed quarter, Manager then Administration.
   // Do not assert the old unconfigured prototype state or weaken any safeguards.
-  await page.locator(".timeleave-policy > summary").click();
+  await page.locator(".timeleave-policy > summary").filter({hasText:"Leave policy & balances"}).click();
   await expect(page.getByText("Confirmed leave process", { exact: true })).toBeVisible();
   await expect(page.getByText(/24-day yearly allowance comprises 15 annual-leave days/i)).toBeVisible();
   await expect(page.getByText(/Manager approval.*Administration final approval/i)).toBeVisible();
-  await expect(page.getByText(/never an automatic absence finding/i)).toBeVisible();
+  await expect(page.getByText(/does not rank people, score attendance, infer absence from missing sessions/i)).toBeVisible();
 
   await go(page, "Control Center");
   await expect(page.getByRole("heading", { name: "Control Center", exact: true })).toBeVisible();
@@ -2317,7 +2320,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
   await expect(page.getByText("Leave policy not configured", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Manage leave rules in Time & Leave", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Manage leave rules in Time & Leave", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Workforce", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Time & Leave", exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Schedules & policy", exact: true }).click();
   await expect(page.getByRole("button", { name: "Configure leave policy", exact: true })).toBeVisible();
 

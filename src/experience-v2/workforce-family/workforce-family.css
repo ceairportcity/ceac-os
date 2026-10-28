@@ -493,42 +493,9 @@
   width: min(100%, 84rem);
 }
 
-.ev2-workforce-admin .ev2wf-tabs {
-  gap: 1px;
-  padding: 1px;
-  overflow-x: auto;
-  flex-wrap: nowrap;
-  border: 1px solid var(--ev2-line);
-  border-radius: var(--ev2-radius-control);
-  background: var(--ev2-line);
-  scrollbar-width: none;
-}
-
-.ev2-workforce-admin .ev2wf-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.ev2-workforce-admin .ev2wf-tabs button {
-  flex: 1 0 auto;
-  min-width: max-content;
-  padding-inline: var(--ev2-space-3);
-  border: 0;
-  border-radius: 0;
-  background: var(--ev2-surface);
-  box-shadow: none;
-}
-
-.ev2-workforce-admin .ev2wf-tabs button:first-child {
-  border-radius: calc(var(--ev2-radius-control) - 1px) 0 0 calc(var(--ev2-radius-control) - 1px);
-}
-
-.ev2-workforce-admin .ev2wf-tabs button:last-child {
-  border-radius: 0 calc(var(--ev2-radius-control) - 1px) calc(var(--ev2-radius-control) - 1px) 0;
-}
-
-.ev2-workforce-admin .ev2wf-tabs button.is-selected {
-  background: var(--ev2-action-soft);
-}
+.ev2-workforce-admin .ev2wf-tabs{gap:16px;padding:0;overflow-x:auto;flex-wrap:nowrap;border:0;border-bottom:1px solid var(--ev2-line);border-radius:0;background:transparent}
+.ev2-workforce-admin .ev2wf-tabs button{flex:0 0 auto;min-width:max-content;padding:8px 2px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;box-shadow:none}
+.ev2-workforce-admin .ev2wf-tabs button.is-selected{border-bottom-color:var(--ev2-action);background:transparent;color:var(--ev2-action)}
 
 .ev2-workforce-admin .ev2wf-section {
   margin-top: var(--ev2-space-4);
@@ -608,61 +575,5 @@
   .ev2-workforce-admin .ev2wf-row-state,
   .ev2-workforce-admin .ev2wf-decision-actions {
     grid-column: 1;
-  }
-}
-
-
-/* VF4C Level C correction — Administration Calendar mobile day rail.
-   All seven days and all factual workforce rows remain available; phone no longer
-   serialises the entire seven-day organisation matrix into one vertical page. */
-.ev2-workforce-admin .ev2wf-admin-calendar-week {
-  display: grid;
-  gap: 0;
-}
-
-.ev2-workforce-admin .ev2wf-admin-calendar-week > .ev2wf-section:first-child {
-  margin-top: 0;
-}
-
-@media (max-width: 760px) {
-  .ev2-workforce-admin .ev2wf-admin-calendar-week {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--ev2-space-3);
-    margin-right: calc(var(--ev2-space-3) * -1);
-    padding-right: var(--ev2-space-3);
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-  }
-
-  .ev2-workforce-admin .ev2wf-admin-calendar-week::-webkit-scrollbar {
-    display: none;
-  }
-
-  .ev2-workforce-admin .ev2wf-admin-calendar-week > .ev2wf-section {
-    flex: 0 0 calc(100% - 1.25rem);
-    margin-top: 0;
-    scroll-snap-align: start;
-  }
-}
-
-@media (max-width: 359px) {
-  .ev2-workforce-admin .ev2wf-admin-calendar-week > .ev2wf-section {
-    flex-basis: calc(100% - .75rem);
-  }
-}
-
-
-@media (min-width: 1100px) {
-  .ev2-workforce-admin .ev2wf-admin-calendar-week {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--ev2-space-4);
-    align-items: start;
-  }
-
-  .ev2-workforce-admin .ev2wf-admin-calendar-week > .ev2wf-section {
-    margin-top: 0;
   }
 }

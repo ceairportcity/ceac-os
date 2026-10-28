@@ -53,7 +53,7 @@ test("mobile and desktop have separate first-class hierarchy and real screenshot
 test("the dominant next step contains real CEAC authority-preserving navigation", () => {
   assert.match(overview, /const suggestedAction = leaveQueue\.length/);
   assert.match(overview, /eyebrow: canAdminDecideLeave\(leaveQueue\[0\]\) \? "Leave decision waiting" : "Leave request to review"/);
-  assert.match(overview, /action: onOpenAttendance/);
+  assert.match(overview, /onOpenLeaveRequest\(leaveQueue\[0\]\.id\)/);
   assert.match(overview, /action: onOpenWorkflows/);
   assert.match(overview, /pendingInvitations\.length && canManagePeople/);
   assert.match(overview, /action: onOpenInvitations/);
@@ -94,7 +94,9 @@ test("Overview stage guards protect both controls and the mutation handler", () 
   const home = readFileSync("src/screens/AdminHome.jsx", "utf8");
   const workforce = readFileSync("src/screens/Workforce.jsx", "utf8");
   assert.match(overview, /\{canAdminDecideLeave\(request\) \? <>/);
-  assert.match(overview, /onClick=\{onOpenAttendance\}>Review in Time & Leave/);
+  assert.match(overview, /onOpenLeaveRequest\(request\.id\)/);
+  assert.match(home, /go\?\.\("attendance", \{leaveRequestId:requestId\}\)/);
+  assert.match(workforce, /initialRequestId=\{initialLeaveRequestId\}/);
   assert.match(overview, /leaveStageLabel\(request\)/);
   assert.match(workforce, /leaveStageLabel\(l,route\)/);
   const handler = home.slice(home.indexOf("async function decideLeave("), home.indexOf("const adminDate"));

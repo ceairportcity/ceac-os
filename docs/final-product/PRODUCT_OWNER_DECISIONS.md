@@ -1,3 +1,37 @@
+## 27 October 2026 — finish all requested corrections and work through release
+
+The owner explicitly directs: “Work towards release and ensure all the fixes I asked for are done!” Continue existing PR155, close the outstanding implementation and connected-workflow gaps, and take the completed candidate through required qualification, migration/deployment and actual live verification. Do not stop at a partial draft or ask again for routine implementation/release permission within this scope. Preserve the original role colours, accepted panels, real accounts/data and existing authorities. This direction does not waive required checks or declare the current designs owner-approved by implication.
+
+## 27 October 2026 — implement accepted mockups; preserve original role panels
+
+The owner directs implementation from the released current repository, using the focused change-impact testing policy. Preserve the original role panel colours and the accepted Overview, People & Access and Control Center designs; the successive pale/plum/teal PDF revisions are not implementation authorities. Do not apply a replacement application shell or restart the build. The original supplied comparison/mockup PDF has SHA256 `c83d072a270035373ba6f3100a2bc2128ad15d436f8e13e2a9802f46028cf5af`; its private bytes are not published in this repository.
+
+Implement the original mockups the owner retained, while correcting the rejected Executive/HR/Manager reports, My Achievements, Work Review and Payroll designs. The scope is not reporting alone. Include meeting viewer/organiser separation, department/person navigation, Finance requests and optional receipt evidence, Learning catalogue/builder, announcements, invitations, Reviews & Development, Time & Leave and weekly schedules. Preserve existing authorities, facts, calculations and private records. Reports must work appropriately across the relevant roles; no fabricated numbers or employee rankings.
+
+The owner also reports create-form values remaining after a confirmed save and excessive mandatory HR prose. Clear a confirmed unchanged create draft, retain interrupted/failed/newer drafts, and distinguish a recorded invitation from unconfirmed email delivery. Routine HR approval may record the explicit approval action without compulsory typed prose; rejection/exception reasons and independent assessment-version approval remain required. Meeting viewers do not author another organiser's agenda. Organisation work inspection must not expose the owner's checklist or activity entry controls.
+
+Continuation and exact evidence: [existing Administration correction ledger](../continuity/CEAC_ADMIN_CORRECTIONS_2026-10-26.md#27-october-2026--owner-approved-mockup-continuation-pr-155). This instruction authorises the implementation work; it is not acceptance of the rejected mockups, permission bypass, or a claim that all retained mockups are implemented/released.
+
+---
+
+## 26 October 2026 — HR employee focus, organisation communication, work and Projects correction
+
+The owner reported Add employee fields losing focus after a character and HR unable to enter department rooms or address people. They explicitly confirmed HR may communicate with all organisation departments, heads and individuals, and assign work across departments. They added a visible Projects section with creation and the same operational project functions available to Managers. Correct the actual screens and server room authority; do not impersonate an Executive or invent department membership. The earlier read-only Administration project restriction is superseded for HR by this instruction. Keep contextual room conversations clearly shared, other roles and tenant/privacy boundaries intact, and preserve completed releases and independent PR #150. Continue through implementation, required qualification and live verification under the existing authorised Admin correction release scope. [Repair and verification ledger](../continuity/CEAC_HR_OPERATIONAL_REPAIR_2026-10-26.md).
+
+---
+
+## 26 October 2026 — complete Administration audit, corrections and release before another panel
+
+Implementation status: Administration/HR corrections released through PR #149 at `7b9d504`, from qualified head `69d9323`, and verified using the existing HR account. [Final acceptance record](../design/CEAC_ADMIN_RELEASE_ACCEPTANCE_2026-10-26.md). Historical pending ledger entries are superseded by that release receipt; preserve newer main/PR work.
+
+After the Executive correction release (#148), the owner explicitly authorised a complete Administration/HR design and connected-workflow audit, implementation of the resulting corrections, verification and production release. Finish that scope before starting Manager or Staff. Staff is the owner's tentative next panel, not permission to start it now. No repeated implementation/release permission is required within the authorised Admin correction scope.
+
+The owner additionally flagged repeated laptop navigation/action icons and explicitly requested comparison with the phone layout. Distinguish different Admin destinations and actions using the existing consistent icon set; preserve shared symbols for the same action and do not change other roles merely to resolve this Admin finding.
+
+Use the released Executive's design quality, typography, meaningful icons, spacing, interactions and complete child journeys as the reference, without copying its exact colours. Find and replace surviving legacy designs with the existing approved component families; preserve the accepted Overview, People & Access and Control Center identities. The owner specifically reports Overview leave requests showing pending/escalated states without a usable resolution path. Trace request selection, Manager-first approval, HR final review, reasons, persistence and return; do not bypass the existing server authority. Preserve released Executive code, accounts, data and deferred Auth choices. [Current audit and verification](../continuity/CEAC_ADMIN_CORRECTIONS_2026-10-26.md).
+
+---
+
 ## 25 October 2026 — Executive-first design and connected journeys
 
 The owner requires a comprehensive design and functional audit, followed by actual corrections: Executive completely, then Administration/HR, Manager and Staff. The approved current Executive Overview is the reference for fonts, colours, meaningful icons, motion and quality; preserve it while replacing legacy destination, subpage, Calendar, form and mobile treatments. Workflow-only repairs do not fulfil the request.

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import postcss from "postcss";
 import { join } from "node:path";
 
@@ -120,9 +120,13 @@ test("support authority is separate from ordinary employment role and client-sid
 
 test("approved Executive Overview, palette and shell rules remain identical while legacy destinations are replaced", () => {
   // 25 October owner scope replaces subpages, preserving the approved Overview.
-  // Compare every protected rule against the original pinned Git blob rather
+  // Retain the exact pinned Git blob as a hash-checked fixture for shallow builds.
+  // Compare every protected rule against the original approved reference rather
   // than rebaselining that render or freezing obsolete destination CSS.
-  const original = execFileSync("git", ["cat-file", "blob", "5613e38749322da28f6bfd6f4a584dd4bebd6d47"], {encoding:"utf8"});
+  const original = read("tests/fixtures/approved-executive-redesign-20261025.css");
+  const originalBytes = Buffer.from(original, "utf8");
+  const originalBlob = createHash("sha1").update(`blob ${originalBytes.length}\0`).update(originalBytes).digest("hex");
+  assert.equal(originalBlob,"5613e38749322da28f6bfd6f4a584dd4bebd6d47","the checked-in reference must be the exact original approved Git blob");
   const protectedSelector = /executivev2|ev2s-|exec-redesign-(?:mobile-)?notification|fpg9-(?:sidebar-quick|topbar-message)/;
   function protectedRules(css) {
     const rules=[];
@@ -205,13 +209,16 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261024100121_browser_truncate_privilege_hardening.sql",
     "20261025123639_executive_assignment_scope.sql",
     "20261025180606_executive_routine_options_preservation.sql",
+    "20261026155352_hr_room_authority.sql",
+    "20261027083248_meeting_organiser_write_authority.sql",
+    "20261027125202_finance_independent_requests_and_receipts.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
   }
   assert.equal(migrations.filter((file) => !stagedIntegratedSecurity.includes(file)).length, 153,
     "Stage 1's 153 reviewed migrations remain identical; all Stage 2 additions are explicitly inventoried");
-  assert.equal(migrations.length, 206, "expected 153 reviewed Stage 1 plus 53 explicitly inventoried Stage 2 migrations");
+  assert.equal(migrations.length, 209, "expected 153 reviewed Stage 1 plus 56 explicitly inventoried Stage 2 migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";

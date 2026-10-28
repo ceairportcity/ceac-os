@@ -15,7 +15,7 @@ function latestSubmission(item) {
   return [...(item.submissions || [])].sort((a, b) => String(b.submitted_at).localeCompare(String(a.submitted_at)))[0] || null;
 }
 
-export default function ManagerProjectClose({ me, project, objectives, work, costs, onRefresh }) {
+export default function ManagerProjectClose({ me, project, objectives, work, costs, onRefresh, projectUnitId = me.unit_id }) {
   const [closes, setCloses] = useState([]);
   const [readiness, setReadiness] = useState([]);
   const [lastReopenedAt, setLastReopenedAt] = useState(null);
@@ -33,7 +33,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   // Versioned project-close mutations must not dispatch twice in one render.
   const closeMutationPending = useRef(false);
   const [error, setError] = useState(null);
-  const projectScope = [project.id, me.org_id, me.id, me.unit_id].join(":");
+  const projectScope = [project.id, me.org_id, me.id, me.unit_id].join(":") + ":" + projectUnitId;
   const currentProjectScope = useRef(projectScope);
   currentProjectScope.current = projectScope;
   const closeReadSequence = useRef(0);
@@ -41,13 +41,13 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
   const [evidenceLoading, setEvidenceLoading] = useState(true);
   const closeEvidenceVerified = verifiedScope === projectScope && !evidenceLoading;
 
-  const isLead = project.lead_unit_id === me.unit_id;
-  const ownObjectives = objectives.filter((row) => row.unit_id === me.unit_id);
+  const isLead = project.lead_unit_id === projectUnitId;
+  const ownObjectives = objectives.filter((row) => row.unit_id === projectUnitId);
   const deliveredWork = work.filter((row) => ["completed", "self_certified"].includes(row.status));
   const deliverablesFor = (scope) => scope === "unit"
-    ? deliveredWork.filter((row) => row.unit_id === me.unit_id)
+    ? deliveredWork.filter((row) => row.unit_id === projectUnitId)
     : deliveredWork;
-  const unitClose = closes.find((row) => row.scope === "unit" && row.unit_id === me.unit_id && row.status === "submitted");
+  const unitClose = closes.find((row) => row.scope === "unit" && row.unit_id === projectUnitId && row.status === "submitted");
   const overallClose = closes.find((row) => row.scope === "overall" && row.status === "submitted");
   const overallCloseCurrentCycle = Boolean(overallClose) && (
     !lastReopenedAt || new Date(overallClose.submitted_at).getTime() > new Date(lastReopenedAt).getTime()
@@ -57,7 +57,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
     setSheet(null); setLifecycle(null); setHistoryClose(null);
     void load();
     return () => { closeReadSequence.current += 1; };
-  }, [project.id, me.org_id, me.id, me.unit_id]);
+  }, [project.id, me.org_id, me.id, projectUnitId]);
 
   async function load() {
     const requestedScope = projectScope;
@@ -220,7 +220,7 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
       const { error: submitError } = await supabase.rpc("save_and_submit_project_close", {
         p_project_id: project.id,
         p_scope: sheet.scope,
-        p_unit_id: sheet.scope === "unit" ? me.unit_id : null,
+        p_unit_id: sheet.scope === "unit" ? projectUnitId : null,
         p_deliverables_note: deliverablesNote.trim() || null,
         p_challenges: challenges.trim(),
         p_do_differently: doDifferently.trim(),
@@ -340,13 +340,13 @@ export default function ManagerProjectClose({ me, project, objectives, work, cos
     {error && <div className="flag flag-brick"><h4>Could not complete project close</h4>{error}</div>}
 
     <div className="card">
-      <div className="row-t">Your unit return</div>
+      <div className="row-t">{me.is_admin?"Lead department return":"Your unit return"}</div>
       <div className="row-m">{unitClose ? `Latest submitted · version ${unitClose.version}` : "Not submitted"}</div>
       {project.status !== "closed" && <button className="btn btn-sm" style={{ marginTop: 10 }} onClick={() => openClose("unit")}>
         {unitClose ? "Prepare revised unit return" : "Prepare unit return"}
       </button>}
       {project.status === "closed" && <div className="hint">This submitted return is preserved with the closed project.</div>}
-      {closes.filter((row) => row.scope === "unit" && row.unit_id === me.unit_id && row.status === "submitted").length > 0 && <div style={{ marginTop: 10 }}>{closes.filter((row) => row.scope === "unit" && row.unit_id === me.unit_id && row.status === "submitted").map((close) => <button key={close.id} className="btn btn-ghost btn-sm" style={{ marginRight: 6, marginBottom: 6 }} onClick={() => openCloseHistory(close)}>Version {close.version}</button>)}</div>}
+      {closes.filter((row) => row.scope === "unit" && row.unit_id === projectUnitId && row.status === "submitted").length > 0 && <div style={{ marginTop: 10 }}>{closes.filter((row) => row.scope === "unit" && row.unit_id === projectUnitId && row.status === "submitted").map((close) => <button key={close.id} className="btn btn-ghost btn-sm" style={{ marginRight: 6, marginBottom: 6 }} onClick={() => openCloseHistory(close)}>Version {close.version}</button>)}</div>}
     </div>
 
     {isLead && <div className="card" style={{ marginTop: 10 }}>

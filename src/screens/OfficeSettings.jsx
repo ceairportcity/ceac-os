@@ -224,13 +224,13 @@ export default function OfficeSettings({ me, openWorkforce, section: requestedSe
       </section>:null}
       {section==="leave"?<section className="focused-setting-editor">
         <ProductNotice tone={leaveConfigured?"success":"attention"} title={leaveConfigured?"Active leave policy":"Leave policy not configured"}>{leaveConfigured?leavePolicy.name:"Confirm CEAC’s leave rules before assigning entitlements."}</ProductNotice>
-        {leaveRules.map(rule=><div className="settings-leave-rule" key={rule.id}><h2>{leavePoolLabel(rule.leave_kind)||rule.leave_kind}</h2><dl>
+        {leaveRules.map(rule=><div className="settings-leave-rule" key={rule.id}><h2>{rule.leave_kind==="annual"?"Annual leave":leavePoolLabel(rule.leave_kind)||rule.leave_kind}</h2><dl>
           <div><dt>Entitlement</dt><dd>{rule.complete?`${rule.entitlement_amount} ${rule.entitlement_unit}`:"Needs confirmation"}</dd></div>
           <div><dt>How leave builds up</dt><dd>{(rule.accrual_method||"Not configured").replaceAll("_"," ")}</dd></div>
           <div><dt>Unused leave</dt><dd>{(rule.carryover_method||"Not configured").replaceAll("_"," ")}</dd></div>
           <div><dt>Approval route</dt><dd>{(rule.approval_route||"Not configured").replaceAll("_"," ")}</dd></div>
         </dl></div>)}
-        <button type="button" className="btn" onClick={()=>openWorkforce?.()}>Manage leave rules in Time & Leave</button>
+        <button type="button" className="btn" onClick={()=>openWorkforce?.("setup")}>Manage leave rules in Time & Leave</button>
       </section>:null}
       {section==="alerts"?<section className="focused-setting-editor"><p className="screen-note">Changing these values changes when HR sees an item for review. It does not change the underlying work or create a score.</p>
         <div className="office-threshold-list">{thresholds.map(row=><div key={row.name} className="office-threshold-row"><div><strong>{row.label}</strong><span>{row.unit_label}</span></div>

@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { FieldGroup, Sheet } from "../components/bits";
-import { ComposerDrawer } from "../experience-v2/components";
+import { FieldGroup, ProductNotice, Sheet } from "../components/bits";
+import { ComposerDrawer, SegmentedControl } from "../experience-v2/components";
 import VoiceInput from "../components/VoiceInput";
 import { OperationalFileList, PendingFilePicker } from "../components/OperationalFiles";
 import { uploadOperationalFiles } from "../lib/operationalFiles";
@@ -16,10 +16,14 @@ function formatDate(value) {
 }
 
 function blankForm() {
-  return { id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [], files: [], audienceMode: "everyone" };
+  return { draftKey: Symbol(), id: null, title: "", body: "", priority: "normal", requiresAck: false, expiresAt: "", allOrg: true, unitIds: [], roles: [], files: [], audienceMode: "everyone" };
 }
 
-export default function Announcements({ me, back, createRequest = false, onCreateHandled, initialAnnouncementId = null, onInitialHandled }) {
+export default function Announcements(props) {
+  return <AnnouncementWorkspace key={`${props.me.org_id}:${props.me.id}`} {...props} />;
+}
+
+function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandled, initialAnnouncementId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [units, setUnits] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -29,6 +33,10 @@ export default function Announcements({ me, back, createRequest = false, onCreat
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [savedDraft, setSavedDraft] = useState(null);
+  const [listView,setListView]=useState("all");
+  const savePending = useRef(false), mounted = useRef(false);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   useEffect(() => { load(); }, [me.id]);
   useEffect(() => {
@@ -108,6 +116,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
     const unitIds = audiences.filter((audience) => audience.audience_type === "unit").map((audience) => audience.unit_id);
     const roles = audiences.filter((audience) => audience.audience_type === "role").map((audience) => audience.audience_role);
     setForm({
+      draftKey: Symbol(),
       id: announcement.id, title: announcement.title, body: announcement.body, priority: announcement.priority,
       requiresAck: announcement.requires_acknowledgement,
       expiresAt: announcement.expires_at ? new Date(announcement.expires_at).toISOString().slice(0, 16) : "",
@@ -121,7 +130,10 @@ export default function Announcements({ me, back, createRequest = false, onCreat
   }
 
   async function saveDraft() {
-    setBusy(true); setError(null);
+    if (!form || busy || savePending.current) return;
+    const submitted = form;
+    savePending.current = true;
+    setBusy(true); setError(null); setSavedDraft(null);
     try {
       const args = {
         p_title: form.title.trim(), p_body: form.body.trim(), p_priority: form.priority,
@@ -132,6 +144,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       const result = form.id
         ? await supabase.rpc("update_announcement", { p_announcement_id: form.id, ...args })
         : await supabase.rpc("create_announcement", args);
+      if (!mounted.current) return;
       if (result.error) throw result.error;
       const announcementId = form.id || result.data;
       if (form.files?.length && announcementId) {
@@ -143,14 +156,22 @@ export default function Announcements({ me, back, createRequest = false, onCreat
             relation: "announcement_attachment",
           });
         } catch (fileError) {
-          if (!form.id) setForm((current) => ({ ...current, id: announcementId }));
+          if (!mounted.current) return;
+          if (!form.id) setForm((current) => current?.draftKey === submitted.draftKey ? { ...current, id: announcementId } : current);
           await load();
           throw new Error(`The announcement draft was saved, but ${fileError.message || "one or more attachments could not be uploaded."}`);
         }
       }
-      setForm(null); await load();
-    } catch (err) { setError(err.message || "The draft could not be saved."); }
-    finally { setBusy(false); }
+      if (!mounted.current) return;
+      // A confirmed save retires only the submitted version. Later edits keep
+      // the returned ID, so their next save updates rather than duplicates it.
+      setForm((current) => current?.draftKey !== submitted.draftKey ? current : current === submitted ? null : {
+        ...current, id: announcementId,
+        files: (current.files || []).filter((file) => !(submitted.files || []).includes(file)),
+      });
+      setSavedDraft(submitted.draftKey); await load();
+    } catch (err) { if (mounted.current) setError(err.message || "The draft could not be saved."); }
+    finally { savePending.current = false; if (mounted.current) setBusy(false); }
   }
 
   async function changeStatus(announcement, action) {
@@ -163,6 +184,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
     finally { setBusy(false); }
   }
 
+  const DetailSurface = me.is_admin ? ComposerDrawer : Sheet;
   return <div className={me.is_exec ? "body exec-redesign-page exec-announcements" : "body"}>
     <header className={me.is_exec ? "exec-redesign-shared-head" : undefined} style={me.is_exec ? undefined : { paddingTop: 26 }}>
       <div>
@@ -171,14 +193,20 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       <h1 className="h1" style={me.is_exec ? undefined : { marginTop: 6 }}>Announcements</h1>
       <p className="screen-note">Important messages for the organisation, your role or your unit.</p>
       </div>
-      {canPublish && <button className="btn" style={me.is_exec ? undefined : { marginTop: 14 }} onClick={() => setForm(blankForm())}>New announcement</button>}
+      {canPublish && <button className="btn" style={me.is_exec ? undefined : { marginTop: 14, width: "fit-content", alignSelf: "flex-start" }} onClick={() => setForm(blankForm())}>New announcement</button>}
     </header>
 
     {error && <div className="flag flag-brick" style={{ marginTop: 14 }}><h4>Could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={load}>Try again</button></div>}
+    {savedDraft && !form && <p role="status" className="screen-note">Announcement draft saved.</p>}
     {loading && <div className="spin">Loading announcements...</div>}
-    {!loading && <div style={{ marginTop: 18 }}>
-      {rows.length === 0 && <div className="card small">There are no current announcements for you.</div>}
-      {rows.map((announcement) => {
+    {me.is_admin&&!loading&&!error&&<SegmentedControl ariaLabel="Announcement views" value={listView} onChange={setListView} items={[
+      {value:"all",label:`All · ${rows.length}`},{value:"published",label:`Published · ${rows.filter(row=>row.status==="published").length}`},
+      {value:"draft",label:`Drafts · ${rows.filter(row=>row.status==="draft").length}`},{value:"closed",label:`Closed · ${rows.filter(row=>row.status==="closed").length}`}
+    ]}/>}
+    {!loading && <div className={me.is_admin?"form-grid two":undefined} style={{ marginTop: 18 }}><div>
+      {rows.length === 0 && !error && <div className="card small">There are no current announcements for you.</div>}
+      {me.is_admin&&!error&&rows.length>0&&!rows.some(row=>listView==="all"||row.status===listView)&&<p role="status">No announcements match this view.</p>}
+      {rows.filter(row=>!me.is_admin||listView==="all"||row.status===listView).map((announcement) => {
         const receipt = receiptFor(announcement);
         const unread = announcement.status === "published" && !receipt;
         return <div className={`row ${unread ? "home-tone-info" : ""}`} key={announcement.id}>
@@ -194,11 +222,12 @@ export default function Announcements({ me, back, createRequest = false, onCreat
           </div>}
         </div>;
       })}
-    </div>}
+    </div>{me.is_admin&&<aside className="card" aria-label="Announcement publishing checklist"><h2 className="h2">Publishing checklist</h2><p>Choose the audience.</p><p>Preview the message before saving.</p><p>Saving creates a draft. Publish it when ready.</p></aside>}</div>}
 
-    {selected && <Sheet onClose={() => setSelected(null)}>
+    {selected && <DetailSurface open title={me.is_admin ? selected.title : undefined} onClose={() => { if (!busy) setSelected(null); }}>
+      {me.is_admin && error && <ProductNotice tone="error" title="Announcement update">{error}</ProductNotice>}
       <div className="eyebrow">{selected.priority}{selected.status !== "published" ? ` · ${selected.status}` : ""}</div>
-      <div className="h2" style={{ marginTop: 5 }}>{selected.title}</div>
+      {!me.is_admin && <div className="h2" style={{ marginTop: 5 }}>{selected.title}</div>}
       <div className="row-m">{selected.profiles?.full_name || "CEAC"} · {formatDate(selected.published_at || selected.created_at)}</div>
       <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, marginTop: 18 }}>{selected.body}</div>
       <OperationalFileList
@@ -212,7 +241,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       {selected.requires_acknowledgement && !receiptFor(selected)?.acknowledged_at && selected.status === "published" &&
         <button className="btn" style={{ marginTop: 18 }} onClick={acknowledge} disabled={busy}>{busy ? "Saving..." : "I acknowledge this message"}</button>}
       {receiptFor(selected)?.acknowledged_at && <div className="flag flag-green" style={{ marginTop: 18 }}><h4>Acknowledged</h4>{formatDate(receiptFor(selected).acknowledged_at)}</div>}
-    </Sheet>}
+    </DetailSurface>}
 
     {form && <ComposerDrawer
       open
@@ -222,6 +251,8 @@ export default function Announcements({ me, back, createRequest = false, onCreat
       panelClassName="reference-composer reference-announcement-composer"
       footer={<button className="btn" onClick={saveDraft} disabled={busy || !form.title.trim() || !form.body.trim() || (!form.allOrg && form.unitIds.length === 0 && form.roles.length === 0)}>{busy ? "Saving..." : form.id ? "Save changes" : "Save draft"}</button>}
     >
+      {me.is_admin && error && <ProductNotice tone="error" title="Announcement draft not saved">{error}</ProductNotice>}
+      {savedDraft === form.draftKey && <p role="status" className="screen-note">Submitted version saved. Your later changes are not saved yet.</p>}
       <label className="label" htmlFor="announcement-title">Title *</label>
       <div className="assistive-inline">
         <input id="announcement-title" className="field" placeholder="e.g. Sunday Service Update" value={form.title} onChange={(event) => { const value = event.target.value; setForm((current) => ({ ...current, title: value })); }} />
@@ -249,6 +280,7 @@ export default function Announcements({ me, back, createRequest = false, onCreat
         <VoiceInput compact label="Speak announcement message" onResult={(text) => setForm((current) => ({ ...current, body: current.body ? current.body + " " + text : text }))} />
       </div>
 
+      {me.is_admin&&<details className="reference-disclosure"><summary>Preview message</summary><div className="reference-disclosure-body"><h2>{form.title||"Untitled draft"}</h2><p style={{whiteSpace:"pre-wrap"}}>{form.body||"Write a message to preview it here."}</p><small>{form.allOrg?"Everyone in the organisation":form.unitIds.length?`${form.unitIds.length} selected departments`:form.roles.length?`${form.roles.length} selected roles`:"Choose an audience"}</small></div></details>}
       <details className="reference-disclosure">
         <summary><span>Attachments</span><span>+ Add file · {(form.files || []).length}</span></summary>
         <div className="reference-disclosure-body">

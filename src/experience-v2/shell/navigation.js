@@ -35,14 +35,15 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
     { key: "people", label: "People & Access", icon: "people", group: "workspace", capability: "people.manage" },
     { key: "work", label: "Work", icon: "work", group: "workspace" },
+    { key: "admin-projects", label: "Projects", icon: "projects", group: "workspace" },
     { key: "attendance", label: "Time & Leave", icon: "time", group: "planning" },
     { key: "admin-calendar", label: "Calendar", icon: "calendar", group: "planning" },
     { key: "finance", label: "Finance", icon: "finance", group: "insight" },
-    { key: "payroll", label: "Payroll", icon: "finance", group: "insight", capability: "payroll.prepare" },
+    { key: "payroll", label: "Payroll", icon: "budget", group: "insight", capability: "payroll.prepare" },
     { key: "reporting", label: "Reports", icon: "reports", group: "insight" },
     { key: "settings", label: "Control Center", icon: "control", group: "system" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
-    { key: "me", label: "My Hub", icon: "account", group: "account" },
+    { key: "me", label: "My Hub", icon: "person", group: "account" },
     { key: "account", label: "Your account", icon: "account", group: "account" },
   ]),
   executive: Object.freeze([
@@ -84,7 +85,7 @@ const ROLE_QUICK_ACTIONS = Object.freeze({
   ]),
   admin: Object.freeze([
     { id: "work", label: "New work", icon: "work", action: "work" },
-    { id: "announcement", label: "Announcement", icon: "messages", action: "announcement" },
+    { id: "announcement", label: "Announcement", icon: "notification", action: "announcement" },
     { id: "meeting", label: "Meeting", icon: "meeting", action: "meeting" },
     { id: "message", label: "Message room", icon: "messages", action: "message" },
   ]),
@@ -123,7 +124,7 @@ export function getRoleName(context = {}) {
 export function getAdministrationTools(me = {}) {
   const grants = me.capability_grants || [];
   return [
-    { key: "performance", label: "Reviews & Development", icon: "reports", group: "insight", capability: "performance.admin", searchTerms: "performance appraisal quarterly reviews" },
+    { key: "performance", label: "Reviews & Development", icon: "goal", group: "insight", capability: "performance.admin", searchTerms: "performance appraisal quarterly reviews" },
     { key: "learning", label: "Learning", icon: "learning", group: "insight", capability: "learning.manage", searchTerms: "courses training" },
   ].filter(item => grants.some(grant => grant.capability === item.capability && !grant.scope_unit_id));
 }

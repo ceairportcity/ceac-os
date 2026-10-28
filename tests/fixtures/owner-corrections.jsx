@@ -1,0 +1,95 @@
+// Synthetic local-only fixture: all remote requests are intercepted by tests.
+import React, {useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import AdminWorkflows from "../../src/screens/AdminWorkflows";
+import PersonalRecurringTaskComposer from "../../src/components/PersonalRecurringTaskComposer";
+import WorkforceStreetMap from "../../src/components/WorkforceStreetMap";
+import "../../src/experience-v2/calendar/calendar.css";
+import ManagerReports from '../../src/screens/ManagerReports';
+import Reports from '../../src/screens/Reports';
+import ExecutiveReports from '../../src/screens/ExecutiveReports';
+import PersonalAchievements from '../../src/screens/PersonalAchievements';
+import AdminPayroll from '../../src/screens/AdminPayroll';
+import Learning from '../../src/screens/Learning';
+import Finance from '../../src/screens/Finance';
+import Cost from '../../src/screens/Cost';
+import Announcements from '../../src/screens/Announcements';
+import EmployeeScheduleEditor from '../../src/components/EmployeeScheduleEditor';
+import Meeting from '../../src/screens/Meeting';
+import Performance from '../../src/screens/Performance';
+import Item from '../../src/screens/Item';
+import PeopleAccess from '../../src/components/PeopleAccess';
+import ExecutiveOrganisation from '../../src/screens/ExecutiveOrganisation';
+import {SideNav,AppTopBar,MobileTopBar,Tabs} from '../../src/experience-v2/shell/ShellV2';
+import '../../src/styles.css';
+import '../../src/premium.css';
+import '../../src/premium-staff.css';
+import '../../src/premium-manager.css';
+import '../../src/premium-admin.css';
+import '../../src/premium-executive.css';
+import '../../src/premium-parity.css';
+import '../../src/experience-v2.css';
+import '../../src/experience-v2/components/components.css';
+import '../../src/experience-v2/shell/shell.css';
+import '../../src/experience-v2/staff-today/staff-today.css';
+import '../../src/experience-v2/admin-overview/admin-overview.css';
+import '../../src/experience-v2/work-family/work-family.css';
+import '../../src/experience-v2/executive-overview/executive-surfaces.css';
+import '../../src/experience-v2/project-family/project-family.css';
+import '../../src/experience-v2/people-family/people-family.css';
+import '../../src/experience-v2/workforce-family/workforce-family.css';
+import '../../src/experience-v2/finance-family/finance-family.css';
+import '../../src/experience-v2/personal-family/personal-family.css';
+import '../../src/experience-v2/data-viz/data-viz.css';
+import '../../src/experience-v2/integrations/integrations.css';
+import '../../src/resilience/pwa-status.css';
+import '../../src/experience-v2/ui-density-refinement.css';
+import '../../src/experience-v2/executive-overview/ExecutiveRedesignStyles';
+const me={full_name:'Design preview',role:'staff',memberships:[],managed_units:[],id:'actor',org_id:'org',is_admin:true,is_exec:true,capabilities:['people.manage','workforce.manage'],capability_grants:[{capability:'people.manage',scope_unit_id:null},{capability:'learning.manage',scope_unit_id:null}]};
+function Fixture(){
+ const params=new URLSearchParams(location.search);
+ const screen=params.get('screen');
+ const [actor,setActor]=useState({...me,capabilities:[...me.capabilities,...(params.get("permissiontest")==="1"?["hr_private.access"]:[])],is_admin:params.get('actor')!=='executive',is_exec:params.get('actor')!=='admin'});
+ const screens={
+  'department-reports':<Reports me={actor}/>,
+  reports:<ExecutiveReports me={actor} openItem={()=>{}}/>,
+  'manager-reports':<ManagerReports me={{...actor,unit_id:'unit'}} openItem={()=>{}}/>,
+  achievements:<PersonalAchievements me={actor} back={()=>{}} openItem={()=>{}}/>,
+  payroll:<AdminPayroll me={{...actor,capabilities:[...actor.capabilities,'payroll.prepare']}}/>,
+  learning:<Learning me={actor}/>,
+  workflows:<AdminWorkflows me={actor}/>,
+  recurrence:<div className="phase6-day-workspace" style={{width:340,maxWidth:"100%"}}><PersonalRecurringTaskComposer me={actor} ready selectedDate="2026-10-28" /></div>,
+  map:<WorkforceStreetMap clusters={[{key:"point",lat:5.6,lng:-.18,people:[{id:"person",name:"Synthetic colleague"}]}]} onSelect={id=>setActor(current=>({...current,selectedId:id}))} selectedId={actor.selectedId} selectedContent={actor.selectedId?<p>Synthetic work-start record</p>:null}/>,
+  finance:<Finance me={actor}/>,
+  cost:<Cost me={actor}/>,
+  announcements:<Announcements me={actor}/>,
+  schedule:<EmployeeScheduleEditor me={actor} profileId="person" unitId="unit" name="Synthetic colleague"/>,
+  meeting:<Meeting me={actor} meetingId="meeting" back={()=>{}}/>,
+  review:<Item me={actor} id="work" reviewOnly back={()=>{}}/>,
+  performance:<Performance me={actor}/>,
+  directory:<ExecutiveOrganisation key={actor.id} me={actor} openItem={()=>{}}/>,
+ };
+ const content=screens[screen]||<PeopleAccess me={actor}/>;
+ if(params.get('full')==='1'){
+  const isExec=params.get('actor')==='executive'||['reports','review'].includes(screen),isAdmin=['department-reports','payroll','finance','cost','learning','access','performance','announcements'].includes(screen),isManager=screen==='manager-reports';
+  const roleClass=isExec?'executive-app':isAdmin?'office-app':isManager?'manager-app':'staff-app';
+  const tab={reports:'exec-reports','department-reports':'reporting','manager-reports':'manager-reports',achievements:'achievements',payroll:'payroll',review:'item',finance:'finance',cost:'cost',learning:'learning',access:'settings'}[screen];
+  const noop=()=>{};
+  const roleProps={me:actor,isExec,isAdmin,isManager,tab};
+  return <div className={'app '+roleClass}>
+   <SideNav {...roleProps} setTab={noop}/>
+   <div className="ev2s-workspace">
+    <MobileTopBar {...roleProps} roleLabel={isExec?'Executive':isAdmin?'Administration':isManager?'Manager':'Staff'} onNavigate={noop}/>
+    <AppTopBar {...roleProps} onNavigate={noop}/>
+    <main className={"app-content ev2s-content"+(isExec?" exec-v2":"")}>{content}</main>
+    <Tabs {...roleProps} setTab={noop}/>
+   </div>
+  </div>;
+ }
+ return <main className={screen==='reports'?'executive-app':params.get('actor')==='admin'?'office-app':undefined}>
+  <button onClick={()=>setActor({...me,id:'new-actor'})}>Switch fixture actor</button>
+  {params.get("permissiontest")==="1"&&<button onClick={()=>setActor(current=>{const permission=screen==="payroll"?"hr_private.access":"people.manage";return {...current,capabilities:current.capabilities.includes(permission)?current.capabilities.filter(value=>value!==permission):[...current.capabilities,permission]};})}>Toggle review permission</button>}
+  {content}
+ </main>;
+}
+createRoot(document.getElementById('root')).render(<Fixture/>);

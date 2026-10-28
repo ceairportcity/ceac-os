@@ -191,12 +191,12 @@ for (const viewport of [
     );
     await page.goto("/?tab=manager-reports");
 
-    const show = page.getByRole("button", { name:"Show analysis", exact:true });
+    const show = page.getByRole("button", { name:"Show charts and tables", exact:true });
     await expect(show).toBeVisible({ timeout:15000 });
     await expect(show).toHaveAttribute("aria-expanded", "false");
     await show.click();
 
-    const hide = page.getByRole("button", { name:"Hide analysis", exact:true });
+    const hide = page.getByRole("button", { name:"Hide charts and tables", exact:true });
     await expect(hide).toHaveAttribute("aria-expanded", "true");
     await expect(hide).toHaveAttribute("aria-controls", "manager-report-supporting-analysis");
     await expect(page.getByLabel("Supporting analysis")).toBeVisible();

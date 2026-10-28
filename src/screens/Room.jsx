@@ -89,7 +89,7 @@ export default function Room({
   useEffect(() => {
     const target = context?.mentionProfileId;
     const key = `${room?.id || ""}:${target || ""}`;
-    if (!me.is_exec || !room?.id || !target || contactApplied.current === key) return;
+    if (!(me.is_exec || me.is_admin) || !room?.id || !target || contactApplied.current === key) return;
     const person = participants.find(row => row.id === target);
     if (!person) return;
     // A URL is only an intent. Authorised room participants supply the name
@@ -97,7 +97,7 @@ export default function Room({
     contactApplied.current = key;
     setBody(current => current.trim() ? current : `@${person.full_name} `);
     setMentions(current => current.includes(person.id) ? current : [...current,person.id]);
-  }, [room?.id,context?.mentionProfileId,participants,me.is_exec]);
+  }, [room?.id,context?.mentionProfileId,participants,me.is_exec,me.is_admin]);
 
   useEffect(() => { loadInitialRoom(); }, [context?.kind, context?.unitId, context?.subTeamId, context?.projectId]);
   useEffect(() => {
@@ -267,11 +267,10 @@ export default function Room({
       }
 
       const uniqueIds = [...new Set(profileIds)].filter((id) => id && id !== me.id);
-      if (!uniqueIds.length) { if (current()) setParticipants([]); return; }
-
       const profileResult = await supabase.from("profiles")
         .select("id,full_name,active")
-        .in("id", uniqueIds)
+        .eq("org_id", me.org_id).neq("id",me.id)
+        .or([...(uniqueIds.length?[`id.in.(${uniqueIds.join(",")})`]:[]),"is_admin.eq.true",...(currentRoom.kind!=="project"?["is_exec.eq.true"]:[])].join(","))
         .eq("active", true);
       if (profileResult.error) throw profileResult.error;
       if (current()) setParticipants(uniqueById(profileResult.data || []));

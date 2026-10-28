@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Avatar, EmptyState, FieldGroup, LoadingState, ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer } from "../experience-v2/components";
+import { expenseAmountMinor } from "../lib/expenseAmount";
+import AdminProtectedHR from "./AdminProtectedHR";
 
 const LINE_TYPES = [
   ["transport_allowance","addition","Transport allowance"],
@@ -34,8 +36,7 @@ function dateLabel(value) {
 }
 
 function amountToMinor(value) {
-  const number = Number(String(value || "").replace(/,/g, ""));
-  return Number.isFinite(number) ? Math.round(number * 100) : 0;
+  return expenseAmountMinor(value) ?? 0;
 }
 
 function statusLabel(status) {
@@ -54,9 +55,13 @@ export default function AdminPayroll({ me }) {
   const capabilities = new Set(me.capabilities || []);
   const canPrepare = capabilities.has("payroll.prepare");
   const canApprove = capabilities.has("payroll.approve");
+  const canRecordSalary = canPrepare && capabilities.has("hr_private.access");
+  const [salarySetup,setSalarySetup] = useState(null);
   const [runs, setRuns] = useState([]);
   const [readiness, setReadiness] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  const [entrySearch,setEntrySearch] = useState("");
+  const [entryFilter,setEntryFilter] = useState("all");
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -69,6 +74,7 @@ export default function AdminPayroll({ me }) {
   const decisionWriteBusyRef = useRef(false);
   const creationWriteBusyRef = useRef(false);
   const lineWriteBusyRef = useRef(false);
+  const salaryReadGeneration = useRef(0);
   const selectedRunRef = useRef(null);
   const manualSelectionGeneration = useRef(0);
   function selectRun(id, intentional = false) {
@@ -78,13 +84,22 @@ export default function AdminPayroll({ me }) {
   }
 
   useEffect(() => {
+    salaryReadGeneration.current += 1;
+    setSheet(current=>current?.type === "salary" ? null : current);
+    setSalarySetup(null);
+  },[canRecordSalary]);
+
+  useEffect(() => { setEntrySearch(""); setEntryFilter("all"); }, [selectedId,me.id,me.org_id]);
+  useEffect(() => {
     void loadRuns();
     return () => {
       runsReadGeneration.current += 1;
       detailReadGeneration.current += 1;
+      salaryReadGeneration.current += 1;
     };
-  }, [me.id]);
+  }, [me.id,me.org_id]);
   useEffect(() => {
+    salaryReadGeneration.current += 1;
     setSheet(null);
     if (selectedId) void loadDetail(selectedId);
     else { detailReadGeneration.current += 1; setDetail(null); }
@@ -193,9 +208,33 @@ export default function AdminPayroll({ me }) {
     }
   }
 
+  async function reviewRecordedSalary(entry) {
+    const runId=selectedRunRef.current;
+    if(!canRecordSalary || !entry.employee_id || !runId || detail?.run?.status !== "draft")return;
+    const generation=++salaryReadGeneration.current;
+    setError(null);setSheet({type:"salary",runId,entry,loading:true});
+    try {
+      const response=await supabase.rpc("hr_employee_protected_summary",{p_employee_id:entry.employee_id});
+      if(generation !== salaryReadGeneration.current || selectedRunRef.current !== runId)return;
+      if(response.error)throw response.error;
+      const salary=(response.data?.compensation || []).filter(row=>row.status === "active"
+        && row.effective_on <= detail.run.period_end && (!row.ends_on || row.ends_on >= detail.run.period_start))
+        .sort((a,b)=>String(b.effective_on).localeCompare(String(a.effective_on)) || String(b.recorded_at).localeCompare(String(a.recorded_at)))[0] || null;
+      setSheet({type:"salary",runId,entry,salary,loading:false});
+    } catch {
+      if(generation === salaryReadGeneration.current && selectedRunRef.current === runId)
+        setSheet({type:"salary",runId,entry,loading:false,readError:"The protected salary could not be verified. No payroll change has been made."});
+    }
+  }
+
   async function saveLine(form) {
     const runId = detail?.run?.id;
     if (!runId || selectedRunRef.current !== runId || !form.employeeId || busy || lineWriteBusyRef.current) return;
+    const amountMinor = amountToMinor(form.amount);
+    if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
+      setError("Enter a positive amount with no more than two decimal places.");
+      return;
+    }
     lineWriteBusyRef.current = true;
     setBusy(true); setError(null); setNotice(null);
     let recorded = false;
@@ -207,7 +246,7 @@ export default function AdminPayroll({ me }) {
         p_category: form.category,
         p_direction: form.direction,
         p_label: form.label.trim(),
-        p_amount_minor: amountToMinor(form.amount),
+        p_amount_minor: amountMinor,
         p_note: form.note.trim() || null,
       });
       if (error) {
@@ -218,7 +257,7 @@ export default function AdminPayroll({ me }) {
       recorded = true;
       if (selectedRunRef.current !== runId) return;
       setSheet(null);
-      setNotice("Payroll line recorded.");
+      setNotice(form.category === "base_salary" ? "Recorded salary applied to this draft." : "Payroll line recorded.");
       await Promise.all([loadDetail(runId), loadRuns(runId)]);
     } catch (failure) {
       if (selectedRunRef.current === runId)
@@ -384,8 +423,16 @@ export default function AdminPayroll({ me }) {
   const visibleSheet = sheet?.type === "create" ? sheet
     : run && sheet?.runId === selectedId ? sheet : null;
   const flagged = useMemo(() => entries.filter((entry) => Array.isArray(entry.flags) && entry.flags.length), [entries]);
+  const visibleEntries = entries.filter(entry => (entryFilter !== "flagged" || entry.flags?.length) && String(entry.employee_name || "").toLocaleLowerCase().includes(entrySearch.trim().toLocaleLowerCase()));
 
   if (loading) return <div className="body fpg-payroll"><LoadingState label="Loading Payroll…" /></div>;
+
+  if (salarySetup && canRecordSalary) return <>
+    <div className="body"><Button variant="secondary" onClick={()=>{setSalarySetup(null);void loadRuns();if(selectedRunRef.current)void loadDetail(selectedRunRef.current);}}>Back to Payroll</Button>
+      <p className="screen-note">Protected HR is the only place to record salary and payment details. Review and apply a recorded salary to update an existing draft. Payment details are captured when a payroll run is created.</p>
+    </div>
+    <AdminProtectedHR key={`${me.org_id}:${me.id}:${salarySetup.employeeId || "all"}`} me={me} initialEmployeeId={salarySetup.employeeId || null} />
+  </>;
 
   return <div className="body fpg-payroll">
     <header className="fpg-payroll-head">
@@ -398,6 +445,7 @@ export default function AdminPayroll({ me }) {
       </div>
       <div className="fpg-payroll-head-actions">
         <span className="fpg-payroll-authority">{canPrepare ? "Administration prepares" : "Group Pastor approves"}</span>
+        {canRecordSalary && <button className="btn btn-ghost" onClick={()=>setSalarySetup({})}>Salary & payment setup</button>}
         {canPrepare && <button className="btn" onClick={() => setSheet({ type:"create" })}>Create payroll run</button>}
       </div>
     </header>
@@ -405,7 +453,8 @@ export default function AdminPayroll({ me }) {
     {error && <ProductNotice tone="error" title="Payroll">{error} {!runs.length && <button type="button" className="btn btn-ghost" onClick={() => void loadRuns()}>Retry Payroll access</button>}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Payroll">{notice}</ProductNotice>}
 
-    {readiness && <section className="fpg-payroll-table-card">
+    {readiness && <details className="fpg-payroll-table-card">
+      <summary className="fpg-payroll-table-head"><strong>Payroll setup · {readiness.employee_count || 0} salary-eligible employees</strong><small>{readiness.compensation_missing_count || 0} salary records missing · {readiness.payment_missing_count || 0} payment details missing · View setup</small></summary>
       <div className="fpg-payroll-table-head">
         <div><span>Payroll readiness</span><h3>{readiness.employee_count || 0} salary-eligible employee{readiness.employee_count === 1 ? "" : "s"}</h3></div>
         <small>{readiness.linked_count || 0} linked account{readiness.linked_count === 1 ? "" : "s"} · {readiness.roster_only_count || 0} roster only</small>
@@ -422,8 +471,14 @@ export default function AdminPayroll({ me }) {
       {(readiness.volunteer_count || 0) > 0 && <ProductNotice tone="info" title="Volunteer payroll boundary">
         {readiness.volunteer_count} active volunteer{readiness.volunteer_count === 1 ? "" : "s"} excluded from this ordinary salary-payroll population. Stipend or support does not silently convert a volunteer into a salaried employee.
       </ProductNotice>}
-    </section>}
+    </details>}
 
+    <label className="fpg-payroll-mobile-period">Payroll period
+      <select className="field" aria-label="Payroll period" value={selectedId || ""} onChange={event=>selectRun(event.target.value,true)}>
+        {!runs.length && <option value="">No payroll runs</option>}
+        {runs.map(row=><option key={row.id} value={row.id}>{row.label} · {statusLabel(row.status)}</option>)}
+      </select>
+    </label>
     <div className="fpg-payroll-layout">
       <aside className="fpg-payroll-runs" aria-label="Payroll runs">
         <div className="fpg-payroll-side-title"><span>Payroll periods</span><b>{runs.length}</b></div>
@@ -448,11 +503,10 @@ export default function AdminPayroll({ me }) {
             <span className={"fpg-payroll-status " + statusTone(run.status)}>{statusLabel(run.status)}</span>
           </section>
 
-          <section className="fpg-payroll-metrics">
+          <section className="fpg-payroll-metrics" aria-label="Recorded payroll totals">
+            <article><span>Net payroll</span><strong>{money(run.total_net_minor, run.currency)}</strong><small>{entries.length} employee entries · this run</small></article>
             <article><span>Total additions</span><strong>{money(run.total_additions_minor, run.currency)}</strong><small>Recorded employee additions</small></article>
             <article><span>Total deductions</span><strong>{money(run.total_deductions_minor, run.currency)}</strong><small>Recorded employee deductions</small></article>
-            <article><span>Net payroll</span><strong>{money(run.total_net_minor, run.currency)}</strong><small>Recorded additions minus deductions</small></article>
-            <article className={flagged.length ? "has-flags" : ""}><span>Needs review</span><strong>{flagged.length}</strong><small>Employee entries with factual flags</small></article>
           </section>
 
           <div className="fpg-payroll-actions">
@@ -463,39 +517,53 @@ export default function AdminPayroll({ me }) {
           </div>
 
           <section className="fpg-payroll-table-card">
-            <div className="fpg-payroll-table-head"><div><span>Employee payroll</span><h3>{entries.length} employee entr{entries.length === 1 ? "y" : "ies"}</h3></div><small>Protected data · {run.currency}</small></div>
-            <div className="fpg-payroll-table-wrap">
+            <div className="fpg-payroll-table-head"><div><span>Employee payroll</span><h3>{visibleEntries.length} of {entries.length} employee entries</h3></div><small>Protected data · {run.currency}</small></div>
+            <div className="fpg-payroll-actions" role="group" aria-label="Employee payroll filters">
+              <input className="field" type="search" aria-label="Find payroll employee" placeholder="Find an employee" value={entrySearch} onChange={event=>setEntrySearch(event.target.value)}/>
+              <button type="button" className="btn btn-ghost" aria-pressed={entryFilter === "all"} onClick={()=>setEntryFilter("all")}>All entries ({entries.length})</button>
+              <button type="button" className="btn btn-ghost" aria-pressed={entryFilter === "flagged"} onClick={()=>setEntryFilter("flagged")}>Needs review ({flagged.length})</button>
+            </div>
+            {visibleEntries.length === 0 && <EmptyState compact title="No matching employee entries">Change the employee search or review filter.</EmptyState>}
+            <div className="fpg-payroll-table-wrap" role="region" aria-label="Employee payroll table" tabIndex="0">
               <table className="fpg-payroll-table">
                 <thead><tr><th>Employee</th><th>Additions</th><th>Deductions</th><th>Net</th><th>Review</th><th /></tr></thead>
-                <tbody>{entries.map((entry) => <tr key={entry.id}>
+                <tbody>{visibleEntries.map((entry) => <tr key={entry.id}>
                   <td><div className="fpg-payroll-person"><Avatar name={entry.employee_name} size="sm" /><span><strong>{entry.employee_name}</strong><small>{entry.payment_detail_id ? "Payment detail recorded" : "Payment detail missing"}</small></span></div></td>
                   <td>{money(entry.additions_minor, entry.currency)}</td>
                   <td>{money(entry.deductions_minor, entry.currency)}</td>
                   <td><strong>{money(entry.net_minor, entry.currency)}</strong></td>
                   <td>{entry.flags?.length ? <span className="fpg-payroll-flags">{entry.flags.map((flag) => flag.replaceAll("_"," ")).join(" · ")}</span> : <span className="fpg-payroll-clear">Clear</span>}</td>
-                  <td>{canPrepare && run.status === "draft" ? <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"entry", runId:run.id, entry })}>Adjust</button> : <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"view", runId:run.id, entry })}>Review</button>}</td>
+                  <td>{canPrepare && run.status === "draft" ? <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"entry", runId:run.id, entry })}>Adjust</button> : <button type="button" className="fpg-payroll-row-action" onClick={() => setSheet({ type:"view", runId:run.id, entry })}>Review</button>}
+                    {canRecordSalary && entry.employee_id && run.status === "draft" && <button type="button" className="fpg-payroll-row-action" onClick={()=>void reviewRecordedSalary(entry)}>Review recorded salary</button>}
+                    {canRecordSalary && entry.employee_id && <button type="button" className="fpg-payroll-row-action" onClick={()=>setSalarySetup({employeeId:entry.employee_id})}>Salary & payment details</button>}
+                  </td>
                 </tr>)}</tbody>
               </table>
             </div>
           </section>
 
-          <ProductNotice tone="info" title="Output policy not invented">
+          <ProductNotice tone="info" title="Payment and export availability">
             Payslip distribution, payment export, statutory calculation and automatic deductions remain unavailable until CEAC confirms those policies. This screen records only authoritative Payroll data and decisions.
           </ProductNotice>
         </>}
       </main>
     </div>
 
-    {visibleSheet?.type === "create" && <CreateRunSheet busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
-    {visibleSheet?.type === "entry" && <EntrySheet entry={visibleSheet.entry} busy={busy} onClose={() => setSheet(null)} onSave={saveLine} onRemove={removeLine} />}
+    {visibleSheet?.type === "create" && <CreateRunSheet error={error} busy={busy} onClose={() => setSheet(null)} onSave={createRun} />}
+    {canRecordSalary && visibleSheet?.type === "salary" && <RecordedSalarySheet
+      entry={visibleSheet.entry} salary={visibleSheet.salary} loading={visibleSheet.loading} readError={visibleSheet.readError} error={error} busy={busy}
+      onClose={()=>{salaryReadGeneration.current += 1;setSheet(null);}}
+      onOpenProtected={()=>{salaryReadGeneration.current += 1;setSheet(null);setSalarySetup({employeeId:visibleSheet.entry.employee_id});}}
+      onApply={()=>saveLine({employeeId:visibleSheet.entry.employee_id,category:"base_salary",direction:"addition",label:"Base salary",amount:String(Number(visibleSheet.salary.amount_minor)/100),note:`Applied protected salary record ${visibleSheet.salary.id}, effective ${visibleSheet.salary.effective_on}, after review for this draft.`})} />}
+    {visibleSheet?.type === "entry" && <EntrySheet error={error} entry={visibleSheet.entry} busy={busy} onClose={() => setSheet(null)} onSave={saveLine} onRemove={removeLine} />}
     {visibleSheet?.type === "view" && <ViewEntrySheet entry={visibleSheet.entry} onClose={() => setSheet(null)} />}
-    {visibleSheet?.type === "submit" && <DecisionSheet title="Submit Payroll" action="Submit for approval" busy={busy} onClose={() => setSheet(null)} onSave={submitRun} />}
-    {visibleSheet?.type === "approve" && <DecisionSheet title="Approve Payroll" action="Approve and lock" busy={busy} onClose={() => setSheet(null)} onSave={approveRun} />}
-    {visibleSheet?.type === "correction" && <DecisionSheet title="Create correction" action="Create correction draft" busy={busy} onClose={() => setSheet(null)} onSave={createCorrection} />}
+    {visibleSheet?.type === "submit" && <DecisionSheet error={error} title="Submit Payroll" action="Submit for approval" busy={busy} onClose={() => setSheet(null)} onSave={submitRun} />}
+    {visibleSheet?.type === "approve" && <DecisionSheet error={error} title="Approve Payroll" action="Approve and lock" busy={busy} onClose={() => setSheet(null)} onSave={approveRun} />}
+    {visibleSheet?.type === "correction" && <DecisionSheet error={error} title="Create correction" action="Create correction draft" busy={busy} onClose={() => setSheet(null)} onSave={createCorrection} />}
   </div>;
 }
 
-function CreateRunSheet({ busy, onClose, onSave }) {
+function CreateRunSheet({ error, busy, onClose, onSave }) {
   const [label,setLabel]=useState("");
   const [start,setStart]=useState("");
   const [end,setEnd]=useState("");
@@ -516,6 +584,7 @@ function CreateRunSheet({ busy, onClose, onSave }) {
       </Button>
     </>}
   >
+    {error && <ProductNotice tone="error" title="Payroll was not recorded">{error}</ProductNotice>}
     <FieldGroup label="Period label"><input className="field" value={label} onChange={(event)=>setLabel(event.target.value)} placeholder="October 2026 Payroll" /></FieldGroup>
     <div className="fpg-payroll-form-grid">
       <FieldGroup label="Period start"><input className="field" type="date" value={start} onChange={(event)=>setStart(event.target.value)} /></FieldGroup>
@@ -530,7 +599,7 @@ function CreateRunSheet({ busy, onClose, onSave }) {
   </ComposerDrawer>;
 }
 
-function EntrySheet({ entry, busy, onClose, onSave, onRemove }) {
+function EntrySheet({ error, entry, busy, onClose, onSave, onRemove }) {
   const [category,setCategory]=useState("transport_allowance");
   const initial=LINE_TYPES.find(([key])=>key===category);
   const [direction,setDirection]=useState(initial?.[1] || "addition");
@@ -563,6 +632,7 @@ function EntrySheet({ entry, busy, onClose, onSave, onRemove }) {
       </Button>
     </>}
   >
+    {error && <ProductNotice tone="error" title="Payroll line was not recorded">{error}</ProductNotice>}
     <div className="fpg-payroll-entry-summary">
       <span>Additions <b>{money(entry.additions_minor,entry.currency)}</b></span>
       <span>Deductions <b>{money(entry.deductions_minor,entry.currency)}</b></span>
@@ -605,7 +675,7 @@ function ViewEntrySheet({ entry, onClose }) {
   </ComposerDrawer>;
 }
 
-function DecisionSheet({ title, action, busy, onClose, onSave }) {
+function DecisionSheet({ error, title, action, busy, onClose, onSave }) {
   const [note,setNote]=useState("");
   const valid=note.trim().length>=3;
   return <ComposerDrawer
@@ -618,7 +688,24 @@ function DecisionSheet({ title, action, busy, onClose, onSave }) {
       <Button onClick={()=>onSave(note)} busy={busy} disabled={!valid}>{action}</Button>
     </>}
   >
+    {error && <ProductNotice tone="error" title="Payroll decision was not recorded">{error}</ProductNotice>}
     <FieldGroup label="Decision note"><textarea className="field" rows="4" value={note} onChange={(event)=>setNote(event.target.value)} placeholder="Record the reason and review context" /></FieldGroup>
     <p className="screen-note">Approved Payroll is immutable. Corrections create a new attributable successor revision.</p>
+  </ComposerDrawer>;
+}
+
+
+function RecordedSalarySheet({entry,salary,loading,readError,error,busy,onClose,onApply,onOpenProtected}) {
+  const applicable=salary && salary.id && salary.amount_minor != null && salary.currency === entry.currency && Number.isSafeInteger(Number(salary.amount_minor)) && Number(salary.amount_minor)>=0;
+  return <ComposerDrawer open title="Use recorded salary" onClose={busy?undefined:onClose}
+    description={`${entry.employee_name} · This applies Protected HR's recorded salary to this draft only. The employee's salary record and approved payroll runs remain unchanged.`}
+    footer={<><Button variant="secondary" disabled={busy} onClick={onClose}>Cancel</Button><Button busy={busy} disabled={loading || Boolean(readError) || !applicable} onClick={onApply}>Apply salary to this draft</Button></>}>
+    {loading?<LoadingState label="Loading protected salary…"/>:readError?<ProductNotice tone="error" title="Salary unavailable">{readError}</ProductNotice>:salary?<>
+      <dl><dt>Recorded base salary</dt><dd>{money(salary.amount_minor,salary.currency)}</dd><dt>Basis</dt><dd>{salary.basis_label}</dd><dt>Effective date</dt><dd>{dateLabel(salary.effective_on)}</dd></dl>
+      {!applicable&&<ProductNotice tone="attention" title="Salary cannot be applied">The recorded salary must have a valid amount in {entry.currency}. Currencies are never converted automatically.</ProductNotice>}
+    </>:<ProductNotice tone="attention" title="No salary recorded for this period">Record the salary in Protected HR with an effective date covering this payroll period, then return to review it.</ProductNotice>}
+    {error&&<ProductNotice tone="error" title="Salary was not applied">{error}</ProductNotice>}
+    <Button variant="secondary" disabled={busy} onClick={onOpenProtected}>Update salary in Protected HR</Button>
+    <p className="screen-note">Review the amount before applying it. Existing allowances and deductions stay in this draft; the salary application is recorded in payroll history.</p>
   </ComposerDrawer>;
 }

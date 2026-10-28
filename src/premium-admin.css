@@ -3,7 +3,7 @@
    time & leave, finance, reporting and a contained Control Center.
 */
 .office-app .app-content>.body{max-width:1280px!important;margin:0 auto!important}
-.office-app .h1{font-size:34px!important;letter-spacing:-.045em!important}
+.office-app .h1{font-size:28px!important;letter-spacing:-.03em!important;line-height:1.15!important}
 .office-app .screen-note{max-width:760px}
 
 /* People directory + employee workspace */
@@ -16,13 +16,6 @@
 
 /* Workforce / Time & Leave */
 .office-app .workforce-page{max-width:1220px!important}
-.office-app .workforce-tabs{
-  position:sticky;top:82px;z-index:8;display:flex!important;gap:5px!important;padding:7px!important;margin:15px 0!important;
-  border:1px solid #e1e6ed!important;border-radius:13px!important;background:rgba(255,255,255,.94)!important;backdrop-filter:blur(12px);
-  box-shadow:0 7px 22px rgba(35,53,79,.04)!important;overflow:auto;
-}
-.office-app .workforce-tabs button{white-space:nowrap;border:0!important;border-radius:9px!important;background:transparent!important;color:#758498!important;font-size:12px!important;padding:9px 11px!important}
-.office-app .workforce-tabs button.on{background:#0f1723!important;color:#fff!important}
 .office-app .workforce-grid{gap:10px!important}
 .office-app .workforce-person{
   border:1px solid #e3e8ef!important;border-radius:14px!important;background:#fff!important;box-shadow:0 6px 20px rgba(35,53,79,.035)!important;
@@ -37,9 +30,9 @@
 
 @media(max-width:980px){
   .office-app .admin-command-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .office-app .workforce-tabs{top:64px}
 }
 @media(max-width:620px){
+  .office-app .h1{font-size:25px!important}
   .admin-page-header{display:block}.admin-page-header>.btn{margin-top:12px}
   .office-app .split{display:block!important}
 }
@@ -185,3 +178,7 @@
     gap: var(--ev2-space-3);
   }
 }
+/* Retained owner mockups: catalogue first, focused course preparation. */
+.office-app .owner-learning-catalogue{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr));gap:16px;margin:16px 0}.office-app .owner-learning-catalogue .learning-course-row{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:12px;overflow:hidden;padding:20px;border:1px solid var(--ev2-line,#dce5ef);border-radius:12px;background:#fff}.office-app .owner-course-cover{display:flex;align-items:center;padding:20px;width:100%;min-height:88px;background:var(--ev2-action);color:#fff;font-size:12px;letter-spacing:.06em}.office-app .owner-learning-workspace>[hidden]{display:none}.office-app .performance-review .ev2c-segmented{flex-wrap:wrap;margin:16px 0}.office-app .performance-review .ev2c-segmented-item{flex:1 1 115px;min-height:44px}
+
+.office-app .owner-course-heading h3{font-size:20px;line-height:1.4;margin:0}.office-app .owner-course-heading p{font-size:14px;line-height:1.6;color:var(--ev2-text-secondary);margin:8px 0}.office-app .owner-learning-catalogue .learning-course-row>small{font-size:13px}.office-app .learning-page>.ev2c-segmented,.office-app .admin-unit-detail>.ev2c-segmented{margin:20px 0;max-width:100%;flex-wrap:wrap}.office-app .admin-unit-overview-grid{gap:16px}.office-app .admin-unit-overview-card{border-radius:10px;padding:20px;gap:12px}.office-app .admin-unit-overview-card>span,.office-app .admin-unit-overview-card>small{font-size:12px}.office-app .admin-unit-overview-card>strong{font-size:20px}.office-app .admin-unit-detail .admin-workspace-area{padding:4px 2px 20px}

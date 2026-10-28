@@ -85,6 +85,7 @@ jobs:
     name: Level A targeted browser
     needs: build
     if: needs.build.outputs.documentation_only != 'true' && needs.build.outputs.level_b != 'true' && needs.build.outputs.scope != 'p2-edge'
+    # Match the supported OS of pinned Playwright 1.56.1; latest may roll forward.
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:

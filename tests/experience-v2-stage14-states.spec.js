@@ -175,6 +175,7 @@ test("Stage 14C destructive global sign-out requires confirmation and cancellati
   await page.goto("/?tab=account");
   await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
 
+  await page.getByRole("tab", {name:"Sessions",exact:true}).click();
   let confirmationSeen = false;
   page.once("dialog", async (dialog) => {
     confirmationSeen = true;

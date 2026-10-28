@@ -40,7 +40,7 @@ for(const width of [1440,1366,390,320])test(`approved People list/detail navigat
  }else{await page.getByRole("button",{name:"← All people"}).click();await expect(rail).toBeVisible();}
  const views=page.getByRole("tablist",{name:"People views"});
  await views.getByRole("tab",{name:"Organisation",exact:true}).click();await expect(page.getByText("Recorded unit membership and role context only. Job titles never create authority.")).toBeVisible();
- await views.getByRole("tab",{name:"Needs attention",exact:true}).click();await expect(page.getByText("Organisation exceptions",{exact:true})).toBeVisible();
+ await views.getByRole("tab",{name:"Needs attention",exact:true}).click();await expect(page.getByText("Units without a recorded head",{exact:true})).toBeVisible();
  await views.getByRole("tab",{name:/^Access(?: administration)?$/}).click();
  await expect(page.locator(".phase5-people-access")).toBeVisible();
  await views.getByRole("tab",{name:"Directory",exact:true}).click();await expect(rail).toBeVisible();

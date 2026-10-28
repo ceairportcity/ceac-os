@@ -93,6 +93,39 @@ test("browser location never retries a denied geolocation permission", async () 
   assert.equal(result.lat, undefined);
 });
 
+test("a silent high-accuracy browser request falls back and ignores its late callback", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const attempts = [];
+  let lateHigh, completeFallback;
+  const pending = getPositionOnce({ getCurrentPosition(ok, _fail, options) {
+    attempts.push(options.enableHighAccuracy);
+    if(options.enableHighAccuracy) lateHigh=ok; else completeFallback=ok;
+  }});
+  t.mock.timers.tick(6500);
+  assert.deepEqual(attempts,[true,false]);
+  lateHigh({coords:{latitude:0,longitude:0,accuracy:1},timestamp:Date.now()});
+  completeFallback({coords:{latitude:5.6037,longitude:-0.187,accuracy:850},timestamp:Date.now()});
+  const result=await pending;
+  assert.equal(result.lat,5.6037);
+  assert.equal(result.accuracy,850);
+});
+
+test("two silent browser requests end with a bounded failure rather than a stuck Start", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const attempts=[];
+  const pending=getPositionOnce({getCurrentPosition(_ok,_fail,options){attempts.push(options.enableHighAccuracy);}});
+  t.mock.timers.tick(6500);t.mock.timers.tick(6500);
+  assert.deepEqual(attempts,[true,false]);
+  assert.match((await pending).failure,/timed out/);
+});
+
+test("invalid browser coordinates are not used and fall back to a fresh real result", async () => {
+  const result=await getPositionOnce({getCurrentPosition(ok,_fail,options){
+    ok({coords:{latitude:options.enableHighAccuracy?999:5.6037,longitude:-0.187,accuracy:900},timestamp:Date.now()});
+  }});
+  assert.equal(result.lat,5.6037);assert.equal(result.accuracy,900);
+});
+
 test("pre-insert location failure allows retry while uncertain Start writes remain fail-closed", () => {
   const clock = read("../src/components/EmployeeWorkSession.jsx");
   assert.match(session, /class WorkStartPreflightError extends Error/);

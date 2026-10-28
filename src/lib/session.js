@@ -21,19 +21,19 @@ export async function openSession(orgId, userId) {
 }
 export async function startWork(orgId, userId, place, workItemId, officeLocationId = null) {
   if (place !== "office" && place !== "elsewhere") {
-    throw new Error("Choose a valid working location before starting.");
+    throw new WorkStartPreflightError("Choose a valid working location before starting.");
   }
   if (place === "elsewhere") {
     // An off-site session must reference an actual active responsibility of
     // this employee in this organisation, even if a client bypasses the picker.
-    if (!workItemId) throw new Error("Choose an assigned responsibility before starting off-site.");
+    if (!workItemId) throw new WorkStartPreflightError("Choose an assigned responsibility before starting off-site.");
     const { data: assigned, error: assignmentError } = await supabase.from("work_items")
       .select("id")
       .eq("org_id",orgId).eq("assignee_id",userId).eq("id",workItemId)
       .in("status",["not_started","in_progress","returned"])
       .limit(1).maybeSingle();
     if (assignmentError || !assigned?.id) {
-      throw new Error("That work is no longer an authorised active responsibility.");
+      throw new WorkStartPreflightError(assignmentError ? "Your active responsibility could not be verified. Reload the start options and retry. No session was started." : "That work is no longer an authorised active responsibility. Choose current work and retry. No session was started.");
     }
   }
   const pos = await getPositionOnce();
@@ -52,9 +52,9 @@ export async function startWork(orgId, userId, place, workItemId, officeLocation
       : locationQuery.eq("is_primary", true);
     const { data: location, error: locationError } =
       await locationQuery.limit(1).maybeSingle();
-    if (locationError) throw locationError;
+    if (locationError) throw new WorkStartPreflightError("Your duty location could not be verified. Reload the start options and retry. No session was started.");
     if (!location) {
-      throw new Error("Choose a CEAC-authorised office or programme location before starting work.");
+      throw new WorkStartPreflightError("Choose a CEAC-authorised office or programme location before starting work. No session was started.");
     }
     verifiedOfficeLocationId = location.id;
   }
@@ -65,6 +65,9 @@ export async function startWork(orgId, userId, place, workItemId, officeLocation
     location_accuracy_m: pos.accuracy ?? null, location_captured_at: pos.capturedAt ?? null,
     device_time: new Date().toISOString(),
   }).select("id, started_at, last_confirmed_at, place, work_item_id").single();
+  if (error?.code === "P0001" && error.message?.includes("Recorded coordinates are outside this authorised CEAC duty location")) {
+    throw new Error("Your device reports a location outside the selected venue. Check the selected venue and your device location settings.");
+  }
   if (error) throw error;
   return data;
 }

@@ -17,7 +17,11 @@ function providerLabel(meeting) {
   return "Other meeting link";
 }
 
-export default function Meeting({ me, meetingId, back, goAssign, openItem, openProject, openRoom }) {
+export default function Meeting(props) {
+  return <MeetingDetail key={`${props.me.org_id}:${props.me.id}:${props.meetingId}`} {...props} />;
+}
+
+function MeetingDetail({ me, meetingId, back, goAssign, openItem, openProject, openRoom }) {
   const [meeting, setMeeting] = useState(null);
   const [records, setRecords] = useState([]);
   const [links, setLinks] = useState([]);
@@ -70,17 +74,9 @@ export default function Meeting({ me, meetingId, back, goAssign, openItem, openP
   }
 
   const myParticipant = participants.find((row) => row.profile_id === me.id);
-  const managerUnitIds = (me.memberships || []).filter((row) => row.role === "manager").map((row) => row.unit_id);
-  const projectUnitIds = meeting?.projects
-    ? [meeting.projects.lead_unit_id, ...(meeting.projects.project_units || []).map((row) => row.unit_id)].filter(Boolean)
-    : [];
-  const managesContext = Boolean(
-    meeting && (
-      (meeting.scope === "unit" && managerUnitIds.includes(meeting.unit_id))
-      || (meeting.scope === "project" && projectUnitIds.some((id) => managerUnitIds.includes(id)))
-    )
-  );
-  const canManage = Boolean(me?.is_admin || me?.is_exec || myParticipant?.role === "organiser" || managesContext);
+  // Viewing a meeting through a leadership role does not make that person
+  // its author. The creator and explicitly recorded organisers prepare it.
+  const canManage = Boolean(meeting && (meeting.created_by === me.id || myParticipant?.role === "organiser"));
   const canContribute = Boolean(myParticipant);
   const decisions = records.filter((row) => row.kind === "decision");
   const meetingStarted = Boolean(meeting && Date.now() >= new Date(meeting.starts_at).getTime());
@@ -189,6 +185,7 @@ export default function Meeting({ me, meetingId, back, goAssign, openItem, openP
 
     {error && <div className="flag flag-brick"><h4>Could not complete that</h4>{error}</div>}
 
+    <div className="form-grid two">
     <section className="meeting-panel">
       <div className="meeting-section-head"><div><span>Before</span><h2>Agenda</h2></div><small>{meetingStarted ? "Meeting started" : "Preparation"}</small></div>
       {!meetingStarted && canManage
@@ -202,6 +199,12 @@ export default function Meeting({ me, meetingId, back, goAssign, openItem, openP
         {participants.length > 1 && <div>{participants.slice(0,8).map((participant) => <b key={participant.profile_id}>{participant.profiles?.full_name || "CEAC member"}</b>)}</div>}
       </div>}
     </section>
+    <aside className="meeting-panel" aria-label="Meeting details"><div className="meeting-section-head"><div><span>Meeting details</span><h2>{canManage?"Organiser view":"Viewer mode"}</h2></div></div>
+      <p><strong>Organiser</strong><br/>{participants.filter(row=>row.role==="organiser"||row.profile_id===meeting.created_by).map(row=>row.profiles?.full_name).filter(Boolean).join(", ")||"Name not recorded"}</p>
+      <p><strong>When</strong><br/>{whenLabel(meeting.starts_at)}</p>
+      {meeting.location&&<p><strong>Location</strong><br/>{meeting.location}</p>}
+      <p>{canManage?"You can prepare the agenda before the meeting starts.":"The organiser prepares the agenda. Your personal notes stay private."}</p>
+    </aside></div>
 
     <section className="meeting-panel">
       <div className="meeting-section-head">

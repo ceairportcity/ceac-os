@@ -4,6 +4,7 @@ import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../lib/inv
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
 import SupportTeamMemberships from "./SupportTeamMemberships";
+import SupportAccessApprovals from "./SupportAccessApprovals";
 import VolunteerActivationApprovals from "./VolunteerActivationApprovals";
 
 const ACCESS_MODES = [
@@ -24,7 +25,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const [snapshot, setSnapshot] = useState(null);
   const [snapshotScope, setSnapshotScope] = useState(null);
   const [mode, setMode] = useState("invite");
+  const [invitationFilter,setInvitationFilter]=useState("all");
   const [form, setForm] = useState({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
+  const inviteDraft = useRef(form);
+  inviteDraft.current = form;
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
   const [error, setError] = useState(null);
@@ -51,6 +55,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     setRevokeTarget(null);
     setEndMembershipTarget(null);
     setRevokeReason("");
+    setInvitationFilter("all");
     setForm({ name: "", email: "", person: "", unit: "", role: "staff", reason: "", lane: "" });
     if (canManage) void load();
     return () => { loadGeneration.current += 1; identityGeneration.current += 1; actionBusyRef.current = false; };
@@ -166,6 +171,22 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
     }
   }
 
+  async function sendInvitation() {
+    const submitted = inviteDraft.current;
+    const identity = identityGeneration.current;
+    const recorded = await action(
+      () => inviteByEmail({ email: submitted.email, fullName: submitted.name, unitId: submitted.unit }),
+      "Invitation recorded and activation email requested. Delivery has not been independently confirmed."
+    );
+    // Clear only a confirmed, unchanged create draft. A failed send, an unknown
+    // outcome, newer typing or another account must keep its current values.
+    if (recorded && identity === identityGeneration.current) {
+      setForm(current => current === submitted
+        ? { ...current, name: "", email: "", unit: "", lane: "" }
+        : current);
+    }
+  }
+
   async function saveResponsibility(operation = "add", membership = null, profileId = form.person, reason = form.reason) {
     const { error: failure } = await supabase.rpc("admin_record_unit_responsibility", {
       p_profile_id: profileId,
@@ -240,6 +261,10 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   const pendingInvitationCount = snapshot?.invitations.filter((invitation) =>
     !invitation.revoked_at && invitation.activation_state !== "verified" && invitation.activation_state !== "expired"
   ).length || 0;
+  const visibleInvitations=(snapshot?.invitations||[]).filter(invitation=>{
+    const state=invitation.revoked_at?"cancelled":invitation.activation_state==="verified"?"verified":invitation.activation_state==="expired"?"expired":"pending";
+    return invitationFilter==="all"||state===invitationFilter;
+  });
   // The roster is not proof that every account is activated, but an identical
   // email must not be invited blindly a second time.
   const { accountExists: existingAccountEmail, invitationPending: existingInvitationEmail } =
@@ -321,10 +346,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
             <Button
               busy={busy}
               disabled={busy || form.name.trim().length < 2 || !isPlausibleInvitationEmail(form.email) || !form.unit || existingAccountEmail || existingInvitationEmail}
-              onClick={() => action(
-                () => inviteByEmail({ email: form.email, fullName: form.name, unitId: form.unit }),
-                "Activation email requested. The recipient must verify their email and set a password; delivery has not been independently confirmed."
-              )}
+              onClick={sendInvitation}
             >Send Staff invitation</Button>
           </div>
         </DataPanel>}
@@ -430,7 +452,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
           </DataPanel>
         </div>}
 
-        {mode === "technical-support" && <SupportTeamMemberships me={me} people={snapshot.people} units={snapshot.units} />}
+        {mode === "technical-support" && <><SupportAccessApprovals me={me} authority="people_administration" /><SupportTeamMemberships me={me} people={snapshot.people} units={snapshot.units} /></>}
 
         {mode === "invitations" && <DataPanel
           eyebrow="Account activation"
@@ -439,8 +461,12 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
           className="phase5-access-panel"
           action={<StatusBadge tone={pendingInvitationCount ? "action" : "success"}>{pendingInvitationCount ? String(pendingInvitationCount) + " to review" : "No outstanding"}</StatusBadge>}
         >
-          {!snapshot.invitations.length ? <div className="phase5-access-empty">No invitations are recorded.</div> : <div className="phase5-invitation-list">
-            {snapshot.invitations.map((invitation) => {
+          <FieldGroup label="Invitation status"><select className="field" aria-label="Invitation status" style={{maxWidth:280}} value={invitationFilter} onChange={e=>setInvitationFilter(e.target.value)}>
+            <option value="all">All invitations</option><option value="pending">Awaiting activation</option><option value="expired">Expired</option><option value="verified">Activated</option><option value="cancelled">Cancelled</option>
+          </select></FieldGroup>
+          <p className="screen-note">{visibleInvitations.length} of {snapshot.invitations.length} invitations</p>
+          {!visibleInvitations.length ? <div className="phase5-access-empty">{snapshot.invitations.length?"No invitations match this status.":"No invitations are recorded."}</div> : <div className="phase5-invitation-list">
+            {visibleInvitations.map((invitation) => {
               const unit = snapshot.units.find((entry) => entry.id === invitation.unit_id);
               const cancellable = !invitation.revoked_at && invitation.activation_state !== "verified";
               return <article className="phase5-invitation-row" key={invitation.id}>

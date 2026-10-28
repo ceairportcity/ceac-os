@@ -31,6 +31,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
   const [edit,setEdit] = useState(false);
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState("");
+  const [writeError,setWriteError] = useState("");
   const [notice,setNotice] = useState("");
   const [busy,setBusy] = useState(false);
   const generation = useRef(0);
@@ -40,6 +41,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
   async function load(expectedVersionId = null) {
     const token = ++generation.current;
     setLoading(true);
+    setWriteError("");
     setVerifiedScope(null);
     setVersions([]);
     setDayTypes([]);
@@ -156,7 +158,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     && reason.trim().length>=8 && complete;
 
   async function save() {
-    if (writeBusy.current || !verified || !valid || (!profileId && !employeeId)) return;
+    if (writeBusy.current || writeError || !verified || !valid || (!profileId && !employeeId)) return;
     writeBusy.current=true;
     setBusy(true);
     setError("");
@@ -191,7 +193,7 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
       }
     } catch (failure) {
       if (token===generation.current)
-        setError(recorded
+        setWriteError(recorded
           ? "The schedule was recorded but its latest state could not be confirmed."
           : "The schedule outcome could not be confirmed. Check recorded history before trying again.");
     } finally {
@@ -205,7 +207,8 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
     <p className="screen-note">Schedules vary by employee and include their approved office, remote, programme and weekly rest days. Do not calculate historical leave or lateness from an unconfirmed schedule.</p>
     {loading && <p role="status">Loading the employee's schedule...</p>}
     {error && <p role="alert">{error}</p>}
-    {!loading && error && !busy && <button type="button" className="btn btn-ghost btn-sm"
+    {writeError && <p role="alert">{writeError}</p>}
+    {!loading && (error || writeError) && !busy && <button type="button" className="btn btn-ghost btn-sm"
       onClick={()=>void load()}>Reload authorised schedule</button>}
     {notice && <p role="status">{notice}</p>}
     {verified && previous && <div className="ev2p-admin-schedule-history" style={{display:"grid",gap:12,minWidth:0,marginTop:12}}>
@@ -249,34 +252,33 @@ export default function EmployeeScheduleEditor({ me, profileId, employeeId, unit
           <input className="field" type="date" value={endDate} min={startDate || undefined} onChange={(e)=>setEndDate(e.target.value)}/>
         </label>
       </div>
-      {DAYS.map(([key,label]) => {
-        const selected=dayTypes.find((entry)=>entry.id===days[key].type);
-        return <div className="form-grid two" key={key}>
-          <label>{label}
-            <select className="field" aria-label={label+" work arrangement"} value={days[key].type}
-              onChange={(e)=>change(key,"type",e.target.value)}>
-              <option value="">Choose approved day type</option>
-              {dayTypes.map((type)=><option key={type.id} value={type.id}>{type.name}</option>)}
-            </select>
-          </label>
-          <div className="form-grid two">
-            <label>Start
-              <input className="field" type="time" aria-label={label+" start"} value={days[key].start}
-                disabled={!selected?.session_expected} onChange={(e)=>change(key,"start",e.target.value)}/>
-            </label>
-            <label>End
-              <input className="field" type="time" aria-label={label+" end"} value={days[key].end}
-                disabled={!selected?.session_expected} onChange={(e)=>change(key,"end",e.target.value)}/>
-            </label>
-          </div>
-        </div>;
-      })}
+      <div style={{maxWidth:"100%",overflowX:"auto",marginBlock:16}} tabIndex={0} role="region" aria-label="Weekly schedule editor">
+        <table style={{width:"100%",minWidth:540,borderCollapse:"collapse"}}>
+          <caption style={{textAlign:"left",paddingBlock:8,fontWeight:600}}>Seven-day working week</caption>
+          <thead><tr>{["Day","Work arrangement","Start","End"].map(label=><th key={label} scope="col" style={{textAlign:"left",padding:8,borderBottom:"1px solid var(--ev2-line,var(--line))"}}>{label}</th>)}</tr></thead>
+          <tbody>{DAYS.map(([key,label]) => {
+            const selected=dayTypes.find(entry=>entry.id===days[key].type);
+            return <tr key={key}>
+              <th scope="row" style={{textAlign:"left",padding:8,fontWeight:500}}>{label}</th>
+              <td style={{padding:6}}><select className="field" aria-label={label+" work arrangement"} value={days[key].type}
+                onChange={e=>change(key,"type",e.target.value)}>
+                <option value="">Choose approved day type</option>
+                {dayTypes.map(type=><option key={type.id} value={type.id}>{type.name}</option>)}
+              </select></td>
+              <td style={{padding:6}}><input className="field" type="time" aria-label={label+" start"} value={days[key].start}
+                disabled={!selected?.session_expected} onChange={e=>change(key,"start",e.target.value)}/></td>
+              <td style={{padding:6}}><input className="field" type="time" aria-label={label+" end"} value={days[key].end}
+                disabled={!selected?.session_expected} onChange={e=>change(key,"end",e.target.value)}/></td>
+            </tr>;
+          })}</tbody>
+        </table>
+      </div>
       <label>HR reason and individual agreement
         <textarea className="field" rows={3} aria-label="HR schedule reason"
           value={reason} onChange={(e)=>setReason(e.target.value)} />
       </label>
       <div className="workforce-setup-actions">
-        <button type="button" className="btn" disabled={busy || !valid} onClick={save}>{busy ? "Recording..." : "Record HR-authorised schedule"}</button>
+        <button type="button" className="btn" disabled={busy || Boolean(writeError) || !valid} onClick={save}>{busy ? "Recording..." : "Record HR-authorised schedule"}</button>
         <button type="button" className="btn btn-ghost" disabled={busy} onClick={()=>setEdit(false)}>Cancel</button>
       </div>
     </div>}

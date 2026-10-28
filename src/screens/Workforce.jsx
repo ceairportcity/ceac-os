@@ -16,7 +16,7 @@ import { isValidPolicyAmount } from "../lib/workforcePolicyNumbers";
 import { Avatar, EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { isMissingAnnualLeaveStageSchema } from "../lib/stage1SchemaCompatibility";
-import { Button, SelectField } from "../experience-v2/components";
+import { Button, ComposerDrawer, SelectField } from "../experience-v2/components";
 import {
   WorkforceDecisionRow,
   WorkforceEmpty,
@@ -48,7 +48,7 @@ function metresBetween(aLat,aLng,bLat,bLng){
   return Math.round(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)));
 }
 
-export default function Workforce({ me }) {
+export default function Workforce({ me, initialLeaveRequestId = null, initialSection = null }) {
   const caps=me.capabilities||[];
   const canManage=caps.includes("workforce.manage");
   const canCorrect=caps.includes("attendance.correct");
@@ -56,7 +56,8 @@ export default function Workforce({ me }) {
   const isStaffView=!me.is_admin && !me.is_exec && !isManager;
   const isManagerView=!me.is_admin && !me.is_exec && isManager;
   const isAdminView=Boolean(me.is_admin);
-  const [tab,setTab]=useState("today");
+  const [tab,setTab]=useState(initialLeaveRequestId ? "leave" : me.is_admin&&canManage&&initialSection==="setup" ? "setup" : "today");
+  useEffect(() => { if (initialLeaveRequestId) setTab("leave"); else if(me.is_admin&&canManage&&initialSection==="setup")setTab("setup"); }, [initialLeaveRequestId,initialSection,me.is_admin,canManage]);
   const [people,setPeople]=useState([]);
   const [sessions,setSessions]=useState([]);
   const [lastActivity,setLastActivity]=useState([]);
@@ -102,6 +103,8 @@ export default function Workforce({ me }) {
   const splitWriteBusy = useRef(false);
   const [myLeaveSummary,setMyLeaveSummary]=useState(null);
   const [policySheet,setPolicySheet]=useState(false);
+  const adminFormError=useRef(null);
+  useEffect(()=>{if(isAdminView&&error&&(dayTypeSheet||scheduleSheet||policySheet))adminFormError.current?.focus();},[isAdminView,error,dayTypeSheet,scheduleSheet,policySheet]);
   const [policyName,setPolicyName]=useState("");
   const [policyFrom,setPolicyFrom]=useState(isoDay(new Date()));
   const [policySource,setPolicySource]=useState("");
@@ -266,6 +269,7 @@ export default function Workforce({ me }) {
   }
 
   function beginDayType(){
+    setError(null);
     setDayTypeName(""); setDayTypeDescription(""); setDayTypeExpected(true);
     setDayTypeSheet(true);
   }
@@ -438,7 +442,7 @@ export default function Workforce({ me }) {
   const flaggedSessions=sessions.map((session)=>({session,differences:recordedDifferences(session)})).filter((row)=>row.differences.length);
   const staffTabs=[["today","Today"],["calendar","My week"],["leave","Leave"],["sessions","Sessions"],["differences","Recorded differences"],["corrections","Corrections"]];
   const managerTabs=[["today","Today"],["leave","Leave"],["calendar","Calendar"],["sessions","Sessions"],["differences","Recorded differences"],["corrections","Corrections"],...(canManage?[["setup","Schedules & policy"]]:[])];
-  const adminTabs=[["today","Today"],["calendar","Calendar"],["sessions","Sessions"],["differences","Recorded differences"],["leave","Leave"],["corrections","Corrections"],...(canManage?[["setup","Schedules & policy"]]:[])];
+  const adminTabs=[["today","Overview"],["leave","Leave requests"],["sessions","Work sessions"],...(canManage?[["setup","Schedules & policy"]]:[]),["calendar","Calendar"],["differences","Recorded differences"],["corrections","Corrections"]];
   const tabs=isStaffView?staffTabs:isManagerView?managerTabs:adminTabs;
 
   const locationPanel=<Suspense fallback={<LoadingState label="Loading attendance evidence…"/>}><AttendanceEvidence me={me}/></Suspense>;
@@ -941,9 +945,11 @@ export default function Workforce({ me }) {
         note={route==="manager_then_admin"
           ?leaveStageLabel(l,route)
           :route?"Policy route: "+human(route):"No confirmed route for this leave kind"}
-        statusLabel={human(l.status)}
+        statusLabel={l.status==="escalated"?"HR decision needed":l.status==="pending"?"Awaiting approval":human(l.status)}
         statusTone={l.status==="escalated"?"amber":"blue"}
       >
+        <p className="screen-note">Request reason: {l.reason?.trim() || "No reason recorded."}</p>
+        {l.decision_note&&<p className="screen-note">Recorded decision: {l.decision_note}</p>}
         {l.status==="pending"&&route==="admin"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
         {l.status==="escalated"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
         {canManage&&((route==="manager_then_admin"&&l.status==="escalated")||(route!=="manager_then_admin"&&["pending","escalated"].includes(l.status)))&&<Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>}
@@ -953,34 +959,35 @@ export default function Workforce({ me }) {
     return <div className="body ev2-workforce-page ev2-workforce-admin workforce-page">
       <WorkforcePageHeader
         eyebrow="Organisation time & leave"
-        title="Workforce"
-        description="Organisation-wide schedule, recorded-session, leave and attributable correction context. “No session recorded” is descriptive context only and is never an automatic absence finding or performance judgement."
-        statusLabel={people.length+" people visible"}
+        title="Time & Leave"
+        action={<Button size="compact" onClick={()=>setTab("leave")}>Review requests · {datasetErrors.leave?"Unavailable":waitingLeave.length}</Button>}
+        description="See availability, review requests and inspect recorded work sessions."
+        statusLabel={datasetErrors.people?"Employment records unavailable":people.length+" active employment accounts"}
         statusTone="neutral"
       />
 
-      {error&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
+      {error&&!dayTypeSheet&&!scheduleSheet&&!policySheet&&<ProductNotice tone="error" title="Workforce">{error}<Button variant="secondary" size="compact" disabled={busy||loading} onClick={()=>void load()}>Retry Workforce data</Button></ProductNotice>}
       {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
-
-      {["today","calendar","leave"].includes(tab)?<TimeLeavePlanner rows={leave} scope="Organisation" unavailable={Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>:null}
 
       <WorkforceTabs items={tabs} value={tab} onChange={setTab} ariaLabel="Administration workforce sections"/>
 
-      <details className="timeleave-policy"><summary>Leave policy &amp; balances{!canManage&&myLeaveSummary?<span> · Annual: {myLeaveSummary.balance_available?myLeaveSummary.available_days:"unavailable"} days · Sick/study: {myLeaveSummary.shared_other?.balance_available?myLeaveSummary.shared_other.available_days:"unavailable"} days</span>:null}</summary>{confirmedLeaveSummary}</details>
+      {tab==="leave"&&<TimeLeavePlanner compact rows={leave} scope="Organisation" initialRequestId={initialLeaveRequestId} unavailable={Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow} onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}/>}
+
+
 
       {!activePolicy&&<ProductNotice tone="info" title="Secondary leave quantities not configured">The confirmed Annual rule is available independently of the incomplete secondary leave quantities. CEAC OS will not invent Sick, Maternity, Paternity or Study entitlement values.</ProductNotice>}
 
       {tab==="today"&&<>
-        {locationPanel}
-        <WorkforceSection title="Administration actions" description="Leave items requiring a recorded decision are presented before organisation context. Existing policy routes and server authority remain decisive." meta={waitingLeave.length+" waiting"}>
-          {waitingLeave.map(adminLeaveRow)}
-          {!waitingLeave.length&&<WorkforceEmpty compact title="No leave requests are waiting" description="New requests will appear here with their recorded route and history."/>}
-        </WorkforceSection>
-
-        <WorkforceSection title="Today · evidence needing review"
-          description="A compact queue for account-linked employees: unconfigured schedules, missing or unavailable session evidence, recorded starts and approved leave remain distinct. No attendance finding is automatic."
-          meta={people.length+" linked people"}>
-          <WorkforceTodayReviewList me={me} date={today}
+        <WorkforceTodayReviewList overview me={me} date={today}
+          requestsToReview={datasetErrors.leave?null:waitingLeave.length}
+          approvedToday={datasetErrors.leave?null:leave.filter(row=>row.status==="approved"&&row.start_date<=today&&row.end_date>=today).length}
+          renderPlanner={({scheduleAttention})=><TimeLeavePlanner compact rows={leave} scope="Organisation"
+            unavailable={Boolean(datasetErrors.leave)} renderDecision={adminLeaveRow}
+            onOpenLeave={()=>setTab("leave")} onOpenSessions={()=>setTab("sessions")}>
+            <section className="timeleave-readiness"><h3>Schedule readiness</h3><p>{scheduleAttention} active employee schedule{scheduleAttention===1?" needs":"s need"} attention for today.</p>
+              {canManage&&<Button variant="quiet" size="compact" onClick={()=>setTab("setup")}>Review schedules</Button>}
+            </section>
+          </TimeLeavePlanner>}
           schedules={schedules} dayTypes={dayTypes}
           sourceUnavailable={["people","sessions","schedules","day types","leave"].some(name=>Boolean(datasetErrors[name]))}
           rows={people.map(row=>{
@@ -1009,7 +1016,8 @@ export default function Workforce({ me }) {
           onSchedule={canManage?(employeeId)=>{setScheduleEmployeeFocus(employeeId);setTab("setup");}:null}
           onSessions={(profileId)=>{setSessionProfileFocus(profileId);setTab("sessions");}}
           />
-        </WorkforceSection>
+      <details className="timeleave-policy"><summary>Leave policy &amp; balances{!canManage&&myLeaveSummary?<span> · Annual: {myLeaveSummary.balance_available?myLeaveSummary.available_days:"unavailable"} days · Sick/study: {myLeaveSummary.shared_other?.balance_available?myLeaveSummary.shared_other.available_days:"unavailable"} days</span>:null}</summary>{confirmedLeaveSummary}</details>
+        <details className="timeleave-policy"><summary>Location evidence &amp; attendance notices</summary>{locationPanel}</details>
       </>}
 
       {tab==="calendar"&&<>
@@ -1197,7 +1205,7 @@ export default function Workforce({ me }) {
         <div className="ev2wf-toolbar">
           <Button variant="secondary" onClick={beginDayType}>Add day type</Button>
           <p className="screen-note">Choose an employee above to review all seven days, change a weekday and confirm an effective-dated successor. Historical one-day schedule records remain preserved; new changes use the unified editor.</p>
-          <Button onClick={()=>setPolicySheet(true)}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
+          <Button onClick={()=>{setError(null);setPolicySheet(true);}}>{activePolicy?"Create policy revision":"Configure leave policy"}</Button>
         </div>
         <details className="ev2wf-admin-advanced" style={{margin:"12px 0"}}><summary>Duty-location check-in codes</summary><AttendanceCodeIssuer me={me} /></details>
         <WorkforceSection title="Day types" description="Organisation schedule vocabulary remains explicit and attributable." meta={dayTypes.length+" active"}>
@@ -1219,29 +1227,28 @@ export default function Workforce({ me }) {
 
       <WorkforceFootnote>Administration Workforce is an evidence and workflow console. It does not rank people, score attendance, infer absence from missing sessions or treat recorded activity as payroll time.</WorkforceFootnote>
 
-      {dayTypeSheet&&canManage&&<Sheet onClose={()=>!busy&&setDayTypeSheet(false)}>
-        <div className="h2">Add workforce day type</div>
+      {dayTypeSheet&&canManage&&<ComposerDrawer open title="Add workforce day type" onClose={()=>!busy&&setDayTypeSheet(false)}>
+        {error&&<div ref={adminFormError} tabIndex={-1}><ProductNotice tone="error" title="Day type not recorded">{error}</ProductNotice></div>}
         <FieldGroup label="Name"><input className="field" aria-label="Day type name" value={dayTypeName} onChange={e=>setDayTypeName(e.target.value)}/></FieldGroup>
         <FieldGroup label="Description"><textarea className="field" aria-label="Day type description" rows="2" value={dayTypeDescription} onChange={e=>setDayTypeDescription(e.target.value)}/></FieldGroup>
         <label className="check-row"><input type="checkbox" checked={dayTypeExpected} onChange={e=>setDayTypeExpected(e.target.checked)}/><span>A work session is ordinarily expected on this day type</span></label>
         <button className="btn" style={{marginTop:14}} disabled={busy||dayTypeName.trim().length<2} onClick={recordDayType}>Record day type</button>
-      </Sheet>}
+      </ComposerDrawer>}
 
-      {scheduleSheet&&canManage&&<Sheet onClose={()=>!busy&&setScheduleSheet(false)}>
-        <div className="h2">Record workforce schedule</div><p className="screen-note">Hours apply to the selected weekday only. Leave both clocks blank to record hours as unconfigured.</p>
+      {scheduleSheet&&canManage&&<ComposerDrawer open title="Record workforce schedule" description="Hours apply to the selected weekday only. Leave both clocks blank to record hours as unconfigured." onClose={()=>!busy&&setScheduleSheet(false)}>
+        {error&&<div ref={adminFormError} tabIndex={-1}><ProductNotice tone="error" title="Schedule not recorded">{error}</ProductNotice></div>}
         <FieldGroup label="Person"><select className="field" aria-label="Schedule person" value={schedulePerson} onChange={e=>setSchedulePerson(e.target.value)}>{people.map(p=><option key={p.profile_id} value={p.profile_id}>{p.profiles?.full_name}</option>)}</select></FieldGroup>
         <div className="form-grid two"><FieldGroup label="Day"><select className="field" aria-label="Schedule weekday" value={scheduleDay} onChange={e=>setScheduleDay(e.target.value)}>{DAY_KEYS.map(k=><option key={k} value={k}>{DAY_LABELS[k]}</option>)}</select></FieldGroup><FieldGroup label="Day type"><select className="field" aria-label="Schedule day type" value={scheduleDayType} onChange={e=>setScheduleDayType(e.target.value)}>{dayTypes.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></FieldGroup></div>
         <div className="form-grid two"><FieldGroup label="Effective from"><input className="field" type="date" value={scheduleFrom} onChange={e=>setScheduleFrom(e.target.value)}/></FieldGroup><FieldGroup label="Effective to"><input className="field" type="date" value={scheduleTo} onChange={e=>setScheduleTo(e.target.value)}/></FieldGroup></div>
         <div className="form-grid two"><FieldGroup label="Expected start"><input className="field" type="time" value={scheduleStart} onChange={e=>setScheduleStart(e.target.value)}/></FieldGroup><FieldGroup label="Expected end"><input className="field" type="time" value={scheduleEnd} onChange={e=>setScheduleEnd(e.target.value)}/></FieldGroup></div>
         <FieldGroup label="Reason"><textarea className="field" aria-label="Schedule reason" rows="2" value={scheduleReason} onChange={e=>setScheduleReason(e.target.value)}/></FieldGroup>
         <button className="btn" style={{marginTop:14}} disabled={busy||!schedulePerson||!scheduleDayType||scheduleReason.trim().length<3} onClick={recordSchedule}>Record schedule</button>
-      </Sheet>}
+      </ComposerDrawer>}
 
 
 
-      {policySheet&&canManage&&<Sheet onClose={()=>!busy&&setPolicySheet(false)}>
-        <div className="h2">{activePolicy?"Create leave policy revision":"Configure confirmed leave policy"}</div>
-        <p className="screen-note">Enter only CEAC-confirmed values. Activating this version makes it the organisation policy record.</p>
+      {policySheet&&canManage&&<ComposerDrawer open title={activePolicy?"Create leave policy revision":"Configure confirmed leave policy"} description="Enter only CEAC-confirmed values. Activating this version makes it the organisation policy record." onClose={()=>!busy&&setPolicySheet(false)}>
+        {error&&<div ref={adminFormError} tabIndex={-1}><ProductNotice tone="error" title="Leave policy not recorded">{error}</ProductNotice></div>}
         <FieldGroup label="Policy name"><input className="field" aria-label="Policy name" value={policyName} onChange={e=>setPolicyName(e.target.value)}/></FieldGroup>
         <FieldGroup label="Effective from"><input className="field" type="date" value={policyFrom} onChange={e=>setPolicyFrom(e.target.value)}/></FieldGroup>
         <FieldGroup label="Source reference"><input className="field" aria-label="Policy source reference" value={policySource} onChange={e=>setPolicySource(e.target.value)} placeholder="Document, approval or reference"/></FieldGroup>
@@ -1254,7 +1261,7 @@ export default function Workforce({ me }) {
         <FieldGroup label="Reason for this policy version"><textarea className="field" aria-label="Policy reason" rows="2" value={policyReason} onChange={e=>setPolicyReason(e.target.value)}/></FieldGroup>
         {!policyReady&&<div className="card small">Activation stays disabled until entitlement, unit, accrual method, carry-over method, approval route and any conditional rate/limit are explicitly configured. Nothing is inferred.</div>}
         <button className="btn" style={{marginTop:14}} disabled={busy||!policyReady} onClick={recordPolicy}>Activate confirmed policy</button>
-      </Sheet>}
+      </ComposerDrawer>}
     </div>;
   }
 
