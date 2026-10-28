@@ -1490,7 +1490,7 @@ test("Stage 8 Learning publishes structured learning and preserves factual compl
     const { context, page } = await openAs(browser, "admin@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Learning");
     await expect(page.getByRole("heading", { name: "Learning", exact: true })).toBeVisible();
-    await expect(page.getByText(/does not turn learning activity into a skill, performance or potential score/i)).toBeVisible();
+    await expect(page.getByText("Build useful learning programmes. Help people find their next step.",{exact:true})).toBeVisible();
 
     await page.getByRole("button", { name: "Create course", exact: true }).click();
     let dialog = page.getByRole("dialog");

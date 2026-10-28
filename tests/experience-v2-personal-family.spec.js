@@ -589,7 +589,9 @@ test("OCR5F Administration system surfaces use shared Queue Record Settings and 
 
   expect(workflows).toContain("SegmentedControl");
   expect(workflows).toContain('title="Waiting for a decision"');
-  expect(workflows).toContain('title="Check"');
+  expect(workflows).toContain('eyebrow="Selected request"');
+  expect(workflows).toContain("WorkflowChangeContext");
+  expect(workflows).toContain("contextVerified !== selectedStep.id");
   expect(workflows).not.toContain('import { QueueRow, byOldest } from "../components/primitives"');
 
   expect(authority).toContain("RecordRow");
@@ -640,8 +642,9 @@ test("Stage 10 Family H4 keeps Units evidence-backed and Administration-owned", 
   expect(units).toContain("Session and leave facts are context only. They do not measure output.");
   expect(units).toContain("Currencies remain separate; CEAC OS does not invent exchange rates.");
   expect(units).toContain("Administration can inspect the record but does not enter the Manager’s review queue.");
-  expect(units).toContain("Unit Head needed");
-  expect(units).toContain("StatusBadge");
+  expect(units).toContain("Unit Head not assigned");
+  expect(units).toContain("Table");
+  expect(units).toContain('aria-label="Organisation units register"');
 });
 
 
