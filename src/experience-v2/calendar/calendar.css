@@ -1005,11 +1005,14 @@ button.ev2cal-event:hover {
 
 .phase6-private-task-compose {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 7.5rem auto;
+  align-items:end;
+  grid-template-columns: minmax(0, 1fr) 7.5rem;
   gap: var(--ev2-space-2);
   margin-top: var(--ev2-space-3);
 }
 
+.phase6-private-task-compose h4,.phase6-private-task-compose .phase6-private-task-actions{grid-column:1/-1;margin:0}
+.phase6-private-task-compose label{min-width:0}
 .phase6-private-task-compose .field,
 .phase6-private-task-compose .ev2c-button {
   min-height: var(--ev2-control-min);

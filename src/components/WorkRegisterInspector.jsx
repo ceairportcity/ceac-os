@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import WorkActivityDiary from "./WorkActivityDiary";
 import WorkProjectLink from "./WorkProjectLink";
+import WorkDetailsEditor from "./WorkDetailsEditor";
 import "./WorkRegisterInspector.css";
 
 /** Approved Work register's selected-responsibility inspector.
@@ -23,7 +24,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
     if (!selectedId) { setLoading(false); setCompletedWorkScope(workScope); return () => { current = false; }; }
     setLoading(true);
     supabase.from("work_items")
-      .select("id,org_id,unit_id,project_id,objective_id,phase_id,assignee_id,origin,visibility,confidential,title,ref,kind,status,purpose,expected_outcome,due_at,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
+      .select("id,org_id,unit_id,project_id,objective_id,phase_id,assignee_id,assigned_by,last_movement_at,instructions,origin,visibility,confidential,title,ref,kind,status,purpose,expected_outcome,due_at,projects(name),profiles!work_items_assignee_id_fkey(full_name)")
       .eq("id",selectedId).eq("org_id",me.org_id).single()
       .then(({data,error:readError}) => {
         if (!current) return;
@@ -54,6 +55,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       <WorkActivityDiary me={me} item={work} compact key={`${me.id}:${work.id}`} />
       <WorkProjectLink me={me} item={work} key={`${me.id}:${work.id}`} onLinked={() => setReload(n=>n+1)} />
       <details className="s2-work-inspector-details"><summary>Responsibility details</summary>
+      <WorkDetailsEditor key={`${me.id}:${work.id}:${work.last_movement_at}`} me={me} item={work} onSaved={() => setReload(n=>n+1)} />
       <dl className="s2-work-inspector-facts">
         <div><dt>Person responsible</dt><dd>{work.assignee_id === me.id ? "You" : work.profiles?.full_name || "Authorised person"}</dd></div>
         <div><dt>Origin</dt><dd>{work.origin === "self_created" ? "Self-created" : "Assigned"}</dd></div>
@@ -64,7 +66,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       </section>}
       </details>
       <button className="btn btn-ghost" type="button" onClick={() => openItem?.(work.id)}>
-        Open complete work record →
+        Open full work record →
       </button>
       <footer><strong>Evidence & outcomes</strong> stay linked to the person and project.</footer>
     </>}

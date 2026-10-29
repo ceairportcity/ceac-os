@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import SupportAccessApprovals from "../components/SupportAccessApprovals";
-import { HELP_CATEGORIES, supportCategoryLabel, supportUnavailableMessage } from "../lib/technicalSupport";
+import { HELP_CATEGORIES, SERVICE_NAMES, supportCategoryLabel, supportUnavailableMessage } from "../lib/technicalSupport";
 import "../role-styles/technical-support.css";
 
 const formatDate = (date) => date ? new Date(date).toLocaleDateString("en-GB", {
@@ -21,7 +21,10 @@ export default function TechnicalHelp({ me }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [category, setCategory] = useState(HELP_CATEGORIES[0].id);
+  const [showApprovals,setShowApprovals]=useState(false);
+  const [category, setCategory] = useState("");
+  const [impact,setImpact]=useState("normal");
+  const [department,setDepartment]=useState(me.unit_id || "");
   const [summary, setSummary] = useState("");
   const [description, setDescription] = useState("");
   const [service, setService] = useState("");
@@ -30,7 +33,7 @@ export default function TechnicalHelp({ me }) {
   const scopedLoading = loading || loadedScope !== currentScope;
 
   useEffect(() => {
-    setCategory(HELP_CATEGORIES[0].id);
+    setCategory("");setImpact("normal");setDepartment(me.unit_id || "");
     setSummary(""); setDescription(""); setService("");
     setError(null); setSuccess(null); setBusy(false);
     submitBusyRef.current = false;
@@ -68,6 +71,9 @@ export default function TechnicalHelp({ me }) {
     const generation = readGeneration.current;
     const title = summary.trim();
     const details = description.trim();
+    if(!HELP_CATEGORIES.some(item=>item.id===category)){
+      setError("Choose the type of help you need.");return;
+    }
     if (title.length < 8 || details.length < 12) {
       setError("Add a short summary and explain what is happening before sending.");
       return;
@@ -84,7 +90,8 @@ export default function TechnicalHelp({ me }) {
         id: requestId,
         org_id: me.org_id, reported_by: me.id, affected_profile_id: me.id,
         category, summary: title, description: details,
-        affected_service: service.trim() || null, impact: "normal", state: "open",
+        affected_unit_id:(me.memberships || []).some(item=>item.unit_id===department)?department:null,
+        affected_service: service.trim() || null, impact, state: "open",
       });
       if (failure) throw failure;
       if (generation !== readGeneration.current) return;
@@ -94,7 +101,7 @@ export default function TechnicalHelp({ me }) {
       if (generation !== readGeneration.current) return;
       // The insert has succeeded. A failed follow-up read must not tell the
       // reporter to submit again: that could create a second support case.
-      setSummary(""); setDescription(""); setService("");
+      setSummary(""); setDescription(""); setService("");setCategory("");setImpact("normal");
       if (readFailure || !data) {
         setSuccess("Your request was recorded, but its reference could not be loaded. Refresh your requests to see the saved case. Do not submit it again.");
         setReloadCount((previous) => previous + 1);
@@ -122,29 +129,38 @@ export default function TechnicalHelp({ me }) {
       <h1>Get technical help</h1>
       <p>Tell Technical Support what is preventing you from working. Do not include passwords, verification codes, financial records or confidential employee information.</p>
     </header>
-    {(me.memberships || []).some(membership=>membership.role === "manager") && <SupportAccessApprovals me={me} authority="unit_manager" />}
     <div className="ceac-support-layout">
       <section className="ceac-support-main" aria-labelledby="support-new-request">
         <h2 id="support-new-request">Describe the problem</h2>
+        <p className="screen-note">Reported by <strong>{me.full_name || "Your signed-in account"}</strong>. Your identity is attached automatically.</p>
         <form className="ceac-support-form" onSubmit={submit}>
+          <label>Department
+            <select value={department} onChange={event=>setDepartment(event.target.value)} disabled={requestUnavailable || busy}>
+              <option value="">No department selected</option>
+              {(me.memberships || []).map(item=><option key={item.unit_id} value={item.unit_id}>{item.unit_name || (item.unit_id===me.unit_id?me.unit_name:null) || "Your department"}</option>)}
+            </select>
+          </label>
           <label>What do you need help with?
-            <select value={category} onChange={(event) => setCategory(event.target.value)} disabled={requestUnavailable} required>
+            <select value={category} onChange={(event) => setCategory(event.target.value)} disabled={requestUnavailable || busy} required>
+              <option value="">Choose request type</option>
               {HELP_CATEGORIES.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}
             </select>
           </label>
           <label>Short summary
             <input value={summary} onChange={(event) => setSummary(event.target.value)}
-              disabled={requestUnavailable} maxLength={160} minLength={8} placeholder="What is preventing you from working?" required />
+              disabled={requestUnavailable || busy} maxLength={160} minLength={8} placeholder="What is preventing you from working?" required />
           </label>
           <label>What happened?
             <textarea value={description} onChange={(event) => setDescription(event.target.value)}
-              disabled={requestUnavailable} maxLength={3000} minLength={12} rows={5}
+              disabled={requestUnavailable || busy} maxLength={3000} minLength={12} rows={5}
               placeholder="Describe the steps and the error you saw. Leave out confidential content." required />
           </label>
           <label>Affected CEAC feature (optional)
             <input value={service} onChange={(event) => setService(event.target.value)}
-              disabled={requestUnavailable} maxLength={120} placeholder="For example, invitations or file uploads" />
+              list="support-services" disabled={requestUnavailable || busy} maxLength={120} placeholder="For example, invitations or file uploads" />
+            <datalist id="support-services">{SERVICE_NAMES.map(name=><option key={name} value={name}/>)}</datalist>
           </label>
+          <label>Effect on your work<select value={impact} onChange={event=>setImpact(event.target.value)} disabled={requestUnavailable || busy}><option value="normal">I can continue working</option><option value="work_blocked">I cannot continue working</option></select></label>
           {error && <p className="ceac-support-error" role="alert">{error}</p>}
           {success && <p className="ceac-support-success" role="status">{success}</p>}
           <button className="btn" type="submit" disabled={busy || requestUnavailable}>{busy ? "Recording request..." : "Send help request"}</button>
@@ -190,5 +206,6 @@ export default function TechnicalHelp({ me }) {
         </section>}
       </aside>
     </div>
+    {(me.memberships || []).some(membership=>membership.role === "manager") && <details onToggle={event=>setShowApprovals(event.currentTarget.open)}><summary>Access decisions assigned to you</summary>{showApprovals&&<SupportAccessApprovals me={me} authority="unit_manager" />}</details>}
   </main>;
 }

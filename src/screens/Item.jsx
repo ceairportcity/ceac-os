@@ -9,6 +9,7 @@ import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
 import WorkActivityDiary from "../components/WorkActivityDiary";
 import WorkProjectLink from "../components/WorkProjectLink";
+import WorkDetailsEditor from "../components/WorkDetailsEditor";
 import RoutineDateProgress from "../components/RoutineDateProgress";
 import RoutineOccurrenceReviews from "../components/RoutineOccurrenceReviews";
 import { routineFutureChange, routineOccurrenceDetails } from "../lib/routineWriteValidation";
@@ -549,6 +550,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         onBack={back}
       />
       <WorkProjectLink key={`${me.id}:${item.id}:${item.project_id || "unlinked"}`} me={me} item={item} onLinked={load} />
+      <WorkDetailsEditor key={`${me.id}:${item.id}:${item.last_movement_at}`} me={me} item={item} onSaved={load} />
 
       {openRoom && (item.project_id || item.sub_team_id || item.unit_id) && <button className="work-room-entry" onClick={() => openRoom({
         ...(item.project_id
@@ -788,7 +790,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
       </>}
 
       {item.assignee_id === me.id && !["routine", "case", "request", "decision"].includes(item.kind) && !(["in_review", "completed", "self_certified"].includes(item.status)) && (<>
-        <button className="btn work-primary-action" style={{ marginTop: 20 }} onClick={() => setSheet("submit")}
+        <button className="btn btn-sm work-primary-action" style={{ marginTop: 20, width:"fit-content" }} onClick={() => setSheet("submit")}
           disabled={managerSubmissionBlocked || (checks.length > 0 && !allDone)}>
           {item.kind === "deliverable"
             ? (managerOwnWork ? "Finish deliverable" : "Send deliverable for review")
@@ -797,7 +799,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         {managerSubmissionBlocked && <div className="hint">Manager self-certification is waiting on the database migration. This work will not enter your review queue.</div>}
         {!gated && checks.length > 0 && !allDone && <div className="hint">Finish the checklist to send it in</div>}
         {!blocker && (
-          <button className="btn btn-ghost work-secondary-action" style={{ marginTop: 10 }} onClick={() => setSheet("waiting")}>
+          <button className="btn btn-ghost btn-sm work-secondary-action" style={{ marginTop: 10, width:"fit-content" }} onClick={() => setSheet("waiting")}>
             I am waiting on someone</button>)}
       </>)}
 

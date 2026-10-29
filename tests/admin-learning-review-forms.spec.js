@@ -53,7 +53,7 @@ for (const width of [390, 1440]) {
     await page.getByRole('button',{name:/Draft orientation.*modules/}).click();
     await page.getByRole('button',{name:'Review & publish',exact:true}).click();
     await expect(page.getByRole('button', { name: 'Publish course', exact: true })).toBeDisabled();
-    await expect(page.getByText('Add a resource to every module', { exact: true })).toBeVisible();
+    await expect(page.getByText('Add a resource to every module.', { exact: true })).toBeVisible();
     await page.getByRole('button',{name:'Back to course catalogue',exact:true}).click();
     await page.getByRole('button', { name: 'Create course', exact: true }).click();
     let dialog = page.getByRole('dialog', { name: 'Create a draft course', exact: true });

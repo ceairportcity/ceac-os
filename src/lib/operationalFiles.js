@@ -24,9 +24,11 @@ export function validateOperationalFile(file) {
   return file;
 }
 
-export async function uploadOperationalFile({ file, contextType, contextId, relation }) {
+export async function uploadOperationalFile({ file, contextType, contextId, relation, retryState }) {
   validateOperationalFile(file);
-  const registration = await supabase.rpc("register_operational_file", {
+  const scope=JSON.stringify([contextType,contextId,relation,file.name,file.size,file.type]);
+  if(retryState?.scope && retryState.scope!==scope)throw new Error("The upload context changed. Choose the file again.");
+  const registration = retryState?.registration ? {data:retryState.registration} : await supabase.rpc("register_operational_file", {
     p_context_type: contextType,
     p_context_id: contextId,
     p_relation: relation,
@@ -37,16 +39,26 @@ export async function uploadOperationalFile({ file, contextType, contextId, rela
   if (registration.error) throw registration.error;
   const row = Array.isArray(registration.data) ? registration.data[0] : registration.data;
   if (!row?.file_id || !row?.storage_path || !row?.storage_bucket) throw new Error("CEAC could not prepare the private file upload.");
+  if(retryState){retryState.scope=scope;retryState.registration=row;}
 
-  const upload = await supabase.storage.from(row.storage_bucket).upload(row.storage_path, file, {
+  if(!retryState?.uploaded){
+   const upload = await supabase.storage.from(row.storage_bucket).upload(row.storage_path, file, {
     contentType: file.type,
     cacheControl: "3600",
     upsert: false,
   });
-  if (upload.error) throw upload.error;
+   // A retry may find bytes whose successful response was interrupted. Never
+   // overwrite them; the finaliser verifies the registered private object.
+   if (upload.error && !(retryState && String(upload.error.statusCode)==="409")) throw upload.error;
+   if(retryState)retryState.uploaded=true;
+  }
 
   const finalise = await supabase.rpc("finalize_operational_file", { p_file_id: row.file_id });
-  if (finalise.error) throw finalise.error;
+  if (finalise.error) {
+    if(!retryState)throw finalise.error;
+    const check=await supabase.from("operational_files").select("id,state").eq("id",row.file_id).maybeSingle();
+    if(check.error || check.data?.id!==row.file_id || check.data.state!=="active")throw finalise.error;
+  }
   return row.file_id;
 }
 

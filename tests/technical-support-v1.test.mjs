@@ -1,9 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {supportCasePeople} from "../src/lib/supportCasePeople.js";
 import {
   HELP_CATEGORIES, SUPPORT_WORKSPACES, SUPPORT_GUIDES, SERVICE_NAMES,
   canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome, supportReportedServiceIssues,
 } from "../src/lib/technicalSupport.js";
+
+test("triage requests only its authorised case identities", async()=>{
+ const calls=[];
+ const client={async rpc(name,args){calls.push({name,args});return {data:[{case_id:'case',reporter_name:'Synthetic reporter',department_name:'IT'}]};}};
+ const cases=await supportCasePeople(client,[{id:'case',reported_by:'reporter',affected_unit_id:'unit'}]);
+ assert.equal(cases[0].reporter_name,'Synthetic reporter');assert.equal(cases[0].department_name,'IT');
+ assert.equal(filterSupportCases(cases,'reporter').length,1);assert.equal(filterSupportCases(cases,'IT').length,1);
+ assert.deepEqual(calls,[{name:'support_case_people',args:{p_case_ids:['case']}}]);
+});
+test("denied case identity results fail closed rather than inventing a reporter",async()=>{
+ const client={async rpc(){return {error:{message:'Denied'}};}};
+ await assert.rejects(supportCasePeople(client,[{id:'case'}]),error=>error.message==='Denied');
+ assert.deepEqual(await supportCasePeople(client,[]),[]);
+});
 
 test("support panel has the six locked workspaces and categories", () => {
   assert.deepEqual(SUPPORT_WORKSPACES.map((item) => item.label),

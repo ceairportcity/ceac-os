@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
+import { supportCasePeople } from "../lib/supportCasePeople";
 import SupportAccessCaseActions from "../components/SupportAccessCaseActions";
 import DailyScenicPhoto from "../components/DailyScenicPhoto";
 import { OperationalFileList } from "../components/OperationalFiles";
@@ -17,6 +18,7 @@ function SupportRows({ cases, onSelect, empty = "Nothing requires action here." 
     {cases.map((item) => <button type="button" key={item.id}
       className="ceac-support-row ceac-support-case-button" onClick={() => onSelect(item.id)}>
       <span><strong>{item.summary}</strong>
+        <small>{item.reporter_name || "Reporter details unavailable"}{item.department_name ? ` · ${item.department_name}` : ""}</small>
         <small>{item.reference || "Reference pending"} · {supportCategoryLabel(item.category)}</small>
       </span>
       <span className="ceac-support-state">{String(item.state).replaceAll("_", " ")}</span>
@@ -70,11 +72,15 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
       </div>
     </div>
     <dl className="ceac-support-case-facts">
+      <div><dt>Reported by</dt><dd>{item.reporter_name || "Reporter details unavailable"}</dd></div>
+      <div><dt>Department</dt><dd>{item.department_name || "Not recorded with this request"}</dd></div>
+      <div><dt>Affected colleague</dt><dd>{item.affected_name || (item.affected_profile_id===item.reported_by ? item.reporter_name : null) || "Not recorded"}</dd></div>
+      <div><dt>Submitted</dt><dd>{new Date(item.opened_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}</dd></div>
       <div><dt>Category</dt><dd>{supportCategoryLabel(item.category)}</dd></div>
       <div><dt>Service</dt><dd>{item.affected_service || "Not specified"}</dd></div>
       <div><dt>Impact</dt><dd>{item.impact || "Unspecified"}</dd></div>
       <div><dt>Current status</dt><dd>{String(item.state).replaceAll("_", " ")}</dd></div>
-      <div><dt>Assignment</dt><dd>{item.assigned_to === myId ? "Assigned to you" : item.assigned_to ? "Assigned to another support member" : "Unassigned"}</dd></div>
+      <div><dt>Assignment</dt><dd>{item.assigned_to === myId ? "Assigned to you" : item.assigned_to ? item.assignee_name || "Assigned to another support member" : "Unassigned"}</dd></div>
     </dl>
     {!item.assigned_to && item.state !== "resolved" && item.state !== "closed" && <button type="button" className="btn btn-ghost" disabled={busy}
       onClick={() => onClaim(item.id)}>{busy ? "Recording..." : "Take this case"}</button>}
@@ -92,7 +98,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
       onUpdate(item.id, nextState, resolution, item.updated_at, accessLedger);
     }}>
       <label>Case status
-        <select value={nextState} onChange={(event) => setNextState(event.target.value)}>
+        <select disabled={busy || item.assigned_to!==myId} value={nextState} onChange={(event) => setNextState(event.target.value)}>
           <option value="open">Open</option>
           <option value="in_progress">In progress</option>
           <option value="waiting_approval">Waiting for business approval</option>
@@ -102,7 +108,7 @@ function CaseDetails({ item, onClose, onRefresh, onUpdate, onClaim, onRelease, m
       </label>
       {requiresBusinessApproval && !accessReadyToClose && <p className="ceac-support-unverified" role="status">Access requests remain open until independent business approval and attributable technical execution are recorded. The database verifies both before closure.</p>}
       <label>Action or resolution note
-        <textarea rows={3} value={resolution} onChange={(event) => setResolution(event.target.value)}
+        <textarea disabled={busy || item.assigned_to!==myId} rows={3} value={resolution} onChange={(event) => setResolution(event.target.value)}
           maxLength={2000} placeholder="Record factual work completed. Do not include credentials or protected records." />
       </label>
       {error && <p role="alert" className="ceac-support-error">{error}</p>}
@@ -177,7 +183,8 @@ export default function TechnicalSupport({ me, go }) {
           .select("id,reference,category,summary,description,affected_service,impact,state,reported_by,affected_profile_id,affected_unit_id,assigned_to,opened_at,resolved_at,closed_at,resolution_summary,updated_at")
           .eq("org_id", me.org_id).order("opened_at", { ascending: false }).limit(150);
         if (casesFailure) throw casesFailure;
-        if (live && generation === readGeneration.current) setCases(caseData || []);
+        const namedCases=await supportCasePeople(supabase,caseData || []);
+        if (live && generation === readGeneration.current) setCases(namedCases);
       } catch (failure) {
         if (live && generation === readGeneration.current) setError(supportUnavailableMessage(failure) || humanError(failure, "The Technical Support service cannot be opened. No permissions were changed."));
       } finally {
@@ -223,7 +230,9 @@ export default function TechnicalSupport({ me, go }) {
         .eq("org_id", me.org_id).order("opened_at", { ascending: false }).limit(150);
       if (casesFailure) throw casesFailure;
       if (generation !== readGeneration.current) return;
-      setCases(currentCases || []);
+      const namedCases=await supportCasePeople(supabase,currentCases || []);
+      if (generation !== readGeneration.current) return;
+      setCases(namedCases);
       setMembership(currentMembership);
     } catch (failure) {
       if (generation === readGeneration.current) setError(supportUnavailableMessage(failure) || humanError(failure, "The Technical Support queue cannot be refreshed. No case was changed."));
@@ -249,7 +258,7 @@ export default function TechnicalSupport({ me, go }) {
       if (failure) throw failure;
       if (!data) throw new Error("This case is no longer unassigned. Refresh the Help Desk before taking it.");
       if (generation !== readGeneration.current) return;
-      setCases((items) => items.map((item) => item.id === id ? data : item));
+      setCases((items) => items.map((item) => item.id === id ? {...item,...data} : item));
     } catch (failure) {
       if (generation === readGeneration.current) setActionError(humanError(failure, "The case was not assigned to you."));
     } finally {
@@ -272,7 +281,7 @@ export default function TechnicalSupport({ me, go }) {
       if (failure) throw failure;
       if (!data) throw new Error("This case is no longer yours to release. Refresh before trying again.");
       if (generation !== readGeneration.current) return;
-      setCases((items) => items.map((item) => item.id === id ? data : item));
+      setCases((items) => items.map((item) => item.id === id ? {...item,...data} : item));
     } catch (failure) {
       if (generation === readGeneration.current) setActionError(humanError(failure, "The case was not released."));
     } finally {
@@ -317,7 +326,7 @@ export default function TechnicalSupport({ me, go }) {
       if (failure) throw failure;
       if (!data) throw new Error("The case changed since you opened it. Refresh the Help Desk before saving.");
       if (generation !== readGeneration.current) return;
-      setCases((items) => items.map((item) => item.id === id ? data : item));
+      setCases((items) => items.map((item) => item.id === id ? {...item,...data} : item));
     } catch (failure) {
       if (generation === readGeneration.current) setActionError(humanError(failure, "The case change was not recorded. No further action was taken."));
     } finally {
@@ -327,9 +336,9 @@ export default function TechnicalSupport({ me, go }) {
 
   return <main className="body ceac-support-page ceac-support-operations">
     <header className="ceac-support-heading s2-support-heading s2-landscape-hero"><DailyScenicPhoto />
-      <p className="ceac-support-eyebrow">Media & Technical · Autonomous service team</p>
+      <p className="ceac-support-eyebrow">IT services</p>
       <h1>Technical Support</h1>
-      <p>Help people use CEAC, maintain approved access and escalate service issues. This workspace does not grant HR, payroll, leave or general administrative permissions.</p>
+      <p>Track requests, record responses and help colleagues get back to work.</p>
     </header>
 
     {!scopedReady && <p role="status" aria-busy="true">Checking your Technical Support authority...</p>}

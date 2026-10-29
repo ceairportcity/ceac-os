@@ -54,7 +54,7 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       expect((await colleague.rpc('record_routine_occurrence',params)).error?.code).toBe('42501');
       await page.locator('.s2-register-row').filter({hasText:title}).locator('th button').click();
       await page.getByRole('complementary',{name:'Selected responsibility'})
-        .getByRole('button',{name:/Open complete work record/}).click();
+        .getByRole('button',{name:/Open full work record/}).click();
       await expect(page.getByRole('region',{name:'Routine method'})).toBeVisible();
       await expect(page.getByRole('region',{name:'Task checklist and progress'})).toHaveCount(0);
       await expect(page.getByRole('button',{name:'Change future schedule',exact:true})).toBeVisible();
@@ -208,7 +208,7 @@ test("custom self routine keeps exact interval/count/timezone and future edits p
   for(const row of preview.data) expect(new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Amsterdam",hour:"2-digit",minute:"2-digit"}).format(new Date(row.due_at))).toBe("09:30");
   expect((await client.schema("private").rpc("change_routine_schedule_options",{p_work_item_id:work.data.id,p_effective_from:day(2),p_options:{schedule_kind:"daily"}})).error?.code).toBe("PGRST106");
   await register.locator("th button").click();
-  await page.getByRole("complementary",{name:"Selected responsibility"}).getByRole("button",{name:/Open complete work record/}).click();
+  await page.getByRole("complementary",{name:"Selected responsibility"}).getByRole("button",{name:/Open full work record/}).click();
   await page.getByRole("button",{name:"Change future schedule",exact:true}).click();
   const dialog=page.getByRole("dialog");
   await dialog.getByLabel("Effective from").fill(day(2));

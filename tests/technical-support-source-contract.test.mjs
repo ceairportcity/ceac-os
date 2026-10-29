@@ -214,13 +214,14 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261027125202_finance_independent_requests_and_receipts.sql",
     "20261028181026_messages_memos_work_followups.sql",
     "20261028182309_offsite_location_optional_responsibility.sql",
+    "20261029112823_work_activity_evidence_followup_and_edit.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
     assert.ok(migrations.includes(migration), "Missing single-candidate Stage 2 migration: " + migration);
   }
   assert.equal(migrations.filter((file) => !stagedIntegratedSecurity.includes(file)).length, 153,
     "Stage 1's 153 reviewed migrations remain identical; all Stage 2 additions are explicitly inventoried");
-  assert.equal(migrations.length, 211, "expected 153 reviewed Stage 1 plus 58 explicitly inventoried Stage 2 migrations");
+  assert.equal(migrations.length, 212, "expected 153 reviewed Stage 1 plus 59 explicitly inventoried Stage 2 migrations");
   assert.ok(migrations.includes("20261016090159_148_support_invoker_projection.sql"), "forward-only support view repair is missing");
   assert.ok(migrations.includes("20261015090000_147_private_personal_task_recurrence.sql"), "owner-private recurrence migration missing");
   const s3 = "20261007083250_118_capability_delegation_expiry.sql";
@@ -255,13 +256,13 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
-  // Independently fail closed at the current 174-signature reviewed surface.
+  // Independently fail closed at the current 176-signature reviewed surface.
   // The exact allowlist and obsolete-grant denial remain enforced in the
   // dedicated security_definer_surface_gate.sql (not just this count check).
-  assert.match(mfa, /callable_count<>174/);
-  assert.match(surface, /v_actual<>174 or v_expected<>174/);
-  assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>174 then/);
-  assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>174 then/);
+  assert.match(mfa, /callable_count<>176/);
+  assert.match(surface, /v_actual<>176 or v_expected<>176/);
+  assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>176 then/);
+  assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>176 then/);
   assert.ok(surface.includes("public.executive_assign_project_department(p_project_id uuid, p_unit_id uuid, p_reason text)"));
   assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);

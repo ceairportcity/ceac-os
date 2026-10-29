@@ -1,38 +1,38 @@
 /* Stage 2 premium white/blue treatment for Technical Support. All role gates and case data remain authoritative. */
 .ceac-support-page.s2-support-staged{max-width:1380px}
-.ceac-support-page .s2-support-heading{max-width:none;padding:22px 25px;margin-bottom:14px;border:1px solid #dfeaf7;border-radius:14px;background:linear-gradient(110deg,#f2f8ff 0%,#fff 65%);box-shadow:0 6px 24px rgba(31,66,112,.035)}
-.ceac-support-page .s2-support-heading h1{color:#172e50;font-size:clamp(25px,2.4vw,34px);font-weight:760;letter-spacing:-.04em}
+.ceac-support-page .s2-support-heading{max-width:none;padding:22px 25px;margin-bottom:14px;border:1px solid #dfeaf7;background:#fff;}
+.ceac-support-page .s2-support-heading h1{color:#172e50;font-size:clamp(25px,2.4vw,34px);font-weight:760;letter-spacing:normal}
 .ceac-support-page .s2-support-heading>.ceac-support-eyebrow{color:#1767c9;letter-spacing:.055em}
 .ceac-support-page .s2-support-heading>p:last-child{color:#67819c;max-width:82ch;font-size:13px;margin-bottom:0}
-.ceac-support-page .ceac-support-nav{gap:20px;border-color:#e3ecf7;margin-bottom:14px;background:#fff;border-radius:9px;padding:0 15px;box-shadow:0 2px 15px rgba(34,76,128,.025)}
+.ceac-support-page .ceac-support-nav{gap:20px;border-color:#e3ecf7;margin-bottom:14px;background:#fff;border-radius:9px;padding:0 15px;}
 .ceac-support-page .ceac-support-nav button{min-height:44px;padding:14px 0;border-color:transparent;font-size:12px;white-space:nowrap}
 .ceac-support-page .ceac-support-nav button.is-active{border-color:var(--exec-purple,#1472e8);color:var(--exec-purple,#166bd1)}
 .ceac-support-page .s2-support-home{display:grid;gap:12px}
-.ceac-support-page .s2-support-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #e1eaf5;border-radius:12px;background:#fff;overflow:hidden}
+.ceac-support-page .s2-support-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #e1eaf5;background:#fff;overflow:hidden}
 .ceac-support-page .s2-support-summary>div{padding:15px 18px;display:grid;gap:2px;min-width:0;border-right:1px solid #e8eef7}
 .ceac-support-page .s2-support-summary>div:last-child{border-right:none}
 .ceac-support-page .s2-support-summary span,.ceac-support-page .s2-support-summary small{font-size:12px;color:#8093ab}
-.ceac-support-page .s2-support-summary strong{font-size:25px;line-height:1.2;color:#1757a4;letter-spacing:-.035em}
+.ceac-support-page .s2-support-summary strong{font-size:25px;line-height:1.2;color:#1757a4;letter-spacing:0}
 .ceac-support-page .ceac-support-layout{gap:12px;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr)}
-.ceac-support-page .ceac-support-layout>.ceac-support-main,.ceac-support-page .ceac-support-layout>.ceac-support-side,.ceac-support-page section.ceac-support-main,.ceac-support-page .ceac-support-detail{border:1px solid #e2eaf4;border-radius:12px;background:#fff;padding:19px;box-shadow:0 6px 22px rgba(37,70,110,.025)}
+.ceac-support-page .ceac-support-layout>.ceac-support-main,.ceac-support-page .ceac-support-layout>.ceac-support-side,.ceac-support-page section.ceac-support-main,.ceac-support-page .ceac-support-detail{border:1px solid #e2eaf4;background:#fff;padding:19px;}
 .ceac-support-page .ceac-support-layout h2,.ceac-support-page .ceac-support-main h2,.ceac-support-page .ceac-support-detail h2{font-size:14px;color:#1e3558;font-weight:730}
 .ceac-support-page .ceac-support-rows{border-color:#e7edf5}
 .ceac-support-page .ceac-support-row{border-color:#e7edf5;gap:10px}
 .ceac-support-page .ceac-support-row strong{font-size:12px;color:#244565}
-.ceac-support-page .ceac-support-row small{color:#8498af;font-size:12px}
+.ceac-support-page .ceac-support-row small{display:block;color:#5e7287;font-size:12px}
 .ceac-support-page .ceac-support-state{display:inline-block;background:#eaf4ff;color:#226bb9;font-size:12px;border-radius:6px;padding:4px 7px;white-space:normal}
 .ceac-support-page .ceac-support-desk-filters input,.ceac-support-page .ceac-support-desk-filters select{border:1px solid #dce7f4;border-radius:8px}
 @media(max-width:800px){.ceac-support-page .ceac-support-layout{grid-template-columns:1fr}}
-@media(max-width:590px){.ceac-support-page .s2-support-heading{padding:16px}.ceac-support-page .s2-support-summary>div{padding:11px}.ceac-support-page .s2-support-summary strong{font-size:20px}.ceac-support-page .s2-support-summary span,.ceac-support-page .s2-support-summary small{font-size:12px}.ceac-support-page .ceac-support-layout>.ceac-support-main,.ceac-support-page .ceac-support-layout>.ceac-support-side,.ceac-support-page section.ceac-support-main{padding:14px}.ceac-support-page .ceac-support-nav{margin-inline:-8px;border-radius:0}}
+@media(max-width:590px){.ceac-support-page .s2-support-heading{padding:16px}.ceac-support-page .s2-support-summary>div{padding:11px}.ceac-support-page .s2-support-summary strong{font-size:20px}.ceac-support-page .ceac-support-layout>.ceac-support-main,.ceac-support-page .ceac-support-layout>.ceac-support-side,.ceac-support-page section.ceac-support-main{padding:14px}.ceac-support-page .ceac-support-nav{margin-inline:-8px;border-radius:0}}
 
 /* Approved V4-style selected-case inspector: retain the actual Help Desk
    queue while a manager or technician works on one authorised case. */
 .ceac-support-page .s2-support-split{min-width:0;display:block}
 .ceac-support-page .s2-support-split.has-inspector{display:grid;grid-template-columns:minmax(0,1fr) minmax(350px,42%);gap:13px;align-items:start}
-.ceac-support-page .s2-support-split>.ceac-support-main{min-width:0;border:1px solid #e2eaf4;border-radius:12px;padding:19px;background:#fff}
-.ceac-support-page .s2-support-inspector{min-width:0;position:sticky;top:74px;max-height:calc(100dvh - 88px);overflow:auto;overscroll-behavior:contain;border:1px solid #e2eaf4;border-radius:12px;background:#fff}
-.ceac-support-page .s2-support-inspector>.ceac-support-detail{box-shadow:none;border:0;border-radius:0;margin:0}
+.ceac-support-page .s2-support-split>.ceac-support-main{min-width:0;border:1px solid #e2eaf4;padding:19px;background:#fff}
+.ceac-support-page .s2-support-inspector{min-width:0;position:relative;border:1px solid #e2eaf4;background:#fff}
+.ceac-support-page .s2-support-inspector>.ceac-support-detail{border:0;border-radius:0;margin:0}
 .ceac-support-page .s2-support-inspector .ceac-support-detail-top h2{font-size:17px}
 .ceac-support-page .s2-support-inspector .ceac-support-section-actions{flex-wrap:wrap}
-@media(max-width:1120px){.ceac-support-page .s2-support-split.has-inspector{grid-template-columns:1fr}.ceac-support-page .s2-support-inspector{position:static;max-height:none;overflow:visible}}
+@media(max-width:1120px){.ceac-support-page .s2-support-split.has-inspector{grid-template-columns:1fr}}
 @media(max-width:590px){.ceac-support-page .s2-support-split>.ceac-support-main{padding:14px}}

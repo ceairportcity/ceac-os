@@ -16,10 +16,12 @@
 .s2-work-diary-timeline p{margin:6px 0}
 .s2-work-diary-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
 .s2-work-diary-form label{display:grid;gap:5px;font-size:12px;font-weight:600}
-.s2-work-diary-form label.wide{grid-column:1/-1}
+.s2-work-diary-form .wide{grid-column:1/-1}
 .s2-work-diary-form :is(input,textarea,select){width:100%;min-width:0;box-sizing:border-box;padding:10px;border:1px solid #cdd9e5;border-radius:8px;background:#fff;color:#182b3c;font:inherit}
 .s2-work-diary-form button{justify-self:start}
 .s2-work-diary-error{padding:9px 10px;border:1px solid #d59d84;border-radius:8px}
 @media(max-width:650px){.s2-work-diary>header{flex-direction:column}.s2-work-diary-form{grid-template-columns:1fr}}
 
 @media(max-width:650px){.s2-work-diary-form :is(input,textarea,select){font-size:16px}}
+
+.s2-work-diary-fields{display:contents}.s2-work-diary-form input[type=checkbox]{width:auto}
