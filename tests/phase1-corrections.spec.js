@@ -108,6 +108,15 @@ for(const width of [390,1440]){
   await expect(page.getByText('Saved: 1',{exact:true})).toBeVisible();
   expect(writes.find(row=>row.name==='edit_open_work_details').body).toMatchObject({p_work_item_id:'work',p_title:'Updated synthetic assignment',p_expected_movement:null});
  });
+ test(`HR can edit work it assigned across departments ${width}`,async({page})=>{
+  await page.setViewportSize({width,height:1000});const {writes}=await mock(page);
+  await page.goto('/tests/fixtures/phase1-corrections.html?screen=edit&actor=admin');
+  await page.getByRole('button',{name:'Edit work details'}).click();
+  await page.getByLabel('Title',{exact:true}).fill('HR clarified assigned work');
+  await page.getByRole('button',{name:'Save work details'}).click();
+  await expect(page.getByText('Saved: 1',{exact:true})).toBeVisible();
+  expect(writes.find(row=>row.name==='edit_open_work_details').body).toMatchObject({p_work_item_id:'work',p_title:'HR clarified assigned work'});
+ });
  test(`Calendar work chip selects its own date before opening the record ${width}`,async({page})=>{
   await page.setViewportSize({width,height:1000});await mock(page);
   const date=new Date(),last=new Date(date.getFullYear(),date.getMonth()+1,0).getDate();date.setDate(date.getDate()===last?date.getDate()-1:date.getDate()+1);date.setHours(12,0,0,0);

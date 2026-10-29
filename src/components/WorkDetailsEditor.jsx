@@ -10,7 +10,7 @@ export default function WorkDetailsEditor({me,item,onSaved}) {
  const member=memberships.some(m=>m.unit_id===item.unit_id)||me.unit_id===item.unit_id;
  const manager=memberships.some(m=>m.unit_id===item.unit_id&&m.role==='manager');
  const allowed= !['completed','self_certified','cancelled','in_review'].includes(item.status) && (
-  item.origin==='self_created'&&item.assignee_id===me.id&&member || item.assigned_by===me.id&&(manager||me.is_exec));
+  item.origin==='self_created'&&item.assignee_id===me.id&&member || item.assigned_by===me.id&&(manager||me.is_admin||me.is_exec));
  if(!allowed)return null;
  async function save(event) {
   event.preventDefault();if(writing.current)return;

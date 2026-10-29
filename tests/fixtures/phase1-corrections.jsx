@@ -36,7 +36,10 @@ const item={id:'work',assignee_id:'actor',assigned_by:'actor',unit_id:'unit',ori
 function Fixture(){
  const [selected,setSelected]=useState(null),[saved,setSaved]=useState(0);
  const screen=new URLSearchParams(location.search).get('screen');
- const views={help:<TechnicalHelp me={me}/>,support:<TechnicalSupport me={me}/>,diary:<WorkActivityDiary me={me} item={item}/>,edit:<><WorkDetailsEditor me={me} item={item} onSaved={()=>setSaved(n=>n+1)}/><p>Saved: {saved}</p></>,calendar:<StaffCalendar me={me} openItem={()=>{}}/>,map:<WorkforceStreetMap initialEnabled clusters={[{key:'point',lat:5.6,lng:-.18,people:[{id:'one',name:'Synthetic Ama',place:'office'},{id:'two',name:'Synthetic Kojo',place:'elsewhere'}]}]} onSelect={setSelected} selectedId={selected} selectedContent={selected?<p>Selected: {selected}</p>:null}/>};
+ const adminAssigning=new URLSearchParams(location.search).get('actor')==='admin';
+ const editorActor=adminAssigning?{...me,is_admin:true}:me;
+ const editorItem=adminAssigning?{...item,origin:'assigned',assignee_id:'colleague',unit_id:'other-unit'}:item;
+ const views={help:<TechnicalHelp me={me}/>,support:<TechnicalSupport me={me}/>,diary:<WorkActivityDiary me={me} item={item}/>,edit:<><WorkDetailsEditor me={editorActor} item={editorItem} onSaved={()=>setSaved(n=>n+1)}/><p>Saved: {saved}</p></>,calendar:<StaffCalendar me={me} openItem={()=>{}}/>,map:<WorkforceStreetMap initialEnabled clusters={[{key:'point',lat:5.6,lng:-.18,people:[{id:'one',name:'Synthetic Ama',place:'office'},{id:'two',name:'Synthetic Kojo',place:'elsewhere'}]}]} onSelect={setSelected} selectedId={selected} selectedContent={selected?<p>Selected: {selected}</p>:null}/>};
  return <main className="staff-app" style={{padding:16,minWidth:0}}>{views[screen] || views.diary}</main>;
 }
 createRoot(document.getElementById('root')).render(<Fixture/>);

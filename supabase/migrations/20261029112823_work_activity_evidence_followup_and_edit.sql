@@ -133,7 +133,7 @@ BEGIN
  SELECT * INTO w FROM public.work_items WHERE id=p_work_item_id AND org_id=public.app_org_id() FOR UPDATE;
  IF w.id IS NULL OR NOT public.app_can_see_item(w.id) OR w.status IN ('completed','self_certified','cancelled','in_review') OR NOT (
   (w.origin='self_created' AND w.assignee_id=auth.uid() AND w.unit_id IN (SELECT public.app_my_units()))
-  OR (w.assigned_by=auth.uid() AND (w.unit_id IN (SELECT public.app_managed_units()) OR public.app_is_exec()))
+  OR (w.assigned_by=auth.uid() AND (w.unit_id IN (SELECT public.app_managed_units()) OR public.app_is_admin() OR public.app_is_exec()))
  ) THEN RAISE EXCEPTION 'Only the creator or assigning manager can edit open work.' USING ERRCODE='42501'; END IF;
  IF w.last_movement_at IS DISTINCT FROM p_expected_movement THEN RAISE EXCEPTION 'This work changed. Refresh before editing.' USING ERRCODE='40001'; END IF;
  IF length(btrim(coalesce(p_title,''))) NOT BETWEEN 3 AND 220 OR length(coalesce(p_purpose,''))>4000

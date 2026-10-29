@@ -5,6 +5,7 @@ UPDATE public.organisations SET universal_totp_required=false WHERE id='10000000
 INSERT INTO work_items(id,org_id,assigned_by,assignee_id,unit_id,origin,title,ref,kind) VALUES('41000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000001','31000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011','self_created','Synthetic work','TUA-PHASE1-212','task');
 
 INSERT INTO work_items(id,org_id,assigned_by,assignee_id,unit_id,origin,title,ref,kind) VALUES('41000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000002','31000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000011','assigned','Manager assigned work','TUA-PHASE1-213','task');
+INSERT INTO work_items(id,org_id,assigned_by,assignee_id,unit_id,origin,title,ref,kind) VALUES('41000000-0000-4000-8000-000000000003','10000000-0000-4000-8000-000000000010','31000000-0000-4000-8000-000000000003','31000000-0000-4000-8000-000000000005','20000000-0000-4000-8000-000000000012','assigned','HR cross-department assigned work','TUA-PHASE1-214','task');
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000001","role":"authenticated","aal":"aal1","amr":[{"method":"password"}]}',true);
 SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
@@ -47,4 +48,11 @@ DO $$ BEGIN
 END; $$;
 RESET ROLE;
 
+-- Preserve the already-approved HR cross-department assignment authority,
+-- limited here to the work HR actually assigned. No reviewer change is made.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal1","amr":[{"method":"password"}]}',true);
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
+SELECT public.edit_open_work_details('41000000-0000-4000-8000-000000000003',(SELECT last_movement_at FROM public.work_items WHERE id='41000000-0000-4000-8000-000000000003'),'HR revised assigned work','Clarified purpose','','');
+RESET ROLE;
 ROLLBACK;
