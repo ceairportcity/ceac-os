@@ -36,6 +36,10 @@ const OWNER_CONFIRMED_LEAVE_KINDS=new Set(["annual","sick","maternity","paternit
 function isoDay(value){ return new Date(value).toISOString().slice(0,10); }
 function niceDay(value){ return new Date(value+"T00:00:00Z").toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"}); }
 function human(value=""){ return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase()); }
+function sessionPlace(session){
+  const name=session.place==="elsewhere"?session.flags?.offsite_location_name:null;
+  return typeof name==="string"&&name.trim()?"Off-site · "+name+" (employee reported)":session.place||"Place not recorded";
+}
 function clock(value){
   if(!value) return "Not recorded";
   const date=new Date(value);
@@ -404,7 +408,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
     if(session.place==="office"&&(session.lat==null||session.lng==null)) out.push("Marked as office; no location was recorded");
     if(session.end_location_status==="not_verified") out.push("End location not verified");
     if(session.flags&&typeof session.flags==="object"){
-      Object.entries(session.flags).forEach(([key,value])=>{if(value) out.push(human(key));});
+      Object.entries(session.flags).forEach(([key,value])=>{if(value&&key!=="offsite_location_name") out.push(human(key));});
     }
     return out;
   }
@@ -555,7 +559,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
             icon="time"
             eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})}
             title={clock(session.started_at)+" → "+(session.ended_at?clock(session.ended_at):"no recorded end")}
-            meta={session.place||"Place not recorded"}
+            meta={sessionPlace(session)}
             note={(diff.length||sessionCorrections.length)?(diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s")):null}
           />;
         })}
@@ -586,7 +590,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
             icon="warning"
             eyebrow={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short"})}
             title={clock(session.started_at)}
-            meta={session.place||"Place not recorded"}
+            meta={sessionPlace(session)}
             note={differences.join(" · ")}
             statusLabel="Recorded difference"
             statusTone="amber"
@@ -807,7 +811,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
             eyebrow={person?.units?.name||"Managed unit"}
             title={person?.profiles?.full_name||"Employee"}
             meta={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})+" · "+clock(session.started_at)+" → "+(session.ended_at?clock(session.ended_at):"no recorded end")}
-            note={(session.place||"Place not recorded")+(diff.length||sessionCorrections.length?" · "+diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s"):"")}
+            note={sessionPlace(session)+(diff.length||sessionCorrections.length?" · "+diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s"):"")}
           />;
         })}
         {!sessions.length&&!sessionReadFailed&&<WorkforceEmpty compact title="No sessions recorded in this period" description="Nothing is inferred from the absence of session rows."/>}
@@ -1095,7 +1099,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
             icon="time"
             eyebrow={person?.units?.name||"Unit not recorded"}
             title={person?.profiles?.full_name||"Employee"}
-            meta={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})+" · "+clock(session.started_at)+" → "+(session.ended_at?clock(session.ended_at):"no recorded end")+" · "+(session.place||"place not recorded")}
+            meta={new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})+" · "+clock(session.started_at)+" → "+(session.ended_at?clock(session.ended_at):"no recorded end")+" · "+sessionPlace(session)}
             note={(diff.length||sessionCorrections.length)?diff.length+" recorded difference"+(diff.length===1?"":"s")+" · "+sessionCorrections.length+" effective correction"+(sessionCorrections.length===1?"":"s"):null}
           />;
         })}
@@ -1354,7 +1358,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
         const sessionCorrections=effectiveCorrections(session.profile_id,isoDay(session.started_at)).filter((row)=>!row.work_session_id||row.work_session_id===session.id);
         return <div className="row workforce-session-row" key={session.id}>
           <div className="row-t">{person?.profiles?.full_name||"Employee"}</div>
-          <div className="row-m">{new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})} · {clock(session.started_at)} → {session.ended_at?clock(session.ended_at):"no recorded end"} · {session.place||"place not recorded"}</div>
+          <div className="row-m">{new Date(session.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"})} · {clock(session.started_at)} → {session.ended_at?clock(session.ended_at):"no recorded end"} · {sessionPlace(session)}</div>
           {(diff.length>0||sessionCorrections.length>0)&&<div className="row-note">{diff.length} recorded difference{diff.length===1?"":"s"} · {sessionCorrections.length} effective correction{sessionCorrections.length===1?"":"s"}</div>}
         </div>;
       })}
