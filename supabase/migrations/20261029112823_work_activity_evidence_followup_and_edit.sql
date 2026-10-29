@@ -1,6 +1,48 @@
 -- Phase 1: retain immutable activities, reuse private files and personal planning.
 BEGIN;
 
+-- The old intake contract accepted only NULL department / normal impact.
+-- Keep self-reporting and every assignment/closure restriction; permit only
+-- an actual active department membership and the two existing impact values.
+ALTER POLICY support_cases_report_self ON public.support_cases WITH CHECK (
+ org_id=public.app_org_id() AND reported_by=auth.uid() AND affected_profile_id=auth.uid()
+ AND public.app_identity_confirmed() AND public.app_stage2_universal_aal_allowed()
+ AND (affected_unit_id IS NULL OR (
+  affected_unit_id IN (SELECT public.app_my_units())
+  AND EXISTS(SELECT 1 FROM public.units u WHERE u.id=affected_unit_id AND u.org_id=public.app_org_id() AND u.active)
+ ))
+ AND assigned_to IS NULL AND state='open' AND impact IN ('normal','work_blocked')
+ AND resolution_summary IS NULL AND resolved_at IS NULL AND closed_at IS NULL
+);
+
+-- Profile RLS deliberately hides unrelated departments. Return only the names
+-- attached to already-authorised support cases, including historical reporters.
+-- Do not broaden profiles, memberships, employee or case-body access.
+CREATE FUNCTION private.support_case_people_rows(p_case_ids uuid[])
+RETURNS TABLE(case_id uuid,reporter_name text,affected_name text,assignee_name text,department_name text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
+ SELECT sc.id,reporter.full_name,affected.full_name,assignee.full_name,department.name
+ FROM public.support_cases sc
+ LEFT JOIN public.profiles reporter ON reporter.id=sc.reported_by AND reporter.org_id=sc.org_id
+ LEFT JOIN public.profiles affected ON affected.id=sc.affected_profile_id AND affected.org_id=sc.org_id
+ LEFT JOIN public.profiles assignee ON assignee.id=sc.assigned_to AND assignee.org_id=sc.org_id
+ LEFT JOIN public.units department ON department.id=sc.affected_unit_id AND department.org_id=sc.org_id
+ WHERE cardinality(p_case_ids) BETWEEN 1 AND 150 AND sc.id=ANY(p_case_ids)
+ AND auth.uid() IS NOT NULL AND public.app_identity_confirmed()
+ AND public.app_stage2_universal_aal_allowed() AND sc.org_id=public.app_org_id()
+ AND public.app_has_capability('support.case.manage',NULL)
+ AND EXISTS(SELECT 1 FROM public.support_team_memberships tm WHERE tm.org_id=sc.org_id AND tm.profile_id=auth.uid() AND tm.active)
+$$;
+REVOKE ALL ON FUNCTION private.support_case_people_rows(uuid[]) FROM public,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION private.support_case_people_rows(uuid[]) TO authenticated,service_role;
+CREATE FUNCTION public.support_case_people(p_case_ids uuid[])
+RETURNS TABLE(case_id uuid,reporter_name text,affected_name text,assignee_name text,department_name text)
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$
+ SELECT * FROM private.support_case_people_rows(p_case_ids)
+$$;
+REVOKE ALL ON FUNCTION public.support_case_people(uuid[]) FROM public,anon;
+GRANT EXECUTE ON FUNCTION public.support_case_people(uuid[]) TO authenticated;
+
 DO $extend$
 DECLARE d text; n text;
 BEGIN

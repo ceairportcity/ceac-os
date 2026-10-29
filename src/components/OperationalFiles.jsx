@@ -9,7 +9,7 @@ import {
   validateOperationalFile,
 } from "../lib/operationalFiles";
 
-export function PendingFilePicker({ files, onChange, label = "Attach files", disabled = false }) {
+export function PendingFilePicker({ files, onChange, label = "Attach files", disabled = false, compact = false }) {
   const [error, setError] = useState(null);
 
   function add(event) {
@@ -27,13 +27,13 @@ export function PendingFilePicker({ files, onChange, label = "Attach files", dis
   }
 
   return <div className="operational-files-picker">
-    <label className="btn btn-ghost btn-sm">
+    <label className="btn btn-ghost btn-sm" style={compact?{width:"fit-content"}:undefined}>
       {label}
       <input type="file" multiple accept={OPERATIONAL_FILE_ACCEPT} onChange={add} disabled={disabled} style={{ display:"none" }} />
     </label>
     {(files || []).length > 0 && <div style={{ display:"grid", gap:6, marginTop:8 }}>
-      {files.map((file) => <div className="row" key={file.name + ":" + file.size}>
-        <div className="row-t">{file.name}</div>
+      {files.map((file) => <div className={compact?undefined:"row"} style={compact?{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}:undefined} key={file.name + ":" + file.size}>
+        <div className="row-t" style={compact?{minWidth:0,overflowWrap:"anywhere",flex:"1 1 160px"}:undefined}>{file.name}</div>
         <div className="row-m">{formatOperationalFileSize(file.size)} · ready to upload</div>
         <button className="text-action" type="button" disabled={disabled} onClick={() => onChange?.(files.filter((entry) => entry !== file))}>Remove</button>
       </div>)}

@@ -12,6 +12,7 @@ async function mock(page){
    const body=req.postDataJSON();writes.push({name,body});
    if(name==='work_activity_records'){const entry={...body,id:'activity',recorded_at:'2026-10-29T09:00:00Z',contributor:{full_name:'Synthetic colleague'}};activities.push(entry);return reply({id:entry.id});}
    if(name==='plan_work_activity_followup')return reply('task');
+   if(name==='support_case_people')return reply([{case_id:'case',reporter_name:'Synthetic reporter',affected_name:'Synthetic reporter',department_name:'Synthetic IT'}]);
    if(name==='register_operational_file')return reply({file_id:'file',storage_path:'synthetic/evidence.pdf',storage_bucket:'ceac-operational-private'});
    if(name==='support_cases'){if(req.method()!=='POST')Object.assign(support,body);return reply(req.method()==='POST'?null:support);}
    return reply(null);
@@ -48,6 +49,8 @@ for(const width of [390,1440]){
   await page.getByLabel('Next action',{exact:true}).fill('Follow up next week');
   await page.getByLabel('Next action date (optional)').fill('2026-11-03');
   await page.locator('input[type=file]').setInputFiles({name:'evidence.pdf',mimeType:'application/pdf',buffer:Buffer.from('Synthetic evidence')});
+  expect((await page.getByRole('button',{name:'Record activity',exact:true}).boundingBox()).width).toBeLessThan(240);
+  await page.screenshot({path:`test-artifacts/phase1-diary-form-${width}.png`,fullPage:true});
   await page.getByRole('button',{name:'Record activity',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('The activity is saved. Retry');
   await expect(page.getByLabel('Action taken or planned')).toBeDisabled();
@@ -66,11 +69,12 @@ for(const width of [390,1440]){
   await expect(page.getByText('Synthetic colleague',{exact:true})).toBeVisible();
   await expect(page.getByLabel('What do you need help with?')).toHaveValue('');
   await page.getByLabel('What do you need help with?').selectOption('cannot_upload');
+  await page.getByLabel('Effect on your work').selectOption('work_blocked');
   await page.getByLabel('Short summary').fill('Synthetic upload issue');
   await page.getByLabel('What happened?').fill('The document upload fails after choosing a file.');
   await page.getByRole('button',{name:'Send help request'}).click();
   await expect.poll(()=>writes.filter(row=>row.name==='support_cases').length).toBe(1);
-  expect(writes.find(row=>row.name==='support_cases').body).toMatchObject({reported_by:'actor',affected_unit_id:'unit',category:'cannot_upload'});
+  expect(writes.find(row=>row.name==='support_cases').body).toMatchObject({reported_by:'actor',affected_unit_id:'unit',category:'cannot_upload',impact:'work_blocked'});
   await page.goto('/tests/fixtures/phase1-corrections.html?screen=support');
   await page.getByRole('button',{name:'Help Desk',exact:true}).click();
   await page.getByRole('button',{name:/Synthetic upload issue/}).first().click();

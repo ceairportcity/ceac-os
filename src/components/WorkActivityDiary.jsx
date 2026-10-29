@@ -211,7 +211,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     }
   }
 
-  const recordAction = (verified && canRecord && <button type="button" className={compact ? "btn s2-work-inspector-open" : "btn btn-sm"}
+  const recordAction = (verified && canRecord && <button type="button" className={compact ? "btn btn-sm s2-work-inspector-open" : "btn btn-sm"} style={{width:"fit-content"}}
         disabled={busy || Boolean(savedActivity.current)} onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");setFiles([]);setPlanNext(true);setWriteError(""); setEditor((open) => !open); }}
         >{editor ? "Close" : "+ Record an activity"}</button>);
 
@@ -270,10 +270,10 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       <label>Minutes spent (optional, self-recorded) <input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
       <label className="wide">Evidence link (optional, HTTPS) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
       </fieldset>
-      <div className="wide"><PendingFilePicker files={files} onChange={setFiles} disabled={busy} label="Attach activity files"/></div>
+      <div className="wide"><PendingFilePicker compact files={files} onChange={setFiles} disabled={busy} label="Attach activity files"/></div>
       {writeError&&<p className="wide" role="alert">{writeError}</p>}
       {savedActivity.current&&<button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={()=>{savedActivity.current=null;uploadAttempts.current.clear();setFiles([]);setEditor(false);setWriteError("");setSuccess("The activity is saved. You can plan its next action or attach files from its activity record later.");setReload(n=>n+1);}}>Keep saved activity; finish later</button>}
-      <button type="submit" className="btn" disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Record activity"}</button>
+      <button type="submit" className="btn btn-sm" style={{width:"fit-content"}} disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Record activity"}</button>
     </form>}
     {compact && recordAction}
   </section>;

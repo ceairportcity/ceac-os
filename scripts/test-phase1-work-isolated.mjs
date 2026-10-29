@@ -24,8 +24,10 @@ CREATE POLICY fixture_work_read ON public.work_items FOR SELECT TO authenticated
 `);
 await db.exec(fs.readFileSync('supabase/migrations/20261007093000_120_phase6_private_day_planning.sql','utf8'));
 await db.exec(`ALTER TABLE public.personal_day_tasks ALTER COLUMN plan_date DROP NOT NULL,ADD COLUMN linked_work_item_id uuid REFERENCES public.work_items(id);`);
+await db.exec(fs.readFileSync('tests/fixtures/phase1-support-schema.sql','utf8'));
 await db.exec(fs.readFileSync('supabase/migrations/20261029112823_work_activity_evidence_followup_and_edit.sql','utf8'));
 await db.exec(fs.readFileSync('tests/fixtures/phase1-work-gate.sql','utf8'));
-console.log('PASS: isolated SQL work edit, stale edit, audit, file contexts, own follow-up, idempotency, private RLS and completion independence');
+await db.exec(fs.readFileSync('tests/fixtures/phase1-support-gate.sql','utf8'));
+console.log('PASS: isolated SQL work edit, stale edit, audit, file contexts, own follow-up, idempotency, private RLS, completion independence and Support intake/identity/revocation');
 await db.close();
 } catch(error) {console.error(error.message,error.code,error.where || '',error.query?.slice(0,250));await db.close();process.exitCode=1;}

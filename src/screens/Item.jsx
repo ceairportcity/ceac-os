@@ -790,7 +790,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
       </>}
 
       {item.assignee_id === me.id && !["routine", "case", "request", "decision"].includes(item.kind) && !(["in_review", "completed", "self_certified"].includes(item.status)) && (<>
-        <button className="btn work-primary-action" style={{ marginTop: 20 }} onClick={() => setSheet("submit")}
+        <button className="btn btn-sm work-primary-action" style={{ marginTop: 20, width:"fit-content" }} onClick={() => setSheet("submit")}
           disabled={managerSubmissionBlocked || (checks.length > 0 && !allDone)}>
           {item.kind === "deliverable"
             ? (managerOwnWork ? "Finish deliverable" : "Send deliverable for review")
@@ -799,7 +799,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         {managerSubmissionBlocked && <div className="hint">Manager self-certification is waiting on the database migration. This work will not enter your review queue.</div>}
         {!gated && checks.length > 0 && !allDone && <div className="hint">Finish the checklist to send it in</div>}
         {!blocker && (
-          <button className="btn btn-ghost work-secondary-action" style={{ marginTop: 10 }} onClick={() => setSheet("waiting")}>
+          <button className="btn btn-ghost btn-sm work-secondary-action" style={{ marginTop: 10, width:"fit-content" }} onClick={() => setSheet("waiting")}>
             I am waiting on someone</button>)}
       </>)}
 
