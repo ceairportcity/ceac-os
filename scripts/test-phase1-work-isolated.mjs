@@ -25,6 +25,13 @@ CREATE POLICY fixture_work_read ON public.work_items FOR SELECT TO authenticated
 await db.exec(fs.readFileSync('supabase/migrations/20261007093000_120_phase6_private_day_planning.sql','utf8'));
 await db.exec(`ALTER TABLE public.personal_day_tasks ALTER COLUMN plan_date DROP NOT NULL,ADD COLUMN linked_work_item_id uuid REFERENCES public.work_items(id);`);
 await db.exec(fs.readFileSync('tests/fixtures/phase1-support-schema.sql','utf8'));
+const supportSource=fs.readFileSync('supabase/migrations/20261011130000_133_technical_support_v1_backend.sql','utf8');
+const insertGuardStart=supportSource.indexOf('CREATE OR REPLACE FUNCTION public.support_case_insert_guard()');
+const insertGuardEnd=supportSource.indexOf('\n$$;',insertGuardStart)+4;
+if(insertGuardStart<0 || insertGuardEnd<4)throw new Error('Reviewed Support insert guard is missing.');
+await db.exec(supportSource.slice(insertGuardStart,insertGuardEnd));
+await db.exec(`REVOKE ALL ON FUNCTION public.support_case_insert_guard() FROM public,anon,authenticated; CREATE TRIGGER support_case_insert_guard BEFORE INSERT ON public.support_cases FOR EACH ROW EXECUTE FUNCTION public.support_case_insert_guard();`);
+
 await db.exec(fs.readFileSync('supabase/migrations/20261029112823_work_activity_evidence_followup_and_edit.sql','utf8'));
 await db.exec(fs.readFileSync('tests/fixtures/phase1-work-gate.sql','utf8'));
 await db.exec(fs.readFileSync('tests/fixtures/phase1-support-gate.sql','utf8'));

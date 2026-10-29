@@ -4,9 +4,18 @@ BEGIN;
 -- The old intake contract accepted only NULL department / normal impact.
 -- Keep self-reporting and every assignment/closure restriction; permit only
 -- an actual active department membership and the two existing impact values.
+-- Confirmed identity is enforced by the existing protected BEFORE INSERT
+-- trigger. Its internal helper intentionally has no direct staff EXECUTE grant.
+DO $identity_guard$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.support_cases'::regclass
+  AND tgname='support_case_insert_guard' AND NOT tgisinternal AND tgenabled IN ('O','A')
+  AND tgfoid='public.support_case_insert_guard()'::regprocedure)
+ THEN RAISE EXCEPTION 'Verified Support intake trigger must remain enabled.'; END IF;
+END; $identity_guard$;
 ALTER POLICY support_cases_report_self ON public.support_cases WITH CHECK (
  org_id=public.app_org_id() AND reported_by=auth.uid() AND affected_profile_id=auth.uid()
- AND public.app_identity_confirmed() AND public.app_stage2_universal_aal_allowed()
+ AND public.app_stage2_universal_aal_allowed()
  AND (affected_unit_id IS NULL OR (
   affected_unit_id IN (SELECT public.app_my_units())
   AND EXISTS(SELECT 1 FROM public.units u WHERE u.id=affected_unit_id AND u.org_id=public.app_org_id() AND u.active)
