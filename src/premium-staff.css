@@ -73,8 +73,6 @@
 /* Calendar */
 
 /* Inbox */
-.staff-app .inbox-page{max-width:960px!important}
-.inbox-list{overflow:hidden}
 
 @media(max-width:980px){
   .staff-app .hub-entry-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
@@ -89,38 +87,3 @@
 
 /* VF6D — Messages operational-inbox closure.
    Communication scope remains Rooms / Mentions / linked Work / Announcements; no DM capability is added. */
-.inbox-page .ev2c-segmented-item {
-  min-height: 44px;
-}
-
-.inbox-page .inbox-list {
-  overflow: hidden;
-  border-top: 1px solid var(--ceac-line);
-  border-bottom: 1px solid var(--ceac-line);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.inbox-page .inbox-empty {
-  display: grid;
-  gap: 4px;
-  padding: 26px 2px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: #748497;
-  text-align: left;
-}
-
-.inbox-page .inbox-empty strong {
-  color: #263a50;
-  font-size: 14px;
-  line-height: 1.35;
-}
-
-.inbox-page .inbox-empty span {
-  max-width: 62ch;
-  font-size: 12px;
-  line-height: 1.5;
-}

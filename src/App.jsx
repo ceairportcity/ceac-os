@@ -471,7 +471,11 @@ export default function App() {
     }
     if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} />;
     if (tab === "messages") return <Inbox
+      key={`${me.org_id}:${me.id}`}
       me={me}
+      openProject={id=>navigate({tab:isAdmin?"admin-projects":isExec?"delivery":"projects",projectId:id})}
+      scheduleMeeting={startMeeting}
+      startWorkFromMessage={isManager || isExec ? startAssignment : null}
       openRoom={openRoom}
       openItem={(id) => navigate({ tab: "work", itemId: id })}
       openAnnouncements={() => go("announcements")}

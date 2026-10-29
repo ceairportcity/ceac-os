@@ -1,23 +1,25 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { supabase } from "../lib/supabase";
-import VoiceInput from "../components/VoiceInput";
-import { OperationalMediaList, PendingFilePicker } from "../components/OperationalFiles";
-import { listOperationalFilesForContexts, uploadOperationalFiles } from "../lib/operationalFiles";
+import { Info, Trash2, Paperclip } from "lucide-react";
+import "./MessagesWorkspace.css";
+import { OperationalMediaList } from "../components/OperationalFiles";
+import { listOperationalFilesForContexts, uploadOperationalFile, validateOperationalFile, OPERATIONAL_FILE_ACCEPT } from "../lib/operationalFiles";
 import { humanError } from "../lib/productLanguage";
 
 function timeLabel(value) {
-  return new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return new Date(value).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" });
 }
 
 function dayLabel(value) {
   const date = new Date(value);
   const today = new Date();
   const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
-  const key = date.toDateString();
-  if (key === today.toDateString()) return "Today";
-  if (key === yesterday.toDateString()) return "Yesterday";
-  return date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  const inAccra = d => d.toLocaleDateString("en-CA", { timeZone:"Africa/Accra" });
+  const key = inAccra(date);
+  if (key === inAccra(today)) return "Today";
+  if (key === inAccra(yesterday)) return "Yesterday";
+  return date.toLocaleDateString("en-GB", { timeZone: "Africa/Accra", weekday: "short", day: "numeric", month: "short" });
 }
 
 function roomTitle(room) {
@@ -41,6 +43,8 @@ function uniqueById(rows) {
 
 export default function Room({
   me,
+  embedded = false,
+  onMessagesChanged,
   context,
   back,
   openItem,
@@ -51,11 +55,17 @@ export default function Room({
   startWorkFromMessage,
 }) {
   const reduceMotion = useReducedMotion();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [removing, setRemoving] = useState(null);
+  const composerRef = useRef(null);
+  const attachmentRef = useRef(null);
+  const caretAfterMention = useRef(false);
   const [room, setRoom] = useState(null);
   const [scopeRooms, setScopeRooms] = useState([]);
   const [messages, setMessages] = useState([]);
   const [body, setBody] = useState("");
   const [pendingFiles, setPendingFiles] = useState([]);
+  const [attachmentMessageId, setAttachmentMessageId] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [mentions, setMentions] = useState([]);
@@ -179,7 +189,7 @@ export default function Room({
     setParticipants([]); setScopeRooms([]); setWorkOptions([]); setProjectOptions([]);
     setRoom(nextRoom);
     setPanel(null);
-    setPendingFiles([]);
+    setPendingFiles([]); setAttachmentMessageId(null);
     setReplyTo(null);
     setMentions([]);
     setMentionQuery(null);
@@ -385,7 +395,9 @@ export default function Room({
   async function markRead(roomId = room?.id) {
     if (!roomId || activeRoomIdRef.current !== roomId) return;
     const result = await supabase.rpc("mark_room_read", { p_room_id: roomId });
-    if (!result.error && activeRoomIdRef.current === roomId) setNewMessageCount(0);
+    if (!result.error && activeRoomIdRef.current === roomId) {
+      setNewMessageCount(0); onMessagesChanged?.();
+    }
   }
 
   function handleFeedScroll() {
@@ -417,6 +429,7 @@ export default function Room({
   }
 
   function chooseMention(person) {
+    caretAfterMention.current = true;
     setBody((current) => {
       const match = current.match(/(?:^|\s)@([^\n@]*)$/);
       if (!match) return current + (current ? " " : "") + "@" + person.full_name + " ";
@@ -428,8 +441,8 @@ export default function Room({
   }
 
   async function send() {
-    const clean = body.trim();
-    if (!clean || sendingRef.current) return;
+    const clean = body.trim() || (pendingFiles.length ? "Files: " + pendingFiles.map(file => file.name).join(", ").slice(0,7900) : "");
+    if ((!clean && !attachmentMessageId) || sendingRef.current) return;
     sendingRef.current = true;
     setSending(true); setError(null);
     try {
@@ -447,30 +460,34 @@ export default function Room({
         if (!resolved.data?.id) throw new Error("The Room is not ready or you do not have access.");
         targetRoomId = resolved.data.id;
       }
-      const mentionIds = [...new Set(mentions)];
-      const result = await supabase.rpc("send_room_message", {
-        p_room_id: targetRoomId,
-        p_body: clean,
-        p_reply_to_id: replyTo?.id || null,
-        p_refs: selectedRefs,
-        p_mention_ids: mentionIds,
-      });
-      if (result.error) throw result.error;
-      const messageId = Array.isArray(result.data) ? result.data[0] : result.data;
-      if (pendingFiles.length && messageId) {
+      let messageId = attachmentMessageId;
+      if (!messageId) {
+        const result = await supabase.rpc("send_room_message", {
+          p_room_id: targetRoomId,
+          p_body: clean,
+          p_reply_to_id: replyTo?.id || null,
+          p_refs: selectedRefs,
+          p_mention_ids: [...new Set(mentions)],
+        });
+        if (result.error) throw result.error;
+        messageId = Array.isArray(result.data) ? result.data[0] : result.data;
+        if (!messageId) throw new Error("The send outcome is uncertain. Refresh the conversation before retrying.");
+        setBody(""); setReplyTo(null); setMentions([]); setMentionQuery(null); setSelectedRefs([]);
+      }
+      if (pendingFiles.length) {
+        setAttachmentMessageId(messageId);
         try {
-          await uploadOperationalFiles({
-            files: pendingFiles,
-            contextType: "room_message",
-            contextId: messageId,
-            relation: "room_media",
-          });
+          for (const file of pendingFiles) {
+            await uploadOperationalFile({file,contextType:"room_message",contextId:messageId,relation:"room_media"});
+            setPendingFiles(current => current.filter(row => row !== file));
+          }
+          setAttachmentMessageId(null);
         } catch (fileError) {
-          setError(`Your message was sent, but ${fileError.message || "one or more files could not be attached."}`);
+          setError(`Your message was sent. ${fileError.message || "An attachment failed."} Retry attachments to keep them on the same message.`);
         }
       }
-      setBody(""); setPendingFiles([]); setReplyTo(null); setMentions([]); setMentionQuery(null); setSelectedRefs([]);
       await loadMessages(targetRoomId, false);
+      onMessagesChanged?.();
     } catch (err) {
       setError(humanError(err, "Your message could not be sent."));
     } finally {
@@ -479,9 +496,39 @@ export default function Room({
     }
   }
 
-  function appendVoice(text) {
-    setBody((current) => current.trim() ? current.trim() + " " + text : text);
+  async function removeMessage(message) {
+    if (message.author_id !== me.id || removing || !window.confirm("Delete this message for everyone in the Room?")) return;
+    const targetRoom = room.id;
+    setRemoving(message.id); setError(null);
+    try {
+      const result = await supabase.rpc("remove_own_room_message", { p_message_id: message.id });
+      if (result.error) throw result.error;
+      if (activeRoomIdRef.current === targetRoom) {
+        setMessages(current => current.filter(row => row.id !== message.id));
+        if (replyTo?.id === message.id) setReplyTo(null);
+        onMessagesChanged?.();
+      }
+    } catch (failure) {
+      if (activeRoomIdRef.current === targetRoom) setError(humanError(failure, "Your message could not be deleted."));
+    } finally { setRemoving(null); }
   }
+
+  useLayoutEffect(() => {
+    const input = composerRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 180) + "px";
+    if (caretAfterMention.current) {
+      input.focus(); input.setSelectionRange(input.value.length, input.value.length);
+      caretAfterMention.current = false;
+    }
+  }, [body]);
+  useEffect(() => {
+    const refresh = () => { if (room?.id && document.visibilityState === "visible") void loadMessages(room.id); };
+    window.addEventListener("focus", refresh);
+    const timer = window.setInterval(refresh, 30000);
+    return () => { window.removeEventListener("focus", refresh); window.clearInterval(timer); };
+  }, [room?.id]);
 
   function addRef(ref) {
     setSelectedRefs((current) => current.some((row) => row.object_type === ref.object_type && row.object_id === ref.object_id)
@@ -522,7 +569,7 @@ export default function Room({
   let previousDay = null;
   let unreadShown = false;
 
-  return <div className="body room-screen">
+  return <div className={`body room-screen msg-room ${embedded ? "is-embedded" : ""}`}>
     <header className="room-head">
       <button type="button" className="room-back" aria-label="Back from Room" onClick={back}>←</button>
       <div className="room-head-copy">
@@ -533,7 +580,16 @@ export default function Room({
         <span className="room-live-dot" aria-hidden="true" />
         {realtimeStatus === "connected" ? "Live updates" : realtimeStatus === "connecting" ? "Connecting" : "Updates offline"}
       </span>
+    <button type="button" className="room-details-toggle" aria-label="Room details" aria-expanded={detailsOpen} onClick={() => setDetailsOpen(open => !open)}><Info size={18} /></button>
     </header>
+
+    {detailsOpen && <aside className="msg-details" aria-label="Room details">
+      <button type="button" onClick={() => setDetailsOpen(false)} aria-label="Close Room details">×</button>
+      <h2>{roomTitle(room)}</h2><p>{roomLabel(room)}</p>
+      <h3>Available participants</h3><p>{me.full_name}</p>{participants.map(person => <p key={person.id}>{person.full_name}</p>)}
+      {room?.kind === "project" && <button type="button" onClick={() => openProject?.(room.project_id)}>Open linked project</button>}
+      <h3>Files in this conversation</h3><OperationalMediaList files={messages.flatMap(row => row.operational_files || [])} />
+    </aside>}
 
     {error && <div className="flag flag-brick room-error"><h4>Room could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" onClick={loadInitialRoom}>Try again</button></div>}
 
@@ -559,7 +615,7 @@ export default function Room({
         <span>Start with the work, decision or coordination that belongs in this context.</span>
       </div>}
       {!loading && messages.map((message) => {
-        const currentDay = new Date(message.created_at).toDateString();
+        const currentDay = new Date(message.created_at).toLocaleDateString("en-CA", { timeZone:"Africa/Accra" });
         const showDay = currentDay !== previousDay;
         previousDay = currentDay;
         const mine = message.author_id === me.id;
@@ -570,10 +626,12 @@ export default function Room({
           {isUnread && <div ref={unreadRef} className="room-unread-divider"><span>New since your last visit</span></div>}
           {showDay && <div className="room-day"><span>{dayLabel(message.created_at)}</span></div>}
           <article className={`room-message ${mine ? "mine" : ""}`}>
+            <span className="msg-avatar" aria-hidden="true">{(message.profiles?.full_name || "CEAC").split(/\s+/).slice(0,2).map(name => name[0]).join("")}</span>
             <div className="room-message-meta">
               <strong>{mine ? "You" : message.profiles?.full_name || "CEAC member"}</strong>
               <time>{timeLabel(message.created_at)}</time>
             </div>
+            {message.reply_to_id && !parent && <div className="room-reply-context">Reply to an earlier or unavailable message</div>}
             {parent && <div className="room-reply-context">
               <strong>{parent.author_id === me.id ? "You" : parent.profiles?.full_name || "Earlier message"}</strong>
               <span>{parent.body}</span>
@@ -591,6 +649,7 @@ export default function Room({
             </div>}
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               <button className="room-reply-action" onClick={() => setReplyTo(message)}>Reply</button>
+              {mine && <button className="room-reply-action" disabled={Boolean(removing)} onClick={() => removeMessage(message)}><Trash2 size={13} aria-hidden="true" /> {removing === message.id ? "Deleting…" : "Delete"}</button>}
               {startWorkFromMessage && !(message.room_message_refs || []).some((ref) => ref.object_type === "work_item") &&
                 <button className="room-reply-action" onClick={() => startWorkFromMessage({
                   title: message.body,
@@ -624,7 +683,7 @@ export default function Room({
       {mentionQuery !== null && mentionMatches.length > 0 && <div className="room-inline-mentions">
         <div className="room-inline-label">Mention someone in this Room</div>
         {mentionMatches.map((person) => <button key={person.id} onClick={() => chooseMention(person)}>
-          <span className="room-person-avatar">{person.full_name.charAt(0)}</span>
+          <span className="room-person-avatar" aria-hidden="true">{person.full_name.charAt(0)}</span>
           <strong>{person.full_name}</strong>
         </button>)}
       </div>}
@@ -658,20 +717,26 @@ export default function Room({
         </button>)}
       </div>}
 
-      <PendingFilePicker
-        files={pendingFiles}
-        onChange={setPendingFiles}
-        label="Attach media or file"
-        disabled={sending}
-      />
+      {pendingFiles.length > 0 && <div className="room-pending-files">{pendingFiles.map(file => <span key={file.name+file.size}>{file.name}<button type="button" disabled={sending} aria-label={`Remove ${file.name}`} onClick={() => setPendingFiles(files => files.filter(row => row !== file))}>×</button></span>)}</div>}
 
       <div className="room-composer-row room-composer-v2">
+        <button type="button" className="room-attach" aria-label="Attach file" disabled={sending} onClick={() => attachmentRef.current?.click()}><Paperclip size={18}/></button>
+        <input ref={attachmentRef} type="file" hidden multiple accept={OPERATIONAL_FILE_ACCEPT} disabled={sending} onChange={event => {
+          try {
+            const selected = [...(event.target.files || [])]; selected.forEach(validateOperationalFile);
+            setPendingFiles(current => [...new Map([...current,...selected].map(file => [file.name+":"+file.size,file])).values()]);
+          } catch(failure) { setError(failure.message); }
+          event.target.value="";
+        }}/>
+
         <button type="button" className={"room-plus " + (panel ? "on" : "")}
           aria-label={panel ? "Close Room actions" : "Add context or action"}
           aria-expanded={Boolean(panel)} onClick={() => setPanel((current) => current ? null : "actions")}>
           {panel ? "×" : "+"}</button>
         <div className="room-text-wrap">
           <textarea
+            ref={composerRef}
+            disabled={sending || Boolean(attachmentMessageId)}
             rows={1}
             value={body}
             maxLength={8000}
@@ -679,14 +744,13 @@ export default function Room({
             placeholder={room?.kind === "project" ? "Message the project team" : room?.kind === "sub_team" ? `Message ${roomTitle(room)}` : "Message your unit"}
             onChange={(event) => updateBody(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+              if (!event.nativeEvent.isComposing && event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
                 event.preventDefault(); send();
               }
             }}
           />
-          <VoiceInput compact label="Speak message" onResult={appendVoice} />
         </div>
-        <button className="room-send" disabled={sending || loading || !room?.id || !body.trim()} onClick={send}>{sending ? "…" : "Send"}</button>
+        <button className="room-send" disabled={sending || loading || !room?.id || (!body.trim() && !pendingFiles.length)} onClick={send}>{sending ? "Sending…" : attachmentMessageId ? "Retry attachments" : "Send"}</button>
       </div>
       <small>Work communication only · @ mentions notify people inside this Room</small>
     </footer>

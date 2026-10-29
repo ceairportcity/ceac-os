@@ -1,3 +1,4 @@
+import { outstandingActivityActions } from "../lib/workCompletion";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { RESPONSIBILITY_STATUS } from "../lib/responsibilityRegister";
@@ -36,6 +37,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   const [summary, setSummary] = useState("");
   const [outcome, setOutcome] = useState("");
   const [nextAction, setNextAction] = useState("");
+  const [nextActionOn, setNextActionOn] = useState("");
   const [minutes, setMinutes] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [reload, setReload] = useState(0);
@@ -50,7 +52,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   // Reset the previous identity and its draft before a new scope can submit.
   useEffect(() => {
     setEditor(false); setCorrectingId(null); setDate(ghanaDay()); setState("done");
-    setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl("");
+    setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
     setSuccess(""); setError("");
   }, [me.id, me.org_id, item.id]);
   // Only user-invoked occurrence shortcuts set the entry date; an unrelated
@@ -60,7 +62,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
     setCorrectingId(null);
     setDate(prefillDate);
     setState("done");
-    setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl("");
+    setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
     setError(""); setSuccess("");
     setEditor(true);
     sectionRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
@@ -79,7 +81,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
         for (let page = 0; page < 20; page++) {
           const start = page * 200;
           const read = await supabase.from("work_activity_records")
-            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
+            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,next_action_on,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
             .eq("org_id", me.org_id).eq("work_item_id", item.id)
             .order("recorded_at", { ascending: false })
             .order("id", { ascending: false })
@@ -113,7 +115,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   }, [me.id, me.org_id, item.id, reload]);
 
   const completedActionCount = history.filter((action) => action.activity_state === "done").length;
-  const latestNextAction = history.find((action) => action.next_action?.trim())?.next_action || null;
+  const nextActions = outstandingActivityActions(history);
 
   const canRecord = verified && (item.assignee_id === me.id || (
     item.visibility !== "private" && item.confidential !== true
@@ -127,6 +129,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
     setSummary(entry.action_summary);
     setOutcome(entry.outcome_note || "");
     setNextAction(entry.next_action || "");
+    setNextActionOn(entry.next_action_on || "");
     setMinutes(entry.duration_minutes == null ? "" : String(entry.duration_minutes));
     setEvidenceUrl(entry.evidence_url || "");
     setError(""); setSuccess(""); setEditor(true);
@@ -146,6 +149,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
         action_summary: summary.trim(),
         outcome_note: outcome.trim() || null,
         next_action: nextAction.trim() || null,
+        next_action_on: nextAction.trim() ? nextActionOn || null : null,
         duration_minutes: minutes === "" ? null : Number(minutes),
         evidence_url: evidenceUrl.trim() || null,
         supersedes_id: correctingId || null,
@@ -162,7 +166,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
         || check.data.activity_date !== fields.activity_date
         || (check.data.supersedes_id || null) !== fields.supersedes_id)
         throw new Error("The record cannot be independently confirmed. Refresh before retrying.");
-      setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl("");
+      setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
       setCorrectingId(null); setDate(ghanaDay()); setState("done");
       setSuccess(fields.supersedes_id
         ? "Your activity correction was recorded. The earlier version remains preserved."
@@ -178,7 +182,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   }
 
   const recordAction = (verified && canRecord && <button type="button" className={compact ? "btn s2-work-inspector-open" : "btn btn-sm"}
-        onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setMinutes(""); setEvidenceUrl(""); setEditor((open) => !open); }}
+        onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl(""); setEditor((open) => !open); }}
         >{editor ? "Close" : "+ Record an activity"}</button>);
 
   return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
@@ -201,8 +205,8 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
       <div><span>Recorded actions</span><strong>{history.length}</strong></div>
       <div><span>Recorded as done</span><strong>{completedActionCount}</strong></div>
     </div>}
-    {verified && latestNextAction && <div className="s2-work-diary-next-action">
-      <span>Next action</span><p>{latestNextAction}</p>
+    {verified && nextActions.length > 0 && <div className="s2-work-diary-next-action">
+      <span>Recorded next actions</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}</p>)}
     </div>}
     {compact && verified && <h3>Activity record</h3>}
     {verified && history.length === 0 && <p>No dated activities have been recorded under this responsibility yet.</p>}
@@ -212,7 +216,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
           <small>{entry.activity_date} · {entry.contributor?.full_name || (entry.contributor_id === me.id ? "You" : "Authorised contributor")} · {states.find(([key]) => key === entry.activity_state)?.[1] || entry.activity_state}</small>
         </div>
         {entry.outcome_note && <p>{entry.outcome_note}</p>}
-        {entry.next_action && <p><b>Next:</b> {entry.next_action}</p>}
+        {entry.next_action && <p><b>Next{entry.next_action_on ? ` · ${entry.next_action_on}` : ""}:</b> {entry.next_action}</p>}
         {entry.duration_minutes != null && <small>{entry.duration_minutes} minutes self-recorded (not attendance)</small>}
         {entry.evidence_url && <a href={entry.evidence_url} target="_blank" rel="noopener noreferrer">Open evidence ↗</a>}
         {entry.supersedes_id && <small>Corrected entry · prior version preserved</small>}
@@ -228,6 +232,8 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
       <label className="wide">Action taken or planned <textarea value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
       <label className="wide">Factual outcome <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
       <label className="wide">Next action <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
+      <label>Next action date (optional) <input type="date" value={nextActionOn} onChange={e => setNextActionOn(e.target.value)} disabled={!nextAction.trim()} /></label>
+      <p className="wide">Completing this activity leaves the assignment open. Finish the assignment separately when its full deliverable is complete.</p>
       <label>Minutes spent (optional, self-recorded) <input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
       <label className="wide">Evidence link (optional, HTTPS) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
       <button type="submit" className="btn" disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Record activity"}</button>

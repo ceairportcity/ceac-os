@@ -12,7 +12,7 @@ async function signIn(browser, { email, app, route, viewport }) {
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.locator(app)).toBeVisible({ timeout: 15000 });
   await page.goto(route);
-  await expect(page.locator(".body")).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(".body,.msg-workspace")).toBeVisible({ timeout: 15000 });
   return { context, page };
 }
 
@@ -24,12 +24,11 @@ test("VF6D keeps Messages and Connected Apps factual while closing shared-surfac
   const integrations = readFileSync("src/screens/AdminIntegrations.jsx", "utf8");
 
   expect(inbox).not.toContain('className="premium-surface inbox-list"');
-  expect(inbox).toContain("Work actions, Rooms, mentions and announcements");
-  expect(inbox).toContain("Choose a room, then mention a person to address them in that shared conversation.");
-  expect(staffCss).toContain("/* VF6D — Messages operational-inbox closure.");
-  expect(staffCss).toContain(".inbox-page .ev2c-segmented-item");
-  expect(staffCss).toContain(".inbox-page .inbox-empty");
-  expect(staffCss).not.toContain(".staff-app .inbox-page .ev2c-segmented-item");
+  expect(inbox).toContain('aria-label="Messages sections"');
+  expect(inbox).toContain('supabase.rpc("my_room_directory")');
+  const messagesCss=readFileSync("src/screens/MessagesWorkspace.css","utf8");
+  expect(messagesCss).toContain(".msg-layout");
+  expect(messagesCss).toContain(".memo-compose");
   expect(integrationCss).toContain("/* VF6D — Connected Apps operational-surface closure.");
   expect(integrationCss).not.toContain("!important");
   expect(integrations).toContain('type="password"');
@@ -52,40 +51,20 @@ test("VF6D keeps Messages and Connected Apps factual while closing shared-surfac
         route: "/?tab=messages",
         viewport: { width: viewport.width, height: viewport.height },
       });
-      const inboxPage = page.locator(".inbox-page");
+      const inboxPage = page.locator(".msg-workspace");
       await expect(inboxPage.getByRole("heading", { name: "Messages", exact: true })).toBeVisible();
-      if (role.key === "executive" || role.key === "administration") {
-        await expect(inboxPage.getByText(/Find conversations, mentions, announcements and work needing a response/i)).toBeVisible();
-      } else {
-        await expect(inboxPage.getByText(/does not provide unrestricted direct messages/i)).toBeVisible();
-      }
-
-      const filters = inboxPage.getByRole("tablist", { name: "Message views", exact: true }).getByRole("tab");
-      await expect(filters).toHaveCount(role.key === "administration" ? 6 : 5);
-      await expect(filters.filter({hasText:/^People$/})).toHaveCount(role.key === "administration" ? 1 : 0);
-      const heights = await filters.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
+      const filters = inboxPage.getByRole("navigation", { name: "Messages sections", exact: true }).getByRole("button");
+      await expect(filters).toHaveCount(2);
+      await expect(inboxPage.getByRole("navigation",{name:"Messages sections",exact:true}).getByRole("button",{name:"Rooms",exact:true})).toHaveCount(1);
+      await expect(inboxPage.getByRole("navigation",{name:"Messages sections",exact:true}).getByRole("button",{name:"Memos",exact:true})).toHaveCount(1);
+      const heights = await filters.evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().height));
       expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
-
-      const queuePanel = inboxPage.locator(".ev2c-data-panel").filter({ hasText: "Updates" }).first();
-      await expect(queuePanel).toBeVisible();
-      const queueStyle = await queuePanel.evaluate((node) => ({
-        shadow: getComputedStyle(node).boxShadow,
-        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      }));
+      await expect(inboxPage.getByRole("searchbox",{name:"Search Rooms"})).toBeVisible();
+      await expect(inboxPage.getByRole("button",{name:"Direct Messages",exact:true})).toHaveCount(0);
+      const queuePanel=inboxPage.locator(".msg-conversation");
+      const queueStyle=await queuePanel.evaluate(node=>({shadow:getComputedStyle(node).boxShadow,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}));
       expect(queueStyle.shadow).toBe("none");
       expect(queueStyle.overflow).toBeLessThanOrEqual(1);
-
-      const empty = inboxPage.locator(".inbox-empty");
-      if (await empty.count()) {
-        const emptyStyle = await empty.evaluate((node) => ({
-          borderTopWidth: getComputedStyle(node).borderTopWidth,
-          borderRadius: getComputedStyle(node).borderRadius,
-          backgroundColor: getComputedStyle(node).backgroundColor,
-        }));
-        expect(emptyStyle.borderTopWidth).toBe("0px");
-        expect(emptyStyle.borderRadius).toBe("0px");
-      }
-
       await page.screenshot({
         path: `test-artifacts/vf6d-${role.key}-messages-${viewport.name}.png`,
         fullPage: true,

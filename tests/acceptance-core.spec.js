@@ -501,7 +501,7 @@ test("Recurring ministry numbers flow from a unit record to the Group Pastor ove
 
   {
     const { context, page } = await openAs(browser, "exec@ceac.local.test");
-    await expect(page.getByRole("heading", { name: "Recent activity", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Significant updates", exact: true })).toBeVisible();
     await expect(page.getByText(numberName, { exact: true })).toBeVisible();
     await expect(page.getByText(/17 People received/)).toBeVisible();
     await context.close();
@@ -634,7 +634,9 @@ test("OCR6C Unit Rooms carry attributable communication and private media betwee
     await expect(page.getByRole("heading", { name: "Test Unit A" })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("heading", { name: "Test Unit A" })).toBeVisible();
-    await page.locator('.operational-files-picker input[type="file"]').setInputFiles({ name: filename, mimeType: "image/png", buffer: media });
+    const chooseFile = page.waitForEvent('filechooser');
+    await page.getByRole('button',{name:'Attach file',exact:true}).click();
+    await (await chooseFile).setFiles({ name: filename, mimeType: "image/png", buffer: media });
     await page.getByPlaceholder("Message your unit").fill(message);
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(page.getByText(message, { exact: true })).toBeVisible();

@@ -323,10 +323,10 @@ export default function ExecutiveOverviewV2({
         <section className="executivev2-lower-grid">
           <section className="executivev2-reference-panel executivev2-activity">
             <div className="executivev2-panel-head">
-              <h2><CeacIcon name="record" size="row" decorative />Recent activity</h2>
+              <h2><CeacIcon name="record" size="row" decorative />Significant updates</h2>
               <button type="button" onClick={onOpenMinistry}>View all</button>
             </div>
-            <div className="executivev2-activity-context">{recentActivity.length ? "Recent attributable CEAC activity" : "Recorded ministry activity"}</div>
+            <div className="executivev2-activity-context">{recentActivity.length ? "Organisational milestones and exceptions" : "Recorded ministry activity"}</div>
             <div className="executivev2-activity-grid">
               {recentMinistryRows.length || recentActivity.length ? <>
                   {recentMinistryRows.map((row) => <ActivityItem key={row.id} row={row} />)}
