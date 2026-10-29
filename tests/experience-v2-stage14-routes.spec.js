@@ -175,7 +175,7 @@ async function navigate(page, role, route, viewport) {
 
   await expect.poll(() => routeKey(page)).toBe(route.key);
   await expect(page.locator(role.app)).toBeVisible();
-  await expect(page.locator(".app-content .body").first()).toBeVisible();
+  await expect(page.locator(route.key === "messages" ? ".app-content .msg-workspace" : ".app-content .body").first()).toBeVisible();
   await expect(page.locator(".auth-shell")).toHaveCount(0);
 
   if (viewport.width >= 900) {

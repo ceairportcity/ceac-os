@@ -25,7 +25,7 @@ async function mock(page,{denySend=false}={}){
   return reply(name in rows?rows[name]:[]);
  });return writes;
 }
-for(const width of [1440,390])test(`Rooms timeline, composer, own removal and back navigation at ${width}px`,async({page})=>{
+for(const width of [1440,390,320])test(`Rooms timeline, composer, own removal and back navigation at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:960});const writes=await mock(page);
  await page.goto('/tests/fixtures/messages-workspace.html');
  await page.getByRole('button',{name:/IT & Systems/}).click();
@@ -42,7 +42,7 @@ for(const width of [1440,390])test(`Rooms timeline, composer, own removal and ba
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  expect(await page.locator('input[type="file"]').count()).toBeGreaterThan(0);
  await expect(page.getByRole('button',{name:/Speak|microphone/i})).toHaveCount(0);
- await page.screenshot({path:`test-results/messages-rooms-${width}.png`,fullPage:true});
+ await page.screenshot({path:`test-artifacts/messages-rooms-${width}.png`,fullPage:true});
  await page.getByRole('button',{name:'Back from Room'}).click();await expect(page.getByRole('searchbox',{name:'Search Rooms'})).toBeVisible();
 });
 test('failed Room send retains the draft',async({page})=>{
@@ -55,13 +55,13 @@ for(const actor of ['copied','pastor'])test(`Memo decision controls respect ${ac
  if(actor==='copied'){await expect(page.getByRole('button',{name:'Approve proposal',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Send reply'})).toBeVisible();}
  else {await page.getByRole('button',{name:'Approve proposal',exact:true}).click();await expect(page.locator('.memo-status')).toHaveText('Approved');expect(writes.filter(w=>w.name==='respond_to_memo')).toHaveLength(1);}
 });
-for(const width of [1440,390])test(`Memo composition retains failed send and restricts decision recipient at ${width}px`,async({page})=>{
+for(const width of [1440,390,320])test(`Memo composition retains failed send and restricts decision recipient at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:960});const writes=await mock(page,{denySend:true});await page.goto('/tests/fixtures/messages-workspace.html');await page.getByRole('button',{name:'New Memo',exact:true}).click();
  await page.getByLabel('To',{exact:true}).fill('Pastor');await page.getByRole('button',{name:/Group Pastor Group Pastor/}).click();
  await page.getByLabel('Subject',{exact:true}).fill('Digital initiative');await page.getByLabel('Message',{exact:true}).fill('A proposal for review.');
  await page.getByLabel('Decision required',{exact:true}).check();await page.getByLabel('Proposal scope').selectOption('cross_department');await page.getByLabel('Decision-maker').selectOption('pastor');
- await page.screenshot({path:`test-results/messages-memo-compose-${width}.png`,fullPage:true});
- if(width===390)expect(await page.getByRole('button',{name:'Send Memo',exact:true}).evaluate(el=>el.clientWidth)).toBeLessThan(180);
+ await page.screenshot({path:`test-artifacts/messages-memo-compose-${width}.png`,fullPage:true});
+ if(width<=390)expect(await page.getByRole('button',{name:'Send Memo',exact:true}).evaluate(el=>el.clientWidth)).toBeLessThan(180);
  await page.getByRole('button',{name:'Send Memo',exact:true}).click();await expect(page.getByText('Synthetic memo send denied')).toBeVisible();await expect(page.getByLabel('Subject',{exact:true})).toHaveValue('Digital initiative');
  const saved=writes.find(w=>w.name==='save_memo_draft');expect(saved.body.p_to).toEqual(['pastor']);expect(saved.body.p_decision_scope).toBe('cross_department');expect(saved.body.p_decision_maker_id).toBe('pastor');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();

@@ -76,3 +76,20 @@ Earlier failed checks were corrected, not waived: obsolete layout/string asserti
 5. Release only through established safeguards: schema before matching UI, exact tested SHA, verified backup/recovery, separately reviewed IT data operation and four-message removal. Verify affected rows and unrelated records after each operation. Keep prior UI rollback available; do not drop Memo/history tables as rollback.
 
 Outstanding production work remains explicit: IT Head membership/title, duplicate-account retirement with roster reconciliation, Frank's four removals, schema application, real role/Storage acceptance and production deployment. HR review was observed, but automatic fallback causation was not proven; do not replace the established reviewer hierarchy on that assumption.
+
+## Initial remote qualification — exact PR head `fb3c6bb`
+
+- [CI 40752307116](https://github.com/ceairportcity/ceac-os/actions/runs/40752307116): SUCCESS.
+- [Migration Replay 40752307018](https://github.com/ceairportcity/ceac-os/actions/runs/40752307018): SUCCESS, including the new forward migration in the 210-file bundle.
+- [Account Security 40752307002](https://github.com/ceairportcity/ceac-os/actions/runs/40752307002): SUCCESS.
+- [Quality Gate 40752307026](https://github.com/ceairportcity/ceac-os/actions/runs/40752307026): cumulative SQL/authority job SUCCESS, including `messages_memos_gate.sql` on the real replayed schema. This supersedes the earlier isolated-fixture-only SQL limitation for that head; live production acceptance remains outstanding.
+- Initial full browser shard 2 failed two stale source assertions expecting the old Recent activity wording. Their related runtime heading expectations were reconciled to Significant updates; authority, ministry-number and evidence-empty checks remain. The two corrected source contracts pass locally. The completed run also exposed stale generic page-container checks, an obsolete attachment-picker selector and exact-text matching across icon whitespace. Messages-specific route roots and accessible attachment controls now replace those selectors without weakening original width, real-file, authority or layout assertions. The downstream missing-message assertion followed the failed upload/send setup; it remains enforced. This is not a full-browser PASS.
+- Additional focused SQL coverage verifies wrong-department manager denial, denial for a copied Group Pastor and successful approval by the designated actual department head. The isolated PostgreSQL gate passes with these assertions; the fixture now models both seeded manager departments.
+
+Application code remains frozen at `93a0a28`. The follow-up qualification correction changes acceptance assertions/fixtures and this ledger only. Final PR status is authoritative for later exact-head CI outcomes.
+
+## Consolidated qualification repair — 29 October 2026
+
+All eight initial browser shards were collected before another push. Four passed (507 tests); the other four failed on the obsolete labels/container/picker assumptions above. Corrected source contracts pass 2/2 locally. Expanded Messages fixture checks pass 10/10 at 320/390/1440 px, including draft/focus retention, own removal, selected-recipient decision controls and the compact composer. Screenshots now use the established `test-artifacts` directory so existing CI uploads retain them. Generated test artifacts are ignored by git.
+
+A new `messages-memos-live.spec.js` exercises Staff draft reopening, actual private attachment bytes, Manager Cc clarification, Group Pastor approval, no automatic project creation, subsequent explicit project creation with reviewed shareable content, two-way origin links and unrelated HR content denial through the actual app/API/Storage. It explicitly refuses non-loopback database environments and restores its temporary fixture job title. It is skipped locally because this host has no disposable Supabase stack; only a successful CI result may establish that journey as passed. This adds verification coverage, not new production infrastructure.

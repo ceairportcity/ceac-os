@@ -98,6 +98,23 @@ DO $$ DECLARE v uuid; BEGIN
  IF (SELECT status FROM public.memos WHERE id='52000000-0000-4000-8000-000000000029')<>'sent' THEN RAISE EXCEPTION 'Ordinary memo requires decision fields'; END IF;
  PERFORM public.respond_to_memo('52000000-0000-4000-8000-000000000029',v,gen_random_uuid(),'closed','Correspondence complete');
 END; $$;
+-- Department decisions require the actual department head; even a copied
+-- Group Pastor has no approval action unless designated as the To decision-maker.
+DO $$ DECLARE v uuid; BEGIN
+ v:=(public.save_memo_draft('52000000-0000-4000-8000-000000000030',NULL,'Department proposal','Scoped departmental proposal',ARRAY['31000000-0000-4000-8000-000000000007'::uuid],ARRAY['31000000-0000-4000-8000-000000000004'::uuid],true,'department','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000007')->>'version_id')::uuid;
+ BEGIN PERFORM public.send_memo('52000000-0000-4000-8000-000000000030',v); RAISE EXCEPTION 'Another department manager gained authority'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ v:=(public.save_memo_draft('52000000-0000-4000-8000-000000000030',v,'Department proposal','Scoped departmental proposal',ARRAY['31000000-0000-4000-8000-000000000002'::uuid],ARRAY['31000000-0000-4000-8000-000000000004'::uuid],true,'department','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000002',(SELECT updated_at FROM public.memos WHERE id='52000000-0000-4000-8000-000000000030'))->>'version_id')::uuid;
+ PERFORM set_config('ceac.memo_test.department_version',v::text,true);
+ PERFORM public.send_memo('52000000-0000-4000-8000-000000000030',v);
+END; $$;
+SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal1"}',true);
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000004',true);
+DO $$ BEGIN
+ BEGIN PERFORM public.respond_to_memo('52000000-0000-4000-8000-000000000030',current_setting('ceac.memo_test.department_version')::uuid,gen_random_uuid(),'approved','Copied executive attempt'); RAISE EXCEPTION 'Copied Group Pastor gained authority'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END; $$;
+SELECT set_config('request.jwt.claims','{"sub":"31000000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal1"}',true);
+SELECT set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
+SELECT public.respond_to_memo('52000000-0000-4000-8000-000000000030',current_setting('ceac.memo_test.department_version')::uuid,gen_random_uuid(),'approved','Department head approval');
 RESET ROLE;
 DO $$ BEGIN
  IF (SELECT count(*) FROM private.room_message_removals WHERE message_id='51000000-0000-4000-8000-000000000028')<>1 OR NOT EXISTS(SELECT 1 FROM public.room_messages WHERE id='51000000-0000-4000-8000-000000000028') THEN RAISE EXCEPTION 'Removal audit or original message lost';END IF;

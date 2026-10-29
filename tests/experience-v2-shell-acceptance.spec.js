@@ -171,7 +171,7 @@ async function signIn(page, role) {
 }
 
 async function expectRoute(page, key) {
-  await expect(page.locator(".body").first()).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(key === "messages" ? ".msg-workspace" : ".body").first()).toBeVisible({ timeout: 15000 });
   const url = new URL(page.url());
   if (key === "home") {
     expect(url.searchParams.has("tab")).toBe(false);

@@ -44,7 +44,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(home).toContain('supabase.from("strategy_nodes")');
   expect(home).toContain('supabase.from("activity_events")');
   expect(overview).toContain("recentActivity");
-  expect(overview).toContain("Recent attributable CEAC activity");
+  expect(overview).toContain("Organisational milestones and exceptions");
   expect(overview).toContain("ministryStrategyRows");
   expect(overview).not.toContain("On track or met");
   expect(css).toContain(".executive-app .ev2s-sidebar");
@@ -147,7 +147,7 @@ test("Executive Overview reproduces the locked desktop composition", async ({ pa
   await expect(page.getByText("Needs your attention", { exact: true })).toBeVisible();
   await expect(page.getByText("Ministry direction", { exact: true })).toBeVisible();
   await expect(page.getByText("Organisational overview", { exact: true })).toBeVisible();
-  await expect(page.getByText("Recent activity", { exact: true })).toBeVisible();
+  await expect(page.getByText("Significant updates", { exact: true })).toBeVisible();
   await expect(page.getByText("Upcoming meetings", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await page.screenshot({ path: "test-artifacts/executive-redesign-reference-overview-desktop-1440.png", fullPage: true });

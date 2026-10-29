@@ -10,3 +10,4 @@ standby-output
 supabase/.temp/
 test-results/
 playwright-report/
+test-artifacts/

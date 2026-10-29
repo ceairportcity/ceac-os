@@ -55,8 +55,8 @@ test("VF6D keeps Messages and Connected Apps factual while closing shared-surfac
       await expect(inboxPage.getByRole("heading", { name: "Messages", exact: true })).toBeVisible();
       const filters = inboxPage.getByRole("navigation", { name: "Messages sections", exact: true }).getByRole("button");
       await expect(filters).toHaveCount(2);
-      await expect(filters.filter({hasText:/^Rooms$/})).toHaveCount(1);
-      await expect(filters.filter({hasText:/^Memos$/})).toHaveCount(1);
+      await expect(inboxPage.getByRole("navigation",{name:"Messages sections",exact:true}).getByRole("button",{name:"Rooms",exact:true})).toHaveCount(1);
+      await expect(inboxPage.getByRole("navigation",{name:"Messages sections",exact:true}).getByRole("button",{name:"Memos",exact:true})).toHaveCount(1);
       const heights = await filters.evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().height));
       expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
       await expect(inboxPage.getByRole("searchbox",{name:"Search Rooms"})).toBeVisible();

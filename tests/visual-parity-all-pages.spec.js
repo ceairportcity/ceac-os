@@ -62,7 +62,7 @@ async function inspectRoutes(page,role,config,routes){
     await page.goto(url);
     await expect(page.locator(config.app)).toBeVisible({timeout:15000});
     await expect(page.locator(".app-content")).toBeVisible();
-    await expect(page.locator(".body").first()).toBeVisible({timeout:15000});
+    await expect(page.locator(tab === "messages" ? ".msg-workspace" : ".body").first()).toBeVisible({timeout:15000});
     await page.evaluate(()=>document.fonts.ready);
     await page.waitForTimeout(250);
     const sidebarOverflow=await page.evaluate(()=>{
@@ -92,10 +92,10 @@ async function inspectMobileRoutes(page,role,config,routes){
     const url=tab==="home"?"/":"/?tab="+encodeURIComponent(tab);
     await page.goto(url);
     await expect(page.locator(config.app)).toBeVisible({timeout:15000});
-    await expect(page.locator(".body").first()).toBeVisible({timeout:15000});
+    await expect(page.locator(tab === "messages" ? ".msg-workspace" : ".body").first()).toBeVisible({timeout:15000});
     await page.evaluate(()=>document.fonts.ready);
     const geometry=await page.evaluate(()=>{
-      const body=document.querySelector(".app-content .body");
+      const body=document.querySelector(new URL(location.href).searchParams.get("tab")==="messages" ? ".app-content .msg-workspace" : ".app-content .body");
       const rect=body?.getBoundingClientRect();
       return {
         document:document.documentElement.scrollWidth-document.documentElement.clientWidth,

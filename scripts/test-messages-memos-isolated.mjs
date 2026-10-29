@@ -15,9 +15,9 @@ const start=project.indexOf('create or replace function public.create_project_wi
 await db.exec(project.slice(start,end));
 await db.exec(fs.readFileSync('supabase/migrations/20261028181026_messages_memos_work_followups.sql','utf8'));
 await db.exec(`INSERT INTO organisations(id) VALUES ('10000000-0000-4000-8000-000000000010');
-INSERT INTO units(id,org_id,name) VALUES ('20000000-0000-4000-8000-000000000011','10000000-0000-4000-8000-000000000010','Test A');
+INSERT INTO units(id,org_id,name) VALUES ('20000000-0000-4000-8000-000000000011','10000000-0000-4000-8000-000000000010','Test A'),('20000000-0000-4000-8000-000000000012','10000000-0000-4000-8000-000000000010','Test B');
 INSERT INTO profiles(id,org_id,full_name,job_title,is_admin,is_exec) SELECT ('31000000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid,'10000000-0000-4000-8000-000000000010','Fixture '||i,'Fixture',i=3,i=4 FROM generate_series(1,7) i;
-INSERT INTO unit_memberships(profile_id,org_id,unit_id,role) SELECT id,org_id,'20000000-0000-4000-8000-000000000011',CASE WHEN full_name='Fixture 2' THEN 'manager' ELSE 'staff' END FROM profiles;
+INSERT INTO unit_memberships(profile_id,org_id,unit_id,role) SELECT id,org_id,CASE WHEN full_name='Fixture 7' THEN '20000000-0000-4000-8000-000000000012'::uuid ELSE '20000000-0000-4000-8000-000000000011'::uuid END,CASE WHEN full_name IN ('Fixture 2','Fixture 7') THEN 'manager' ELSE 'staff' END FROM profiles;
 INSERT INTO rooms(id,org_id,kind,unit_id) VALUES ('50000000-0000-4000-8000-000000000028','10000000-0000-4000-8000-000000000010','unit','20000000-0000-4000-8000-000000000011');`);
 console.log('PASS: forward migration compiled and applied to isolated PGlite schema fixture');
 await db.exec(fs.readFileSync('supabase/tests/messages_memos_gate.sql','utf8').replace(/^\\set.*$/gm,''));

@@ -126,12 +126,12 @@ test("Stage 11B Executive activity remains attributable and does not invent move
   await page.goto("/?tab=home");
   await expect(page.locator(".executivev2-hero h2")).toContainText(/Good morning|Good afternoon|Good evening/);
 
-  // Owner-approved Executive Overview renders attributable activity, not a
+  // Owner-approved Executive Overview renders attributable significant updates, not a
   // synthetic movement score or an empty chart. If no authorised records
   // exist, the explicit evidence-empty state must be visible.
   const activity = page.locator(".executivev2-activity");
   await expect(activity).toBeVisible();
-  await expect(activity.getByRole("heading", { name: "Recent activity" })).toBeVisible();
+  await expect(activity.getByRole("heading", { name: "Significant updates" })).toBeVisible();
   const records = activity.locator(".executivev2-activity-item");
   const empty = activity.getByText("No recent attributable activity is visible.", { exact: true });
   await expect.poll(async () =>

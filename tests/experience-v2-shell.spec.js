@@ -252,7 +252,8 @@ test("OCR3 Room Composer exposes private media attachment control", async ({ pag
   await create.click();
   await page.getByRole("menu").getByRole("menuitem", { name: "Message room", exact: true }).click();
   await expect(page.locator(".room-screen")).toBeVisible({ timeout: 15000 });
-  await expect(page.getByText("Attach media or file", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Attach file", exact: true })).toBeVisible();
+  await expect(page.locator('.room-composer input[type="file"]')).toHaveAttribute("accept", /image/);
 });
 
 test("OCR4 Global Search returns grouped authorised records and opens Project and Work", async ({ page }) => {

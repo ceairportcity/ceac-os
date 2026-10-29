@@ -41,7 +41,8 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
   expect(view).toContain('from "../icons"');
   expect(view).toContain("Needs your attention");
   expect(view).toContain("Good morning");
-  expect(view).toContain("Recent activity");
+  expect(view).toContain("Significant updates");
+  expect(home).toContain('.in("verb", EXECUTIVE_EXCEPTION_VERBS)');
   expect(view).toContain("Organisational overview");
   expect(view).toContain("This area only shows CEAC records your account is authorised to see.");
   expect(view).not.toContain("ReferenceDashboard");
