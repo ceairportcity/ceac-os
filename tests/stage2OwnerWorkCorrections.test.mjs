@@ -300,10 +300,10 @@ test("recorded routine dates can open a factual evidence entry without certifyin
 test("approved Messages timeline replaces bubbles with compact contextual controls",()=>{
   const css=source("src/screens/MessagesWorkspace.css");
   const room=source("src/screens/Room.jsx");
-  assert.match(css,/\.msg-room \.room-message\{/);
-  assert.match(css,/\.msg-room \.room-message\{[^}]*max-width:none/);
-  assert.match(css,/\.msg-room \.room-message\{[^}]*width:auto/);
-  assert.match(css,/\.msg-room \.room-message\.mine>p\{/);
+  assert.match(css,/\.room-message\{/);
+  assert.match(css,/\.room-message\{[^}]*max-width:none/);
+  assert.match(css,/\.room-message\{[^}]*width:auto/);
+  assert.match(css,/\.room-message\.mine>p\{/);
   assert.match(css,/\.msg-details\{/);
   assert.match(room,/aria-label="Room details"/);
   assert.match(room,/aria-label="Back from Room"/);

@@ -85,3 +85,19 @@ test('Memo refresh retains a clarification draft and section changes protect uns
  await page.getByRole('button',{name:'Rooms',exact:true}).click();
  await expect(page.getByRole('textbox',{name:'Subject',exact:true})).toHaveValue('Unsaved composition');
 });
+
+for(const width of [1440,320])test(`Memo reader keeps document and authorised actions proportionate at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:960});await mock(page);
+ await page.goto('/tests/fixtures/messages-workspace.html?actor=pastor');
+ await page.getByRole('button',{name:'Memos',exact:true}).click();
+ await page.getByRole('button',{name:/Media Team Digital Transformation Initiative/}).click();
+ await expect(page.getByRole('button',{name:'Approve proposal',exact:true})).toBeVisible();
+ const document=await page.locator('.memo-document').boundingBox(),actions=await page.locator('.memo-response').boundingBox();
+ expect(document).toBeTruthy();expect(actions).toBeTruthy();
+ if(width>1100){expect(actions.x).toBeGreaterThanOrEqual(document.x+document.width);expect(actions.width).toBeLessThanOrEqual(260);}
+ else{expect(actions.y).toBeGreaterThanOrEqual(document.y+document.height-1);expect(document.width).toBeGreaterThan(250);}
+ const sender=await page.locator('.memo-parties strong').boundingBox(),date=await page.locator('.memo-parties small').first().boundingBox();
+ expect(date.y).toBeGreaterThan(sender.y);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+ await page.screenshot({path:`test-artifacts/messages-memo-reader-${width}.png`,fullPage:true});
+});

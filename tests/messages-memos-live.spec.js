@@ -13,7 +13,7 @@ async function openAs(browser,email,url='/?tab=messages'){
  const context=await browser.newContext({viewport:{width:390,height:960}}),page=await context.newPage();
  await page.goto(url);await page.getByPlaceholder('Work email').fill(email);
  await page.getByPlaceholder('Password').fill(process.env.ROLE_FIXTURE_PASSWORD);
- await page.getByRole('button',{name:'Sign in',exact:true}).click();
+ await page.getByRole('button',{name:'Sign in'}).click();
  await expect(page.locator('.msg-workspace')).toBeVisible();
  if(!url.includes('&memo='))await page.getByRole('button',{name:'Memos',exact:true}).click();
  return {context,page};
