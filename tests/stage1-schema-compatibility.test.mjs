@@ -75,7 +75,7 @@ test("People Administration cannot begin Support membership changes while Stage 
 test("Technical Help cannot accept a request draft while its Stage 1 service is unavailable", () => {
   const help = source("src/screens/TechnicalHelp.jsx");
   assert.match(help, /const requestUnavailable = scopedLoading \|\| Boolean\(loadError\)/);
-  assert.equal((help.match(/disabled=\{requestUnavailable\}/g) || []).length, 4);
+  assert.equal((help.match(/disabled=\{requestUnavailable \|\| busy\}/g) || []).length, 6);
   assert.match(help, /disabled=\{busy \|\| requestUnavailable\}/);
 });
 

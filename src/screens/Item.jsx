@@ -9,6 +9,7 @@ import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
 import WorkActivityDiary from "../components/WorkActivityDiary";
 import WorkProjectLink from "../components/WorkProjectLink";
+import WorkDetailsEditor from "../components/WorkDetailsEditor";
 import RoutineDateProgress from "../components/RoutineDateProgress";
 import RoutineOccurrenceReviews from "../components/RoutineOccurrenceReviews";
 import { routineFutureChange, routineOccurrenceDetails } from "../lib/routineWriteValidation";
@@ -549,6 +550,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         onBack={back}
       />
       <WorkProjectLink key={`${me.id}:${item.id}:${item.project_id || "unlinked"}`} me={me} item={item} onLinked={load} />
+      <WorkDetailsEditor key={`${me.id}:${item.id}:${item.last_movement_at}`} me={me} item={item} onSaved={load} />
 
       {openRoom && (item.project_id || item.sub_team_id || item.unit_id) && <button className="work-room-entry" onClick={() => openRoom({
         ...(item.project_id

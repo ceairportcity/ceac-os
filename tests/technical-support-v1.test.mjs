@@ -1,9 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {supportCasePeople} from "../src/lib/supportCasePeople.js";
 import {
   HELP_CATEGORIES, SUPPORT_WORKSPACES, SUPPORT_GUIDES, SERVICE_NAMES,
   canManageSupport, supportCaseGroups, supportCategoryLabel, filterSupportCases, supportCasesNeedingMe, supportUnavailableMessage, canRecordSupportOutcome, supportReportedServiceIssues,
 } from "../src/lib/technicalSupport.js";
+
+test("triage resolves only RLS-visible names and searches the resolved reporter/department", async()=>{
+ const calls=[];
+ const client={from(table){return {select(fields){calls.push({table,fields});return {in:async()=>({data:table==='profiles'?[{id:'reporter',full_name:'Synthetic reporter'}]:[{id:'unit',name:'IT'}]})};}};}};
+ const cases=await supportCasePeople(client,[{id:'case',reported_by:'reporter',affected_profile_id:'reporter',affected_unit_id:'unit'}]);
+ assert.equal(cases[0].reporter_name,'Synthetic reporter');assert.equal(cases[0].department_name,'IT');
+ assert.equal(filterSupportCases(cases,'reporter').length,1);assert.equal(filterSupportCases(cases,'IT').length,1);
+ assert.deepEqual(calls,[{table:'profiles',fields:'id,full_name'},{table:'units',fields:'id,name'}]);
+});
+test("denied directory results retain the case without inventing reporter identity",async()=>{
+ const client={from(){return {select(){return {in:async()=>({error:{message:'Denied'},data:null})};}};}};
+ const [item]=await supportCasePeople(client,[{id:'case',reported_by:'hidden',affected_unit_id:'hidden-unit'}]);
+ assert.equal(item.id,'case');assert.equal(item.reporter_name,null);assert.equal(item.department_name,null);
+});
 
 test("support panel has the six locked workspaces and categories", () => {
   assert.deepEqual(SUPPORT_WORKSPACES.map((item) => item.label),

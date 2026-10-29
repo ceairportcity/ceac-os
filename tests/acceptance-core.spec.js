@@ -126,7 +126,7 @@ async function openCompleteWorkRecord(page, title) {
   await row.getByRole("button").first().click();
   const inspector=page.getByRole("complementary",{name:"Selected responsibility"});
   await expect(inspector.getByRole("heading",{name:title})).toBeVisible({timeout:20000});
-  await inspector.getByRole("button",{name:/Open complete work record/}).click();
+  await inspector.getByRole("button",{name:/Open full work record/}).click();
   await expect(page.locator(".ev2-work-detail")).toBeVisible({timeout:20000});
 }
 

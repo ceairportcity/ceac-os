@@ -81,14 +81,14 @@ export default function LearningCourseBuilder({me,course,modules,resources,rules
    </div>
    <div id="learning-stage-publish" hidden={stage!=='publish'}>
     <section className="card" style={panel} aria-label="Review and publish">
-     <h3>{draft?'Ready to publish?':'Course publication'}</h3>
+     <h3>{draft?(ready?'Ready to publish?':'Before publishing'):'Course publication'}</h3>
      <p>{course.summary}</p>
      <ul style={{lineHeight:2}}>
       <li>{modules.length} modules · {resources.length} resources</li>
-      <li>{modules.some(row=>row.required)?'Required module recorded':'Add at least one required module'}</li>
-      <li>{modules.length&&modules.every(row=>resources.some(resource=>resource.module_id===row.id))?'Every module has a resource':'Add a resource to every module'}</li>
+      <li>{modules.some(row=>row.required)?'Required module recorded':<><span>Add at least one required module. </span>{draft&&<button type="button" className="text-action" onClick={()=>{setStage('modules');if(!modules.length)onAddModule();}}>Edit course outline</button>}</>}</li>
+      <li>{modules.length&&modules.every(row=>resources.some(resource=>resource.module_id===row.id))?'Every module has a resource':<><span>Add a resource to every module. </span>{draft&&modules.length>0&&<button type="button" className="text-action" onClick={()=>{setSelectedId(modules.find(row=>!resources.some(resource=>resource.module_id===row.id))?.id||modules[0].id);setStage('modules');}}>Add missing resources</button>}</>}</li>
      </ul>
-     {draft&&<><p>Published content cannot be edited. Review the learner preview before publishing; assignments are created separately in Audience.</p>{unsaved&&<p role="status">Save your course and module changes before publishing. Learner preview shows saved content.</p>}<button type="button" className="btn" disabled={busy||!ready||unsaved} onClick={onPublish}>Publish course</button></>}
+     {draft&&<><p>Published content cannot be edited. Review the learner preview before publishing; assignments are created separately in Audience.</p>{unsaved&&<p role="status">Save your course and module changes before publishing. Learner preview shows saved content.</p>}<button type="button" className="btn btn-sm" style={{width:"fit-content",opacity:(busy||!ready||unsaved)?0.45:1}} disabled={busy||!ready||unsaved} onClick={onPublish}>Publish course</button></>}
      {course.state==='published'&&<><p>Published content is protected. Archive this course if it should no longer receive new assignments.</p><button type="button" className="btn btn-ghost" disabled={busy} onClick={onArchive}>Archive course</button></>}
      {course.state==='archived'&&<p>This course is archived. Existing assignments and history remain available.</p>}
     </section>

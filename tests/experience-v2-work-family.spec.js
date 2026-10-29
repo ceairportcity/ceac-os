@@ -171,7 +171,7 @@ for (const viewport of [
     await expect(firstRow).toBeVisible();
     await firstRow.click();
     await expect(page.getByRole("complementary", { name: "Selected responsibility" })).toBeVisible();
-    await page.getByRole("button", { name: /Open complete work record/ }).click();
+    await page.getByRole("button", { name: /Open full work record/ }).click();
 
     await expect(page.locator(".ev2-work-detail")).toBeVisible();
     await expect(page.locator(".ev2wd-header")).toBeVisible();
@@ -382,7 +382,7 @@ for (const viewport of [
     await expect(firstRow).toBeVisible();
     await firstRow.click();
     await expect(page.getByRole("complementary", { name: "Selected responsibility" })).toBeVisible();
-    await page.getByRole("button", { name: /Open complete work record/ }).click();
+    await page.getByRole("button", { name: /Open full work record/ }).click();
     await expect(page.locator(".ev2-work-detail")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await page.screenshot({

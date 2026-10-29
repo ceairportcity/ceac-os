@@ -68,7 +68,7 @@ export function filterSupportCases(cases = [], query = "", status = "all") {
   const needle = String(query || "").trim().toLocaleLowerCase();
   return (Array.isArray(cases) ? cases : []).filter((item) => {
     if (status !== "all" && item.state !== status) return false;
-    return !needle || [item.summary, item.reference, supportCategoryLabel(item.category)]
+    return !needle || [item.summary, item.reference, item.reporter_name, item.affected_name, item.department_name, supportCategoryLabel(item.category)]
       .some((value) => String(value || "").toLocaleLowerCase().includes(needle));
   });
 }

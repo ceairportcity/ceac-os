@@ -142,8 +142,8 @@ begin
   -- allowlist; migration185 adds one HR-only canonical roster creation RPC.
   -- Any additional unreviewed function remains prohibited.
   -- 25 October adds exactly one reviewed Executive department-assignment RPC.
-  if n<>174 then
-    raise exception 'Security gate failure: expected 164 existing interfaces plus ten explicitly enumerated Messages interfaces (174), found %.',n;
+  if n<>176 then
+    raise exception 'Security gate failure: expected 174 existing interfaces plus two enumerated work-edit/follow-up interfaces (176), found %.',n;
   end if;
 end $$;
 

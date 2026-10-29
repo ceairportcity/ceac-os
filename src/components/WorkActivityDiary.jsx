@@ -2,6 +2,8 @@ import { outstandingActivityActions } from "../lib/workCompletion";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { RESPONSIBILITY_STATUS } from "../lib/responsibilityRegister";
+import {OperationalFileList, PendingFilePicker} from "./OperationalFiles";
+import {uploadOperationalFile} from "../lib/operationalFiles";
 import "./WorkActivityDiary.css";
 
 function ghanaDay() {
@@ -22,7 +24,10 @@ const states = [
 
 /** Source-backed contribution diary. A diary action never completes a parent
  * responsibility, changes formal attendance or self-approves an objective. */
-export default function WorkActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact = false }) {
+export default function WorkActivityDiary(props) {
+  return <ActivityDiary key={`${props.me.org_id}:${props.me.id}:${props.item.id}`} {...props}/>;
+}
+function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact = false }) {
   const [sourceHistory, setSourceHistory] = useState([]);
   const [completedDiaryScope, setCompletedDiaryScope] = useState("");
   const [loading, setLoading] = useState(true);
@@ -41,8 +46,15 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   const [minutes, setMinutes] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [reload, setReload] = useState(0);
+  const [files,setFiles]=useState([]);
+  const [planNext,setPlanNext]=useState(true);
+  const [writeError,setWriteError]=useState("");
+  const savedActivity=useRef(null);
+  const uploadAttempts=useRef(new Map());
   const submitting = useRef(false);
   const sectionRef = useRef(null);
+  const active=useRef(true);
+  useEffect(()=>{active.current=true;return ()=>{active.current=false;};},[]);
   const diaryScope = `${me.org_id}:${me.id}:${item.id}`;
   const verified = completedDiaryScope === diaryScope && !loading && !error && !unavailable;
   const history = verified ? sourceHistory : [];
@@ -54,6 +66,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
     setEditor(false); setCorrectingId(null); setDate(ghanaDay()); setState("done");
     setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
     setSuccess(""); setError("");
+    setFiles([]);setWriteError("");savedActivity.current=null;uploadAttempts.current.clear();
   }, [me.id, me.org_id, item.id]);
   // Only user-invoked occurrence shortcuts set the entry date; an unrelated
   // rerender or ordinary load never discards an editor's unsaved work.
@@ -122,8 +135,9 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   ));
 
   function correct(entry) {
-    if (entry.contributor_id !== me.id || busy || !verified) return;
+    if (entry.contributor_id !== me.id || busy || savedActivity.current || !verified) return;
     setCorrectingId(entry.id);
+    setPlanNext(false);setFiles([]);setWriteError("");
     setDate(entry.activity_date);
     setState(entry.activity_state);
     setSummary(entry.action_summary);
@@ -141,6 +155,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
     submitting.current = true;
     setBusy(true);
     setError("");
+    setWriteError("");
     setSuccess("");
     try {
       const fields = {
@@ -154,10 +169,12 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
         evidence_url: evidenceUrl.trim() || null,
         supersedes_id: correctingId || null,
       };
-      const write = await supabase.from("work_activity_records").insert(fields).select("id").single();
+      const write = savedActivity.current ? {data:{id:savedActivity.current},error:null} : await supabase.from("work_activity_records").insert(fields).select("id").single();
+      if(!active.current)return;
       if (write.error) throw write.error;
       if (!write.data?.id)
         throw new Error("The save outcome is uncertain. Inspect the activity history before trying again.");
+      savedActivity.current=write.data.id;
       const check = await supabase.from("work_activity_records")
         .select("id,org_id,work_item_id,contributor_id,action_summary,activity_date,supersedes_id")
         .eq("id", write.data.id).eq("org_id", me.org_id).eq("work_item_id", item.id).maybeSingle();
@@ -166,15 +183,28 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
         || check.data.activity_date !== fields.activity_date
         || (check.data.supersedes_id || null) !== fields.supersedes_id)
         throw new Error("The record cannot be independently confirmed. Refresh before retrying.");
+      if(!active.current)return;
+      if(planNext && fields.next_action){
+        const planned=await supabase.rpc("plan_work_activity_followup",{p_activity_id:write.data.id});
+        if(planned.error)throw planned.error;
+        if(!active.current)return;
+      }
+      for(let index=0;index<files.length;index++){
+        if(!uploadAttempts.current.has(files[index]))uploadAttempts.current.set(files[index],{});
+        try{await uploadOperationalFile({file:files[index],contextType:"work_activity",contextId:write.data.id,relation:"activity_evidence",retryState:uploadAttempts.current.get(files[index])});}
+        catch(failure){setFiles(files.slice(index));throw failure;}
+        if(!active.current)return;
+      }
+      savedActivity.current=null;setFiles([]);uploadAttempts.current.clear();
       setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
       setCorrectingId(null); setDate(ghanaDay()); setState("done");
       setSuccess(fields.supersedes_id
         ? "Your activity correction was recorded. The earlier version remains preserved."
-        : "Your dated activity was recorded.");
+        : fields.next_action&&planNext ? "Your activity was recorded. Its follow-up remains in your private plan even when this assignment is finished." : "Your dated activity was recorded.");
       setEditor(false);
       setReload((n) => n + 1);
     } catch (e) {
-      setError(e?.message || "The activity could not be saved.");
+      setWriteError((savedActivity.current ? "The activity is saved. Retry to finish its follow-up or attachments without recording it again. " : "")+(e?.message || "The activity could not be saved."));
     } finally {
       submitting.current = false;
       setBusy(false);
@@ -182,7 +212,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
   }
 
   const recordAction = (verified && canRecord && <button type="button" className={compact ? "btn s2-work-inspector-open" : "btn btn-sm"}
-        onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl(""); setEditor((open) => !open); }}
+        disabled={busy || Boolean(savedActivity.current)} onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");setFiles([]);setPlanNext(true);setWriteError(""); setEditor((open) => !open); }}
         >{editor ? "Close" : "+ Record an activity"}</button>);
 
   return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
@@ -206,7 +236,7 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
       <div><span>Recorded as done</span><strong>{completedActionCount}</strong></div>
     </div>}
     {verified && nextActions.length > 0 && <div className="s2-work-diary-next-action">
-      <span>Recorded next actions</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}</p>)}
+      <span>Recorded next actions</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}{action.contributor_id===me.id&&<PlanFollowup activityId={action.id}/>}</p>)}
     </div>}
     {compact && verified && <h3>Activity record</h3>}
     {verified && history.length === 0 && <p>No dated activities have been recorded under this responsibility yet.</p>}
@@ -219,12 +249,14 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
         {entry.next_action && <p><b>Next{entry.next_action_on ? ` · ${entry.next_action_on}` : ""}:</b> {entry.next_action}</p>}
         {entry.duration_minutes != null && <small>{entry.duration_minutes} minutes self-recorded (not attendance)</small>}
         {entry.evidence_url && <a href={entry.evidence_url} target="_blank" rel="noopener noreferrer">Open evidence ↗</a>}
+        <ActivityFiles entry={entry} canUpload={entry.contributor_id===me.id&&canRecord}/>
         {entry.supersedes_id && <small>Corrected entry · prior version preserved</small>}
-        {entry.contributor_id === me.id && canRecord && <button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={() => correct(entry)}>Correct this entry</button>}
+        {entry.contributor_id === me.id && canRecord && <button className="btn btn-ghost btn-sm" type="button" disabled={busy || Boolean(savedActivity.current)} onClick={() => correct(entry)}>Correct this entry</button>}
       </li>)}
     </ol>}
     {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
-      {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail.</p>}
+      <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
+      {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail. Existing private follow-up tasks stay in Calendar; edit them there if needed.</p>}
       <label>Activity date <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></label>
       <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
         {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
@@ -233,11 +265,32 @@ export default function WorkActivityDiary({ me, item, prefillDate = "", prefillR
       <label className="wide">Factual outcome <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
       <label className="wide">Next action <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
       <label>Next action date (optional) <input type="date" value={nextActionOn} onChange={e => setNextActionOn(e.target.value)} disabled={!nextAction.trim()} /></label>
+      {nextAction.trim()&&<label className="wide"><span><input type="checkbox" checked={planNext} onChange={e=>setPlanNext(e.target.checked)}/> Keep this follow-up in my private plan</span></label>}
       <p className="wide">Completing this activity leaves the assignment open. Finish the assignment separately when its full deliverable is complete.</p>
       <label>Minutes spent (optional, self-recorded) <input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
       <label className="wide">Evidence link (optional, HTTPS) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
+      </fieldset>
+      <div className="wide"><PendingFilePicker files={files} onChange={setFiles} disabled={busy} label="Attach activity files"/></div>
+      {writeError&&<p className="wide" role="alert">{writeError}</p>}
+      {savedActivity.current&&<button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={()=>{savedActivity.current=null;uploadAttempts.current.clear();setFiles([]);setEditor(false);setWriteError("");setSuccess("The activity is saved. You can plan its next action or attach files from its activity record later.");setReload(n=>n+1);}}>Keep saved activity; finish later</button>}
       <button type="submit" className="btn" disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Record activity"}</button>
     </form>}
     {compact && recordAction}
   </section>;
+}
+
+function ActivityFiles({entry,canUpload}){
+ const [open,setOpen]=useState(false);
+ return <details onToggle={event=>setOpen(event.currentTarget.open)}><summary>Activity files</summary>{open&&<OperationalFileList contextType="work_activity" contextId={entry.id} relation="activity_evidence" canUpload={canUpload} title="Activity evidence"/>}</details>;
+}
+function PlanFollowup({activityId}){
+ const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ const writing=useRef(false);
+ async function plan(){
+  if(writing.current)return;writing.current=true;setBusy(true);setMessage('');
+  try{const result=await supabase.rpc('plan_work_activity_followup',{p_activity_id:activityId});if(result.error)throw result.error;setMessage(result.data?'Available in Calendar → Tasks. Completing the assignment leaves this task open.':'This private follow-up was previously deleted.');}
+  catch(e){setMessage(e.message || 'The follow-up could not be planned.');}
+  finally{writing.current=false;setBusy(false);}
+ }
+ return <><button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={plan}>{busy?'Saving…':'Keep in my plan'}</button>{message&&<small role="status">{message}</small>}</>;
 }

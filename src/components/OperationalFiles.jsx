@@ -35,7 +35,7 @@ export function PendingFilePicker({ files, onChange, label = "Attach files", dis
       {files.map((file) => <div className="row" key={file.name + ":" + file.size}>
         <div className="row-t">{file.name}</div>
         <div className="row-m">{formatOperationalFileSize(file.size)} · ready to upload</div>
-        <button className="text-action" type="button" onClick={() => onChange?.(files.filter((entry) => entry !== file))}>Remove</button>
+        <button className="text-action" type="button" disabled={disabled} onClick={() => onChange?.(files.filter((entry) => entry !== file))}>Remove</button>
       </div>)}
     </div>}
     {error && <div className="hint" role="alert">{error}</div>}

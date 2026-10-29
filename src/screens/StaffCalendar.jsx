@@ -299,7 +299,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     meta:`${includeDate?new Date(`${event.date}T12:00:00`).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" · ":""}${event.meta||""}`,
     status:event.routineState?routineCalendarStatus(event.routineState):event.kind==="leave"?"Approved":event.kind==="meeting"?"Meeting":event.kind==="work"?"Due":event.kind==="personal"?(event.completed?"Done":"Private"):"Ministry",
     statusTone:event.kind==="leave"?"success":event.kind==="meeting"?"action":event.kind==="personal"&&event.completed?"success":"neutral",
-    onClick:event.itemId||event.meetingId||event.privateEventId?()=>open(event):undefined,
+    onClick:event.itemId||event.meetingId||event.privateEventId?()=>{setSelectedDate(event.date);setDayTab(event.kind==="work"?"tasks":"schedule");open(event);}:undefined,
   });
 
   const selectedShared=calendarEvents.filter(event=>event.date===selectedDate&&event.kind!=="personal");
@@ -376,12 +376,13 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
               </button>)}
               {selectedPrivate.map(task=><div key={task.id} className="phase6-private-task-card"><label className={task.completed_at?"phase6-private-task is-complete":"phase6-private-task"}><input type="checkbox" checked={Boolean(task.completed_at)} disabled={busy} onChange={()=>togglePersonalTask(task)}/><span><strong>{task.title}</strong><small>{[task.planned_time?timeLabel(task.planned_time):"Private personal task",task.reminder_at?"reminder set":null,task.linked_work_item_id?"linked CEAC Work":task.linked_project_id?"linked Project":null].filter(Boolean).join(" · ")}</small></span><em>Private</em></label>{checklistFor(task.id).length>0&&<div className="phase6-task-checklist">{checklistFor(task.id).map(row=><label key={row.id}><input type="checkbox" checked={Boolean(row.completed_at)} disabled={busy} onChange={()=>toggleChecklist(row)}/><span>{row.title}</span></label>)}</div>}<div className="phase6-private-task-actions"><Button variant="quiet" size="sm" disabled={busy} onClick={()=>setEditingPrivateItem({kind:"task",...task})}>Edit / delete</Button></div></div>)}
               {!selectedPrivate.length&&!selectedWork.length?<p className="phase6-day-empty">No task is planned or due on this day.</p>:null}
-              {personalPlanningReady&&<div className="phase6-private-task-compose">
-                <input className="field" aria-label="New private task" placeholder="Add a private task" value={taskTitle} onChange={event=>setTaskTitle(event.target.value)} />
-                <input className="field" aria-label="Private task time" type="time" value={taskTime} onChange={event=>setTaskTime(event.target.value)} />
+              {personalPlanningReady&&<div className="phase6-private-task-compose" role="group" aria-label="Add a private task">
+                <h4>Add a private task</h4>
+                <label>Task<input className="field" aria-label="New private task" placeholder="What do you need to do?" value={taskTitle} onChange={event=>setTaskTitle(event.target.value)} /></label>
+                <label>Time (optional)<input className="field" aria-label="Private task time" type="time" value={taskTime} onChange={event=>setTaskTime(event.target.value)} /></label>
                 <div className="phase6-private-task-actions">
                   <Button variant="secondary" size="sm" disabled={busy||!taskTitle.trim()} onClick={()=>addPersonalTask(true)}>Keep unscheduled</Button>
-                  <Button size="sm" disabled={busy||!taskTitle.trim()} onClick={()=>addPersonalTask(false)}>Add to day</Button>
+                  <Button size="sm" disabled={busy||!taskTitle.trim()} onClick={()=>addPersonalTask(false)}>Add to {shortDate(selectedDate)}</Button>
                 </div>
               </div>}
             </section>

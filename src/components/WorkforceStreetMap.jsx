@@ -109,10 +109,10 @@ export default function WorkforceStreetMap({clusters=EMPTY_CLUSTERS,office=null,
        `Select a person at this shared work-start location (${pin.people.length} staff). Press again for next person`}
       onPointerDown={e=>e.stopPropagation()}
       onClick={event=>{selectedMarker.current=event.currentTarget;onSelect?.(nextWorkforceClusterPersonId(pin.people,selectedId));}}>
-      {pin.people.length===1?<><span aria-hidden="true">●</span><span className="ceac-street-map-name">{pin.people[0].name}</span></>:pin.people.length}
+      <span className="ceac-street-map-dot" aria-hidden="true">{pin.people.length>1?pin.people.length:""}</span><span className="ceac-street-map-name">{pin.people.map(person=>person.name).join(", ")}</span>
      </button>)}
     </div>
-    {selectedContent&&<div className="ceac-street-map-popup" style={popupStyle} role="region" aria-label="Selected work start" onKeyDown={event=>{if(event.key==="Escape"){event.stopPropagation();closeSelection();}}} onPointerDown={e=>e.stopPropagation()}><button type="button" className="ceac-street-map-close" aria-label="Close selected work start" onClick={closeSelection}>×</button>{selectedContent}</div>}
+    {selectedContent&&<div className="ceac-street-map-popup" style={popupStyle} role="region" aria-label="Selected work start" onKeyDown={event=>{if(event.key==="Escape"){event.stopPropagation();closeSelection();}}} onPointerDown={e=>e.stopPropagation()}><button type="button" className="ceac-street-map-close" aria-label="Close selected work start" onClick={closeSelection}>×</button>{selectedPin?.people.length>1&&<div style={{display:"grid",gap:4}} aria-label="People at this recorded location">{selectedPin.people.map(person=><button className="text-action" type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={()=>onSelect?.(person.id)}>{person.name}</button>)}</div>}{selectedContent}</div>}
     <div className="ceac-street-map-zoom">
      <button type="button" aria-label="Zoom in on street map" onPointerDown={e=>e.stopPropagation()} onClick={()=>changeZoom(1)}>+</button>
      <button type="button" aria-label="Zoom out of street map" onPointerDown={e=>e.stopPropagation()} onClick={()=>changeZoom(-1)}>−</button>
@@ -124,6 +124,7 @@ export default function WorkforceStreetMap({clusters=EMPTY_CLUSTERS,office=null,
     </div>
    </>}
   </div>
+  {!choosing&&clusters.some(cluster=>cluster.people.some(person=>person.place==="office"))&&<div className="workstart-summary" aria-label="Recorded office starts"><strong>Office starts</strong>{clusters.flatMap(cluster=>cluster.people).filter(person=>person.place==="office").map(person=><button type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={event=>{selectedMarker.current=event.currentTarget;onSelect?.(person.id);}}>{person.name}</button>)}</div>}
   {consent&&<p className="screen-note">OpenStreetMap receives the visible map area, the CEAC site origin and your IP address. Staff identities and exact work-start records are not sent to the map provider. {office?"The office pin is a saved reference, not attendance proof.":"No saved office reference is available."} {!choosing&&!clusters.length&&"No recorded start GPS is available for these employees."}</p>}
   {consent&&<div className="ceac-street-map-after">
    <span>{choosing?(tileWarning?"Street tiles could not all load. Check that the venue point is correct before saving.":"Drag the map, or focus it and use arrow keys. Place the venue under the centre marker, then choose that point."):tileWarning?"The street background could not load from OpenStreetMap. Check this PC’s connection or content-blocking settings, then retry. Employee records remain available through Browse employees.":"Drag to explore. Use zoom controls to inspect streets. A pin opens a staff record; activate shared-location pins again to inspect every person there."}</span>
