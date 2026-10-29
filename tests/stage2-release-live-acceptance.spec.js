@@ -29,6 +29,18 @@ test('release personal monthly and quarterly PDFs contain visible authorised rep
  // Allow two actual exports and captures; the period selector includes option text
  // in its accessible name, so use its stable role and Period prefix.
  test.setTimeout(60000);
+ // Each browser shard has its own disposable database. This export needs its
+ // own current-period contribution; it must not depend on an earlier spec
+ // happening to submit or complete work for the same employee.
+ const service=localClient(process.env.SUPABASE_SERVICE_ROLE_KEY);
+ const contributionId=randomUUID();
+ const contributionTitle='Synthetic personal PDF contribution '+contributionId;
+ ok(await service.from('work_items').insert({
+  id:contributionId,org_id:org,unit_id:unit,assignee_id:'31000000-0000-4000-8000-000000000001',
+  assigned_by:'31000000-0000-4000-8000-000000000002',ref:'PDF-'+contributionId.slice(0,8),
+  title:contributionTitle,kind:'task',origin:'assigned',visibility:'unit',confidential:false,
+  status:'completed',completed_at:new Date().toISOString(),
+ }));
  const {page,context}=await open(browser,'staff@ceac.local.test','/?tab=achievements');
  try{
   const report=page.getByRole('main',{name:'My achievements'});
@@ -46,6 +58,7 @@ test('release personal monthly and quarterly PDFs contain visible authorised rep
    await expect(report.locator('.s2-achievement-metrics')).toBeVisible();
    const table=report.locator('.s2-achievement-table-scroll table');
    await expect(table).toBeVisible();
+   await expect(table).toContainText(contributionTitle);
    // Assert all source labels; generic operational CSS renders headers uppercase.
    // Do not rely on a case-sensitive accessible name after print media changes.
    await expect(table.locator('thead th')).toHaveText(['Work record','Current project','Recorded outcome','State now']);

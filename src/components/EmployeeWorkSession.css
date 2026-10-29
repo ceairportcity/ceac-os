@@ -6,6 +6,4 @@
 .s2-own-work-session-buttons button{background:#eaf3ff;border:1px solid #bbd8f8;padding:9px 13px;min-height:44px;font-size:12px;font-weight:700;border-radius:7px;color:#1365c1;cursor:pointer}
 .s2-own-work-session-buttons button:disabled{opacity:.5;cursor:not-allowed}
 .s2-own-work-session-error{flex-basis:100%;margin:0;color:#9d3434;font-size:12px}
-.s2-own-work-session fieldset{border:0;padding:0;margin:12px 0;display:grid;gap:7px}
-.s2-own-work-session fieldset label{display:flex;align-items:center;gap:6px}
 @media(max-width:600px){.s2-own-work-session{padding:12px;align-items:flex-start}.s2-own-work-session-buttons{width:100%}.s2-own-work-session-buttons button{width:100%}}

@@ -8,7 +8,7 @@ export class WorkStartPreflightError extends Error {
 }
 export async function openSession(orgId, userId) {
   const { data, error } = await supabase.from("work_sessions")
-    .select("id, started_at, last_confirmed_at, place, work_item_id")
+    .select("id, started_at, last_confirmed_at, place, work_item_id, flags")
     // The current employee can have historical records across CEAC units,
     // but this lookup must never bridge organisation boundaries.
     .eq("org_id", orgId).eq("profile_id", userId).is("ended_at", null)
@@ -19,14 +19,17 @@ export async function openSession(orgId, userId) {
   if (error) throw error;
   return data || null;
 }
-export async function startWork(orgId, userId, place, workItemId, officeLocationId = null) {
+export async function startWork(orgId, userId, place, workItemId, officeLocationId = null, offsiteLocationName = "") {
   if (place !== "office" && place !== "elsewhere") {
     throw new WorkStartPreflightError("Choose a valid working location before starting.");
   }
-  if (place === "elsewhere") {
-    // An off-site session must reference an actual active responsibility of
-    // this employee in this organisation, even if a client bypasses the picker.
-    if (!workItemId) throw new WorkStartPreflightError("Choose an assigned responsibility before starting off-site.");
+  const locationName = typeof offsiteLocationName === "string" ? offsiteLocationName.trim() : "";
+  if (place === "elsewhere" && (!locationName || [...locationName].length > 200 || /[\u0000-\u001f\u007f]/.test(locationName))) {
+    throw new WorkStartPreflightError("Enter where you are working from, using up to 200 characters. No session was started.");
+  }
+  // A responsibility is optional. If selected, it must still belong to this
+  // employee and organisation and remain active at the time of starting.
+  if (place === "elsewhere" && workItemId) {
     const { data: assigned, error: assignmentError } = await supabase.from("work_items")
       .select("id")
       .eq("org_id",orgId).eq("assignee_id",userId).eq("id",workItemId)
@@ -37,7 +40,7 @@ export async function startWork(orgId, userId, place, workItemId, officeLocation
     }
   }
   const pos = await getPositionOnce();
-  if (place === "office" && pos.failure) {
+  if (pos.failure) {
     throw new WorkStartPreflightError(`${pos.failure}. Turn on device location services and allow location for CEAC OS in browser site settings, then retry. No session was started.`);
   }
   let verifiedOfficeLocationId = null;
@@ -59,12 +62,13 @@ export async function startWork(orgId, userId, place, workItemId, officeLocation
     verifiedOfficeLocationId = location.id;
   }
   const { data, error } = await supabase.from("work_sessions").insert({
-    org_id: orgId, profile_id: userId, place, work_item_id: workItemId,
+    org_id: orgId, profile_id: userId, place, work_item_id: place === "elsewhere" ? workItemId || null : null,
+    flags: place === "elsewhere" ? { offsite_location_name: locationName } : {},
     office_location_id: verifiedOfficeLocationId,
     lat: pos.lat ?? null, lng: pos.lng ?? null,
     location_accuracy_m: pos.accuracy ?? null, location_captured_at: pos.capturedAt ?? null,
     device_time: new Date().toISOString(),
-  }).select("id, started_at, last_confirmed_at, place, work_item_id").single();
+  }).select("id, started_at, last_confirmed_at, place, work_item_id, flags").single();
   if (error?.code === "P0001" && error.message?.includes("Recorded coordinates are outside this authorised CEAC duty location")) {
     throw new Error("Your device reports a location outside the selected venue. Check the selected venue and your device location settings.");
   }

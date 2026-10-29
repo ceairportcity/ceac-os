@@ -274,3 +274,30 @@ The owner approved the three connected mockups and explicitly instructed impleme
 ## 28 October 2026 — Messages, confidential Memos and focused work corrections
 
 The owner approved the supplied composite Messages mockup and continuing implementation. Preserve the existing Messages main destination with **Rooms | Memos**, compact two-panel Rooms with optional details, restrained timeline and expanding attachment composer, and document-style Memo composition. No Direct Messaging, Requests/Submissions destination or voice recording. Authors can remove their own Room messages through an auditable mechanism; the separately identified four historical test-account messages are owner-authorised for removal without deleting the account. Confidential Memos are sender plus selected To/Cc only, without automatic HR/IT/unrelated Executive access. Group Pastor decides cross-department proposals; actual department management decides department proposals, with no Cc or implied team-lead approval power. Project creation remains a separate authorised action; proposal approval does not grant budget or execution authority. Retain the Gmail account and safely retire the duplicate iCloud access while preserving linked employee/HR history. Preserve existing work approvals and eligible self-certification; distinguish completed daily activity, follow-ups and whole-assignment completion; focus Executive Overview on exceptions with legitimate drill-down retained. Implementation, private-reference SHA256, findings and acceptance limits: `docs/continuity/CEAC_MESSAGES_MEMOS_IMPLEMENTATION_2026-10-28.md`. This authorises development; production remains subject to established release safeguards.
+## 28 October 2026 — off-site attendance independent of responsibility
+
+The owner clarified in voice that off-site Start Work must capture the employee's
+current location and where they are working from, without requiring a linked
+project. The owner explicitly approved implementing this change. This supersedes
+the mandatory active-responsibility requirement retained by PR150. A selected
+responsibility remains optional and must belong to the employee and organisation
+and be active. No project/task is fabricated. New off-site starts require fresh
+location evidence and a place name; location failures retain a retryable form.
+Office geofence, actor/tenant isolation, uncertain-write read-back, one-open-session
+protection, End Work and historical records remain unchanged. This implementation
+approval does not claim production deployment or physical-device acceptance.
+
+## 28 October 2026 — approved Start Work popup, existing system colours
+
+The owner approved the refined Start Work popup and explicitly instructed:
+“Excellent. Implement this while maintaining the current System colors”.
+The selected proposal is `start-work-refined.html`, SHA256
+`ca7799fedb35b1170709e086c89da45a2ade9b5885e09833678bfd2f854788c0`.
+Use a compact Start work header, two visible CEAC location / Off-site choices,
+conditional venue or place-name input, collapsed optional responsibility link,
+short foreground-location explanation and Cancel / Start work footer.
+Implement once across Staff and shared Manager/HR/Executive controls. Retain the
+current CEAC colour tokens and primary-button styles rather than copying the
+proposal's literal palette. The earlier off-site location, optional work,
+authority, office geofence and safe-write recovery decisions remain binding.
+This approves implementation, not an assertion that production has been updated.

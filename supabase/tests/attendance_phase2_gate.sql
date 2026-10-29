@@ -69,7 +69,7 @@ do $$ declare n uuid; med uuid; s public.work_sessions; c uuid; c2 uuid; body js
  begin perform public.respond_work_request(n,'fulfilled','Item screen bypass'); raise exception 'Generic Request self approval accepted'; exception when others then if sqlerrm not like 'You are not responsible%' and sqlerrm not like 'Managed-unit%' then raise; end if; end;
  perform public.attendance_record_return(n);
  if not exists(select 1 from public.attendance_returns where work_item_id=n and evidence_type='self_report' and actor_id=auth.uid()) then raise exception 'Attributable self return missing'; end if;
- insert into public.work_sessions(org_id,profile_id,place) values(public.app_org_id(),auth.uid(),'elsewhere') returning * into s;
+ insert into public.work_sessions(org_id,profile_id,place,lat,lng,location_accuracy_m,location_captured_at,device_time,flags) values(public.app_org_id(),auth.uid(),'elsewhere',0,0,12,now(),now(),'{"offsite_location_name":"Synthetic off-site checkpoint fixture"}') returning * into s;
  insert into phase2_ids values('session',s.id);
  c:=public.record_work_checkpoint(s.id,'periodic',null,null,null,null,now(),'Permission denied');
  c2:=public.record_work_checkpoint(s.id,'periodic',0,0,12,now(),now(),null);

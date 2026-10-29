@@ -84,7 +84,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(css).not.toContain(".fpg-payroll-metrics article:nth-child(1)");
   expect(fs.readFileSync("src/premium.css", "utf8")).toContain(".fpg-payroll-main .fpg-payroll-metrics article:first-child>strong");
   expect(fs.readFileSync("src/screens/AdminPayroll.jsx", "utf8")).toContain('aria-label="Recorded payroll totals"');
-  expect(css).toContain(".inbox-page");
+  expect(fs.readFileSync("src/screens/MessagesWorkspace.css", "utf8")).toContain(".msg-workspace");
   expect(inbox).toContain('className="msg-workspace"');
   expect(inbox).toContain('aria-label="Messages sections"');
   expect(css).toContain(".exec-redesign-shared-head");

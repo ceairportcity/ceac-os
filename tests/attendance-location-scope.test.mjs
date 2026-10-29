@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const session = read("../src/lib/session.js");
 const home = read("../src/screens/Home.jsx");
+const startDialog = read("../src/components/StartWorkDialog.jsx");
 const issuer = read("../src/components/AttendanceCodeIssuer.jsx");
 const workforce = read("../src/screens/Workforce.jsx");
 const evidence = read("../src/components/AttendanceEvidence.jsx");
@@ -21,7 +22,9 @@ test("office work sessions validate a selected duty location within the organisa
 });
 
 test("on-site work starts require a deliberate registered office or programme selection", () => {
-  assert.match(home, /aria-label="Authorised duty location"/);
+  assert.match(startDialog, /aria-label="Authorised duty location"/);
+  assert.match(home, /<StartWorkDialog/);
+  assert.match(home, /locationId=\{officeLocationId\}/);
   assert.match(home, /place === "office" && \(officeLocationStatus !== "ready" \|\| !officeLocationId\)/);
   assert.match(home, /place === "office" \? officeLocationId : null/);
   assert.match(home, /select\("id,name"\)/);
@@ -134,25 +137,27 @@ test("pre-insert location failure allows retry while uncertain Start writes rema
   assert.match(clock, /setVerified\(false\); setEditor\(false\); setReady\(false\)/);
   assert.match(home, /err instanceof WorkStartPreflightError/);
   assert.match(home, /setVerifiedSessionScope\(null\); setAsk\(false\)/);
-  assert.match(home, /\{error && <p role="alert" className="hint">\{error\}<\/p>\}/);
+  assert.match(home, /busy=\{busy\} error=\{error\}/);
+  assert.match(startDialog, /\{error && <p className="cw-error" style=\{layout.error\} role="alert">\{error\}<\/p>\}/);
 });
 
 test("manager and HR off-site work remains available if office locations fail to load", () => {
   const ownSession = read("../src/components/EmployeeWorkSession.jsx");
-  assert.match(ownSession, /Promise\.allSettled\(/);
-  assert.match(ownSession, /setLocationsUnavailable\(Boolean\(locationValue\.error\)\)/);
-  assert.match(ownSession, /setOwnWorkUnavailable\(Boolean\(workValue\.error\)\)/);
-  assert.match(ownSession, /place==="office"\?\(locationsUnavailable\|\|!locationId\):\(ownWorkUnavailable\|\|!workId\)/);
-  assert.match(ownSession, /No active responsibility is currently assigned to you/);
+  assert.match(ownSession, /Optional responsibility loading cannot hold up/);
+  assert.match(ownSession, /setLocationsUnavailable\(Boolean\(error\)\)/);
+  assert.match(ownSession, /setOwnWorkUnavailable\(Boolean\(error\)\)/);
+  assert.match(ownSession, /!offsiteLocationName\.trim\(\)/);
+  assert.match(startDialog, /No responsibility is required to start off-site/);
 });
 
 test("staff off-site picker reads authorised live work independently of Overview widgets", () => {
   assert.match(home, /setOffsiteWorkStatus\("loading"\)/);
   assert.match(home, /supabase\.from\("work_items"\)\.select\("id,ref,title,status"\)/);
   assert.match(home, /\.eq\("org_id",me\.org_id\)\.eq\("assignee_id",me\.id\)/);
-  assert.match(home, /offsiteWork\.map\(\(item\) =>/);
-  assert.match(home, /offsiteWorkStatus === "error"/);
-  assert.match(home, /offsiteWorkStatus === "ready" && offsiteWork\.length === 0/);
-  assert.match(home, /openWork\?\.\(\)/);
+  assert.match(home, /workItems=\{offsiteWork\} workStatus=\{offsiteWorkStatus\}/);
+  assert.match(startDialog, /workItems\.map\(item =>/);
+  assert.match(startDialog, /workStatus === "error"/);
+  assert.match(startDialog, /workStatus === "ready" && workItems\.length === 0/);
+  assert.match(startDialog, /Continue without linking work/);
   assert.match(home, /offsiteWork\.some\(\(item\) => item\.id === sessionWorkItem\)/);
 });

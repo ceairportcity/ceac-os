@@ -79,10 +79,10 @@ body{color:var(--ceac-text)}
   background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;
   box-shadow:0 4px 14px rgba(33,61,96,.04)!important
 }
-.body>.row:not(:where(.exec-v2 *)),.premium-list-row,.inbox-row,.manager-work-row,.manager-review-row,.admin-work-row,.admin-review-row,.exec-list>button,.exec-report-row{
+.body>.row:not(:where(.exec-v2 *)),.premium-list-row,.manager-work-row,.manager-review-row,.admin-work-row,.admin-review-row,.exec-list>button,.exec-report-row{
   min-height:54px!important;background:#fff!important;border-color:#edf2f6!important;
 }
-.body button.row:hover:not(:where(.exec-v2 *)),.premium-list-row:hover,.inbox-row:hover,.manager-work-row:hover,.manager-review-row:hover,.admin-work-row:hover,.exec-list>button:hover{
+.body button.row:hover:not(:where(.exec-v2 *)),.premium-list-row:hover,.manager-work-row:hover,.manager-review-row:hover,.admin-work-row:hover,.exec-list>button:hover{
   background:#f8fbff!important
 }
 .manager-work-tabs,.admin-work-tabs,.workforce-tabs,.exec-tabs,.status-filter{
@@ -102,8 +102,8 @@ body{color:var(--ceac-text)}
 }
 .metric b:not(:where(.exec-v2 *)),.finance-currency-card strong,.manager-finance-position-card strong,.exec-currency-card strong{color:#132840!important}
 /* VF4D: Control Center presentation is owned by the later governance-workspace layer. */
-.people-directory-name strong,.work-list-main strong,.manager-work-main strong,.admin-work-main strong,.inbox-copy>b{color:#172a41!important}
-.people-directory-context,.work-list-main span,.work-list-main small,.manager-work-main span,.manager-work-main small,.admin-work-main small,.inbox-context{color:#8490a0!important}
+.people-directory-name strong,.work-list-main strong,.manager-work-main strong,.admin-work-main strong{color:#172a41!important}
+.people-directory-context,.work-list-main span,.work-list-main small,.manager-work-main span,.manager-work-main small,.admin-work-main small{color:#8490a0!important}
 .staff-calendar-layout,.manager-calendar .calendar-shell{background:#fff!important;border:1px solid var(--ceac-line)!important;border-radius:12px!important;box-shadow:0 5px 16px rgba(36,63,96,.04)!important}
 .staff-calendar-day{border-color:#edf1f5!important}.staff-calendar-day.today{background:#f2f7ff!important;box-shadow:inset 0 0 0 1px #aacaff!important}
 .staff-calendar-event{border-radius:6px!important}
