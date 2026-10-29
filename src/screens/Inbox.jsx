@@ -61,7 +61,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
     return()=>{viewport.removeEventListener("resize",fit);viewport.removeEventListener("scroll",fit);};
   },[]);
   const visibleRooms = verified ? rooms.filter(room => `${room.name || ""} ${room.last_body || ""}`.toLowerCase().includes(query.toLowerCase())) : [];
-  return <div ref={workspaceRef} className="msg-workspace">
+  return <div ref={workspaceRef} className="msg-workspace" style={{"--exec-purple":"#1678c9"}}>
     <header className="msg-head"><h1>Messages</h1>
       <div><button type="button" aria-expanded={actionsOpen} onClick={()=>setActionsOpen(open=>!open)}>Work actions {verified ? actions.length : "…"}</button><button type="button" onClick={openAnnouncements}>Announcements</button>
       <button type="button" aria-label="New Memo" onClick={()=>{setSection("memos");setComposeMemo(n=>n+1);}}><PenSquare size={19}/></button></div>

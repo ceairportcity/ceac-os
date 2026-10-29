@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 const people=[{id:'sender',full_name:'Gabriel Rockson',job_title:'IT Head',managed_units:['it'],member_units:['it']},{id:'pastor',full_name:'Group Pastor',job_title:'Group Pastor',is_group_pastor:true,managed_units:[],member_units:[]},{id:'copied',full_name:'Media Head',job_title:'Media Head',managed_units:['media'],member_units:['media']}];
-async function mock(page,{denySend=false}={}){
- const writes=[];let status='pending_decision';let versions=[{id:'version',memo_id:'memo',version_no:1,subject:'Media Team Digital Transformation Initiative',body:'Dear Pastor,\n**Digital transformation proposal**\nPlease review the attached initiative.',sent_at:'2026-10-28T12:00:00Z'}];
+async function mock(page,{denySend=false,initialStatus="pending_decision",projectAuthority=false}={}){
+ const writes=[];let status=initialStatus;let versions=[{id:'version',memo_id:'memo',version_no:1,subject:'Media Team Digital Transformation Initiative',body:'Dear Pastor,\n**Digital transformation proposal**\nPlease review the attached initiative.',sent_at:'2026-10-28T12:00:00Z'}];
  let messages=[{id:'other',room_id:'room',author_id:'copied',body:'Please review the latest proposal.',created_at:'2026-10-28T10:00:00Z',profiles:{full_name:'Media Head'},room_message_refs:[],room_mentions:[]},{id:'own',room_id:'room',author_id:'sender',body:'I will share the supporting documents.',created_at:'2026-10-28T10:01:00Z',profiles:{full_name:'Gabriel Rockson'},room_message_refs:[],room_mentions:[]}];
  const room={id:'room',kind:'unit',unit_id:'it',units:{name:'IT & Systems'},name:'IT & Systems',last_body:'Latest proposal',last_author:'Gabriel',last_at:'2026-10-28T10:01:00Z',unread_count:1};
  const recipients=[{memo_id:'memo',profile_id:'pastor',kind:'to'},{memo_id:'memo',profile_id:'copied',kind:'cc'}];
@@ -21,7 +21,7 @@ async function mock(page,{denySend=false}={}){
   if(name==='save_memo_draft')return reply({version_id:'draft-version',updated_at:'2026-10-28T12:02:00Z'});
   if(name==='send_memo')return denySend?reply({message:'Synthetic memo send denied'},403):reply(null);
   if(name==='respond_to_memo'){status=req.postDataJSON().p_action;return reply(req.postDataJSON().p_exchange_id);}
-  const rows={my_room_directory:[room],rooms:object?room:[room],room_reads:object?null:[],room_messages:messages,unit_memberships:[{profile_id:'sender'},{profile_id:'copied'}],profiles:people,units:[{id:'it',name:'IT & Systems'},{id:'media',name:'Media'}],work_items:[],projects:[],operational_file_links:[],mark_room_read:null,memo_recipient_directory:people,memos:object?memo():[memo()],memo_exchanges:[],mark_memo_read:null,capabilities:object?null:[]};
+  const rows={my_room_directory:[room],rooms:object?room:[room],room_reads:object?null:[],room_messages:messages,unit_memberships:[{profile_id:'sender'},{profile_id:'copied'}],profiles:people,units:[{id:'it',name:'IT & Systems'},{id:'media',name:'Media'}],work_items:[],projects:[],operational_file_links:[],mark_room_read:null,memo_recipient_directory:people,memos:object?memo():[memo()],memo_exchanges:[],mark_memo_read:null,capabilities:projectAuthority?(object?{id:"legacy-project-grant"}:[{id:"legacy-project-grant"}]):(object?null:[])};
   return reply(name in rows?rows[name]:[]);
  });return writes;
 }
@@ -53,7 +53,7 @@ for(const actor of ['copied','pastor'])test(`Memo decision controls respect ${ac
  const writes=await mock(page);await page.goto(`/tests/fixtures/messages-workspace.html?actor=${actor}`);await page.getByRole('button',{name:'Memos',exact:true}).click();await page.getByRole('button',{name:/Media Team Digital Transformation Initiative/}).click();
  await expect(page.getByText('Digital transformation proposal',{exact:true})).toBeVisible();
  if(actor==='copied'){await expect(page.getByRole('button',{name:'Approve proposal',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Send reply'})).toBeVisible();}
- else {await page.getByRole('button',{name:'Approve proposal',exact:true}).click();await expect(page.locator('.memo-status')).toHaveText('Approved');expect(writes.filter(w=>w.name==='respond_to_memo')).toHaveLength(1);}
+ else {await expect(page.getByRole('button',{name:'Approve proposal',exact:true})).toHaveCSS('background-color','rgb(22, 120, 201)');await page.getByRole('button',{name:'Approve proposal',exact:true}).click();await expect(page.locator('.memo-status')).toHaveText('Approved');expect(writes.filter(w=>w.name==='respond_to_memo')).toHaveLength(1);}
 });
 for(const width of [1440,390,320])test(`Memo composition retains failed send and restricts decision recipient at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:960});const writes=await mock(page,{denySend:true});await page.goto('/tests/fixtures/messages-workspace.html');await page.getByRole('button',{name:'New Memo',exact:true}).click();
@@ -100,4 +100,14 @@ for(const width of [1440,320])test(`Memo reader keeps document and authorised ac
  expect(date.y).toBeGreaterThan(sender.y);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  await page.screenshot({path:`test-artifacts/messages-memo-reader-${width}.png`,fullPage:true});
+});
+
+for(const allowed of [true,false])test(`Memo project conversion follows existing Projects authority: ${allowed}`,async({page})=>{
+ await mock(page,{initialStatus:'approved',projectAuthority:allowed});
+ await page.goto('/tests/fixtures/messages-workspace.html?actor=copied');
+ await page.getByRole('button',{name:'Memos',exact:true}).click();
+ await page.getByRole('button',{name:/Media Team Digital Transformation Initiative/}).click();
+ await expect(page.locator('.memo-status')).toHaveText('Approved');
+ if(allowed)await expect(page.getByLabel('Project title',{exact:true})).toBeVisible();
+ else await expect(page.getByLabel('Project title',{exact:true})).toHaveCount(0);
 });

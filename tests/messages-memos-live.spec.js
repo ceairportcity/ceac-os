@@ -68,6 +68,7 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   const image=pastor.page.getByRole('img',{name:filename,exact:true});await expect(image).toBeVisible();
   const response=await pastor.page.request.get(await image.getAttribute('src'));
   expect(response.ok()).toBeTruthy();expect((await response.body()).equals(bytes)).toBeTruthy();
+  await expect(pastor.page.getByRole('button',{name:'Approve proposal',exact:true})).toHaveCSS('background-color','rgb(22, 120, 201)');
   await pastor.page.getByRole('button',{name:'Approve proposal',exact:true}).click();
   await expect(pastor.page.locator('.memo-status')).toHaveText('Approved');
   const memo=await checked(service.from('memos').select('status,project_id,current_version_id').eq('id',version.memo_id).single());

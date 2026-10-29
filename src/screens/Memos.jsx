@@ -23,6 +23,7 @@ function RecipientPicker({label,people,value,onChange,excluded,disabled}) {
 }
 export default function Memos({me,composeRequest,initialMemoId,openProject,leaveGuard}) {
   const [rows,setRows]=useState([]),[people,setPeople]=useState([]),[units,setUnits]=useState([]),[fileVersions,setFileVersions]=useState(new Set());
+  const [canCreateProject,setCanCreateProject]=useState(Boolean(me.is_admin));
   const [view,setView]=useState("received"),[query,setQuery]=useState(""),[selected,setSelected]=useState(initialMemoId || null);
   const [form,setForm]=useState(null),[dirty,setDirty]=useState(false),[pendingFiles,setPendingFiles]=useState([]),[draftFiles,setDraftFiles]=useState([]);
   const [detail,setDetail]=useState(null),[detailKey,setDetailKey]=useState(""),[reply,setReply]=useState("");
@@ -35,9 +36,10 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     let current=true;setLoading(true);setError("");
     (async()=>{
       try {
-        const [memoResult,directoryResult,unitResult]=await Promise.all([
+        const [memoResult,directoryResult,unitResult,creationResult]=await Promise.all([
           supabase.from("memos").select("*,memo_versions!memo_versions_memo_id_fkey(id,version_no,subject,sent_at),memo_recipients(*)").order("updated_at",{ascending:false}).limit(200),
           supabase.rpc("memo_recipient_directory"),supabase.from("units").select("id,name").eq("org_id",me.org_id).eq("active",true).order("name"),
+          supabase.from("capabilities").select("id").eq("org_id",me.org_id).eq("profile_id",me.id).eq("capability","create_project").maybeSingle(),
         ]);
         const failure=[memoResult.error,directoryResult.error,unitResult.error].find(Boolean);if(failure)throw failure;
         const versionIds=(memoResult.data || []).flatMap(m=>m.memo_versions.map(v=>v.id));
@@ -48,11 +50,13 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
         }
         const actorUnits=(me.memberships || []).map(m=>m.unit_id);
         const relevance=p=>p.managed_units?.some(id=>actorUnits.includes(id))?2:p.member_units?.some(id=>actorUnits.includes(id))?1:0;
-        if(current){setRows(memoResult.data || []);setFileVersions(attached);setPeople((directoryResult.data || []).sort((a,b)=>relevance(b)-relevance(a)||a.full_name.localeCompare(b.full_name)));setUnits(unitResult.data || []);}
+        if(current){setCanCreateProject(Boolean(me.is_admin || !creationResult.error && creationResult.data));
+          setNotice(previous=>creationResult.error && !me.is_admin ? "Project creation permissions could not be verified. Refresh Memos to retry." : previous.startsWith("Project creation permissions could not be verified.") ? "" : previous);
+          setRows(memoResult.data || []);setFileVersions(attached);setPeople((directoryResult.data || []).sort((a,b)=>relevance(b)-relevance(a)||a.full_name.localeCompare(b.full_name)));setUnits(unitResult.data || []);}
       }catch(failure){if(current){setRows([]);setError(failure.message || "Memos could not be loaded.");}}
       finally{if(current)setLoading(false);}
     })();return()=>{current=false;};
-  },[me.id,me.org_id,reload]);
+  },[me.id,me.org_id,me.is_admin,reload]);
   useEffect(()=>{
     const refresh=()=>{if(!writing.current && document.visibilityState=== "visible")setReload(n=>n+1);};window.addEventListener("focus",refresh);
     const timer=window.setInterval(refresh,30000);
@@ -147,7 +151,6 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   const decisions=active ? eligibleMemoDecisionMakers(people,{scope:active.decision_scope,unitId:active.unit_id,to:active.memo_recipients.filter(r=>r.kind==="to").map(r=>r.profile_id),senderId:active.sender_id}):[];
   const canDecide=active?.status==="pending_decision" && active.decision_maker_id===me.id && decisions.some(p=>p.id===me.id);
   const decisionPeople=form ? eligibleMemoDecisionMakers(people,{scope:form.scope,unitId:form.unitId,to:form.to,senderId:me.id}):[];
-  const canCreateProject=Boolean(me.is_admin || me.capabilities?.includes("create_project"));
   const unread=rows.filter(row=>row.memo_recipients.some(r=>r.profile_id===me.id && (!r.last_read_at || new Date(r.last_read_at)<new Date(row.updated_at)))).length;
   return <section className={`memos-workspace ${form ? "is-composing" : ""}`} aria-label="Memos">
     {error && <p className="msg-error" role="alert">{error}<button type="button" disabled={busy} onClick={()=>setReload(n=>n+1)}>Retry loading</button></p>}
