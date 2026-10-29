@@ -83,7 +83,7 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   const projectName=`Shareable media charter ${crypto.randomUUID()}`;
   await creator.page.getByLabel('Project title',{exact:true}).fill(projectName);
   await creator.page.getByLabel('Shareable project summary',{exact:true}).fill('Reviewed operational charter for project participants.');
-  await creator.page.getByLabel('Project lead department',{exact:true}).selectOption('20000000-0000-4000-8000-000000000011');
+  await creator.page.getByRole('combobox',{name:'Project lead department',exact:true}).selectOption('20000000-0000-4000-8000-000000000011');
   await creator.page.getByRole('button',{name:'Create project from approved Memo',exact:true}).click();
   await expect(creator.page.getByRole('button',{name:'Open linked project',exact:true})).toBeVisible();
   const linked=await checked(service.from('memos').select('project_id').eq('id',version.memo_id).single());

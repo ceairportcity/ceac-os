@@ -108,6 +108,10 @@ for(const allowed of [true,false])test(`Memo project conversion follows existing
  await page.getByRole('button',{name:'Memos',exact:true}).click();
  await page.getByRole('button',{name:/Media Team Digital Transformation Initiative/}).click();
  await expect(page.locator('.memo-status')).toHaveText('Approved');
- if(allowed)await expect(page.getByLabel('Project title',{exact:true})).toBeVisible();
+ if(allowed){
+  await expect(page.getByLabel('Project title',{exact:true})).toBeVisible();
+  const department=page.getByRole('combobox',{name:'Project lead department',exact:true});
+  await department.selectOption('it');await expect(department).toHaveValue('it');
+ }
  else await expect(page.getByLabel('Project title',{exact:true})).toHaveCount(0);
 });
