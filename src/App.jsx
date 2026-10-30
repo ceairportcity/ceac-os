@@ -585,6 +585,7 @@ export default function App() {
         onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
         onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
         onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
+         onCreateProject={isExec ? () => go("exec-projects") : undefined}
         onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
         onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
         onGuide={() => openGuide(false)}
@@ -603,6 +604,7 @@ export default function App() {
           onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
+         onCreateProject={isExec ? () => go("exec-projects") : undefined}
           onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
           onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
           onOpenWork={openSearchWork}
@@ -626,6 +628,7 @@ export default function App() {
           onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
+         onCreateProject={isExec ? () => go("exec-projects") : undefined}
           onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
           onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
           onOpenWork={openSearchWork}
