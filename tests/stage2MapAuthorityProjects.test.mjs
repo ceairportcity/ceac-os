@@ -25,7 +25,11 @@ test("HR and Compliance use the same source-backed real map",()=>{
  const compliance=source("src/components/ComplianceOverview.jsx");
  assert.match(compliance,/<AdminWorkforceToday/);
  assert.match(compliance,/lat:session\.start_lat/);
- assert.match(map,/nextWorkforceClusterPersonId\(cluster\.people,latest\.current\.selectedId\)/);
+ // Individual on-map pins now select each person directly at shared coordinates.
+ assert.match(map,/node\.dataset\.workforcePerson=person\.id/);
+ assert.match(map,/latest\.current\.onSelect\?\.\(person\.id\)/);
+ // The Google iframe fallback still cycles the shared-location list.
+ assert.match(map,/nextWorkforceClusterPersonId\(cluster\.people,selectedId\)/);
 });
 test("People Access has one capability-gated employee-specific Authority link",()=>{
  assert.match(app,/onManagePermissions=\{canManageAuthority \? openAuthorityForPerson : null\}/);
