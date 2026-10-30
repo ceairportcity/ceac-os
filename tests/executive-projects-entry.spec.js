@@ -29,3 +29,15 @@ test('Executive Projects navigation offers project creation',async({page})=>{
  await expect(page.getByRole('heading',{name:'Create project'})).toBeVisible();
  await expect(page.getByLabel('Lead department')).toBeVisible();
 });
+
+test('Staff does not gain Executive project access through a direct URL',async({page})=>{
+ test.skip(!process.env.ROLE_FIXTURE_PASSWORD,'Requires local role fixtures');
+ await page.goto('/');
+ await page.getByPlaceholder('Work email').fill('staff@ceac.local.test');
+ await page.getByPlaceholder('Password').fill(process.env.ROLE_FIXTURE_PASSWORD);
+ await page.getByRole('button',{name:'Sign in'}).click();
+ await expect(page.locator('.staff-app')).toBeVisible();
+ await page.goto('/?tab=exec-projects');
+ await expect(page.getByRole('button',{name:'Create project',exact:true})).toHaveCount(0);
+ await expect(page.locator('.staff-app')).toBeVisible();
+});
