@@ -48,6 +48,16 @@ export function loadGoogleMaps() {
  return pending;
 }
 
+
+// Google road-view fallback for read-only workforce maps when the JavaScript
+// SDK cannot download. Only numeric map coordinates reach Google; employee
+// names, work-session IDs and the browser API key are not included.
+export function googleMapsFallbackUrl(point){
+ const lat=Number(point?.lat),lng=Number(point?.lng);
+ if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)return null;
+ return 'https://www.google.com/maps?'+new URLSearchParams({q:lat+','+lng,z:'15',output:'embed'}).toString();
+}
+
 // DOM content is created locally, never interpolated as HTML or put in map URLs.
 export function googleMapPoint(maps,map,position,node){
  const point=new maps.OverlayView();
