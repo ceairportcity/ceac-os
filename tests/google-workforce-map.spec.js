@@ -47,6 +47,28 @@ test('absent map credentials retain office identity access and do not request an
  await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Ama');
  expect(requests.some(r=>/maps.googleapis.com|openstreetmap/.test(r.url))).toBe(false);
 });
+test('MAP-DOWNLOAD exposes a Google road fallback without a key or staff names in the URL',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});
+ await mock(page);await page.goto('/tests/fixtures/executive-google-map.html');
+ await expect(page.getByText('Synthetic Google Maps',{exact:true})).toBeVisible();
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('ceac-google-map-error',{detail:{code:'MAP-DOWNLOAD'}})));
+ await expect(page.getByText('Map check: MAP-DOWNLOAD',{exact:true})).toBeVisible();
+ const alternative=page.getByTitle('Google Maps alternative road map');
+ await expect(alternative).toBeVisible();
+ const src=await alternative.getAttribute('src');
+ const url=new URL(src);
+ expect(url.origin).toBe('https://www.google.com');
+ expect(url.pathname).toBe('/maps');
+ expect(url.searchParams.get('q')).toBe('5.6,-0.18');
+ expect(url.searchParams.get('output')).toBe('embed');
+ expect(src).not.toMatch(/Synthetic|person|session|AIza|key=/i);
+ await page.getByLabel('Recorded office starts').getByRole('button',{name:'Synthetic Ama',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Ama');
+ await page.getByRole('button',{name:'Retry interactive map',exact:true}).click();
+ await expect(alternative).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Fit staff start locations',exact:true})).toBeEnabled();
+});
 test('map opening failure preserves staff records and retry restores markers on phone',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.addInitScript({content:readFileSync('tests/fixtures/google-maps-stub.js','utf8')+';window.syntheticMapFail=true;'});
