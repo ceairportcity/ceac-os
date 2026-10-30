@@ -15,6 +15,9 @@ test('Executive navigation offers a Projects destination and existing creation a
  expect(rpc).toContain("insert into public.activity_events");
  const workforce=readFileSync('src/components/AdminWorkforceToday.jsx','utf8');
  expect(workforce).not.toContain('Browse {peopleLabel}');
+ const attendance=readFileSync('src/components/WorkforceAttendancePanel.jsx','utf8');
+ expect(attendance).toContain('workforce-attendance-list workstart-accessible-list');
+ expect(attendance).toContain('onSelect?.(person.id===selectedId?null:person.id,event.currentTarget)');
 });
 
 test('Executive creates a department-led project through authorised workflow',async({page})=>{
