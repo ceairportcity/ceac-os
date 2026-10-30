@@ -65,9 +65,9 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
 
   return <div className="body admin-projects ev2-project-page ev2-project-admin">
     <ProjectPageHeader
-      eyebrow="Organisation delivery"
+      eyebrow={me.is_exec?"Executive delivery":"Organisation delivery"}
       title="Projects"
-      description="Create projects and coordinate objectives, work, people and evidence across departments."
+      description={me.is_exec?"Create and oversee ministry projects across departments. Open a project to review its strategic portfolio context.":"Create projects and coordinate objectives, work, people and evidence across departments."}
       actionLabel="Create project" onAction={()=>setCreating(true)}
     />
 
