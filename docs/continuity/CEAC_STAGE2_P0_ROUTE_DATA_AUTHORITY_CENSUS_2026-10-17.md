@@ -4,7 +4,7 @@
 
 ## 1. Enumerated signed-in root client tabs
 
-There are **47** explicit `tab ===` routing cases, plus a separate default `me` My Hub fallback. The first column below is derived from the real source, not a speculative future route. A role-shell link is just a navigation choice; it is NOT RLS, Storage or RPC authorization. The client can attempt a hidden tab via its query parameter and most routes have no additional root guard, so every sensitive data read/write needs **server-enforced role and tenant policy tests**. A conditional screen component may enforce additional UI capabilities, but UI-only denial is insufficient.
+There are **48** explicit `tab ===` routing cases, plus a separate default `me` My Hub fallback. The first column below is derived from the real source, not a speculative future route. A role-shell link is just a navigation choice; it is NOT RLS, Storage or RPC authorization. The client can attempt a hidden tab via its query parameter and most routes have no additional root guard, so every sensitive data read/write needs **server-enforced role and tenant policy tests**. A conditional screen component may enforce additional UI capabilities, but UI-only denial is insufficient.
 
 | Tab | Main role navigation | App-level render routing | Root screen/component | Acceptance stage | Proof |
 | --- | --- | --- | --- | --- | --- |
@@ -23,6 +23,7 @@ There are **47** explicit `tab ===` routing cases, plus a separate default `me` 
 | `calendar` | manager | isUnitManager | `ManagerCalendar` | P4 | SOURCE ONLY |
 | `manager-finance` | manager | isUnitManager | `ManagerFinance` | P0/P7 | SOURCE ONLY |
 | `manager-reports` | manager | isUnitManager | `ManagerReports` | P6 | SOURCE ONLY |
+| `exec-projects` | executive | isExec | `AdminProjects` | P5 | SOURCE ONLY — newly audited Executive create route; RPC capability/MFA required |
 | `exec-organisation` | executive | isExec | `ExecutiveOrganisation` | P0/P7 | SOURCE ONLY |
 | `exec-finance` | executive | isExec | `ExecutiveFinance` | P0/P7 | SOURCE ONLY |
 | `exec-reports` | executive | isExec | `ExecutiveReports` | P6 | SOURCE ONLY |
@@ -131,3 +132,7 @@ The existing `scripts/stage2/p0-source-inventory.mjs` now enumerates **every con
 | Meeting deep link | `src/screens/Meeting.jsx` | `meeting_private_notes`, `meeting_work_links` | Private note, foreign meeting and participant changes denied (P4/P8) |
 
 P0 documents their **source and responsible future acceptance**, not an approval to access private material. Preserve server RLS, auth/MFA and restricted role boundaries unchanged.
+
+## 30 October 2026 addendum — Executive Projects
+
+The owner-authorised Executive Projects tab (`exec-projects`) is a separate route from the existing `delivery`/Portfolio strategic view. The screen reuses `AdminProjects` and the pre-existing project composer, listing organisation-wide projects and invoking `create_project_with_participants` with a user-selected active lead department. The proposed forward-only RPC update keeps the `create_project` capability, authenticated identity, AAL2 and active-organisation checks; only a confirmed Executive may bypass the manager-owned lead-department condition. Browser/SQL acceptance and production migration are separately required before claiming that project creation works. The duplicate Browse people attendance list has been replaced by the attendance snapshot above it. Source inventory counts now include 48 root tabs and 13 Executive destinations; this addendum does not rewrite historical P0 evidence.
