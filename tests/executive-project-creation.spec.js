@@ -35,6 +35,7 @@ test('Executive creates a department-led project through authorised workflow',as
  await page.getByLabel('Purpose').fill('Validate authenticated executive project creation without an HR role.');
  await page.getByLabel('Lead department').selectOption({index:1});
  await page.locator('form').filter({has:page.getByLabel('Project name')}).getByRole('button',{name:'Create project',exact:true}).click();
- await expect(page.getByText(name,{exact:true}).first()).toBeVisible({timeout:25000});
+ // onCreated navigates only after the RPC succeeded and the saved project was reread.
+ await expect(page).toHaveURL(/tab=exec-projects.*project=[0-9a-f-]{36}/i,{timeout:25000});
  await expect(page.getByRole('region',{name:'Project creation error'})).toHaveCount(0);
 });
