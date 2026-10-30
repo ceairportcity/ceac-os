@@ -19,4 +19,15 @@
 @media(max-width:380px){.workstart-toolbar{grid-template-columns:1fr}}
 .ceac-google-map-canvas{width:100%;height:100%}.ceac-google-map-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;background:#f2f5f8;color:#42546a;font-size:13px}.ceac-google-selected{padding:12px;margin-top:8px;border:1px solid #dfe7ef;border-radius:6px}.ceac-google-selected>.btn{display:block;margin-left:auto;margin-bottom:8px}.ceac-google-centre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:30px;color:#144999;pointer-events:none}
 
+
+/* Alternate Google road view only when the JavaScript map cannot download.
+   Keep Google's in-frame controls and attribution unobstructed. */
+.ceac-google-fallback-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#e7eef0}
+.ceac-google-recovery{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:10px 12px;border:1px solid #dfe7ef;border-radius:8px;background:#f5f8fc;color:#42546a;font-size:12px}
+.ceac-google-recovery>span{flex:1 1 240px}
+.ceac-google-recovery>small{font-size:11px;color:#61738a}
+.ceac-google-recovery>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.ceac-google-fallback-points{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.ceac-google-fallback-points .btn[aria-pressed=true]{border-color:#0c5df9;background:#eef6ff}
+
 .workstart-workspace button{min-height:44px}
