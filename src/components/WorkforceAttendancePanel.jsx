@@ -31,7 +31,7 @@ export default function WorkforceAttendancePanel({people=[],results=[],office=nu
     {visible.map(person=>{
      const place=recordedPlace(person,office,verifiedStreets[person.id]);
      const hasPoint=Number.isFinite(person?.latitude)&&Number.isFinite(person?.longitude);
-     return <button type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={()=>onSelect?.(person.id===selectedId?null:person.id)}>
+     return <button type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={event=>onSelect?.(person.id===selectedId?null:person.id,event.currentTarget)}>
       <strong>{staffInitials(person.name)} · {person.name}</strong>
       <span>{person.unit}</span>
       <span>{place.label} · {place.address}</span>
