@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { openSession, startWork, endWork, reconcileWorkSession, WorkStartPreflightError } from "../lib/session";
+import { openSession, startWork, endWork, reconcileWorkSession, verifyContinuedWorkSession, WorkStartPreflightError } from "../lib/session";
 import { Sheet } from "./bits";
 import StartWorkDialog from "./StartWorkDialog";
 import "./EmployeeWorkSession.css";
@@ -160,13 +160,10 @@ export default function EmployeeWorkSession({ me }) {
     if (!session?.id || busy || !verified) return;
     setBusy(true);setError("");
     try {
-      await reconcileWorkSession(session.id,"continue");
+      const created = await reconcileWorkSession(session.id,"continue");
       // RPC may return a void/acknowledgement rather than a work_sessions row.
       // Re-read the owner-scoped authoritative open session before rendering.
-      const current = await openSession(me.org_id,me.id);
-      if (!current || current.id !== session.id) {
-        throw new Error("Your earlier work session identity could not be verified. Retry before making further changes.");
-      }
+      const current = await verifyContinuedWorkSession(me.org_id,me.id,session.id,created);
       // A successful RPC alone is not evidence that the stale-session
       // reconciliation actually refreshed the authoritative server timestamp.
       if (ghanaDay(current.last_confirmed_at || current.started_at) < ghanaDay(Date.now())) {
@@ -174,6 +171,7 @@ export default function EmployeeWorkSession({ me }) {
       }
       setSession(current);setVerified(true);setRecover(false);
     } catch (e) {
+      if (e instanceof WorkStartPreflightError) { setError(e.message); return; }
       setVerified(false); setRecover(false);
       setError(e?.message || "Your earlier session requires verification.");
     } finally { setBusy(false); }
@@ -227,8 +225,8 @@ export default function EmployeeWorkSession({ me }) {
     />}
     {recover&&<Sheet onClose={()=>!busy&&setRecover(false)}>
       <h2>Review your earlier session</h2>
-      <p>The original start and any corrections remain recorded. Do not invent an end time.</p>
-      <button type="button" onClick={continueOld} disabled={busy||!verified}>Continue recorded session</button>
+      <p>Forgot to end work? Start today's session using the previous working location, or record when you actually stopped below. The earlier session is closed at its last confirmed point, not counted as overnight work.</p>
+      <button type="button" onClick={continueOld} disabled={busy||!verified}>{busy?"Checking…":"Start today's session"}</button>
       <label>Actual end time <input type="datetime-local" value={endedAt} onChange={e=>setEndedAt(e.target.value)}/></label>
       <label>Explanation for correction <textarea rows={3} value={correctionReason} onChange={e=>setCorrectionReason(e.target.value)}/></label>
       <button type="button" onClick={closeOld} disabled={busy||!endedAt||!verified}>Close at actual time</button>

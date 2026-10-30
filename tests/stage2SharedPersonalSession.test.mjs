@@ -98,13 +98,17 @@ test("End Work requires the exact authorised session row to have an end timestam
  assert.match(body,/const current = await openSession\(me\.org_id, me\.id\)/);
 });
 
-test("P3 stale-session continuation fails closed on different or still-stale row", () => {
+test("stale-session recovery verifies the new linked row and still rejects stale evidence", () => {
  const source = read("src/components/EmployeeWorkSession.jsx");
  const continued = source.match(/async function continueOld\(\) \{([\s\S]*?)\n  \}/)?.[1];
  assert.ok(continued, "Continuation control must exist");
- assert.match(continued, /const current = await openSession\(me\.org_id,me\.id\)/);
- assert.match(continued, /!current \|\| current\.id !== session\.id/,
-   "Reconciliation may not silently select another open session");
+ assert.match(continued, /verifyContinuedWorkSession\(me\.org_id,me\.id,session\.id,created\)/);
+ const api=read("src/lib/session.js");
+ assert.match(api,/created\.id === previousId/);
+ assert.match(api,/current\?\.id !== created\.id/);
+ assert.match(api,/current\.flags\?\.continued_from_session_id !== previousId/);
+ assert.match(api,/\.eq\("org_id", orgId\)\.eq\("profile_id", userId\)\.eq\("id", previousId\)/);
+ assert.match(api,/error \|\| !previous\?\.ended_at/);
  assert.match(continued, /ghanaDay\(current\.last_confirmed_at \|\| current\.started_at\) < ghanaDay\(Date\.now\(\)\)/,
    "Continuation must confirm the server refreshed the stale timestamp");
  assert.match(continued, /setSession\(current\);setVerified\(true\);setRecover\(false\)/);
@@ -173,7 +177,7 @@ test("P3 Start Work refuses unknown places and rejects other employees' or tenan
 test("P3 Staff session actions require authoritative exact-row verification before another Start or End",()=>{
  const home=read("src/screens/Home.jsx");
  const view=read("src/experience-v2/staff-today/StaffTodayV2.jsx");
- assert.match(home,/import \{ openSession, startWork, endWork, reconcileWorkSession, WorkStartPreflightError \} from/);
+ assert.match(home,/import \{ openSession, startWork, endWork, reconcileWorkSession, verifyContinuedWorkSession, WorkStartPreflightError \} from/);
  assert.match(home,/const sessionVerified = verifiedSessionScope === sessionScope/);
  assert.match(home,/const created = await startWork/);
  assert.match(home,/const current = await openSession\(me\.org_id,me\.id\)/);

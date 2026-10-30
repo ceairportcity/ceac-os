@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
-import { openSession, startWork, endWork, reconcileWorkSession, WorkStartPreflightError } from "../lib/session";
+import { openSession, startWork, endWork, reconcileWorkSession, verifyContinuedWorkSession, WorkStartPreflightError } from "../lib/session";
 import { isOverdue } from "../lib/time";
 import { Sheet } from "../components/bits";
 import StartWorkDialog from "../components/StartWorkDialog";
@@ -396,13 +396,14 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
     if (!session?.id || busy || !sessionVerified) return;
     setBusy(true); setError(null);
     try {
-      await reconcileWorkSession(session.id, "continue");
-      const current = await openSession(me.org_id,me.id);
-      if (!current || current.id !== session.id ||
+      const created = await reconcileWorkSession(session.id, "continue");
+      const current = await verifyContinuedWorkSession(me.org_id,me.id,session.id,created);
+      if (
           accraDateKey(current.last_confirmed_at || current.started_at) < accraDateKey(new Date()))
         throw new Error("The stale session still requires verification.");
       setSession(current); setRecoveryOpen(false);
-    } catch {
+    } catch (err) {
+      if (err instanceof WorkStartPreflightError) { setError(err.message); return; }
       setVerifiedSessionScope(null); setRecoveryOpen(false);
       setError("Continued work session could not be verified. Recheck the server record.");
     } finally { setBusy(false); }
@@ -508,6 +509,8 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
     {recoveryOpen && sessionVerified && <Sheet onClose={() => !busy && setRecoveryOpen(false)}>
       <div className="h2">Close the earlier work session</div>
       <p className="screen-note">Enter when you actually stopped. The original start, this correction and who made it remain in the history.</p>
+      <p className="screen-note">Or start today using the previous working location. Yesterday closes at its last confirmed point; overnight work is not assumed.</p>
+      <button className="btn btn-sm" onClick={continueRecoveredSession} disabled={busy}>{busy?"Checking…":"Start today's session"}</button>
       <label className="label" htmlFor="recovery-ended-at">Actual end time</label>
       <input id="recovery-ended-at" className="field" type="datetime-local" value={recoveryEndedAt} onChange={(event) => setRecoveryEndedAt(event.target.value)} />
       <label className="label" htmlFor="recovery-note">Correction note (optional)</label>

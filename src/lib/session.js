@@ -88,6 +88,7 @@ export async function endWork(sessionId) {
 export async function reconcileWorkSession(sessionId, action, effectiveEndedAt = null, note = null) {
   if (action === "continue") {
     const pos = await getPositionOnce();
+    if (pos.failure) throw new WorkStartPreflightError(`${pos.failure}. Allow device location and retry. Your earlier session has not been changed.`);
     const { data, error } = await supabase.rpc("continue_work_session_with_location", {
       p_session_id: sessionId, p_lat: pos.lat ?? null, p_lng: pos.lng ?? null,
       p_accuracy_m: pos.accuracy ?? null, p_captured_at: pos.capturedAt ?? null,
@@ -103,4 +104,18 @@ export async function reconcileWorkSession(sessionId, action, effectiveEndedAt =
   });
   if (error) throw error;
   return data;
+}
+
+// Recovery closes yesterday's row and creates a NEW linked row. Never accept
+// an unrelated concurrent session, a void acknowledgement or an unclosed old row.
+export async function verifyContinuedWorkSession(orgId, userId, previousId, created) {
+  const current = await openSession(orgId, userId);
+  if (!created?.id || created.id === previousId || current?.id !== created.id ||
+      current.flags?.continued_from_session_id !== previousId) {
+    throw new Error("Today's new work session could not be verified. Recheck your current session.");
+  }
+  const {data: previous, error} = await supabase.from("work_sessions").select("id,ended_at")
+    .eq("org_id", orgId).eq("profile_id", userId).eq("id", previousId).maybeSingle();
+  if (error || !previous?.ended_at) throw new Error("The earlier session closure could not be verified. Recheck your current session.");
+  return current;
 }

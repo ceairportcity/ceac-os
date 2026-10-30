@@ -1,0 +1,9 @@
+# 30 October 2026 — Google map replacement and forgotten-session recovery
+
+Owner reports missing streets, rejects unreliable OpenStreetMap and directs Google Maps like BlossomBox, shared HR/Executive map positioned deliberately, and yesterday's unclosed sessions must not block today. Preserve existing identities, session history and approved colours. Continue existing development branch.
+
+Verified baseline main c5e38e6d. The live reconcile_work_session continuation closes the old row at its last confirmed point and returns a NEW linked session. Both Staff and shared employee UI wrongly required the old ID. Repair verifies the RPC-returned new ID, continued_from_session_id, owner/organisation-scoped current session and specific earlier row's ended_at, then confirms today's timestamp. Location denial performs no write and leaves recovery available. No schema or attendance records changed.
+
+Focused evidence, Node 22.23.4, 30 October 12:01 Accra: 20/20 browser checks PASS, zero skips, including Staff/HR/Manager/Executive phone/desktop new-day success; unrelated-session and still-open-old denial; denied GPS causes zero writes. /tmp/ceac-clock-browser.json. Source 660/660 PASS; production build PASS. Exact-head qualification/release still pending. No source-only or synthetic check is called production acceptance.
+
+BlossomBox reference inspected read-only through Lovable: project 1f4f0a43-e3cc-457e-9cca-34378c899fde, commit 046b26e06085859ca814652d89d66dd0c9dc1082. Its delivery-map uses Google Maps JS API, road view, 380px map, compact coloured points, fit bounds and pan/zoom. The browser key is configured for its own app; no credentials copied. CEAC Vercel environment inventory contains no Maps key. Production replacement needs a CEAC-authorised referrer-restricted Maps JavaScript key and billing/quota configuration; no new spending authorised here. Google documentation confirms this prerequisite. No changes were made to BlossomBox.
