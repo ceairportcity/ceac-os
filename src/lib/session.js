@@ -119,3 +119,17 @@ export async function verifyContinuedWorkSession(orgId, userId, previousId, crea
   if (error || !previous?.ended_at) throw new Error("The earlier session closure could not be verified. Recheck your current session.");
   return current;
 }
+
+// A retry after an uncertain correction must inspect the original row, not
+// silently switch a user's entered end time onto a different open session.
+export async function recheckSessionCorrection(orgId, userId, sessionId) {
+  const {data:original,error} = await supabase.from("work_sessions")
+    .select("id,ended_at").eq("org_id",orgId).eq("profile_id",userId).eq("id",sessionId).maybeSingle();
+  if(error || !original?.id) throw new Error("The earlier session could not be checked. Please retry.");
+  const current = await openSession(orgId,userId);
+  if(!original.ended_at && current?.id !== sessionId)
+    throw new Error("The earlier session is not verified. Please retry before saving.");
+  if(original.ended_at && current?.id === sessionId)
+    throw new Error("The saved end time is not verified. Please retry.");
+  return {current,closed:Boolean(original.ended_at)};
+}

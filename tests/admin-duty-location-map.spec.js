@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';
 for(const width of [390,1440])test(`Admin chooses duty venue visually and confirms its saved identity at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});
  const office={id:'office',name:'Saved CEAC office',lat:5.6,lng:-.2,radius_meters:100,is_primary:true};
  const venues=[office],writes=[];let deny=true;
  await page.route('**/*',route=>{
@@ -20,7 +21,7 @@ for(const width of [390,1440])test(`Admin chooses duty venue visually and confir
  await expect(save).toBeDisabled();
  await expect(page.getByLabel('Duty venue latitude',{exact:true})).toHaveCount(0);
  await expect(page.getByLabel('Duty venue longitude',{exact:true})).toHaveCount(0);
- const map=page.getByRole('group',{name:'Venue map. Use arrow keys to move the map centre.',exact:true});
+ const map=page.locator('[data-synthetic-map=true]');
  await map.focus();await map.press('ArrowRight');
  await page.getByRole('button',{name:'Use map centre for this venue',exact:true}).click();
  await expect(page.getByText('Venue point chosen. Check the map before saving.',{exact:true})).toBeVisible();

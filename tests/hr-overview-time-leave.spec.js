@@ -1,33 +1,30 @@
 import {test,expect} from "@playwright/test";
 
 async function fixture(page,scope="Organisation"){
- let tiles=0;
+ await page.addInitScript({path:"tests/fixtures/google-maps-stub.js"});
  await page.route("**/*",async route=>{
   const url=new URL(route.request().url());
-  if(url.hostname==="tile.openstreetmap.org"){
-   tiles++;return route.fulfill({status:200,contentType:"image/png",body:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jR5sAAAAASUVORK5CYII=","base64")});
-  }
   if(!["localhost","127.0.0.1"].includes(url.hostname))return route.abort();
   if(url.pathname.includes("/rest/v1/"))return route.fulfill({status:200,contentType:"application/json",body:"null"});
   return route.continue();
  });
  await page.goto(`/tests/fixtures/hr-overview-review.html?scope=${scope}`);
  await expect(page.locator(".adminv2-main")).toBeVisible();
- return ()=>tiles;
+ return ()=>page.evaluate(()=>window.syntheticMaps||0);
 }
 for(const width of [1440,820,390,320]){
  test(`approved HR hierarchy, default map and responsive controls at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1100});
-  const tileCount=await fixture(page);
+  const mapCount=await fixture(page);
   const inbox=page.locator(".adminv2-inbox"),map=page.locator(".workstart-workspace");
   expect((await inbox.boundingBox()).y).toBeLessThan((await map.boundingBox()).y);
   await expect(page.getByRole("complementary",{name:"Upcoming commitments"})).toBeVisible();
   await expect(page.getByRole("region",{name:"Selected work start"})).toHaveCount(0);
   await map.scrollIntoViewIfNeeded();
-  await expect.poll(tileCount).toBeGreaterThan(0);
+  await expect.poll(mapCount).toBeGreaterThan(0);
   await page.evaluate(()=>window.scrollTo(0,0));
   await page.screenshot({path:`test-artifacts/hr-approved-overview-${width}.png`,fullPage:true});
-  const shared=page.getByRole("button",{name:/shared work-start location/});
+  const shared=page.getByRole("button",{name:/shared recorded location/});
   await shared.click();
   const popup=page.getByRole("region",{name:"Selected work start"});
   await expect(popup).toContainText("Ama Fixture");
@@ -36,7 +33,7 @@ for(const width of [1440,820,390,320]){
   await page.screenshot({path:`test-artifacts/hr-approved-overview-selected-${width}.png`,fullPage:true});
   await shared.click();await expect(popup).toContainText("Kojo Fixture");
   await popup.getByRole("button",{name:"Close selected work start"}).click();await expect(popup).toHaveCount(0);await expect(shared).toBeFocused();
-  await expect.poll(tileCount).toBeGreaterThan(0);
+  await expect.poll(mapCount).toBeGreaterThan(0);
   await map.getByRole("button",{name:"1 start locations unavailable"}).click();
   await expect(map.getByRole("button",{name:/Esi Fixture/})).toBeVisible();
   await expect(page.getByRole("button",{name:/View recorded work start for Esi/})).toHaveCount(0);

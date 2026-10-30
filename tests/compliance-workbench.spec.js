@@ -1,12 +1,9 @@
 import {test,expect} from '@playwright/test';
 const date=new Date().toISOString().slice(0,10);
 async function fixture(page,{failCases=false,failOffice=false,asAdmin=false,hiddenProfile=false}={}){
- let tiles=0;
+ await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});
  await page.route('**/*',async route=>{
   const url=new URL(route.request().url());
-  if(url.hostname==='tile.openstreetmap.org'){
-   tiles++;return route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jR5sAAAAASUVORK5CYII=','base64')});
-  }
   if(url.pathname.includes('/rest/v1/')){
    const name=url.pathname.split('/').at(-1);
    if(name==='compliance_attendance_case_register'&&failCases)return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Unavailable"}'});
@@ -33,7 +30,7 @@ async function fixture(page,{failCases=false,failOffice=false,asAdmin=false,hidd
  await page.goto('/tests/fixtures/compliance-workbench.html'+(asAdmin?'?role=admin':''));
  await expect(page.getByRole('heading',{name:'Compliance',exact:true})).toBeVisible();
  if(!asAdmin)await expect(page.getByRole('heading',{name:'Your review desk'})).toBeVisible();
- return ()=>tiles;
+ return ()=>page.evaluate(()=>window.syntheticMaps||0);
 }
 for(const width of [1440,820,390,320])test(`Compliance approved review-first layout and connected actions at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:1100});await fixture(page);
@@ -76,31 +73,33 @@ test('failed case read stays explicit while verified evidence remains reviewable
 });
 
 for(const width of [1440,390,320])test(`empty Compliance map defaults to saved office and remains usable at ${width}px`,async({page})=>{
- await page.setViewportSize({width,height:1100});const tileCount=await fixture(page);
+ await page.setViewportSize({width,height:1100});const mapCount=await fixture(page);
  const map=page.getByRole('region',{name:'Recorded workforce work-start street map'});
  await map.scrollIntoViewIfNeeded();
- await expect.poll(tileCount).toBeGreaterThan(0);
- await expect(map.getByRole('img',{name:/CEAC main office · Saved CEAC office/})).toBeVisible();
+ await expect.poll(mapCount).toBeGreaterThan(0);
+ await expect(map.getByRole('img',{name:/Saved CEAC office · Office reference/})).toBeVisible();
  await expect(map.getByRole('button',{name:/View recorded work start|shared work-start/})).toHaveCount(0);
  await expect(map).toContainText('No recorded start GPS');
  await expect(page.getByRole('button',{name:/Open authorised work/})).toHaveCount(0);
- await map.getByRole('button',{name:'Zoom in on street map'}).click();
+ const fits=await page.evaluate(()=>window.syntheticMapFits);
  await map.getByRole('button',{name:'Fit staff start locations'}).click();
- await expect(map.locator('.ceac-office-reference')).toHaveCSS('background-color','rgb(20, 73, 153)');
+ expect(await page.evaluate(()=>window.syntheticMapFits)).toBeGreaterThan(fits);
+ await expect(map.locator('.ceac-office-reference')).toHaveCSS('border-color','rgb(20, 73, 153)');
+ expect(await page.evaluate(()=>window.syntheticLastMap.bounds.points.some(p=>p.lat===5.61&&p.lng===-.19))).toBe(true);
  await page.evaluate(()=>window.scrollTo(0,0));
  await page.screenshot({path:`test-artifacts/compliance-office-map-${width}.png`,fullPage:true});
  await map.getByRole('button',{name:'Hide street map'}).click();
- const enable=map.getByRole('button',{name:'Enable street map'});
+ const enable=map.getByRole('button',{name:'Show Google Maps'});
  await expect(enable).toBeEnabled();await enable.click();
- await expect(map.getByRole('img',{name:/CEAC main office/})).toBeVisible();
+ await expect(map.getByRole('img',{name:/Office reference/})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 test('office read failure is explicit without blocking default map or exposing a fake office',async({page})=>{
- const tileCount=await fixture(page,{failOffice:true});
+ const mapCount=await fixture(page,{failOffice:true});
  const map=page.getByRole('region',{name:'Recorded workforce work-start street map'});
- await map.scrollIntoViewIfNeeded();await expect.poll(tileCount).toBeGreaterThan(0);
+ await map.scrollIntoViewIfNeeded();await expect.poll(mapCount).toBeGreaterThan(0);
  await expect(page.getByRole('status')).toContainText('saved office reference could not be loaded');
- await expect(map.getByRole('img',{name:/CEAC main office/})).toHaveCount(0);
+ await expect(map.getByRole('img',{name:/Office reference/})).toHaveCount(0);
 });
 
 test('HR direct-link access remains personal even with its legacy organisation-wide Compliance grant',async({page})=>{

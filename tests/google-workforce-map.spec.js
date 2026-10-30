@@ -30,6 +30,7 @@ for(const width of [390,1440])test(`Executive map follows priority panels and us
  expect(requests.some(r=>r.method==='POST'||/admin_employee_roster|hr_private|payroll/.test(r.url))).toBe(false);
  const reads=requests.filter(r=>/rest\/v1\/(profiles|units|unit_memberships|work_sessions)/.test(r.url));
  expect(reads.every(r=>new URL(r.url).searchParams.get('org_id')==='eq.org')).toBe(true);
+ if(width===390){const heights=await map.locator("button:visible").evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().height));for(const height of heights)expect(height).toBeGreaterThanOrEqual(44);}
  await page.screenshot({path:`test-artifacts/executive-google-map-${width}.png`,fullPage:true});
 });
 test('Executive map fails independently without hiding decisions or claiming zero attendance',async({page})=>{

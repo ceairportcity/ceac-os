@@ -144,7 +144,8 @@ test("P3 uncertain Start Work and history reconciliation require an explicit rec
  assert.match(dialog, /disabled=\{busy \|\| !canStart\}/);
  assert.match(dialog, /if \(!busy && canStart\) onStart\(\)/);
  assert.match(continued, /setVerified\(false\); setRecover\(false\)/);
- assert.match(closed, /setVerified\(false\); setRecover\(false\)/);
+ assert.match(closed, /setVerified\(false\)/);
+ assert.doesNotMatch(closed, /catch\(e\) \{[\s\S]*setRecover\(false\)/, "A failed correction must retain its form");
  assert.match(screen, /Retry session verification/);
 });
 

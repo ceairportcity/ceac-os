@@ -56,6 +56,7 @@ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
     }])});
    }else await route.continue();
   });
+  await page.reload(); // Run the SDK init script before the SPA sign-in.
   await authenticate(page);
   const street=page.getByRole("region",{name:"Recorded workforce work-start street map"});
   await expect(street).toBeVisible({timeout:15000});

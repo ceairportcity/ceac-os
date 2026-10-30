@@ -51,7 +51,7 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
     node.onclick=()=>{selectedMarker.current=node;latest.current.onSelect?.(nextWorkforceClusterPersonId(cluster.people,latest.current.selectedId));};
     overlays.push(googleMapPoint(maps.current,map.current,cluster,node));
    }
-   if(office){const node=document.createElement('span');node.className='ceac-street-map-marker ceac-office-reference';node.setAttribute('aria-label',office.name+' · Office reference');node.title=office.name+' · Reference only, not attendance proof';overlays.push(googleMapPoint(maps.current,map.current,office,node));}
+   if(office){const node=document.createElement('span');node.className='ceac-street-map-marker ceac-office-reference';node.setAttribute('role','img');node.setAttribute('aria-label',office.name+' · Office reference');node.title=office.name+' · Reference only, not attendance proof';overlays.push(googleMapPoint(maps.current,map.current,office,node));}
   }
   return()=>overlays.forEach(o=>o.setMap(null));
  },[ready,clusters,office,focusLocation,choosing]);
@@ -69,6 +69,7 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
    </div>:null}
   </div>
   {consent&&<div className="ceac-street-map-after"><span>Recorded starts · not live tracking</span><div><button className="btn btn-ghost btn-sm" disabled={!ready||state!=='ready'} onClick={fit}>Fit staff start locations</button> <button className="btn btn-ghost btn-sm" onClick={()=>setConsent(false)}>Hide street map</button></div></div>}
+  {!choosing&&!clusters.length&&<p className="screen-note">No recorded start GPS for these filters.</p>}
   {!choosing&&officePeople.length>0&&<div className="workstart-summary" aria-label="Recorded office starts"><strong>Office starts</strong>{officePeople.map(p=><button type="button" key={p.id} aria-pressed={p.id===selectedId} onClick={e=>{selectedMarker.current=e.currentTarget;onSelect?.(p.id);}}>{p.name}</button>)}</div>}
   {clusters.filter(c=>c.people.length>1&&c.people.some(p=>p.id===selectedId)).map(c=><div className="workstart-summary" aria-label="People at this recorded location" key={c.key}>{c.people.map(p=><button type="button" key={p.id} aria-pressed={p.id===selectedId} onClick={()=>onSelect?.(p.id)}>{p.name}</button>)}</div>)}
   {selectedContent&&<section className="ceac-google-selected" aria-label="Selected work start"><button className="btn btn-ghost btn-sm" onClick={()=>{onSelect?.(null);selectedMarker.current?.focus();}}>Close selected work start</button>{selectedContent}</section>}
