@@ -1,5 +1,4 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {nextWorkforceClusterPersonId} from '../lib/workforceStreetMap';
 import {staffInitials} from '../lib/workforcePresentation';
 import {googleMapsConfigured,loadGoogleMaps,googleMapPoint,googleMapFailure,googleMapsFallbackUrl} from '../lib/googleMaps';
 import './WorkforceStreetMap.css';
@@ -100,6 +99,8 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
  // Duty-venue picking still requires the full SDK to return precise coordinates.
  const fallbackNeeded=!choosing&&configured&&state==='error'&&['MAP-DOWNLOAD','MAP-SDK-TIMEOUT','MAP-POLICY','MAP-TILES-TIMEOUT'].includes(issue?.code);
  const focusedCluster=clusters.find(c=>c.people.some(p=>p.id===selectedId));
+ const fallbackStaff=clusters.flatMap(c=>c.people);
+ const focusedPerson=fallbackStaff.find(person=>person.id===selectedId);
  const fallbackUrl=fallbackNeeded?googleMapsFallbackUrl(focusedCluster||office||clusters[0]||{lat:5.6037,lng:-0.187}):null;
  const fallbackActive=Boolean(fallbackUrl);
  return <section className="ceac-street-map" aria-label={choosing?'Choose duty venue on street map':'Recorded workforce work-start street map'}>
@@ -113,8 +114,8 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
     {state==='error'&&configured&&<button className="btn btn-ghost btn-sm" type="button" onClick={()=>issue?.code==='MAP-AUTH'?window.location.reload():setAttempt(n=>n+1)}>{issue?.code==='MAP-AUTH'?'Reload map configuration':'Retry Google Maps'}</button>}
    </div>:null}
   </div>
-  {consent&&fallbackActive&&<div className="ceac-google-recovery" role="status"><span>Google road view is available as an alternative. Select a recorded location below to focus it; staff pins require the interactive map.</span><small>Map check: {issue?.code}</small><div><button className="btn btn-ghost btn-sm" type="button" onClick={()=>setAttempt(n=>n+1)}>Retry interactive map</button> <a className="btn btn-ghost btn-sm" href={'https://www.google.com/maps/search/?'+new URLSearchParams({api:'1',query:(focusedCluster||office||clusters[0]||{lat:5.6037,lng:-0.187}).lat+','+(focusedCluster||office||clusters[0]||{lat:5.6037,lng:-0.187}).lng})} target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div></div>}
-  {consent&&fallbackActive&&clusters.length>0&&<div className="ceac-google-fallback-points" aria-label="Recorded map locations">{clusters.map(cluster=><button type="button" key={cluster.key} className="btn btn-ghost btn-sm" aria-pressed={cluster.people.some(p=>p.id===selectedId)} onClick={()=>onSelect?.(nextWorkforceClusterPersonId(cluster.people,selectedId))}>{cluster.people.length===1?cluster.people[0].name:cluster.people.length+' recorded people'}</button>)}</div>}
+  {consent&&fallbackActive&&<div className="ceac-google-recovery" role="status"><span>{focusedPerson?'Showing '+focusedPerson.name+'’s recorded start location.':'Google road view is available. Choose a staff member below to focus their recorded start location.'} Staff markers require the interactive map.</span>{office&&<small>CEAC Church Office · saved reference</small>}<small>Map check: {issue?.code}</small><div><button className="btn btn-ghost btn-sm" type="button" onClick={()=>setAttempt(n=>n+1)}>Retry interactive map</button> <a className="btn btn-ghost btn-sm" href={'https://www.google.com/maps/search/?'+new URLSearchParams({api:'1',query:(focusedCluster||office||clusters[0]||{lat:5.6037,lng:-0.187}).lat+','+(focusedCluster||office||clusters[0]||{lat:5.6037,lng:-0.187}).lng})} target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div></div>}
+  {consent&&fallbackActive&&fallbackStaff.length>0&&<div className="ceac-google-fallback-points" aria-label="Recorded staff map locations">{fallbackStaff.map(person=><button type="button" key={person.id} className="btn btn-ghost btn-sm" aria-pressed={person.id===selectedId} onClick={()=>onSelect?.(person.id)} aria-label={'View recorded location for '+person.name}><span className="ceac-map-avatar" aria-hidden="true">{staffInitials(person.name)}</span><span>{person.name}</span></button>)}</div>}
   {consent&&<div className="ceac-street-map-after"><span>Recorded starts · not live tracking</span><div><button className="btn btn-ghost btn-sm" disabled={!ready||state!=='ready'} onClick={fit}>Fit staff start locations</button> <button className="btn btn-ghost btn-sm" onClick={()=>setConsent(false)}>Hide street map</button></div></div>}
   {!choosing&&!clusters.length&&<p className="screen-note">No recorded start GPS for these filters.</p>}
   {!choosing&&officePeople.length>0&&<div className="workstart-summary" aria-label="Recorded office starts"><strong>Office starts</strong>{officePeople.map(p=><button type="button" key={p.id} aria-pressed={p.id===selectedId} onClick={e=>{selectedMarker.current=e.currentTarget;onSelect?.(p.id);}}>{p.name}</button>)}</div>}
