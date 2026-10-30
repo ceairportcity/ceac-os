@@ -29,7 +29,7 @@ async function mock(page){
 
 for(const width of [390,1440]){
  test(`compact map shows office names and selects everyone at shared coordinates ${width}`,async({page})=>{
-  await page.setViewportSize({width,height:1000});await mock(page);
+  await page.setViewportSize({width,height:1000});await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});await mock(page);
   await page.goto('/tests/fixtures/phase1-corrections.html?screen=map');
   const office=page.getByLabel('Recorded office starts');
   await expect(office.getByRole('button',{name:'Synthetic Ama',exact:true})).toBeVisible();

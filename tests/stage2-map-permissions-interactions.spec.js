@@ -44,7 +44,7 @@ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
  test(`Admin Overview street map defaults on and never sends employee identities (${viewport.width}px)`,async({browser})=>{
   const {page,context}=await adminPage(browser,viewport);
   const start=new Date().toISOString();
-  let requestedTiles=0;
+  await page.addInitScript({path:"tests/fixtures/google-maps-stub.js"});
   await page.route("**/rest/v1/work_sessions?*",async route=>{
    const select=new URL(route.request().url()).searchParams.get("select")||"";
    if(route.request().method()==="GET"&&select.includes("location_accuracy_m")){
@@ -56,21 +56,17 @@ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
     }])});
    }else await route.continue();
   });
-  await page.route("https://tile.openstreetmap.org/**",async route=>{
-   requestedTiles++;
-   const png=Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jR5sAAAAASUVORK5CYII=","base64");
-   await route.fulfill({status:200,contentType:"image/png",body:png});
-  });
+  await page.reload(); // Run the SDK init script before the SPA sign-in.
   await authenticate(page);
   const street=page.getByRole("region",{name:"Recorded workforce work-start street map"});
   await expect(street).toBeVisible({timeout:15000});
-  await expect(street.getByText(/visible map area, the CEAC site origin and your IP address/)).toBeVisible();
+  await expect(street.getByText(/Google Maps receives the viewed map area/)).toBeVisible();
   await expect(street.getByRole("button",{name:"Enable street map"})).toHaveCount(0);
   await expect(street.getByRole("button",{name:/View recorded work start for Staff Fixture/})).toBeVisible();
-  await expect.poll(()=>requestedTiles,{timeout:15000}).toBeGreaterThan(0);
-  await expect(street.getByText(/© OpenStreetMap contributors/)).toBeVisible();
+  await expect(street.locator("[data-synthetic-map=true]")).toBeVisible();
+  await expect(street.getByText("Synthetic Google Maps",{exact:true})).toBeVisible();
   await street.getByRole("button",{name:"Hide street map"}).click();
-  await expect(street.getByRole("button",{name:"Enable street map"})).toBeVisible();
+  await expect(street.getByRole("button",{name:"Show Google Maps"})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await context.close();
  });

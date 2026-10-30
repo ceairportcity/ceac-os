@@ -45,16 +45,16 @@ for(const width of [390,1440]){
   await page.screenshot({path:`test-artifacts/reopened-unit-${width}.png`,fullPage:true});
  });
 }
-test('failed street tiles offer retry while employee markers remain readable',async({page})=>{
- let failed=true,requests=0;
- await page.route('https://tile.openstreetmap.org/**',route=>{requests++;return failed?route.abort():route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')});});
+test('failed Google map offers retry without recording or changing an employee location',async({page})=>{
+ await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});
+ await page.addInitScript(()=>{window.syntheticMapFail=true;});
  await page.goto('/tests/fixtures/owner-corrections.html?screen=map&actor=admin');
- const retry=page.getByRole('button',{name:'Retry street map',exact:true});await expect(retry).toBeVisible();
+ const retry=page.getByRole('button',{name:'Retry Google Maps',exact:true});await expect(retry).toBeVisible();
+ await page.evaluate(()=>{window.syntheticMapFail=false;});await retry.click();
+ await expect(retry).toHaveCount(0);
  await page.getByRole('button',{name:'View recorded work start for Synthetic colleague',exact:true}).click();
  await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic work-start record');
- const before=requests;failed=false;await retry.click();
- await expect(retry).toHaveCount(0);expect(requests).toBeGreaterThan(before);
- await expect(page.locator('.ceac-street-map-tiles img').first()).toBeVisible();
+ await expect(page.locator('[data-synthetic-map=true]')).toBeVisible();
 });
 test('Pending Decisions shows the original dated employment snapshot and an optional comment',async({page})=>{
  const before={id:'old',created_at:'2026-10-01T09:00Z',effective_on:'2026-10-01',employment_type:'fixed_term',job_title:'Coordinator',employment_status:'active'};

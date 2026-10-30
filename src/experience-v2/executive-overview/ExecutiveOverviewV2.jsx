@@ -1,3 +1,4 @@
+import ExecutiveWorkforceToday from "../../components/ExecutiveWorkforceToday";
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
 import EmployeeWorkSession from "../../components/EmployeeWorkSession";
 import {
@@ -351,6 +352,7 @@ export default function ExecutiveOverviewV2({
             <button type="button" className="executivev2-schedule-link" onClick={onScheduleMeeting}>Schedule meeting</button>
           </section>
         </section>
+        {me?.id && <ExecutiveWorkforceToday me={me} onOpenOrganisation={onOpenOrganisation} />}
       </main> : null}
     </div>
   </div>;

@@ -1,136 +1,79 @@
-import {useEffect,useMemo,useRef,useState} from "react";
-import {fitWorkforceMap,pointCoordinates,visibleStreetTiles,workforcePinPosition,worldPoint,nextWorkforceClusterPersonId} from "../lib/workforceStreetMap";
-import "./WorkforceStreetMap.css";
-const EMPTY_CLUSTERS=[];
+import {useEffect,useMemo,useRef,useState} from 'react';
+import {nextWorkforceClusterPersonId} from '../lib/workforceStreetMap';
+import {googleMapsConfigured,loadGoogleMaps,googleMapPoint} from '../lib/googleMaps';
+import './WorkforceStreetMap.css';
+const EMPTY=[];
 
-/** Owner-approved default street view. Only tile area, site origin and browser IP
- * reach OpenStreetMap; identities and staff records stay in first-party memory. */
-export default function WorkforceStreetMap({clusters=EMPTY_CLUSTERS,office=null,selectedId,onSelect,selectedContent,focusLocation=null,onChooseLocation}) {
- const choosing=typeof onChooseLocation==="function";
- const frame=useRef(null),drag=useRef(null),selectedMarker=useRef(null);
- const [size,setSize]=useState({width:520,height:340}),[consent,setConsent]=useState(true),[tileWarning,setTileWarning]=useState(false);
- const fitted=useMemo(()=>fitWorkforceMap(focusLocation?[focusLocation]:office?[...clusters,office]:clusters,size.width,size.height),[clusters,office,focusLocation,size.width,size.height]);
- const [view,setView]=useState(fitted);
- const [tileAttempt,setTileAttempt]=useState(0);
- const failedTiles=useRef(new Set());
- useEffect(()=>{setView(fitted);},[fitted]);
+/** Shared Google road map for HR, Compliance, Executive and duty venues. */
+export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedId,onSelect,selectedContent,focusLocation=null,onChooseLocation}){
+ const choosing=typeof onChooseLocation==='function';
+ const configured=googleMapsConfigured||Boolean(window.google?.maps?.Map);
+ const frame=useRef(null),map=useRef(null),maps=useRef(null),selectedMarker=useRef(null);
+ const latest=useRef({selectedId,onSelect});latest.current={selectedId,onSelect};
+ const [consent,setConsent]=useState(true),[state,setState]=useState('loading'),[attempt,setAttempt]=useState(0),[ready,setReady]=useState(false);
+ const points=useMemo(()=>focusLocation?[focusLocation]:office?[...clusters,office]:clusters,[clusters,office,focusLocation]);
+ function fit(){
+  if(!map.current||!maps.current||!points.length)return;
+  const bounds=new maps.current.LatLngBounds();points.forEach(p=>bounds.extend({lat:p.lat,lng:p.lng}));
+  map.current.fitBounds(bounds,55);
+  maps.current.event.addListenerOnce(map.current,'idle',()=>{if(map.current?.getZoom()>16)map.current.setZoom(16);});
+ }
  useEffect(()=>{
-  if(!frame.current)return;
-  if(typeof ResizeObserver==="undefined"){
-   const measure=()=>{const rect=frame.current?.getBoundingClientRect();if(rect)setSize({width:Math.max(200,Math.round(rect.width)),height:Math.max(200,Math.round(rect.height))});};
-   measure();window.addEventListener("resize",measure);
-   return ()=>window.removeEventListener("resize",measure);
+  let alive=true,timer;const listeners=[];
+  setReady(false);setState('loading');
+  if(!consent)return;
+  const failed=()=>{if(alive)setState('error');};
+  window.addEventListener('ceac-google-map-error',failed);
+  loadGoogleMaps().then(api=>{
+   if(!alive||!frame.current)return;
+   maps.current=api;
+   map.current=new api.Map(frame.current,{
+    center:points[0]?{lat:points[0].lat,lng:points[0].lng}:{lat:5.6037,lng:-.187},zoom:12,
+    renderingType:'RASTER',streetViewControl:false,mapTypeControl:false,fullscreenControl:false,
+    gestureHandling:'cooperative',clickableIcons:false,
+    styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{featureType:'transit',stylers:[{visibility:'off'}]}],
+   });
+   listeners.push(api.event.addListenerOnce(map.current,'tilesloaded',()=>{if(alive){clearTimeout(timer);setState('ready');}}));
+   timer=setTimeout(failed,20000);setReady(true);
+  }).catch(failed);
+  return()=>{alive=false;clearTimeout(timer);window.removeEventListener('ceac-google-map-error',failed);listeners.forEach(l=>l.remove());if(map.current)maps.current?.event.clearInstanceListeners(map.current);map.current=null;};
+ },[consent,attempt]);
+ useEffect(()=>{
+  if(!ready||!map.current)return;
+  fit();const overlays=[];
+  if(!choosing){
+   for(const cluster of clusters){
+    const node=document.createElement('button');node.type='button';node.className='ceac-street-map-marker'+(cluster.people.some(p=>p.id===selectedId)?' is-selected':'');
+    const label=cluster.people.map(p=>p.name).join(', ');
+    node.dataset.workforceCluster=cluster.key;
+    node.setAttribute('aria-label',cluster.people.length>1?'Select a person at this shared recorded location: '+label:'View recorded work start for '+label);node.title=label;
+    const dot=document.createElement('span');dot.className='ceac-street-map-dot';dot.textContent=cluster.people.length>1?String(cluster.people.length):'';node.append(dot);
+    node.onclick=()=>{selectedMarker.current=node;latest.current.onSelect?.(nextWorkforceClusterPersonId(cluster.people,latest.current.selectedId));};
+    overlays.push(googleMapPoint(maps.current,map.current,cluster,node));
+   }
+   if(office){const node=document.createElement('span');node.className='ceac-street-map-marker ceac-office-reference';node.setAttribute('role','img');node.setAttribute('aria-label',office.name+' · Office reference');node.title=office.name+' · Reference only, not attendance proof';overlays.push(googleMapPoint(maps.current,map.current,office,node));}
   }
-  const observer=new ResizeObserver(entries=>{
-   const width=Math.max(200,Math.round(entries[0]?.contentRect?.width||520));
-   const height=Math.max(200,Math.round(entries[0]?.contentRect?.height||340));
-   setSize(old=>old.width===width&&old.height===height?old:{width,height});
-  });
-  observer.observe(frame.current);
-  return ()=>observer.disconnect();
- },[]);
- const tileViews=useMemo(()=>consent?visibleStreetTiles(view,view.zoom,size.width,size.height):[],
-  [consent,view,size.width,size.height]);
- const tileScope=tileViews.map(tile=>tile.key).join("|")+":"+tileAttempt;
- useEffect(()=>{failedTiles.current.clear();setTileWarning(false);},[tileScope]);
- const pins=useMemo(()=>clusters.map(cluster=>({...cluster,position:workforcePinPosition(cluster,view,view.zoom,size.width,size.height)})),
-  [clusters,view,size.width,size.height]).filter(p=>p.position.x>=-30&&p.position.x<=size.width+30
-   &&p.position.y>=-30&&p.position.y<=size.height+30);
-
- const selectedPin=pins.find(pin=>pin.people.some(person=>person.id===selectedId));
- // Place the scrollable detail on the opposite side of the selected marker.
- // Shared-location pins must remain reachable even on a narrow phone.
- const popupEdge=selectedPin?.position.y<size.height/2?"top":"bottom";
- const popupInset=Math.max(12,popupEdge==="top"?(selectedPin?.position.y||0)+32:size.height-(selectedPin?.position.y||size.height)+32);
- const popupStyle={top:"auto",bottom:"auto",[popupEdge]:popupInset,maxHeight:Math.max(80,size.height-popupInset-28)};
- function closeSelection(){
-  onSelect?.(null);
-  selectedMarker.current?.focus();
- }
- function changeZoom(step){
-  setView(current=>({...current,zoom:Math.min(17,Math.max(2,current.zoom+step))}));
- }
- function pointerDown(event){
-  if(!consent||event.button!==0)return;
-  drag.current={pointer:event.pointerId,x:event.clientX,y:event.clientY,original:view};
-  event.currentTarget.setPointerCapture?.(event.pointerId);
- }
- function pointerMove(event){
-  if(!drag.current||drag.current.pointer!==event.pointerId)return;
-  const {x,y,original}=drag.current;
-  const middle=worldPoint(original.lat,original.lng,original.zoom);
-  const coord=pointCoordinates(middle.x-(event.clientX-x),middle.y-(event.clientY-y),original.zoom);
-  setView({...original,...coord});
- }
- function pointerEnd(event){
-  if(drag.current?.pointer===event.pointerId)drag.current=null;
-  if(event.currentTarget.hasPointerCapture?.(event.pointerId))
-   event.currentTarget.releasePointerCapture(event.pointerId);
- }
- function panWithKeyboard(event){
-  if(!choosing||!consent||event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.target!==event.currentTarget)return;
-  const direction={ArrowLeft:[-80,0],ArrowRight:[80,0],ArrowUp:[0,-80],ArrowDown:[0,80]}[event.key];
-  if(!direction)return;
-  event.preventDefault();
-  setView(current=>{const middle=worldPoint(current.lat,current.lng,current.zoom);return {...current,...pointCoordinates(middle.x+direction[0],middle.y+direction[1],current.zoom)};});
- }
- return <section className="ceac-street-map" aria-label={choosing?"Choose duty venue on street map":"Recorded workforce work-start street map"}>
-  <div ref={frame} className="ceac-street-map-viewport"
-   tabIndex={choosing?0:undefined} role={choosing?"group":undefined} aria-label={choosing?"Venue map. Use arrow keys to move the map centre.":undefined} onKeyDown={panWithKeyboard}
-   onPointerDown={pointerDown} onPointerMove={pointerMove}
-   onPointerUp={pointerEnd} onPointerCancel={pointerEnd}
-   style={{touchAction:consent?"none":"auto"}}>
-   {!consent?<div className="ceac-street-map-optin">
-    <span className="ceac-street-map-eyebrow">GEOGRAPHIC VIEW</span>
-    <strong>View recorded work starts on a street map</strong>
-    <p>OpenStreetMap tiles show roads and nearby places. Loading them sends the visible map area, the CEAC site origin and your IP address to OpenStreetMap. Staff identities and exact work-start records are not sent to the map provider.</p>
-    <button type="button" className="btn btn-sm" onClick={()=>{setTileWarning(false);setConsent(true);}}>
-     Enable street map
-    </button>
-    {!clusters.length&&<small>No recorded start GPS is available for these employees.</small>}
-   </div>:<>
-    <div className="ceac-street-map-tiles" aria-hidden="true">
-     {tileViews.map(tile=><img key={`${tile.key}:${tileAttempt}`} src={tile.url}
-      loading="eager" draggable="false" alt="" referrerPolicy="strict-origin-when-cross-origin"
-      onError={event=>{event.currentTarget.style.visibility="hidden";failedTiles.current.add(tile.key);setTileWarning(true);}}
-      onLoad={event=>{event.currentTarget.style.visibility="visible";failedTiles.current.delete(tile.key);setTileWarning(failedTiles.current.size>0);}}
-      style={{position:"absolute",left:tile.x,top:tile.y,width:256,height:256}} />)}
-    </div>
-    <div className="ceac-street-map-overlay" aria-label={choosing?"Venue reference and selection":"Recorded work-start markers"}>
-     {choosing&&<span className="ceac-street-map-marker is-selected" role="img" aria-label="Venue selection at map centre" style={{left:"50%",top:"50%",pointerEvents:"none"}}>+<span className="ceac-street-map-name">Venue point</span></span>}
-     {office&&<span className="ceac-street-map-marker ceac-office-reference" role="img" aria-label={"CEAC main office · "+office.name+" · Reference only, not attendance proof"}
-      style={(()=>{const p=workforcePinPosition(office,view,view.zoom,size.width,size.height);return {left:p.x,top:p.y};})()}>
-      <span aria-hidden="true">◆</span><span className="ceac-street-map-name">CEAC main office</span>
-     </span>}
-     {pins.map(pin=><button key={pin.key} type="button"
-      className={pin.people.some(person=>person.id===selectedId)?"ceac-street-map-marker is-selected":"ceac-street-map-marker"}
-      style={{left:pin.position.x,top:pin.position.y}}
-      aria-label={pin.people.length===1?`View recorded work start for ${pin.people[0].name}`:
-       `Select a person at this shared work-start location (${pin.people.length} staff). Press again for next person`}
-      onPointerDown={e=>e.stopPropagation()}
-      onClick={event=>{selectedMarker.current=event.currentTarget;onSelect?.(nextWorkforceClusterPersonId(pin.people,selectedId));}}>
-      <span className="ceac-street-map-dot" aria-hidden="true">{pin.people.length>1?pin.people.length:""}</span><span className="ceac-street-map-name">{pin.people.map(person=>person.name).join(", ")}</span>
-     </button>)}
-    </div>
-    {selectedContent&&<div className="ceac-street-map-popup" style={popupStyle} role="region" aria-label="Selected work start" onKeyDown={event=>{if(event.key==="Escape"){event.stopPropagation();closeSelection();}}} onPointerDown={e=>e.stopPropagation()}><button type="button" className="ceac-street-map-close" aria-label="Close selected work start" onClick={closeSelection}>×</button>{selectedPin?.people.length>1&&<div style={{display:"grid",gap:4}} aria-label="People at this recorded location">{selectedPin.people.map(person=><button className="text-action" type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={()=>onSelect?.(person.id)}>{person.name}</button>)}</div>}{selectedContent}</div>}
-    <div className="ceac-street-map-zoom">
-     <button type="button" aria-label="Zoom in on street map" onPointerDown={e=>e.stopPropagation()} onClick={()=>changeZoom(1)}>+</button>
-     <button type="button" aria-label="Zoom out of street map" onPointerDown={e=>e.stopPropagation()} onClick={()=>changeZoom(-1)}>−</button>
-     <button type="button" aria-label={choosing?"Return to saved location":"Fit staff start locations"} onPointerDown={e=>e.stopPropagation()} onClick={()=>setView(fitted)}>⌖</button>
-    </div>
-    <div className="ceac-street-map-footer">
-     <span>{choosing?"Venue setup · Not attendance proof":"Recorded start · Not live tracking"}</span>
-     <span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></span>
-    </div>
-   </>}
+  return()=>overlays.forEach(o=>o.setMap(null));
+ },[ready,clusters,office,focusLocation,choosing]);
+ // Changing a selection must not reconstruct the map or reset the viewport.
+ useEffect(()=>{const selectedKey=clusters.find(c=>c.people.some(p=>p.id===selectedId))?.key;frame.current?.querySelectorAll('[data-workforce-cluster]').forEach(node=>node.classList.toggle('is-selected',Boolean(selectedKey)&&node.dataset.workforceCluster===selectedKey));},[selectedId,clusters]);
+ const officePeople=clusters.flatMap(c=>c.people).filter(p=>p.place==='office');
+ return <section className="ceac-street-map" aria-label={choosing?'Choose duty venue on street map':'Recorded workforce work-start street map'}>
+  <div className="ceac-street-map-viewport">
+   {consent&&<div ref={frame} className="ceac-google-map-canvas" aria-label="Google Maps road map"/>}
+   {choosing&&consent&&ready&&<span className="ceac-google-centre" aria-hidden="true">+</span>}
+   {!consent?<div className="ceac-street-map-optin"><strong>Google Maps is hidden</strong><button className="btn btn-sm" type="button" onClick={()=>setConsent(true)}>Show Google Maps</button></div>:state!=='ready'?<div className="ceac-google-map-state" role="status">
+    <strong>{state==='loading'?'Loading Google Maps…':configured?'Google Maps is unavailable':'Google Maps setup required'}</strong>
+    {state==='error'&&<span>{configured?'Check the connection or map configuration. Employee records remain available below.':'A CEAC-authorised Maps key must be configured before this map can load.'}</span>}
+    {state==='error'&&configured&&<button className="btn btn-ghost btn-sm" type="button" onClick={()=>setAttempt(n=>n+1)}>Retry Google Maps</button>}
+   </div>:null}
   </div>
-  {!choosing&&clusters.some(cluster=>cluster.people.some(person=>person.place==="office"))&&<div className="workstart-summary" aria-label="Recorded office starts"><strong>Office starts</strong>{clusters.flatMap(cluster=>cluster.people).filter(person=>person.place==="office").map(person=><button type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={event=>{selectedMarker.current=event.currentTarget;onSelect?.(person.id);}}>{person.name}</button>)}</div>}
-  {consent&&<p className="screen-note">OpenStreetMap receives the visible map area, the CEAC site origin and your IP address. Staff identities and exact work-start records are not sent to the map provider. {office?"The office pin is a saved reference, not attendance proof.":"No saved office reference is available."} {!choosing&&!clusters.length&&"No recorded start GPS is available for these employees."}</p>}
-  {consent&&<div className="ceac-street-map-after">
-   <span>{choosing?(tileWarning?"Street tiles could not all load. Check that the venue point is correct before saving.":"Drag the map, or focus it and use arrow keys. Place the venue under the centre marker, then choose that point."):tileWarning?"The street background could not load from OpenStreetMap. Check this PC’s connection or content-blocking settings, then retry. Employee records remain available through Browse employees.":"Drag to explore. Use zoom controls to inspect streets. A pin opens a staff record; activate shared-location pins again to inspect every person there."}</span>
-   {tileWarning&&<button className="btn btn-ghost btn-sm" type="button" onClick={()=>setTileAttempt(attempt=>attempt+1)}>Retry street map</button>}
-   <button className="btn btn-ghost btn-sm" type="button" onClick={()=>setConsent(false)}>Hide street map</button>
-  </div>}
-  {choosing&&consent&&<button className="btn" type="button" onClick={()=>onChooseLocation({lat:view.lat,lng:view.lng})}>Use map centre for this venue</button>}
+  {consent&&<div className="ceac-street-map-after"><span>Recorded starts · not live tracking</span><div><button className="btn btn-ghost btn-sm" disabled={!ready||state!=='ready'} onClick={fit}>Fit staff start locations</button> <button className="btn btn-ghost btn-sm" onClick={()=>setConsent(false)}>Hide street map</button></div></div>}
+  {!choosing&&!clusters.length&&<p className="screen-note">No recorded start GPS for these filters.</p>}
+  {!choosing&&officePeople.length>0&&<div className="workstart-summary" aria-label="Recorded office starts"><strong>Office starts</strong>{officePeople.map(p=><button type="button" key={p.id} aria-pressed={p.id===selectedId} onClick={e=>{selectedMarker.current=e.currentTarget;onSelect?.(p.id);}}>{p.name}</button>)}</div>}
+  {clusters.filter(c=>c.people.length>1&&c.people.some(p=>p.id===selectedId)).map(c=><div className="workstart-summary" aria-label="People at this recorded location" key={c.key}>{c.people.map(p=><button type="button" key={p.id} aria-pressed={p.id===selectedId} onClick={()=>onSelect?.(p.id)}>{p.name}</button>)}</div>)}
+  {selectedContent&&<section className="ceac-google-selected" aria-label="Selected work start"><button className="btn btn-ghost btn-sm" onClick={()=>{onSelect?.(null);selectedMarker.current?.focus();}}>Close selected work start</button>{selectedContent}</section>}
+  {consent&&<p className="screen-note">Google Maps receives the viewed map area and device/network information to render the map. Employee names are not included in map requests. The office marker is a saved reference, not attendance proof.</p>}
+  {choosing&&consent&&<button className="btn btn-sm" disabled={state!=='ready'} onClick={()=>{const p=map.current?.getCenter();if(p)onChooseLocation({lat:p.lat(),lng:p.lng()});}}>Use map centre for this venue</button>}
  </section>;
 }
