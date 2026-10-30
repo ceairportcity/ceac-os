@@ -266,10 +266,10 @@ export default function StaffTodayV2({
             <span className="staffv2-recovery-icon"><CeacIcon name="warning" size="row" decorative /></span>
             <div>
               <strong>Earlier work session still open</strong>
-              <p>CEAC OS will not record continuous overnight work by itself. Confirm whether you continued or close it at the actual time.</p>
+              <p>CEAC OS will not record continuous overnight work by itself. Start a new day using the previous working location, or close it at the actual time.</p>
             </div>
             <div className="staffv2-recovery-actions">
-              <Button onClick={onContinueRecoveredSession} disabled={busy || !sessionVerified}>Continue this session</Button>
+              <Button onClick={onContinueRecoveredSession} disabled={busy || !sessionVerified}>Start a new day</Button>
               <Button variant="secondary" onClick={onCloseRecoveredSession} disabled={busy || !sessionVerified}>Close at the actual time</Button>
             </div>
           </Surface>
