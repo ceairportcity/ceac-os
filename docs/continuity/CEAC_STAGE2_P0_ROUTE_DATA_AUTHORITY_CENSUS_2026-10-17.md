@@ -4,7 +4,7 @@
 
 ## 1. Enumerated signed-in root client tabs
 
-There are **47** explicit `tab ===` routing cases, plus a separate default `me` My Hub fallback. The first column below is derived from the real source, not a speculative future route. A role-shell link is just a navigation choice; it is NOT RLS, Storage or RPC authorization. The client can attempt a hidden tab via its query parameter and most routes have no additional root guard, so every sensitive data read/write needs **server-enforced role and tenant policy tests**. A conditional screen component may enforce additional UI capabilities, but UI-only denial is insufficient.
+There are **48** explicit `tab ===` routing cases (the original 47 plus the owner-approved Executive Projects tab of 30 October 2026), plus a separate default `me` My Hub fallback. The first column below is derived from the real source, not a speculative future route. A role-shell link is just a navigation choice; it is NOT RLS, Storage or RPC authorization. The client can attempt a hidden tab via its query parameter and most routes have no additional root guard, so every sensitive data read/write needs **server-enforced role and tenant policy tests**. A conditional screen component may enforce additional UI capabilities, but UI-only denial is insufficient.
 
 | Tab | Main role navigation | App-level render routing | Root screen/component | Acceptance stage | Proof |
 | --- | --- | --- | --- | --- | --- |
@@ -23,6 +23,7 @@ There are **47** explicit `tab ===` routing cases, plus a separate default `me` 
 | `calendar` | manager | isUnitManager | `ManagerCalendar` | P4 | SOURCE ONLY |
 | `manager-finance` | manager | isUnitManager | `ManagerFinance` | P0/P7 | SOURCE ONLY |
 | `manager-reports` | manager | isUnitManager | `ManagerReports` | P6 | SOURCE ONLY |
+| `exec-projects` | executive | isExec | `AdminProjects` (existing cross-department composer; Executive RPC authorization required) | P5 | SOURCE ONLY — 30 Oct 2026 addition |
 | `exec-organisation` | executive | isExec | `ExecutiveOrganisation` | P0/P7 | SOURCE ONLY |
 | `exec-finance` | executive | isExec | `ExecutiveFinance` | P0/P7 | SOURCE ONLY |
 | `exec-reports` | executive | isExec | `ExecutiveReports` | P6 | SOURCE ONLY |
