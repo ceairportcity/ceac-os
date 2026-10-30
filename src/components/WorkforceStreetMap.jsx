@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {nextWorkforceClusterPersonId} from '../lib/workforceStreetMap';
-import {googleMapsConfigured,loadGoogleMaps,googleMapPoint} from '../lib/googleMaps';
+import {googleMapsConfigured,loadGoogleMaps,googleMapPoint,googleMapFailure} from '../lib/googleMaps';
 import './WorkforceStreetMap.css';
 const EMPTY=[];
 
@@ -11,6 +11,7 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
  const frame=useRef(null),map=useRef(null),maps=useRef(null),selectedMarker=useRef(null);
  const latest=useRef({selectedId,onSelect});latest.current={selectedId,onSelect};
  const [consent,setConsent]=useState(true),[state,setState]=useState('loading'),[attempt,setAttempt]=useState(0),[ready,setReady]=useState(false);
+ const [issue,setIssue]=useState(null);
  const points=useMemo(()=>focusLocation?[focusLocation]:office?[...clusters,office]:clusters,[clusters,office,focusLocation]);
  function fit(){
   if(!map.current||!maps.current||!points.length)return;
@@ -19,11 +20,16 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
   maps.current.event.addListenerOnce(map.current,'idle',()=>{if(map.current?.getZoom()>16)map.current.setZoom(16);});
  }
  useEffect(()=>{
-  let alive=true,timer;const listeners=[];
-  setReady(false);setState('loading');
+  let alive=true,timer,policyBlocked=false,fatal=false;const listeners=[];
+  setReady(false);setState('loading');setIssue(null);
   if(!consent)return;
-  const failed=()=>{if(alive)setState('error');};
+  const failed=error=>{if(alive){clearTimeout(timer);const next=googleMapFailure(policyBlocked?{code:'MAP-POLICY'}:error?.detail||error);fatal=['MAP-AUTH','MAP-POLICY','MAP-INITIALISE'].includes(next.code);setIssue(next);setState('error');}};
+  const blocked=event=>{
+   if(event.disposition!=='enforce')return;
+   try{const host=new URL(event.blockedURI).hostname;if(host==='maps.googleapis.com'||host==='maps.gstatic.com'||/^(khms\d*|mt\d*)\.googleapis\.com$/.test(host)){policyBlocked=true;failed({code:'MAP-POLICY'});}}catch{/* Ignore non-URL and unrelated policy reports. */}
+  };
   window.addEventListener('ceac-google-map-error',failed);
+  document.addEventListener('securitypolicyviolation',blocked);
   loadGoogleMaps().then(api=>{
    if(!alive||!frame.current)return;
    maps.current=api;
@@ -33,10 +39,10 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
     gestureHandling:'cooperative',clickableIcons:false,
     styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{featureType:'transit',stylers:[{visibility:'off'}]}],
    });
-   listeners.push(api.event.addListenerOnce(map.current,'tilesloaded',()=>{if(alive){clearTimeout(timer);setState('ready');}}));
-   timer=setTimeout(failed,20000);setReady(true);
+   listeners.push(api.event.addListenerOnce(map.current,'tilesloaded',()=>{if(alive&&!fatal){clearTimeout(timer);setIssue(null);setState('ready');}}));
+   timer=setTimeout(()=>failed({code:'MAP-TILES-TIMEOUT'}),20000);setReady(true);
   }).catch(failed);
-  return()=>{alive=false;clearTimeout(timer);window.removeEventListener('ceac-google-map-error',failed);listeners.forEach(l=>l.remove());if(map.current)maps.current?.event.clearInstanceListeners(map.current);map.current=null;};
+  return()=>{alive=false;clearTimeout(timer);window.removeEventListener('ceac-google-map-error',failed);document.removeEventListener('securitypolicyviolation',blocked);listeners.forEach(l=>l.remove());if(map.current)maps.current?.event.clearInstanceListeners(map.current);map.current=null;};
  },[consent,attempt]);
  useEffect(()=>{
   if(!ready||!map.current)return;
@@ -64,8 +70,8 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
    {choosing&&consent&&ready&&<span className="ceac-google-centre" aria-hidden="true">+</span>}
    {!consent?<div className="ceac-street-map-optin"><strong>Google Maps is hidden</strong><button className="btn btn-sm" type="button" onClick={()=>setConsent(true)}>Show Google Maps</button></div>:state!=='ready'?<div className="ceac-google-map-state" role="status">
     <strong>{state==='loading'?'Loading Google Maps…':configured?'Google Maps is unavailable':'Google Maps setup required'}</strong>
-    {state==='error'&&<span>{configured?'Check the connection or map configuration. Employee records remain available below.':'A CEAC-authorised Maps key must be configured before this map can load.'}</span>}
-    {state==='error'&&configured&&<button className="btn btn-ghost btn-sm" type="button" onClick={()=>setAttempt(n=>n+1)}>Retry Google Maps</button>}
+    {state==='error'&&<><span>{issue?.message} Employee records remain available below.</span><small>Map check: {issue?.code}</small></>}
+    {state==='error'&&configured&&<button className="btn btn-ghost btn-sm" type="button" onClick={()=>issue?.code==='MAP-AUTH'?window.location.reload():setAttempt(n=>n+1)}>{issue?.code==='MAP-AUTH'?'Reload map configuration':'Retry Google Maps'}</button>}
    </div>:null}
   </div>
   {consent&&<div className="ceac-street-map-after"><span>Recorded starts · not live tracking</span><div><button className="btn btn-ghost btn-sm" disabled={!ready||state!=='ready'} onClick={fit}>Fit staff start locations</button> <button className="btn btn-ghost btn-sm" onClick={()=>setConsent(false)}>Hide street map</button></div></div>}

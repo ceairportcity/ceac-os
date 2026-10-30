@@ -1,4 +1,5 @@
 import test from "node:test";
+import './googleMapsLoader.test.mjs';
 import assert from "node:assert/strict";
 import {fitWorkforceMap,pointCoordinates,visibleStreetTiles,worldPoint,workforcePinPosition,primaryOfficePoint} from "../src/lib/workforceStreetMap.js";
 
