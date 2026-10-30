@@ -1,5 +1,4 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {nextWorkforceClusterPersonId} from '../lib/workforceStreetMap';
 import {staffInitials} from '../lib/workforcePresentation';
 import {googleMapsConfigured,loadGoogleMaps,googleMapPoint,googleMapFailure,googleMapsFallbackUrl} from '../lib/googleMaps';
 import './WorkforceStreetMap.css';
