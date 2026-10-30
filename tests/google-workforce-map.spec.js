@@ -153,3 +153,22 @@ test('attendance panel reuses CEAC readable styles and identifies shared-locatio
  }).map(el=>({text:el.textContent.trim().slice(0,36),size:getComputedStyle(el).fontSize})));
  expect(small).toEqual([]);
 });
+
+test('download fallback identifies each staff member at shared coordinates without false positional pins',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});
+ await mock(page,{pair:true});await page.goto('/tests/fixtures/executive-google-map.html');
+ await expect(page.getByText('Synthetic Google Maps',{exact:true})).toBeVisible();
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('ceac-google-map-error',{detail:{code:'MAP-DOWNLOAD'}})));
+ const staff=page.getByLabel('Recorded staff map locations');
+ await expect(staff.getByRole('button',{name:'View recorded location for Synthetic Ama'})).toBeVisible();
+ const kofi=staff.getByRole('button',{name:'View recorded location for Synthetic Kofi'});
+ await expect(kofi).toContainText('SK');
+ await kofi.click();
+ await expect(kofi).toHaveAttribute('aria-pressed','true');
+ await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Kofi');
+ await expect(page.getByText(/Showing Synthetic Kofi’s recorded start location/)).toBeVisible();
+ const url=await page.getByTitle('Google Maps alternative road map').getAttribute('src');
+ expect(url).not.toMatch(/Synthetic|Kofi|Ama|session|AIza|key=/i);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+});
