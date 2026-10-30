@@ -14,7 +14,7 @@ export function attendanceSnapshot(people=[]){
  };
 }
 export function recordedPlace(person,office,verifiedStreet=null){
- if(verifiedStreet&&person?.firstStart)return {label:'Recorded street (approximate)',address:verifiedStreet};
+ if(verifiedStreet&&person?.firstStart)return {label:person.place==='office'?'Office selected':person.place==='elsewhere'?'Off-site selected':'Recorded location',address:verifiedStreet+' (approximate)'};
  if(!person?.firstStart)return {label:'No work start recorded',address:'No recorded start location'};
  if(person.place==='office')return {label:'Office selected',address:office?.name||'CEAC Church Office'};
  if(person.place==='elsewhere')return {label:'Off-site selected',address:'Street address not yet verified'};
