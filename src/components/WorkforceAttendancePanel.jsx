@@ -17,7 +17,7 @@ export default function WorkforceAttendancePanel({people=[],results=[],office=nu
   [snapshot.offsite,'Off-site selected'],
   [snapshot.notStarted,'No start recorded'],
  ];
- return <section className="workstart-unmapped-detail" aria-label="Recorded staff attendance details">
+ return <section className="workforce-attendance-panel" aria-label="Recorded staff attendance details">
   <header className="workstart-heading">
    <div><h2>Attendance snapshot</h2><p>Recorded work starts · Ghana time · not live tracking</p></div>
    <span>Today</span>
@@ -26,7 +26,7 @@ export default function WorkforceAttendancePanel({people=[],results=[],office=nu
    {facts.map(([count,label])=><div key={label} className="workstart-unmapped-detail"><strong>{count}</strong><span>{label}</span></div>)}
   </div>
   <div className="workstart-summary"><strong>{executive?'Recent staff starts':'Staff attendance details'}</strong><span>{results.length} matching records</span></div>
-  <div className="workstart-accessible-list">
+  <div className="workforce-attendance-list">
    <div aria-label="Daily staff attendance records">
     {visible.map(person=>{
      const place=recordedPlace(person,office);
