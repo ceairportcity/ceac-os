@@ -31,3 +31,11 @@
 .ceac-google-fallback-points .btn[aria-pressed=true]{border-color:#0c5df9;background:#eef6ff}
 
 .workstart-workspace button{min-height:44px}
+
+/* Attendance evidence is distinct from the legacy employee browser. */
+.workforce-attendance-panel{margin-top:12px;padding:12px;border:1px solid #dfe7ef;border-radius:8px;background:#f7f9fc;color:#183049}
+.workforce-attendance-list>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:8px;max-height:360px;overflow:auto}
+.workforce-attendance-list button{display:grid;gap:4px;min-height:44px;min-width:0;padding:10px;text-align:left;border:1px solid #dae4ef;border-radius:7px;background:#fff;cursor:pointer;overflow-wrap:anywhere}
+.workforce-attendance-list button[aria-pressed=true]{border-color:#0c5df9;background:#eef6ff}
+.workforce-attendance-list button:focus-visible{outline:3px solid #0c5df9;outline-offset:2px}
+.workforce-attendance-list button span{font-size:12px;color:#61738a}
