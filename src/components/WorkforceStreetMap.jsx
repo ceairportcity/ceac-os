@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {nextWorkforceClusterPersonId} from '../lib/workforceStreetMap';
-import {googleMapsConfigured,loadGoogleMaps,googleMapPoint,googleMapFailure} from '../lib/googleMaps';
+import {googleMapsConfigured,loadGoogleMaps,googleMapPoint,googleMapFailure,googleMapsFallbackUrl} from '../lib/googleMaps';
 import './WorkforceStreetMap.css';
 const EMPTY=[];
 
@@ -64,16 +64,26 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
  // Changing a selection must not reconstruct the map or reset the viewport.
  useEffect(()=>{const selectedKey=clusters.find(c=>c.people.some(p=>p.id===selectedId))?.key;frame.current?.querySelectorAll('[data-workforce-cluster]').forEach(node=>node.classList.toggle('is-selected',Boolean(selectedKey)&&node.dataset.workforceCluster===selectedKey));},[selectedId,clusters]);
  const officePeople=clusters.flatMap(c=>c.people).filter(p=>p.place==='office');
+ // When Google rejects the SDK download on a user's device, retain a genuine
+ // Google road map in read-only views via its independent iframe endpoint.
+ // Duty-venue picking still requires the full SDK to return precise coordinates.
+ const fallbackNeeded=!choosing&&configured&&state==='error'&&['MAP-DOWNLOAD','MAP-SDK-TIMEOUT','MAP-POLICY','MAP-TILES-TIMEOUT'].includes(issue?.code);
+ const focusedCluster=clusters.find(c=>c.people.some(p=>p.id===selectedId));
+ const fallbackUrl=fallbackNeeded?googleMapsFallbackUrl(focusedCluster||office||clusters[0]||{lat:5.6037,lng:-0.187}):null;
+ const fallbackActive=Boolean(fallbackUrl);
  return <section className="ceac-street-map" aria-label={choosing?'Choose duty venue on street map':'Recorded workforce work-start street map'}>
   <div className="ceac-street-map-viewport">
-   {consent&&<div ref={frame} className="ceac-google-map-canvas" aria-label="Google Maps road map"/>}
+   {consent&&<div ref={frame} className="ceac-google-map-canvas" aria-label="Google Maps road map" hidden={fallbackActive}/>}
+   {consent&&fallbackActive&&<iframe className="ceac-google-fallback-frame" title="Google Maps alternative road map" src={fallbackUrl} loading="eager" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>}
    {choosing&&consent&&ready&&<span className="ceac-google-centre" aria-hidden="true">+</span>}
-   {!consent?<div className="ceac-street-map-optin"><strong>Google Maps is hidden</strong><button className="btn btn-sm" type="button" onClick={()=>setConsent(true)}>Show Google Maps</button></div>:state!=='ready'?<div className="ceac-google-map-state" role="status">
+   {!consent?<div className="ceac-street-map-optin"><strong>Google Maps is hidden</strong><button className="btn btn-sm" type="button" onClick={()=>setConsent(true)}>Show Google Maps</button></div>:state!=='ready'&&!fallbackActive?<div className="ceac-google-map-state" role="status">
     <strong>{state==='loading'?'Loading Google Maps…':configured?'Google Maps is unavailable':'Google Maps setup required'}</strong>
     {state==='error'&&<><span>{issue?.message} Employee records remain available below.</span><small>Map check: {issue?.code}</small></>}
     {state==='error'&&configured&&<button className="btn btn-ghost btn-sm" type="button" onClick={()=>issue?.code==='MAP-AUTH'?window.location.reload():setAttempt(n=>n+1)}>{issue?.code==='MAP-AUTH'?'Reload map configuration':'Retry Google Maps'}</button>}
    </div>:null}
   </div>
+  {consent&&fallbackActive&&<div className="ceac-google-recovery" role="status"><span>Google road view is available as an alternative. Select a recorded location below to focus it; staff pins require the interactive map.</span><small>Map check: {issue?.code}</small><div><button className="btn btn-ghost btn-sm" type="button" onClick={()=>setAttempt(n=>n+1)}>Retry interactive map</button> <a className="btn btn-ghost btn-sm" href={'https://www.google.com/maps/search/?'+new URLSearchParams({api:'1',query:(focusedCluster||office||clusters[0]||{lat:5.6037,lng:-0.187}).lat+','+(focusedCluster||office||clusters[0]||{lat:5.6037,lng:-0.187}).lng})} target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div></div>}
+  {consent&&fallbackActive&&clusters.length>0&&<div className="ceac-google-fallback-points" aria-label="Recorded map locations">{clusters.map(cluster=><button type="button" key={cluster.key} className="btn btn-ghost btn-sm" aria-pressed={cluster.people.some(p=>p.id===selectedId)} onClick={()=>onSelect?.(nextWorkforceClusterPersonId(cluster.people,selectedId))}>{cluster.people.length===1?cluster.people[0].name:cluster.people.length+' recorded people'}</button>)}</div>}
   {consent&&<div className="ceac-street-map-after"><span>Recorded starts · not live tracking</span><div><button className="btn btn-ghost btn-sm" disabled={!ready||state!=='ready'} onClick={fit}>Fit staff start locations</button> <button className="btn btn-ghost btn-sm" onClick={()=>setConsent(false)}>Hide street map</button></div></div>}
   {!choosing&&!clusters.length&&<p className="screen-note">No recorded start GPS for these filters.</p>}
   {!choosing&&officePeople.length>0&&<div className="workstart-summary" aria-label="Recorded office starts"><strong>Office starts</strong>{officePeople.map(p=><button type="button" key={p.id} aria-pressed={p.id===selectedId} onClick={e=>{selectedMarker.current=e.currentTarget;onSelect?.(p.id);}}>{p.name}</button>)}</div>}
