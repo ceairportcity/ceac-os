@@ -60,7 +60,7 @@ export default function AdminWorkforceToday({me,roster=EMPTY_ROWS,sessions=EMPTY
   </div>
   <div className="workstart-summary"><span>{started.length} {started.length===1?(peopleLabel==="people"?"person":"employee"):peopleLabel} with recorded starts · {started.length-missing.length} mapped</span><button type="button" onClick={()=>{setFilter("noCoordinates");setSelectedId(null);}}>{missing.length} start locations unavailable</button></div>
   <WorkforceStreetMap key={officeScope} clusters={clusters} office={office} selectedId={selected?.id||null} onSelect={setSelectedId} selectedContent={located(selected)?detail:null}/>
-  <WorkforceAttendancePanel people={people} results={results} office={office} selectedId={selectedId} onSelect={setSelectedId} roleLabel={roleLabel} verifiedStreets={verifiedStreets}/>
+  <WorkforceAttendancePanel people={people} results={results} office={office} selectedId={selectedId} onSelect={(id,node)=>{lastListSelection.current=node;setSelectedId(id);}} roleLabel={roleLabel} verifiedStreets={verifiedStreets}/>
   {officeRead.scope===officeScope&&officeRead.error&&<p role="status">The saved office reference could not be loaded. Staff records remain available.</p>}
   {selected&&!located(selected)?<div className="workstart-unmapped-detail">{detail}<button className="btn btn-ghost btn-sm" type="button" onClick={()=>{setSelectedId(null);lastListSelection.current?.focus();}}>Close details</button></div>:null}
 
