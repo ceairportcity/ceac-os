@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {staffInitials,attendanceSnapshot,recordedPlace} from '../lib/workforcePresentation';
 
 /** Read-only, role-scoped attendance evidence; relies on existing CEAC styles. */
-export default function WorkforceAttendancePanel({people=[],results=[],office=null,selectedId,onSelect,roleLabel='People & HR'}){
+export default function WorkforceAttendancePanel({people=[],results=[],office=null,selectedId,onSelect,roleLabel='People & HR',verifiedStreets={}}){
  const [expanded,setExpanded]=useState(false);
  const snapshot=attendanceSnapshot(people);
  const executive=roleLabel==='Executive';
@@ -29,7 +29,7 @@ export default function WorkforceAttendancePanel({people=[],results=[],office=nu
   <div className="workforce-attendance-list">
    <div aria-label="Daily staff attendance records">
     {visible.map(person=>{
-     const place=recordedPlace(person,office);
+     const place=recordedPlace(person,office,verifiedStreets[person.id]);
      const hasPoint=Number.isFinite(person?.latitude)&&Number.isFinite(person?.longitude);
      return <button type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={()=>onSelect?.(person.id===selectedId?null:person.id)}>
       <strong>{staffInitials(person.name)} · {person.name}</strong>
