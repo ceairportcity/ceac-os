@@ -57,6 +57,9 @@ const ROOT_COMPONENTS = Object.freeze({
   "manager-reports": [
     "ManagerReports"
   ],
+  "exec-projects": [
+    "AdminProjects"
+  ],
   "exec-organisation": [
     "ExecutiveOrganisation"
   ],
@@ -172,7 +175,7 @@ export function collectP0SourceInventory(root = process.cwd()) {
   const page = app.slice(begin, end);
   const branches = [...page.matchAll(/if\s*\(tab === "([^"]+)"(?:\s*&&\s*([^)]+))?\)/g)];
   const tabs = branches.map((b) => b[1]);
-  if (tabs.length !== 47 || new Set(tabs).size !== 47
+  if (tabs.length !== 48 || new Set(tabs).size !== 48
       || tabs.slice().sort().join("|") !== Object.keys(ROOT_COMPONENTS).sort().join("|")) {
     throw new Error("P0 root tab inventory changed; audit new or removed routes");
   }
