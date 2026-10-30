@@ -67,7 +67,7 @@ test('MAP-DOWNLOAD exposes a Google road fallback without a key or staff names i
  await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Ama');
  await page.getByRole('button',{name:'Retry interactive map',exact:true}).click();
  await expect(alternative).toHaveCount(0);
- await expect(page.getByText('Synthetic Google Maps',{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Fit staff start locations',exact:true})).toBeEnabled();
 });
 test('map opening failure preserves staff records and retry restores markers on phone',async({page})=>{
  await page.setViewportSize({width:390,height:844});
