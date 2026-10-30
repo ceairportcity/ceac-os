@@ -60,6 +60,6 @@ export default function AdminWorkforceToday({me,roster=EMPTY_ROWS,sessions=EMPTY
   <WorkforceAttendancePanel people={people} results={results} office={office} selectedId={selectedId} onSelect={setSelectedId} roleLabel={roleLabel}/>
   {officeRead.scope===officeScope&&officeRead.error&&<p role="status">The saved office reference could not be loaded. Staff records remain available.</p>}
   {selected&&!located(selected)?<div className="workstart-unmapped-detail">{detail}<button className="btn btn-ghost btn-sm" type="button" onClick={()=>{setSelectedId(null);lastListSelection.current?.focus();}}>Close details</button></div>:null}
-  <details className="workstart-accessible-list" open={filter==="noCoordinates"||filter==="noSession"||undefined}><summary>Browse {peopleLabel} ({results.length})</summary><div aria-label="Daily workforce employee list">{results.length?results.map(r=><button type="button" key={r.id} aria-pressed={r.id===selectedId} onClick={event=>{lastListSelection.current=event.currentTarget;setSelectedId(r.id);}}><strong>{r.name}</strong><span>{r.unit}</span><small>{r.mapStart?`Started ${stamp(r.mapStart)} · ${located(r)?"Location captured":"Start GPS not captured"}`:"No session recorded"}</small></button>):<p>No employees match this filter; no attendance conclusion is implied.</p>}</div></details>
+
  </section>;
 }
