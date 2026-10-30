@@ -1,4 +1,4 @@
-import {useEffect,useMemo,useRef,useState} from "react";
+import {useEffect,useMemo,useState} from "react";
 import {adminWorkforceToday,clusterWorkStartLocations} from "../lib/adminWorkforceToday";
 import {supabase} from "../lib/supabase";
 import {primaryOfficePoint} from "../lib/workforceStreetMap";
@@ -10,7 +10,6 @@ const stamp=v=>v?new Date(v).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra"
 const located=r=>Number.isFinite(r?.latitude)&&Number.isFinite(r?.longitude);
 /** Role-scoped start snapshots. Rows remain scoped by the current role and organisation. */
 export default function AdminWorkforceToday({me,roster=EMPTY_ROWS,sessions=EMPTY_ROWS,operationalProfiles=EMPTY_ROWS,onOpenPeople,onOpenPerson,onOpenAccess,onOpenWorkforce,roleLabel="People & HR",dateLabel="today",directoryLabel="People & Access",peopleLabel="employees"}){
- const lastListSelection=useRef(null);
  const officeScope=me?.org_id&&me?.id?me.org_id+":"+me.id:"";
  const [officeRead,setOfficeRead]=useState({scope:"",point:null,error:false});
  useEffect(()=>{
@@ -59,7 +58,7 @@ export default function AdminWorkforceToday({me,roster=EMPTY_ROWS,sessions=EMPTY
   <WorkforceStreetMap key={officeScope} clusters={clusters} office={office} selectedId={selected?.id||null} onSelect={setSelectedId} selectedContent={located(selected)?detail:null}/>
   <WorkforceAttendancePanel people={people} results={results} office={office} selectedId={selectedId} onSelect={setSelectedId} roleLabel={roleLabel}/>
   {officeRead.scope===officeScope&&officeRead.error&&<p role="status">The saved office reference could not be loaded. Staff records remain available.</p>}
-  {selected&&!located(selected)?<div className="workstart-unmapped-detail">{detail}<button className="btn btn-ghost btn-sm" type="button" onClick={()=>{setSelectedId(null);lastListSelection.current?.focus();}}>Close details</button></div>:null}
-  <details className="workstart-accessible-list" open={filter==="noCoordinates"||filter==="noSession"||undefined}><summary>Browse {peopleLabel} ({results.length})</summary><div aria-label="Daily workforce employee list">{results.length?results.map(r=><button type="button" key={r.id} aria-pressed={r.id===selectedId} onClick={event=>{lastListSelection.current=event.currentTarget;setSelectedId(r.id);}}><strong>{r.name}</strong><span>{r.unit}</span><small>{r.mapStart?`Started ${stamp(r.mapStart)} · ${located(r)?"Location captured":"Start GPS not captured"}`:"No session recorded"}</small></button>):<p>No employees match this filter; no attendance conclusion is implied.</p>}</div></details>
+  {selected&&!located(selected)?<div className="workstart-unmapped-detail">{detail}<button className="btn btn-ghost btn-sm" type="button" onClick={()=>{setSelectedId(null);}}>Close details</button></div>:null}
+
  </section>;
 }
