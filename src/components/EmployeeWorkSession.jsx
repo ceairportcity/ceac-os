@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { openSession, startWork, endWork, reconcileWorkSession, verifyContinuedWorkSession, WorkStartPreflightError } from "../lib/session";
-import { Sheet } from "./bits";
+import SessionRecoveryDialog from "./SessionRecoveryDialog";
+import { recheckSessionCorrection } from "../lib/session";
 import StartWorkDialog from "./StartWorkDialog";
 import "./EmployeeWorkSession.css";
 
@@ -37,6 +38,7 @@ export default function EmployeeWorkSession({ me }) {
   const [ownWorkLoading, setOwnWorkLoading] = useState(true);
   const [endedAt, setEndedAt] = useState("");
   const [correctionReason, setCorrectionReason] = useState("");
+  const [notice, setNotice] = useState("");
   const [ready, setReady] = useState(false);
   const [verified, setVerified] = useState(false);
   const [recheck, setRecheck] = useState(0);
@@ -182,12 +184,23 @@ export default function EmployeeWorkSession({ me }) {
     try {
       await reconcileWorkSession(session.id,"close",new Date(endedAt).toISOString(),correctionReason.trim()||null);
       await verifyClosedSession(session.id);
-      setRecover(false);setEndedAt("");setCorrectionReason("");
+      setRecover(false);setEndedAt("");setCorrectionReason("");setNotice("End time saved. You can start work.");
     } catch(e) {
-      setVerified(false); setRecover(false);
+      setVerified(false);
       setError(e?.message || "The historical correction could not be verified. Retry session verification.");
     } finally { setBusy(false); }
   }
+  async function recheckCorrection() {
+    if(busy || !session?.id) return;
+    setBusy(true);setError("");
+    try {
+      const result = await recheckSessionCorrection(me.org_id,me.id,session.id);
+      setSession(result.current);setVerified(true);
+      if(result.closed){setRecover(false);setEndedAt("");setCorrectionReason("");setNotice("End time saved. You can start work.");}
+    } catch(e){setVerified(false);setError(e.message);}
+    finally{setBusy(false);}
+  }
+
 
   return <section className="s2-own-work-session" aria-label="My work session">
     <div className="s2-own-work-session-info">
@@ -210,7 +223,7 @@ export default function EmployeeWorkSession({ me }) {
           Start work
         </button>}
     </div>
-    {error&&<p className="s2-own-work-session-error" role="alert">{error}{!verified&&<button type="button" onClick={()=>setRecheck((v)=>v+1)} disabled={loading}>Retry session verification</button>}</p>}
+    {error&&!recover&&<p className="s2-own-work-session-error" role="alert">{error}{!verified&&<button type="button" onClick={()=>setRecheck((v)=>v+1)} disabled={loading}>Retry session verification</button>}</p>}
     {editor&&<StartWorkDialog
       place={place} onPlaceChange={value=>{setPlace(value);setError("");}}
       locationName={offsiteLocationName} onLocationNameChange={value=>{setOffsiteLocationName(value);setError("");}}
@@ -223,14 +236,10 @@ export default function EmployeeWorkSession({ me }) {
       onReload={()=>{setError("");setOptionsAttempt(value=>value+1);}}
       onStart={begin} onClose={()=>!busy&&setEditor(false)}
     />}
-    {recover&&<Sheet onClose={()=>!busy&&setRecover(false)}>
-      <h2>Review your earlier session</h2>
-      <p>Forgot to end work? Start today's session using the previous working location, or record when you actually stopped below. The earlier session is closed at its last confirmed point, not counted as overnight work.</p>
-      <button type="button" onClick={continueOld} disabled={busy||!verified}>{busy?"Checking…":"Start today's session"}</button>
-      <label>Actual end time <input type="datetime-local" value={endedAt} onChange={e=>setEndedAt(e.target.value)}/></label>
-      <label>Explanation for correction <textarea rows={3} value={correctionReason} onChange={e=>setCorrectionReason(e.target.value)}/></label>
-      <button type="button" onClick={closeOld} disabled={busy||!endedAt||!verified}>Close at actual time</button>
-      {error&&<p role="alert">{error}</p>}
-    </Sheet>}
+    {notice&&<p role="status">{notice}</p>}
+    {recover&&session&&<SessionRecoveryDialog session={session} endedAt={endedAt} onEndChange={setEndedAt}
+      note={correctionReason} onNoteChange={setCorrectionReason} busy={busy} verified={verified} error={error}
+      onSave={closeOld} onContinue={continueOld} onRecheck={recheckCorrection} onClose={()=>!busy&&setRecover(false)}/>}
+
   </section>;
 }

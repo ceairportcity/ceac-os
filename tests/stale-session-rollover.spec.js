@@ -28,6 +28,7 @@ async function setup(page,role,{unrelated=false,oldOpen=false,denied=false}={}){
  });
  await page.goto(`/tests/fixtures/start-work-recovery.html?role=${role}&stale=1`);
  await page.getByRole('button',{name:role==='staff'?'Review':'Review earlier session',exact:true}).click();
+ await page.getByText("Need to start work today instead?",{exact:true}).click();
  return writes;
 }
 for(const role of ['staff','employee','manager','executive']){

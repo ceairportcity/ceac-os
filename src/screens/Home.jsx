@@ -4,6 +4,8 @@ import { supabase } from "../lib/supabase";
 import { openSession, startWork, endWork, reconcileWorkSession, verifyContinuedWorkSession, WorkStartPreflightError } from "../lib/session";
 import { isOverdue } from "../lib/time";
 import { Sheet } from "../components/bits";
+import SessionRecoveryDialog from "../components/SessionRecoveryDialog";
+import { recheckSessionCorrection } from "../lib/session";
 import StartWorkDialog from "../components/StartWorkDialog";
 import { humanError } from "../lib/productLanguage";
 import StaffTodayV2 from "../experience-v2/staff-today/StaffTodayV2";
@@ -81,6 +83,7 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryEndedAt, setRecoveryEndedAt] = useState("");
   const [recoveryNote, setRecoveryNote] = useState("");
+  const [correctionNotice, setCorrectionNotice] = useState("");
   const [eventDetail, setEventDetail] = useState(null);
   const [, tick] = useState(0);
 
@@ -415,11 +418,22 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
     try {
       await reconcileWorkSession(session.id, "close", new Date(recoveryEndedAt).toISOString(), recoveryNote.trim() || null);
       await verifyEndedSession(session.id);
-      setRecoveryOpen(false); setRecoveryEndedAt(""); setRecoveryNote("");
-    } catch {
-      setVerifiedSessionScope(null); setRecoveryOpen(false);
-      setError("Earlier session close could not be verified. Recheck the server record.");
+      setRecoveryOpen(false); setRecoveryEndedAt(""); setRecoveryNote("");setCorrectionNotice("End time saved. You can start work.");
+    } catch (err) {
+      setVerifiedSessionScope(null);
+      setError(err?.message || "Earlier session close could not be verified. Recheck the server record.");
     } finally { setBusy(false); }
+  }
+
+  async function recheckCorrection() {
+    if(busy || !session?.id) return;
+    setBusy(true);setError(null);
+    try {
+      const result = await recheckSessionCorrection(me.org_id,me.id,session.id);
+      setSession(result.current);setVerifiedSessionScope(sessionScope);
+      if(result.closed){setRecoveryOpen(false);setRecoveryEndedAt("");setRecoveryNote("");setCorrectionNotice("End time saved. You can start work.");}
+    } catch(err){setVerifiedSessionScope(null);setError(err.message);}
+    finally{setBusy(false);}
   }
 
   const accraHour = Number(new Intl.DateTimeFormat("en-GB", {
@@ -506,17 +520,10 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
       onReload={()=>{setError(null);setStartOptionsAttempt(value=>value+1);}}
       onStart={begin} onClose={()=>!busy&&setAsk(false)}
     />}
-    {recoveryOpen && sessionVerified && <Sheet onClose={() => !busy && setRecoveryOpen(false)}>
-      <div className="h2">Close the earlier work session</div>
-      <p className="screen-note">Enter when you actually stopped. The original start, this correction and who made it remain in the history.</p>
-      <p className="screen-note">Or start today using the previous working location. Yesterday closes at its last confirmed point; overnight work is not assumed.</p>
-      <button className="btn btn-sm" onClick={continueRecoveredSession} disabled={busy}>{busy?"Checking…":"Start today's session"}</button>
-      <label className="label" htmlFor="recovery-ended-at">Actual end time</label>
-      <input id="recovery-ended-at" className="field" type="datetime-local" value={recoveryEndedAt} onChange={(event) => setRecoveryEndedAt(event.target.value)} />
-      <label className="label" htmlFor="recovery-note">Correction note (optional)</label>
-      <AssistiveTextarea id="recovery-note" className="field" rows={3} value={recoveryNote} onChange={(event) => setRecoveryNote(event.target.value)} placeholder="Anything useful about this correction" />
-      <button className="btn" style={{ marginTop: 14 }} onClick={closeRecoveredSession} disabled={busy || !recoveryEndedAt}>{busy ? "Saving..." : "Close and record correction"}</button>
-    </Sheet>}
+    {correctionNotice&&<p role="status">{correctionNotice}</p>}
+    {recoveryOpen && session && <SessionRecoveryDialog session={session} endedAt={recoveryEndedAt} onEndChange={setRecoveryEndedAt}
+      note={recoveryNote} onNoteChange={setRecoveryNote} busy={busy} verified={sessionVerified} error={error}
+      onSave={closeRecoveredSession} onContinue={continueRecoveredSession} onRecheck={recheckCorrection} onClose={()=>!busy&&setRecoveryOpen(false)}/>}
     {eventDetail && <Sheet onClose={() => setEventDetail(null)}>
       <div className="eyebrow">{eventDetail.kind.replaceAll("_", " ")}</div>
       <div className="h2" style={{ marginTop: 5 }}>{eventDetail.title}</div>
