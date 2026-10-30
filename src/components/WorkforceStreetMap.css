@@ -4,7 +4,7 @@
 .ceac-street-map-marker.ceac-office-reference{width:max-content;min-width:0;height:31px;display:flex;gap:5px;padding:3px 9px 3px 4px;align-items:center;justify-content:flex-start;border:1px solid #bed1e8;border-radius:8px;background:#fff;color:#173b65;box-shadow:0 2px 8px #1b335026;pointer-events:none;transform:translate(14px,-74px);font-size:12px;font-weight:750;white-space:nowrap}.ceac-office-symbol{display:grid;place-items:center;width:23px;height:23px;border-radius:5px;background:#144999;color:#fff;font-size:19px;line-height:1}
 
 .ceac-street-map-marker{position:absolute;transform:translate(calc(-50% + var(--ceac-pin-x,0px)),calc(-50% + var(--ceac-pin-y,0px)));width:44px;height:44px;min-width:44px;border:0;border-radius:50%;background:transparent;color:#fff;display:grid;place-items:center;padding:0;box-shadow:none;pointer-events:auto;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700}
-.ceac-map-avatar{display:grid;place-items:center;width:29px;height:29px;border:2px solid #fff;border-radius:50%;background:#144999;color:#fff;box-shadow:0 2px 7px #09294955;line-height:1;letter-spacing:-.025em;font-size:12px;font-weight:800;transition:transform .15s ease}
+.ceac-map-avatar{display:grid;place-items:center;width:29px;height:29px;border:2px solid #fff;border-radius:50%;background:#144999;color:#fff;box-shadow:0 2px 7px #09294955;line-height:1;font-size:12px;font-weight:800;transition:transform .15s ease}
 .ceac-street-map-marker.is-selected .ceac-map-avatar{outline:2px solid #144999;outline-offset:2px;transform:scale(1.08)}
 .ceac-street-map-marker:focus-visible{outline:3px solid #2165cc;outline-offset:1px}
 .ceac-map-extra .ceac-map-avatar{background:#344e70}
