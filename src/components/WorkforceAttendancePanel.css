@@ -1,0 +1,28 @@
+/* Role-scoped workforce start evidence. Compact, legible and responsive. */
+.workforce-attendance{margin-top:12px;border:1px solid #dfe7ef;border-radius:11px;background:#fff;color:#183049;overflow:hidden}
+.workforce-attendance-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px 8px}
+.workforce-attendance-head strong{font-size:14px;font-weight:750}
+.workforce-attendance-head p{margin:4px 0 0;font-size:11px;color:#61738a}
+.workforce-attendance-period{font-size:11px;color:#4b617b;background:#f1f5fa;padding:4px 9px;border:1px solid #e5ebf3;border-radius:5px}
+.workforce-attendance-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:6px 14px 13px}
+.workforce-attendance-metrics>div{min-width:0;padding:11px 12px;border:1px solid #e2e9f1;border-radius:8px;background:#f8fafc;display:flex;flex-direction:column;gap:4px}
+.workforce-attendance-metrics strong{font-size:20px;line-height:1.1;color:#183b63;font-weight:750}
+.workforce-attendance-metrics span{font-size:11px;line-height:1.35;color:#56677d}
+.workforce-attendance-list-head{display:flex;justify-content:space-between;gap:10px;padding:12px 15px;border-top:1px solid #e6edf4;font-size:12px}
+.workforce-attendance-list-head span{color:#61738a}
+.workforce-attendance-list{display:grid}
+.workforce-attendance-row{width:100%;min-width:0;display:grid;grid-template-columns:36px minmax(0,1.15fr) minmax(0,1.4fr) minmax(95px,.65fr) 12px;align-items:center;gap:10px;padding:10px 15px;background:#fff;border:0;border-top:1px solid #eef2f6;text-align:left;color:#233a53;cursor:pointer}
+.workforce-attendance-row:hover{background:#f8fbff}
+.workforce-attendance-row.is-selected{background:#eef5fc;box-shadow:inset 3px 0 #144999}
+.workforce-attendance-row:focus-visible{outline:2px solid #144999;outline-offset:-3px}
+.workforce-person-avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#144999;color:#fff;border:2px solid #fff;box-shadow:0 1px 5px #112a4320;font-size:11px;font-weight:750}
+.workforce-attendance-person,.workforce-attendance-place,.workforce-attendance-time{min-width:0;display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere}
+.workforce-attendance-row strong{font-size:12px;line-height:1.25;font-weight:700}
+.workforce-attendance-row small{font-size:11px;line-height:1.4;color:#607286}
+.workforce-attendance-time{text-align:right}
+.workforce-attendance-chevron{font-size:17px;color:#72869b;text-align:center}
+.workforce-attendance-empty{padding:16px;margin:0;font-size:12px;color:#61738a}
+.workforce-attendance-more{margin:9px 14px}
+.workforce-attendance-note{padding:0 15px 13px;margin:6px 0 0;font-size:11px;line-height:1.5;color:#64768b}
+@media(max-width:760px){.workforce-attendance-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.workforce-attendance-row{grid-template-columns:36px minmax(0,1fr) minmax(72px,.5fr);gap:7px 9px;padding:11px}.workforce-attendance-person{grid-column:2;grid-row:1}.workforce-attendance-place{grid-column:2;grid-row:2}.workforce-attendance-time{grid-column:3;grid-row:1 / 3}.workforce-attendance-chevron{display:none}.workforce-person-avatar{grid-column:1;grid-row:1 / 3}.workforce-attendance-list-head{padding:12px}.workforce-attendance-head{padding:12px 12px 7px}.workforce-attendance-note{padding:0 12px 12px}.workforce-attendance-metrics{padding:6px 12px 12px}}
+@media(prefers-reduced-motion:reduce){.ceac-map-avatar{transition:none}}

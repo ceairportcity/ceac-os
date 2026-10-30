@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import {staffInitials,attendanceSnapshot,recordedPlace} from '../lib/workforcePresentation';
+import './WorkforceAttendancePanel.css';
 
 /** Compact attendance evidence shared by Executive, HR and Compliance. */
 export default function WorkforceAttendancePanel({people=[],results=[],office=null,selectedId,onSelect,roleLabel='People & HR'}){
