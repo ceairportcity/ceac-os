@@ -1,12 +1,12 @@
 import {test,expect} from '@playwright/test';
 import {readFileSync} from 'node:fs';
-async function mock(page,{failure=false}={}){
+async function mock(page,{failure=false,pair=false}={}){
  const requests=[];
  await page.route('**/*',route=>{
   const req=route.request(),u=new URL(req.url()),name=u.pathname.split('/').pop();requests.push({method:req.method(),url:req.url()});
   if(!u.pathname.includes('/rest/v1/'))return ['localhost','127.0.0.1'].includes(u.hostname)?route.continue():route.abort();
   const now=new Date().toISOString();
-  const rows={profiles:[{id:'person',full_name:'Synthetic Ama',active:true}],units:[{id:'unit',name:'IT'}],unit_memberships:[{profile_id:'person',unit_id:'unit'}],work_sessions:u.searchParams.get('select')?.includes('location_accuracy_m')?[{id:'session',profile_id:'person',started_at:now,place:'office',lat:5.6,lng:-.18}]:[],office_locations:{name:'CEAC office',lat:5.6,lng:-.18,is_primary:true}};
+  const rows={profiles:[{id:'person',full_name:'Synthetic Ama',active:true},...(pair?[{id:'person2',full_name:'Synthetic Kofi',active:true}]:[])],units:[{id:'unit',name:'IT'}],unit_memberships:[{profile_id:'person',unit_id:'unit'},...(pair?[{profile_id:'person2',unit_id:'unit'}]:[])],work_sessions:u.searchParams.get('select')?.includes('location_accuracy_m')?[{id:'session',profile_id:'person',started_at:now,place:'office',lat:5.6,lng:-.18},...(pair?[{id:'session2',profile_id:'person2',started_at:now,place:'office',lat:5.6,lng:-.18}]:[])]:[],office_locations:{name:'CEAC office',lat:5.6,lng:-.18,is_primary:true}};
   if(failure&&name==='profiles')return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({message:'Synthetic denial'})});
   const data=rows[name]||[],count=Array.isArray(data)?data.length:1;
   return route.fulfill({contentType:'application/json',headers:{'content-range':`0-${Math.max(0,count-1)}/${count}`,'access-control-expose-headers':'content-range'},body:JSON.stringify(data)});
@@ -112,4 +112,44 @@ test('late streets recover from a tile timeout; authorisation rejection remains 
  await expect(page.getByRole('button',{name:'Reload map configuration',exact:true})).toBeVisible();
  await page.clock.fastForward(30000);
  await expect(page.getByText('Map check: MAP-AUTH',{exact:true})).toBeVisible();
+});
+
+test('compact individual person pins and church office label at one recorded coordinate',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});
+ await mock(page,{pair:true});await page.goto('/tests/fixtures/executive-google-map.html');
+ const region=page.getByRole('region',{name:'Recorded workforce work-start street map'});
+ await expect(region.locator('.ceac-office-reference')).toContainText('CEAC Church Office');
+ const ama=region.getByRole('button',{name:'View recorded work start for Synthetic Ama'});
+ const kofi=region.getByRole('button',{name:'View recorded work start for Synthetic Kofi'});
+ await expect(ama.locator('.ceac-map-avatar')).toHaveText('SA');
+ await expect(kofi.locator('.ceac-map-avatar')).toHaveText('SK');
+ await expect(ama).toHaveAttribute('aria-pressed','false');
+ const before=await page.evaluate(()=>window.syntheticMaps);
+ await kofi.click();
+ await expect(region.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Kofi');
+ await expect(kofi).toHaveAttribute('aria-pressed','true');
+ await ama.click();
+ await expect(region.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Ama');
+ expect(await page.evaluate(()=>window.syntheticMaps)).toBe(before);
+ await expect(page.getByRole('region',{name:'Recorded staff attendance details'})).toContainText('Office selected');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+});
+
+test('attendance panel reuses CEAC readable styles and identifies shared-location staff',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});
+ await mock(page,{pair:true});
+ await page.goto('/tests/fixtures/executive-google-map.html');
+ const panel=page.getByRole('region',{name:'Recorded staff attendance details'});
+ await expect(panel).toContainText('2 matching records');
+ await expect(panel.getByRole('button',{name:/Synthetic Ama/})).toContainText('CEAC office');
+ await expect(panel.getByRole('button',{name:/Synthetic Kofi/})).toContainText('Office selected');
+ await panel.getByRole('button',{name:/Synthetic Kofi/}).click();
+ await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Kofi');
+ const small=await panel.locator('*').evaluateAll(nodes=>nodes.filter(el=>{
+  const style=getComputedStyle(el),rect=el.getBoundingClientRect();
+  return style.display!=='none'&&rect.width>0&&rect.height>0&&[...el.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim())&&parseFloat(style.fontSize)<12;
+ }).map(el=>({text:el.textContent.trim().slice(0,36),size:getComputedStyle(el).fontSize})));
+ expect(small).toEqual([]);
 });

@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {nextWorkforceClusterPersonId} from '../lib/workforceStreetMap';
+import {staffInitials} from '../lib/workforcePresentation';
 import {googleMapsConfigured,loadGoogleMaps,googleMapPoint,googleMapFailure,googleMapsFallbackUrl} from '../lib/googleMaps';
 import './WorkforceStreetMap.css';
 const EMPTY=[];
@@ -49,20 +50,50 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
   fit();const overlays=[];
   if(!choosing){
    for(const cluster of clusters){
-    const node=document.createElement('button');node.type='button';node.className='ceac-street-map-marker'+(cluster.people.some(p=>p.id===selectedId)?' is-selected':'');
-    const label=cluster.people.map(p=>p.name).join(', ');
-    node.dataset.workforceCluster=cluster.key;
-    node.setAttribute('aria-label',cluster.people.length>1?'Select a person at this shared recorded location: '+label:'View recorded work start for '+label);node.title=label;
-    const dot=document.createElement('span');dot.className='ceac-street-map-dot';dot.textContent=cluster.people.length>1?String(cluster.people.length):'';node.append(dot);
-    node.onclick=()=>{selectedMarker.current=node;latest.current.onSelect?.(nextWorkforceClusterPersonId(cluster.people,latest.current.selectedId));};
-    overlays.push(googleMapPoint(maps.current,map.current,cluster,node));
+    // Keep authentic recorded coordinates: only the screen-space marker positions
+    // are separated to make individuals at one work-start point identifiable.
+    const group=cluster.people,visible=group.slice(0,12),total=group.length;
+    visible.forEach((person,index)=>{
+     const node=document.createElement('button');node.type='button';
+     node.className='ceac-street-map-marker ceac-person-marker'+(person.id===latest.current.selectedId?' is-selected':'');
+     node.dataset.workforceCluster=cluster.key;node.dataset.workforcePerson=person.id;
+     node.setAttribute('aria-label','View recorded work start for '+person.name);
+     node.setAttribute('aria-pressed',String(person.id===latest.current.selectedId));
+     node.title=person.name+' · recorded work start';
+     const radius=total===1?0:total<=2?29:total<=6?36:48;
+     const angle=-Math.PI/2+index*2*Math.PI/Math.min(total,12);
+     node.style.setProperty('--ceac-pin-x',Math.round(radius*Math.cos(angle))+'px');
+     node.style.setProperty('--ceac-pin-y',Math.round(radius*Math.sin(angle))+'px');
+     const avatar=document.createElement('span');avatar.className='ceac-map-avatar';
+     avatar.textContent=staffInitials(person.name);node.append(avatar);
+     node.onclick=()=>{selectedMarker.current=node;latest.current.onSelect?.(person.id);};
+     overlays.push(googleMapPoint(maps.current,map.current,cluster,node));
+    });
+    if(total>12){
+     const hidden=group.slice(12),node=document.createElement('button');node.type='button';
+     node.className='ceac-street-map-marker ceac-person-marker ceac-map-extra';
+     node.dataset.workforceCluster=cluster.key;
+     node.setAttribute('aria-label',hidden.length+' more staff at this recorded location; select to view');
+     node.style.setProperty('--ceac-pin-x','0px');node.style.setProperty('--ceac-pin-y','65px');
+     const badge=document.createElement('span');badge.className='ceac-map-avatar';
+     badge.textContent='+'+hidden.length;node.append(badge);
+     node.onclick=()=>{const index=hidden.findIndex(p=>p.id===latest.current.selectedId);latest.current.onSelect?.(hidden[(index+1)%hidden.length]?.id);};
+     overlays.push(googleMapPoint(maps.current,map.current,cluster,node));
+    }
    }
-   if(office){const node=document.createElement('span');node.className='ceac-street-map-marker ceac-office-reference';node.setAttribute('role','img');node.setAttribute('aria-label',office.name+' · Office reference');node.title=office.name+' · Reference only, not attendance proof';overlays.push(googleMapPoint(maps.current,map.current,office,node));}
+   if(office){
+    const node=document.createElement('span');node.className='ceac-street-map-marker ceac-office-reference';
+    node.setAttribute('role','img');node.setAttribute('aria-label','CEAC Church Office · Saved office reference');
+    node.title=office.name+' · Reference only, not attendance proof';
+    const icon=document.createElement('span');icon.className='ceac-office-symbol';icon.setAttribute('aria-hidden','true');icon.textContent='⌂';
+    const label=document.createElement('span');label.textContent='CEAC Church Office';label.className='ceac-office-label';
+    node.append(icon,label);overlays.push(googleMapPoint(maps.current,map.current,office,node));
+   }
   }
   return()=>overlays.forEach(o=>o.setMap(null));
  },[ready,clusters,office,focusLocation,choosing]);
  // Changing a selection must not reconstruct the map or reset the viewport.
- useEffect(()=>{const selectedKey=clusters.find(c=>c.people.some(p=>p.id===selectedId))?.key;frame.current?.querySelectorAll('[data-workforce-cluster]').forEach(node=>node.classList.toggle('is-selected',Boolean(selectedKey)&&node.dataset.workforceCluster===selectedKey));},[selectedId,clusters]);
+ useEffect(()=>{frame.current?.querySelectorAll('[data-workforce-person]').forEach(node=>{const chosen=node.dataset.workforcePerson===selectedId;node.classList.toggle('is-selected',chosen);node.setAttribute('aria-pressed',String(chosen));});},[selectedId,clusters]);
  const officePeople=clusters.flatMap(c=>c.people).filter(p=>p.place==='office');
  // When Google rejects the SDK download on a user's device, retain a genuine
  // Google road map in read-only views via its independent iframe endpoint.
