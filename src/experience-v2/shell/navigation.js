@@ -51,6 +51,7 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "work", label: "Work", icon: "work", group: "workspace" },
     { key: "strategy", label: "Ministry", icon: "ministry", group: "workspace" },
     { key: "delivery", label: "Portfolio", icon: "portfolio", group: "workspace" },
+    { key: "exec-projects", label: "Projects", icon: "projects", group: "workspace" },
     { key: "exec-organisation", label: "Organisation", icon: "organisation", group: "workspace" },
     { key: "exec-calendar", label: "Calendar", icon: "calendar", group: "planning" },
     { key: "exec-finance", label: "Finance", icon: "finance", group: "insight" },

@@ -172,3 +172,17 @@ test('download fallback identifies each staff member at shared coordinates witho
  expect(url).not.toMatch(/Synthetic|Kofi|Ama|session|AIza|key=/i);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
 });
+
+test('verified Google street names appear only after selecting a recorded person',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ const googleStub=readFileSync('tests/fixtures/google-maps-stub.js','utf8');
+ await page.addInitScript({content:googleStub+';window.google.maps.Geocoder=class {async geocode(){return {results:[{types:["street_address"],address_components:[{long_name:"Example Avenue",types:["route"]},{long_name:"Test District",types:["sublocality"]},{long_name:"Accra",types:["locality"]}]}]};}};'});
+ await mock(page);
+ await page.goto('/tests/fixtures/executive-google-map.html');
+ await page.getByRole('region',{name:'Recorded workforce work-start street map'}).getByRole('button',{name:'View recorded work start for Synthetic Ama'}).click();
+ const detail=page.getByRole('region',{name:'Selected work start'});
+ await detail.getByRole('button',{name:'Look up recorded street'}).click();
+ await expect(detail).toContainText('Example Avenue, Test District, Accra');
+ await expect(page.getByRole('region',{name:'Recorded staff attendance details'})).toContainText('Example Avenue');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+});

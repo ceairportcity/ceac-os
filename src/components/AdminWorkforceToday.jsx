@@ -4,6 +4,7 @@ import {supabase} from "../lib/supabase";
 import {primaryOfficePoint} from "../lib/workforceStreetMap";
 import WorkforceStreetMap from "./WorkforceStreetMap";
 import WorkforceAttendancePanel from "./WorkforceAttendancePanel";
+import RecordedStreetAddress from "./RecordedStreetAddress";
 import {recordedPlace,recordedMapUrl} from "../lib/workforcePresentation";
 const EMPTY_ROWS=[];
 const stamp=v=>v?new Date(v).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"}):"Not recorded";
@@ -30,6 +31,7 @@ export default function AdminWorkforceToday({me,roster=EMPTY_ROWS,sessions=EMPTY
  const office=officeRead.scope===officeScope?officeRead.point:null;
  const [term,setTerm]=useState(""),[filter,setFilter]=useState("started"),[selectedId,setSelectedId]=useState(null);
  const [unitFilter,setUnitFilter]=useState(""),[startChoice,setStartChoice]=useState("latest");
+ const [verifiedStreets,setVerifiedStreets]=useState({});
  const people=useMemo(()=>adminWorkforceToday(roster,sessions,operationalProfiles,startChoice),[roster,sessions,operationalProfiles,startChoice]);
  const unitNames=useMemo(()=>[...new Set(people.flatMap(r=>r.unitNames))].sort(),[people]);
  const results=useMemo(()=>people.filter(r=>(!term||(r.name+" "+r.unit).toLowerCase().includes(term.toLowerCase()))&&(!unitFilter||r.unitNames.includes(unitFilter))&&(filter==="started"?r.firstStart:filter==="open"?r.open:filter==="noSession"?!r.firstStart:filter==="noCoordinates"?r.firstStart&&!located(r):true)),[people,term,unitFilter,filter]);
@@ -39,7 +41,8 @@ export default function AdminWorkforceToday({me,roster=EMPTY_ROWS,sessions=EMPTY
  const detail=selected?<div className="workstart-person-detail">
   <strong>{selected.name}</strong><span>{selected.unit}</span>
   <span>{startChoice==="latest"?"Latest":"First"} start: {stamp(selected.mapStart)}</span>
-  <span><strong>Recorded location:</strong> {recordedPlace(selected,office).label} · {recordedPlace(selected,office).address}</span>
+  <span><strong>Recorded location:</strong> {recordedPlace(selected,office).label} · {recordedPlace(selected,office,verifiedStreets[selected.id]).address}</span>
+  {located(selected)&&<RecordedStreetAddress key={selected.id} latitude={selected.latitude} longitude={selected.longitude} onResolved={street=>setVerifiedStreets(previous=>({...previous,[selected.id]:street}))}/>}
   {recordedMapUrl(selected)&&<a href={recordedMapUrl(selected)} target="_blank" rel="noopener noreferrer">View recorded point in Google Maps</a>}
   <span>{selected.place==="office"?"Office selected":selected.place==="elsewhere"?"Elsewhere selected":"Place not recorded"} · {selected.mapStart?(selected.mapOpen?"Session open":"Session ended"):"No session recorded"}</span>
   <small>{located(selected)?`Location estimate${Number.isFinite(selected.accuracyM)?` ±${Math.round(selected.accuracyM)} m`:" · accuracy unavailable"}`:"Start GPS unavailable or not captured"}. Not verified live presence.</small>
@@ -57,9 +60,9 @@ export default function AdminWorkforceToday({me,roster=EMPTY_ROWS,sessions=EMPTY
   </div>
   <div className="workstart-summary"><span>{started.length} {started.length===1?(peopleLabel==="people"?"person":"employee"):peopleLabel} with recorded starts · {started.length-missing.length} mapped</span><button type="button" onClick={()=>{setFilter("noCoordinates");setSelectedId(null);}}>{missing.length} start locations unavailable</button></div>
   <WorkforceStreetMap key={officeScope} clusters={clusters} office={office} selectedId={selected?.id||null} onSelect={setSelectedId} selectedContent={located(selected)?detail:null}/>
-  <WorkforceAttendancePanel people={people} results={results} office={office} selectedId={selectedId} onSelect={setSelectedId} roleLabel={roleLabel}/>
+  <WorkforceAttendancePanel people={people} results={results} office={office} selectedId={selectedId} onSelect={(id,node)=>{lastListSelection.current=node;setSelectedId(id);}} roleLabel={roleLabel} verifiedStreets={verifiedStreets}/>
   {officeRead.scope===officeScope&&officeRead.error&&<p role="status">The saved office reference could not be loaded. Staff records remain available.</p>}
   {selected&&!located(selected)?<div className="workstart-unmapped-detail">{detail}<button className="btn btn-ghost btn-sm" type="button" onClick={()=>{setSelectedId(null);lastListSelection.current?.focus();}}>Close details</button></div>:null}
-  <details className="workstart-accessible-list" open={filter==="noCoordinates"||filter==="noSession"||undefined}><summary>Browse {peopleLabel} ({results.length})</summary><div aria-label="Daily workforce employee list">{results.length?results.map(r=><button type="button" key={r.id} aria-pressed={r.id===selectedId} onClick={event=>{lastListSelection.current=event.currentTarget;setSelectedId(r.id);}}><strong>{r.name}</strong><span>{r.unit}</span><small>{r.mapStart?`Started ${stamp(r.mapStart)} · ${located(r)?"Location captured":"Start GPS not captured"}`:"No session recorded"}</small></button>):<p>No employees match this filter; no attendance conclusion is implied.</p>}</div></details>
+
  </section>;
 }

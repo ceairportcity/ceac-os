@@ -329,6 +329,7 @@ export default function App() {
 
   function openSearchProject(id) {
     if (isAdmin) { navigate({tab:"admin-projects",projectId:id}); return; }
+    if (isExec) { navigate({tab:"exec-projects",projectId:id}); return; }
     if (isUnitManager) {
       navigate({ tab: "projects", projectId: id });
       return;
@@ -473,7 +474,7 @@ export default function App() {
     if (tab === "messages") return <Inbox
       key={`${me.org_id}:${me.id}`}
       me={me}
-      openProject={id=>navigate({tab:isAdmin?"admin-projects":isExec?"delivery":"projects",projectId:id})}
+      openProject={id=>navigate({tab:isAdmin?"admin-projects":isExec?"exec-projects":"projects",projectId:id})}
       scheduleMeeting={startMeeting}
       startWorkFromMessage={isManager || isExec ? startAssignment : null}
       openRoom={openRoom}
@@ -486,6 +487,7 @@ export default function App() {
     if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
     if (tab === "manager-finance" && isUnitManager) return <ManagerFinance key={managerScopeKey} me={me} openProject={openProject} />;
     if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} />;
+    if (tab === "exec-projects" && isExec) return <AdminProjects key={`${me.org_id}:${me.id}:executive`} me={me} roleMode="executive" initialProjectId={projectId} openProject={(id)=>navigate({tab:"exec-projects",projectId:id})} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id,reference)=>openRoom({kind:"project",projectId:id,reference})} createRequest={createIntent==="project"} onCreateHandled={()=>setCreateIntent(null)} />;
     if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation key={`${me.org_id}:${me.id}`} me={me} goAssign={startAssignment} openItem={openItem} openRoom={openRoom} />;
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
     if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} openItem={openItem} />;
@@ -584,6 +586,7 @@ export default function App() {
         onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
         onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
         onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
+          onCreateProject={isExec ? () => startSurfaceCreate("exec-projects", "project") : undefined}
         onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
         onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
         onGuide={() => openGuide(false)}
@@ -602,6 +605,7 @@ export default function App() {
           onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
+          onCreateProject={isExec ? () => startSurfaceCreate("exec-projects", "project") : undefined}
           onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
           onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
           onOpenWork={openSearchWork}
@@ -625,6 +629,7 @@ export default function App() {
           onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
+          onCreateProject={isExec ? () => startSurfaceCreate("exec-projects", "project") : undefined}
           onCreateAnnouncement={canPublishAnnouncement ? () => startSurfaceCreate("announcements", "announcement") : undefined}
           onCreateMeeting={() => startMeeting(isAdmin || isExec ? { scope:"organisation", organisation:true } : { scope:"unit", unitId:me.unit_id, unitName:me.unit_name })}
           onOpenWork={openSearchWork}

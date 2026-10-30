@@ -14,7 +14,7 @@ import {
   ProjectSummary,
 } from "../experience-v2/project-family/ProjectFamilyV2";
 
-export default function AdminProjects({ me, scheduleMeeting, openItem, initialProjectId = null, openProject, goAssign, openRoom }) {
+export default function AdminProjects({ me, scheduleMeeting, openItem, initialProjectId = null, openProject, goAssign, openRoom, roleMode="admin", createRequest=false, onCreateHandled }) {
   const [projects,setProjects]=useState([]);
   const [units,setUnits]=useState([]);
   const [creating,setCreating]=useState(false);
@@ -24,6 +24,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
   const [filter,setFilter]=useState("all");
 
   useEffect(()=>{load();},[me.org_id]);
+  useEffect(()=>{if(createRequest){setCreating(true);onCreateHandled?.();}},[createRequest]);
 
   async function load(){
     setLoading(true); setError(null); setProjects([]);
@@ -65,9 +66,9 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
 
   return <div className="body admin-projects ev2-project-page ev2-project-admin">
     <ProjectPageHeader
-      eyebrow="Organisation delivery"
+      eyebrow={roleMode==="executive"?"Executive delivery":"Organisation delivery"}
       title="Projects"
-      description="Create projects and coordinate objectives, work, people and evidence across departments."
+      description={roleMode==="executive"?"Initiate projects, designate lead departments and oversee objectives, people and results.":"Create projects and coordinate objectives, work, people and evidence across departments."}
       actionLabel="Create project" onAction={()=>setCreating(true)}
     />
 

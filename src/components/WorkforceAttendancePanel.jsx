@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {staffInitials,attendanceSnapshot,recordedPlace} from '../lib/workforcePresentation';
 
 /** Read-only, role-scoped attendance evidence; relies on existing CEAC styles. */
-export default function WorkforceAttendancePanel({people=[],results=[],office=null,selectedId,onSelect,roleLabel='People & HR'}){
+export default function WorkforceAttendancePanel({people=[],results=[],office=null,selectedId,onSelect,roleLabel='People & HR',verifiedStreets={}}){
  const [expanded,setExpanded]=useState(false);
  const snapshot=attendanceSnapshot(people);
  const executive=roleLabel==='Executive';
@@ -17,7 +17,7 @@ export default function WorkforceAttendancePanel({people=[],results=[],office=nu
   [snapshot.offsite,'Off-site selected'],
   [snapshot.notStarted,'No start recorded'],
  ];
- return <section className="workforce-attendance-panel" aria-label="Recorded staff attendance details">
+ return <section className="card workforce-attendance-panel" aria-label="Recorded staff attendance details">
   <header className="workstart-heading">
    <div><h2>Attendance snapshot</h2><p>Recorded work starts · Ghana time · not live tracking</p></div>
    <span>Today</span>
@@ -26,12 +26,12 @@ export default function WorkforceAttendancePanel({people=[],results=[],office=nu
    {facts.map(([count,label])=><div key={label} className="workstart-unmapped-detail"><strong>{count}</strong><span>{label}</span></div>)}
   </div>
   <div className="workstart-summary"><strong>{executive?'Recent staff starts':'Staff attendance details'}</strong><span>{results.length} matching records</span></div>
-  <div className="workforce-attendance-list">
+  <div className="workforce-attendance-list workstart-accessible-list">
    <div aria-label="Daily staff attendance records">
     {visible.map(person=>{
-     const place=recordedPlace(person,office);
+     const place=recordedPlace(person,office,verifiedStreets[person.id]);
      const hasPoint=Number.isFinite(person?.latitude)&&Number.isFinite(person?.longitude);
-     return <button type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={()=>onSelect?.(person.id===selectedId?null:person.id)}>
+     return <button type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={event=>onSelect?.(person.id===selectedId?null:person.id,event.currentTarget)}>
       <strong>{staffInitials(person.name)} · {person.name}</strong>
       <span>{person.unit}</span>
       <span>{place.label} · {place.address}</span>
