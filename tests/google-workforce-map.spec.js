@@ -135,3 +135,21 @@ test('compact individual person pins and church office label at one recorded coo
  await expect(page.getByRole('region',{name:'Recorded staff attendance details'})).toContainText('Office selected');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
 });
+
+test('attendance panel reuses CEAC readable styles and identifies shared-location staff',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});
+ await mock(page,{pair:true});
+ await page.goto('/tests/fixtures/executive-google-map.html');
+ const panel=page.getByRole('region',{name:'Recorded staff attendance details'});
+ await expect(panel).toContainText('2 matching records');
+ await expect(panel.getByRole('button',{name:/Synthetic Ama/})).toContainText('CEAC office');
+ await expect(panel.getByRole('button',{name:/Synthetic Kofi/})).toContainText('Office selected');
+ await panel.getByRole('button',{name:/Synthetic Kofi/}).click();
+ await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Kofi');
+ const small=await panel.locator('*').evaluateAll(nodes=>nodes.filter(el=>{
+  const style=getComputedStyle(el),rect=el.getBoundingClientRect();
+  return style.display!=='none'&&rect.width>0&&rect.height>0&&[...el.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim())&&parseFloat(style.fontSize)<12;
+ }).map(el=>({text:el.textContent.trim().slice(0,36),size:getComputedStyle(el).fontSize})));
+ expect(small).toEqual([]);
+});
