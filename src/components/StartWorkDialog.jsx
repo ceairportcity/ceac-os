@@ -7,7 +7,7 @@ import "./StartWorkDialog.css";
 const muted = "var(--ev2-text-secondary,var(--ceac-muted))";
 const line = "1px solid var(--ev2-line,var(--ceac-line))";
 const gutter = "clamp(18px, 4.8vw, 24px)";
-const layout = {
+export const workDialogLayout = {
   head: {padding:`20px 66px 20px ${gutter}`,borderBottom:line},
   heading: {margin:0,fontSize:20,fontWeight:600,letterSpacing:"-.025em",lineHeight:1.3},
   body: {padding:`22px ${gutter} 20px`},
@@ -35,6 +35,8 @@ const layout = {
   error: {margin:"14px 0 0",color:"var(--ev2-danger,var(--brick))",fontSize:13,lineHeight:1.5,overflowWrap:"anywhere"},
   reload: {minHeight:44,marginTop:8,textDecoration:"underline",color:"var(--ev2-action,var(--ceac-action-blue))",fontSize:13},
 };
+
+const layout = workDialogLayout;
 
 /** Presentation only: callers retain employee/tenant validation and write recovery. */
 export default function StartWorkDialog({
