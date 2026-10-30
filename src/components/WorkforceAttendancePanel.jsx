@@ -17,10 +17,10 @@ export default function WorkforceAttendancePanel({people=[],results=[],office=nu
   [snapshot.offsite,'Off-site selected'],
   [snapshot.notStarted,'No start recorded'],
  ];
- return <section className="workstart-workspace" aria-label="Recorded staff attendance details">
+ return <section className="workstart-unmapped-detail" aria-label="Recorded staff attendance details">
   <header className="workstart-heading">
    <div><h2>Attendance snapshot</h2><p>Recorded work starts · Ghana time · not live tracking</p></div>
-   <span className="eyebrow">Today</span>
+   <span>Today</span>
   </header>
   <div className="workstart-toolbar" aria-label="Today's recorded work-start summary">
    {facts.map(([count,label])=><div key={label} className="workstart-unmapped-detail"><strong>{count}</strong><span>{label}</span></div>)}
