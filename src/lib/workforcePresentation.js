@@ -13,7 +13,8 @@ export function attendanceSnapshot(people=[]){
   notStarted:people.length-started.length
  };
 }
-export function recordedPlace(person,office){
+export function recordedPlace(person,office,verifiedStreet=null){
+ if(verifiedStreet&&person?.firstStart)return {label:'Recorded street (approximate)',address:verifiedStreet};
  if(!person?.firstStart)return {label:'No work start recorded',address:'No recorded start location'};
  if(person.place==='office')return {label:'Office selected',address:office?.name||'CEAC Church Office'};
  if(person.place==='elsewhere')return {label:'Off-site selected',address:'Street address not yet verified'};
