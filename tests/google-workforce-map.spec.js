@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+import {readFileSync} from 'node:fs';
 async function mock(page,{failure=false}={}){
  const requests=[];
  await page.route('**/*',route=>{
@@ -45,4 +46,48 @@ test('absent map credentials retain office identity access and do not request an
  await page.getByLabel('Recorded office starts').getByRole('button',{name:'Synthetic Ama',exact:true}).click();
  await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Ama');
  expect(requests.some(r=>/maps.googleapis.com|openstreetmap/.test(r.url))).toBe(false);
+});
+test('map opening failure preserves staff records and retry restores markers on phone',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.addInitScript({content:readFileSync('tests/fixtures/google-maps-stub.js','utf8')+';window.syntheticMapFail=true;'});
+ await mock(page);await page.goto('/tests/fixtures/executive-google-map.html');
+ await expect(page.getByText('Map check: MAP-INITIALISE',{exact:true})).toBeVisible();
+ await page.getByLabel('Recorded office starts').getByRole('button',{name:'Synthetic Ama',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Ama');
+ await page.evaluate(()=>{window.syntheticMapFail=false;});
+ await page.getByRole('button',{name:'Retry Google Maps',exact:true}).click();
+ await expect(page.getByText('Map check: MAP-INITIALISE',{exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'View recorded work start for Synthetic Ama',exact:true})).toBeVisible();
+});
+test('a Google policy block has a safe visible code; unrelated and report-only blocks do not hide streets',async({page})=>{
+ await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});
+ await mock(page);await page.goto('/tests/fixtures/executive-google-map.html');
+ await expect(page.getByRole('button',{name:'Fit staff start locations',exact:true})).toBeEnabled();
+ for(const event of [{blockedURI:'https://other.test/private',disposition:'enforce'},{blockedURI:'https://fonts.googleapis.com/css',disposition:'enforce'},{blockedURI:'https://maps.googleapis.com/maps/api/js?key=PRIVATE',disposition:'report'}]){
+  await page.evaluate(data=>document.dispatchEvent(new SecurityPolicyViolationEvent('securitypolicyviolation',data)),event);
+  await expect(page.getByRole('button',{name:'Fit staff start locations',exact:true})).toBeEnabled();
+ }
+ await page.evaluate(()=>document.dispatchEvent(new SecurityPolicyViolationEvent('securitypolicyviolation',{blockedURI:'https://maps.googleapis.com/maps/api/js?key=PRIVATE',disposition:'enforce'})));
+ await expect(page.getByText('Map check: MAP-POLICY',{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Fit staff start locations',exact:true})).toBeDisabled();
+ await expect(page.getByRole('region',{name:'Recorded workforce work-start street map'})).not.toContainText('PRIVATE');
+});
+test('late streets recover from a tile timeout; authorisation rejection remains a failure',async({page})=>{
+ await page.clock.install();
+ const stub=readFileSync('tests/fixtures/google-maps-stub.js','utf8').replace("setTimeout(()=>{callback();},5)","setTimeout(()=>{callback();},name==='tilesloaded'?25000:5)");
+ await page.addInitScript({content:stub});
+ await mock(page);await page.goto('/tests/fixtures/executive-google-map.html');
+ await expect(page.getByText('Loading Google Maps…',{exact:true})).toBeVisible();
+ await page.clock.fastForward(21000);
+ await expect(page.getByText('Map check: MAP-TILES-TIMEOUT',{exact:true})).toBeVisible();
+ await page.clock.fastForward(5000);
+ await expect(page.getByRole('button',{name:'Fit staff start locations',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'Hide street map',exact:true}).click();
+ await page.getByRole('button',{name:'Show Google Maps',exact:true}).click();
+ await expect(page.getByText('Loading Google Maps…',{exact:true})).toBeVisible();
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('ceac-google-map-error',{detail:{code:'MAP-AUTH'}})));
+ await expect(page.getByText('Map check: MAP-AUTH',{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Reload map configuration',exact:true})).toBeVisible();
+ await page.clock.fastForward(30000);
+ await expect(page.getByText('Map check: MAP-AUTH',{exact:true})).toBeVisible();
 });
