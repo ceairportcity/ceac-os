@@ -5,9 +5,9 @@ import { ComposerDrawer } from "../experience-v2/components";
 import { humanError } from "../lib/productLanguage";
 
 const TYPE_LABELS = {
-  ministry_direction: "Ministry Direction",
-  ministry_objective: "Ministry Objective",
-  unit_objective: "Unit Objective",
+  ministry_direction: "Church priority",
+  ministry_objective: "Church goal",
+  unit_objective: "Department goal",
 };
 
 function displayNumber(value) {
@@ -246,8 +246,8 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
   function NodeActions({ node, allowChild }) {
     return <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
       {canEdit(node) && <button className="btn btn-ghost btn-sm" onClick={() => openEdit(node)}>Revise</button>}
-      {allowChild === "ministry" && canGlobal && <button className="btn btn-ghost btn-sm" onClick={() => openCreate("ministry_objective", node.id)}>Add Ministry Objective</button>}
-      {allowChild === "unit" && (canGlobal || managedUnitIds.length > 0) && <button className="btn btn-ghost btn-sm" onClick={() => openCreate("unit_objective", node.id)}>Add Unit Objective</button>}
+      {allowChild === "ministry" && canGlobal && <button className="btn btn-ghost btn-sm" onClick={() => openCreate("ministry_objective", node.id)}>Add a church goal</button>}
+      {allowChild === "unit" && (canGlobal || managedUnitIds.length > 0) && <button className="btn btn-ghost btn-sm" onClick={() => openCreate("unit_objective", node.id)}>Add a department goal</button>}
       {node.node_type === "unit_objective" && canEdit(node) && <button className="btn btn-ghost btn-sm" onClick={() => setLinkForm({ nodeId: node.id, projectId: "", reason: "" })}>Link project</button>}
     </div>;
   }
@@ -258,8 +258,8 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
   return <div className={executiveSurface ? "body ev2-executive-ministry" : "body"}>
     <div className={executiveSurface ? "ev2ex-ministry-head" : ""} style={executiveSurface ? undefined : { paddingTop: 26 }}>
       <div className={executiveSurface ? "ev2ex-ministry-head-copy" : ""}>
-        <div className="eyebrow">{executiveSurface ? "Executive ministry" : "Goals & strategy"}</div>
-        <h1 className="h1">{executiveSurface ? "Ministry direction & outcomes" : "Strategy"}</h1>
+        <div className="eyebrow">{executiveSurface ? "Leadership planning" : "Goals & strategy"}</div>
+        <h1 className="h1">{executiveSurface ? "Church priorities & progress" : "Strategy"}</h1>
         <p className="screen-note">{executiveSurface ? "Set the church’s priorities, see what each department is working toward and follow the projects delivering those results." : "Ministry Direction → Ministry Objective → Unit Objective. Descriptive goals stay descriptive; numeric goals always show the result beside its target."}</p>
       </div>
       {canGlobal && executiveSurface && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -337,7 +337,8 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
         {busy ? "Saving…" : form.id ? "Record revision" : `Create ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
       </button>}
     >
-            {form.nodeType === "ministry_objective" && <FieldGroup label="Ministry direction *">
+            <div className="ev2ex-priority-form-step"><b>01</b><span><strong>Describe the goal</strong><small>Give it a name and explain the result you want to see.</small></span></div>
+            {form.nodeType === "ministry_objective" && <FieldGroup label="Which church priority does this support? *">
         <select className="field" aria-label="Strategy parent direction" value={form.parentId}
           onChange={(event) => setForm({ ...form, parentId: event.target.value })} disabled={Boolean(form.id)}>
           <option value="">Choose the direction this objective supports</option>
@@ -351,8 +352,9 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
           {units.filter((unit) => canGlobal || managedUnitIds.includes(unit.id)).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
         </select>
       </FieldGroup>}
-<FieldGroup label={form.nodeType === "ministry_direction" ? "Direction title *" : "Objective title *"}><input className="field" aria-label="Strategy name" placeholder="Name the specific ministry priority" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FieldGroup>
+<FieldGroup label={form.nodeType === "ministry_direction" ? "Priority name *" : "Goal name *"}><input className="field" aria-label="Strategy name" placeholder="Name the specific ministry priority" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FieldGroup>
       <FieldGroup label="What should this achieve? *"><textarea className="field" aria-label="Strategy statement" rows="4" placeholder="What are we trying to achieve?" value={form.statement} onChange={(event) => setForm({ ...form, statement: event.target.value })} /></FieldGroup>
+      <div className="ev2ex-priority-form-step"><b>02</b><span><strong>Plan how to track it</strong><small>Add a target or dates if they help. You can leave them out for now.</small></span></div>
       <button type="button" className="btn btn-ghost btn-sm" aria-expanded={showAdvanced}
         onClick={() => setShowAdvanced(value => !value)}>{showAdvanced ? "Hide additional planning details" : "Add measure, dates or status"}</button>
       {showAdvanced && <div className="reference-measurement-group">
@@ -384,6 +386,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
       </FieldGroup>
 
       </div>}
+      <div className="ev2ex-priority-form-step"><b>03</b><span><strong>Explain this decision</strong><small>Keep a brief reason for future reviews.</small></span></div>
       <FieldGroup label="Why are you adding or changing this? *">
         <textarea className="field" aria-label="Strategy change reason" rows="2"
           placeholder="Why is this priority being recorded or revised?"

@@ -1,4 +1,3 @@
-import DailyScenicPhoto from "../../components/DailyScenicPhoto";
 import { CeacIcon } from "../icons";
 import { Button, StatusBadge } from "../components";
 
@@ -70,7 +69,7 @@ export function ProjectWorkspaceHeader({
   return (
     <>
       <ProjectBackButton onClick={onBack} />
-      <header className="ev2p-workspace-header s2-landscape-hero"><DailyScenicPhoto />
+      <header className="ev2p-workspace-header ev2p-project-hero">
         <div className="ev2p-workspace-kicker">
           {[kind ? projectLabel(kind) : null, context].filter(Boolean).join(" · ")}
         </div>
@@ -152,6 +151,7 @@ export function ProjectContextRow({
   status,
   health,
   facts = [],
+  goalMix = null,
   actions = [],
 }) {
   return (
@@ -162,6 +162,15 @@ export function ProjectContextRow({
         <strong>{title}</strong>
         {meta ? <span>{meta}</span> : null}
         {note ? <p>{note}</p> : null}
+        {goalMix?.total ? <div className="ev2p-goal-mix" aria-label={`${goalMix.total} recorded goals`}>
+          <div className="ev2p-goal-mix-copy"><span>Recorded goal status</span><small>{goalMix.onTrack} on track or achieved · {goalMix.atRisk + goalMix.notMet} need attention</small></div>
+          <div className="ev2p-goal-mix-track" role="img" aria-label={`${goalMix.onTrack} on track or achieved, ${goalMix.atRisk} at risk, ${goalMix.notMet} not achieved, ${goalMix.other} other`}>
+            {goalMix.onTrack > 0 && <span className="is-on-track" style={{ flexGrow: goalMix.onTrack }} />}
+            {goalMix.atRisk > 0 && <span className="is-at-risk" style={{ flexGrow: goalMix.atRisk }} />}
+            {goalMix.notMet > 0 && <span className="is-not-met" style={{ flexGrow: goalMix.notMet }} />}
+            {goalMix.other > 0 && <span className="is-other" style={{ flexGrow: goalMix.other }} />}
+          </div>
+        </div> : null}
         {facts.length ? <div className="ev2p-context-facts" aria-label={`${title} factual context`}>
           {facts.map((fact) => (
             <span key={fact.label}>

@@ -454,7 +454,7 @@ export default function Performance({ me }) {
     ? <PersonalPageHeader
         eyebrow="My Hub"
         title="Reviews & development"
-        description="See what your review covers, add your own reflections and follow the development steps agreed with your reviewer."
+        description="See what your review covers, add your own reflections and follow the development steps agreed with your reviewer. CEAC OS does not score or rank you."
         statusLabel="Your development"
       />
     : me.is_admin ? <WorkPageHeader

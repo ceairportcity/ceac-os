@@ -49,7 +49,7 @@ const ROLE_DESTINATIONS = Object.freeze({
   executive: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
     { key: "work", label: "Work", icon: "work", group: "workspace" },
-    { key: "strategy", label: "Ministry", icon: "ministry", group: "workspace" },
+    { key: "strategy", label: "Priorities", icon: "ministry", group: "workspace" },
     { key: "exec-projects", label: "Projects", icon: "projects", group: "workspace" },
     { key: "exec-organisation", label: "Organisation", icon: "organisation", group: "workspace" },
     { key: "exec-calendar", label: "Calendar", icon: "calendar", group: "planning" },
@@ -66,7 +66,7 @@ const MOBILE_PRIMARY_KEYS = Object.freeze({
   staff: Object.freeze(["home", "work", "team", "me"]),
   manager: Object.freeze(["home", "work", "team", "projects"]),
   admin: Object.freeze(["home", "people", "attendance", "finance"]),
-  // Owner-approved mobile dock is Overview / Work / Ministry / More.
+  // Executive mobile dock now uses Overview / Work / Priorities / More.
   // Calendar stays available in the More drawer, never as a fifth item.
   executive: Object.freeze(["home", "work", "strategy"]),
 });
@@ -91,7 +91,7 @@ const ROLE_QUICK_ACTIONS = Object.freeze({
   ]),
   executive: Object.freeze([
     { id: "work", label: "Give out work", icon: "work", action: "work" },
-    { id: "ministry-objective", label: "Ministry objective", icon: "ministry", action: "ministry" },
+    { id: "ministry-objective", label: "Church goal", icon: "ministry", action: "ministry" },
     { id: "project", label: "Project", icon: "projects", action: "project" },
     { id: "announcement", label: "Announcement", icon: "messages", action: "announcement" },
     { id: "meeting", label: "Meeting", icon: "meeting", action: "meeting" },

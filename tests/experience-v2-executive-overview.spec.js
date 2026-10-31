@@ -305,10 +305,10 @@ for (const viewport of [
 
     await page.goto("/?tab=strategy");
     await expect(page.locator(".ev2-executive-ministry")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true })).toBeVisible();
-    await expect(page.getByText("Ministry objectives", { exact: true })).toBeVisible();
-    await expect(page.getByText("Ministry Direction · active", { exact: true })).toBeVisible();
-    await expect(page.getByText("Ministry Objective · active", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Church priorities & progress", exact: true })).toBeVisible();
+    await expect(page.getByText("Goals", { exact: true })).toBeVisible();
+    await expect(page.getByText("Church priority · active", { exact: true })).toBeVisible();
+    await expect(page.getByText("Church goal · active", { exact: true })).toBeVisible();
     await expect(page.getByText("First Timers · Complete recorded visitor follow-ups", { exact: true })).toBeVisible();
     await expect(page.getByText(/current 420 people · target 600 people/i)).toBeVisible();
     await expect(page.getByText("First Timers follow-up system", { exact: true })).toBeVisible();

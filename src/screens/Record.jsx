@@ -175,7 +175,7 @@ export default function Record({ me, openItem }) {
     <PersonalPageHeader
       eyebrow="My Hub"
       title="My work history"
-      description="See the work you finished, updates you recorded and feedback you received. Choose a month to explore your record."
+      description="See the work you finished, updates you recorded and feedback you received. Choose a month to explore your record. Private work and personal goals remain outside this history."
     />
     {error
       ? <div className="flag flag-brick" role="alert" style={{ marginTop: 24 }}><h4>Could not load your record</h4>{error}</div>
@@ -191,7 +191,7 @@ export default function Record({ me, openItem }) {
     <PersonalPageHeader
       eyebrow="My Hub"
       title="My work history"
-      description="See the work you finished, updates you recorded and feedback you received. Choose a month to explore your record."
+      description="See the work you finished, updates you recorded and feedback you received. Choose a month to explore your record. Private work and personal goals remain outside this history."
       statusLabel={monthLabel}
     />
     <div className="ev2-personal-record-period">

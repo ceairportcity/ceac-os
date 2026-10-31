@@ -74,7 +74,7 @@ test("manager projects preserve one integrated workspace with real photo and tas
     const workspace = page.locator(".manager-projects.s2-owner-approved-projects");
     await expect(workspace).toBeVisible({ timeout: 20000 });
     await expect(workspace.locator(".s2-project-metrics .s2-project-stat-card")).toHaveCount(4);
-    await expect(workspace.locator(".s2-project-panel", { hasText: "Project team" })).toBeVisible();
+    await expect(workspace.locator(".s2-project-panel", { hasText: "People contributing" })).toBeVisible();
     await expect(workspace.getByText("Departments involved")).toBeVisible();
     await expect(workspace.getByText("Project tasks", { exact: true })).toBeVisible();
     await expect(workspace.locator(".s2-project-aside")).toBeVisible();
