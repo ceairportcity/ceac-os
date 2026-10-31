@@ -41,6 +41,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
   const [projects, setProjects] = useState([]);
   const [units, setUnits] = useState([]);
   const [form, setForm] = useState(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [linkForm, setLinkForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -59,6 +60,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
     if (createRequest === "ministry_objective" && canGlobal) {
       setError(null);
       setNotice(null);
+      setShowAdvanced(false);
       setForm(blankForm("ministry_objective"));
       onCreateHandled?.();
     }
@@ -110,10 +112,12 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
   function openCreate(nodeType, parentId = "", unitId = "") {
     setError(null);
     setNotice(null);
+    setShowAdvanced(false);
     setForm(blankForm(nodeType, parentId, unitId || (nodeType === "unit_objective" && managedUnitIds.length === 1 ? managedUnitIds[0] : "")));
   }
 
   function openEdit(node) {
+    setShowAdvanced(true);
     setError(null);
     setNotice(null);
     setForm({
@@ -327,8 +331,25 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
         {busy ? "Saving…" : form.id ? "Record revision" : `Create ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
       </button>}
     >
-      <FieldGroup label="Objective name *"><input className="field" aria-label="Strategy name" placeholder="e.g. Increase youth attendance" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FieldGroup>
+            {form.nodeType === "ministry_objective" && <FieldGroup label="Ministry direction *">
+        <select className="field" aria-label="Strategy parent direction" value={form.parentId}
+          onChange={(event) => setForm({ ...form, parentId: event.target.value })} disabled={Boolean(form.id)}>
+          <option value="">Choose the direction this objective supports</option>
+          {directions.filter((direction) => direction.status !== "closed").map((direction) => <option key={direction.id} value={direction.id}>{direction.name}</option>)}
+        </select>
+      </FieldGroup>}
+      {form.nodeType === "unit_objective" && <FieldGroup label="Responsible department *">
+        <select className="field" aria-label="Strategy unit" value={form.unitId}
+          onChange={(event) => setForm({ ...form, unitId: event.target.value })} disabled={Boolean(form.id)}>
+          <option value="">Choose responsible department</option>
+          {units.filter((unit) => canGlobal || managedUnitIds.includes(unit.id)).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+        </select>
+      </FieldGroup>}
+<FieldGroup label={form.nodeType === "ministry_direction" ? "Direction title *" : "Objective title *"}><input className="field" aria-label="Strategy name" placeholder="Name the specific ministry priority" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FieldGroup>
       <FieldGroup label="Statement *"><textarea className="field" aria-label="Strategy statement" rows="4" placeholder="What are we trying to achieve?" value={form.statement} onChange={(event) => setForm({ ...form, statement: event.target.value })} /></FieldGroup>
+      <button type="button" className="btn btn-ghost btn-sm" aria-expanded={showAdvanced}
+        onClick={() => setShowAdvanced(value => !value)}>{showAdvanced ? "Hide additional planning details" : "Add measure, dates or status"}</button>
+      {showAdvanced && <div className="reference-measurement-group">
       <FieldGroup label="Measurement *">
         <select className="field" aria-label="Strategy measurement" value={form.measurementKind} onChange={(event) => setForm({ ...form, measurementKind: event.target.value, targetValue: "", targetUnit: "", currentValue: "" })}>
           <option value="descriptive">Descriptive (no percentage)</option>
@@ -356,31 +377,12 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
         </select>
       </FieldGroup>
 
-      {form.nodeType === "ministry_objective" && <details className="reference-disclosure" open={!form.parentId}>
-        <summary><span>Ministry direction <small>(required)</small></span><span>{form.parentId ? "Selected" : "+"}</span></summary>
-        <div className="reference-disclosure-body">
-          <select className="field" aria-label="Strategy parent direction" value={form.parentId} onChange={(event) => setForm({ ...form, parentId: event.target.value })} disabled={Boolean(form.id)}>
-            <option value="">Choose Ministry Direction</option>
-            {directions.filter((direction) => direction.status !== "closed").map((direction) => <option key={direction.id} value={direction.id}>{direction.name}</option>)}
-          </select>
-        </div>
-      </details>}
-      {form.nodeType === "unit_objective" && <details className="reference-disclosure" open={!form.unitId}>
-        <summary><span>Unit <small>(required)</small></span><span>{form.unitId ? "Selected" : "+"}</span></summary>
-        <div className="reference-disclosure-body">
-          <select className="field" aria-label="Strategy unit" value={form.unitId} onChange={(event) => setForm({ ...form, unitId: event.target.value })} disabled={Boolean(form.id)}>
-            <option value="">Choose unit</option>
-            {units.filter((unit) => canGlobal || managedUnitIds.includes(unit.id)).map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
-          </select>
-        </div>
-      </details>}
-
-      <details className="reference-disclosure" open={form.nodeType !== "ministry_objective" || Boolean(form.reason)}>
-        <summary><span>Reason / context <small>(required for history)</small></span><span>{form.reason ? "Added" : "+"}</span></summary>
-        <div className="reference-disclosure-body">
-          <textarea className="field" aria-label="Strategy change reason" rows="3" placeholder="Why this objective is being created or revised" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} />
-        </div>
-      </details>
+      </div>}
+      <FieldGroup label="Reason / context *">
+        <textarea className="field" aria-label="Strategy change reason" rows="2"
+          placeholder="Why is this priority being recorded or revised?"
+          value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} />
+      </FieldGroup>
     </ComposerDrawer>}
 
     {linkForm && <Sheet onClose={() => { if (!busy) setLinkForm(null); }}>
