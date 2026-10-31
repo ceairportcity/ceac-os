@@ -323,6 +323,7 @@ export default function Compliance({ me, openAnnouncements }) {
   </div>;
 
   const personalCompliance = !canManage && !isManager;
+  const PolicyDetailsWrapper = personalCompliance ? "details" : "div";
   return <div className={`body compliance-page ${canManage ? "cp" : ""} ${personalCompliance ? "ev2-personal-page ev2-personal-compliance" : ""}`.trim()}>
     {canManage ? <>
       <section className="cp-welcome s2-landscape-hero" aria-label="Compliance department welcome">
@@ -397,19 +398,22 @@ export default function Compliance({ me, openAnnouncements }) {
             <div className="compliance-policy-head"><div><span className="eyebrow">{policy.category} · v{policy.version}</span><h3>{policy.title}</h3></div><Pill tone={active?"green":"grey"}>{active?"Active":human(policy.state)}</Pill></div>
             {policy.summary&&<p>{policy.summary}</p>}
             <details><summary>Policy text</summary><div className="compliance-policy-body">{policy.body_text}</div></details>
-            <div className="compliance-meta">
+            <PolicyDetailsWrapper className={personalCompliance ? "ceac-policy-meta-toggle" : undefined}>
+              {personalCompliance && <summary>Dates and other details</summary>}
+              <div className="compliance-meta">
               <span>Effective <b>{day(policy.effective_on)}</b></span>
               <span>Expires <b>{policy.expires_on?day(policy.expires_on):"No expiry recorded"}</b></span>
               <span>Source <b>{policy.source_reference||"Not recorded"}</b></span>
               <span>Applies to <b>{policyScopes(policy.id).map(scopeLabel).join(", ")||"Not recorded"}</b></span>
-            </div>
+              </div>
+            </PolicyDetailsWrapper>
             {!canManage&&!isManager&&active&&needsAck&&<div className="compliance-ack-row">{ack?<Pill tone="green">Acknowledged {day(ack.acknowledged_at.slice(0,10))}</Pill>:<button className="btn btn-sm" disabled={busy} onClick={()=>acknowledge(policy)}>Acknowledge policy</button>}</div>}
             {policies.filter((row)=>row.policy_key===policy.policy_key).length>1&&<details className="compliance-history"><summary>Version history · {policies.filter((row)=>row.policy_key===policy.policy_key).length}</summary>{policies.filter((row)=>row.policy_key===policy.policy_key).sort((a,b)=>b.version-a.version).map((row)=><div key={row.id}><strong>Version {row.version} · {human(row.state)}</strong><span>Effective {day(row.effective_on)} · {row.reason}</span></div>)}</details>}
             {canManage&&<div className="compliance-actions"><button className="btn btn-ghost btn-sm" onClick={()=>openRevision(policy)}>Publish revision</button>{policy.state==="active"&&<button className="btn btn-ghost btn-sm" onClick={()=>retirePolicy(policy)}>Retire policy</button>}</div>}
           </article>;
         })}
       </div>
-      {!currentPolicies.length&&<EmptyState title="No policies are assigned to you at the moment">{canManage?"Publish the first compliance policy when CEAC has approved its content and applicability.":"Policies assigned to you will appear here when they are available."}</EmptyState>}
+      {!currentPolicies.length&&<EmptyState title={canManage ? "No policies published yet" : isManager ? "No policies available for your team" : "No policies are assigned to you at the moment"}>{canManage?"Publish the first compliance policy when CEAC has approved its content and applicability.":"Policies assigned to you will appear here when they are available."}</EmptyState>}
     </>}
 
     {tab==="requirements"&&(canManage||isManager)&&<>

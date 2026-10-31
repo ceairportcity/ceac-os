@@ -231,6 +231,7 @@ export default function Assets({ me }) {
   if(loading) return <div className="body"><LoadingState label="Loading assets & devices…" /></div>;
 
   const personalAssets = !canManage && !me.is_admin;
+  const FactsWrapper = personalAssets ? "details" : "div";
   return <div className={`body assets-page ${personalAssets ? "ev2-personal-page ev2-personal-assets" : ""}`.trim()}>
     {personalAssets ? <PersonalPageHeader
       eyebrow="My Hub"
@@ -267,7 +268,13 @@ export default function Assets({ me }) {
             <div><span className="eyebrow">{asset.asset_code}</span><h3>{asset.manufacturer||asset.category}{asset.model?" · "+asset.model:""}</h3></div>
             <Pill tone={statusTone(asset.current_status)}>{human(asset.current_status)}</Pill>
           </div>
-          <div className="asset-facts">
+          {personalAssets && <div className="ceac-equipment-preview">
+            <span>Location: {asset.current_location||"Not recorded"}</span>
+            <span>Condition: {asset.current_condition_note||"Not recorded"}</span>
+          </div>}
+          <FactsWrapper className={personalAssets ? "ceac-equipment-details" : undefined} open={personalAssets ? undefined : undefined}>
+            {personalAssets && <summary>See full equipment details</summary>}
+            <div className="asset-facts">
             <span>Category <b>{asset.category}</b></span>
             <span>Serial <b>{asset.serial_number||"Not recorded"}</b></span>
             <span>Custodian <b>{asset.assignee?.full_name||"Not assigned to a person"}</b></span>
@@ -277,7 +284,8 @@ export default function Assets({ me }) {
             <span>Purchase <b>{money(asset.purchase_cost,asset.purchase_currency)}</b></span>
             <span>Purchased on <b>{day(asset.purchase_date)}</b></span>
             <span>Warranty to <b>{day(asset.warranty_expires_on)}</b></span>
-          </div>
+            </div>
+          </FactsWrapper>
           {canManage&&<div className="asset-actions">
             <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(asset)}>Edit details</button>
             {asset.current_status!=="repair"&&asset.current_status!=="retired"&&<button className="btn btn-ghost btn-sm" onClick={()=>openAssign(asset)}>{asset.current_status==="assigned"?"Transfer":"Assign"}</button>}

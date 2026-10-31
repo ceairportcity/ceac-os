@@ -46,3 +46,17 @@
  .ceac-premium-work-detail .ev2wd-header{margin-top:0}
 }
 @media(min-width:721px) and (max-width:1023px){.ceac-hub-intro{padding:18px}.ceac-premium-work-detail{max-width:100%}}
+
+/* Work actions and personal record disclosures */
+.ceac-work-quick-actions{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin:13px 0 18px;min-width:0}
+.ceac-work-quick-actions>*{min-width:0;max-width:100%;margin:0!important}
+.ceac-work-quick-actions .work-room-entry{flex:1 1 220px;min-height:44px;padding:12px 14px}
+.ceac-work-quick-actions .work-room-entry>span{min-width:0}
+.ceac-work-quick-actions .work-room-entry small{display:block}
+.ceac-equipment-preview{display:flex;align-items:center;gap:6px 18px;flex-wrap:wrap;margin:12px 0;color:var(--ev2-text-secondary);font-size:12px;line-height:1.5}
+.ceac-equipment-details,.ceac-policy-meta-toggle{border-top:1px solid var(--ev2-line);margin-top:13px;padding-top:12px}
+.ceac-equipment-details>summary,.ceac-policy-meta-toggle>summary{cursor:pointer;color:var(--ev2-action);font-size:12px;font-weight:720;min-height:36px;align-content:center}
+.ceac-equipment-details[open] .asset-facts,.ceac-policy-meta-toggle[open] .compliance-meta{padding-top:12px}
+.ceac-equipment-details .asset-facts{grid-template-columns:repeat(auto-fit,minmax(min(100%,155px),1fr));gap:12px}
+.ceac-equipment-details .asset-facts>span{min-width:0;overflow-wrap:anywhere}
+@media(max-width:720px){.ceac-work-quick-actions{gap:8px}.ceac-work-quick-actions>*{flex:1 1 100%}}
