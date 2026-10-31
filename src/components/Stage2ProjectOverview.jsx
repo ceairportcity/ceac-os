@@ -128,12 +128,12 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
       <div className="s2-project-content">
     <section className="s2-project-metrics" aria-label="Recorded project metrics">
       <div className="s2-project-stat-card s2-project-progress-card">
-        <span>Task completion</span>
+        <span>Work completed</span>
         <div className="s2-project-progress-line">
           <span className="s2-project-progress-ring" style={{ "--s2-percent": completionRate ?? 0 }} aria-hidden="true">
             <strong>{completionRate === null ? "—" : completionRate + "%"}</strong>
           </span>
-          <small>{completed.length} of {tasks.length} tasks complete</small>
+          <small>{completed.length} of {tasks.length} tasks finished</small>
         </div>
       </div>
       <div className="s2-project-stat-card">
@@ -145,17 +145,17 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         </div>
       </div>
       <div className="s2-project-stat-card">
-        <span>Departments</span>
-        <strong>{units.length}</strong><small>Including the lead department</small>
+        <span>Departments involved</span>
+        <strong>{units.length}</strong><small>Departments working on this project</small>
       </div>
       <div className="s2-project-stat-card">
-        <span>Next key date</span>
+        <span>Next deadline</span>
         <strong className="s2-project-date">{when(next?.due_at)}</strong>
         <small>{next?.title || "No upcoming due date"}</small>
       </div>
     </section>
         <section className="s2-project-panel s2-project-team-panel">
-          <header><h2>Project team</h2><small aria-label={people.length + " people with visible assignments or dated actions"}>{people.length} {people.length === 1 ? "person" : "people"}</small></header>
+          <header><h2>People contributing</h2><small aria-label={people.length + " people with visible assignments or dated actions"}>{people.length} {people.length === 1 ? "person" : "people"}</small></header>
           {displayActionError && <p role="alert">Additional contributors could not be verified; only visible assignments are shown.</p>}
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>
             <PersonAvatar name={person.name} photoUrl={visiblePortraits[person.id]} /><span><strong>{person.name}</strong>
@@ -164,7 +164,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
           <div className="s2-project-units"><header><h3>Departments involved</h3></header><div>{units.map((row) => <span key={row.id}><strong>{row.name}</strong><small>{row.lead ? "Lead" : "Participating"}</small></span>)}</div></div>
         </section>
         <section className="s2-project-panel s2-project-tasks-panel">
-          <header><h2>Project tasks</h2>{canAssign && <button className="s2-project-primary" onClick={addWork}>+ Add task</button>}</header>
+          <header><h2>Tasks and responsibilities</h2>{canAssign && <button className="s2-project-primary" onClick={addWork}>+ Add task</button>}</header>
           <div className="s2-project-filters">
             <input type="search" aria-label="Search project tasks" placeholder="Search tasks or assignees" value={scopedSearch} onChange={(e) => setSearch(e.target.value)} />
             <select aria-label="Task status" value={scopedFilter} onChange={(e) => setFilter(e.target.value)}><option value="all">All tasks</option><option value="active">Active</option><option value="finished">Finished</option></select>
@@ -182,10 +182,10 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         </section>
       </div>
       <aside className="s2-project-panel s2-project-aside">
-        <header><h2>About this project</h2></header>
-        <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Lead unit</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>End date</dt><dd>{when(project.ends_on)}</dd></div></dl>
+        <header><h2>Project at a glance</h2></header>
+        <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Responsible department</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>Target completion</dt><dd>{when(project.ends_on)}</dd></div></dl>
         {project.purpose && <section><h3>Description</h3><p>{project.purpose}</p></section>}
-        <section className="s2-project-detail-milestones"><h3>Key milestones</h3>{project.milestones === null ? <p>Milestone records are unavailable to this view.</p> : project.milestones?.length ? <ol className="s2-project-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.status === "achieved" ? "is-complete" : ""}><strong>{milestone.name}</strong><small>{String(milestone.status || "Not recorded").replaceAll("_", " ")} · {milestone.completed_at ? "Completed " + when(milestone.completed_at) : milestone.target_on ? "Target " + when(milestone.target_on) : "No recorded date"}</small></li>)}</ol> : <p>No milestones recorded.</p>}</section>
+        <section className="s2-project-detail-milestones"><h3>Important milestones</h3>{project.milestones === null ? <p>Milestone records are unavailable to this view.</p> : project.milestones?.length ? <ol className="s2-project-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.status === "achieved" ? "is-complete" : ""}><strong>{milestone.name}</strong><small>{String(milestone.status || "Not recorded").replaceAll("_", " ")} · {milestone.completed_at ? "Completed " + when(milestone.completed_at) : milestone.target_on ? "Target " + when(milestone.target_on) : "No recorded date"}</small></li>)}</ol> : <p>No milestones recorded.</p>}</section>
         <section className="s2-project-recent-activity" aria-label="Recent visible project activity" aria-description="Recorded actions visible to your account; entries are not automatic approvals.">
           <header><h3>Recent activity</h3><button type="button" onClick={() => setActionReload((n) => n + 1)}
             disabled={activityChecking}>Refresh</button></header>
