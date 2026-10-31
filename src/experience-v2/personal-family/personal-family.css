@@ -1014,3 +1014,12 @@
     font-size: var(--ev2-type-row-desktop);
   }
 }
+
+/* Clear, spacious personal records without changing the shared colour system. */
+.ev2-personal-record .record-area{border:1px solid #e8eaf0;border-radius:13px;background:#fff;padding:23px;box-shadow:0 4px 20px rgba(25,31,54,.03)}
+.ev2-personal-record .record-summary-grid>div{border:1px solid #e9eaf0;border-radius:10px;background:#fafbfc;padding:18px}
+.ev2-personal-record .timeline-row{border-radius:9px;transition:background .16s ease,box-shadow .16s ease}
+.ev2-personal-record .timeline-row:hover{background:#f8f9fc;box-shadow:inset 3px 0 0 var(--ev2-action)}
+.ev2-personal-review .performance-review,.ev2-personal-review .performance-case-list{border:1px solid #e6e8ef;border-radius:12px;box-shadow:0 4px 18px rgba(25,31,54,.035)}
+.ev2-personal-review .performance-case-row:hover{background:#f8f9fc}
+@media(max-width:600px){.ev2-personal-record .record-area{padding:15px}.ev2-personal-record .record-summary-grid>div{padding:13px}}

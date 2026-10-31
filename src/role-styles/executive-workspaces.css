@@ -143,3 +143,9 @@
 
 /* Read-only schedule and attendance rows use the full text column. */
 .executive-app .ev2-exec-organisation .exec-redesign-list-row:not(.exec-directory-link){grid-template-columns:minmax(0,1fr)}
+
+/* Executive directory refinements: restrained emphasis, clearer scanning. */
+.executive-app .ev2-exec-organisation .exec-redesign-list{border:1px solid #e6e8ee;border-radius:12px;box-shadow:0 4px 18px rgba(27,32,57,.04)}
+.executive-app .ev2-exec-organisation .exec-directory-link{transition:background .16s ease,box-shadow .16s ease}
+.executive-app .ev2-exec-organisation .exec-directory-link:hover{background:#faf9ff;box-shadow:inset 3px 0 0 var(--exec-purple)}
+.executive-app .ev2-exec-organisation .exec-directory-profile{border:1px solid #e7e9ee;border-radius:12px;background:#fff;box-shadow:0 6px 24px rgba(25,31,54,.045)}

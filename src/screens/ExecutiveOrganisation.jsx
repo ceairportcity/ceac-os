@@ -170,7 +170,7 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
       <span>{person ? "Person" : team ? unitName(team.unit_id) : department ? "Department" : "Across CEAC"}</span>
       <h1 ref={heading} tabIndex={-1}>{person?.full_name || team?.name || department?.name || "Organisation"}</h1>
       <p>{person ? person.job_title || "Role not recorded" : team ? "People in this team and their recorded responsibilities." : department ? `Head: ${headNames(department.id) || "Not recorded"}` : view === "people" && peopleGroup !== "all" ? `Currently ${peopleGroup === "staff" ? "employed staff" : "active volunteers"} linked to their CEAC employee accounts.` : "Explore departments, teams and people, then open the work behind them."}</p>
-    </div>{!selected && ready && <StatusBadge tone={missingLeaders.length ? "warning" : "neutral"} icon={false}>{missingLeaders.length ? `${missingLeaders.length} leadership gap${missingLeaders.length === 1 ? "" : "s"}` : "Department heads recorded"}</StatusBadge>}{department && <button type="button" className="btn" onClick={() => goAssign?.({ unitId: department.id })}>Give out work</button>}</header>
+    </div>{!selected && ready && <StatusBadge tone={missingLeaders.length ? "warning" : "neutral"} icon={false}>{missingLeaders.length ? `${missingLeaders.length} leadership gap${missingLeaders.length === 1 ? "" : "s"}` : "Department heads recorded"}</StatusBadge>}{department && <button type="button" className="btn" onClick={() => goAssign?.({ unitId: department.id })}>Assign work</button>}</header>
     {!selected && <div className="exec-redesign-tabs" role="group" aria-label="Organisation views">{[["departments", "Departments"], ["teams", "Teams"], ["people", "People"]].map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} className={view === key ? "is-active" : ""} onClick={() => { setView(key); setPeopleGroup("all"); setQuery(""); }}>{label}</button>)}</div>}
     {loading && <LoadingState label="Loading organisation…" />}
     {error && <ProductNotice tone="error" title="Could not load Organisation" action={<button type="button" className="btn btn-ghost" onClick={() => setReload(n => n + 1)}>Try again</button>}>{error}</ProductNotice>}
@@ -198,8 +198,8 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
             className={personTab===key?"is-active":""} onClick={()=>setPersonTab(key)}>{label}</button>)}
         </div>
         {personTab==="overview" && <section className="exec-directory-profile" aria-label="Employee profile">
-          <h2>About this person</h2>
-          <p className="screen-note">Employment information is separate from project responsibilities. Select another tab to see their schedule, attendance or recorded work.</p>
+          <h2>Person overview</h2>
+          <p className="screen-note">View this person’s role and department here. Use the other sections to see their schedule, attendance or assigned work.</p>
           <div className="ev2p-summary">
             <div><strong>{employmentLabel}</strong><span>Engagement</span></div>
             <div><strong>{currentEmployment?.employment_status?.replaceAll("_"," ")||"Not recorded"}</strong><span>Employment status</span></div>
