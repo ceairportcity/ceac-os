@@ -60,3 +60,13 @@
 .ceac-equipment-details .asset-facts{grid-template-columns:repeat(auto-fit,minmax(min(100%,155px),1fr));gap:12px}
 .ceac-equipment-details .asset-facts>span{min-width:0;overflow-wrap:anywhere}
 @media(max-width:720px){.ceac-work-quick-actions{gap:8px}.ceac-work-quick-actions>*{flex:1 1 100%}}
+
+/* Match the approved CEAC blue/neutral reporting palette, rather than the
+   legacy Executive purple accent. This is scoped to Reports only. */
+.executive-app .ev2-reporting-executive{
+  --exec-purple:var(--exec-blue,#2e86e6);
+  --exec-purple-soft:var(--exec-blue-soft,#e9f3ff);
+  --ev2-action:var(--exec-blue,#2e86e6);
+  --ev2-action-hover:#175cb5;
+  --ev2-action-soft:var(--exec-blue-soft,#e9f3ff);
+}

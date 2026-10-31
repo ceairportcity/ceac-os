@@ -543,7 +543,7 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
     await expect(page.getByText("Your account only", { exact: true })).toBeVisible();
-    await expect(page.getByText(/Manage your sign-in protection/i)).toBeVisible();
+    await expect(page.getByText("Manage your sign-in protection, devices and account activity in one place.",{exact:true})).toHaveCount(1);
     await page.getByRole("tab",{name:"Sessions",exact:true}).click();
     await expect(page.getByRole("button", { name: "Sign out on this device", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out on every device", exact: true })).toBeVisible();

@@ -19,8 +19,8 @@ test("Cohesive Executive Reports fits iPad and desktop without overlapping tabs"
       await page.locator(".ev2s-sidebar").getByRole("button", { name: "Reports", exact: true }).click();
       await expect(page.locator(".ev2-reporting-executive")).toBeVisible({ timeout: 15000 });
       const tabs = page.locator('.ev2rep-tabs[aria-label="Executive reporting workspace"] [role="tab"]');
-      if (await tabs.count()) {
-        await expect(tabs).toHaveCount(4);
+      await expect(tabs).toHaveCount(4);
+      {
         const rects = await tabs.evaluateAll(nodes => nodes.map(node => {
           const box = node.getBoundingClientRect();
           return { left:box.left, right:box.right, top:box.top, bottom:box.bottom, width:box.width, height:box.height };
@@ -46,4 +46,25 @@ test("Cohesive Executive Reports fits iPad and desktop without overlapping tabs"
       await context.close();
     }
   }
+});
+
+test("Executive can reach quarterly reporting before a period opens", async ({ browser }) => {
+  test.setTimeout(90000);
+  const context = await browser.newContext({ viewport: { width:390, height:844 } });
+  try {
+    const page = await context.newPage();
+    await page.route("**/rest/v1/report_periods?*", route => route.fulfill({
+      status:200, contentType:"application/json", headers:{"content-range":"*/0"}, body:"[]"
+    }));
+    await enterExecutive(page);
+    await page.goto("/?tab=exec-reports");
+    await expect(page.getByRole("heading",{name:"Reports",exact:true})).toBeVisible();
+    const nav=page.locator(".ev2rep-tabs[aria-label='Executive reporting workspace']");
+    await expect(nav.getByRole("tab")).toHaveCount(4);
+    await nav.getByRole("tab",{name:"Quarterly reports"}).click();
+    await expect(page.getByText("No reporting period is recorded",{exact:true})).toBeVisible();
+    await expect(page.getByRole("region",{name:"Quarterly leadership review schedule"})).toBeVisible();
+    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+  } finally {await context.close();}
 });
