@@ -861,3 +861,18 @@
     padding-inline: var(--ev2-space-2);
   }
 }
+
+/* Tablet Staff Today: restore the laptop's useful two-column panels
+   while retaining the mobile carousel only for actual phones. */
+@media (min-width: 768px) and (max-width: 899px) {
+  .staffv2 { min-width: 0; gap: var(--ev2-space-4); }
+  .staffv2-focus-grid { grid-template-columns: minmax(0, 1.3fr) minmax(255px, .9fr); }
+  .staffv2-main-grid, .staffv2-secondary-grid, .staffv2-loading {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .staffv2-main-grid > .staffv2-attention { grid-column: 1 / -1; }
+  .staffv2-main-grid > .staffv2-updates,
+  .staffv2-main-grid > .staffv2-waiting,
+  .staffv2-main-grid > .staffv2-coming { grid-column: auto; }
+  .staffv2-focus-grid > *, .staffv2-panel { min-width: 0; }
+}

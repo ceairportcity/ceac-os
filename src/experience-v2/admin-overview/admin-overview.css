@@ -16,3 +16,20 @@
 .adminv2-approved .adminv2-glance{padding:16px;border:1px solid #dfe7ef;border-radius:10px;background:#fff}.adminv2-glance h2{margin:0 0 12px;font-size:18px}.adminv2-glance>div{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.adminv2-glance>div>button{text-align:left;border:0;border-right:1px solid #e0e7ef;background:white;padding:8px 14px;display:grid;gap:5px;cursor:pointer;color:#17304f;font:inherit}.adminv2-glance span,.adminv2-glance small{font-size:12px}.adminv2-glance small{color:#075ddb}.adminv2-glance strong{font-size:16px}.adminv2-glance footer{display:flex;justify-content:flex-end;border-top:1px solid #e7edf4;margin-top:10px}.adminv2-more-context>summary{padding:14px 4px;color:#075ddb;cursor:pointer;font-size:13px;min-height:44px}.adminv2-approved .s2-own-work-session{margin:0;padding:12px 16px;min-height:0}.adminv2-approved .s2-own-work-session-info{display:flex;flex-direction:row;text-align:left;align-items:center;gap:12px;flex-wrap:wrap}.adminv2-approved .s2-own-work-session-info small{flex-basis:100%;font-size:12px}.adminv2-approved .adminv2-hero-main>.adminv2-intro-row{flex:0}.adminv2-approved .adminv2-hero-main>.adminv2-intro-actions{margin-top:12px}@media(max-width:760px){.adminv2-glance>div{grid-template-columns:1fr 1fr}.adminv2-glance>div>button{border-bottom:1px solid #e0e7ef;padding:12px 8px}.adminv2-approved .s2-own-work-session-info{display:grid;gap:3px}}
 
 .adminv2-announcements .ceac-support-approvals{padding:12px 0 0;margin:12px 0 0;border:0;border-top:1px solid #dfe7ef;box-shadow:none}.adminv2-announcements summary{font-size:12px;min-height:32px;cursor:pointer}
+
+/* Tablet HR overview: full desktop cards, flexible calendar and readable grids. */
+@media (min-width: 768px) and (max-width: 899px) {
+  .adminv2 { min-width: 0; }
+  .adminv2-hero { grid-template-columns: minmax(0, 1fr); }
+  .adminv2-hero-main { min-height: 180px; padding: 20px; }
+  .adminv2-hero-agenda { min-width: 0; border-left: 0; border-top: 1px solid #dfe7ef; }
+  .adminv2-context-grid, .adminv2-support-grid, .adminv2-loading {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .adminv2-approved .adminv2-glance > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adminv2-panel, .adminv2-announcements { min-width: 0; }
+}
+@media (min-width: 900px) and (max-width: 1023px) {
+  .adminv2-hero { grid-template-columns: minmax(0, 1fr) 270px; }
+  .adminv2-hero-main { padding: 20px; }
+}

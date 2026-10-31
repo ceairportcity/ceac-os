@@ -43,3 +43,30 @@ gap:8px;padding:9px;border:1px solid #edf0f3;border-radius:10px;background:#fbfc
 .managerv2 .ev2c-button-compact{min-height:44px}.managerv2{gap:8px;padding-bottom:calc(var(--ev2s-mobile-nav-height) + 14px)}.fpg9-home-hero{margin:0;padding:12px 14px 11px;border:0;border-radius:0;background:#0f1723;color:#fff}.fpg9-home-context{margin-bottom:3px;color:#8ea0b5}.fpg9-home-context span{color:#79d9cb}.fpg9-home-hero h1{color:#fff;font-size:22px;line-height:1.08}.fpg9-home-hero p,.fpg9-home-hero-action,.fpg9-home-impact{display:none}.fpg9-mobile-shortcuts{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:0 10px;padding:3px;border-radius:9px;background:#f1f4f7}.fpg9-mobile-shortcuts button{min-height:44px;border:0;border-radius:7px;background:transparent;color:#65707c;font-weight:650}.fpg9-mobile-shortcuts button.is-active{background:#1674e8;color:#fff;box-shadow:0 2px 6px rgba(22,116,232,.18)}.fpg9-home-reference{gap:8px;padding:0 10px}.fpg9-home-focus{display:block}.fpg9-next-card{grid-template-columns:92px minmax(0,1fr);min-height:154px;border-radius:10px;box-shadow:none}.fpg9-next-copy{padding:12px}.fpg9-next-copy h2{font-size:16px}.fpg9-next-status{margin:8px 0 auto}.fpg9-schedule-card,.fpg9-calendar-card,.fpg9-waiting-card,.fpg9-coming-card,.fpg9-module-strip,.fpg9-workspace-previews{display:none}.fpg9-home-queues{display:block}.fpg9-attention-card{padding:11px;border-radius:10px;box-shadow:none}.fpg9-home-row{min-height:44px}.fpg9-home-empty{margin:9px 4px}
 }
 @media(max-width:340px){.fpg9-next-card{grid-template-columns:78px minmax(0,1fr)}}
+
+/* Tablet Manager overview: recover laptop composition after the old
+   <=899px phone-like flattening, without altering the phone version. */
+@media (min-width: 768px) and (max-width: 899px) {
+  .managerv2 { min-width: 0; gap: 14px; }
+  .fpg9-home-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 124px;
+    padding: 18px 20px;
+    border-radius: 14px;
+    background-size: 100% 100%, 155% auto;
+    background-position: center, center -55px;
+  }
+  .fpg9-home-hero h1 { font-size: 27px; }
+  .fpg9-home-impact { width: min(37%, 260px); margin-top: 0; }
+  .fpg9-home-reference { grid-template-columns: minmax(0, 1fr); }
+  .fpg9-home-focus { grid-template-columns: minmax(0, 1.35fr) minmax(230px, .9fr); }
+  .fpg9-home-queues { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fpg9-calendar-card { grid-column: auto; grid-row: auto; }
+  .fpg9-module-strip { grid-column: 1 / -1; }
+  .fpg9-module-strip > div { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fpg9-workspace-previews { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .managerv2-loading { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fpg9-home-focus > *, .fpg9-home-reference > *, .fpg9-queue-card { min-width: 0; }
+}

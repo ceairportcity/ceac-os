@@ -670,7 +670,7 @@
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 767px) {
   .ev2s-mobile-search-drawer{padding-top:calc(var(--ev2-space-4) + env(safe-area-inset-top, 0px));top:0;bottom:0;width:100%;max-width:none;max-height:100dvh;border:0;border-radius:0}
 
   .ev2s-sidebar,
@@ -932,3 +932,90 @@
 .s2-achievement-entry{display:flex;justify-content:flex-end;max-width:1480px;margin:0 auto;padding:7px 0 2px}
 .s2-achievement-entry button{font-size:12px;border:1px solid #d9e7f8;background:#f5faff;color:#126bc9;padding:8px 12px;border-radius:7px;cursor:pointer;font-weight:690}
 .s2-achievement-entry button:hover{background:#e7f2ff}
+
+/* iPad / tablet: keep laptop navigation with an accessible compact rail.
+   Phones <=767px and desktop >=1024px retain their approved layouts. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root { --ev2s-sidebar-width: 4.75rem; }
+  .ev2s-sidebar { padding: .75rem .45rem; }
+  .ev2s-sidebar-identity { padding-inline: 0; }
+  .ev2s-brand { justify-content: center; padding: .25rem 0 .75rem; }
+  .ev2s-brand-copy { display: none; }
+  .ev2s-brand-mark { flex-shrink: 0; }
+  .ev2s-unit-switch.is-compact {
+    min-height: 44px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1px;
+    padding-inline: 3px;
+  }
+  .ev2s-unit-switch.is-compact > svg:first-child { display: none; }
+  .ev2s-unit-switch.is-compact select { min-width: 0; font-size: 10px; }
+  .ev2s-sidebar-nav { padding-inline: 0; }
+  .ev2s-sidebar-group,
+  .ev2s-sidebar-group-items { min-width: 0; }
+  .ev2s-sidebar-nav button {
+    position: relative;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding-inline: 0;
+  }
+  /* Visually hidden labels remain available to screen readers; tooltips
+     are supplied by the actual navigation buttons. */
+  .ev2s-sidebar-nav button span,
+  .fpg9-sidebar-quick button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+    border: 0;
+  }
+  .ev2s-sidebar-nav button svg { flex-shrink: 0; }
+  .ev2s-sidebar-footer { min-width: 0; }
+  .ev2s-sidebar-guide {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    margin: .25rem 0 0;
+    padding: 0;
+  }
+  .ev2s-sidebar-guide span,
+  .ev2s-sidebar-guide > svg:last-child { display: none; }
+  .ev2s-sidebar-profile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    padding: .75rem 0;
+  }
+  .ev2s-sidebar-profile-copy,
+  .ev2s-sidebar-profile > svg:last-child { display: none; }
+  .fpg9-sidebar-quick { min-width: 0; margin: .2rem 0 0; padding: .35rem; }
+  .fpg9-sidebar-quick > span { display: none; }
+  .fpg9-sidebar-quick > div { grid-template-columns: minmax(0, 1fr); }
+  .fpg9-sidebar-quick button {
+    position: relative;
+    min-width: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .ev2s-topbar {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .5rem;
+    padding-inline: .75rem;
+  }
+  .ev2s-destination-search { min-width: 0; }
+  .ev2s-content, .ev2-route-transition { min-width: 0; max-width: 100%; }
+}
