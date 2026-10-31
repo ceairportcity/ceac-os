@@ -144,9 +144,9 @@ test("OCR2 Executive creation is reachable through the approved Work, Ministry a
   await expect(page.getByRole("button", { name: "Give out work", exact: true }).first()).toBeVisible();
 
   await page.goto("/?tab=strategy");
-  await expect(page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Add Ministry Direction", exact: true }).click();
-  let dialog = page.getByRole("dialog", { name: "New ministry direction" });
+  await expect(page.getByRole("heading", { name: "Ministry goals", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Set first ministry priority", exact: true }).click();
+  let dialog = page.getByRole("dialog", { name: "Add ministry priority" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel("Strategy name")).toBeVisible();
 
@@ -221,27 +221,27 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   await expect(announcementRow.getByText(/published/i)).toBeVisible();
 
   await page.goto("/?tab=strategy");
-  await expect(page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Add Ministry Direction", exact: true }).click();
-  dialog = page.getByRole("dialog", { name: "New ministry direction" });
+  await expect(page.getByRole("heading", { name: "Ministry goals", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Set first ministry priority", exact: true }).click();
+  dialog = page.getByRole("dialog", { name: "Add ministry priority" });
   await dialog.getByLabel("Strategy name").fill(directionTitle);
   await dialog.getByLabel("Strategy statement").fill("Provide an attributable parent direction for OCR6 acceptance.");
   await dialog.getByLabel("Strategy change reason").fill("OCR6 final workflow acceptance.");
-  await dialog.getByRole("button", { name: "Create ministry direction", exact: true }).click();
+  await dialog.getByRole("button", { name: "Add ministry priority", exact: true }).click();
   await expect(page.getByText(directionTitle, { exact: true })).toBeVisible();
 
   // The ministry-specific composer enforces the same parent-direction
   // authority, without reintroducing the retired global Create button.
   await page.goto("/?tab=strategy");
-  await page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true }).waitFor();
-  await page.getByRole("button", { name: "Add ministry objective", exact: true }).first().click();
-  dialog = page.getByRole("dialog", { name: "New ministry objective" });
+  await page.getByRole("heading", { name: "Ministry goals", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Add ministry goal", exact: true }).first().click();
+  dialog = page.getByRole("dialog", { name: "Add ministry goal" });
   await dialog.getByLabel("Strategy parent direction").selectOption({ label: directionTitle });
   await dialog.getByLabel("Strategy name").fill(objectiveTitle);
   await dialog.getByLabel("Strategy statement").fill("Prove the compact Executive ministry objective Composer.");
-  await dialog.getByText(/Reason \/ context/).first().click();
+  await dialog.getByText(/Why are you adding or changing this/).first().click();
   await dialog.getByLabel("Strategy change reason").fill("OCR6 final workflow acceptance.");
-  await dialog.getByRole("button", { name: "Create ministry objective", exact: true }).click();
+  await dialog.getByRole("button", { name: "Add ministry goal", exact: true }).click();
   await expect(page.getByText(objectiveTitle, { exact: true })).toBeVisible();
 });
 
