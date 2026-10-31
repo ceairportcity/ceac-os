@@ -52,17 +52,17 @@ for(const width of [390,1440]){
  test(`activity upload retries without another activity and retains a dated plan ${width}`,async({page})=>{
   await page.setViewportSize({width,height:1000});const {writes}=await mock(page);
   await page.goto('/tests/fixtures/phase1-corrections.html?screen=diary');
-  await page.getByRole('button',{name:'+ Record an activity'}).click();
-  await page.getByLabel('Action taken or planned').fill('Finished the supplier meeting');
-  await page.getByLabel('Next action',{exact:true}).fill('Follow up next week');
+  await page.getByRole('button',{name:'+ Add work update'}).click();
+  await page.getByLabel('What did you do?').fill('Finished the supplier meeting');
+  await page.getByLabel('What happens next?',{exact:true}).fill('Follow up next week');
   await page.getByLabel('Next action date (optional)').fill('2026-11-03');
   await page.locator('input[type=file]').setInputFiles({name:'evidence.pdf',mimeType:'application/pdf',buffer:Buffer.from('Synthetic evidence')});
-  expect((await page.getByRole('button',{name:'Record activity',exact:true}).boundingBox()).width).toBeLessThan(240);
+  expect((await page.getByRole('button',{name:'Save work update',exact:true}).boundingBox()).width).toBeLessThan(240);
   await page.screenshot({path:`test-artifacts/phase1-diary-form-${width}.png`,fullPage:true});
-  await page.getByRole('button',{name:'Record activity',exact:true}).click();
+  await page.getByRole('button',{name:'Save work update',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('The activity is saved. Retry');
-  await expect(page.getByLabel('Action taken or planned')).toBeDisabled();
-  await page.getByRole('button',{name:'Record activity',exact:true}).click();
+  await expect(page.getByLabel('What did you do?')).toBeDisabled();
+  await page.getByRole('button',{name:'Save work update',exact:true}).click();
   await expect(page.getByRole('status').filter({hasText:'Its follow-up remains'})).toBeVisible();
   expect(writes.filter(row=>row.name==='work_activity_records')).toHaveLength(1);
   expect(writes.filter(row=>row.name==='register_operational_file')).toHaveLength(1);

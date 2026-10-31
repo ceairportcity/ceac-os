@@ -165,7 +165,7 @@ test("VF5B Executive Work and Ministry keep leadership records factual and role-
   expect(work).toContain("ev2-work-executive");
   expect(strategy).toContain('supabase.from("strategy_nodes")');
   expect(strategy).toContain('supabase.from("strategy_delivery_links")');
-  expect(strategy).toContain("Descriptive objective — no percentage is generated.");
+  expect(strategy).toContain("Progress for this goal is described in words.");
   expect(strategy).toContain("ev2-executive-ministry");
   expect(strategy).toContain("ev2ex-ministry-direction");
   expect(strategy).toContain("ev2ex-unit-objective");
@@ -305,8 +305,8 @@ for (const viewport of [
 
     await page.goto("/?tab=strategy");
     await expect(page.locator(".ev2-executive-ministry")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true })).toBeVisible();
-    await expect(page.getByText("Ministry objectives", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ministry goals", exact: true })).toBeVisible();
+    await expect(page.getByText("Priorities and goals", { exact: true })).toBeVisible();
     await expect(page.getByText("Ministry Direction · active", { exact: true })).toBeVisible();
     await expect(page.getByText("Ministry Objective · active", { exact: true })).toBeVisible();
     await expect(page.getByText("First Timers · Complete recorded visitor follow-ups", { exact: true })).toBeVisible();

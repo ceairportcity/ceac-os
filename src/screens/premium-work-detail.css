@@ -1,0 +1,37 @@
+/* Premium work details. Visual hierarchy only; all work and review permissions stay unchanged. */
+.ceac-premium-work-detail{width:min(100%,78rem);margin-inline:auto;padding:24px clamp(15px,2.5vw,36px) 72px}
+.ceac-premium-work-detail .ev2wd-back{min-height:38px;margin-bottom:20px;color:var(--ev2-text-secondary);font-size:12px;font-weight:680}
+.ceac-premium-work-detail .ev2wd-header{padding:25px 27px 28px;border:1px solid var(--ev2-line);border-radius:13px;background:var(--ev2-surface);box-shadow:0 4px 20px rgba(17,30,48,.025);margin-bottom:16px}
+.ceac-premium-work-detail .ev2wd-kicker{font-size:12px;letter-spacing:.095em;font-weight:720;text-transform:uppercase;color:var(--ev2-text-tertiary)}
+.ceac-premium-work-detail .ev2wd-header h1{max-width:32ch;margin:11px 0 18px;font-size:clamp(27px,2.8vw,39px);line-height:1.16;letter-spacing:-.048em;font-weight:760;color:var(--ev2-text)}
+.ceac-premium-work-detail .ev2wd-header-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--ev2-text-secondary)}
+.ceac-premium-work-detail>.work-room-entry{margin:12px 0 16px;min-height:72px;padding:17px 20px;border:1px solid var(--ev2-line);border-radius:11px;background:var(--ev2-surface);box-shadow:0 3px 15px rgba(17,30,48,.02)}
+.ceac-premium-work-detail>.work-room-entry:hover{border-color:var(--ev2-line-strong);background:var(--ev2-surface-soft)}
+.ceac-premium-work-detail>.work-room-entry strong{font-size:13px;color:var(--ev2-text)}
+.ceac-premium-work-detail>.work-room-entry small{font-size:12px;line-height:1.5;color:var(--ev2-text-secondary)}
+.ceac-premium-work-detail .ev2wd-section{padding:21px 24px;margin:14px 0;border:1px solid var(--ev2-line);border-radius:12px;background:var(--ev2-surface);box-shadow:0 3px 16px rgba(17,30,48,.02)}
+.ceac-premium-work-detail .ev2wd-section-head{margin-bottom:12px}
+.ceac-premium-work-detail .ev2wd-section-head h2{font-size:15px;font-weight:730;letter-spacing:-.025em;color:var(--ev2-text)}
+.ceac-premium-work-detail .ev2wd-copy{font-size:13px;line-height:1.75;color:var(--ev2-text-secondary)}
+.ceac-premium-work-detail .s2-work-diary{padding:23px 25px;margin:18px 0;border:1px solid var(--ev2-line);border-radius:12px;background:var(--ev2-surface);box-shadow:0 4px 21px rgba(17,30,48,.035)}
+.ceac-premium-work-detail .s2-work-diary>header{align-items:center;gap:18px;margin:0 0 15px}
+.ceac-premium-work-detail .s2-work-diary .eyebrow{font-size:12px;letter-spacing:.11em}
+.ceac-premium-work-detail .s2-work-diary h3{margin:5px 0 4px;font-size:19px;letter-spacing:-.035em;font-weight:750;color:var(--ev2-text)}
+.ceac-premium-work-detail .s2-work-diary header p{max-width:65ch;margin-top:6px;font-size:12px;line-height:1.6;color:var(--ev2-text-secondary)}
+.ceac-premium-work-detail .s2-work-diary>p{padding:21px;border:1px dashed var(--ev2-line-strong);border-radius:9px;background:var(--ev2-surface-soft);font-size:12px;line-height:1.6;color:var(--ev2-text-secondary)}
+.ceac-premium-work-detail .s2-work-diary-form{padding:18px;margin-top:16px;border:1px solid var(--ev2-line);border-radius:11px;background:var(--ev2-surface-soft);gap:14px}
+.ceac-premium-work-detail .s2-work-diary-form label{font-size:12px;line-height:1.5;color:var(--ev2-text)}
+.ceac-premium-work-detail .s2-work-diary-form :is(input,select,textarea){min-height:40px;border-color:var(--ev2-line-strong);border-radius:8px;background:var(--ev2-surface);font-size:13px}
+.ceac-premium-work-detail .s2-work-diary-form textarea{min-height:85px}
+.ceac-premium-work-detail .s2-work-diary-summary{gap:15px;padding:16px 0}
+.ceac-premium-work-detail .s2-work-diary-timeline{margin-left:9px;padding-left:21px;border-color:var(--ev2-line-strong)}
+.ceac-premium-work-detail .s2-work-diary-timeline li{padding:1px 0 20px 15px}
+.ceac-premium-work-detail .s2-work-diary-timeline strong{font-size:13px;color:var(--ev2-text)}
+.ceac-premium-work-detail .s2-work-diary-next-action{margin:13px 0;padding:14px 18px;border-left:3px solid var(--ev2-action);border-radius:0 9px 9px 0;background:var(--ev2-surface-soft)}
+.ceac-premium-work-detail .card{border-color:var(--ev2-line);border-radius:11px;background:var(--ev2-surface);box-shadow:0 3px 14px rgba(17,30,48,.025)}
+.ceac-premium-work-detail .sec{margin-top:25px;color:var(--ev2-text)}
+.ceac-premium-work-detail .hint{font-size:12px;line-height:1.6;color:var(--ev2-text-secondary)}
+.ceac-premium-work-detail .work-primary-action{min-height:44px;padding-inline:21px}
+.ceac-premium-work-detail .work-secondary-action{min-height:38px}
+.ceac-premium-work-detail :is(button,input,select,textarea):focus-visible{outline:2px solid var(--ev2-action);outline-offset:2px}
+@media(max-width:660px){.ceac-premium-work-detail{padding:14px 12px 48px}.ceac-premium-work-detail .ev2wd-header{padding:19px 17px}.ceac-premium-work-detail .ev2wd-section{padding:16px}.ceac-premium-work-detail .s2-work-diary{padding:16px}.ceac-premium-work-detail .s2-work-diary>header{align-items:stretch;flex-direction:column}.ceac-premium-work-detail .s2-work-diary-form{padding:12px}.ceac-premium-work-detail .s2-work-diary-form :is(input,textarea,select){font-size:16px}}

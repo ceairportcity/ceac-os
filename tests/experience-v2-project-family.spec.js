@@ -397,9 +397,12 @@ test("VF6A cross-role Project surfaces share one factual workspace grammar", asy
         return { left: rect.left, top: rect.top, bottom: rect.bottom, radius: style.borderRadius, shadow: style.boxShadow };
       }));
       expect(Math.abs(geometry[0].left - geometry[1].left)).toBeLessThanOrEqual(2);
-      expect(geometry[1].top - geometry[0].bottom).toBeLessThanOrEqual(2);
-      expect(geometry[0].radius).toBe("0px");
-      expect(geometry[0].shadow).toBe("none");
+      // Premium cards are deliberately separated, gently rounded and elevated.
+      const gap = geometry[1].top - geometry[0].bottom;
+      expect(gap).toBeGreaterThanOrEqual(8);
+      expect(gap).toBeLessThanOrEqual(16);
+      expect(geometry[0].radius).toBe("13px");
+      expect(geometry[0].shadow).not.toBe("none");
       if (viewport.width <= 760) {
         const summary = page.locator(".ev2-project-admin .ev2p-summary");
         const rail = await summary.evaluate((node) => ({ display: getComputedStyle(node).display, scroll: node.scrollWidth, client: node.clientWidth }));

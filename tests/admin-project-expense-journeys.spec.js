@@ -32,7 +32,7 @@ for(const width of [390,1440])test(`Admin project filters, calendar link and det
  await page.getByRole('button',{name:/Planned projects/}).click();
  await expect(page.locator('.ev2p-context-list')).toContainText('Next Conference');
  await expect(page.locator('.ev2p-context-list')).not.toContainText('Service Setup');
- await page.getByRole('button',{name:/Need objective attention/}).click();
+ await page.getByRole('button',{name:/Need attention/}).click();
  await expect(page.locator('.ev2p-context-list')).toContainText('Service Setup');
  await expect(page.locator('.ev2p-context-list')).not.toContainText('Next Conference');
  await page.getByRole('button',{name:'Open project',exact:true}).click();

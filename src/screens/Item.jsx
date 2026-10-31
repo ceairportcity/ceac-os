@@ -7,6 +7,7 @@ import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
+import "./premium-work-detail.css";
 import WorkActivityDiary from "../components/WorkActivityDiary";
 import WorkProjectLink from "../components/WorkProjectLink";
 import WorkDetailsEditor from "../components/WorkDetailsEditor";
@@ -536,7 +537,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
     : <div className="spin">Loading...</div>;
 
   return (
-    <div className={`body ${isManager ? "manager-work-detail" : "staff-work-detail"} ev2-work-detail`}>
+    <div className={`body ${isManager ? "manager-work-detail" : "staff-work-detail"} ev2-work-detail ceac-premium-work-detail`}>
       <WorkDetailHeader
         refCode={item.ref}
         kind={item.kind}
@@ -560,7 +561,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
             : { kind: "unit", unitId: item.unit_id }),
         reference: { object_type: "work_item", object_id: item.id, label: `${item.ref} · ${item.title}` },
       })}>
-        <span><strong>{item.project_id ? "Discuss in Project Room" : item.sub_team_id ? "Discuss in Sub-team Room" : "Discuss in Team Room"}</strong><small>Open the relevant conversation with this work linked.</small></span>
+        <span><strong>{item.project_id ? "Discuss this project" : item.sub_team_id ? "Discuss with this team" : "Discuss with your team"}</strong><small>Open the conversation about this work.</small></span>
         <b aria-hidden="true">→</b>
       </button>}
 
@@ -780,10 +781,10 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
           <button className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} disabled={busy} onClick={useRecipeSteps}>Use these steps</button>
         </div>}
         <div className="card small" style={{ marginTop: 10 }}>
-          <div className="row-t">Break this work down</div>
-          <div className="row-m">Add your own next step. Your manager’s original assignment remains unchanged.</div>
+          <div className="row-t">Plan your next step</div>
+          <div className="row-m">Add a smaller step you can work on next. The original task will stay the same.</div>
           <div style={{ display:"flex", gap:8, marginTop:8 }}>
-            <input className="field" aria-label="Add my step" placeholder="Add my step" value={myStep} onChange={(event) => setMyStep(event.target.value)} />
+            <input className="field" aria-label="Add my step" placeholder="Write your next step" value={myStep} onChange={(event) => setMyStep(event.target.value)} />
             <button className="btn btn-sm" disabled={busy || !myStep.trim()} onClick={addMyStep}>Add step</button>
           </div>
         </div>
@@ -795,12 +796,12 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
           {item.kind === "deliverable"
             ? (managerOwnWork ? "Finish deliverable" : "Send deliverable for review")
             : managerOwnWork ? "Finish this work" : "Send for review"}</button>
-        {gated && <div className="hint">No work session is open. You can still send this in; it will be recorded as outside a session.</div>}
+        {gated && <div className="hint">You can submit this work without starting a work session. Your attendance record will not change.</div>}
         {managerSubmissionBlocked && <div className="hint">Manager self-certification is waiting on the database migration. This work will not enter your review queue.</div>}
         {!gated && checks.length > 0 && !allDone && <div className="hint">Finish the checklist to send it in</div>}
         {!blocker && (
           <button className="btn btn-ghost btn-sm work-secondary-action" style={{ marginTop: 10, width:"fit-content" }} onClick={() => setSheet("waiting")}>
-            I am waiting on someone</button>)}
+            I need something from someone</button>)}
       </>)}
 
       {!canReview && item.status === "in_review" &&
