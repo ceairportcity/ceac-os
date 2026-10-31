@@ -83,6 +83,6 @@
 .manager-projects.s2-owner-approved-projects .s2-project-panel{border-color:var(--ev2-line);border-radius:11px;box-shadow:0 3px 16px rgba(15,29,47,.025)}
 @media(max-width:760px){.ev2-project-manager .ev2p-list .ev2p-row{padding:12px 13px;gap:9px}.manager-projects.s2-owner-approved-projects .ev2p-workspace-header{padding:18px 15px}}
 
-.executive-app .ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero{display:grid;align-content:center;align-items:stretch;gap:8px;padding:22px 26px;min-height:160px}
+.ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero{display:grid;align-content:center;align-items:stretch;gap:8px;padding:22px 26px;min-height:160px}
 .ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero>:not(.s2-scenic-photo){max-width:65%}
-@media(max-width:760px){.executive-app .ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero{padding:18px;min-height:140px}.ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero>:not(.s2-scenic-photo){max-width:100%}}
+@media(max-width:760px){.ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero{padding:18px;min-height:140px}.ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero>:not(.s2-scenic-photo){max-width:100%}}
