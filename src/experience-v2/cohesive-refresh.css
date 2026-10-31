@@ -63,7 +63,7 @@
 
 /* Match the approved CEAC blue/neutral reporting palette, rather than the
    legacy Executive purple accent. This is scoped to Reports only. */
-.executive-app .ev2-reporting-executive{
+.ev2-reporting-executive{
   --exec-purple:var(--exec-blue,#2e86e6);
   --exec-purple-soft:var(--exec-blue-soft,#e9f3ff);
   --ev2-action:var(--exec-blue,#2e86e6);
