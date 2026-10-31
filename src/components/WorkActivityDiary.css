@@ -25,3 +25,18 @@
 @media(max-width:650px){.s2-work-diary-form :is(input,textarea,select){font-size:16px}}
 
 .s2-work-diary-fields{display:contents}.s2-work-diary-form input[type=checkbox]{width:auto}
+
+/* Premium work-update treatment shared by staff, managers and executives. */
+.s2-work-diary{border:1px solid #e7e9f0;border-radius:13px;background:#fff;padding:22px;box-shadow:0 5px 20px rgba(26,32,55,.035)}
+.s2-work-diary>header{border-bottom:1px solid #ebedf1;padding-bottom:16px;margin-bottom:18px}
+.s2-work-diary>header h3{font-size:19px;font-weight:750;letter-spacing:-.025em;color:#252837}
+.s2-work-diary-timeline{border-left:2px solid #e4e4ef;margin-top:18px}
+.s2-work-diary-timeline li{padding:12px 15px 15px;margin:0 0 13px 10px;background:#fafbfc;border:1px solid #edeef3;border-radius:10px}
+.s2-work-diary-timeline li::before{left:-32px;top:18px;background:var(--ev2-action,#7148e8);width:10px;height:10px}
+.s2-work-diary-form{padding:19px;border:1px solid #e4e5ed;border-radius:11px;background:#fafbfc;gap:14px}
+.s2-work-diary-form label{font-size:12px;font-weight:660;color:#3b4050}
+.s2-work-diary-form :is(input,textarea,select){min-height:41px;border:1px solid #d9dce7;border-radius:8px;background:#fff}
+.s2-work-diary-form textarea{min-height:81px;line-height:1.5}
+.s2-work-diary-form :is(input,textarea,select):focus-visible{outline:2px solid var(--ev2-action,#7148e8);outline-offset:1px}
+.s2-work-diary-summary>div{padding:11px 13px;background:#fafbfc;border:1px solid #eceef3;border-radius:8px}
+@media(max-width:650px){.s2-work-diary{padding:15px}.s2-work-diary-form{padding:13px}.s2-work-diary-timeline li{padding:12px}}

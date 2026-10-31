@@ -213,7 +213,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
 
   const recordAction = (verified && canRecord && <button type="button" className={compact ? "btn btn-sm s2-work-inspector-open" : "btn btn-sm"} style={{width:"fit-content"}}
         disabled={busy || Boolean(savedActivity.current)} onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");setFiles([]);setPlanNext(true);setWriteError(""); setEditor((open) => !open); }}
-        >{editor ? "Close" : "+ Record an activity"}</button>);
+        >{editor ? "Close" : "Add a work update"}</button>);
 
   return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
     {compact && <dl className="s2-work-inspector-facts">
@@ -221,8 +221,8 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       <div><dt>Recorded actions</dt><dd>{verified ? history.length : checking ? "Verifying…" : "Unavailable"}</dd></div>
     </dl>}
     {!compact && <header>
-      <div><span className="eyebrow">Individual contribution</span><h3>Activity record</h3>
-        <p>Keep each action, outcome and next step under this responsibility. This is not an attendance or performance score.</p>
+      <div><span className="eyebrow">Work updates</span><h3>Progress on this work</h3>
+        <p>Record what happened, the result and what needs to happen next. These updates show progress on the work, not attendance or a performance rating.</p>
       </div>
       {recordAction}
     </header>}
@@ -232,14 +232,14 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     </p>}
     {visibleSuccess && <p role="status">{visibleSuccess}</p>}
     {!compact && verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
-      <div><span>Recorded actions</span><strong>{history.length}</strong></div>
-      <div><span>Recorded as done</span><strong>{completedActionCount}</strong></div>
+      <div><span>Work updates</span><strong>{history.length}</strong></div>
+      <div><span>Marked complete</span><strong>{completedActionCount}</strong></div>
     </div>}
     {verified && nextActions.length > 0 && <div className="s2-work-diary-next-action">
-      <span>Recorded next actions</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}{action.contributor_id===me.id&&<PlanFollowup activityId={action.id}/>}</p>)}
+      <span>What happens next</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}{action.contributor_id===me.id&&<PlanFollowup activityId={action.id}/>}</p>)}
     </div>}
-    {compact && verified && <h3>Activity record</h3>}
-    {verified && history.length === 0 && <p>No dated activities have been recorded under this responsibility yet.</p>}
+    {compact && verified && <h3>Work updates</h3>}
+    {verified && history.length === 0 && <p>No work updates yet. Add an update when you have progress to share.</p>}
     {verified && history.length > 0 && <ol className="s2-work-diary-timeline">
       {history.map((entry) => <li key={entry.id}>
         <div><strong>{entry.action_summary}</strong>
@@ -251,29 +251,29 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
         {entry.evidence_url && <a href={entry.evidence_url} target="_blank" rel="noopener noreferrer">Open evidence ↗</a>}
         <ActivityFiles entry={entry} canUpload={entry.contributor_id===me.id&&canRecord}/>
         {entry.supersedes_id && <small>Corrected entry · prior version preserved</small>}
-        {entry.contributor_id === me.id && canRecord && <button className="btn btn-ghost btn-sm" type="button" disabled={busy || Boolean(savedActivity.current)} onClick={() => correct(entry)}>Correct this entry</button>}
+        {entry.contributor_id === me.id && canRecord && <button className="btn btn-ghost btn-sm" type="button" disabled={busy || Boolean(savedActivity.current)} onClick={() => correct(entry)}>Edit this update</button>}
       </li>)}
     </ol>}
     {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
       {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail. Existing private follow-up tasks stay in Calendar; edit them there if needed.</p>}
-      <label>Activity date <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></label>
-      <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
+      <label>Date of update <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></label>
+      <label>Update status <select value={state} onChange={(e) => setState(e.target.value)}>
         {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
       </select></label>
-      <label className="wide">Action taken or planned <textarea value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
-      <label className="wide">Factual outcome <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
-      <label className="wide">Next action <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
-      <label>Next action date (optional) <input type="date" value={nextActionOn} onChange={e => setNextActionOn(e.target.value)} disabled={!nextAction.trim()} /></label>
-      {nextAction.trim()&&<label className="wide"><span><input type="checkbox" checked={planNext} onChange={e=>setPlanNext(e.target.checked)}/> Keep this follow-up in my private plan</span></label>}
-      <p className="wide">Completing this activity leaves the assignment open. Finish the assignment separately when its full deliverable is complete.</p>
-      <label>Minutes spent (optional, self-recorded) <input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
-      <label className="wide">Evidence link (optional, HTTPS) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
+      <label className="wide">What did you do? <textarea value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
+      <label className="wide">What was the result? <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
+      <label className="wide">What happens next? <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
+      <label>When will you do it? (optional) <input type="date" value={nextActionOn} onChange={e => setNextActionOn(e.target.value)} disabled={!nextAction.trim()} /></label>
+      {nextAction.trim()&&<label className="wide"><span><input type="checkbox" checked={planNext} onChange={e=>setPlanNext(e.target.checked)}/> Add this follow-up to my private plan</span></label>}
+      <p className="wide">Saving an update does not mark the whole task as finished. You can complete the task separately when all its work is done.</p>
+      <label>Time spent, in minutes (optional) <input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
+      <label className="wide">Link to supporting work (optional) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
       </fieldset>
-      <div className="wide"><PendingFilePicker compact files={files} onChange={setFiles} disabled={busy} label="Attach activity files"/></div>
+      <div className="wide"><PendingFilePicker compact files={files} onChange={setFiles} disabled={busy} label="Attach supporting files"/></div>
       {writeError&&<p className="wide" role="alert">{writeError}</p>}
       {savedActivity.current&&<button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={()=>{savedActivity.current=null;uploadAttempts.current.clear();setFiles([]);setEditor(false);setWriteError("");setSuccess("The activity is saved. You can plan its next action or attach files from its activity record later.");setReload(n=>n+1);}}>Keep saved activity; finish later</button>}
-      <button type="submit" className="btn btn-sm" style={{width:"fit-content"}} disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Record activity"}</button>
+      <button type="submit" className="btn btn-sm" style={{width:"fit-content"}} disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Save work update"}</button>
     </form>}
     {compact && recordAction}
   </section>;
