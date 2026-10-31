@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
 import { Sheet } from "../components/bits";
+import "./premium-personal.css";
 
 function accraDateKey(value) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -175,7 +176,7 @@ export default function Record({ me, openItem }) {
     <PersonalPageHeader
       eyebrow="My Hub"
       title="My work history"
-      description="Completed CEAC work, feedback and recorded activity from the period you choose. Private work and personal goals remain outside this history."
+      description="Look back at completed work, feedback and recorded time. Choose a month to see what happened."
     />
     {error
       ? <div className="flag flag-brick" role="alert" style={{ marginTop: 24 }}><h4>Could not load your record</h4>{error}</div>
@@ -187,11 +188,11 @@ export default function Record({ me, openItem }) {
   const firstHighlight = record.completedItems[0];
   const secondHighlight = record.completedItems[1];
 
-  return <div className={`body staff-record ev2-personal-page ev2-personal-record ${!me.is_admin && !me.is_exec && me.role !== "manager" ? "ev2-personal-staff" : ""}`.trim()}>
+  return <div className={`body staff-record ev2-personal-page ev2-personal-record ceac-premium-record ${!me.is_admin && !me.is_exec && me.role !== "manager" ? "ev2-personal-staff" : ""}`.trim()}>
     <PersonalPageHeader
       eyebrow="My Hub"
       title="My work history"
-      description="Completed CEAC work, feedback and recorded activity from the period you choose. Private work and personal goals remain outside this history."
+      description="Look back at completed work, feedback and recorded time. Choose a month to see what happened."
       statusLabel={monthLabel}
     />
     <div className="ev2-personal-record-period">
@@ -217,13 +218,13 @@ export default function Record({ me, openItem }) {
 
     {area === "highlights" && <div className="record-area">
       <div className="area-heading">
-        <div><span className="eyebrow">{monthLabel}</span><h2>Highlights from your record</h2></div>
+        <div><span className="eyebrow">{monthLabel}</span><h2>Highlights for this month</h2></div>
       </div>
 
       <div className="record-summary-grid">
-        <div><strong>{record.completed}</strong><span>finished outputs</span></div>
-        <div><strong>{record.onTime}<small> / {record.dueCompleted}</small></strong><span>on time where dated</span></div>
-        <div><strong>{feedback.length}</strong><span>visible feedback notes</span></div>
+        <div><strong>{record.completed}</strong><span>Completed work</span></div>
+        <div><strong>{record.onTime}<small> / {record.dueCompleted}</small></strong><span>Completed on time</span></div>
+        <div><strong>{feedback.length}</strong><span>Feedback received</span></div>
       </div>
 
       {firstHighlight ? <div className="highlight-stack">
@@ -236,8 +237,8 @@ export default function Record({ me, openItem }) {
           </div>
         </button>)}
       </div> : <div className="quiet-empty compact">
-        <strong>No completed Task or Deliverable this month</strong>
-        <span>Your highlights will build automatically from completed, evidence-based work.</span>
+        <strong>No completed work this month</strong>
+        <span>Completed tasks and deliverables will appear here when your work is marked finished.</span>
       </div>}
 
       {feedback.length > 0 && <section className="record-feedback">

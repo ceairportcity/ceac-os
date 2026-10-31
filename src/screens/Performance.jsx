@@ -9,6 +9,7 @@ import { humanError } from "../lib/productLanguage";
 import { Avatar, ComposerDrawer, SegmentedControl } from "../experience-v2/components";
 import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
+import "./premium-personal.css";
 
 const CATEGORY_LABELS = {
   work: "Work outcomes",
@@ -454,8 +455,8 @@ export default function Performance({ me }) {
     ? <PersonalPageHeader
         eyebrow="My Hub"
         title="Reviews & development"
-        description="Your evidence, reflection, review conversation, development plan and visible feedback. CEAC OS does not score or rank you."
-        statusLabel="Evidence-first review"
+        description="See your work, add reflections and review feedback from your manager. Your progress is discussed with people, not calculated as a score."
+        statusLabel="Your reviews"
       />
     : me.is_admin ? <WorkPageHeader
         eyebrow="People development"
@@ -467,7 +468,7 @@ export default function Performance({ me }) {
         <p className="screen-note">{hrReleaseAdmin ? "CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. Reviewers enter ratings with explanations; the system does not calculate employee scores or rankings." : "CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. There is no employee score or ranking."}</p>
       </div>;
 
-  return <div className={`body performance-page ${personalReview ? "ev2-personal-page ev2-personal-review" : ""}`.trim()}>
+  return <div className={`body performance-page ${personalReview ? "ev2-personal-page ev2-personal-review ceac-premium-review" : ""}`.trim()}>
     {reviewIntro}
 
     {error && <ProductNotice tone="error" title="Reviews & development">{error}</ProductNotice>}
@@ -504,6 +505,7 @@ export default function Performance({ me }) {
     {selectedCycle && <div className="performance-layout">
       <aside className="performance-case-list">
         <div className="sec"><span>People in this period</span><span>{cycleCases.length}</span></div>
+        {cycleCases.length === 0 && <p className="ceac-review-empty">No reviews have been assigned in this period yet.</p>}
         {cycleCases.map((review) => <button key={review.id} className={"performance-case-row"+(selectedCaseId === review.id ? " on" : "")} onClick={() => { selectedCaseRef.current = review.id; setSelectedCaseId(review.id); }}>
           <Avatar name={review.profiles?.full_name} size="sm" />
           <span><strong>{review.profiles?.full_name || "Employee"}</strong><small>{review.units?.name || "Unit not recorded"} · {review.reviewer?.full_name ? "Reviewer: " + review.reviewer.full_name : "Reviewer not assigned"}</small></span>
