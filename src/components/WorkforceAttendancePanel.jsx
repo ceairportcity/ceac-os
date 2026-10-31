@@ -23,7 +23,7 @@ export default function WorkforceAttendancePanel({people=[],results=[],office=nu
    <span>Today</span>
   </header>
   <div className="workstart-toolbar" aria-label="Today's recorded work-start summary">
-   {facts.map(([count,label])=><div key={label} className="workstart-unmapped-detail"><strong>{count}</strong><span>{label}</span></div>)}
+   {facts.map(([count,label])=><div key={label} className="workforce-attendance-metric" style={{padding:12,background:"#f5f8fc",borderRadius:8}}><strong>{count}</strong><span>{label}</span></div>)}
   </div>
   <div className="workstart-summary"><strong>{executive?'Recent staff starts':'Staff attendance details'}</strong><span>{results.length} matching records</span></div>
   <div className="workforce-attendance-list">
@@ -31,7 +31,7 @@ export default function WorkforceAttendancePanel({people=[],results=[],office=nu
     {visible.map(person=>{
      const place=recordedPlace(person,office);
      const hasPoint=Number.isFinite(person?.latitude)&&Number.isFinite(person?.longitude);
-     return <button type="button" key={person.id} aria-pressed={person.id===selectedId} onClick={()=>onSelect?.(person.id===selectedId?null:person.id)}>
+     return <button type="button" key={person.id} data-attendance-person={person.id} aria-pressed={person.id===selectedId} onClick={()=>onSelect?.(person.id===selectedId?null:person.id)}>
       <strong>{staffInitials(person.name)} · {person.name}</strong>
       <span>{person.unit}</span>
       <span>{place.label} · {place.address}</span>
