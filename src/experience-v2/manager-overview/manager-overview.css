@@ -46,7 +46,7 @@ gap:8px;padding:9px;border:1px solid #edf0f3;border-radius:10px;background:#fbfc
 
 /* Tablet Manager overview: recover laptop composition after the old
    <=899px phone-like flattening, without altering the phone version. */
-@media (min-width: 768px) and (max-width: 899px) {
+@media (min-width: 721px) and (max-width: 899px) {
   .managerv2 { min-width: 0; gap: 14px; }
   .fpg9-home-hero {
     display: flex;
@@ -69,4 +69,12 @@ gap:8px;padding:9px;border:1px solid #edf0f3;border-radius:10px;background:#fbfc
   .fpg9-workspace-previews { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .managerv2-loading { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .fpg9-home-focus > *, .fpg9-home-reference > *, .fpg9-queue-card { min-width: 0; }
+}
+
+/* Smaller iPad landscape: keep project and queue cards comfortably legible. */
+@media (min-width: 1100px) and (max-width: 1199px) {
+  .fpg9-home-reference { grid-template-columns: minmax(0, 1fr) 275px; }
+  .fpg9-home-focus { grid-template-columns: minmax(0, 1fr); }
+  .fpg9-home-queues { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fpg9-workspace-previews { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

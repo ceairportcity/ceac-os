@@ -412,7 +412,7 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
 
 /* Tablet overview: preserve the laptop cards and hero instead of
    squeezing four KPI cards into a narrow portrait viewport. */
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 721px) and (max-width: 1023px) {
   .executivev2 { min-width: 0; padding-inline: 8px; }
   .executivev2-hero { gap: 12px; padding-inline: 18px; }
   .executivev2-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }

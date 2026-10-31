@@ -18,7 +18,7 @@
 .adminv2-announcements .ceac-support-approvals{padding:12px 0 0;margin:12px 0 0;border:0;border-top:1px solid #dfe7ef;box-shadow:none}.adminv2-announcements summary{font-size:12px;min-height:32px;cursor:pointer}
 
 /* Tablet HR overview: full desktop cards, flexible calendar and readable grids. */
-@media (min-width: 768px) and (max-width: 899px) {
+@media (min-width: 721px) and (max-width: 899px) {
   .adminv2 { min-width: 0; }
   .adminv2-hero { grid-template-columns: minmax(0, 1fr); }
   .adminv2-hero-main { min-height: 180px; padding: 20px; }

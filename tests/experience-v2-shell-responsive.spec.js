@@ -422,9 +422,9 @@ test("Stage 4C canonical mobile overlays hide bottom navigation and return clean
 
 /* iPad Mini/standard iPad portrait and landscape acceptance, same
    role fixtures as the existing laptop and phone quality gates. */
-test("Tablet 768-1180px keeps laptop navigation, role overview and no sideways overflow", async ({ browser }) => {
-  test.setTimeout(180000);
-  const widths = [768, 820, 1024, 1180];
+test("Tablet 744-1133px keeps laptop navigation, role overview and no sideways overflow", async ({ browser }) => {
+  test.setTimeout(240000);
+  const widths = [744, 768, 820, 1024, 1133];
   const overviewByRole = {
     staff: ".staffv2",
     manager: ".managerv2",

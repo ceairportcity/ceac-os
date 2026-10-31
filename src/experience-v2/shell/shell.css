@@ -670,7 +670,7 @@
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 720px) {
   .ev2s-mobile-search-drawer{padding-top:calc(var(--ev2-space-4) + env(safe-area-inset-top, 0px));top:0;bottom:0;width:100%;max-width:none;max-height:100dvh;border:0;border-radius:0}
 
   .ev2s-sidebar,
@@ -934,8 +934,8 @@
 .s2-achievement-entry button:hover{background:#e7f2ff}
 
 /* iPad / tablet: keep laptop navigation with an accessible compact rail.
-   Phones <=767px and desktop >=1024px retain their approved layouts. */
-@media (min-width: 768px) and (max-width: 1023px) {
+   Phones <=720px and desktop >=1024px retain their approved layouts. */
+@media (min-width: 721px) and (max-width: 1023px) {
   :root { --ev2s-sidebar-width: 4.75rem; }
   .ev2s-sidebar { padding: .75rem .45rem; }
   .ev2s-sidebar-identity { padding-inline: 0; }
