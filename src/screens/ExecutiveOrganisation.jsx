@@ -20,18 +20,22 @@ function complete(result, label) {
   if (!Array.isArray(result.data) || result.count !== result.data.length) throw new Error(`${label} could not be completely loaded. Try again.`);
   return result.data;
 }
-const emptyDirectory = { units: [], people: [], memberships: [], teams: [], teamMembers: [] };
+const emptyDirectory = { units: [], people: [], memberships: [], teams: [], teamMembers: [], employment: [] };
+const peopleViewFor = (directory) => directory === "staff" || directory === "volunteers" ? "people" : directory;
+const peopleGroupFor = (directory) => directory === "staff" || directory === "volunteers" ? directory : "all";
 
-export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom }) {
+export default function ExecutiveOrganisation({ me, directory = null, goAssign, openItem, openRoom }) {
   const [directory, setDirectory] = useState(emptyDirectory);
   const storageKey = `ceac-executive-directory:${me.org_id}:${me.id}`;
   function savedDirectory() {
     try { const value = JSON.parse(sessionStorage.getItem(storageKey) || "{}"); return value && typeof value === "object" && !Array.isArray(value) ? value : {}; }
     catch { return {}; }
   }
-  const [view, setView] = useState(() => ["departments","teams","people"].includes(savedDirectory().view) ? savedDirectory().view : "departments");
+  const [view, setView] = useState(() => peopleViewFor(directory) || (["departments","teams","people"].includes(savedDirectory().view) ? savedDirectory().view : "departments"));
+  const [peopleGroup, setPeopleGroup] = useState(() => peopleGroupFor(directory));
   const [path, setPath] = useState(() => (Array.isArray(savedDirectory().path) ? savedDirectory().path : []).filter(row => row && ["department","team","person"].includes(row.kind) && typeof row.id === "string").slice(-20));
   useEffect(() => { try { sessionStorage.setItem(storageKey, JSON.stringify({view,path})); } catch { /* Navigation still works without storage. */ } }, [storageKey,view,path]);
+  useEffect(() => { if (directory) { setView(peopleViewFor(directory)); setPeopleGroup(peopleGroupFor(directory)); setPath([]); setQuery(""); } }, [directory]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,13 +55,14 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
     setLoading(true); setError(null); setLoadedScope(""); setDirectory(emptyDirectory);
     (async () => {
       try {
-        const [units, people, memberships, teams] = await Promise.all([
+        const [units, people, memberships, teams, employment] = await Promise.all([
           supabase.from("units").select("id,name,code,active", { count: "exact" }).eq("org_id", me.org_id).eq("active", true).order("name"),
           supabase.from("profiles").select("id,full_name,job_title,active", { count: "exact" }).eq("org_id", me.org_id).eq("active", true).order("full_name"),
           supabase.from("unit_memberships").select("unit_id,profile_id,role", { count: "exact" }).eq("org_id", me.org_id),
           supabase.from("sub_teams").select("id,name,unit_id,active", { count: "exact" }).eq("org_id", me.org_id).eq("active", true).order("name"),
+          supabase.from("employment_records").select("profile_id,employment_type", { count: "exact" }).eq("org_id", me.org_id).eq("employment_status", "active"),
         ]);
-        const next = { units: complete(units, "Departments"), people: complete(people, "People"), memberships: complete(memberships, "Department memberships"), teams: complete(teams, "Teams"), teamMembers: [] };
+        const next = { units: complete(units, "Departments"), people: complete(people, "People"), memberships: complete(memberships, "Department memberships"), teams: complete(teams, "Teams"), teamMembers: [], employment: complete(employment, "Active employment roster") };
         if (next.teams.length) next.teamMembers = complete(await supabase.from("sub_team_members").select("sub_team_id,profile_id", { count: "exact" }).in("sub_team_id", next.teams.map(team => team.id)), "Team memberships");
         if (current) {
           setDirectory(next); setLoadedScope(scope);
@@ -83,7 +88,10 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
   useEffect(() => { if (path.length) heading.current?.focus(); }, [path]);
 
   const ready = loadedScope === scope && !loading && !error;
-  const { units, people, memberships, teams, teamMembers } = ready ? directory : emptyDirectory;
+  const { units, people, memberships, teams, teamMembers, employment } = ready ? directory : emptyDirectory;
+  const employedIds = new Set(employment.filter((row) => row.employment_type !== "volunteer").map((row) => row.profile_id));
+  const volunteerIds = new Set(employment.filter((row) => row.employment_type === "volunteer").map((row) => row.profile_id));
+  const peopleForView = peopleGroup === "staff" ? people.filter((row) => employedIds.has(row.id)) : peopleGroup === "volunteers" ? people.filter((row) => volunteerIds.has(row.id)) : people;
   const unitName = id => units.find(row => row.id === id)?.name || "Department not recorded";
   const membersOf = id => people.filter(person => memberships.some(row => row.unit_id === id && row.profile_id === person.id));
   const headNames = id => people.filter(person => memberships.some(row => row.unit_id === id && row.profile_id === person.id && row.role === "manager")).map(person => person.full_name).join(", ");
@@ -103,13 +111,14 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
     <header className="exec-redesign-head"><div>
       <span>{person ? "Person" : team ? unitName(team.unit_id) : department ? "Department" : "Across CEAC"}</span>
       <h1 ref={heading} tabIndex={-1}>{person?.full_name || team?.name || department?.name || "Organisation"}</h1>
-      <p>{person ? person.job_title || "Role not recorded" : team ? "People in this team and their recorded responsibilities." : department ? `Head: ${headNames(department.id) || "Not recorded"}` : "Explore departments, teams and people, then open the work behind them."}</p>
+      <p>{person ? person.job_title || "Role not recorded" : team ? "People in this team and their recorded responsibilities." : department ? `Head: ${headNames(department.id) || "Not recorded"}` : view === "people" && peopleGroup !== "all" ? `Currently ${peopleGroup === "staff" ? "employed staff" : "active volunteers"} linked to their CEAC employee accounts.` : "Explore departments, teams and people, then open the work behind them."}</p>
     </div>{!selected && ready && <StatusBadge tone={missingLeaders.length ? "warning" : "neutral"} icon={false}>{missingLeaders.length ? `${missingLeaders.length} leadership gap${missingLeaders.length === 1 ? "" : "s"}` : "Department heads recorded"}</StatusBadge>}{department && <button type="button" className="btn" onClick={() => goAssign?.({ unitId: department.id })}>Give out work</button>}</header>
-    {!selected && <div className="exec-redesign-tabs" role="group" aria-label="Organisation views">{[["departments", "Departments"], ["teams", "Teams"], ["people", "People"]].map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} className={view === key ? "is-active" : ""} onClick={() => { setView(key); setQuery(""); }}>{label}</button>)}</div>}
+    {!selected && <div className="exec-redesign-tabs" role="group" aria-label="Organisation views">{[["departments", "Departments"], ["teams", "Teams"], ["people", "People"]].map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} className={view === key ? "is-active" : ""} onClick={() => { setView(key); setPeopleGroup("all"); setQuery(""); }}>{label}</button>)}</div>}
     {loading && <LoadingState label="Loading organisation…" />}
     {error && <ProductNotice tone="error" title="Could not load Organisation" action={<button type="button" className="btn btn-ghost" onClick={() => setReload(n => n + 1)}>Try again</button>}>{error}</ProductNotice>}
     {ready && <>
       {!selected && view === "departments" && missingLeaders.length > 0 && <ProductNotice tone="attention" title="Needs attention">{missingLeaders.map(unit => unit.name).join(", ")} {missingLeaders.length === 1 ? "has" : "have"} no active department head recorded.</ProductNotice>}
+      {!selected && view === "people" && <div className="exec-redesign-tabs" role="group" aria-label="Filter people by employment">{[["all", "All people"], ["staff", "Employed staff"], ["volunteers", "Volunteers"]].map(([key, label]) => <button type="button" key={key} className={peopleGroup === key ? "is-active" : ""} aria-pressed={peopleGroup === key} onClick={() => { setPeopleGroup(key); setQuery(""); }}>{label}</button>)}</div>}
       {!person && <label className="exec-directory-search">Find {department || team ? "a person or team" : view}<input className="field" type="search" value={query} onChange={e => setQuery(e.target.value)} /></label>}
       {!selected && view === "departments" && <section aria-label="Departments"><Table caption="Departments" rows={units.filter(matches).map(row=>({...row,head:headNames(row.id)||"Head not recorded",people:membersOf(row.id).length}))} empty="No departments match this view." columns={[
         {key:"name",label:"Department"},{key:"head",label:"Head"},
@@ -117,7 +126,7 @@ export default function ExecutiveOrganisation({ me, goAssign, openItem, openRoom
         {key:"open",label:"Open",render:row=><button type="button" className="btn btn-ghost btn-sm" aria-label={`Open ${row.name}`} onClick={()=>enter("department",row.id)}>Open</button>}
       ]}/></section>}
       {!selected && view === "teams" && list("Teams", teams.filter(matches).map(row => <DirectoryRow key={row.id} kind="team" title={row.name} description={unitName(row.unit_id)} onClick={() => enter("team", row.id)} />))}
-      {!selected && view === "people" && list("People", peopleRows(people))}
+      {!selected && view === "people" && list(peopleGroup === "staff" ? "Employed staff" : peopleGroup === "volunteers" ? "Volunteers" : "People", peopleRows(peopleForView))}
       {department && <><h2>People</h2>{list("People", peopleRows(membersOf(department.id)))}<h2>Teams</h2>{list("Teams", teams.filter(row => row.unit_id === department.id).filter(matches).map(row => <DirectoryRow key={row.id} kind="team" title={row.name} description={unitName(row.unit_id)} onClick={() => enter("team", row.id)} />))}<button type="button" className="btn btn-ghost" onClick={() => openRoom?.({ kind: "unit", unitId: department.id })}>Open department room</button></>}
       {team && list("People", peopleRows(people.filter(row => teamMembers.some(member => member.sub_team_id === team.id && member.profile_id === row.id))))}
       {person && <><h2>Departments</h2>{list("Departments", placements.map(row => <DirectoryRow key={row.unit_id} kind="department" title={unitName(row.unit_id)} description={row.role === "manager" ? "Department head" : "Department member"} onClick={() => enter("department", row.unit_id)} />))}
