@@ -95,5 +95,11 @@ test("Executive linked staff and volunteer metrics are deduplicated and limited 
   assert.match(home,/activeStaffIds = new Set/);
   assert.match(directory,/employedIds = new Set/);
   assert.match(directory,/volunteerIds = new Set/);
-  assert.match(directory,/\.eq\("employment_status", "active"\)/);
+  assert.match(directory,/executive_personnel_directory/);
+  assert.match(home,/executive_personnel_directory/);
+  const migration=readFileSync("supabase/migrations/20261031021300_executive_personnel_read_summary.sql","utf8");
+  assert.match(migration,/e\.employment_status = 'active'/);
+  assert.match(migration,/p\.active IS TRUE/);
+  assert.match(migration,/NOT public\.app_is_exec\(\)/);
+  assert.match(migration,/REVOKE ALL ON FUNCTION public\.executive_personnel_directory/);
 });
