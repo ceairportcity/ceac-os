@@ -23,6 +23,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
   const [filter,setFilter]=useState("all");
+  const [query,setQuery]=useState("");
 
   useEffect(()=>{load();},[me.org_id]);
 
@@ -63,7 +64,9 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
   const active=projects.filter((project)=>project.status==="active");
   const planned=projects.filter((project)=>project.status==="planned");
   const attention=projects.filter((project)=>project.objectives.some((row)=>["at_risk","not_met"].includes(row.status)));
-  const visible=filter==="active"?active:filter==="planned"?planned:filter==="attention"?attention:projects;
+  const filtered=filter==="active"?active:filter==="planned"?planned:filter==="attention"?attention:projects;
+  const normalisedQuery=query.trim().toLocaleLowerCase();
+  const visible=normalisedQuery?filtered.filter(project=>[project.name,project.purpose,project.leadUnit,...project.participating].some(value=>String(value||"").toLocaleLowerCase().includes(normalisedQuery))):filtered;
   const chooseFilter=(next)=>setFilter(current=>current===next?"all":next);
 
   return <div className="body admin-projects ev2-project-page ev2-project-admin">
@@ -84,11 +87,16 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
       {label:"Needs attention",value:attention.length,detail:"Recorded goals that need a decision",selected:filter==="attention",onClick:()=>chooseFilter("attention")},
     ]} />
 
-    <ProjectSectionHeader eyebrow="Delivery" title={filter==="all"?"Organisation projects":filter==="attention"?"Projects needing attention":filter==="active"?"Active projects":"Planned projects"} count={visible.length} />
+    <div className="ev2p-project-toolbar" role="search">
+      <label htmlFor="project-directory-search">Find a project</label>
+      <input id="project-directory-search" type="search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Search by project or department" />
+      <span aria-live="polite">{visible.length} of {projects.length} projects shown</span>
+    </div>
+    <ProjectSectionHeader eyebrow="Projects" title={filter==="all"?"All organisation projects":filter==="attention"?"Projects needing attention":filter==="active"?"Active projects":"Planned projects"} count={visible.length} />
     {filter!=="all"&&<Button variant="secondary" onClick={()=>setFilter("all")}>Show all projects</Button>}
 
     {projects.length===0&&<ProjectEmpty title="No projects recorded" description="Create a project to begin planning objectives and work." />}
-    {projects.length>0&&visible.length===0&&<ProjectEmpty title="No projects match this view" description="Choose another summary or show all projects." />}
+    {projects.length>0&&visible.length===0&&<ProjectEmpty title="No projects match your search" description="Try a different name or department, or show all projects." />}
 
     <div className="ev2p-context-list">
       {visible.map((project)=>{
