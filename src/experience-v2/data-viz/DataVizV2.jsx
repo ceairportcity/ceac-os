@@ -5,7 +5,7 @@ const SERIES_COLORS = [
   "var(--ev2-action)",
   "var(--ev2-identity)",
   "var(--ev2-warning)",
-  "var(--ev2-violet)",
+  "var(--ev2-text-secondary)",
   "var(--ev2-success)",
 ];
 
