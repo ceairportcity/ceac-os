@@ -95,3 +95,48 @@
 @media(max-width:650px) {
   .executive-app .ev2-exec-organisation .exec-directory-profile {padding:14px}
 }
+
+/* CEAC executive directory density: two-column people index on wide screens. */
+.executive-app .ev2-exec-organisation {max-width:78rem}
+.executive-app .ev2-exec-organisation :is(
+  .exec-redesign-list[aria-label="People"],
+  .exec-redesign-list[aria-label="Employed staff"],
+  .exec-redesign-list[aria-label="Volunteers"]
+) {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  align-items: start;
+  gap: 10px;
+  background: transparent;
+  border: 0;
+  overflow: visible;
+}
+.executive-app .ev2-exec-organisation :is(
+  .exec-redesign-list[aria-label="People"],
+  .exec-redesign-list[aria-label="Employed staff"],
+  .exec-redesign-list[aria-label="Volunteers"]
+) > .exec-directory-link {
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid var(--ev2-line);
+  border-radius: 10px;
+  grid-template-columns: 38px minmax(0,1fr) 12px;
+  gap: 10px;
+}
+.executive-app .ev2-exec-organisation :is(
+  .exec-redesign-list[aria-label="People"],
+  .exec-redesign-list[aria-label="Employed staff"],
+  .exec-redesign-list[aria-label="Volunteers"]
+) > .exec-directory-link .exec-redesign-row-meta:empty {display:none}
+.executive-app .ev2-exec-organisation :is(
+  .exec-redesign-list[aria-label="People"],
+  .exec-redesign-list[aria-label="Employed staff"],
+  .exec-redesign-list[aria-label="Volunteers"]
+) > .exec-redesign-empty {grid-column:1/-1}
+@media(max-width:760px){
+  .executive-app .ev2-exec-organisation :is(
+    .exec-redesign-list[aria-label="People"],
+    .exec-redesign-list[aria-label="Employed staff"],
+    .exec-redesign-list[aria-label="Volunteers"]
+  ) {grid-template-columns:minmax(0,1fr)}
+}
