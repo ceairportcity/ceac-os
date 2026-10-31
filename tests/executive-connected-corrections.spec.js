@@ -38,7 +38,7 @@ test('Executive directory shows missing-head context and keeps department naviga
   await page.getByRole('button',{name:/Test Unit A/}).click();
   await expect(page.getByRole('heading',{name:'Test Unit A',exact:true})).toBeVisible();
   await expect(page.getByText('Head: Not recorded',{exact:true})).toBeVisible();
-  await expect(page.getByRole('button',{name:'Assign work',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Give out work',exact:true})).toBeVisible();
 });
 
 for (const width of [320,390,430,1440]) {
@@ -59,7 +59,7 @@ for (const width of [320,390,430,1440]) {
     await expect(page.getByRole('heading',{name:'Staff Fixture',exact:true})).toBeVisible();
     await page.getByRole('button',{name:/Back to previous view/}).click();
     await expect(page.getByRole('heading',{name:'Test Unit A',exact:true})).toBeVisible();
-    await page.getByRole('button',{name:'Assign work',exact:true}).click();
+    await page.getByRole('button',{name:'Give out work',exact:true}).click();
     const dialog=page.getByRole('dialog',{name:'Give out work'});
     await expect(dialog.getByRole('combobox',{name:'Assignment department'})).toHaveValue(unitA);
     await expect(dialog.getByRole('combobox',{name:'Work type'})).toBeVisible();
@@ -100,7 +100,7 @@ test('Executive without department can choose an assignment department and cance
   await signIn(page);
   await page.goto('/?tab=work');
   await expect(page.locator('.ev2-work-executive .ev2w-header').getByRole('heading',{name:'Work',exact:true})).toBeVisible();
-  await page.locator('.ev2-work-executive .ev2w-header').getByRole('button',{name:'Assign work',exact:true}).click();
+  await page.locator('.ev2-work-executive .ev2w-header').getByRole('button',{name:'Give out work',exact:true}).click();
   let dialog=page.getByRole('dialog',{name:'Give out work'});
   await dialog.getByRole('combobox',{name:'Assignment department'}).selectOption(unitA);
   await expect(dialog.getByRole('combobox',{name:'Work type'})).toBeVisible();

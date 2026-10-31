@@ -54,7 +54,7 @@ for(const width of [390,1440]){
   await page.goto('/tests/fixtures/phase1-corrections.html?screen=diary');
   await page.getByRole('button',{name:'+ Add work update'}).click();
   await page.getByLabel('What did you do?').fill('Finished the supplier meeting');
-  await page.getByLabel('Next action',{exact:true}).fill('Follow up next week');
+  await page.getByLabel('What happens next?',{exact:true}).fill('Follow up next week');
   await page.getByLabel('Next action date (optional)').fill('2026-11-03');
   await page.locator('input[type=file]').setInputFiles({name:'evidence.pdf',mimeType:'application/pdf',buffer:Buffer.from('Synthetic evidence')});
   expect((await page.getByRole('button',{name:'Save work update',exact:true}).boundingBox()).width).toBeLessThan(240);

@@ -48,8 +48,8 @@ for (const actor of actors) {
       await diary.getByRole('button', { name: /Add work update/ }).click();
       await diary.getByLabel('Activity date', { exact: true }).fill('2026-09-30');
       await diary.getByLabel('What did you do?').fill(original);
-      await diary.getByLabel('Factual outcome').fill('A verifiable action was recorded.');
-      await diary.getByLabel('Next action', { exact: true }).fill('Confirm the next collection date.');
+      await diary.getByLabel('What was the result?').fill('A verifiable action was recorded.');
+      await diary.getByLabel('What happens next?', { exact: true }).fill('Confirm the next collection date.');
       await diary.getByRole('button', { name: 'Save work update', exact: true }).click();
       await expect(diary.locator('li').filter({ hasText: original })).toBeVisible();
       await diary.getByRole('button', { name: 'Correct this entry', exact: true }).click();
