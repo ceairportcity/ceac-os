@@ -5,6 +5,7 @@ import { LoadingState, ProductNotice } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { CeacIcon } from "../experience-v2/icons";
 import { StatusBadge } from "../experience-v2/components";
+import "./premium-organisation.css";
 
 const ICONS = { department: ["organisation", "purple"], team: ["team", "green"], person: ["account", "blue"], work: ["work", "amber"] };
 function DirectoryRow({ kind, title, description, meta, onClick }) {
@@ -164,13 +165,13 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
   });
   const list = (label, children) => <section aria-label={label} className="exec-redesign-list">{children.length ? children : <p className="exec-redesign-empty">No {label.toLowerCase()} match this view.</p>}</section>;
 
-  return <div className="body ev2-exec-organisation exec-redesign-page">
+  return <div className="body ev2-exec-organisation exec-redesign-page ceac-premium-organisation">
     {selected && <button type="button" className="exec-directory-back" onClick={back}><CeacIcon name="arrowLeft" size="row" decorative /> Back to {path.length > 1 ? "previous view" : "Organisation"}</button>}
     <header className="exec-redesign-head"><div>
       <span>{person ? "Person" : team ? unitName(team.unit_id) : department ? "Department" : "Across CEAC"}</span>
       <h1 ref={heading} tabIndex={-1}>{person?.full_name || team?.name || department?.name || "Organisation"}</h1>
-      <p>{person ? person.job_title || "Role not recorded" : team ? "People in this team and their recorded responsibilities." : department ? `Head: ${headNames(department.id) || "Not recorded"}` : view === "people" && peopleGroup !== "all" ? `Currently ${peopleGroup === "staff" ? "employed staff" : "active volunteers"} linked to their CEAC employee accounts.` : "Explore departments, teams and people, then open the work behind them."}</p>
-    </div>{!selected && ready && <StatusBadge tone={missingLeaders.length ? "warning" : "neutral"} icon={false}>{missingLeaders.length ? `${missingLeaders.length} leadership gap${missingLeaders.length === 1 ? "" : "s"}` : "Department heads recorded"}</StatusBadge>}{department && <button type="button" className="btn" onClick={() => goAssign?.({ unitId: department.id })}>Give out work</button>}</header>
+      <p>{person ? person.job_title || "Role not recorded" : team ? "People in this team and their recorded responsibilities." : department ? `Head: ${headNames(department.id) || "Not recorded"}` : view === "people" && peopleGroup !== "all" ? `Currently ${peopleGroup === "staff" ? "employed staff" : "active volunteers"} linked to their CEAC employee accounts.` : "Find people, explore departments and see how your organisation works together."}</p>
+    </div>{!selected && ready && <StatusBadge tone={missingLeaders.length ? "warning" : "neutral"} icon={false}>{missingLeaders.length ? `${missingLeaders.length} department${missingLeaders.length === 1 ? "" : "s"} need a head` : "Department heads recorded"}</StatusBadge>}{department && <button type="button" className="btn" onClick={() => goAssign?.({ unitId: department.id })}>Assign work</button>}</header>
     {!selected && <div className="exec-redesign-tabs" role="group" aria-label="Organisation views">{[["departments", "Departments"], ["teams", "Teams"], ["people", "People"]].map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} className={view === key ? "is-active" : ""} onClick={() => { setView(key); setPeopleGroup("all"); setQuery(""); }}>{label}</button>)}</div>}
     {loading && <LoadingState label="Loading organisation…" />}
     {error && <ProductNotice tone="error" title="Could not load Organisation" action={<button type="button" className="btn btn-ghost" onClick={() => setReload(n => n + 1)}>Try again</button>}>{error}</ProductNotice>}
@@ -198,14 +199,14 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
             className={personTab===key?"is-active":""} onClick={()=>setPersonTab(key)}>{label}</button>)}
         </div>
         {personTab==="overview" && <section className="exec-directory-profile" aria-label="Employee profile">
-          <h2>About this person</h2>
-          <p className="screen-note">Employment information is separate from project responsibilities. Select another tab to see their schedule, attendance or recorded work.</p>
+          <h2>Profile at a glance</h2>
+          <p className="screen-note">See their department and role here. Other tabs show their schedule, attendance and shared work.</p>
           <div className="ev2p-summary">
             <div><strong>{employmentLabel}</strong><span>Engagement</span></div>
             <div><strong>{currentEmployment?.employment_status?.replaceAll("_"," ")||"Not recorded"}</strong><span>Employment status</span></div>
             <div><strong>{placements.length}</strong><span>Department placements</span></div>
           </div>
-          <h3>Department placements</h3>
+          <h3>Departments</h3>
           {list("Departments",placements.map(row => <DirectoryRow key={row.unit_id} kind="department" title={unitName(row.unit_id)}
             description={row.role==="manager"?"Department head":"Department member"} onClick={()=>enter("department",row.unit_id)} />))}
           {placements.length > 0 && <div className="exec-directory-actions">
@@ -220,13 +221,13 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
           <p className="screen-note">Department messages are visible to authorised room members, not a private direct message.</p>
         </section>}
         {personTab==="employment" && <section aria-label="Employment and working schedule">
-          <h2>Employment & working arrangement</h2>
+          <h2>Employment and schedule</h2>
           <div className="ev2p-summary">
             <div><strong>{employmentLabel}</strong><span>Engagement</span></div>
             <div><strong>{currentEmployment?.employment_status?.replaceAll("_"," ")||"Not recorded"}</strong><span>Status</span></div>
             <div><strong>{scheduleText}</strong><span>Recorded working pattern</span></div>
           </div>
-          <h3>Recorded weekly schedule</h3>
+          <h3>Weekly schedule</h3>
           {scheduleRead.scope!==personScope||scheduleRead.loading ? <LoadingState label="Loading authorised schedule…" />
             : scheduleRead.error ? <ProductNotice tone="attention" title="Schedule unavailable">{scheduleRead.error}</ProductNotice>
             : scheduleRead.days.length ? <div className="exec-redesign-list" aria-label="Seven-day recorded work schedule">
@@ -237,12 +238,12 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
                 </span>
               </div>)}
             </div> : <p className="screen-note">No current authorised weekly schedule has been recorded for this person. This does not mean they are expected to be absent.</p>}
-          <p className="screen-note">Employment and scheduling facts are read-only. Compensation, bank details, identity documents and protected HR records remain private.</p>
+          <p className="screen-note">This schedule is for viewing only. Pay, bank details and private HR records are not shown.</p>
           {employmentRows.length > 1 && <p className="screen-note">This person has employment records across {employmentRows.length} placements. Contact HR for formal employment history.</p>}
         </section>}
         {personTab==="time" && <section aria-label="Recorded attendance and leave">
           <h2>Attendance & leave</h2>
-          <p className="screen-note">Recent attendance and up to 14 planning-relevant leave requests. Private leave reasons, medical categories and full HR records are not shown.</p>
+          <p className="screen-note">Recent work sessions and leave dates. Private leave reasons and HR records are not shown.</p>
           {timeRecords.scope!==personScope||timeRecords.loading ? <LoadingState label="Opening authorised time records…" /> : <>
             <h3>Recent work sessions</h3>
             {timeRecords.sessionError ? <ProductNotice tone="attention" title="Attendance unavailable">{timeRecords.sessionError}</ProductNotice>
@@ -259,7 +260,7 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
           </>}
         </section>}
         {personTab==="work" && <section aria-label="Work contributions">
-          <h2>Recorded work contributions</h2>
+          <h2>Shared work</h2>
           <p className="screen-note">Shared assignments and their actual work states. Private work and confidential HR records remain separate.</p>
           <button type="button" className="btn btn-ghost btn-sm" aria-expanded={showAssignedWork} aria-controls="directory-assigned-work"
             onClick={()=>setExpandedWorkScope(showAssignedWork?"":personScope)}>{showAssignedWork?"Hide assigned work":"Load assigned work"}</button>
