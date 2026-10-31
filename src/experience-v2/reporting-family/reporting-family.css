@@ -2,6 +2,10 @@
 .ev2-reporting-page{width:min(100%,80rem);margin:0 auto;padding:var(--ev2-space-5) var(--ev2-space-5) var(--ev2-space-10);color:var(--ev2-text);font-family:var(--ev2-font-sans)}
 .ev2rep-header{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--ev2-space-5);padding:var(--ev2-space-5) 0;border-bottom:1px solid var(--ev2-line)}
 .ev2rep-header-copy{min-width:0}
+.ev2rep-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:var(--ev2-space-2);flex-wrap:wrap;min-width:0}
+.ev2rep-header-actions .btn{min-height:var(--ev2-control-min);white-space:nowrap}
+@media(max-width:720px){.ev2rep-header{flex-wrap:wrap}.ev2rep-header-actions{width:100%;justify-content:flex-start}}
+
 .ev2rep-eyebrow,.ev2rep-section-head>div>span{display:block;color:var(--ev2-text-tertiary);font-size:var(--ev2-type-label);line-height:1.3;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
 .ev2rep-eyebrow{margin-bottom:var(--ev2-space-2)}
 .ev2rep-header h1{margin:0;color:var(--ev2-text);font-size:var(--ev2-type-page-mobile);line-height:1.05;letter-spacing:-.025em}
