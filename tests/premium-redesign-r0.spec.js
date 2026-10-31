@@ -58,7 +58,7 @@ test.describe("Premium redesign R0 shell", () => {
 
   test("Executive desktop shell is an executive product", async ({ browser }) => {
     const { context, page } = await openAs(browser, "exec@ceac.local.test");
-    for (const label of ["Overview","Work","Ministry","Projects","Organisation","Finance","Reports"]) {
+    for (const label of ["Overview","Work","Priorities","Projects","Organisation","Finance","Reports"]) {
       await expect(page.locator(".ev2s-sidebar").getByRole("button", { name:label, exact:true })).toBeVisible();
     }
     await expect(page.locator(".ev2s-sidebar").getByRole("button", { name:"Employee lifecycle", exact:true })).toHaveCount(0);

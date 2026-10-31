@@ -10,7 +10,6 @@ test("all role Overviews use one deterministic locally stored real-photography c
     "src/experience-v2/manager-overview/ManagerOverviewV2.jsx",
     "src/experience-v2/admin-overview/AdminOverviewV2.jsx",
     "src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx",
-    "src/experience-v2/project-family/ProjectFamilyV2.jsx",
   ];
   for (const name of surfaces) {
     const source = file(name);
@@ -18,6 +17,9 @@ test("all role Overviews use one deterministic locally stored real-photography c
     assert.match(source, /<DailyScenicPhoto\s*\/>/);
     assert.match(source, /s2-landscape-hero/);
   }
+  const projectHeader = file("src/experience-v2/project-family/ProjectFamilyV2.jsx");
+  assert.match(projectHeader, /ev2p-project-hero/);
+  assert.doesNotMatch(projectHeader, /<DailyScenicPhoto/);
   const image = file("src/components/DailyScenicPhoto.jsx");
   assert.match(image, /selectDailyLandscape/);
   assert.match(image, /ceacLandscapeCatalog/);

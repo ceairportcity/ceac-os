@@ -1478,14 +1478,14 @@
 .ev2p-project-hero::before{content:"";position:absolute;top:0;bottom:0;left:0;width:4px;background:var(--ev2-action,#7148e8)}
 .ev2p-project-hero .ev2p-workspace-title-row{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:12px}
 .ev2p-project-hero .ev2p-workspace-title-row h1{font-size:clamp(24px,2.6vw,33px);line-height:1.15;letter-spacing:-.035em;color:#222635;margin:0}
-.ev2p-project-hero .ev2p-workspace-kicker{font-size:11px;letter-spacing:.07em;color:#667080}
+.ev2p-project-hero .ev2p-workspace-kicker{font-size:12px;letter-spacing:.07em;color:#667080}
 .ev2p-project-hero p{font-size:14px;line-height:1.55;max-width:72ch;color:#586476;margin:0}
 .manager-projects.s2-owner-approved-projects .ev2p-project-hero{background:linear-gradient(145deg,#fff,#f8f9fc);border:1px solid #e2e5ed;padding:25px 28px 26px}
 /* Each row shows recorded goal states; no invented completion percentage. */
 .ev2p-context-row .ev2p-goal-mix{display:grid;gap:8px;padding:13px 0 3px;max-width:510px}
-.ev2p-context-row .ev2p-goal-mix-copy{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;font-size:11px;color:#5c6574}
+.ev2p-context-row .ev2p-goal-mix-copy{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;font-size:12px;color:#5c6574}
 .ev2p-context-row .ev2p-goal-mix-copy span{font-weight:700;color:#44495a}
-.ev2p-context-row .ev2p-goal-mix-copy small{font-size:11px;color:#646e7c}
+.ev2p-context-row .ev2p-goal-mix-copy small{font-size:12px;color:#646e7c}
 .ev2p-context-row .ev2p-goal-mix-track{display:flex;gap:2px;overflow:hidden;height:7px;border-radius:6px;background:#eef0f3}
 .ev2p-context-row .ev2p-goal-mix-track>span{display:block;min-width:2px;border-radius:2px}
 .ev2p-context-row .ev2p-goal-mix-track .is-on-track{background:#30a777}
@@ -1493,3 +1493,9 @@
 .ev2p-context-row .ev2p-goal-mix-track .is-not-met{background:#d65d67}
 .ev2p-context-row .ev2p-goal-mix-track .is-other{background:#a5aabb}
 @media(max-width:650px){.ev2p-workspace-header.ev2p-project-hero,.manager-projects.s2-owner-approved-projects .ev2p-project-hero{padding:18px 18px 19px;border-radius:11px}.ev2p-project-hero .ev2p-workspace-title-row h1{font-size:25px}}
+
+/* Executive shell header rules must not flatten the project identity card. */
+.executive-app .ev2p-workspace-header.ev2p-project-hero{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-flow:row;align-items:stretch;gap:10px;min-height:0;padding:25px 28px 26px;margin-bottom:18px;border:1px solid #e2e5ed;border-radius:13px;background:linear-gradient(145deg,#fff,#f8f9fc);box-shadow:0 4px 22px rgba(25,31,54,.04)}
+.executive-app .ev2p-project-hero .ev2p-workspace-title-row{display:flex;justify-content:flex-start;flex-wrap:wrap;gap:12px}
+.executive-app .ev2p-project-hero .ev2p-workspace-title-row h1{margin:0;font-size:clamp(24px,2.6vw,33px);line-height:1.15;color:#222635}
+@media(max-width:650px){.executive-app .ev2p-workspace-header.ev2p-project-hero{padding:18px 18px 19px}}

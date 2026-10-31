@@ -99,7 +99,7 @@ test('Executive without department can choose an assignment department and cance
   await signIn(page);
   await page.goto('/?tab=work');
   await expect(page.locator('.ev2-work-executive .ev2w-header').getByRole('heading',{name:'Work',exact:true})).toBeVisible();
-  await page.locator('.ev2-work-executive .ev2w-header').getByRole('button',{name:'Assign work',exact:true}).click();
+  await page.locator('.ev2-work-executive .ev2w-header').getByRole('button',{name:'Give out work',exact:true}).click();
   let dialog=page.getByRole('dialog',{name:'Give out work'});
   await dialog.getByRole('combobox',{name:'Assignment department'}).selectOption(unitA);
   await expect(dialog.getByRole('combobox',{name:'Work type'})).toBeVisible();

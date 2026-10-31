@@ -70,7 +70,7 @@ const ROLES = [
     routes:[
       { key:"home", label:"Overview", mobileLabel:"Home" },
       { key:"work", label:"Work" },
-      { key:"strategy", label:"Ministry" },
+      { key:"strategy", label:"Priorities" },
       { key:"exec-projects", label:"Projects" },
       { key:"exec-organisation", label:"Organisation" },
       { key:"exec-finance", label:"Finance" },

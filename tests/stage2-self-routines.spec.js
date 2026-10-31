@@ -117,7 +117,7 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       const activityDate = page.getByLabel('Date of update',{exact:true});
       await expect(activityDate).toHaveValue(today);
       await page.getByLabel('What did you do?',{exact:true}).fill('Inspected venue and verified entrances');
-      await page.getByRole('button',{name:'Record activity',exact:true}).click();
+      await page.getByRole('button',{name:'Save work update',exact:true}).click();
       await expect(page.getByText('Your dated activity was recorded.',{exact:true})).toBeVisible();
       const datedEvidence = await client.from('work_activity_records')
         .select('id,contributor_id,activity_date,action_summary')

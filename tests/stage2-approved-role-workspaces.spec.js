@@ -75,7 +75,7 @@ test("manager projects preserve one integrated workspace with real photo and tas
     await expect(workspace).toBeVisible({ timeout: 20000 });
     await expect(workspace.locator(".s2-project-metrics .s2-project-stat-card")).toHaveCount(4);
     await expect(workspace.locator(".s2-project-panel", { hasText: "People contributing" })).toBeVisible();
-    await expect(workspace.getByText("Departments involved")).toBeVisible();
+    await expect(workspace.locator(".s2-project-units h3", { hasText: "Departments involved" })).toBeVisible();
     await expect(workspace.getByText("Project tasks", { exact: true })).toBeVisible();
     await expect(workspace.locator(".s2-project-aside")).toBeVisible();
     const summary = await workspace.locator('.s2-project-metrics').boundingBox();
