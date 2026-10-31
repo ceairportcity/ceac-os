@@ -879,7 +879,7 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
                 onChange={event => setDecisionRequests(event.target.value)} />
             </FieldGroup>
           </>}
-          {mode === "quarter" && <p className="screen-note">The charts and evidence references above are saved with the submitted report version; written explanations and requests are kept in its revision history.</p>
+          {mode === "quarter" && <p className="screen-note">The charts and evidence references above are saved with the submitted report version; written explanations and requests are kept in its revision history.</p>}
         </div>
       </ReportingSection>
 
