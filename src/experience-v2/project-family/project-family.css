@@ -1493,9 +1493,3 @@
 .ev2p-context-row .ev2p-goal-mix-track .is-not-met{background:#d65d67}
 .ev2p-context-row .ev2p-goal-mix-track .is-other{background:#a5aabb}
 @media(max-width:650px){.ev2p-workspace-header.ev2p-project-hero,.manager-projects.s2-owner-approved-projects .ev2p-project-hero{padding:18px 18px 19px;border-radius:11px}.ev2p-project-hero .ev2p-workspace-title-row h1{font-size:25px}}
-
-/* Executive shell header rules must not flatten the project identity card. */
-.executive-app .ev2p-workspace-header.ev2p-project-hero{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-flow:row;align-items:stretch;gap:10px;min-height:0;padding:25px 28px 26px;margin-bottom:18px;border:1px solid #e2e5ed;border-radius:13px;background:linear-gradient(145deg,#fff,#f8f9fc);box-shadow:0 4px 22px rgba(25,31,54,.04)}
-.executive-app .ev2p-project-hero .ev2p-workspace-title-row{display:flex;justify-content:flex-start;flex-wrap:wrap;gap:12px}
-.executive-app .ev2p-project-hero .ev2p-workspace-title-row h1{margin:0;font-size:clamp(24px,2.6vw,33px);line-height:1.15;color:#222635}
-@media(max-width:650px){.executive-app .ev2p-workspace-header.ev2p-project-hero{padding:18px 18px 19px}}

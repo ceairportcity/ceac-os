@@ -829,7 +829,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     await dialog.getByLabel("Strategy unit").selectOption("20000000-0000-4000-8000-000000000011");
     await dialog.getByLabel("Strategy name").fill("Acceptance Unit A objective");
     await dialog.getByLabel("Strategy statement").fill("Record completed readiness outcomes for the agreed weekly schedule.");
-    await dialog.getByRole("button", { name: "Add progress measure, dates or status", exact: true }).click();
+    await dialog.getByRole("button", { name: "Add measure, dates or status", exact: true }).click();
     await dialog.getByLabel("Strategy measurement").selectOption("numeric");
     await dialog.getByLabel("Strategy measure label").fill("Completed readiness outcomes");
     await dialog.getByLabel("Strategy target value").fill("12");
