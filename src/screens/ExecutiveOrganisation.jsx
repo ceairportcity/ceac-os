@@ -241,7 +241,7 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
                   description={unitName(row.unit_id)} meta={row.status.replaceAll("_"," ")} onClick={()=>openItem?.(row.id)} />))}
           </div>}
         </section>}
-      </>}</>}
+      </>}
     </>}
   </div>;
 }
