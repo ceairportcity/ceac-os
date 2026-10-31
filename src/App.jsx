@@ -38,6 +38,7 @@ const Finance = lazy(() => import("./screens/Finance"));
 const Reports = lazy(() => import("./screens/Reports"));
 const PersonalAchievements = lazy(() => import("./screens/PersonalAchievements"));
 const ExecutiveHome = lazy(() => import("./screens/ExecutiveHome"));
+const ExecutiveProjectsWorkspace = lazy(() => import("./screens/ExecutiveProjectsWorkspace"));
 const ExecutiveWork = lazy(() => import("./screens/ExecutiveWork"));
 const ExecutiveOrganisation = lazy(() => import("./screens/ExecutiveOrganisation"));
 const ExecutiveFinance = lazy(() => import("./screens/ExecutiveFinance"));
@@ -491,7 +492,7 @@ export default function App() {
     if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
     if (tab === "manager-finance" && isUnitManager) return <ManagerFinance key={managerScopeKey} me={me} openProject={openProject} />;
     if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} />;
-    if (tab === "exec-projects" && isExec) return <AdminProjects key={`${me.org_id}:${me.id}:executive-projects`} me={me} openProject={id=>navigate({tab:"delivery",projectId:id})} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id,reference)=>openRoom({kind:"project",projectId:id,reference})} />;
+    if (tab === "exec-projects" && isExec) return <ExecutiveProjectsWorkspace key={`${me.org_id}:${me.id}:executive-projects`} me={me} initialProjectId={projectId} openProject={id=>navigate({tab:"exec-projects",projectId:id})} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id,reference)=>openRoom({kind:"project",projectId:id,reference})} />;
     if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation key={`${me.org_id}:${me.id}`} me={me} initialDirectory={directory} goAssign={startAssignment} openItem={openItem} openRoom={openRoom} />;
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
     if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} openItem={openItem} />;
@@ -509,6 +510,7 @@ export default function App() {
       createRequest={createIntent === "ministry_objective" ? "ministry_objective" : null}
       onCreateHandled={() => setCreateIntent(null)}
     />;
+    if (tab === "delivery" && isExec) return <ExecutiveProjectsWorkspace key={`${me.org_id}:${me.id}:legacy-delivery`} me={me} initialProjectId={projectId} initialView="insights" openProject={id=>navigate({tab:"exec-projects",projectId:id})} openItem={openItem} goAssign={startAssignment} scheduleMeeting={startMeeting} />;
     if (tab === "delivery" && canUseDelivery) return <Delivery key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openItem={openItem} openProject={openProject} goAssign={startAssignment} />;
     if (tab === "workload" && canUseWorkload) return <ResourceWorkload me={me} />;
     if (tab === "performance" && canUsePerformance) return <Performance me={me} />;
