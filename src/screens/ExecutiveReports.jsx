@@ -23,6 +23,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [view, setView] = useState("all");
+  const [workspaceView, setWorkspaceView] = useState("insights");
   const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[],decisions:[]});
   const [outcomeError,setOutcomeError] = useState(null);
 
@@ -214,7 +215,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
       <ReportingPageHeader onOpenAchievements={onOpenAchievements}
         eyebrow="Executive insight"
         title="Reports"
-        description="Read department reports and the evidence behind them. Filter by period or filing status."
+        description="Leadership insights show verified outcomes and decisions; Department submissions show quarterly filing progress and supporting reports."
         statusLabel={statusLabel}
         statusTone={contextError ? "danger" : "neutral"}
       />
@@ -265,6 +266,12 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
         </div>
       ) : (
         <>
+          <nav className="ev2rep-tabs" role="tablist" aria-label="Executive reporting workspace">
+            {[["insights","Insights & outcomes"],["submissions","Department submissions"]].map(([key,label])=>
+              <button key={key} type="button" role="tab" aria-selected={workspaceView===key}
+                className={workspaceView===key?"is-active":""} onClick={()=>setWorkspaceView(key)}>{label}</button>)}
+          </nav>
+          {workspaceView==="submissions" && <>
           <div className="exec-redesign-tabs ev2rep-status-tabs" role="tablist" aria-label="Report filters">
             {[
               ["all", "All", units.length],
@@ -308,12 +315,15 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
             </ReportingSection>
           </div>
 
+          </>}
+          {workspaceView==="insights" && <>
           <ExecutiveOutcomeBrief period={period} units={units}
             issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
             milestones={outcomeSources.milestones} targets={outcomeSources.targets}
             evidenceRefs={outcomeSources.evidenceRefs} decisions={outcomeSources.decisions} readError={outcomeError} />
 
           <ExecutiveContributionDrilldown me={me} period={period} units={units} openItem={openItem} />
+          </>}
 
           <ReportingFootnote>
             Executive Reports is read-only. Filing coverage describes reporting status only; CEAC OS does not infer unit performance, staff performance, achievement, score or ranking from it.
