@@ -276,7 +276,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
         </div>
       ) : (
         <>
-          
+
           {workspaceView==="quarterly" && <>
           <div className="exec-redesign-tabs ev2rep-status-tabs" role="tablist" aria-label="Report filters">
             {[
