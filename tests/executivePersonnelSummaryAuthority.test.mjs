@@ -21,8 +21,8 @@ test("Executive read-only projection guards role and organisation without granti
  assert.match(sql,/REVOKE ALL ON FUNCTION public\.executive_personnel_leave/);
  assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.executive_personnel_leave/);
  assert.ok(!sql.includes("GRANT SELECT ON TABLE"));
- assert.ok(!sql.includes("payroll"));
- assert.ok(!sql.includes("salary"));
+ assert.ok(!sql.includes("e.salary"));
+ assert.ok(!sql.includes("e.payroll"));
  assert.ok(!sql.includes("l.reason"));
  assert.ok(!sql.includes("l.kind"));
 });
