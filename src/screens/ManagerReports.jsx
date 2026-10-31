@@ -70,7 +70,7 @@ function validFrozenReportSnapshot(snapshot) {
   return true;
 }
 
-export default function ManagerReports({ me, openItem }) {
+export default function ManagerReports({ me, openItem, onOpenAchievements = null }) {
   const [mode, setMode] = useState("week");
   const [projectId, setProjectId] = useState("");
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
@@ -588,7 +588,7 @@ export default function ManagerReports({ me, openItem }) {
         : "Live preview";
 
   if (loadedScope !== reportScope || loading || (range && periodRowsState === "loading")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
-    <ReportingPageHeader
+    <ReportingPageHeader onOpenAchievements={onOpenAchievements}
       eyebrow={me.unit_name}
       title="Reports"
       description="Built from work, submissions, projects and recorded work sessions already in CEAC OS. Submitted versions keep the evidence they were filed with."
@@ -601,7 +601,7 @@ export default function ManagerReports({ me, openItem }) {
   </div>;
 
   if (loadFailed || (range && periodRowsState === "error")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
-    <ReportingPageHeader
+    <ReportingPageHeader onOpenAchievements={onOpenAchievements}
       eyebrow={me.unit_name}
       title="Reports"
       description="Built from work, submissions, projects and recorded work sessions already in CEAC OS. Submitted versions keep the evidence they were filed with."
@@ -621,7 +621,7 @@ export default function ManagerReports({ me, openItem }) {
   </div>;
 
   if (invalidFrozenEvidence) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
-    <ReportingPageHeader eyebrow={me.unit_name} title="Reports"
+    <ReportingPageHeader onOpenAchievements={onOpenAchievements} eyebrow={me.unit_name} title="Reports"
       description="Submitted versions must retain their original factual evidence."
       statusLabel="Archived evidence unavailable" statusTone="danger" />
     <div className="ev2rep-control-panel">
@@ -642,7 +642,7 @@ export default function ManagerReports({ me, openItem }) {
       <span>{me.unit_name} · Manager report</span>
     </div>
 
-    <ReportingPageHeader
+    <ReportingPageHeader onOpenAchievements={onOpenAchievements}
       eyebrow={me.unit_name}
       title="Reports"
       description="Built from work, submissions, projects and recorded work sessions already in CEAC OS. Submitted versions keep the figures and evidence they were filed with."
