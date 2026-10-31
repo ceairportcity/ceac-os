@@ -34,16 +34,18 @@ for(const width of [390,1440]){
   await page.goto('/tests/fixtures/owner-corrections.html?screen=directory');
   await page.getByRole('group',{name:'Organisation views',exact:true}).getByRole('button',{name:'People',exact:true}).click();
   await page.getByRole('button',{name:/Synthetic colleague/}).click();
-  await expect(page.getByRole('button',{name:'View assigned work',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Contributions',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Load assigned work',exact:true})).toBeVisible();
   expect(reads.filter(x=>x.name==='work_items')).toHaveLength(0);
-  await page.getByRole('button',{name:'View assigned work',exact:true}).click();
+  await page.getByRole('button',{name:'Load assigned work',exact:true}).click();
   await expect(page.getByRole('button',{name:/SYN-1/})).toBeVisible();
   expect(reads.filter(x=>x.name==='work_items')).toHaveLength(1);
   await page.getByRole('button',{name:'Hide assigned work',exact:true}).click();
   await expect(page.getByRole('button',{name:/SYN-1/})).toHaveCount(0);
   await page.getByRole('button',{name:'Back to Organisation',exact:true}).click();
   await page.getByRole('button',{name:/Synthetic colleague/}).click();
-  await expect(page.getByRole('button',{name:'View assigned work',exact:true})).toHaveAttribute('aria-expanded','false');
+  await page.getByRole('button',{name:'Contributions',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Load assigned work',exact:true})).toHaveAttribute('aria-expanded','false');
   expect(reads.filter(x=>x.name==='work_items')).toHaveLength(1);
  });
  test(`confirmed invitation clears its create fields at ${width}px`,async({page})=>{

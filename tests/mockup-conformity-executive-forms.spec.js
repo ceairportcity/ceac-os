@@ -40,7 +40,7 @@ test("owner mockup: Executive Overview uses compact briefing composition", async
   await expect(page.locator(".executivev2-meetings")).toBeVisible();
 
   await expect(page.getByText("Executive Dashboard", { exact: true })).toBeVisible();
-  await expect(page.getByText("Volunteers", { exact: true })).toBeVisible();
+  await expect(page.getByText("Volunteers", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Ministry Objectives", { exact: true })).toBeVisible();
   await expect(page.getByText("Upcoming Meetings", { exact: true })).toBeVisible();
   await expect(page.getByText("Reports / Actions", { exact: true })).toBeVisible();

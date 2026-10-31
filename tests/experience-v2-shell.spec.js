@@ -144,11 +144,11 @@ test("OCR2 Executive creation is reachable through the approved Work, Ministry a
   await expect(page.getByRole("button", { name: "Give out work", exact: true }).first()).toBeVisible();
 
   await page.goto("/?tab=strategy");
-  await expect(page.getByRole("heading", { name: "Ministry", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "New Ministry Objective", exact: true }).click();
-  let dialog = page.getByRole("dialog", { name: "New ministry objective" });
+  await expect(page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Add Ministry Direction", exact: true }).click();
+  let dialog = page.getByRole("dialog", { name: "New ministry direction" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByLabel("Strategy parent direction")).toBeVisible();
+  await expect(dialog.getByLabel("Direction title *")).toBeVisible();
 
   await page.goto("/?tab=announcements");
   await page.getByRole("button", { name: "New announcement", exact: true }).click();

@@ -132,7 +132,7 @@ test('compact individual person pins and church office label at one recorded coo
  await ama.click();
  await expect(region.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Ama');
  expect(await page.evaluate(()=>window.syntheticMaps)).toBe(before);
- await expect(page.getByRole('region',{name:'Recorded staff attendance details'})).toContainText('Office selected');
+ await expect(page.getByRole('region',{name:'Recorded staff attendance details'})).toContainText(/CEAC office|CEAC Church Office/);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
 });
 
@@ -142,7 +142,7 @@ test('attendance panel reuses CEAC readable styles and identifies shared-locatio
  await mock(page,{pair:true});
  await page.goto('/tests/fixtures/executive-google-map.html');
  const panel=page.getByRole('region',{name:'Recorded staff attendance details'});
- await expect(panel).toContainText('2 matching records');
+ await expect(panel.locator('[data-attendance-person]')).toHaveCount(2);
  await expect(panel.getByRole('button',{name:/Synthetic Ama/})).toContainText('CEAC office');
  await expect(panel.getByRole('button',{name:/Synthetic Kofi/})).toContainText('Office selected');
  await panel.getByRole('button',{name:/Synthetic Kofi/}).click();

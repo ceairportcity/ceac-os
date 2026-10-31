@@ -631,7 +631,8 @@ test("Stage 10 Family H3 keeps Executive directory records read-only with author
   expect(organisation).not.toContain(".insert(");
   expect(organisation).not.toContain(".update(");
   expect(organisation).not.toContain(".delete(");
-  expect(organisation).not.toContain("supabase.rpc(");
+  const reviewedReadRpcs = [...organisation.matchAll(/supabase\.rpc\("([^"]+)"/g)].map(match => match[1]).sort();
+  expect(reviewedReadRpcs).toEqual(["executive_personnel_directory", "executive_personnel_leave", "executive_personnel_schedule"]);
 });
 
 

@@ -6,7 +6,7 @@ test('Executive has a dedicated Projects route and retained project-creation sec
  const app=readFileSync('src/App.jsx','utf8');
  const migration=readFileSync('supabase/migrations/20261030231000_executive_project_creation.sql','utf8');
  expect(nav).toContain('{ key: "exec-projects", label: "Projects"');
- expect(nav).toContain('{ key: "delivery", label: "Portfolio"');
+ expect(nav).not.toContain('{ key: "delivery", label: "Portfolio"');
  expect(app).toContain('tab === "exec-projects" && isExec');
  expect(app).toContain('<AdminProjects key={`${me.org_id}:${me.id}:executive-projects`}');
  expect(migration).toContain('public.app_is_exec()');
