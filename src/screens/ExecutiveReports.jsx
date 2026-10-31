@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 import ExecutiveFilingOverview from "../components/ExecutiveFilingOverview";
 import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
 import ExecutiveContributionDrilldown from "../components/ExecutiveContributionDrilldown";
+import ExecutiveIntelligence from "../components/ExecutiveIntelligence";
+import "../experience-v2/cohesive-refresh.css";
 import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import { humanError } from "../lib/productLanguage";
@@ -23,7 +25,8 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [view, setView] = useState("all");
-  const [workspaceView, setWorkspaceView] = useState("insights");
+  const [workspaceView, setWorkspaceView] = useState("brief");
+  const [selectedUnitId, setSelectedUnitId] = useState("");
   const [outcomeSources,setOutcomeSources] = useState({issued:[],objectives:[],milestones:[],targets:[],evidenceRefs:[],decisions:[]});
   const [outcomeError,setOutcomeError] = useState(null);
 
@@ -215,12 +218,12 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
       <ReportingPageHeader onOpenAchievements={onOpenAchievements}
         eyebrow="Executive insight"
         title="Reports"
-        description="Leadership insights show verified outcomes and decisions; Department submissions show quarterly filing progress and supporting reports."
+        description="See what is happening across CEAC, explore the records, and review department reports."
         statusLabel={statusLabel}
         statusTone={contextError ? "danger" : "neutral"}
       />
 
-      {!contextPending && !contextError && periodOptions.length > 1 && <div className="ev2rep-period-picker">
+      {!contextPending && !contextError && periodOptions.length > 0 && <div className="ev2rep-period-picker">
         <label htmlFor="executive-report-period">Reporting period</label>
         <select id="executive-report-period" className="field" value={period?.id || ""}
           onChange={(event) => setSelectedPeriodId(event.target.value)}>
@@ -267,11 +270,11 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
       ) : (
         <>
           <nav className="ev2rep-tabs" role="tablist" aria-label="Executive reporting workspace">
-            {[["insights","Insights & outcomes"],["submissions","Department submissions"]].map(([key,label])=>
+            {[["brief","Organisation brief"],["explore","Explore"],["departments","Departments"],["quarterly","Quarterly reports"]].map(([key,label])=>
               <button key={key} type="button" role="tab" aria-selected={workspaceView===key}
                 className={workspaceView===key?"is-active":""} onClick={()=>setWorkspaceView(key)}>{label}</button>)}
           </nav>
-          {workspaceView==="submissions" && <>
+          {workspaceView==="quarterly" && <>
           <div className="exec-redesign-tabs ev2rep-status-tabs" role="tablist" aria-label="Report filters">
             {[
               ["all", "All", units.length],
@@ -314,15 +317,33 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
               )}
             </ReportingSection>
           </div>
-
-          </>}
-          {workspaceView==="insights" && <>
           <ExecutiveOutcomeBrief period={period} units={units}
             issuedReports={outcomeSources.issued} objectives={outcomeSources.objectives}
             milestones={outcomeSources.milestones} targets={outcomeSources.targets}
             evidenceRefs={outcomeSources.evidenceRefs} decisions={outcomeSources.decisions} readError={outcomeError} />
-
-          <ExecutiveContributionDrilldown me={me} period={period} units={units} openItem={openItem} />
+          </>}
+          {workspaceView==="brief" && <ExecutiveIntelligence
+            mode="brief" period={period} rows={unitStatusRows}
+            sources={outcomeSources} readError={outcomeError}
+            onQuarterly={()=>setWorkspaceView("quarterly")}
+            onExplore={()=>setWorkspaceView("explore")}
+            onSelectDepartment={(id)=>{setSelectedUnitId(id);setWorkspaceView("departments");}}
+            onOpenWork={openItem} />}
+          {workspaceView==="departments" && <ExecutiveIntelligence
+            mode="departments" period={period} rows={unitStatusRows}
+            sources={outcomeSources} readError={outcomeError}
+            selectedUnitId={selectedUnitId}
+            onSelectDepartment={setSelectedUnitId}
+            onExplore={()=>setWorkspaceView("explore")}
+            onOpenWork={openItem} />}
+          {workspaceView==="explore" && <>
+          <ExecutiveIntelligence
+            mode="explore" period={period} rows={unitStatusRows}
+            sources={outcomeSources} readError={outcomeError}
+            onSelectDepartment={(id)=>{setSelectedUnitId(id);setWorkspaceView("departments");}}
+            onOpenWork={openItem} />
+          <ExecutiveContributionDrilldown me={me} period={period} units={units}
+            initialUnitId={selectedUnitId} openItem={openItem} />
           </>}
 
           <ReportingFootnote>
@@ -330,7 +351,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
           </ReportingFootnote>
         </>
       )}
-      <QuarterlyReviewEventControl me={me} />
+      {!contextPending && !contextError && period && workspaceView==="quarterly" && <QuarterlyReviewEventControl me={me} />}
     </div>
   );
 }
