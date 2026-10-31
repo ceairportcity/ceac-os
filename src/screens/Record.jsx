@@ -195,6 +195,7 @@ export default function Record({ me, openItem }) {
       description="Look back at completed work, feedback and recorded time. Choose a month to see what happened."
       statusLabel={monthLabel}
     />
+    <p className="context-note">Private work and personal goals remain outside this history.</p>
     <div className="ev2-personal-record-period">
       <div className="record-period-control" aria-label="Work history period">
         <button type="button" aria-label="Previous month" onClick={() => changeMonth(-1)}>←</button>
