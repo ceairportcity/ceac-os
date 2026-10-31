@@ -8,14 +8,17 @@ export function ReportingStatusBadge({ children, tone = "neutral" }) {
   return <StatusBadge tone={TONES[tone] || "neutral"} icon={false}>{children}</StatusBadge>;
 }
 
-export function ReportingPageHeader({ eyebrow, title = "Reports", description, statusLabel, statusTone = "neutral" }) {
+export function ReportingPageHeader({ eyebrow, title = "Reports", description, statusLabel, statusTone = "neutral", onOpenAchievements = null }) {
   return <header className="ev2rep-header">
     <div className="ev2rep-header-copy">
       {eyebrow ? <span className="ev2rep-eyebrow">{eyebrow}</span> : null}
       <h1>{title}</h1>
       {description ? <p>{description}</p> : null}
     </div>
-    {statusLabel ? <ReportingStatusBadge tone={statusTone}>{statusLabel}</ReportingStatusBadge> : null}
+    <div className="ev2rep-header-actions">
+      {onOpenAchievements ? <button type="button" className="btn btn-ghost btn-sm" onClick={onOpenAchievements}>My achievements</button> : null}
+      {statusLabel ? <ReportingStatusBadge tone={statusTone}>{statusLabel}</ReportingStatusBadge> : null}
+    </div>
   </header>;
 }
 
