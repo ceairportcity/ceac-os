@@ -85,10 +85,10 @@ function strategyStatusLabel(row) {
   return `${Number(current).toLocaleString("en-GH")} of ${Number(target).toLocaleString("en-GH")}${unit} · ${status}`;
 }
 
-function OrganisationRow({ icon, label, value, tone = "purple", onClick }) {
-  return <button type="button" className="executivev2-org-row" onClick={onClick}>
+function OrganisationRow({ icon, label, value, hint, tone = "purple", onClick }) {
+  return <button type="button" className="executivev2-org-row" onClick={onClick} aria-label={`${label}: ${displayCount(value)}. ${hint || ""}`}>
     <span className={`executivev2-org-icon is-${tone}`}><CeacIcon name={icon} size="row" decorative /></span>
-    <span><strong>{label}</strong><small>{displayCount(value)}</small></span>
+    <span><strong>{label}</strong><small>{displayCount(value)}{hint ? ` · ${hint}` : ""}</small></span>
     <span aria-hidden="true">›</span>
   </button>;
 }
@@ -309,14 +309,14 @@ export default function ExecutiveOverviewV2({
 
           <section className="executivev2-reference-panel executivev2-organisation">
             <div className="executivev2-panel-head">
-              <h2><CeacIcon name="organisation" size="row" decorative />Organisational overview</h2>
+              <h2><CeacIcon name="organisation" size="row" decorative />People and departments</h2>
               <button type="button" onClick={onOpenOrganisation}>View all</button>
             </div>
             <div className="executivev2-panel-body">
-              <OrganisationRow icon="organisation" label="Departments" value={summary.activeUnits} tone="purple" onClick={onOpenOrganisation} />
-              <OrganisationRow icon="team" label="Teams" value={summary.activeTeams} tone="blue" onClick={onOpenOrganisation} />
-              <OrganisationRow icon="people" label="Active Volunteers" value={summary.activeVolunteers} tone="amber" onClick={onOpenOrganisation} />
-              <OrganisationRow icon="account" label="Active Staff" value={summary.activeStaff} tone="green" onClick={onOpenOrganisation} />
+              <OrganisationRow icon="organisation" label="Departments" hint="Currently operating" value={summary.activeUnits} tone="purple" onClick={() => onOpenOrganisation?.("departments")} />
+              <OrganisationRow icon="team" label="Teams" hint="Currently operating" value={summary.activeTeams} tone="blue" onClick={() => onOpenOrganisation?.("teams")} />
+              <OrganisationRow icon="people" label="Volunteers" hint="On the active roster" value={summary.activeVolunteers} tone="amber" onClick={() => onOpenOrganisation?.("volunteers")} />
+              <OrganisationRow icon="account" label="Employed staff" hint="On the active roster" value={summary.activeStaff} tone="green" onClick={() => onOpenOrganisation?.("staff")} />
             </div>
           </section>
         </section>
@@ -352,7 +352,7 @@ export default function ExecutiveOverviewV2({
             <button type="button" className="executivev2-schedule-link" onClick={onScheduleMeeting}>Schedule meeting</button>
           </section>
         </section>
-        {me?.id && <ExecutiveWorkforceToday me={me} onOpenOrganisation={onOpenOrganisation} />}
+        {me?.id && <ExecutiveWorkforceToday me={me} onOpenOrganisation={() => onOpenOrganisation?.("people")} />}
       </main> : null}
     </div>
   </div>;
