@@ -27,3 +27,9 @@
 @media(max-width:480px){.s2-exec-brief-head{flex-direction:column}.s2-exec-brief-stats{grid-template-columns:1fr}.s2-exec-brief-milestones>div>div{grid-template-columns:1fr}}
 @media print{body:has(.s2-exec-brief) *:not(:has(.s2-exec-brief)):not(.s2-exec-brief):not(.s2-exec-brief *){display:none!important}body:has(.s2-exec-brief),body:has(.s2-exec-brief) *:has(.s2-exec-brief){display:block!important;position:static!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important}body:has(.s2-exec-brief) *{visibility:hidden!important}body .s2-exec-brief,body .s2-exec-brief *{visibility:visible!important}.s2-exec-brief{position:static!important;border:0;margin:0;padding:0}.s2-exec-brief-print{display:none!important}.s2-exec-brief-grid{display:block}.s2-exec-brief-section,.s2-exec-brief-milestones{break-inside:auto}.s2-exec-brief-unit,.s2-exec-brief-objective,.s2-exec-brief-stats article,.s2-exec-brief-milestones>div>div{break-inside:avoid}.s2-exec-brief-section h3,.s2-exec-brief-milestones small{font-size:12px}
 .s2-exec-brief-milestones summary{break-after:avoid}.s2-exec-brief-milestones>div{display:grid!important}@page{size:A4;margin:14mm}}
+
+.s2-exec-brief-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:16px 0}
+.s2-exec-brief-charts .ev2dv-chart{margin:0;min-width:0}
+.s2-exec-brief-charts .ev2dv-chart-head{gap:8px}
+@media(max-width:880px){.s2-exec-brief-charts{grid-template-columns:minmax(0,1fr)}}
+@media print{.s2-exec-brief-charts{break-inside:avoid}}
