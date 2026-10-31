@@ -68,10 +68,10 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   const reports = fs.readFileSync("src/screens/ExecutiveReports.jsx", "utf8");
   const inbox = fs.readFileSync("src/screens/Inbox.jsx", "utf8");
   expect(work).toContain("Plan, record, and finish your work. Keep every contribution connected to the right project.");
-  expect(ministry).toContain("See what the ministry is working toward, which departments are responsible and where project evidence supports the outcome.");
-  expect(ministry).toContain('executiveSurface ? "Strategic priorities and delivery" : "Strategic hierarchy"');
+  expect(ministry).toContain("Set what CEAC wants to achieve. Departments turn these goals into action, and Projects shows the work being delivered.");
+  expect(ministry).toContain('executiveSurface ? "Priorities and goals" : "Strategic hierarchy"');
   expect(portfolio).toContain("See recorded project risks, delivery milestones and coordinated programmes. Open All projects to manage an individual project.");
-  expect(organisation).toContain("Explore departments, teams and people, then open the work behind them.");
+  expect(organisation).toContain("Find people, explore departments and see how your organisation works together.");
   expect(calendar).toContain("Your meetings, ministry events and project dates in one calendar.");
   expect(finance).toContain("Review income, spending and requests awaiting your decision. Each currency stays separate.");
   expect(finance).toContain('supabase.from("income_lines")');
@@ -172,7 +172,7 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
 
 const destinations = [
   ["work", ".ev2-work-executive", "Work"],
-  ["strategy", ".ev2-executive-ministry", "Ministry direction & outcomes"],
+  ["strategy", ".ev2-executive-ministry", "Ministry goals"],
   ["exec-projects", ".executive-projects-consolidated", "Projects"],
   ["exec-organisation", ".ev2-exec-organisation", "Organisation"],
   ["exec-calendar", ".ev2cal-admin-page", "Calendar"],
