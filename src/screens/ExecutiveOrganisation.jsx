@@ -43,13 +43,45 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
   const [loadedScope, setLoadedScope] = useState("");
   const [work, setWork] = useState([]);
   const [expandedWorkScope, setExpandedWorkScope] = useState("");
+  const [personTab, setPersonTab] = useState("overview");
+  const [selectedActionUnitId, setSelectedActionUnitId] = useState("");
+  const [timeRecords, setTimeRecords] = useState({scope:"",loading:false,sessions:[],leave:[],sessionError:null,leaveError:null});
   const [workState, setWorkState] = useState({ scope: "", loading: false, error: null });
   const heading = useRef(null);
   const scope = `${me.org_id}:${me.id}`;
   const selected = path.at(-1);
   const personId = selected?.kind === "person" ? selected.id : null;
   const personScope = `${scope}:${personId || ""}`;
-  const showAssignedWork = Boolean(personId && expandedWorkScope === personScope);
+  const showAssignedWork = Boolean(personId && expandedWorkScope === personScope && personTab === "work");
+  useEffect(() => { setPersonTab("overview"); setSelectedActionUnitId(""); }, [personId]);
+  useEffect(() => {
+    let current=true;
+    setTimeRecords({scope:personScope,loading:personTab==="time" && Boolean(personId),sessions:[],leave:[],sessionError:null,leaveError:null});
+    if (personTab === "time" && personId) {
+      (async () => {
+        const results = await Promise.allSettled([
+          supabase.from("work_sessions")
+            .select("id,started_at,ended_at,place,end_reason")
+            .eq("org_id",me.org_id).eq("profile_id",personId)
+            .order("started_at",{ascending:false}).limit(14),
+          supabase.from("leave_requests")
+            .select("id,kind,start_date,end_date,status")
+            .eq("org_id",me.org_id).eq("profile_id",personId)
+            .order("start_date",{ascending:false}).limit(14),
+        ]);
+        if(!current)return;
+        const [sessions, leave] = results.map((item)=>item.status==="fulfilled" ? item.value : {error:item.reason});
+        setTimeRecords({
+          scope:personScope,loading:false,
+          sessions:sessions.error?[]:sessions.data||[],
+          leave:leave.error?[]:leave.data||[],
+          sessionError:sessions.error?"Attendance records are not available to this view.":null,
+          leaveError:leave.error?"Leave records are not available to this view.":null,
+        });
+      })();
+    }
+    return ()=>{current=false;};
+  },[personScope,personTab,personId,me.org_id]);
   useEffect(() => {
     let current = true;
     setLoading(true); setError(null); setLoadedScope(""); setDirectory(emptyDirectory);
@@ -60,7 +92,7 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
           supabase.from("profiles").select("id,full_name,job_title,active", { count: "exact" }).eq("org_id", me.org_id).eq("active", true).order("full_name"),
           supabase.from("unit_memberships").select("unit_id,profile_id,role", { count: "exact" }).eq("org_id", me.org_id),
           supabase.from("sub_teams").select("id,name,unit_id,active", { count: "exact" }).eq("org_id", me.org_id).eq("active", true).order("name"),
-          supabase.from("employment_records").select("profile_id,employment_type", { count: "exact" }).eq("org_id", me.org_id).eq("employment_status", "active"),
+          supabase.from("employment_records").select("profile_id,employment_type,employment_status,working_pattern,manager_profile_id,unit_id", { count: "exact" }).eq("org_id", me.org_id).eq("employment_status", "active"),
         ]);
         const next = { units: complete(units, "Departments"), people: complete(people, "People"), memberships: complete(memberships, "Department memberships"), teams: complete(teams, "Teams"), teamMembers: [], employment: complete(employment, "Active employment roster") };
         if (next.teams.length) next.teamMembers = complete(await supabase.from("sub_team_members").select("sub_team_id,profile_id", { count: "exact" }).in("sub_team_id", next.teams.map(team => team.id)), "Team memberships");
@@ -100,7 +132,15 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
   const team = selected?.kind === "team" ? teams.find(row => row.id === selected.id) : null;
   const person = people.find(row => row.id === personId);
   const placements = person ? memberships.filter(row => row.profile_id === person.id && units.some(unit => unit.id === row.unit_id)) : [];
-  const enter = (kind, id) => { setExpandedWorkScope(""); setPath(current => [...current, { kind, id }].slice(-20)); setQuery(""); };
+  const employmentRows = employment.filter(row => row.profile_id === personId);
+  const currentEmployment = employmentRows[0] || null;
+  const actionUnitId = placements.some(row=>row.unit_id===selectedActionUnitId) ? selectedActionUnitId : placements[0]?.unit_id || null;
+  const selectedWorkingPattern = currentEmployment?.working_pattern;
+  const scheduleText = selectedWorkingPattern?.days?.length
+    ? selectedWorkingPattern.days.join(", ").toUpperCase() + (selectedWorkingPattern.start ? " · " + selectedWorkingPattern.start : "") + (selectedWorkingPattern.end ? "–" + selectedWorkingPattern.end : "")
+    : selectedWorkingPattern?.kind ? String(selectedWorkingPattern.kind).replaceAll("_"," ") : "Not recorded";
+  const employmentLabel = currentEmployment?.employment_type === "volunteer" ? "Volunteer" : currentEmployment ? "Employee" : "Not recorded";
+  const enter = (kind, id) => { setExpandedWorkScope(""); setPersonTab("overview"); setPath(current => [...current, { kind, id }].slice(-20)); setQuery(""); };
   const back = () => { setExpandedWorkScope(""); setPath(current => current.slice(0, -1)); setQuery(""); };
   const matches = row => !query.trim() || `${row.name || row.full_name || ""} ${row.job_title || ""}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
   const peopleRows = rows => rows.filter(matches).map(row => <DirectoryRow key={row.id} kind="person" title={row.full_name || "Recorded person"} description={row.job_title || "Role not recorded"} onClick={() => enter("person", row.id)} />);
@@ -129,18 +169,79 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
       {!selected && view === "people" && list(peopleGroup === "staff" ? "Employed staff" : peopleGroup === "volunteers" ? "Volunteers" : "People", peopleRows(peopleForView))}
       {department && <><h2>People</h2>{list("People", peopleRows(membersOf(department.id)))}<h2>Teams</h2>{list("Teams", teams.filter(row => row.unit_id === department.id).filter(matches).map(row => <DirectoryRow key={row.id} kind="team" title={row.name} description={unitName(row.unit_id)} onClick={() => enter("team", row.id)} />))}<button type="button" className="btn btn-ghost" onClick={() => openRoom?.({ kind: "unit", unitId: department.id })}>Open department room</button></>}
       {team && list("People", peopleRows(people.filter(row => teamMembers.some(member => member.sub_team_id === team.id && member.profile_id === row.id))))}
-      {person && <><h2>Departments</h2>{list("Departments", placements.map(row => <DirectoryRow key={row.unit_id} kind="department" title={unitName(row.unit_id)} description={row.role === "manager" ? "Department head" : "Department member"} onClick={() => enter("department", row.unit_id)} />))}
-        <div className="exec-directory-actions">{placements.map(row => <div key={row.unit_id}><button type="button" className="btn" onClick={() => goAssign?.({ unitId: row.unit_id, assigneeId: person.id })}>Give work in {unitName(row.unit_id)}</button><button type="button" className="btn btn-ghost" onClick={() => openRoom?.({ kind:"unit",unitId:row.unit_id,mentionProfileId:person.id })}>Message in {unitName(row.unit_id)} room</button></div>)}</div>
-        {placements.length > 0 && <p className="screen-note">Room messages are shared with the department. The selected person is mentioned after their room access is verified.</p>}
-        <h2>Assigned work</h2><p className="screen-note">Open this person's shared work when needed. Private planning and confidential HR records stay separate.</p>
-        <button type="button" className="btn btn-ghost" aria-expanded={showAssignedWork} aria-controls="directory-assigned-work"
-          onClick={() => setExpandedWorkScope(showAssignedWork ? "" : personScope)}>{showAssignedWork ? "Hide assigned work" : "View assigned work"}</button>
-        {showAssignedWork && <div id="directory-assigned-work">
-          {(workState.scope !== personScope || workState.loading) ? <LoadingState label="Loading assigned work…" /> : workState.error
-            ? <ProductNotice tone="error" title="Assigned work unavailable" action={<button type="button" className="btn btn-ghost" onClick={() => { setExpandedWorkScope(""); }}>Close assigned work</button>}>{workState.error}</ProductNotice>
-            : list("Assigned work", work.map(row => <DirectoryRow key={row.id} kind="work" title={`${row.ref} · ${row.title}`} description={unitName(row.unit_id)} meta={row.status.replaceAll("_", " ")} onClick={() => openItem?.(row.id)} />))}
-        </div>}
-      </>}
+      {person && <>
+        <div className="exec-redesign-tabs" role="tablist" aria-label={`${person.full_name} employee information`}>
+          {[
+            ["overview","Profile"],
+            ["employment","Employment & schedule"],
+            ["time","Attendance & leave"],
+            ["work","Contributions"],
+          ].map(([key,label])=><button key={key} type="button" role="tab" aria-selected={personTab===key}
+            className={personTab===key?"is-active":""} onClick={()=>setPersonTab(key)}>{label}</button>)}
+        </div>
+        {personTab==="overview" && <section className="exec-directory-profile" aria-label="Employee profile">
+          <h2>About this person</h2>
+          <p className="screen-note">Employment information is separate from project responsibilities. Select another tab to see their schedule, attendance or recorded work.</p>
+          <div className="ev2p-summary">
+            <div><strong>{employmentLabel}</strong><span>Engagement</span></div>
+            <div><strong>{currentEmployment?.employment_status?.replaceAll("_"," ")||"Not recorded"}</strong><span>Employment status</span></div>
+            <div><strong>{placements.length}</strong><span>Department placements</span></div>
+          </div>
+          <h3>Department placements</h3>
+          {list("Departments",placements.map(row => <DirectoryRow key={row.unit_id} kind="department" title={unitName(row.unit_id)}
+            description={row.role==="manager"?"Department head":"Department member"} onClick={()=>enter("department",row.unit_id)} />))}
+          {placements.length > 0 && <div className="exec-directory-actions">
+            <label>Choose department
+              <select className="field" aria-label="Employee department for action" value={actionUnitId||""} onChange={e=>setSelectedActionUnitId(e.target.value)}>
+                {placements.map(row=><option key={row.unit_id} value={row.unit_id}>{unitName(row.unit_id)}</option>)}
+              </select>
+            </label>
+            <button type="button" className="btn btn-sm" onClick={()=>goAssign?.({unitId:actionUnitId,assigneeId:person.id})}>Assign work</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={()=>openRoom?.({kind:"unit",unitId:actionUnitId,mentionProfileId:person.id})}>Message in department</button>
+          </div>}
+          <p className="screen-note">Department messages are visible to authorised room members, not a private direct message.</p>
+        </section>}
+        {personTab==="employment" && <section aria-label="Employment and working schedule">
+          <h2>Employment & working arrangement</h2>
+          <div className="ev2p-summary">
+            <div><strong>{employmentLabel}</strong><span>Engagement</span></div>
+            <div><strong>{currentEmployment?.employment_status?.replaceAll("_"," ")||"Not recorded"}</strong><span>Status</span></div>
+            <div><strong>{scheduleText}</strong><span>Recorded working pattern</span></div>
+          </div>
+          <p className="screen-note">Only the ordinary employment facts authorised for Executive viewing are shown. Compensation, bank details, identity documents and protected HR records remain private.</p>
+          {employmentRows.length > 1 && <p className="screen-note">This person has employment records across {employmentRows.length} placements. Contact HR for formal employment history.</p>}
+        </section>}
+        {personTab==="time" && <section aria-label="Recorded attendance and leave">
+          <h2>Attendance & leave</h2>
+          <p className="screen-note">Recent records (up to 14 of each type), not a productivity score or a complete leave entitlement statement.</p>
+          {timeRecords.scope!==personScope||timeRecords.loading ? <LoadingState label="Opening authorised time records…" /> : <>
+            <h3>Recent work sessions</h3>
+            {timeRecords.sessionError ? <ProductNotice tone="attention" title="Attendance unavailable">{timeRecords.sessionError}</ProductNotice>
+              : list("Work sessions",timeRecords.sessions.map(row=><div key={row.id} className="exec-redesign-list-row">
+                <span className="exec-redesign-row-copy"><strong>{new Date(row.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short",year:"numeric"})}</strong>
+                <small>{new Date(row.started_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})} · {row.ended_at?"Ended":"Still open"} · {row.place||"Work location not recorded"}</small></span>
+              </div>))}
+            <h3>Leave requests</h3>
+            {timeRecords.leaveError ? <ProductNotice tone="attention" title="Leave unavailable">{timeRecords.leaveError}</ProductNotice>
+              : list("Leave requests",timeRecords.leave.map(row=><div key={row.id} className="exec-redesign-list-row">
+                <span className="exec-redesign-row-copy"><strong>{String(row.kind||"Leave").replaceAll("_"," ")}</strong>
+                <small>{row.start_date||"Date not recorded"} – {row.end_date||"Date not recorded"} · {String(row.status||"Recorded").replaceAll("_"," ")}</small></span>
+              </div>))}
+          </>}
+        </section>}
+        {personTab==="work" && <section aria-label="Work contributions">
+          <h2>Recorded work contributions</h2>
+          <p className="screen-note">Shared assignments and their actual work states. Private work and confidential HR records remain separate.</p>
+          <button type="button" className="btn btn-ghost btn-sm" aria-expanded={showAssignedWork} aria-controls="directory-assigned-work"
+            onClick={()=>setExpandedWorkScope(showAssignedWork?"":personScope)}>{showAssignedWork?"Hide assigned work":"Load assigned work"}</button>
+          {showAssignedWork && <div id="directory-assigned-work">
+            {workState.scope!==personScope||workState.loading ? <LoadingState label="Loading assigned work…" /> : workState.error
+              ? <ProductNotice tone="error" title="Assigned work unavailable">{workState.error}</ProductNotice>
+              : list("Assigned work",work.map(row=><DirectoryRow key={row.id} kind="work" title={`${row.ref} · ${row.title}`}
+                  description={unitName(row.unit_id)} meta={row.status.replaceAll("_"," ")} onClick={()=>openItem?.(row.id)} />))}
+          </div>}
+        </section>}
+      </>}</>}
     </>}
   </div>;
 }
