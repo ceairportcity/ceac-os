@@ -515,6 +515,7 @@ export default function App() {
       me={me}
       createRequest={createIntent === "ministry_objective" ? "ministry_objective" : null}
       onCreateHandled={() => setCreateIntent(null)}
+      onOpenProject={isExec ? (id) => navigate({ tab:"exec-projects", projectId:id }) : isAdmin ? (id) => navigate({tab:"admin-projects",projectId:id}) : isUnitManager ? (id) => navigate({tab:"projects",projectId:id}) : null}
     />;
     if (tab === "delivery" && isExec) return <ExecutiveProjectsWorkspace key={`${me.org_id}:${me.id}:legacy-delivery`} me={me} initialProjectId={projectId} initialView="insights" openProject={id=>navigate({tab:"exec-projects",projectId:id})} openItem={openItem} goAssign={startAssignment} scheduleMeeting={startMeeting} />;
     if (tab === "delivery" && canUseDelivery) return <Delivery key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openItem={openItem} openProject={openProject} goAssign={startAssignment} />;
