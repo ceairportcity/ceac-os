@@ -623,11 +623,11 @@ test("Stage 10 Family H3 keeps Executive directory records read-only with author
   const organisation = readFileSync("src/screens/ExecutiveOrganisation.jsx", "utf8");
   expect(organisation).toContain('supabase.from("units")');
   expect(organisation).toContain('supabase.from("unit_memberships")');
-  expect(organisation).toContain("Explore departments, teams and people, then open the work behind them.");
+  expect(organisation).toContain("Find people, explore departments and see how your organisation works together.");
   expect(organisation).toContain("goAssign?.");
   expect(organisation).toContain("openRoom?.");
   expect(organisation).toContain("Needs attention");
-  expect(organisation).toContain("leadership gap");
+  expect(organisation).toContain("need a head");
   expect(organisation).not.toContain(".insert(");
   expect(organisation).not.toContain(".update(");
   expect(organisation).not.toContain(".delete(");
@@ -688,8 +688,8 @@ for (const viewport of [
     const { context, page } = await openHub(browser, roles[3], { width: viewport.width, height: viewport.height });
     await page.goto("/?tab=exec-organisation");
     await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toBeVisible();
-    await expect(page.getByText(/Explore departments, teams and people/i)).toBeVisible();
-    await expect(page.getByText(/Department heads recorded|leadership gap/i).first()).toBeVisible();
+    await expect(page.getByText(/Find people, explore departments and see how your organisation works together/i)).toBeVisible();
+    await expect(page.getByText(/Department heads recorded|need a head/i).first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Executive Organisation overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);
     await page.screenshot({ path: `test-artifacts/redesign-r7-stage10h-exec-org-${viewport.name}.png`, fullPage: true });
