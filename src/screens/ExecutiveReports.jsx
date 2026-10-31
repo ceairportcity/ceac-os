@@ -351,7 +351,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
           </ReportingFootnote>
         </>
       )}
-      {!contextPending && !contextError && period && workspaceView==="quarterly" && <QuarterlyReviewEventControl me={me} />}
+      {!contextPending && !contextError && workspaceView==="quarterly" && <QuarterlyReviewEventControl me={me} />}
     </div>
   );
 }

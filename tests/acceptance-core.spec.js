@@ -155,7 +155,7 @@ test("Staff and Manager complete the real work loop, including return and approv
     await go(page, "Work");
     await openCompleteWorkRecord(page, title);
     await expect(page.getByText("Why this matters")).toBeVisible();
-    await expect(page.getByText("What finished looks like")).toBeVisible();
+    await expect(page.getByText("What a completed result should include")).toBeVisible();
     await page.getByRole("button", { name: new RegExp(step) }).click();
     await page.getByRole("button", { name: "Send for review" }).click();
     const sendDialog = page.getByRole("dialog");
@@ -412,7 +412,7 @@ test("OCR6C work source attachment reaches the authorised Staff record", async (
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
     await openCompleteWorkRecord(page, title);
-    await expect(page.getByText("Source files", { exact: true })).toBeVisible();
+    await expect(page.getByText("Files for this work", { exact: true })).toBeVisible();
     await expect(page.getByText(filename, { exact: true })).toBeVisible();
     await context.close();
   }
@@ -1828,7 +1828,7 @@ test("Stage 10 Assets & devices preserves factual custody and lifecycle across r
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Me");
     await page.getByRole("button", { name: /My assets/ }).click();
-    await expect(page.getByRole("heading", { name: "Assets & devices", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "My equipment", exact: true })).toBeVisible();
     const card = page.locator(".asset-card").filter({ hasText: assetCode });
     await expect(card).toBeVisible();
     await expect(card).toContainText("Staff Fixture");
@@ -2007,7 +2007,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Compliance");
-    await expect(page.getByRole("heading", { name: "Compliance", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "My policies & requirements", exact: true })).toBeVisible();
     const policyCard = page.locator(".compliance-policy-card").filter({ hasText: policyTitle });
     await expect(policyCard).toBeVisible();
     await policyCard.getByRole("button", { name: "Acknowledge policy", exact: true }).click();

@@ -28,7 +28,7 @@ async function fixture(page,{failCases=false,failOffice=false,asAdmin=false,hidd
   return route.continue();
  });
  await page.goto('/tests/fixtures/compliance-workbench.html'+(asAdmin?'?role=admin':''));
- await expect(page.getByRole('heading',{name:'Compliance',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'My policies & requirements',exact:true})).toBeVisible();
  if(!asAdmin)await expect(page.getByRole('heading',{name:'Your review desk'})).toBeVisible();
  return ()=>page.evaluate(()=>window.syntheticMaps||0);
 }

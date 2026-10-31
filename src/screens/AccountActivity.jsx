@@ -111,7 +111,7 @@ function AccountWorkspace({ me }) {
       <div hidden={section!=="security"}>
       <div className="form-grid two">
         <PersonalSection title="Your devices"><p>{sessionError?"Device information is temporarily unavailable.":`${sessions.length} signed-in ${sessions.length===1?"device":"devices"} recorded`}</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSection("sessions")}>See devices</button></PersonalSection>
-        <PersonalSection title="Recent activity"><p>{activityError?"Activity is temporarily unavailable":events[0]?String(events[0].action).replace(/[._]/g," ").replace(/^\w/, letter=>letter.toUpperCase()):"No activity recorded yet"}</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSection("activity")}>See activity</button></PersonalSection>
+        <PersonalSection title="Latest account action"><p>{activityError?"Activity is temporarily unavailable":events[0]?String(events[0].action).replace(/[._]/g," ").replace(/^\w/, letter=>letter.toUpperCase()):"No activity recorded yet"}</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSection("activity")}>See activity</button></PersonalSection>
       </div>
       <PersonalSection
         eyebrow="Account protection"

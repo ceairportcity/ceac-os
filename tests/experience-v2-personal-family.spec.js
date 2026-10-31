@@ -371,7 +371,7 @@ test("Stage 10 Family G6A keeps personal Assets custody factual while aligning i
   expect(assets).toContain('supabase.from("asset_lifecycle_events")');
   expect(assets).toContain("does not remotely wipe, lock, configure or monitor device operating systems");
   expect(assets).toContain("ev2-personal-assets");
-  expect(assets).toContain('statusLabel="My custody"');
+  expect(assets).toContain('statusLabel="My Hub"');
 });
 
 for (const viewport of [
@@ -384,9 +384,9 @@ for (const viewport of [
   test(`Stage 10 Family G6A Staff Assets composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openHub(browser, roles[0], { width: viewport.width, height: viewport.height });
     await page.getByRole("button", { name: "My assets", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Assets & devices", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "My equipment", exact: true })).toBeVisible();
     await expect(page.locator(".ev2-personal-assets")).toBeVisible();
-    await expect(page.getByText(/does not remotely manage your device/i)).toBeVisible();
+    await expect(page.getByText(/See the equipment recorded in your care/i)).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Staff Assets overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);
     await page.screenshot({ path: `test-artifacts/redesign-r7-stage10g6-staff-${viewport.name}.png`, fullPage: true });
@@ -402,7 +402,7 @@ test("Stage 10 Family G6B keeps personal Compliance factual while aligning it wi
   expect(compliance).toContain('rpc("compliance_request_exception"');
   expect(compliance).toContain("does not calculate an employee compliance score");
   expect(compliance).toContain("ev2-personal-compliance");
-  expect(compliance).toContain('statusLabel="My compliance"');
+  expect(compliance).toContain('title="My policies & requirements"');
 });
 
 for (const viewport of [
@@ -415,9 +415,9 @@ for (const viewport of [
   test(`Stage 10 Family G6B Staff Compliance composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openHub(browser, roles[0], { width: viewport.width, height: viewport.height });
     await page.getByRole("button", { name: "My compliance", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Compliance", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "My policies & requirements", exact: true })).toBeVisible();
     await expect(page.locator(".ev2-personal-compliance")).toBeVisible();
-    await expect(page.getByText(/does not calculate a personal compliance score/i)).toBeVisible();
+    await expect(page.getByText(/Find the policies that apply to you/i)).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Staff Compliance overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);
     await page.screenshot({ path: `test-artifacts/redesign-r7-stage10g7-staff-${viewport.name}.png`, fullPage: true });
@@ -469,7 +469,7 @@ test("Stage 10 Family G7 keeps account activity self-only while aligning it with
   expect(account).toContain('supabase.rpc("my_account_activity", { p_limit: 50 })');
   expect(account).toContain('supabase.auth.signOut({ scope: "local" })');
   expect(account).toContain('supabase.auth.signOut({ scope: "global" })');
-  expect(account).toContain("Only you can see this.");
+  expect(account).toContain("Manage your sign-in protection, devices and account activity in one place.");
   expect(account).toContain('statusLabel="Your account only"');
   expect(account).toContain("ev2-personal-account");
   expect(account).toContain("This is not a colleague-monitoring surface.");
@@ -543,7 +543,7 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
     await expect(page.getByText("Your account only", { exact: true })).toBeVisible();
-    await expect(page.getByText(/Only you can see this/i)).toBeVisible();
+    await expect(page.getByText(/Manage your sign-in protection/i)).toBeVisible();
     await page.getByRole("tab",{name:"Sessions",exact:true}).click();
     await expect(page.getByRole("button", { name: "Sign out on this device", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out on every device", exact: true })).toBeVisible();

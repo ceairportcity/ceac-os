@@ -95,10 +95,10 @@ test("Stage 11D replaces Manager Reports one-off visuals with the shared factual
   const css = readFileSync("src/experience-v2/data-viz/data-viz.css", "utf8");
 
   expect(manager).toContain('import { DataVizChart } from "../experience-v2/data-viz/DataVizV2";');
-  expect(manager).toContain('title="Completed work trend"');
+  expect(manager).toContain('title="Completed work by day"');
   expect(manager).toContain('title="Completed by project"');
   expect(manager).toContain('title="Current work composition"');
-  expect(manager).toContain('title="Recorded work-session activity"');
+  expect(manager).toContain('title="Recorded work sessions by day"');
   expect(manager).toContain("openFrozenSection");
   expect(manager).toContain("openLive");
   expect(manager).not.toContain("function Trend(");
@@ -129,10 +129,10 @@ for (const viewport of [
     await page.getByRole("button", { name:"Show charts and tables", exact:true }).click();
     const charts = page.locator(".report-analysis .ev2dv-chart");
     await expect(charts).toHaveCount(4);
-    await expect(page.getByText("Completed work trend", { exact:true })).toBeVisible();
+    await expect(page.getByText("Completed work by day", { exact:true })).toBeVisible();
     await expect(page.getByText("Completed by project", { exact:true })).toBeVisible();
     await expect(page.getByText("Current work composition", { exact:true })).toBeVisible();
-    await expect(page.getByText("Recorded work-session activity", { exact:true })).toBeVisible();
+    await expect(page.getByText("Recorded work sessions by day", { exact:true })).toBeVisible();
     await expect(page.getByText(/not a performance, productivity or ranking score/i)).toBeVisible();
     await expect(page.getByText(/not an attendance or performance score/i)).toBeVisible();
 
@@ -146,12 +146,12 @@ for (const viewport of [
 
     if (viewport.width >= 1000) {
       const first = charts.first();
-      await first.getByRole("button", { name:/Show Completed work trend as table/ }).click();
+      await first.getByRole("button", { name:/Show Completed work by day as table/ }).click();
       await expect(first.getByRole("table")).toBeVisible();
       await first.getByRole("button", { name:fixture.day, exact:true }).click();
       await expect(page.getByText("Completed fixture A", { exact:true })).toBeVisible();
 
-      await first.getByRole("button", { name:/Show Completed work trend as chart/ }).click();
+      await first.getByRole("button", { name:/Show Completed work by day as chart/ }).click();
       const mark = first.getByRole("button", { name:new RegExp(`Open ${fixture.day} · Completed work: 3`) });
       await mark.focus();
       await expect(mark).toBeFocused();

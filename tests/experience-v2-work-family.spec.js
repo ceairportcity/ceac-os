@@ -142,7 +142,7 @@ test("Stage 10 Family A2 Work Detail follows the approved working hierarchy", as
   expect(source).not.toContain("statusPill(item.status)");
 
   const purpose = source.indexOf('title="Why this matters"');
-  const finished = source.indexOf('title="What finished looks like"');
+  const finished = source.indexOf('title="What a completed result should include"');
   const instructions = source.indexOf('title="What to do"');
   expect(purpose).toBeGreaterThan(-1);
   expect(finished).toBeGreaterThan(purpose);
