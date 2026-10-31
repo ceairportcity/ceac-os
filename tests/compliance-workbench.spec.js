@@ -84,7 +84,9 @@ for(const width of [1440,390,320])test(`empty Compliance map defaults to saved o
  const fits=await page.evaluate(()=>window.syntheticMapFits);
  await map.getByRole('button',{name:'Fit staff start locations'}).click();
  expect(await page.evaluate(()=>window.syntheticMapFits)).toBeGreaterThan(fits);
- await expect(map.locator('.ceac-office-reference')).toHaveCSS('border-color','rgb(20, 73, 153)');
+ // Validate the pale office reference border and strong-blue office symbol separately.
+ await expect(map.locator('.ceac-office-reference')).toHaveCSS('border-color','rgb(190, 209, 232)');
+ await expect(map.locator('.ceac-office-symbol')).toHaveCSS('background-color','rgb(20, 73, 153)');
  expect(await page.evaluate(()=>window.syntheticLastMap.bounds.points.some(p=>p.lat===5.61&&p.lng===-.19))).toBe(true);
  await page.evaluate(()=>window.scrollTo(0,0));
  await page.screenshot({path:`test-artifacts/compliance-office-map-${width}.png`,fullPage:true});

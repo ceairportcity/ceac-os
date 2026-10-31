@@ -172,7 +172,7 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
 
 const destinations = [
   ["work", ".ev2-work-executive", "Work"],
-  ["strategy", ".ev2-executive-ministry", "Ministry"],
+  ["strategy", ".ev2-executive-ministry", "Ministry direction & outcomes"],
   ["exec-projects", ".executive-projects-consolidated", "Projects"],
   ["exec-organisation", ".ev2-exec-organisation", "Organisation"],
   ["exec-calendar", ".ev2cal-admin-page", "Calendar"],

@@ -889,7 +889,7 @@ test("Stage 5 Delivery manages programmes, milestones, dependencies and project 
     await go(page, "Delivery");
     await expect(page.getByRole("heading", { name: "Delivery", exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "New Programme / Portfolio", exact: true }).click();
+    await page.getByRole("button", { name: "Create programme group", exact: true }).click();
     let dialog = page.getByRole("dialog");
     await dialog.getByLabel("Delivery group name").fill("Acceptance Unit A Programme");
     await dialog.getByLabel("Delivery group purpose").fill("Coordinate the Stage 5 browser delivery journey.");
@@ -1100,14 +1100,20 @@ test("Experience Stage 5 project register enforces payment, custody, slots and t
 
   {
     const { context, page } = await openAs(browser, "exec@ceac.local.test", { width: 1280, height: 900 });
-    await go(page, "Delivery");
+    // Executive project inspection is role-scoped: programme records and
+    // attributable project work are visible; private participant payments,
+    // remittance and slot inventory remain in authorised Manager/Admin flows.
+    await page.goto("/?tab=exec-projects");
+    await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
     const leadershipProject = page.locator(".ev2p-context-row").filter({ hasText: projectName }).first();
     await expect(leadershipProject).toBeVisible();
-    await leadershipProject.getByRole("button", { name: "Operational details", exact: true }).click();
-    await expect(page.getByText(participantName, { exact: true })).toBeVisible();
-    const reconciliation = page.locator("table").filter({ hasText: "Confirmed remitted" }).first();
-    await expect(reconciliation).toContainText("GHS 100");
-    await expect(page.getByText("Acceptance Dormitory", { exact: true }).first()).toBeVisible();
+    await leadershipProject.getByRole("button", { name: "Open project", exact: true }).click();
+    await expect(page.locator(".s2-project-reader")).toBeVisible();
+    await expect(page.getByRole("heading", { name: projectName, exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Project tasks/ })).toBeVisible();
+    await expect(page.getByText(participantName, { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Confirmed remitted", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Acceptance Dormitory", { exact: true })).toHaveCount(0);
     await context.close();
   }
 });
