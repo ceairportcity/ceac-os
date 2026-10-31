@@ -133,7 +133,7 @@ test('Executive person contact opens a shared room with a verified mention, with
     const roomId=new URL(route.request().url()).searchParams.get('room_id')?.replace(/^eq\./,'');
     await route.fulfill({status:200,contentType:'application/json',headers:{'content-range':'0-0/1'},body:JSON.stringify([{id:'39000000-0000-4000-8000-000000000025',room_id:roomId,author_id:'31000000-0000-4000-8000-000000000001',body:'Room assignment fixture',reply_to_id:null,created_at:new Date().toISOString(),profiles:{full_name:'Staff Fixture'},room_message_refs:[],room_mentions:[]}])});
   });
-  await page.getByRole('button',{name:'Message in Test Unit A room',exact:true}).click();
+  await page.getByRole('button',{name:'Message in department',exact:true}).click();
   await expect(page.getByRole('textbox',{name:'Room message'})).toHaveValue('@Staff Fixture ');
   await expect(page.getByRole('button',{name:'Send',exact:true})).toBeEnabled();
   expect(sent).toHaveLength(0);

@@ -4,11 +4,14 @@ import {readFileSync} from 'node:fs';
 test('Executive has a dedicated Projects route and retained project-creation security',async()=>{
  const nav=readFileSync('src/experience-v2/shell/navigation.js','utf8');
  const app=readFileSync('src/App.jsx','utf8');
+ const workspace=readFileSync('src/screens/ExecutiveProjectsWorkspace.jsx','utf8');
  const migration=readFileSync('supabase/migrations/20261030231000_executive_project_creation.sql','utf8');
  expect(nav).toContain('{ key: "exec-projects", label: "Projects"');
  expect(nav).not.toContain('{ key: "delivery", label: "Portfolio"');
  expect(app).toContain('tab === "exec-projects" && isExec');
- expect(app).toContain('<AdminProjects key={`${me.org_id}:${me.id}:executive-projects`}');
+ expect(app).toContain('<ExecutiveProjectsWorkspace key={`${me.org_id}:${me.id}:executive-projects`}');
+ expect(workspace).toContain('<AdminProjects me={me}');
+ expect(workspace).toContain('Delivery insights');
  expect(migration).toContain('public.app_is_exec()');
  expect(migration).toContain("c.capability='create_project'");
  expect(migration).toContain('public.app_managed_units()');

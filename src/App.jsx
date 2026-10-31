@@ -345,6 +345,10 @@ export default function App() {
       navigate({ tab: "projects", projectId: id });
       return;
     }
+    if (isExec) {
+      navigate({ tab: "exec-projects", projectId: id });
+      return;
+    }
     if (canUseDelivery) {
       navigate({ tab: "delivery", projectId: id });
       return;
@@ -485,7 +489,7 @@ export default function App() {
     if (tab === "messages") return <Inbox
       key={`${me.org_id}:${me.id}`}
       me={me}
-      openProject={id=>navigate({tab:isAdmin?"admin-projects":isExec?"delivery":"projects",projectId:id})}
+      openProject={id=>navigate({tab:isAdmin?"admin-projects":isExec?"exec-projects":"projects",projectId:id})}
       scheduleMeeting={startMeeting}
       startWorkFromMessage={isManager || isExec ? startAssignment : null}
       openRoom={openRoom}
@@ -551,7 +555,7 @@ export default function App() {
     if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
     if (tab === "admin-projects" && isAdmin) return <AdminProjects key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openProject={openProject} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id, reference) => openRoom({kind:"project",projectId:id,reference})} />;
     if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
-    if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"delivery",projectId:id})} />;
+    if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"exec-projects",projectId:id})} />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;
     if (tab === "events" && canViewAudit) return <AdminEvents me={me} />;
     if (tab === "workflows" && canUseWorkflows) return <AdminWorkflows me={me} />;

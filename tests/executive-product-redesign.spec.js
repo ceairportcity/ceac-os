@@ -117,7 +117,6 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
     "Work",
     "Ministry",
     "Projects",
-    "Portfolio",
     "Organisation",
     "Calendar",
     "Finance",

@@ -144,7 +144,7 @@ test('attendance panel reuses CEAC readable styles and identifies shared-locatio
  const panel=page.getByRole('region',{name:'Recorded staff attendance details'});
  await expect(panel.locator('[data-attendance-person]')).toHaveCount(2);
  await expect(panel.getByRole('button',{name:/Synthetic Ama/})).toContainText('CEAC office');
- await expect(panel.getByRole('button',{name:/Synthetic Kofi/})).toContainText('Office selected');
+ await expect(panel.getByRole('button',{name:/Synthetic Kofi/})).toContainText('CEAC office');
  await panel.getByRole('button',{name:/Synthetic Kofi/}).click();
  await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Kofi');
  const small=await panel.locator('*').evaluateAll(nodes=>nodes.filter(el=>{

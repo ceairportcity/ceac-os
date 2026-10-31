@@ -16,14 +16,31 @@ async function signInExecutive(page) {
 async function openCreate(page, label) {
   const routes = {
     "Give out work": ["work", "Give out work"],
-    "Ministry objective": ["strategy", "New Ministry Objective"],
+    "Ministry objective": ["strategy", "Add ministry objective"],
     Announcement: ["announcements", "New announcement"],
   };
   const route = routes[label];
   if (!route) throw new Error("No approved Executive destination for " + label);
   await page.goto("/?tab=" + route[0]);
   await expect(page.locator(".executive-app")).toBeVisible();
-  await page.getByRole("button", { name: route[1], exact: true }).first().click();
+  if (label === "Ministry objective") {
+    await expect(page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true })).toBeVisible();
+    const objective = page.getByRole("button", { name: "Add ministry objective", exact: true }).first();
+    if (!(await objective.count())) {
+      // An objective requires a recorded parent, including in isolated acceptance fixtures.
+      await page.getByRole("button", { name: "Set ministry direction", exact: true }).click();
+      const direction = page.getByRole("dialog", { name: "New ministry direction" });
+      await direction.getByLabel("Strategy name").fill("Acceptance parent direction");
+      await direction.getByLabel("Strategy statement").fill("Provide an attributable parent for the objective design check.");
+      await direction.getByLabel("Strategy change reason").fill("Isolated role acceptance.");
+      await direction.getByRole("button", { name: "Create ministry direction", exact: true }).click();
+      await expect(direction).not.toBeVisible();
+    }
+    await expect(objective).toBeVisible();
+    await objective.click();
+  } else {
+    await page.getByRole("button", { name: route[1], exact: true }).first().click();
+  }
   if (label === "Give out work") await page.getByRole("combobox", { name: "Assignment department" }).selectOption("20000000-0000-4000-8000-000000000011");
 }
 
@@ -85,8 +102,9 @@ test("owner mockup: Ministry objective is compact and hierarchy-first", async ({
   const primary = dialog.locator('.ev2c-overlay-footer .btn').first();
   expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
   expect(await primary.evaluate(node => getComputedStyle(node).backgroundImage)).toBe('none');
-  await expect(dialog.getByText("Objective name *", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Objective title *", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Statement *", { exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Add measure, dates or status", exact: true }).click();
   await expect(dialog.getByText("Measurement *", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Starts on", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Target date", { exact: true })).toBeVisible();
