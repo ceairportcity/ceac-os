@@ -5,7 +5,7 @@
 .ceac-premium-ministry .ev2ex-ministry-head h1{font-size:clamp(29px,2.8vw,40px);line-height:1.16;letter-spacing:-.052em;font-weight:760;margin:8px 0 12px;color:var(--ev2-text)}
 .ceac-premium-ministry .ev2ex-ministry-head .eyebrow{font-size:12px;letter-spacing:.12em;color:var(--ev2-text-tertiary)}
 .ceac-premium-ministry .ev2ex-ministry-head p{max-width:61ch;font-size:13px;line-height:1.7;color:var(--ev2-text-secondary)}
-.ceac-premium-ministry .ev2ex-ministry-head .btn{min-height:42px;font-size:12px;white-space:nowrap}
+.ceac-premium-ministry .ev2ex-ministry-head .btn{min-height:44px;font-size:12px;white-space:nowrap}
 .ceac-ministry-guide{padding:24px 24px 20px;border:1px solid var(--ev2-line);border-radius:14px;background:var(--ev2-surface);box-shadow:0 4px 22px rgba(16,31,52,.03);margin:14px 0 24px}
 .ceac-ministry-guide>header{margin-bottom:20px}
 .ceac-ministry-guide>header h2{margin:0 0 5px;font-size:18px;letter-spacing:-.035em;font-weight:750;color:var(--ev2-text)}
@@ -26,7 +26,7 @@
 .ceac-premium-ministry .ev2ex-ministry-direction>.eyebrow{font-size:12px;letter-spacing:.11em;color:var(--ev2-text-tertiary)}
 .ceac-premium-ministry .ev2ex-ministry-direction>h2{font-size:clamp(19px,1.6vw,24px);line-height:1.22;letter-spacing:-.038em;font-weight:760;margin:9px 0 9px;color:var(--ev2-text)}
 .ceac-premium-ministry .ev2ex-ministry-direction>.screen-note{max-width:77ch;color:var(--ev2-text-secondary);font-size:13px;line-height:1.7}
-.ceac-premium-ministry .ev2ex-ministry-direction .btn{min-height:37px;font-size:12px}
+.ceac-premium-ministry .ev2ex-ministry-direction .btn{min-height:44px;font-size:12px}
 .ceac-premium-ministry .ev2ex-ministry-objective{padding:19px 21px;margin:20px 0 0;border:1px solid var(--ev2-line);border-radius:11px;background:var(--ev2-surface-soft)}
 .ceac-premium-ministry .ev2ex-ministry-objective>.eyebrow{font-size:12px;letter-spacing:.09em}
 .ceac-premium-ministry .ev2ex-ministry-objective>h3{font-size:17px;line-height:1.28;letter-spacing:-.027em;margin:7px 0 8px;color:var(--ev2-text)}
@@ -39,7 +39,9 @@
 .reference-objective-composer .field{min-height:43px;border-radius:9px}
 .reference-objective-composer textarea.field{min-height:88px;line-height:1.55}
 .reference-objective-composer .reference-measurement-group{padding:13px;border:1px solid var(--ev2-line);border-radius:10px;background:var(--ev2-surface-soft);margin:7px 0}
-.reference-objective-composer .btn.btn-ghost{min-height:38px;font-size:12px}
+.reference-objective-composer .btn.btn-ghost{min-height:44px;font-size:12px}
 .ceac-premium-ministry :is(button,input,select,textarea):focus-visible{outline:2px solid var(--ev2-action);outline-offset:2px}
 @media(max-width:930px){.ceac-premium-ministry .ev2ex-ministry-head{flex-direction:column;align-items:flex-start}.ceac-premium-ministry .ev2p-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.ceac-premium-ministry{padding:16px 12px 48px}.ceac-ministry-guide{padding:18px 15px}.ceac-ministry-guide-grid{grid-template-columns:1fr}.ceac-premium-ministry .ev2ex-ministry-head h1{font-size:28px}.ceac-premium-ministry .ev2ex-ministry-direction{padding:18px 15px}.ceac-premium-ministry .ev2ex-ministry-objective{padding:15px 12px}.ceac-premium-ministry .ev2p-summary>div{min-height:97px;padding:14px}}
+
+.ceac-premium-ministry .btn{min-height:44px}

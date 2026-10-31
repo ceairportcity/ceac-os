@@ -135,6 +135,18 @@ test("Executive Projects creates and inspects authorised collaboration without g
     await expect(page.getByRole("button",{name:"Create project",exact:true})).toBeVisible();
     await page.getByRole("button", { name: "Open project", exact: true }).first().click();
     await expect(page.locator(".s2-project-reader .s2-project-layout")).toBeVisible();
+    const hero = page.locator(".s2-project-reader .ev2p-workspace-header.s2-landscape-hero");
+    await expect(hero).toBeVisible();
+    const hierarchy = await hero.evaluate(node => {
+      const box = selector => node.querySelector(selector).getBoundingClientRect();
+      return { layout: getComputedStyle(node).display,
+        kicker: box(".ev2p-workspace-kicker"), title: box(".ev2p-workspace-title-row"),
+        purpose: box("p") };
+    });
+    expect(hierarchy.layout).toBe("grid");
+    expect(hierarchy.kicker.bottom).toBeLessThanOrEqual(hierarchy.title.top + 2);
+    expect(hierarchy.title.bottom).toBeLessThanOrEqual(hierarchy.purpose.top + 2);
+
     await page.getByRole("tab",{name:/Project tasks/}).click();
     await expect(page.locator(".s2-project-reader .s2-project-table-scroll")).toBeVisible();
     await expect(page.locator(".s2-project-reader").getByRole("button", { name: "+ Add task" })).toHaveCount(0);

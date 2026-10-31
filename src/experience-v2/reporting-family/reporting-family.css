@@ -149,3 +149,6 @@
 .ev2rep-status-tabs span{margin-inline-start:6px;font-variant-numeric:tabular-nums}
 
 .ev2rep-row-copy p{white-space:pre-line}
+
+/* A role note must never concatenate its heading and explanation. */
+.ev2rep-executive-authority{display:grid;align-content:start;gap:8px}
