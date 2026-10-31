@@ -3,6 +3,7 @@ import {ComposerDrawer} from "../experience-v2/components";
 import {FieldGroup,ProductNotice} from "./bits";
 import {supabase} from "../lib/supabase";
 import {humanError} from "../lib/productLanguage";
+import "./admin-project-composer.css";
 
 export default function AdminProjectComposer({me,units,onClose,onCreated}) {
   const [form,setForm]=useState({name:"",purpose:"",leadUnitId:units.some(u=>u.id===me.unit_id)?me.unit_id:"",startsOn:"",endsOn:"",participants:[]});
@@ -36,22 +37,39 @@ export default function AdminProjectComposer({me,units,onClose,onCreated}) {
     } catch(failure) {setError(humanError(failure,"The project could not be confirmed. Your draft is retained."));}
     finally {saving.current=false;setBusy(false);}
   }
-  return <ComposerDrawer open title="Create project" onClose={()=>{if(!saving.current)onClose();}} description="Choose the lead department, then add objectives and give out work in the project workspace.">
-    {error&&<div ref={errorRef} tabIndex={-1} role="region" aria-label="Project creation error"><ProductNotice tone="error" title="Project creation">{error}</ProductNotice></div>}
-    <form onSubmit={save} style={{display:"grid",gap:12}}>
-      <fieldset disabled={busy||Boolean(createdId.current)} style={{display:"grid",gap:12,border:0,padding:0,margin:0,minWidth:0}}>
-        <FieldGroup label="Project name"><input className="field" required maxLength={200} value={form.name} onChange={e=>set("name",e.target.value)}/></FieldGroup>
-        <FieldGroup label="Purpose"><textarea className="field" rows={3} value={form.purpose} onChange={e=>set("purpose",e.target.value)}/></FieldGroup>
-        <FieldGroup label="Lead department"><select className="field" required value={form.leadUnitId} onChange={e=>setForm(previous=>({...previous,leadUnitId:e.target.value,participants:previous.participants.filter(id=>id!==e.target.value)}))}>
-          <option value="">Choose a department</option>{units.map(unit=><option key={unit.id} value={unit.id}>{unit.name}</option>)}
-        </select></FieldGroup>
-        <FieldGroup label="Start date"><input className="field" type="date" value={form.startsOn} onChange={e=>set("startsOn",e.target.value)}/></FieldGroup>
-        <FieldGroup label="Target date"><input className="field" type="date" min={form.startsOn||undefined} value={form.endsOn} onChange={e=>set("endsOn",e.target.value)}/></FieldGroup>
-        <fieldset style={{border:0,padding:0,margin:0}}><legend className="field-label">Participating departments</legend>
-          {units.filter(unit=>unit.id!==form.leadUnitId).map(unit=><label className="ck" key={unit.id}><input type="checkbox" checked={form.participants.includes(unit.id)} onChange={e=>set("participants",e.target.checked?[...form.participants,unit.id]:form.participants.filter(id=>id!==unit.id))}/><span>{unit.name}</span></label>)}
-        </fieldset>
+  return <ComposerDrawer open title="Create project" onClose={()=>{if(!saving.current)onClose();}} description="Start with the goal and the department responsible. You can plan tasks and invite people after creating the project.">
+    {error&&<div ref={errorRef} tabIndex={-1} role="region" aria-label="Project creation error"><ProductNotice tone="error" title="We couldn't finish creating the project">{error}</ProductNotice></div>}
+    <form onSubmit={save} className="ceac-project-composer">
+      <fieldset disabled={busy||Boolean(createdId.current)} className="ceac-project-composer-fields">
+        <section className="ceac-project-form-section" aria-labelledby="ceac-project-basics">
+          <header><span className="ceac-project-form-index" aria-hidden="true">01</span><div><h3 id="ceac-project-basics">The project</h3><p>Give this project a clear name and describe what you want to achieve.</p></div></header>
+          <FieldGroup label="Project name"><input className="field" required maxLength={200} autoFocus placeholder="For example, New Members Welcome Programme" value={form.name} onChange={e=>set("name",e.target.value)}/></FieldGroup>
+          <FieldGroup label="What is this project for?"><textarea className="field" rows={3} placeholder="Describe the result you want, in one or two sentences." value={form.purpose} onChange={e=>set("purpose",e.target.value)}/></FieldGroup>
+        </section>
+        <section className="ceac-project-form-section" aria-labelledby="ceac-project-people">
+          <header><span className="ceac-project-form-index" aria-hidden="true">02</span><div><h3 id="ceac-project-people">Who is responsible?</h3><p>Choose one department to lead. You can include other departments if they will help.</p></div></header>
+          <FieldGroup label="Which department is responsible?"><select className="field" aria-label="Lead department" required value={form.leadUnitId} onChange={e=>setForm(previous=>({...previous,leadUnitId:e.target.value,participants:previous.participants.filter(id=>id!==e.target.value)}))}>
+            <option value="">Choose the lead department</option>{units.map(unit=><option key={unit.id} value={unit.id}>{unit.name}</option>)}
+          </select></FieldGroup>
+          {units.some(unit=>unit.id!==form.leadUnitId)&&<details className="ceac-project-form-collaborators">
+            <summary>Other departments helping <span>{form.participants.length ? form.participants.length+" selected" : "Optional"}</span></summary>
+            <p>Select only departments that will take part in this project.</p>
+            <div className="ceac-project-form-options">{units.filter(unit=>unit.id!==form.leadUnitId).map(unit=><label key={unit.id}><input type="checkbox" checked={form.participants.includes(unit.id)} onChange={e=>set("participants",e.target.checked?[...form.participants,unit.id]:form.participants.filter(id=>id!==unit.id))}/><span>{unit.name}</span></label>)}</div>
+          </details>}
+        </section>
+        <section className="ceac-project-form-section" aria-labelledby="ceac-project-timing">
+          <header><span className="ceac-project-form-index" aria-hidden="true">03</span><div><h3 id="ceac-project-timing">When will it happen?</h3><p>Dates are optional. Add them now if you already have a schedule.</p></div></header>
+          <div className="ceac-project-form-date-grid">
+            <FieldGroup label="Start date"><input className="field" type="date" value={form.startsOn} onChange={e=>set("startsOn",e.target.value)}/></FieldGroup>
+            <FieldGroup label="When should it be completed?"><input className="field" aria-label="Target date" type="date" min={form.startsOn||undefined} value={form.endsOn} onChange={e=>set("endsOn",e.target.value)}/></FieldGroup>
+          </div>
+          {form.startsOn&&form.endsOn&&form.endsOn<form.startsOn?<p role="alert" className="ceac-project-form-error">The completion date must be on or after the start date.</p>:null}
+        </section>
       </fieldset>
-      <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><button className="btn btn-ghost" type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="btn" disabled={busy||!ready}>{busy?"Saving project…":createdId.current?"Verify saved project":"Create project"}</button></div>
+      <footer className="ceac-project-form-footer">
+        <p>Next: add tasks, set milestones and bring your team into the project.</p>
+        <div><button className="btn btn-ghost" type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="btn" disabled={busy||!ready}>{busy?"Creating project…":createdId.current?"Check saved project":"Create project"}</button></div>
+      </footer>
     </form>
   </ComposerDrawer>;
 }
