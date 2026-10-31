@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { LoadingState, ProductNotice } from "./bits";
 import ExecutiveProjectDepartments from "./ExecutiveProjectDepartments";
 import Stage2ProjectOverview from "./Stage2ProjectOverview";
-import { ProjectWorkspaceHeader } from "../experience-v2/project-family/ProjectFamilyV2";
+import { ProjectTabs, ProjectWorkspaceHeader } from "../experience-v2/project-family/ProjectFamilyV2";
 
 /**
  * Stage 2 factual cross-role project inspector; explicit Executive actions
@@ -13,6 +13,7 @@ import { ProjectWorkspaceHeader } from "../experience-v2/project-family/ProjectF
  */
 export default function Stage2ProjectReader({ projectId, openItem, onBack, me, goAssign }) {
   const [reload, setReload] = useState(0);
+  const [view, setView] = useState("overview");
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,9 +71,15 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
     {project && <>
       <ProjectWorkspaceHeader kind={project.kind} title={project.name} purpose={project.purpose}
         status={project.status} context={project.units?.name || "Lead unit not recorded"} onBack={onBack} />
-      <p className="screen-note">Project progress uses the records your account can read.</p>
+      <p className="screen-note">Every number below comes from work and delivery records available to your role. Project access does not expose private employee information.</p>
       {me?.is_exec && ["planned","active"].includes(project.status) && <div className="exec-directory-actions"><button type="button" className="btn" onClick={() => goAssign?.({projectId:project.id})}>Give out work</button><ExecutiveProjectDepartments me={me} project={project} onSaved={() => setReload(n => n+1)} /></div>}
-      <Stage2ProjectOverview key={project.id} project={project} openWork={openItem} canAssign={false} />
+      <ProjectTabs ariaLabel="Executive project details" items={[
+        ["overview", "Overview"],
+        ["people", "People & departments", project.participants.length],
+        ["work", "Project tasks", project.work.filter(row => row.kind === "task").length],
+        ["milestones", "Milestones & activity", project.milestones?.length ?? undefined],
+      ]} value={view} onChange={setView} />
+      <Stage2ProjectOverview key={project.id} project={project} section={view} openWork={openItem} canAssign={false} />
     </>}
     {!project && (loading || error) && <button type="button" className="btn btn-ghost" onClick={onBack}>Back to projects</button>}
   </div>;
