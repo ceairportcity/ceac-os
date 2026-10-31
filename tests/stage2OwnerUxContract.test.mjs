@@ -34,9 +34,9 @@ test("Projects presents one connected workspace with factual people and task tab
   assert.match(source, /project\.participants/);
   assert.match(source, /project\.work/);
   assert.match(source, /item\.profiles\?\.full_name/);
-  assert.match(source, /Project team/);
+  assert.match(source, /People contributing/);
   assert.match(source, /Departments involved/);
-  assert.match(source, /Project tasks/);
+  assert.match(source, /Tasks and responsibilities/);
   assert.match(source, /No recorded tasks match this view/);
   assert.match(styles, /\.s2-project-layout>\.s2-project-content\{/);
   assert.doesNotMatch(styles, /\.s2-project-layout>\.s2-project-primary\{/);

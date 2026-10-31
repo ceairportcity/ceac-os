@@ -63,7 +63,7 @@ test("Ministry direction links to actual recorded projects instead of passive te
   const app = source("src/App.jsx");
   const strategy = source("src/screens/Strategy.jsx");
   assert.match(strategy, /onOpenProject\(link\.project_id\)/);
-  assert.match(strategy, /Strategic priorities and delivery/);
+  assert.match(strategy, /Church priorities and progress/);
   assert.match(app, /onOpenProject=\{isExec/);
 });
 

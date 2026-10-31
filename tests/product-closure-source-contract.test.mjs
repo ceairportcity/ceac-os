@@ -392,8 +392,8 @@ test("P5 project work indicators respect exact Ghana deadlines and refresh on an
  assert.match(s,/deadlineOverdue\(row\.due_at, asOf\)/);
  assert.match(s,/window\.setInterval\(refresh, 60000\)/);
  assert.match(s,/document\.addEventListener\("visibilitychange", refresh\)/);
- assert.match(s,/<span>Task completion<\/span>/);
- assert.match(s,/<span>Departments<\/span>/);
+ assert.match(s,/<span>Work completed<\/span>/);
+ assert.match(s,/<span>Departments involved<\/span>/);
  assert.doesNotMatch(s,/new Date\(row\.due_at\) < new Date\(\)/);
 });
 
