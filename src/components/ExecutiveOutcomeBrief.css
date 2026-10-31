@@ -33,3 +33,5 @@
 .s2-exec-brief-charts .ev2dv-chart-head{gap:8px}
 @media(max-width:880px){.s2-exec-brief-charts{grid-template-columns:minmax(0,1fr)}}
 @media print{.s2-exec-brief-charts{break-inside:avoid}}
+
+.s2-exec-brief-unit p{white-space:pre-line}
