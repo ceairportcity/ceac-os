@@ -58,7 +58,7 @@ const ROOT_COMPONENTS = Object.freeze({
     "ManagerReports"
   ],
   "exec-projects": [
-    "AdminProjects"
+    "ExecutiveProjectsWorkspace"
   ],
   "exec-organisation": [
     "ExecutiveOrganisation"
@@ -79,6 +79,7 @@ const ROOT_COMPONENTS = Object.freeze({
     "Strategy"
   ],
   "delivery": [
+    "ExecutiveProjectsWorkspace",
     "Delivery"
   ],
   "workload": [
