@@ -70,7 +70,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     <ProjectPageHeader
       eyebrow={me.is_exec?"Executive delivery":"Organisation delivery"}
       title="Projects"
-      description={me.is_exec?"Create and oversee ministry projects across departments. Open a project to review work, responsible departments, milestones and recorded delivery evidence.":"Create projects and coordinate objectives, work, people and evidence across departments."}
+      description={me.is_exec?"See every department’s projects, check what needs your attention and open a project to review its progress, team and next steps.":"Plan projects, assign responsibilities and keep the work moving across departments."}
       actionLabel="Create project" onAction={()=>setCreating(true)}
     />
 
@@ -81,10 +81,10 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     <ProjectSummary items={[
       {label:"Active projects",value:active.length,detail:"Recorded as active",selected:filter==="active",onClick:()=>chooseFilter("active")},
       {label:"Planned projects",value:planned.length,detail:"Recorded as planned",selected:filter==="planned",onClick:()=>chooseFilter("planned")},
-      {label:"Need objective attention",value:attention.length,detail:"At risk or not met objective state",selected:filter==="attention",onClick:()=>chooseFilter("attention")},
+      {label:"Needs attention",value:attention.length,detail:"Recorded goals that need a decision",selected:filter==="attention",onClick:()=>chooseFilter("attention")},
     ]} />
 
-    <ProjectSectionHeader eyebrow="Delivery" title={filter==="all"?"Organisation projects":filter==="attention"?"Projects needing objective attention":filter==="active"?"Active projects":"Planned projects"} count={visible.length} />
+    <ProjectSectionHeader eyebrow="Delivery" title={filter==="all"?"Organisation projects":filter==="attention"?"Projects needing attention":filter==="active"?"Active projects":"Planned projects"} count={visible.length} />
     {filter!=="all"&&<Button variant="secondary" onClick={()=>setFilter("all")}>Show all projects</Button>}
 
     {projects.length===0&&<ProjectEmpty title="No projects recorded" description="Create a project to begin planning objectives and work." />}
@@ -102,20 +102,20 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
         const projectUnits=project.participating.length?project.participating.join(", "):"No participating units recorded";
         const facts=project.objectives.length
           ? [
-              {label:"Objectives",value:project.objectives.length},
-              {label:"On track / met",value:onTrack},
+              {label:"Goals",value:project.objectives.length},
+              {label:"On track or achieved",value:onTrack},
               {label:"At risk",value:atRisk},
-              {label:"Not met",value:notMet},
-              ...(other?[{label:"Other states",value:other}]:[]),
+              {label:"Not achieved",value:notMet},
+              ...(other?[{label:"Other updates",value:other}]:[]),
             ]
-          : [{label:"Objectives",value:"None recorded"}];
+          : [{label:"Goals",value:"None recorded"}];
 
         return <ProjectContextRow
           key={project.id}
-          eyebrow="Organisation project"
+          eyebrow={me.is_exec?"Organisation-wide project":"Department project"}
           title={project.name}
-          meta={`Lead: ${project.leadUnit} · ${dateContext}`}
-          note={`Project units: ${projectUnits} · ${project.purpose||"No purpose recorded."}`}
+          meta={`Responsible: ${project.leadUnit} · ${dateContext}`}
+          note={`${project.purpose||"Project goal not recorded yet."} · Helping departments: ${projectUnits}`}
           status={project.status}
           facts={facts}
           actions={[{

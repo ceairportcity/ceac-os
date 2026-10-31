@@ -260,11 +260,11 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
       <div className={executiveSurface ? "ev2ex-ministry-head-copy" : ""}>
         <div className="eyebrow">{executiveSurface ? "Executive ministry" : "Goals & strategy"}</div>
         <h1 className="h1">{executiveSurface ? "Ministry direction & outcomes" : "Strategy"}</h1>
-        <p className="screen-note">{executiveSurface ? "See what the ministry is working toward, which departments are responsible and where project evidence supports the outcome." : "Ministry Direction → Ministry Objective → Unit Objective. Descriptive goals stay descriptive; numeric goals always show the result beside its target."}</p>
+        <p className="screen-note">{executiveSurface ? "Set the church’s priorities, see what each department is working toward and follow the projects delivering those results." : "Ministry Direction → Ministry Objective → Unit Objective. Descriptive goals stay descriptive; numeric goals always show the result beside its target."}</p>
       </div>
       {canGlobal && executiveSurface && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button className="btn" onClick={() => openCreate(directions.length ? "ministry_objective" : "ministry_direction")}>{directions.length ? "Add ministry objective" : "Set ministry direction"}</button>
-        <button className="btn btn-ghost" onClick={() => openCreate("ministry_direction")}>Add Ministry Direction</button>
+        <button className="btn" onClick={() => openCreate(directions.length ? "ministry_objective" : "ministry_direction")}>{directions.length ? "Add a goal" : "Set church priority"}</button>
+        <button className="btn btn-ghost" onClick={() => openCreate("ministry_direction")}>Add another priority</button>
       </div>}
     </div>
 
@@ -272,20 +272,20 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
     {notice && <ProductNotice tone="success" title="Strategy">{notice}</ProductNotice>}
 
     {canGlobal && !executiveSurface && <div style={{ marginTop: 16 }}>
-      <button className="btn wide-auto" onClick={() => openCreate("ministry_direction")}>Add Ministry Direction</button>
+      <button className="btn wide-auto" onClick={() => openCreate("ministry_direction")}>Add another priority</button>
     </div>}
 
     {executiveSurface && <section className="ev2ex-ministry-facts" aria-label="Recorded ministry direction and delivery">
        <div className="ev2p-summary" role="group" aria-label="Ministry priorities">
-         <div><strong>{directions.filter((d) => d.status !== "closed").length}</strong><span>Current directions</span></div>
-         <div><strong>{nodes.filter((n) => n.node_type === "ministry_objective" && n.status !== "closed").length}</strong><span>Ministry objectives</span></div>
+         <div><strong>{directions.filter((d) => d.status !== "closed").length}</strong><span>Church priorities</span></div>
+         <div><strong>{nodes.filter((n) => n.node_type === "ministry_objective" && n.status !== "closed").length}</strong><span>Goals</span></div>
          <div><strong>{nodes.filter((n) => n.status === "at_risk" || n.status === "not_met").length}</strong><span>Require attention</span></div>
-         <div><strong>{new Set(links.filter((l) => l.status === "active").map((l) => l.project_id)).size}</strong><span>Connected projects</span></div>
+         <div><strong>{new Set(links.filter((l) => l.status === "active").map((l) => l.project_id)).size}</strong><span>Projects linked to goals</span></div>
        </div>
-       <p className="screen-note">Direction defines the purpose. Departments record their objectives, connect real projects and report the results. Counts are recorded facts, not automatic performance scores.</p>
+       <p className="screen-note">Start with what the church wants to achieve. Each department can then add its goals and connect the projects doing the work. The figures below come from saved records.</p>
      </section>}
-     <div className={executiveSurface ? "sec ev2ex-ministry-section-title" : "sec"}><span>{executiveSurface ? "Strategic priorities and delivery" : "Strategic hierarchy"}</span><span>{nodes.length}</span></div>
-    {directions.length === 0 && <EmptyState title="No Ministry Direction recorded">{executiveSurface ? "Add the church’s ministry direction, then connect its objectives." : "An authorised strategy owner can record the first Ministry Direction without inventing a numeric score."}</EmptyState>}
+     <div className={executiveSurface ? "sec ev2ex-ministry-section-title" : "sec"}><span>{executiveSurface ? "Church priorities and progress" : "Strategic hierarchy"}</span><span>{nodes.length}</span></div>
+    {directions.length === 0 && <EmptyState title="No church priorities recorded yet">{executiveSurface ? "Start by setting the church’s main priority. Departments can then add goals and connect projects." : "An authorised strategy owner can record the first Ministry Direction without inventing a numeric score."}</EmptyState>}
 
     {directions.map((direction) => <section className={executiveSurface ? "card ev2ex-ministry-direction" : "card"} key={direction.id} style={executiveSurface ? undefined : { padding: 18, marginBottom: 14 }}>
       <div className="eyebrow">{TYPE_LABELS[direction.node_type]} · {direction.status.replaceAll("_", " ")}</div>
@@ -324,8 +324,8 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
     {form && <ComposerDrawer
       open
       onClose={() => { if (!busy) setForm(null); }}
-      title={form.id ? `Revise ${TYPE_LABELS[form.nodeType].toLowerCase()}` : `New ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
-      description="Describe the intended result in plain language. Link it to the right direction; use a number only if you have a real measure and target."
+      title={form.id ? `Edit ${TYPE_LABELS[form.nodeType].toLowerCase()}` : `Add ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
+      description="Explain what you want to achieve. Choose which priority it supports, and add a number only when you have a real way to measure progress."
       panelClassName="reference-composer reference-objective-composer"
       footer={<button className="btn" disabled={busy || !form.name.trim() || !form.statement.trim() || !form.reason.trim() || (form.nodeType !== "ministry_direction" && !form.parentId) || (form.nodeType === "unit_objective" && !form.unitId) || (form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim()))} onClick={saveNode}>
         {busy ? "Saving…" : form.id ? "Record revision" : `Create ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
@@ -346,14 +346,14 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
         </select>
       </FieldGroup>}
 <FieldGroup label={form.nodeType === "ministry_direction" ? "Direction title *" : "Objective title *"}><input className="field" aria-label="Strategy name" placeholder="Name the specific ministry priority" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FieldGroup>
-      <FieldGroup label="Statement *"><textarea className="field" aria-label="Strategy statement" rows="4" placeholder="What are we trying to achieve?" value={form.statement} onChange={(event) => setForm({ ...form, statement: event.target.value })} /></FieldGroup>
+      <FieldGroup label="What should this achieve? *"><textarea className="field" aria-label="Strategy statement" rows="4" placeholder="What are we trying to achieve?" value={form.statement} onChange={(event) => setForm({ ...form, statement: event.target.value })} /></FieldGroup>
       <button type="button" className="btn btn-ghost btn-sm" aria-expanded={showAdvanced}
         onClick={() => setShowAdvanced(value => !value)}>{showAdvanced ? "Hide additional planning details" : "Add measure, dates or status"}</button>
       {showAdvanced && <div className="reference-measurement-group">
-      <FieldGroup label="Measurement *">
+      <FieldGroup label="How will progress be checked? *">
         <select className="field" aria-label="Strategy measurement" value={form.measurementKind} onChange={(event) => setForm({ ...form, measurementKind: event.target.value, targetValue: "", targetUnit: "", currentValue: "" })}>
-          <option value="descriptive">Descriptive (no percentage)</option>
-          <option value="numeric">Numeric result and target</option>
+          <option value="descriptive">Written progress updates</option>
+          <option value="numeric">Track a number against a target</option>
         </select>
       </FieldGroup>
       {form.measurementKind === "numeric" && <div className="ocr-composer-group reference-measurement-group">
@@ -378,7 +378,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
       </FieldGroup>
 
       </div>}
-      <FieldGroup label="Reason / context *">
+      <FieldGroup label="Why are you adding or changing this? *">
         <textarea className="field" aria-label="Strategy change reason" rows="2"
           placeholder="Why is this priority being recorded or revised?"
           value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} />
