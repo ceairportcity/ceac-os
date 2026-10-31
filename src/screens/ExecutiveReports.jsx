@@ -14,7 +14,7 @@ import {
   ReportingSection,
 } from "../experience-v2/reporting-family/ReportingFamilyV2";
 
-export default function ExecutiveReports({ me, openItem }) {
+export default function ExecutiveReports({ me, openItem, onOpenAchievements = null }) {
   const [period, setPeriod] = useState(null);
   const [periodOptions, setPeriodOptions] = useState([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
@@ -211,7 +211,7 @@ export default function ExecutiveReports({ me, openItem }) {
 
   return (
     <div className="body ev2-reporting-page ev2-reporting-executive">
-      <ReportingPageHeader
+      <ReportingPageHeader onOpenAchievements={onOpenAchievements}
         eyebrow="Executive insight"
         title="Reports"
         description="Read department reports and the evidence behind them. Filter by period or filing status."
