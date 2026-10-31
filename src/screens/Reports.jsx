@@ -20,7 +20,7 @@ import {
 
 const KINDS = [["week","Weekly"],["month","Monthly"],["project","Project"],["year","Yearly"]];
 
-export default function Reports({ me }) {
+export default function Reports({ me, onOpenAchievements = null }) {
   const [periods, setPeriods] = useState([]);
   const [reports, setReports] = useState([]);
   const [units, setUnits] = useState([]);
@@ -202,7 +202,7 @@ export default function Reports({ me }) {
   if (loadedActor !== actorScope || loading) {
     return (
       <div className="body ev2-reporting-page ev2-reporting-admin" aria-busy="true">
-        <ReportingPageHeader
+        <ReportingPageHeader onOpenAchievements={onOpenAchievements}
           eyebrow="Administration reporting"
           title="Reports"
           description="Open reporting periods, track named unit follow-up, and inspect submitted narratives without turning coverage into a performance score."
@@ -219,7 +219,7 @@ export default function Reports({ me }) {
   if (loadFailed) {
     return (
       <div className="body ev2-reporting-page ev2-reporting-admin">
-        <ReportingPageHeader
+        <ReportingPageHeader onOpenAchievements={onOpenAchievements}
           eyebrow="Administration reporting"
           title="Reports"
           description="Open reporting periods, track named unit follow-up, and inspect submitted narratives without turning coverage into a performance score."
@@ -256,7 +256,7 @@ export default function Reports({ me }) {
 
     return (
       <div className="body ev2-reporting-page ev2-reporting-admin">
-        <ReportingPageHeader
+        <ReportingPageHeader onOpenAchievements={onOpenAchievements}
           eyebrow={`${(KINDS.find((row) => row[0] === period.kind) || ["",""])[1]} reporting period`}
           title={period.label}
           description={`${dateOnly(period.starts_on)} — ${dateOnly(period.ends_on)}. Coverage remains factual follow-up context; named units remain visible.`}
@@ -356,7 +356,7 @@ export default function Reports({ me }) {
 
   return (
     <div className="body ev2-reporting-page ev2-reporting-admin">
-      <ReportingPageHeader
+      <ReportingPageHeader onOpenAchievements={onOpenAchievements}
         eyebrow="Administration reporting"
         title="Reports"
         description="Open reporting periods, see named filing follow-up, and inspect unit narratives. Administration owns reporting periods; Managers file within their authorised scope."
