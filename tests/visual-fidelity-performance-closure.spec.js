@@ -22,8 +22,12 @@ const budgets = {
   // redesign adds 34,635 bytes beyond the preceding measured 640,306-byte
   // role-aware baseline. The exact-head candidate emitted 674,941 bytes in
   // CI 41206798967. Cap at 660 KiB (675,840 bytes): 899 bytes headroom.
-  // Keep individual route/vendor budgets unchanged; future growth needs review.
-  allCssRaw: 660 * KIB,
+  // 31 Oct owner-approved tablet layout: measured all-CSS output grew from
+  // 674,941 to 680,362 bytes (5,421 additional bytes) to support iPad mini
+  // through landscape tablet across four roles. Review confirms necessary
+  // explicit tablet geometry and no change to the gzip/core/route budgets.
+  // New cap 666 KiB = 681,984 bytes; only 1,622 bytes spare.
+  allCssRaw: 666 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;

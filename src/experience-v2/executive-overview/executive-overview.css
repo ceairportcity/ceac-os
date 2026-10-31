@@ -409,3 +409,22 @@ button.executivev2-kpi:focus-visible { outline: 3px solid rgba(113,72,232,.18); 
   .executivev2-kpi { grid-template-columns: 32px minmax(0,1fr); }
   .executivev2-kpi-icon { width: 32px; height: 32px; }
 }
+
+/* Tablet overview: preserve the laptop cards and hero instead of
+   squeezing four KPI cards into a narrow portrait viewport. */
+@media (min-width: 721px) and (max-width: 1023px) {
+  .executivev2 { min-width: 0; padding-inline: 8px; }
+  .executivev2-hero { gap: 12px; padding-inline: 18px; }
+  .executivev2-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .executivev2-reference-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .executivev2-organisation { grid-column: 1 / -1; }
+  .executivev2-lower-grid { grid-template-columns: minmax(0, 1fr); }
+  .executivev2-kpi, .executivev2-reference-panel { min-width: 0; }
+  .executivev2-kpi-copy, .executivev2-panel-head h2 { min-width: 0; }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .executivev2-kpis { gap: 8px; }
+  .executivev2-kpi { grid-template-columns: 34px minmax(0, 1fr); gap: 8px; padding: 10px; }
+  .executivev2-kpi-icon { width: 34px; height: 34px; }
+  .executivev2-kpi-copy > strong { font-size: 19px; }
+}

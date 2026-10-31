@@ -118,6 +118,7 @@ export function SideNav({
                     type="button"
                     className={tab === item.key ? "is-active" : ""}
                     aria-current={tab === item.key ? "page" : undefined}
+                    title={item.label}
                     onClick={() => setTab(item.key)}
                   >
                     <CeacIcon name={item.icon} size="nav" decorative />
