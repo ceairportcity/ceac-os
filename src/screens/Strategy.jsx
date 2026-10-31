@@ -268,6 +268,12 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
       </div>}
     </div>
 
+    {executiveSurface && <section className="ev2ex-priority-guide" aria-label="How church priorities become completed work">
+      <div><span aria-hidden="true">01</span><h2>Set the priority</h2><p>What should the church achieve? Leadership records the main direction and why it matters.</p></div>
+      <div><span aria-hidden="true">02</span><h2>Agree on goals</h2><p>Departments describe the results they are responsible for, and how they will show progress.</p></div>
+      <div><span aria-hidden="true">03</span><h2>Follow the projects</h2><p>Connect real projects to those goals so leaders can see who is doing the work and what has been delivered.</p></div>
+    </section>}
+
     {error && <ProductNotice tone="error" title="Strategy">{error}</ProductNotice>}
     {notice && <ProductNotice tone="success" title="Strategy">{notice}</ProductNotice>}
 
