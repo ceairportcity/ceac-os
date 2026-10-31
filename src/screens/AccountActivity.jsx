@@ -116,7 +116,7 @@ function AccountWorkspace({ me }) {
       <PersonalSection
         eyebrow="Account protection"
         title="Authenticator app"
-        description="Use an authenticator app to help protect your account. You can see and manage your sign-in protection here."
+        description="Use an authenticator app for an extra sign-in check. Set it up or review it here."
       >
         <AccountMfaSetup key={`${me.org_id}:${me.id}`}/>
       </PersonalSection>

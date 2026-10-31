@@ -233,6 +233,13 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
         </select>
       </div>}
 
+      {!contextPending && !contextError && (
+        <nav className="ev2rep-tabs" role="tablist" aria-label="Executive reporting workspace">
+            {[["brief","Organisation brief"],["explore","Explore"],["departments","Departments"],["quarterly","Quarterly reports"]].map(([key,label])=>
+              <button key={key} type="button" role="tab" aria-selected={workspaceView===key}
+                className={workspaceView===key?"is-active":""} onClick={()=>setWorkspaceView(key)}>{label}</button>)}
+          </nav>
+      )}
       {contextPending ? (
         <div className="ev2rep-loading" aria-label="Loading reports" aria-busy="true">
           <Skeleton variant="block" height="7rem" />
@@ -254,7 +261,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
           <ReportingSection
             eyebrow="Latest period"
             title="No reporting period is recorded"
-            description="Executive reporting remains empty until Administration records a reporting period."
+            description="No reporting period has been opened yet. You can still see the quarterly review area. Administration will set the reporting dates."
           >
             <ReportingEmpty
               title="No leadership reporting context yet"
@@ -269,11 +276,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
         </div>
       ) : (
         <>
-          <nav className="ev2rep-tabs" role="tablist" aria-label="Executive reporting workspace">
-            {[["brief","Organisation brief"],["explore","Explore"],["departments","Departments"],["quarterly","Quarterly reports"]].map(([key,label])=>
-              <button key={key} type="button" role="tab" aria-selected={workspaceView===key}
-                className={workspaceView===key?"is-active":""} onClick={()=>setWorkspaceView(key)}>{label}</button>)}
-          </nav>
+          
           {workspaceView==="quarterly" && <>
           <div className="exec-redesign-tabs ev2rep-status-tabs" role="tablist" aria-label="Report filters">
             {[
