@@ -4,8 +4,9 @@ import ReportingFilingOverview from "../components/ExecutiveFilingOverview";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import OperationalArchiveRecords from "../components/OperationalArchiveRecords";
 import { dateOnly } from "../lib/time";
-import { reportAccraDate, reportDateOnly, reportWeekRange, reportMonthRange } from "../lib/ghanaReportingDates";
+import { reportAccraDate, reportDateOnly, reportWeekRange, reportMonthRange, reportQuarterRange } from "../lib/ghanaReportingDates";
 import { isIssuedUnitReport, latestUnitReportStatus } from "../lib/ministryReportingFacts";
+import { verifiedReportingQuarter } from "../lib/quarterlyReportingWindow";
 import { ProductNotice } from "../components/bits";
 import { Button, ComposerDrawer, Skeleton, StatePanel } from "../experience-v2/components";
 import {
@@ -18,7 +19,7 @@ import {
   ReportingStatusBadge,
 } from "../experience-v2/reporting-family/ReportingFamilyV2";
 
-const KINDS = [["week","Weekly"],["month","Monthly"],["project","Project"],["year","Yearly"]];
+const KINDS = [["week","Weekly"],["month","Monthly"],["quarter","Quarterly"],["project","Project"],["year","Yearly"]];
 
 export default function Reports({ me, onOpenAchievements = null }) {
   const [periods, setPeriods] = useState([]);
@@ -120,6 +121,9 @@ export default function Reports({ me, onOpenAchievements = null }) {
     } else if (nextKind === "month") {
       const range = reportMonthRange(now);
       setStarts(range.start); setEnds(range.end); setLabel(range.label);
+    } else if (nextKind === "quarter") {
+      const range = reportQuarterRange(now);
+      setStarts(range.start); setEnds(range.end); setLabel(range.label);
     } else if (nextKind === "year") {
       const year = reportAccraDate(now).slice(0,4);
       setStarts(year + "-01-01"); setEnds(year + "-12-31"); setLabel(year);
@@ -137,6 +141,7 @@ export default function Reports({ me, onOpenAchievements = null }) {
       if (!label.trim()) throw new Error("Give the period a name people will recognise.");
       if (!starts || !ends) throw new Error("Set the start and end dates.");
       if (ends < starts) throw new Error("The end date is before the start date.");
+      if (kind === "quarter" && !verifiedReportingQuarter({starts_on:starts,ends_on:ends})) throw new Error("Quarterly periods must cover one complete January–March, April–June, July–September or October–December quarter.");
       const { error } = await supabase.from("report_periods").insert({
         org_id: me.org_id,
         kind,
@@ -373,13 +378,13 @@ export default function Reports({ me, onOpenAchievements = null }) {
       {msg && !sheet ? <ProductNotice tone="error" title="Reporting update">{msg}</ProductNotice> : null}
 
       <div className="ev2rep-actions">
-        <Button onClick={() => { prefill("week"); setSheet("new"); setMsg(null); }}>Open reporting period</Button>
+        <Button onClick={() => { prefill("quarter"); setSheet("new"); setMsg(null); }}>Open reporting period</Button>
       </div>
 
       {openPeriods.length === 0 ? (
         <div className="ev2rep-live-state">
           <strong>No period is open</strong>
-          Managers cannot file or save a report against a missing reporting period. Open a week, month, project or year period when reporting should begin.
+          Managers cannot file or save a report against a missing reporting period. Open a quarterly, monthly, weekly, project or annual reporting period before submissions are due.
         </div>
       ) : null}
 

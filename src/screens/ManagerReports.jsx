@@ -8,6 +8,7 @@ import {
   reportAccraDate as localDate,
   reportWeekRange as weekRange,
   reportMonthRange as monthRange,
+  reportQuarterRange as quarterRange,
 } from "../lib/ghanaReportingDates";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
@@ -198,7 +199,7 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
     }
   }
 
-  const baseRange = useMemo(() => mode === "week" ? weekRange(parseDateOnly(reportDay)) : mode === "month" ? monthRange(parseDateOnly(reportDay)) : null, [mode, reportDay]);
+  const baseRange = useMemo(() => mode === "week" ? weekRange(parseDateOnly(reportDay)) : mode === "month" ? monthRange(parseDateOnly(reportDay)) : mode === "quarter" ? quarterRange(parseDateOnly(reportDay)) : null, [mode, reportDay]);
   const kindPeriods = useMemo(() => periods.filter((period) => period.kind === mode), [periods, mode]);
 
   const matchingPeriod = useMemo(() => {
@@ -306,27 +307,27 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
     if (!range || !evidence) return [];
     const rows = [];
     let day = parseDateOnly(range.start), end = parseDateOnly(range.end);
-    while (day <= end && rows.length < 62) {
+    while (day <= end && rows.length < (mode === "quarter" ? 93 : 62)) {
       const key = dateKey(day);
       const items = evidence.completed.filter((row) => localDate(row.completed_at) === key);
       rows.push({ date: key, label: key, value: items.length, rows: items, section: `completed_day:${key}` });
       day = addDays(day, 1);
     }
     return rows;
-  }, [range, evidence]);
+  }, [range, evidence, mode]);
 
   const attendanceHeat = useMemo(() => {
     if (!range || !evidence) return [];
     const rows = [];
     let day = parseDateOnly(range.start), end = parseDateOnly(range.end);
-    while (day <= end && rows.length < 62) {
+    while (day <= end && rows.length < (mode === "quarter" ? 93 : 62)) {
       const key = dateKey(day);
       const dayRows = distinctAttendanceDays(evidence.periodSessions.filter((row) => localDate(row.started_at) === key));
       rows.push({ date: key, label: key, value: dayRows.length, rows: dayRows, section: `attendance_day:${key}` });
       day = addDays(day, 1);
     }
     return rows;
-  }, [range, evidence]);
+  }, [range, evidence, mode]);
 
   const statusRows = useMemo(() => {
     if (!evidence) return [];
@@ -660,7 +661,7 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
     </ProductNotice>}
 
     <ReportingTabs
-      items={[["week","Weekly"],["month","Monthly"],["project","Project"]]}
+      items={[["week","Weekly"],["month","Monthly"],["quarter","Quarterly"],["project","Project"]]}
       value={mode}
       onChange={(key) => {
         setMode(key);
@@ -675,7 +676,7 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
 
     <div className="ev2rep-control-panel">
       {mode !== "project" && kindPeriods.length > 0 && <select className="field" aria-label="Reporting period" value={matchingPeriod?.id || ""} onChange={(event) => { setSelectedPeriodId(event.target.value); setSelectedReportId(null); setDrill(null); }}>
-        <option value="">Current {mode === "week" ? "week" : "month"} preview</option>
+        <option value="">Current {mode === "week" ? "week" : mode === "quarter" ? "quarter" : "month"} preview</option>
         {kindPeriods.map((period) => <option key={period.id} value={period.id}>{period.label} · {period.starts_on} → {period.ends_on} · {period.status}</option>)}
       </select>}
 
