@@ -18,11 +18,12 @@ const budgets = {
   // retain narrow regression headroom rather than exempting the new product CSS.
   coreCssRaw: 534 * KIB,
   coreCssGzip: 80 * KIB,
-  // The 31 Oct role-aware Executive, Projects, Organisation and reporting
-  // scope adds real shared layouts and readable controls. The measured
-  // complete CSS is 640,306 bytes; the new 626 KiB cap leaves only 718 bytes
-  // headroom, keeps per-route budgets and requires future growth to be reviewed.
-  allCssRaw: 626 * KIB,
+  // The approved 31 Oct premium Projects, Ministry, Organisation and My Hub
+  // redesign adds 34,635 bytes beyond the preceding measured 640,306-byte
+  // role-aware baseline. The exact-head candidate emitted 674,941 bytes in
+  // CI 41206798967. Cap at 660 KiB (675,840 bytes): 899 bytes headroom.
+  // Keep individual route/vendor budgets unchanged; future growth needs review.
+  allCssRaw: 660 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;
