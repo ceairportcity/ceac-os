@@ -72,7 +72,7 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
       <ProjectWorkspaceHeader kind={project.kind} title={project.name} purpose={project.purpose}
         status={project.status} context={project.units?.name || "Lead unit not recorded"} onBack={onBack} />
       <p className="screen-note">Every number below comes from work and delivery records available to your role. Project access does not expose private employee information.</p>
-      {me?.is_exec && ["planned","active"].includes(project.status) && <div className="exec-directory-actions"><button type="button" className="btn" onClick={() => goAssign?.({projectId:project.id})}>Give out work</button><ExecutiveProjectDepartments me={me} project={project} onSaved={() => setReload(n => n+1)} /></div>}
+      {me?.is_exec && ["planned","active"].includes(project.status) && <div className="s2-project-quick-actions" aria-label="Project actions"><button type="button" className="btn btn-sm" onClick={() => goAssign?.({projectId:project.id})}>Assign project work</button><ExecutiveProjectDepartments me={me} project={project} onSaved={() => setReload(n => n+1)} /></div>}
       <ProjectTabs ariaLabel="Executive project details" items={[
         ["overview", "Overview"],
         ["people", "People & departments", project.participants.length],
