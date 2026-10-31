@@ -8,6 +8,7 @@ import { supabase } from "../lib/supabase";
 import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
 import "./premium-work-detail.css";
+import "../experience-v2/cohesive-refresh.css";
 import WorkActivityDiary from "../components/WorkActivityDiary";
 import WorkProjectLink from "../components/WorkProjectLink";
 import WorkDetailsEditor from "../components/WorkDetailsEditor";
@@ -589,15 +590,15 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         contextType="work_item"
         contextId={item.id}
         relation="assignment_source"
-        title="Source files"
-        emptyText="No source files were supplied with this work."
+        title="Files for this work"
+        emptyText="No files were attached when this work was assigned."
       />
 
       {item.purpose && <WorkDetailSection title="Why this matters">
         <WorkDetailCopy>{item.purpose}</WorkDetailCopy>
       </WorkDetailSection>}
 
-      {item.expected_outcome && <WorkDetailSection title="What finished looks like">
+      {item.expected_outcome && <WorkDetailSection title="What a completed result should include">
         <WorkDetailCopy tone="emphasis">{item.expected_outcome}</WorkDetailCopy>
       </WorkDetailSection>}
 

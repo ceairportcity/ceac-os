@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import { SegmentedControl } from "../experience-v2/components";
 import AccountMfaSetup from "../components/AccountMfaSetup";
+import "../experience-v2/cohesive-refresh.css";
 import {
   PersonalBoundary,
   PersonalEmpty,
@@ -99,7 +100,7 @@ function AccountWorkspace({ me }) {
       <PersonalPageHeader
         eyebrow="Account security"
         title="Your account"
-        description="Where you are signed in, and what has happened under your name. Only you can see this."
+        description="Manage your sign-in protection, devices and account activity in one place."
         statusLabel="Your account only"
       />
 
@@ -109,13 +110,13 @@ function AccountWorkspace({ me }) {
 
       <div hidden={section!=="security"}>
       <div className="form-grid two">
-        <PersonalSection title="Signed-in sessions"><p>{sessionError?"Device records unavailable":`${sessions.length} recorded sessions`}</p><button className="btn btn-ghost btn-sm" onClick={()=>setSection("sessions")}>Review devices</button></PersonalSection>
-        <PersonalSection title="Latest account activity"><p>{activityError?"Account activity unavailable":events[0]?String(events[0].action).replace(/[._]/g," "):"No activity recorded"}</p><button className="btn btn-ghost btn-sm" onClick={()=>setSection("activity")}>View full history</button></PersonalSection>
+        <PersonalSection title="Your devices"><p>{sessionError?"Device information is temporarily unavailable.":`${sessions.length} signed-in ${sessions.length===1?"device":"devices"} recorded`}</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSection("sessions")}>See devices</button></PersonalSection>
+        <PersonalSection title="Recent activity"><p>{activityError?"Activity is temporarily unavailable":events[0]?String(events[0].action).replace(/[._]/g," ").replace(/^\w/, letter=>letter.toUpperCase()):"No activity recorded yet"}</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSection("activity")}>See activity</button></PersonalSection>
       </div>
       <PersonalSection
         eyebrow="Account protection"
         title="Authenticator app"
-        description="Your own authenticator settings. Mandatory two-step sign-in is deferred for this release."
+        description="Use an authenticator app to help protect your account. You can see and manage your sign-in protection here."
       >
         <AccountMfaSetup key={`${me.org_id}:${me.id}`}/>
       </PersonalSection>

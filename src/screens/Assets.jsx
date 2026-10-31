@@ -5,6 +5,7 @@ import { humanError } from "../lib/productLanguage";
 import { ComposerDrawer } from "../experience-v2/components";
 import { WorkPageHeader } from "../experience-v2/work-family/WorkFamilyV2";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
+import "../experience-v2/cohesive-refresh.css";
 
 function human(value=""){
   return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase());
@@ -233,9 +234,9 @@ export default function Assets({ me }) {
   return <div className={`body assets-page ${personalAssets ? "ev2-personal-page ev2-personal-assets" : ""}`.trim()}>
     {personalAssets ? <PersonalPageHeader
       eyebrow="My Hub"
-      title="Assets & devices"
-      description="CEAC equipment currently in your custody, with factual assignment and lifecycle history. This surface does not remotely manage your device."
-      statusLabel="My custody"
+      title="My equipment"
+      description="See the equipment recorded in your care, its condition and its history."
+      statusLabel="My Hub"
     /> : me.is_admin ? <WorkPageHeader eyebrow="Enterprise asset register" title="Assets & devices" description="CEAC equipment, current custody, repairs and recorded history. This register does not remotely wipe, lock, configure or monitor device operating systems." /> : <div style={{paddingTop:26}}>
       <div className="eyebrow">Enterprise asset register</div>
       <h1 className="h1">Assets & devices</h1>
@@ -245,14 +246,21 @@ export default function Assets({ me }) {
     {error&&<ProductNotice tone="error" title="Assets & devices">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
-    <div className="asset-tabs" role="tablist" aria-label="Asset sections">
-      {[["inventory",canManage?"Inventory":"My assets"],["assigned","Assigned"],["service","Service & lifecycle"],["history","History"]].map(([key,label])=>
+    {personalAssets && <div className="ceac-hub-intro" aria-label="Your equipment at a glance">
+      <div><span>Equipment in your care</span><strong>{assets.length}</strong><small>Based on your recorded assignments</small></div>
+      <p>Select an item to read its details. You can also check repairs and previous assignments below.</p>
+    </div>}
+    <div className="asset-tabs ceac-hub-tabs" role="tablist" aria-label="Equipment sections">
+      {(personalAssets
+        ? [["inventory","My equipment"],["service","Repairs & care"],["history","History"]]
+        : [["inventory",canManage?"Equipment register":"My equipment"],["assigned","Assigned"],["service","Repairs & care"],["history","History"]]
+      ).map(([key,label])=>
         <button key={key} role="tab" aria-selected={tab===key} className={tab===key?"on":""} onClick={()=>setTab(key)}>{label}</button>
       )}
     </div>
 
     {tab==="inventory"&&<>
-      <div className="sec"><span>{canManage?"Visible inventory":"Assets in your custody"}</span>{canManage&&<button className="btn btn-sm" onClick={openCreate}>Add asset</button>}</div>
+      <div className="sec"><span>{canManage?"Equipment register":"Equipment assigned to you"}</span>{canManage&&<button className="btn btn-sm" onClick={openCreate}>Add asset</button>}</div>
       <div className="asset-grid">
         {assets.map((asset)=><article className="card asset-card" key={asset.id}>
           <div className="asset-card-head">
@@ -281,7 +289,7 @@ export default function Assets({ me }) {
           </div>}
         </article>)}
       </div>
-      {!assets.length&&<EmptyState title={canManage?"No assets recorded yet":"No assets are currently assigned to you"}>{canManage?"Add the first CEAC asset/device to begin the register.":"Your assigned CEAC equipment will appear here when custody is recorded."}</EmptyState>}
+      {!assets.length&&<EmptyState title={canManage?"No assets recorded yet":"No equipment is assigned to you yet"}>{canManage?"Add the first CEAC asset/device to begin the register.":"Equipment recorded in your care will appear here."}</EmptyState>}
     </>}
 
     {tab==="assigned"&&<>

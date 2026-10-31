@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import "../experience-v2/cohesive-refresh.css";
 import ReportingFilingOverview from "../components/ExecutiveFilingOverview";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import OperationalArchiveRecords from "../components/OperationalArchiveRecords";

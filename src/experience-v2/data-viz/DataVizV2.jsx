@@ -221,10 +221,14 @@ export function DataVizChart({
   onOpen,
 }) {
   const [view, setView] = useState(defaultView === "table" ? "table" : "chart");
-  const max = Math.max(
-    ...data.flatMap((row) => series.map((item) => Number(row[item.key]) || 0)),
-    0,
-  ) || 1;
+  // Whole-number measures must never show fractional tick labels.
+  // Decimal measures keep their original precision.
+  const values = data.flatMap((row) => series.map((item) => Number(row[item.key]) || 0));
+  const observedMax = Math.max(...values, 0);
+  const isCount = values.every((value) => Number.isInteger(value) && value >= 0);
+  const max = isCount
+    ? observedMax <= 4 ? Math.max(1, observedMax) : Math.ceil(observedMax / 4) * 4
+    : Math.max(observedMax, 1);
   const columns = useMemo(() => [
     {
       key: "label",
@@ -285,6 +289,12 @@ export function DataVizChart({
         <TableShell caption={title ? `${title} — recorded values` : "Recorded values"} columns={columns} rows={data} />
       ) : kind === "donut" ? (
         <div className="ev2dv-donut-wrap"><DonutChart data={data} series={series} onOpen={onOpen} /></div>
+      ) : kind === "bar" && data.length === 1 && series.length === 1 ? (
+        <div className="ev2dv-single-fact">
+          <strong>{formatNumber(data[0][series[0].key])}</strong>
+          <span>{data[0].label} · {series[0].label}</span>
+          {onOpen ? <button type="button" className="ev2dv-record-button" onClick={() => onOpen(data[0], series[0])}>View records</button> : null}
+        </div>
       ) : (
         <div className="ev2dv-svg-wrap">
           <svg
@@ -294,7 +304,7 @@ export function DataVizChart({
             role="img"
             aria-label={ariaLabel || title || "Recorded data chart"}
           >
-            <ChartAxis width={width} height={height} pad={pad} max={max} />
+            <ChartAxis width={width} height={height} pad={pad} max={max} ticks={isCount && max <= 4 ? max : 4} />
             {kind === "line" ? (
               <LineChart data={data} series={series} width={width} height={height} pad={pad} max={max} onOpen={onOpen} />
             ) : (

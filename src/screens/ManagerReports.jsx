@@ -12,6 +12,7 @@ import {
 } from "../lib/ghanaReportingDates";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
+import "../experience-v2/cohesive-refresh.css";
 import { Sheet, ProductNotice, FieldGroup } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { composeQuarterlyNarrative, parseQuarterlyNarrative } from "../lib/reportNarrativeSections";
