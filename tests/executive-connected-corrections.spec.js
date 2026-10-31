@@ -85,7 +85,7 @@ for (const width of [320,390,430,1440]) {
         await schedule.click();
         const open=governance.getByRole('button',{name:'Open quarterly review',exact:true});
         await expect(open).toBeDisabled();
-        expect(await open.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+        expect(await open.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(46, 134, 230)');
         await governance.getByRole('button',{name:'Close',exact:true}).click();
       }
       expect(await title.evaluate(node=>getComputedStyle(node).fontFamily)).toContain('Instrument Sans');
