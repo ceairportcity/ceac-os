@@ -240,9 +240,9 @@ export default function ExecutiveOverviewV2({
             icon="people"
             value={displayCount(summary.activeVolunteers)}
             label="Volunteers"
-            supporting={summary.activeVolunteers === null ? "Visible when authorised" : "Active engagement"}
+            supporting={summary.activeVolunteers === null ? "Visible when authorised" : "Active linked volunteers"}
             tone="purple"
-            onClick={onOpenOrganisation}
+            onClick={() => onOpenOrganisation?.("volunteers")}
           />
           <ExecutiveStat
             icon="goal"
@@ -310,13 +310,13 @@ export default function ExecutiveOverviewV2({
           <section className="executivev2-reference-panel executivev2-organisation">
             <div className="executivev2-panel-head">
               <h2><CeacIcon name="organisation" size="row" decorative />People and departments</h2>
-              <button type="button" onClick={onOpenOrganisation}>View all</button>
+              <button type="button" onClick={() => onOpenOrganisation?.("departments")}>View all</button>
             </div>
             <div className="executivev2-panel-body">
               <OrganisationRow icon="organisation" label="Departments" hint="Currently operating" value={summary.activeUnits} tone="purple" onClick={() => onOpenOrganisation?.("departments")} />
               <OrganisationRow icon="team" label="Teams" hint="Currently operating" value={summary.activeTeams} tone="blue" onClick={() => onOpenOrganisation?.("teams")} />
-              <OrganisationRow icon="people" label="Volunteers" hint="On the active roster" value={summary.activeVolunteers} tone="amber" onClick={() => onOpenOrganisation?.("volunteers")} />
-              <OrganisationRow icon="account" label="Employed staff" hint="On the active roster" value={summary.activeStaff} tone="green" onClick={() => onOpenOrganisation?.("staff")} />
+              <OrganisationRow icon="people" label="Volunteers" hint="Active linked profiles" value={summary.activeVolunteers} tone="amber" onClick={() => onOpenOrganisation?.("volunteers")} />
+              <OrganisationRow icon="account" label="Employed staff" hint="Active linked profiles" value={summary.activeStaff} tone="green" onClick={() => onOpenOrganisation?.("staff")} />
             </div>
           </section>
         </section>
