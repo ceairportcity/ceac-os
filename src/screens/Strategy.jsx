@@ -267,7 +267,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
       </div>
       {canGlobal && executiveSurface && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button className="btn" onClick={() => openCreate(directions.length ? "ministry_objective" : "ministry_direction")}>{directions.length ? "Add ministry goal" : "Set first ministry priority"}</button>
-        <button className="btn btn-ghost" onClick={() => openCreate("ministry_direction")}>Add another priority</button>
+        {directions.length>0 && <button className="btn btn-ghost" onClick={() => openCreate("ministry_direction")}>Add another priority</button>}
       </div>}
     </div>
 

@@ -223,7 +223,7 @@ export default function Record({ me, openItem }) {
 
       <div className="record-summary-grid">
         <div><strong>{record.completed}</strong><span>Completed work</span></div>
-        <div><strong>{record.onTime}<small> / {record.dueCompleted}</small></strong><span>Completed on time</span></div>
+        <div><strong>{record.dueCompleted>0 ? <>{record.onTime}<small> / {record.dueCompleted}</small></> : "—"}</strong><span>{record.dueCompleted>0 ? "Completed on time" : "No dated completed work"}</span></div>
         <div><strong>{feedback.length}</strong><span>Feedback received</span></div>
       </div>
 

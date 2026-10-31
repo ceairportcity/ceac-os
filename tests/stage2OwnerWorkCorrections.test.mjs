@@ -35,7 +35,7 @@ test("each real work record exposes source-backed person-attributed dated activi
   assert.match(diary, /next_action:/);
   assert.match(diary, /duration_minutes:/);
   assert.match(diary, /check\.data\.contributor_id !== me\.id/);
-  assert.match(diary, /This is not an attendance or performance score\./);
+  assert.match(diary, /This does not affect attendance or performance ratings\./);
   assert.doesNotMatch(diary, /\.update\(|\.delete\(|autoApprove|markObjectiveAchieved|calculatePerformanceScore/);
 });
 
