@@ -24,18 +24,18 @@ const emptyDirectory = { units: [], people: [], memberships: [], teams: [], team
 const peopleViewFor = (directory) => directory === "staff" || directory === "volunteers" ? "people" : directory;
 const peopleGroupFor = (directory) => directory === "staff" || directory === "volunteers" ? directory : "all";
 
-export default function ExecutiveOrganisation({ me, directory = null, goAssign, openItem, openRoom }) {
+export default function ExecutiveOrganisation({ me, initialDirectory = null, goAssign, openItem, openRoom }) {
   const [directory, setDirectory] = useState(emptyDirectory);
   const storageKey = `ceac-executive-directory:${me.org_id}:${me.id}`;
   function savedDirectory() {
     try { const value = JSON.parse(sessionStorage.getItem(storageKey) || "{}"); return value && typeof value === "object" && !Array.isArray(value) ? value : {}; }
     catch { return {}; }
   }
-  const [view, setView] = useState(() => peopleViewFor(directory) || (["departments","teams","people"].includes(savedDirectory().view) ? savedDirectory().view : "departments"));
-  const [peopleGroup, setPeopleGroup] = useState(() => peopleGroupFor(directory));
+  const [view, setView] = useState(() => peopleViewFor(initialDirectory) || (["departments","teams","people"].includes(savedDirectory().view) ? savedDirectory().view : "departments"));
+  const [peopleGroup, setPeopleGroup] = useState(() => peopleGroupFor(initialDirectory));
   const [path, setPath] = useState(() => (Array.isArray(savedDirectory().path) ? savedDirectory().path : []).filter(row => row && ["department","team","person"].includes(row.kind) && typeof row.id === "string").slice(-20));
   useEffect(() => { try { sessionStorage.setItem(storageKey, JSON.stringify({view,path})); } catch { /* Navigation still works without storage. */ } }, [storageKey,view,path]);
-  useEffect(() => { if (directory) { setView(peopleViewFor(directory)); setPeopleGroup(peopleGroupFor(directory)); setPath([]); setQuery(""); } }, [directory]);
+  useEffect(() => { if (initialDirectory) { setView(peopleViewFor(initialDirectory)); setPeopleGroup(peopleGroupFor(initialDirectory)); setPath([]); setQuery(""); } }, [initialDirectory]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
