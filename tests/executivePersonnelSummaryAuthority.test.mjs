@@ -26,3 +26,15 @@ test("Executive read-only projection guards role and organisation without granti
  assert.ok(!sql.includes("l.reason"));
  assert.ok(!sql.includes("l.kind"));
 });
+
+test("Executive schedule resolves day-type identities without leaking private schedule reasons",()=>{
+ const sql=source("supabase/migrations/20261031021900_executive_schedule_read_summary.sql");
+ const screen=source("src/screens/ExecutiveOrganisation.jsx");
+ assert.match(sql,/auth\.uid\(\) IS NULL OR NOT public\.app_is_exec\(\)/);
+ assert.match(sql,/s\.org_id=public\.app_org_id\(\)/);
+ assert.match(sql,/workforce_day_types t/);
+ assert.match(sql,/REVOKE ALL ON FUNCTION public\.executive_personnel_schedule/);
+ assert.ok(!sql.includes("s.reason"));
+ assert.ok(screen.includes('rpc("executive_personnel_schedule"'));
+ assert.ok(screen.includes("Recorded weekly schedule"));
+});

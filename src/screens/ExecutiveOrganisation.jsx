@@ -46,6 +46,7 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
   const [personTab, setPersonTab] = useState("overview");
   const [selectedActionUnitId, setSelectedActionUnitId] = useState("");
   const [timeRecords, setTimeRecords] = useState({scope:"",loading:false,sessions:[],leave:[],sessionError:null,leaveError:null});
+  const [scheduleRead, setScheduleRead] = useState({scope:"",loading:false,days:[],error:null});
   const [workState, setWorkState] = useState({ scope: "", loading: false, error: null });
   const heading = useRef(null);
   const scope = `${me.org_id}:${me.id}`;
@@ -102,6 +103,19 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
     })();
     return () => { current = false; };
   }, [me.org_id, me.id, reload]);
+  useEffect(() => {
+    let current = true;
+    setScheduleRead({scope:personScope,loading:personTab==="employment"&&Boolean(personId),days:[],error:null});
+    if(personTab==="employment" && personId){
+      supabase.rpc("executive_personnel_schedule",{p_profile_id:personId}).then(({data,error})=>{
+        if(!current)return;
+        setScheduleRead({scope:personScope,loading:false,days:error?[]:data||[],
+          error:error?"This person's current schedule is not available to the Executive view.":null});
+      }).catch(()=>{if(current)setScheduleRead({scope:personScope,loading:false,days:[],
+        error:"This person's current schedule could not be verified."});});
+    }
+    return ()=>{current=false;};
+  },[personScope,personTab,personId]);
   useEffect(() => {
     let current = true;
     setWork([]); setWorkState({ scope: personScope, loading: showAssignedWork, error: null });
@@ -205,7 +219,18 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
             <div><strong>{currentEmployment?.employment_status?.replaceAll("_"," ")||"Not recorded"}</strong><span>Status</span></div>
             <div><strong>{scheduleText}</strong><span>Recorded working pattern</span></div>
           </div>
-          <p className="screen-note">Only the ordinary employment facts authorised for Executive viewing are shown. Compensation, bank details, identity documents and protected HR records remain private.</p>
+          <h3>Recorded weekly schedule</h3>
+          {scheduleRead.scope!==personScope||scheduleRead.loading ? <LoadingState label="Loading authorised schedule…" />
+            : scheduleRead.error ? <ProductNotice tone="attention" title="Schedule unavailable">{scheduleRead.error}</ProductNotice>
+            : scheduleRead.days.length ? <div className="exec-redesign-list" aria-label="Seven-day recorded work schedule">
+              {scheduleRead.days.map(row=><div className="exec-redesign-list-row" key={row.day_code}>
+                <span className="exec-redesign-row-copy">
+                  <strong>{row.day_label}</strong>
+                  <small>{row.day_type||"Day arrangement not recorded"}{row.expected_start&&row.expected_end?` · ${row.expected_start.slice(0,5)}–${row.expected_end.slice(0,5)}`:""}</small>
+                </span>
+              </div>)}
+            </div> : <p className="screen-note">No current authorised weekly schedule has been recorded for this person. This does not mean they are expected to be absent.</p>}
+          <p className="screen-note">Employment and scheduling facts are read-only. Compensation, bank details, identity documents and protected HR records remain private.</p>
           {employmentRows.length > 1 && <p className="screen-note">This person has employment records across {employmentRows.length} placements. Contact HR for formal employment history.</p>}
         </section>}
         {personTab==="time" && <section aria-label="Recorded attendance and leave">
