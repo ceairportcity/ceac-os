@@ -177,12 +177,9 @@ test("VF8B iPad 744–1133 and small-laptop matrix preserves desktop-style table
         expect(sideGeometry.right).toBeLessThanOrEqual(viewport.width);
       }
 
-      // The same approved role overview must remain visible at every iPad width.
-      const overviewSelector = {
-        staff: ".staffv2", manager: ".managerv2",
-        admin: ".adminv2", executive: ".executivev2",
-      }[role.key];
-      await expect(page.locator(overviewSelector)).toBeVisible();
+      // Use the established role readiness selector (Administration's key is
+      // "administration", not "admin"); signIn already verifies this too.
+      await expect(page.locator(role.ready).first()).toBeVisible();
       if ([744, 768, 1024, 1133].includes(viewport.width)) {
         await page.screenshot({
           path: `test-artifacts/vf8b-${role.key}-${viewport.name}.png`,
