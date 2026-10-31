@@ -1,0 +1,24 @@
+/* Premium project creation: restrained, role-neutral composition; no new palette. */
+.ceac-project-composer{display:grid;gap:0;min-width:0}
+.ceac-project-composer-fields{display:grid;gap:0;border:0;padding:0;margin:0;min-width:0}
+.ceac-project-form-section{display:grid;gap:15px;padding:22px 0 24px;border-bottom:1px solid var(--ev2-line,#e7e8ee);min-width:0}
+.ceac-project-form-section:first-child{padding-top:7px}
+.ceac-project-form-section>header{display:grid;grid-template-columns:30px minmax(0,1fr);gap:11px;align-items:start;margin-bottom:1px}
+.ceac-project-form-index{display:grid;place-items:center;width:28px;height:28px;border:1px solid #e0e1e9;border-radius:7px;color:#6f667f;font-size:11px;font-weight:750;letter-spacing:.03em}
+.ceac-project-form-section h3{font-size:15px;line-height:1.25;font-weight:750;color:var(--ev2-text,#242532);letter-spacing:-.015em;margin:1px 0 5px}
+.ceac-project-form-section header p,.ceac-project-form-collaborators>p{font-size:12px;line-height:1.55;color:var(--ev2-muted,#656a76);margin:0}
+.ceac-project-form-section .field{min-height:43px;border-radius:8px}
+.ceac-project-form-section textarea.field{min-height:90px;resize:vertical}
+.ceac-project-form-date-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.ceac-project-form-collaborators{border:1px solid #e3e4eb;background:#fafafb;border-radius:9px;padding:0 13px}
+.ceac-project-form-collaborators summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;min-height:46px;font-size:13px;font-weight:670;color:#343340}
+.ceac-project-form-collaborators summary span{font-size:11px;color:#757585;font-weight:550}
+.ceac-project-form-collaborators>p{padding:0 0 8px}
+.ceac-project-form-options{display:grid;gap:6px;padding:0 0 13px}
+.ceac-project-form-options label{display:flex;align-items:center;gap:10px;min-height:37px;padding:7px 9px;background:white;border:1px solid #ececf1;border-radius:7px;font-size:12px;color:#343340}
+.ceac-project-form-options input{accent-color:var(--exec-purple,#7148e8);width:16px;height:16px}
+.ceac-project-form-error{color:#a52a3b;font-size:12px}
+.ceac-project-form-footer{display:grid;gap:15px;padding-top:18px}
+.ceac-project-form-footer>p{margin:0;font-size:12px;line-height:1.5;color:#656a76}
+.ceac-project-form-footer>div{display:flex;gap:9px;justify-content:flex-end}
+@media(max-width:530px){.ceac-project-form-date-grid{grid-template-columns:1fr}.ceac-project-form-section{padding:17px 0 20px}.ceac-project-form-footer>div>.btn{min-height:42px}}

@@ -68,8 +68,8 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   const reports = fs.readFileSync("src/screens/ExecutiveReports.jsx", "utf8");
   const inbox = fs.readFileSync("src/screens/Inbox.jsx", "utf8");
   expect(work).toContain("Plan, record, and finish your work. Keep every contribution connected to the right project.");
-  expect(ministry).toContain("See what the ministry is working toward, which departments are responsible and where project evidence supports the outcome.");
-  expect(ministry).toContain('executiveSurface ? "Strategic priorities and delivery" : "Strategic hierarchy"');
+  expect(ministry).toContain("Set the church’s priorities, see what each department is working toward and follow the projects delivering those results.");
+  expect(ministry).toContain('executiveSurface ? "Church priorities and progress" : "Strategic hierarchy"');
   expect(portfolio).toContain("See recorded project risks, delivery milestones and coordinated programmes. Open All projects to manage an individual project.");
   expect(organisation).toContain("Explore departments, teams and people, then open the work behind them.");
   expect(calendar).toContain("Your meetings, ministry events and project dates in one calendar.");
@@ -103,7 +103,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   });
   // Locked Executive mobile dock: three destinations plus More.
   // Calendar must remain reachable in More, not become a fifth dock item.
-  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Ministry"]);
+  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Priorities"]);
 
   const desktop = getShellNavigation({
     isExec: true,
@@ -115,7 +115,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(desktop.map((item) => item.label)).toEqual([
     "Overview",
     "Work",
-    "Ministry",
+    "Priorities",
     "Projects",
     "Organisation",
     "Calendar",
@@ -157,7 +157,7 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
   await signIn(page, { width: 390, height: 844 });
   const nav = page.locator(".ev2s-mobile-nav");
   await expect(nav.getByRole("button")).toHaveCount(4);
-  await expect(nav.locator("button span")).toHaveText(["Overview", "Work", "Ministry", "More"]);
+  await expect(nav.locator("button span")).toHaveText(["Overview", "Work", "Priorities", "More"]);
   await expect(page.locator(".executivev2-kpi")).toHaveCount(4);
   const columns = await page.locator(".executivev2-kpis").evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(" ").length);
   expect(columns).toBe(2);
@@ -172,7 +172,7 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
 
 const destinations = [
   ["work", ".ev2-work-executive", "Work"],
-  ["strategy", ".ev2-executive-ministry", "Ministry direction & outcomes"],
+  ["strategy", ".ev2-executive-ministry", "Church priorities & progress"],
   ["exec-projects", ".executive-projects-consolidated", "Projects"],
   ["exec-organisation", ".ev2-exec-organisation", "Organisation"],
   ["exec-calendar", ".ev2cal-admin-page", "Calendar"],

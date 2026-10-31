@@ -296,7 +296,7 @@ test("Stage 10 Family G4 keeps Reviews & development evidence-first while aligni
   }
 
   expect(performance).toContain('title="Reviews & development"');
-  expect(performance).toContain('statusLabel="Evidence-first review"');
+  expect(performance).toContain('statusLabel="Your development"');
   expect(performance).toContain("ev2-personal-review");
   expect(css).toContain(".ev2-personal-review");
   expect(css).not.toContain("!important");

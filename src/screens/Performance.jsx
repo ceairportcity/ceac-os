@@ -454,15 +454,15 @@ export default function Performance({ me }) {
     ? <PersonalPageHeader
         eyebrow="My Hub"
         title="Reviews & development"
-        description="Your evidence, reflection, review conversation, development plan and visible feedback. CEAC OS does not score or rank you."
-        statusLabel="Evidence-first review"
+        description="See what your review covers, add your own reflections and follow the development steps agreed with your reviewer. CEAC OS does not score or rank you."
+        statusLabel="Your development"
       />
     : me.is_admin ? <WorkPageHeader
         eyebrow="People development"
         title="Reviews & development"
         description="Recorded evidence, human assessments and development plans. Reviewers enter ratings with explanations; CEAC OS does not calculate employee scores or rankings."
       /> : <div style={{ paddingTop:26 }}>
-        <div className="eyebrow">Evidence-first people development</div>
+        <div className="eyebrow">People and development</div>
         <h1 className="h1">Reviews & development</h1>
         <p className="screen-note">{hrReleaseAdmin ? "CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. Reviewers enter ratings with explanations; the system does not calculate employee scores or rankings." : "CEAC OS assembles recorded evidence. People write the reflection, assessment, conversation record and development plan. There is no employee score or ranking."}</p>
       </div>;
@@ -503,7 +503,7 @@ export default function Performance({ me }) {
 
     {selectedCycle && <div className="performance-layout">
       <aside className="performance-case-list">
-        <div className="sec"><span>People in this period</span><span>{cycleCases.length}</span></div>
+        <div className="sec"><span>Reviews in this period</span><span>{cycleCases.length}</span></div>
         {cycleCases.map((review) => <button key={review.id} className={"performance-case-row"+(selectedCaseId === review.id ? " on" : "")} onClick={() => { selectedCaseRef.current = review.id; setSelectedCaseId(review.id); }}>
           <Avatar name={review.profiles?.full_name} size="sm" />
           <span><strong>{review.profiles?.full_name || "Employee"}</strong><small>{review.units?.name || "Unit not recorded"} · {review.reviewer?.full_name ? "Reviewer: " + review.reviewer.full_name : "Reviewer not assigned"}</small></span>
@@ -512,7 +512,7 @@ export default function Performance({ me }) {
       </aside>
 
       <section className="performance-review" ref={reviewPanelRef} tabIndex={-1} aria-label="Selected formal review">
-        {!selectedCase ? <EmptyState title="Choose a review">Open a person to inspect the evidence and review record.</EmptyState> : caseLoading ? <LoadingState label="Opening review…" /> : <>
+        {!selectedCase ? <EmptyState title="Select a review">Choose a person to see their work records and review details.</EmptyState> : caseLoading ? <LoadingState label="Opening review…" /> : <>
           <header className="performance-person-header">
             <Avatar name={selectedCase.profiles?.full_name} size="lg" />
             <div><span className="eyebrow">{selectedCase.units?.name || "Unit not recorded"}</span><h2>{selectedCase.profiles?.full_name}</h2><p>{selectedCase.profiles?.job_title || "Position not recorded"}</p></div>
@@ -536,7 +536,7 @@ export default function Performance({ me }) {
           </section>}
 
           <div className="performance-section-head">
-            <div><span className="eyebrow">Evidence pack</span><h3>Recorded facts in this review period</h3></div>
+            <div><span className="eyebrow">Work records</span><h3>What this review is based on</h3></div>
             {(isReviewer || orgPerformanceAdmin) && <button className="btn btn-ghost btn-sm" disabled={busy} onClick={refreshEvidence}>Check for new records</button>}
           </div>
           <p className="screen-note">Activity sessions are shown only as context. Missing records do not automatically mean absence, low effort or poor performance.</p>

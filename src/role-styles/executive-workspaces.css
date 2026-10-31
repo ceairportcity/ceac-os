@@ -143,3 +143,26 @@
 
 /* Read-only schedule and attendance rows use the full text column. */
 .executive-app .ev2-exec-organisation .exec-redesign-list-row:not(.exec-directory-link){grid-template-columns:minmax(0,1fr)}
+
+/* Executive directory refinements: restrained emphasis, clearer scanning. */
+.executive-app .ev2-exec-organisation .exec-redesign-list{border:1px solid #e6e8ee;border-radius:12px;box-shadow:0 4px 18px rgba(27,32,57,.04)}
+.executive-app .ev2-exec-organisation .exec-directory-link{transition:background .16s ease,box-shadow .16s ease}
+.executive-app .ev2-exec-organisation .exec-directory-link:hover{background:#faf9ff;box-shadow:inset 3px 0 0 var(--exec-purple)}
+.executive-app .ev2-exec-organisation .exec-directory-profile{border:1px solid #e7e9ee;border-radius:12px;background:#fff;box-shadow:0 6px 24px rgba(25,31,54,.045)}
+
+/* Executive shell header rules must not flatten the project identity card. */
+.executive-app .ev2p-workspace-header.ev2p-project-hero{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-flow:row;align-items:stretch;gap:10px;min-height:0;padding:25px 28px 26px;margin-bottom:18px;border:1px solid #e2e5ed;border-radius:13px;background:linear-gradient(145deg,#fff,#f8f9fc);box-shadow:0 4px 22px rgba(25,31,54,.04)}
+.executive-app .ev2p-project-hero .ev2p-workspace-title-row{display:flex;justify-content:flex-start;flex-wrap:wrap;gap:12px}
+.executive-app .ev2p-project-hero .ev2p-workspace-title-row h1{margin:0;font-size:clamp(24px,2.6vw,33px);line-height:1.15;color:#222635}
+@media(max-width:650px){.executive-app .ev2p-workspace-header.ev2p-project-hero{padding:18px 18px 19px}}
+
+/* Executive Organisation directory: premium, restrained table treatment. */
+.executive-app .ev2-exec-organisation section[aria-label="Departments"]{overflow:hidden;border:1px solid #e3e6ed;border-radius:13px;background:#fff;box-shadow:0 5px 22px rgba(27,33,54,.045)}
+.executive-app .ev2-exec-organisation section[aria-label="Departments"] table{width:100%;border-collapse:collapse}
+.executive-app .ev2-exec-organisation section[aria-label="Departments"] caption{text-align:left;padding:18px 20px 14px;font-size:14px;font-weight:750;color:#2c3040;letter-spacing:-.01em}
+.executive-app .ev2-exec-organisation section[aria-label="Departments"] th{padding:12px 20px;background:#f8f9fb;color:#687386;font-size:12px;font-weight:690}
+.executive-app .ev2-exec-organisation section[aria-label="Departments"] td{padding:17px 20px;font-size:13px;border-top:1px solid #ebedf2}
+.executive-app .ev2-exec-organisation section[aria-label="Departments"] td:first-child{font-weight:720;color:#293247}
+.executive-app .ev2-exec-organisation section[aria-label="Departments"] tbody tr:hover{background:#fafbfe}
+.executive-app .ev2-exec-organisation section[aria-label="Departments"] td .btn{border-radius:8px;min-height:36px;padding:7px 13px}
+@media(max-width:640px){.executive-app .ev2-exec-organisation section[aria-label="Departments"] :is(th,td){padding:12px 9px}.executive-app .ev2-exec-organisation section[aria-label="Departments"] caption{padding:15px 12px 12px}}

@@ -19,10 +19,11 @@ const budgets = {
   coreCssRaw: 534 * KIB,
   coreCssGzip: 80 * KIB,
   // The 31 Oct role-aware Executive, Projects, Organisation and reporting
-  // scope adds real shared layouts and readable controls. The measured
-  // complete CSS is 640,306 bytes; the new 626 KiB cap leaves only 718 bytes
-  // headroom, keeps per-route budgets and requires future growth to be reviewed.
-  allCssRaw: 626 * KIB,
+  // scope adds real shared layouts and readable controls. The additional
+  // approved premium Work, Ministry, Projects, Organisation and My Hub redesign
+  // measured 652,841 bytes in QA on 31 Oct. The 640 KiB cap leaves 2,519
+  // bytes headroom; core, gzip, per-route and vendor limits are unchanged.
+  allCssRaw: 640 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;

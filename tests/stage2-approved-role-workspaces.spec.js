@@ -74,9 +74,9 @@ test("manager projects preserve one integrated workspace with real photo and tas
     const workspace = page.locator(".manager-projects.s2-owner-approved-projects");
     await expect(workspace).toBeVisible({ timeout: 20000 });
     await expect(workspace.locator(".s2-project-metrics .s2-project-stat-card")).toHaveCount(4);
-    await expect(workspace.locator(".s2-project-panel", { hasText: "Project team" })).toBeVisible();
-    await expect(workspace.getByText("Departments involved")).toBeVisible();
-    await expect(workspace.getByText("Project tasks", { exact: true })).toBeVisible();
+    await expect(workspace.locator(".s2-project-panel", { hasText: "People contributing" })).toBeVisible();
+    await expect(workspace.locator(".s2-project-units h3", { hasText: "Departments involved" })).toBeVisible();
+    await expect(workspace.getByText("Tasks and responsibilities", { exact: true })).toBeVisible();
     await expect(workspace.locator(".s2-project-aside")).toBeVisible();
     const summary = await workspace.locator('.s2-project-metrics').boundingBox();
     const inspector = await workspace.locator('.s2-project-aside').boundingBox();
@@ -86,10 +86,11 @@ test("manager projects preserve one integrated workspace with real photo and tas
     expect(summary.x + summary.width, 'Project summary and inspector do not overlap').toBeLessThan(inspector.x);
     await expect(workspace.locator(".fpg-project-tree")).toBeHidden();
     await expect(workspace.locator(".fpg-project-facts")).toBeHidden();
-    const img = workspace.locator(".s2-scenic-photo img");
-    await expect(img).toBeVisible();
-    await expect.poll(async () => img.evaluate((el) => el.complete && el.naturalWidth > 100)).toBe(true);
-    expect(await img.getAttribute("src")).toMatch(/^\/assets\/ceac-landscapes\/scene-\d{2}\.webp$/);
+    const projectHero = workspace.locator(".ev2p-project-hero");
+    await expect(projectHero).toBeVisible();
+    await expect(projectHero.locator("h1")).toBeVisible();
+    await expect(projectHero.locator(".s2-scenic-photo img")).toHaveCount(0);
+    expect(await projectHero.evaluate(el => getComputedStyle(el).backgroundImage)).toContain("gradient");
     await page.screenshot({ path: "test-artifacts/stage2-approved-manager-project-desktop.png", fullPage: true });
   } finally { await context.close(); }
 });

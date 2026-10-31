@@ -128,12 +128,12 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
       <div className="s2-project-content">
     <section className="s2-project-metrics" aria-label="Recorded project metrics">
       <div className="s2-project-stat-card s2-project-progress-card">
-        <span>Task completion</span>
+        <span>Work completed</span>
         <div className="s2-project-progress-line">
           <span className="s2-project-progress-ring" style={{ "--s2-percent": completionRate ?? 0 }} aria-hidden="true">
             <strong>{completionRate === null ? "—" : completionRate + "%"}</strong>
           </span>
-          <small>{completed.length} of {tasks.length} tasks complete</small>
+          <small>{completed.length} of {tasks.length} tasks finished</small>
         </div>
       </div>
       <div className="s2-project-stat-card">
@@ -145,17 +145,17 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
         </div>
       </div>
       <div className="s2-project-stat-card">
-        <span>Departments</span>
-        <strong>{units.length}</strong><small>Including the lead department</small>
+        <span>Departments involved</span>
+        <strong>{units.length}</strong><small>Departments working on this project</small>
       </div>
       <div className="s2-project-stat-card">
-        <span>Next key date</span>
+        <span>Next deadline</span>
         <strong className="s2-project-date">{when(next?.due_at)}</strong>
         <small>{next?.title || "No upcoming due date"}</small>
       </div>
     </section>
         <section className="s2-project-panel s2-project-team-panel">
-          <header><h2>Project team</h2><small aria-label={people.length + " people with visible assignments or dated actions"}>{people.length} {people.length === 1 ? "person" : "people"}</small></header>
+          <header><h2>People contributing</h2><small aria-label={people.length + " people with visible assignments or dated actions"}>{people.length} {people.length === 1 ? "person" : "people"}</small></header>
           {displayActionError && <p role="alert">Additional contributors could not be verified; only visible assignments are shown.</p>}
           <div className="s2-project-people">{people.map((person) => <div className="s2-project-person" key={person.id}>
             <PersonAvatar name={person.name} photoUrl={visiblePortraits[person.id]} /><span><strong>{person.name}</strong>
@@ -164,28 +164,28 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
           <div className="s2-project-units"><header><h3>Departments involved</h3></header><div>{units.map((row) => <span key={row.id}><strong>{row.name}</strong><small>{row.lead ? "Lead" : "Participating"}</small></span>)}</div></div>
         </section>
         <section className="s2-project-panel s2-project-tasks-panel">
-          <header><h2>Project tasks</h2>{canAssign && <button className="s2-project-primary" onClick={addWork}>+ Add task</button>}</header>
+          <header><h2>Tasks and responsibilities</h2>{canAssign && <button className="s2-project-primary" onClick={addWork}>+ Add task</button>}</header>
           <div className="s2-project-filters">
             <input type="search" aria-label="Search project tasks" placeholder="Search tasks or assignees" value={scopedSearch} onChange={(e) => setSearch(e.target.value)} />
             <select aria-label="Task status" value={scopedFilter} onChange={(e) => setFilter(e.target.value)}><option value="all">All tasks</option><option value="active">Active</option><option value="finished">Finished</option></select>
             <select aria-label="Department" value={scopedUnit} onChange={(e) => setUnit(e.target.value)}><option value="all">All departments</option>{units.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select>
           </div>
-          <div className="s2-project-table-scroll"><table><thead><tr><th>Task</th><th>Department</th><th>Assigned to</th><th>Due</th><th>Status</th></tr></thead>
+          <div className="s2-project-table-scroll"><table aria-label="Project tasks and responsibilities"><thead><tr><th>Task</th><th>Department</th><th>Assigned to</th><th>Due</th><th>Status</th></tr></thead>
           <tbody>{visible.map((item) => <tr key={item.id}>
-            <td><button className="s2-project-task" onClick={() => openWork?.(item.id)}>{item.title}<small>{item.ref}</small></button></td>
-            <td><span className="s2-project-unit-chip">{units.find((dept) => dept.id === item.unit_id)?.name || (item.unit_id === project.lead_unit_id ? project.units?.name || "Lead unit" : "Not recorded")}</span></td>
-            <td>{item.profiles?.full_name ? <span className="s2-project-personcell"><PersonAvatar name={item.profiles.full_name} photoUrl={visiblePortraits[item.assignee_id]} size={25} />{item.profiles.full_name}</span> : "Unassigned"}</td><td>{when(item.due_at)}</td>
-            <td><span className={finished.has(item.status) ? "s2-project-done" : "s2-project-pending"}>{String(item.status || "Not recorded").replaceAll("_"," ")}</span></td>
+            <td data-label="Task"><button className="s2-project-task" onClick={() => openWork?.(item.id)}>{item.title}<small>{item.ref}</small></button></td>
+            <td data-label="Department"><span className="s2-project-unit-chip">{units.find((dept) => dept.id === item.unit_id)?.name || (item.unit_id === project.lead_unit_id ? project.units?.name || "Lead unit" : "Not recorded")}</span></td>
+            <td data-label="Assigned to">{item.profiles?.full_name ? <span className="s2-project-personcell"><PersonAvatar name={item.profiles.full_name} photoUrl={visiblePortraits[item.assignee_id]} size={25} />{item.profiles.full_name}</span> : "Unassigned"}</td><td data-label="Due">{when(item.due_at)}</td>
+            <td data-label="Status"><span className={finished.has(item.status) ? "s2-project-done" : "s2-project-pending"}>{String(item.status || "Not recorded").replaceAll("_"," ")}</span></td>
           </tr>)}</tbody></table></div>
           {!visible.length && <p className="s2-project-empty">No recorded tasks match this view.</p>}
           {showWork && work.length > tasks.length && <button className="s2-project-more" onClick={showWork}>View all project work →</button>}
         </section>
       </div>
       <aside className="s2-project-panel s2-project-aside">
-        <header><h2>About this project</h2></header>
-        <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Lead unit</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>End date</dt><dd>{when(project.ends_on)}</dd></div></dl>
+        <header><h2>Project at a glance</h2></header>
+        <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Responsible department</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>Target completion</dt><dd>{when(project.ends_on)}</dd></div></dl>
         {project.purpose && <section><h3>Description</h3><p>{project.purpose}</p></section>}
-        <section className="s2-project-detail-milestones"><h3>Key milestones</h3>{project.milestones === null ? <p>Milestone records are unavailable to this view.</p> : project.milestones?.length ? <ol className="s2-project-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.status === "achieved" ? "is-complete" : ""}><strong>{milestone.name}</strong><small>{String(milestone.status || "Not recorded").replaceAll("_", " ")} · {milestone.completed_at ? "Completed " + when(milestone.completed_at) : milestone.target_on ? "Target " + when(milestone.target_on) : "No recorded date"}</small></li>)}</ol> : <p>No milestones recorded.</p>}</section>
+        <section className="s2-project-detail-milestones"><h3>Important milestones</h3>{project.milestones === null ? <p>Milestone records are unavailable to this view.</p> : project.milestones?.length ? <ol className="s2-project-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.status === "achieved" ? "is-complete" : ""}><strong>{milestone.name}</strong><small>{String(milestone.status || "Not recorded").replaceAll("_", " ")} · {milestone.completed_at ? "Completed " + when(milestone.completed_at) : milestone.target_on ? "Target " + when(milestone.target_on) : "No recorded date"}</small></li>)}</ol> : <p>No milestones recorded.</p>}</section>
         <section className="s2-project-recent-activity" aria-label="Recent visible project activity" aria-description="Recorded actions visible to your account; entries are not automatic approvals.">
           <header><h3>Recent activity</h3><button type="button" onClick={() => setActionReload((n) => n + 1)}
             disabled={activityChecking}>Refresh</button></header>

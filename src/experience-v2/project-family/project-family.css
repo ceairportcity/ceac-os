@@ -1464,3 +1464,32 @@
 
 /* Compact project navigation replaces the older pill-like button silhouette. */
 .ev2p-tabs > button{border-radius:var(--ev2-radius-control)}
+
+/* Searchable executive/administrative portfolio: one clean control, no pill stacks. */
+.ev2-project-admin .ev2p-project-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:6px 14px;padding:16px 18px;margin:20px 0 17px;border:1px solid #e7e8ef;border-radius:12px;background:#fff;box-shadow:0 4px 18px rgba(23,30,52,.03)}
+.ev2-project-admin .ev2p-project-toolbar>label{grid-column:1/-1;font-size:12px;font-weight:700;color:#333745}
+.ev2-project-admin .ev2p-project-toolbar>input{width:100%;min-width:0;min-height:43px;padding:10px 13px;border:1px solid #dfe1ea;border-radius:8px;background:#fafbfc;color:#292c37;font:inherit;font-size:13px}
+.ev2-project-admin .ev2p-project-toolbar>input:focus-visible{outline:2px solid var(--ev2-action,#7148e8);outline-offset:2px}
+.ev2-project-admin .ev2p-project-toolbar>span{font-size:12px;color:#697181;white-space:nowrap;padding-bottom:12px}
+@media(max-width:560px){.ev2-project-admin .ev2p-project-toolbar{grid-template-columns:minmax(0,1fr);padding:13px}.ev2-project-admin .ev2p-project-toolbar>span{padding-bottom:0}}
+
+/* Premium project header: no overlapping stock image or illegible hero text. */
+.ev2p-workspace-header.ev2p-project-hero{position:relative;display:grid;gap:10px;min-height:0;margin:0 0 18px;padding:25px 28px 26px;border:1px solid #e2e5ed;border-radius:13px;background:linear-gradient(145deg,#fff 0%,#f8f9fc 100%);box-shadow:0 4px 22px rgba(25,31,54,.04);overflow:hidden;isolation:isolate}
+.ev2p-project-hero::before{content:"";position:absolute;top:0;bottom:0;left:0;width:4px;background:var(--ev2-action,#7148e8)}
+.ev2p-project-hero .ev2p-workspace-title-row{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:12px}
+.ev2p-project-hero .ev2p-workspace-title-row h1{font-size:clamp(24px,2.6vw,33px);line-height:1.15;letter-spacing:-.035em;color:#222635;margin:0}
+.ev2p-project-hero .ev2p-workspace-kicker{font-size:12px;letter-spacing:.07em;color:#667080}
+.ev2p-project-hero p{font-size:14px;line-height:1.55;max-width:72ch;color:#586476;margin:0}
+.manager-projects.s2-owner-approved-projects .ev2p-project-hero{background:linear-gradient(145deg,#fff,#f8f9fc);border:1px solid #e2e5ed;padding:25px 28px 26px}
+/* Each row shows recorded goal states; no invented completion percentage. */
+.ev2p-context-row .ev2p-goal-mix{display:grid;gap:8px;padding:13px 0 3px;max-width:510px}
+.ev2p-context-row .ev2p-goal-mix-copy{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;font-size:12px;color:#5c6574}
+.ev2p-context-row .ev2p-goal-mix-copy span{font-weight:700;color:#44495a}
+.ev2p-context-row .ev2p-goal-mix-copy small{font-size:12px;color:#646e7c}
+.ev2p-context-row .ev2p-goal-mix-track{display:flex;gap:2px;overflow:hidden;height:7px;border-radius:6px;background:#eef0f3}
+.ev2p-context-row .ev2p-goal-mix-track>span{display:block;min-width:2px;border-radius:2px}
+.ev2p-context-row .ev2p-goal-mix-track .is-on-track{background:#30a777}
+.ev2p-context-row .ev2p-goal-mix-track .is-at-risk{background:#e2a645}
+.ev2p-context-row .ev2p-goal-mix-track .is-not-met{background:#d65d67}
+.ev2p-context-row .ev2p-goal-mix-track .is-other{background:#a5aabb}
+@media(max-width:650px){.ev2p-workspace-header.ev2p-project-hero,.manager-projects.s2-owner-approved-projects .ev2p-project-hero{padding:18px 18px 19px;border-radius:11px}.ev2p-project-hero .ev2p-workspace-title-row h1{font-size:25px}}

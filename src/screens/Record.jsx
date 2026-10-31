@@ -175,7 +175,7 @@ export default function Record({ me, openItem }) {
     <PersonalPageHeader
       eyebrow="My Hub"
       title="My work history"
-      description="Completed CEAC work, feedback and recorded activity from the period you choose. Private work and personal goals remain outside this history."
+      description="See the work you finished, updates you recorded and feedback you received. Choose a month to explore your record. Private work and personal goals remain outside this history."
     />
     {error
       ? <div className="flag flag-brick" role="alert" style={{ marginTop: 24 }}><h4>Could not load your record</h4>{error}</div>
@@ -191,7 +191,7 @@ export default function Record({ me, openItem }) {
     <PersonalPageHeader
       eyebrow="My Hub"
       title="My work history"
-      description="Completed CEAC work, feedback and recorded activity from the period you choose. Private work and personal goals remain outside this history."
+      description="See the work you finished, updates you recorded and feedback you received. Choose a month to explore your record. Private work and personal goals remain outside this history."
       statusLabel={monthLabel}
     />
     <div className="ev2-personal-record-period">
@@ -217,13 +217,13 @@ export default function Record({ me, openItem }) {
 
     {area === "highlights" && <div className="record-area">
       <div className="area-heading">
-        <div><span className="eyebrow">{monthLabel}</span><h2>Highlights from your record</h2></div>
+        <div><span className="eyebrow">{monthLabel}</span><h2>Your month at a glance</h2></div>
       </div>
 
       <div className="record-summary-grid">
-        <div><strong>{record.completed}</strong><span>finished outputs</span></div>
-        <div><strong>{record.onTime}<small> / {record.dueCompleted}</small></strong><span>on time where dated</span></div>
-        <div><strong>{feedback.length}</strong><span>visible feedback notes</span></div>
+        <div><strong>{record.completed}</strong><span>Completed work</span></div>
+        <div><strong>{record.onTime}<small> / {record.dueCompleted}</small></strong><span>Finished by the deadline</span></div>
+        <div><strong>{feedback.length}</strong><span>Feedback received</span></div>
       </div>
 
       {firstHighlight ? <div className="highlight-stack">
@@ -264,7 +264,7 @@ export default function Record({ me, openItem }) {
       </section>}
 
       {record.corrections.length > 0 && <section>
-        <div className="area-heading secondary"><div><h2>Returned & corrected</h2></div><span>{record.corrections.length}</span></div>
+        <div className="area-heading secondary"><div><h2>Work sent back for changes</h2></div><span>{record.corrections.length}</span></div>
         {record.corrections.map((entry) => <button key={entry.id} className="record-line" onClick={() => openItem?.(entry.submission.work_item_id)}>
           <div><strong>{entry.submission.work_items?.title}</strong><span>Returned {when(entry.reviewed_at)}</span></div>
           <p>{entry.comment || "No return comment was recorded."}</p>
@@ -272,7 +272,7 @@ export default function Record({ me, openItem }) {
       </section>}
 
       {record.blockers.length > 0 && <section>
-        <div className="area-heading secondary"><div><h2>Dependency history</h2></div><span>{record.blockers.length}</span></div>
+        <div className="area-heading secondary"><div><h2>Work waiting on others</h2></div><span>{record.blockers.length}</span></div>
         {record.blockers.map((blocker) => <button key={blocker.id} className="record-line" onClick={() => openItem?.(blocker.work_item_id)}>
           <div><strong>{blocker.work_items?.title || "Work"}</strong><span>{blocker.party_text} · {blocker.state}</span></div>
           <p>{blocker.resolution_note || blocker.response_note || blocker.note || "No additional note."}</p>
@@ -281,7 +281,7 @@ export default function Record({ me, openItem }) {
 
       {record.completedItems.length === 0 && record.corrections.length === 0 && record.blockers.length === 0 && <div className="quiet-empty compact">
         <strong>No work history in this month</strong>
-        <span>Completed work, corrections and dependency history will appear here.</span>
+        <span>Finished tasks, requested changes and recorded delays will appear here.</span>
       </div>}
     </div>}
 

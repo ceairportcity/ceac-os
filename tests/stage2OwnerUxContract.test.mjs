@@ -10,7 +10,6 @@ test("all role Overviews use one deterministic locally stored real-photography c
     "src/experience-v2/manager-overview/ManagerOverviewV2.jsx",
     "src/experience-v2/admin-overview/AdminOverviewV2.jsx",
     "src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx",
-    "src/experience-v2/project-family/ProjectFamilyV2.jsx",
   ];
   for (const name of surfaces) {
     const source = file(name);
@@ -18,6 +17,9 @@ test("all role Overviews use one deterministic locally stored real-photography c
     assert.match(source, /<DailyScenicPhoto\s*\/>/);
     assert.match(source, /s2-landscape-hero/);
   }
+  const projectHeader = file("src/experience-v2/project-family/ProjectFamilyV2.jsx");
+  assert.match(projectHeader, /ev2p-project-hero/);
+  assert.doesNotMatch(projectHeader, /<DailyScenicPhoto/);
   const image = file("src/components/DailyScenicPhoto.jsx");
   assert.match(image, /selectDailyLandscape/);
   assert.match(image, /ceacLandscapeCatalog/);
@@ -34,9 +36,9 @@ test("Projects presents one connected workspace with factual people and task tab
   assert.match(source, /project\.participants/);
   assert.match(source, /project\.work/);
   assert.match(source, /item\.profiles\?\.full_name/);
-  assert.match(source, /Project team/);
+  assert.match(source, /People contributing/);
   assert.match(source, /Departments involved/);
-  assert.match(source, /Project tasks/);
+  assert.match(source, /Tasks and responsibilities/);
   assert.match(source, /No recorded tasks match this view/);
   assert.match(styles, /\.s2-project-layout>\.s2-project-content\{/);
   assert.doesNotMatch(styles, /\.s2-project-layout>\.s2-project-primary\{/);
