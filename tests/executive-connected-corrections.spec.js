@@ -49,7 +49,7 @@ for (const width of [320,390,430,1440]) {
     await expect(page.getByRole('heading',{name:'Organisation',exact:true})).toBeVisible();
     const department = page.getByRole('button',{name:/Test Unit A/});
     await expect(department).toBeVisible();
-    expect(await department.evaluate(node => getComputedStyle(node).color)).toBe('rgb(113, 72, 232)');
+    expect(await department.evaluate(node => getComputedStyle(node).color)).toBe('rgb(46, 134, 230)');
     await page.screenshot({path:`test-artifacts/executive-connected-organisation-${width}.png`,fullPage:true});
     await department.click();
     await expect(page.getByRole('heading',{name:'Test Unit A',exact:true})).toBeVisible();
@@ -80,12 +80,12 @@ for (const width of [320,390,430,1440]) {
         const governance=page.getByRole('region',{name:'Quarterly leadership review schedule',exact:true});
         const schedule=governance.getByRole('button',{name:'Schedule quarterly review',exact:true});
         await expect(schedule).toBeVisible();
-        expect(await schedule.evaluate(node=>getComputedStyle(node).backgroundColor)).not.toBe('rgb(113, 72, 232)');
+        expect(await schedule.evaluate(node=>getComputedStyle(node).backgroundColor)).not.toBe('rgb(46, 134, 230)');
         expect((await schedule.boundingBox()).height).toBeGreaterThanOrEqual(44);
         await schedule.click();
         const open=governance.getByRole('button',{name:'Open quarterly review',exact:true});
         await expect(open).toBeDisabled();
-        expect(await open.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+        expect(await open.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(46, 134, 230)');
         await governance.getByRole('button',{name:'Close',exact:true}).click();
       }
       expect(await title.evaluate(node=>getComputedStyle(node).fontFamily)).toContain('Instrument Sans');
@@ -162,7 +162,7 @@ for (const width of [390,1440]) {
         const primary=page.getByRole('button',{name:/^(Add ministry goal|Set first ministry priority)$/});
         const secondary=page.getByRole('button',{name:'Add another priority',exact:true});
         expect(await primary.evaluate(node=>getComputedStyle(node).backgroundImage)).toBe('none');
-        expect(await primary.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+        expect(await primary.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(46, 134, 230)');
         expect(await primary.evaluate(node=>getComputedStyle(node).color)).toBe('rgb(255, 255, 255)');
         if (await secondary.count()) expect(await secondary.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(255, 255, 255)');
       }
@@ -278,12 +278,12 @@ for (const width of [320,1440]) {
       const tab=planning.getByRole('tab',{name:kind,exact:true});
       await tab.click();
       await expect(tab).toHaveAttribute('aria-selected','true');
-      expect(await tab.evaluate(node=>getComputedStyle(node).color)).toBe('rgb(113, 72, 232)');
+      expect(await tab.evaluate(node=>getComputedStyle(node).color)).toBe('rgb(46, 134, 230)');
       const title=planning.getByRole('textbox',{name:'Planning title',exact:true});
       await expect(title).toBeVisible();
       expect(await title.evaluate(node=>getComputedStyle(node).fontFamily)).toContain('Instrument Sans');
       if(width<900)expect(await title.evaluate(node=>getComputedStyle(node).fontSize)).toBe('16px');
-      expect(await planning.getByRole('button',{name:`Save ${kind.toLowerCase()}`,exact:true}).evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+      expect(await planning.getByRole('button',{name:`Save ${kind.toLowerCase()}`,exact:true}).evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(46, 134, 230)');
       await page.screenshot({path:`test-artifacts/executive-calendar-${kind.toLowerCase()}-${width}.png`,fullPage:true});
     }
     await planning.getByRole('button',{name:'Cancel',exact:true}).click();
@@ -296,7 +296,7 @@ for (const width of [320,1440]) {
     expect(presentation.background).toBe('rgb(255, 255, 255)');
     expect(presentation.font).toContain('Instrument Sans');
     const scope=meeting.getByRole('button',{name:'Organisation',exact:true});
-    expect(await scope.evaluate(node=>getComputedStyle(node).color)).toBe('rgb(113, 72, 232)');
+    expect(await scope.evaluate(node=>getComputedStyle(node).color)).toBe('rgb(46, 134, 230)');
     expect((await scope.boundingBox()).height).toBeGreaterThanOrEqual(44);
     expect(await meeting.locator('.meeting-audience-head>small').evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(12);
     await page.screenshot({path:`test-artifacts/executive-calendar-meeting-${width}.png`,fullPage:true});
@@ -321,14 +321,14 @@ for(const width of [320,1440])test(`Executive report and personal print controls
   const brief=page.getByRole('region',{name:'Executive outcomes briefing',exact:true});
   await expect(brief).toBeVisible();
   const reportPrint=brief.getByRole('button',{name:'Print / Save as PDF',exact:true});
-  expect(await reportPrint.evaluate(node=>getComputedStyle(node).backgroundColor)).not.toBe('rgb(113, 72, 232)');
+  expect(await reportPrint.evaluate(node=>getComputedStyle(node).backgroundColor)).not.toBe('rgb(46, 134, 230)');
   expect((await reportPrint.boundingBox()).height).toBeGreaterThanOrEqual(44);
   await page.screenshot({path:`test-artifacts/executive-report-print-${width}.png`,fullPage:true});
   await page.goto('/?tab=achievements');
   await expect(page.getByRole('heading',{name:'My achievements',exact:true})).toBeVisible();
   const ownPrint=page.locator('.s2-achievement-print');
   await expect(ownPrint).toBeVisible();
-  expect(await ownPrint.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect(await ownPrint.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(46, 134, 230)');
   expect((await ownPrint.boundingBox()).height).toBeGreaterThanOrEqual(44);
   await page.screenshot({path:`test-artifacts/executive-own-print-${width}.png`,fullPage:true});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
