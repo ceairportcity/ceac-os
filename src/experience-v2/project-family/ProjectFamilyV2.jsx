@@ -169,17 +169,17 @@ export function ProjectContextRow({
       <div className="ev2p-context-row-state">
         {health ? <ProjectHealthBadge health={health} /> : status ? <ProjectStatusBadge status={status} /> : null}
         {actions.length ? <div className="ev2p-context-actions">
-          {actions.map((action) => (
-            <Button
-              key={action.label}
-              variant="secondary"
-              size="compact"
-              onClick={action.onClick}
-              disabled={action.disabled}
-            >
-              {action.label}
-            </Button>
-          ))}
+          <button type="button" className="ev2p-context-primary-action"
+            onClick={actions[0].onClick} disabled={actions[0].disabled}>
+            {actions[0].label}<CeacIcon name="chevronRight" size="meta" decorative />
+          </button>
+          {actions.length > 1 ? <details className="ev2p-context-more">
+            <summary>More actions</summary>
+            <div className="ev2p-context-more-list">
+              {actions.slice(1).map((action) => <button type="button" key={action.label}
+                onClick={action.onClick} disabled={action.disabled}>{action.label}</button>)}
+            </div>
+          </details> : null}
         </div> : null}
       </div>
     </article>
