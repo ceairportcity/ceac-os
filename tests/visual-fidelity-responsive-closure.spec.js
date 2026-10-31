@@ -100,14 +100,16 @@ test("VF8A 320–430 phone matrix preserves all four role shells and deliberate 
 });
 
 
-test("VF8B 768–1024 tablet and small-laptop matrix preserves the shell breakpoint and usable role geometry", async ({ browser }) => {
+test("VF8B iPad 744–1133 and small-laptop matrix preserves desktop-style tablet shell and role overviews", async ({ browser }) => {
   test.setTimeout(300000);
   const viewports = [
+    { name: "ipad-mini-744", width: 744, height: 900 },
     { name: "tablet-768", width: 768, height: 900 },
     { name: "tablet-820", width: 820, height: 900 },
     { name: "small-laptop-900", width: 900, height: 900 },
     { name: "small-laptop-980", width: 980, height: 820 },
     { name: "small-laptop-1024", width: 1024, height: 820 },
+    { name: "ipad-landscape-1133", width: 1133, height: 820 },
   ];
 
   for (const viewport of viewports) {
@@ -117,7 +119,7 @@ test("VF8B 768–1024 tablet and small-laptop matrix preserves the shell breakpo
       await signIn(page, role);
       await page.evaluate(() => document.fonts.ready);
 
-      const mobileShell = viewport.width <= 899;
+      const mobileShell = viewport.width <= 720;
       if (mobileShell) {
         await expect(page.locator(".ev2s-mobile-topbar")).toBeVisible();
         await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
@@ -166,11 +168,22 @@ test("VF8B 768–1024 tablet and small-laptop matrix preserves the shell breakpo
           width: node.getBoundingClientRect().width,
           right: node.getBoundingClientRect().right,
         }));
-        expect(sideGeometry.width).toBeGreaterThan(180);
+        if (viewport.width <= 1023) {
+          expect(sideGeometry.width, "compact tablet navigation").toBeGreaterThan(60);
+          expect(sideGeometry.width, "compact tablet navigation").toBeLessThanOrEqual(90);
+        } else {
+          expect(sideGeometry.width, "standard laptop navigation").toBeGreaterThan(180);
+        }
         expect(sideGeometry.right).toBeLessThanOrEqual(viewport.width);
       }
 
-      if (viewport.width === 768 || viewport.width === 1024) {
+      // The same approved role overview must remain visible at every iPad width.
+      const overviewSelector = {
+        staff: ".staffv2", manager: ".managerv2",
+        admin: ".adminv2", executive: ".executivev2",
+      }[role.key];
+      await expect(page.locator(overviewSelector)).toBeVisible();
+      if ([744, 768, 1024, 1133].includes(viewport.width)) {
         await page.screenshot({
           path: `test-artifacts/vf8b-${role.key}-${viewport.name}.png`,
           fullPage: true,
