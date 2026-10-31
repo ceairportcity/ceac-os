@@ -36,22 +36,38 @@ export default function AdminProjectComposer({me,units,onClose,onCreated}) {
     } catch(failure) {setError(humanError(failure,"The project could not be confirmed. Your draft is retained."));}
     finally {saving.current=false;setBusy(false);}
   }
-  return <ComposerDrawer open title="Create project" onClose={()=>{if(!saving.current)onClose();}} description="Choose the lead department, then add objectives and give out work in the project workspace.">
+  return <ComposerDrawer open title="Create project" onClose={()=>{if(!saving.current)onClose();}} description="Start with the essentials. You can add tasks, goals and updates after creating the project.">
     {error&&<div ref={errorRef} tabIndex={-1} role="region" aria-label="Project creation error"><ProductNotice tone="error" title="Project creation">{error}</ProductNotice></div>}
-    <form onSubmit={save} style={{display:"grid",gap:12}}>
-      <fieldset disabled={busy||Boolean(createdId.current)} style={{display:"grid",gap:12,border:0,padding:0,margin:0,minWidth:0}}>
-        <FieldGroup label="Project name"><input className="field" required maxLength={200} value={form.name} onChange={e=>set("name",e.target.value)}/></FieldGroup>
-        <FieldGroup label="Purpose"><textarea className="field" rows={3} value={form.purpose} onChange={e=>set("purpose",e.target.value)}/></FieldGroup>
-        <FieldGroup label="Lead department"><select className="field" required value={form.leadUnitId} onChange={e=>setForm(previous=>({...previous,leadUnitId:e.target.value,participants:previous.participants.filter(id=>id!==e.target.value)}))}>
-          <option value="">Choose a department</option>{units.map(unit=><option key={unit.id} value={unit.id}>{unit.name}</option>)}
-        </select></FieldGroup>
-        <FieldGroup label="Start date"><input className="field" type="date" value={form.startsOn} onChange={e=>set("startsOn",e.target.value)}/></FieldGroup>
-        <FieldGroup label="Target date"><input className="field" type="date" min={form.startsOn||undefined} value={form.endsOn} onChange={e=>set("endsOn",e.target.value)}/></FieldGroup>
-        <fieldset style={{border:0,padding:0,margin:0}}><legend className="field-label">Participating departments</legend>
-          {units.filter(unit=>unit.id!==form.leadUnitId).map(unit=><label className="ck" key={unit.id}><input type="checkbox" checked={form.participants.includes(unit.id)} onChange={e=>set("participants",e.target.checked?[...form.participants,unit.id]:form.participants.filter(id=>id!==unit.id))}/><span>{unit.name}</span></label>)}
-        </fieldset>
+    <form onSubmit={save} className="ceac-project-create-form">
+      <fieldset disabled={busy||Boolean(createdId.current)} className="ceac-project-create-fields">
+        <section className="ceac-project-create-section" aria-labelledby="project-basic-heading">
+          <div className="ceac-project-create-section-head"><span className="ceac-project-create-step">01</span><div><h3 id="project-basic-heading">Project details</h3><p>Give the project a clear name and explain what success looks like.</p></div></div>
+          <FieldGroup label="Project name"><input className="field" required maxLength={200} placeholder="e.g. Welcome new volunteers" value={form.name} onChange={e=>set("name",e.target.value)}/></FieldGroup>
+          <FieldGroup label="Purpose"><textarea className="field" rows={3} placeholder="What is this project for, and what should it achieve?" value={form.purpose} onChange={e=>set("purpose",e.target.value)}/></FieldGroup>
+        </section>
+        <section className="ceac-project-create-section" aria-labelledby="project-people-heading">
+          <div className="ceac-project-create-section-head"><span className="ceac-project-create-step">02</span><div><h3 id="project-people-heading">Who's responsible?</h3><p>Choose the department that will lead this project.</p></div></div>
+          <FieldGroup label="Lead department"><select className="field" required value={form.leadUnitId} onChange={e=>setForm(previous=>({...previous,leadUnitId:e.target.value,participants:previous.participants.filter(id=>id!==e.target.value)}))}>
+            <option value="">Choose a department</option>{units.map(unit=><option key={unit.id} value={unit.id}>{unit.name}</option>)}
+          </select></FieldGroup>
+          <details className="ceac-project-create-more">
+            <summary>Other departments helping <span>{form.participants.length?form.participants.length+" selected":"Optional"}</span></summary>
+            <p>Choose any other departments that will work on this project.</p>
+            <fieldset className="ceac-project-create-departments"><legend className="field-label">Participating departments</legend>
+              {units.filter(unit=>unit.id!==form.leadUnitId).map(unit=><label className="ck" key={unit.id}><input type="checkbox" checked={form.participants.includes(unit.id)} onChange={e=>set("participants",e.target.checked?[...form.participants,unit.id]:form.participants.filter(id=>id!==unit.id))}/><span>{unit.name}</span></label>)}
+            </fieldset>
+          </details>
+        </section>
+        <section className="ceac-project-create-section" aria-labelledby="project-dates-heading">
+          <div className="ceac-project-create-section-head"><span className="ceac-project-create-step">03</span><div><h3 id="project-dates-heading">Project dates</h3><p>Add dates if you know them. You can plan the work after creating the project.</p></div></div>
+          <div className="ceac-project-create-dates">
+            <FieldGroup label="Start date"><input className="field" type="date" value={form.startsOn} onChange={e=>set("startsOn",e.target.value)}/></FieldGroup>
+            <FieldGroup label="Target date"><input className="field" type="date" min={form.startsOn||undefined} value={form.endsOn} onChange={e=>set("endsOn",e.target.value)}/></FieldGroup>
+          </div>
+          {form.startsOn&&form.endsOn&&form.endsOn<form.startsOn&&<p className="ceac-project-create-validation" role="alert">The target date must be on or after the start date.</p>}
+        </section>
       </fieldset>
-      <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><button className="btn btn-ghost" type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="btn" disabled={busy||!ready}>{busy?"Saving project…":createdId.current?"Verify saved project":"Create project"}</button></div>
+      <div className="ceac-project-create-footer"><span>Tasks and milestones come next.</span><div><button className="btn btn-ghost" type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="btn" disabled={busy||!ready}>{busy?"Creating project…":createdId.current?"Verify saved project":"Create project"}</button></div></div>
     </form>
   </ComposerDrawer>;
 }

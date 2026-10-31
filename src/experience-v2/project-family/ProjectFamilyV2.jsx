@@ -1,6 +1,7 @@
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
 import { CeacIcon } from "../icons";
 import { Button, StatusBadge } from "../components";
+import "./premium-projects.css";
 
 const PROJECT_STATUS = {
   planned: ["Planned", "neutral"],
@@ -153,6 +154,7 @@ export function ProjectContextRow({
   health,
   facts = [],
   actions = [],
+  progress = null,
 }) {
   return (
     <article className="ev2p-context-row" data-health={health || ""}>
@@ -162,6 +164,10 @@ export function ProjectContextRow({
         <strong>{title}</strong>
         {meta ? <span>{meta}</span> : null}
         {note ? <p>{note}</p> : null}
+        {Number.isFinite(progress) ? <div className="ev2p-objective-health" aria-label={`Objectives on track or met: ${Math.round(progress)} percent`}>
+          <div className="ev2p-objective-health-copy"><span>Objectives on track or met</span><strong>{Math.round(progress)}%</strong></div>
+          <div className="ev2p-objective-health-track" role="progressbar" aria-label="Objectives on track or met" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}><span style={{width:`${Math.min(100,Math.max(0,progress))}%`}} /></div>
+        </div> : null}
         {facts.length ? <div className="ev2p-context-facts" aria-label={`${title} factual context`}>
           {facts.map((fact) => (
             <span key={fact.label}>

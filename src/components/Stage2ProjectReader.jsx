@@ -65,13 +65,13 @@ export default function Stage2ProjectReader({ projectId, openItem, onBack, me, g
     return () => { current = false; };
   }, [projectId, reload, me?.id, me?.org_id]);
 
-  return <div className="ev2-project-page ev2-project-workspace s2-project-reader">
+  return <div className="ev2-project-page ev2-project-workspace s2-project-reader ceac-premium-project-reader">
     {loading && <LoadingState label="Loading authorised project details…" />}
     {error && <ProductNotice tone="error" title="Project details unavailable">{error}</ProductNotice>}
     {project && <>
       <ProjectWorkspaceHeader kind={project.kind} title={project.name} purpose={project.purpose}
         status={project.status} context={project.units?.name || "Lead unit not recorded"} onBack={onBack} />
-      <p className="screen-note">Every number below comes from work and delivery records available to your role. Project access does not expose private employee information.</p>
+      <p className="screen-note">This page shows the project updates available to you. Private employee information stays private.</p>
       {me?.is_exec && ["planned","active"].includes(project.status) && <div className="s2-project-quick-actions" aria-label="Project actions"><button type="button" className="btn btn-sm" onClick={() => goAssign?.({projectId:project.id})}>Assign project work</button><ExecutiveProjectDepartments me={me} project={project} onSaved={() => setReload(n => n+1)} /></div>}
       <ProjectTabs ariaLabel="Executive project details" items={[
         ["overview", "Overview"],
