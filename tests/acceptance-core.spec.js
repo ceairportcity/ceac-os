@@ -829,6 +829,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     await dialog.getByLabel("Strategy unit").selectOption("20000000-0000-4000-8000-000000000011");
     await dialog.getByLabel("Strategy name").fill("Acceptance Unit A objective");
     await dialog.getByLabel("Strategy statement").fill("Record completed readiness outcomes for the agreed weekly schedule.");
+    await dialog.getByRole("button", { name: "Add measure, dates or status", exact: true }).click();
     await dialog.getByLabel("Strategy measurement").selectOption("numeric");
     await dialog.getByLabel("Strategy measure label").fill("Completed readiness outcomes");
     await dialog.getByLabel("Strategy target value").fill("12");
@@ -975,15 +976,17 @@ test("Stage 5 Delivery manages programmes, milestones, dependencies and project 
 
   {
     const { context, page } = await openAs(browser, "exec@ceac.local.test", { width: 1280, height: 900 });
-    await go(page, "Delivery");
-    await expect(page.getByRole("heading", { name: "Portfolio", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Major projects", exact: true })).toBeVisible();
-    await expect(page.getByText("Stage 4 Browser Project", { exact: true }).first()).toBeVisible();
-    // Read the actual health saved above, rather than requiring retired help copy.
-    const recordedProject = page.locator(".ev2p-context-list > .ev2p-context-row").filter({ hasText: "Stage 4 Browser Project" }).first();
+    // Portfolio now lives within Executive Projects, not a duplicate navigation route.
+    await page.goto("/?tab=exec-projects");
+    await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Delivery insights", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Delivery insights", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recorded attention", exact: true })).toBeVisible();
+    const recordedProject = page.locator(".ev2p-attention-list .ev2p-context-row").filter({ hasText: "Stage 4 Browser Project" }).first();
     await expect(recordedProject).toContainText("Watch");
     await expect(recordedProject).not.toContainText(/score|ranking/i);
-    await page.getByRole("button", { name: "Open operational details", exact: true }).click();
+    // The new Insights view exposes programme evidence directly, without a redundant details toggle.
+    await expect(page.getByRole("heading", { name: "Coordinated programmes", exact: true })).toBeVisible();
     await expect(page.locator(".row-t").filter({ hasText: /^Acceptance Unit A Programme$/ }).first()).toBeVisible();
     await context.close();
   }

@@ -146,7 +146,7 @@ test("Executive Overview reproduces the locked desktop composition", async ({ pa
   await expect(page.locator(".executivev2-lower-grid > .executivev2-reference-panel")).toHaveCount(2);
   await expect(page.getByText("Needs your attention", { exact: true })).toBeVisible();
   await expect(page.getByText("Ministry direction", { exact: true })).toBeVisible();
-  await expect(page.getByText("Organisational overview", { exact: true })).toBeVisible();
+  await expect(page.getByText("People and departments", { exact: true })).toBeVisible();
   await expect(page.getByText("Significant updates", { exact: true })).toBeVisible();
   await expect(page.getByText("Upcoming meetings", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
@@ -173,7 +173,7 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
 const destinations = [
   ["work", ".ev2-work-executive", "Work"],
   ["strategy", ".ev2-executive-ministry", "Ministry"],
-  ["delivery", ".ev2-project-delivery.is-executive", "Portfolio"],
+  ["exec-projects", ".executive-projects-consolidated", "Projects"],
   ["exec-organisation", ".ev2-exec-organisation", "Organisation"],
   ["exec-calendar", ".ev2cal-admin-page", "Calendar"],
   ["exec-finance", ".ev2-finance-executive", "Finance"],

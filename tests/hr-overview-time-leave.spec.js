@@ -48,7 +48,7 @@ for(const width of [1440,820,390,320]){
   await page.screenshot({path:`test-artifacts/hr-approved-overview-unavailable-${width}.png`,fullPage:true});
   // A missing session remains factual and may be inspected without a duplicate filter dashboard.
   // Missing sessions are intentionally separate from the default recorded-start view.
-  await map.getByRole("combobox",{name:"Filter daily workforce"}).selectOption("noSession");
+  await map.getByRole("combobox",{name:"Filter daily workforce",exact:true}).selectOption("noSession");
   const noSession=map.locator(".workforce-attendance-list").getByRole("button",{name:/Yaw Fixture/});
   await noSession.click();
   await expect(map.locator(".workstart-unmapped-detail")).toHaveCount(1);
