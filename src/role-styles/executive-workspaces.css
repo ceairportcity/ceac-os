@@ -42,3 +42,56 @@
 .executive-app .meeting-audience-option.on strong{color:var(--exec-purple)}
 .executive-app .meeting-audience-selected button{min-height:44px}
 @media(min-width:900px){.executive-app .meeting-scheduler-sheet{border-radius:12px}}
+
+
+/* Executive role-aware recorded evidence grids. Use the existing role tokens,
+   not a new standalone palette or inflated action buttons. */
+.executive-app :is(.ev2ex-ministry-facts,.ev2-exec-organisation) .ev2p-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(min(100%,13rem),1fr));
+  gap: 12px;
+  margin: 16px 0 20px;
+}
+.executive-app :is(.ev2ex-ministry-facts,.ev2-exec-organisation) .ev2p-summary > div {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid var(--ev2-line);
+  border-radius: 12px;
+  background: var(--ev2-surface);
+}
+.executive-app :is(.ev2ex-ministry-facts,.ev2-exec-organisation) .ev2p-summary strong {
+  color: var(--ev2-text);
+  font-size: clamp(18px,2.25vw,25px);
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.executive-app :is(.ev2ex-ministry-facts,.ev2-exec-organisation) .ev2p-summary span {
+  color: var(--ev2-text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.executive-app .ev2-exec-organisation .exec-directory-profile {
+  background: var(--ev2-surface);
+  border: 1px solid var(--ev2-line);
+  border-radius: 12px;
+  padding: 20px;
+}
+.executive-app .ev2-exec-organisation .exec-directory-actions {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.executive-app .ev2-exec-organisation .exec-directory-actions > label {min-width: min(100%,15rem)}
+.executive-app .ev2-exec-organisation .exec-directory-actions :is(button,select) {min-height: 40px}
+.executive-app .ev2-exec-organisation .exec-directory-actions > label {color: var(--ev2-text-secondary);font-size:12px}
+.executive-app .ev2-exec-organisation .exec-directory-actions > label > select {display:block;margin-top:6px}
+.executive-app .ev2-exec-organisation > section {margin-block:16px}
+@media(max-width:650px) {
+  .executive-app .ev2-exec-organisation .exec-directory-profile {padding:14px}
+}
