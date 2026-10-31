@@ -67,7 +67,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
           .select("id,name,value_label,unit_id,units(name)", { count: "exact" })
           .eq("org_id",me.org_id).eq("active",true).eq("records_value",true)
           .order("name"),
-        supabase.from("employment_records").select("profile_id,employment_type", { count: "exact" }).eq("org_id", me.org_id).eq("employment_status", "active"),
+        supabase.rpc("executive_personnel_directory", {}, { count: "exact" }),
         supabase.from("profiles").select("id", { count: "exact" }).eq("org_id", me.org_id).eq("active", true),
         supabase.from("sub_teams").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("active", true),
         supabase.from("activity_events")

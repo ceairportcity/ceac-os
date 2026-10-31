@@ -64,10 +64,7 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
             .select("id,started_at,ended_at,place,end_reason")
             .eq("org_id",me.org_id).eq("profile_id",personId)
             .order("started_at",{ascending:false}).limit(14),
-          supabase.from("leave_requests")
-            .select("id,kind,start_date,end_date,status")
-            .eq("org_id",me.org_id).eq("profile_id",personId)
-            .order("start_date",{ascending:false}).limit(14),
+          supabase.rpc("executive_personnel_leave", { p_profile_id:personId }),
         ]);
         if(!current)return;
         const [sessions, leave] = results.map((item)=>item.status==="fulfilled" ? item.value : {error:item.reason});
@@ -92,7 +89,7 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
           supabase.from("profiles").select("id,full_name,job_title,active", { count: "exact" }).eq("org_id", me.org_id).eq("active", true).order("full_name"),
           supabase.from("unit_memberships").select("unit_id,profile_id,role", { count: "exact" }).eq("org_id", me.org_id),
           supabase.from("sub_teams").select("id,name,unit_id,active", { count: "exact" }).eq("org_id", me.org_id).eq("active", true).order("name"),
-          supabase.from("employment_records").select("profile_id,employment_type,employment_status,working_pattern,manager_profile_id,unit_id", { count: "exact" }).eq("org_id", me.org_id).eq("employment_status", "active"),
+          supabase.rpc("executive_personnel_directory", {}, { count: "exact" }),
         ]);
         const next = { units: complete(units, "Departments"), people: complete(people, "People"), memberships: complete(memberships, "Department memberships"), teams: complete(teams, "Teams"), teamMembers: [], employment: complete(employment, "Active employment roster") };
         if (next.teams.length) next.teamMembers = complete(await supabase.from("sub_team_members").select("sub_team_id,profile_id", { count: "exact" }).in("sub_team_id", next.teams.map(team => team.id)), "Team memberships");
@@ -213,7 +210,7 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
         </section>}
         {personTab==="time" && <section aria-label="Recorded attendance and leave">
           <h2>Attendance & leave</h2>
-          <p className="screen-note">Recent records (up to 14 of each type), not a productivity score or a complete leave entitlement statement.</p>
+          <p className="screen-note">Recent attendance and up to 14 planning-relevant leave requests. Private leave reasons, medical categories and full HR records are not shown.</p>
           {timeRecords.scope!==personScope||timeRecords.loading ? <LoadingState label="Opening authorised time records…" /> : <>
             <h3>Recent work sessions</h3>
             {timeRecords.sessionError ? <ProductNotice tone="attention" title="Attendance unavailable">{timeRecords.sessionError}</ProductNotice>
@@ -221,10 +218,10 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
                 <span className="exec-redesign-row-copy"><strong>{new Date(row.started_at).toLocaleDateString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short",year:"numeric"})}</strong>
                 <small>{new Date(row.started_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})} · {row.ended_at?"Ended":"Still open"} · {row.place||"Work location not recorded"}</small></span>
               </div>))}
-            <h3>Leave requests</h3>
+            <h3>Leave affecting workforce planning</h3>
             {timeRecords.leaveError ? <ProductNotice tone="attention" title="Leave unavailable">{timeRecords.leaveError}</ProductNotice>
               : list("Leave requests",timeRecords.leave.map(row=><div key={row.id} className="exec-redesign-list-row">
-                <span className="exec-redesign-row-copy"><strong>{String(row.kind||"Leave").replaceAll("_"," ")}</strong>
+                <span className="exec-redesign-row-copy"><strong>Leave request</strong>
                 <small>{row.start_date||"Date not recorded"} – {row.end_date||"Date not recorded"} · {String(row.status||"Recorded").replaceAll("_"," ")}</small></span>
               </div>))}
           </>}

@@ -30,7 +30,9 @@ test("Executive employee directory offers meaningful non-protected profile secti
   for(const label of ["Profile","Employment & schedule","Attendance & leave","Contributions"])
     assert.ok(person.includes(label), label+" view missing");
   assert.match(person, /\.from\("work_sessions"\)/);
-  assert.match(person, /\.from\("leave_requests"\)/);
+  assert.match(person, /executive_personnel_leave/);
+  assert.match(person, /executive_personnel_directory/);
+  assert.match(home, /executive_personnel_directory/);
   assert.match(person, /selectedActionUnitId/);
   assert.doesNotMatch(person, /hr_employee_protected_summary|hr_private\.access|service_role/);
 });
