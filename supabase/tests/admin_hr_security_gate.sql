@@ -141,9 +141,10 @@ begin
   -- 158 functions already explicitly reviewed in the Stage 2 exact-signature
   -- allowlist; migration185 adds one HR-only canonical roster creation RPC.
   -- Any additional unreviewed function remains prohibited.
-  -- 25 October adds exactly one reviewed Executive department-assignment RPC.
-  if n<>176 then
-    raise exception 'Security gate failure: expected 174 existing interfaces plus two enumerated work-edit/follow-up interfaces (176), found %.',n;
+  -- Three Executive-only read summaries are individually enumerated in
+  -- security_definer_surface_gate.sql, with negative-role and schema checks.
+  if n<>179 then
+    raise exception 'Security gate failure: expected 176 reviewed interfaces plus 3 Executive-only read summaries (179), found %.',n;
   end if;
 end $$;
 
