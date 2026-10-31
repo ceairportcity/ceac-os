@@ -38,6 +38,7 @@ for(const width of [1440,820,390,320]){
   await popup.getByRole("button",{name:"Close selected work start"}).click();await expect(popup).toHaveCount(0);await expect(kojoPin).toBeFocused();
   await expect.poll(mapCount).toBeGreaterThan(0);
   await expect(map.locator(".workstart-accessible-list")).toHaveCount(0);
+  await expect(map.locator(".workforce-attendance-metric")).toHaveCount(4);
   await map.getByRole("button",{name:"1 start locations unavailable"}).click();
   await expect(map.locator(".workforce-attendance-list").getByRole("button",{name:/Esi Fixture/})).toBeVisible();
   await expect(page.getByRole("button",{name:/View recorded work start for Esi/})).toHaveCount(0);
@@ -47,6 +48,7 @@ for(const width of [1440,820,390,320]){
   await map.getByRole("combobox",{name:"Filter daily workforce",exact:true}).selectOption("noSession");
   const noSession=map.locator(".workforce-attendance-list").getByRole("button",{name:/Yaw Fixture/});
   await noSession.click();
+  await expect(map.locator(".workstart-unmapped-detail")).toHaveCount(1);
   await expect(map.locator(".workstart-unmapped-detail")).toContainText("No session recorded");
   await expect(map.locator(".workstart-unmapped-detail")).not.toContainText("Session ended");
   await map.getByRole("button",{name:"Close details",exact:true}).click();
