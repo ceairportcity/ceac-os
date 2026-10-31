@@ -24,7 +24,7 @@ function label(list, value) {
 function human(value = "") {
   return String(value).replaceAll("_"," ").replace(/\b\w/g,(m)=>m.toUpperCase());
 }
-export default function Delivery({ me, initialProjectId = null, openItem, openProject, goAssign }) {
+export default function Delivery({ me, initialProjectId = null, insightsOnly = false, openItem, openProject, goAssign }) {
   const [projects,setProjects]=useState([]);
   const [groups,setGroups]=useState([]);
   const [groupLinks,setGroupLinks]=useState([]);
@@ -41,7 +41,7 @@ export default function Delivery({ me, initialProjectId = null, openItem, openPr
   const [selectedProjectId,setSelectedProjectId]=useState("");
   const inspectProjectId = me.is_exec ? initialProjectId : null;
   const setInspectProjectId = id => openProject?.(id);
-  const [showOperations,setShowOperations]=useState(false);
+  const [showOperations,setShowOperations]=useState(Boolean(insightsOnly));
   const [sheet,setSheet]=useState(null);
   const [busy,setBusy]=useState(false);
   const [loading,setLoading]=useState(true);
@@ -331,8 +331,8 @@ export default function Delivery({ me, initialProjectId = null, openItem, openPr
   return <div className={"body ev2-project-page ev2-project-delivery"+(executiveSurface?" is-executive":"")}>
     <ProjectPageHeader
       eyebrow={executiveSurface ? "Strategic portfolio" : "Work Management 2.0"}
-      title={executiveSurface ? "Portfolio" : "Delivery"}
-      description={executiveSurface ? "View ministry programmes and strategic initiatives, their departments and the work behind them." : "Programmes, portfolios, milestones, dependencies, risks and issues. Health is an explicit management state; CEAC OS does not generate a hidden project score."}
+      title={executiveSurface ? "Delivery insights" : "Delivery"}
+      description={executiveSurface ? "See recorded project risks, delivery milestones and coordinated programmes. Open All projects to manage an individual project." : "Programmes, portfolios, milestones, dependencies, risks and issues. Health is an explicit management state; CEAC OS does not generate a hidden project score."}
     />
 
     {error&&<ProductNotice tone="error" title="Delivery">{error}</ProductNotice>}
@@ -369,8 +369,8 @@ export default function Delivery({ me, initialProjectId = null, openItem, openPr
       </div>:<ProjectEmpty title="No recorded project attention" description="No visible project currently has Watch, At risk, Blocked, or a high / critical open register item." />}
     </>}
 
-    {executiveSurface&&<>
-      <ProjectSectionHeader eyebrow="Portfolio view" title="Major projects" count={projects.length} />
+    {executiveSurface&&!insightsOnly&&<>
+      <ProjectSectionHeader eyebrow="Project register" title="All projects" count={projects.length} />
       {projects.length ? <div className="ev2p-context-list">
         {projects.map((project)=>{
           const linkedObjectives=strategyLinks
@@ -383,7 +383,7 @@ export default function Delivery({ me, initialProjectId = null, openItem, openPr
           const needsDecision=["watch","at_risk","blocked"].includes(project.health)||attentionItems>0;
           return <ProjectContextRow
             key={project.id}
-            eyebrow={needsDecision?"Executive attention":"Major project"}
+            eyebrow={needsDecision?"Executive attention":"Recorded project"}
             title={project.name}
             meta={`${unitsById[project.lead_unit_id]?.name||"Lead unit not recorded"} · Owner: ${owner}`}
             note={`Objective served: ${linkedObjectives.join(", ")||"Not recorded"} · ${project.purpose||"No purpose recorded."}`}
@@ -402,12 +402,12 @@ export default function Delivery({ me, initialProjectId = null, openItem, openPr
       </button>
     </>}
 
-    {(!executiveSurface||showOperations)&&<>
+    {(!executiveSurface||showOperations||insightsOnly)&&<>
     <ProjectSectionHeader
       eyebrow="Structure"
-      title="Programmes & portfolios"
+      title="Coordinated programmes"
       count={report.length}
-      actionLabel="New Programme / Portfolio"
+      actionLabel="Create programme group"
       onAction={()=>setSheet({type:"group"})}
     />
     {report.length===0&&<ProjectEmpty title="No Programmes or Portfolios" description="Create a delivery group when several projects belong to one coordinated outcome." />}
@@ -424,7 +424,7 @@ export default function Delivery({ me, initialProjectId = null, openItem, openPr
       </div>
     </section>)}
 
-    <div className="ev2p-delivery-layout">
+    {!insightsOnly && <div className="ev2p-delivery-layout">
       <div className="main-col ev2p-delivery-main">
         <ProjectSectionHeader eyebrow="Projects" title="Portfolio projects" count={projects.length} />
         <div className="ev2p-list">
@@ -565,7 +565,7 @@ export default function Delivery({ me, initialProjectId = null, openItem, openPr
           </div>
         </>}
       </div>
-    </div>
+    </div>}
 
     </>}
 
