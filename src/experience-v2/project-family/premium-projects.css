@@ -66,7 +66,7 @@
 .ceac-project-create-footer>span{font-size:12px;color:var(--ev2-text-tertiary)}
 .ceac-project-create-footer>div{display:flex;gap:8px}
 @media(max-width:760px){.ev2-project-admin .ev2p-context-list .ev2p-context-row{grid-template-columns:35px minmax(0,1fr);padding:16px;gap:11px}.ev2-project-admin .ev2p-context-row-icon{width:34px;height:34px}.ev2-project-admin .ev2p-context-row-state{grid-column:2;min-width:0;align-items:flex-start;flex-direction:row;flex-wrap:wrap;gap:8px}.ev2-project-admin .ev2p-summary{display:flex;gap:8px;overflow-x:auto}.ev2-project-admin .ev2p-summary>div{flex:0 0 min(67%,180px);border:1px solid var(--ev2-line);border-radius:10px}.ev2p-register-toolbar{align-items:stretch;flex-direction:column;margin-top:24px;gap:7px}.ev2p-register-toolbar>p{margin:0}.ceac-project-create-dates{grid-template-columns:1fr}.ceac-project-create-footer{align-items:stretch;flex-direction:column}.ceac-project-create-footer>div{justify-content:flex-end}}
-@media(prefers-reduced-motion:reduce){.ev2-project-admin .ev2p-context-list .ev2p-context-row{transition:none;transform:none!important}}
+@media(prefers-reduced-motion:reduce){.ev2-project-admin .ev2p-context-list .ev2p-context-row{transition:none;transform:none}}
 
 
 /* Keep manager Projects in the same premium visual family as Executive/HR. */
