@@ -104,6 +104,7 @@ function routeFromLocation() {
   if (roomContext && /^[0-9a-f-]{36}$/i.test(params.get("mention") || "")) roomContext.mentionProfileId = params.get("mention");
   return {
     tab: params.get("tab") || "home",
+    directory: params.get("tab") === "exec-organisation" && ["departments", "teams", "people", "staff", "volunteers"].includes(params.get("directory")) ? params.get("directory") : null,
     setting: params.get("setting") || null,
     settingsReturn: params.get("settingsReturn") === "people" ? "people" : null,
     leaveRequestId: params.get("tab") === "attendance" ? params.get("leave") : null,
@@ -122,6 +123,7 @@ export default function App() {
   const [bootError, setBootError] = useState(null);
   const initialRoute = routeFromLocation();
   const [tab, setTab] = useState(initialRoute.tab);
+  const [directory, setDirectory] = useState(initialRoute.directory);
   const [setting, setSetting] = useState(initialRoute.setting);
   const [settingsReturn, setSettingsReturn] = useState(initialRoute.settingsReturn);
   const [leaveRequestId, setLeaveRequestId] = useState(initialRoute.leaveRequestId);
@@ -231,6 +233,7 @@ export default function App() {
 
   function applyRoute(route) {
     setTab(route.tab || "home");
+    setDirectory(route.tab === "exec-organisation" ? route.directory || null : null);
     setSetting(route.setting || null);
     setSettingsReturn(route.settingsReturn || null);
     setLeaveRequestId(route.tab === "attendance" ? route.leaveRequestId || null : null);
@@ -254,6 +257,7 @@ export default function App() {
   function navigate(route, { replace = false } = {}) {
     const next = {
       tab: route.tab || tab || "home",
+      directory: route.tab === "exec-organisation" && ["departments", "teams", "people", "staff", "volunteers"].includes(route.directory) ? route.directory : null,
       setting: route.tab === "office-settings" ? route.setting || null : null,
       settingsReturn: route.settingsReturn === "people" ? "people" : null,
       leaveRequestId: route.tab === "attendance" ? route.leaveRequestId || null : null,
@@ -266,6 +270,7 @@ export default function App() {
     };
     const params = new URLSearchParams();
     if (next.tab !== "home") params.set("tab", next.tab);
+    if (next.directory) params.set("directory", next.directory);
     if (next.setting) params.set("setting", next.setting);
     if (next.settingsReturn) params.set("settingsReturn", next.settingsReturn);
     if (next.leaveRequestId) params.set("leave", next.leaveRequestId);
@@ -299,7 +304,7 @@ export default function App() {
   function go(t, options = {}) {
     if (t !== "guide") setGuideContextTab(null);
     setAuthorityFocusProfileId(null);
-    navigate({ tab: t, setting: options.setting, leaveRequestId: options.leaveRequestId, workforceSection: options.workforceSection });
+    navigate({ tab: t, setting: options.setting, directory: options.directory, leaveRequestId: options.leaveRequestId, workforceSection: options.workforceSection });
   }
 
   function openGuide(contextual = false) {
@@ -487,7 +492,7 @@ export default function App() {
     if (tab === "manager-finance" && isUnitManager) return <ManagerFinance key={managerScopeKey} me={me} openProject={openProject} />;
     if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} />;
     if (tab === "exec-projects" && isExec) return <AdminProjects key={`${me.org_id}:${me.id}:executive-projects`} me={me} openProject={id=>navigate({tab:"delivery",projectId:id})} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id,reference)=>openRoom({kind:"project",projectId:id,reference})} />;
-    if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation key={`${me.org_id}:${me.id}`} me={me} goAssign={startAssignment} openItem={openItem} openRoom={openRoom} />;
+    if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation key={`${me.org_id}:${me.id}`} me={me} directory={directory} goAssign={startAssignment} openItem={openItem} openRoom={openRoom} />;
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
     if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} openItem={openItem} />;
     if (tab === "record") return <Record me={me} openItem={openItem} />;
