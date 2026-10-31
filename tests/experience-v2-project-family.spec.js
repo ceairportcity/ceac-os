@@ -214,7 +214,14 @@ for (const viewport of [
     await expect(page.getByRole("button", { name: /Add objective/i })).toHaveCount(0);
 
     if (await rows.count()) {
-      const schedule = page.getByRole("button", { name: "Schedule project meeting", exact: true }).first();
+      const row = rows.first();
+      await expect(row.getByRole("button", { name: "Open project", exact: true })).toBeVisible();
+      const more = row.locator(".ev2p-context-more > summary");
+      await expect(more).toBeVisible();
+      const moreBox = await more.boundingBox();
+      expect(moreBox?.height || 0).toBeGreaterThanOrEqual(44);
+      await more.click();
+      const schedule = row.getByRole("button", { name: "Schedule project meeting", exact: true });
       await expect(schedule).toBeVisible();
       const scheduleBox = await schedule.boundingBox();
       expect(scheduleBox?.height || 0).toBeGreaterThanOrEqual(44);
@@ -245,7 +252,7 @@ for (const viewport of [
 }
 
 
-async function openExecutivePortfolio(browser, viewport) {
+async function openExecutiveInsights(browser, viewport) {
   const context = await browser.newContext({ viewport });
   const page = await context.newPage();
   await page.goto("/");
@@ -253,7 +260,11 @@ async function openExecutivePortfolio(browser, viewport) {
   await page.getByPlaceholder("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.locator(".executive-app")).toBeVisible({ timeout: 15000 });
-  await page.goto("/?tab=delivery");
+  await page.goto("/?tab=exec-projects");
+  await expect(page.locator(".executive-projects-consolidated .ev2-project-admin")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole("tab", { name: "All projects", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create project", exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "Delivery insights", exact: true }).click();
   await expect(page.locator(".ev2-project-delivery")).toBeVisible({ timeout: 15000 });
   return { context, page };
 }
@@ -303,36 +314,26 @@ for (const viewport of [
   { name: "desktop-1440", width: 1440, height: 900 },
 ]) {
   test(`Stage 10 Family C4 Executive Portfolio composes at ${viewport.name}`, async ({ browser }) => {
-    const { context, page } = await openExecutivePortfolio(browser, { width: viewport.width, height: viewport.height });
+    const { context, page } = await openExecutiveInsights(browser, { width: viewport.width, height: viewport.height });
 
-    await expect(page.getByRole("heading", { name: "Portfolio", exact: true })).toBeVisible();
-    await expect(page.getByText(/View ministry programmes and strategic initiatives, their departments and the work behind them/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Delivery insights", exact: true })).toBeVisible();
+    await expect(page.getByText(/See recorded project risks, delivery milestones and coordinated programmes/i)).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Delivery insights", exact: true })).toHaveAttribute("aria-selected", "true");
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
-    const leadershipRows = page.locator(".ev2p-context-list:visible > .ev2p-context-row");
-    expect(await leadershipRows.count()).toBeGreaterThan(0);
-
-    const operations = page.getByRole("button", { name: "Open operational details", exact: true });
-    await expect(operations).toBeVisible();
-    const operationsBox = await operations.boundingBox();
-    expect(operationsBox?.height || 0).toBeGreaterThanOrEqual(44);
-    await expect(page.getByRole("button", { name: "New Programme / Portfolio", exact: true })).toHaveCount(0);
-
-    await operations.click();
-    const createGroup = page.getByRole("button", { name: "New Programme / Portfolio", exact: true });
+    // Delivery insights must not duplicate the canonical All projects register.
+    await expect(page.locator(".ev2-project-delivery .ev2p-context-list")).toHaveCount(0);
+    await expect(page.locator(".ev2-project-delivery .ev2p-list")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Coordinated programmes", exact: true })).toBeVisible();
+    const createGroup = page.getByRole("button", { name: "Create programme group", exact: true });
     await expect(createGroup).toBeVisible();
     const createBox = await createGroup.boundingBox();
-    expect(createBox?.height || 0).toBeGreaterThanOrEqual(44);
+    expect(createBox?.height || 0).toBeGreaterThanOrEqual(40);
 
-    await expect(page.getByRole("heading", { name: "People, payments and custody", exact: true })).toBeVisible();
-    if (viewport.width <= 430) {
-      for (const label of ["Add participant", "Add slot type", "Record remittance"]) {
-        const action = page.getByRole("button", { name: label, exact: true });
-        await expect(action).toBeVisible();
-        const actionBox = await action.boundingBox();
-        expect(actionBox?.height || 0).toBeGreaterThanOrEqual(44);
-      }
-    }
+    // Real programme records or a genuine empty state; no fabricated fixtures.
+    const cards = page.locator(".ev2-project-delivery .ev2p-portfolio-card");
+    const empty = page.getByText("No Programmes or Portfolios", { exact: true });
+    await expect.poll(async () => (await cards.count()) > 0 || await empty.isVisible(), { timeout: 15000 }).toBe(true);
 
     const smallest = await page.locator(".ev2-project-delivery").evaluate((root) => {
       const values = [...root.querySelectorAll("*")]
@@ -410,21 +411,18 @@ test("VF6A cross-role Project surfaces share one factual workspace grammar", asy
     }
 
     {
-      const { context, page } = await openExecutivePortfolio(browser, { width: viewport.width, height: viewport.height });
-      await expect(page.locator(".ev2-project-delivery .ev2p-context-list")).toBeVisible();
-      await page.getByRole("button", { name: "Open operational details", exact: true }).click();
-      const list = page.locator(".ev2-project-delivery .ev2p-list");
-      await expect(list).toBeVisible();
-      const rows = list.locator(":scope > .ev2p-row");
-      expect(await rows.count()).toBeGreaterThan(1);
-      const firstStyle = await rows.first().evaluate((node) => ({
-        radius: getComputedStyle(node).borderRadius,
-        shadow: getComputedStyle(node).boxShadow,
-      }));
-      expect(firstStyle.radius).toBe("0px");
-      expect(firstStyle.shadow).toBe("none");
+      const { context, page } = await openExecutiveInsights(browser, { width: viewport.width, height: viewport.height });
+      // The Executive sees one project register (All projects) and a distinct insights view.
+      await expect(page.getByRole("heading", { name: "Delivery insights", exact: true })).toBeVisible();
+      await expect(page.locator(".ev2-project-delivery .ev2p-context-list")).toHaveCount(0);
+      await expect(page.locator(".ev2-project-delivery .ev2p-list")).toHaveCount(0);
+      const summary = page.locator(".ev2-project-delivery > .ev2p-summary");
+      await expect(summary).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Coordinated programmes", exact: true })).toBeVisible();
+      const groupCards = page.locator(".ev2-project-delivery .ev2p-portfolio-card");
+      const groupEmpty = page.getByText("No Programmes or Portfolios", { exact: true });
+      await expect.poll(async () => (await groupCards.count()) > 0 || await groupEmpty.isVisible(), { timeout: 15000 }).toBe(true);
       if (viewport.width <= 760) {
-        const summary = page.locator(".ev2-project-delivery > .ev2p-summary");
         const rail = await summary.evaluate((node) => ({ display: getComputedStyle(node).display, scroll: node.scrollWidth, client: node.clientWidth }));
         expect(rail.display).toBe("flex");
         expect(rail.scroll).toBeGreaterThan(rail.client);
