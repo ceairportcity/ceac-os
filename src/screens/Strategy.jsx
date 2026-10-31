@@ -35,7 +35,7 @@ function blankForm(type, parentId = "", unitId = "") {
   };
 }
 
-export default function Strategy({ me, createRequest = null, onCreateHandled }) {
+export default function Strategy({ me, createRequest = null, onCreateHandled, onOpenProject = null }) {
   const [nodes, setNodes] = useState([]);
   const [links, setLinks] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -255,11 +255,11 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
     <div className={executiveSurface ? "ev2ex-ministry-head" : ""} style={executiveSurface ? undefined : { paddingTop: 26 }}>
       <div className={executiveSurface ? "ev2ex-ministry-head-copy" : ""}>
         <div className="eyebrow">{executiveSurface ? "Executive ministry" : "Goals & strategy"}</div>
-        <h1 className="h1">{executiveSurface ? "Ministry" : "Strategy"}</h1>
-        <p className="screen-note">{executiveSurface ? "Set direction, track objectives and keep ministry priorities connected to recorded delivery." : "Ministry Direction → Ministry Objective → Unit Objective. Descriptive goals stay descriptive; numeric goals always show the result beside its target."}</p>
+        <h1 className="h1">{executiveSurface ? "Ministry direction & outcomes" : "Strategy"}</h1>
+        <p className="screen-note">{executiveSurface ? "See what the ministry is working toward, which departments are responsible and where project evidence supports the outcome." : "Ministry Direction → Ministry Objective → Unit Objective. Descriptive goals stay descriptive; numeric goals always show the result beside its target."}</p>
       </div>
       {canGlobal && executiveSurface && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button className="btn" onClick={() => openCreate("ministry_objective")}>New Ministry Objective</button>
+        <button className="btn" onClick={() => openCreate(directions.length ? "ministry_objective" : "ministry_direction")}>{directions.length ? "Add ministry objective" : "Set ministry direction"}</button>
         <button className="btn btn-ghost" onClick={() => openCreate("ministry_direction")}>Add Ministry Direction</button>
       </div>}
     </div>
@@ -271,7 +271,16 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
       <button className="btn wide-auto" onClick={() => openCreate("ministry_direction")}>Add Ministry Direction</button>
     </div>}
 
-    <div className={executiveSurface ? "sec ev2ex-ministry-section-title" : "sec"}><span>{executiveSurface ? "Objectives" : "Strategic hierarchy"}</span><span>{nodes.length}</span></div>
+    {executiveSurface && <section className="ev2ex-ministry-facts" aria-label="Recorded ministry direction and delivery">
+       <div className="ev2p-summary" role="group" aria-label="Ministry priorities">
+         <div><strong>{directions.filter((d) => d.status !== "closed").length}</strong><span>Current directions</span></div>
+         <div><strong>{nodes.filter((n) => n.node_type === "ministry_objective" && n.status !== "closed").length}</strong><span>Ministry objectives</span></div>
+         <div><strong>{nodes.filter((n) => n.status === "at_risk" || n.status === "not_met").length}</strong><span>Require attention</span></div>
+         <div><strong>{new Set(links.filter((l) => l.status === "active").map((l) => l.project_id)).size}</strong><span>Connected projects</span></div>
+       </div>
+       <p className="screen-note">Direction defines the purpose. Departments record their objectives, connect real projects and report the results. Counts are recorded facts, not automatic performance scores.</p>
+     </section>}
+     <div className={executiveSurface ? "sec ev2ex-ministry-section-title" : "sec"}><span>{executiveSurface ? "Strategic priorities and delivery" : "Strategic hierarchy"}</span><span>{nodes.length}</span></div>
     {directions.length === 0 && <EmptyState title="No Ministry Direction recorded">{executiveSurface ? "Add the church’s ministry direction, then connect its objectives." : "An authorised strategy owner can record the first Ministry Direction without inventing a numeric score."}</EmptyState>}
 
     {directions.map((direction) => <section className={executiveSurface ? "card ev2ex-ministry-direction" : "card"} key={direction.id} style={executiveSurface ? undefined : { padding: 18, marginBottom: 14 }}>
@@ -298,7 +307,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
             {activeLinks.length > 0 && <div style={{ marginTop: 9 }}>
               <div className="small" style={{ fontWeight: 650 }}>Delivery projects</div>
               {activeLinks.map((link) => <div key={link.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 5 }}>
-                <span className="small">{projectName(link.project_id)}</span>
+                {onOpenProject ? <button type="button" className="text-action" onClick={() => onOpenProject(link.project_id)}>{projectName(link.project_id)}</button> : <span className="small">{projectName(link.project_id)}</span>}
                 {canEdit(unitObjective) && <button className="text-action" disabled={busy} onClick={() => withdrawLink(link)}>Withdraw link</button>}
               </div>)}
             </div>}
@@ -312,7 +321,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
       open
       onClose={() => { if (!busy) setForm(null); }}
       title={form.id ? `Revise ${TYPE_LABELS[form.nodeType].toLowerCase()}` : `New ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
-      description={form.nodeType === "ministry_objective" ? null : "Keep the objective clear and factual. Measurement detail appears only when CEAC is recording a numeric result."}
+      description="Describe the intended result in plain language. Link it to the right direction; use a number only if you have a real measure and target."
       panelClassName="reference-composer reference-objective-composer"
       footer={<button className="btn" disabled={busy || !form.name.trim() || !form.statement.trim() || !form.reason.trim() || (form.nodeType !== "ministry_direction" && !form.parentId) || (form.nodeType === "unit_objective" && !form.unitId) || (form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim()))} onClick={saveNode}>
         {busy ? "Saving…" : form.id ? "Record revision" : `Create ${TYPE_LABELS[form.nodeType].toLowerCase()}`}
@@ -377,7 +386,7 @@ export default function Strategy({ me, createRequest = null, onCreateHandled }) 
     {linkForm && <Sheet onClose={() => { if (!busy) setLinkForm(null); }}>
       <div className="eyebrow">Strategy delivery</div>
       <div className="h2">Link project</div>
-      <p className="screen-note">This records which existing Project currently supports the Unit Objective. Stage 5 adds programme/portfolio and milestone layers.</p>
+      <p className="screen-note">Connect an existing project to this objective so leadership can follow the work and its recorded outcomes.</p>
       <FieldGroup label="Project">
         <select className="field" aria-label="Strategy delivery project" value={linkForm.projectId} onChange={(event) => setLinkForm({ ...linkForm, projectId: event.target.value })}>
           <option value="">Choose visible project</option>
