@@ -34,3 +34,15 @@ export function reportMonthRange(now = new Date()) {
     label: now.toLocaleDateString("en-GB", { timeZone: "Africa/Accra", month: "long", year: "numeric" }),
   };
 }
+
+/** Complete Ghana-calendar quarter; dates remain stable across browser timezones. */
+export function reportQuarterRange(now = new Date()) {
+  const year = now.getUTCFullYear();
+  const quarter = Math.floor(now.getUTCMonth() / 3) + 1;
+  const month = (quarter - 1) * 3;
+  return {
+    start: reportDateKey(new Date(Date.UTC(year, month, 1))),
+    end: reportDateKey(new Date(Date.UTC(year, month + 3, 0))),
+    label: `Q${quarter} ${year}`,
+  };
+}

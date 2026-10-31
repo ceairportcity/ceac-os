@@ -77,21 +77,23 @@ for(const width of [1440,390,320])test(`empty Compliance map defaults to saved o
  const map=page.getByRole('region',{name:'Recorded workforce work-start street map'});
  await map.scrollIntoViewIfNeeded();
  await expect.poll(mapCount).toBeGreaterThan(0);
- await expect(map.getByRole('img',{name:/Saved CEAC office · Office reference/})).toBeVisible();
+ await expect(map.getByRole('img',{name:/CEAC Church Office · Saved office reference/})).toBeVisible();
  await expect(map.getByRole('button',{name:/View recorded work start|shared work-start/})).toHaveCount(0);
  await expect(map).toContainText('No recorded start GPS');
  await expect(page.getByRole('button',{name:/Open authorised work/})).toHaveCount(0);
  const fits=await page.evaluate(()=>window.syntheticMapFits);
  await map.getByRole('button',{name:'Fit staff start locations'}).click();
  expect(await page.evaluate(()=>window.syntheticMapFits)).toBeGreaterThan(fits);
- await expect(map.locator('.ceac-office-reference')).toHaveCSS('border-color','rgb(20, 73, 153)');
+ // Validate the pale office reference border and strong-blue office symbol separately.
+ await expect(map.locator('.ceac-office-reference')).toHaveCSS('border-color','rgb(190, 209, 232)');
+ await expect(map.locator('.ceac-office-symbol')).toHaveCSS('background-color','rgb(20, 73, 153)');
  expect(await page.evaluate(()=>window.syntheticLastMap.bounds.points.some(p=>p.lat===5.61&&p.lng===-.19))).toBe(true);
  await page.evaluate(()=>window.scrollTo(0,0));
  await page.screenshot({path:`test-artifacts/compliance-office-map-${width}.png`,fullPage:true});
  await map.getByRole('button',{name:'Hide street map'}).click();
  const enable=map.getByRole('button',{name:'Show Google Maps'});
  await expect(enable).toBeEnabled();await enable.click();
- await expect(map.getByRole('img',{name:/Office reference/})).toBeVisible();
+ await expect(map.getByRole('img',{name:/CEAC Church Office · Saved office reference/})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 test('office read failure is explicit without blocking default map or exposing a fake office',async({page})=>{
@@ -99,7 +101,7 @@ test('office read failure is explicit without blocking default map or exposing a
  const map=page.getByRole('region',{name:'Recorded workforce work-start street map'});
  await map.scrollIntoViewIfNeeded();await expect.poll(mapCount).toBeGreaterThan(0);
  await expect(page.getByRole('status')).toContainText('saved office reference could not be loaded');
- await expect(map.getByRole('img',{name:/Office reference/})).toHaveCount(0);
+ await expect(map.getByRole('img',{name:/CEAC Church Office · Saved office reference/})).toHaveCount(0);
 });
 
 test('HR direct-link access remains personal even with its legacy organisation-wide Compliance grant',async({page})=>{

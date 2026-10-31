@@ -22,3 +22,54 @@
 .room-live-status[data-state=offline]{opacity:.65}
 
 .memo-compose>header>.btn{width:auto}
+
+/* CEAC memo action density: retain established controls without giant bars. */
+.memo-reader .memo-response {
+  align-self: start;
+  justify-items: start;
+  align-items: start;
+  gap: 12px;
+}
+.memo-reader .memo-response > label {
+  width: 100%;
+  min-width: 0;
+}
+.memo-reader .memo-response > button,
+.memo-reader .memo-response .memo-actions > button,
+.memo-reader .memo-project > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 9px 14px;
+  justify-self: start;
+  align-self: start;
+  border-radius: 7px;
+}
+.memo-reader .memo-actions {
+  align-items: flex-start;
+  width: 100%;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.memo-reader .memo-actions > strong,
+.memo-reader .memo-actions > small {flex-basis: 100%}
+.memo-reader .memo-project {justify-items: start; max-width: min(100%,46rem)}
+.memo-reader .memo-project > label,
+.memo-reader .memo-project > p {width: 100%}
+.memo-compose .operational-files-picker > label {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 9px 14px;
+}
+@media (max-width: 760px) {
+  .memo-reader .memo-actions {gap: 8px}
+  .memo-reader .memo-response > button,
+  .memo-reader .memo-project > button {max-width: 100%}
+}

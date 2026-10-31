@@ -68,9 +68,9 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   const reports = fs.readFileSync("src/screens/ExecutiveReports.jsx", "utf8");
   const inbox = fs.readFileSync("src/screens/Inbox.jsx", "utf8");
   expect(work).toContain("Plan, record, and finish your work. Keep every contribution connected to the right project.");
-  expect(ministry).toContain("Set direction, track objectives and keep ministry priorities connected to recorded delivery.");
-  expect(ministry).toContain('executiveSurface ? "Objectives" : "Strategic hierarchy"');
-  expect(portfolio).toContain("View ministry programmes and strategic initiatives, their departments and the work behind them.");
+  expect(ministry).toContain("See what the ministry is working toward, which departments are responsible and where project evidence supports the outcome.");
+  expect(ministry).toContain('executiveSurface ? "Strategic priorities and delivery" : "Strategic hierarchy"');
+  expect(portfolio).toContain("See recorded project risks, delivery milestones and coordinated programmes. Open All projects to manage an individual project.");
   expect(organisation).toContain("Explore departments, teams and people, then open the work behind them.");
   expect(calendar).toContain("Your meetings, ministry events and project dates in one calendar.");
   expect(finance).toContain("Review income, spending and requests awaiting your decision. Each currency stays separate.");
@@ -117,7 +117,6 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
     "Work",
     "Ministry",
     "Projects",
-    "Portfolio",
     "Organisation",
     "Calendar",
     "Finance",
@@ -147,7 +146,7 @@ test("Executive Overview reproduces the locked desktop composition", async ({ pa
   await expect(page.locator(".executivev2-lower-grid > .executivev2-reference-panel")).toHaveCount(2);
   await expect(page.getByText("Needs your attention", { exact: true })).toBeVisible();
   await expect(page.getByText("Ministry direction", { exact: true })).toBeVisible();
-  await expect(page.getByText("Organisational overview", { exact: true })).toBeVisible();
+  await expect(page.getByText("People and departments", { exact: true })).toBeVisible();
   await expect(page.getByText("Significant updates", { exact: true })).toBeVisible();
   await expect(page.getByText("Upcoming meetings", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
@@ -173,8 +172,8 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
 
 const destinations = [
   ["work", ".ev2-work-executive", "Work"],
-  ["strategy", ".ev2-executive-ministry", "Ministry"],
-  ["delivery", ".ev2-project-delivery.is-executive", "Portfolio"],
+  ["strategy", ".ev2-executive-ministry", "Ministry direction & outcomes"],
+  ["exec-projects", ".executive-projects-consolidated", "Projects"],
   ["exec-organisation", ".ev2-exec-organisation", "Organisation"],
   ["exec-calendar", ".ev2cal-admin-page", "Calendar"],
   ["exec-finance", ".ev2-finance-executive", "Finance"],

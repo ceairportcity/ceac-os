@@ -126,14 +126,16 @@ test("Administration uses the approved Projects workspace with owner-authorised 
   } finally { await context.close(); }
 });
 
-test("Executive portfolio opens read-only project collaboration, not manager authoring", async ({ browser }) => {
+test("Executive Projects creates and inspects authorised collaboration without granting manager-only edits", async ({ browser }) => {
   assertLocalEnvironment();
   const { context, page } = await openAs(browser, "exec@ceac.local.test");
   try {
-    await page.goto(root + "/?tab=delivery");
-    await expect(page.locator(".ev2-project-delivery")).toBeVisible();
+    await page.goto(root + "/?tab=exec-projects");
+    await expect(page.locator(".ev2-project-admin")).toBeVisible();
+    await expect(page.getByRole("button",{name:"Create project",exact:true})).toBeVisible();
     await page.getByRole("button", { name: "Open project", exact: true }).first().click();
     await expect(page.locator(".s2-project-reader .s2-project-layout")).toBeVisible();
+    await page.getByRole("tab",{name:/Project tasks/}).click();
     await expect(page.locator(".s2-project-reader .s2-project-table-scroll")).toBeVisible();
     await expect(page.locator(".s2-project-reader").getByRole("button", { name: "+ Add task" })).toHaveCount(0);
     await page.screenshot({ path: "test-artifacts/stage2-approved-executive-project.png", fullPage: true });

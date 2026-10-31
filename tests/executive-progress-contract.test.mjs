@@ -60,13 +60,46 @@ test("Executive Overview denies false zero counts and incomplete ministry source
  const app=readFileSync("src/App.jsx","utf8");
  assert.match(src,/if \(!Number\.isInteger\(result\.count\) \|\| result\.count < 0\)/);
  assert.doesNotMatch(src,/return result\.count \?\? 0/);
- assert.match(src,/\[objectiveRows,strategyRows,unitRows,operationRows\]\.every\(complete\)/);
+ assert.match(src,/\[objectiveRows,strategyRows,unitRows,operationRows,employmentRows,activeProfileRows\]\.every\(complete\)/);
  assert.match(src,/result\.count === result\.data\.length/);
  assert.match(src,/!complete\(occurrenceResult\)/);
  assert.match(src,/!complete\(reportRows\)/);
  assert.match(src,/activeTeams: optionalCount\(teamRows\)/);
- assert.match(src,/activeVolunteers: optionalCount\(volunteerRows\)/);
- assert.match(src,/activeStaff: optionalCount\(staffRows\)/);
+ assert.match(src,/activeVolunteers: activeVolunteerIds\.size/);
+ assert.match(src,/activeStaff: activeStaffIds\.size/);
  assert.match(src,/The executive source evidence could not be fully verified/);
  assert.match(app,/ExecutiveHome key=\{me\.org_id\+":"\+me\.id\}/);
+});
+
+test("Executive people cards open role-specific directory views without altering attendance counts", () => {
+  const app=readFileSync("src/App.jsx","utf8");
+  const overview=readFileSync("src/experience-v2/executive-overview/ExecutiveOverviewV2.jsx","utf8");
+  const screen=readFileSync("src/screens/ExecutiveOrganisation.jsx","utf8");
+  assert.match(app,/initialDirectory=\{directory\}/);
+  assert.match(app,/options\.directory/);
+  assert.match(overview,/onOpenOrganisation\?\.\("staff"\)/);
+  assert.match(overview,/onOpenOrganisation\?\.\("volunteers"\)/);
+  assert.match(overview,/onOpenOrganisation\?\.\("teams"\)/);
+  assert.match(screen,/initialDirectory = null/);
+  assert.match(screen,/const \[directory, setDirectory\] = useState\(emptyDirectory\)/);
+  assert.doesNotMatch(screen,/\{ me, directory = null/);
+  assert.match(screen,/peopleForView = peopleGroup === "staff"/);
+});
+
+test("Executive linked staff and volunteer metrics are deduplicated and limited to active accessible profiles", () => {
+  const home=readFileSync("src/screens/ExecutiveHome.jsx","utf8");
+  const directory=readFileSync("src/screens/ExecutiveOrganisation.jsx","utf8");
+  assert.match(home,/linkedActiveProfileIds = new Set\(activeProfileRows\.data/);
+  assert.match(home,/linkedActiveProfileIds\.has\(row\.profile_id\)/);
+  assert.match(home,/activeVolunteerIds = new Set/);
+  assert.match(home,/activeStaffIds = new Set/);
+  assert.match(directory,/employedIds = new Set/);
+  assert.match(directory,/volunteerIds = new Set/);
+  assert.match(directory,/executive_personnel_directory/);
+  assert.match(home,/executive_personnel_directory/);
+  const migration=readFileSync("supabase/migrations/20261031021300_executive_personnel_read_summary.sql","utf8");
+  assert.match(migration,/e\.employment_status = 'active'/);
+  assert.match(migration,/p\.active IS TRUE/);
+  assert.match(migration,/NOT public\.app_is_exec\(\)/);
+  assert.match(migration,/REVOKE ALL ON FUNCTION public\.executive_personnel_directory/);
 });

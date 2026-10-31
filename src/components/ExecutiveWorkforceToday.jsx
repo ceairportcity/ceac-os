@@ -30,5 +30,5 @@ export default function ExecutiveWorkforceToday({me,onOpenOrganisation}){
  },[scope,retry]);
  if(read.scope!==scope||read.loading)return <section className="workstart-workspace" aria-label="Today's workforce start locations"><h2>Where work was started today</h2><p role="status">Loading recorded work starts…</p></section>;
  if(read.error)return <section className="workstart-workspace" aria-label="Today's workforce start locations"><h2>Where work was started today</h2><p role="status">Work-start records are unavailable. No attendance conclusion is implied.</p><button className="btn btn-ghost btn-sm" onClick={()=>setRetry(n=>n+1)}>Retry work-start records</button></section>;
- return <AdminWorkforceToday me={me} roster={read.roster} sessions={read.sessions} roleLabel="Executive" onOpenPeople={onOpenOrganisation} directoryLabel="Organisation directory" peopleLabel="people"/>;
+ return <AdminWorkforceToday me={me} roster={read.roster} sessions={read.sessions} roleLabel="Executive" peopleLabel="people"/>;
 }

@@ -168,6 +168,7 @@ test("VF5C Executive Reports is coverage-first with factual named filing status"
 
     await page.goto("/?tab=exec-reports");
     await expect(page.locator(".ev2-reporting-executive")).toBeVisible({ timeout: 15000 });
+    await page.getByRole("tab",{name:"Department submissions"}).click();
     await expect(page.getByText("September 2026", { exact: true })).toBeVisible();
     await expect(page.getByText("1", { exact: true }).first()).toBeVisible();
     await expect(page.locator(".filing-total")).toBeVisible();
@@ -276,7 +277,9 @@ test("Executive issued-outcome brief hides incomplete history rather than counti
   }
   await page.goto("/?tab=exec-reports");
   await expect(page.locator(".ev2-reporting-executive")).toBeVisible();
+  await page.getByRole("tab",{name:"Department submissions"}).click();
   await expect(page.locator(".filing-total")).toBeVisible();
+  await page.getByRole("tab",{name:"Insights & outcomes"}).click();
   await expect(page.getByText("Detailed outcome records could not be verified. No achievement figures have been inferred.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Print / Save as PDF" })).toBeDisabled();
   await context.close();

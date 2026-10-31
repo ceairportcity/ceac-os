@@ -8,11 +8,13 @@ import {
   reportAccraDate as localDate,
   reportWeekRange as weekRange,
   reportMonthRange as monthRange,
+  reportQuarterRange as quarterRange,
 } from "../lib/ghanaReportingDates";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { Sheet, ProductNotice, FieldGroup } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
+import { composeQuarterlyNarrative, parseQuarterlyNarrative } from "../lib/reportNarrativeSections";
 import MinistryNumbers from "../components/MinistryNumbers";
 import { Button, MotionDisclosure, Skeleton, StatePanel } from "../experience-v2/components";
 import { DataVizChart } from "../experience-v2/data-viz/DataVizV2";
@@ -70,7 +72,7 @@ function validFrozenReportSnapshot(snapshot) {
   return true;
 }
 
-export default function ManagerReports({ me, openItem }) {
+export default function ManagerReports({ me, openItem, onOpenAchievements = null }) {
   const [mode, setMode] = useState("week");
   const [projectId, setProjectId] = useState("");
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
@@ -85,7 +87,20 @@ export default function ManagerReports({ me, openItem }) {
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [reportRefs, setReportRefs] = useState([]);
   const [narrative, setNarrative] = useState("");
+  const [nextPriorities, setNextPriorities] = useState("");
+  const [decisionRequests, setDecisionRequests] = useState("");
   const [challenges, setChallenges] = useState("");
+  function restoreNarrative(value) {
+    const parts = parseQuarterlyNarrative(value);
+    setNarrative(parts.outcomes);
+    setNextPriorities(parts.nextPriorities);
+    setDecisionRequests(parts.decisionRequests);
+  }
+  function submitNarrative() {
+    return mode === "quarter"
+      ? composeQuarterlyNarrative({outcomes:narrative,nextPriorities,decisionRequests})
+      : narrative.trim() || null;
+  }
   const [correctionReason, setCorrectionReason] = useState("");
   const [sheet, setSheet] = useState(null);
   const [drill, setDrill] = useState(null);
@@ -198,7 +213,7 @@ export default function ManagerReports({ me, openItem }) {
     }
   }
 
-  const baseRange = useMemo(() => mode === "week" ? weekRange(parseDateOnly(reportDay)) : mode === "month" ? monthRange(parseDateOnly(reportDay)) : null, [mode, reportDay]);
+  const baseRange = useMemo(() => mode === "week" ? weekRange(parseDateOnly(reportDay)) : mode === "month" ? monthRange(parseDateOnly(reportDay)) : mode === "quarter" ? quarterRange(parseDateOnly(reportDay)) : null, [mode, reportDay]);
   const kindPeriods = useMemo(() => periods.filter((period) => period.kind === mode), [periods, mode]);
 
   const matchingPeriod = useMemo(() => {
@@ -306,27 +321,27 @@ export default function ManagerReports({ me, openItem }) {
     if (!range || !evidence) return [];
     const rows = [];
     let day = parseDateOnly(range.start), end = parseDateOnly(range.end);
-    while (day <= end && rows.length < 62) {
+    while (day <= end && rows.length < (mode === "quarter" ? 93 : 62)) {
       const key = dateKey(day);
       const items = evidence.completed.filter((row) => localDate(row.completed_at) === key);
       rows.push({ date: key, label: key, value: items.length, rows: items, section: `completed_day:${key}` });
       day = addDays(day, 1);
     }
     return rows;
-  }, [range, evidence]);
+  }, [range, evidence, mode]);
 
   const attendanceHeat = useMemo(() => {
     if (!range || !evidence) return [];
     const rows = [];
     let day = parseDateOnly(range.start), end = parseDateOnly(range.end);
-    while (day <= end && rows.length < 62) {
+    while (day <= end && rows.length < (mode === "quarter" ? 93 : 62)) {
       const key = dateKey(day);
       const dayRows = distinctAttendanceDays(evidence.periodSessions.filter((row) => localDate(row.started_at) === key));
       rows.push({ date: key, label: key, value: dayRows.length, rows: dayRows, section: `attendance_day:${key}` });
       day = addDays(day, 1);
     }
     return rows;
-  }, [range, evidence]);
+  }, [range, evidence, mode]);
 
   const statusRows = useMemo(() => {
     if (!evidence) return [];
@@ -390,16 +405,16 @@ export default function ManagerReports({ me, openItem }) {
     const latestSubmitted = rows.find(isIssuedUnitReport);
     if (preferDraft && draft) {
       setSelectedReportId(null);
-      setNarrative(draft.narrative || "");
+      restoreNarrative(draft.narrative || "");
       setChallenges(draft.challenges || "");
       setReportRefs([]);
     } else if (latestSubmitted) {
       setSelectedReportId(latestSubmitted.id);
-      setNarrative(latestSubmitted.narrative || "");
+      restoreNarrative(latestSubmitted.narrative || "");
       setChallenges(latestSubmitted.challenges || "");
     } else {
       setSelectedReportId(null);
-      setNarrative("");
+      restoreNarrative("");
       setChallenges("");
       setReportRefs([]);
     }
@@ -480,7 +495,7 @@ export default function ManagerReports({ me, openItem }) {
       p_scope: scope,
       p_unit_id: me.unit_id,
       p_project_id: scope === "project" ? projectId : null,
-      p_narrative: narrative.trim() || null,
+      p_narrative: submitNarrative(),
       p_challenges: challenges.trim() || null,
     });
     if (result.error) throw result.error;
@@ -537,13 +552,14 @@ export default function ManagerReports({ me, openItem }) {
     setBusy(true); setError(null); setNotice(null);
     try {
       if (!matchingPeriod || matchingPeriod.status !== "open") throw new Error("Administration must open this reporting period before you can submit a report.");
+      if (mode === "quarter" && !narrative.trim()) throw new Error("Record the key achievements and outcomes before submitting a quarterly report.");
       const refs = buildRefs("pending").map(({ report_id, ...ref }) => ref);
       const submitted = await supabase.rpc("save_and_submit_report", {
         p_period_id: matchingPeriod.id,
         p_scope: scope,
         p_unit_id: me.unit_id,
         p_project_id: scope === "project" ? projectId : null,
-        p_narrative: narrative.trim() || null,
+        p_narrative: submitNarrative(),
         p_challenges: challenges.trim() || null,
         p_evidence: buildSnapshot(),
         p_refs: refs,
@@ -588,7 +604,7 @@ export default function ManagerReports({ me, openItem }) {
         : "Live preview";
 
   if (loadedScope !== reportScope || loading || (range && periodRowsState === "loading")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
-    <ReportingPageHeader
+    <ReportingPageHeader onOpenAchievements={onOpenAchievements}
       eyebrow={me.unit_name}
       title="Reports"
       description="Built from work, submissions, projects and recorded work sessions already in CEAC OS. Submitted versions keep the evidence they were filed with."
@@ -601,7 +617,7 @@ export default function ManagerReports({ me, openItem }) {
   </div>;
 
   if (loadFailed || (range && periodRowsState === "error")) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
-    <ReportingPageHeader
+    <ReportingPageHeader onOpenAchievements={onOpenAchievements}
       eyebrow={me.unit_name}
       title="Reports"
       description="Built from work, submissions, projects and recorded work sessions already in CEAC OS. Submitted versions keep the evidence they were filed with."
@@ -621,7 +637,7 @@ export default function ManagerReports({ me, openItem }) {
   </div>;
 
   if (invalidFrozenEvidence) return <div className="body manager-reports ev2-reporting-page ev2-reporting-manager">
-    <ReportingPageHeader eyebrow={me.unit_name} title="Reports"
+    <ReportingPageHeader onOpenAchievements={onOpenAchievements} eyebrow={me.unit_name} title="Reports"
       description="Submitted versions must retain their original factual evidence."
       statusLabel="Archived evidence unavailable" statusTone="danger" />
     <div className="ev2rep-control-panel">
@@ -642,7 +658,7 @@ export default function ManagerReports({ me, openItem }) {
       <span>{me.unit_name} · Manager report</span>
     </div>
 
-    <ReportingPageHeader
+    <ReportingPageHeader onOpenAchievements={onOpenAchievements}
       eyebrow={me.unit_name}
       title="Reports"
       description="Built from work, submissions, projects and recorded work sessions already in CEAC OS. Submitted versions keep the figures and evidence they were filed with."
@@ -660,10 +676,11 @@ export default function ManagerReports({ me, openItem }) {
     </ProductNotice>}
 
     <ReportingTabs
-      items={[["week","Weekly"],["month","Monthly"],["project","Project"]]}
+      items={[["week","Weekly"],["month","Monthly"],["quarter","Quarterly"],["project","Project"]]}
       value={mode}
       onChange={(key) => {
         setMode(key);
+        setNextPriorities(""); setDecisionRequests("");
         setProjectId("");
         setSelectedPeriodId("");
         setSelectedReportId(null);
@@ -675,7 +692,7 @@ export default function ManagerReports({ me, openItem }) {
 
     <div className="ev2rep-control-panel">
       {mode !== "project" && kindPeriods.length > 0 && <select className="field" aria-label="Reporting period" value={matchingPeriod?.id || ""} onChange={(event) => { setSelectedPeriodId(event.target.value); setSelectedReportId(null); setDrill(null); }}>
-        <option value="">Current {mode === "week" ? "week" : "month"} preview</option>
+        <option value="">Current {mode === "week" ? "week" : mode === "quarter" ? "quarter" : "month"} preview</option>
         {kindPeriods.map((period) => <option key={period.id} value={period.id}>{period.label} · {period.starts_on} → {period.ends_on} · {period.status}</option>)}
       </select>}
 
@@ -834,8 +851,35 @@ export default function ManagerReports({ me, openItem }) {
 
       <ReportingSection eyebrow="Narrative" title="Manager's summary" description={viewingFrozen ? "This submitted version is read-only." : "Add the context that recorded evidence alone cannot explain."}>
         <div className="report-authoring">
-          <FieldGroup label="What leadership should understand"><AssistiveTextarea className="field" rows={4} disabled={viewingFrozen} placeholder="Summarise the period in plain language" value={viewingFrozen ? (frozenReport.narrative || "") : narrative} onChange={(event) => setNarrative(event.target.value)} /></FieldGroup>
-          <FieldGroup label="Challenges or context" hint="Optional. Explain what the evidence alone would not show."><AssistiveTextarea className="field" rows={3} disabled={viewingFrozen} placeholder="Add useful context" value={viewingFrozen ? (frozenReport.challenges || "") : challenges} onChange={(event) => setChallenges(event.target.value)} /></FieldGroup>
+          <FieldGroup label={mode === "quarter" ? "Achievements and outcomes *" : "What leadership should understand"}
+            hint={mode === "quarter" ? "Describe what changed, for whom, with evidence from recorded work." : "Summarise the period without inventing outcomes."}>
+            <AssistiveTextarea className="field" rows={4} disabled={viewingFrozen}
+              placeholder={mode === "quarter" ? "What was delivered and what results can be shown?" : "Summarise the period in plain language"}
+              value={viewingFrozen ? parseQuarterlyNarrative(frozenReport.narrative || "").outcomes : narrative}
+              onChange={event => setNarrative(event.target.value)} />
+          </FieldGroup>
+          <FieldGroup label={mode === "quarter" ? "Challenges and unresolved risks" : "Challenges or context"}
+            hint="Explain blockers and what the recorded evidence does not show.">
+            <AssistiveTextarea className="field" rows={3} disabled={viewingFrozen}
+              placeholder="Record material challenges, delays, risks and causes"
+              value={viewingFrozen ? (frozenReport.challenges || "") : challenges}
+              onChange={event => setChallenges(event.target.value)} />
+          </FieldGroup>
+          {mode === "quarter" && <>
+            <FieldGroup label="Priorities for the next quarter" hint="Proposed priorities, not automatically approved commitments.">
+              <AssistiveTextarea className="field" rows={3} disabled={viewingFrozen}
+                placeholder="What will your department focus on next, and how will you assess the result?"
+                value={viewingFrozen ? parseQuarterlyNarrative(frozenReport.narrative || "").nextPriorities : nextPriorities}
+                onChange={event => setNextPriorities(event.target.value)} />
+            </FieldGroup>
+            <FieldGroup label="Leadership decisions or support requested" hint="A request does not establish approval.">
+              <AssistiveTextarea className="field" rows={3} disabled={viewingFrozen}
+                placeholder="What decision, support or resource does your department need?"
+                value={viewingFrozen ? parseQuarterlyNarrative(frozenReport.narrative || "").decisionRequests : decisionRequests}
+                onChange={event => setDecisionRequests(event.target.value)} />
+            </FieldGroup>
+          </>}
+          {mode === "quarter" && <p className="screen-note">The charts and evidence references above are saved with the submitted report version; written explanations and requests are kept in its revision history.</p>}
         </div>
       </ReportingSection>
 
@@ -861,7 +905,7 @@ export default function ManagerReports({ me, openItem }) {
             statusLabel={row.status === "draft" ? "Draft" : "Submitted"}
             statusTone={row.status === "draft" ? "warning" : "success"}
             onClick={() => {
-              if (row.status === "draft") { setSelectedReportId(null); setNarrative(row.narrative || ""); setChallenges(row.challenges || ""); }
+              if (row.status === "draft") { setSelectedReportId(null); restoreNarrative(row.narrative || ""); setChallenges(row.challenges || ""); }
               else setSelectedReportId(row.id);
               setDrill(null);
             }}
@@ -875,7 +919,7 @@ export default function ManagerReports({ me, openItem }) {
             <button className="btn" disabled={busy || !historyVerified} onClick={submitReport}>{busy ? "Submitting..." : "Submit report"}</button>
           </>}
           {viewingFrozen && !draft && frozenReport?.status === "submitted" && frozenReport.id === latestSubmitted?.id && matchingPeriod?.status === "open" && <button className="btn btn-ghost" disabled={!historyVerified || !refsVerified} onClick={() => { setCorrectionReason(""); setSheet("correct"); }}>Correct this report</button>}
-          {viewingFrozen && draft && <button className="btn btn-ghost" onClick={() => { setSelectedReportId(null); setNarrative(draft.narrative || ""); setChallenges(draft.challenges || ""); }}>Return to draft</button>}
+          {viewingFrozen && draft && <button className="btn btn-ghost" onClick={() => { setSelectedReportId(null); restoreNarrative(draft.narrative || ""); setChallenges(draft.challenges || ""); }}>Return to draft</button>}
         </div>
 
         <ReportingFootnote>Submitted reports use frozen figures and evidence links. Later activity does not rewrite them. Reporting coverage and work-session context are factual records, not performance scores.</ReportingFootnote>

@@ -17,6 +17,7 @@ async function records(page,{empty=false,deny=false}={}){
 for(const width of [320,390,1440])test(`Executive reporting figures, display choice and register agree at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:1000});await records(page);
  await page.goto('/tests/fixtures/owner-corrections.html?screen=reports&actor=executive');
+ await page.getByRole('tab',{name:'Department submissions'}).click();
  const overview=page.getByRole('region',{name:'October 2026',exact:true});
  await expect(overview.locator('.filing-ring strong')).toHaveText('63%');
  await expect(overview.locator('.filing-total>strong')).toHaveText('5 / 8');
@@ -38,6 +39,7 @@ for(const width of [320,390,1440])test(`Executive reporting figures, display cho
 });
 test('No active departments has no fabricated zero percentage',async({page})=>{
  await records(page,{empty:true});await page.goto('/tests/fixtures/owner-corrections.html?screen=reports');
+ await page.getByRole('tab',{name:'Department submissions'}).click();
  await expect(page.locator('.filing-ring strong')).toHaveText('—');
  await expect(page.getByText('No active departments are recorded.')).toBeVisible();
 });

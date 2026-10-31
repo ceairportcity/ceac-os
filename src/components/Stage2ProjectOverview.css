@@ -176,3 +176,73 @@
 .s2-project-recent-activity li small{color:#71849b;font-size:12px;line-height:1.45}
 
 .s2-project-progress-line>small{white-space:normal}
+
+
+/* Role-aware project drill-down. The ordinary manager overview retains all
+   existing sections; Executive inspection exposes one purpose at a time. */
+.s2-project[data-project-view="overview"] .s2-project-team-panel,
+.s2-project[data-project-view="overview"] .s2-project-tasks-panel,
+.s2-project[data-project-view="overview"] .s2-project-detail-milestones,
+.s2-project[data-project-view="overview"] .s2-project-recent-activity,
+.s2-project[data-project-view="people"] .s2-project-metrics,
+.s2-project[data-project-view="people"] .s2-project-tasks-panel,
+.s2-project[data-project-view="people"] .s2-project-aside,
+.s2-project[data-project-view="work"] .s2-project-metrics,
+.s2-project[data-project-view="work"] .s2-project-team-panel,
+.s2-project[data-project-view="work"] .s2-project-aside,
+.s2-project[data-project-view="milestones"] .s2-project-metrics,
+.s2-project[data-project-view="milestones"] .s2-project-team-panel,
+.s2-project[data-project-view="milestones"] .s2-project-tasks-panel,
+.s2-project[data-project-view="milestones"] .s2-project-aside > header,
+.s2-project[data-project-view="milestones"] .s2-project-aside > dl,
+.s2-project[data-project-view="milestones"] .s2-project-aside > section:not(.s2-project-detail-milestones):not(.s2-project-recent-activity) {
+  display: none;
+}
+.s2-project[data-project-view="people"] .s2-project-layout,
+.s2-project[data-project-view="work"] .s2-project-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.s2-project[data-project-view="milestones"] .s2-project-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.s2-project[data-project-view="milestones"] .s2-project-content {
+  display: none;
+}
+.s2-project[data-project-view="milestones"] .s2-project-aside {
+  position: static;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1.25rem;
+}
+.s2-project[data-project-view="milestones"] .s2-project-aside > section {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+.s2-project-reader .ev2p-tabs button {
+  border-radius: var(--ev2-radius-control);
+}
+@media(max-width:700px) {
+  .s2-project[data-project-view="milestones"] .s2-project-aside {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Project actions sit between the title and detail tabs, not as page-width bars. */
+.s2-project-reader .s2-project-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+.s2-project-reader .s2-project-quick-actions > button,
+.s2-project-reader .s2-project-quick-actions > .btn,
+.s2-project-reader .s2-project-quick-actions .btn {
+  width: auto;
+  max-width: 100%;
+  min-height: 40px;
+  padding-inline: 14px;
+  flex: 0 0 auto;
+}

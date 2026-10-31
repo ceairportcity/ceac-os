@@ -220,6 +220,50 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.plan_work_activity_followup(p_activity_id uuid)'),
  ('public.edit_open_work_details(p_work_item_id uuid, p_expected_movement timestamp with time zone, p_title text, p_purpose text, p_outcome text, p_instructions text)');
 
+-- The redesign adds three Executive-only, tenant-scoped, read-only projections.
+-- Exact function identities were verified against isolated staging; no HR
+-- table SELECT privilege is widened and no anonymous execution is permitted.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.executive_personnel_directory()'),
+ ('public.executive_personnel_leave(p_profile_id uuid)'),
+ ('public.executive_personnel_schedule(p_profile_id uuid)');
+
+do $executive_read_surface$
+declare v_signature text; v_proc oid; v_definition text;
+begin
+  foreach v_signature in array array[
+    'public.executive_personnel_directory()',
+    'public.executive_personnel_leave(uuid)',
+    'public.executive_personnel_schedule(uuid)'
+  ] loop
+    v_proc := to_regprocedure(v_signature);
+    if v_proc is null then
+      raise exception 'Reviewed Executive read RPC missing: %',v_signature;
+    end if;
+    if not exists (
+      select 1 from pg_proc p where p.oid=v_proc
+        and p.prosecdef
+        and p.proconfig @> array['search_path=""']
+    ) or not has_function_privilege('authenticated',v_proc,'EXECUTE')
+      or has_function_privilege('anon',v_proc,'EXECUTE') then
+      raise exception 'Executive read RPC violates authenticated-only/fixed-path definer boundary: %',v_signature;
+    end if;
+    v_definition := pg_get_functiondef(v_proc);
+    if v_definition not ilike '%auth.uid()%'
+      or v_definition not ilike '%public.app_is_exec()%'
+      or v_definition not ilike '%public.app_org_id()%'
+      or v_definition not ilike '%RAISE EXCEPTION%'
+      or v_definition not ilike '%RETURN QUERY%'
+      or v_definition ilike '%INSERT INTO%'
+      or v_definition ilike '%UPDATE public.%'
+      or v_definition ilike '%DELETE FROM%'
+    then
+      raise exception 'Executive read RPC lacks a reviewed read-only actor/tenant/role contract: %',v_signature;
+    end if;
+  end loop;
+end
+$executive_read_surface$;
+
 do $allowlist$
 declare
   v_unexpected text;
@@ -267,8 +311,9 @@ begin
   left join actual a using(signature)
   where a.signature is null;
 
-  -- 25 October: one reviewed Executive department-assignment RPC, exact signature above.
-  if v_actual<>176 or v_expected<>176 or v_unexpected is not null or v_missing is not null then
+  -- The three new Executive-only projections have explicit signatures and
+  -- actor/tenant/no-anon/read-only checks above.
+  if v_actual<>179 or v_expected<>179 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;

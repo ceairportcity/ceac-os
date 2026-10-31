@@ -10,8 +10,12 @@ test("there is one self-achievement route for both My Hub and the navigation",()
  assert.match(me,/onOpenAchievements\?\.\(\)/);
  assert.doesNotMatch(me,/components\/PersonalAchievements|showAchievements/);
  assert.match(app,/const PersonalAchievements = lazy/);
- assert.match(app,/onOpenAchievements=\{\(\) => go\("achievements"\)\}/);
+ assert.match(app,/onOpenAchievements=\{\(\) => openAchievements\("me"\)\}/);
  assert.match(app,/tab === "achievements"/);
+ assert.match(app,/openAchievements\("manager-reports"\)/);
+ assert.match(app,/openAchievements\("exec-reports"\)/);
+ assert.match(app,/openAchievements\("reporting"\)/);
+ assert.doesNotMatch(app,/s2-achievement-entry/);
  assert.match(screen,/individualAchievementFacts/);
  assert.match(screen,/\.from\("work_items"\)/);
  assert.match(screen,/\.from\("submissions"\)/);

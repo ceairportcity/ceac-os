@@ -43,7 +43,8 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
   expect(view).toContain("Good morning");
   expect(view).toContain("Significant updates");
   expect(home).toContain('.in("verb", EXECUTIVE_EXCEPTION_VERBS)');
-  expect(view).toContain("Organisational overview");
+  expect(view).toContain('label="Employed staff"');
+  expect(view).toContain('label="Volunteers"');
   expect(view).toContain("This area only shows CEAC records your account is authorised to see.");
   expect(view).not.toContain("ReferenceDashboard");
   expect(view).not.toContain("components/primitives");
@@ -304,8 +305,8 @@ for (const viewport of [
 
     await page.goto("/?tab=strategy");
     await expect(page.locator(".ev2-executive-ministry")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("heading", { name: "Ministry", exact: true })).toBeVisible();
-    await expect(page.getByText("Objectives", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true })).toBeVisible();
+    await expect(page.getByText("Ministry objectives", { exact: true })).toBeVisible();
     await expect(page.getByText("Ministry Direction · active", { exact: true })).toBeVisible();
     await expect(page.getByText("Ministry Objective · active", { exact: true })).toBeVisible();
     await expect(page.getByText("First Timers · Complete recorded visitor follow-ups", { exact: true })).toBeVisible();

@@ -40,7 +40,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
       const previousMonday = new Date(monday); previousMonday.setUTCDate(previousMonday.getUTCDate() - 7);
       const ministryStart = new Date(now); ministryStart.setDate(ministryStart.getDate() - 90);
 
-      const [doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, meetingRows, objectiveRows, strategyRows, periodRows, unitRows, operationRows, volunteerRows, staffRows, teamRows, activityResult] = await Promise.all([
+      const [doneWeek, donePreviousWeek, objectives, objectiveAttention, projects, blocked, review, meetingRows, objectiveRows, strategyRows, periodRows, unitRows, operationRows, employmentRows, activeProfileRows, teamRows, activityResult] = await Promise.all([
         count("work_items", (query) => query.in("kind", ["task", "deliverable"]).in("status", ["completed", "self_certified"]).gte("completed_at", monday.toISOString())),
         count("work_items", (query) => query.in("kind", ["task", "deliverable"]).in("status", ["completed", "self_certified"]).gte("completed_at", previousMonday.toISOString()).lt("completed_at", monday.toISOString())),
         count("objectives"),
@@ -67,8 +67,8 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
           .select("id,name,value_label,unit_id,units(name)", { count: "exact" })
           .eq("org_id",me.org_id).eq("active",true).eq("records_value",true)
           .order("name"),
-        supabase.from("employment_records").select("profile_id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").eq("employment_type", "volunteer"),
-        supabase.from("employment_records").select("profile_id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("employment_status", "active").neq("employment_type", "volunteer"),
+        supabase.rpc("executive_personnel_directory", {}, { count: "exact" }),
+        supabase.from("profiles").select("id", { count: "exact" }).eq("org_id", me.org_id).eq("active", true),
         supabase.from("sub_teams").select("id", { count: "exact", head: true }).eq("org_id", me.org_id).eq("active", true),
         supabase.from("activity_events")
           .select("id,actor_id,verb,object_type,object_id,at")
@@ -78,10 +78,10 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
           .limit(12),
       ]);
 
-      const firstError = [meetingRows.error, objectiveRows.error, strategyRows.error, periodRows.error, unitRows.error, operationRows.error, activityResult.error].find(Boolean);
+      const firstError = [meetingRows.error, objectiveRows.error, strategyRows.error, periodRows.error, unitRows.error, operationRows.error, employmentRows.error, activeProfileRows.error, activityResult.error].find(Boolean);
       if (firstError) throw new Error("Executive records could not be verified.");
       const complete = (result) => !result.error && Array.isArray(result.data) && Number.isInteger(result.count) && result.count === result.data.length;
-      if (![objectiveRows,strategyRows,unitRows,operationRows].every(complete)) throw new Error("Executive source collections are incomplete.");
+      if (![objectiveRows,strategyRows,unitRows,operationRows,employmentRows,activeProfileRows].every(complete)) throw new Error("Executive source collections are incomplete.");
       if (![meetingRows,periodRows,activityResult].every(result=>Array.isArray(result.data))) throw new Error("Executive visible records could not be verified.");
       const optionalCount = (result) => !result.error && Number.isInteger(result.count) && result.count >= 0 ? result.count : null;
 
@@ -128,6 +128,9 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
         setReporting({label:openPeriod.label,filed,total:unitRows.data.length});
       }else setReporting(null);
 
+      const linkedActiveProfileIds = new Set(activeProfileRows.data.map((row) => row.id));
+      const activeVolunteerIds = new Set(employmentRows.data.filter((row) => row.employment_type === "volunteer" && linkedActiveProfileIds.has(row.profile_id)).map((row) => row.profile_id));
+      const activeStaffIds = new Set(employmentRows.data.filter((row) => row.employment_type !== "volunteer" && linkedActiveProfileIds.has(row.profile_id)).map((row) => row.profile_id));
       setX({
         doneWeek,
         donePreviousWeek,
@@ -139,8 +142,8 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
         activeUnits: unitRows.data.length,
         ministryObjectives: strategyRows.data.filter((row) => row.node_type === "ministry_objective").length,
         activeTeams: optionalCount(teamRows),
-        activeVolunteers: optionalCount(volunteerRows),
-        activeStaff: optionalCount(staffRows),
+        activeVolunteers: activeVolunteerIds.size,
+        activeStaff: activeStaffIds.size,
       });
       setMeetings(meetingRows.data || []);
     } catch (loadError) {
@@ -219,7 +222,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
     onOpenWork={() => go?.("work")}
     onOpenMinistry={() => go?.("strategy")}
     onOpenPortfolio={() => go?.("delivery")}
-    onOpenOrganisation={() => go?.("exec-organisation")}
+    onOpenOrganisation={(directory = "departments") => go?.("exec-organisation", { directory })}
     onOpenFinance={() => go?.("exec-finance")}
     onOpenReports={() => go?.("exec-reports")}
     onOpenCalendar={() => go?.("exec-calendar")}

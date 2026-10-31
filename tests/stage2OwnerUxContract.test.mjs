@@ -291,7 +291,7 @@ test("P0 route census continuously matches JSX branches, actual screens and dire
     "ManagerReports"
   ],
   "exec-projects": [
-    "AdminProjects"
+    "ExecutiveProjectsWorkspace"
   ],
   "exec-organisation": [
     "ExecutiveOrganisation"
@@ -312,6 +312,7 @@ test("P0 route census continuously matches JSX branches, actual screens and dire
     "Strategy"
   ],
   "delivery": [
+    "ExecutiveProjectsWorkspace",
     "Delivery"
   ],
   "workload": [
@@ -431,7 +432,7 @@ test("P0 executable census captures all mapped screen and direct data sources wi
   const audit = collectP0SourceInventory();
   assert.equal(audit.status, "SOURCE_INVENTORY_ONLY");
   assert.equal(audit.routeCount, 48);
-  assert.deepEqual(audit.roleNavigationCounts, { staff: 8, manager: 11, admin: 13, executive: 13 });
+  assert.deepEqual(audit.roleNavigationCounts, { staff: 8, manager: 11, admin: 13, executive: 12 });
   assert.equal(audit.overlays.length, 9);
   assert.ok(audit.routes.every((r) => r.components.length > 0
     && r.components.every((c) => c.path.startsWith("src/screens/"))));

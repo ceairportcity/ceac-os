@@ -71,7 +71,7 @@ const ROLES = [
       { key:"home", label:"Overview", mobileLabel:"Home" },
       { key:"work", label:"Work" },
       { key:"strategy", label:"Ministry" },
-      { key:"delivery", label:"Portfolio" },
+      { key:"exec-projects", label:"Projects" },
       { key:"exec-organisation", label:"Organisation" },
       { key:"exec-finance", label:"Finance" },
       { key:"exec-reports", label:"Reports" },
@@ -201,7 +201,7 @@ test("Stage 14B route matrix mirrors the accepted shell destination contract", a
     "home","people","work","attendance","finance","reporting","settings","messages","me","account",
   ]);
   expect(ROLES.find((role)=>role.key==="executive").routes.map((r)=>r.key)).toEqual([
-    "home","work","strategy","delivery","exec-organisation","exec-finance","exec-reports","messages","me","account",
+    "home","work","strategy","exec-projects","exec-organisation","exec-finance","exec-reports","messages","me","account",
   ]);
 });
 

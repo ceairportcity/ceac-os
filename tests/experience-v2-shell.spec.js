@@ -144,11 +144,11 @@ test("OCR2 Executive creation is reachable through the approved Work, Ministry a
   await expect(page.getByRole("button", { name: "Give out work", exact: true }).first()).toBeVisible();
 
   await page.goto("/?tab=strategy");
-  await expect(page.getByRole("heading", { name: "Ministry", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "New Ministry Objective", exact: true }).click();
-  let dialog = page.getByRole("dialog", { name: "New ministry objective" });
+  await expect(page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Add Ministry Direction", exact: true }).click();
+  let dialog = page.getByRole("dialog", { name: "New ministry direction" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByLabel("Strategy parent direction")).toBeVisible();
+  await expect(dialog.getByLabel("Strategy name")).toBeVisible();
 
   await page.goto("/?tab=announcements");
   await page.getByRole("button", { name: "New announcement", exact: true }).click();
@@ -221,7 +221,7 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   await expect(announcementRow.getByText(/published/i)).toBeVisible();
 
   await page.goto("/?tab=strategy");
-  await expect(page.getByRole("heading", { name: "Ministry", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Add Ministry Direction", exact: true }).click();
   dialog = page.getByRole("dialog", { name: "New ministry direction" });
   await dialog.getByLabel("Strategy name").fill(directionTitle);
@@ -233,8 +233,8 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   // The ministry-specific composer enforces the same parent-direction
   // authority, without reintroducing the retired global Create button.
   await page.goto("/?tab=strategy");
-  await page.getByRole("heading", { name: "Ministry", exact: true }).waitFor();
-  await page.getByRole("button", { name: "New Ministry Objective", exact: true }).click();
+  await page.getByRole("heading", { name: "Ministry direction & outcomes", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Add ministry objective", exact: true }).first().click();
   dialog = page.getByRole("dialog", { name: "New ministry objective" });
   await dialog.getByLabel("Strategy parent direction").selectOption({ label: directionTitle });
   await dialog.getByLabel("Strategy name").fill(objectiveTitle);

@@ -122,7 +122,7 @@ test('Executive person contact opens a shared room with a verified mention, with
   await page.goto('/?tab=exec-organisation');
   await page.getByRole('button',{name:/Test Unit A/}).click();
   await page.getByRole('button',{name:/^Staff Fixture/}).first().click();
-  await expect(page.getByText('Room messages are shared with the department.',{exact:false})).toBeVisible();
+  await expect(page.getByRole('region',{name:'Employee profile'})).toBeVisible();
   const sent=[];
   await page.route('**/rest/v1/rpc/send_room_message',async route=>{
     sent.push(route.request().postData());
@@ -133,7 +133,7 @@ test('Executive person contact opens a shared room with a verified mention, with
     const roomId=new URL(route.request().url()).searchParams.get('room_id')?.replace(/^eq\./,'');
     await route.fulfill({status:200,contentType:'application/json',headers:{'content-range':'0-0/1'},body:JSON.stringify([{id:'39000000-0000-4000-8000-000000000025',room_id:roomId,author_id:'31000000-0000-4000-8000-000000000001',body:'Room assignment fixture',reply_to_id:null,created_at:new Date().toISOString(),profiles:{full_name:'Staff Fixture'},room_message_refs:[],room_mentions:[]}])});
   });
-  await page.getByRole('button',{name:'Message in Test Unit A room',exact:true}).click();
+  await page.getByRole('button',{name:'Message in department',exact:true}).click();
   await expect(page.getByRole('textbox',{name:'Room message'})).toHaveValue('@Staff Fixture ');
   await expect(page.getByRole('button',{name:'Send',exact:true})).toBeEnabled();
   expect(sent).toHaveLength(0);
@@ -152,12 +152,12 @@ for (const width of [390,1440]) {
   test(`Executive secondary destinations use the replacement family at ${width}px`,async ({page},testInfo)=>{
     await page.setViewportSize({width,height:960});
     await signIn(page);
-    for (const [tab,heading] of [['work','Work'],['strategy','Ministry'],['delivery','Portfolio'],['messages','Messages'],['me','My Hub'],['announcements','Announcements'],['payroll','Payroll'],['technical-help','Get technical help'],['guide','Help that matches your work']]) {
+    for (const [tab,heading] of [['work','Work'],['strategy','Ministry direction & outcomes'],['exec-projects','Projects'],['messages','Messages'],['me','My Hub'],['announcements','Announcements'],['payroll','Payroll'],['technical-help','Get technical help'],['guide','Help that matches your work']]) {
       await page.goto(`/?tab=${tab}`);
       const title=page.getByRole('heading',{name:heading,exact:true}).first();
       await expect(title).toBeVisible();
       if (tab === 'strategy') {
-        const primary=page.getByRole('button',{name:'New Ministry Objective',exact:true});
+        const primary=page.getByRole('button',{name:/^(Add ministry objective|Set ministry direction)$/});
         const secondary=page.getByRole('button',{name:'Add Ministry Direction',exact:true});
         expect(await primary.evaluate(node=>getComputedStyle(node).backgroundImage)).toBe('none');
         expect(await primary.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
@@ -200,7 +200,7 @@ test('Executive project department, work, Back/reload and calendar date stay con
   const projectId=await created.json();
   expect(typeof projectId).toBe('string');
   await signIn(page);
-  await page.goto(`/?tab=delivery&project=${projectId}`);
+  await page.goto(`/?tab=exec-projects&project=${projectId}`);
   await expect(page.getByRole('heading',{name:title,exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Assign department',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Assign department to project'});
@@ -218,6 +218,7 @@ test('Executive project department, work, Back/reload and calendar date stay con
   expect(taskResponse.ok()).toBe(true);
   const task=await taskResponse.json();
   await page.reload();
+  await page.getByRole('tab',{name:/Project tasks/}).click();
   await page.getByRole('button',{name:new RegExp(`^${taskTitle}`)}).click();
   await expect(page).toHaveURL(new RegExp(`project=${projectId}`));
   await expect(page.getByRole('heading',{name:taskTitle,exact:true})).toBeVisible();
@@ -227,7 +228,7 @@ test('Executive project department, work, Back/reload and calendar date stay con
   await expect(page.getByRole('heading',{name:title,exact:true})).toBeVisible();
   await page.goto('/?tab=exec-calendar');
   await page.getByRole('button',{name:new RegExp(title+' starts')}).click();
-  await expect(page).toHaveURL(new RegExp(`tab=delivery&project=${projectId}`));
+  await expect(page).toHaveURL(new RegExp(`tab=exec-projects&project=${projectId}`));
   await expect(page.getByRole('heading',{name:title,exact:true})).toBeVisible();
   test.info().annotations.push({type:'isolated_fixture',description:`project=${projectId};work=${task.id}`});
 });

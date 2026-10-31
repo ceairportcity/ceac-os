@@ -38,6 +38,7 @@ const Finance = lazy(() => import("./screens/Finance"));
 const Reports = lazy(() => import("./screens/Reports"));
 const PersonalAchievements = lazy(() => import("./screens/PersonalAchievements"));
 const ExecutiveHome = lazy(() => import("./screens/ExecutiveHome"));
+const ExecutiveProjectsWorkspace = lazy(() => import("./screens/ExecutiveProjectsWorkspace"));
 const ExecutiveWork = lazy(() => import("./screens/ExecutiveWork"));
 const ExecutiveOrganisation = lazy(() => import("./screens/ExecutiveOrganisation"));
 const ExecutiveFinance = lazy(() => import("./screens/ExecutiveFinance"));
@@ -104,6 +105,7 @@ function routeFromLocation() {
   if (roomContext && /^[0-9a-f-]{36}$/i.test(params.get("mention") || "")) roomContext.mentionProfileId = params.get("mention");
   return {
     tab: params.get("tab") || "home",
+    directory: params.get("tab") === "exec-organisation" && ["departments", "teams", "people", "staff", "volunteers"].includes(params.get("directory")) ? params.get("directory") : null,
     setting: params.get("setting") || null,
     settingsReturn: params.get("settingsReturn") === "people" ? "people" : null,
     leaveRequestId: params.get("tab") === "attendance" ? params.get("leave") : null,
@@ -122,6 +124,7 @@ export default function App() {
   const [bootError, setBootError] = useState(null);
   const initialRoute = routeFromLocation();
   const [tab, setTab] = useState(initialRoute.tab);
+  const [directory, setDirectory] = useState(initialRoute.directory);
   const [setting, setSetting] = useState(initialRoute.setting);
   const [settingsReturn, setSettingsReturn] = useState(initialRoute.settingsReturn);
   const [leaveRequestId, setLeaveRequestId] = useState(initialRoute.leaveRequestId);
@@ -137,6 +140,7 @@ export default function App() {
   const [meetingDraft, setMeetingDraft] = useState(null);
   const [createIntent, setCreateIntent] = useState(null);
   const [guideContextTab, setGuideContextTab] = useState(null);
+  const [achievementsReturnTab, setAchievementsReturnTab] = useState("me");
   const [peopleFocusId, setPeopleFocusId] = useState(null);
   const [authorityFocusProfileId,setAuthorityFocusProfileId] = useState(null);
   const [peopleAccessIntent, setPeopleAccessIntent] = useState(null);
@@ -231,6 +235,7 @@ export default function App() {
 
   function applyRoute(route) {
     setTab(route.tab || "home");
+    setDirectory(route.tab === "exec-organisation" ? route.directory || null : null);
     setSetting(route.setting || null);
     setSettingsReturn(route.settingsReturn || null);
     setLeaveRequestId(route.tab === "attendance" ? route.leaveRequestId || null : null);
@@ -254,6 +259,7 @@ export default function App() {
   function navigate(route, { replace = false } = {}) {
     const next = {
       tab: route.tab || tab || "home",
+      directory: route.tab === "exec-organisation" && ["departments", "teams", "people", "staff", "volunteers"].includes(route.directory) ? route.directory : null,
       setting: route.tab === "office-settings" ? route.setting || null : null,
       settingsReturn: route.settingsReturn === "people" ? "people" : null,
       leaveRequestId: route.tab === "attendance" ? route.leaveRequestId || null : null,
@@ -266,6 +272,7 @@ export default function App() {
     };
     const params = new URLSearchParams();
     if (next.tab !== "home") params.set("tab", next.tab);
+    if (next.directory) params.set("directory", next.directory);
     if (next.setting) params.set("setting", next.setting);
     if (next.settingsReturn) params.set("settingsReturn", next.settingsReturn);
     if (next.leaveRequestId) params.set("leave", next.leaveRequestId);
@@ -299,7 +306,12 @@ export default function App() {
   function go(t, options = {}) {
     if (t !== "guide") setGuideContextTab(null);
     setAuthorityFocusProfileId(null);
-    navigate({ tab: t, setting: options.setting, leaveRequestId: options.leaveRequestId, workforceSection: options.workforceSection });
+    navigate({ tab: t, setting: options.setting, directory: options.directory, leaveRequestId: options.leaveRequestId, workforceSection: options.workforceSection });
+  }
+
+  function openAchievements(from = "me") {
+    setAchievementsReturnTab(from);
+    go("achievements");
   }
 
   function openGuide(contextual = false) {
@@ -331,6 +343,10 @@ export default function App() {
     if (isAdmin) { navigate({tab:"admin-projects",projectId:id}); return; }
     if (isUnitManager) {
       navigate({ tab: "projects", projectId: id });
+      return;
+    }
+    if (isExec) {
+      navigate({ tab: "exec-projects", projectId: id });
       return;
     }
     if (canUseDelivery) {
@@ -448,7 +464,7 @@ export default function App() {
     const managerScopeKey = `${me.org_id}:${me.id}:${me.unit_id || "none"}`;
     if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
     if (tab === "account") return <AccountActivity me={me} />;
-    if (tab === "achievements") return <PersonalAchievements me={me} back={() => go("me")} openItem={openItem} />;
+    if (tab === "achievements") return <PersonalAchievements me={me} back={() => go(achievementsReturnTab)} openItem={openItem} />;
     if (tab === "technical-help") return <TechnicalHelp key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "technical-support") return canManageSupport
       ? <TechnicalSupport key={`${me.org_id}:${me.id}`} me={me} go={go} />
@@ -473,7 +489,7 @@ export default function App() {
     if (tab === "messages") return <Inbox
       key={`${me.org_id}:${me.id}`}
       me={me}
-      openProject={id=>navigate({tab:isAdmin?"admin-projects":isExec?"delivery":"projects",projectId:id})}
+      openProject={id=>navigate({tab:isAdmin?"admin-projects":isExec?"exec-projects":"projects",projectId:id})}
       scheduleMeeting={startMeeting}
       startWorkFromMessage={isManager || isExec ? startAssignment : null}
       openRoom={openRoom}
@@ -485,11 +501,11 @@ export default function App() {
     if (tab === "projects" && isUnitManager) return <ManagerProjects key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
     if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
     if (tab === "manager-finance" && isUnitManager) return <ManagerFinance key={managerScopeKey} me={me} openProject={openProject} />;
-    if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} />;
-    if (tab === "exec-projects" && isExec) return <AdminProjects key={`${me.org_id}:${me.id}:executive-projects`} me={me} openProject={id=>navigate({tab:"delivery",projectId:id})} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id,reference)=>openRoom({kind:"project",projectId:id,reference})} />;
-    if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation key={`${me.org_id}:${me.id}`} me={me} goAssign={startAssignment} openItem={openItem} openRoom={openRoom} />;
+    if (tab === "manager-reports" && isUnitManager) return <ManagerReports key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} onOpenAchievements={() => openAchievements("manager-reports")} />;
+    if (tab === "exec-projects" && isExec) return <ExecutiveProjectsWorkspace key={`${me.org_id}:${me.id}:executive-projects`} me={me} initialProjectId={projectId} openProject={id=>navigate({tab:"exec-projects",projectId:id})} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id,reference)=>openRoom({kind:"project",projectId:id,reference})} />;
+    if (tab === "exec-organisation" && isExec) return <ExecutiveOrganisation key={`${me.org_id}:${me.id}`} me={me} initialDirectory={directory} goAssign={startAssignment} openItem={openItem} openRoom={openRoom} />;
     if (tab === "exec-finance" && isExec) return <ExecutiveFinance me={me} />;
-    if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} openItem={openItem} />;
+    if (tab === "exec-reports" && isExec) return <ExecutiveReports me={me} openItem={openItem} onOpenAchievements={() => openAchievements("exec-reports")} />;
     if (tab === "record") return <Record me={me} openItem={openItem} />;
     if (tab === "announcements") return <Announcements
       me={me}
@@ -503,8 +519,11 @@ export default function App() {
       me={me}
       createRequest={createIntent === "ministry_objective" ? "ministry_objective" : null}
       onCreateHandled={() => setCreateIntent(null)}
+      onOpenProject={isExec ? (id) => navigate({ tab:"exec-projects", projectId:id }) : isAdmin ? (id) => navigate({tab:"admin-projects",projectId:id}) : isUnitManager ? (id) => navigate({tab:"projects",projectId:id}) : null}
     />;
-    if (tab === "delivery" && canUseDelivery) return <Delivery key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openItem={openItem} openProject={openProject} goAssign={startAssignment} />;
+    if (tab === "delivery" && canUseDelivery) return isExec
+      ? <ExecutiveProjectsWorkspace key={`${me.org_id}:${me.id}:legacy-delivery`} me={me} initialProjectId={projectId} initialView="insights" openProject={id=>navigate({tab:"exec-projects",projectId:id})} openItem={openItem} goAssign={startAssignment} scheduleMeeting={startMeeting} />
+      : <Delivery key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openItem={openItem} openProject={openProject} goAssign={startAssignment} />;
     if (tab === "workload" && canUseWorkload) return <ResourceWorkload me={me} />;
     if (tab === "performance" && canUsePerformance) return <Performance me={me} />;
     if (tab === "learning" && canUseLearning) return <Learning me={me} />;
@@ -516,7 +535,7 @@ export default function App() {
     />;
     if (tab === "cost" && isAdmin) return <Cost key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "finance" && isAdmin) return <Finance key={`${me.org_id}:${me.id}`} me={me} openExpenses={() => go("cost")} />;
-    if (tab === "reporting" && isAdmin) return <Reports me={me} />;
+    if (tab === "reporting" && isAdmin) return <Reports me={me} onOpenAchievements={() => openAchievements("reporting")} />;
     if (tab === "attendance" && canUseWorkforce) return <Workforce key={`${me.org_id}:${me.id}:${me.unit_id || "none"}:${me.role || "none"}:${me.is_admin ? "admin" : "not-admin"}:${me.is_exec ? "exec" : "not-exec"}`} me={me} initialLeaveRequestId={leaveRequestId} initialSection={workforceSection} />;
     if (tab === "people" && canManagePeople) return <People
       key={`${me.org_id}:${me.id}`}
@@ -536,7 +555,7 @@ export default function App() {
     if (tab === "units" && isAdmin) return <Units me={me} openItem={openItem} openPeopleAccess={openPeopleAccess} openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
     if (tab === "admin-projects" && isAdmin) return <AdminProjects key={`${me.org_id}:${me.id}`} me={me} initialProjectId={projectId} openProject={openProject} scheduleMeeting={startMeeting} openItem={openItem} goAssign={startAssignment} openRoom={(id, reference) => openRoom({kind:"project",projectId:id,reference})} />;
     if (tab === "admin-calendar" && isAdmin) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="admin" openProject={(id) => navigate({tab:"admin-projects",projectId:id})} />;
-    if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"delivery",projectId:id})} />;
+    if (tab === "exec-calendar" && isExec) return <AdminCalendar me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} roleMode="executive" openProject={(id) => navigate({tab:"exec-projects",projectId:id})} />;
     if (tab === "audit" && canViewAudit) return <AdminAudit me={me} />;
     if (tab === "events" && canViewAudit) return <AdminEvents me={me} />;
     if (tab === "workflows" && canUseWorkflows) return <AdminWorkflows me={me} />;
@@ -545,7 +564,7 @@ export default function App() {
     if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} initialProfileId={authorityFocusProfileId} />;
     if (tab === "settings" && isAdmin) return <ControlCenter me={me} go={go} />;
     if (tab === "office-settings" && isAdmin) return <OfficeSettings me={me} section={setting} openSection={(next) => go("office-settings", {setting:next})} back={() => go("settings")} openWorkforce={(section) => go("attendance", {workforceSection:section})} />;
-    return <MeScreen me={me} onOpenWork={openItem} onOpenAchievements={() => go("achievements")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
+    return <MeScreen me={me} onOpenWork={openItem} onOpenAchievements={() => openAchievements("me")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
   }
 
   const appModeClass = isExec ? "executive-app" : isUnitManager ? "manager-app" : (!isAdmin ? "staff-app" : "office-app");
@@ -644,9 +663,6 @@ export default function App() {
             {me.legacyAuthorityVerified
               ? "Preview compatibility: your existing permissions have been checked by the CEAC server. The temporary-delegation expiry upgrade is not installed; new database-dependent functionality remains unavailable. Use production for normal work."
               : "Preview compatibility: the database upgrade is not installed and server permission verification was incomplete. Privileged capabilities are disabled here. Use production for normal work."}
-          </div>}
-          {tab === "work" && !overlay && <div className="s2-achievement-entry">
-            <button type="button" onClick={() => go("achievements")}>My achievements · Monthly / Quarterly / Projects →</button>
           </div>}
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>

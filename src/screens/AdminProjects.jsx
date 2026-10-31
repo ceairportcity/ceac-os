@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ManagerProjects from "./ManagerProjects";
+import Stage2ProjectReader from "../components/Stage2ProjectReader";
 import AdminProjectComposer from "../components/AdminProjectComposer";
 import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
@@ -53,6 +54,8 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
 
   const selected = projects.find(project => project.id === selectedProjectId);
   if (selectedProjectId && !selected) return <div className="body admin-projects"><button className="back" onClick={()=>openProject?.(null)}>← Projects</button><ProductNotice tone="error" title="Project unavailable">This project could not be verified in your organisation.</ProductNotice></div>;
+  if (selected && me.is_exec) return <Stage2ProjectReader key={`${me.org_id}:${me.id}:${selected.id}`}
+    projectId={selected.id} me={me} openItem={openItem} onBack={()=>openProject?.(null)} goAssign={goAssign} />;
   if (selected) return <ManagerProjects key={`${me.org_id}:${me.id}:${selected.id}`} me={me} projectUnitId={selected.lead_unit_id}
     initialProjectId={selected.id} back={()=>openProject?.(null)} openItem={openItem}
     goAssign={context=>goAssign?.({...context,unitId:selected.lead_unit_id})} openRoom={openRoom} scheduleMeeting={scheduleMeeting} />;
@@ -67,7 +70,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     <ProjectPageHeader
       eyebrow={me.is_exec?"Executive delivery":"Organisation delivery"}
       title="Projects"
-      description={me.is_exec?"Create and oversee ministry projects across departments. Open a project to review its strategic portfolio context.":"Create projects and coordinate objectives, work, people and evidence across departments."}
+      description={me.is_exec?"Create and oversee ministry projects across departments. Open a project to review work, responsible departments, milestones and recorded delivery evidence.":"Create projects and coordinate objectives, work, people and evidence across departments."}
       actionLabel="Create project" onAction={()=>setCreating(true)}
     />
 

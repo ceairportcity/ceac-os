@@ -15,6 +15,8 @@ for(const width of [390,1440]){
   await page.getByRole('button',{name:'Open reporting period',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Open a reporting period',exact:true});
   await expect(dialog).toHaveClass(/ev2c-composer-drawer/);
+  // Quarterly is the approved default; explicitly select the weekly contract under test.
+  await dialog.getByRole('button',{name:'Weekly',exact:true}).click();
   await dialog.getByLabel('Period name',{exact:true}).fill('Retained reporting period');
   await dialog.getByLabel('Start date',{exact:true}).fill('2026-10-26');
   await dialog.getByLabel('End date',{exact:true}).fill('2026-10-25');
