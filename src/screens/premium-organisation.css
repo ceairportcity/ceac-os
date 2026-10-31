@@ -3,7 +3,7 @@
 .ceac-premium-organisation .exec-redesign-head{display:flex;align-items:center;gap:20px;justify-content:space-between;margin:0 0 22px;padding:0 0 22px;border-bottom:1px solid var(--ev2-line)}
 .ceac-premium-organisation .exec-redesign-head h1{margin:5px 0 7px;font-size:clamp(27px,2.2vw,35px);line-height:1.17;letter-spacing:-.045em;font-weight:760;color:var(--ev2-text)}
 .ceac-premium-organisation .exec-redesign-head p{max-width:67ch;font-size:13px;line-height:1.65;color:var(--ev2-text-secondary)}
-.ceac-premium-organisation .exec-redesign-head>div>span{font-size:11px;letter-spacing:.095em;font-weight:720;text-transform:uppercase;color:var(--ev2-text-tertiary)}
+.ceac-premium-organisation .exec-redesign-head>div>span{font-size:12px;letter-spacing:.095em;font-weight:720;text-transform:uppercase;color:var(--ev2-text-tertiary)}
 .ceac-premium-organisation .exec-redesign-tabs{display:flex;align-items:center;gap:7px;padding:0 0 10px;margin-bottom:22px;border-bottom:1px solid var(--ev2-line);overflow-x:auto}
 .ceac-premium-organisation .exec-redesign-tabs button{min-height:42px;white-space:nowrap;padding:0 15px;border:0;border-radius:8px;background:transparent;color:var(--ev2-text-secondary);font-size:13px;font-weight:680}
 .ceac-premium-organisation .exec-redesign-tabs button:hover{background:var(--ev2-surface-soft);color:var(--ev2-text)}
@@ -26,7 +26,7 @@
 .ceac-premium-organisation .ev2p-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;border:0;background:transparent;overflow:visible;margin:18px 0 22px}
 .ceac-premium-organisation .ev2p-summary>div{min-height:100px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:18px;border:1px solid var(--ev2-line);border-radius:11px;background:var(--ev2-surface-soft);box-shadow:none}
 .ceac-premium-organisation .ev2p-summary strong{font-size:22px;line-height:1.18;letter-spacing:-.035em;font-weight:750;text-transform:capitalize;color:var(--ev2-text)}
-.ceac-premium-organisation .ev2p-summary span{font-size:11px;color:var(--ev2-text-secondary)}
+.ceac-premium-organisation .ev2p-summary span{font-size:12px;color:var(--ev2-text-secondary)}
 .ceac-premium-organisation .exec-directory-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:end;margin:18px 0 12px;padding:15px;border-radius:11px;background:var(--ev2-surface-soft)}
 .ceac-premium-organisation .exec-directory-actions label{font-size:12px;color:var(--ev2-text-secondary)}
 .ceac-premium-organisation .exec-directory-actions .field{min-height:40px}

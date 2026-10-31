@@ -3,7 +3,7 @@
 .ceac-premium-ministry .ev2ex-ministry-head{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:0 0 27px;margin-bottom:22px;border-bottom:1px solid var(--ev2-line)}
 .ceac-premium-ministry .ev2ex-ministry-head-copy{min-width:0}
 .ceac-premium-ministry .ev2ex-ministry-head h1{font-size:clamp(29px,2.8vw,40px);line-height:1.16;letter-spacing:-.052em;font-weight:760;margin:8px 0 12px;color:var(--ev2-text)}
-.ceac-premium-ministry .ev2ex-ministry-head .eyebrow{font-size:11px;letter-spacing:.12em;color:var(--ev2-text-tertiary)}
+.ceac-premium-ministry .ev2ex-ministry-head .eyebrow{font-size:12px;letter-spacing:.12em;color:var(--ev2-text-tertiary)}
 .ceac-premium-ministry .ev2ex-ministry-head p{max-width:61ch;font-size:13px;line-height:1.7;color:var(--ev2-text-secondary)}
 .ceac-premium-ministry .ev2ex-ministry-head .btn{min-height:42px;font-size:12px;white-space:nowrap}
 .ceac-ministry-guide{padding:24px 24px 20px;border:1px solid var(--ev2-line);border-radius:14px;background:var(--ev2-surface);box-shadow:0 4px 22px rgba(16,31,52,.03);margin:14px 0 24px}
@@ -12,7 +12,7 @@
 .ceac-ministry-guide>header p{margin:0;font-size:12px;line-height:1.65;color:var(--ev2-text-secondary)}
 .ceac-ministry-guide-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
 .ceac-ministry-guide-grid>div{display:grid;align-content:start;gap:6px;padding:16px;border:1px solid var(--ev2-line);border-radius:10px;background:var(--ev2-surface-soft)}
-.ceac-ministry-guide-grid span{display:grid;place-items:center;width:29px;height:29px;border:1px solid var(--ev2-line-strong);border-radius:8px;background:var(--ev2-surface);font-size:11px;font-weight:750;color:var(--ev2-action);margin-bottom:5px}
+.ceac-ministry-guide-grid span{display:grid;place-items:center;width:29px;height:29px;border:1px solid var(--ev2-line-strong);border-radius:8px;background:var(--ev2-surface);font-size:12px;font-weight:750;color:var(--ev2-action);margin-bottom:5px}
 .ceac-ministry-guide-grid strong{font-size:13px;letter-spacing:-.01em;font-weight:740;color:var(--ev2-text)}
 .ceac-ministry-guide-grid p{margin:0;font-size:12px;line-height:1.55;color:var(--ev2-text-secondary)}
 .ceac-premium-ministry .ev2ex-ministry-facts{padding:0 0 19px;margin:0 0 28px;border-bottom:1px solid var(--ev2-line)}
@@ -20,15 +20,15 @@
 .ceac-premium-ministry .ev2p-summary>div{display:grid;align-content:center;min-height:114px;padding:17px 20px;border:1px solid var(--ev2-line);border-radius:11px;background:var(--ev2-surface);box-shadow:0 3px 14px rgba(16,31,52,.02)}
 .ceac-premium-ministry .ev2p-summary strong{font-size:29px;letter-spacing:-.045em;font-weight:755;color:var(--ev2-text)}
 .ceac-premium-ministry .ev2p-summary span{font-size:12px;line-height:1.5;color:var(--ev2-text-secondary)}
-.ceac-premium-ministry .ev2ex-ministry-facts>.screen-note{margin:12px 0 0;font-size:11px;line-height:1.6;color:var(--ev2-text-tertiary)}
+.ceac-premium-ministry .ev2ex-ministry-facts>.screen-note{margin:12px 0 0;font-size:12px;line-height:1.6;color:var(--ev2-text-tertiary)}
 .ceac-premium-ministry .ev2ex-ministry-section-title{display:flex;justify-content:space-between;align-items:center;margin:25px 0 13px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ev2-text-secondary)}
 .ceac-premium-ministry .ev2ex-ministry-direction{margin-bottom:16px;padding:24px 26px;border:1px solid var(--ev2-line);border-radius:13px;background:var(--ev2-surface);box-shadow:0 4px 19px rgba(16,31,52,.025)}
-.ceac-premium-ministry .ev2ex-ministry-direction>.eyebrow{font-size:10px;letter-spacing:.11em;color:var(--ev2-text-tertiary)}
+.ceac-premium-ministry .ev2ex-ministry-direction>.eyebrow{font-size:12px;letter-spacing:.11em;color:var(--ev2-text-tertiary)}
 .ceac-premium-ministry .ev2ex-ministry-direction>h2{font-size:clamp(19px,1.6vw,24px);line-height:1.22;letter-spacing:-.038em;font-weight:760;margin:9px 0 9px;color:var(--ev2-text)}
 .ceac-premium-ministry .ev2ex-ministry-direction>.screen-note{max-width:77ch;color:var(--ev2-text-secondary);font-size:13px;line-height:1.7}
 .ceac-premium-ministry .ev2ex-ministry-direction .btn{min-height:37px;font-size:12px}
 .ceac-premium-ministry .ev2ex-ministry-objective{padding:19px 21px;margin:20px 0 0;border:1px solid var(--ev2-line);border-radius:11px;background:var(--ev2-surface-soft)}
-.ceac-premium-ministry .ev2ex-ministry-objective>.eyebrow{font-size:10px;letter-spacing:.09em}
+.ceac-premium-ministry .ev2ex-ministry-objective>.eyebrow{font-size:12px;letter-spacing:.09em}
 .ceac-premium-ministry .ev2ex-ministry-objective>h3{font-size:17px;line-height:1.28;letter-spacing:-.027em;margin:7px 0 8px;color:var(--ev2-text)}
 .ceac-premium-ministry .ev2ex-ministry-objective>.screen-note{font-size:12px;line-height:1.6;color:var(--ev2-text-secondary)}
 .ceac-premium-ministry .ev2ex-unit-objective{padding:15px 18px;margin-top:12px;border:1px solid var(--ev2-line);border-radius:10px;background:var(--ev2-surface);box-shadow:none}
