@@ -140,3 +140,6 @@
     .exec-redesign-list[aria-label="Volunteers"]
   ) {grid-template-columns:minmax(0,1fr)}
 }
+
+/* Read-only schedule and attendance rows use the full text column. */
+.executive-app .ev2-exec-organisation .exec-redesign-list-row:not(.exec-directory-link){grid-template-columns:minmax(0,1fr)}

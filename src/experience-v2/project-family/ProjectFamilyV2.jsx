@@ -85,17 +85,22 @@ export function ProjectWorkspaceHeader({
 }
 
 export function ProjectTabs({ items, value, onChange, ariaLabel = "Project workspace" }) {
+  const onKey = (event, index) => {
+    const key = event.key;
+    if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(key)) return;
+    event.preventDefault();
+    const next = key === "Home" ? 0 : key === "End" ? items.length - 1
+      : (index + (key === "ArrowRight" ? 1 : -1) + items.length) % items.length;
+    onChange(items[next][0]);
+    event.currentTarget.parentElement?.querySelectorAll('[role="tab"]')[next]?.focus();
+  };
   return (
     <nav className="ev2p-tabs" role="tablist" aria-label={ariaLabel}>
-      {items.map(([key, label, count]) => (
-        <button
-          key={key}
-          type="button"
-          role="tab"
-          aria-selected={value === key}
+      {items.map(([key, label, count], index) => (
+        <button key={key} type="button" role="tab"
+          aria-selected={value === key} tabIndex={value === key ? 0 : -1}
           className={value === key ? "is-selected" : ""}
-          onClick={() => onChange(key)}
-        >
+          onClick={() => onChange(key)} onKeyDown={event => onKey(event,index)}>
           <span>{label}</span>
           {Number.isFinite(count) ? <b>{count}</b> : null}
         </button>

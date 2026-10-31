@@ -1461,3 +1461,6 @@
   .fpg-project-stage{grid-column:auto;min-width:170px}
   .fpg-project-assignees{min-width:150px}
 }
+
+/* Compact project navigation replaces the older pill-like button silhouette. */
+.ev2p-tabs > button{border-radius:var(--ev2-radius-control)}

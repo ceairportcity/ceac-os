@@ -154,7 +154,14 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
   const enter = (kind, id) => { setExpandedWorkScope(""); setPersonTab("overview"); setPath(current => [...current, { kind, id }].slice(-20)); setQuery(""); };
   const back = () => { setExpandedWorkScope(""); setPath(current => current.slice(0, -1)); setQuery(""); };
   const matches = row => !query.trim() || `${row.name || row.full_name || ""} ${row.job_title || ""}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
-  const peopleRows = rows => rows.filter(matches).map(row => <DirectoryRow key={row.id} kind="person" title={row.full_name || "Recorded person"} description={row.job_title || "Role not recorded"} onClick={() => enter("person", row.id)} />);
+  const peopleRows = rows => rows.filter(matches).map(row => {
+    const departmentNames = memberships.filter(entry => entry.profile_id === row.id)
+      .map(entry => units.find(unit => unit.id === entry.unit_id)?.name).filter(Boolean);
+    const context = [row.job_title, ...departmentNames.slice(0, 2)].filter(Boolean).join(" · ")
+      || "Department assignment not recorded";
+    return <DirectoryRow key={row.id} kind="person" title={row.full_name || "Recorded person"}
+      description={context} onClick={() => enter("person", row.id)} />;
+  });
   const list = (label, children) => <section aria-label={label} className="exec-redesign-list">{children.length ? children : <p className="exec-redesign-empty">No {label.toLowerCase()} match this view.</p>}</section>;
 
   return <div className="body ev2-exec-organisation exec-redesign-page">
@@ -181,13 +188,13 @@ export default function ExecutiveOrganisation({ me, initialDirectory = null, goA
       {department && <><h2>People</h2>{list("People", peopleRows(membersOf(department.id)))}<h2>Teams</h2>{list("Teams", teams.filter(row => row.unit_id === department.id).filter(matches).map(row => <DirectoryRow key={row.id} kind="team" title={row.name} description={unitName(row.unit_id)} onClick={() => enter("team", row.id)} />))}<button type="button" className="btn btn-ghost" onClick={() => openRoom?.({ kind: "unit", unitId: department.id })}>Open department room</button></>}
       {team && list("People", peopleRows(people.filter(row => teamMembers.some(member => member.sub_team_id === team.id && member.profile_id === row.id))))}
       {person && <>
-        <div className="exec-redesign-tabs" role="tablist" aria-label={`${person.full_name} employee information`}>
+        <div className="exec-redesign-tabs" role="group" aria-label={`${person.full_name} employee information`}>
           {[
             ["overview","Profile"],
             ["employment","Employment & schedule"],
             ["time","Attendance & leave"],
             ["work","Contributions"],
-          ].map(([key,label])=><button key={key} type="button" role="tab" aria-selected={personTab===key}
+          ].map(([key,label])=><button key={key} type="button" aria-pressed={personTab===key}
             className={personTab===key?"is-active":""} onClick={()=>setPersonTab(key)}>{label}</button>)}
         </div>
         {personTab==="overview" && <section className="exec-directory-profile" aria-label="Employee profile">
