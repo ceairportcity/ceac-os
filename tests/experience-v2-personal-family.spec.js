@@ -296,7 +296,7 @@ test("Stage 10 Family G4 keeps Reviews & development evidence-first while aligni
   }
 
   expect(performance).toContain('title="Reviews & development"');
-  expect(performance).toContain('statusLabel="Evidence-first review"');
+  expect(performance).toContain('statusLabel="Your reviews"');
   expect(performance).toContain("ev2-personal-review");
   expect(css).toContain(".ev2-personal-review");
   expect(css).not.toContain("!important");
@@ -318,7 +318,7 @@ for (const viewport of [
     await page.getByRole("button", { name: "Reviews & development", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: "Reviews & development", exact: true })).toBeVisible();
-    await expect(page.getByText(/does not score or rank you/i)).toBeVisible();
+    await expect(page.getByText(/not calculated as a score/i)).toBeVisible();
     await expect(page.locator(".ev2-personal-review")).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
