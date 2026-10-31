@@ -927,7 +927,7 @@ test("Stage 5 Delivery manages programmes, milestones, dependencies and project 
     await dialog.getByRole("button", { name: "Save milestone", exact: true }).click();
 
     const foundation = page.locator(".row").filter({ hasText: "Acceptance Foundation milestone" });
-    await foundation.getByRole("button", { name: "Edit", exact: true }).click();
+    await foundation.getByRole("button", { name: "Revise", exact: true }).click();
     dialog = page.getByRole("dialog");
     await dialog.getByLabel("Milestone status").selectOption("achieved");
     await dialog.getByLabel("Milestone reason").fill("Acceptance foundation achieved");
