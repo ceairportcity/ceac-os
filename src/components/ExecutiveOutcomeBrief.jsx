@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useRef} from "react";
 import {ministryPeriodEvidence} from "../lib/ministryReportingFacts";
 import { verifiedReportingQuarter } from "../lib/quarterlyReportingWindow";
+import { DataVizChart } from "../experience-v2/data-viz/DataVizV2";
 import "./ExecutiveOutcomeBrief.css";
 
 export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],objectives=[],milestones=[],targets=[],evidenceRefs=[],decisions=[],readError=null}){
@@ -15,6 +16,20 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
  const facts=useMemo(()=>ministryPeriodEvidence({unitReports:issuedReports,objectives,milestones,targets,evidenceRefs,activeUnitIds:units.map(x=>x.id)}),[issuedReports,objectives,milestones,targets,evidenceRefs,units]);
  const names=Object.fromEntries(units.map(x=>[x.id,x.name]));
  const quarter=verifiedReportingQuarter(period);
+ // Visualise the recorded states, never turn filing counts into an appraisal.
+ const objectiveStates=[
+  ["met","Met"],["on_track","On track"],["partly_met","Partly met"],
+  ["at_risk","At risk"],["not_met","Not met"],["draft","Draft"],
+ ];
+ const objectiveCount=Object.fromEntries(objectiveStates.map(([state])=>[state,0]));
+ for(const row of facts.objectives) objectiveCount[row.status||"unrecorded"]=(objectiveCount[row.status||"unrecorded"]||0)+1;
+ const objectiveMix=Object.entries(objectiveCount).filter(([,value])=>value>0)
+  .map(([state,value])=>({label:objectiveStates.find(([k])=>k===state)?.[1]||state.replaceAll("_"," "),count:value}));
+ const milestoneStates=[["achieved","Achieved"],["in_progress","In progress"],["planned","Planned"],["missed","Missed"],["cancelled","Cancelled"]];
+ const milestoneCount=Object.fromEntries(milestoneStates.map(([key])=>[key,0]));
+ for(const row of facts.milestones) milestoneCount[row.status||"unrecorded"]=(milestoneCount[row.status||"unrecorded"]||0)+1;
+ const milestoneMix=Object.entries(milestoneCount).filter(([,value])=>value>0)
+  .map(([state,value])=>({label:milestoneStates.find(([k])=>k===state)?.[1]||state.replaceAll("_"," "),count:value}));
  const print=()=>window.print();
  return <section ref={brief} className="s2-exec-brief" aria-label="Executive outcomes briefing">
   <header className="s2-exec-brief-head">
@@ -30,6 +45,14 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
       <article><strong>{facts.objectives.length}</strong><span>Currently visible objectives</span><small>Not independently verified achievements</small></article>
       <article><strong>{facts.milestones.length}</strong><span>Visible project milestones</span><small>Unique milestones, not additive unit output</small></article>
     </div>
+    {(objectiveMix.length>0||milestoneMix.length>0) && <section aria-label="Verified reporting visual summaries" className="s2-exec-brief-charts">
+      {objectiveMix.length>0 && <DataVizChart kind="bar" title="Objective status"
+        note="Number of visible objectives by their stored status; not a performance rating"
+        data={objectiveMix} series={[{key:"count",label:"Objectives"}]} />}
+      {milestoneMix.length>0 && <DataVizChart kind="bar" title="Project milestone status"
+        note="Unique visible milestones by recorded state; no inferred completion"
+        data={milestoneMix} series={[{key:"count",label:"Milestones"}]} />}
+    </section>}
     <div className="s2-exec-brief-grid">
       <article className="s2-exec-brief-section">
         <h3>Submitted unit achievements and challenges</h3>
