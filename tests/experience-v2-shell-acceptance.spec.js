@@ -129,6 +129,7 @@ const roles = [
       ["home", "Overview"],
       ["work", "Work"],
       ["strategy", "Ministry"],
+      ["exec-projects", "Projects"],
       ["delivery", "Portfolio"],
       ["exec-organisation", "Organisation"],
       ["exec-calendar", "Calendar"],
@@ -146,6 +147,7 @@ const roles = [
       ["strategy", "Ministry"],
     ],
     secondary: [
+      ["exec-projects", "Projects"],
       ["delivery", "Portfolio"],
       ["exec-organisation", "Organisation"],
       ["exec-calendar", "Calendar"],
