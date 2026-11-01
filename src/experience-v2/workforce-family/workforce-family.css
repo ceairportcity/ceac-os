@@ -578,23 +578,22 @@
   }
 }
 
-/* Factual work-session review: readable cards at phone widths. */
-.ev2wf-today-guidance{font-size:13px;color:var(--ev2-text-secondary,#526777)}
-.ev2wf-today-guidance summary{cursor:pointer;min-height:32px;font-weight:600}
-.ev2wf-today-guidance p{margin:4px 0;line-height:1.5}
+/* Readable phone review cards, with full evidence and touch targets. */
+.ev2wf-today-guidance{font-size:13px;color:var(--ev2-text-secondary)}
+.ev2wf-today-guidance summary{cursor:pointer}
 @media(max-width:650px){
- .ev2wf-today-review-summary>strong,.ev2wf-today-review-summary>span{flex:1 1 100%;font-size:12px;line-height:1.5}
- .ev2wf-today-review-controls{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important}
- .ev2wf-today-review-list{overflow:visible!important}
- .ev2wf-today-review-list table,.ev2wf-today-review-list tbody{display:block;width:100%;min-width:0!important}
- .ev2wf-today-review-list thead{display:none}
- .ev2wf-today-review-entry{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:0 0 10px;padding:12px;border:1px solid var(--ev2-line,#d8e4ed);border-radius:10px;background:#fff}
- .ev2wf-today-review-entry>th,.ev2wf-today-review-entry>td{display:block;border:0;padding:0;min-width:0;overflow-wrap:anywhere;white-space:normal;font-size:12px;line-height:1.5}
- .ev2wf-today-review-entry>th{grid-column:1/-1;border-bottom:1px solid var(--ev2-line,#d8e4ed);padding-bottom:6px;font-size:14px}
- .ev2wf-today-review-entry>td:nth-of-type(1)::before{content:"Scheduled"}
- .ev2wf-today-review-entry>td:nth-of-type(2)::before{content:"Started"}
- .ev2wf-today-review-entry>td:nth-of-type(3)::before{content:"Status"}
- .ev2wf-today-review-entry>td:nth-of-type(-n+3)::before{display:block;color:var(--ev2-text-secondary,#526777);font-size:11px;font-weight:600}
- .ev2wf-today-review-entry>td:last-child{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
- .ev2wf-today-review-entry .btn{min-height:38px}
+.ev2wf-today-review-summary>:is(strong,span){flex:1 1 100%;font-size:12px}
+.ev2wf-today-review-controls{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
+.ev2wf-today-review-list{overflow:visible!important}
+.ev2wf-today-review-list :is(table,tbody){display:block;width:100%;min-width:0!important}
+.ev2wf-today-review-list thead{display:none}
+.ev2wf-today-review-entry{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;padding:12px;border:1px solid var(--ev2-line);border-radius:10px;background:#fff}
+.ev2wf-today-review-entry>:is(th,td){display:block;border:0;padding:0;min-width:0;overflow-wrap:anywhere;white-space:normal;font-size:12px;line-height:1.5}
+.ev2wf-today-review-entry>th{grid-column:1/-1;border-bottom:1px solid var(--ev2-line);padding-bottom:6px;font-size:14px}
+.ev2wf-today-review-entry>td:nth-of-type(1)::before{content:"Scheduled"}
+.ev2wf-today-review-entry>td:nth-of-type(2)::before{content:"Started"}
+.ev2wf-today-review-entry>td:nth-of-type(3)::before{content:"Status"}
+.ev2wf-today-review-entry>td:nth-of-type(-n+3)::before{display:block;color:var(--ev2-text-secondary);font-size:12px;font-weight:600}
+.ev2wf-today-review-entry>td:last-child{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
+.ev2wf-today-review-entry .btn{min-height:44px}
 }
