@@ -8,9 +8,14 @@ const titles={
  case_resolved:"An attendance question has been resolved",
  memo_sent:"New Memo received",
  memo_response:"A Memo has a new response",
- work_assigned:"New work assigned to you"
+ work_assigned:"New work assigned to you",
+ policy_published:"A policy has been published for you",
+ evidence_submitted:"Evidence needs review",
+ evidence_reviewed:"Your evidence has been reviewed",
+ exception_requested:"An exception request needs review",
+ exception_decided:"Your exception request has an update"
 };
-const actionable=new Set(["case_opened","case_response","case_referred","memo_sent","work_assigned"]);
+const actionable=new Set(["case_opened","case_response","case_referred","memo_sent","work_assigned","policy_published","evidence_submitted","exception_requested"]);
 const uuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value||"");
 function target(row){
  if(!uuid(row.context_id))return null;
@@ -18,6 +23,9 @@ function target(row){
  if(row.context_kind==="compliance_case")return "/?tab=compliance&case="+id;
  if(row.context_kind==="memo")return "/?tab=messages&memo="+id;
  if(row.context_kind==="work_item")return "/?tab=work&item="+id;
+ if(row.context_kind==="compliance_policy")return "/?tab=compliance&section=policies";
+ if(row.context_kind==="compliance_evidence")return "/?tab=compliance&section=evidence";
+ if(row.context_kind==="compliance_exception")return "/?tab=compliance&section=exceptions";
  return null;
 }
 const when=value=>value?new Date(value).toLocaleString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";

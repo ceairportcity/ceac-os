@@ -9,5 +9,9 @@ test("the shared Updates view routes to each authorised record",()=>{
  assert.match(files.view,/context_kind==="compliance_case"/);
  assert.match(files.view,/context_kind==="memo"/);
  assert.match(files.view,/context_kind==="work_item"/);
+ assert.match(files.view,/context_kind==="compliance_policy"/);
+ assert.match(files.view,/context_kind==="compliance_evidence"/);
+ assert.match(files.view,/context_kind==="compliance_exception"/);
+ assert.match(files.compliance,/availableSections.includes\(linkedSection\)/);
  assert.match(files.app,/isAdmin \|\| isStaff \|\| isUnitManager/);
 });
