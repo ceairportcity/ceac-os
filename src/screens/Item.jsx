@@ -337,6 +337,20 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
     finally { setBusy(false); }
   }
 
+  async function returnUnreviewedManagerWork() {
+    if (busy || !managerOwnWork || item?.status !== "in_review") return;
+    setBusy(true); setErr(null);
+    try {
+      const { error } = await supabase.rpc("withdraw_unreviewed_manager_submission", {
+        p_work_item_id: id,
+      });
+      if (error) throw error;
+      await load();
+    } catch (error) {
+      setErr(error.message || "This work could not be returned. It may already have been reviewed.");
+    } finally { setBusy(false); }
+  }
+
   function toggleReviewChecklist(id) {
     setReviewChecklist((current) => current.includes(id)
       ? current.filter((itemId) => itemId !== id)
@@ -808,7 +822,16 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
       </>)}
 
       {!canReview && item.status === "in_review" &&
-        <div className="flag flag-amber" style={{ marginTop: 20 }}><h4>Sent in</h4>Waiting on {responsibleReviewer?.full_name || "the responsible reviewer"} to check it.</div>}
+        <div className="flag flag-amber" style={{ marginTop: 20 }}>
+          <h4>{managerOwnWork ? "Waiting for review" : "Sent in"}</h4>
+          <p>{managerOwnWork
+            ? "As the manager responsible for this work, you can withdraw an unreviewed submission and finish it yourself. The original submission stays in your history."
+            : `Waiting on ${responsibleReviewer?.full_name || "the responsible reviewer"} to check it.`}</p>
+          {managerOwnWork && <button className="btn btn-ghost btn-sm" disabled={busy}
+            onClick={returnUnreviewedManagerWork} type="button">
+            {busy ? "Returning…" : "Return to my work"}
+          </button>}
+        </div>}
 
       {isManager && ["task", "meeting_outcome", "deliverable"].includes(item.kind) && ["completed", "self_certified"].includes(item.status) &&
         <button className="btn btn-ghost" style={{ marginTop: 20 }} onClick={() => { setNote(""); setSheet("reopen"); }}>
