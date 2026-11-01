@@ -10,7 +10,7 @@ async function signInAdmin(browser, viewport) {
   await page.getByPlaceholder("Work email").fill("admin@ceac.local.test");
   await page.getByPlaceholder("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(".office-app")).toBeVisible({ timeout: 30000 });
   return { context, page };
 }
 

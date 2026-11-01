@@ -67,7 +67,7 @@ for(const width of [390,1440]){
  test(`recorded invitation with failed email clears fields and keeps truthful warning at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});await api(page,{deliveryFailure:true});await fillInvite(page);
   await page.getByRole('button',{name:'Send Staff invitation',exact:true}).click();
-  await expect(page.getByRole('alert')).toContainText('Delivery is unconfirmed');
+  await expect(page.getByRole('alert')).toContainText('Invitation saved, but the email provider is unavailable');
   await expect(page.getByLabel('Invitation email',{exact:true})).toHaveValue('');
  });
  test(`late invitation success preserves newer typing at ${width}px`,async({page})=>{
