@@ -31,7 +31,11 @@ const budgets = {
   // per-chunk display). This adds 11.5 kB above the tablet cap while
   // preserving route splitting, original palette and core/gzip caps.
   // Reviewed new ceiling: 679 KiB (695,296 bytes), roughly 1.8 kB headroom.
-  allCssRaw: 679 * KIB,
+  // 1 Nov: map marker anchored to its true point and compact mobile Time & Leave
+  // records required small additional route CSS. Removed duplicated map
+  // styling and consolidated mobile typography first; allow at most +1 KiB
+  // over the last approved ceiling, keeping all other size limits intact.
+  allCssRaw: 680 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;
