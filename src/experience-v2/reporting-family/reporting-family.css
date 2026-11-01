@@ -152,3 +152,10 @@
 
 /* A role note must never concatenate its heading and explanation. */
 .ev2rep-executive-authority{display:grid;align-content:start;gap:8px}
+
+/* Executive reports: a single unobtrusive disclosure replaces repeated legalistic footers. */
+.ev2-reporting-executive .ev2rep-evidence-note{border-top:1px solid var(--ev2-line);padding:10px 0 4px;margin:12px 0 6px;color:var(--ev2-text-secondary);font-size:13px;line-height:1.5}
+.ev2-reporting-executive .ev2rep-evidence-note summary{cursor:pointer;display:inline-flex;align-items:center;min-height:38px;color:var(--ev2-action);font-size:13px;font-weight:650}
+.ev2-reporting-executive .ev2rep-evidence-note summary:focus-visible{outline:2px solid var(--ev2-action);outline-offset:3px}
+.ev2-reporting-executive .ev2rep-evidence-note p{max-width:67ch;margin:5px 0 9px}
+@media(max-width:640px){.ev2-reporting-executive .ev2rep-evidence-note{margin:8px 0 0}}
