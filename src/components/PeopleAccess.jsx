@@ -148,7 +148,7 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
       if (onChanged) await onChanged();
       return true;
     } catch (actionError) {
-      if (!sameIdentity()) return recorded || Boolean(actionError?.invitationRecorded);
+      if (!sameIdentity()) return recorded;
       if (actionError?.invitationRecorded) {
         // Invitation preparation was saved even though email dispatch failed.
         // Do not present the pending identity as an entirely failed write.

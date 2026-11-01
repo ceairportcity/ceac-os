@@ -9,11 +9,11 @@ test('switching to a second department does not remove own-work self-certificati
  assert.equal(canSelfCertifyOwnWork({...me,unit_id:'support',role:'manager'},own),true);
  assert.equal(canSelfCertifyOwnWork(me,{...own,unit_id:'media'}),false);
 });
-test('ordinary managerial context cannot self-certify another person or Executive assignment',()=>{
+test('manager may finish own Executive assignment without gaining authority for someone else',()=>{
  assert.equal(canSelfCertifyOwnWork(me,{...own,assignee_id:'other'}),false);
- assert.equal(canSelfCertifyOwnWork(me,{...own,origin:'assigned_by_exec'}),false);
+ assert.equal(canSelfCertifyOwnWork(me,{...own,origin:'assigned_by_exec',assigned_by:'exec'}),true);
  assert.equal(canSelfCertifyOwnWork({...me,memberships:[]},own),false);
- assert.equal(canSelfCertifyOwnWork(me,{...own,origin:'assigned',assigned_by:'other'}),false);
+ assert.equal(canSelfCertifyOwnWork(me,{...own,unit_id:'media',assigned_by:'exec'}),false);
 });
 test('completed activities retain dated next actions and correction chains clear superseded actions',()=>{
  const records=[{id:'old',next_action:'Already followed up',next_action_on:'2026-10-01'}, {id:'new',supersedes_id:'old',next_action:null}, {id:'active',activity_state:'done',next_action:'Call next week',next_action_on:'2026-11-02'}, {id:'undated',next_action:'Inspect'}];
