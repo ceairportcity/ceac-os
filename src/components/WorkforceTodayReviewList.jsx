@@ -98,7 +98,7 @@ export default function WorkforceTodayReviewList({
    <strong>{attention} need attention</strong>
    <span>{started} started · {linked} linked accounts · {unlinked} without login</span>
   </div>
-  <div className="ev2wf-today-review-controls" style={{display:"flex",flexWrap:"wrap",gap:12}}>
+  <div className="ev2wf-today-review-controls">
    <label className="small" style={{flex:"1 1 170px",minWidth:0}}>Review filter
     <select className="field" value={view} aria-label="Filter daily workforce records" onChange={e=>setView(e.target.value)}>
      {OPTIONS.map(([id,label])=><option key={id} value={id}>{label}</option>)}

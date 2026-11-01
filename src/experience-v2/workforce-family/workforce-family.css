@@ -579,13 +579,14 @@
 }
 
 /* Readable phone review cards, with full evidence and touch targets. */
+.ev2wf-today-review .ev2wf-today-review-controls{display:flex;flex-wrap:wrap;gap:12px}
 .ev2wf-today-guidance{font-size:13px;color:var(--ev2-text-secondary)}
 .ev2wf-today-guidance summary{cursor:pointer}
 @media(max-width:650px){
 .ev2wf-today-review-summary>:is(strong,span){flex:1 1 100%;font-size:12px}
-.ev2wf-today-review-controls{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
-.ev2wf-today-review-list{overflow:visible!important}
-.ev2wf-today-review-list :is(table,tbody){display:block;width:100%;min-width:0!important}
+.ev2wf-today-review .ev2wf-today-review-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.ev2wf-today-review .ev2wf-today-review-list{overflow:visible}
+.ev2wf-today-review .ev2wf-today-review-list :is(table,tbody){display:block;width:100%;min-width:0}
 .ev2wf-today-review-list thead{display:none}
 .ev2wf-today-review-entry{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;padding:12px;border:1px solid var(--ev2-line);border-radius:10px;background:#fff}
 .ev2wf-today-review-entry>:is(th,td){display:block;border:0;padding:0;min-width:0;overflow-wrap:anywhere;white-space:normal;font-size:12px;line-height:1.5}
