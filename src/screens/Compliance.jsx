@@ -311,7 +311,7 @@ export default function Compliance({ me, openAnnouncements }) {
   }
 
   const tabs=canManage
-    ? [["overview","Overview"],["reports","Reports"],["observations","Attendance cases"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
+    ? [["overview","Overview"],["attendance","Attendance"],["reviews","Reviews"],["policies","Policies"],["reports","Reports"]]
     : isManager
     ? [["observations","Attendance cases"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
     : [["policies","My policies"],["observations","Attendance questions"],["evidence","My evidence"],["exceptions","Exceptions"]];
@@ -324,6 +324,7 @@ export default function Compliance({ me, openAnnouncements }) {
     </ProductNotice>
   </div>;
 
+  const primaryTab = canManage && ["observations","evidence","exceptions"].includes(tab) ? "reviews" : canManage && tab === "requirements" ? "policies" : tab;
   const personalCompliance = !canManage && !isManager;
   const PolicyDetailsWrapper = personalCompliance ? "details" : "div";
   return <div className={`body compliance-page ${canManage ? "cp" : ""} ${personalCompliance ? "ev2-personal-page ev2-personal-compliance" : ""}`.trim()}>
@@ -356,8 +357,16 @@ export default function Compliance({ me, openAnnouncements }) {
       <p>Choose a section below to review what applies to you and whether anything needs your attention.</p>
     </div>}
     <div className="compliance-tabs ceac-hub-tabs" role="tablist" aria-label="Compliance sections">
-      {tabs.map(([key,label])=><button key={key} role="tab" aria-selected={tab===key} className={tab===key?"on":""} onClick={()=>{setObservationIntent({id:"",create:false});setTab(key);}}>{label}</button>)}
+      {tabs.map(([key,label])=><button key={key} role="tab" aria-selected={primaryTab===key} className={primaryTab===key?"on":""} onClick={()=>{setObservationIntent({id:"",create:false});setTab(key==="reviews"?"observations":key);}}>{label}</button>)}
     </div>
+
+    {canManage&&primaryTab==="reviews"&&<div className="compliance-tabs" role="tablist" aria-label="Review sections">
+      {[["observations","Attendance cases"],["evidence","Evidence"],["exceptions","Exceptions"]].map(([key,label])=><button key={key} role="tab" aria-selected={tab===key} onClick={()=>setTab(key)}>{label}</button>)}
+    </div>}
+    {canManage&&primaryTab==="policies"&&<div className="compliance-tabs" role="tablist" aria-label="Policy sections">
+      {[["policies","Policies"],["requirements","Requirements"]].map(([key,label])=><button key={key} role="tab" aria-selected={tab===key} onClick={()=>setTab(key)}>{label}</button>)}
+    </div>}
+    {canManage&&tab==="attendance"&&<CompliancePeriodReport me={me} />}
 
     {tab==="overview"&&canManage&&<ComplianceOverview
       date={overviewDate}
