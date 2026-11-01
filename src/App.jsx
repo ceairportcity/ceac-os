@@ -417,7 +417,11 @@ export default function App() {
 
   const isAdmin = Boolean(me.is_admin);
   const isExec = Boolean(me.is_exec);
-  const isUnitManager = !isAdmin && !isExec && me.role === "manager";
+  // The workspace identity remains Manager if the person manages ANY unit.
+  // Choosing a staff membership changes department context, not their whole panel.
+  const isUnitManager = !isAdmin && !isExec && (me.memberships || []).some(membership => membership.role === "manager");
+  const managesCurrentUnit = (me.memberships || []).some(membership =>
+    membership.unit_id === me.unit_id && membership.role === "manager");
   const isStaff = !isAdmin && !isExec && !isUnitManager;
   const isManager = isAdmin || isUnitManager;
   const hasCapability = (capability) => (me.capabilities || []).includes(capability);
@@ -476,7 +480,7 @@ export default function App() {
       if (isManager) return <ManagerHome key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
       return <Home me={me} session={session} setSession={setSession} openItem={openItem} openMeeting={openMeeting} openRoom={openRoom} openWork={() => go("work")} openMe={() => go("me")} openAnnouncements={() => go("announcements")} openTeam={() => go("team")} openCalendar={() => go("staff-calendar")} />;
     }
-    if (tab === "team") return isManager
+    if (tab === "team") return (isAdmin || managesCurrentUnit)
       ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
       : <StaffTeam me={me} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />;
     if (tab === "work") {
