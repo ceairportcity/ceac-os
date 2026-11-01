@@ -234,6 +234,10 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
       </div>}
 
       <ComplianceReportReferences me={me} />
+      <details className="ev2rep-evidence-note">
+        <summary>About these records</summary>
+        <p>A filed report shows that information was submitted, not how well a department or person performed. This explanation remains available even if a reporting period has not yet been opened.</p>
+      </details>
 
       {/* Keep access to the independently verified quarterly review schedule even when report-period records are unavailable. */}
       {!contextPending && (
@@ -352,10 +356,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
             initialUnitId={selectedUnitId} openItem={openItem} />
           </>}
 
-          <details className="ev2rep-evidence-note">
-            <summary>About these records</summary>
-            <p>These reports are for viewing. A filed report shows that information was submitted, not how well a department or person performed.</p>
-          </details>
+
         </>
       )}
       {!contextPending && workspaceView==="quarterly" && <QuarterlyReviewEventControl me={me} />}
