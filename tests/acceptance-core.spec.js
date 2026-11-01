@@ -1,3 +1,11 @@
+async function openEvidenceReview(page) {
+  // The authorised Compliance workspace groups evidence beneath Reviews;
+  // Manager and Staff continue to see their existing direct Evidence tabs.
+  const reviews = page.getByRole("tab", { name: "Reviews", exact: true });
+  if (await reviews.count()) await reviews.click();
+  await page.getByRole("tab", { name: "Evidence", exact: true }).click();
+}
+
 // FPG10 exact-head Level B whole-system parity propagation checkpoint.
 // FPG9 final exact-head Level B Home shell parity checkpoint — route-lazy cascade + locked budget.
 // FPG8 exact-head Level B staff reconciliation safety checkpoint.
@@ -2049,7 +2057,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Compliance");
-    await page.getByRole("tab", { name: "Evidence", exact: true }).click();
+    await openEvidenceReview(page);
     const evidenceRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: requirementTitle }).first();
     await expect(evidenceRow).toBeVisible();
     await expect(evidenceRow).toContainText(evidenceRef);
@@ -2065,7 +2073,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
   {
     const { context, page } = await openAs(browser, "other@ceac.local.test", { width: 1280, height: 900 });
     await go(page, "Compliance");
-    await page.getByRole("tab", { name: "Evidence", exact: true }).click();
+    await openEvidenceReview(page);
     let row = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: requirementTitle }).first();
     await row.getByRole("button", { name: "Review evidence", exact: true }).click();
     let dialog = page.getByRole("dialog");
@@ -2096,7 +2104,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
 
     await page.reload();
     await go(page, "Compliance");
-    await page.getByRole("tab", { name: "Evidence", exact: true }).click();
+    await openEvidenceReview(page);
     row = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: requirementTitle }).first();
     await expect(row).toContainText("Verified");
     await expect(row.getByText(/Evidence history · 2/)).toBeVisible();
