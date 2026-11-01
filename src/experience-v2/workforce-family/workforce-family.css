@@ -577,3 +577,22 @@
     grid-column: 1;
   }
 }
+
+/* Compact review cards on phones; keep the full five-column table on larger screens. */
+@media (max-width:650px){
+ .ev2wf-today-review-summary{align-items:flex-start!important}
+ .ev2wf-today-review-summary>strong,.ev2wf-today-review-summary>span{flex:1 1 100%;font-size:12px;line-height:1.45}
+ .ev2wf-today-review-controls{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
+ .ev2wf-today-review-list{overflow:visible!important}
+ .ev2wf-today-review-list table,.ev2wf-today-review-list tbody{display:block;width:100%;min-width:0!important}
+ .ev2wf-today-review-list thead{display:none}
+ .ev2wf-today-review-list .ev2wf-today-review-entry{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px 12px;margin:0 0 10px;padding:12px;border:1px solid var(--ev2-line,#d8e4ed);border-radius:10px;background:#fff;min-width:0}
+ .ev2wf-today-review-list .ev2wf-today-review-entry>th,.ev2wf-today-review-list .ev2wf-today-review-entry>td{display:block;width:auto;border:0;padding:0;white-space:normal;overflow-wrap:anywhere;min-width:0;font-size:12px;line-height:1.45}
+ .ev2wf-today-review-list .ev2wf-today-review-entry>th{grid-column:1/-1;font-size:14px;border-bottom:1px solid var(--ev2-line,#d8e4ed);padding-bottom:8px}
+ .ev2wf-today-review-list .ev2wf-today-review-entry>td:nth-of-type(1)::before{content:"Schedule"}
+ .ev2wf-today-review-list .ev2wf-today-review-entry>td:nth-of-type(2)::before{content:"Started"}
+ .ev2wf-today-review-list .ev2wf-today-review-entry>td:nth-of-type(3)::before{content:"Status"}
+ .ev2wf-today-review-list .ev2wf-today-review-entry>td:nth-of-type(1)::before,.ev2wf-today-review-list .ev2wf-today-review-entry>td:nth-of-type(2)::before,.ev2wf-today-review-list .ev2wf-today-review-entry>td:nth-of-type(3)::before{display:block;font-size:11px;color:var(--muted,#526777);font-weight:600;margin-bottom:3px}
+ .ev2wf-today-review-list .ev2wf-today-review-entry>td:last-child{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
+ .ev2wf-today-review-list .ev2wf-today-review-entry>td:last-child .btn{min-height:38px}
+}
