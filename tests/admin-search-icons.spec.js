@@ -55,7 +55,7 @@ test('Admin desktop symbols distinguish different destinations and phone More us
  const shape=label=>nav.getByRole('button',{name:label,exact:true}).locator('svg').first().innerHTML();
  expect(await shape('Finance')).not.toBe(await shape('Payroll'));
  expect(await shape('Reports')).not.toBe(await shape('Reviews & Development'));
- expect(await shape('My Hub')).not.toBe(await shape('Your account'));
+ expect(await shape('My Hub')).not.toBe(await shape('Account security'));
  await page.screenshot({path:'test-artifacts/admin-distinct-icons-desktop.png',fullPage:false});
  await page.setViewportSize({width:390,height:844});
  await page.getByRole('button',{name:'More',exact:true}).click();

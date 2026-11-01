@@ -52,7 +52,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(shell).toContain('name={isExec ? "notification" : "messages"}');
   expect(shell).toContain('className="ev2s-mobile-profile exec-redesign-mobile-notification"');
   expect(search).toContain('Search across CEAC OS...');
-  expect(navigation).toContain('{ key: "account", label: "Account", icon: "account", group: "account" }');
+  expect(navigation).toContain('{ key: "account", label: "Account security", icon: "lock", group: "account" }');
   expect(css).toContain("/* Executive literal shell finishing */");
   expect(css).toContain(".executive-app .ev2s-profile-button > span:last-child");
   expect(css).toContain(".executive-app .ev2-project-delivery.is-executive");
@@ -124,7 +124,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
     "Reports",
     "Messages",
     "My Hub",
-    "Account",
+    "Account security",
     "Get technical help",
   ]);
   expect(css).toContain("/* Executive phone Payroll cards */");
