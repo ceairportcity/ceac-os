@@ -241,24 +241,27 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
         },
       ]);
 
-      const requestResult = await supabase.from("work_requests")
-        .select("work_item_id,request_state,responsible_unit_id, work_items!inner(id,ref,title,due_at,status,assigned_by)")
-        .eq("responsible_unit_id", me.unit_id)
-        .in("request_state", ["waiting", "clarification"])
-        .order("responded_at", { ascending: true, nullsFirst: true });
+      // These independent summaries were formerly requested sequentially,
+      // extending the Overview wait by three round trips. Keep the existing
+      // requireResult verification for each response, but fetch together.
+      const [requestResult, routineResult, financePositionResult] = await Promise.all([
+        supabase.from("work_requests")
+          .select("work_item_id,request_state,responsible_unit_id, work_items!inner(id,ref,title,due_at,status,assigned_by)")
+          .eq("responsible_unit_id", me.unit_id)
+          .in("request_state", ["waiting", "clarification"])
+          .order("responded_at", { ascending: true, nullsFirst: true }),
+        supabase.from("recurring_operations")
+          .select("id,name,work_item_id,active,schedule_kind,weekdays,day_of_month,records_value,value_label,starts_on,ends_on")
+          .eq("unit_id", me.unit_id)
+          .not("work_item_id", "is", null)
+          .order("name"),
+        supabase.rpc("unit_budget_position", {
+          p_unit_id: me.unit_id,
+          p_year: today.getFullYear(),
+        }),
+      ]);
       setIncomingRequests(requireResult(requestResult, "Incoming requests"));
-
-      const routineResult = await supabase.from("recurring_operations")
-        .select("id,name,work_item_id,active,schedule_kind,weekdays,day_of_month,records_value,value_label,starts_on,ends_on")
-        .eq("unit_id", me.unit_id)
-        .not("work_item_id", "is", null)
-        .order("name");
       setRoutines(requireResult(routineResult, "Routines"));
-
-      const financePositionResult = await supabase.rpc("unit_budget_position", {
-        p_unit_id: me.unit_id,
-        p_year: today.getFullYear(),
-      });
       setFinancePositions(requireResult(financePositionResult, "Unit financial position"));
 
       const tasks = requireResult(weekResult, "This week");
