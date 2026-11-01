@@ -26,8 +26,12 @@ const budgets = {
   // 674,941 to 680,362 bytes (5,421 additional bytes) to support iPad mini
   // through landscape tablet across four roles. Review confirms necessary
   // explicit tablet geometry and no change to the gzip/core/route budgets.
-  // New cap 666 KiB = 681,984 bytes; only 1,622 bytes spare.
-  allCssRaw: 666 * KIB,
+  // Cohesive Reports / Work / My Hub redesign (31 Oct): exact-head CI
+  // 41236534630 measured 693.48 kB across CSS chunks (Vite's rounded
+  // per-chunk display). This adds 11.5 kB above the tablet cap while
+  // preserving route splitting, original palette and core/gzip caps.
+  // Reviewed new ceiling: 679 KiB (695,296 bytes), roughly 1.8 kB headroom.
+  allCssRaw: 679 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;

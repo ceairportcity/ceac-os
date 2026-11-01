@@ -12,6 +12,7 @@ import {
 } from "../lib/ghanaReportingDates";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
+import "../experience-v2/cohesive-refresh.css";
 import { Sheet, ProductNotice, FieldGroup } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { composeQuarterlyNarrative, parseQuarterlyNarrative } from "../lib/reportNarrativeSections";
@@ -783,9 +784,10 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
             description="The recorded evidence remains above. CEAC OS does not invent a chart when there is not enough comparable data to show a factual pattern."
           />}
           {displayDaily.some((point) => point.value > 0) && <DataVizChart
-            kind="line"
-            title="Completed work trend"
-            note="Recorded completed work by date. Open a point or table record for the supporting work."
+            kind="bar"
+            compact
+            title="Completed work by day"
+            note="Daily completed work counts. Open a bar or use the table to see the work."
             data={displayDaily}
             series={[{ key:"value", label:"Completed work" }]}
             onOpen={(point) => viewingFrozen
@@ -820,9 +822,10 @@ export default function ManagerReports({ me, openItem, onOpenAchievements = null
 
           {displayAttendance.some((day) => day.value > 0) && <>
             <DataVizChart
-              kind="line"
-              title="Recorded work-session activity"
-              note="Unique team-member work-session days by date. Open a point or table record for the underlying sessions."
+              kind="bar"
+              compact
+              title="Recorded work sessions by day"
+              note="Recorded team-member work-session days. Open a bar or the table for the details."
               data={displayAttendance}
               series={[{ key:"value", label:"Recorded team-member session days" }]}
               onOpen={(day) => viewingFrozen

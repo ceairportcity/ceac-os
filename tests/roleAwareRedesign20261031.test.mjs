@@ -52,8 +52,11 @@ test("personal achievements remain in My Hub and are reachable from Reports but 
 
 test("Executive reports separate leadership insights from quarterly submissions", () => {
   const reports = source("src/screens/ExecutiveReports.jsx");
-  assert.match(reports, /workspaceView==="submissions"/);
-  assert.match(reports, /workspaceView==="insights"/);
+  for (const section of ["brief","explore","departments","quarterly"]) {
+    assert.match(reports, new RegExp('workspaceView==="' + section + '"'));
+  }
+  assert.match(reports, /<ExecutiveIntelligence/);
+  assert.match(reports, /periodOptions.length > 0/);
   assert.match(reports, /<ExecutiveOutcomeBrief/);
   assert.match(reports, /<ExecutiveContributionDrilldown/);
   assert.match(reports, /<ExecutiveFilingOverview/);

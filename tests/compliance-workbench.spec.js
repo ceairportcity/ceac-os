@@ -28,7 +28,8 @@ async function fixture(page,{failCases=false,failOffice=false,asAdmin=false,hidd
   return route.continue();
  });
  await page.goto('/tests/fixtures/compliance-workbench.html'+(asAdmin?'?role=admin':''));
- await expect(page.getByRole('heading',{name:'Compliance',exact:true})).toBeVisible();
+ // The test fixture is an authorised Compliance operator, not a personal My Hub page.
+ await expect(page.getByRole('heading',{name:asAdmin?'My policies & requirements':'Compliance',exact:true})).toBeVisible();
  if(!asAdmin)await expect(page.getByRole('heading',{name:'Your review desk'})).toBeVisible();
  return ()=>page.evaluate(()=>window.syntheticMaps||0);
 }
@@ -112,8 +113,8 @@ test('HR direct-link access remains personal even with its legacy organisation-w
  await expect(page.getByRole('button',{name:'Record observation',exact:true})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'Publish policy',exact:true})).toHaveCount(0);
  await expect(page.getByRole('region',{name:'Recorded workforce work-start street map'})).toHaveCount(0);
- await expect(page.getByText('My compliance',{exact:true})).toBeVisible();
- await expect(page.getByRole('tab',{name:'Policies',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'My policies & requirements',exact:true})).toBeVisible();
+ await expect(page.getByRole('tab',{name:'My policies',exact:true})).toBeVisible();
 });
 
 test('Compliance uses already-authorised names for cross-department evidence and exception reviews',async({page})=>{

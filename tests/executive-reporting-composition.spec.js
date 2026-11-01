@@ -17,7 +17,7 @@ async function records(page,{empty=false,deny=false}={}){
 for(const width of [320,390,1440])test(`Executive reporting figures, display choice and register agree at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:1000});await records(page);
  await page.goto('/tests/fixtures/owner-corrections.html?screen=reports&actor=executive');
- await page.getByRole('tab',{name:'Department submissions'}).click();
+ await page.getByRole('tab',{name:'Quarterly reports'}).click();
  const overview=page.getByRole('region',{name:'October 2026',exact:true});
  await expect(overview.locator('.filing-ring strong')).toHaveText('63%');
  await expect(overview.locator('.filing-total>strong')).toHaveText('5 / 8');
@@ -39,7 +39,7 @@ for(const width of [320,390,1440])test(`Executive reporting figures, display cho
 });
 test('No active departments has no fabricated zero percentage',async({page})=>{
  await records(page,{empty:true});await page.goto('/tests/fixtures/owner-corrections.html?screen=reports');
- await page.getByRole('tab',{name:'Department submissions'}).click();
+ await page.getByRole('tab',{name:'Quarterly reports'}).click();
  await expect(page.locator('.filing-ring strong')).toHaveText('—');
  await expect(page.getByText('No active departments are recorded.')).toBeVisible();
 });
@@ -149,11 +149,11 @@ for(const width of [390,1440])test(`Manager figures open source records and expo
  await expect(metric.locator('strong')).toHaveText('1');await metric.click();
  await expect(page.locator('.ev2rep-list')).toContainText('Synthetic completed work');
  await page.getByRole('button',{name:'Show charts and tables',exact:true}).click();
- await page.getByRole('button',{name:'Show Completed work trend as table',exact:true}).click();
- const chart=page.locator('.ev2dv-chart').filter({hasText:'Completed work trend'});
+ await page.getByRole('button',{name:'Show Completed work by day as table',exact:true}).click();
+ const chart=page.locator('.ev2dv-chart').filter({hasText:'Completed work by day'});
  await expect(chart.getByRole('table')).toBeVisible();
- await chart.getByRole('button',{name:'Show Completed work trend as chart',exact:true}).click();
- await expect(chart.getByRole('img',{name:'Completed work trend',exact:true})).toBeVisible();
+ await chart.getByRole('button',{name:'Show Completed work by day as chart',exact:true}).click();
+ await expect(chart.getByRole('img',{name:'Completed work by day',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Hide charts and tables',exact:true}).click();
  await expect(page.getByRole('button',{name:'Show charts and tables',exact:true})).toHaveAttribute('aria-expanded','false');
  await expect(chart).not.toBeVisible();

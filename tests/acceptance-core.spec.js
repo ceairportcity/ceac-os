@@ -155,7 +155,7 @@ test("Staff and Manager complete the real work loop, including return and approv
     await go(page, "Work");
     await openCompleteWorkRecord(page, title);
     await expect(page.getByText("Why this matters")).toBeVisible();
-    await expect(page.getByText("What finished looks like")).toBeVisible();
+    await expect(page.getByText("What a completed result should include")).toBeVisible();
     await page.getByRole("button", { name: new RegExp(step) }).click();
     await page.getByRole("button", { name: "Send for review" }).click();
     const sendDialog = page.getByRole("dialog");
@@ -412,7 +412,7 @@ test("OCR6C work source attachment reaches the authorised Staff record", async (
     const { context, page } = await openAs(browser, "staff@ceac.local.test");
     await go(page, "Work");
     await openCompleteWorkRecord(page, title);
-    await expect(page.getByText("Source files", { exact: true })).toBeVisible();
+    await expect(page.getByText("Files for this work", { exact: true })).toBeVisible();
     await expect(page.getByText(filename, { exact: true })).toBeVisible();
     await context.close();
   }
@@ -1828,7 +1828,7 @@ test("Stage 10 Assets & devices preserves factual custody and lifecycle across r
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Me");
     await page.getByRole("button", { name: /My assets/ }).click();
-    await expect(page.getByRole("heading", { name: "Assets & devices", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "My equipment", exact: true })).toBeVisible();
     const card = page.locator(".asset-card").filter({ hasText: assetCode });
     await expect(card).toBeVisible();
     await expect(card).toContainText("Staff Fixture");
@@ -1923,7 +1923,7 @@ test("Stage 10 Assets & devices preserves factual custody and lifecycle across r
     await expect(page.getByText("Transferred", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Returned", { exact: true }).first()).toBeVisible();
 
-    await page.getByRole("tab", { name: "Service & lifecycle", exact: true }).click();
+    await page.getByRole("tab", { name: "Repairs & care", exact: true }).click();
     await expect(page.getByText("Repair Started", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Warranty Claimed", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Retired", { exact: true }).first()).toBeVisible();
@@ -2007,7 +2007,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
   {
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Compliance");
-    await expect(page.getByRole("heading", { name: "Compliance", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "My policies & requirements", exact: true })).toBeVisible();
     const policyCard = page.locator(".compliance-policy-card").filter({ hasText: policyTitle });
     await expect(policyCard).toBeVisible();
     await policyCard.getByRole("button", { name: "Acknowledge policy", exact: true }).click();
@@ -2024,7 +2024,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
     await dialog.getByRole("button", { name: "Submit evidence", exact: true }).click();
     await expect(page.getByText("Compliance evidence submitted.", { exact: true })).toBeVisible();
 
-    await page.getByRole("tab", { name: "My exceptions", exact: true }).click();
+    await page.getByRole("tab", { name: "Exceptions", exact: true }).click();
     const exceptionCard = page.locator(".compliance-self-item").filter({ hasText: requirementTitle });
     await exceptionCard.getByRole("button", { name: "Request exception", exact: true }).click();
     dialog = page.getByRole("dialog");
@@ -2038,7 +2038,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
     await expect(page.locator(".compliance-policy-card").filter({ hasText: policyTitle })).toContainText("Acknowledged");
     await page.getByRole("tab", { name: "My evidence", exact: true }).click();
     await expect(page.locator(".compliance-self-item").filter({ hasText: requirementTitle })).toContainText(evidenceRef);
-    await page.getByRole("tab", { name: "My exceptions", exact: true }).click();
+    await page.getByRole("tab", { name: "Exceptions", exact: true }).click();
     await expect(page.locator(".compliance-self-item").filter({ hasText: requirementTitle })).toContainText("Requested");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, "Stage 11 Staff compliance overflowed the 390px viewport").toBeLessThanOrEqual(1);

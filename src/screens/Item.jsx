@@ -8,6 +8,7 @@ import { supabase } from "../lib/supabase";
 import { dueLabel } from "../lib/time";
 import { Sheet } from "../components/bits";
 import "./premium-work-detail.css";
+import "../experience-v2/cohesive-refresh.css";
 import WorkActivityDiary from "../components/WorkActivityDiary";
 import WorkProjectLink from "../components/WorkProjectLink";
 import WorkDetailsEditor from "../components/WorkDetailsEditor";
@@ -550,6 +551,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         status={item.status}
         onBack={back}
       />
+      <div className="ceac-work-quick-actions" aria-label="Work tools">
       <WorkProjectLink key={`${me.id}:${item.id}:${item.project_id || "unlinked"}`} me={me} item={item} onLinked={load} />
       <WorkDetailsEditor key={`${me.id}:${item.id}:${item.last_movement_at}`} me={me} item={item} onSaved={load} />
 
@@ -564,6 +566,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         <span><strong>{item.project_id ? "Discuss this project" : item.sub_team_id ? "Discuss with this team" : "Discuss with your team"}</strong><small>Open the conversation about this work.</small></span>
         <b aria-hidden="true">→</b>
       </button>}
+      </div>
 
       {err && <div className="flag flag-brick" style={{ marginTop: 14 }}>{err}</div>}
 
@@ -589,15 +592,15 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         contextType="work_item"
         contextId={item.id}
         relation="assignment_source"
-        title="Source files"
-        emptyText="No source files were supplied with this work."
+        title="Files for this work"
+        emptyText="No files were attached when this work was assigned."
       />
 
       {item.purpose && <WorkDetailSection title="Why this matters">
         <WorkDetailCopy>{item.purpose}</WorkDetailCopy>
       </WorkDetailSection>}
 
-      {item.expected_outcome && <WorkDetailSection title="What finished looks like">
+      {item.expected_outcome && <WorkDetailSection title="What a completed result should include">
         <WorkDetailCopy tone="emphasis">{item.expected_outcome}</WorkDetailCopy>
       </WorkDetailSection>}
 

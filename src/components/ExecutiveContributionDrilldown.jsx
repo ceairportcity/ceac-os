@@ -7,12 +7,13 @@ const normalize = (v) => String(v || "").trim().toLocaleLowerCase();
 
 /** Executive factual project -> department -> person -> dated-action detail.
  * No personal HR ratings, private employee activity, or automatic performance scores. */
-export default function ExecutiveContributionDrilldown({ me, period, units, openItem }) {
+export default function ExecutiveContributionDrilldown({ me, period, units, openItem, initialUnitId = "" }) {
   const [sourceRows, setSourceRows] = useState([]);
   const [completedEvidenceScope, setCompletedEvidenceScope] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [unitId, setUnitId] = useState("");
+  const [unitId, setUnitId] = useState(initialUnitId);
+  useEffect(() => { setUnitId(initialUnitId || ""); }, [initialUnitId]);
   const [projectId, setProjectId] = useState("");
   const [personId, setPersonId] = useState("");
   const [query, setQuery] = useState("");

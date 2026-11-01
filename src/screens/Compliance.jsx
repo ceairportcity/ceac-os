@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { EmptyState, FieldGroup, LoadingState, Pill, ProductNotice, Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { PersonalPageHeader } from "../experience-v2/personal-family/PersonalFamilyV2";
+import "../experience-v2/cohesive-refresh.css";
 import { attendanceDate } from "../lib/attendance";
 import {compliancePersonOptions,withCompliancePersonNames} from "../lib/complianceReviewQueue";
 import ComplianceOverview from "../components/ComplianceOverview";
@@ -311,7 +312,7 @@ export default function Compliance({ me, openAnnouncements }) {
     ? [["overview","Overview"],["observations","Attendance cases"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
     : isManager
     ? [["observations","Attendance cases"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
-    : [["observations","My attendance cases"],["policies","Policies"],["evidence","My evidence"],["exceptions","My exceptions"]];
+    : [["policies","My policies"],["observations","Attendance questions"],["evidence","My evidence"],["exceptions","Exceptions"]];
 
   if(loading)return <div className="body"><LoadingState label="Loading compliance…" /></div>;
   if(!isVerified)return <div className="body">
@@ -322,6 +323,7 @@ export default function Compliance({ me, openAnnouncements }) {
   </div>;
 
   const personalCompliance = !canManage && !isManager;
+  const PolicyDetailsWrapper = personalCompliance ? "details" : "div";
   return <div className={`body compliance-page ${canManage ? "cp" : ""} ${personalCompliance ? "ev2-personal-page ev2-personal-compliance" : ""}`.trim()}>
     {canManage ? <>
       <section className="cp-welcome s2-landscape-hero" aria-label="Compliance department welcome">
@@ -335,9 +337,9 @@ export default function Compliance({ me, openAnnouncements }) {
       </header>
     </> : personalCompliance ? <PersonalPageHeader
       eyebrow="My Hub"
-      title="Compliance"
-      description="Policies that apply to you, your acknowledgements, factual evidence and approved exceptions. CEAC OS does not calculate a personal compliance score."
-      statusLabel="My compliance"
+      title="My policies & requirements"
+      description="Find the policies that apply to you, check what you have recorded and see any approved exceptions."
+      statusLabel="My Hub"
     /> : <div style={{paddingTop:26}}>
       <div className="eyebrow">Rules + evidence + exceptions</div>
       <h1 className="h1">Compliance</h1>
@@ -346,7 +348,12 @@ export default function Compliance({ me, openAnnouncements }) {
     {error&&<ProductNotice tone="error" title="Compliance">{error}</ProductNotice>}
     {notice&&<ProductNotice tone="success" title="Recorded">{notice}</ProductNotice>}
 
-    <div className="compliance-tabs" role="tablist" aria-label="Compliance sections">
+    {personalCompliance && <div className="ceac-hub-intro ceac-hub-intro-split" aria-label="Your policies at a glance">
+      <div><span>Policies shown to you</span><strong>{currentPolicies.length}</strong><small>Open a policy for its details</small></div>
+      <div><span>Evidence records</span><strong>{evidenceLatest.length}</strong><small>Check their recorded status</small></div>
+      <p>Choose a section below to review what applies to you and whether anything needs your attention.</p>
+    </div>}
+    <div className="compliance-tabs ceac-hub-tabs" role="tablist" aria-label="Compliance sections">
       {tabs.map(([key,label])=><button key={key} role="tab" aria-selected={tab===key} className={tab===key?"on":""} onClick={()=>{setObservationIntent({id:"",create:false});setTab(key);}}>{label}</button>)}
     </div>
 
@@ -391,19 +398,22 @@ export default function Compliance({ me, openAnnouncements }) {
             <div className="compliance-policy-head"><div><span className="eyebrow">{policy.category} · v{policy.version}</span><h3>{policy.title}</h3></div><Pill tone={active?"green":"grey"}>{active?"Active":human(policy.state)}</Pill></div>
             {policy.summary&&<p>{policy.summary}</p>}
             <details><summary>Policy text</summary><div className="compliance-policy-body">{policy.body_text}</div></details>
-            <div className="compliance-meta">
+            <PolicyDetailsWrapper className={personalCompliance ? "ceac-policy-meta-toggle" : undefined}>
+              {personalCompliance && <summary>Dates and other details</summary>}
+              <div className="compliance-meta">
               <span>Effective <b>{day(policy.effective_on)}</b></span>
               <span>Expires <b>{policy.expires_on?day(policy.expires_on):"No expiry recorded"}</b></span>
               <span>Source <b>{policy.source_reference||"Not recorded"}</b></span>
               <span>Applies to <b>{policyScopes(policy.id).map(scopeLabel).join(", ")||"Not recorded"}</b></span>
-            </div>
+              </div>
+            </PolicyDetailsWrapper>
             {!canManage&&!isManager&&active&&needsAck&&<div className="compliance-ack-row">{ack?<Pill tone="green">Acknowledged {day(ack.acknowledged_at.slice(0,10))}</Pill>:<button className="btn btn-sm" disabled={busy} onClick={()=>acknowledge(policy)}>Acknowledge policy</button>}</div>}
             {policies.filter((row)=>row.policy_key===policy.policy_key).length>1&&<details className="compliance-history"><summary>Version history · {policies.filter((row)=>row.policy_key===policy.policy_key).length}</summary>{policies.filter((row)=>row.policy_key===policy.policy_key).sort((a,b)=>b.version-a.version).map((row)=><div key={row.id}><strong>Version {row.version} · {human(row.state)}</strong><span>Effective {day(row.effective_on)} · {row.reason}</span></div>)}</details>}
             {canManage&&<div className="compliance-actions"><button className="btn btn-ghost btn-sm" onClick={()=>openRevision(policy)}>Publish revision</button>{policy.state==="active"&&<button className="btn btn-ghost btn-sm" onClick={()=>retirePolicy(policy)}>Retire policy</button>}</div>}
           </article>;
         })}
       </div>
-      {!currentPolicies.length&&<EmptyState title="No compliance policies in scope">{canManage?"Publish the first compliance policy when CEAC has approved its content and applicability.":"Applicable policy versions will appear here."}</EmptyState>}
+      {!currentPolicies.length&&<EmptyState title={canManage ? "No policies published yet" : isManager ? "No policies available for your team" : "No policies are assigned to you at the moment"}>{canManage?"Publish the first compliance policy when CEAC has approved its content and applicability.":"Policies assigned to you will appear here when they are available."}</EmptyState>}
     </>}
 
     {tab==="requirements"&&(canManage||isManager)&&<>

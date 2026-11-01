@@ -93,6 +93,7 @@ test('release Executive PDF prints collapsed milestone content and restores its 
  const period=ok(await service.from('report_periods').insert({org_id:org,kind:'project',label:'Synthetic PDF acceptance Q4 2026',starts_on:'2026-10-01',ends_on:'2026-12-31'}).select('id').single());
  const {page,context}=await open(browser,'exec@ceac.local.test','/?tab=exec-reports');
  try{
+  await page.getByRole('tab',{name:'Quarterly reports'}).click();
   await expect(page.locator('.s2-exec-brief')).toBeVisible();
   const picker=page.getByLabel('Reporting period',{exact:true});
   if(await picker.count())await picker.selectOption(period.id);

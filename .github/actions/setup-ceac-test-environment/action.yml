@@ -27,7 +27,16 @@ runs:
         fi
         mkdir -p /tmp/ceac-migrations
         find supabase/migrations -maxdepth 1 -name '*.sql' -exec mv {} /tmp/ceac-migrations/ \;
-        supabase start
+        # Retry only a failed isolated test-stack startup. Registry throttling can
+        # leave a partially started container holding the local Postgres port.
+        if ! supabase start; then
+          echo "Local test database startup failed; cleaning partial containers before one retry."
+          supabase stop --no-backup || true
+          # A failed startup may leave a container occupying the test database port.
+          docker ps -aq --filter 'name=^/supabase_' | xargs -r docker rm -f || true
+          sleep 8
+          supabase start
+        fi
         mv /tmp/ceac-migrations/*.sql supabase/migrations/
         psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/replay/legacy-live-artifacts.sql
         bash scripts/ci/replay-approved-bundle-migrations.sh

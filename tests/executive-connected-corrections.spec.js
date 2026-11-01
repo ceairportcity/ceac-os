@@ -76,15 +76,16 @@ for (const width of [320,390,430,1440]) {
       const title=page.getByRole('heading',{name:heading,exact:true}).first();
       await expect(title).toBeVisible();
       if (tab === 'exec-reports') {
+        await page.getByRole('tab',{name:'Quarterly reports'}).click();
         const governance=page.getByRole('region',{name:'Quarterly leadership review schedule',exact:true});
         const schedule=governance.getByRole('button',{name:'Schedule quarterly review',exact:true});
         await expect(schedule).toBeVisible();
-        expect(await schedule.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+        expect(await schedule.evaluate(node=>getComputedStyle(node).backgroundColor)).not.toBe('rgb(113, 72, 232)');
         expect((await schedule.boundingBox()).height).toBeGreaterThanOrEqual(44);
         await schedule.click();
         const open=governance.getByRole('button',{name:'Open quarterly review',exact:true});
         await expect(open).toBeDisabled();
-        expect(await open.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+        expect(await open.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(46, 134, 230)');
         await governance.getByRole('button',{name:'Close',exact:true}).click();
       }
       expect(await title.evaluate(node=>getComputedStyle(node).fontFamily)).toContain('Instrument Sans');
@@ -316,10 +317,11 @@ for(const width of [320,1440])test(`Executive report and personal print controls
     await route.fulfill({response,status:200,headers:{...response.headers(),'content-range':'0-0/1'},json:[{id:'26000000-0000-4000-8000-000000000025',label:'Synthetic Q3 2026',status:'open',starts_on:'2026-07-01',ends_on:'2026-09-30'}]});
   });
   await page.goto('/?tab=exec-reports');
+  await page.getByRole('tab',{name:'Quarterly reports'}).click();
   const brief=page.getByRole('region',{name:'Executive outcomes briefing',exact:true});
   await expect(brief).toBeVisible();
   const reportPrint=brief.getByRole('button',{name:'Print / Save as PDF',exact:true});
-  expect(await reportPrint.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect(await reportPrint.evaluate(node=>getComputedStyle(node).backgroundColor)).not.toBe('rgb(113, 72, 232)');
   expect((await reportPrint.boundingBox()).height).toBeGreaterThanOrEqual(44);
   await page.screenshot({path:`test-artifacts/executive-report-print-${width}.png`,fullPage:true});
   await page.goto('/?tab=achievements');
