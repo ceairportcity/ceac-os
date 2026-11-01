@@ -11,7 +11,6 @@ import { humanError } from "../lib/productLanguage";
 import { Skeleton, StatePanel } from "../experience-v2/components";
 import {
   ReportingEmpty,
-  ReportingFootnote,
   ReportingPageHeader,
   ReportingSection,
 } from "../experience-v2/reporting-family/ReportingFamilyV2";
@@ -350,9 +349,10 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
             initialUnitId={selectedUnitId} openItem={openItem} />
           </>}
 
-          <ReportingFootnote>
-            Executive Reports is read-only. Filing coverage describes reporting status only; CEAC OS does not infer unit performance, staff performance, achievement, score or ranking from it.
-          </ReportingFootnote>
+          <details className="ev2rep-evidence-note">
+            <summary>About these records</summary>
+            <p>These reports are for viewing. A filed report shows that information was submitted, not how well a department or person performed.</p>
+          </details>
         </>
       )}
       {!contextPending && workspaceView==="quarterly" && <QuarterlyReviewEventControl me={me} />}

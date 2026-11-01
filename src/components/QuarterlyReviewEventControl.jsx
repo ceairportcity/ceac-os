@@ -84,7 +84,7 @@ export default function QuarterlyReviewEventControl({me}){
  if(!allowed)return null;
  return <section className="s2-quarter-events" aria-label="Quarterly leadership review schedule">
    <header><div><span>Governance</span><h2>Quarterly ministry review</h2>
-     <p>Executive or authorised Administration opens the official leadership review. HR retains independent control of employee appraisals and publication.</p></div>
+     <p>Schedule the quarterly leadership review. Employee appraisals are managed separately by HR.</p></div>
      {recordsVerified&&<button type="button" className="s2-quarter-events-action" onClick={()=>setOpen(v=>!v)}>{open?"Close":"Schedule quarterly review"}</button>}
    </header>
    {loading&&<p role="status">Checking review events…</p>}

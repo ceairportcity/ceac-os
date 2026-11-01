@@ -82,9 +82,8 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
          <small>{m.completed_at?"Recorded completion "+m.completed_at.slice(0,10):m.target_on?"Target "+m.target_on:"No recorded date"}</small>
         </div>)}</div>}
     </details>
-    <div className="s2-exec-brief-section">
-      <h3>Reported targets and following-period proposals</h3>
-      {!facts.unitTargets.length&&<p>No quantified unit targets or next-period proposals are attached to the latest issued reports. A new commitment or decision is not implied.</p>}
+    {(facts.unitTargets.length || facts.unitEvidence.length || decisions.length) ? <div className="s2-exec-brief-section">
+      {facts.unitTargets.length>0 && <h3>Targets and next-period proposals</h3>}
       {facts.unitTargets.map(target=><div className="s2-exec-brief-unit" key={target.id}>
         <strong>{names[target.unit_id]||"Authorised department"} · {target.name}</strong>
         <small>Issued unit-report target · {target.target_value==null?"Target not recorded":`Target ${target.target_value} ${target.target_unit||""}`}
@@ -92,25 +91,23 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
         {target.next_target_value!=null&&<p><b>Proposed next-period target:</b> {target.next_target_value} {target.target_unit||""}. A proposed target is not an Executive approval.</p>}
         {target.note&&<p><b>Recorded unit explanation:</b> {target.note}</p>}
       </div>)}
-      <h3>Linked evidence references</h3>
-      {!facts.unitEvidence.length&&<p>No linked evidence references are attached to the latest issued unit reports.</p>}
+      {facts.unitEvidence.length>0 && <h3>Linked evidence</h3>}
       {facts.unitEvidence.map(ref=><div className="s2-exec-brief-unit" key={ref.id}>
         <strong>{names[ref.unit_id]||"Authorised department"} · {ref.label||"Recorded evidence reference"}</strong>
         <small>{String(ref.section||"Unit report").replaceAll("_"," ")} · {String(ref.object_type||"Source record").replaceAll("_"," ")} · reference only, not a source-file verification</small>
       </div>)}
-      <h3>Recorded Work decisions within this reporting period</h3>
-      {!decisions.length&&<p>No accessible, independently recorded Work decision is available for these period dates. This does not imply that no leadership discussions occurred.</p>}
+      {decisions.length>0 && <h3>Recorded decisions</h3>}
       {decisions.map(decision=><div className="s2-exec-brief-unit" key={decision.work_item_id}>
         <strong>{names[decision.unit_id]||"Authorised Work scope"} · {decision.work_title||"Recorded Work decision"}</strong>
         <small>Work record · decided {decision.decided_at?.slice(0,10)||"date unavailable"} · separate from quarterly Executive approvals</small>
         <p><b>Recorded decision:</b> {decision.decision_text||"Decision text not recorded"}</p>
         {decision.rationale&&<p><b>Recorded rationale:</b> {decision.rationale}</p>}
       </div>)}
-      <h3>Leadership decisions and follow-up</h3>
-      <p>Issued department challenges are reproduced above. Unit next-target proposals are proposals, not decisions. This briefing does not invent an Executive decision, approval, accountable owner, funding commitment or due date when no independently approved decision source is connected.</p>
-      <p>Human-entered appraisals, attendance findings and KPI approvals remain separate review-controlled evidence. This brief does not convert self-recorded activity or draft ratings into verified ministry outcomes.</p>
-    </div>
-    <footer><strong>Evidence and scope</strong><p>{facts.coverageNote} {facts.noDoubleCount} This briefing shows current objective/milestone states and released unit narratives visible to this account, not a frozen verified outcome snapshot. Reviewer decisions, attendance and protected HR appraisals are separate.</p></footer>
+    </div> : <p className="s2-exec-brief-empty">No targets, evidence links or decisions are recorded in the available reports for this period.</p>}
+    <details className="s2-exec-brief-method">
+      <summary>How this report uses records</summary>
+      <p>Figures count each recorded objective and milestone once. Proposed targets are not approved decisions. Staff reviews and attendance are managed separately.</p>
+    </details>
   </>}
  </section>;
 }

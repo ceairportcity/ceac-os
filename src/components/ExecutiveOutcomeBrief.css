@@ -47,3 +47,11 @@
 .s2-exec-brief-stats article{border-color:var(--ev2-line)}
 .s2-exec-brief-warning{color:var(--ev2-text);background:var(--ev2-surface-soft);border:1px solid var(--ev2-line);line-height:1.5}
 @media(max-width:720px){.s2-exec-brief{padding:16px;margin:16px 0}.s2-exec-brief-head{gap:12px}.s2-exec-brief-grid{gap:10px}.s2-exec-brief-section{padding:14px}.s2-exec-brief-charts{gap:10px}.s2-exec-brief-stats{grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))}}
+
+/* Keep report explanation optional on small screens; make empty copy a calm single line. */
+.s2-exec-brief-method{margin-top:14px;border-top:1px solid var(--ev2-line,#e4ebf3);padding-top:12px;color:var(--ev2-text-secondary,#64748b);font-size:13px;line-height:1.5}
+.s2-exec-brief-method summary{color:var(--ev2-action,#216bd3);font-size:13px;font-weight:650;cursor:pointer;min-height:36px;display:list-item;padding:8px 0;list-style-position:inside}
+.s2-exec-brief-method summary:focus-visible{outline:2px solid var(--ev2-action,#216bd3);outline-offset:3px}
+.s2-exec-brief-method p{margin:5px 0 0;max-width:67ch}
+.s2-exec-brief-empty{color:var(--ev2-text-secondary,#64748b);font-size:13px;line-height:1.55;margin:10px 0}
+@media print{.s2-exec-brief-method{border-top:1px solid #ccd6e4;break-inside:avoid}}

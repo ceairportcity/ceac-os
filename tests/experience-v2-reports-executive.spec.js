@@ -25,8 +25,8 @@ test("Stage 10 Family F4 keeps Executive Reports read-only and factual", async (
   expect(executive).toContain('supabase.from("reports")');
   expect(executive).toContain('supabase.from("units")');
   expect(executive).toContain('.eq("scope", "unit")');
-  expect(executive).toContain("does not infer unit performance, staff performance, achievement, score or ranking");
-  expect(executive).toContain("Executive Reports is read-only");
+  expect(executive).toContain("not how well a department or person performed");
+  expect(executive).toContain("These reports are for viewing");
   expect(executive).toContain("ev2-reporting-executive");
   expect(executive).not.toContain(".insert(");
   expect(executive).not.toContain(".update(");
@@ -76,7 +76,7 @@ for (const viewport of [
     const { context, page } = await openExecutiveReports(browser, { width: viewport.width, height: viewport.height });
 
     await expect(page.getByText(/Administration controls (reporting periods and configuration|period configuration)/i).first()).toBeVisible();
-    await expect(page.getByText(/Filing coverage (is evidence of reporting status only|describes reporting status only)/i).first()).toBeVisible();
+    await expect(page.getByText("About these records", { exact: true })).toBeVisible();
 
     await expect(page.getByRole("button", { name: "Open reporting period", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /Close period|Reopen period|Submit|Save|Correct/i })).toHaveCount(0);
