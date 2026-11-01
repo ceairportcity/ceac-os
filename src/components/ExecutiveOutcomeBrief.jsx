@@ -106,7 +106,7 @@ export default function ExecutiveOutcomeBrief({period,units,issuedReports=[],obj
     </div> : <p className="s2-exec-brief-empty">No targets, evidence links or decisions are recorded in the available reports for this period.</p>}
     <details className="s2-exec-brief-method">
       <summary>How this report uses records</summary>
-      <p>Figures show available reports and recorded work. Proposed targets are not approved decisions. Staff reviews and attendance are handled separately.</p>
+      <p>Figures count each recorded objective and milestone once. Proposed targets are not approved decisions. Staff reviews and attendance are managed separately.</p>
     </details>
   </>}
  </section>;
