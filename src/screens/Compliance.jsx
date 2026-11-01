@@ -366,7 +366,7 @@ export default function Compliance({ me, openAnnouncements }) {
     {canManage&&primaryTab==="policies"&&<div className="compliance-tabs" role="tablist" aria-label="Policy sections">
       {[["policies","Policies"],["requirements","Requirements"]].map(([key,label])=><button key={key} role="tab" aria-selected={tab===key} onClick={()=>setTab(key)}>{label}</button>)}
     </div>}
-    {canManage&&tab==="attendance"&&<CompliancePeriodReport me={me} />}
+    {canManage&&tab==="attendance"&&<CompliancePeriodReport me={me} defaultPeriod="day" allowMemo={false} />}
 
     {tab==="overview"&&canManage&&<ComplianceOverview
       date={overviewDate}
@@ -390,7 +390,7 @@ export default function Compliance({ me, openAnnouncements }) {
       onException={(row)=>{setDecisionSheet(row);setDecisionAction("approved");setDecisionNote("");setDecisionUntil("");}}
     />}
 
-    {tab==="reports"&&canManage&&<CompliancePeriodReport me={me} />}
+    {tab==="reports"&&canManage&&<CompliancePeriodReport me={me} defaultPeriod="month" allowMemo={true} />}
 
     {tab==="observations" && <ComplianceAttendanceCases
       key={actorScope} me={me} canManage={canManage}

@@ -23,8 +23,8 @@ function localTime(value) {
   if(Number.isNaN(d.getTime())) return "Not recorded";
   return d.toLocaleString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
 }
-export default function CompliancePeriodReport({me}) {
-  const [period,setPeriod]=useState("week");
+export default function CompliancePeriodReport({me,defaultPeriod="week",allowMemo=true}) {
+  const [period,setPeriod]=useState(defaultPeriod);
   const [date,setDate]=useState(attendanceDate);
   const [page,setPage]=useState(0);
   const [result,setResult]=useState(null);
@@ -122,7 +122,7 @@ export default function CompliancePeriodReport({me}) {
       <label>Reporting date <input className="field" aria-label="Choose a reporting date" type="date" value={date} onChange={e=>setDate(e.target.value)} /></label>
     </div>
     {range&&<p className="screen-note">Accra reporting period: {range.start} to {range.end}</p>}
-    {period==="month"&&<div className="cp-filters"><button type="button" className="btn" disabled={loading||drafting||!result||Boolean(error)} onClick={prepareMonthlyMemo}>{drafting?"Preparing draft…":"Prepare monthly report Memo"}</button><span className="screen-note">Review the draft and choose its HR and Group Pastor recipients before sending.</span></div>}
+    {allowMemo&&period==="month"&&<div className="cp-filters"><button type="button" className="btn" disabled={loading||drafting||!result||Boolean(error)} onClick={prepareMonthlyMemo}>{drafting?"Preparing draft…":"Prepare monthly report Memo"}</button><span className="screen-note">Review the draft and choose its HR and Group Pastor recipients before sending.</span></div>}
     {loading?<p role="status">Checking attendance records…</p>:error?<div role="alert" className="card">{error}</div>:result&&<>
       <p className="screen-note">{result.total_people} people within your authorised reporting scope. Open a name to see each day's record.</p>
       <div className="cp-scroll"><table className="cp-table">
