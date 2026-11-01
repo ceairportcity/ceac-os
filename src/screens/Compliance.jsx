@@ -45,8 +45,9 @@ export default function Compliance({ me, openAnnouncements }) {
   const isVerified=verifiedActor===actorScope;
   const isManager=departmentalUser&&me.role==="manager";
   const canPublishInstruction=hasOrgCapability("post_announcement");
-  const [tab,setTab]=useState(canManage?"overview":"policies");
-  const [observationIntent,setObservationIntent]=useState({id:"",create:false});
+  const linkedCase = new URLSearchParams(window.location.search).get("case");
+  const [tab,setTab]=useState(linkedCase?"observations":canManage?"overview":"policies");
+  const [observationIntent,setObservationIntent]=useState({id:/^[0-9a-f-]{36}$/i.test(linkedCase||"")?linkedCase:"",create:false});
   const [policies,setPolicies]=useState([]);
   const [applicability,setApplicability]=useState([]);
   const [requirements,setRequirements]=useState([]);

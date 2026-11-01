@@ -440,7 +440,7 @@ export default function App() {
   const canUseLearning = !isExec && (isStaff || isUnitManager || hasOrgCapability("learning.manage"));
   const canUseWorkforce = !isExec && (isStaff || isUnitManager || hasOrgCapability("workforce.manage") || hasOrgCapability("attendance.correct") || hasOrgCapability("compliance.manage"));
   const canUseAssets = !isExec && (isStaff || isUnitManager || hasOrgCapability("asset.manage"));
-  const canUseCompliance = !isExec && (isStaff || isUnitManager || hasOrgCapability("compliance.manage"));
+  const canUseCompliance = !isExec && (isAdmin || isStaff || isUnitManager || hasOrgCapability("compliance.manage"));
   const canPublishAnnouncement = isAdmin || isExec || hasOrgCapability("post_announcement");
   const overlay = itemId || assigning || goalId || person || (projectId && isUnitManager) || roomContext || meetingId || meetingDraft;
 

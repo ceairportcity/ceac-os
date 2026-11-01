@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, MessageSquare, FileText, PenSquare } from "lucide-react";
+import { Search, MessageSquare, FileText, PenSquare, Bell } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import Room from "./Room";
 import Memos from "./Memos";
+import Notifications from "./Notifications";
 import { initials, messageTimestamp, roomContext } from "../lib/memos";
 import "./MessagesWorkspace.css";
 
 export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled }) {
   const linkedMemo = new URLSearchParams(window.location.search).get("memo");
-  const [section,setSection] = useState(linkedMemo ? "memos" : "rooms");
+  const [section,setSection] = useState(linkedMemo ? "memos" : "updates");
   const [rooms,setRooms] = useState([]), [selected,setSelected] = useState(null);
   const [actions,setActions] = useState([]), [actionsOpen,setActionsOpen] = useState(false);
   const [query,setQuery] = useState(""), [error,setError] = useState(""), [loading,setLoading] = useState(true);
@@ -72,10 +73,11 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
       </button>)}{!actions.length && <p>No work action is waiting.</p>}
     </div>}
     <nav className="msg-sections" aria-label="Messages sections">
+      <button type="button" aria-current={section==="updates"?"page":undefined} onClick={()=>switchSection("updates")}><Bell size={16}/> Updates</button>
       <button type="button" aria-current={section === "rooms" ? "page" : undefined} onClick={()=>switchSection("rooms")}><MessageSquare size={16}/> Rooms</button>
       <button type="button" aria-current={section === "memos" ? "page" : undefined} onClick={()=>switchSection("memos")}><FileText size={16}/> Memos</button>
     </nav>
-    {section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
+    {section === "updates" ? <Notifications key={scope} me={me} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
       : <div className={`msg-layout ${selected && verified ? "has-selection" : ""}`}>
         <aside className="msg-directory" aria-label="Rooms">
           <label className="msg-search"><Search size={16}/><input type="search" aria-label="Search Rooms" placeholder="Search rooms…" value={query} onChange={e=>setQuery(e.target.value)}/></label>
