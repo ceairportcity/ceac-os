@@ -113,8 +113,8 @@ test('HR direct-link access remains personal even with its legacy organisation-w
  await expect(page.getByRole('button',{name:'Record observation',exact:true})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'Publish policy',exact:true})).toHaveCount(0);
  await expect(page.getByRole('region',{name:'Recorded workforce work-start street map'})).toHaveCount(0);
- await expect(page.getByText('My compliance',{exact:true})).toBeVisible();
- await expect(page.getByRole('tab',{name:'Policies',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'My policies & requirements',exact:true})).toBeVisible();
+ await expect(page.getByRole('tab',{name:'My policies',exact:true})).toBeVisible();
 });
 
 test('Compliance uses already-authorised names for cross-department evidence and exception reviews',async({page})=>{
