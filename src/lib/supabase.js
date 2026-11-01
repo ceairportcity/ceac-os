@@ -31,17 +31,19 @@ export async function loadMe() {
   if (!auth.user.email_confirmed_at) {
     throw new Error("Complete your email verification before opening CEAC.");
   }
-  const { data: p, error: profileError } = await supabase.from("profiles")
-    .select("id, full_name, preferred_name, email, job_title, phone, is_admin, is_exec, org_id, joined_at, birthday, contract_type, active")
-    .eq("id", auth.user.id).single();
-  if (profileError) throw profileError;
-  if (!p) return null;
-  if (!p.active) throw new Error("Your CEAC access is inactive. Contact Administration.");
+  // The profile, unit memberships and permission grants are independent
+  // server-authorised reads after getUser() verifies the sign-in. Fetch them
+  // together to remove a serial network wait; publish nothing until ALL
+  // profile, membership and authority checks below have succeeded.
   const [
+    { data: p, error: profileError },
     { data: memberships, error: membershipError },
     { data: capabilityGrants, error: capabilityError },
     { data: ledSubTeams, error: leadError },
   ] = await Promise.all([
+    supabase.from("profiles")
+      .select("id, full_name, preferred_name, email, job_title, phone, is_admin, is_exec, org_id, joined_at, birthday, contract_type, active")
+      .eq("id", auth.user.id).single(),
     supabase.from("unit_memberships")
       .select("role, unit_id, units(name)")
       .eq("profile_id", auth.user.id),
@@ -54,6 +56,9 @@ export async function loadMe() {
       .eq("lead_id", auth.user.id)
       .eq("active", true),
   ]);
+  if (profileError) throw profileError;
+  if (!p) return null;
+  if (!p.active) throw new Error("Your CEAC access is inactive. Contact Administration.");
   if (membershipError) throw membershipError;
   const { grants, capabilitySchemaReady, error: resolvedCapabilityError } =
     resolveCapabilityGrantRead({ data: capabilityGrants, error: capabilityError });
