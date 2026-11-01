@@ -15,8 +15,8 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "attendance", label: "Time & Leave", icon: "time", group: "planning" },
     { key: "staff-calendar", label: "Calendar", icon: "calendar", group: "planning" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
-    { key: "me", label: "My Hub", icon: "account", group: "account" },
-    { key: "account", label: "Your account", icon: "account", group: "account" },
+    { key: "me", label: "My Hub", icon: "person", group: "account" },
+    { key: "account", label: "Account security", icon: "lock", group: "account" },
   ]),
   manager: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
@@ -28,8 +28,8 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "manager-finance", label: "Finance", icon: "finance", group: "insight" },
     { key: "manager-reports", label: "Reports", icon: "reports", group: "insight" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
-    { key: "me", label: "My Hub", icon: "account", group: "account" },
-    { key: "account", label: "Your account", icon: "account", group: "account" },
+    { key: "me", label: "My Hub", icon: "person", group: "account" },
+    { key: "account", label: "Account security", icon: "lock", group: "account" },
   ]),
   admin: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
@@ -44,7 +44,7 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "settings", label: "Control Center", icon: "control", group: "system" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
     { key: "me", label: "My Hub", icon: "person", group: "account" },
-    { key: "account", label: "Your account", icon: "account", group: "account" },
+    { key: "account", label: "Account security", icon: "lock", group: "account" },
   ]),
   executive: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
@@ -54,11 +54,11 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "exec-organisation", label: "Organisation", icon: "organisation", group: "workspace" },
     { key: "exec-calendar", label: "Calendar", icon: "calendar", group: "planning" },
     { key: "exec-finance", label: "Finance", icon: "finance", group: "insight" },
-    { key: "payroll", label: "Payroll", icon: "finance", group: "insight", capability: "payroll.approve" },
+    { key: "payroll", label: "Payroll", icon: "budget", group: "insight", capability: "payroll.approve" },
     { key: "exec-reports", label: "Reports", icon: "reports", group: "insight" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
-    { key: "me", label: "My Hub", icon: "account", group: "account" },
-    { key: "account", label: "Account", icon: "account", group: "account" },
+    { key: "me", label: "My Hub", icon: "person", group: "account" },
+    { key: "account", label: "Account security", icon: "lock", group: "account" },
   ]),
 });
 
