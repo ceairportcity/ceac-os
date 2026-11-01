@@ -3,7 +3,9 @@ async function openEvidenceReview(page) {
   // Manager and Staff continue to see their existing direct Evidence tabs.
   const reviews = page.getByRole("tab", { name: "Reviews", exact: true });
   if (await reviews.count()) await reviews.click();
-  await page.getByRole("tab", { name: "Evidence", exact: true }).click();
+  const evidence = page.getByRole("tab", { name: "Evidence", exact: true });
+  if (await evidence.count()) await evidence.click();
+  else await page.getByRole("tab", { name: "My evidence", exact: true }).click();
 }
 
 // FPG10 exact-head Level B whole-system parity propagation checkpoint.
