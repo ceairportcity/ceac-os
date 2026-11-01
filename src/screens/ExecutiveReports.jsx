@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import ExecutiveFilingOverview from "../components/ExecutiveFilingOverview";
+import ComplianceReportReferences from "../components/ComplianceReportReferences";
 import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
 import ExecutiveContributionDrilldown from "../components/ExecutiveContributionDrilldown";
 import ExecutiveIntelligence from "../components/ExecutiveIntelligence";
@@ -231,6 +232,8 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
           </option>)}
         </select>
       </div>}
+
+      <ComplianceReportReferences me={me} />
 
       {/* Keep access to the independently verified quarterly review schedule even when report-period records are unavailable. */}
       {!contextPending && (

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import "../experience-v2/cohesive-refresh.css";
 import ReportingFilingOverview from "../components/ExecutiveFilingOverview";
+import ComplianceReportReferences from "../components/ComplianceReportReferences";
 import QuarterlyReviewEventControl from "../components/QuarterlyReviewEventControl";
 import OperationalArchiveRecords from "../components/OperationalArchiveRecords";
 import { dateOnly } from "../lib/time";
@@ -368,6 +369,8 @@ export default function Reports({ me, onOpenAchievements = null }) {
         description="Open reporting periods, see named filing follow-up, and inspect unit narratives. Administration owns reporting periods; Managers file within their authorised scope."
         statusLabel={statusLabel}
       />
+
+      <ComplianceReportReferences me={me} />
 
       <QuarterlyReviewEventControl me={me} />
 
