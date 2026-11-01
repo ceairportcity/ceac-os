@@ -159,7 +159,7 @@ export default function ExecutiveIntelligence({
         </div>
       </article>
     </div>
-    <div className="ceac-exec-brief-footer"><p>Filing status, objectives and decisions come from different records. They are not combined into an employee score.</p>
-      <button type="button" className="ceac-exec-link" onClick={onExplore}>Explore the evidence →</button></div>
+    <div className="ceac-exec-brief-footer">
+      <button type="button" className="ceac-exec-link" onClick={onExplore}>Explore the records →</button></div>
   </section>;
 }
