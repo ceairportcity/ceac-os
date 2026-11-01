@@ -98,7 +98,7 @@ export class InvitationDeliveryUnconfirmedError extends Error {
  constructor(kind="new",cause=null){
   super(invitationDeliveryMessage(cause));
   this.name="InvitationDeliveryUnconfirmedError";
-  this.invitationRecorded=true;
+  this.invitationRecorded = true;
  }
 }
 
