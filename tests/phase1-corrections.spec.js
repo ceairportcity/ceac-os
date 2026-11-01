@@ -132,7 +132,7 @@ for(const width of [390,1440]){
   await page.goto('/tests/fixtures/phase1-corrections.html?screen=calendar');
   if(width===390){
    const dateLabel=date.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-   const targetDay=page.locator('.ev2cal-day-button[aria-label*="'+dateLabel+'"]');
+   const targetDay=page.getByRole('grid',{name:'Personal month calendar'}).locator('.ev2cal-day-button[aria-label*=" '+dateLabel+'"]');
    await expect(targetDay).toHaveCount(1);
    await targetDay.click();
    await page.getByRole('tab',{name:'Tasks',exact:true}).click();
