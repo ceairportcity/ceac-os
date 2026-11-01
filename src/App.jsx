@@ -155,6 +155,12 @@ export default function App() {
   useEffect(() => {
     boot();
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      // boot() above already performs the initial, independently verified
+      // account read. Supabase also emits INITIAL_SESSION on subscription:
+      // re-running the same boot cancels the first read and repeats every
+      // auth, profile, authority and work-session request unnecessarily.
+      // Continue handling all genuine identity and security state changes.
+      if (event === "INITIAL_SESSION") return;
       if (UNIVERSAL_TOTP_CUTOVER) {
         // Identity-changing Auth events must immediately hide the previous
         // actor's protected workspace, before any asynchronous profile read.
