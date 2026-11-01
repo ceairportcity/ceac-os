@@ -9,7 +9,7 @@ import "./MessagesWorkspace.css";
 
 export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled }) {
   const linkedMemo = new URLSearchParams(window.location.search).get("memo");
-  const [section,setSection] = useState(linkedMemo ? "memos" : "updates");
+  const [section,setSection] = useState(linkedMemo ? "memos" : new URLSearchParams(window.location.search).get("updates")==="1" ? "updates" : "rooms");
   const [rooms,setRooms] = useState([]), [selected,setSelected] = useState(null);
   const [actions,setActions] = useState([]), [actionsOpen,setActionsOpen] = useState(false);
   const [query,setQuery] = useState(""), [error,setError] = useState(""), [loading,setLoading] = useState(true);
@@ -65,6 +65,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
   return <div ref={workspaceRef} className="msg-workspace" style={{"--exec-purple":"#1678c9"}}>
     <header className="msg-head"><h1>Messages</h1>
       <div><button type="button" aria-expanded={actionsOpen} onClick={()=>setActionsOpen(open=>!open)}>Work actions {verified ? actions.length : "…"}</button><button type="button" onClick={openAnnouncements}>Announcements</button>
+      <button type="button" aria-label="Updates" aria-pressed={section==="updates"} onClick={()=>switchSection("updates")}><Bell size={18}/></button>
       <button type="button" aria-label="New Memo" onClick={()=>{setSection("memos");setComposeMemo(n=>n+1);}}><PenSquare size={19}/></button></div>
     </header>
     {actionsOpen && verified && <div className="room-picker-panel" aria-label="Work actions">
@@ -73,7 +74,6 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
       </button>)}{!actions.length && <p>No work action is waiting.</p>}
     </div>}
     <nav className="msg-sections" aria-label="Messages sections">
-      <button type="button" aria-current={section==="updates"?"page":undefined} onClick={()=>switchSection("updates")}><Bell size={16}/> Updates</button>
       <button type="button" aria-current={section === "rooms" ? "page" : undefined} onClick={()=>switchSection("rooms")}><MessageSquare size={16}/> Rooms</button>
       <button type="button" aria-current={section === "memos" ? "page" : undefined} onClick={()=>switchSection("memos")}><FileText size={16}/> Memos</button>
     </nav>
