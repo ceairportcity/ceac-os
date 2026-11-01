@@ -793,6 +793,8 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         </div>
       </>}
 
+      {managerOwnWork && item.status === "in_review" && item.assignee_id === me.id && <button className="btn btn-sm work-primary-action" disabled={busy || (checks.length > 0 && !allDone)} onClick={() => setSheet("submit")}>Finish my work</button>}
+
       {item.assignee_id === me.id && !["routine", "case", "request", "decision"].includes(item.kind) && !(["in_review", "completed", "self_certified"].includes(item.status)) && (<>
         <button className="btn btn-sm work-primary-action" style={{ marginTop: 20, width:"fit-content" }} onClick={() => setSheet("submit")}
           disabled={managerSubmissionBlocked || (checks.length > 0 && !allDone)}>
@@ -807,7 +809,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
             I need something from someone</button>)}
       </>)}
 
-      {!canReview && item.status === "in_review" &&
+      {!canReview && !managerOwnWork && item.status === "in_review" &&
         <div className="flag flag-amber" style={{ marginTop: 20 }}><h4>Sent in</h4>Waiting on {responsibleReviewer?.full_name || "the responsible reviewer"} to check it.</div>}
 
       {isManager && ["task", "meeting_outcome", "deliverable"].includes(item.kind) && ["completed", "self_certified"].includes(item.status) &&
@@ -952,7 +954,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
             ? (managerOwnWork ? "Finish deliverable" : "Send deliverable for review")
             : managerOwnWork ? "Finish this work" : "Send for review"}</div>
           <p className="screen-note">{managerOwnWork
-            ? "This records your submission as self-certified. It will not enter your review queue."
+            ? (item.status === "in_review" ? "Your earlier submission stays in the record. Finishing this manager-owned work removes the pending review." : "This finishes your work and records your outcome without sending it for review.")
             : `${responsibleReviewer?.full_name || "The responsible reviewer"} will receive this in their review queue.`}</p>
           {gated && <div className="flag flag-amber"><h4>No work session is open</h4>This submission will still be accepted and recorded as outside a session.</div>}
           <p className="screen-note">This finishes the whole assignment. If only today’s activity is finished, close this form and record an activity with its next action instead.</p>

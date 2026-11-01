@@ -1,9 +1,7 @@
 // Presentation eligibility only. The existing self_certify_work RPC remains
 // authoritative and rechecks the actor's current department membership.
 export function canSelfCertifyOwnWork(me, item) {
-  if (!me?.id || !item || item.assignee_id !== me.id
-      || item.origin === "assigned_by_exec"
-      || !(item.origin === "self_created" || item.assigned_by === me.id)) return false;
+  if (!me?.id || !item || item.assignee_id !== me.id) return false;
   return Boolean(me.is_admin || me.is_exec || (me.memberships || []).some(
     membership => membership.unit_id === item.unit_id && membership.role === "manager"
   ));
