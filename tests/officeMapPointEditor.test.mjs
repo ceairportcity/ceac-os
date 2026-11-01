@@ -11,7 +11,7 @@ test('Office Settings saves an explicitly selected Google map centre rather than
 
 test('Every map button has explicit non-submit type inside Office Settings form',()=>{
  const map=readFileSync('src/components/WorkforceStreetMap.jsx','utf8');
- const buttons=[...map.matchAll(/<button\\b([^>]*?)>/g)];
+ const buttons=[...map.matchAll(/<button\b([^>]*?)>/g)];
  assert.ok(buttons.length>=8);
  assert.ok(buttons.every(entry=>entry[1].includes('type="button"')));
 });
