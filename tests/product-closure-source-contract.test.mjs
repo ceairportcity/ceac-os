@@ -93,8 +93,8 @@ test("People & Access never displays a previous account's roster after switching
 test("Invitation email delivery is never confused with a stored invitation", () => {
   assert.match(auth, /class InvitationDeliveryUnconfirmedError/);
   assert.match(auth, /this\.invitationRecorded = true/);
-  assert.match(auth, /throw new InvitationDeliveryUnconfirmedError\("new"\)/);
-  assert.match(auth, /throw new InvitationDeliveryUnconfirmedError\("resend"\)/);
+  assert.match(auth, /throw new InvitationDeliveryUnconfirmedError\("new",error\)/);
+  assert.match(auth, /throw new InvitationDeliveryUnconfirmedError\("resend",error\)/);\n  assert.match(auth, /invitationDeliveryMessage\(cause\)/);
   assert.match(access, /actionError\?\.invitationRecorded/);
   assert.match(access, /invitationEmailConflicts\(form\.email/);
   assert.match(access, /existingAccountEmail \|\| existingInvitationEmail/);
