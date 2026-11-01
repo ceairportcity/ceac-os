@@ -391,7 +391,12 @@ export default function App() {
       unit_name: membership.unit_name,
       role: membership.role,
     }));
-    go("home");
+    // Keep the same workspace and update only the department context.
+    // Pages tied to management of one specific department return to Work
+    // when the newly selected department is not managed by this person.
+    const managerOnlyPages = ["team", "projects", "calendar", "manager-finance", "manager-reports"];
+    const nextTab = managerOnlyPages.includes(tab) && membership.role !== "manager" ? "work" : tab;
+    navigate({ tab: nextTab }, { replace: true });
   }
 
   const authPath = window.location.pathname;
