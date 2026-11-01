@@ -98,9 +98,9 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
   const unitName = (id) => units.find(u=>u.id===id)?.name || "Authorised unit";
 
   return <section className="s2-exec-contrib" aria-label="Individual contribution drill-down">
-    <header><div><span className="eyebrow">Source-linked ministry work</span>
+    <header><div><span className="eyebrow">Work records</span>
       <h2>Project and individual contributions</h2>
-      <p>Inspect dated contributions by project, department and person. Entries are self-recorded evidence, not automatically approved outcomes, employee ratings or attendance.</p>
+      <p>See who recorded work, when it happened and which project it belongs to.</p>
     </div><button type="button" className="btn btn-ghost btn-sm" disabled={loading} onClick={()=>setReload(n=>n+1)}>Refresh evidence</button></header>
     {(!start || !end) && <p role="status">Select a reporting period to inspect recorded contributions.</p>}
     {evidenceChecking && <p role="status">Checking source records and permissions…</p>}
@@ -123,7 +123,7 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
       </div>
       <div className="s2-exec-contrib-layout">
         <div className="s2-exec-contrib-list" aria-label="Source-recorded contributions">
-          {visible.length===0&&<p>No contributor actions are recorded for these filters. This does not mean no work took place.</p>}
+          {visible.length===0&&<p>No recorded actions match these filters.</p>}
           {visible.map((a)=><button type="button" key={a.id}
             className={selected?.id===a.id?"s2-exec-contrib-row is-selected":"s2-exec-contrib-row"}
             aria-pressed={selected?.id===a.id} onClick={()=>setSelectedId(a.id)}>
@@ -151,7 +151,6 @@ export default function ExecutiveContributionDrilldown({ me, period, units, open
           </>}
         </aside>
       </div>
-      <p className="s2-exec-contrib-disclaimer">A person contributing to more than one task does not create multiple project achievements. Counts above are distinct source records; any official outcome still requires the established reviewer process.</p>
     </>}
   </section>;
 }
