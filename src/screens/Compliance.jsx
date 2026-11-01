@@ -8,6 +8,7 @@ import { attendanceDate } from "../lib/attendance";
 import {compliancePersonOptions,withCompliancePersonNames} from "../lib/complianceReviewQueue";
 import ComplianceOverview from "../components/ComplianceOverview";
 import ComplianceAttendanceCases from "../components/ComplianceAttendanceCases";
+import CompliancePeriodReport from "../components/CompliancePeriodReport";
 import DailyScenicPhoto from "../components/DailyScenicPhoto";
 import "../components/ComplianceWorkbench.css";
 
@@ -309,7 +310,7 @@ export default function Compliance({ me, openAnnouncements }) {
   }
 
   const tabs=canManage
-    ? [["overview","Overview"],["observations","Attendance cases"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
+    ? [["overview","Overview"],["reports","Reports"],["observations","Attendance cases"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
     : isManager
     ? [["observations","Attendance cases"],["policies","Policies"],["requirements","Requirements"],["evidence","Evidence"],["exceptions","Exceptions"]]
     : [["policies","My policies"],["observations","Attendance questions"],["evidence","My evidence"],["exceptions","Exceptions"]];
@@ -378,6 +379,8 @@ export default function Compliance({ me, openAnnouncements }) {
       onEvidence={(row)=>{setReviewSheet(row);setReviewAction("verified");setReviewNote("");}}
       onException={(row)=>{setDecisionSheet(row);setDecisionAction("approved");setDecisionNote("");setDecisionUntil("");}}
     />}
+
+    {tab==="reports"&&canManage&&<CompliancePeriodReport me={me} />}
 
     {tab==="observations" && <ComplianceAttendanceCases
       key={actorScope} me={me} canManage={canManage}
