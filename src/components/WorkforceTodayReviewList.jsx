@@ -95,8 +95,8 @@ export default function WorkforceTodayReviewList({
   {overview&&renderPlanner?.({scheduleAttention})}
   {overview&&<h2>Recorded work sessions · today</h2>}
   <div className="ev2wf-today-review-summary" style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap",padding:"10px 12px",border:"1px solid var(--ev2-line,var(--line))",borderRadius:8}}>
-   <strong>{attention} contexts to review</strong>
-   <span>{started} recorded start{started===1?"":"s"} · {linked} linked HR roster · {unlinked} without login · {normalized.length} records (including unmatched accounts)</span>
+   <strong>{attention} need attention</strong>
+   <span>{started} started · {linked} account links · {unlinked} not linked</span>
   </div>
   <div className="ev2wf-today-review-controls" style={{display:"flex",flexWrap:"wrap",gap:12}}>
    <label className="small" style={{flex:"1 1 170px",minWidth:0}}>Review filter
@@ -126,6 +126,6 @@ export default function WorkforceTodayReviewList({
     </tr>)}</tbody>
    </table>
   </div>
-  <p className="screen-note">Roster facts, account access, approved schedules and recorded sessions are separate sources. “Needs review” does not establish absence, lateness, discipline, payroll consequences or a KPI score.</p>
+  <details className="ceac-map-info"><summary>How to read these records</summary><p>The roster, account access, schedules and work starts are separate records. A missing record does not mean someone was absent or late, and does not change their pay or assessment.</p></details>
  </div>;
 }
