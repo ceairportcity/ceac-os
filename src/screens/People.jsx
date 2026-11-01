@@ -65,6 +65,8 @@ function avgStartLabel(minutes) {
 export default function People({ me, openItem, go, openLifecycle, onManagePermissions=null, accessIntent = null, onAccessIntentHandled, initialEmployeeId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [creatingEmployee,setCreatingEmployee] = useState(false);
+  const [accountForEmployee,setAccountForEmployee]=useState(null);
+  const [employeeCreationMessage,setEmployeeCreationMessage]=useState("");
   const [operationalDirectory, setOperationalDirectory] = useState([]);
   const [filter, setFilter] = useState("all");
   const [viewMode, setViewMode] = useState("directory");
@@ -755,13 +757,16 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
     const directory = viewMode === "directory";
     return <div className="body ev2-people-page ev2-people-admin pp-split-page">
       <PeoplePageHeader title="People & Access" description="Employee records and account access"
-        actionLabel="Add employee" onAction={()=>setCreatingEmployee(true)} />
+        actionLabel="Add employee" onAction={()=>{setAccountForEmployee(null);setCreatingEmployee(true);}} />
+      {employeeCreationMessage&&<ProductNotice tone="info" title="Employee saved">{employeeCreationMessage}<button type="button" className="btn btn-ghost btn-sm" onClick={()=>setEmployeeCreationMessage("")}>Dismiss</button></ProductNotice>}
     {creatingEmployee && <HRCreateRosterEmployee
       me={me} units={units} employees={rows} accounts={operationalDirectory}
-      onClose={()=>setCreatingEmployee(false)}
-      onCreated={async employee=>{
+      initialAccount={accountForEmployee}
+      onClose={()=>{setCreatingEmployee(false);setAccountForEmployee(null);}}
+      onCreated={async (employee,{invitationState}={})=>{
         if(!(await load({silent:true})))throw new Error("The employee was created but the directory did not refresh. Recheck existing employees before retrying.");
         setCreatingEmployee(false);
+        setAccountForEmployee(null);
         setSearchText("");
         setFilter("all");
         setViewMode("directory");
@@ -770,6 +775,12 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
           full_name:employee.full_name,employment_status:employee.employment_status,
           job_title:employee.job_title,identity_state:"roster_only",active:employee.employment_status==="active",
         });
+        setEmployeeCreationMessage(invitationState==="requested"
+         ?"Employee saved. A login invitation was requested; email delivery is not yet confirmed."
+         :invitationState==="unconfirmed"
+          ?"Employee saved. Invitation delivery was not confirmed. Review Invitations before retrying."
+          :"Employee saved. Create an invitation or verify an existing account in Account & Access.");
+
       }}
     />}
 
@@ -1439,6 +1450,7 @@ export default function People({ me, openItem, go, openLifecycle, onManagePermis
             <button type="button" className="btn btn-ghost btn-sm" onClick={()=>{
               setSearchText(account.full_name||"");setFilter("all");setViewMode("directory");
             }}>Find roster person</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={()=>{setAccountForEmployee(account);setCreatingEmployee(true);}}>Add HR record</button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={()=>openAccessAdministration(account.id)}>Review account access</button>
           </div>
         </article>)}
