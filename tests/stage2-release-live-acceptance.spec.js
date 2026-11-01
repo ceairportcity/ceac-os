@@ -100,7 +100,7 @@ test('release Executive PDF prints collapsed milestone content and restores its 
   const brief=page.locator('.s2-exec-brief');
   await expect(brief.getByRole('button',{name:'Print / Save as PDF'})).toBeEnabled();
   await expect(brief).toContainText('Q4 2026');
-  const milestones=brief.locator('details');
+  const milestones=brief.locator('details.s2-exec-brief-milestones');
   await expect(milestones).not.toHaveAttribute('open','');
   await expect(milestones).toContainText(milestoneName);
   await milestones.evaluate(node=>window.addEventListener('beforeprint',()=>{
