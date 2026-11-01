@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { assertStage2SupabaseTarget } from "./stage2SupabaseTarget";
 import { authRedirect } from "./authRedirect";
-import { isPlausibleInvitationEmail } from "./invitationSafety";
+import { isPlausibleInvitationEmail, invitationDeliveryMessage } from "./invitationSafety";
 import { readServerVerifiedLegacyGrants, resolveCapabilityGrantRead } from "./capabilitySchemaCompatibility";
 
 const fallbackSupabaseUrl = "https://efjljhftsesssumtshvp.supabase.co";
@@ -95,13 +95,11 @@ export async function loadMe() {
     capabilities: [...new Set(activeCapabilityGrants.map((grant) => grant.capability))] };
 }
 export class InvitationDeliveryUnconfirmedError extends Error {
-  constructor(kind = "new") {
-    super(kind === "resend"
-      ? "The resend was prepared, but the activation email request was not accepted. Delivery is unconfirmed. Review the invitation's latest state before retrying."
-      : "The invitation was recorded, but the activation email request was not accepted. Delivery is unconfirmed. Review Invitations before retrying.");
-    this.name = "InvitationDeliveryUnconfirmedError";
-    this.invitationRecorded = true;
-  }
+ constructor(kind="new",cause=null){
+  super(invitationDeliveryMessage(cause));
+  this.name="InvitationDeliveryUnconfirmedError";
+  this.invitationRecorded=true;
+ }
 }
 
 export async function inviteByEmail({ email, fullName, unitId }) {
@@ -130,8 +128,8 @@ export async function inviteByEmail({ email, fullName, unitId }) {
       },
     });
     if (authError) throw authError;
-  } catch {
-    throw new InvitationDeliveryUnconfirmedError("new");
+  } catch (error) {
+    throw new InvitationDeliveryUnconfirmedError("new",error);
   }
 }
 
@@ -146,7 +144,7 @@ export async function resendStaffInvitation(id) {
     const result = await supabase.auth.signInWithOtp({ email: data.email,
       options: { shouldCreateUser: !data.account_created, emailRedirectTo: redirect } });
     if (result.error) throw result.error;
-  } catch {
-    throw new InvitationDeliveryUnconfirmedError("resend");
+  } catch (error) {
+    throw new InvitationDeliveryUnconfirmedError("resend",error);
   }
 }
