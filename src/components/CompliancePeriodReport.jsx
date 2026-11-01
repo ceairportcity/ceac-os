@@ -30,6 +30,7 @@ export default function CompliancePeriodReport({me}) {
   const [result,setResult]=useState(null);
   const [error,setError]=useState("");
   const [loading,setLoading]=useState(true);
+  const [drafting,setDrafting]=useState(false);
   const range=useMemo(()=>reportingRange(period,date),[period,date]);
   useEffect(()=>setPage(0),[period,date]);
   useEffect(()=>{
@@ -52,6 +53,65 @@ export default function CompliancePeriodReport({me}) {
     return()=>{active=false;};
   },[me.id,me.org_id,range?.start,range?.end,page]);
   const pageCount=Math.max(1,Math.ceil((result?.total_people||0)/25));
+  async function prepareMonthlyMemo(){
+    if(period!=="month"||!range||!result||loading||drafting)return;
+    setDrafting(true);setError("");
+    try{
+      if(range.end>=attendanceDate())throw new Error("A monthly submission can be prepared after the month has ended.");
+      const people=[];let total=null;
+      for(let offset=0;offset<(total??1);offset+=50){
+        const {data,error:readError}=await supabase.rpc("compliance_period_facts",{
+          p_from:range.start,p_to:range.end,p_limit:50,p_offset:offset
+        });
+        if(readError||!data||!Array.isArray(data.rows)||typeof data.total_people!=="number")
+          throw new Error("The complete monthly evidence could not be verified.");
+        if(total===null)total=data.total_people;
+        if(data.total_people!==total||total>2000||data.rows.length===0&&offset<total)
+          throw new Error("The complete staff list could not be verified. Do not issue a partial report.");
+        people.push(...data.rows);
+      }
+      if(people.length!==total||new Set(people.map(p=>p.employee_id)).size!==people.length)
+        throw new Error("The report contains incomplete or duplicate staff records.");
+      const sum=key=>people.reduce((n,p)=>n+Number(p[key]||0),0);
+      const detail=people.length<=75?people.map(p=>
+        (p.name||"Employee")+": scheduled "+p.expected_days+", started "+p.recorded_days+
+        ", approved leave "+p.approved_leave_days+", requiring review "+p.days_needing_check
+      ).join("\n"):"Individual attendance records remain available in the authorised Compliance Reports view.";
+      const report=[
+        "CEAC OS — MONTHLY COMPLIANCE SUMMARY",
+        "Reporting period: "+range.start+" to "+range.end,
+        "Prepared for review. This is not an approved finding or payroll instruction.",
+        "",
+        "People covered: "+people.length,
+        "Scheduled employee-days: "+sum("expected_days"),
+        "Employee-days with a recorded start: "+sum("recorded_days"),
+        "Approved leave days: "+sum("approved_leave_days"),
+        "Scheduled days requiring an attendance check: "+sum("days_needing_check"),
+        "Days with a session still open: "+sum("open_session_days"),
+        "",
+        "INDIVIDUAL ATTENDANCE SUMMARY",detail,
+        "",
+        "COMPLIANCE OFFICER'S REVIEW",
+        "[Review schedules, permissions, corrections and staff responses. Add verified findings here.]",
+        "",
+        "DECISIONS REQUESTED",
+        "[Specify matters that require the Group Pastor's decision; do not propose automatic salary deductions.]",
+        "",
+        "A missing start is not automatically an absence or misconduct. Reported activity duration is not verified work time."
+      ].join("\n");
+      if(report.length>29000)throw new Error("The Memo is too large. Prepare an individual attachment instead.");
+      const id=crypto.randomUUID();
+      const {error:writeError}=await supabase.rpc("save_memo_draft",{
+        p_id:id,p_version_id:null,p_subject:"Monthly Compliance Summary — "+range.start.slice(0,7),
+        p_body:report,p_to:[],p_cc:[],p_decision_required:true,
+        p_decision_scope:"cross_department",p_unit_id:null,p_decision_maker_id:null,
+        p_expected_updated_at:null
+      });
+      if(writeError)throw new Error("The Memo draft could not be saved. No report was submitted.");
+      window.location.assign("/?tab=messages&memo="+encodeURIComponent(id));
+    }catch(e){setError(e.message||"The monthly draft could not be prepared.");setDrafting(false);}
+  }
+
   return <section className="cp-overview" aria-label="Compliance attendance reports">
     <div className="sec"><span>Attendance reporting</span></div>
     <p className="screen-note">Review the daily evidence behind every weekly or monthly total. Attendance is counted once per person, even when they work in several departments.</p>
@@ -62,6 +122,7 @@ export default function CompliancePeriodReport({me}) {
       <label>Reporting date <input className="field" aria-label="Choose a reporting date" type="date" value={date} onChange={e=>setDate(e.target.value)} /></label>
     </div>
     {range&&<p className="screen-note">Accra reporting period: {range.start} to {range.end}</p>}
+    {period==="month"&&<div className="cp-filters"><button type="button" className="btn" disabled={loading||drafting||!result||Boolean(error)} onClick={prepareMonthlyMemo}>{drafting?"Preparing draft…":"Prepare monthly report Memo"}</button><span className="screen-note">Review the draft and choose its HR and Group Pastor recipients before sending.</span></div>}
     {loading?<p role="status">Checking attendance records…</p>:error?<div role="alert" className="card">{error}</div>:result&&<>
       <p className="screen-note">{result.total_people} people within your authorised reporting scope. Open a name to see each day's record.</p>
       <div className="cp-scroll"><table className="cp-table">
