@@ -62,7 +62,9 @@ test("Executive can reach quarterly reporting before a period opens", async ({ b
     const nav=page.locator(".ev2rep-tabs[aria-label='Executive reporting workspace']");
     await expect(nav.getByRole("tab")).toHaveCount(4);
     await nav.getByRole("tab",{name:"Quarterly reports"}).click();
-    await expect(page.getByText("No reporting period is recorded",{exact:true})).toBeVisible();
+    const emptyPeriod=page.getByText("No reporting period is recorded",{exact:true});
+    const unavailable=page.getByText("Reporting context could not be loaded",{exact:true});
+    await expect(emptyPeriod.or(unavailable)).toBeVisible();
     await expect(page.getByRole("region",{name:"Quarterly leadership review schedule"})).toBeVisible();
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);

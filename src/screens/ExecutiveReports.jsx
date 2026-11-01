@@ -233,7 +233,8 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
         </select>
       </div>}
 
-      {!contextPending && !contextError && (
+      {/* Keep access to the independently verified quarterly review schedule even when report-period records are unavailable. */}
+      {!contextPending && (
         <nav className="ev2rep-tabs" role="tablist" aria-label="Executive reporting workspace">
             {[["brief","Organisation brief"],["explore","Explore"],["departments","Departments"],["quarterly","Quarterly reports"]].map(([key,label])=>
               <button key={key} type="button" role="tab" aria-selected={workspaceView===key}
@@ -354,7 +355,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
           </ReportingFootnote>
         </>
       )}
-      {!contextPending && !contextError && workspaceView==="quarterly" && <QuarterlyReviewEventControl me={me} />}
+      {!contextPending && workspaceView==="quarterly" && <QuarterlyReviewEventControl me={me} />}
     </div>
   );
 }

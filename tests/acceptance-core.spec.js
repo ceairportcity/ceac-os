@@ -1923,7 +1923,7 @@ test("Stage 10 Assets & devices preserves factual custody and lifecycle across r
     await expect(page.getByText("Transferred", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Returned", { exact: true }).first()).toBeVisible();
 
-    await page.getByRole("tab", { name: "Service & lifecycle", exact: true }).click();
+    await page.getByRole("tab", { name: "Repairs & care", exact: true }).click();
     await expect(page.getByText("Repair Started", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Warranty Claimed", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Retired", { exact: true }).first()).toBeVisible();
@@ -2024,7 +2024,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
     await dialog.getByRole("button", { name: "Submit evidence", exact: true }).click();
     await expect(page.getByText("Compliance evidence submitted.", { exact: true })).toBeVisible();
 
-    await page.getByRole("tab", { name: "My exceptions", exact: true }).click();
+    await page.getByRole("tab", { name: "Exceptions", exact: true }).click();
     const exceptionCard = page.locator(".compliance-self-item").filter({ hasText: requirementTitle });
     await exceptionCard.getByRole("button", { name: "Request exception", exact: true }).click();
     dialog = page.getByRole("dialog");
