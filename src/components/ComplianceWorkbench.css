@@ -6,7 +6,7 @@
 .cp .compliance-tabs{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;background:white;padding:0 12px;margin:16px 0 12px}
 .cp .compliance-tabs button{flex-shrink:0;border:0;border-bottom:3px solid transparent;border-radius:0;background:none;color:inherit;min-height:44px}.cp .compliance-tabs button.on{background:none;color:var(--ev2-action);border-bottom-color:var(--ev2-action)}
 .cp-overview{display:grid;gap:12px}.cp-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(240px,.85fr);gap:12px;align-items:start}
-.cp-desk,.cp-policy,.cp-attendance{min-width:0;background:white;border:1px solid var(--ev2-line);border-radius:8px;padding:16px}
+.cp-desk,.cp-daily-fact,.cp-policy,.cp-attendance{min-width:0;background:white;border:1px solid var(--ev2-line);border-radius:8px;padding:16px}
 .cp-overview h2{font-size:18px;margin:0}.cp-filters .field{width:150px;max-width:100%;min-height:40px;font-size:12px}
 .cp-item{display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;gap:12px;align-items:center;border-top:1px solid var(--ev2-line);padding:18px 0}
 .cp-copy{overflow-wrap:anywhere;min-width:0}.cp-copy h3{font-size:14px;margin:4px 0}

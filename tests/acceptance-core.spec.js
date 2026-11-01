@@ -1,6 +1,7 @@
 async function openEvidenceReview(page) {
   // The authorised Compliance workspace groups evidence beneath Reviews;
   // Manager and Staff continue to see their existing direct Evidence tabs.
+  await expect(page.getByRole("tablist", { name: "Compliance sections" })).toBeVisible();
   const reviews = page.getByRole("tab", { name: "Reviews", exact: true });
   if (await reviews.count()) await reviews.click();
   const evidence = page.getByRole("tab", { name: "Evidence", exact: true });

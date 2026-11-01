@@ -79,7 +79,7 @@ export default function ComplianceOverview({
           ["Recorded starts",dailyFacts.recordedStarts],
           ["Scheduled, no start recorded",dailyFacts.noStartRecorded],
           ["Approved leave",dailyFacts.approvedLeave],
-        ].map(([label,value])=><div className="cp-daily-fact cp-desk" key={label}><strong style={{display:"block",fontSize:24}}>{value}</strong><span style={{fontSize:12}}>{label}</span></div>)}
+        ].map(([label,value])=><div className="cp-daily-fact" key={label}><strong style={{display:"block",fontSize:24}}>{value}</strong><span style={{fontSize:12}}>{label}</span></div>)}
         <p style={{gridColumn:"1/-1"}}>These are records for the selected day, not findings of absence, lateness or misconduct. A person is counted once, even when assigned to several departments.</p>
       </div>}
       {error&&<ProductNotice tone="error" title="Attendance evidence unavailable">{error}</ProductNotice>}
