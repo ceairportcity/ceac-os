@@ -16,3 +16,14 @@ test('pending manager review can finish with history preserved',()=>{
  assert.match(sql,/INSERT INTO activity_events|insert into activity_events/);
  assert.doesNotMatch(sql,/DELETE FROM\s+submissions/i);
 });
+
+test('reconciled guard only lets the assigned unit manager finish executive work',()=>{
+ const sql=readFileSync('supabase/migrations/20261101233000_manager_work_guard_reconciliation.sql','utf8');
+ assert.match(sql,/CREATE OR REPLACE FUNCTION public\.guard_executive_work_self_certification\(\)/i);
+ assert.match(sql,/OLD\.assignee_id IS DISTINCT FROM auth\.uid\(\)/i);
+ assert.match(sql,/m\.profile_id = auth\.uid\(\)/i);
+ assert.match(sql,/m\.unit_id = OLD\.unit_id/i);
+ assert.match(sql,/m\.role = 'manager'/i);
+ assert.match(sql,/ERRCODE = '42501'/i);
+ assert.doesNotMatch(sql,/drop\s+trigger|disable\s+trigger|delete\s+from\s+(submissions|reviews)/i);
+});
