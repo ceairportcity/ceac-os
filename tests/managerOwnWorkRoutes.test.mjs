@@ -27,3 +27,13 @@ test('reconciled guard only lets the assigned unit manager finish executive work
  assert.match(sql,/ERRCODE = '42501'/i);
  assert.doesNotMatch(sql,/drop\s+trigger|disable\s+trigger|delete\s+from\s+(submissions|reviews)/i);
 });
+
+test('mobile attendance review remains readable and factually qualified',()=>{
+ const ui=readFileSync('src/components/WorkforceTodayReviewList.jsx','utf8');
+ const css=readFileSync('src/experience-v2/workforce-family/workforce-family.css','utf8');
+ assert.match(ui,/How to read these records/);
+ assert.match(ui,/Missing a start is not proof of absence or lateness/);
+ assert.match(css,/ev2wf-today-review-entry>td:nth-of-type\(1\)::before/);
+ assert.match(css,/ev2wf-today-review-entry>td:last-child/);
+ assert.match(css,/ev2wf-today-review-entry \.btn\{min-height:38px\}/);
+});
