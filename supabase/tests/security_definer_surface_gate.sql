@@ -220,6 +220,12 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.plan_work_activity_followup(p_activity_id uuid)'),
  ('public.edit_open_work_details(p_work_item_id uuid, p_expected_movement timestamp with time zone, p_title text, p_purpose text, p_outcome text, p_instructions text)');
 
+-- Two new scoped notification actions are individually checked by the
+-- migration contract. Raw event tables remain inaccessible to browsers.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.my_ceac_notifications()'),
+ ('public.mark_ceac_notification_read(p_id uuid)');
+
 -- The redesign adds three Executive-only, tenant-scoped, read-only projections.
 -- Exact function identities were verified against isolated staging; no HR
 -- table SELECT privilege is widened and no anonymous execution is permitted.
@@ -313,7 +319,7 @@ begin
 
   -- The three new Executive-only projections have explicit signatures and
   -- actor/tenant/no-anon/read-only checks above.
-  if v_actual<>179 or v_expected<>179 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>181 or v_expected<>181 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
