@@ -2038,7 +2038,7 @@ test("Stage 11 Compliance records policies, acknowledgement, evidence and except
     await expect(page.locator(".compliance-policy-card").filter({ hasText: policyTitle })).toContainText("Acknowledged");
     await page.getByRole("tab", { name: "My evidence", exact: true }).click();
     await expect(page.locator(".compliance-self-item").filter({ hasText: requirementTitle })).toContainText(evidenceRef);
-    await page.getByRole("tab", { name: "My exceptions", exact: true }).click();
+    await page.getByRole("tab", { name: "Exceptions", exact: true }).click();
     await expect(page.locator(".compliance-self-item").filter({ hasText: requirementTitle })).toContainText("Requested");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, "Stage 11 Staff compliance overflowed the 390px viewport").toBeLessThanOrEqual(1);
