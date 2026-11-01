@@ -35,5 +35,5 @@ test('mobile attendance review remains readable and factually qualified',()=>{
  assert.match(ui,/Missing a start is not proof of absence or lateness/);
  assert.match(css,/ev2wf-today-review-entry>td:nth-of-type\(1\)::before/);
  assert.match(css,/ev2wf-today-review-entry>td:last-child/);
- assert.match(css,/ev2wf-today-review-entry \.btn\{min-height:38px\}/);
+ assert.match(css,/ev2wf-today-review-entry \.btn\{min-height:44px\}/);
 });
