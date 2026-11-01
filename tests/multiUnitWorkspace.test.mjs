@@ -9,3 +9,13 @@ test("manager workspace identity survives switching to a staff department",()=>{
  assert.match(app,/setMe\(\(current\) =>/);
  assert.match(app,/go\("home"\)/);
 });
+
+test("switching a department preserves the current workspace and clears stale details",()=>{
+ const app=readFileSync("src/App.jsx","utf8");
+ const start=app.indexOf("function switchUnit("),end=app.indexOf("const authPath",start);
+ assert.ok(start>=0 && end>start);
+ const source=app.slice(start,end);
+ assert.match(source,/navigate\(\{ tab: nextTab \}, \{ replace: true \}\)/);
+ assert.match(source,/membership\.role !== "manager"/);
+ assert.doesNotMatch(source,/go\("home"\)/);
+});

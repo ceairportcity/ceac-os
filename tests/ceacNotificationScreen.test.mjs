@@ -15,3 +15,10 @@ test("the shared Updates view routes to each authorised record",()=>{
  assert.match(files.compliance,/availableSections.includes\(linkedSection\)/);
  assert.match(files.app,/isAdmin \|\| isStaff \|\| isUnitManager/);
 });
+
+test("existing room and Memo journeys remain the initial Messages experience",()=>{
+ assert.match(files.inbox,/get\("updates"\)==="1" \? "updates" : "rooms"/);
+ assert.match(files.inbox,/aria-label="Updates"/);
+ assert.match(files.inbox,/> Rooms<\/button>/);
+ assert.match(files.inbox,/> Memos<\/button>/);
+});
