@@ -29,7 +29,7 @@ async function fixture(page,{failCases=false,failOffice=false,asAdmin=false,hidd
  });
  await page.goto('/tests/fixtures/compliance-workbench.html'+(asAdmin?'?role=admin':''));
  // The test fixture is an authorised Compliance operator, not a personal My Hub page.
- await expect(page.getByRole('heading',{name:'Compliance',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:asAdmin?'My policies & requirements':'Compliance',exact:true})).toBeVisible();
  if(!asAdmin)await expect(page.getByRole('heading',{name:'Your review desk'})).toBeVisible();
  return ()=>page.evaluate(()=>window.syntheticMaps||0);
 }
