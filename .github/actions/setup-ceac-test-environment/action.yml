@@ -32,6 +32,8 @@ runs:
         if ! supabase start; then
           echo "Local test database startup failed; cleaning partial containers before one retry."
           supabase stop --no-backup || true
+          # A failed startup may leave a container occupying the test database port.
+          docker ps -aq --filter 'name=^/supabase_' | xargs -r docker rm -f || true
           sleep 8
           supabase start
         fi
