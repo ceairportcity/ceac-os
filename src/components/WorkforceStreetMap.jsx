@@ -5,7 +5,7 @@ import './WorkforceStreetMap.css';
 const EMPTY=[];
 
 /** Shared Google road map for HR, Compliance, Executive and duty venues. */
-export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedId,onSelect,selectedContent,focusLocation=null,onChooseLocation}){
+export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedId,onSelect,selectedContent,focusLocation=null,onChooseLocation,chooseLabel="Use map centre for this venue"}){
  const choosing=typeof onChooseLocation==='function';
  const configured=googleMapsConfigured||Boolean(window.google?.maps?.Map);
  const frame=useRef(null),map=useRef(null),maps=useRef(null),selectedMarker=useRef(null);
@@ -122,6 +122,6 @@ export default function WorkforceStreetMap({clusters=EMPTY,office=null,selectedI
   {clusters.filter(c=>c.people.length>1&&c.people.some(p=>p.id===selectedId)).map(c=><div className="workstart-summary" aria-label="People at this recorded location" key={c.key}>{c.people.map(p=><button type="button" key={p.id} aria-pressed={p.id===selectedId} onClick={()=>onSelect?.(p.id)}>{p.name}</button>)}</div>)}
   {selectedContent&&<section className="ceac-google-selected" aria-label="Selected work start"><button className="btn btn-ghost btn-sm" onClick={()=>{onSelect?.(null);selectedMarker.current?.focus();}}>Close selected work start</button>{selectedContent}</section>}
   {consent&&<details className="ceac-map-privacy"><summary>About this map</summary><p>Shows recorded starts, not live tracking. Google Maps receives the viewed map area and device/network information. Employee names are not included in map requests. The church-office pin uses the location saved in Office Settings.</p></details>}
-  {choosing&&consent&&<button className="btn btn-sm" disabled={state!=='ready'} onClick={()=>{const p=map.current?.getCenter();if(p)onChooseLocation({lat:p.lat(),lng:p.lng()});}}>Use map centre for this venue</button>}
+  {choosing&&consent&&<button className="btn btn-sm" disabled={state!=='ready'} onClick={()=>{const p=map.current?.getCenter();if(p)onChooseLocation({lat:p.lat(),lng:p.lng()});}}>{chooseLabel}</button>}
  </section>;
 }

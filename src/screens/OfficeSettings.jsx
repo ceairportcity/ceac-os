@@ -7,6 +7,7 @@ import { ProductNotice } from "../components/bits";
 import { CeacIcon } from "../experience-v2/icons";
 import { humanError } from "../lib/productLanguage";
 import DutyLocationSettings from "../components/DutyLocationSettings";
+import WorkforceStreetMap from "../components/WorkforceStreetMap";
 import AttendanceCodeIssuer from "../components/AttendanceCodeIssuer";
 import "../components/SettingsBack.css";
 import "./ControlCenter.css";
@@ -208,7 +209,10 @@ export default function OfficeSettings({ me, openWorkforce, section: requestedSe
       </>:null}
       {section==="office"?<form className="focused-setting-editor" onSubmit={event=>{event.preventDefault();saveOffice();}}>
         <label htmlFor="office-name">Office name</label><input id="office-name" className="field" value={name} onChange={event=>setName(event.target.value)} required maxLength={120}/>
-        {mapSrc?<iframe title="Office location" src={mapSrc} className="office-settings-map"/>:<p className="settings-help">Stand at the office and use your current location to set the office point.</p>}
+        <p className="settings-help">Move the map until the centre cross is over the church-office entrance, then choose Use this office position. Save changes to update the shared office pin.</p>
+         <WorkforceStreetMap key={office?.id||"new-office"} focusLocation={Number.isFinite(Number(lat))&&Number.isFinite(Number(lng))&&lat!==""&&lng!==""?{lat:Number(lat),lng:Number(lng)}:null}
+          onChooseLocation={({lat:chosenLat,lng:chosenLng})=>{setLat(chosenLat.toFixed(7));setLng(chosenLng.toFixed(7));setLocErr(null);}}
+          chooseLabel="Use this office position" />
         <button type="button" className="btn btn-ghost" onClick={pickHere} disabled={locating||saving}>{locating?"Finding your location…":"Use my current location"}</button>
         {locErr?<ProductNotice tone="error" title="Location unavailable">{locErr}</ProductNotice>:null}
         <label htmlFor="office-radius">Check-in area</label><div className="office-inline-field"><input id="office-radius" aria-describedby="office-radius-help" className="field" type="number" min="10" max="1000" step="1" required value={radius} onChange={event=>setRadius(event.target.value)}/><span>metres</span></div>
