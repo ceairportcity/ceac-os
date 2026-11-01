@@ -20,10 +20,3 @@
 @media(max-width:1000px){.cp-layout{grid-template-columns:1fr}.cp-item{grid-template-columns:24px minmax(0,1fr) auto;gap:8px}.cp-item>.cp-status{grid-column:2}.cp-item>button{grid-column:3;grid-row:1/3}}
 @media(max-width:600px){.cp-welcome{display:block;padding:16px}.cp-welcome time{display:inline-block;margin-top:12px}.cp-filters{width:100%}.cp-filters input[type=search]{width:100%}}
 
-/* Compact factual summary: no new colours or large cards; wrap gracefully on phones. */
-.cp-daily-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}
-.cp-daily-fact{min-width:0;background:var(--ev2-surface-soft);border:1px solid var(--ev2-line);border-radius:8px;padding:12px}
-.cp-daily-fact strong{display:block;font-size:clamp(20px,2vw,26px);font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums}
-.cp-daily-fact span{display:block;margin-top:4px;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
-.cp-daily-facts>p{grid-column:1/-1;margin:2px 0 0;font-size:12px}
-@media(max-width:650px){.cp-daily-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
