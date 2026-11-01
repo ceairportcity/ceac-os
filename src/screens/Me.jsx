@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ProfilePortraitEditor from "../components/ProfilePortraitEditor";
+import PersonalContributions from "../components/PersonalContributions";
  import { supabase } from "../lib/supabase";
 import { ProductNotice } from "../components/bits";
 import { dateOnly } from "../lib/time";
@@ -48,6 +49,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [profileForm, setProfileForm] = useState({ preferred_name: "", phone: "", birthday: "", emergency_contact_name: "", emergency_contact_phone: "", emergency_contact_relationship: "", address_text: "", instagram: "", linkedin: "" });
   const [area, setArea] = useState("goals");
+  const [showContributions,setShowContributions]=useState(false);
   const [sheet, setSheet] = useState(null);
   const [kind, setKind] = useState("annual");
   const [startDate, setStartDate] = useState("");
@@ -373,6 +375,10 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       {!me.is_admin && !me.is_exec ? <PersonalDestinationCard title="Policies & requirements" description="Policies that apply to you, acknowledgements, evidence and exceptions." ariaLabel="My compliance" onClick={() => openCompliance?.()} /> : null}
     </PersonalDestinationGrid>
 
+    {!loading&&<details className="ceac-policy-meta-toggle" onToggle={event=>setShowContributions(event.currentTarget.open)}>
+      <summary>Work across departments</summary>
+      {showContributions&&<PersonalContributions me={me} onOpenWork={onOpenWork}/>}
+    </details>}
     <PersonalTabs value={area} onChange={setArea} />
 
     {loading ? <div className="ev2pf-loading" aria-label="Loading My Hub" aria-busy="true">

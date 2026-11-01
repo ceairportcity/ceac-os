@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import ExecutiveFilingOverview from "../components/ExecutiveFilingOverview";
+import ComplianceReportReferences from "../components/ComplianceReportReferences";
 import ExecutiveOutcomeBrief from "../components/ExecutiveOutcomeBrief";
 import ExecutiveContributionDrilldown from "../components/ExecutiveContributionDrilldown";
 import ExecutiveIntelligence from "../components/ExecutiveIntelligence";
@@ -232,6 +233,12 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
         </select>
       </div>}
 
+      <ComplianceReportReferences me={me} />
+      <details className="ev2rep-evidence-note">
+        <summary>About these records</summary>
+        <p>These reports are for viewing. A filed report shows that information was submitted, not how well a department or person performed. This explanation stays available even when a reporting period has not yet been opened.</p>
+      </details>
+
       {/* Keep access to the independently verified quarterly review schedule even when report-period records are unavailable. */}
       {!contextPending && (
         <nav className="ev2rep-tabs" role="tablist" aria-label="Executive reporting workspace">
@@ -349,10 +356,7 @@ export default function ExecutiveReports({ me, openItem, onOpenAchievements = nu
             initialUnitId={selectedUnitId} openItem={openItem} />
           </>}
 
-          <details className="ev2rep-evidence-note">
-            <summary>About these records</summary>
-            <p>These reports are for viewing. A filed report shows that information was submitted, not how well a department or person performed.</p>
-          </details>
+
         </>
       )}
       {!contextPending && workspaceView==="quarterly" && <QuarterlyReviewEventControl me={me} />}

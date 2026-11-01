@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, MessageSquare, FileText, PenSquare } from "lucide-react";
+import { Search, MessageSquare, FileText, PenSquare, Bell } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import Room from "./Room";
 import Memos from "./Memos";
+import Notifications from "./Notifications";
 import { initials, messageTimestamp, roomContext } from "../lib/memos";
 import "./MessagesWorkspace.css";
 
 export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled }) {
   const linkedMemo = new URLSearchParams(window.location.search).get("memo");
-  const [section,setSection] = useState(linkedMemo ? "memos" : "rooms");
+  const [section,setSection] = useState(linkedMemo ? "memos" : new URLSearchParams(window.location.search).get("updates")==="1" ? "updates" : "rooms");
   const [rooms,setRooms] = useState([]), [selected,setSelected] = useState(null);
   const [actions,setActions] = useState([]), [actionsOpen,setActionsOpen] = useState(false);
   const [query,setQuery] = useState(""), [error,setError] = useState(""), [loading,setLoading] = useState(true);
@@ -64,6 +65,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
   return <div ref={workspaceRef} className="msg-workspace" style={{"--exec-purple":"#1678c9"}}>
     <header className="msg-head"><h1>Messages</h1>
       <div><button type="button" aria-expanded={actionsOpen} onClick={()=>setActionsOpen(open=>!open)}>Work actions {verified ? actions.length : "…"}</button><button type="button" onClick={openAnnouncements}>Announcements</button>
+      <button type="button" aria-label="Updates" aria-pressed={section==="updates"} onClick={()=>switchSection("updates")}><Bell size={18}/></button>
       <button type="button" aria-label="New Memo" onClick={()=>{setSection("memos");setComposeMemo(n=>n+1);}}><PenSquare size={19}/></button></div>
     </header>
     {actionsOpen && verified && <div className="room-picker-panel" aria-label="Work actions">
@@ -75,7 +77,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
       <button type="button" aria-current={section === "rooms" ? "page" : undefined} onClick={()=>switchSection("rooms")}><MessageSquare size={16}/> Rooms</button>
       <button type="button" aria-current={section === "memos" ? "page" : undefined} onClick={()=>switchSection("memos")}><FileText size={16}/> Memos</button>
     </nav>
-    {section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
+    {section === "updates" ? <Notifications key={scope} me={me} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
       : <div className={`msg-layout ${selected && verified ? "has-selection" : ""}`}>
         <aside className="msg-directory" aria-label="Rooms">
           <label className="msg-search"><Search size={16}/><input type="search" aria-label="Search Rooms" placeholder="Search rooms…" value={query} onChange={e=>setQuery(e.target.value)}/></label>

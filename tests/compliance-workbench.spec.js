@@ -122,6 +122,7 @@ test('Compliance uses already-authorised names for cross-department evidence and
  await page.getByRole('button',{name:'Review evidence for Employee A',exact:true}).click();
  await expect(page.getByRole('dialog')).toContainText('Employee A');
  await page.getByRole('button',{name:'Close dialog',exact:true}).click();
+ await page.getByRole('tab',{name:'Reviews',exact:true}).click();
  await page.getByRole('tab',{name:'Evidence',exact:true}).click();
  const row=page.locator('.row').filter({hasText:'Safety evidence'}).filter({hasText:'Employee A'});
  await row.getByRole('button',{name:'Review evidence',exact:true}).click();

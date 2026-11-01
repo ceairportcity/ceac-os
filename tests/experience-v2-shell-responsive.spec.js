@@ -51,7 +51,7 @@ test("Stage 4C capability and multi-unit policies remain explicit", async () => 
     "Control Center",
     "Messages",
     "My Hub",
-    "Your account",
+    "Account security",
   ]) {
     expect(limitedAdminLabels).toContain(label);
   }

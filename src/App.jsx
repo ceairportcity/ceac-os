@@ -391,7 +391,12 @@ export default function App() {
       unit_name: membership.unit_name,
       role: membership.role,
     }));
-    go("home");
+    // Keep the same workspace and update only the department context.
+    // Pages tied to management of one specific department return to Work
+    // when the newly selected department is not managed by this person.
+    const managerOnlyPages = ["team", "projects", "calendar", "manager-finance", "manager-reports"];
+    const nextTab = managerOnlyPages.includes(tab) && membership.role !== "manager" ? "work" : tab;
+    navigate({ tab: nextTab }, { replace: true });
   }
 
   const authPath = window.location.pathname;
@@ -417,7 +422,11 @@ export default function App() {
 
   const isAdmin = Boolean(me.is_admin);
   const isExec = Boolean(me.is_exec);
-  const isUnitManager = !isAdmin && !isExec && me.role === "manager";
+  // The workspace identity remains Manager if the person manages ANY unit.
+  // Choosing a staff membership changes department context, not their whole panel.
+  const isUnitManager = !isAdmin && !isExec && (me.memberships || []).some(membership => membership.role === "manager");
+  const managesCurrentUnit = (me.memberships || []).some(membership =>
+    membership.unit_id === me.unit_id && membership.role === "manager");
   const isStaff = !isAdmin && !isExec && !isUnitManager;
   const isManager = isAdmin || isUnitManager;
   const hasCapability = (capability) => (me.capabilities || []).includes(capability);
@@ -440,7 +449,7 @@ export default function App() {
   const canUseLearning = !isExec && (isStaff || isUnitManager || hasOrgCapability("learning.manage"));
   const canUseWorkforce = !isExec && (isStaff || isUnitManager || hasOrgCapability("workforce.manage") || hasOrgCapability("attendance.correct") || hasOrgCapability("compliance.manage"));
   const canUseAssets = !isExec && (isStaff || isUnitManager || hasOrgCapability("asset.manage"));
-  const canUseCompliance = !isExec && (isStaff || isUnitManager || hasOrgCapability("compliance.manage"));
+  const canUseCompliance = !isExec && (isAdmin || isStaff || isUnitManager || hasOrgCapability("compliance.manage"));
   const canPublishAnnouncement = isAdmin || isExec || hasOrgCapability("post_announcement");
   const overlay = itemId || assigning || goalId || person || (projectId && isUnitManager) || roomContext || meetingId || meetingDraft;
 
@@ -476,7 +485,7 @@ export default function App() {
       if (isManager) return <ManagerHome key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
       return <Home me={me} session={session} setSession={setSession} openItem={openItem} openMeeting={openMeeting} openRoom={openRoom} openWork={() => go("work")} openMe={() => go("me")} openAnnouncements={() => go("announcements")} openTeam={() => go("team")} openCalendar={() => go("staff-calendar")} />;
     }
-    if (tab === "team") return isManager
+    if (tab === "team") return (isAdmin || managesCurrentUnit)
       ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
       : <StaffTeam me={me} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />;
     if (tab === "work") {

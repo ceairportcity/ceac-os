@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { attendanceDate, startEvidence } from "../lib/attendance";
+import { complianceDailyFacts } from "../lib/complianceDailyFacts";
 import AdminWorkforceToday from "./AdminWorkforceToday";
 import ComplianceCaseAttention from "./ComplianceCaseAttention";
 import { EmptyState, LoadingState, ProductNotice } from "./bits";
@@ -28,6 +29,7 @@ export default function ComplianceOverview({
   openObservations,openAnnouncements,onSection,onEvidence,onException,
 }) {
   const unitNames=useMemo(()=>new Map(units.map(unit=>[unit.id,unit.name])),[units]);
+  const dailyFacts=useMemo(()=>!loading && !error && rows.length ? complianceDailyFacts(rows,date) : null,[rows,date,loading,error]);
   // Read ONLY the existing sanitised, role-scoped attendance response.
   const workforceMapRows=useMemo(()=>({
     roster:rows.map(row=>({id:row.employee_id||("profile:"+row.profile_id),profile_id:row.profile_id||null,
@@ -71,6 +73,15 @@ export default function ComplianceOverview({
           <button type="button" className="cp-action" onClick={()=>openObservations?.()}>Open attendance cases →</button>
         </div>
       </header>
+      {dailyFacts && <div className="cp-daily-facts" role="group" aria-label="Recorded attendance summary" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,160px),1fr))",gap:8,margin:"14px 0"}}>
+        {[
+          ["People in view",dailyFacts.people],
+          ["Recorded starts",dailyFacts.recordedStarts],
+          ["Scheduled, no start recorded",dailyFacts.noStartRecorded],
+          ["Approved leave",dailyFacts.approvedLeave],
+        ].map(([label,value])=><div className="cp-daily-fact" key={label}><strong style={{display:"block",fontSize:24}}>{value}</strong><span style={{fontSize:12}}>{label}</span></div>)}
+        <p style={{gridColumn:"1/-1"}}>These are records for the selected day, not findings of absence, lateness or misconduct. A person is counted once, even when assigned to several departments.</p>
+      </div>}
       {error&&<ProductNotice tone="error" title="Attendance evidence unavailable">{error}</ProductNotice>}
       {loading?<LoadingState label="Loading compliance overview…"/>:!error&&rows.length?<div className="cp-scroll">
         <table className="cp-table"><thead><tr>
