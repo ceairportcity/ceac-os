@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
 import GlobalFormFeedback from "./components/GlobalFormFeedback";
 import { clearAccountCommunicationDrafts } from "./lib/memoLocalDrafts";
+import { useCeacUnreadNotifications } from "./lib/useCeacUnreadNotifications";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
 import { validRoutineDate } from "./lib/routineDateRoute";
@@ -122,6 +123,8 @@ function routeFromLocation() {
 
 export default function App() {
   const [me, setMe] = useState(null);
+  const notificationCounts = useCeacUnreadNotifications(me);
+  const [openUpdatesIntent,setOpenUpdatesIntent]=useState(false);
   const [ready, setReady] = useState(false);
   const [bootError, setBootError] = useState(null);
   const initialRoute = routeFromLocation();
@@ -525,8 +528,9 @@ export default function App() {
       openRoom={openRoom}
       openItem={(id) => navigate({ tab: "work", itemId: id })}
       openAnnouncements={() => go("announcements")}
-      initialView={createIntent === "message_room" ? "rooms" : null}
-      onInitialViewHandled={() => setCreateIntent(null)}
+      initialView={openUpdatesIntent ? "updates" : createIntent === "message_room" ? "rooms" : null}
+      notificationCounts={notificationCounts}
+      onInitialViewHandled={() => {setCreateIntent(null);setOpenUpdatesIntent(false);}}
     />;
     if (tab === "projects" && isUnitManager) return <ManagerProjects key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
     if (tab === "calendar" && isUnitManager) return <ManagerCalendar key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} />;
@@ -650,7 +654,9 @@ export default function App() {
           onProfile={() => go("me")}
           onUnitChange={switchUnit}
           onNavigate={go}
+          notificationCounts={notificationCounts}
           onMessages={() => go("messages")}
+          onOpenUpdates={() => {setOpenUpdatesIntent(true);go("messages");}}
           onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
@@ -674,7 +680,9 @@ export default function App() {
           isAdmin={isAdmin}
           isExec={isExec}
           isManager={isUnitManager}
+          notificationCounts={notificationCounts}
           onMessages={() => go("messages")}
+          onOpenUpdates={() => {setOpenUpdatesIntent(true);go("messages");}}
           onComposeMessage={() => (isExec || isAdmin) ? startSurfaceCreate("messages", "message_room") : me.unit_id ? openRoom({ kind:"unit", unitId:me.unit_id }) : go("messages")}
           onCreateWork={(isManager || isExec) ? () => startAssignment() : undefined}
           onCreateMinistryObjective={isExec ? () => startSurfaceCreate("strategy", "ministry_objective") : undefined}
