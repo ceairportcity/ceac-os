@@ -48,8 +48,8 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(overview).toContain("ministryStrategyRows");
   expect(overview).not.toContain("On track or met");
   expect(css).toContain(".executive-app .ev2s-sidebar");
-  expect(shell).toContain('aria-label={isExec ? "Open updates" : "Open messages"}');
-  expect(shell).toContain('name={isExec ? "notification" : "messages"}');
+  expect(shell).toContain('aria-label={notificationCounts?.count ? `Open updates, ${notificationCounts.count} unread` : "Open updates"}');
+  expect(shell).toContain('name="notification" size="row" decorative');
   expect(shell).toContain('className="ev2s-mobile-profile exec-redesign-mobile-notification"');
   expect(search).toContain('Search across CEAC OS...');
   expect(navigation).toContain('{ key: "account", label: "Account security", icon: "lock", group: "account" }');
