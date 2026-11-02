@@ -9,9 +9,6 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
     const title = `Own daily responsibility ${actor} ${Date.now()}`;
     const context = await browser.newContext({ viewport: { width:390, height:844 } });
     const page = await context.newPage();
-    // Keep the browser on the chosen Ghana calendar date even if this
-    // test begins before midnight and finishes after midnight.
-    await page.clock.install({ time: new Date(today + 'T12:00:00.000Z') });
     const client = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
     const colleague = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
     const unrelated = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -63,6 +60,9 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       await expect(page.getByRole('button',{name:'Change future schedule',exact:true})).toBeVisible();
       await expect(page.getByRole('button',{name:'Pause routine',exact:true})).toBeVisible();
       const dateProgress=page.getByRole('region',{name:'Progress for a routine date',exact:true});
+      // Select the intended date explicitly; never fake the browser clock,
+      // because Supabase JWT validation must use real current time.
+      await dateProgress.getByLabel('Scheduled date',{exact:true}).fill(today);
       await expect(dateProgress.getByRole('button',{name:'Save date progress',exact:true})).toBeVisible();
       await dateProgress.getByRole('checkbox',{name:'Inspect the venue',exact:true}).check();
       await dateProgress.getByRole('combobox',{name:'Status for this date',exact:true}).selectOption('ready_for_review');
