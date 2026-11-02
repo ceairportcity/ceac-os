@@ -60,6 +60,9 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       await expect(page.getByRole('button',{name:'Change future schedule',exact:true})).toBeVisible();
       await expect(page.getByRole('button',{name:'Pause routine',exact:true})).toBeVisible();
       const dateProgress=page.getByRole('region',{name:'Progress for a routine date',exact:true});
+      // Select the intended date explicitly; never fake the browser clock,
+      // because Supabase JWT validation must use real current time.
+      await dateProgress.getByLabel('Scheduled date',{exact:true}).fill(today);
       await expect(dateProgress.getByRole('button',{name:'Save date progress',exact:true})).toBeVisible();
       await dateProgress.getByRole('checkbox',{name:'Inspect the venue',exact:true}).check();
       await dateProgress.getByRole('combobox',{name:'Status for this date',exact:true}).selectOption('ready_for_review');

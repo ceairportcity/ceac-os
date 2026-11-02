@@ -53,6 +53,7 @@ test('MAP-DOWNLOAD exposes a Google road fallback without a key or staff names i
  await mock(page);await page.goto('/tests/fixtures/executive-google-map.html');
  await expect(page.getByText('Synthetic Google Maps',{exact:true})).toBeVisible();
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('ceac-google-map-error',{detail:{code:'MAP-DOWNLOAD'}})));
+ await page.getByText('Map details',{exact:true}).click();
  await expect(page.getByText('Map check: MAP-DOWNLOAD',{exact:true})).toBeVisible();
  const alternative=page.getByTitle('Google Maps alternative road map');
  await expect(alternative).toBeVisible();
@@ -90,6 +91,7 @@ test('a Google policy block has a safe visible code; unrelated and report-only b
   await expect(page.getByRole('button',{name:'Fit staff start locations',exact:true})).toBeEnabled();
  }
  await page.evaluate(()=>document.dispatchEvent(new SecurityPolicyViolationEvent('securitypolicyviolation',{blockedURI:'https://maps.googleapis.com/maps/api/js?key=PRIVATE',disposition:'enforce'})));
+ await page.getByText('Map details',{exact:true}).click();
  await expect(page.getByText('Map check: MAP-POLICY',{exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Fit staff start locations',exact:true})).toBeDisabled();
  await expect(page.getByRole('region',{name:'Recorded workforce work-start street map'})).not.toContainText('PRIVATE');
@@ -101,6 +103,7 @@ test('late streets recover from a tile timeout; authorisation rejection remains 
  await mock(page);await page.goto('/tests/fixtures/executive-google-map.html');
  await expect(page.getByText('Loading Google Maps…',{exact:true})).toBeVisible();
  await page.clock.fastForward(21000);
+ await page.getByText('Map details',{exact:true}).click();
  await expect(page.getByText('Map check: MAP-TILES-TIMEOUT',{exact:true})).toBeVisible();
  await page.clock.fastForward(5000);
  await expect(page.getByRole('button',{name:'Fit staff start locations',exact:true})).toBeEnabled();
@@ -167,7 +170,7 @@ test('download fallback identifies each staff member at shared coordinates witho
  await kofi.click();
  await expect(kofi).toHaveAttribute('aria-pressed','true');
  await expect(page.getByRole('region',{name:'Selected work start'})).toContainText('Synthetic Kofi');
- await expect(page.getByText(/Showing Synthetic Kofi’s recorded start location/)).toBeVisible();
+ await expect(page.getByText('Google road view only · staff pins unavailable',{exact:true})).toBeVisible();
  const url=await page.getByTitle('Google Maps alternative road map').getAttribute('src');
  expect(url).not.toMatch(/Synthetic|Kofi|Ama|session|AIza|key=/i);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);

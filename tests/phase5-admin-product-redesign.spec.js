@@ -9,8 +9,18 @@ async function signInAdmin(browser, viewport) {
   await page.goto("/");
   await page.getByPlaceholder("Work email").fill("admin@ceac.local.test");
   await page.getByPlaceholder("Password").fill(password);
+  let authStatus = "no token response";
+  page.on("response", response => {
+    if (response.url().includes("/auth/v1/token")) authStatus = String(response.status());
+  });
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.locator(".office-app")).toBeVisible({ timeout: 15000 });
+  try {
+    await expect(page.locator(".office-app")).toBeVisible({ timeout: 30000 });
+  } catch (error) {
+    const message = await page.locator(".auth-message,[role=alert],[role=status]").allTextContents().catch(() => []);
+    console.error("Admin fixture sign-in:", JSON.stringify({ authStatus, message, url: page.url() }));
+    throw error;
+  }
   return { context, page };
 }
 

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../src/lib/invitationSafety.js";
+import { invitationEmailConflicts, isPlausibleInvitationEmail, invitationDeliveryMessage } from "../src/lib/invitationSafety.js";
 
 test("invitation duplicate guard normalizes email case and spaces", () => {
   assert.deepEqual(invitationEmailConflicts(" Existing@ceac.org ",
@@ -50,4 +50,11 @@ test("invalid, missing, whitespace and overlong emails are blocked before record
   }
   assert.equal(isPlausibleInvitationEmail(" staff@ceac.org "), true);
   assert.equal(isPlausibleInvitationEmail("staff+work@ceac.org"), true);
+});
+
+test("Auth invitation errors give actionable safe reasons without disclosing provider details",()=>{
+ assert.match(invitationDeliveryMessage({code:"email_address_not_authorized"}),/not authorised/);
+ assert.match(invitationDeliveryMessage({code:"over_email_send_rate_limit",status:429}),/limit/);
+ assert.match(invitationDeliveryMessage({status:500,message:"secret key"}),/unavailable/);
+ assert.doesNotMatch(invitationDeliveryMessage({message:"secret key"}),/secret key/);
 });

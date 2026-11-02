@@ -155,6 +155,12 @@ export default function App() {
   useEffect(() => {
     boot();
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      // boot() above already performs the initial, independently verified
+      // account read. Supabase also emits INITIAL_SESSION on subscription:
+      // re-running the same boot cancels the first read and repeats every
+      // auth, profile, authority and work-session request unnecessarily.
+      // Continue handling all genuine identity and security state changes.
+      if (event === "INITIAL_SESSION") return;
       if (UNIVERSAL_TOTP_CUTOVER) {
         // Identity-changing Auth events must immediately hide the previous
         // actor's protected workspace, before any asynchronous profile read.
@@ -168,7 +174,11 @@ export default function App() {
         }
         // Do not await provider calls within Supabase's Auth callback lock.
         setTimeout(() => boot(), 0);
-      } else boot();
+      } else {
+        // Supabase Auth callbacks hold their own session lock. Queue profile
+        // reads after the callback instead of starting getUser() inside it.
+        setTimeout(() => boot(), 0);
+      }
     });
     const onPopState = () => applyRoute(routeFromLocation());
     window.addEventListener("popstate", onPopState);

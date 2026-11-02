@@ -965,7 +965,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
         eyebrow="Organisation time & leave"
         title="Time & Leave"
         action={<Button size="compact" onClick={()=>setTab("leave")}>Review requests · {datasetErrors.leave?"Unavailable":waitingLeave.length}</Button>}
-        description="See availability, review requests and inspect recorded work sessions."
+        description="Attendance, leave and work sessions in one place."
         statusLabel={datasetErrors.people?"Employment records unavailable":people.length+" active employment accounts"}
         statusTone="neutral"
       />
@@ -1087,7 +1087,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
         </WorkforceSection>
       </>}
 
-      {tab==="sessions"&&<WorkforceSection title="Recorded sessions · last 31 days" description="Session history is factual activity context. It is not a performance score and it is not used as payroll time." meta={sessionReadFailed?"Evidence unavailable":(sessionProfileFocus?sessions.filter(x=>x.profile_id===sessionProfileFocus):sessions).length+" records"}>
+      {tab==="sessions"&&<WorkforceSection title="Work sessions" description="Recorded starts and finishes · last 31 days" meta={sessionReadFailed?"Evidence unavailable":(sessionProfileFocus?sessions.filter(x=>x.profile_id===sessionProfileFocus):sessions).length+" records"}>
         {sessionProfileFocus&&<div className="workforce-setup-actions"><p className="screen-note">Showing records for the selected staff account only.</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSessionProfileFocus("")}>All staff sessions</button></div>}
         {(sessionProfileFocus?sessions.filter(row=>row.profile_id===sessionProfileFocus):sessions).slice(0,160).map((session)=>{
           const person=peopleById[session.profile_id];
@@ -1129,7 +1129,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
           })}
         </WorkforceSection>
         {!office&&<ProductNotice tone="info" title="Office point not configured">Location-based differences stay unavailable until a primary office point exists. Other factual differences still appear.</ProductNotice>}
-        <WorkforceSection title="Recorded session differences" description="Factual evidence only; no automated lateness, absence, underwork or performance conclusion is generated." meta={sessionReadFailed?"Evidence unavailable":flaggedSessions.length+" records"}>
+        <WorkforceSection title="Sessions to check" description="Review the original evidence before deciding." meta={sessionReadFailed?"Evidence unavailable":flaggedSessions.length+" records"}>
           {flaggedSessions.map(({session,differences})=><WorkforceRecordRow
             key={session.id}
             icon="warning"

@@ -1677,7 +1677,7 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await page.getByLabel("Workforce calendar person filter").selectOption("31000000-0000-4000-8000-000000000001");
 
     await page.getByRole("tab", { name: "Work sessions", exact: true }).click();
-    await expect(page.getByText(/Session history is factual activity context/i)).toBeVisible();
+    await expect(page.getByText(/Recorded starts and finishes · last 31 days/i)).toBeVisible();
 
     await page.getByRole("tab", { name: "Recorded differences", exact: true }).click();
     await expect(page.getByText(/does not convert a missing or different record/i)).toBeVisible();

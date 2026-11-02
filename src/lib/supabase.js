@@ -1,8 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { assertStage2SupabaseTarget } from "./stage2SupabaseTarget";
 import { authRedirect } from "./authRedirect";
-import { isPlausibleInvitationEmail } from "./invitationSafety";
+import { isPlausibleInvitationEmail, invitationDeliveryMessage } from "./invitationSafety";
 import { readServerVerifiedLegacyGrants, resolveCapabilityGrantRead } from "./capabilitySchemaCompatibility";
+import { retryFreshJwtRejection } from "./freshJwtReadRetry";
 
 const fallbackSupabaseUrl = "https://efjljhftsesssumtshvp.supabase.co";
 const fallbackSupabasePublishableKey = "sb_publishable_CVq1sCY0Z4-o9Us4Y6RaUw_53FUHQj-";
@@ -25,23 +26,28 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true } }
 );
 export async function loadMe() {
+  return retryFreshJwtRejection(loadMeOnce);
+}
+async function loadMeOnce() {
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
   if (!auth?.user) return null;
   if (!auth.user.email_confirmed_at) {
     throw new Error("Complete your email verification before opening CEAC.");
   }
-  const { data: p, error: profileError } = await supabase.from("profiles")
-    .select("id, full_name, preferred_name, email, job_title, phone, is_admin, is_exec, org_id, joined_at, birthday, contract_type, active")
-    .eq("id", auth.user.id).single();
-  if (profileError) throw profileError;
-  if (!p) return null;
-  if (!p.active) throw new Error("Your CEAC access is inactive. Contact Administration.");
+  // The profile, unit memberships and permission grants are independent
+  // server-authorised reads after getUser() verifies the sign-in. Fetch them
+  // together to remove a serial network wait; publish nothing until ALL
+  // profile, membership and authority checks below have succeeded.
   const [
+    { data: p, error: profileError },
     { data: memberships, error: membershipError },
     { data: capabilityGrants, error: capabilityError },
     { data: ledSubTeams, error: leadError },
   ] = await Promise.all([
+    supabase.from("profiles")
+      .select("id, full_name, preferred_name, email, job_title, phone, is_admin, is_exec, org_id, joined_at, birthday, contract_type, active")
+      .eq("id", auth.user.id).single(),
     supabase.from("unit_memberships")
       .select("role, unit_id, units(name)")
       .eq("profile_id", auth.user.id),
@@ -54,6 +60,9 @@ export async function loadMe() {
       .eq("lead_id", auth.user.id)
       .eq("active", true),
   ]);
+  if (profileError) throw profileError;
+  if (!p) return null;
+  if (!p.active) throw new Error("Your CEAC access is inactive. Contact Administration.");
   if (membershipError) throw membershipError;
   const { grants, capabilitySchemaReady, error: resolvedCapabilityError } =
     resolveCapabilityGrantRead({ data: capabilityGrants, error: capabilityError });
@@ -90,13 +99,11 @@ export async function loadMe() {
     capabilities: [...new Set(activeCapabilityGrants.map((grant) => grant.capability))] };
 }
 export class InvitationDeliveryUnconfirmedError extends Error {
-  constructor(kind = "new") {
-    super(kind === "resend"
-      ? "The resend was prepared, but the activation email request was not accepted. Delivery is unconfirmed. Review the invitation's latest state before retrying."
-      : "The invitation was recorded, but the activation email request was not accepted. Delivery is unconfirmed. Review Invitations before retrying.");
-    this.name = "InvitationDeliveryUnconfirmedError";
-    this.invitationRecorded = true;
-  }
+ constructor(kind="new",cause=null){
+  super(invitationDeliveryMessage(cause));
+  this.name="InvitationDeliveryUnconfirmedError";
+  this.invitationRecorded = true;
+ }
 }
 
 export async function inviteByEmail({ email, fullName, unitId }) {
@@ -125,8 +132,8 @@ export async function inviteByEmail({ email, fullName, unitId }) {
       },
     });
     if (authError) throw authError;
-  } catch {
-    throw new InvitationDeliveryUnconfirmedError("new");
+  } catch (error) {
+    throw new InvitationDeliveryUnconfirmedError("new",error);
   }
 }
 
@@ -141,7 +148,7 @@ export async function resendStaffInvitation(id) {
     const result = await supabase.auth.signInWithOtp({ email: data.email,
       options: { shouldCreateUser: !data.account_created, emailRedirectTo: redirect } });
     if (result.error) throw result.error;
-  } catch {
-    throw new InvitationDeliveryUnconfirmedError("resend");
+  } catch (error) {
+    throw new InvitationDeliveryUnconfirmedError("resend",error);
   }
 }

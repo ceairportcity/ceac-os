@@ -577,3 +577,24 @@
     grid-column: 1;
   }
 }
+
+/* Readable phone review cards, with full evidence and touch targets. */
+.ev2wf-today-review .ev2wf-today-review-controls{display:flex;flex-wrap:wrap;gap:12px}
+.ev2wf-today-guidance{font-size:13px;color:var(--ev2-text-secondary)}
+.ev2wf-today-guidance summary{cursor:pointer}
+@media(max-width:650px){
+.ev2wf-today-review-summary>:is(strong,span){flex:1 1 100%;font-size:12px}
+.ev2wf-today-review .ev2wf-today-review-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.ev2wf-today-review .ev2wf-today-review-list{overflow:visible;max-height:none}
+.ev2wf-today-review .ev2wf-today-review-list :is(table,tbody){display:block;width:100%;min-width:0}
+.ev2wf-today-review-list thead{display:none}
+.ev2wf-today-review-entry{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;padding:12px;border:1px solid var(--ev2-line);border-radius:10px;background:#fff}
+.ev2wf-today-review-entry>:is(th,td){display:block;border:0;padding:0;min-width:0;overflow-wrap:anywhere;white-space:normal;font-size:12px;line-height:1.5}
+.ev2wf-today-review-entry>th{grid-column:1/-1;border-bottom:1px solid var(--ev2-line);padding-bottom:6px;font-size:14px}
+.ev2wf-today-review-entry>td:nth-of-type(1)::before{content:"Scheduled"}
+.ev2wf-today-review-entry>td:nth-of-type(2)::before{content:"Started"}
+.ev2wf-today-review-entry>td:nth-of-type(3)::before{content:"Status"}
+.ev2wf-today-review-entry>td:nth-of-type(-n+3)::before{display:block;color:var(--ev2-text-secondary);font-size:12px;font-weight:600}
+.ev2wf-today-review-entry>td:last-child{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
+.ev2wf-today-review-entry .btn{min-height:44px;scroll-margin-block:96px}
+}

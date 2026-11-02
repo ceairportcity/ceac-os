@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useRef,useState} from "react";
 import {FieldGroup,ProductNotice} from "./bits";
 import {ComposerDrawer} from "../experience-v2/components";
-import {supabase} from "../lib/supabase";
+import {supabase,inviteByEmail} from "../lib/supabase";
 import {humanError} from "../lib/productLanguage";
 
 /** A new HR roster identity is NOT a new login, permission or invitation. */
@@ -10,8 +10,9 @@ const empty={
  status:"active",primaryUnit:"",secondaryUnits:[],managerId:"",
  email:"",phone:"",startedOn:"",reason:"",confirmedDistinct:false,
 };
-export default function HRCreateRosterEmployee({me,units=[],employees=[],accounts=[],onCreated,onClose}){
- const [form,setForm]=useState(empty),[busy,setBusy]=useState(false),[error,setError]=useState("");
+export default function HRCreateRosterEmployee({me,units=[],employees=[],accounts=[],initialAccount=null,onCreated,onClose}){
+ const [form,setForm]=useState(()=>({...empty,fullName:initialAccount?.full_name||"",email:initialAccount?.email||"",primaryUnit:initialAccount?.unit_id||""})),[busy,setBusy]=useState(false),[error,setError]=useState("");
+ const [inviteAfterSave,setInviteAfterSave]=useState(false);
  const saving=useRef(false);
  const errorFocus=useRef(null);
  useEffect(()=>{if(error)errorFocus.current?.focus();},[error]);
@@ -90,7 +91,19 @@ export default function HRCreateRosterEmployee({me,units=[],employees=[],account
     ||audit.reason!==form.reason.trim()
     ||audit.after_record?.event!=="employee_created")
     throw new Error("Employee creation may have been recorded, but its complete HR record, placement or audit could not be independently confirmed. Review the directory before retrying.");
-   await onCreated?.(record);
+   let invitationState="not_requested";
+   if(inviteAfterSave && form.email.trim() && form.primaryUnit && !matchingAccount){
+    try {
+     await inviteByEmail({email:form.email.trim(),fullName:form.fullName.trim(),unitId:form.primaryUnit});
+     invitationState="requested";
+    }catch{
+     // The employee is already saved and independently verified. Never claim
+     // failure to create the employee because an email request was rejected.
+     // The pending invitation may also have been saved; do not retry blindly.
+     invitationState="unconfirmed";
+    }
+   }
+   await onCreated?.(record,{invitationState});
   }catch(failure){
    setError(humanError(failure,"The HR employee record could not be confirmed. Review any existing record before retrying."));
   }finally{saving.current=false;setBusy(false);}
@@ -145,6 +158,11 @@ export default function HRCreateRosterEmployee({me,units=[],employees=[],account
    </ProductNotice>}
    <FieldGroup label="Reason / HR source reference"><textarea className="field" aria-label="Employee creation reason" required minLength={12} maxLength={2000} rows={3}
     value={form.reason} onChange={e=>set("reason",e.target.value)} placeholder="Document the appointment, source and reason for this new roster record."/></FieldGroup>
+   {form.email.trim()&&form.primaryUnit&&!matchingAccount&&<label style={{display:"flex",alignItems:"flex-start",gap:8}}>
+    <input type="checkbox" checked={inviteAfterSave} onChange={e=>setInviteAfterSave(e.target.checked)}/>
+    <span>Also send this employee a CEAC account invitation after saving. The invitation uses their verified contact email and primary unit.</span>
+   </label>}
+   {matchingAccount&&<p className="screen-note">This person already has a CEAC login. Do not invite again. Save the HR employee record, then use Account &amp; Access to verify and link the existing account.</p>}
    <p className="screen-note">A saved HR creation event records the acting administrator, fields, organisational placement and reason. No account or permissions are created.</p>
    <div style={{display:"flex",justifyContent:"flex-end",flexWrap:"wrap",gap:8}}>
     <button type="button" className="btn btn-ghost" disabled={busy} onClick={onClose}>Cancel</button>

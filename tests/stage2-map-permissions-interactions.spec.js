@@ -60,6 +60,7 @@ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
   await authenticate(page);
   const street=page.getByRole("region",{name:"Recorded workforce work-start street map"});
   await expect(street).toBeVisible({timeout:15000});
+  await street.getByText("About this map",{exact:true}).click();
   await expect(street.getByText(/Google Maps receives the viewed map area/)).toBeVisible();
   await expect(street.getByRole("button",{name:"Enable street map"})).toHaveCount(0);
   await expect(street.getByRole("button",{name:/View recorded work start for Staff Fixture/})).toBeVisible();

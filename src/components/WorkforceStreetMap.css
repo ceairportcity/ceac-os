@@ -1,7 +1,7 @@
 .ceac-street-map{width:100%;min-width:0}
 .ceac-street-map-viewport{position:relative;width:100%;height:340px;overflow:hidden;border:1px solid var(--ev2-line,#d8e4ed);border-radius:12px;background:#e7eef0;isolation:isolate}
 .ceac-street-map-optin{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:clamp(16px,4vw,30px);background:linear-gradient(135deg,#edf5f6,#dfeae8 55%,#e3edf6);color:#203a47}
-.ceac-street-map-marker.ceac-office-reference{width:max-content;min-width:0;height:31px;display:flex;gap:5px;padding:3px 9px 3px 4px;align-items:center;justify-content:flex-start;border:1px solid #bed1e8;border-radius:8px;background:#fff;color:#173b65;box-shadow:0 2px 8px #1b335026;pointer-events:none;transform:translate(14px,-74px);font-size:12px;font-weight:750;white-space:nowrap}.ceac-office-symbol{display:grid;place-items:center;width:23px;height:23px;border-radius:5px;background:#144999;color:#fff;font-size:19px;line-height:1}
+.ceac-street-map-marker.ceac-office-reference{width:24px;min-width:24px;height:24px;padding:0;display:block;border:0;background:transparent;box-shadow:none;pointer-events:none;transform:translate(-50%,-50%);overflow:visible}.ceac-office-symbol{display:grid;place-items:center;width:24px;height:24px;border:2px solid #fff;border-radius:7px;background:#144999;color:#fff;box-shadow:0 2px 6px #1b335026;font-size:19px;line-height:1}
 
 .ceac-street-map-marker{position:absolute;transform:translate(calc(-50% + var(--ceac-pin-x,0px)),calc(-50% + var(--ceac-pin-y,0px)));width:44px;height:44px;min-width:44px;border:0;border-radius:50%;background:transparent;color:#fff;display:grid;place-items:center;padding:0;box-shadow:none;pointer-events:auto;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700}
 .ceac-map-avatar{display:grid;place-items:center;width:29px;height:29px;border:2px solid #fff;border-radius:50%;background:#144999;color:#fff;box-shadow:0 2px 7px #09294955;line-height:1;font-size:12px;font-weight:800;transition:transform .15s ease}
@@ -39,3 +39,7 @@
 .workforce-attendance-list button[aria-pressed=true]{border-color:#0c5df9;background:#eef6ff}
 .workforce-attendance-list button:focus-visible{outline:3px solid #0c5df9;outline-offset:2px}
 .workforce-attendance-list button span{font-size:12px;color:#61738a}
+
+.ceac-office-label{position:absolute;left:30px;top:-2px;max-width:170px;font-size:12px;line-height:1.25;background:#fff;padding:4px 7px;border:1px solid #bed1e8;border-radius:5px;box-shadow:0 2px 6px #1b335026;white-space:normal}
+.ceac-map-privacy{margin-top:4px;font-size:12px;color:#62748c}.ceac-map-privacy summary{cursor:pointer;width:max-content}.ceac-map-privacy p{margin:6px 0}
+@media(max-width:620px){.ceac-office-label{max-width:112px;font-size:11px}.ceac-google-recovery{padding:8px}.ceac-street-map-after{gap:4px}.ceac-street-map-after button{font-size:12px}}

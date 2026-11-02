@@ -14,8 +14,18 @@ async function signIn(page, role) {
   await page.goto("/");
   await page.getByPlaceholder("Work email").fill(role.email);
   await page.getByPlaceholder("Password").fill(password);
+  let authStatus = "no token response";
+  page.on("response", (response) => {
+    if (response.url().includes("/auth/v1/token")) authStatus = String(response.status());
+  });
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.locator(role.app)).toBeVisible({ timeout: 15000 });
+  try {
+    await expect(page.locator(role.app)).toBeVisible({ timeout: 15000 });
+  } catch (error) {
+    const screen = (await page.locator("body").innerText().catch(() => "")).slice(0, 1300);
+    console.error("CEAC synthetic sign-in diagnostic", JSON.stringify({role:role.key,authStatus,route:page.url(),screen}));
+    throw error;
+  }
   await page.evaluate(() => document.fonts.ready);
 }
 
