@@ -125,7 +125,7 @@ for (const [email,labels] of [
   ['staff@ceac.local.test',['Today','Work','My Hub']],
   ['manager@ceac.local.test',['Overview','Work','Reports']],
   ['admin@ceac.local.test',['Overview','People & Access','Reviews & Development','Learning']],
-  ['exec@ceac.local.test',['Overview','Ministry','Reports']],
+  ['exec@ceac.local.test',['Overview','Priorities','Reports']],
 ]) test('built application and role navigation remain usable with CSP: '+email,async({page})=>{
   test.skip(!rolePassword||!backend,'Requires the existing isolated role fixtures');
   const violations=[];
