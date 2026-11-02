@@ -52,7 +52,7 @@ test("Administration exposes operations, not internal architecture modules", asy
 test("Group Pastor has an executive navigation boundary", async ({ browser }) => {
   const { context, page } = await openAs(browser, "exec@ceac.local.test");
   const nav = page.locator(".ev2s-sidebar-nav");
-  for (const label of ["Overview","Work","Ministry","Projects","Organisation","Finance","Reports","Messages"]) {
+  for (const label of ["Overview","Work","Priorities","Projects","Organisation","Finance","Reports","Messages"]) {
     await expect(nav.getByRole("button", { name:label, exact:true })).toBeVisible();
   }
   for (const label of ["Portfolio","People","Time & Leave","Control Center","Audit","Authority","Events","Workflows","Integrations","Employee lifecycle","Protected HR","Learning","Assets","Compliance"]) {
