@@ -790,12 +790,12 @@ export default function Room({
         <div className="room-text-wrap">
           <textarea
             ref={composerRef}
-            disabled={sending || Boolean(attachmentMessageId)}
+            disabled={sending || Boolean(attachmentMessageId) || !room?.id}
             rows={1}
             value={body}
             maxLength={8000}
             aria-label="Room message"
-            placeholder={room?.kind === "project" ? "Message the project team" : room?.kind === "sub_team" ? `Message ${roomTitle(room)}` : "Message your unit"}
+            placeholder={!room?.id ? "Opening Room…" : room?.kind === "project" ? "Message the project team" : room?.kind === "sub_team" ? `Message ${roomTitle(room)}` : "Message your unit"}
             onChange={(event) => updateBody(event.target.value)}
             onKeyDown={(event) => {
               if (!event.nativeEvent.isComposing && event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
