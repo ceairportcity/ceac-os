@@ -72,6 +72,20 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   const downloadButton=pastor.page.getByRole('button',{name:`Download ${pdfFilename}`,exact:true});
   await expect(downloadButton).toBeVisible();
   await expect(pastor.page.getByRole('heading',{name:'Attachments (2)',exact:true})).toBeVisible();
+  // Verify a real recipient action produces a signed download that returns the
+  // exact PDF bytes. Button presence alone is not attachment-delivery proof.
+  const signing= pastor.page.waitForResponse(response=>
+    response.url().includes('/storage/v1/object/sign/') &&
+    response.request().method()==='POST');
+  await downloadButton.click();
+  const signingResponse=await signing;
+  expect(signingResponse.ok()).toBe(true);
+  const signed=await signingResponse.json();
+  const downloadPath=signed.signedURL || signed.signedUrl;
+  expect(downloadPath).toBeTruthy();
+  const downloaded=await pastor.page.request.get(new URL(downloadPath,fixtureUrl).toString());
+  expect(downloaded.ok()).toBe(true);
+  expect((await downloaded.body()).equals(pdfBytes)).toBe(true);
   const image=pastor.page.getByRole('img',{name:filename,exact:true});await expect(image).toBeVisible();
   const pdfRecord=await checked(service.from('operational_file_links')
     .select('file:operational_files!inner(filename,mime_type,state,size_bytes,storage_bucket,storage_path)')
@@ -111,6 +125,7 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   await expect(hr.page.getByRole('alert')).toBeVisible();
   await expect(hr.page.getByText(subject,{exact:true})).toHaveCount(0);
   await expect(hr.page.getByRole('img',{name:filename,exact:true})).toHaveCount(0);
+  await expect(hr.page.getByRole('button',{name:`Download ${pdfFilename}`,exact:true})).toHaveCount(0);
  }finally{
   await Promise.allSettled(contexts.map(context=>context.close()));
   await checked(service.from('profiles').update({job_title:original.job_title}).eq('id',executive));
