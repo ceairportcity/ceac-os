@@ -2679,7 +2679,7 @@ test("FPG9 Manager Home and shell follow the locked original CEAC reference", as
     const { context, page } = await openAs(browser, "manager@ceac.local.test", { width: 1440, height: 900 });
     await expect(page.locator(".ev2s-sidebar")).toBeVisible();
     await expect(page.locator(".fpg9-sidebar-quick")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Open messages", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Open updates(?:, \d+ unread)?$/ })).toBeVisible();
     await expect(page.locator(".fpg9-home-hero")).toBeVisible();
     await expect(page.locator(".fpg9-next-card")).toBeVisible();
     await expect(page.locator(".fpg9-schedule-card")).toBeVisible();
