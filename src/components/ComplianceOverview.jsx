@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { attendanceDate, startEvidence } from "../lib/attendance";
 import { complianceDailyFacts } from "../lib/complianceDailyFacts";
-import AdminWorkforceToday from "./AdminWorkforceToday";
+import RoleWorkforceMap from "./RoleWorkforceMap";
 import ComplianceCaseAttention from "./ComplianceCaseAttention";
 import { EmptyState, LoadingState, ProductNotice } from "./bits";
 import { CeacIcon } from "../experience-v2/icons";
@@ -30,16 +30,6 @@ export default function ComplianceOverview({
 }) {
   const unitNames=useMemo(()=>new Map(units.map(unit=>[unit.id,unit.name])),[units]);
   const dailyFacts=useMemo(()=>!loading && !error && rows.length ? complianceDailyFacts(rows,date) : null,[rows,date,loading,error]);
-  // Read ONLY the existing sanitised, role-scoped attendance response.
-  const workforceMapRows=useMemo(()=>({
-    roster:rows.map(row=>({id:row.employee_id||("profile:"+row.profile_id),profile_id:row.profile_id||null,
-      full_name:row.name,units:row.unit_id?[{name:unitNames.get(row.unit_id)||"Unit not named"}]:[]})),
-    sessions:rows.flatMap(row=>row.profile_id?(row.sessions||[]).map(session=>({
-      id:session.id,profile_id:row.profile_id,started_at:session.started_at,ended_at:session.ended_at,
-      lat:session.start_lat,lng:session.start_lng,place:session.place,
-      location_captured_at:session.location_captured_at,location_accuracy_m:session.start_location_accuracy_m,
-    })):[]),
-  }),[rows,unitNames]);
   return <div className="cp-overview">
     <div className="cp-layout">
       <ComplianceCaseAttention scopeKey={scopeKey} onOpen={openObservations}
@@ -75,7 +65,7 @@ export default function ComplianceOverview({
       </header>
       {dailyFacts && <div className="cp-daily-facts" role="group" aria-label="Recorded attendance summary" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,160px),1fr))",gap:8,margin:"14px 0"}}>
         {[
-          ["People in view",dailyFacts.people],
+          ["People in Compliance scope",dailyFacts.people],
           ["Recorded starts",dailyFacts.recordedStarts],
           ["Scheduled, no start recorded",dailyFacts.noStartRecorded],
           ["Approved leave",dailyFacts.approvedLeave],
@@ -107,7 +97,6 @@ export default function ComplianceOverview({
       </div>:!error&&<EmptyState compact title="No attendance evidence in scope">The overview remains empty until authorised employee records are available.</EmptyState>}
       <p className="cp-fact">“No session recorded” is not an absence or misconduct finding.</p>
     </section>
-    {!loading&&!error&&<AdminWorkforceToday me={me} roleLabel="Compliance" dateLabel={date}
-      roster={workforceMapRows.roster} sessions={workforceMapRows.sessions}/>}
+    <RoleWorkforceMap me={me} roleLabel="Compliance" date={date}/>
   </div>;
 }

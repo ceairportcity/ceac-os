@@ -6,14 +6,16 @@ async function mock(page,{failure=false,pair=false}={}){
   const req=route.request(),u=new URL(req.url()),name=u.pathname.split('/').pop();requests.push({method:req.method(),url:req.url()});
   if(!u.pathname.includes('/rest/v1/'))return ['localhost','127.0.0.1'].includes(u.hostname)?route.continue():route.abort();
   const now=new Date().toISOString();
-  const rows={profiles:[{id:'person',full_name:'Synthetic Ama',active:true},...(pair?[{id:'person2',full_name:'Synthetic Kofi',active:true}]:[])],units:[{id:'unit',name:'IT'}],unit_memberships:[{profile_id:'person',unit_id:'unit'},...(pair?[{profile_id:'person2',unit_id:'unit'}]:[])],work_sessions:u.searchParams.get('select')?.includes('location_accuracy_m')?[{id:'session',profile_id:'person',started_at:now,place:'office',lat:5.6,lng:-.18},...(pair?[{id:'session2',profile_id:'person2',started_at:now,place:'office',lat:5.6,lng:-.18}]:[])]:[],office_locations:{name:'CEAC office',lat:5.6,lng:-.18,is_primary:true}};
-  if(failure&&name==='profiles')return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({message:'Synthetic denial'})});
+  const roster=[{id:'roster-ama',profile_id:'person',full_name:'Synthetic Ama',units:['IT']},...(pair?[{id:'roster-kofi',profile_id:'person2',full_name:'Synthetic Kofi',units:['IT']}]:[])];
+  const sessions=[{id:'session',profile_id:'person',started_at:now,place:'office',lat:5.6,lng:-.18},...(pair?[{id:'session2',profile_id:'person2',started_at:now,place:'office',lat:5.6,lng:-.18}]:[])];
+  const rows={workforce_map_day:{date:new URLSearchParams(req.postData()||'').get('p_date')||new Date().toISOString().slice(0,10),roster,sessions,operationalProfiles:[],roster_count:roster.length,session_count:sessions.length},office_locations:{name:'CEAC office',lat:5.6,lng:-.18,is_primary:true}};
+  if(failure&&name==='workforce_map_day')return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({message:'Synthetic denial'})});
   const data=rows[name]||[],count=Array.isArray(data)?data.length:1;
   return route.fulfill({contentType:'application/json',headers:{'content-range':`0-${Math.max(0,count-1)}/${count}`,'access-control-expose-headers':'content-range'},body:JSON.stringify(data)});
  });
  return requests;
 }
-for(const width of [390,1440])test(`Executive map follows priority panels and uses authorised account records ${width}`,async({page})=>{
+for(const width of [390,1440])test(`Executive map follows priority panels and uses the shared roster feed ${width}`,async({page})=>{
  await page.setViewportSize({width,height:1000});await page.addInitScript({path:'tests/fixtures/google-maps-stub.js'});const requests=await mock(page);
  await page.goto('/tests/fixtures/executive-google-map.html');
  const map=page.getByRole('region',{name:"Today's workforce start locations",exact:true});
@@ -28,9 +30,11 @@ for(const width of [390,1440])test(`Executive map follows priority panels and us
  expect(await page.evaluate(()=>({maps:window.syntheticMaps,fits:window.syntheticMapFits}))).toEqual(before);
  await expect(map.getByRole('button',{name:'View recorded work start for Synthetic Ama',exact:true})).toHaveClass(/is-selected/);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
- expect(requests.some(r=>r.method==='POST'||/admin_employee_roster|hr_private|payroll/.test(r.url))).toBe(false);
- const reads=requests.filter(r=>/rest\/v1\/(profiles|units|unit_memberships|work_sessions)/.test(r.url));
- expect(reads.every(r=>new URL(r.url).searchParams.get('org_id')==='eq.org')).toBe(true);
+ expect(requests.some(r=>/admin_employee_roster|hr_private|payroll/.test(r.url))).toBe(false);
+ const shared=requests.filter(r=>/rest\/v1\/rpc\/workforce_map_day/.test(r.url));
+ expect(shared.length).toBe(1);
+ expect(shared.every(r=>r.method==='POST')).toBe(true);
+ expect(requests.some(r=>/rest\/v1\/(profiles|employee_roster|units|unit_memberships|work_sessions)/.test(r.url))).toBe(false);
  if(width===390){const heights=await map.locator("button:visible").evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().height));for(const height of heights)expect(height).toBeGreaterThanOrEqual(44);}
  await page.screenshot({path:`test-artifacts/executive-google-map-${width}.png`,fullPage:true});
 });
