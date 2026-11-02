@@ -134,7 +134,7 @@ test("Stage 4B create menu exposes only role-authorised shortcuts", async ({ pag
   await expect(menu.getByRole("menuitem", { name: "Message room", exact: true })).toBeVisible();
 });
 
-test("OCR2 Executive creation is reachable through the approved Work, Ministry and Announcements destinations", async ({ page }) => {
+test("OCR2 Executive creation is reachable through the approved Work, Priorities and Announcements destinations", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
   await expect(page.getByRole("button", { name: "Create", exact: true })).toBeHidden();
@@ -144,7 +144,7 @@ test("OCR2 Executive creation is reachable through the approved Work, Ministry a
   await expect(page.getByRole("button", { name: "Give out work", exact: true }).first()).toBeVisible();
 
   await page.goto("/?tab=strategy");
-  await expect(page.getByRole("heading", { name: "Church priorities", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Church goals", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Set first ministry priority", exact: true }).click();
   let dialog = page.getByRole("dialog", { name: "Add ministry priority" });
   await expect(dialog).toBeVisible();
