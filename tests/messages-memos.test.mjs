@@ -85,3 +85,10 @@ test('Room writing is recoverable per conversation and cleared on sign-out',()=>
  assert.match(drafts,/clearAccountCommunicationDrafts/);
  assert.match(app,/clearAccountCommunicationDrafts/);
 });
+
+test('Room composer cannot accept text before verified room identity clears loading state',()=>{
+ const room=source('src/screens/Room.jsx');
+ assert.match(room,/disabled=\{sending \|\| Boolean\(attachmentMessageId\) \|\| !room\?\.id\}/);
+ assert.match(room,/placeholder=\{!room\?\.id \? "Opening Room…"/);
+ assert.match(room,/if \(!targetRoomId\) \{/);
+});
