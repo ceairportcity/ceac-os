@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { Info, Trash2, Paperclip } from "lucide-react";
 import "./MessagesWorkspace.css";
 import { OperationalMediaList } from "../components/OperationalFiles";
-import { listOperationalFilesForContexts, uploadOperationalFile, validateOperationalFile, OPERATIONAL_FILE_ACCEPT } from "../lib/operationalFiles";
+import { listOperationalFilesForContexts, uploadOperationalFileWithRetry, validateOperationalFile, OPERATIONAL_FILE_ACCEPT } from "../lib/operationalFiles";
 import { humanError } from "../lib/productLanguage";
 
 function timeLabel(value) {
@@ -76,6 +76,8 @@ export default function Room({
   const [mentionQuery, setMentionQuery] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [sendStage,setSendStage] = useState("");
+  const uploadRetries = useRef(new Map());
   const [error, setError] = useState(null);
   const [canAnnounce, setCanAnnounce] = useState(Boolean(me.is_admin || me.is_exec));
   const [lastReadAt, setLastReadAt] = useState(null);
@@ -441,10 +443,10 @@ export default function Room({
   }
 
   async function send() {
-    const clean = body.trim() || (pendingFiles.length ? "Files: " + pendingFiles.map(file => file.name).join(", ").slice(0,7900) : "");
+    const clean = body.trim() || (pendingFiles.length ? "Attachment" : "");
     if ((!clean && !attachmentMessageId) || sendingRef.current) return;
     sendingRef.current = true;
-    setSending(true); setError(null);
+    setSending(true); setSendStage(pendingFiles.length?"Preparing attachment…":"Sending message…"); setError(null);
     try {
       // Route transitions may invalidate the rendered room between a user's click
       // and the handler. Resolve the authorised context rather than discarding the draft.
@@ -478,12 +480,16 @@ export default function Room({
         setAttachmentMessageId(messageId);
         try {
           for (const file of pendingFiles) {
-            await uploadOperationalFile({file,contextType:"room_message",contextId:messageId,relation:"room_media"});
+            setSendStage("Uploading attachment…");
+            const retryState=uploadRetries.current.get(file) || {};
+            uploadRetries.current.set(file,retryState);
+            await uploadOperationalFileWithRetry({file,contextType:"room_message",contextId:messageId,relation:"room_media",retryState});
+            uploadRetries.current.delete(file);
             setPendingFiles(current => current.filter(row => row !== file));
           }
           setAttachmentMessageId(null);
         } catch (fileError) {
-          setError(`Your message was sent. ${fileError.message || "An attachment failed."} Retry attachments to keep them on the same message.`);
+          setError("The attachment was not delivered. Your file is still selected. Tap Retry attachments to finish sending it.");
         }
       }
       await loadMessages(targetRoomId, false);
@@ -492,7 +498,7 @@ export default function Room({
       setError(humanError(err, "Your message could not be sent."));
     } finally {
       sendingRef.current = false;
-      setSending(false);
+      setSending(false);setSendStage("");
     }
   }
 
@@ -636,7 +642,7 @@ export default function Room({
               <strong>{parent.author_id === me.id ? "You" : parent.profiles?.full_name || "Earlier message"}</strong>
               <span>{parent.body}</span>
             </div>}
-            <p>{message.body}</p>
+            {(message.body !== "Attachment" || !(message.operational_files || []).length) && <p>{message.body === "Attachment" ? "Attachment pending — not yet delivered" : message.body}</p>}
             <OperationalMediaList files={message.operational_files || []} />
             {(message.room_mentions || []).length > 0 && <div className="room-message-mentions">
               {(message.room_mentions || []).map((mention) => <span key={mention.profile_id}>@{mention.profiles?.full_name || "CEAC member"}</span>)}
@@ -750,7 +756,7 @@ export default function Room({
             }}
           />
         </div>
-        <button className="room-send" disabled={sending || loading || !room?.id || (!body.trim() && !pendingFiles.length)} onClick={send}>{sending ? "Sending…" : attachmentMessageId ? "Retry attachments" : "Send"}</button>
+        <button className="room-send" disabled={sending || loading || !room?.id || (!body.trim() && !pendingFiles.length)} onClick={send}>{sending ? sendStage : attachmentMessageId ? "Retry attachments" : "Send"}</button>
       </div>
       <small>Work communication only · @ mentions notify people inside this Room</small>
     </footer>
