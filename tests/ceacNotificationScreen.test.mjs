@@ -1,7 +1,7 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-const files={inbox:readFileSync("src/screens/Inbox.jsx","utf8"),view:readFileSync("src/screens/Notifications.jsx","utf8"),compliance:readFileSync("src/screens/Compliance.jsx","utf8"),app:readFileSync("src/App.jsx","utf8")};
+const files={inbox:readFileSync("src/screens/Inbox.jsx","utf8"),view:readFileSync("src/screens/Notifications.jsx","utf8"),compliance:readFileSync("src/screens/Compliance.jsx","utf8"),app:readFileSync("src/App.jsx","utf8"),hook:readFileSync("src/lib/useCeacUnreadNotifications.js","utf8"),shell:readFileSync("src/experience-v2/shell/ShellV2.jsx","utf8")};
 test("the shared Updates view routes to each authorised record",()=>{
  assert.match(files.inbox,/Notifications key=\{scope\}/);
  assert.match(files.compliance,/linkedCase\?"observations"/);
@@ -19,7 +19,9 @@ test("the shared Updates view routes to each authorised record",()=>{
 test("existing room and Memo journeys remain the initial Messages experience",()=>{
  assert.match(files.inbox,/get\("updates"\)==="1" \? "updates" : "rooms"/);
  assert.match(files.inbox,/aria-label=\{notifications\?\.count/);
- assert.match(files.inbox,/setAppBadge/);
+ assert.match(files.hook,/setAppBadge/);
+ assert.match(files.shell,/UnreadBadge count=\{notificationCounts\?\.count\}/);
+ assert.match(files.app,/onOpenUpdates=/);
  assert.match(files.inbox,/ceac-notification-badge/);
  assert.match(files.inbox,/> Rooms<\/button>/);
  assert.match(files.inbox,/> Memos \{notifications\?\.memo/);
