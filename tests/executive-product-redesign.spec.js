@@ -103,7 +103,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   });
   // Locked Executive mobile dock: three destinations plus More.
   // Calendar must remain reachable in More, not become a fifth dock item.
-  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Ministry"]);
+  expect(primary.map((item) => item.label)).toEqual(["Overview", "Work", "Priorities"]);
 
   const desktop = getShellNavigation({
     isExec: true,
@@ -145,7 +145,7 @@ test("Executive Overview reproduces the locked desktop composition", async ({ pa
   await expect(page.locator(".executivev2-reference-grid > .executivev2-reference-panel")).toHaveCount(3);
   await expect(page.locator(".executivev2-lower-grid > .executivev2-reference-panel")).toHaveCount(2);
   await expect(page.getByText("Needs your attention", { exact: true })).toBeVisible();
-  await expect(page.getByText("Ministry direction", { exact: true })).toBeVisible();
+  await expect(page.getByText("Church priority", { exact: true })).toBeVisible();
   await expect(page.getByText("People and departments", { exact: true })).toBeVisible();
   await expect(page.getByText("Significant updates", { exact: true })).toBeVisible();
   await expect(page.getByText("Upcoming meetings", { exact: true })).toBeVisible();
@@ -157,7 +157,7 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
   await signIn(page, { width: 390, height: 844 });
   const nav = page.locator(".ev2s-mobile-nav");
   await expect(nav.getByRole("button")).toHaveCount(4);
-  await expect(nav.locator("button span")).toHaveText(["Overview", "Work", "Ministry", "More"]);
+  await expect(nav.locator("button span")).toHaveText(["Overview", "Work", "Priorities", "More"]);
   await expect(page.locator(".executivev2-kpi")).toHaveCount(4);
   const columns = await page.locator(".executivev2-kpis").evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(" ").length);
   expect(columns).toBe(2);
@@ -172,7 +172,7 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
 
 const destinations = [
   ["work", ".ev2-work-executive", "Work"],
-  ["strategy", ".ev2-executive-ministry", "Ministry goals"],
+  ["strategy", ".ev2-executive-ministry", "Church goals"],
   ["exec-projects", ".executive-projects-consolidated", "Projects"],
   ["exec-organisation", ".ev2-exec-organisation", "Organisation"],
   ["exec-calendar", ".ev2cal-admin-page", "Calendar"],
