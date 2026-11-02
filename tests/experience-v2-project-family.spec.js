@@ -129,7 +129,7 @@ for (const viewport of [
     await page.getByRole("tab", { name: /^Work/ }).click();
     const workRows = page.locator(".fpg-work-table tbody tr").filter({ has: page.locator(".fpg-work-title") });
     expect(await workRows.count()).toBeGreaterThan(0);
-    await workRows.first().click();
+    await (page.locator(".fpg-work-mobile-card").first().isVisible() ? page.locator(".fpg-work-mobile-card").first() : workRows.first()).click();
     const drawer = page.locator(".fpg-work-drawer");
     await expect(drawer).toBeVisible();
     await expect(drawer.getByText("Priority", { exact: true })).toBeVisible();
