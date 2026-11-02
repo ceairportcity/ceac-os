@@ -159,7 +159,7 @@ for (const width of [390,1440]) {
       const title=page.getByRole('heading',{name:heading,exact:true}).first();
       await expect(title).toBeVisible();
       if (tab === 'strategy') {
-        const primary=page.getByRole('button',{name:/^(Add Church goal|Add Church priority)$/});
+        const primary=page.getByRole('button',{name:/^(Add church goal|Set first church priority)$/});
         const secondary=page.getByRole('button',{name:'Add another priority',exact:true});
         expect(await primary.evaluate(node=>getComputedStyle(node).backgroundImage)).toBe('none');
         expect(await primary.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
