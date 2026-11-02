@@ -83,7 +83,12 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   const signed=await signingResponse.json();
   const downloadPath=signed.signedURL || signed.signedUrl;
   expect(downloadPath).toBeTruthy();
-  const downloaded=await pastor.page.request.get(new URL(downloadPath,fixtureUrl).toString());
+  // Supabase's signing API may return a path relative to /storage/v1,
+  // not relative to the CEAC frontend's fixture URL.
+  const storageOrigin=new URL(signingResponse.url()).origin;
+  const signedUrl=/^https?:\/\//.test(downloadPath)
+    ? downloadPath : storageOrigin+'/storage/v1'+(downloadPath.startsWith('/')?'':'/')+downloadPath;
+  const downloaded=await pastor.page.request.get(signedUrl);
   expect(downloaded.ok()).toBe(true);
   expect((await downloaded.body()).equals(pdfBytes)).toBe(true);
   const image=pastor.page.getByRole('img',{name:filename,exact:true});await expect(image).toBeVisible();
