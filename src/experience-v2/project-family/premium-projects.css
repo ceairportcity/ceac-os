@@ -86,3 +86,20 @@
 .ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero{display:grid;align-content:center;align-items:stretch;gap:8px;padding:22px 26px;min-height:160px}
 .ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero>:not(.s2-scenic-photo){max-width:65%}
 @media(max-width:760px){.ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero{padding:18px;min-height:140px}.ceac-premium-project-reader .ev2p-workspace-header.s2-landscape-hero>:not(.s2-scenic-photo){max-width:100%}}
+
+/* Phone task cards preserve the approved desktop project table. */
+.ceac-mobile-project-tasks { display: none; }
+@media (max-width: 640px) {
+  .fpg-work-table-wrap > .fpg-work-table { display: none; }
+  .ceac-mobile-project-tasks { display: grid; gap: 12px; }
+  .ceac-mobile-task { border: 1px solid var(--line-soft, #dfe3e8); border-radius: 12px; padding: 14px; min-width: 0; background: var(--surface, #fff); }
+  .ceac-mobile-task.is-selected { outline: 2px solid currentColor; outline-offset: -2px; }
+  .ceac-mobile-task-open { display: block; width: 100%; min-height: 44px; text-align: left; border: 0; background: transparent; color: inherit; padding: 0; cursor: pointer; }
+  .ceac-mobile-task-open:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+  .ceac-mobile-task-heading { display: flex; gap: 10px; align-items: start; justify-content: space-between; flex-wrap: wrap; }
+  .ceac-mobile-task-heading strong { overflow-wrap: anywhere; }
+  .ceac-mobile-task-open small { display: block; margin-top: 5px; overflow-wrap: anywhere; }
+  .ceac-mobile-task dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+  .ceac-mobile-task dt { font-size: 12px; opacity: .7; }
+  .ceac-mobile-task dd { margin: 3px 0 0; overflow-wrap: anywhere; }
+}
