@@ -174,7 +174,11 @@ export default function App() {
         }
         // Do not await provider calls within Supabase's Auth callback lock.
         setTimeout(() => boot(), 0);
-      } else boot();
+      } else {
+        // Supabase Auth callbacks hold their own session lock. Queue profile
+        // reads after the callback instead of starting getUser() inside it.
+        setTimeout(() => boot(), 0);
+      }
     });
     const onPopState = () => applyRoute(routeFromLocation());
     window.addEventListener("popstate", onPopState);

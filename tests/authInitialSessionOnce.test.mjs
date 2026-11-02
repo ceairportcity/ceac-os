@@ -11,4 +11,6 @@ test("initial auth event does not restart the already running account boot",()=>
  assert.match(app,/\["SIGNED_OUT", "SIGNED_IN", "PASSWORD_RECOVERY", "USER_UPDATED"\]/);
  assert.match(app,/const \[assurance, factors, claims\] = await Promise\.all/);
  assert.match(app,/const m = await loadMe\(\)/);
+ assert.match(app,/Supabase Auth callbacks hold their own session lock/);
+ assert.match(app,/else \{\s*\/\/ Supabase Auth callbacks[\s\S]*setTimeout\(\(\) => boot\(\), 0\);/);
 });

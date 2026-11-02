@@ -6,7 +6,14 @@ test.describe.configure({mode:'serial'});
 async function open(browser,email,width=1366){
  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();
  await page.goto('/');await page.getByPlaceholder('Work email').fill(email);await page.getByPlaceholder('Password').fill(process.env.ROLE_FIXTURE_PASSWORD);
- await page.getByRole('button',{name:'Sign in to CEAC OS',exact:true}).click();await expect(page.locator('.app')).toBeVisible({timeout:15000});
+ let authStatus='no token response';page.on('response',response=>{if(response.url().includes('/auth/v1/token'))authStatus=String(response.status());});
+ await page.getByRole('button',{name:'Sign in to CEAC OS',exact:true}).click();
+ try {await expect(page.locator('.app')).toBeVisible({timeout:15000});}
+ catch(error) {
+  const screen=(await page.locator('body').innerText().catch(()=>'' )).slice(0,1300);
+  console.error('CEAC synthetic sign-in diagnostic',JSON.stringify({authStatus,route:page.url(),screen}));
+  throw error;
+ }
  await page.goto('/?tab=attendance');await expect(page.getByRole('heading',{name:'Today’s work location evidence',exact:true})).toBeVisible({timeout:15000});
  await expect(page.getByText('Loading attendance evidence…')).toHaveCount(0);return {context,page};
 }
