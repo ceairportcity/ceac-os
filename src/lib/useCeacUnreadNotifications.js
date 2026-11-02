@@ -12,12 +12,19 @@ export function useCeacUnreadNotifications(me) {
     async function refresh(){
       if(document.visibilityState==="hidden")return;
       try{
-        const result=await supabase.rpc("my_ceac_notifications");
+        const [result,rooms]=await Promise.all([
+          supabase.rpc("my_ceac_notifications"),
+          supabase.rpc("my_room_directory"),
+        ]);
         if(!active || result.error || !Array.isArray(result.data))return;
         const unread=result.data.filter(row=>!row.read_at);
-        setCounts({count:unread.length,memo:unread.filter(row=>row.context_kind==="memo").length});
+        const roomUnread=rooms.error || !Array.isArray(rooms.data)?null:rooms.data.reduce(
+          (total,row)=>total+Math.max(0,Number(row.unread_count)||0),0
+        );
+        const count=unread.length+(roomUnread||0);
+        setCounts({count,memo:unread.filter(row=>row.context_kind==="memo").length,room:roomUnread});
         if("setAppBadge" in navigator){
-          if(unread.length)void navigator.setAppBadge(unread.length).catch(()=>{});
+          if(count)void navigator.setAppBadge(count).catch(()=>{});
           else if("clearAppBadge" in navigator)void navigator.clearAppBadge().catch(()=>{});
         }
       }catch{/* Retain the previously verified count. */}
