@@ -115,7 +115,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(desktop.map((item) => item.label)).toEqual([
     "Overview",
     "Work",
-    "Ministry",
+    "Priorities",
     "Projects",
     "Organisation",
     "Calendar",
