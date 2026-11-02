@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
 import GlobalFormFeedback from "./components/GlobalFormFeedback";
+import { clearAccountCommunicationDrafts } from "./lib/memoLocalDrafts";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
 import { validRoutineDate } from "./lib/routineDateRoute";
@@ -151,6 +152,8 @@ export default function App() {
   const [hasPendingMfaSession, setHasPendingMfaSession] = useState(false);
   // Invalidate slow responses from a previous sign-in, token refresh or logout.
   const bootEpoch = useRef(0);
+  const draftActorRef=useRef(null);
+  draftActorRef.current=me;
   useForegroundPresence(me, session);
 
   useEffect(() => {
@@ -162,6 +165,10 @@ export default function App() {
       // auth, profile, authority and work-session request unnecessarily.
       // Continue handling all genuine identity and security state changes.
       if (event === "INITIAL_SESSION") return;
+      if(event==="SIGNED_OUT" && draftActorRef.current){
+        const actor=draftActorRef.current;
+        void clearAccountCommunicationDrafts(actor.org_id,actor.id).catch(()=>{});
+      }
       if (UNIVERSAL_TOTP_CUTOVER) {
         // Identity-changing Auth events must immediately hide the previous
         // actor's protected workspace, before any asynchronous profile read.
