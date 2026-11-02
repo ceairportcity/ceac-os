@@ -350,6 +350,22 @@ export function ProjectIssueTable({
           )}
         </tbody>
       </table>
+      <div className="ceac-mobile-project-tasks" aria-label="Project tasks">
+        {items.map((item) => {
+          const done = ["completed", "self_certified"].includes(item.status);
+          const objective = objectiveById.get(item.objective_id);
+          const phase = phaseById.get(item.phase_id);
+          return <article className={selectedId === item.id ? "ceac-mobile-task is-selected" : "ceac-mobile-task"} key={item.id}>
+            <button type="button" className="ceac-mobile-task-open" onClick={() => onSelect?.(item.id)} aria-label={`Open task: ${item.title}`}>
+              <span className="ceac-mobile-task-heading"><strong>{item.title}</strong><span>{done ? "Completed" : "Not completed"}</span></span>
+              <small>{item.ref} · {item.profiles?.full_name || "Unassigned"}</small>
+            </button>
+            <dl><div><dt>Due</dt><dd>{formatDue?.(item.due_at) || "Not set"}</dd></div><div><dt>Phase</dt><dd>{phase?.name || "Not set"}</dd></div></dl>
+            <div className="fpg-tag-stack">{renderStatus?.(item.status)}{objective && <span className="fpg-context-tag">{objective.ref}</span>}</div>
+          </article>;
+        })}
+        {!items.length && <div className="fpg-table-empty">No project work matches this view.</div>}
+      </div>
     </div>
   );
 }
