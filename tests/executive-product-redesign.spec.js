@@ -145,7 +145,7 @@ test("Executive Overview reproduces the locked desktop composition", async ({ pa
   await expect(page.locator(".executivev2-reference-grid > .executivev2-reference-panel")).toHaveCount(3);
   await expect(page.locator(".executivev2-lower-grid > .executivev2-reference-panel")).toHaveCount(2);
   await expect(page.getByText("Needs your attention", { exact: true })).toBeVisible();
-  await expect(page.getByText("Church goals", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ministry Objectives", { exact: true })).toBeVisible();
   await expect(page.getByText("People and departments", { exact: true })).toBeVisible();
   await expect(page.getByText("Significant updates", { exact: true })).toBeVisible();
   await expect(page.getByText("Upcoming meetings", { exact: true })).toBeVisible();
