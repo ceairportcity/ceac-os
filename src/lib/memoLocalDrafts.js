@@ -77,3 +77,19 @@ export function readLocalRoomDraft(orgId, userId, roomId) {
 export function clearLocalRoomDraft(orgId, userId, roomId) {
   return clearLocalMemoDraft(orgId, `${userId}:room:${roomId}`);
 }
+
+// Clear all encrypted local writing belonging to a signed-out account.
+// Keep other people on the same shared device isolated and untouched.
+export async function clearAccountCommunicationDrafts(orgId, userId) {
+  const db = await openDatabase();
+  try {
+    const prefix=scope(orgId,userId);
+    const ids=await storeRequest(db,"drafts","readonly","getAllKeys");
+    for(const id of ids) {
+      if(id===prefix || id.startsWith(prefix+":room:")) {
+        await storeRequest(db,"drafts","readwrite","delete",id);
+        await storeRequest(db,"keys","readwrite","delete",id);
+      }
+    }
+  } finally { db.close(); }
+}
