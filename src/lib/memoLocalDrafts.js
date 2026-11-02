@@ -67,3 +67,13 @@ export async function clearLocalMemoDraft(orgId, userId) {
     await storeRequest(db,"keys","readwrite","delete",id);
   } finally { db.close(); }
 }
+
+export function saveLocalRoomDraft(orgId, userId, roomId, payload) {
+  return saveLocalMemoDraft(orgId, `${userId}:room:${roomId}`, payload);
+}
+export function readLocalRoomDraft(orgId, userId, roomId) {
+  return readLocalMemoDraft(orgId, `${userId}:room:${roomId}`);
+}
+export function clearLocalRoomDraft(orgId, userId, roomId) {
+  return clearLocalMemoDraft(orgId, `${userId}:room:${roomId}`);
+}
