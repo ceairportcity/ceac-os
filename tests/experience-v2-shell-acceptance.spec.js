@@ -171,7 +171,18 @@ async function signIn(page, role) {
 }
 
 async function expectRoute(page, key) {
-  await expect(page.locator(key === "messages" ? ".msg-workspace" : ".body").first()).toBeVisible({ timeout: 15000 });
+  const target=page.locator(key === "messages" ? ".msg-workspace" : ".body").first();
+  try {
+    await expect(target).toBeVisible({ timeout: 15000 });
+  } catch (error) {
+    const diagnostics=await page.evaluate(()=>({
+      route:location.href,
+      appText:document.querySelector(".app-content")?.textContent?.slice(0,1100)||"",
+      shellText:document.querySelector(".ev2s-sidebar")?.textContent?.slice(0,280)||"",
+      pageErrors:document.querySelector('[role="alert"]')?.textContent?.slice(0,320)||"",
+    }));
+    throw new Error(`Route ${key} did not render; ${JSON.stringify(diagnostics)}. ${error.message}`);
+  }
   const url = new URL(page.url());
   if (key === "home") {
     expect(url.searchParams.has("tab")).toBe(false);
