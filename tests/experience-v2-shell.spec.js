@@ -134,7 +134,7 @@ test("Stage 4B create menu exposes only role-authorised shortcuts", async ({ pag
   await expect(menu.getByRole("menuitem", { name: "Message room", exact: true })).toBeVisible();
 });
 
-test("OCR2 Executive creation is reachable through the approved Work, Ministry and Announcements destinations", async ({ page }) => {
+test("OCR2 Executive creation is reachable through the approved Work, Priorities and Announcements destinations", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await signIn(page, "exec@ceac.local.test");
   await expect(page.getByRole("button", { name: "Create", exact: true })).toBeHidden();
@@ -144,9 +144,9 @@ test("OCR2 Executive creation is reachable through the approved Work, Ministry a
   await expect(page.getByRole("button", { name: "Give out work", exact: true }).first()).toBeVisible();
 
   await page.goto("/?tab=strategy");
-  await expect(page.getByRole("heading", { name: "Ministry goals", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Set first ministry priority", exact: true }).click();
-  let dialog = page.getByRole("dialog", { name: "Add ministry priority" });
+  await expect(page.getByRole("heading", { name: "Church priorities & progress", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Set church priority", exact: true }).click();
+  let dialog = page.getByRole("dialog", { name: "Add church priority" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel("Strategy name")).toBeVisible();
 
@@ -221,27 +221,27 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   await expect(announcementRow.getByText(/published/i)).toBeVisible();
 
   await page.goto("/?tab=strategy");
-  await expect(page.getByRole("heading", { name: "Ministry goals", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Set first ministry priority", exact: true }).click();
-  dialog = page.getByRole("dialog", { name: "Add ministry priority" });
+  await expect(page.getByRole("heading", { name: "Church priorities & progress", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Set church priority", exact: true }).click();
+  dialog = page.getByRole("dialog", { name: "Add church priority" });
   await dialog.getByLabel("Strategy name").fill(directionTitle);
   await dialog.getByLabel("Strategy statement").fill("Provide an attributable parent direction for OCR6 acceptance.");
   await dialog.getByLabel("Strategy change reason").fill("OCR6 final workflow acceptance.");
-  await dialog.getByRole("button", { name: "Add ministry priority", exact: true }).click();
+  await dialog.getByRole("button", { name: "Add church priority", exact: true }).click();
   await expect(page.getByText(directionTitle, { exact: true })).toBeVisible();
 
   // The ministry-specific composer enforces the same parent-direction
   // authority, without reintroducing the retired global Create button.
   await page.goto("/?tab=strategy");
-  await page.getByRole("heading", { name: "Ministry goals", exact: true }).waitFor();
-  await page.getByRole("button", { name: "Add ministry goal", exact: true }).first().click();
-  dialog = page.getByRole("dialog", { name: "Add ministry goal" });
+  await page.getByRole("heading", { name: "Church priorities & progress", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Add church goal", exact: true }).first().click();
+  dialog = page.getByRole("dialog", { name: "Add church goal" });
   await dialog.getByLabel("Strategy parent direction").selectOption({ label: directionTitle });
   await dialog.getByLabel("Strategy name").fill(objectiveTitle);
   await dialog.getByLabel("Strategy statement").fill("Prove the compact Executive ministry objective Composer.");
   await dialog.getByText(/Why are you adding or changing this/).first().click();
   await dialog.getByLabel("Strategy change reason").fill("OCR6 final workflow acceptance.");
-  await dialog.getByRole("button", { name: "Add ministry goal", exact: true }).click();
+  await dialog.getByRole("button", { name: "Add church goal", exact: true }).click();
   await expect(page.getByText(objectiveTitle, { exact: true })).toBeVisible();
 });
 
