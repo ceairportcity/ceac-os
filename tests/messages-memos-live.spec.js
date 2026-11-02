@@ -50,8 +50,9 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   await page.getByRole('button',{name:new RegExp(subject)}).click();
   await page.getByRole('button',{name:'Continue draft',exact:true}).click();
   await expect(page.getByLabel('Subject',{exact:true})).toHaveValue(subject);
-  await expect(page.locator('.memo-draft-file').first()).toContainText(filename);
-  await expect(page.locator('.memo-draft-file').last()).toContainText(pdfFilename);
+  await expect(page.locator('.memo-draft-file')).toHaveCount(2);
+  await expect(page.locator('.memo-compose')).toContainText(filename);
+  await expect(page.locator('.memo-compose')).toContainText(pdfFilename);
   await page.getByRole('button',{name:'Send Memo',exact:true}).click();
   await expect(page.locator('.memo-status')).toHaveText('Pending decision');
   const version=await checked(service.from('memo_versions').select('id,memo_id').eq('subject',subject).single());
