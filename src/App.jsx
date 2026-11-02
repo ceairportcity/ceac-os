@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { supabase, loadMe } from "./lib/supabase";
+import GlobalFormFeedback from "./components/GlobalFormFeedback";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
 import { validRoutineDate } from "./lib/routineDateRoute";
@@ -610,6 +611,7 @@ export default function App() {
     <ActiveMfaGate me={me} onVerified={boot}>
     <RolePresentationContext.Provider value={isExec ? "executive" : null}>
     <div className={`app ${appModeClass}`}>
+      <GlobalFormFeedback />
       {isExec ? <Suspense fallback={null}><ExecutiveRedesignStyles /></Suspense> : null}
       <SideNav
         tab={tab}
