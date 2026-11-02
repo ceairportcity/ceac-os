@@ -72,7 +72,7 @@ export function isTemporaryOperationalUploadError(error) {
 }
 
 export async function uploadOperationalFileWithRetry(options) {
-  const retryState = {};
+  const retryState = options.retryState || {};
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       return await uploadOperationalFile({ ...options, retryState });
