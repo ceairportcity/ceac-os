@@ -435,6 +435,7 @@ export default function Room({
     const result = await supabase.rpc("mark_room_read", { p_room_id: roomId });
     if (!result.error && activeRoomIdRef.current === roomId) {
       setNewMessageCount(0); onMessagesChanged?.();
+      window.dispatchEvent(new Event("ceac:notifications-changed"));
     }
   }
 
