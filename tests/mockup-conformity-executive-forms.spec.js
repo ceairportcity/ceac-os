@@ -33,7 +33,7 @@ async function openCreate(page, label) {
       await direction.getByLabel("Strategy name").fill("Acceptance parent direction");
       await direction.getByLabel("Strategy statement").fill("Provide an attributable parent for the objective design check.");
       await direction.getByLabel("Strategy change reason").fill("Isolated role acceptance.");
-      await direction.getByRole("button", { name: "Add Church priority", exact: true }).click();
+      await direction.getByRole("button", { name: "Add church priority", exact: true }).click();
       await expect(direction).not.toBeVisible();
     }
     await expect(objective).toBeVisible();
