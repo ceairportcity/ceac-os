@@ -62,10 +62,32 @@ export async function uploadOperationalFile({ file, contextType, contextId, rela
   return row.file_id;
 }
 
+// Keep the original registration on transient storage failures so retries cannot
+// create duplicate attachment links or unrelated private storage objects.
+export function isTemporaryOperationalUploadError(error) {
+  const code = String(error?.statusCode || error?.status || error?.code || "");
+  const message = String(error?.message || "");
+  return /^(408|429|500|502|503|504|520|522|524|544)$/.test(code)
+    || /timeout|temporar|connection terminated|failed to fetch|network/i.test(message);
+}
+
+export async function uploadOperationalFileWithRetry(options) {
+  const retryState = {};
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await uploadOperationalFile({ ...options, retryState });
+    } catch (error) {
+      if (attempt === 2 || !isTemporaryOperationalUploadError(error)) throw error;
+      await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 700));
+    }
+  }
+  throw new Error("The attachment could not be uploaded. Try again.");
+}
+
 export async function uploadOperationalFiles({ files, contextType, contextId, relation }) {
   const uploaded = [];
   for (const file of files || []) {
-    uploaded.push(await uploadOperationalFile({ file, contextType, contextId, relation }));
+    uploaded.push(await uploadOperationalFileWithRetry({ file, contextType, contextId, relation }));
   }
   return uploaded;
 }
@@ -117,9 +139,33 @@ export async function signedOperationalFileUrl(file, expiresIn = 300) {
   return result.data.signedUrl;
 }
 
+export async function signedOperationalDownloadUrl(file, expiresIn = 300) {
+  const result = await supabase.storage.from(file.storage_bucket || "ceac-operational-private")
+    .createSignedUrl(file.storage_path, expiresIn, { download: file.filename });
+  if (result.error) throw result.error;
+  if (!result.data?.signedUrl) throw new Error("We could not prepare this download. Please try again.");
+  return result.data.signedUrl;
+}
+
+// Start opening the destination directly from the user's tap; waiting for an
+// asynchronous signing call before opening can trigger iOS popup blockers.
+async function navigateToPrivateFile(file, download = false) {
+  const tab = window.open("about:blank", "_blank");
+  if (tab) tab.opener = null;
+  try {
+    const url = download ? await signedOperationalDownloadUrl(file) : await signedOperationalFileUrl(file);
+    if (tab && !tab.closed) tab.location.replace(url);
+    else window.location.assign(url);
+  } catch (error) {
+    if (tab && !tab.closed) tab.close();
+    throw error;
+  }
+}
 export async function openOperationalFile(file) {
-  const signedUrl = await signedOperationalFileUrl(file, 300);
-  window.open(signedUrl, "_blank", "noopener,noreferrer");
+  return navigateToPrivateFile(file, false);
+}
+export async function downloadOperationalFile(file) {
+  return navigateToPrivateFile(file, true);
 }
 
 export function formatOperationalFileSize(value) {
