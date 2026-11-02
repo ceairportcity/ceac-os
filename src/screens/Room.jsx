@@ -6,6 +6,7 @@ import "./MessagesWorkspace.css";
 import { OperationalMediaList } from "../components/OperationalFiles";
 import { listOperationalFilesForContexts, uploadOperationalFileWithRetry, validateOperationalFile, OPERATIONAL_FILE_ACCEPT } from "../lib/operationalFiles";
 import { humanError } from "../lib/productLanguage";
+import { saveLocalRoomDraft, readLocalRoomDraft, clearLocalRoomDraft } from "../lib/memoLocalDrafts";
 
 function timeLabel(value) {
   return new Date(value).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" });
@@ -64,6 +65,9 @@ export default function Room({
   const [scopeRooms, setScopeRooms] = useState([]);
   const [messages, setMessages] = useState([]);
   const [body, setBody] = useState("");
+  const [draftReadyRoom,setDraftReadyRoom]=useState(null);
+  const [missingRoomFiles,setMissingRoomFiles]=useState([]);
+  const draftWriteQueue=useRef(Promise.resolve());
   const [pendingFiles, setPendingFiles] = useState([]);
   const [attachmentMessageId, setAttachmentMessageId] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
@@ -97,6 +101,36 @@ export default function Room({
   const PAGE_SIZE = 60;
 
   const canCoordinate = Boolean(me.is_admin || me.is_exec || me.role === "manager");
+  useEffect(()=>{
+    const id=room?.id;if(!id)return;
+    let active=true;setDraftReadyRoom(null);
+    readLocalRoomDraft(me.org_id,me.id,id).then(saved=>{
+      if(!active || activeRoomIdRef.current!==id)return;
+      if(saved?.body)setBody(current=>current || saved.body);
+      setMissingRoomFiles(saved?.missingFiles || []);
+      setDraftReadyRoom(id);
+    }).catch(()=>{if(active)setDraftReadyRoom(id);});
+    return()=>{active=false;};
+  },[room?.id,me.org_id,me.id]);
+  useEffect(()=>{
+    if(!room?.id || draftReadyRoom!==room.id)return;
+    if(!body.trim() && !pendingFiles.length && !missingRoomFiles.length)return;
+    const id=room.id;
+    const payload={body,missingFiles:[...new Set([
+      ...missingRoomFiles,...pendingFiles.map(file=>file.name),
+    ])]};
+    const timer=setTimeout(()=>{
+      draftWriteQueue.current=draftWriteQueue.current.catch(()=>{}).then(
+        ()=>saveLocalRoomDraft(me.org_id,me.id,id,payload)
+      );
+    },280);
+    return()=>clearTimeout(timer);
+  },[room?.id,me.org_id,me.id,draftReadyRoom,body,pendingFiles,missingRoomFiles]);
+  function clearRoomDraft(id) {
+    draftWriteQueue.current=draftWriteQueue.current.catch(()=>{}).then(
+      ()=>clearLocalRoomDraft(me.org_id,me.id,id)
+    );
+  }
 
   useEffect(() => {
     const target = context?.mentionProfileId;
@@ -190,6 +224,7 @@ export default function Room({
     // Clear prior-room identities/references before any asynchronous read.
     setParticipants([]); setScopeRooms([]); setWorkOptions([]); setProjectOptions([]);
     setRoom(nextRoom);
+    setBody("");setMissingRoomFiles([]);setDraftReadyRoom(null);
     setPanel(null);
     setPendingFiles([]); setAttachmentMessageId(null);
     setReplyTo(null);
@@ -443,6 +478,7 @@ export default function Room({
   }
 
   async function send() {
+    if(missingRoomFiles.length){setError("Reattach your previous files, or remove them from the draft before sending.");return;}
     const clean = body.trim() || (pendingFiles.length ? "Attachment" : "");
     if ((!clean && !attachmentMessageId) || sendingRef.current) return;
     sendingRef.current = true;
@@ -491,6 +527,9 @@ export default function Room({
         } catch (fileError) {
           setError("The attachment was not delivered. Your file is still selected. Tap Retry attachments to finish sending it.");
         }
+      }
+      if(!pendingFiles.length || pendingFiles.every(file=>!uploadRetries.current.has(file))){
+        if(!uploadRetries.current.size){setMissingRoomFiles([]);clearRoomDraft(targetRoomId);}
       }
       await loadMessages(targetRoomId, false);
       onMessagesChanged?.();
@@ -723,6 +762,12 @@ export default function Room({
         </button>)}
       </div>}
 
+      {missingRoomFiles.length>0 && <div className="memo-missing-files" role="status">
+        <strong>Reattach these files to complete your previous message</strong>
+        {missingRoomFiles.map(filename=><div key={filename}>{filename}
+          <button type="button" onClick={()=>setMissingRoomFiles(files=>files.filter(x=>x!==filename))}>Remove from draft</button>
+        </div>)}
+      </div>}
       {pendingFiles.length > 0 && <div className="room-pending-files">{pendingFiles.map(file => <span key={file.name+file.size}>{file.name}<button type="button" disabled={sending} aria-label={`Remove ${file.name}`} onClick={() => setPendingFiles(files => files.filter(row => row !== file))}>×</button></span>)}</div>}
 
       <div className="room-composer-row room-composer-v2">
@@ -731,6 +776,7 @@ export default function Room({
           try {
             const selected = [...(event.target.files || [])]; selected.forEach(validateOperationalFile);
             setPendingFiles(current => [...new Map([...current,...selected].map(file => [file.name+":"+file.size,file])).values()]);
+            setMissingRoomFiles(previous=>previous.filter(name=>!selected.some(file=>file.name===name)));
           } catch(failure) { setError(failure.message); }
           event.target.value="";
         }}/>
