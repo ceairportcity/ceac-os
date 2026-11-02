@@ -7,14 +7,14 @@ import Notifications from "./Notifications";
 import { initials, messageTimestamp, roomContext } from "../lib/memos";
 import "./MessagesWorkspace.css";
 
-export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled }) {
+export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled, notificationCounts }) {
   const linkedMemo = new URLSearchParams(window.location.search).get("memo");
   const [section,setSection] = useState(linkedMemo ? "memos" : new URLSearchParams(window.location.search).get("updates")==="1" ? "updates" : "rooms");
   const [rooms,setRooms] = useState([]), [selected,setSelected] = useState(null);
   const [actions,setActions] = useState([]), [actionsOpen,setActionsOpen] = useState(false);
   const [query,setQuery] = useState(""), [error,setError] = useState(""), [loading,setLoading] = useState(true);
   const [reload,setReload] = useState(0), [composeMemo,setComposeMemo] = useState(0);
-  const [notifications,setNotifications] = useState(null);
+  const notifications=notificationCounts;
   const [loadedScope,setLoadedScope] = useState("");
   const scope = `${me.org_id}:${me.id}`;
   const request = useRef(0);
@@ -25,35 +25,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
     setSection(next);
   }
   const verified = loadedScope === scope;
-  useEffect(()=>{
-    let active=true;
-    async function refreshNotifications(){
-      if(document.visibilityState==="hidden")return;
-      try{
-        const response=await supabase.rpc("my_ceac_notifications");
-        if(!active || response.error || !Array.isArray(response.data))return;
-        const unread=response.data.filter(row=>!row.read_at);
-        setNotifications({
-          count:unread.length,
-          memo:unread.filter(row=>row.context_kind==="memo").length,
-        });
-        if("setAppBadge" in navigator){
-          if(unread.length)void navigator.setAppBadge(unread.length).catch(()=>{});
-          else if("clearAppBadge" in navigator)void navigator.clearAppBadge().catch(()=>{});
-        }
-      }catch{/* Keep last verified count, not a fabricated zero. */}
-    }
-    void refreshNotifications();
-    const timer=window.setInterval(refreshNotifications,12000);
-    window.addEventListener("focus",refreshNotifications);
-    window.addEventListener("ceac:notifications-changed",refreshNotifications);
-    return()=>{
-      active=false;window.clearInterval(timer);
-      window.removeEventListener("focus",refreshNotifications);
-      window.removeEventListener("ceac:notifications-changed",refreshNotifications);
-    };
-  },[scope]);
-  useEffect(() => { if(initialView) {setSection("rooms");onInitialViewHandled?.();} },[initialView]);
+  useEffect(() => { if(initialView) {setSection(initialView==="updates"?"updates":"rooms");onInitialViewHandled?.();} },[initialView]);
   useEffect(() => {
     let active = true; const serial = ++request.current;
     setLoading(true);setError("");
