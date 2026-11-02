@@ -6,6 +6,15 @@ async function fixture(page,{failCases=false,failOffice=false,asAdmin=false,hidd
   const url=new URL(route.request().url());
   if(url.pathname.includes('/rest/v1/')){
    const name=url.pathname.split('/').at(-1);
+   // The Compliance map now uses the same restricted roster feed as HR and Executive.
+   // This fixture deliberately has no recorded starts, so the saved office remains visible.
+   if(name==='workforce_map_day'){
+    const day=JSON.parse(route.request().postData()||'{}').p_date;
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     date:day,as_of:new Date().toISOString(),roster:[],sessions:[],
+     operationalProfiles:[],roster_count:0,session_count:0
+    })});
+   }
    if(name==='compliance_attendance_case_register'&&failCases)return route.fulfill({status:503,contentType:'application/json',body:'{"message":"Unavailable"}'});
    if(name==='office_locations'){
     expect(url.searchParams.get('org_id')).toBe('eq.synthetic-org');
