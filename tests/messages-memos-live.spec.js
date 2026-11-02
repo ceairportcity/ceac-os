@@ -90,7 +90,8 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
     ? downloadPath : storageOrigin+'/storage/v1'+(downloadPath.startsWith('/')?'':'/')+downloadPath;
   const downloaded=await pastor.page.request.get(signedUrl);
   expect(downloaded.ok()).toBe(true);
-  expect((await downloaded.body()).equals(pdfBytes)).toBe(true);
+  const deliveredBytes=await downloaded.body();
+  expect(deliveredBytes.equals(pdfBytes), `PDF download bytes differ: received ${deliveredBytes.length} bytes, expected ${pdfBytes.length}; content-type=${downloaded.headers()['content-type']}; first bytes=${deliveredBytes.subarray(0,55).toString('hex')}`).toBe(true);
   const image=pastor.page.getByRole('img',{name:filename,exact:true});await expect(image).toBeVisible();
   const pdfRecord=await checked(service.from('operational_file_links')
     .select('file:operational_files!inner(filename,mime_type,state,size_bytes,storage_bucket,storage_path)')
