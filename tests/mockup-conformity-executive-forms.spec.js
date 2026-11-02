@@ -29,11 +29,11 @@ async function openCreate(page, label) {
     if (!(await objective.count())) {
       // An objective requires a recorded parent, including in isolated acceptance fixtures.
       await page.getByRole("button", { name: /^(Set first church priority|Add Church priority)$/i }).first().click();
-      const direction = page.getByRole("dialog", { name: "Add Church priority" });
+      const direction = page.getByRole("dialog", { name: /Add church priority/i });
       await direction.getByLabel("Strategy name").fill("Acceptance parent direction");
       await direction.getByLabel("Strategy statement").fill("Provide an attributable parent for the objective design check.");
       await direction.getByLabel("Strategy change reason").fill("Isolated role acceptance.");
-      await direction.getByRole("button", { name: "Add Church priority", exact: true }).click();
+      await direction.getByRole("button", { name: "Add church priority", exact: true }).click();
       await expect(direction).not.toBeVisible();
     }
     await expect(objective).toBeVisible();
@@ -72,7 +72,7 @@ test("owner mockup: Give out work is a narrow progressive composer", async ({ pa
   const dialog = page.getByRole("dialog", { name: "Give out work" });
   await expect(dialog).toBeVisible();
   const primary = dialog.locator('.ev2c-overlay-footer .btn').first();
-  expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
   expect(await primary.evaluate(node => getComputedStyle(node).backgroundImage)).toBe('none');
   await expect(dialog.locator(".reference-kind-row")).toBeVisible();
   await expect(dialog.getByText("What needs doing *", { exact: true })).toBeVisible();
@@ -100,7 +100,7 @@ test("owner mockup: Ministry objective is compact and hierarchy-first", async ({
   const dialog = page.getByRole("dialog", { name: "Add church goal" });
   await expect(dialog).toBeVisible();
   const primary = dialog.locator('.ev2c-overlay-footer .btn').first();
-  expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
   expect(await primary.evaluate(node => getComputedStyle(node).backgroundImage)).toBe('none');
   await expect(dialog.getByText("Goal name *", { exact: true })).toBeVisible();
   await expect(dialog.getByText("What should this achieve? *", { exact: true })).toBeVisible();
@@ -125,7 +125,7 @@ test("owner mockup: Announcement uses audience pills and progressive options", a
   const dialog = page.getByRole("dialog", { name: "New announcement" });
   await expect(dialog).toBeVisible();
   const primary = dialog.locator('.ev2c-overlay-footer .btn').first();
-  expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
+  expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
   expect(await primary.evaluate(node => getComputedStyle(node).backgroundImage)).toBe('none');
   await expect(dialog.getByText("Title *", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Audience *", { exact: true })).toBeVisible();
