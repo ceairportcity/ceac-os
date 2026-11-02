@@ -227,7 +227,7 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
   await dialog.getByLabel("Strategy name").fill(directionTitle);
   await dialog.getByLabel("Strategy statement").fill("Provide an attributable parent direction for OCR6 acceptance.");
   await dialog.getByLabel("Strategy change reason").fill("OCR6 final workflow acceptance.");
-  await dialog.getByRole("button", { name: "Add church priority", exact: true }).click();
+  await dialog.getByRole("button", { name: "Add Church priority", exact: true }).click();
   await expect(page.getByText(directionTitle, { exact: true })).toBeVisible();
 
   // The ministry-specific composer enforces the same parent-direction
