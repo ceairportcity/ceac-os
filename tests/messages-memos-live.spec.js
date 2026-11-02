@@ -72,31 +72,37 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   const downloadButton=pastor.page.getByRole('button',{name:`Download ${pdfFilename}`,exact:true});
   await expect(downloadButton).toBeVisible();
   await expect(pastor.page.getByRole('heading',{name:'Attachments (2)',exact:true})).toBeVisible();
-  // Verify a real recipient action produces a signed download that returns the
-  // exact PDF bytes. Button presence alone is not attachment-delivery proof.
-  const signing= pastor.page.waitForResponse(response=>
-    response.url().includes('/storage/v1/object/sign/') &&
-    response.request().method()==='POST');
+  // The image preview also signs URLs in the background. Match the PDF's
+  // registered storage path so the test never mistakes that PNG for the
+  // requested download.
+  const pdfRecords=await checked(service.from('operational_file_links')
+    .select('file:operational_files!inner(filename,mime_type,state,size_bytes,storage_bucket,storage_path)')
+    .eq('context_type','memo_version').eq('context_id',version.id));
+  const pdfFile=pdfRecords.find(row=>row.file.filename===pdfFilename)?.file;
+  expect(pdfFile).toBeTruthy();
+  expect(pdfFile.mime_type).toBe('application/pdf');
+  expect(pdfFile.state).toBe('active');
+  expect(pdfFile.size_bytes).toBe(pdfBytes.length);
+  const expectedStoragePath=`/storage/v1/object/sign/${pdfFile.storage_bucket}/${pdfFile.storage_path}`;
+  const signing=pastor.page.waitForResponse(response=>{
+    const requestPath=decodeURIComponent(new URL(response.url()).pathname);
+    return response.request().method()==='POST' && requestPath===expectedStoragePath;
+  });
   await downloadButton.click();
   const signingResponse=await signing;
   expect(signingResponse.ok()).toBe(true);
   const signed=await signingResponse.json();
   const downloadPath=signed.signedURL || signed.signedUrl;
   expect(downloadPath).toBeTruthy();
-  // Supabase's signing API may return a path relative to /storage/v1,
-  // not relative to the CEAC frontend's fixture URL.
   const storageOrigin=new URL(signingResponse.url()).origin;
   const signedUrl=/^https?:\/\//.test(downloadPath)
     ? downloadPath : storageOrigin+'/storage/v1'+(downloadPath.startsWith('/')?'':'/')+downloadPath;
   const downloaded=await pastor.page.request.get(signedUrl);
   expect(downloaded.ok()).toBe(true);
+  expect(downloaded.headers()['content-type']).toMatch(/application\/pdf/);
   const deliveredBytes=await downloaded.body();
-  expect(deliveredBytes.equals(pdfBytes), `PDF download bytes differ: received ${deliveredBytes.length} bytes, expected ${pdfBytes.length}; content-type=${downloaded.headers()['content-type']}; first bytes=${deliveredBytes.subarray(0,55).toString('hex')}`).toBe(true);
+  expect(deliveredBytes.equals(pdfBytes), `PDF download bytes differ: received ${deliveredBytes.length} bytes, expected ${pdfBytes.length}`).toBe(true);
   const image=pastor.page.getByRole('img',{name:filename,exact:true});await expect(image).toBeVisible();
-  const pdfRecord=await checked(service.from('operational_file_links')
-    .select('file:operational_files!inner(filename,mime_type,state,size_bytes,storage_bucket,storage_path)')
-    .eq('context_type','memo_version').eq('context_id',version.id));
-  expect(pdfRecord.some(record=>record.file.filename===pdfFilename && record.file.mime_type==='application/pdf' && record.file.state==='active' && record.file.size_bytes===pdfBytes.length)).toBe(true);
   const response=await pastor.page.request.get(await image.getAttribute('src'));
   expect(response.ok()).toBeTruthy();expect((await response.body()).equals(bytes)).toBeTruthy();
   await expect(pastor.page.getByRole('button',{name:'Approve proposal',exact:true})).toHaveCSS('background-color','rgb(22, 120, 201)');
