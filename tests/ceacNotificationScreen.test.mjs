@@ -18,7 +18,9 @@ test("the shared Updates view routes to each authorised record",()=>{
 
 test("existing room and Memo journeys remain the initial Messages experience",()=>{
  assert.match(files.inbox,/get\("updates"\)==="1" \? "updates" : "rooms"/);
- assert.match(files.inbox,/aria-label="Updates"/);
+ assert.match(files.inbox,/aria-label=\{notifications\?\.count/);
+ assert.match(files.inbox,/setAppBadge/);
+ assert.match(files.inbox,/ceac-notification-badge/);
  assert.match(files.inbox,/> Rooms<\/button>/);
  assert.match(files.inbox,/> Memos<\/button>/);
 });
