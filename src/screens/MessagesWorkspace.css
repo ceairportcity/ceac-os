@@ -101,11 +101,9 @@
  .msg-head>div button{min-height:38px;white-space:nowrap;padding:5px}
  .memo-filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;white-space:nowrap}
  .memo-filters button{flex:0 0 auto;white-space:nowrap}
- 
+
 }
 
 
 .msg-head>div button{position:relative}
 .ceac-notification-badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;background:#c73535;color:white!important;border-radius:999px;font-size:12px;line-height:1;font-weight:700;flex:none}
-
-
