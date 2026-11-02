@@ -74,7 +74,7 @@ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
   await expect(street.getByText(/Google Maps receives the viewed map area/)).toBeVisible();
   await expect(street.getByRole("button",{name:"Enable street map"})).toHaveCount(0);
   await expect(street.getByRole("button",{name:/View recorded work start for Staff Fixture/})).toBeVisible();
-  expect(sharedMapCalls.some(call=>call.method==="POST"&&/^\\d{4}-\\d{2}-\\d{2}$/.test(call.day))).toBe(true);
+  expect(sharedMapCalls.some(call=>call.method==="POST"&&/^\d{4}-\d{2}-\d{2}$/.test(call.day))).toBe(true);
   await expect(street.locator("[data-synthetic-map=true]")).toBeVisible();
   await expect(street.getByText("Synthetic Google Maps",{exact:true})).toBeVisible();
   await street.getByRole("button",{name:"Hide street map"}).click();
