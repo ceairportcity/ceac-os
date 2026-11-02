@@ -3,6 +3,7 @@ import { assertStage2SupabaseTarget } from "./stage2SupabaseTarget";
 import { authRedirect } from "./authRedirect";
 import { isPlausibleInvitationEmail, invitationDeliveryMessage } from "./invitationSafety";
 import { readServerVerifiedLegacyGrants, resolveCapabilityGrantRead } from "./capabilitySchemaCompatibility";
+import { retryFreshJwtRejection } from "./freshJwtReadRetry";
 
 const fallbackSupabaseUrl = "https://efjljhftsesssumtshvp.supabase.co";
 const fallbackSupabasePublishableKey = "sb_publishable_CVq1sCY0Z4-o9Us4Y6RaUw_53FUHQj-";
@@ -25,6 +26,9 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true } }
 );
 export async function loadMe() {
+  return retryFreshJwtRejection(loadMeOnce);
+}
+async function loadMeOnce() {
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError && authError.name !== "AuthSessionMissingError") throw authError;
   if (!auth?.user) return null;
