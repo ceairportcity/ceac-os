@@ -157,7 +157,7 @@ export function OperationalFileList({
       <div className="row-note">Private attachment</div>
       {file.state === "active" ? <div className="operational-file-actions">
         <button type="button" onClick={() => void open(file)} aria-label={`Open ${file.filename}`}>Open</button>
-        <button type="button" onClick={() => void download(file)} aria-label={`Download ${file.filename}`}>Download</button>
+        <button type="button" onClick={() => void download(file)} aria-label="Download file">Download</button>
       </div> : <span role="status">Upload incomplete</span>}
     </div>)}
   </section>;
