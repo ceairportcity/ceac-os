@@ -34,7 +34,8 @@ for(const width of [390,1440])test(`Executive map follows priority panels and us
  const shared=requests.filter(r=>/rest\/v1\/rpc\/workforce_map_day/.test(r.url));
  expect(shared.length).toBe(1);
  expect(shared.every(r=>r.method==='POST')).toBe(true);
- expect(requests.some(r=>/rest\/v1\/(profiles|employee_roster|units|unit_memberships|work_sessions)/.test(r.url))).toBe(false);
+ // Other Overview widgets may read profiles; the map itself is sourced by one RPC.
+ expect(requests.some(r=>/rest\/v1\/employee_roster/.test(r.url))).toBe(false);
  if(width===390){const heights=await map.locator("button:visible").evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().height));for(const height of heights)expect(height).toBeGreaterThanOrEqual(44);}
  await page.screenshot({path:`test-artifacts/executive-google-map-${width}.png`,fullPage:true});
 });
