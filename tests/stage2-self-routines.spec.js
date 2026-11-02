@@ -81,7 +81,7 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       const evidenceName='venue-proof-'+actor+'.txt';
       const evidenceBytes=Buffer.from('Independent '+actor+' venue evidence '+title);
       await datedFiles.locator('input[type=file]').setInputFiles({name:evidenceName,mimeType:'text/plain',buffer:evidenceBytes});
-      await expect(datedFiles.getByRole('button').filter({hasText:evidenceName})).toBeVisible();
+      await expect(datedFiles.locator('.row-t').filter({hasText:evidenceName})).toBeVisible();
       const fileLink=await client.from('operational_file_links')
         .select('context_id,relation,file:operational_files!inner(id,storage_bucket,storage_path,state)')
         .eq('context_type','routine_date_progress').eq('context_id',datedProgress.data[0].id).single();
@@ -268,7 +268,7 @@ test('Manager arranges one-date cover; colleague follows Work and Calendar, reco
   const operation=await colleague.from('recurring_operations').select('id').eq('work_item_id',id).single();expect(operation.error).toBeNull();
   const progress=await colleague.from('routine_date_progress').select('id,actor_id,scheduled_on').eq('operation_id',operation.data.id).single();expect(progress.error).toBeNull();expect(progress.data.actor_id).toBe('31000000-0000-4000-8000-000000000006');
   const bytes=Buffer.from('Actual colleague cover proof '+title),filename='dated-cover-proof.txt';
-  const files=date.locator('.operational-files').filter({hasText:'Evidence files for '+today});await files.locator('input[type=file]').setInputFiles({name:filename,mimeType:'text/plain',buffer:bytes});await expect(files.getByRole('button').filter({hasText:filename})).toBeVisible();
+  const files=date.locator('.operational-files').filter({hasText:'Evidence files for '+today});await files.locator('input[type=file]').setInputFiles({name:filename,mimeType:'text/plain',buffer:bytes});await expect(files.locator('.row-t').filter({hasText:filename})).toBeVisible();
   const linked=await colleague.from('operational_file_links').select('file:operational_files!inner(storage_bucket,storage_path)').eq('context_type','routine_date_progress').eq('context_id',progress.data.id).single();expect(linked.error).toBeNull();
   const downloaded=await colleague.storage.from(linked.data.file.storage_bucket).download(linked.data.file.storage_path);expect(downloaded.error).toBeNull();expect(Buffer.from(await downloaded.data.arrayBuffer())).toEqual(bytes);
   expect((await original.rpc('register_operational_file',{p_context_type:'routine_date_progress',p_context_id:progress.data.id,p_relation:'routine_evidence',p_filename:'impersonate.txt',p_mime_type:'text/plain',p_size_bytes:12})).error?.code).toBe('42501');
