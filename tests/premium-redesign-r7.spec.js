@@ -39,7 +39,7 @@ test.describe("Premium redesign R7 closure", () => {
       } else {
         await expect(page.locator(".fpg9-sidebar-quick")).toBeVisible();
         await expect(page.getByRole("button", { name: "Create", exact: true })).toBeVisible();
-        await expect(page.getByRole("button", { name: "Open messages", exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: /^Open updates(?:, .* unread)?$/ })).toBeVisible();
       }
 
       if (label === "Staff") {
