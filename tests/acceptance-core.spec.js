@@ -817,23 +817,23 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     await go(page, "Strategy");
     await expect(page.getByRole("heading", { name: /^(Strategy|Church goals)$/ })).toBeVisible();
 
-    await page.getByRole("button", { name: "Add Ministry Direction", exact: true }).click();
+    await page.getByRole("button", { name: "Add Church priority", exact: true }).click();
     let dialog = page.getByRole("dialog");
     await dialog.getByLabel("Strategy name").fill("Acceptance ministry direction");
     await dialog.getByLabel("Strategy statement").fill("Build reliable ministry systems while reaching and serving people.");
     await dialog.getByLabel("Strategy change reason").fill("Acceptance Stage 4 direction");
-    await dialog.getByRole("button", { name: "Add ministry priority", exact: true }).click();
+    await dialog.getByRole("button", { name: "Add church priority", exact: true }).click();
     await expect(page.getByText("Strategy record created.", { exact: true })).toBeVisible();
 
     const direction = page.locator("section.card").filter({ hasText: "Acceptance ministry direction" });
     await expect(direction).toBeVisible();
-    await direction.getByRole("button", { name: "Add ministry goal", exact: true }).click();
+    await direction.getByRole("button", { name: "Add church goal", exact: true }).click();
     dialog = page.getByRole("dialog");
     await dialog.getByLabel("Strategy name").fill("Acceptance ministry objective");
     await dialog.getByLabel("Strategy statement").fill("Make weekly ministry delivery more reliable across participating units.");
     await dialog.getByText(/Why are you adding or changing this/).first().click();
     await dialog.getByLabel("Strategy change reason").fill("Acceptance Stage 4 ministry objective");
-    await dialog.getByRole("button", { name: "Add ministry goal", exact: true }).click();
+    await dialog.getByRole("button", { name: "Add church goal", exact: true }).click();
 
     await page.getByRole("button", { name: "Add department goal", exact: true }).click();
     dialog = page.getByRole("dialog");
@@ -885,7 +885,7 @@ test("Goals and Strategy preserves factual hierarchy and manager authority", asy
     const { context, page } = await openAs(browser, "staff@ceac.local.test", { width: 390, height: 844 });
     await go(page, "Strategy");
     await expect(page.getByText("Acceptance ministry direction", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Add Ministry Direction", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Add Church priority", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Link project", exact: true })).toHaveCount(0);
     await context.close();
