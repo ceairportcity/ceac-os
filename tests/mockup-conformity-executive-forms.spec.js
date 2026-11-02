@@ -16,24 +16,24 @@ async function signInExecutive(page) {
 async function openCreate(page, label) {
   const routes = {
     "Give out work": ["work", "Give out work"],
-    "Ministry objective": ["strategy", "Add ministry goal"],
+    "Church goal": ["strategy", "Add church goal"],
     Announcement: ["announcements", "New announcement"],
   };
   const route = routes[label];
   if (!route) throw new Error("No approved Executive destination for " + label);
   await page.goto("/?tab=" + route[0]);
   await expect(page.locator(".executive-app")).toBeVisible();
-  if (label === "Ministry objective") {
-    await expect(page.getByRole("heading", { name: "Ministry goals", exact: true })).toBeVisible();
-    const objective = page.getByRole("button", { name: "Add ministry goal", exact: true }).first();
+  if (label === "Church goal") {
+    await expect(page.getByRole("heading", { name: "Church priorities & progress", exact: true })).toBeVisible();
+    const objective = page.getByRole("button", { name: "Add church goal", exact: true }).first();
     if (!(await objective.count())) {
       // An objective requires a recorded parent, including in isolated acceptance fixtures.
-      await page.getByRole("button", { name: "Set first ministry priority", exact: true }).click();
-      const direction = page.getByRole("dialog", { name: "Add ministry priority" });
+      await page.getByRole("button", { name: "Set church priority", exact: true }).click();
+      const direction = page.getByRole("dialog", { name: "Add church priority" });
       await direction.getByLabel("Strategy name").fill("Acceptance parent direction");
       await direction.getByLabel("Strategy statement").fill("Provide an attributable parent for the objective design check.");
       await direction.getByLabel("Strategy change reason").fill("Isolated role acceptance.");
-      await direction.getByRole("button", { name: "Add ministry priority", exact: true }).click();
+      await direction.getByRole("button", { name: "Add church priority", exact: true }).click();
       await expect(direction).not.toBeVisible();
     }
     await expect(objective).toBeVisible();
@@ -94,10 +94,10 @@ test("owner mockup: Give out work is a narrow progressive composer", async ({ pa
   await page.screenshot({ path: "test-artifacts/mockup-conformity-give-out-work-1440.png", fullPage: true });
 });
 
-test("owner mockup: Ministry objective is compact and hierarchy-first", async ({ page }) => {
+test("owner mockup: Church goal is compact and hierarchy-first", async ({ page }) => {
   await signInExecutive(page);
-  await openCreate(page, "Ministry objective");
-  const dialog = page.getByRole("dialog", { name: "Add ministry goal" });
+  await openCreate(page, "Church goal");
+  const dialog = page.getByRole("dialog", { name: "Add church goal" });
   await expect(dialog).toBeVisible();
   const primary = dialog.locator('.ev2c-overlay-footer .btn').first();
   expect(await primary.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
@@ -109,7 +109,7 @@ test("owner mockup: Ministry objective is compact and hierarchy-first", async ({
   await expect(dialog.getByText("Starts on", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Target date", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Status", { exact: true })).toBeVisible();
-  await expect(dialog.getByText(/Which ministry priority/)).toBeVisible();
+  await expect(dialog.getByText(/Which church priority/)).toBeVisible();
   await expect(dialog.getByText(/Why are you adding or changing this/)).toBeVisible();
 
   const box = await dialog.boundingBox();
