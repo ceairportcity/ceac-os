@@ -149,11 +149,12 @@ export async function signedOperationalDownloadUrl(file, expiresIn = 300) {
 
 // Start opening the destination directly from the user's tap; waiting for an
 // asynchronous signing call before opening can trigger iOS popup blockers.
-async function navigateToPrivateFile(file, download = false) {
+async function navigateToPrivateFile(file, download = false, isCurrent = () => true) {
   const tab = window.open("about:blank", "_blank");
   if (tab) tab.opener = null;
   try {
     const url = download ? await signedOperationalDownloadUrl(file) : await signedOperationalFileUrl(file);
+    if (!isCurrent()) { if (tab && !tab.closed) tab.close(); return; }
     if (tab && !tab.closed) tab.location.replace(url);
     else window.location.assign(url);
   } catch (error) {
@@ -161,11 +162,11 @@ async function navigateToPrivateFile(file, download = false) {
     throw error;
   }
 }
-export async function openOperationalFile(file) {
-  return navigateToPrivateFile(file, false);
+export async function openOperationalFile(file, isCurrent) {
+  return navigateToPrivateFile(file, false, isCurrent);
 }
-export async function downloadOperationalFile(file) {
-  return navigateToPrivateFile(file, true);
+export async function downloadOperationalFile(file, isCurrent) {
+  return navigateToPrivateFile(file, true, isCurrent);
 }
 
 export function formatOperationalFileSize(value) {
