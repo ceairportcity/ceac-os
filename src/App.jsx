@@ -165,9 +165,12 @@ export default function App() {
       // auth, profile, authority and work-session request unnecessarily.
       // Continue handling all genuine identity and security state changes.
       if (event === "INITIAL_SESSION") return;
-      if(event==="SIGNED_OUT" && draftActorRef.current){
-        const actor=draftActorRef.current;
-        void clearAccountCommunicationDrafts(actor.org_id,actor.id).catch(()=>{});
+      if(event==="SIGNED_OUT"){
+        if("clearAppBadge" in navigator)void navigator.clearAppBadge().catch(()=>{});
+        if(draftActorRef.current){
+          const actor=draftActorRef.current;
+          void clearAccountCommunicationDrafts(actor.org_id,actor.id).catch(()=>{});
+        }
       }
       if (UNIVERSAL_TOTP_CUTOVER) {
         // Identity-changing Auth events must immediately hide the previous
