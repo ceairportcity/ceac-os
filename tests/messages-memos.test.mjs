@@ -45,3 +45,34 @@ test('Executive significant updates include existing events and exclude routine 
  for(const verb of ['project_created','reopened','report_submitted','blocker_raised']) assert.ok(EXECUTIVE_EXCEPTION_VERBS.includes(verb));
  for(const verb of ['work_started','work_completed','activity_recorded']) assert.equal(EXECUTIVE_EXCEPTION_VERBS.includes(verb),false);
 });
+
+import {readFileSync as readContract} from 'node:fs';
+const source=path=>readContract(path,'utf8');
+test('Memos show attachments to authorised recipients with independent download actions',()=>{
+ const memo=source('src/screens/Memos.jsx'),media=source('src/components/OperationalFiles.jsx'),files=source('src/lib/operationalFiles.js');
+ assert.match(memo,/visibleAttachments\.length>0/);
+ assert.match(memo,/aria-label="Memo attachments"/);
+ assert.match(media,/aria-label=\{`Download \$\{file\.filename\}`\}/);
+ assert.match(files,/signedOperationalDownloadUrl/);
+ assert.match(files,/download: file\.filename/);
+ assert.match(files,/if \(!isCurrent\(\)\)/);
+});
+test('Room-only files do not masquerade as delivered filename messages and transient failures are retried',()=>{
+ const room=source('src/screens/Room.jsx'),files=source('src/lib/operationalFiles.js');
+ assert.doesNotMatch(room,/Files: " \+ pendingFiles/);
+ assert.match(room,/Attachment pending — not yet delivered/);
+ assert.match(room,/Retry attachments/);
+ assert.match(files,/uploadOperationalFileWithRetry/);
+ assert.match(files,/attempt < 3/);
+ assert.match(files,/options\.retryState \|\| \{\}/);
+});
+test('Memo sending validates recipients, labels progress and protects encrypted offline drafts',()=>{
+ const memo=source('src/screens/Memos.jsx'),drafts=source('src/lib/memoLocalDrafts.js');
+ assert.match(memo,/if\(!form\?\.to\?\.length\)/);
+ assert.match(memo,/Complete these details before sending/);
+ assert.match(memo,/Sending Memo…/);
+ assert.match(memo,/readLocalMemoDraft/);
+ assert.match(drafts,/AES-GCM/);
+ assert.match(drafts,/clearLocalMemoDraft/);
+ assert.doesNotMatch(drafts,/localStorage/);
+});
