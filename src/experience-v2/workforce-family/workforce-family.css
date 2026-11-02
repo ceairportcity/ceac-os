@@ -585,7 +585,7 @@
 @media(max-width:650px){
 .ev2wf-today-review-summary>:is(strong,span){flex:1 1 100%;font-size:12px}
 .ev2wf-today-review .ev2wf-today-review-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
-.ev2wf-today-review .ev2wf-today-review-list{overflow:visible}
+.ev2wf-today-review .ev2wf-today-review-list{overflow:visible;max-height:none}
 .ev2wf-today-review .ev2wf-today-review-list :is(table,tbody){display:block;width:100%;min-width:0}
 .ev2wf-today-review-list thead{display:none}
 .ev2wf-today-review-entry{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;padding:12px;border:1px solid var(--ev2-line);border-radius:10px;background:#fff}
