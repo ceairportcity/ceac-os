@@ -347,7 +347,7 @@ test("Room switching never restores stale participants or work links, and failed
   assert.match(room,/if \(loaded && activeRoomIdRef.current === room.id && atBottomRef.current\)/);
   assert.match(room,/if \(loading \|\| !room\?\.id \|\| error \|\| activeRoomIdRef.current !== room.id\) return;/);
   assert.match(room,/if \(requestSerial !== messageLoadSerial.current \|\| activeRoomIdRef.current !== roomId\) return false;/);
-  assert.match(room,/if \(!result.error && activeRoomIdRef.current === roomId\) \{\s*setNewMessageCount\(0\);\s*onMessagesChanged\?\.\(\);\s*\}/);
+  assert.match(room,/if \(!result.error && activeRoomIdRef.current === roomId\) \{\s*setNewMessageCount\(0\);\s*onMessagesChanged\?\.\(\);\s*window\.dispatchEvent\(new Event\("ceac:notifications-changed"\)\);\s*\}/);
 });
 
 test("Room message history uses a deterministic same-timestamp cursor without silently skipping messages",()=>{
