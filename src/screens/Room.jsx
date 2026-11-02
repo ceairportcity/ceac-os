@@ -597,7 +597,7 @@ export default function Room({
       <h3>Files in this conversation</h3><OperationalMediaList files={messages.flatMap(row => row.operational_files || [])} />
     </aside>}
 
-    {error && <div className="flag flag-brick room-error"><h4>Room could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" onClick={loadInitialRoom}>Try again</button></div>}
+    {error && <div className="flag flag-brick room-error"><h4>Room could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" onClick={loadInitialRoom}>Refresh Room</button> <a href="/?tab=technical-help">Report a problem</a></div>}
 
     {scopeRooms.length > 1 && <nav className="room-scope-strip" aria-label="Unit conversations">
       {scopeRooms.map((entry) => <button key={entry.id} className={entry.id === room?.id ? "on" : ""} onClick={() => entry.id === room?.id ? null : onRoomChange?.(contextForRoom(entry))}>
