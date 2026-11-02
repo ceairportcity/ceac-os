@@ -596,5 +596,5 @@
 .ev2wf-today-review-entry>td:nth-of-type(3)::before{content:"Status"}
 .ev2wf-today-review-entry>td:nth-of-type(-n+3)::before{display:block;color:var(--ev2-text-secondary);font-size:12px;font-weight:600}
 .ev2wf-today-review-entry>td:last-child{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
-.ev2wf-today-review-entry .btn{min-height:44px}
+.ev2wf-today-review-entry .btn{min-height:44px;scroll-margin-block:96px}
 }
