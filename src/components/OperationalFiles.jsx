@@ -123,7 +123,7 @@ export function OperationalFileList({
     const scopeGenerationAtStart = scopeGeneration.current;
     setError(null);
     try {
-      if (scopeGenerationAtStart === scopeGeneration.current) await openOperationalFile(file);
+      if (scopeGenerationAtStart === scopeGeneration.current) await openOperationalFile(file,()=>scopeGeneration.current===scopeGenerationAtStart);
     } catch (err) {
       if (scopeGenerationAtStart === scopeGeneration.current) {
         setError(err.message || "The file could not be opened.");
@@ -135,7 +135,7 @@ export function OperationalFileList({
     if (!verified) return;
     const generation = scopeGeneration.current;
     setError(null);
-    try { await downloadOperationalFile(file); }
+    try { await downloadOperationalFile(file,()=>scopeGeneration.current===generation); }
     catch (err) { if (generation === scopeGeneration.current) setError("This file could not be downloaded. Please try again."); }
   }
 
@@ -177,6 +177,7 @@ export function OperationalMediaList({ files = [] }) {
   const safeUrls = loadedMediaKey === mediaKey ? urls : {};
   const activeMediaKey = useRef(mediaKey);
   activeMediaKey.current = mediaKey;
+  useEffect(()=>()=>{ activeMediaKey.current = null; },[]);
 
   useEffect(() => {
     let cancelled = false;
@@ -211,7 +212,7 @@ export function OperationalMediaList({ files = [] }) {
   async function openMedia(file) {
     const expectedKey = mediaKey;
     try {
-      if (activeMediaKey.current === expectedKey) await openOperationalFile(file);
+      if (activeMediaKey.current === expectedKey) await openOperationalFile(file,()=>activeMediaKey.current===expectedKey);
     } catch (err) {
       if (activeMediaKey.current === expectedKey) {
         setError(err.message || "The private media file could not be opened.");
@@ -222,7 +223,7 @@ export function OperationalMediaList({ files = [] }) {
   async function downloadMedia(file) {
     const expectedKey = mediaKey;
     try {
-      if (activeMediaKey.current === expectedKey) await downloadOperationalFile(file);
+      if (activeMediaKey.current === expectedKey) await downloadOperationalFile(file,()=>activeMediaKey.current===expectedKey);
     } catch {
       if (activeMediaKey.current === expectedKey) setError("This download could not be started. Please try again.");
     }
