@@ -35,6 +35,8 @@ const budgets = {
   // records required small additional route CSS. Removed duplicated map
   // styling and consolidated mobile typography first; allow at most +1 KiB
   // over the last approved ceiling, keeping all other size limits intact.
+  // 2 Nov exact-head Level B evidence measured 697,586 bytes, 1,266 over
+  // this ceiling. Keep the regression limit intact pending a real CSS repair.
   allCssRaw: 680 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
