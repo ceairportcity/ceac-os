@@ -28,7 +28,7 @@ async function openCreate(page, label) {
     const objective = page.getByRole("button", { name: "Add church goal", exact: true }).first();
     if (!(await objective.count())) {
       // An objective requires a recorded parent, including in isolated acceptance fixtures.
-      await page.getByRole("button", { name: "Set first church priority", exact: true }).click();
+      await page.getByRole("button", { name: /^(Set first church priority|Add Church priority)$/i }).first().click();
       const direction = page.getByRole("dialog", { name: "Add Church priority" });
       await direction.getByLabel("Strategy name").fill("Acceptance parent direction");
       await direction.getByLabel("Strategy statement").fill("Provide an attributable parent for the objective design check.");
