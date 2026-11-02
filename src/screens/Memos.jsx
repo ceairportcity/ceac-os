@@ -232,7 +232,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   const decisionPeople=form ? eligibleMemoDecisionMakers(people,{scope:form.scope,unitId:form.unitId,to:form.to,senderId:me.id}):[];
   const unread=rows.filter(row=>row.memo_recipients.some(r=>r.profile_id===me.id && (!r.last_read_at || new Date(r.last_read_at)<new Date(row.updated_at)))).length;
   return <section className={`memos-workspace ${form ? "is-composing" : ""}`} aria-label="Memos">
-    {error && <p className="msg-error" role="alert">{error}<button type="button" disabled={busy} onClick={()=>setReload(n=>n+1)}>Retry loading</button></p>}
+    {error && <p className="msg-error" role="alert">{error}<button type="button" disabled={busy} onClick={()=>setReload(n=>n+1)}>Try again</button> <a href="/?tab=technical-help">Report a problem</a></p>}
     {notice && <p className="msg-notice" role="status">{notice}</p>}
     {form ? <form noValidate className="memo-compose" onSubmit={e=>{e.preventDefault();sendWithValidation();}}>
       <header><button type="button" aria-label="Back to Memos" disabled={busy} onClick={()=>{if(canLeave()){setForm(null);setDirty(false);setPendingFiles([]);setReload(n=>n+1);}}}><ArrowLeft size={18}/></button><div><h2>{form.revision?"Revise Memo":"New Memo"}</h2><small>Formal communication · visible only to selected participants</small></div><button type="button" disabled={busy} onClick={()=>persist(false)}>Save Draft</button><button className="btn" type="submit" disabled={busy} aria-busy={busy}>{busy?sendStage:"Send Memo"}</button></header>
