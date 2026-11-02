@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { PendingFilePicker, OperationalMediaList } from "../components/OperationalFiles";
 import { listOperationalFiles, uploadOperationalFileWithRetry } from "../lib/operationalFiles";
 import { humanError } from "../lib/productLanguage";
+import { readLocalMemoDraft, saveLocalMemoDraft, clearLocalMemoDraft } from "../lib/memoLocalDrafts";
 import { MEMO_STATUS_LABELS, eligibleMemoDecisionMakers, initials, memoInView, messageTimestamp } from "../lib/memos";
 
 const fresh = () => ({id:crypto.randomUUID(),versionId:null,updatedAt:null,subject:"",body:"",to:[],cc:[],decisionRequired:false,scope:"department",unitId:"",decisionMakerId:""});
@@ -30,9 +31,32 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   const [detail,setDetail]=useState(null),[detailKey,setDetailKey]=useState(""),[reply,setReply]=useState("");
   const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
   const [sendStage,setSendStage]=useState(""),[formIssues,setFormIssues]=useState([]),[attachmentError,setAttachmentError]=useState("");
+  const [recoveredDraft,setRecoveredDraft]=useState(null),[missingUploads,setMissingUploads]=useState([]);
+  const uploadRetries=useRef(new Map());
   const [reload,setReload]=useState(0),[projectUnit,setProjectUnit]=useState(""),[projectName,setProjectName]=useState(""),[projectSummary,setProjectSummary]=useState("");
   const writing=useRef(false),textarea=useRef(null),request=useRef(0),responseIntent=useRef(null),editorVersion=useRef(null),projectVersion=useRef(null);
   const name=id=>people.find(person=>person.id===id)?.full_name || "CEAC colleague";
+  useEffect(()=>{
+    let active=true;
+    setRecoveredDraft(null);
+    readLocalMemoDraft(me.org_id,me.id).then(saved=>{if(active&&saved?.form)setRecoveredDraft(saved);}).catch(()=>{});
+    return()=>{active=false;};
+  },[me.org_id,me.id]);
+  useEffect(()=>{
+    if(!form)return;
+    const pending=[...new Set([...missingUploads,...pendingFiles.map(file=>file.name)])];
+    const payload={form,missingUploads:pending};
+    const timer=setTimeout(()=>{
+      void saveLocalMemoDraft(me.org_id,me.id,payload).then(()=>setRecoveredDraft(payload)).catch(()=>{});
+    },350);
+    return()=>clearTimeout(timer);
+  },[me.org_id,me.id,form,pendingFiles,missingUploads]);
+  useEffect(()=>{
+    const {data}=supabase.auth.onAuthStateChange(event=>{
+      if(event==="SIGNED_OUT")void clearLocalMemoDraft(me.org_id,me.id).catch(()=>{});
+    });
+    return()=>data.subscription.unsubscribe();
+  },[me.org_id,me.id]);
   useEffect(()=>{if(composeRequest)startNew();},[composeRequest]);
   useEffect(()=>{
     let current=true;setLoading(true);setError("");
@@ -92,7 +116,18 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   useEffect(()=>{setReply("");responseIntent.current=null;},[selected]);
   useEffect(()=>{if(leaveGuard)leaveGuard.current=canLeave;return()=>{if(leaveGuard)leaveGuard.current=null;};},[dirty,pendingFiles.length,reply,leaveGuard]);
   function canLeave(){return !writing.current && (!(dirty || pendingFiles.length || reply.trim()) || window.confirm("Leave this unsaved message? Save Draft or send your reply first to keep your changes."));}
-  function startNew(){if(!canLeave())return;setSelected(null);setForm(fresh());editorVersion.current=null;setDraftFiles([]);setPendingFiles([]);setDirty(false);setError("");setNotice("");}
+  function startNew(){
+    if(!canLeave())return;
+    const recovered=recoveredDraft?.form;
+    setSelected(null);setForm(recovered || fresh());editorVersion.current=recovered?.versionId || null;
+    setDraftFiles([]);setPendingFiles([]);setMissingUploads(recoveredDraft?.missingUploads || []);
+    setDirty(Boolean(recovered));setFormIssues([]);setError("");
+    setNotice(recovered?"Your unfinished Memo has been restored from this device. Reattach any files listed below.":"");
+  }
+  function discardRecoveredDraft(){
+    setRecoveredDraft(null);setMissingUploads([]);void clearLocalMemoDraft(me.org_id,me.id).catch(()=>{});
+    setSelected(null);setForm(fresh());editorVersion.current=null;setPendingFiles([]);setDraftFiles([]);setDirty(false);setError("");setNotice("");
+  }
   function change(key,value){setForm(f=>({...f,[key]:value}));setDirty(true);setFormIssues([]);}
   function validateForSend() {
     const issues=[];
@@ -101,9 +136,10 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     if(!form?.body?.trim())issues.push({key:"body",message:"Write your message."});
     if(form?.decisionRequired && form.scope==="department" && !form.unitId)issues.push({key:"unitId",message:"Choose a department."});
     if(form?.decisionRequired && !form.decisionMakerId)issues.push({key:"decisionMakerId",message:"Choose who will decide this proposal."});
+    if(missingUploads.length)issues.push({key:"files",message:"Reattach your previously selected files before sending, or remove them from the draft."});
     setFormIssues(issues);
     if(issues.length)requestAnimationFrame(()=>{
-      const nodes={to:".memo-recipient input",subject:".memo-subject input",body:".memo-writing textarea",unitId:".memo-route select",decisionMakerId:".memo-route select:last-of-type"};
+      const nodes={to:".memo-recipient input",subject:".memo-subject input",body:".memo-writing textarea",unitId:".memo-route select",decisionMakerId:".memo-route select:last-of-type",files:".operational-files-picker input"};
       const field=document.querySelector(".memo-compose "+nodes[issues[0].key]);
       field?.scrollIntoView({behavior:"smooth",block:"center"});field?.focus({preventScroll:true});
     });
@@ -115,7 +151,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     if(!version)return;
     setForm({id:m.id,versionId:version.id,updatedAt:m.updated_at,subject:version.subject,body:version.body,to:m.memo_recipients.filter(r=>r.kind==="to").map(r=>r.profile_id),cc:m.memo_recipients.filter(r=>r.kind==="cc").map(r=>r.profile_id),decisionRequired:m.decision_required,scope:m.decision_scope,unitId:m.unit_id||"",decisionMakerId:m.decision_maker_id||"",revision:m.status==="changes_requested"});
     editorVersion.current=version.sent_at?null:version.id;
-    setDraftFiles(version.sent_at ? [] : m.files[version.id] || []);setPendingFiles([]);setDirty(false);setSelected(null);setError("");
+    setDraftFiles(version.sent_at ? [] : m.files[version.id] || []);setPendingFiles([]);setMissingUploads([]);setDirty(false);setSelected(null);setError("");
   }
   async function persist(send=false){
     if(!form || writing.current)return;writing.current=true;setBusy(true);setSendStage(send?"Preparing Memo…":"Saving draft…");setError("");setNotice("");
@@ -128,12 +164,16 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
       setForm(f=>({...f,versionId,updatedAt:result.data.updated_at}));setDirty(false);
       for(const file of pendingFiles){
         setSendStage("Uploading attachment…");
-        await uploadOperationalFileWithRetry({file,contextType:"memo_version",contextId:versionId,relation:"memo_attachment"});
+        const retryState=uploadRetries.current.get(file) || {};
+        uploadRetries.current.set(file,retryState);
+        await uploadOperationalFileWithRetry({file,contextType:"memo_version",contextId:versionId,relation:"memo_attachment",retryState});
+        uploadRetries.current.delete(file);
         setPendingFiles(current=>current.filter(row=>row!==file));
       }
       setDraftFiles(await listOperationalFiles("memo_version",versionId));
       if(send){setSendStage("Sending Memo…");const delivery=await supabase.rpc("send_memo",{p_id:savedForm.id,p_version_id:versionId});if(delivery.error)throw delivery.error;
-        setForm(null);setSelected(savedForm.id);setNotice("Memo sent.");
+        setForm(null);setSelected(savedForm.id);setRecoveredDraft(null);setMissingUploads([]);
+        void clearLocalMemoDraft(me.org_id,me.id).catch(()=>{});setNotice("Memo sent.");
       }else setNotice("Draft saved.");
       setReload(n=>n+1);
     }catch(failure){
@@ -197,12 +237,27 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
         </div>}
         <div className="memo-format" role="toolbar" aria-label="Message formatting"><button type="button" onClick={()=>format("**")}>Bold</button><button type="button" onClick={()=>format("_")}>Italic</button><button type="button" onClick={()=>format("\n• ","")}>List</button></div>
         <label className="memo-writing">Message<textarea ref={textarea} aria-invalid={formIssues.some(x=>x.key==="body")} required maxLength={30000} rows={12} value={form.body} onChange={e=>change("body",e.target.value)} placeholder="Write your memo…"/></label>
-        <PendingFilePicker files={pendingFiles} onChange={files=>{setPendingFiles(files);setDirty(true);}} label="Attach proposal or documents" disabled={busy}/>
+        <PendingFilePicker files={pendingFiles} onChange={files=>{
+          setPendingFiles(files);
+          setMissingUploads(previous=>previous.filter(name=>!files.some(file=>file.name===name)));
+          setDirty(true);setFormIssues([]);
+        }} label="Attach proposal or documents" disabled={busy}/>
+        {missingUploads.length>0 && <div className="memo-missing-files" role="status">
+          <strong>Previously selected files need to be reattached</strong>
+          {missingUploads.map(filename=><div key={filename}>{filename}
+            <button type="button" onClick={()=>setMissingUploads(current=>current.filter(x=>x!==filename))}>Remove from draft</button>
+          </div>)}
+        </div>}
         {draftFiles.map(file=><div className="memo-draft-file" key={file.link_id}><Paperclip size={14}/>{file.filename}{file.state!=="active" && <small>Upload incomplete</small>}<button type="button" onClick={()=>removeFile(file)}>Remove</button></div>)}
         <p className="memo-policy">Proposal approval does not authorise expenditure or project execution. Use the existing Finance, HR and Work processes for their respective approvals.</p>
       </fieldset>
     </form> : <div className={`memo-layout ${selected?"has-selection":""}`}>
       <aside className="memo-directory"><header><h2>Memos {unread>0 && <small>{unread} unread</small>}</h2><button type="button" onClick={startNew} aria-label="New Memo"><Plus size={18}/></button></header>
+        {recoveredDraft?.form && <div className="memo-recovery-banner" role="status">
+          <strong>Unfinished Memo saved on this device</strong>
+          <button type="button" onClick={startNew}>Continue writing</button>
+          <button type="button" onClick={discardRecoveredDraft}>Discard this copy</button>
+        </div>}
         <label className="msg-search"><Search size={16}/><input type="search" aria-label="Search Memos" placeholder="Search subjects…" value={query} onChange={e=>setQuery(e.target.value)}/></label>
         <nav className="memo-filters" aria-label="Memo views">{[["received","Received"],["sent","Sent"],["drafts","Drafts"],["awaiting","Awaiting Decision"],["completed","Completed / Closed"]].map(([key,label])=><button type="button" key={key} aria-current={view===key?"page":undefined} onClick={()=>setView(key)}>{label}</button>)}</nav>
         {loading && <p role="status">Loading Memos…</p>}
