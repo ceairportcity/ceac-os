@@ -13,7 +13,7 @@ import {
 
 const globalSearchModule = import("./GlobalSearch");
 const GlobalSearch = lazy(() => globalSearchModule);
-const unreadBadgeStyle={display:"inline-grid",placeItems:"center",minWidth:19,height:19,padding:"0 5px",borderRadius:99,background:"#c73535",color:"#fff",fontSize:11,fontWeight:700,marginLeft:3};
+const unreadBadgeStyle={display:"inline-grid",placeItems:"center",minWidth:19,height:19,padding:"0 5px",borderRadius:99,background:"#c73535",color:"#fff",fontSize:12,fontWeight:700,marginLeft:3};
 function UnreadBadge({count}) {
   return count>0?<span style={unreadBadgeStyle} aria-hidden="true">{count>99?"99+":count}</span>:null;
 }
