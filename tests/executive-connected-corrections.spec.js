@@ -154,12 +154,12 @@ for (const width of [390,1440]) {
   test(`Executive secondary destinations use the replacement family at ${width}px`,async ({page},testInfo)=>{
     await page.setViewportSize({width,height:960});
     await signIn(page);
-    for (const [tab,heading] of [['work','Work'],['strategy','Ministry goals'],['exec-projects','Projects'],['messages','Messages'],['me','My Hub'],['announcements','Announcements'],['payroll','Payroll'],['technical-help','Get technical help'],['guide','Help that matches your work']]) {
+    for (const [tab,heading] of [['work','Work'],['strategy','Church goals'],['exec-projects','Projects'],['messages','Messages'],['me','My Hub'],['announcements','Announcements'],['payroll','Payroll'],['technical-help','Get technical help'],['guide','Help that matches your work']]) {
       await page.goto(`/?tab=${tab}`);
       const title=page.getByRole('heading',{name:heading,exact:true}).first();
       await expect(title).toBeVisible();
       if (tab === 'strategy') {
-        const primary=page.getByRole('button',{name:/^(Add ministry goal|Set first ministry priority)$/});
+        const primary=page.getByRole('button',{name:/^(Add Church goal|Add Church priority)$/});
         const secondary=page.getByRole('button',{name:'Add another priority',exact:true});
         expect(await primary.evaluate(node=>getComputedStyle(node).backgroundImage)).toBe('none');
         expect(await primary.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
