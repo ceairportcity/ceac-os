@@ -9,6 +9,9 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
     const title = `Own daily responsibility ${actor} ${Date.now()}`;
     const context = await browser.newContext({ viewport: { width:390, height:844 } });
     const page = await context.newPage();
+    // Keep the browser on the chosen Ghana calendar date even if this
+    // test begins before midnight and finishes after midnight.
+    await page.clock.install({ time: new Date(today + 'T12:00:00.000Z') });
     const client = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
     const colleague = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
     const unrelated = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
