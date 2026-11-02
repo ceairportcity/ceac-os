@@ -224,6 +224,7 @@ export default function Room({
     // Clear prior-room identities/references before any asynchronous read.
     setParticipants([]); setScopeRooms([]); setWorkOptions([]); setProjectOptions([]);
     setRoom(nextRoom);
+    uploadRetries.current.clear();
     setBody("");setMissingRoomFiles([]);setDraftReadyRoom(null);
     setPanel(null);
     setPendingFiles([]); setAttachmentMessageId(null);
