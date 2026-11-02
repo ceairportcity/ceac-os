@@ -33,6 +33,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   const [sendStage,setSendStage]=useState(""),[formIssues,setFormIssues]=useState([]),[attachmentError,setAttachmentError]=useState("");
   const [recoveredDraft,setRecoveredDraft]=useState(null),[missingUploads,setMissingUploads]=useState([]);
   const uploadRetries=useRef(new Map());
+  const localDraftGeneration=useRef(0);
   const [reload,setReload]=useState(0),[projectUnit,setProjectUnit]=useState(""),[projectName,setProjectName]=useState(""),[projectSummary,setProjectSummary]=useState("");
   const writing=useRef(false),textarea=useRef(null),request=useRef(0),responseIntent=useRef(null),editorVersion=useRef(null),projectVersion=useRef(null);
   const name=id=>people.find(person=>person.id===id)?.full_name || "CEAC colleague";
@@ -46,10 +47,13 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     if(!form)return;
     const pending=[...new Set([...missingUploads,...pendingFiles.map(file=>file.name)])];
     const payload={form,missingUploads:pending};
+    const generation=++localDraftGeneration.current;
     const timer=setTimeout(()=>{
-      void saveLocalMemoDraft(me.org_id,me.id,payload).then(()=>setRecoveredDraft(payload)).catch(()=>{});
+      void saveLocalMemoDraft(me.org_id,me.id,payload)
+        .then(()=>{if(localDraftGeneration.current===generation)setRecoveredDraft(payload);})
+        .catch(()=>{});
     },350);
-    return()=>clearTimeout(timer);
+    return()=>{clearTimeout(timer);localDraftGeneration.current++;};
   },[me.org_id,me.id,form,pendingFiles,missingUploads]);
   useEffect(()=>{
     const {data}=supabase.auth.onAuthStateChange(event=>{
@@ -108,6 +112,16 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
           setDetail({...m.data,versions,exchanges:e.data || [],files:Object.fromEntries(files)});setDetailKey(selected);
           if(projectVersion.current!==m.data.current_version_id){projectVersion.current=m.data.current_version_id;setProjectUnit(m.data.unit_id || "");setProjectName(versions.filter(v=>v.sent_at).at(-1)?.subject || "");setProjectSummary("");}}
         const read=await supabase.rpc("mark_memo_read",{p_id:selected});
+        if(!read.error){
+          // Reading the Memo should clear its unread alert, but must not approve
+          // or complete any pending decision attached to the same Memo.
+          void supabase.rpc("my_ceac_notifications").then(async result=>{
+            if(result.error || !Array.isArray(result.data))return;
+            const ids=result.data.filter(row=>row.context_kind==="memo"&&row.context_id===selected&&!row.read_at).map(row=>row.id);
+            await Promise.allSettled(ids.map(id=>supabase.rpc("mark_ceac_notification_read",{p_id:id})));
+            window.dispatchEvent(new Event("ceac:notifications-changed"));
+          }).catch(()=>{});
+        }
         if(read.error && current)setNotice("Memo opened; its read indicator could not be updated.");
         else if(current)setRows(rows=>rows.map(row=>row.id!==selected?row:{...row,memo_recipients:row.memo_recipients.map(recipient=>recipient.profile_id===me.id?{...recipient,last_read_at:m.data.updated_at}:recipient)}));
       }catch(failure){if(current && serial===request.current){setDetail(null);setError(failure.message || "This memo could not be opened.");}}
@@ -173,7 +187,9 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
       setDraftFiles(await listOperationalFiles("memo_version",versionId));
       if(send){setSendStage("Sending Memo…");const delivery=await supabase.rpc("send_memo",{p_id:savedForm.id,p_version_id:versionId});if(delivery.error)throw delivery.error;
         setForm(null);setSelected(savedForm.id);setRecoveredDraft(null);setMissingUploads([]);
+        localDraftGeneration.current++;
         void clearLocalMemoDraft(me.org_id,me.id).catch(()=>{});setNotice("Memo sent.");
+        window.dispatchEvent(new Event("ceac:notifications-changed"));
       }else setNotice("Draft saved.");
       setReload(n=>n+1);
     }catch(failure){
