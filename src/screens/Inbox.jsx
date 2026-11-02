@@ -14,6 +14,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
   const [actions,setActions] = useState([]), [actionsOpen,setActionsOpen] = useState(false);
   const [query,setQuery] = useState(""), [error,setError] = useState(""), [loading,setLoading] = useState(true);
   const [reload,setReload] = useState(0), [composeMemo,setComposeMemo] = useState(0);
+  const [notifications,setNotifications] = useState(null);
   const [loadedScope,setLoadedScope] = useState("");
   const scope = `${me.org_id}:${me.id}`;
   const request = useRef(0);
@@ -24,6 +25,34 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
     setSection(next);
   }
   const verified = loadedScope === scope;
+  useEffect(()=>{
+    let active=true;
+    async function refreshNotifications(){
+      if(document.visibilityState==="hidden")return;
+      try{
+        const response=await supabase.rpc("my_ceac_notifications");
+        if(!active || response.error || !Array.isArray(response.data))return;
+        const unread=response.data.filter(row=>!row.read_at);
+        setNotifications({
+          count:unread.length,
+          memo:unread.filter(row=>row.context_kind==="memo").length,
+        });
+        if("setAppBadge" in navigator){
+          if(unread.length)void navigator.setAppBadge(unread.length).catch(()=>{});
+          else if("clearAppBadge" in navigator)void navigator.clearAppBadge().catch(()=>{});
+        }
+      }catch{/* Keep last verified count, not a fabricated zero. */}
+    }
+    void refreshNotifications();
+    const timer=window.setInterval(refreshNotifications,12000);
+    window.addEventListener("focus",refreshNotifications);
+    window.addEventListener("ceac:notifications-changed",refreshNotifications);
+    return()=>{
+      active=false;window.clearInterval(timer);
+      window.removeEventListener("focus",refreshNotifications);
+      window.removeEventListener("ceac:notifications-changed",refreshNotifications);
+    };
+  },[scope]);
   useEffect(() => { if(initialView) {setSection("rooms");onInitialViewHandled?.();} },[initialView]);
   useEffect(() => {
     let active = true; const serial = ++request.current;
@@ -65,7 +94,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
   return <div ref={workspaceRef} className="msg-workspace" style={{"--exec-purple":"#1678c9"}}>
     <header className="msg-head"><h1>Messages</h1>
       <div><button type="button" aria-expanded={actionsOpen} onClick={()=>setActionsOpen(open=>!open)}>Work actions {verified ? actions.length : "…"}</button><button type="button" onClick={openAnnouncements}>Announcements</button>
-      <button type="button" aria-label="Updates" aria-pressed={section==="updates"} onClick={()=>switchSection("updates")}><Bell size={18}/></button>
+      <button type="button" aria-label={notifications?.count?`Updates, ${notifications.count} unread`:"Updates"} aria-pressed={section==="updates"} onClick={()=>switchSection("updates")}><Bell size={18}/>{notifications?.count>0 && <span className="ceac-notification-badge">{notifications.count>99?"99+":notifications.count}</span>}</button>
       <button type="button" aria-label="New Memo" onClick={()=>{setSection("memos");setComposeMemo(n=>n+1);}}><PenSquare size={19}/></button></div>
     </header>
     {actionsOpen && verified && <div className="room-picker-panel" aria-label="Work actions">
@@ -75,7 +104,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
     </div>}
     <nav className="msg-sections" aria-label="Messages sections">
       <button type="button" aria-current={section === "rooms" ? "page" : undefined} onClick={()=>switchSection("rooms")}><MessageSquare size={16}/> Rooms</button>
-      <button type="button" aria-current={section === "memos" ? "page" : undefined} onClick={()=>switchSection("memos")}><FileText size={16}/> Memos</button>
+      <button type="button" aria-current={section === "memos" ? "page" : undefined} onClick={()=>switchSection("memos")}><FileText size={16}/> Memos {notifications?.memo>0 && <span className="ceac-notification-badge">{notifications.memo>99?"99+":notifications.memo}</span>}</button>
     </nav>
     {section === "updates" ? <Notifications key={scope} me={me} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
       : <div className={`msg-layout ${selected && verified ? "has-selection" : ""}`}>
