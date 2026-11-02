@@ -9,6 +9,7 @@ import "./protected-hr-roster-read.test.mjs";
 
 const read = (path) => readFileSync(path, "utf8");
 const privateFiles = read("src/components/OperationalFiles.jsx");
+const fileTransport = read("src/lib/operationalFiles.js");
 const approvals = read("src/components/SupportAccessApprovals.jsx");
 const support = read("src/screens/TechnicalSupport.jsx");
 
@@ -26,8 +27,9 @@ test("private attachments are scoped during render, not merely cleared after an 
 test("stale private signed URL requests cannot open documents after a context switch", () => {
   assert.match(privateFiles, /async function open\(file\) \{/);
   assert.match(privateFiles, /if \(!verified\) return/);
-  assert.match(privateFiles, /await signedOperationalFileUrl\(file, 300\)/);
-  assert.match(privateFiles, /if \(scopeGenerationAtStart === scopeGeneration\.current\) \{\s*window\.open/);
+  assert.match(privateFiles, /await openOperationalFile\(file,\(\)=>scopeGeneration\.current===scopeGenerationAtStart\)/);
+  assert.match(fileTransport, /if \(!isCurrent\(\)\) \{ if \(tab && !tab\.closed\) tab\.close\(\); return; \}/);
+  assert.match(fileTransport, /downloadOperationalFile\(file, isCurrent\)/);
   assert.match(privateFiles, /disabled=\{busy \|\| !verified \|\| !contextId \|\| Boolean\(visibleError\)\}/);
   assert.match(privateFiles, /writeBusy\.current/);
   assert.match(privateFiles, /if \(scopeGenerationAtStart !== scopeGeneration\.current\) return;/);
@@ -71,12 +73,14 @@ test("private media previews never reuse stale signed links for changed file ide
   assert.match(privateFiles, /file\.storage_path \|\| ""/);
   assert.match(privateFiles, /const safeUrls = loadedMediaKey === mediaKey \? urls : \{\}/);
   assert.match(privateFiles, /const url = safeUrls\[file\.id\]/);
-  assert.match(privateFiles, /if \(!cancelled\) \{ setUrls\(Object\.fromEntries\(pairs\)\); setLoadedMediaKey\(mediaKey\); \}/);
-  assert.match(privateFiles, /if \(activeMediaKey\.current === expectedKey\) window\.open/);
-  assert.match(privateFiles, /if \(loadedMediaKey !== mediaKey\) return/);
+  assert.match(privateFiles, /Promise\.allSettled\(files\.map/);
+  assert.match(privateFiles, /setUrls\(Object\.fromEntries\(pairs\)\)/);
+  assert.match(privateFiles, /await openOperationalFile\(file,\(\)=>activeMediaKey\.current===expectedKey\)/);
+  assert.match(privateFiles, /await downloadOperationalFile\(file,\(\)=>activeMediaKey\.current===expectedKey\)/);
+  assert.match(privateFiles, /activeMediaKey\.current = null/);
   assert.match(privateFiles, /Retry private media/);
   assert.match(privateFiles, /Checking private media/);
-  assert.match(privateFiles, /disabled=\{loadedMediaKey !== mediaKey\} onClick=\{\(\) => void openMedia\(file\)\}/);
+  assert.match(privateFiles, /aria-label=\{`Download \$\{file\.filename\}`\}/);
   assert.doesNotMatch(privateFiles, /const url = urls\[file\.id\]/);
 });
 

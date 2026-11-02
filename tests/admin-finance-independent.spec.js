@@ -71,7 +71,7 @@ for(const width of [390,1440]){
   const upload=dialog.getByLabel('Upload file',{exact:true});
   await expect(upload).toBeEnabled();
   await upload.setInputFiles({name:'synthetic-receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('test')});
-  await expect(dialog.getByRole('button',{name:/synthetic-receipt.pdf/})).toBeVisible();
+  await expect(dialog.locator('.operational-files .row-t').filter({hasText:'synthetic-receipt.pdf'})).toBeVisible();
   expect(calls.map(c=>c.kind)).toEqual(['register','storage','finalise']);
   await page.screenshot({path:`test-artifacts/expense-receipts-${width}.png`,fullPage:false,animations:"disabled"});
   expect(calls[0].body).toMatchObject({p_context_type:'spend_line',p_context_id:'spend',p_relation:'expense_receipt'});
@@ -118,7 +118,7 @@ test('real isolated Admin receipt stores and retrieves the same private bytes',a
  // upload state a person must reach before opening their file chooser.
  await expect.poll(async()=>({ready:await upload.isEnabled(),errors:await receipts.getByRole('alert').allTextContents()})).toEqual({ready:true,errors:[]});
  await upload.setInputFiles({name:filename,mimeType:'application/pdf',buffer:bytes});
- await expect.poll(async()=>({visible:await receipts.getByRole('button',{name:new RegExp(filename)}).isVisible(),errors:await receipts.getByRole('alert').allTextContents()})).toEqual({visible:true,errors:[]});
+ await expect.poll(async()=>({visible:await receipts.locator('.operational-files .row-t').filter({hasText:filename}).isVisible(),errors:await receipts.getByRole('alert').allTextContents()})).toEqual({visible:true,errors:[]});
  const downloaded=await page.evaluate(async(name)=>{
   const {supabase}=await import('/src/lib/supabase.js');
   const links=await supabase.from('operational_files').select('storage_bucket,storage_path').eq('filename',name).single();

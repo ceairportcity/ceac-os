@@ -13,6 +13,10 @@ import {
 
 const globalSearchModule = import("./GlobalSearch");
 const GlobalSearch = lazy(() => globalSearchModule);
+const unreadBadgeStyle={display:"inline-grid",placeItems:"center",minWidth:19,height:19,padding:"0 5px",borderRadius:99,background:"#c73535",color:"#fff",fontSize:12,fontWeight:700,marginLeft:3};
+function UnreadBadge({count}) {
+  return count>0?<span style={unreadBadgeStyle} aria-hidden="true">{count>99?"99+":count}</span>:null;
+}
 
 function GlobalSearchSurface(props) {
   return <Suspense fallback={null}><GlobalSearch {...props} /></Suspense>;
@@ -177,6 +181,8 @@ export function SideNav({
 
 export function AppTopBar({
   me,
+  notificationCounts,
+  onOpenUpdates,
   roleLabel,
   tab,
   onProfile,
@@ -273,10 +279,11 @@ export function AppTopBar({
         {onMessages ? <button
           type="button"
           className={isExec ? "fpg9-topbar-message exec-redesign-notification" : "fpg9-topbar-message"}
-          onClick={onMessages}
-          aria-label={isExec ? "Open updates" : "Open messages"}
+          onClick={onOpenUpdates || onMessages}
+          aria-label={notificationCounts?.count ? `Open updates, ${notificationCounts.count} unread` : "Open updates"}
         >
-          <CeacIcon name={isExec ? "notification" : "messages"} size="row" decorative />
+          <CeacIcon name="notification" size="row" decorative />
+          <UnreadBadge count={notificationCounts?.count} />
         </button> : null}
 
         <div className="ev2s-accra-time" aria-label="Current date and time in Accra">
@@ -303,6 +310,8 @@ export function AppTopBar({
 
 export function MobileTopBar({
   me,
+  notificationCounts,
+  onOpenUpdates,
   roleLabel = "Staff",
   isAdmin = false,
   isExec = false,
@@ -374,13 +383,14 @@ export function MobileTopBar({
           >
             <CeacIcon name="help" size="row" decorative />
           </button> : null}
-          {isExec && onMessages ? <button
+          {onMessages ? <button
             type="button"
             className="ev2s-mobile-profile exec-redesign-mobile-notification"
-            aria-label="Open updates"
-            onClick={onMessages}
+            aria-label={notificationCounts?.count ? `Open updates, ${notificationCounts.count} unread` : "Open updates"}
+            onClick={onOpenUpdates || onMessages}
           >
             <CeacIcon name="notification" size="row" decorative />
+            <UnreadBadge count={notificationCounts?.count} />
           </button> : null}
           <button
             type="button"

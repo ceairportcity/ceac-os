@@ -4,6 +4,7 @@ import {
   formatOperationalFileSize,
   listOperationalFiles,
   openOperationalFile,
+  downloadOperationalFile,
   signedOperationalFileUrl,
   uploadOperationalFiles,
   validateOperationalFile,
@@ -122,15 +123,20 @@ export function OperationalFileList({
     const scopeGenerationAtStart = scopeGeneration.current;
     setError(null);
     try {
-      const url = await signedOperationalFileUrl(file, 300);
-      if (scopeGenerationAtStart === scopeGeneration.current) {
-        window.open(url, "_blank", "noopener,noreferrer");
-      }
+      if (scopeGenerationAtStart === scopeGeneration.current) await openOperationalFile(file,()=>scopeGeneration.current===scopeGenerationAtStart);
     } catch (err) {
       if (scopeGenerationAtStart === scopeGeneration.current) {
         setError(err.message || "The file could not be opened.");
       }
     }
+  }
+
+  async function download(file) {
+    if (!verified) return;
+    const generation = scopeGeneration.current;
+    setError(null);
+    try { await downloadOperationalFile(file,()=>scopeGeneration.current===generation); }
+    catch (err) { if (generation === scopeGeneration.current) setError("This file could not be downloaded. Please try again."); }
   }
 
   return <section className="operational-files">
@@ -145,11 +151,15 @@ export function OperationalFileList({
       {visibleError} <button type="button" className="text-action" onClick={() => void load()}>Retry private files</button>
     </div>}
     {verified && !visibleRows.length && !visibleError && <div className="card small">{emptyText}</div>}
-    {visibleRows.map((file) => <button type="button" className="row" key={file.link_id || file.id} onClick={() => open(file)}>
+    {visibleRows.map((file) => <div className="row" key={file.link_id || file.id}>
       <div className="row-t">{file.filename}</div>
       <div className="row-m">{formatOperationalFileSize(file.size_bytes)} · {file.mime_type}</div>
-      <div className="row-note">Private CEAC file · open with a short-lived signed link</div>
-    </button>)}
+      <div className="row-note">Private attachment</div>
+      {file.state === "active" ? <div className="operational-file-actions">
+        <button type="button" onClick={() => void open(file)} aria-label={`Open ${file.filename}`}>Open</button>
+        <button type="button" onClick={() => void download(file)} aria-label="Download file">Download</button>
+      </div> : <span role="status">Upload incomplete</span>}
+    </div>)}
   </section>;
 }
 
@@ -167,6 +177,7 @@ export function OperationalMediaList({ files = [] }) {
   const safeUrls = loadedMediaKey === mediaKey ? urls : {};
   const activeMediaKey = useRef(mediaKey);
   activeMediaKey.current = mediaKey;
+  useEffect(()=>()=>{ activeMediaKey.current = null; },[]);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,10 +188,15 @@ export function OperationalMediaList({ files = [] }) {
         return;
       }
       try {
-        const pairs = await Promise.all(files.map(async (file) => [
-          file.id, await signedOperationalFileUrl(file, 300),
-        ]));
-        if (!cancelled) { setUrls(Object.fromEntries(pairs)); setLoadedMediaKey(mediaKey); }
+        const results = await Promise.allSettled(files.map(file => signedOperationalFileUrl(file, 300)));
+        const pairs = results.flatMap((result, index) => result.status === "fulfilled" ? [[files[index].id, result.value]] : []);
+        if (!cancelled) {
+          setUrls(Object.fromEntries(pairs));
+          setError(results.some(result => result.status === "rejected")
+            ? "Some previews are unavailable. You can still try opening or downloading each attachment."
+            : null);
+          setLoadedMediaKey(mediaKey);
+        }
       } catch (err) {
         if (!cancelled) {
           setUrls({});
@@ -194,15 +210,22 @@ export function OperationalMediaList({ files = [] }) {
   }, [mediaKey, retry]);
 
   async function openMedia(file) {
-    if (loadedMediaKey !== mediaKey) return;
     const expectedKey = mediaKey;
     try {
-      const url = await signedOperationalFileUrl(file, 300);
-      if (activeMediaKey.current === expectedKey) window.open(url, "_blank", "noopener,noreferrer");
+      if (activeMediaKey.current === expectedKey) await openOperationalFile(file,()=>activeMediaKey.current===expectedKey);
     } catch (err) {
       if (activeMediaKey.current === expectedKey) {
         setError(err.message || "The private media file could not be opened.");
       }
+    }
+  }
+
+  async function downloadMedia(file) {
+    const expectedKey = mediaKey;
+    try {
+      if (activeMediaKey.current === expectedKey) await downloadOperationalFile(file,()=>activeMediaKey.current===expectedKey);
+    } catch {
+      if (activeMediaKey.current === expectedKey) setError("This download could not be started. Please try again.");
     }
   }
 
@@ -214,6 +237,7 @@ export function OperationalMediaList({ files = [] }) {
       if (file.mime_type?.startsWith("image/") && url) return <figure className="operational-media-image" key={file.id}>
         <img src={url} alt={file.filename} loading="lazy" />
         <figcaption>{file.filename} · {formatOperationalFileSize(file.size_bytes)}</figcaption>
+        <button type="button" aria-label={`Download ${file.filename}`} onClick={() => void downloadMedia(file)}>Download image</button>
       </figure>;
       if (file.mime_type?.startsWith("audio/") && url) return <div className="operational-media-audio" key={file.id}>
         <strong>{file.filename}</strong><audio controls preload="metadata" src={url} />
@@ -222,10 +246,13 @@ export function OperationalMediaList({ files = [] }) {
         <video controls preload="metadata" src={url} aria-label={file.filename} />
         <span>{file.filename}</span>
       </div>;
-      return <button type="button" className="operational-media-file" key={file.id}
-        disabled={loadedMediaKey !== mediaKey} onClick={() => void openMedia(file)}>
+      return <div className="operational-media-file" key={file.id}>
         <strong>{file.filename}</strong><span>{formatOperationalFileSize(file.size_bytes)} · private CEAC file</span>
-      </button>;
+        {file.state === "active" ? <div className="operational-file-actions">
+          <button type="button" aria-label={`Open ${file.filename}`} onClick={() => void openMedia(file)}>Open</button>
+          <button type="button" aria-label={`Download ${file.filename}`} onClick={() => void downloadMedia(file)}>Download</button>
+        </div> : <span role="status">Upload incomplete</span>}
+      </div>;
     })}
     {error && loadedMediaKey === mediaKey && <div className="hint" role="alert">
       {error} <button type="button" className="text-action" onClick={() => setRetry((n) => n + 1)}>

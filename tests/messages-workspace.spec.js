@@ -115,3 +115,19 @@ for(const allowed of [true,false])test(`Memo project conversion follows existing
  }
  else await expect(page.getByLabel('Project title',{exact:true})).toHaveCount(0);
 });
+
+test('Memo missing recipient or text yields visible guidance and never sends',async({page})=>{
+ const writes=await mock(page);
+ await page.goto('/tests/fixtures/messages-workspace.html');
+ await page.getByRole('button',{name:'New Memo',exact:true}).first().click();
+ await page.getByRole('button',{name:'Send Memo',exact:true}).click();
+ await expect(page.getByRole('alert')).toContainText('Choose at least one recipient.');
+ await expect(page.getByRole('alert')).toContainText('Enter a subject.');
+ await expect(page.getByRole('alert')).toContainText('Write your message.');
+ expect(writes.some(entry=>entry.name==='send_memo')).toBe(false);
+ await page.getByLabel('To',{exact:true}).fill('Pastor');
+ await page.getByRole('button',{name:/Group Pastor Group Pastor/}).click();
+ await page.getByLabel('Subject',{exact:true}).fill('Recovered media proposal');
+ await page.getByLabel('Message',{exact:true}).fill('Please review the evidence.');
+ await expect(page.getByRole('alert').filter({hasText:'Choose at least one recipient.'})).toHaveCount(0);
+});

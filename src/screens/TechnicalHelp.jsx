@@ -33,8 +33,14 @@ export default function TechnicalHelp({ me }) {
   const scopedLoading = loading || loadedScope !== currentScope;
 
   useEffect(() => {
-    setCategory("");setImpact("normal");setDepartment(me.unit_id || "");
-    setSummary(""); setDescription(""); setService("");
+    const issue=new URLSearchParams(window.location.search).get("issue");
+    const prefill=issue==="room-upload"
+      ? {category:"cannot_upload",summary:"A Room attachment did not send",description:"I tried to send a file in a CEAC Room, but it did not finish uploading. Please help me check what happened.",service:"Files & uploads"}
+      : issue==="memo"
+        ? {category:"something_not_working",summary:"A Memo could not be completed",description:"I had a problem sending, opening or downloading a Memo or its attachment. Please help me check what happened.",service:"Files & uploads"}
+        : null;
+    setCategory(prefill?.category || "");setImpact("normal");setDepartment(me.unit_id || "");
+    setSummary(prefill?.summary || "");setDescription(prefill?.description || "");setService(prefill?.service || "");
     setError(null); setSuccess(null); setBusy(false);
     submitBusyRef.current = false;
   }, [me.id, me.org_id]);

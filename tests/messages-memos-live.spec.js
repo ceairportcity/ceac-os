@@ -27,6 +27,8 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
  try{
   const subject=`Isolated media proposal ${crypto.randomUUID()}`;
   const filename='memo-proposal-evidence.png';
+  const pdfFilename='memo-proposal-review.pdf';
+  const pdfBytes=Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF\n');
   const bytes=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZlSIAAAAASUVORK5CYII=','base64');
   const staff=await openAs(browser,'staff@ceac.local.test');contexts.push(staff.context);
   const page=staff.page;
@@ -40,7 +42,7 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   await page.getByLabel('Decision required',{exact:true}).check();
   await page.getByLabel('Proposal scope').selectOption('cross_department');
   await page.getByLabel('Decision-maker').selectOption(executive);
-  await page.locator('.memo-compose input[type="file"]').setInputFiles({name:filename,mimeType:'image/png',buffer:bytes});
+  await page.locator('.memo-compose input[type="file"]').setInputFiles([{name:filename,mimeType:'image/png',buffer:bytes},{name:pdfFilename,mimeType:'application/pdf',buffer:pdfBytes}]);
   await page.getByRole('button',{name:'Save Draft',exact:true}).click();
   await expect(page.getByText('Draft saved.',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Back to Memos',exact:true}).click();
@@ -48,7 +50,9 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   await page.getByRole('button',{name:new RegExp(subject)}).click();
   await page.getByRole('button',{name:'Continue draft',exact:true}).click();
   await expect(page.getByLabel('Subject',{exact:true})).toHaveValue(subject);
-  await expect(page.locator('.memo-draft-file')).toContainText(filename);
+  await expect(page.locator('.memo-draft-file')).toHaveCount(2);
+  await expect(page.locator('.memo-compose')).toContainText(filename);
+  await expect(page.locator('.memo-compose')).toContainText(pdfFilename);
   await page.getByRole('button',{name:'Send Memo',exact:true}).click();
   await expect(page.locator('.memo-status')).toHaveText('Pending decision');
   const version=await checked(service.from('memo_versions').select('id,memo_id').eq('subject',subject).single());
@@ -65,6 +69,39 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   const pastor=await openAs(browser,'exec@ceac.local.test');contexts.push(pastor.context);
   await pastor.page.getByRole('button',{name:new RegExp(subject)}).click();
   await expect(pastor.page.getByText('Please clarify the equipment scope.',{exact:true})).toBeVisible();
+  const downloadButton=pastor.page.getByRole('button',{name:`Download ${pdfFilename}`,exact:true});
+  await expect(downloadButton).toBeVisible();
+  await expect(pastor.page.getByRole('heading',{name:'Attachments (2)',exact:true})).toBeVisible();
+  // The image preview also signs URLs in the background. Match the PDF's
+  // registered storage path so the test never mistakes that PNG for the
+  // requested download.
+  const pdfRecords=await checked(service.from('operational_file_links')
+    .select('file:operational_files!inner(filename,mime_type,state,size_bytes,storage_bucket,storage_path)')
+    .eq('context_type','memo_version').eq('context_id',version.id));
+  const pdfFile=pdfRecords.find(row=>row.file.filename===pdfFilename)?.file;
+  expect(pdfFile).toBeTruthy();
+  expect(pdfFile.mime_type).toBe('application/pdf');
+  expect(pdfFile.state).toBe('active');
+  expect(pdfFile.size_bytes).toBe(pdfBytes.length);
+  const expectedStoragePath=`/storage/v1/object/sign/${pdfFile.storage_bucket}/${pdfFile.storage_path}`;
+  const signing=pastor.page.waitForResponse(response=>{
+    const requestPath=decodeURIComponent(new URL(response.url()).pathname);
+    return response.request().method()==='POST' && requestPath===expectedStoragePath;
+  });
+  await downloadButton.click();
+  const signingResponse=await signing;
+  expect(signingResponse.ok()).toBe(true);
+  const signed=await signingResponse.json();
+  const downloadPath=signed.signedURL || signed.signedUrl;
+  expect(downloadPath).toBeTruthy();
+  const storageOrigin=new URL(signingResponse.url()).origin;
+  const signedUrl=/^https?:\/\//.test(downloadPath)
+    ? downloadPath : storageOrigin+'/storage/v1'+(downloadPath.startsWith('/')?'':'/')+downloadPath;
+  const downloaded=await pastor.page.request.get(signedUrl);
+  expect(downloaded.ok()).toBe(true);
+  expect(downloaded.headers()['content-type']).toMatch(/application\/pdf/);
+  const deliveredBytes=await downloaded.body();
+  expect(deliveredBytes.equals(pdfBytes), `PDF download bytes differ: received ${deliveredBytes.length} bytes, expected ${pdfBytes.length}`).toBe(true);
   const image=pastor.page.getByRole('img',{name:filename,exact:true});await expect(image).toBeVisible();
   const response=await pastor.page.request.get(await image.getAttribute('src'));
   expect(response.ok()).toBeTruthy();expect((await response.body()).equals(bytes)).toBeTruthy();
@@ -100,6 +137,7 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   await expect(hr.page.getByRole('alert')).toBeVisible();
   await expect(hr.page.getByText(subject,{exact:true})).toHaveCount(0);
   await expect(hr.page.getByRole('img',{name:filename,exact:true})).toHaveCount(0);
+  await expect(hr.page.getByRole('button',{name:`Download ${pdfFilename}`,exact:true})).toHaveCount(0);
  }finally{
   await Promise.allSettled(contexts.map(context=>context.close()));
   await checked(service.from('profiles').update({job_title:original.job_title}).eq('id',executive));

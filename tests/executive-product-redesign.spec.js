@@ -48,8 +48,8 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(overview).toContain("ministryStrategyRows");
   expect(overview).not.toContain("On track or met");
   expect(css).toContain(".executive-app .ev2s-sidebar");
-  expect(shell).toContain('aria-label={isExec ? "Open updates" : "Open messages"}');
-  expect(shell).toContain('name={isExec ? "notification" : "messages"}');
+  expect(shell).toContain('aria-label={notificationCounts?.count ? `Open updates, ${notificationCounts.count} unread` : "Open updates"}');
+  expect(shell).toContain('name="notification" size="row" decorative');
   expect(shell).toContain('className="ev2s-mobile-profile exec-redesign-mobile-notification"');
   expect(search).toContain('Search across CEAC OS...');
   expect(navigation).toContain('{ key: "account", label: "Account security", icon: "lock", group: "account" }');
@@ -145,7 +145,7 @@ test("Executive Overview reproduces the locked desktop composition", async ({ pa
   await expect(page.locator(".executivev2-reference-grid > .executivev2-reference-panel")).toHaveCount(3);
   await expect(page.locator(".executivev2-lower-grid > .executivev2-reference-panel")).toHaveCount(2);
   await expect(page.getByText("Needs your attention", { exact: true })).toBeVisible();
-  await expect(page.getByText("Church goals", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ministry Objectives", { exact: true })).toBeVisible();
   await expect(page.getByText("People and departments", { exact: true })).toBeVisible();
   await expect(page.getByText("Significant updates", { exact: true })).toBeVisible();
   await expect(page.getByText("Upcoming meetings", { exact: true })).toBeVisible();

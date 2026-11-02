@@ -4,8 +4,9 @@ import { supabase } from "../lib/supabase";
 import { Info, Trash2, Paperclip } from "lucide-react";
 import "./MessagesWorkspace.css";
 import { OperationalMediaList } from "../components/OperationalFiles";
-import { listOperationalFilesForContexts, uploadOperationalFile, validateOperationalFile, OPERATIONAL_FILE_ACCEPT } from "../lib/operationalFiles";
+import { listOperationalFilesForContexts, uploadOperationalFileWithRetry, validateOperationalFile, OPERATIONAL_FILE_ACCEPT } from "../lib/operationalFiles";
 import { humanError } from "../lib/productLanguage";
+import { saveLocalRoomDraft, readLocalRoomDraft, clearLocalRoomDraft } from "../lib/memoLocalDrafts";
 
 function timeLabel(value) {
   return new Date(value).toLocaleTimeString("en-GB", { timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit" });
@@ -64,6 +65,9 @@ export default function Room({
   const [scopeRooms, setScopeRooms] = useState([]);
   const [messages, setMessages] = useState([]);
   const [body, setBody] = useState("");
+  const [draftReadyRoom,setDraftReadyRoom]=useState(null);
+  const [missingRoomFiles,setMissingRoomFiles]=useState([]);
+  const draftWriteQueue=useRef(Promise.resolve());
   const [pendingFiles, setPendingFiles] = useState([]);
   const [attachmentMessageId, setAttachmentMessageId] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
@@ -76,6 +80,8 @@ export default function Room({
   const [mentionQuery, setMentionQuery] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [sendStage,setSendStage] = useState("");
+  const uploadRetries = useRef(new Map());
   const [error, setError] = useState(null);
   const [canAnnounce, setCanAnnounce] = useState(Boolean(me.is_admin || me.is_exec));
   const [lastReadAt, setLastReadAt] = useState(null);
@@ -95,6 +101,36 @@ export default function Room({
   const PAGE_SIZE = 60;
 
   const canCoordinate = Boolean(me.is_admin || me.is_exec || me.role === "manager");
+  useEffect(()=>{
+    const id=room?.id;if(!id)return;
+    let active=true;setDraftReadyRoom(null);
+    readLocalRoomDraft(me.org_id,me.id,id).then(saved=>{
+      if(!active || activeRoomIdRef.current!==id)return;
+      if(saved?.body)setBody(current=>current || saved.body);
+      setMissingRoomFiles(saved?.missingFiles || []);
+      setDraftReadyRoom(id);
+    }).catch(()=>{if(active)setDraftReadyRoom(id);});
+    return()=>{active=false;};
+  },[room?.id,me.org_id,me.id]);
+  useEffect(()=>{
+    if(!room?.id || draftReadyRoom!==room.id)return;
+    if(!body.trim() && !pendingFiles.length && !missingRoomFiles.length)return;
+    const id=room.id;
+    const payload={body,missingFiles:[...new Set([
+      ...missingRoomFiles,...pendingFiles.map(file=>file.name),
+    ])]};
+    const timer=setTimeout(()=>{
+      draftWriteQueue.current=draftWriteQueue.current.catch(()=>{}).then(
+        ()=>saveLocalRoomDraft(me.org_id,me.id,id,payload)
+      );
+    },280);
+    return()=>clearTimeout(timer);
+  },[room?.id,me.org_id,me.id,draftReadyRoom,body,pendingFiles,missingRoomFiles]);
+  function clearRoomDraft(id) {
+    draftWriteQueue.current=draftWriteQueue.current.catch(()=>{}).then(
+      ()=>clearLocalRoomDraft(me.org_id,me.id,id)
+    );
+  }
 
   useEffect(() => {
     const target = context?.mentionProfileId;
@@ -188,6 +224,8 @@ export default function Room({
     // Clear prior-room identities/references before any asynchronous read.
     setParticipants([]); setScopeRooms([]); setWorkOptions([]); setProjectOptions([]);
     setRoom(nextRoom);
+    uploadRetries.current.clear();
+    setBody("");setMissingRoomFiles([]);setDraftReadyRoom(null);
     setPanel(null);
     setPendingFiles([]); setAttachmentMessageId(null);
     setReplyTo(null);
@@ -397,6 +435,7 @@ export default function Room({
     const result = await supabase.rpc("mark_room_read", { p_room_id: roomId });
     if (!result.error && activeRoomIdRef.current === roomId) {
       setNewMessageCount(0); onMessagesChanged?.();
+      window.dispatchEvent(new Event("ceac:notifications-changed"));
     }
   }
 
@@ -441,10 +480,11 @@ export default function Room({
   }
 
   async function send() {
-    const clean = body.trim() || (pendingFiles.length ? "Files: " + pendingFiles.map(file => file.name).join(", ").slice(0,7900) : "");
+    if(missingRoomFiles.length){setError("Reattach your previous files, or remove them from the draft before sending.");return;}
+    const clean = body.trim() || (pendingFiles.length ? "Attachment" : "");
     if ((!clean && !attachmentMessageId) || sendingRef.current) return;
     sendingRef.current = true;
-    setSending(true); setError(null);
+    setSending(true); setSendStage(pendingFiles.length?"Preparing attachment…":"Sending message…"); setError(null);
     try {
       // Route transitions may invalidate the rendered room between a user's click
       // and the handler. Resolve the authorised context rather than discarding the draft.
@@ -478,13 +518,20 @@ export default function Room({
         setAttachmentMessageId(messageId);
         try {
           for (const file of pendingFiles) {
-            await uploadOperationalFile({file,contextType:"room_message",contextId:messageId,relation:"room_media"});
+            setSendStage("Uploading attachment…");
+            const retryState=uploadRetries.current.get(file) || {};
+            uploadRetries.current.set(file,retryState);
+            await uploadOperationalFileWithRetry({file,contextType:"room_message",contextId:messageId,relation:"room_media",retryState});
+            uploadRetries.current.delete(file);
             setPendingFiles(current => current.filter(row => row !== file));
           }
           setAttachmentMessageId(null);
         } catch (fileError) {
-          setError(`Your message was sent. ${fileError.message || "An attachment failed."} Retry attachments to keep them on the same message.`);
+          setError("The attachment was not delivered. Your file is still selected. Tap Retry attachments to finish sending it.");
         }
+      }
+      if(!pendingFiles.length || pendingFiles.every(file=>!uploadRetries.current.has(file))){
+        if(!uploadRetries.current.size){setMissingRoomFiles([]);clearRoomDraft(targetRoomId);}
       }
       await loadMessages(targetRoomId, false);
       onMessagesChanged?.();
@@ -492,7 +539,7 @@ export default function Room({
       setError(humanError(err, "Your message could not be sent."));
     } finally {
       sendingRef.current = false;
-      setSending(false);
+      setSending(false);setSendStage("");
     }
   }
 
@@ -591,7 +638,7 @@ export default function Room({
       <h3>Files in this conversation</h3><OperationalMediaList files={messages.flatMap(row => row.operational_files || [])} />
     </aside>}
 
-    {error && <div className="flag flag-brick room-error"><h4>Room could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" onClick={loadInitialRoom}>Try again</button></div>}
+    {error && <div className="flag flag-brick room-error"><h4>Room could not complete that</h4>{error}<button className="btn btn-ghost btn-sm" onClick={loadInitialRoom}>Refresh Room</button> <a href="/?tab=technical-help&issue=room-upload">Report a problem</a></div>}
 
     {scopeRooms.length > 1 && <nav className="room-scope-strip" aria-label="Unit conversations">
       {scopeRooms.map((entry) => <button key={entry.id} className={entry.id === room?.id ? "on" : ""} onClick={() => entry.id === room?.id ? null : onRoomChange?.(contextForRoom(entry))}>
@@ -636,7 +683,7 @@ export default function Room({
               <strong>{parent.author_id === me.id ? "You" : parent.profiles?.full_name || "Earlier message"}</strong>
               <span>{parent.body}</span>
             </div>}
-            <p>{message.body}</p>
+            {(message.body !== "Attachment" || !(message.operational_files || []).length) && <p>{message.body === "Attachment" ? "Attachment pending — not yet delivered" : message.body}</p>}
             <OperationalMediaList files={message.operational_files || []} />
             {(message.room_mentions || []).length > 0 && <div className="room-message-mentions">
               {(message.room_mentions || []).map((mention) => <span key={mention.profile_id}>@{mention.profiles?.full_name || "CEAC member"}</span>)}
@@ -717,6 +764,12 @@ export default function Room({
         </button>)}
       </div>}
 
+      {missingRoomFiles.length>0 && <div className="memo-missing-files" role="status">
+        <strong>Reattach these files to complete your previous message</strong>
+        {missingRoomFiles.map(filename=><div key={filename}>{filename}
+          <button type="button" onClick={()=>setMissingRoomFiles(files=>files.filter(x=>x!==filename))}>Remove from draft</button>
+        </div>)}
+      </div>}
       {pendingFiles.length > 0 && <div className="room-pending-files">{pendingFiles.map(file => <span key={file.name+file.size}>{file.name}<button type="button" disabled={sending} aria-label={`Remove ${file.name}`} onClick={() => setPendingFiles(files => files.filter(row => row !== file))}>×</button></span>)}</div>}
 
       <div className="room-composer-row room-composer-v2">
@@ -725,6 +778,7 @@ export default function Room({
           try {
             const selected = [...(event.target.files || [])]; selected.forEach(validateOperationalFile);
             setPendingFiles(current => [...new Map([...current,...selected].map(file => [file.name+":"+file.size,file])).values()]);
+            setMissingRoomFiles(previous=>previous.filter(name=>!selected.some(file=>file.name===name)));
           } catch(failure) { setError(failure.message); }
           event.target.value="";
         }}/>
@@ -736,12 +790,12 @@ export default function Room({
         <div className="room-text-wrap">
           <textarea
             ref={composerRef}
-            disabled={sending || Boolean(attachmentMessageId)}
+            disabled={sending || Boolean(attachmentMessageId) || !room?.id}
             rows={1}
             value={body}
             maxLength={8000}
             aria-label="Room message"
-            placeholder={room?.kind === "project" ? "Message the project team" : room?.kind === "sub_team" ? `Message ${roomTitle(room)}` : "Message your unit"}
+            placeholder={!room?.id ? "Opening Room…" : room?.kind === "project" ? "Message the project team" : room?.kind === "sub_team" ? `Message ${roomTitle(room)}` : "Message your unit"}
             onChange={(event) => updateBody(event.target.value)}
             onKeyDown={(event) => {
               if (!event.nativeEvent.isComposing && event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
@@ -750,7 +804,7 @@ export default function Room({
             }}
           />
         </div>
-        <button className="room-send" disabled={sending || loading || !room?.id || (!body.trim() && !pendingFiles.length)} onClick={send}>{sending ? "Sending…" : attachmentMessageId ? "Retry attachments" : "Send"}</button>
+        <button className="room-send" disabled={sending || loading || !room?.id || (!body.trim() && !pendingFiles.length)} onClick={send}>{sending ? sendStage : attachmentMessageId ? "Retry attachments" : "Send"}</button>
       </div>
       <small>Work communication only · @ mentions notify people inside this Room</small>
     </footer>

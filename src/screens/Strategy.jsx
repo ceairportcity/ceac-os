@@ -143,10 +143,25 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
   }
 
   async function saveNode() {
-    if (!form || !form.name.trim() || !form.statement.trim() || !form.reason.trim()) return;
-    if (form.nodeType !== "ministry_direction" && !form.parentId) return;
-    if (form.nodeType === "unit_objective" && !form.unitId) return;
-    if (form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim())) return;
+    if (!form) return;
+    const required = [
+      [!form.name.trim(), "Enter a priority or goal name.", "Strategy name"],
+      [!form.statement.trim(), "Describe what this should achieve.", "Strategy statement"],
+      [form.nodeType !== "ministry_direction" && !form.parentId, "Choose the church priority this goal belongs to.", "Strategy parent direction"],
+      [form.nodeType === "unit_objective" && !form.unitId, "Choose the responsible department.", "Strategy unit"],
+      [form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim()), "Complete the measurement target and unit.", "Strategy target value"],
+      [!form.reason.trim(), "Explain why this priority or goal is being recorded.", "Strategy change reason"],
+    ];
+    const missing = required.find(([invalid]) => invalid);
+    if (missing) {
+      setError(missing[1]);
+      requestAnimationFrame(() => {
+        const field = [...document.querySelectorAll("input,textarea,select")].find(el => el.getAttribute("aria-label") === missing[2]);
+        field?.scrollIntoView({block:"center",behavior:"smooth"});
+        field?.focus({preventScroll:true});
+      });
+      return;
+    }
 
     setBusy(true);
     setError(null);
@@ -339,10 +354,11 @@ export default function Strategy({ me, createRequest = null, onCreateHandled, on
       title={form.id ? `Edit ${FORM_LABELS[form.nodeType]}` : `Add ${FORM_LABELS[form.nodeType]}`}
       description="Write what you want to achieve and why it matters. You can add a target and dates when you have them."
       panelClassName="reference-composer reference-objective-composer"
-      footer={<button className="btn" disabled={busy || !form.name.trim() || !form.statement.trim() || !form.reason.trim() || (form.nodeType !== "ministry_direction" && !form.parentId) || (form.nodeType === "unit_objective" && !form.unitId) || (form.measurementKind === "numeric" && (form.targetValue === "" || !form.targetUnit.trim()))} onClick={saveNode}>
-        {busy ? "Saving…" : form.id ? "Save changes" : `Add ${FORM_LABELS[form.nodeType]}`}
+      footer={<button className="btn" disabled={busy} onClick={saveNode}>
+        {busy ? "Saving…" : form.id ? "Save changes" : form.nodeType === "ministry_direction" ? "Add Church priority" : `Add ${FORM_LABELS[form.nodeType]}`}
       </button>}
     >
+      {error && <p role="alert" className="msg-error">{error}</p>}
             {form.nodeType === "ministry_objective" && <FieldGroup label="Which church priority is this goal part of? *">
         <select className="field" aria-label="Strategy parent direction" value={form.parentId}
           onChange={(event) => setForm({ ...form, parentId: event.target.value })} disabled={Boolean(form.id)}>

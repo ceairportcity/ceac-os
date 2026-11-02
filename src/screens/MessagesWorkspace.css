@@ -73,3 +73,37 @@
   .memo-reader .memo-response > button,
   .memo-reader .memo-project > button {max-width: 100%}
 }
+
+/* Consistent interaction, validation and attachment affordances. */
+
+.msg-workspace button:active:not(:disabled){filter:brightness(.94)}
+.msg-workspace [aria-invalid="true"]{border-color:#b42318!important;outline:1px solid #b42318}
+.memo-validation-summary{margin:12px 16px 0;padding:12px 14px;border-left:3px solid #b42318;background:#fff5f4;color:#7c241e}
+
+.memo-missing-files,.memo-recovery-banner{padding:12px;background:#fff8ed;border:1px solid #eedbbb;display:grid;gap:8px}
+
+.memo-missing-files button,.memo-recovery-banner button{width:max-content;color:#126bc2;text-decoration:underline}
+.memo-attachments{background:#f8fbff;border:1px solid #dce6f2;border-radius:10px;margin-top:14px;padding:14px}
+
+.operational-media-list{display:grid;gap:10px;min-width:0}
+.operational-media-file{min-width:0;display:grid;gap:8px;border:1px solid #dce6f2;border-radius:8px;padding:12px;background:#fff;overflow-wrap:anywhere}
+
+.operational-file-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:5px}
+.operational-file-actions button,.operational-media-image>button{background:#eef5fd!important;border:1px solid #bfdaef!important;color:#125f9b!important;border-radius:8px;padding:9px 13px;min-height:42px;font-weight:600}
+
+.operational-media-image img{display:block;max-width:100%;height:auto;object-fit:contain;border-radius:6px}
+
+.room-scope-strip button{flex:0 0 auto;white-space:nowrap;min-width:fit-content;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:760px){
+ .msg-head{flex-wrap:wrap;gap:8px}
+ .msg-head h1{flex:1 1 100%}
+ .msg-head>div{width:100%;gap:6px;justify-content:space-between;min-width:0}
+ .msg-head>div button{min-height:38px;white-space:nowrap;padding:5px}
+ .memo-filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;white-space:nowrap}
+ .memo-filters button{flex:0 0 auto;white-space:nowrap}
+
+}
+
+
+.msg-head>div button{position:relative}
+.ceac-notification-badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;background:#c73535;color:white!important;border-radius:999px;font-size:12px;line-height:1;font-weight:700;flex:none}
