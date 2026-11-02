@@ -76,3 +76,12 @@ test('Memo sending validates recipients, labels progress and protects encrypted 
  assert.match(drafts,/clearLocalMemoDraft/);
  assert.doesNotMatch(drafts,/localStorage/);
 });
+
+test('Room writing is recoverable per conversation and cleared on sign-out',()=>{
+ const room=source('src/screens/Room.jsx'),drafts=source('src/lib/memoLocalDrafts.js'),app=source('src/App.jsx');
+ assert.match(room,/readLocalRoomDraft/);
+ assert.match(room,/saveLocalRoomDraft/);
+ assert.match(room,/clearRoomDraft/);
+ assert.match(drafts,/clearAccountCommunicationDrafts/);
+ assert.match(app,/clearAccountCommunicationDrafts/);
+});
