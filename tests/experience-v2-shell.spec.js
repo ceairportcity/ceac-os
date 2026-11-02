@@ -145,8 +145,8 @@ test("OCR2 Executive creation is reachable through the approved Work, Priorities
 
   await page.goto("/?tab=strategy");
   await expect(page.getByRole("heading", { name: "Church goals", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Set first ministry priority", exact: true }).click();
-  let dialog = page.getByRole("dialog", { name: "Add ministry priority" });
+  await page.getByRole("button", { name: /^(Set first church priority|Add another priority)$/i }).click();
+  let dialog = page.getByRole("dialog", { name: /Add church priority/i });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel("Strategy name")).toBeVisible();
 
@@ -222,8 +222,8 @@ test("OCR6C Executive Create publishes an Announcement and records a Ministry Ob
 
   await page.goto("/?tab=strategy");
   await expect(page.getByRole("heading", { name: "Church priorities", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Set first ministry priority", exact: true }).click();
-  dialog = page.getByRole("dialog", { name: "Add ministry priority" });
+  await page.getByRole("button", { name: /^(Set first church priority|Add another priority)$/i }).click();
+  dialog = page.getByRole("dialog", { name: /Add church priority/i });
   await dialog.getByLabel("Strategy name").fill(directionTitle);
   await dialog.getByLabel("Strategy statement").fill("Provide an attributable parent direction for OCR6 acceptance.");
   await dialog.getByLabel("Strategy change reason").fill("OCR6 final workflow acceptance.");
