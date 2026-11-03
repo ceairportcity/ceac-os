@@ -1,80 +1,88 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import {useState} from "react";
+import {Bell,BellOff,BellRing,CalendarClock,CheckCircle2,Clock3,FileText,MessageSquare,RefreshCw} from "lucide-react";
+import {supabase} from "../lib/supabase";
+import "./notifications-center.css";
 
-const titles={
- case_opened:"Attendance question needs your response",
- case_response:"An attendance question has a new response",
- case_referred:"Attendance question referred for review",
- case_resolved:"An attendance question has been resolved",
- memo_sent:"New Memo received",
- memo_response:"A Memo has a new response",
- work_assigned:"New work assigned to you",
- policy_published:"A policy has been published for you",
- evidence_submitted:"Evidence needs review",
- evidence_reviewed:"Your evidence has been reviewed",
- exception_requested:"An exception request needs review",
- exception_decided:"Your exception request has an update"
-};
-const actionable=new Set(["case_opened","case_response","case_referred","memo_sent","work_assigned","policy_published","evidence_submitted","exception_requested"]);
-const uuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value||"");
-function target(row){
- if(!uuid(row.context_id))return null;
- const id=encodeURIComponent(row.context_id);
- if(row.context_kind==="compliance_case")return "/?tab=compliance&case="+id;
- if(row.context_kind==="memo")return "/?tab=messages&memo="+id;
- if(row.context_kind==="work_item")return "/?tab=work&item="+id;
- if(row.context_kind==="compliance_policy")return "/?tab=compliance&section=policies";
- if(row.context_kind==="compliance_evidence")return "/?tab=compliance&section=evidence";
- if(row.context_kind==="compliance_exception")return "/?tab=compliance&section=exceptions";
- return null;
-}
-const when=value=>value?new Date(value).toLocaleString("en-GB",{timeZone:"Africa/Accra",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
-export default function Notifications({me}){
- const [rows,setRows]=useState(null);
- const [filter,setFilter]=useState("attention");
- const [error,setError]=useState("");
- const [busy,setBusy]=useState(null);
- const [refresh,setRefresh]=useState(0);
- useEffect(()=>{
-  let active=true;setRows(null);setError("");
-  (async()=>{
-   const r=await supabase.rpc("my_ceac_notifications");
-   if(!active)return;
-   if(r.error||!Array.isArray(r.data)){
-    setError("Updates could not be verified. Retry to read your latest notifications.");
-   }else setRows(r.data);
-  })().catch(()=>{if(active)setError("Updates are currently unavailable.");});
-  return()=>{active=false;};
- },[me.org_id,me.id,refresh]);
- const visible=(rows||[]).filter(row=>filter==="all"||!row.read_at&&actionable.has(row.kind));
- async function open(row){
-  const href=target(row);
-  if(!href)return;
-  setBusy(row.id);setError("");
-  const r=await supabase.rpc("mark_ceac_notification_read",{p_id:row.id});
-  if(r.error){setError("This update could not be confirmed. Check your access and retry.");setBusy(null);return;}
-  window.location.assign(href);
- }
- return <section className="msg-layout" aria-label="Your updates">
-  <div className="msg-directory" style={{width:"100%",maxWidth:"none"}}>
-   <div className="sec"><span>Your updates</span>
-    <button type="button" className="btn btn-ghost btn-sm" onClick={()=>setRefresh(n=>n+1)}>Refresh</button>
-   </div>
-   <p className="screen-note">See work, Compliance questions and Memos that concern you. Private details appear only after you open an authorised record.</p>
-   <div className="cp-filters">
-    <button type="button" className="btn btn-ghost btn-sm" aria-pressed={filter==="attention"} onClick={()=>setFilter("attention")}>Needs your attention</button>
-    <button type="button" className="btn btn-ghost btn-sm" aria-pressed={filter==="all"} onClick={()=>setFilter("all")}>All updates</button>
-   </div>
-   {error&&<div role="alert" className="card">{error}</div>}
-   {rows===null&&!error&&<p role="status">Checking updates…</p>}
-   {rows!==null&&!error&&visible.map(row=><button key={row.id} type="button"
-    className="msg-row" disabled={busy===row.id||!target(row)} onClick={()=>open(row)}
-    aria-label={titles[row.kind]||"New update"}>
-    <span className="msg-copy"><strong>{titles[row.kind]||"New update"}</strong>
-     <small>{when(row.created_at)} · {row.read_at?"Read":"Not read"}</small></span>
-    <span className="msg-meta">Open</span>
-   </button>)}
-   {rows!==null&&!error&&visible.length===0&&<p className="screen-note">No updates in this view.</p>}
-  </div>
- </section>;
+const typeIcons={meeting:CalendarClock,work:Clock3,room:MessageSquare,
+  event:FileText,calendar:CalendarClock,reminder:Bell};
+const filters=[["attention","Needs attention"],["personal","For you"],["activity","Room activity"],["all","All"]];
+export default function Notifications({me,notificationCounts}){
+  const [filter,setFilter]=useState("attention");
+  const [showAllRooms,setShowAllRooms]=useState(false);
+  const [busy,setBusy]=useState("");
+  const [error,setError]=useState("");
+  const [search,setSearch]=useState("");
+  const [showSettings,setShowSettings]=useState(false);
+  const data=notificationCounts;
+  const entries=(data?.items||[]).filter(row=>filter==="all"||row.level===filter);
+  const rooms=(data?.roomPreferences||[]).filter(room=>room.name.toLowerCase().includes(search.toLowerCase()));
+  const visibleRooms=showAllRooms?rooms:rooms.slice(0,10);
+  async function open(row){
+    if(busy)return;
+    if(row.type==="event"){
+      const id=row.id.slice("event:".length);
+      setBusy(id);setError("");
+      const result=await supabase.rpc("mark_ceac_notification_read",{p_id:id});
+      if(result.error){setBusy("");setError("This update could not be marked as read. Retry.");return;}
+      window.dispatchEvent(new Event("ceac:notifications-changed"));
+    }
+    window.location.assign(row.url||"/?tab=home");
+  }
+  async function changeRoomLevel(roomId,level){
+    if(!data?.setRoomLevel)return;
+    setBusy(roomId);setError("");
+    try{await data.setRoomLevel(roomId,level);}
+    catch{setError("That Room's notification preference could not be saved. Please retry.");}
+    finally{setBusy("");}
+  }
+  return <section className="ceac-updates-page" aria-label="Your updates">
+    <header className="ceac-updates-heading">
+      <div><span className="ceac-updates-eyebrow">Personal notification centre</span><h2>Your updates</h2>
+        <p>Meetings, deadlines, Memos and conversations that matter to you.</p></div>
+      <button type="button" onClick={()=>data?.refresh?.()} aria-label="Refresh your updates" className="ceac-updates-refresh"><RefreshCw size={16}/> Refresh</button>
+    </header>
+    {data?.error&&<p className="ceac-updates-error" role="status">{data.error}</p>}
+    {error&&<p className="ceac-updates-error" role="alert">{error}</p>}
+    <nav className="ceac-updates-tabs" aria-label="Notification priority">
+      {filters.map(([value,label])=><button type="button" key={value} aria-current={value===filter?"page":undefined}
+        onClick={()=>setFilter(value)}>{label}
+        {value==="attention"&&Boolean(data?.attention)&&<span>{data.attention}</span>}
+      </button>)}
+    </nav>
+    {!data?<p role="status" className="ceac-updates-empty">Verifying your notifications…</p>
+      : !entries.length?<div className="ceac-updates-empty"><CheckCircle2 size={20}/> Nothing in this category needs your attention.</div>
+      : <div className="ceac-updates-list">{entries.slice(0,40).map(row=>{
+        const Icon=typeIcons[row.type]||Bell;
+        return <button type="button" className={"ceac-updates-entry is-"+row.level} key={row.id} disabled={Boolean(busy)}
+          onClick={()=>void open(row)}>
+          <span className="ceac-updates-icon"><Icon size={18}/></span>
+          <span className="ceac-updates-copy"><strong>{row.title}</strong><small>{row.meta}</small></span>
+          <span className="ceac-updates-category">{row.level==="attention"?"Action":row.level==="personal"?"For you":"Quiet"}</span>
+        </button>;
+      })}</div>}
+    <section className="ceac-room-settings" aria-label="Room notification settings">
+      <header><div><h3>Room notifications</h3><p>Access to a Room is separate from receiving its messages.</p></div>
+        <button type="button" onClick={()=>setShowSettings(value=>!value)} aria-expanded={showSettings}>{showSettings?"Hide settings":"Manage Rooms"}</button>
+      </header>
+      {showSettings&&<div className="ceac-room-settings-body">
+        <p className="ceac-room-setting-hint">All activity: every unread message. Mentions only: when someone mentions you. Mute: no ordinary Room alerts. Formal approvals and assigned work remain visible.</p>
+        {!data?.roomPreferencesAvailable&&<p role="status">Room preferences are temporarily unavailable.</p>}
+        <label>Find Room<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search Rooms"/></label>
+        <div className="ceac-room-settings-rows">
+          {visibleRooms.map(room=><div className="ceac-room-setting" key={room.id}>
+            <span><strong>{room.name}</strong><small>{room.unread?room.unread+" personal updates":"No active alerts"}</small></span>
+            <select aria-label={"Notifications for "+room.name} value={room.level}
+              disabled={Boolean(busy)||!data?.roomPreferencesAvailable}
+              onChange={e=>void changeRoomLevel(room.id,e.target.value)}>
+              <option value="all">All activity</option>
+              <option value="mentions">Mentions only</option>
+              <option value="mute">Mute</option>
+            </select>
+          </div>)}
+          {!visibleRooms.length&&<p>No matching Rooms.</p>}
+        </div>
+        {!showAllRooms&&rooms.length>10&&<button type="button" className="ceac-room-more" onClick={()=>setShowAllRooms(true)}>Show all {rooms.length} Rooms</button>}
+      </div>}
+    </section>
+  </section>;
 }
