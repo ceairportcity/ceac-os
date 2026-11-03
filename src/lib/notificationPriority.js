@@ -1,0 +1,123 @@
+// Pure, account-scoped notification prioritisation. No confidential message
+// bodies are exposed in the Overview or bell, even when the source includes them.
+const closedStatus = /^(completed|closed|cancelled|canceled|declined|self_certified|approved)$/i;
+const cancelledMeeting = /cancelled|canceled|deleted/i;
+const decisions = new Set(["case_opened","case_referred","exception_requested","evidence_submitted"]);
+const headings = {
+  memo_sent:"New Memo addressed to you", memo_response:"A Memo has a reply",
+  work_assigned:"Work assigned to you", evidence_submitted:"Evidence needs your review",
+  evidence_reviewed:"Your evidence was reviewed",
+  case_opened:"Attendance question needs your response",
+  case_response:"An attendance question has a response",
+  case_referred:"Attendance question referred to you",
+  case_resolved:"Attendance question resolved",
+  policy_published:"A policy is available",
+  exception_requested:"Exception request needs review",
+  exception_decided:"Your exception request has an outcome",
+};
+const validId = id => /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(id||""));
+const ms = value => { const n=Date.parse(value||"");return Number.isFinite(n)?n:NaN; };
+const within = (value,start,end) => {const t=ms(value);return t>=start&&t<=end;};
+export function defaultRoomLevel(me) {
+  return me?.is_admin || me?.is_exec ? "mentions" : "all";
+}
+export function ceacNoticeTarget(row) {
+  const id=String(row?.context_id||row?.id||"");
+  if (!validId(id)) return "/?tab=messages&updates=1";
+  const encoded=encodeURIComponent(id);
+  if(row.context_kind==="memo")return "/?tab=messages&memo="+encoded;
+  if(row.context_kind==="work_item")return "/?tab=work&item="+encoded;
+  if(row.context_kind==="compliance_case")return "/?tab=compliance&case="+encoded;
+  return "/?tab=messages&updates=1";
+}
+const item=(id,level,title,meta,url,createdAt,type)=>({id,level,title,meta,url,createdAt,type});
+export function buildCeacNotificationBriefing({
+  me,events=[],rooms=[],preferences=[],mentions=[],roomReads=[],meetings=[],
+  workItems=[],reminders=[],calendarEvents=[],now=Date.now()
+}={}){
+  const defaultLevel=defaultRoomLevel(me);
+  const levelByRoom=Object.fromEntries(preferences.map(p=>[p.room_id,p.notification_level]));
+  const readByRoom=new Map(roomReads.map(r=>[r.room_id,ms(r.last_read_at)||0]));
+  const mentionByRoom=new Map();
+  for(const mention of mentions){
+    const roomId=mention.room_messages?.room_id || mention.room_id;
+    if(!roomId || !within(mention.created_at,now-30*86400000,now+30000))continue;
+    if(ms(mention.created_at)<=(readByRoom.get(roomId)||0))continue;
+    mentionByRoom.set(roomId,(mentionByRoom.get(roomId)||0)+1);
+  }
+  const entries=[],roomSummary=[];
+  for(const event of events){
+    if(event.read_at)continue;
+    const kind=event.kind||event.event_kind||"update";
+    const urgent=decisions.has(kind);
+    entries.push(item("event:"+event.id,urgent?"attention":"personal",
+      headings[kind]||"New update for you",urgent?"Action required":"Personal update",
+      ceacNoticeTarget(event),event.created_at,"event"));
+  }
+  for(const room of rooms){
+    const level=levelByRoom[room.id]||defaultLevel;
+    const mentionCount=mentionByRoom.get(room.id)||0;
+    const amount=level==="mute"?0:level==="all"?Math.max(0,Number(room.unread_count)||0):mentionCount;
+    roomSummary.push({id:room.id,name:room.name||"Room",level,unread:amount,mentions:mentionCount});
+    if(!amount)continue;
+    entries.push(item("room:"+room.id,mentionCount>0?"personal":"activity",
+      mentionCount>0?"You were mentioned in a Room":"New Room messages",
+      (room.name||"Room")+" · "+amount+" unread",
+      "/?tab=messages",room.last_at||new Date(now).toISOString(),"room"));
+  }
+  for(const meeting of meetings){
+    if(cancelledMeeting.test(meeting.status||""))continue;
+    const minutes=(ms(meeting.starts_at)-now)/60000;
+    if(!Number.isFinite(minutes)||minutes>60||minutes< -15)continue;
+    const urgent=minutes<=30;
+    entries.push(item("meeting:"+meeting.id,urgent?"attention":"personal",
+      minutes<=0?"Meeting is starting":minutes<=30?"Meeting starts soon":"Meeting in the next hour",
+      (meeting.title||"Scheduled meeting")+" · "+(minutes>0?Math.ceil(minutes)+" min":"Now"),
+      "/?tab=home&meeting="+encodeURIComponent(meeting.id),meeting.starts_at,"meeting"));
+  }
+  for(const work of workItems){
+    if(closedStatus.test(work.status||"")||!work.due_at)continue;
+    const minutes=(ms(work.due_at)-now)/60000;
+    if(!Number.isFinite(minutes)||minutes>3*1440)continue;
+    const urgent=minutes<=1440;
+    entries.push(item("work:"+work.id,urgent?"attention":"personal",
+      minutes<0?"Assigned task is overdue":minutes<=1440?"Task deadline approaching":"Task due in the next 3 days",
+      work.confidential?"Confidential assigned task":String(work.title||"Assigned task").slice(0,100),
+      "/?tab=work&item="+encodeURIComponent(work.id),work.due_at,"work"));
+  }
+  for(const reminder of reminders){
+    if(reminder.seen_at||!within(reminder.remind_at,now-2*86400000,now+3600000))continue;
+    entries.push(item("reminder:"+reminder.id,"attention","Personal reminder",
+      String(reminder.title||"You have a reminder").slice(0,100),
+      "/?tab=home",reminder.remind_at,"reminder"));
+  }
+  for(const event of calendarEvents){
+    if(!event.reminder_at || !within(event.reminder_at,now-3600000,now+3600000)
+       || !within(event.starts_at,now-900000,now+3*86400000))continue;
+    entries.push(item("calendar:"+event.id,"personal","Calendar reminder",
+      String(event.title||"Your calendar event").slice(0,100),
+      "/?tab=home",event.reminder_at,"calendar"));
+  }
+  // A work assignment can have both an event and a due-time reminder. The
+  // latter is the actionable item, so avoid showing both in the short stack.
+  const workWithDeadline=new Set(workItems.filter(w=>w.due_at).map(w=>w.id));
+  const filtered=entries.filter(e=>!(e.type==="event" && e.url.includes("tab=work&item=")
+    && workWithDeadline.has(decodeURIComponent(e.url.split("item=")[1]||""))));
+  const rank={attention:0,personal:1,activity:2};
+  const output=filtered.sort((a,b)=>rank[a.level]-rank[b.level]
+    || (ms(b.createdAt)||0)-(ms(a.createdAt)||0));
+  const count=output.filter(e=>e.level!=="activity").length
+    +roomSummary.filter(r=>r.level==="all").reduce((sum,r)=>sum+r.unread,0)
+    +roomSummary.filter(r=>r.level==="mentions").reduce((sum,r)=>sum+r.unread,0);
+  // The badge counts individual Room messages at most once: a group card is
+  // merely their preview. Keep this number bounded for device badges.
+  const personalItems=output.filter(e=>e.type!=="room").length;
+  const roomUnread=roomSummary.reduce((sum,r)=>sum+r.unread,0);
+  return {
+    items:output,roomPreferences:roomSummary,defaultRoomLevel:defaultLevel,
+    attention:output.filter(e=>e.level==="attention").length,
+    personal:output.filter(e=>e.level==="personal").length,
+    room:roomUnread,memo:events.filter(e=>!e.read_at&&e.context_kind==="memo").length,
+    count:Math.min(999,personalItems+roomUnread),
+  };
+}
