@@ -3,6 +3,7 @@ import { supabase, loadMe } from "./lib/supabase";
 import GlobalFormFeedback from "./components/GlobalFormFeedback";
 import { clearAccountCommunicationDrafts } from "./lib/memoLocalDrafts";
 import { useCeacUnreadNotifications } from "./lib/useCeacUnreadNotifications";
+import OverviewNotifications from "./components/OverviewNotifications";
 import { openSession } from "./lib/session";
 import { useForegroundPresence } from "./lib/useForegroundPresence";
 import { validRoutineDate } from "./lib/routineDateRoute";
@@ -504,10 +505,11 @@ export default function App() {
       : <div className="body" role="alert">This account is not authorised to manage Technical Support.</div>;
     if (tab === "primitives" && isAdmin) return <DesignPrimitives me={me} />;
     if (tab === "home") {
-      if (me.is_exec) return <ExecutiveHome key={me.org_id+":"+me.id} me={me} openMeeting={openMeeting} scheduleMeeting={startMeeting} go={go} />;
-      if (me.is_admin) return <AdminHome key={`${me.org_id}:${me.id}`} me={me} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} openSettings={() => go("settings")} openUnits={() => go("units")} openPeopleAccess={openPeopleAccess} openPerson={(employeeId) => openSearchPerson({ employeeId })} go={go} />;
-      if (isManager) return <ManagerHome key={managerScopeKey} me={me} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
-      return <Home me={me} session={session} setSession={setSession} openItem={openItem} openMeeting={openMeeting} openRoom={openRoom} openWork={() => go("work")} openMe={() => go("me")} openAnnouncements={() => go("announcements")} openTeam={() => go("team")} openCalendar={() => go("staff-calendar")} />;
+      const notificationPanel=<OverviewNotifications notifications={notificationCounts} onOpenUpdates={()=>{setOpenUpdatesIntent(true);go("messages");}} />;
+      if (me.is_exec) return <ExecutiveHome key={me.org_id+":"+me.id} me={me} notificationPanel={notificationPanel} openMeeting={openMeeting} scheduleMeeting={startMeeting} go={go} />;
+      if (me.is_admin) return <AdminHome key={`${me.org_id}:${me.id}`} me={me} notificationPanel={notificationPanel} openItem={openItem} openMeeting={openMeeting} scheduleMeeting={startMeeting} openSettings={() => go("settings")} openUnits={() => go("units")} openPeopleAccess={openPeopleAccess} openPerson={(employeeId) => openSearchPerson({ employeeId })} go={go} />;
+      if (isManager) return <ManagerHome key={managerScopeKey} me={me} notificationPanel={notificationPanel} openItem={openItem} openProject={openProject} openMeeting={openMeeting} scheduleMeeting={startMeeting} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={() => startAssignment()} go={go} />;
+      return <Home me={me} notificationPanel={notificationPanel} session={session} setSession={setSession} openItem={openItem} openMeeting={openMeeting} openRoom={openRoom} openWork={() => go("work")} openMe={() => go("me")} openAnnouncements={() => go("announcements")} openTeam={() => go("team")} openCalendar={() => go("staff-calendar")} />;
     }
     if (tab === "team") return (isAdmin || managesCurrentUnit)
       ? <Team key={managerScopeKey} me={me} openPerson={(id, focus) => setPerson({ id, focus })} goAssign={startAssignment} openRoom={() => openRoom({ kind: "unit", unitId: me.unit_id })} />
