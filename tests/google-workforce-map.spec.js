@@ -37,7 +37,9 @@ for(const width of [390,1440])test(`Executive map follows priority panels and us
 test('Executive map fails independently without hiding decisions or claiming zero attendance',async({page})=>{
  await mock(page,{failure:true});await page.goto('/tests/fixtures/executive-google-map.html');
  await expect(page.getByText('Work-start records are unavailable. No attendance conclusion is implied.',{exact:true})).toBeVisible();
- await expect(page.getByRole('heading',{name:'Needs your attention',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Your Day',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Requires your action',exact:true})).toBeVisible();
+ await expect(page.getByText('Delivery follow-up required',{exact:true})).toBeVisible();
  await expect(page.getByText(/0 people with recorded starts/)).toHaveCount(0);
 });
 test('absent map credentials retain office identity access and do not request another provider',async({page})=>{
