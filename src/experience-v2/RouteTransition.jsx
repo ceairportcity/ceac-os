@@ -6,7 +6,7 @@ export default function RouteTransition({ routeKey, children }) {
   const transition = reduceMotion ? { duration: 0 } : EV2_TRANSITIONS.fast;
 
   return (
-    <AnimatePresence initial={false} mode="sync">
+    <AnimatePresence initial={false} mode="wait">
       <motion.div
         key={routeKey}
         className="ev2-route-transition"
