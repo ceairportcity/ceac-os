@@ -140,6 +140,7 @@ function ActivityItem({ row }) {
 
 export default function ExecutiveOverviewV2({
   me,
+  notificationPanel,
   executiveName,
   executiveDate,
   loading,
@@ -219,6 +220,7 @@ export default function ExecutiveOverviewV2({
       </header>
 
       {me?.id && <EmployeeWorkSession me={me} />}
+      {notificationPanel}
 
       {error ? <StatePanel
         state="error"
