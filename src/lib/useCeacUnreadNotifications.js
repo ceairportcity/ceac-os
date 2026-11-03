@@ -53,9 +53,10 @@ export function useCeacUnreadNotifications(me) {
             .gte("remind_at",new Date(now-2*86400000).toISOString()).limit(40),
           supabase.from("personal_calendar_events").select("id,title,starts_at,reminder_at")
             .eq("profile_id",me.id).gte("starts_at",start).lte("starts_at",soon).limit(60),
+          supabase.rpc("my_work_attention_queue"),
         ]);
         if(!active||currentScope.current!==scope)return;
-        const [events,rooms,prefs,reads,mentions,participants,meetings,works,reminders,calendar]=results;
+        const [events,rooms,prefs,reads,mentions,participants,meetings,works,reminders,calendar,actions]=results;
         if(events.error || !Array.isArray(events.data) || rooms.error || !Array.isArray(rooms.data))
           throw new Error("Personal notifications could not be verified.");
         const invited=new Set((participants.data||[]).map(p=>p.meeting_id));
@@ -64,7 +65,7 @@ export function useCeacUnreadNotifications(me) {
         const next=buildCeacNotificationBriefing({
           me,events:events.data,rooms:rooms.data,preferences:prefs.data||[],
           roomReads:reads.data||[],mentions:mentions.data||[],
-          meetings:personalMeetings,workItems:works.data||[],
+          meetings:personalMeetings,workItems:works.data||[],attentionQueue:actions.data||[],
           reminders:reminders.data||[],calendarEvents:calendar.data||[],now
         });
         setCounts({...next,roomPreferencesAvailable:!prefs.error,
