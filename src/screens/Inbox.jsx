@@ -18,6 +18,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
   const [loadedScope,setLoadedScope] = useState("");
   const scope = `${me.org_id}:${me.id}`;
   const request = useRef(0);
+  const lastBackgroundLoad = useRef(0);
   const workspaceRef = useRef(null);
   const memoLeaveGuard = useRef(null);
   function switchSection(next) {
@@ -27,11 +28,16 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
   const verified = loadedScope === scope;
   useEffect(() => { if(initialView) {setSection(initialView==="updates"?"updates":"rooms");onInitialViewHandled?.();} },[initialView]);
   useEffect(() => {
+    // The Memo and Updates workspaces do not need the legacy Rooms directory.
+    // Load Rooms only while viewing them (or explicitly inspecting work actions).
+    if(section!=="rooms"&&!actionsOpen)return;
     let active = true; const serial = ++request.current;
+    const controller=new AbortController();
+    lastBackgroundLoad.current=Date.now();
     setLoading(true);setError("");
     (async () => {
       try {
-        const [result,attention] = await Promise.all([supabase.rpc("my_room_directory"),supabase.rpc("my_work_attention_queue")]);
+        const [result,attention] = await Promise.all([supabase.rpc("my_room_directory").abortSignal(controller.signal),supabase.rpc("my_work_attention_queue").abortSignal(controller.signal)]);
         if(result.error) throw result.error;
         if(attention.error) throw attention.error;
         if(!active || serial !== request.current) return;
@@ -41,14 +47,24 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
         if(active && serial === request.current) {setRooms([]);setLoadedScope(scope);setError(failure.message || "Rooms could not be loaded.");}
       } finally {if(active && serial === request.current)setLoading(false);}
     })();
-    return () => {active=false;};
-  },[scope,reload]);
+    return () => {active=false;controller.abort();};
+  },[scope,reload,section,actionsOpen]);
   useEffect(() => {
-    const refresh=()=>{if(document.visibilityState === "visible")setReload(n=>n+1);};
+    const refresh=()=>{
+      if(document.visibilityState!=="visible"||(section!=="rooms"&&!actionsOpen))return;
+      if(Date.now()-lastBackgroundLoad.current<120000)return;
+      lastBackgroundLoad.current=Date.now();
+      setReload(n=>n+1);
+    };
     window.addEventListener("focus",refresh);
-    const timer=window.setInterval(refresh,60000);
-    return ()=>{window.removeEventListener("focus",refresh);window.clearInterval(timer);};
-  },[]);
+    document.addEventListener("visibilitychange",refresh);
+    const timer=window.setInterval(refresh,180000);
+    return ()=>{
+      window.removeEventListener("focus",refresh);
+      document.removeEventListener("visibilitychange",refresh);
+      window.clearInterval(timer);
+    };
+  },[section,actionsOpen]);
   useEffect(() => {
     const viewport=window.visualViewport;
     if(!viewport)return;

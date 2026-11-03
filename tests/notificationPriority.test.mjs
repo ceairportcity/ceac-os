@@ -171,3 +171,11 @@ test("Supabase client enforces a global database budget without limiting Auth",(
   const source=readFileSync("src/lib/supabase.js","utf8");
   assert.match(source,/createBoundedRestFetch\(globalThis\.fetch\.bind\(globalThis\),supabaseUrl,5\)/);
 });
+
+test("legacy Inbox avoids expensive Room requests while showing Memos or Updates",()=>{
+  const inbox=readFileSync("src/screens/Inbox.jsx","utf8");
+  assert.match(inbox,/section!=="rooms"&&!actionsOpen/);
+  assert.match(inbox,/controller\.abort\(\)/);
+  assert.match(inbox,/window\.setInterval\(refresh,180000\)/);
+  assert.match(inbox,/lastBackgroundLoad\.current<120000/);
+});
