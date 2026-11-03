@@ -44,7 +44,7 @@ test("Stage 7 Administration Overview is isolated V2 presentation on preserved A
 
   expect(view).toContain('from "../components"');
   expect(view).toContain('from "../icons"');
-  expect(view).toContain("Needs Administration");
+  expect(view).toContain("withOverviewActions(notificationPanel,dayActions");
   expect(view).toContain('title="Employee records"');
   expect(view).toContain('title="Today and leave context"');
   expect(view).toContain('title="Payroll readiness"');
@@ -81,7 +81,7 @@ for (const viewport of [
 
     await expect(page.locator(".adminv2-hero-title h1")).toContainText(/Good morning|Good afternoon|Good evening/);
     await expect(page.locator(".adminv2-context")).toContainText("Administration & HR");
-    await expect(page.locator(".adminv2-inbox")).toBeVisible();
+    await expect(page.locator(".ceac-day")).toBeVisible();
     await page.locator(".adminv2-more-context > summary").click();
     await expect(page.locator(".adminv2-people")).toBeVisible();
     await expect(page.locator(".adminv2-reporting")).toBeVisible();
@@ -110,7 +110,7 @@ for (const viewport of [
       await expect(page.locator(".adminv2-mobile-actions .adminv2-hero-link")).toBeVisible();
       await expect(page.locator(".adminv2-mobile-actions")).toBeVisible();
 
-      const inboxBox = await page.locator(".adminv2-inbox").boundingBox();
+      const inboxBox = await page.locator(".ceac-day").boundingBox();
       const shortcutsBox = await page.locator(".adminv2-mobile-actions").boundingBox();
       const peopleBox = await page.locator(".adminv2-people").boundingBox();
       expect(inboxBox?.y || 0).toBeLessThan(shortcutsBox?.y || 0);

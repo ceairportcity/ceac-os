@@ -28,9 +28,9 @@ for (const viewport of [
       ? page.locator(".adminv2-mobile-actions").getByRole("link", {name:/Review your inbox/})
       : hero.getByRole("link", {name:/Review your inbox/});
     await expect(inboxLink).toBeVisible();
-    await expect(page.locator(".adminv2-inbox")).toBeVisible({timeout:15000});
-    await expect(page.getByRole("region", {name:"Next useful Administration step"})).toBeVisible();
-    await expect(page.locator(".adminv2-focus-metrics")).toBeVisible();
+    await expect(page.locator(".ceac-day")).toBeVisible({timeout:15000});
+    await expect(page.getByRole("region", {name:"Your day"})).toBeVisible();
+    await expect(page.locator(".ceac-day-group")).toHaveCount(2);
 
     await page.screenshot({path:`test-artifacts/admin-premium-briefing-${viewport.name}.png`,fullPage:true});
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -39,8 +39,8 @@ for (const viewport of [
     await hero.getByRole("button", { name:"Next month" }).click();
     await hero.getByRole("button", { name:"Show current month" }).click();
     await inboxLink.click();
-    await expect(page).toHaveURL(/#admin-operational-inbox/);
-    await expect(page.locator("#admin-operational-inbox")).toBeVisible();
+    await expect(page).toHaveURL(/#ceac-your-day/);
+    await expect(page.locator("#ceac-your-day")).toBeVisible();
     await context.close();
   });
 }
