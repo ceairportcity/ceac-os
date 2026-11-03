@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {buildCeacNotificationBriefing,ceacNoticeTarget,defaultRoomLevel} from "../src/lib/notificationPriority.js";
 import {notificationRetryDelay,runNotificationTasks} from "../src/lib/notificationRefreshControl.js";
+import {createBoundedRestFetch} from "../src/lib/boundedRestFetch.js";
 const now=Date.UTC(2026,10,3,7,0);
 const iso=minutes=>new Date(now+minutes*60000).toISOString();
 const room={id:"room-a",name:"Executive access Room",unread_count:42,last_at:iso(-3)};
@@ -119,4 +120,54 @@ test("shared notifications avoid overlapping requests and keep minute-level remi
   assert.match(hook,/nextFetchAt=Date\.now\(\)\+180000/);
   assert.match(hook,/publish\(Date\.now\(\)\)/);
   assert.match(hook,/activeController\?\.abort\(\)/);
+});
+
+test("all CEAC overview database reads share a five-request concurrency budget",async()=>{
+  let active=0,maximum=0;
+  const fetcher=async()=>{
+    active++;maximum=Math.max(maximum,active);
+    await new Promise(resolve=>setTimeout(resolve,5));
+    active--;
+    return {ok:true};
+  };
+  const limited=createBoundedRestFetch(fetcher,"https://ceac.supabase.co",5);
+  const responses=await Promise.all(Array.from({length:17},(_,i)=>
+    limited("https://ceac.supabase.co/rest/v1/work_items?batch="+i)));
+  assert.equal(maximum,5);
+  assert.ok(responses.every(row=>row.ok));
+});
+
+test("authentication traffic is never blocked behind database requests",async()=>{
+  let release;
+  const fetcher=(url)=>url.includes("/auth/v1/")
+    ?Promise.resolve({ok:true,auth:true})
+    :new Promise(resolve=>{release=()=>resolve({ok:true});});
+  const limited=createBoundedRestFetch(fetcher,"https://ceac.supabase.co",1);
+  const db=limited("https://ceac.supabase.co/rest/v1/profiles");
+  // Wait for the queue's first microtask to dispatch the database request.
+  await Promise.resolve();
+  const auth=await limited("https://ceac.supabase.co/auth/v1/token");
+  assert.equal(auth.auth,true);
+  release();
+  await db;
+});
+
+test("aborting a queued database request prevents it from reaching Supabase",async()=>{
+  let release,started=0;
+  const fetcher=()=>{started++;return new Promise(resolve=>{release=()=>resolve({ok:true});});};
+  const limited=createBoundedRestFetch(fetcher,"https://ceac.supabase.co",1);
+  const first=limited("https://ceac.supabase.co/rest/v1/profiles");
+  await Promise.resolve();
+  const controller=new AbortController();
+  const second=limited("https://ceac.supabase.co/rest/v1/rooms",{signal:controller.signal});
+  controller.abort();
+  await assert.rejects(second,{name:"AbortError"});
+  release();
+  await first;
+  assert.equal(started,1);
+});
+
+test("Supabase client enforces a global database budget without limiting Auth",()=>{
+  const source=readFileSync("src/lib/supabase.js","utf8");
+  assert.match(source,/createBoundedRestFetch\(globalThis\.fetch\.bind\(globalThis\),supabaseUrl,5\)/);
 });
