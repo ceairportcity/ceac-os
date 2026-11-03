@@ -60,6 +60,7 @@ CREATE POLICY room_notification_preferences_delete
     AND public.app_stage2_universal_aal_allowed()
   );
 
+REVOKE ALL ON public.room_notification_preferences FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.room_notification_preferences
   TO authenticated;
 
