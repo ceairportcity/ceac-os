@@ -149,11 +149,11 @@ test("VF9B accepted Administration composition remains deliberate on phone", asy
   await signIn(page, { email: "admin@ceac.local.test", app: ".office-app" });
 
   await expect(page.locator(".adminv2")).toBeVisible();
-  const panel = page.locator(".adminv2-panel").first();
+  const panel = page.locator(".ceac-day-group").first();
   await expect(panel).toBeVisible();
 
   const state = await page.evaluate(() => {
-    const panel = document.querySelector(".adminv2-panel");
+    const panel = document.querySelector(".ceac-day-group");
     const style = panel ? getComputedStyle(panel) : null;
     const navButtons = [...document.querySelectorAll(".ev2s-mobile-nav button")];
     return {
