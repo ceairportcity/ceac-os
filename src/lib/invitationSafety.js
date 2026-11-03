@@ -11,6 +11,18 @@ export function invitationEmailConflicts(email, people = [], invitations = []) {
   };
 }
 
+/** Use only the verified server invitation state to offer recovery of an existing account.
+ * This is a UI affordance, not authorisation. The resend RPC rechecks authority.
+ */
+export function findRecoverableInvitation(email, invitations = []) {
+  const wanted = String(email || "").trim().toLowerCase();
+  if (!isPlausibleInvitationEmail(wanted) || !Array.isArray(invitations)) return null;
+  return invitations.find((row) => row && typeof row.id === "string"
+    && String(row.email || "").trim().toLowerCase() === wanted
+    && !row.revoked_at
+    && ["awaiting_verification", "expired"].includes(row.activation_state)) || null;
+}
+
 export function isPlausibleInvitationEmail(email) {
   // Client-side guard only: server-side invitation validation is authoritative.
   const value = String(email || "").trim();
