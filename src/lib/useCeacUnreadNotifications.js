@@ -68,7 +68,7 @@ export function useCeacUnreadNotifications(me) {
           meetings:personalMeetings,workItems:works.data||[],attentionQueue:actions.data||[],
           reminders:reminders.data||[],calendarEvents:calendar.data||[],now
         });
-        setCounts({...next,roomPreferencesAvailable:!prefs.error,
+        setCounts({...next,scope,roomPreferencesAvailable:!prefs.error,
           roomPreferencesError:prefs.error?"Room alert preferences could not be loaded.":""});
         setError(optionalFailures?"Some optional reminders could not be checked. Retry updates.":"");
         if("setAppBadge" in navigator){
@@ -94,5 +94,5 @@ export function useCeacUnreadNotifications(me) {
     };
   },[scope,revision,me?.id,me?.org_id,me?.is_admin,me?.is_exec]);
 
-  return counts===null?null:{...counts,error,refresh,setRoomLevel};
+  return !counts || counts.scope!==scope ? null : {...counts,error,refresh,setRoomLevel};
 }
