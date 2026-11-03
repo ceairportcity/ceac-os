@@ -28,6 +28,9 @@ export function ceacNoticeTarget(row) {
   if(row.context_kind==="memo")return "/?tab=messages&memo="+encoded;
   if(row.context_kind==="work_item")return "/?tab=work&item="+encoded;
   if(row.context_kind==="compliance_case")return "/?tab=compliance&case="+encoded;
+  if(row.context_kind==="compliance_policy")return "/?tab=compliance&section=policies";
+  if(row.context_kind==="compliance_evidence")return "/?tab=compliance&section=evidence";
+  if(row.context_kind==="compliance_exception")return "/?tab=compliance&section=exceptions";
   return "/?tab=messages&updates=1";
 }
 const item=(id,level,title,meta,url,createdAt,type)=>({id,level,title,meta,url,createdAt,type});
@@ -106,9 +109,6 @@ export function buildCeacNotificationBriefing({
   const rank={attention:0,personal:1,activity:2};
   const output=filtered.sort((a,b)=>rank[a.level]-rank[b.level]
     || (ms(b.createdAt)||0)-(ms(a.createdAt)||0));
-  const count=output.filter(e=>e.level!=="activity").length
-    +roomSummary.filter(r=>r.level==="all").reduce((sum,r)=>sum+r.unread,0)
-    +roomSummary.filter(r=>r.level==="mentions").reduce((sum,r)=>sum+r.unread,0);
   // The badge counts individual Room messages at most once: a group card is
   // merely their preview. Keep this number bounded for device badges.
   const personalItems=output.filter(e=>e.type!=="room").length;
