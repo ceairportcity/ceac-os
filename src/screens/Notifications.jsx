@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {Bell,BellOff,BellRing,CalendarClock,CheckCircle2,Clock3,FileText,MessageSquare,RefreshCw} from "lucide-react";
+import {Bell,CalendarClock,CheckCircle2,Clock3,FileText,MessageSquare,RefreshCw} from "lucide-react";
 import {supabase} from "../lib/supabase";
 import "./notifications-center.css";
 
@@ -19,6 +19,14 @@ export default function Notifications({me,notificationCounts}){
   const visibleRooms=showAllRooms?rooms:rooms.slice(0,10);
   async function open(row){
     if(busy)return;
+    if(row.type==="reminder"){
+      const id=row.id.slice("reminder:".length);
+      setBusy(id);setError("");
+      const result=await supabase.from("personal_reminders").update({seen_at:new Date().toISOString()})
+        .eq("id",id).eq("profile_id",me.id);
+      if(result.error){setBusy("");setError("The reminder could not be acknowledged. Retry.");return;}
+      setBusy("");data?.refresh?.();return;
+    }
     if(row.type==="event"){
       const id=row.id.slice("event:".length);
       setBusy(id);setError("");
