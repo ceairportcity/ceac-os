@@ -62,14 +62,16 @@ test.describe("Premium redesign R7 closure", () => {
       } else if (label === "Administration") {
         await expect(page.locator(".adminv2")).toBeVisible();
         await expect(page.locator(".adminv2-main")).toBeVisible({ timeout: 15000 });
-        await expect(page.locator(".adminv2-inbox")).toBeVisible();
+        await expect(page.locator(".ceac-day")).toBeVisible();
+        await expect(page.getByRole("heading",{name:"Requires your action"})).toBeVisible();
         await expect(page.locator(".reference-module-strip")).toHaveCount(0);
         await expect(page.locator(".reference-calendar-card")).toHaveCount(0);
         await expect(page.locator(".admin-command-surface")).toHaveCount(0);
       } else {
         await expect(page.locator(".executivev2")).toBeVisible();
         await expect(page.locator(".executivev2-main")).toBeVisible({ timeout: 15000 });
-        await expect(page.locator(".executivev2-attention")).toBeVisible();
+        await expect(page.locator(".ceac-day")).toBeVisible();
+        await expect(page.getByRole("heading",{name:"Requires your action"})).toBeVisible();
         await expect(page.locator(".reference-module-strip")).toHaveCount(0);
         await expect(page.locator(".reference-calendar-card")).toHaveCount(0);
         await expect(page.locator(".executive-command-surface")).toHaveCount(0);
