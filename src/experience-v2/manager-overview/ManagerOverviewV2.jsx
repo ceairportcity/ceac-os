@@ -181,6 +181,7 @@ function decisionPreview(decision) {
 
 export default function ManagerOverviewV2({
   me,
+  notificationPanel,
   greeting,
   dateLabel,
   loading,
@@ -288,6 +289,7 @@ export default function ManagerOverviewV2({
         </div>
       </header>
       <EmployeeWorkSession me={me} />
+      {notificationPanel}
 
       {loadFailed ? <StatePanel
         state="error"

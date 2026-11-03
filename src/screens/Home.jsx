@@ -44,7 +44,7 @@ function nextBirthday(value) {
   return date;
 }
 
-export default function Home({ me, session, setSession, openItem, openMeeting, openRoom, openWork, openMe, openAnnouncements, openTeam, openCalendar }) {
+export default function Home({ me, notificationPanel, session, setSession, openItem, openMeeting, openRoom, openWork, openMe, openAnnouncements, openTeam, openCalendar }) {
   const [items, setItems] = useState([]);
   const [completedThisWeek, setCompletedThisWeek] = useState([]);
   const [alerts, setAlerts] = useState([]);
@@ -455,6 +455,7 @@ export default function Home({ me, session, setSession, openItem, openMeeting, o
   return <>
     <StaffTodayV2
       me={me}
+      notificationPanel={notificationPanel}
       session={session}
       staleSession={staleSession}
       busy={busy}

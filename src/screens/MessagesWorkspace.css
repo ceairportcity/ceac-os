@@ -107,3 +107,4 @@
 
 .msg-head>div button{position:relative}
 .ceac-notification-badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;background:#c73535;color:white!important;border-radius:999px;font-size:12px;line-height:1;font-weight:700;flex:none}
+.msg-head .ceac-notification-trigger>.ceac-notification-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px}

@@ -156,6 +156,7 @@ function UnitRow({ unit, onInvite }) {
 
 export default function AdminOverviewV2({
   me,
+  notificationPanel,
   announcements = null,
   onOpenAnnouncements,
   dateLabel,
@@ -322,6 +323,7 @@ export default function AdminOverviewV2({
         </aside>
       </header>
       <EmployeeWorkSession me={me} />
+      {notificationPanel}
 
       {loadFailed ? <StatePanel
         state="error"
