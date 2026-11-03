@@ -10,7 +10,7 @@ async function openStaff(browser,viewport={width:1440,height:960}){
   await expect(page.locator(".staff-app")).toBeVisible({timeout:15000});
   return {context,page};
 }
-async function side(page,label){await page.locator(".ev2s-sidebar").getByRole("button",{name:label,exact:true}).click();await expect(page.locator(".body")).toBeVisible();}
+async function side(page,label){await page.locator(".ev2s-sidebar").getByRole("button",{name:label,exact:true}).click();await expect(page.locator(".body").last()).toBeVisible();}
 
 test.describe("Premium redesign R1 Staff",()=>{
   test("Staff Today is calm, action-first and visually coherent",async({browser})=>{
