@@ -1,4 +1,5 @@
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
+import {withOverviewActions} from "../../components/OverviewNotifications";
 import EmployeeWorkSession from "../../components/EmployeeWorkSession";
 import AdminWorkforceToday from "../../components/AdminWorkforceToday";
 import { useState } from "react";
@@ -227,6 +228,32 @@ export default function AdminOverviewV2({
     invitation.expires_at && Date.parse(invitation.expires_at) <= Date.now()).length;
   const reportingAttention = reportingGap;
   const totalAttention = decisionCount + onboardingAttention + peopleAttention + payrollAttention + deliveryAttention + reportingAttention;
+  const dayActions=[
+    ...(checks.length?[{id:"checks",icon:"checks",title:`Checks · ${checks.length} waiting`,
+      meta:`Oldest waiting since ${formatDate(checks[0].created_at)}`,onClick:onOpenWorkflows}]:[]),
+    ...(pendingInvitations.length&&canManagePeople?[{id:"invitations",icon:"people",
+      title:`Staff invitations to review · ${pendingInvitations.length}`,
+      meta:expiredInvitationCount?`${expiredInvitationCount} expired link(s)`:"Awaiting activation",
+      onClick:onOpenInvitations}]:[]),
+    ...leaveQueue.map(request=>({
+      id:"leave-"+request.id,icon:"leave",
+      title:`${request.requester?.full_name||"Team member"} · ${request.days} day(s) ${request.kind} leave`,
+      meta:`${request.start_date} → ${request.end_date} · ${leaveStageLabel(request)}`,
+      onClick:()=>onOpenLeaveRequest?onOpenLeaveRequest(request.id):onOpenAttendance?.(),
+      actions:canAdminDecideLeave(request)?<>
+        <Button variant="secondary" size="compact" disabled={busy}
+          onClick={()=>onLeaveDecision?.(request,"declined")}>Decline</Button>
+        <Button size="compact" disabled={busy}
+          onClick={()=>onLeaveDecision?.(request,"approved")}>Approve</Button>
+      </>:null
+    })),
+    ...alerts.map(alert=>({
+      id:"alert-"+alert.id,icon:"warning",title:alert.message,meta:`Since ${formatDate(alert.first_seen_at)}`,
+      workItemId:alert.subject_type==="work_item"?alert.subject_id:null,
+      onClick:alert.subject_type==="work_item"&&alert.subject_id?
+        ()=>onOpenItem?.(alert.subject_id):undefined
+    }))
+  ];
   const adminFirstName = String(me?.full_name || "").trim().split(/\s+/)[0] || "there";
   const accraHour = Number(new Intl.DateTimeFormat("en-GB", { timeZone:"Africa/Accra", hour:"2-digit", hourCycle:"h23" }).format(new Date()));
   const greeting = accraHour < 12 ? "Good morning" : accraHour < 17 ? "Good afternoon" : "Good evening";
@@ -304,7 +331,7 @@ export default function AdminOverviewV2({
             </div>
           </div>
           <div className="adminv2-intro-actions">
-            <a className="adminv2-hero-link" href="#admin-operational-inbox">Review your inbox <CeacIcon name="chevronRight" size="meta" decorative /></a>
+            <a className="adminv2-hero-link" href="#ceac-your-day">Review your inbox <CeacIcon name="chevronRight" size="meta" decorative /></a>
             {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>People &amp; Access</Button> : null}
             <Button icon="control" variant="secondary" onClick={onOpenSettings}>Control Center</Button>
           </div>
@@ -323,7 +350,7 @@ export default function AdminOverviewV2({
         </aside>
       </header>
       <EmployeeWorkSession me={me} />
-      {notificationPanel}
+      {withOverviewActions(notificationPanel,dayActions,!loading&&!loadFailed)}
 
       {loadFailed ? <StatePanel
         state="error"
@@ -342,67 +369,9 @@ export default function AdminOverviewV2({
       </div> : null}
 
       {!loading && !loadFailed ? <main className="adminv2-main">
-        <section className="adminv2-focus-strip" aria-label="Next useful Administration step">
-          <div className="adminv2-focus-summary"><h2>Needs your attention</h2><span>Requests · announcements · approvals</span></div>
-          <div className="adminv2-focus-metrics" aria-label="Recorded organisation context"><span><strong>{employeeRoster.length}</strong><small>Employees recorded</small></span><span><strong>{reporting ? `${reporting.submitted}/${reporting.total}` : "—"}</strong><small>Reports submitted</small></span></div>
-        </section>
         <section className="adminv2-command-grid" aria-label="Administration actions and setup">
-          <DataPanel
-            className="adminv2-panel adminv2-inbox"
-            id="admin-operational-inbox"
-            eyebrow="Operational inbox"
-            title="Needs Administration"
-            supporting="Decisions, onboarding follow-up and checks that require Administration authority. Unit-level daily management stays with managers."
-            action={<Count value={decisionCount} tone={decisionCount ? "attention" : "success"} />}
-          >
-            {decisionCount === 0 ? <Quiet>Nothing currently requires an Administration decision.</Quiet> : null}
-
-            {checks.length ? <AdminActionRow
-              icon="control"
-              title={`Checks · ${checks.length} waiting`}
-              meta={`Oldest waiting since ${formatDate(checks[0].created_at)}`}
-              status="Open checks"
-              statusTone="warning"
-              onClick={onOpenWorkflows}
-            /> : null}
-
-            {pendingInvitations.length && canManagePeople ? <AdminActionRow
-              icon="people"
-              title={`Staff invitations to review · ${pendingInvitations.length}`}
-              meta={expiredInvitationCount ? `${expiredInvitationCount} activation link${expiredInvitationCount === 1 ? " has" : "s have"} expired. Check before resending.` : "Activation is outstanding. Reconcile existing identities rather than inviting again."}
-              status="Onboarding"
-              statusTone="action"
-              onClick={onOpenInvitations}
-            /> : null}
-
-            {leaveQueue.map((request) => <AdminActionRow
-              key={request.id}
-              icon="time"
-              title={`${request.requester?.full_name || "Team member"} · ${request.days} day${Number(request.days) === 1 ? "" : "s"} ${request.kind} leave`}
-              meta={`${request.start_date} → ${request.end_date} · ${leaveStageLabel(request)}`}
-              status={canAdminDecideLeave(request) ? "Decision" : "Awaiting approval"}
-              statusTone="warning"
-            >
-              <Button variant="secondary" size="compact" onClick={() => onOpenLeaveRequest ? onOpenLeaveRequest(request.id) : onOpenAttendance?.()}>Review request</Button>
-              {canAdminDecideLeave(request) ? <>
-                <Button variant="secondary" size="compact" disabled={busy} onClick={() => onLeaveDecision?.(request, "declined")}>Decline</Button>
-                <Button size="compact" disabled={busy} onClick={() => onLeaveDecision?.(request, "approved")}>Approve</Button>
-              </> : <span className="screen-note">{leaveStageLabel(request)}</span>}
-            </AdminActionRow>)}
-
-            {alerts.map((alert) => <AdminActionRow
-              key={alert.id}
-              icon="notification"
-              title={alert.message}
-              meta={`Since ${formatDate(alert.first_seen_at)}`}
-              status="Alert"
-              statusTone="warning"
-              onClick={alert.subject_type === "work_item" && alert.subject_id ? () => onOpenItem?.(alert.subject_id) : undefined}
-            />)}
-          </DataPanel>
-
           <div className="adminv2-mobile-actions" aria-label="Administration shortcuts">
-            <a className="adminv2-hero-link" href="#admin-operational-inbox">Review your inbox <CeacIcon name="chevronRight" size="meta" decorative /></a>
+            <a className="adminv2-hero-link" href="#ceac-your-day">Review your inbox <CeacIcon name="chevronRight" size="meta" decorative /></a>
             {canManagePeople ? <Button icon="people" variant="secondary" onClick={onOpenPeople}>Open People &amp; Access</Button> : null}
             <Button icon="control" onClick={onOpenSettings}>Control Center</Button>
           </div>

@@ -1,4 +1,5 @@
 import ExecutiveWorkforceToday from "../../components/ExecutiveWorkforceToday";
+import {withOverviewActions} from "../../components/OverviewNotifications";
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
 import EmployeeWorkSession from "../../components/EmployeeWorkSession";
 import {
@@ -203,6 +204,11 @@ export default function ExecutiveOverviewV2({
       onClick: onOpenWork,
     } : null,
   ].filter(Boolean);
+  const dayActions=attentionRows.map((row,index)=>({
+    id:"executive-"+index,title:row.title,meta:row.meta,
+    icon:row.icon==="reports"?"report":row.icon==="people"?"people":row.icon==="work"?"work":"warning",
+    onClick:row.onClick
+  }));
 
   return <div className="body executive-home">
     <div className="executivev2">
@@ -220,7 +226,7 @@ export default function ExecutiveOverviewV2({
       </header>
 
       {me?.id && <EmployeeWorkSession me={me} />}
-      {notificationPanel}
+      {withOverviewActions(notificationPanel,dayActions,!error)}
 
       {error ? <StatePanel
         state="error"
@@ -273,21 +279,6 @@ export default function ExecutiveOverviewV2({
         </section>
 
         <section className="executivev2-reference-grid">
-          <section className="executivev2-reference-panel executivev2-attention" aria-label="Needs your attention">
-            <div className="executivev2-panel-head">
-              <h2><CeacIcon name="warning" size="row" decorative />Needs your attention</h2>
-              <button type="button" onClick={onOpenWork}>View all</button>
-            </div>
-            <div className="executivev2-panel-body">
-              {attentionRows.length ? attentionRows.slice(0, 4).map((row) => <AttentionItem key={row.title} {...row} />) : (
-                <div className="executivev2-empty">
-                  <CeacIcon name="checkCircle" size="row" decorative />
-                  <span><strong>No recorded item needs your decision right now.</strong><small>New exceptions will appear here when an underlying CEAC record requires Executive attention.</small></span>
-                </div>
-              )}
-            </div>
-          </section>
-
           <section className="executivev2-reference-panel executivev2-direction">
             <div className="executivev2-panel-head">
               <h2><CeacIcon name="goal" size="row" decorative />Ministry direction</h2>

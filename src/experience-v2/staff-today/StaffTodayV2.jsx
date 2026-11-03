@@ -1,4 +1,5 @@
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
+import {withOverviewActions} from "../../components/OverviewNotifications";
 import {
   ActionFocusCard,
   Button,
@@ -195,13 +196,21 @@ export default function StaffTodayV2({
     .sort((left, right) => new Date(left.at) - new Date(right.at))
     .slice(0, 6);
 
-  const updateCount =
-    roomMentions.slice(0, 3).length +
-    feedback.slice(0, 2).length +
-    completedThisWeek.slice(0, 2).length +
-    leaveUpdates.slice(0, 2).length;
-  const waitingCount = waitingReviews.length + waitingDependencies.length;
-  const attentionCount = nextMoveItems.length + visibleAlerts.length + announcementAttention.length;
+  const updateCount=feedback.slice(0,2).length+completedThisWeek.slice(0,2).length+leaveUpdates.slice(0,2).length;
+  const waitingCount=waitingReviews.length+waitingDependencies.length;
+  const rawDayActions=[
+    ...nextMoveItems.map(item=>({id:"work-"+item.id,workItemId:item.id,icon:"work",title:item.title,
+      meta:`${item.ref} · ${dueLabel(item.due_at)}`,status:workStatus(item).label,
+      onClick:()=>onOpenItem?.(item.id)})),
+    ...visibleAlerts.map(alert=>({id:"alert-"+alert.id,
+      workItemId:alert.subject_type==="work_item"?alert.subject_id:null,icon:"warning",
+      title:alert.message,meta:`Since ${formatDate(alert.first_seen_at)}`,
+      onClick:alert.subject_id?()=>onOpenItem?.(alert.subject_id):undefined})),
+    ...announcementAttention.map(item=>({id:"announcement-"+item.id,icon:"announcement",
+      title:`Acknowledge: ${item.title}`,meta:"Organisation announcement",onClick:onOpenAnnouncements}))
+  ];
+  const dayActions=rawDayActions.filter((row,index,rows)=>!row.workItemId||
+    rows.findIndex(other=>other.workItemId===row.workItemId)===index);
 
   const focusStatus = primaryNextItem ? workStatus(primaryNextItem) : null;
   const focusTitle = primaryNextItem
@@ -262,7 +271,7 @@ export default function StaffTodayV2({
           </div>
         </Surface>
 
-        {notificationPanel}
+        {withOverviewActions(notificationPanel,dayActions,!loading&&!loadFailed)}
 
         {staleSession ? (
           <Surface variant="soft" padding="standard" className="staffv2-recovery">
@@ -359,81 +368,13 @@ export default function StaffTodayV2({
             </section>
 
             <div className="staffv2-main-grid">
-              {attentionCount > 0 ? (
-                <DataPanel
-                  className="staffv2-panel staffv2-attention"
-                  eyebrow="Actionable now"
-                  title="Needs your attention"
-                  action={<span className="staffv2-count">{attentionCount}</span>}
-                >
-                  {nextMoveItems.map((item) => {
-                    const status = workStatus(item);
-                    return (
-                      <QueueRow
-                        key={item.id}
-                        icon={item.status === "returned" ? "warning" : "work"}
-                        title={item.title}
-                        meta={`${item.ref} · ${dueLabel(item.due_at)}`}
-                        status={status.label}
-                        statusTone={status.tone}
-                        onClick={() => onOpenItem?.(item.id)}
-                      />
-                    );
-                  })}
-                  {visibleAlerts.map((alert) => (
-                    <QueueRow
-                      key={alert.id}
-                      icon="warning"
-                      title={alert.message}
-                      meta={`Since ${new Date(alert.first_seen_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
-                      status="Attention"
-                      statusTone="warning"
-                      onClick={alert.subject_id ? () => onOpenItem?.(alert.subject_id) : undefined}
-                    />
-                  ))}
-                  {announcementAttention.map((announcement) => (
-                    <QueueRow
-                      key={`ack-${announcement.id}`}
-                      icon="notification"
-                      title={`Acknowledge: ${announcement.title}`}
-                      meta="Organisation announcement"
-                      status="Acknowledge"
-                      statusTone="warning"
-                      onClick={onOpenAnnouncements}
-                    />
-                  ))}
-                </DataPanel>
-              ) : null}
-
               {updateCount > 0 ? (
                 <DataPanel
                   className="staffv2-panel staffv2-updates"
-                  eyebrow="Since you last checked"
-                  title="Updates"
+                  eyebrow="Recorded progress"
+                  title="Recent activity"
                   action={<span className="staffv2-count">{updateCount}</span>}
                 >
-                  {roomMentions.slice(0, 3).map((message) => {
-                    const room = message.rooms;
-                    const roomName = room?.kind === "project"
-                      ? room.projects?.name
-                      : room?.kind === "sub_team"
-                        ? room.sub_teams?.name
-                        : room?.units?.name;
-                    return (
-                      <QueueRow
-                        key={`mention-${message.id}`}
-                        icon="messages"
-                        title={`${message.profiles?.full_name || "A teammate"} mentioned you`}
-                        meta={`${roomName || "Room"} · ${new Date(message.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
-                        onClick={() => onOpenRoom?.({
-                          kind: room?.kind,
-                          unitId: room?.unit_id,
-                          subTeamId: room?.sub_team_id,
-                          projectId: room?.project_id,
-                        })}
-                      />
-                    );
-                  })}
                   {feedback.slice(0, 2).map((note) => (
                     <StaticRow
                       key={note.id}
