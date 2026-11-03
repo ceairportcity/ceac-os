@@ -19,15 +19,15 @@ export function useCeacUnreadNotifications(me) {
       org_id:me.org_id,profile_id:me.id,room_id:roomId,notification_level:level
     },{onConflict:"room_id,profile_id"});
     if(result.error)throw result.error;
-    refresh();
     window.dispatchEvent(new Event("ceac:notifications-changed"));
-  },[me?.org_id,me?.id,refresh]);
+  },[me?.org_id,me?.id]);
 
   useEffect(()=>{
+    const changedAccount=currentScope.current!==scope;
     currentScope.current=scope;
     if(!me?.id||!me?.org_id){setCounts(null);setError("");return;}
     let active=true;
-    setCounts(null);setError("");
+    if(changedAccount){setCounts(null);setError("");}
     async function load(){
       if(document.visibilityState==="hidden")return;
       const now=Date.now(),start=new Date(now-15*60000).toISOString();
