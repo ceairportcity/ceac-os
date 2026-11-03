@@ -20,15 +20,16 @@ test("the approved visual direction is a binding reference, not an accepted scre
 test("Administration remains decision-first with a personal premium daily greeting", () => {
   assert.match(overview, /Administration daily briefing/);
   assert.match(overview, /\{greeting\}, \{adminFirstName\}/);
-  assert.match(overview, /Needs Administration/);
+  assert.match(overview, /const dayActions=\[/);
+  assert.match(overview, /withOverviewActions\(notificationPanel,dayActions/);
   assert.match(overview, /Upcoming commitments/);
   assert.match(overview, /pendingInvitations\.length/);
   assert.match(overview, /onLeaveDecision\?\.\(request/);
 });
 
 test("the hero preserves existing actual-work navigation and authorised role controls", () => {
-  assert.match(overview, /href="#admin-operational-inbox"/);
-  assert.match(overview, /id="admin-operational-inbox"/);
+  assert.match(overview, /href="#ceac-your-day"/);
+  assert.match(readFileSync("src/components/OverviewNotifications.jsx","utf8"), /id="ceac-your-day"/);
   assert.match(components, /export function DataPanel\(\{\s*id,/);
   assert.match(components, /<Surface id=\{id\}/);
   assert.match(overview, /canManagePeople \? <Button/);
@@ -57,9 +58,9 @@ test("the dominant next step contains real CEAC authority-preserving navigation"
   assert.match(overview, /action: onOpenWorkflows/);
   assert.match(overview, /pendingInvitations\.length && canManagePeople/);
   assert.match(overview, /action: onOpenInvitations/);
-  assert.match(overview, /onClick=\{onOpenInvitations\}/);
+  assert.match(overview, /onClick:onOpenInvitations/);
   assert.match(overview, /onOpenItem\?\.\(mine\[0\]\.id\)/);
-  assert.match(overview, /adminv2-focus-strip/);
+  assert.match(overview, /withOverviewActions\(notificationPanel,dayActions/);
   assert.match(stylesheet, /Admin premium reference: dominant next-decision focus/);
   assert.doesNotMatch(overview, /automatically.*approve.*leave/i);
 });
@@ -93,7 +94,7 @@ test("missing or custom route evidence cannot invent an Overview decision", () =
 test("Overview stage guards protect both controls and the mutation handler", () => {
   const home = readFileSync("src/screens/AdminHome.jsx", "utf8");
   const workforce = readFileSync("src/screens/Workforce.jsx", "utf8");
-  assert.match(overview, /\{canAdminDecideLeave\(request\) \? <>/);
+  assert.match(overview, /actions:canAdminDecideLeave\(request\)\?<>/);
   assert.match(overview, /onOpenLeaveRequest\(request\.id\)/);
   assert.match(home, /go\?\.\("attendance", \{leaveRequestId:requestId\}\)/);
   assert.match(workforce, /initialRequestId=\{initialLeaveRequestId\}/);
