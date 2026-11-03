@@ -5,7 +5,7 @@ import AdminOverviewV2 from "../experience-v2/admin-overview/AdminOverviewV2";
 import { summariseAdminToday, countRecordedSessionDays } from "../lib/adminTodaySummary";
 import { canAdminDecideLeave } from "../lib/leaveDecisionStage";
 
-export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, openSettings, openUnits, openPeopleAccess, openPerson, go }) {
+export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, openSettings, openUnits, openPeopleAccess, openPerson, go, notificationPanel }) {
   const [units, setUnits] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [blockers, setBlockers] = useState([]);
@@ -295,6 +295,7 @@ export default function AdminHome({ me, openItem, openMeeting, scheduleMeeting, 
   return <>
     <AdminOverviewV2
       me={me}
+      notificationPanel={notificationPanel}
       announcements={verifiedSnapshot ? announcements : null}
       onOpenAnnouncements={() => go?.("announcements")}
       dateLabel={adminDate}
