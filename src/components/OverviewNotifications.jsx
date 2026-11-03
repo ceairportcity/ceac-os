@@ -2,6 +2,7 @@ import {cloneElement,isValidElement,useState} from "react";
 import {Bell,CalendarClock,CheckCircle2,Clock3,FileText,MessageSquare,ShieldAlert,ClipboardCheck} from "lucide-react";
 import "./overview-notifications.css";
 import {supabase} from "../lib/supabase";
+import {filterDayNotices} from "../lib/overviewDay";
 
 // Decisions are supplied by the authorised Overview role, not fetched again.
 export function withOverviewActions(panel,actionItems=[],actionReady=true) {
@@ -10,15 +11,6 @@ export function withOverviewActions(panel,actionItems=[],actionReady=true) {
 const icons={meeting:CalendarClock,work:Clock3,room:MessageSquare,event:FileText,
   calendar:CalendarClock,reminder:Bell,report:FileText,people:ClipboardCheck,
   checks:ClipboardCheck,warning:ShieldAlert,leave:CalendarClock,announcement:Bell};
-function workId(url){
-  const m=typeof url==="string"?url.match(/[?&]item=([^&#]+)/):null;
-  if(!m)return null;
-  try{return decodeURIComponent(m[1]);}catch{return m[1];}
-}
-export function filterDayNotices(notices=[],actions=[]){
-  const shown=new Set(actions.map(item=>item.workItemId).filter(Boolean));
-  return notices.filter(item=>!shown.has(workId(item.url)));
-}
 export default function OverviewNotifications({notifications,onOpenUpdates,actionItems=[],actionReady=true}){
   const [expanded,setExpanded]=useState(false);
   const actions=Array.isArray(actionItems)?actionItems.filter(Boolean):[];
