@@ -13,7 +13,7 @@ import {
 
 const globalSearchModule = import("./GlobalSearch");
 const GlobalSearch = lazy(() => globalSearchModule);
-const unreadBadgeStyle={position:"absolute",top:0,right:0,display:"inline-grid",placeItems:"center",minWidth:18,height:18,padding:"0 4px",borderRadius:99,background:"#c73535",color:"#fff",fontSize:11,fontWeight:700,lineHeight:1,pointerEvents:"none",zIndex:1};
+const unreadBadgeStyle={position:"absolute",top:0,right:0,display:"inline-grid",placeItems:"center",minWidth:18,height:18,padding:"0 4px",borderRadius:99,background:"#c73535",color:"#fff",fontSize:12,fontWeight:700,lineHeight:1,pointerEvents:"none",zIndex:1};
 function UnreadBadge({count}) {
   return count>0?<span style={unreadBadgeStyle} aria-hidden="true">{count>99?"99+":count}</span>:null;
 }
