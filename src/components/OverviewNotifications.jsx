@@ -1,7 +1,6 @@
 import {Bell,CalendarClock,CheckCircle2,Clock3,FileText,MessageSquare,ShieldAlert} from "lucide-react";
 import "./overview-notifications.css";
 import {supabase} from "../lib/supabase";
-import {supabase} from "../lib/supabase";
 
 // Same compact notification stack on all four Overview experiences.
 // No confidential Memo or Room message body enters this preview.
@@ -20,16 +19,6 @@ export default function OverviewNotifications({notifications,onOpenUpdates}){
     window.location.assign(row.url||"/?tab=messages&updates=1");
   }
   const pending=notifications?.attention||0;
-  async function openNotice(row,evt){
-    if(row.type!=="event" || evt.button!==0 || evt.metaKey || evt.ctrlKey || evt.altKey || evt.shiftKey)return;
-    evt.preventDefault();
-    const id=String(row.id||"").slice(6);
-    try{
-      const result=await supabase.rpc("mark_ceac_notification_read",{p_id:id});
-      if(!result.error)window.dispatchEvent(new Event("ceac:notifications-changed"));
-    }catch{/* A failed acknowledgement must not deny access to the record. */}
-    window.location.assign(row.url||"/?tab=messages&updates=1");
-  }
   return <section className="ceac-glass-updates" aria-label="Your notification briefing">
     <header className="ceac-glass-updates-header">
       <div className="ceac-glass-updates-title">
@@ -44,7 +33,7 @@ export default function OverviewNotifications({notifications,onOpenUpdates}){
     {!!items.length&&<div className="ceac-glass-list">
       {items.map(row=>{
         const Icon=icons[row.type]||ShieldAlert;
-        return <a key={row.id} className={"ceac-glass-item is-"+row.level} href={row.url||"/?tab=messages&updates=1"} onClick={evt=>void openNotice(row,evt)} onClick={event=>void openItem(event,row)}>
+        return <a key={row.id} className={"ceac-glass-item is-"+row.level} href={row.url||"/?tab=messages&updates=1"} onClick={event=>void openItem(event,row)}>
           <span className="ceac-glass-icon" aria-hidden="true"><Icon size={17}/></span>
           <span className="ceac-glass-copy">
             <strong>{row.title}</strong>
