@@ -42,8 +42,7 @@ export function useCeacUnreadNotifications(me) {
           supabase.from("room_reads").select("room_id,last_read_at").eq("profile_id",me.id),
           supabase.from("room_mentions").select("id,created_at,room_messages!inner(room_id)")
             .eq("profile_id",me.id).gte("created_at",new Date(now-30*86400000).toISOString()).limit(150),
-          supabase.from("meeting_participants").select("meeting_id").eq("profile_id",me.id).limit(200),
-          supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,created_by")
+          supabase.from("meeting_sessions").select("id,title,starts_at,ends_at,status,created_by,meeting_participants(profile_id)")
             .gte("starts_at",start).lte("starts_at",ends).limit(100),
           supabase.from("work_items").select("id,title,due_at,status,confidential")
             .eq("assignee_id",me.id).not("due_at","is",null).lte("due_at",soon)
@@ -56,11 +55,13 @@ export function useCeacUnreadNotifications(me) {
           supabase.rpc("my_work_attention_queue"),
         ]);
         if(!active||currentScope.current!==scope)return;
-        const [events,rooms,prefs,reads,mentions,participants,meetings,works,reminders,calendar,actions]=results;
+        const [events,rooms,prefs,reads,mentions,meetings,works,reminders,calendar,actions]=results;
         if(events.error || !Array.isArray(events.data) || rooms.error || !Array.isArray(rooms.data))
           throw new Error("Personal notifications could not be verified.");
-        const invited=new Set((participants.data||[]).map(p=>p.meeting_id));
-        const personalMeetings=(meetings.data||[]).filter(m=>m.created_by===me.id||invited.has(m.id));
+        // Read participants only for imminent meetings; do not limit a person to
+        // the first 200 historical invitations, which can hide today's meeting.
+        const personalMeetings=(meetings.data||[]).filter(m=>m.created_by===me.id
+          ||m.meeting_participants?.some(p=>p.profile_id===me.id));
         const optionalFailures=results.slice(2).some(result=>Boolean(result.error));
         const next=buildCeacNotificationBriefing({
           me,events:events.data,rooms:rooms.data,preferences:prefs.data||[],
