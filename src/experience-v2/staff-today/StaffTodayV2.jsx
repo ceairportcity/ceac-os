@@ -74,6 +74,7 @@ function StaticRow({ icon, title, meta, note }) {
 
 export default function StaffTodayV2({
   me,
+  notificationPanel,
   session,
   staleSession,
   busy,
@@ -260,6 +261,8 @@ export default function StaffTodayV2({
               : <Button onClick={onStartWork} disabled={busy || !sessionVerified}>Start work</Button>}
           </div>
         </Surface>
+
+        {notificationPanel}
 
         {staleSession ? (
           <Surface variant="soft" padding="standard" className="staffv2-recovery">
