@@ -7,7 +7,7 @@ function dateKey(date) {
   return new Date(date).toLocaleDateString("en-CA", { timeZone: "Africa/Accra" });
 }
 
-export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) {
+export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go, notificationPanel }) {
   const [x, setX] = useState({ doneWeek: 0, donePreviousWeek: 0, objectives: 0, objectiveAttention: 0, projects: 0, blocked: 0, review: 0, activeUnits: 0, activeTeams: null, activeVolunteers: null, activeStaff: null });
   const [loading, setLoading] = useState(true);
   const [meetings, setMeetings] = useState([]);
@@ -218,6 +218,7 @@ export default function ExecutiveHome({ me, openMeeting, scheduleMeeting, go }) 
     ministryCharts={ministryCharts}
     recentActivity={recentActivity}
     meetings={meetings}
+    notificationPanel={notificationPanel}
     onRetry={load}
     onOpenWork={() => go?.("work")}
     onOpenMinistry={() => go?.("strategy")}
