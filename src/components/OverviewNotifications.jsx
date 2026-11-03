@@ -72,8 +72,7 @@ export default function OverviewNotifications({notifications,onOpenUpdates,actio
             {row.level==="attention"?<span className="ceac-glass-priority">Action</span>:null}
           </a>;
         })}</div>:null}
-        <div className="ceac-glass-foot">{notifications?.room>0?
-          notifications.room+" followed Room updates":"Rooms stay quiet unless followed or mentioned"}</div>
+        {notifications?.room>0?<div className="ceac-glass-foot">{notifications.room} followed Room updates</div>:null}
       </section>
     </div>
   </section>;

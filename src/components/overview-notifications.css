@@ -39,3 +39,12 @@ button.ceac-day-decision-main:hover,button.ceac-day-decision-main:focus-visible{
 .ceac-day .ceac-glass-item{min-height:55px}
 @media(max-width:800px){.ceac-day-sections{grid-template-columns:1fr}.ceac-day-group{padding:10px}}
 @media(max-width:380px){.ceac-day-status{display:none}.ceac-day-decision-main,.ceac-glass-item{gap:8px}}
+
+/* Compact phone briefing: maintain 44px actions without duplicated empty-status copy. */
+@media(max-width:650px){
+  .ceac-day{margin:8px 0 10px;padding:10px 10px 8px}
+  .ceac-day-sections{gap:8px}
+  .ceac-day-group{padding:8px}
+  .ceac-day-group-head{margin-bottom:4px}
+  .ceac-day .ceac-glass-item{padding-block:7px}
+}
