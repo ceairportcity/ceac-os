@@ -1019,3 +1019,7 @@
   .ev2s-destination-search { min-width: 0; }
   .ev2s-content, .ev2-route-transition { min-width: 0; max-width: 100%; }
 }
+
+/* Bell badge must not affect the icon's layout at any breakpoint. */
+.ceac-notification-trigger{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:42px;min-height:42px;flex:none}
+.ceac-notification-trigger>span[aria-hidden]{pointer-events:none}
