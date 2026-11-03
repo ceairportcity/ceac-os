@@ -133,7 +133,7 @@ test("Executive redesign is bound to the literal owner-approved reference", () =
   expect(css).toContain(".executive-app .fpg-payroll-row-action");
 });
 
-test("Executive Overview reproduces the locked desktop composition", async ({ page }) => {
+test("Executive Overview respects the approved Your Day desktop composition", async ({ page }) => {
   await signIn(page);
   await expect(page.getByText("Executive Dashboard", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Search across CEAC OS")).toBeVisible();
@@ -142,9 +142,11 @@ test("Executive Overview reproduces the locked desktop composition", async ({ pa
   await expect(page.getByLabel("Current date and time in Accra")).toBeHidden();
   await expect(page.locator(".executivev2-hero h2")).toContainText(/Good (morning|afternoon|evening), Executive Fixture/);
   await expect(page.locator(".executivev2-kpi")).toHaveCount(4);
-  await expect(page.locator(".executivev2-reference-grid > .executivev2-reference-panel")).toHaveCount(3);
+  await expect(page.locator(".executivev2-reference-grid > .executivev2-reference-panel")).toHaveCount(2);
   await expect(page.locator(".executivev2-lower-grid > .executivev2-reference-panel")).toHaveCount(2);
-  await expect(page.getByText("Needs your attention", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your Day" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Requires your action" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Upcoming & updates" })).toBeVisible();
   await expect(page.getByText("Ministry Objectives", { exact: true })).toBeVisible();
   await expect(page.getByText("People and departments", { exact: true })).toBeVisible();
   await expect(page.getByText("Significant updates", { exact: true })).toBeVisible();
@@ -153,7 +155,7 @@ test("Executive Overview reproduces the locked desktop composition", async ({ pa
   await page.screenshot({ path: "test-artifacts/executive-redesign-reference-overview-desktop-1440.png", fullPage: true });
 });
 
-test("Executive Overview reproduces the locked phone composition", async ({ page }) => {
+test("Executive Overview respects the approved Your Day phone composition", async ({ page }) => {
   await signIn(page, { width: 390, height: 844 });
   const nav = page.locator(".ev2s-mobile-nav");
   await expect(nav.getByRole("button")).toHaveCount(4);
@@ -161,7 +163,7 @@ test("Executive Overview reproduces the locked phone composition", async ({ page
   await expect(page.locator(".executivev2-kpi")).toHaveCount(4);
   const columns = await page.locator(".executivev2-kpis").evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(" ").length);
   expect(columns).toBe(2);
-  await expect(page.locator(".executivev2-attention")).toBeVisible();
+  await expect(page.locator(".ceac-day")).toBeVisible();
   await expect(page.getByRole("button", { name: "Open updates", exact: true })).toBeVisible();
   await expect(page.locator(".executivev2-direction")).toBeHidden();
   await expect(page.locator(".executivev2-organisation")).toBeHidden();

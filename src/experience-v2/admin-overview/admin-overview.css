@@ -33,3 +33,6 @@
   .adminv2-hero { grid-template-columns: minmax(0, 1fr) 270px; }
   .adminv2-hero-main { padding: 20px; }
 }
+
+/* Operational decisions moved into Your Day; keep announcements full width. */
+.adminv2-command-grid{grid-template-columns:minmax(0,1fr)}

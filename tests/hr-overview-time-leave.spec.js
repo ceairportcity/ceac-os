@@ -16,7 +16,7 @@ for(const width of [1440,820,390,320]){
  test(`approved HR hierarchy, default map and responsive controls at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1100});
   const mapCount=await fixture(page);
-  const inbox=page.locator(".adminv2-inbox"),map=page.locator(".workstart-workspace");
+  const inbox=page.locator(".ceac-day"),map=page.locator(".workstart-workspace");
   expect((await inbox.boundingBox()).y).toBeLessThan((await map.boundingBox()).y);
   await expect(page.getByRole("complementary",{name:"Upcoming commitments"})).toBeVisible();
   await expect(page.getByRole("region",{name:"Selected work start"})).toHaveCount(0);
@@ -66,7 +66,7 @@ for(const width of [1440,820,390,320]){
 for(const scope of ["My","Team","Organisation"]){
  test(`calendar selection, pending/approved separation and request detail for ${scope}`,async({page})=>{
   await fixture(page,scope);
-  await page.locator('.adminv2-inbox').getByRole("button",{name:"Review request",exact:true}).click();
+  await page.locator('.ceac-day').getByRole("button",{name:/Ama Fixture.*annual leave/}).first().click();
   const planner=page.getByRole("region",{name:scope+" leave calendar",exact:true});
   await expect(planner).toBeVisible();
   if(scope==='Organisation')await planner.getByRole('button',{name:'Back to requests',exact:true}).click();

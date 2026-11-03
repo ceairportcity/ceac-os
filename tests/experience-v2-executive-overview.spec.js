@@ -39,7 +39,7 @@ test("Stage 8 Executive Overview is isolated V2 presentation on preserved Execut
 
   expect(view).toContain('from "../components"');
   expect(view).toContain('from "../icons"');
-  expect(view).toContain("Needs your attention");
+  expect(view).toContain("withOverviewActions(notificationPanel,dayActions");
   expect(view).toContain("Good morning");
   expect(view).toContain("Significant updates");
   expect(home).toContain('.in("verb", EXECUTIVE_EXCEPTION_VERBS)');
@@ -93,7 +93,7 @@ for (const viewport of [
     expect(kpiBox.y, "KPI cards must begin below employee attendance").toBeGreaterThanOrEqual(
       sessionBox.y + sessionBox.height - 1,
     );
-    await expect(page.locator(".executivev2-attention")).toBeVisible();
+    await expect(page.locator(".ceac-day")).toBeVisible();
     if (viewport.width > 720) {
       await expect(page.locator(".executivev2-direction")).toBeVisible();
       await expect(page.locator(".executivev2-organisation")).toBeVisible();
@@ -135,7 +135,7 @@ test("VF5A Executive briefing keeps the approved compact mockup hierarchy on mob
   await expect(kpis).toBeVisible();
   await expect(kpis.locator(".executivev2-kpi")).toHaveCount(4);
 
-  const attention = page.locator(".executivev2-attention");
+  const attention = page.locator(".ceac-day");
   await expect(attention).toBeVisible();
   await expect(page.locator(".executivev2-direction")).toBeHidden();
   await expect(page.locator(".executivev2-organisation")).toBeHidden();

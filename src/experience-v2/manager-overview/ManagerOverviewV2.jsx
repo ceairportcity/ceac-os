@@ -1,4 +1,5 @@
 import DailyScenicPhoto from "../../components/DailyScenicPhoto";
+import {withOverviewActions} from "../../components/OverviewNotifications";
 import EmployeeWorkSession from "../../components/EmployeeWorkSession";
 import "./manager-overview.css";
 import {
@@ -243,7 +244,22 @@ export default function ManagerOverviewV2({
     ...acknowledgedIncoming,
     ...deliveryBlockers.filter((blocker) => blocker.direction === "outgoing"),
   ].slice(0, 3);
-  const attentionRows = decisions.slice(0, 3);
+  const dayActions=decisions.map((decision,index)=>{
+    const preview=decisionPreview(decision);
+    const workItemId=decision.type==="submission"?decision.item?.work_items?.id:
+      decision.type==="blocker"?decision.item?.work_item_id:null;
+    const blocker=decision.type==="blocker"?decision.item:null;
+    return {id:decision.type+"-"+(decision.item?.id||index),icon:decision.type==="leave"?"leave":"work",
+      title:preview.title,meta:preview.meta,workItemId,
+      onClick:decision.type==="leave"?()=>onNavigate?.("attendance"):
+        decision.type==="submission"&&workItemId?()=>onOpenItem?.(workItemId):undefined,
+      status:blocker?"Needs response":null,
+      actions:blocker?<><Button variant="secondary" size="compact" busy={busy}
+        onClick={()=>onBlockerAcknowledge?.(blocker)}>Acknowledge</Button>
+        <Button variant="quiet" size="compact" busy={busy}
+        onClick={()=>onBlockerDisagree?.(blocker)}>Disagree</Button></>:null
+    };
+  });
   const comingRows = [
     ...upcomingMeetings.map((meeting) => ({
       key: `meeting-${meeting.id}`,
@@ -289,7 +305,7 @@ export default function ManagerOverviewV2({
         </div>
       </header>
       <EmployeeWorkSession me={me} />
-      {notificationPanel}
+      {withOverviewActions(notificationPanel,dayActions,!loading&&!loadFailed)}
 
       {loadFailed ? <StatePanel
         state="error"
@@ -373,33 +389,6 @@ export default function ManagerOverviewV2({
           </aside>
 
           <div className="fpg9-home-queues">
-            <article className="fpg9-queue-card fpg9-attention-card">
-              <header><h2>Needs your attention</h2><Count value={decisionCount} tone={attentionRows.length ? "attention" : "success"} /></header>
-              {awaitingReview > 0 && <Button variant="secondary" size="compact" onClick={() => onNavigate?.("work")}>Needs review · {awaitingReview}</Button>}
-              {attentionRows.length ? attentionRows.map((decision, index) => {
-                const row = decisionPreview(decision);
-                if (decision.type === "blocker") {
-                  return <DecisionRow
-                    key={decision.item?.id || index}
-                    icon={row.icon}
-                    title={row.title}
-                    meta={row.meta}
-                    status="Needs response"
-                    statusTone="warning"
-                    actions={<>
-                      <Button variant="secondary" size="compact" busy={busy} onClick={() => onBlockerAcknowledge?.(decision.item)}>Acknowledge</Button>
-                      <Button variant="quiet" size="compact" busy={busy} onClick={() => onBlockerDisagree?.(decision.item)}>Disagree</Button>
-                    </>}
-                  />;
-                }
-                const itemId = decision.type === "submission" ? decision.item?.work_items?.id : null;
-                const onClick = decision.type === "leave"
-                  ? () => onNavigate?.("attendance")
-                  : itemId ? () => onOpenItem?.(itemId) : undefined;
-                return <HomeReferenceRow key={decision.item?.id || index} icon={row.icon} title={row.title} meta={row.meta} tone="danger" onClick={onClick} />;
-              }) : <p className="fpg9-home-empty">Nothing needs your authority right now.</p>}
-            </article>
-
             <article className="fpg9-queue-card fpg9-waiting-card">
               <header><h2>Waiting on others</h2><Count value={waitingRows.length} /></header>
               {waitingRows.length ? waitingRows.map((blocker) => blocker.direction === "incoming" && blocker.state === "acknowledged"

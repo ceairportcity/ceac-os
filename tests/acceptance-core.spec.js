@@ -291,7 +291,7 @@ test("A blocker can be raised, acknowledged by the manager, and resolved", async
 
   {
     const { context, page } = await openAs(browser, "manager@ceac.local.test");
-    const blockerRow = page.locator(".managerv2-decision-row").filter({ hasText: title });
+    const blockerRow = page.locator(".ceac-day-decision").filter({ hasText: title });
     await expect(blockerRow).toBeVisible();
     await blockerRow.getByRole("button", { name: "Acknowledge" }).click();
     const acknowledgedRow = page.locator(".managerv2-dependency-row").filter({ hasText: title });
@@ -2149,7 +2149,7 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await expect(page.locator(".adminv2-hero-title h1")).toContainText(/Good morning|Good afternoon|Good evening/);
   await expect(page.locator(".adminv2-context")).toContainText("Administration & HR");
-  await expect(page.getByText("Needs Administration", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Requires your action", exact: true })).toBeVisible();
   await page.locator(".adminv2-more-context > summary").click();
   await expect(page.getByRole("heading", { name: "Finance & reporting", exact: true })).toBeVisible();
   await expect(page.getByText("Delivery signals", { exact: true })).toBeVisible();
@@ -2684,7 +2684,7 @@ test("FPG9 Manager Home and shell follow the locked original CEAC reference", as
     await expect(page.locator(".fpg9-next-card")).toBeVisible();
     await expect(page.locator(".fpg9-schedule-card")).toBeVisible();
     await expect(page.locator(".fpg9-calendar-card")).toBeVisible();
-    await expect(page.locator(".fpg9-attention-card")).toBeVisible();
+    await expect(page.locator(".ceac-day")).toBeVisible();
     await expect(page.locator(".fpg9-waiting-card")).toBeVisible();
     await expect(page.locator(".fpg9-coming-card")).toBeVisible();
     await expect(page.locator(".fpg9-module-strip")).toBeVisible();

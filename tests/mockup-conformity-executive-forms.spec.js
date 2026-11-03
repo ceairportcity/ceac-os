@@ -50,7 +50,8 @@ test("owner mockup: Executive Overview uses compact briefing composition", async
   await signInExecutive(page);
   await expect(page.locator(".executivev2-hero h2")).toContainText(/Good (morning|afternoon|evening), Executive Fixture/);
   await expect(page.locator(".executivev2-kpis .executivev2-kpi")).toHaveCount(4);
-  await expect(page.locator(".executivev2-attention")).toBeVisible();
+  await expect(page.locator(".ceac-day")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Requires your action" })).toBeVisible();
   await expect(page.locator(".executivev2-direction")).toBeVisible();
   await expect(page.locator(".executivev2-organisation")).toBeVisible();
   await expect(page.locator(".executivev2-activity")).toBeVisible();

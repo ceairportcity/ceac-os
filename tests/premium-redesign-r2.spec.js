@@ -53,7 +53,8 @@ test.describe("Premium redesign R2 Manager",()=>{
     await expect(page.locator(".ev2s-mobile-nav")).toBeVisible();
     await expect(page.locator(".managerv2-main")).toBeVisible({timeout:15000});
     await expect(page.locator(".fpg9-mobile-shortcuts")).toBeVisible();
-    await expect(page.locator(".fpg9-attention-card")).toBeVisible();
+    await expect(page.locator(".ceac-day")).toBeVisible();
+    await expect(page.getByRole("heading",{name:"Requires your action"})).toBeVisible();
     await expect(page.locator(".managerv2-decisions")).toHaveCount(0);
     await expect(page.locator(".reference-module-strip")).toHaveCount(0);
     const geometry=await page.evaluate(()=>({
