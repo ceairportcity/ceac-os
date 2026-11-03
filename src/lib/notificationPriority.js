@@ -36,7 +36,7 @@ export function ceacNoticeTarget(row) {
 const item=(id,level,title,meta,url,createdAt,type)=>({id,level,title,meta,url,createdAt,type});
 export function buildCeacNotificationBriefing({
   me,events=[],rooms=[],preferences=[],mentions=[],roomReads=[],meetings=[],
-  workItems=[],reminders=[],calendarEvents=[],now=Date.now()
+  workItems=[],attentionQueue=[],reminders=[],calendarEvents=[],now=Date.now()
 }={}){
   const defaultLevel=defaultRoomLevel(me);
   const levelByRoom=Object.fromEntries(preferences.map(p=>[p.room_id,p.notification_level]));
@@ -88,6 +88,16 @@ export function buildCeacNotificationBriefing({
       work.confidential?"Confidential assigned task":String(work.title||"Assigned task").slice(0,100),
       "/?tab=work&item="+encodeURIComponent(work.id),work.due_at,"work"));
   }
+  for(const action of attentionQueue){
+    if(!action.work_item_id)continue;
+    const title=action.action_kind==="review_required"?"Work is awaiting your review"
+      :action.action_kind==="returned_work"?"Returned work needs attention"
+      :action.action_kind==="routine_due"?"Scheduled responsibility needs attention":"Assigned work is ready";
+    entries.push(item("action:"+action.action_kind+":"+action.work_item_id,
+      "attention",title,String(action.work_title||"Assigned responsibility").slice(0,100),
+      "/?tab=work&item="+encodeURIComponent(action.work_item_id),
+      action.action_at||new Date(now).toISOString(),"action"));
+  }
   for(const reminder of reminders){
     if(reminder.seen_at||!within(reminder.remind_at,now-2*86400000,now+3600000))continue;
     entries.push(item("reminder:"+reminder.id,"attention","Personal reminder",
@@ -104,8 +114,13 @@ export function buildCeacNotificationBriefing({
   // A work assignment can have both an event and a due-time reminder. The
   // latter is the actionable item, so avoid showing both in the short stack.
   const workWithDeadline=new Set(workItems.filter(w=>w.due_at).map(w=>w.id));
-  const filtered=entries.filter(e=>!(e.type==="event" && e.url.includes("tab=work&item=")
-    && workWithDeadline.has(decodeURIComponent(e.url.split("item=")[1]||""))));
+  const actionIds=new Set(attentionQueue.map(a=>a.work_item_id));
+  const filtered=entries.filter(e=>{
+    const workId=e.url.includes("tab=work&item=")?decodeURIComponent(e.url.split("item=")[1]||""):null;
+    if(e.type==="event"&&workId&&(workWithDeadline.has(workId)||actionIds.has(workId)))return false;
+    if(e.type==="work"&&workId&&actionIds.has(workId))return false;
+    return true;
+  });
   const rank={attention:0,personal:1,activity:2};
   const output=filtered.sort((a,b)=>rank[a.level]-rank[b.level]
     || (ms(b.createdAt)||0)-(ms(a.createdAt)||0));
