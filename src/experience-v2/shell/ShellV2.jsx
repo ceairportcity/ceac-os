@@ -13,7 +13,7 @@ import {
 
 const globalSearchModule = import("./GlobalSearch");
 const GlobalSearch = lazy(() => globalSearchModule);
-const unreadBadgeStyle={display:"inline-grid",placeItems:"center",minWidth:19,height:19,padding:"0 5px",borderRadius:99,background:"#c73535",color:"#fff",fontSize:12,fontWeight:700,marginLeft:3};
+const unreadBadgeStyle={position:"absolute",top:0,right:0,display:"inline-grid",placeItems:"center",minWidth:18,height:18,padding:"0 4px",borderRadius:99,background:"#c73535",color:"#fff",fontSize:11,fontWeight:700,lineHeight:1,pointerEvents:"none",zIndex:1};
 function UnreadBadge({count}) {
   return count>0?<span style={unreadBadgeStyle} aria-hidden="true">{count>99?"99+":count}</span>:null;
 }
@@ -278,7 +278,7 @@ export function AppTopBar({
 
         {onMessages ? <button
           type="button"
-          className={isExec ? "fpg9-topbar-message exec-redesign-notification" : "fpg9-topbar-message"}
+          className={isExec ? "fpg9-topbar-message exec-redesign-notification ceac-notification-trigger" : "fpg9-topbar-message ceac-notification-trigger"}
           onClick={onOpenUpdates || onMessages}
           aria-label={notificationCounts?.count ? `Open updates, ${notificationCounts.count} unread` : "Open updates"}
         >
@@ -385,7 +385,7 @@ export function MobileTopBar({
           </button> : null}
           {onMessages ? <button
             type="button"
-            className="ev2s-mobile-profile exec-redesign-mobile-notification"
+            className="ev2s-mobile-profile exec-redesign-mobile-notification ceac-notification-trigger"
             aria-label={notificationCounts?.count ? `Open updates, ${notificationCounts.count} unread` : "Open updates"}
             onClick={onOpenUpdates || onMessages}
           >
