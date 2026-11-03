@@ -78,7 +78,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
       <button type="button" aria-label="Rooms" aria-current={section === "rooms" ? "page" : undefined} onClick={()=>switchSection("rooms")}><MessageSquare size={16}/> Rooms {notifications?.room>0 && <span aria-hidden="true" className="ceac-notification-badge">{notifications.room>99?"99+":notifications.room}</span>}</button>
       <button type="button" aria-label="Memos" aria-current={section === "memos" ? "page" : undefined} onClick={()=>switchSection("memos")}><FileText size={16}/> Memos {notifications?.memo>0 && <span aria-hidden="true" className="ceac-notification-badge">{notifications.memo>99?"99+":notifications.memo}</span>}</button>
     </nav>
-    {section === "updates" ? <Notifications key={scope} me={me} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
+    {section === "updates" ? <Notifications key={scope} me={me} notificationCounts={notificationCounts} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
       : <div className={`msg-layout ${selected && verified ? "has-selection" : ""}`}>
         <aside className="msg-directory" aria-label="Rooms">
           <label className="msg-search"><Search size={16}/><input type="search" aria-label="Search Rooms" placeholder="Search rooms…" value={query} onChange={e=>setQuery(e.target.value)}/></label>
