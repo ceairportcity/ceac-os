@@ -42,7 +42,7 @@ function requireResult(result, label) {
   return result.data || [];
 }
 
-export default function ManagerHome({ me, openItem, openProject, openMeeting, scheduleMeeting, openPerson, goAssign, go }) {
+export default function ManagerHome({ me, openItem, openProject, openMeeting, scheduleMeeting, openPerson, goAssign, go, notificationPanel }) {
   const [submissions, setSubmissions] = useState([]);
   const [leave, setLeave] = useState([]);
   const [blockers, setBlockers] = useState([]);
@@ -408,6 +408,7 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
     <ManagerOverviewV2
       me={me}
       greeting={managerGreeting}
+      notificationPanel={notificationPanel}
       dateLabel={managerDate}
       loading={loading}
       loadFailed={loadFailed}
