@@ -34,6 +34,16 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   const [recoveredDraft,setRecoveredDraft]=useState(null),[missingUploads,setMissingUploads]=useState([]);
   const uploadRetries=useRef(new Map());
   const localDraftGeneration=useRef(0);
+  const localDraftQueue=useRef(Promise.resolve());
+  function queueDraftWrite(action) {
+    localDraftQueue.current=localDraftQueue.current.catch(()=>{}).then(action);
+    return localDraftQueue.current;
+  }
+  function clearRecoveredCopy() {
+    localDraftGeneration.current+=1;
+    setRecoveredDraft(null);
+    void queueDraftWrite(()=>clearLocalMemoDraft(me.org_id,me.id)).catch(()=>{});
+  }
   const [reload,setReload]=useState(0),[projectUnit,setProjectUnit]=useState(""),[projectName,setProjectName]=useState(""),[projectSummary,setProjectSummary]=useState("");
   const writing=useRef(false),textarea=useRef(null),request=useRef(0),responseIntent=useRef(null),editorVersion=useRef(null),projectVersion=useRef(null);
   const name=id=>people.find(person=>person.id===id)?.full_name || "CEAC colleague";
@@ -44,17 +54,19 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     return()=>{active=false;};
   },[me.org_id,me.id]);
   useEffect(()=>{
-    if(!form)return;
+    // Only genuinely unsaved changes need local recovery. A server-saved draft
+    // belongs in Drafts, not as an automatic replacement for every new Memo.
+    if(!form || (!dirty && !pendingFiles.length && !missingUploads.length))return;
     const pending=[...new Set([...missingUploads,...pendingFiles.map(file=>file.name)])];
     const payload={form,missingUploads:pending};
     const generation=++localDraftGeneration.current;
     const timer=setTimeout(()=>{
-      void saveLocalMemoDraft(me.org_id,me.id,payload)
+      void queueDraftWrite(()=>saveLocalMemoDraft(me.org_id,me.id,payload))
         .then(()=>{if(localDraftGeneration.current===generation)setRecoveredDraft(payload);})
         .catch(()=>{});
     },350);
     return()=>{clearTimeout(timer);localDraftGeneration.current++;};
-  },[me.org_id,me.id,form,pendingFiles,missingUploads]);
+  },[me.org_id,me.id,form,dirty,pendingFiles,missingUploads]);
   useEffect(()=>{
     const {data}=supabase.auth.onAuthStateChange(event=>{
       if(event==="SIGNED_OUT")void clearLocalMemoDraft(me.org_id,me.id).catch(()=>{});
@@ -132,14 +144,35 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   function canLeave(){return !writing.current && (!(dirty || pendingFiles.length || reply.trim()) || window.confirm("Leave this unsaved message? Save Draft or send your reply first to keep your changes."));}
   function startNew(){
     if(!canLeave())return;
-    const recovered=recoveredDraft?.form;
-    setSelected(null);setForm(recovered || fresh());editorVersion.current=recovered?.versionId || null;
-    setDraftFiles([]);setPendingFiles([]);setMissingUploads(recoveredDraft?.missingUploads || []);
-    setDirty(Boolean(recovered));setFormIssues([]);setError("");
-    setNotice(recovered?"Your unfinished Memo has been restored from this device. Reattach any files listed below.":"");
+    // New means new. Never silently reopen a stale local version that may
+    // already have been sent or revised on another device.
+    setSelected(null);setForm(fresh());editorVersion.current=null;
+    setDraftFiles([]);setPendingFiles([]);setMissingUploads([]);
+    setDirty(false);setFormIssues([]);setError("");setNotice("");
+  }
+  function continueRecoveredDraft(){
+    if(!recoveredDraft?.form || !canLeave())return;
+    const restored=recoveredDraft.form;
+    const stored=rows.find(row=>row.id===restored.id && row.sender_id===me.id);
+    const sameVersion=stored && ["draft","changes_requested"].includes(stored.status)
+      && stored.current_version_id===restored.versionId
+      && stored.updated_at===restored.updatedAt;
+    const target=sameVersion ? {...restored}
+      : {...fresh(),subject:String(restored.subject||"").slice(0,240),
+          body:String(restored.body||"").slice(0,30000),
+          to:Array.isArray(restored.to)?restored.to:[],cc:Array.isArray(restored.cc)?restored.cc:[],
+          decisionRequired:Boolean(restored.decisionRequired),
+          scope:["department","cross_department"].includes(restored.scope)?restored.scope:"department",
+          unitId:restored.unitId||"",decisionMakerId:restored.decisionMakerId||""};
+    setSelected(null);setForm(target);editorVersion.current=target.versionId||null;
+    setDraftFiles([]);setPendingFiles([]);setMissingUploads(recoveredDraft.missingUploads||[]);
+    setDirty(true);setFormIssues([]);setError("");
+    setNotice(sameVersion
+      ? "Your unfinished changes were restored. Reattach any listed files before sending."
+      : "Your text was recovered into a new Memo so an older version cannot block saving. Check the recipients and reattach files.");
   }
   function discardRecoveredDraft(){
-    setRecoveredDraft(null);setMissingUploads([]);void clearLocalMemoDraft(me.org_id,me.id).catch(()=>{});
+    clearRecoveredCopy();setMissingUploads([]);
     setSelected(null);setForm(fresh());editorVersion.current=null;setPendingFiles([]);setDraftFiles([]);setDirty(false);setError("");setNotice("");
   }
   function change(key,value){setForm(f=>({...f,[key]:value}));setDirty(true);setFormIssues([]);}
@@ -186,11 +219,10 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
       }
       setDraftFiles(await listOperationalFiles("memo_version",versionId));
       if(send){setSendStage("Sending Memo…");const delivery=await supabase.rpc("send_memo",{p_id:savedForm.id,p_version_id:versionId});if(delivery.error)throw delivery.error;
-        setForm(null);setSelected(savedForm.id);setRecoveredDraft(null);setMissingUploads([]);
-        localDraftGeneration.current++;
-        void clearLocalMemoDraft(me.org_id,me.id).catch(()=>{});setNotice("Memo sent.");
+        setForm(null);setSelected(savedForm.id);setMissingUploads([]);
+        clearRecoveredCopy();setNotice("Memo sent.");
         window.dispatchEvent(new Event("ceac:notifications-changed"));
-      }else setNotice("Draft saved.");
+      }else{clearRecoveredCopy();setNotice("Draft saved.");}
       setReload(n=>n+1);
     }catch(failure){
       setError(humanError(failure,send?"The Memo was not sent. Your draft is still available. Check the attachments and try again.":"Your draft could not be saved. Your text is still here."));
@@ -271,7 +303,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
       <aside className="memo-directory"><header><h2>Memos {unread>0 && <small>{unread} unread</small>}</h2><button type="button" onClick={startNew} aria-label="New Memo"><Plus size={18}/></button></header>
         {recoveredDraft?.form && <div className="memo-recovery-banner" role="status">
           <strong>Unfinished Memo saved on this device</strong>
-          <button type="button" onClick={startNew}>Continue writing</button>
+          <button type="button" onClick={continueRecoveredDraft}>Continue writing</button>
           <button type="button" onClick={discardRecoveredDraft}>Discard this copy</button>
         </div>}
         <label className="msg-search"><Search size={16}/><input type="search" aria-label="Search Memos" placeholder="Search subjects…" value={query} onChange={e=>setQuery(e.target.value)}/></label>
