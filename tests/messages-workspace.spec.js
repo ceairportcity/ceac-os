@@ -95,8 +95,17 @@ for(const width of [1440,320])test(`Memo reader keeps document and authorised ac
  await expect(page.getByRole('button',{name:'Approve proposal',exact:true})).toBeVisible();
  const document=await page.locator('.memo-document').boundingBox(),actions=await page.locator('.memo-response').boundingBox();
  expect(document).toBeTruthy();expect(actions).toBeTruthy();
- if(width>1100){expect(actions.x).toBeGreaterThanOrEqual(document.x+document.width);expect(actions.width).toBeLessThanOrEqual(260);}
+ if(width>1100){
+  expect(actions.x).toBeGreaterThanOrEqual(document.x+document.width);
+  expect(actions.width).toBeLessThanOrEqual(260);
+  await expect(page.getByRole('button',{name:/Toggle correspondence with Gabriel Rockson/})).toBeVisible();
+ }
  else{expect(actions.y).toBeGreaterThanOrEqual(document.y+document.height-1);expect(document.width).toBeGreaterThan(250);}
+ if(width<=760){
+  const title=await page.locator('.memo-reader>header h2').boundingBox();
+  const follow=await page.getByRole('button',{name:'Continue subject',exact:true}).boundingBox();
+  expect(follow.y).toBeGreaterThanOrEqual(title.y+title.height-1);
+ }
  const sender=await page.locator('.memo-parties strong').boundingBox(),date=await page.locator('.memo-parties small').first().boundingBox();
  expect(date.y).toBeGreaterThan(sender.y);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();

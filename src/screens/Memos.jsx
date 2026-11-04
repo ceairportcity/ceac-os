@@ -319,8 +319,12 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
         {groups.map((group,index)=>{
           const lead=group.items[0];
           const correspondents=memoCorrespondentIds(lead,me.id);
-          const personLabel=correspondents.map(id=>name(id)).join(", ")||"Correspondence";
-          const personDetail=correspondents.length===1?identity(correspondents[0]).detail:`${correspondents.length} participants`;
+          const primaryId=lead.sender_id===me.id
+            ?lead.memo_recipients.find(r=>r.kind==="to"&&r.profile_id!==me.id)?.profile_id||correspondents[0]
+            :lead.sender_id;
+          const personLabel=primaryId?name(primaryId):"Correspondence";
+          const others=correspondents.filter(id=>id!==primaryId).length;
+          const personDetail=[primaryId?identity(primaryId).detail:"",others?`+${others} other participant${others===1?"":"s"}`:""].filter(Boolean).join(" · ");
           const open=expandedGroups[group.key] ?? (selected?group.items.some(m=>m.id===selected):index===0);
           const unseen=group.items.filter(m=>m.memo_recipients.some(r=>r.profile_id===me.id&&(!r.last_read_at||new Date(r.last_read_at)<new Date(m.updated_at)))).length;
           return <section key={group.key} aria-label={personLabel} className="memo-group" style={{borderBottom:"1px solid #e5ebf2"}}>
@@ -330,9 +334,9 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
               <span className="memo-group-copy" style={{display:"grid",gap:3,flex:1,minWidth:0}}>
                 <strong>{grouping==="person"?personLabel:group.subject}</strong>
                 <small>{grouping==="person"?(personDetail||"Correspondence"):personLabel}</small>
-                <small>{grouping==="person"?memoCurrentSubject(lead):personDetail}</small>
+                {(grouping!=="person"||!open)&&<small>{grouping==="person"?memoCurrentSubject(lead):personDetail}</small>}
               </span>
-              <span className="memo-group-meta" style={{display:"grid",gap:5,textAlign:"right",flex:"none"}}><small>{group.items.length} {group.items.length===1?"memo":"memos"}{unseen?" · "+unseen+" unread":""}</small><small>{messageTimestamp(group.updatedAt)} · {open?"−":"+"}</small></span>
+              <span className="memo-group-meta" style={{display:"grid",gap:5,textAlign:"right",flex:"none"}}><small>{group.items.length} {group.items.length===1?"memo":"memos"}{unseen?" · "+unseen+" unread":""}</small><small>{open?"−":messageTimestamp(group.updatedAt)+" · +"}</small></span>
             </button>
             {open && <div className="memo-group-items" style={{paddingLeft:8,borderLeft:"2px solid #d7e6f4"}}>{group.items.map(renderMemoRow)}</div>}
           </section>;
