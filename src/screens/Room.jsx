@@ -72,6 +72,7 @@ export default function Room({
   const [attachmentMessageId, setAttachmentMessageId] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [participants, setParticipants] = useState([]);
+  const authorDirectoryRef = useRef(null);
   const [mentions, setMentions] = useState([]);
   const [selectedRefs, setSelectedRefs] = useState(() => context?.reference ? [context.reference] : []);
   const [workOptions, setWorkOptions] = useState([]);
@@ -366,8 +367,28 @@ export default function Room({
   const messageSelect = "id,room_id,author_id,body,reply_to_id,created_at,profiles!room_messages_author_id_fkey(full_name),room_message_refs(id,object_type,object_id,label),room_mentions(profile_id,profiles!room_mentions_profile_id_fkey(full_name))";
 
   async function hydrateMessageMedia(rows = []) {
-    const grouped = await listOperationalFilesForContexts("room_message", rows.map((row) => row.id));
-    return rows.map((row) => ({ ...row, operational_files: grouped.get(row.id) || [] }));
+    // Normal profile joins can be null under profile RLS. Resolve missing authors
+    // using the existing account-scoped CEAC directory only when needed.
+    const needsNames=rows.some(row=>!row.profiles?.full_name || (row.room_mentions||[]).some(mention=>!mention.profiles?.full_name));
+    if(needsNames && !authorDirectoryRef.current){
+      authorDirectoryRef.current=supabase.rpc("memo_recipient_directory").then(({data,error})=>{
+        if(error)return {};
+        return Object.fromEntries((data||[]).filter(person=>person.full_name).map(person=>[person.id,person.full_name]));
+      }).catch(()=>({}));
+    }
+    const [grouped,directory]=await Promise.all([
+      listOperationalFilesForContexts("room_message", rows.map(row=>row.id)),
+      needsNames ? authorDirectoryRef.current : Promise.resolve({})
+    ]);
+    return rows.map(row=>({
+      ...row,
+      profiles:row.profiles?.full_name?row.profiles:directory[row.author_id]?{full_name:directory[row.author_id]}:row.profiles,
+      room_mentions:(row.room_mentions||[]).map(mention=>({
+        ...mention,profiles:mention.profiles?.full_name?mention.profiles:
+          directory[mention.profile_id]?{full_name:directory[mention.profile_id]}:mention.profiles
+      })),
+      operational_files:grouped.get(row.id)||[]
+    }));
   }
 
   async function loadMessages(roomId, showLoading = false) {
@@ -673,20 +694,20 @@ export default function Room({
           {isUnread && <div ref={unreadRef} className="room-unread-divider"><span>New since your last visit</span></div>}
           {showDay && <div className="room-day"><span>{dayLabel(message.created_at)}</span></div>}
           <article className={`room-message ${mine ? "mine" : ""}`}>
-            <span className="msg-avatar" aria-hidden="true">{(message.profiles?.full_name || "CEAC").split(/\s+/).slice(0,2).map(name => name[0]).join("")}</span>
+            <span className="msg-avatar" aria-hidden="true">{(message.profiles?.full_name || (mine?me.full_name:"?")).split(/\s+/).slice(0,2).map(name => name[0]).join("")}</span>
             <div className="room-message-meta">
-              <strong>{mine ? "You" : message.profiles?.full_name || "CEAC member"}</strong>
+              <strong>{mine ? (me.full_name || "You")+" (You)" : message.profiles?.full_name || "Name unavailable"}</strong>
               <time>{timeLabel(message.created_at)}</time>
             </div>
             {message.reply_to_id && !parent && <div className="room-reply-context">Reply to an earlier or unavailable message</div>}
             {parent && <div className="room-reply-context">
-              <strong>{parent.author_id === me.id ? "You" : parent.profiles?.full_name || "Earlier message"}</strong>
+              <strong>{parent.author_id === me.id ? (me.full_name || "You")+" (You)" : parent.profiles?.full_name || "Earlier message"}</strong>
               <span>{parent.body}</span>
             </div>}
             {(message.body !== "Attachment" || !(message.operational_files || []).length) && <p>{message.body === "Attachment" ? "Attachment pending — not yet delivered" : message.body}</p>}
             <OperationalMediaList files={message.operational_files || []} />
             {(message.room_mentions || []).length > 0 && <div className="room-message-mentions">
-              {(message.room_mentions || []).map((mention) => <span key={mention.profile_id}>@{mention.profiles?.full_name || "CEAC member"}</span>)}
+              {(message.room_mentions || []).map((mention) => <span key={mention.profile_id}>@{mention.profiles?.full_name || "Name unavailable"}</span>)}
             </div>}
             {(message.room_message_refs || []).length > 0 && <div className="room-ref-list">
               {message.room_message_refs.map((ref) => <button key={ref.id} onClick={() => openRef(ref)}>
@@ -717,7 +738,7 @@ export default function Room({
 
     <footer className="room-composer">
       {replyTo && <div className="room-composer-reply">
-        <span>Replying to {replyTo.author_id === me.id ? "your message" : replyTo.profiles?.full_name || "message"}</span>
+        <span>Replying to {replyTo.author_id === me.id ? "your message" : replyTo.profiles?.full_name || "a colleague"}</span>
         <button onClick={() => setReplyTo(null)}>×</button>
       </div>}
 
