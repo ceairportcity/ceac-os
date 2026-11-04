@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { createBoundedRestFetch } from "./boundedRestFetch";
 import { assertStage2SupabaseTarget } from "./stage2SupabaseTarget";
 import { authRedirect } from "./authRedirect";
 import { isPlausibleInvitationEmail, invitationDeliveryMessage } from "./invitationSafety";
@@ -23,7 +24,10 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || fallbackSup
 export const supabase = createClient(
   supabaseUrl,
   supabaseKey,
-  { auth: { persistSession: true, autoRefreshToken: true } }
+  { auth: { persistSession: true, autoRefreshToken: true },
+    // Bound UI reads across HR, Manager, Staff and Executive workspaces.
+    // Never queue authentication endpoints behind expensive dashboard reads.
+    global: { fetch: createBoundedRestFetch(globalThis.fetch.bind(globalThis),supabaseUrl,5) } }
 );
 export async function loadMe() {
   return retryFreshJwtRejection(loadMeOnce);
