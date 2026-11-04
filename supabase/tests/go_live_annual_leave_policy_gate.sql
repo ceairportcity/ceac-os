@@ -23,12 +23,12 @@ begin
       'accrual_method','quarterly',
       'accrual_rate',3.75,
       'carryover_method','none',
-      'approval_route','manager_then_admin',
+      'approval_route','admin',
       'opening_balance_required',false
     ),jsonb_build_object(
       'leave_kind','shared_other','entitlement_amount',9,'entitlement_unit','days',
       'accrual_method','quarterly','accrual_rate',2.25,'carryover_method','none',
-      'approval_route','manager_then_admin','opening_balance_required',false
+      'approval_route','admin','opening_balance_required',false
     )),
     true,null
   );
@@ -51,7 +51,7 @@ where r.policy_version_id=p.id
   and p.source_reference='CEAC_OWNER_LEAVE_ROUTING_2026-10-02'
   and r.leave_kind='annual'
   and r.complete
-  and r.approval_route='manager_then_admin';
+  and r.approval_route='admin';
 
 do $annual_policy_shape$
 declare
@@ -71,7 +71,7 @@ begin
     and not r.opening_balance_required
     and r.complete
     and r.routing_confirmed
-    and r.approval_route='manager_then_admin';
+    and r.approval_route='admin';
 
   if v_count<>1 then
     raise exception 'Annual-leave gate failure: the 24-day / 6-day-quarter owner rule is not recorded exactly once.';
@@ -263,21 +263,25 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
 
-do $annual_manager_approval$
+-- Manager must not decide leave. The annual balance remains unaffected.
+do $annual_manager_denial$
 declare
-  v_leave uuid:=nullif(current_setting('ceac.annual_leave_id',true),'')::uuid;
+ v_leave uuid:=nullif(current_setting('ceac.annual_leave_id',true),'')::uuid;
 begin
-  perform public.workforce_leave_action(
-    v_leave,
-    'manager_approved',
-    'Manager approval for annual-leave go-live gate'
-  );
-
-  if not exists(select 1 from public.leave_requests where id=v_leave and status='escalated') then
-    raise exception 'Annual-leave gate failure: Manager approval did not escalate to Administration.';
-  end if;
-end
-$annual_manager_approval$;
+ begin
+   perform public.workforce_leave_action(v_leave,'manager_approved','Manager attempt must be denied');
+   raise exception 'Annual-leave gate failure: Manager approval was accepted.';
+ exception when insufficient_privilege then null;
+ end;
+ begin
+   perform public.workforce_leave_action(v_leave,'declined','Manager attempt must be denied');
+   raise exception 'Annual-leave gate failure: Manager decline was accepted.';
+ exception when insufficient_privilege then null;
+ end;
+ if not exists(select 1 from public.leave_requests where id=v_leave and status='pending') then
+   raise exception 'Annual-leave gate failure: Manager changed HR pending leave.';
+ end if;
+end $annual_manager_denial$;
 
 reset role;
 
@@ -297,7 +301,7 @@ begin
   perform public.workforce_leave_action(
     v_leave,
     'admin_approved',
-    'Administration final approval for annual-leave go-live gate'
+    'HR direct approval for annual-leave go-live gate'
   );
 
   v_summary:=public.workforce_annual_leave_summary(
@@ -432,21 +436,29 @@ end $shared_requests$;
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
-select public.workforce_leave_action(current_setting('ceac.pool_sick')::uuid,'manager_approved','Manager approves sick test');
-select public.workforce_leave_action(current_setting('ceac.pool_study')::uuid,'manager_approved','Manager approves study test');
-do $manager_not_final$
-declare v_summary jsonb;
+do $shared_manager_denial$
+declare
+ v_leave uuid;
 begin
- v_summary:=public.workforce_annual_leave_summary('31000000-0000-4000-8000-000000000001',date '2026-10-07');
- if (v_summary->'shared_other'->>'available_days')::numeric<>(current_setting('ceac.pool_shared_before'))::numeric then
-   raise exception 'Manager approval prematurely deducted shared days';
+ foreach v_leave in array array[current_setting('ceac.pool_sick')::uuid,current_setting('ceac.pool_study')::uuid] loop
+   begin
+     perform public.workforce_leave_action(v_leave,'manager_approved','Manager cannot approve shared leave');
+     raise exception 'Shared leave gate failure: Manager approval was allowed.';
+   exception when insufficient_privilege then null;
+   end;
+ end loop;
+ if exists(select 1 from public.leave_requests
+   where id in (current_setting('ceac.pool_sick')::uuid,current_setting('ceac.pool_study')::uuid)
+     and status <> 'pending') then
+   raise exception 'Shared leave gate failure: Manager changed HR pending shared leave.';
  end if;
-end $manager_not_final$;
+end $shared_manager_denial$;
 reset role;
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
-select public.workforce_leave_action(current_setting('ceac.pool_sick')::uuid,'admin_approved','Administration final sick approval');
-select public.workforce_leave_action(current_setting('ceac.pool_study')::uuid,'admin_approved','Administration final study approval');
+select public.workforce_leave_action(current_setting('ceac.pool_sick')::uuid,'admin_approved','HR direct sick approval');
+select public.workforce_leave_action(current_setting('ceac.pool_study')::uuid,'admin_approved','HR direct study approval');
 do $shared_usage$
 declare v_summary jsonb;
 begin
