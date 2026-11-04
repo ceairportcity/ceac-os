@@ -329,7 +329,8 @@ for(const width of [320,1440])test(`Executive report and personal print controls
   const ownPrint=page.locator('.s2-achievement-print');
   await expect(ownPrint).toBeVisible();
   expect(await ownPrint.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(113, 72, 232)');
-  expect((await ownPrint.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  // Chromium can report a 44px layout as 43.99999px due to float precision.
+  expect((await ownPrint.boundingBox()).height).toBeGreaterThanOrEqual(43.99);
   await page.screenshot({path:`test-artifacts/executive-own-print-${width}.png`,fullPage:true});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
