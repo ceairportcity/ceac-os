@@ -61,8 +61,8 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   const copied=await openAs(browser,'manager@ceac.local.test');contexts.push(copied.context);
   await copied.page.getByRole('button',{name:new RegExp(subject)}).click();
   await expect(copied.page.getByRole('button',{name:'Approve proposal',exact:true})).toHaveCount(0);
-  await copied.page.getByLabel('Reply or clarification').fill('Please clarify the equipment scope.');
-  await copied.page.getByRole('button',{name:'Send reply',exact:true}).click();
+  await copied.page.getByLabel('Reply in this conversation').fill('Please clarify the equipment scope.');
+  await copied.page.getByRole('button',{name:'Send reply to thread',exact:true}).click();
   await expect(copied.page.getByText('Please clarify the equipment scope.',{exact:true})).toBeVisible();
   await copied.context.close();
 
@@ -71,7 +71,7 @@ test('real Staff Memo preserves draft/private bytes, Cc clarification and Group 
   await expect(pastor.page.getByText('Please clarify the equipment scope.',{exact:true})).toBeVisible();
   const downloadButton=pastor.page.getByRole('button',{name:`Download ${pdfFilename}`,exact:true});
   await expect(downloadButton).toBeVisible();
-  await expect(pastor.page.getByRole('heading',{name:'Attachments (2)',exact:true})).toBeVisible();
+  await expect(pastor.page.getByText('Attachments (2)',{exact:true})).toBeVisible();
   // The image preview also signs URLs in the background. Match the PDF's
   // registered storage path so the test never mistakes that PNG for the
   // requested download.

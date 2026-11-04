@@ -26,6 +26,7 @@ export function ceacNoticeTarget(row) {
   if (!validId(id)) return "/?tab=messages&updates=1";
   const encoded=encodeURIComponent(id);
   if(row.context_kind==="memo")return "/?tab=messages&memo="+encoded;
+  if(row.context_kind==="support_case")return "/?tab=technical-support&case="+encoded;
   if(row.context_kind==="work_item")return "/?tab=work&item="+encoded;
   if(row.context_kind==="compliance_case")return "/?tab=compliance&case="+encoded;
   if(row.context_kind==="compliance_policy")return "/?tab=compliance&section=policies";
@@ -58,12 +59,13 @@ export function buildCeacNotificationBriefing({
       if(unreadMemoIds.has(event.context_id))continue;
       unreadMemoIds.add(event.context_id);
     }
-    const urgent=decisions.has(kind);
+    const isSupport=event.context_kind==="support_case";
+    const urgent=isSupport||decisions.has(kind);
     const memoName=isMemo&&event.memo_actor ? " from "+String(event.memo_actor).slice(0,80) : "";
-    const title=isMemo?(kind==="memo_sent"?"New memo"+memoName:"New reply to a memo"+memoName):headings[kind]||"New update for you";
+    const title=isSupport?"New staff Technical Support request":isMemo?(kind==="memo_sent"?"New memo"+memoName:"New reply to a memo"+memoName):headings[kind]||"New update for you";
     const memoMeta=isMemo?[event.memo_detail,event.memo_subject].filter(Boolean).join(" · "):"";
     entries.push(item("event:"+event.id,urgent?"attention":"personal",
-      title,(memoMeta|| (urgent?"Action required":"Personal update")).slice(0,160),
+      title,(isSupport?[event.support_reference,event.support_summary].filter(Boolean).join(" · ") || "Open Help Desk to review":memoMeta|| (urgent?"Action required":"Personal update")).slice(0,160),
       ceacNoticeTarget(event),event.created_at,"event"));
   }
   for(const room of rooms){

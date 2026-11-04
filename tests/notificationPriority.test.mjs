@@ -236,3 +236,29 @@ test("memo metadata is fetched only for unread memo events using existing role-s
   assert.match(hook,/\.in\("id",memoIds\)\.abortSignal\(signal\)/);
   assert.doesNotMatch(hook,/select\(".*memo_versions.*body/);
 });
+
+test("Technical Support requests appear as actionable, directly routed, privacy-limited updates",()=>{
+ const id="11111111-1111-4111-8111-111111111111";
+ const event={id:"support-event",kind:"support_request_opened",context_kind:"support_case",
+   context_id:id,created_at:iso(-1),read_at:null,support_reference:"TS-123",support_summary:"Unable to sign in"};
+ const result=buildCeacNotificationBriefing({me:person,now,events:[event]});
+ assert.equal(ceacNoticeTarget(event),"/?tab=technical-support&case="+id);
+ assert.equal(result.attention,1);
+ assert.equal(result.count,1);
+ assert.equal(result.items[0].title,"New staff Technical Support request");
+ assert.match(result.items[0].meta,/TS-123/);
+ assert.doesNotMatch(result.items[0].meta,/password/i);
+ assert.equal(buildCeacNotificationBriefing({me:person,now,events:[{...event,read_at:iso(0)}]}).count,0);
+});
+test("support alerts are enriched with only permitted case metadata and open the right case",()=>{
+ const hook=readFileSync("src/lib/useCeacUnreadNotifications.js","utf8");
+ const desk=readFileSync("src/screens/TechnicalSupport.jsx","utf8");
+ const sql=readFileSync("supabase/migrations/20261104114120_support_case_intake_notifications.sql","utf8");
+ assert.match(hook,/\.select\("id,reference,summary"\)/);
+ assert.match(hook,/me\.capabilities\?\.includes\("support\.case\.manage"\)/);
+ assert.match(desk,/linkedCaseId/);
+ assert.match(desk,/mark_ceac_notification_read/);
+ assert.match(sql,/AFTER INSERT ON public\.support_cases/);
+ assert.match(sql,/stm\.active/);
+ assert.match(sql,/private\.ceac_notification_context_visible/);
+});
