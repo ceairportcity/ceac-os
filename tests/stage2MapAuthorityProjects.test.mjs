@@ -26,7 +26,7 @@ test("HR and Compliance use the same source-backed real map",()=>{
  assert.match(compliance,/<RoleWorkforceMap/);
  assert.match(source("src/experience-v2/admin-overview/AdminOverviewV2.jsx"),/<RoleWorkforceMap/);
  assert.match(source("src/components/ExecutiveWorkforceToday.jsx"),/<RoleWorkforceMap/);
- assert.match(source("src/components/RoleWorkforceMap.jsx"),/supabase\\.rpc\\("workforce_map_day",\\{p_date:selectedDay\\}\\)/);
+ assert.match(source("src/components/RoleWorkforceMap.jsx"),/supabase\.rpc\("workforce_map_day",\{p_date:selectedDay\}\)/);
  // Individual on-map pins now select each person directly at shared coordinates.
  assert.match(map,/node\.dataset\.workforcePerson=person\.id/);
  assert.match(map,/latest\.current\.onSelect\?\.\(person\.id\)/);
