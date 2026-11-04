@@ -46,7 +46,7 @@ test("Work starts without roster identity are still labelled rather than dropped
  assert.match(sql,/'profile_id', p\.id, 'full_name', p\.full_name/);
  assert.match(shared,/read\.data\.operationalProfiles/);
 });
- 
+
 test("roster map refresh is bounded and does not repeat requests every minute",()=>{
  assert.match(shared,/lastRefresh.current>=180000/);
  assert.match(shared,/document.visibilityState==="hidden"/);
