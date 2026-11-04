@@ -8,6 +8,7 @@ export function eligibleMemoDecisionMakers(people, { scope, unitId, to, senderId
     && (person.is_group_pastor || scope === 'department' && unitId && person.managed_units?.includes(unitId)));
 }
 export function memoInView(memo, view, actorId) {
+  if (view === 'all') return memo.status !== 'draft';
   if (view === 'drafts') return memo.sender_id === actorId && memo.status === 'draft';
   if (view === 'sent') return memo.sender_id === actorId && memo.status !== 'draft';
   if (view === 'awaiting') return memo.status === 'pending_decision';
@@ -33,11 +34,14 @@ export function memoCurrentSubject(memo) {
   return (versions.find(version => version.id === memo.current_version_id)
     || [...versions].sort((a,b) => b.version_no-a.version_no)[0])?.subject || "Untitled draft";
 }
+export function memoCorrespondentIds(memo,actorId) {
+  const participants=[memo.sender_id,...(memo.memo_recipients||[]).map(row=>row.profile_id)]
+    .filter(id=>id && id!==actorId);
+  return [...new Set(participants)].sort();
+}
 export function memoCorrespondentId(memo,actorId) {
-  if (memo.sender_id !== actorId) return "from:"+memo.sender_id;
-  const recipients = (memo.memo_recipients || []).filter(row => row.kind === "to")
-    .map(row => row.profile_id).filter(Boolean).sort();
-  return "to:"+[...new Set(recipients)].join(",");
+  // Direction-independent, but audiences with different Cc members never merge.
+  return memoCorrespondentIds(memo,actorId).join("|") || "self";
 }
 export function memoConversationGroups(memos,actorId,mode="person") {
   const groups = new Map();
@@ -45,7 +49,7 @@ export function memoConversationGroups(memos,actorId,mode="person") {
     const correspondent = memoCorrespondentId(memo,actorId);
     const subject = memoCurrentSubject(memo).trim();
     // A subject shared by two different people is not one private conversation.
-    const key = mode === "subject" ? correspondent+"|"+subject.toLocaleLowerCase() : correspondent;
+    const key = mode === "subject" ? correspondent+"|"+subject.toLocaleLowerCase().replace(/\s+/g," ") : correspondent;
     if (!groups.has(key)) groups.set(key,{key,correspondent,subject,items:[],updatedAt:memo.updated_at});
     groups.get(key).items.push(memo);
   }

@@ -108,3 +108,21 @@
 .msg-head>div button{position:relative}
 .ceac-notification-badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;background:#c73535;color:white!important;border-radius:999px;font-size:12px;line-height:1;font-weight:700;flex:none}
 .msg-head .ceac-notification-trigger>.ceac-notification-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px}
+
+/* Restrained CEAC correspondence hierarchy: content stays solid and readable. */
+.memo-directory{background:#fff}.memo-directory>header{border-bottom:1px solid #edf1f5;padding:15px 16px}
+.memo-directory>header h2{font-size:16px;font-weight:700;letter-spacing:-.02em}
+.memo-group{border-bottom:1px solid #e5ebf2}.memo-group-toggle{background:#f9fbfd;border:0;display:flex;align-items:center;gap:10px;text-align:left;padding:13px 15px;width:100%}
+.memo-group-toggle:hover{background:#f1f6fb}.memo-group-avatar{position:static!important;inset:auto!important;width:35px;height:35px;border-radius:10px;background:#e6edf5;color:#274861}
+.memo-group-copy{display:grid;gap:3px;flex:1;min-width:0}.memo-group-copy strong{color:#1e3146;font-size:13px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.memo-group-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.memo-group-meta{display:grid;gap:5px;text-align:right;flex:none}.memo-group-items{padding-left:8px;border-left:2px solid #d7e6f4}.memo-group-items .memo-row{padding:11px 15px}
+.memo-group-items .memo-row:hover{background:#f5f9fd}.memo-row.selected{border-left:3px solid #1678c9}
+.memo-reader{background:#fff}.memo-reader>header{gap:12px;flex-wrap:wrap}.memo-reader>header h2{font-weight:700;letter-spacing:-.02em}
+.memo-follow-up{border:1px solid #bfdaee;border-radius:9px;padding:8px 12px;color:#176699;background:#f1f7fc;white-space:nowrap}
+.memo-thread-index{padding:12px 0;border-bottom:1px solid #e8edf3}.memo-thread-index>strong{font-size:12px;color:#26435c}
+.memo-thread-index>div{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:8px 0}
+.memo-thread-index button{white-space:nowrap;font-size:12px;padding:6px 10px;border-radius:8px;background:#f5f7fa;color:#3b536d}
+.memo-thread-index button[aria-current]{background:#e8f2fc;color:#145e99;font-weight:650}
+.memo-parties{gap:15px}.memo-status{border-radius:6px;font-size:12px}
+@media(max-width:760px){.memo-group-meta{max-width:104px}.memo-follow-up{margin-left:auto}.memo-thread-index>div{max-width:100%}.memo-group-toggle{padding:12px}}
+@media(prefers-reduced-motion:reduce){.memo-group-toggle,.memo-follow-up{transition:none}}

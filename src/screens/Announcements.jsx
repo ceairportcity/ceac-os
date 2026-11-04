@@ -72,14 +72,9 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       setCanPublish(grantedCanPublish);
       setUnits(unitResult.data || []);
       setSenders(directoryResult.error ? [] : directoryResult.data || []);
-      if (grantedCanPublish) {
-        const withCounts = await Promise.all(announcements.map(async (announcement) => {
-          const { data, error: countError } = await supabase.rpc("announcement_audience_counts", { p_announcement_id: announcement.id });
-          if (countError) throw new Error(`Announcement counts: ${countError.message}`);
-          return { ...announcement, counts: data?.[0] || { target_count: 0, read_count: 0, acknowledged_count: 0 } };
-        }));
-        setRows(withCounts);
-      } else setRows(announcements);
+      // Do not make one RPC per announcement during list load.
+      // Reach statistics are fetched only when an authorised publisher opens a notice.
+      setRows(announcements);
     } catch (err) { setError(err.message || "Announcements could not be loaded."); setRows([]); }
     finally { setLoading(false); }
   }
@@ -98,6 +93,14 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
         setRows((current) => current.map((row) => row.id === announcement.id ? announcement : row));
       }
       setSelected(announcement);
+      if (grantedCanPublish && announcement.status === "published") {
+        const announcementId=announcement.id;
+        void supabase.rpc("announcement_audience_counts",{p_announcement_id:announcementId})
+          .then(({data,error:countError})=>{
+            if(countError)return;
+            setSelected(current=>current?.id===announcementId?{...current,counts:data?.[0]||null}:current);
+          }).catch(()=>{});
+      }
     } catch (err) { setError(err.message || "The announcement could not be opened."); }
   }
 
@@ -213,32 +216,43 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       {value:"all",label:`All · ${rows.length}`},{value:"published",label:`Published · ${rows.filter(row=>row.status==="published").length}`},
       {value:"draft",label:`Drafts · ${rows.filter(row=>row.status==="draft").length}`},{value:"closed",label:`Closed · ${rows.filter(row=>row.status==="closed").length}`}
     ]}/>}
-    {!loading && <div className={undefined} style={{ marginTop: 18 }}><div>
+    {!loading && <div className="ceac-announcements-list" style={{display:"grid",gap:12,margin:"18px auto 0",maxWidth:960,width:"100%"}}>
       {rows.length === 0 && !error && <div className="card small">There are no current announcements for you.</div>}
       {me.is_admin&&!error&&rows.length>0&&!rows.some(row=>listView==="all"||row.status===listView)&&<p role="status">No announcements match this view.</p>}
-      {rows.filter(row=>!me.is_admin||listView==="all"||row.status===listView).map((announcement) => {
-        const receipt = receiptFor(announcement);
-        const unread = announcement.status === "published" && !receipt;
-        return <div className={`row ${unread ? "home-tone-info" : ""}`} key={announcement.id}>
-          <button style={{ width: "100%", textAlign: "left" }} onClick={() => openAnnouncement(announcement)}>
-            <div className="row-t">{unread ? "New · " : ""}{announcement.title}</div>
-            <div className="row-m">{publisher(announcement).name}{publisher(announcement).detail ? " · "+publisher(announcement).detail : ""}</div>
-            <div className="row-note">{announcement.priority !== "normal" ? announcement.priority+" · " : ""}{announcement.status === "published" ? "Published" : announcement.status === "draft" ? "Draft" : "Closed"} · {announcement.published_at ? formatDate(announcement.published_at) : formatDate(announcement.created_at)}</div>
+      {rows.filter(row=>!me.is_admin||listView==="all"||row.status===listView).map(announcement=>{
+        const receipt=receiptFor(announcement);
+        const unread=announcement.status==="published"&&!receipt;
+        const author=publisher(announcement);
+        const priority=announcement.priority==="urgent"?"Urgent":announcement.priority==="important"?"Important":null;
+        return <article className={`ceac-announcement-card row ${unread?"home-tone-info":""}`} key={announcement.id}
+          style={{background:"#fff",border:"1px solid #e3e9f1",borderLeft:priority==="Urgent"?"3px solid #b23b35":"1px solid #e3e9f1",borderRadius:13,padding:"16px 18px",boxShadow:"0 3px 13px rgba(22,44,65,.035)"}}>
+          <button type="button" style={{width:"100%",textAlign:"left",display:"grid",gap:8,background:"none",border:0,padding:0}}
+            onClick={()=>openAnnouncement(announcement)}>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",fontSize:12,color:"#6c7e91"}}>
+              {unread && <strong style={{color:"#145e9b"}}>Unread</strong>}
+              {priority && <strong style={{color:priority==="Urgent"?"#a23a33":"#816129"}}>{priority}</strong>}
+              <span>{announcement.status==="published"?"Published":announcement.status==="draft"?"Draft":"Closed"}</span>
+              <time style={{marginLeft:"auto"}}>{formatDate(announcement.published_at||announcement.created_at)}</time>
+            </div>
+            <h2 style={{margin:0,color:"#20384f",fontSize:17,fontWeight:700,lineHeight:1.4}}>{announcement.title}</h2>
+            <div style={{fontSize:13,color:"#4f6378"}}><strong>{author.name}</strong>{author.detail?" · "+author.detail:""}</div>
+            <div style={{fontSize:13,lineHeight:1.5,color:"#62768b",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",whiteSpace:"pre-wrap"}}>{announcement.body}</div>
           </button>
-          {canPublish && <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 9 }}>
-            {announcement.status === "draft" && <><button className="btn btn-ghost btn-sm" onClick={() => editAnnouncement(announcement)}>Edit</button><button className="btn btn-sm" onClick={() => changeStatus(announcement, "publish")} disabled={busy}>Publish</button></>}
-            {announcement.status === "published" && <button className="btn btn-ghost btn-sm" onClick={() => changeStatus(announcement, "close")} disabled={busy}>Close</button>}
-            <span className="row-m">{announcement.counts?.read_count || 0} read{announcement.requires_acknowledgement ? ` · ${announcement.counts?.acknowledged_count || 0} of ${announcement.counts?.target_count || 0} acknowledged` : ""}</span>
+          {canPublish && <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginTop:12}}>
+            {announcement.status==="draft" && <><button className="btn btn-ghost btn-sm" onClick={()=>editAnnouncement(announcement)}>Edit</button><button className="btn btn-sm" onClick={()=>changeStatus(announcement,"publish")} disabled={busy}>Publish</button></>}
+            {announcement.status==="published" && <button className="btn btn-ghost btn-sm" onClick={()=>changeStatus(announcement,"close")} disabled={busy}>Close</button>}
+            {announcement.requires_acknowledgement && <small style={{color:"#6c7e91"}}>Acknowledgement requested</small>}
           </div>}
-        </div>;
+        </article>;
       })}
-    </div></div>}
+    </div>}
 
     {selected && <DetailSurface open title={me.is_admin ? selected.title : undefined} onClose={() => { if (!busy) setSelected(null); }}>
       {me.is_admin && error && <ProductNotice tone="error" title="Announcement update">{error}</ProductNotice>}
-      <div className="eyebrow">{selected.priority}{selected.status !== "published" ? ` · ${selected.status}` : ""}</div>
+      <div className="eyebrow">{selected.priority!=="normal"?selected.priority+" · ":""}{selected.status==="published"?"Official announcement":selected.status}</div>
       {!me.is_admin && <div className="h2" style={{ marginTop: 5 }}>{selected.title}</div>}
       <div className="row-m"><strong>{publisher(selected).name}</strong>{publisher(selected).detail ? " · "+publisher(selected).detail : ""} · {formatDate(selected.published_at || selected.created_at)}</div>
+      {canPublish&&selected.counts&&<p className="row-m" aria-label="Announcement reach">{selected.counts.read_count||0} read{selected.requires_acknowledgement?` · ${selected.counts.acknowledged_count||0} of ${selected.counts.target_count||0} acknowledged`:""}</p>}
       <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, marginTop: 18 }}>{selected.body}</div>
       <OperationalFileList
         contextType="announcement"

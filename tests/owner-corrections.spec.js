@@ -189,7 +189,8 @@ for(const width of [390,1440])test(`retained mockup compositions render with rea
   if(screen==='meeting')await expect(page.getByRole('complementary',{name:'Meeting details',exact:true})).toContainText('Viewer mode');
   if(screen==='announcements'){
    await expect(page.getByRole('tablist',{name:'Announcement views'})).toBeVisible();
-   await expect(page.getByRole('complementary',{name:'Announcement publishing checklist'})).toBeVisible();
+   await expect(page.getByRole('heading',{name:'Announcements',exact:true})).toBeVisible();
+   await expect(page.getByRole('complementary',{name:'Announcement publishing checklist'})).toHaveCount(0);
   }
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth),screen).toBeLessThanOrEqual(1);
   await page.screenshot({path:`test-artifacts/retained-${screen}-${width}.png`,fullPage:true,animations:'disabled'});

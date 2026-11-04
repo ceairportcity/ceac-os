@@ -94,7 +94,7 @@ test('Room composer cannot accept text before verified room identity clears load
 });
 
 
-import {memoCurrentSubject,memoConversationGroups,memoPersonIdentity} from '../src/lib/memos.js';
+import {memoCurrentSubject,memoConversationGroups,memoCorrespondentId,memoPersonIdentity} from '../src/lib/memos.js';
 test('memo correspondence groups by person or subject without merging formal records',()=>{
   const item=(id,person,subject,time)=>({id,sender_id:person,status:'sent',updated_at:time,current_version_id:id+'v',
     memo_recipients:[{profile_id:'exec',kind:'to'}],memo_versions:[{id:id+'v',version_no:1,subject}]});
@@ -126,4 +126,27 @@ test('Memos are first in communication navigation and Rooms are still accessible
   const room=source('src/screens/Room.jsx');
   assert.match(room,/memo_recipient_directory/);
   assert.doesNotMatch(room,/"CEAC member"/);
+});
+
+
+test('correspondence participant sets are direction-independent but Cc boundaries stay separate',()=>{
+ const inbound={sender_id:'gabriel',memo_recipients:[{profile_id:'pastor',kind:'to'}]};
+ const outgoing={sender_id:'pastor',memo_recipients:[{profile_id:'gabriel',kind:'to'}]};
+ assert.equal(memoCorrespondentId(inbound,'pastor'),memoCorrespondentId(outgoing,'pastor'));
+ assert.notEqual(memoCorrespondentId(inbound,'pastor'),memoCorrespondentId({
+   ...inbound,memo_recipients:[...inbound.memo_recipients,{profile_id:'becky',kind:'cc'}]
+ },'pastor'));
+});
+test('All correspondence includes incoming and outgoing sent records, but not drafts',()=>{
+ assert.equal(memoInView({sender_id:'pastor',status:'sent'},'all','pastor'),true);
+ assert.equal(memoInView({sender_id:'gabriel',status:'sent'},'all','pastor'),true);
+ assert.equal(memoInView({sender_id:'pastor',status:'draft'},'all','pastor'),false);
+});
+test('continue subject prepares a separate new Memo, without modifying old approvals or attachments',()=>{
+ const memo=source('src/screens/Memos.jsx');
+ assert.match(memo,/function continueSubject\(memo\)/);
+ assert.match(memo,/setForm\(\{\.\.\.fresh\(\),subject:memoCurrentSubject\(memo\)/);
+ assert.match(memo,/decisionRequired:false/);
+ assert.match(memo,/memo-thread-index/);
+ assert.match(memo,/Finish or discard your recovered draft/);
 });

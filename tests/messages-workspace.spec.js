@@ -28,6 +28,7 @@ async function mock(page,{denySend=false,initialStatus="pending_decision",projec
 for(const width of [1440,390,320])test(`Rooms timeline, composer, own removal and back navigation at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:960});const writes=await mock(page);
  await page.goto('/tests/fixtures/messages-workspace.html');
+ await page.getByRole('navigation',{name:'Messages sections'}).getByRole('button',{name:'Rooms',exact:true}).click();
  await page.getByRole('button',{name:/IT & Systems/}).click();
  await expect(page.getByText('Please review the latest proposal.',{exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Delete',exact:true})).toHaveCount(1);
@@ -46,7 +47,7 @@ for(const width of [1440,390,320])test(`Rooms timeline, composer, own removal an
  await page.getByRole('button',{name:'Back from Room'}).click();await expect(page.getByRole('searchbox',{name:'Search Rooms'})).toBeVisible();
 });
 test('failed Room send retains the draft',async({page})=>{
- await mock(page,{denySend:true});await page.goto('/tests/fixtures/messages-workspace.html');await page.getByRole('button',{name:/IT & Systems/}).click();
+ await mock(page,{denySend:true});await page.goto('/tests/fixtures/messages-workspace.html');await page.getByRole('navigation',{name:'Messages sections'}).getByRole('button',{name:'Rooms',exact:true}).click();await page.getByRole('button',{name:/IT & Systems/}).click();
  const input=page.getByRole('textbox',{name:'Room message'});await input.fill('Retained message');await page.getByRole('button',{name:'Send',exact:true}).click();await expect(input).toHaveValue('Retained message');await expect(page.getByText('Synthetic send denied')).toBeVisible();
 });
 for(const actor of ['copied','pastor'])test(`Memo decision controls respect ${actor} authority`,async({page})=>{
