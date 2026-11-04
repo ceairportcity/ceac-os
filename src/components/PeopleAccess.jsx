@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase, inviteByEmail, resendStaffInvitation } from "../lib/supabase";
-import { invitationEmailConflicts, isPlausibleInvitationEmail } from "../lib/invitationSafety";
+import { findRecoverableInvitation, invitationEmailConflicts, isPlausibleInvitationEmail } from "../lib/invitationSafety";
 import { FieldGroup, ProductNotice, LoadingState } from "./bits";
 import { Button, DataPanel, StatusBadge } from "../experience-v2/components";
 import SupportTeamMemberships from "./SupportTeamMemberships";
@@ -269,6 +269,8 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
   // email must not be invited blindly a second time.
   const { accountExists: existingAccountEmail, invitationPending: existingInvitationEmail } =
     invitationEmailConflicts(form.email, snapshot?.people, snapshot?.invitations);
+  const recoverableInvitation = existingAccountEmail
+    ? findRecoverableInvitation(form.email, snapshot?.invitations) : null;
 
   if (!canManage) return <ProductNotice tone="attention" title="People administration required">This account does not hold organisation-wide People access.</ProductNotice>;
 
@@ -333,11 +335,17 @@ export default function PeopleAccess({ me, go, onBack, embedded = false, onOpenP
           </div>
           <div className="phase5-access-callout">
             <strong>Existing identity?</strong>
-            <span>Do not invite again. Use Responsibilities below so the existing CEAC identity keeps one account and gains the authorised organisational responsibility.</span>
+            <span>Do not create a second account. If this identity is awaiting verification, resend its activation email; otherwise use Responsibilities to manage authorised access.</span>
           </div>
           {form.email.trim() && !isPlausibleInvitationEmail(form.email) && <p className="screen-note" role="status">Enter an email address in the form person@example.org before recording an invitation.</p>}
-          {existingAccountEmail && <ProductNotice tone="attention" title="Account already exists">
-            This email is already associated with a CEAC identity. Use Responsibilities or review that person's existing account instead of sending a second invitation.
+          {existingAccountEmail && <ProductNotice tone="attention" title={recoverableInvitation ? "Account awaiting verification" : "Account already exists"}>
+            {recoverableInvitation ? <>
+              <p>A CEAC account already exists, but its email has not been verified. Do not invite or create the account again. Request a fresh activation email, then ask the employee to open the newest CEAC email and finish setting a password.</p>
+              <Button variant="quiet" size="compact" disabled={busy} onClick={() => action(
+                () => resendStaffInvitation(recoverableInvitation.id),
+                "A new activation email was requested for the existing account. Delivery is not independently confirmed."
+              )}>Resend activation email</Button>
+            </> : "This email already belongs to a CEAC identity. Review the person's account or manage authorised responsibilities; do not invite again."}
           </ProductNotice>}
           {!existingAccountEmail && existingInvitationEmail && <ProductNotice tone="attention" title="Invitation already recorded">
             This email already has an outstanding invitation. Review Invitations to resend or cancel the existing record rather than creating another.
