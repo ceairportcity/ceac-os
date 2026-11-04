@@ -208,3 +208,27 @@ test("staff and manager views use state-aware due labels and overdue criteria",(
   assert.match(diary,/Record earlier work/);
   assert.match(diary,/max=\{ghanaDay\(\)\}/);
 });
+
+
+test("unread Memo notices use authorised sender and subject, with one card per correspondence",()=>{
+  const id="11111111-1111-4111-8111-111111111111";
+  const briefing=buildCeacNotificationBriefing({me:person,now,events:[
+    {id:"new",kind:"memo_response",context_kind:"memo",context_id:id,created_at:iso(-2)},
+    {id:"old",kind:"memo_sent",context_kind:"memo",context_id:id,created_at:iso(-5),
+      memo_actor:"Gabriel Rockson",memo_detail:"Technical Support Head · IT",memo_subject:"Weekly report"},
+    {id:"other",kind:"memo_sent",context_kind:"memo",context_id:"22222222-2222-4222-8222-222222222222",
+      created_at:iso(-6),memo_actor:"Rebecca Arthur",memo_detail:"HR",memo_subject:"Personnel update"}
+  ]});
+  assert.equal(briefing.memo,2);
+  assert.equal(briefing.items.filter(row=>row.type==="event").length,2);
+  assert.equal(briefing.items[0].title,"New reply to a memo");
+  assert.equal(briefing.items[1].title,"New memo from Rebecca Arthur");
+  assert.match(briefing.items[1].meta,/Personnel update/);
+});
+test("memo metadata is fetched only for unread memo events using existing role-scoped APIs",()=>{
+  const hook=readFileSync("src/lib/useCeacUnreadNotifications.js","utf8");
+  assert.match(hook,/if\(memoIds\.length\)/);
+  assert.match(hook,/memo_recipient_directory/);
+  assert.match(hook,/\.in\("id",memoIds\)\.abortSignal\(signal\)/);
+  assert.doesNotMatch(hook,/select\(".*memo_versions.*body/);
+});
