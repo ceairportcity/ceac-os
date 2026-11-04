@@ -270,13 +270,13 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
-  // Independently fail closed at the current 181-signature reviewed surface.
+  // Independently fail closed at the current 182-signature reviewed surface.
   // The exact allowlist and obsolete-grant denial remain enforced in the
   // dedicated security_definer_surface_gate.sql (not just this count check).
-  assert.match(mfa, /callable_count<>181/);
-  assert.match(surface, /v_actual<>181 or v_expected<>181/);
-  assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>181 then/);
-  assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>181 then/);
+  assert.match(mfa, /callable_count<>182/);
+  assert.match(surface, /v_actual<>182 or v_expected<>182/);
+  assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>182 then/);
+  assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>182 then/);
   assert.ok(surface.includes("public.executive_assign_project_department(p_project_id uuid, p_unit_id uuid, p_reason text)"));
   for (const signature of [
     "public.executive_personnel_directory()",
@@ -284,6 +284,7 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
     "public.executive_personnel_schedule(p_profile_id uuid)",
   ]) assert.ok(surface.includes(signature), "Missing reviewed Executive RPC: "+signature);
   assert.match(surface, /has_function_privilege\('anon',v_proc,'EXECUTE'\)/);
+  assert.ok(surface.includes("public.workforce_map_day(p_date date)"), "Restricted roster map is an enumerated RPC");
   assert.match(surface, /public\.app_is_exec/);
   assert.match(surface, /has_function_privilege\('authenticated','public\.share_performance_review\(uuid\)','EXECUTE'\)/);
   assert.match(mfa, /non-TOTP AAL2 session retained privileged authority/);
