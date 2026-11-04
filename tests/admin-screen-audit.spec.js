@@ -3,6 +3,9 @@ import {test,expect} from '@playwright/test';
 // Empty/denied presentation inventory, not authenticated functional acceptance.
 const screens=['projects','calendar','work','protected','payroll','performance','learning','assets','reports','finance','cost','lifecycle','policies','workflows','integrations','audit','events','authority','units','me','account','inbox'];
 for(const width of [390,1440])test(`Admin root presentation inventory at ${width}px`,async({page})=>{
+ // 22 real screen reads and screenshots share one Playwright test. Keep each assertion;
+ // allow the complete inventory a bounded total rather than the global 30-second limit.
+ test.setTimeout(90000);
  await page.setViewportSize({width,height:1000});
  await page.route('**/*',async route=>{
   const url=new URL(route.request().url());
