@@ -594,7 +594,8 @@ export default function Room({
   useEffect(() => {
     const refresh = () => { if (room?.id && document.visibilityState === "visible") void loadMessages(room.id); };
     window.addEventListener("focus", refresh);
-    const timer = window.setInterval(refresh, 30000);
+    // Realtime handles active Room delivery; slow reconciliation protects against missed events.
+    const timer = window.setInterval(refresh, 180000);
     return () => { window.removeEventListener("focus", refresh); window.clearInterval(timer); };
   }, [room?.id]);
 

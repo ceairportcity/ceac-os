@@ -150,3 +150,9 @@ test('continue subject prepares a separate new Memo, without modifying old appro
  assert.match(memo,/memo-thread-index/);
  assert.match(memo,/Finish or discard your recovered draft/);
 });
+
+test('Room fallback polling is bounded while realtime provides active message delivery',()=>{
+ const room=source('src/screens/Room.jsx');
+ assert.ok(room.includes('window.setInterval(refresh, 180000)'));
+ assert.match(room,/postgres_changes/);
+});
