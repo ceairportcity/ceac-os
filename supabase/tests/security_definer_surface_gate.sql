@@ -234,6 +234,10 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.executive_personnel_leave(p_profile_id uuid)'),
  ('public.executive_personnel_schedule(p_profile_id uuid)');
 
+-- The same roster-only map feed for HR, Executive and Compliance is purpose-bound.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.workforce_map_day(p_date date)');
+
 do $executive_read_surface$
 declare v_signature text; v_proc oid; v_definition text;
 begin
