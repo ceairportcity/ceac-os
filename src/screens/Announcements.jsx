@@ -236,7 +236,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
             </div>
             <h2 style={{margin:0,color:"#20384f",fontSize:17,fontWeight:700,lineHeight:1.4}}>{announcement.title}</h2>
             <div style={{fontSize:13,color:"#4f6378"}}><strong>{author.name}</strong>{author.detail?" · "+author.detail:""}</div>
-            <div style={{fontSize:13,lineHeight:1.5,color:"#62768b",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",whiteSpace:"pre-wrap"}}>Preview · {announcement.body}</div>
+            <div style={{fontSize:13,lineHeight:1.5,color:"#62768b",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",whiteSpace:"pre-wrap"}}>{selected?.id===announcement.id ? null : announcement.body}</div>
           </button>
           {canPublish && <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginTop:12}}>
             {announcement.status==="draft" && <><button className="btn btn-ghost btn-sm" onClick={()=>editAnnouncement(announcement)}>Edit</button><button className="btn btn-sm" onClick={()=>changeStatus(announcement,"publish")} disabled={busy}>Publish</button></>}

@@ -59,8 +59,8 @@ export function buildCeacNotificationBriefing({
       unreadMemoIds.add(event.context_id);
     }
     const urgent=decisions.has(kind);
-    const memoName=isMemo&&kind==="memo_sent"&&event.memo_actor ? " from "+String(event.memo_actor).slice(0,80) : "";
-    const title=isMemo?(kind==="memo_sent"?"New memo"+memoName:"New reply to a memo"):headings[kind]||"New update for you";
+    const memoName=isMemo&&event.memo_actor ? " from "+String(event.memo_actor).slice(0,80) : "";
+    const title=isMemo?(kind==="memo_sent"?"New memo"+memoName:"New reply to a memo"+memoName):headings[kind]||"New update for you";
     const memoMeta=isMemo?[event.memo_detail,event.memo_subject].filter(Boolean).join(" · "):"";
     entries.push(item("event:"+event.id,urgent?"attention":"personal",
       title,(memoMeta|| (urgent?"Action required":"Personal update")).slice(0,160),

@@ -120,28 +120,46 @@ export function useCeacUnreadNotifications(me) {
         const memoIds=[...new Set(candidate.events.filter(event=>
           !event.read_at && event.context_kind==="memo").map(event=>event.context_id))].slice(0,30);
         if(memoIds.length){
-          const [memoInfo,peopleInfo,unitInfo]=await Promise.all([
+          const replyMemoIds=[...new Set(candidate.events.filter(event=>
+            !event.read_at && event.kind==="memo_response" && event.context_kind==="memo"
+          ).map(event=>event.context_id))].filter(id=>memoIds.includes(id));
+          const [memoInfo,peopleInfo,unitInfo,replyInfo]=await Promise.all([
             supabase.from("memos").select("id,sender_id,current_version_id,memo_versions!memo_versions_memo_id_fkey(id,subject,sent_at)")
               .in("id",memoIds).abortSignal(signal),
             supabase.rpc("memo_recipient_directory").abortSignal(signal),
-            supabase.from("units").select("id,name").eq("org_id",me.org_id).eq("active",true).abortSignal(signal)
+            supabase.from("units").select("id,name").eq("org_id",me.org_id).eq("active",true).abortSignal(signal),
+            // A reply actor is only resolved for an unread, already authorised Memo.
+            // No reply bodies, attachments or confidential content leave this query.
+            replyMemoIds.length ? supabase.from("memo_exchanges")
+              .select("memo_id,author_id,created_at").in("memo_id",replyMemoIds)
+              .order("created_at",{ascending:false}).limit(60).abortSignal(signal)
+              : Promise.resolve({data:[],error:null})
           ]);
           if(!memoInfo.error && Array.isArray(memoInfo.data)){
             const byId=new Map(memoInfo.data.map(row=>[row.id,row]));
             const byPerson=new Map((peopleInfo.error?[]:peopleInfo.data||[]).map(row=>[row.id,row]));
             const byUnit=new Map((unitInfo.error?[]:unitInfo.data||[]).map(row=>[row.id,row.name]));
+            const latestReplyByMemo=new Map();
+            for(const row of replyInfo.error?[]:replyInfo.data||[]){
+              // Only non-sender exchanges emit reply notices; exclude later
+              // responses by the original sender when resolving the actor.
+              if(byId.get(row.memo_id)?.sender_id===row.author_id)continue;
+              if(!latestReplyByMemo.has(row.memo_id))latestReplyByMemo.set(row.memo_id,row.author_id);
+            }
             candidate.events=candidate.events.map(event=>{
               if(event.context_kind!=="memo"||event.read_at)return event;
               const memo=byId.get(event.context_id);
               if(!memo)return event; // No metadata can mean no longer authorised.
               const latest=memo.memo_versions?.find(v=>v.id===memo.current_version_id&&v.sent_at)
                 || memo.memo_versions?.filter(v=>v.sent_at).sort((a,b)=>b.version_no-a.version_no)[0];
-              const person=byPerson.get(memo.sender_id);
+              const actorId=event.kind==="memo_response"
+                ?latestReplyByMemo.get(event.context_id):memo.sender_id;
+              const person=byPerson.get(actorId);
               const department=[...(person?.managed_units||[]),...(person?.member_units||[])]
                 .map(id=>byUnit.get(id)).find(Boolean);
               return {...event,
-                memo_actor:event.kind==="memo_sent" ? person?.full_name : undefined,
-                memo_detail:event.kind==="memo_sent" ? [person?.job_title,department].filter(Boolean).join(" · ") : "",
+                memo_actor:person?.full_name,
+                memo_detail:[person?.job_title,department].filter(Boolean).join(" · "),
                 memo_subject:latest?.subject||""
               };
             });
