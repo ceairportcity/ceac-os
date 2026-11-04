@@ -92,3 +92,38 @@ test('Room composer cannot accept text before verified room identity clears load
  assert.match(room,/placeholder=\{!room\?\.id \? "Opening Room…"/);
  assert.match(room,/if \(!targetRoomId\) \{/);
 });
+
+
+import {memoCurrentSubject,memoConversationGroups,memoPersonIdentity} from '../src/lib/memos.js';
+test('memo correspondence groups by person or subject without merging formal records',()=>{
+  const item=(id,person,subject,time)=>({id,sender_id:person,status:'sent',updated_at:time,current_version_id:id+'v',
+    memo_recipients:[{profile_id:'exec',kind:'to'}],memo_versions:[{id:id+'v',version_no:1,subject}]});
+  const rows=[item('a','gabriel','Weekly report','2026-11-04T07:00:00Z'),
+    item('b','gabriel','Weekly report','2026-11-03T07:00:00Z'),
+    item('c','becky','Weekly report','2026-11-02T07:00:00Z'),
+    item('d','gabriel','Equipment','2026-11-01T07:00:00Z')];
+  assert.equal(memoCurrentSubject(rows[0]),'Weekly report');
+  const byPerson=memoConversationGroups(rows,'exec','person');
+  assert.equal(byPerson.length,2);
+  assert.deepEqual(byPerson[0].items.map(row=>row.id),['a','b','d']);
+  const bySubject=memoConversationGroups(rows,'exec','subject');
+  assert.equal(bySubject.length,3);
+  assert.deepEqual(bySubject[0].items.map(row=>row.id),['a','b']);
+  assert.notEqual(bySubject[0].key,bySubject.find(group=>group.items.some(row=>row.id==='c')).key);
+});
+test('sender identity uses authorised directory role and unit, not a generic member label',()=>{
+  const person={full_name:'Gabriel Rockson',job_title:'Technical Support Head',managed_units:['support'],member_units:['support']};
+  assert.deepEqual(memoPersonIdentity(person,[{id:'support',name:'Technical Support'}]),{
+    name:'Gabriel Rockson',role:'Technical Support Head',department:'Technical Support',
+    detail:'Technical Support Head · Technical Support'
+  });
+  assert.equal(memoPersonIdentity(null,[]).name,'Sender unavailable');
+});
+test('Memos are first in communication navigation and Rooms are still accessible',()=>{
+  const inbox=source('src/screens/Inbox.jsx');
+  assert.ok(inbox.indexOf('aria-label="Memos" aria-current=')<inbox.indexOf('aria-label="Rooms" aria-current='));
+  assert.match(inbox,/\? "rooms" : "memos"/);
+  const room=source('src/screens/Room.jsx');
+  assert.match(room,/memo_recipient_directory/);
+  assert.doesNotMatch(room,/"CEAC member"/);
+});
