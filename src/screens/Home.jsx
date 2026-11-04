@@ -248,7 +248,7 @@ export default function Home({ me, notificationPanel, session, setSession, openI
   const dueToday = items.filter((item) => item.due_at
     && new Date(item.due_at) >= today && new Date(item.due_at) < tomorrow
     && !["waiting_on","returned","in_review"].includes(item.status));
-  const overdue = items.filter(isWorkOverdue);
+  const overdue = items.filter((item) => isWorkOverdue(item));
   const waitingDependencies = items.filter((item) => item.status === "waiting_on");
   const waitingReviews = items.filter((item) => item.status === "in_review");
   const dueSoon = items.filter((item) => item.due_at
