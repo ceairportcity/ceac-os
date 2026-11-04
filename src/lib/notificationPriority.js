@@ -1,6 +1,6 @@
 // Pure, account-scoped notification prioritisation. No confidential message
 // bodies are exposed in the Overview or bell, even when the source includes them.
-const closedStatus = /^(completed|closed|cancelled|canceled|declined|self_certified|approved)$/i;
+const actionableDeadlineStatus = /^(not_started|in_progress|assigned)$/i;
 const cancelledMeeting = /cancelled|canceled|deleted/i;
 const decisions = new Set(["case_opened","case_referred","exception_requested","evidence_submitted"]);
 const headings = {
@@ -79,7 +79,7 @@ export function buildCeacNotificationBriefing({
       "/?tab=home&meeting="+encodeURIComponent(meeting.id),meeting.starts_at,"meeting"));
   }
   for(const work of workItems){
-    if(closedStatus.test(work.status||"")||!work.due_at)continue;
+    if(!actionableDeadlineStatus.test(work.status||"")||!work.due_at)continue;
     const minutes=(ms(work.due_at)-now)/60000;
     if(!Number.isFinite(minutes)||minutes>3*1440)continue;
     const urgent=minutes<=1440;
