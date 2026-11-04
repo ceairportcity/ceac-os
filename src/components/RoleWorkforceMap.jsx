@@ -15,6 +15,7 @@ const validSnapshot=data=>data&&typeof data==="object"
 
 export default function RoleWorkforceMap({me,date=null,roleLabel="People & HR",...viewProps}){
  const [today,setToday]=useState(accraDay),[revision,setRevision]=useState(0);
+ // Keep background map reads bounded under staff load; date changes still refresh immediately.
  const lastRefresh=useRef(Date.now());
  const [read,setRead]=useState({});
  const selectedDay=date||today;
