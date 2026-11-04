@@ -1,6 +1,6 @@
 import MemoProjectOrigin from "./MemoProjectOrigin";
 import { useEffect, useMemo, useState } from "react";
-import { deadlineOverdue } from "../lib/stage2AchievementMetrics";
+import { deadlineOverdue, isActionableDeadlineWork, isDeadlineWorkOverdue } from "../lib/stage2AchievementMetrics";
 import { currentProjectActions, visibleProjectPeople } from "../lib/projectContributionPeople";
 import { supabase } from "../lib/supabase";
 import PersonAvatar from "./PersonAvatar";
@@ -101,8 +101,8 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
   const completed = tasks.filter((row) => finished.has(row.status));
   const completionRate = tasks.length ? Math.round(100 * completed.length / tasks.length) : null;
   const open = tasks.filter((row) => !inactive.has(row.status));
-  const overdue = open.filter((row) => deadlineOverdue(row.due_at, asOf));
-  const next = open.filter((row) => row.due_at && !deadlineOverdue(row.due_at, asOf))
+  const overdue = open.filter((row) => isDeadlineWorkOverdue(row, asOf));
+  const next = open.filter((row) => isActionableDeadlineWork(row) && row.due_at && !deadlineOverdue(row.due_at, asOf))
     .sort((a,b) => new Date(a.due_at) - new Date(b.due_at))[0];
 
   const units = useMemo(() => {
