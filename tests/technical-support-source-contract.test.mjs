@@ -227,6 +227,7 @@ test("canonical S3 migration and fifteen reviewed security migrations have uniqu
     "20261101141500_secondary_unit_policy_scope.sql",
     "20261101211000_manager_own_work_review_release.sql",
     "20261101233000_manager_work_guard_reconciliation.sql",
+    "20261102142000_workforce_map_roster_parity.sql",
     "20261103070000_room_notification_preferences.sql",
   ];
   for (const migration of stagedIntegratedSecurity) {
@@ -269,13 +270,13 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
-  // Independently fail closed at the current 181-signature reviewed surface.
+  // Independently fail closed at the current 182-signature reviewed surface.
   // The exact allowlist and obsolete-grant denial remain enforced in the
   // dedicated security_definer_surface_gate.sql (not just this count check).
-  assert.match(mfa, /callable_count<>181/);
-  assert.match(surface, /v_actual<>181 or v_expected<>181/);
-  assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>181 then/);
-  assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>181 then/);
+  assert.match(mfa, /callable_count<>182/);
+  assert.match(surface, /v_actual<>182 or v_expected<>182/);
+  assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>182 then/);
+  assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>182 then/);
   assert.ok(surface.includes("public.executive_assign_project_department(p_project_id uuid, p_unit_id uuid, p_reason text)"));
   for (const signature of [
     "public.executive_personnel_directory()",
