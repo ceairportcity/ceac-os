@@ -9,7 +9,7 @@ import "./MessagesWorkspace.css";
 
 export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled, notificationCounts }) {
   const linkedMemo = new URLSearchParams(window.location.search).get("memo");
-  const [section,setSection] = useState(linkedMemo ? "memos" : new URLSearchParams(window.location.search).get("updates")==="1" ? "updates" : "rooms");
+  const [section,setSection] = useState(new URLSearchParams(window.location.search).get("updates")==="1" ? "updates" : new URLSearchParams(window.location.search).get("room") ? "rooms" : "memos");
   const [rooms,setRooms] = useState([]), [selected,setSelected] = useState(null);
   const [actions,setActions] = useState([]), [actionsOpen,setActionsOpen] = useState(false);
   const [query,setQuery] = useState(""), [error,setError] = useState(""), [loading,setLoading] = useState(true);
@@ -80,7 +80,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
   },[]);
   const visibleRooms = verified ? rooms.filter(room => `${room.name || ""} ${room.last_body || ""}`.toLowerCase().includes(query.toLowerCase())) : [];
   return <div ref={workspaceRef} className="msg-workspace" style={{"--exec-purple":"#1678c9"}}>
-    <header className="msg-head"><h1>Messages</h1>
+    <header className="msg-head"><h1>Correspondence</h1>
       <div><button type="button" aria-expanded={actionsOpen} onClick={()=>setActionsOpen(open=>!open)}>Work actions {verified ? actions.length : "…"}</button><button type="button" onClick={openAnnouncements}>Announcements</button>
       <button type="button" className="ceac-notification-trigger" aria-label={notifications?.count?`Updates, ${notifications.count} unread`:"Updates"} aria-pressed={section==="updates"} onClick={()=>switchSection("updates")}><Bell size={18}/>{notifications?.count>0 && <span className="ceac-notification-badge">{notifications.count>99?"99+":notifications.count}</span>}</button>
       <button type="button" aria-label="New Memo" onClick={()=>{setSection("memos");setComposeMemo(n=>n+1);}}><PenSquare size={19}/></button></div>
@@ -91,8 +91,8 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
       </button>)}{!actions.length && <p>No work action is waiting.</p>}
     </div>}
     <nav className="msg-sections" aria-label="Messages sections">
-      <button type="button" aria-label="Rooms" aria-current={section === "rooms" ? "page" : undefined} onClick={()=>switchSection("rooms")}><MessageSquare size={16}/> Rooms {notifications?.room>0 && <span aria-hidden="true" className="ceac-notification-badge">{notifications.room>99?"99+":notifications.room}</span>}</button>
       <button type="button" aria-label="Memos" aria-current={section === "memos" ? "page" : undefined} onClick={()=>switchSection("memos")}><FileText size={16}/> Memos {notifications?.memo>0 && <span aria-hidden="true" className="ceac-notification-badge">{notifications.memo>99?"99+":notifications.memo}</span>}</button>
+      <button type="button" aria-label="Rooms" aria-current={section === "rooms" ? "page" : undefined} onClick={()=>switchSection("rooms")}><MessageSquare size={16}/> Rooms {notifications?.room>0 && <span aria-hidden="true" className="ceac-notification-badge">{notifications.room>99?"99+":notifications.room}</span>}</button>
     </nav>
     {section === "updates" ? <Notifications key={scope} me={me} notificationCounts={notificationCounts} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
       : <div className={`msg-layout ${selected && verified ? "has-selection" : ""}`}>
