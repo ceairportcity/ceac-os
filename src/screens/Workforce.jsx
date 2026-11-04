@@ -678,7 +678,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
 
       <details className="timeleave-policy"><summary>Leave policy &amp; balances{!canManage&&myLeaveSummary?<span> · Annual: {myLeaveSummary.balance_available?myLeaveSummary.available_days:"unavailable"} days · Sick/study: {myLeaveSummary.shared_other?.balance_available?myLeaveSummary.shared_other.available_days:"unavailable"} days</span>:null}</summary>{confirmedLeaveSummary}</details>
 
-      {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">Leave decisions remain available on the existing route. CEAC OS will not invent entitlement, accrual, carry-over or remaining balance from old seeded defaults.</ProductNotice>}
+      {!activePolicy&&<ProductNotice tone="attention" title="Leave policy not configured">HR decides all leave requests directly. CEAC OS will not invent entitlement, accrual, carry-over or remaining balance from old seeded defaults.</ProductNotice>}
 
       {tab==="today"&&<>
         {locationPanel}
