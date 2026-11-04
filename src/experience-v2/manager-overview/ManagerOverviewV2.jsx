@@ -13,7 +13,7 @@ import {
   Surface,
 } from "../components";
 import { CeacIcon } from "../icons";
-import { dueLabel, isOverdue } from "../../lib/time";
+import { dueLabel, isWorkOverdue } from "../../lib/time";
 
 function money(minor, currency) {
   return `${currency} ${(Number(minor || 0) / 100).toLocaleString("en-GH", {
@@ -34,7 +34,7 @@ function formatDate(value, options = {}) {
 
 function workTone(item) {
   if (!item) return "neutral";
-  if (item.status === "returned" || isOverdue(item.due_at)) return "danger";
+  if (item.status === "returned" || isWorkOverdue(item)) return "danger";
   if (item.status === "waiting_on") return "warning";
   if (["completed", "self_certified"].includes(item.status)) return "success";
   return "action";
@@ -340,7 +340,7 @@ export default function ManagerOverviewV2({
                 <span>Next up</span>
                 {nextWork ? <>
                   <h2>{nextWork.title}</h2>
-                  <p>{nextWork.ref}{nextWork.due_at ? ` · ${dueLabel(nextWork.due_at)}` : ""}</p>
+                  <p>{nextWork.ref}{nextWork.due_at ? ` · ${dueLabel(nextWork.due_at, nextWork.status)}` : ""}</p>
                   <div className="fpg9-next-status"><StatusBadge tone={workTone(nextWork)}>{nextWork.status?.replaceAll("_", " ") || "Open"}</StatusBadge></div>
                   <Button size="compact" onClick={() => onOpenItem?.(nextWork.id)}>Continue work</Button>
                 </> : <>
