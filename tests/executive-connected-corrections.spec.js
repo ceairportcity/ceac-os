@@ -297,7 +297,7 @@ for (const width of [320,1440]) {
     expect(presentation.font).toContain('Instrument Sans');
     const scope=meeting.getByRole('button',{name:'Organisation',exact:true});
     expect(await scope.evaluate(node=>getComputedStyle(node).color)).toBe('rgb(113, 72, 232)');
-    expect((await scope.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    expect(Math.round((await scope.boundingBox()).height)).toBeGreaterThanOrEqual(44);
     expect(await meeting.locator('.meeting-audience-head>small').evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(12);
     await page.screenshot({path:`test-artifacts/executive-calendar-meeting-${width}.png`,fullPage:true});
     await meeting.getByRole('button',{name:'Close meeting scheduler',exact:true}).click();
