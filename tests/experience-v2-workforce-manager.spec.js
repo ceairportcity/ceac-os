@@ -26,8 +26,8 @@ test("Stage 10 Family D3 preserves Manager Workforce authority while establishin
   expect(workforce).toContain('const isManagerView=!me.is_admin && !me.is_exec && isManager');
   expect(workforce).toContain('caps.includes("workforce.manage")');
   expect(workforce).toContain('caps.includes("attendance.correct")');
-  expect(workforce).toContain('leaveAction(l.id,"manager_approved")');
-  expect(workforce).toContain('Manager approval → Administration final approval');
+  expect(workforce).not.toContain('leaveAction(l.id,"manager_approved")');
+  expect(workforce).toContain('HR makes all leave decisions. Managers can view request progress but cannot approve or decline.');
   expect(workforce).toContain('Confirmed leave process');
   expect(workforce).toContain('The 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance');
   expect(workforce).not.toContain('onClick={()=>leaveAction(l.id,"escalated")}');
