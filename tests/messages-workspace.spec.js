@@ -72,7 +72,7 @@ test('Memo refresh retains a clarification draft and section changes protect uns
  await mock(page);await page.goto('/tests/fixtures/messages-workspace.html?actor=pastor');
  await page.getByRole('button',{name:'Memos',exact:true}).click();
  await page.getByRole('button',{name:/Media Team Digital Transformation Initiative/}).click();
- const response=page.getByRole('textbox',{name:/Reply or clarification/});
+ const response=page.getByRole('textbox',{name:/Reply in this conversation/});
  await response.fill('Please retain this clarification while refreshing.');
  const refreshed=page.waitForResponse(r=>r.url().includes('/rpc/mark_memo_read'));
  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
@@ -93,21 +93,26 @@ for(const width of [1440,320])test(`Memo reader keeps document and authorised ac
  await page.getByRole('button',{name:'Memos',exact:true}).click();
  await page.getByRole('button',{name:/Media Team Digital Transformation Initiative/}).click();
  await expect(page.getByRole('button',{name:'Approve proposal',exact:true})).toBeVisible();
- const document=await page.locator('.memo-document').boundingBox(),actions=await page.locator('.memo-response').boundingBox();
- expect(document).toBeTruthy();expect(actions).toBeTruthy();
+ const document=await page.locator('.memo-document').boundingBox();
+ const details=await page.locator('.memo-thread-details').boundingBox();
+ const actions=await page.locator('.memo-response').boundingBox();
+ expect(document).toBeTruthy();expect(details).toBeTruthy();expect(actions).toBeTruthy();
+ await expect(page.locator('.memo-thread-timeline .memo-thread-entry')).toHaveCount(1);
+ await expect(page.getByRole('complementary',{name:'Memo details'})).toBeVisible();
  if(width>1100){
-  expect(actions.x).toBeGreaterThanOrEqual(document.x+document.width);
-  expect(actions.width).toBeLessThanOrEqual(260);
-  await expect(page.getByRole('button',{name:/Toggle correspondence with Gabriel Rockson/})).toBeVisible();
+  expect(details.x).toBeGreaterThanOrEqual(document.x+document.width-1);
+  expect(details.width).toBeLessThanOrEqual(260);
+  expect(actions.y).toBeGreaterThanOrEqual(document.y+document.height-1);
+ } else {
+  expect(details.y).toBeGreaterThanOrEqual(document.y+document.height-1);
+  expect(actions.y).toBeGreaterThanOrEqual(details.y+details.height-1);
+  expect(document.width).toBeGreaterThan(250);
  }
- else{expect(actions.y).toBeGreaterThanOrEqual(document.y+document.height-1);expect(document.width).toBeGreaterThan(250);}
  if(width<=760){
-  const title=await page.locator('.memo-reader>header h2').boundingBox();
-  const follow=await page.getByRole('button',{name:'Continue subject',exact:true}).boundingBox();
-  expect(follow.y).toBeGreaterThanOrEqual(title.y+title.height-1);
+  await expect(page.getByRole('button',{name:'Back to Memo list'})).toBeVisible();
  }
- const sender=await page.locator('.memo-parties strong').boundingBox(),date=await page.locator('.memo-parties small').first().boundingBox();
- expect(date.y).toBeGreaterThan(sender.y);
+ await expect(page.locator('.memo-thread-entry-heading strong').first()).toBeVisible();
+ await expect(page.locator('.memo-thread-entry-heading time').first()).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  await page.screenshot({path:`test-artifacts/messages-memo-reader-${width}.png`,fullPage:true});
 });
