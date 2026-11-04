@@ -326,12 +326,12 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
 </header>
           <div className="memo-document">
             {attachmentError && <p className="msg-error" role="alert">{attachmentError} <button type="button" onClick={()=>setReload(n=>n+1)}>Retry attachments</button></p>}
-            <div className="memo-thread-intro"><strong>Conversation</strong><small>{timeline.length} entries · chronological history</small></div>
+            <div className="room-context-note memo-thread-intro"><strong>Conversation</strong><small>{timeline.length} entries · chronological history</small></div>
             <div className="memo-thread-timeline" aria-label="Memo conversation timeline">
-              {timeline.map(entry=><section className="memo-thread-entry" key={entry.type+":"+entry.id}>
+              {timeline.map(entry=><section className="room-message memo-thread-entry" key={entry.type+":"+entry.id}>
                 <span className="msg-avatar memo-thread-avatar" aria-hidden="true">{initials(name(entry.author))}</span>
                 <div className="memo-thread-entry-content">
-                  <div className="memo-thread-entry-heading"><strong>{name(entry.author)}</strong><span>{entry.title}</span><time>{messageTimestamp(entry.at)}</time></div>
+                  <div className="room-message-meta memo-thread-entry-heading"><strong>{name(entry.author)}</strong><span>{entry.title}</span><time>{messageTimestamp(entry.at)}</time></div>
                   {identity(entry.author).detail && <small>{identity(entry.author).detail}</small>}
                   <MemoBody body={entry.body || ""}/>
                   {entry.files.length>0 && <div className="memo-thread-files"><span>{entry.files.length} attachment{entry.files.length===1?"":"s"} · see Memo details</span></div>}
@@ -339,7 +339,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
               </section>)}
             </div>
           </div>
-          <aside className="memo-thread-details" aria-label="Memo details">
+          <aside className="memo-attachments memo-thread-details" aria-label="Memo details">
             <h3>Memo details</h3>
             <dl><dt>From</dt><dd>{name(active.sender_id)}</dd><dt>To</dt><dd>{active.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Cc</dt><dd>{active.memo_recipients.filter(r=>r.kind==="cc").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Status</dt><dd>{MEMO_STATUS_LABELS[active.status]}</dd><dt>Attachments</dt><dd>{visibleAttachments.length}</dd></dl>
             <div className="memo-response">

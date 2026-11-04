@@ -8,7 +8,7 @@
 .memos-workspace{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}.memo-directory>header{align-items:center;display:flex;justify-content:space-between;padding:12px 16px}.memo-directory h2{font-size:15px;margin:0}.memo-directory>header button{background:#edf4fc;color:#1678c9;padding:6px}.memo-filters{display:flex;flex-wrap:wrap;gap:5px;padding:0 14px 12px}.memo-filters button{border-bottom:2px solid transparent;padding:5px 4px}.memo-row{border-bottom:1px solid #e7edf4;display:flex;flex-direction:column;gap:6px;padding:14px 16px;text-align:left;width:100%}.memo-row>strong{color:#20384f;line-height:1.4}.memo-row>span{display:flex;gap:8px;justify-content:space-between}.memo-reader{min-width:0;overflow:auto;padding:0 24px 24px}.memo-reader>header{grid-column:1/-1;align-items:flex-start;padding:18px 0}.memo-reader>header h2{flex:1;font-size:18px;line-height:1.4;margin:0}.memo-status{background:#fff7e8;padding:5px 7px;white-space:nowrap}.memo-parties{border-bottom:1px solid #e8edf4;display:flex;flex-wrap:wrap;gap:20px;padding:18px 0 18px 44px;position:relative}.memo-version{border-bottom:1px solid #e9eef4;padding:20px 0}.memo-body{line-height:1.8;overflow-wrap:anywhere}.memo-body p{margin:7px 0;white-space:pre-wrap}.memo-response{grid-column:2;grid-row:2;display:grid;padding-top:12px}.memo-reader label{display:grid;gap:6px}.memo-reader :is(input,select,textarea){border:1px solid #d9e2ee;font:inherit;padding:10px;width:100%}.memo-actions{border-top:1px solid #e3eaf3;display:flex;padding:12px 0}.memo-actions>button:not(.btn),.memo-project>button{border:1px solid #d7e3ef;padding:8px 12px}.memo-project{grid-column:1/-1;display:grid;gap:10px;padding:18px 0}
 .memo-compose{flex:1;margin:0 auto;overflow:auto;width:min(920px,100%)}.memo-compose>header{background:#fff}.memo-compose>header>div{flex:1}.memo-compose h2{font-size:17px;margin:0}.memo-compose>header>button:not(.btn){border:1px solid #dce5ef;padding:8px 10px}.memo-compose>fieldset{border:0;display:grid;gap:16px;min-width:0;padding:20px 28px}.memo-recipient{position:relative}.memo-compose label{display:grid;gap:7px}.memo-recipient>label{align-items:center;grid-template-columns:75px minmax(0,1fr)}.memo-compose :is(input:not([type=checkbox]),select){background:#fff;border:1px solid #dce5ef;color:#20384f;font:inherit;min-width:0;padding:9px 10px;width:100%}.memo-subject{align-items:center;grid-template-columns:75px minmax(0,1fr)}.memo-compose .memo-subject input{font-size:15px}.memo-people{display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 0 82px}.memo-people>span{align-items:center;background:#edf4fc;display:flex;gap:5px;padding:4px 7px}.memo-matches{background:#fff;border:1px solid #dce5ef;left:82px;max-height:220px;overflow:auto;position:absolute;right:0;top:100%;z-index:5}.memo-matches button{display:flex;gap:10px;justify-content:space-between;padding:10px;text-align:left;width:100%}.memo-compose .memo-decision{align-items:center;display:flex;gap:12px;margin:2px 0}.memo-decision input{accent-color:#1678c9}.memo-route{border-top:1px solid #edf1f6;display:grid;gap:12px;grid-template-columns:1fr 1fr;padding-top:14px}.memo-route p{grid-column:1 /  -1}.memo-format{background:#f7f9fc;border:1px solid #dce5ef;display:flex;gap:6px;margin-bottom:-17px;padding:7px}.memo-format button{padding:5px 8px}.memo-writing textarea{border:1px solid #dce5ef;border-top:0;color:#20384f;font:inherit;font-size:14px;line-height:1.8;min-height:230px;padding:14px;resize:vertical;width:100%}.memo-draft-file{align-items:center;background:#f3f7fc;border:1px solid #e1e9f3;display:flex;gap:8px;padding:8px 10px}
 .memo-reader[data-reading]{display:grid;grid-template-columns:minmax(0,1fr) 220px;align-content:start;gap:0 20px}.memo-document{min-width:0}.memo-reader small{display:block}
-@media(max-width:1100px){.memo-layout,.msg-layout{grid-template-columns:255px minmax(0,1fr)}.room-live-status{display:none}.memo-parties{gap:12px}.memo-reader[data-reading],.memo-reader{display:block;padding-inline:16px}}
+@media(max-width:1100px){.memo-layout,.msg-layout{grid-template-columns:255px minmax(0,1fr)}.room-live-status{display:none}.memo-parties{gap:12px}.memo-reader{padding-inline:16px}}
 @media(max-width:760px){.msg-workspace{border:0;height:calc(100dvh - 140px);margin:0;min-height:320px}.msg-head{padding:12px 16px}.msg-head h1{font-size:19px}.msg-sections{padding:0 12px}.msg-sections button{flex:1}.memo-layout,.msg-layout{display:block;position:relative}.memo-directory,.msg-directory{border:0;height:100%}.memo-reader,.msg-conversation{display:none;height:100%}.memo-layout.has-selection .memo-directory,.msg-layout.has-selection .msg-directory{display:none}.memo-layout.has-selection .memo-reader,.msg-layout.has-selection .msg-conversation{display:block}.room-head{min-height:60px;padding:10px 12px}.room-feed{padding:6px 14px 16px}.room-composer{padding:8px 12px calc(8px + env(safe-area-inset-bottom))}.room-context-note{padding:6px 14px}.room-composer textarea{font-size:16px}.memo-compose>header{flex-wrap:wrap;gap:8px;padding:10px 12px}.memo-compose>header>div{min-width:0}.memo-compose>header small{display:none}.memo-compose>fieldset{padding:16px}.memo-recipient>label,.memo-subject{grid-template-columns:1fr}.memo-people{margin-left:0}.memo-matches{left:0}.memo-compose :is(input:not([type=checkbox]),textarea,select),.memo-response textarea{font-size:16px}.memo-route{grid-template-columns:1fr}.memo-reader>header{gap:10px}.memo-reader>header h2{font-size:16px}.memo-status{max-width:100px;white-space:normal}.memo-parties{padding-left:42px}.msg-workspace button{min-height:36px}.memo-compose button{min-height:40px}}
 
 .msg-workspace :is(small,time){color:#6c7d91;font-size:12px}
@@ -111,62 +111,8 @@
 @media(max-width:760px){.memo-reader>header{flex-wrap:wrap}.memo-reader>header h2{flex:1 1 calc(100% - 48px)}.memo-reader>header .memo-status{margin-left:45px}.memo-reader>header .memo-follow-up{margin-left:auto}}
 
 .room-author-detail{display:block;margin-top:2px;color:#64788e}
-
-
-/* Formal Memo conversation: audit-safe timeline and restrained CEAC blue. */
-.memo-conversation-list{display:grid;align-content:start}
-.memo-conversation-list .memo-row{border-left:3px solid transparent;padding:16px;gap:7px}
-.memo-conversation-list .memo-row.selected{border-left-color:#1678c9;background:#edf5ff}
-.memo-reader[data-reading]{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,235px);gap:0 22px;align-content:start}
-.memo-reader[data-reading]>header{grid-column:1/-1;align-items:center}
-.memo-document{grid-column:1;grid-row:2;min-width:0}
-.memo-thread-details{grid-column:2;grid-row:2;align-self:start;border:1px solid #e1e9f3;background:#fbfcff;border-radius:12px;padding:17px;position:sticky;top:12px}
-.memo-thread-details h3{font-size:14px;margin:0 0 12px}
-.memo-thread-details dl{display:grid;gap:4px;margin:0 0 16px}
-.memo-thread-details dt{font-size:11px;color:#62748b;margin-top:9px}
-.memo-thread-details dd{margin:0;overflow-wrap:anywhere;font-size:13px}
-.memo-thread-details>small{line-height:1.5}
-.memo-thread-intro{display:flex;gap:10px;align-items:baseline;justify-content:space-between;border-bottom:1px solid #e3eaf2;padding:14px 0}
-.memo-thread-timeline{padding:12px 0}
-.memo-thread-entry{position:relative;display:flex;gap:14px;border-left:2px solid #dce8f4;margin:0 0 0 18px;padding:8px 0 24px 24px}
-.memo-thread-avatar{position:absolute;left:-18px;top:8px;width:34px;height:34px;background:#e8f3fe;border-radius:10px}
-.memo-thread-entry-content{min-width:0;width:100%}
-.memo-thread-entry-heading{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-.memo-thread-entry-heading strong{color:#1b3450}
-.memo-thread-entry-heading span{color:#47749d;font-size:12px}
-.memo-thread-entry-heading time{margin-left:auto;color:#68788a}
-.memo-thread-entry .memo-body{font-size:14px;line-height:1.65}
-.memo-thread-files{margin-top:10px}
-.memo-response{grid-column:1;grid-row:3;border-top:1px solid #e4ebf3}
-.memo-project{grid-column:1/-1}
-@media(max-width:1100px){.memo-reader[data-reading]{display:block}.memo-thread-details{position:static;margin:12px 0}.memo-response{margin-top:12px}}
-@media(max-width:760px){.memo-thread-entry{gap:10px;padding-left:20px}.memo-thread-intro{align-items:start;flex-direction:column}}
-
-/* Keep the approved three-pane correspondence layout whenever the Memo
-   workspace itself has sufficient room, including medium-size laptop shells. */
-.memos-workspace{container-name:memo-surface;container-type:inline-size}
-.memo-thread-details{display:grid;align-content:start;gap:13px;max-height:calc(100dvh - 190px);overflow-y:auto;overscroll-behavior:contain}
-.memo-thread-details dl{margin-bottom:0}
-.memo-reader .memo-thread-details .memo-response{grid-column:auto;grid-row:auto;border-top:1px solid #e1e9f3;padding-top:14px;margin:0;gap:10px}
-.memo-reader .memo-thread-details .memo-response .memo-actions{display:grid;grid-template-columns:1fr;gap:8px;padding:0;border:0}
-.memo-reader .memo-thread-details .memo-response .memo-actions>strong,
-.memo-reader .memo-thread-details .memo-response .memo-actions>small{grid-column:1}
-.memo-reader .memo-thread-details .memo-response :is(button,textarea){width:100%;max-width:100%;box-sizing:border-box}
-.memo-reader .memo-thread-details .memo-response button{justify-self:stretch;white-space:normal}
-.memo-sidebar-attachments{display:grid;gap:10px;min-width:0;border-top:1px solid #e1e9f3;padding-top:15px}
-.memo-sidebar-attachments h4{font-size:13px;line-height:1.3;margin:0}
-.memo-sidebar-attachments p,.memo-thread-files{color:#60748c;font-size:12px}
-.memo-sidebar-attachments .operational-media-file{padding:9px}
-.memo-sidebar-attachments .operational-media-image img{max-height:140px;width:auto}
-.memo-sidebar-attachments .operational-file-actions button{width:100%}
-@container memo-surface (min-width:820px){
-  .memo-layout{grid-template-columns:clamp(210px,24%,260px) minmax(0,1fr)}
-  .memo-reader[data-reading]{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,220px);gap:0 16px;padding-inline:16px}
-  .memo-thread-details{grid-column:2;grid-row:2;position:sticky;top:12px;margin:0}
-}
-@container memo-surface (min-width:1150px){
-  .memo-reader[data-reading]{grid-template-columns:minmax(0,1fr) minmax(220px,255px);gap:0 22px}
-}
-@container memo-surface (max-width:819px){
-  .memo-thread-details{max-height:none;overflow:visible;position:static;margin:12px 0}
-}
+/* Reuse established Memo and Room primitives for the formal conversation. */
+.memo-layout{grid-template-columns:clamp(245px,25%,300px) minmax(0,1fr)}
+.memo-thread-details{align-self:start}
+.memo-thread-details .memo-actions{display:grid}
+@media(max-width:850px){.memo-reader[data-reading]{display:block}}
