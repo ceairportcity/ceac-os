@@ -45,16 +45,26 @@ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
   const {page,context}=await adminPage(browser,viewport);
   const start=new Date().toISOString();
   await page.addInitScript({path:"tests/fixtures/google-maps-stub.js"});
-  await page.route("**/rest/v1/work_sessions?*",async route=>{
-   const select=new URL(route.request().url()).searchParams.get("select")||"";
-   if(route.request().method()==="GET"&&select.includes("location_accuracy_m")){
-    await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify([{
-      id:"51000000-0000-4000-8000-000000000101",
-      profile_id:"31000000-0000-4000-8000-000000000001",
-      started_at:start,ended_at:null,place:"office",
-      lat:5.6037,lng:-0.1870,location_captured_at:start,location_accuracy_m:12
-    }])});
-   }else await route.continue();
+  // All role maps now read the same roster-backed RPC, not a direct
+  // work_sessions GET. Mock the selected local day without bypassing login.
+  const sharedMapCalls=[];
+  await page.route("**/rest/v1/rpc/workforce_map_day",async route=>{
+   const request=route.request();
+   const {p_date}=JSON.parse(request.postData()||"{}");
+   sharedMapCalls.push({method:request.method(),day:p_date});
+   const roster=[{id:"41000000-0000-4000-8000-000000000001",
+     profile_id:"31000000-0000-4000-8000-000000000001",
+     full_name:"Staff Fixture",units:["IT"]}];
+   const sessions=[{
+     id:"51000000-0000-4000-8000-000000000101",
+     profile_id:"31000000-0000-4000-8000-000000000001",
+     started_at:start,ended_at:null,place:"office",
+     lat:5.6037,lng:-0.1870,location_captured_at:start,location_accuracy_m:12
+   }];
+   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+     date:p_date,as_of:start,roster,sessions,operationalProfiles:[],
+     roster_count:roster.length,session_count:sessions.length
+   })});
   });
   await page.reload(); // Run the SDK init script before the SPA sign-in.
   await authenticate(page);
@@ -64,6 +74,7 @@ for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
   await expect(street.getByText(/Google Maps receives the viewed map area/)).toBeVisible();
   await expect(street.getByRole("button",{name:"Enable street map"})).toHaveCount(0);
   await expect(street.getByRole("button",{name:/View recorded work start for Staff Fixture/})).toBeVisible();
+  expect(sharedMapCalls.some(call=>call.method==="POST"&&/^\d{4}-\d{2}-\d{2}$/.test(call.day))).toBe(true);
   await expect(street.locator("[data-synthetic-map=true]")).toBeVisible();
   await expect(street.getByText("Synthetic Google Maps",{exact:true})).toBeVisible();
   await street.getByRole("button",{name:"Hide street map"}).click();
