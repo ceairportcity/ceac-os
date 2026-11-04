@@ -5,6 +5,25 @@ async function fixture(page,scope="Organisation"){
  await page.route("**/*",async route=>{
   const url=new URL(route.request().url());
   if(!["localhost","127.0.0.1"].includes(url.hostname))return route.abort();
+  if(url.pathname.endsWith("/rest/v1/rpc/workforce_map_day")){
+   const day=JSON.parse(route.request().postData()||"{}").p_date;
+   const roster=[
+    {id:"employee-a",profile_id:"person-a",full_name:"Ama Fixture",units:["Operations"]},
+    {id:"employee-b",profile_id:"person-b",full_name:"Kojo Fixture",units:["Administration"]},
+    {id:"employee-c",profile_id:"person-c",full_name:"Esi Fixture",units:[]},
+    {id:"employee-d",profile_id:"person-d",full_name:"Yaw Fixture",units:["Facilities, Logistics and Procurement"]}
+   ];
+   const sessions=[
+    {id:"session-a",profile_id:"person-a",started_at:day+"T08:00:00Z",ended_at:day+"T09:00:00Z",place:"elsewhere",lat:5.61,lng:-0.19},
+    {id:"session-b",profile_id:"person-a",started_at:day+"T10:00:00Z",ended_at:null,place:"office",lat:5.60,lng:-0.18,location_accuracy_m:35},
+    {id:"session-c",profile_id:"person-b",started_at:day+"T09:00:00Z",ended_at:null,place:"office",lat:5.60,lng:-0.18},
+    {id:"session-d",profile_id:"person-c",started_at:day+"T09:10:00Z",ended_at:null,place:"elsewhere",lat:null,lng:null}
+   ];
+   return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+    date:day,as_of:new Date().toISOString(),roster,sessions,operationalProfiles:[],
+    roster_count:roster.length,session_count:sessions.length
+   })});
+  }
   if(url.pathname.includes("/rest/v1/"))return route.fulfill({status:200,contentType:"application/json",body:"null"});
   return route.continue();
  });
