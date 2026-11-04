@@ -280,5 +280,3 @@ begin
 end;
 $function$;
 
-comment on function public.workforce_record_leave_policy(text,date,date,text,text,jsonb,boolean,uuid)
-is 'Authorised HR policy authoring: every new leave route is HR-only; annual and shared 15 + 9 day rules remain locked. Historical policy versions are preserved.';
