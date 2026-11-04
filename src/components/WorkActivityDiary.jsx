@@ -239,7 +239,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     </dl>}
     {!compact && <header>
       <div><span className="eyebrow">Your work</span><h3>Work updates</h3>
-        <p>Record today’s work or enter work from an earlier date, including Saturday or Sunday. The activity date is when you worked; CEAC also keeps the actual entry time. This does not change attendance or performance ratings.</p>
+        <p>Record today’s work or enter work from an earlier date, including Saturday or Sunday. The activity date is when you worked; CEAC also keeps the actual entry time. This does not affect attendance or performance ratings.</p>
       </div>
       {recordAction}
     </header>}
