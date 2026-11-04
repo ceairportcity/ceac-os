@@ -268,7 +268,7 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
       setWeek({
         due: tasks.filter((item) => item.due_at && new Date(item.due_at) >= weekStart && new Date(item.due_at) < nextWeek),
         completed: tasks.filter((item) => ["completed", "self_certified"].includes(item.status) && item.completed_at && new Date(item.completed_at) >= weekStart && new Date(item.completed_at) < nextWeek),
-        overdue: tasks.filter(isWorkOverdue),
+        overdue: tasks.filter((item) => isWorkOverdue(item)),
       });
 
       const participatingIds = new Set(requireResult(projectUnitResult, "Project units").map((row) => row.project_id));
