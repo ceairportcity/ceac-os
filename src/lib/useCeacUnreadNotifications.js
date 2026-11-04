@@ -115,6 +115,39 @@ export function useCeacUnreadNotifications(me) {
         // Never claim an empty inbox when its authoritative source has failed.
         if(failures.includes("events")&&!snapshot)throw new Error("No verified personal updates.");
         preferencesHealthy=!failures.includes("prefs");
+        // Enrich only actual unread Memo notices. The Memo query runs under
+        // participant RLS and never fetches private message bodies or files.
+        const memoIds=[...new Set(candidate.events.filter(event=>
+          !event.read_at && event.context_kind==="memo").map(event=>event.context_id))].slice(0,30);
+        if(memoIds.length){
+          const [memoInfo,peopleInfo,unitInfo]=await Promise.all([
+            supabase.from("memos").select("id,sender_id,current_version_id,memo_versions!memo_versions_memo_id_fkey(id,subject,sent_at)")
+              .in("id",memoIds).abortSignal(signal),
+            supabase.rpc("memo_recipient_directory").abortSignal(signal),
+            supabase.from("units").select("id,name").eq("org_id",me.org_id).eq("active",true).abortSignal(signal)
+          ]);
+          if(!memoInfo.error && Array.isArray(memoInfo.data)){
+            const byId=new Map(memoInfo.data.map(row=>[row.id,row]));
+            const byPerson=new Map((peopleInfo.error?[]:peopleInfo.data||[]).map(row=>[row.id,row]));
+            const byUnit=new Map((unitInfo.error?[]:unitInfo.data||[]).map(row=>[row.id,row.name]));
+            candidate.events=candidate.events.map(event=>{
+              if(event.context_kind!=="memo"||event.read_at)return event;
+              const memo=byId.get(event.context_id);
+              if(!memo)return event; // No metadata can mean no longer authorised.
+              const latest=memo.memo_versions?.find(v=>v.id===memo.current_version_id&&v.sent_at)
+                || memo.memo_versions?.filter(v=>v.sent_at).sort((a,b)=>b.version_no-a.version_no)[0];
+              const person=byPerson.get(memo.sender_id);
+              const department=[...(person?.managed_units||[]),...(person?.member_units||[])]
+                .map(id=>byUnit.get(id)).find(Boolean);
+              return {...event,
+                memo_actor:event.kind==="memo_sent" ? person?.full_name : undefined,
+                memo_detail:event.kind==="memo_sent" ? [person?.job_title,department].filter(Boolean).join(" · ") : "",
+                memo_subject:latest?.subject||""
+              };
+            });
+          }
+        }
+        if(!active||currentScope.current!==scope)return;
         snapshot=candidate;
         publish();
         const degraded=failures.length>0;
