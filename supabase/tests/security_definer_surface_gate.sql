@@ -234,6 +234,11 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.executive_personnel_leave(p_profile_id uuid)'),
  ('public.executive_personnel_schedule(p_profile_id uuid)');
 
+-- One read-only, organisation-scoped HR-roster attendance map feed.
+-- Authenticated EXECUTE is guarded server-side for HR, Executive and Compliance.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.workforce_map_day(p_date date)');
+
 do $executive_read_surface$
 declare v_signature text; v_proc oid; v_definition text;
 begin
@@ -319,7 +324,7 @@ begin
 
   -- The three new Executive-only projections have explicit signatures and
   -- actor/tenant/no-anon/read-only checks above.
-  if v_actual<>181 or v_expected<>181 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>182 or v_expected<>182 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
