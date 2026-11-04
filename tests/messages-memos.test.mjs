@@ -50,8 +50,8 @@ import {readFileSync as readContract} from 'node:fs';
 const source=path=>readContract(path,'utf8');
 test('Memos show attachments to authorised recipients with independent download actions',()=>{
  const memo=source('src/screens/Memos.jsx'),media=source('src/components/OperationalFiles.jsx'),files=source('src/lib/operationalFiles.js');
- assert.match(memo,/visibleAttachments\.length>0/);
- assert.match(memo,/aria-label="Memo attachments"/);
+ assert.match(memo,/entry\.files\.length>0/);
+ assert.match(memo,/memo-thread-files/);
  assert.match(media,/aria-label=\{`Download \$\{file\.filename\}`\}/);
  assert.match(files,/signedOperationalDownloadUrl/);
  assert.match(files,/download: file\.filename/);
@@ -164,4 +164,16 @@ test('Room sender role and department appear without per-message directory reque
   assert.match(room,/authorDirectoryRef\.current/);
   assert.match(room,/showAuthorDetails && authorDetails\[message\.author_id\]/);
   assert.match(room,/authorUnitsRef\.current/);
+});
+
+test('each Memo is shown as a distinct conversation with chronological entries and scoped replies',()=>{
+ const memo=source('src/screens/Memos.jsx');
+ assert.match(memo,/memo-conversation-list/);
+ assert.match(memo,/memo-thread-timeline/);
+ assert.match(memo,/\.\.\.active\.exchanges\.map/);
+ assert.match(memo,/\.\.\.active\.versions\.filter/);
+ assert.match(memo,/Date\.parse\(a\.at\)-Date\.parse\(b\.at\)/);
+ assert.match(memo,/Send reply to thread/);
+ assert.doesNotMatch(memo,/subjectThread\?/);
+ assert.match(memo,/respond_to_memo/);
 });
