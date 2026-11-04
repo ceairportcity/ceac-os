@@ -18,8 +18,9 @@ test("the shared Updates view routes to each authorised record",()=>{
  assert.match(files.app,/isAdmin \|\| isStaff \|\| isUnitManager/);
 });
 
-test("existing room and Memo journeys remain the initial Messages experience",()=>{
- assert.match(files.inbox,/get\("updates"\)==="1" \? "updates" : "rooms"/);
+test("Memos opens first without hiding Room or Updates journeys",()=>{
+ assert.match(files.inbox,/get\("updates"\)==="1" \? "updates" : new URLSearchParams\(window.location.search\).get\("room"\) \? "rooms" : "memos"/);
+ assert.ok(files.inbox.indexOf('aria-label="Memos" aria-current=') < files.inbox.indexOf('aria-label="Rooms" aria-current='));
  assert.match(files.inbox,/aria-label=\{notifications\?\.count/);
  assert.match(files.hook,/setAppBadge/);
  assert.match(files.shell,/UnreadBadge count=\{notificationCounts\?\.count\}/);
