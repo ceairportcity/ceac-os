@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { supabase } from "../lib/supabase";
+import { memoPersonIdentity } from "../lib/memos";
 import { Info, Trash2, Paperclip } from "lucide-react";
 import "./MessagesWorkspace.css";
 import { OperationalMediaList } from "../components/OperationalFiles";
@@ -73,6 +74,8 @@ export default function Room({
   const [replyTo, setReplyTo] = useState(null);
   const [participants, setParticipants] = useState([]);
   const authorDirectoryRef = useRef(null);
+  const authorUnitsRef = useRef(null);
+  const [authorDetails,setAuthorDetails] = useState({});
   const [mentions, setMentions] = useState([]);
   const [selectedRefs, setSelectedRefs] = useState(() => context?.reference ? [context.reference] : []);
   const [workOptions, setWorkOptions] = useState([]);
@@ -145,6 +148,29 @@ export default function Room({
     setBody(current => current.trim() ? current : `@${person.full_name} `);
     setMentions(current => current.includes(person.id) ? current : [...current,person.id]);
   }, [room?.id,context?.mentionProfileId,participants,me.is_exec,me.is_admin]);
+
+  // Sender details load in the background, once per Room, without delaying the timeline.
+  // Reuse the authorised directory promise if a missing profile join requested it.
+  useEffect(() => {
+    if(!room?.id){setAuthorDetails({});return;}
+    let active=true;
+    if(!authorDirectoryRef.current){
+      authorDirectoryRef.current=supabase.rpc("memo_recipient_directory").then(({data,error})=>
+        error?{}:Object.fromEntries((data||[]).filter(p=>p?.id).map(p=>[p.id,p]))
+      ).catch(()=>({}));
+    }
+    if(!authorUnitsRef.current){
+      authorUnitsRef.current=supabase.from("units").select("id,name")
+        .eq("org_id",me.org_id).eq("active",true).then(({data,error})=>error?[]:data||[]).catch(()=>[]);
+    }
+    void Promise.all([authorDirectoryRef.current,authorUnitsRef.current]).then(([directory,units])=>{
+      if(!active)return;
+      setAuthorDetails(Object.fromEntries(Object.entries(directory)
+        .map(([id,person])=>[id,memoPersonIdentity(person,units).detail])
+        .filter(([,detail])=>Boolean(detail))));
+    });
+    return()=>{active=false;};
+  },[room?.id,me.org_id]);
 
   useEffect(() => { loadInitialRoom(); }, [context?.kind, context?.unitId, context?.subTeamId, context?.projectId]);
   useEffect(() => {
@@ -373,7 +399,7 @@ export default function Room({
     if(needsNames && !authorDirectoryRef.current){
       authorDirectoryRef.current=supabase.rpc("memo_recipient_directory").then(({data,error})=>{
         if(error)return {};
-        return Object.fromEntries((data||[]).filter(person=>person.full_name).map(person=>[person.id,person.full_name]));
+        return Object.fromEntries((data||[]).filter(person=>person.full_name).map(person=>[person.id,person]));
       }).catch(()=>({}));
     }
     const [grouped,directory]=await Promise.all([
@@ -382,10 +408,10 @@ export default function Room({
     ]);
     return rows.map(row=>({
       ...row,
-      profiles:row.profiles?.full_name?row.profiles:directory[row.author_id]?{full_name:directory[row.author_id]}:row.profiles,
+      profiles:row.profiles?.full_name?row.profiles:directory[row.author_id]?.full_name?{full_name:directory[row.author_id].full_name}:row.profiles,
       room_mentions:(row.room_mentions||[]).map(mention=>({
         ...mention,profiles:mention.profiles?.full_name?mention.profiles:
-          directory[mention.profile_id]?{full_name:directory[mention.profile_id]}:mention.profiles
+          directory[mention.profile_id]?.full_name?{full_name:directory[mention.profile_id].full_name}:mention.profiles
       })),
       operational_files:grouped.get(row.id)||[]
     }));
@@ -636,6 +662,7 @@ export default function Room({
   }
 
   let previousDay = null;
+  let previousAuthorId = null;
   let unreadShown = false;
 
   return <div className={`body room-screen msg-room ${embedded ? "is-embedded" : ""}`}>
@@ -687,6 +714,8 @@ export default function Room({
         const currentDay = new Date(message.created_at).toLocaleDateString("en-CA", { timeZone:"Africa/Accra" });
         const showDay = currentDay !== previousDay;
         previousDay = currentDay;
+        const showAuthorDetails = showDay || previousAuthorId !== message.author_id;
+        previousAuthorId = message.author_id;
         const mine = message.author_id === me.id;
         const parent = message.reply_to_id ? parentById.get(message.reply_to_id) : null;
         const isUnread = !unreadShown && lastReadAt && !mine && new Date(message.created_at) > new Date(lastReadAt);
@@ -700,6 +729,7 @@ export default function Room({
               <strong>{mine ? (me.full_name || "You")+" (You)" : message.profiles?.full_name || "Name unavailable"}</strong>
               <time>{timeLabel(message.created_at)}</time>
             </div>
+            {showAuthorDetails && authorDetails[message.author_id] && <small className="room-author-detail">{authorDetails[message.author_id]}</small>}
             {message.reply_to_id && !parent && <div className="room-reply-context">Reply to an earlier or unavailable message</div>}
             {parent && <div className="room-reply-context">
               <strong>{parent.author_id === me.id ? (me.full_name || "You")+" (You)" : parent.profiles?.full_name || "Earlier message"}</strong>

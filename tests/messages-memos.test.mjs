@@ -156,3 +156,12 @@ test('Room fallback polling is bounded while realtime provides active message de
  assert.ok(room.includes('window.setInterval(refresh, 180000)'));
  assert.match(room,/postgres_changes/);
 });
+
+// Room sender context is shared and bounded, not a new request for every message.
+test('Room sender role and department appear without per-message directory requests',()=>{
+  const room=source('src/screens/Room.jsx');
+  assert.match(room,/memoPersonIdentity\(person,units\)\.detail/);
+  assert.match(room,/authorDirectoryRef\.current/);
+  assert.match(room,/showAuthorDetails && authorDetails\[message\.author_id\]/);
+  assert.match(room,/authorUnitsRef\.current/);
+});
