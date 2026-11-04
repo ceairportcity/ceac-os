@@ -47,7 +47,7 @@
 .s2-project-aside li strong{display:block;font-weight:650}.s2-project-aside li small{display:block;margin-top:2px}
 .s2-project-aside li button{font-size:12px}
 @media(max-width:1100px){.s2-project-layout{grid-template-columns:1fr}.s2-project-aside{position:static}.s2-project-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2-project-metrics>div:nth-child(2){border-right:0}.s2-project-metrics>div:nth-child(-n+2){border-bottom:1px solid #e8eff8}}
-@media(max-width:600px){.s2-project-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.s2-project-metrics>div{padding:12px}.s2-project-metrics strong{font-size:22px}.s2-project-panel{padding:14px}.s2-project-filters{grid-template-columns:1fr 1fr}.s2-project-filters input{grid-column:span 2}.s2-project-table-scroll table{min-width:540px}.s2-project-person{min-width:calc(50% - 12px)}}
+@media(max-width:600px){.s2-project-metrics>div{padding:12px}.s2-project-metrics strong{font-size:22px}.s2-project-panel{padding:14px}.s2-project-filters{grid-template-columns:1fr 1fr}.s2-project-filters input{grid-column:span 2}.s2-project-person{min-width:calc(50% - 12px)}}
 
 .s2-project-personcell{display:inline-flex;align-items:center;gap:7px;min-width:0;white-space:nowrap}
 
@@ -164,31 +164,15 @@ font-size:12px!important;
 
 .s2-project-progress-line>small{white-space:normal}
 
-.s2-project[data-project-view="overview"] .s2-project-team-panel,
-.s2-project[data-project-view="overview"] .s2-project-tasks-panel,
-.s2-project[data-project-view="overview"] .s2-project-detail-milestones,
-.s2-project[data-project-view="overview"] .s2-project-recent-activity,
-.s2-project[data-project-view="people"] .s2-project-metrics,
-.s2-project[data-project-view="people"] .s2-project-tasks-panel,
-.s2-project[data-project-view="people"] .s2-project-aside,
-.s2-project[data-project-view="work"] .s2-project-metrics,
-.s2-project[data-project-view="work"] .s2-project-team-panel,
-.s2-project[data-project-view="work"] .s2-project-aside,
-.s2-project[data-project-view="milestones"] .s2-project-metrics,
-.s2-project[data-project-view="milestones"] .s2-project-team-panel,
-.s2-project[data-project-view="milestones"] .s2-project-tasks-panel,
-.s2-project[data-project-view="milestones"] .s2-project-aside > header,
-.s2-project[data-project-view="milestones"] .s2-project-aside > dl,
-.s2-project[data-project-view="milestones"] .s2-project-aside > section:not(.s2-project-detail-milestones):not(.s2-project-recent-activity) {
-display: none;
-}
+.s2-project[data-project-view="overview"] :is(.s2-project-team-panel,.s2-project-tasks-panel,.s2-project-detail-milestones,.s2-project-recent-activity),
+.s2-project[data-project-view="people"] :is(.s2-project-metrics,.s2-project-tasks-panel,.s2-project-aside),
+.s2-project[data-project-view="work"] :is(.s2-project-metrics,.s2-project-team-panel,.s2-project-aside),
+.s2-project[data-project-view="milestones"] :is(.s2-project-metrics,.s2-project-team-panel,.s2-project-tasks-panel),
+.s2-project[data-project-view="milestones"] .s2-project-aside>:is(header,dl),
+.s2-project[data-project-view="milestones"] .s2-project-aside>section:not(.s2-project-detail-milestones):not(.s2-project-recent-activity){display:none}
 .s2-project[data-project-view="people"] .s2-project-layout,
-.s2-project[data-project-view="work"] .s2-project-layout {
-grid-template-columns: minmax(0, 1fr);
-}
-.s2-project[data-project-view="milestones"] .s2-project-layout {
-grid-template-columns: minmax(0, 1fr);
-}
+.s2-project[data-project-view="work"] .s2-project-layout,
+.s2-project[data-project-view="milestones"] .s2-project-layout{grid-template-columns:minmax(0,1fr)}
 .s2-project[data-project-view="milestones"] .s2-project-content {
 display: none;
 }
@@ -220,26 +204,14 @@ align-items: center;
 gap: 8px;
 margin: 8px 0 14px;
 }
-.s2-project-reader .s2-project-quick-actions > button,
-.s2-project-reader .s2-project-quick-actions > .btn,
-.s2-project-reader .s2-project-quick-actions .btn {
-width: auto;
-max-width: 100%;
-min-height: 40px;
-padding-inline: 14px;
-flex: 0 0 auto;
-}
+.s2-project-reader .s2-project-quick-actions :is(button,.btn){width:auto;max-width:100%;min-height:40px;padding-inline:14px;flex:0 0 auto}
 
 @media(max-width:640px){
-.s2-project .s2-project-tasks-panel .s2-project-table-scroll{overflow:visible}
-.s2-project .s2-project-tasks-panel table{display:block;min-width:0!important;width:100%}
-.s2-project .s2-project-tasks-panel thead{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-.s2-project .s2-project-tasks-panel tbody{display:grid;gap:10px}
-.s2-project .s2-project-tasks-panel tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px;padding:13px;border:1px solid var(--ev2-line,#dce7f2);border-radius:10px;background:#fff;min-width:0}
-.s2-project .s2-project-tasks-panel tbody td{display:block;border:0;padding:0;min-width:0;overflow-wrap:anywhere}
-.s2-project .s2-project-tasks-panel tbody td:first-child{grid-column:1/-1;padding-bottom:11px;border-bottom:1px solid var(--ev2-line,#dce7f2)}
-.s2-project .s2-project-tasks-panel tbody td:not(:first-child)::before{content:attr(data-label);display:block;margin-bottom:5px;color:var(--muted,#526777);font-size:12px;line-height:1.3;font-weight:700}
-.s2-project .s2-project-tasks-panel .s2-project-task{font-size:13px!important;line-height:1.45}
-.s2-project .s2-project-tasks-panel .s2-project-personcell{white-space:normal;align-items:start}
-.s2-project .s2-project-tasks-panel .s2-project-unit-chip{max-width:100%;white-space:normal}
+.s2-project-tasks-panel .s2-project-table-scroll{overflow:visible}
+.s2-project-tasks-panel :is(table,tbody,tr,td){display:block}
+.s2-project-tasks-panel table{min-width:0!important}
+.s2-project-tasks-panel thead{position:absolute;clip-path:inset(50%)}
+.s2-project-tasks-panel tr{margin-bottom:10px;padding:12px;border:1px solid #dce7f2;border-radius:10px}
+.s2-project-tasks-panel td{border:0;padding:5px 0;white-space:normal;overflow-wrap:anywhere}
+.s2-project-tasks-panel td::before{content:attr(data-label);font-weight:700;margin-right:8px}
 }
