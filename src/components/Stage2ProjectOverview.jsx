@@ -1,4 +1,5 @@
 import MemoProjectOrigin from "./MemoProjectOrigin";
+import { projectCreatorLabel, projectCreatedAtLabel } from "../lib/projectAttribution";
 import { useEffect, useMemo, useState } from "react";
 import { deadlineOverdue } from "../lib/stage2AchievementMetrics";
 import { currentProjectActions, visibleProjectPeople } from "../lib/projectContributionPeople";
@@ -183,7 +184,7 @@ export default function Stage2ProjectOverview({ project, openWork, addWork, show
       </div>
       <aside className="s2-project-panel s2-project-aside">
         <header><h2>About this project</h2></header>
-        <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Lead unit</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>End date</dt><dd>{when(project.ends_on)}</dd></div></dl>
+        <dl><div><dt>Status</dt><dd>{project.status || "Not recorded"}</dd></div><div><dt>Lead unit</dt><dd>{project.units?.name || "Not recorded"}</dd></div><div><dt>Start date</dt><dd>{when(project.starts_on)}</dd></div><div><dt>End date</dt><dd>{when(project.ends_on)}</dd></div><div><dt>Created by</dt><dd>{projectCreatorLabel(project)}</dd></div><div><dt>Created on</dt><dd>{projectCreatedAtLabel(project.created_at)}</dd></div></dl>
         {project.purpose && <section><h3>Description</h3><p>{project.purpose}</p></section>}
         <section className="s2-project-detail-milestones"><h3>Key milestones</h3>{project.milestones === null ? <p>Milestone records are unavailable to this view.</p> : project.milestones?.length ? <ol className="s2-project-milestones">{project.milestones.map((milestone) => <li key={milestone.id} className={milestone.status === "achieved" ? "is-complete" : ""}><strong>{milestone.name}</strong><small>{String(milestone.status || "Not recorded").replaceAll("_", " ")} · {milestone.completed_at ? "Completed " + when(milestone.completed_at) : milestone.target_on ? "Target " + when(milestone.target_on) : "No recorded date"}</small></li>)}</ol> : <p>No milestones recorded.</p>}</section>
         <section className="s2-project-recent-activity" aria-label="Recent visible project activity" aria-description="Recorded actions visible to your account; entries are not automatic approvals.">
