@@ -111,3 +111,33 @@
 @media(max-width:760px){.memo-reader>header{flex-wrap:wrap}.memo-reader>header h2{flex:1 1 calc(100% - 48px)}.memo-reader>header .memo-status{margin-left:45px}.memo-reader>header .memo-follow-up{margin-left:auto}}
 
 .room-author-detail{display:block;margin-top:2px;color:#64788e}
+
+
+/* Formal Memo conversation: audit-safe timeline and restrained CEAC blue. */
+.memo-conversation-list{display:grid;align-content:start}
+.memo-conversation-list .memo-row{border-left:3px solid transparent;padding:16px;gap:7px}
+.memo-conversation-list .memo-row.selected{border-left-color:#1678c9;background:#edf5ff}
+.memo-reader[data-reading]{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,235px);gap:0 22px;align-content:start}
+.memo-reader[data-reading]>header{grid-column:1/-1;align-items:center}
+.memo-document{grid-column:1;grid-row:2;min-width:0}
+.memo-thread-details{grid-column:2;grid-row:2;align-self:start;border:1px solid #e1e9f3;background:#fbfcff;border-radius:12px;padding:17px;position:sticky;top:12px}
+.memo-thread-details h3{font-size:14px;margin:0 0 12px}
+.memo-thread-details dl{display:grid;gap:4px;margin:0 0 16px}
+.memo-thread-details dt{font-size:11px;color:#62748b;margin-top:9px}
+.memo-thread-details dd{margin:0;overflow-wrap:anywhere;font-size:13px}
+.memo-thread-details>small{line-height:1.5}
+.memo-thread-intro{display:flex;gap:10px;align-items:baseline;justify-content:space-between;border-bottom:1px solid #e3eaf2;padding:14px 0}
+.memo-thread-timeline{padding:12px 0}
+.memo-thread-entry{position:relative;display:flex;gap:14px;border-left:2px solid #dce8f4;margin:0 0 0 18px;padding:8px 0 24px 24px}
+.memo-thread-avatar{position:absolute;left:-18px;top:8px;width:34px;height:34px;background:#e8f3fe;border-radius:10px}
+.memo-thread-entry-content{min-width:0;width:100%}
+.memo-thread-entry-heading{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.memo-thread-entry-heading strong{color:#1b3450}
+.memo-thread-entry-heading span{color:#47749d;font-size:12px}
+.memo-thread-entry-heading time{margin-left:auto;color:#68788a}
+.memo-thread-entry .memo-body{font-size:14px;line-height:1.65}
+.memo-thread-files{margin-top:10px}
+.memo-response{grid-column:1;grid-row:3;border-top:1px solid #e4ebf3}
+.memo-project{grid-column:1/-1}
+@media(max-width:1100px){.memo-reader[data-reading]{display:block}.memo-thread-details{position:static;margin:12px 0}.memo-response{margin-top:12px}}
+@media(max-width:760px){.memo-thread-entry{gap:10px;padding-left:20px}.memo-thread-intro{align-items:start;flex-direction:column}}
