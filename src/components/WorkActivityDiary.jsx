@@ -226,7 +226,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     {editor ? <button type="button" className="btn btn-sm" disabled={busy || Boolean(savedActivity.current)}
       onClick={() => setEditor(false)}>Close update</button> : <>
       <button type="button" className={compact ? "btn btn-sm s2-work-inspector-open" : "btn btn-sm"}
-        disabled={busy || Boolean(savedActivity.current)} onClick={() => beginUpdate(ghanaDay())}>+ Today's work</button>
+        disabled={busy || Boolean(savedActivity.current)} onClick={() => beginUpdate(ghanaDay())}>+ Add work update</button>
       <button type="button" className="btn btn-ghost btn-sm"
         disabled={busy || Boolean(savedActivity.current)} onClick={() => beginUpdate(yesterdayInGhana())}>Record earlier work</button>
     </>}
@@ -274,7 +274,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
       {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail. Existing private follow-up tasks stay in Calendar; edit them there if needed.</p>}
-      <label>When did you do this work? <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /><small>Choose the actual work date, even if you are entering it later.</small></label>
+      <label>Activity date <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /><small>Choose the actual work date, even if you are entering it later.</small></label>
       <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
         {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
       </select></label>
