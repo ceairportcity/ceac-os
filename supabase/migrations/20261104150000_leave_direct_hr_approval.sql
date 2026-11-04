@@ -279,4 +279,3 @@ begin
   return v_id;
 end;
 $function$;
-
