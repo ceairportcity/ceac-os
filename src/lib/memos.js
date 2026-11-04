@@ -26,3 +26,35 @@ export function messageTimestamp(value) {
   if (!value) return '';
   return new Intl.DateTimeFormat('en-GB', {timeZone:'Africa/Accra',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value));
 }
+
+/** Group already-authorised Memos in memory. Never merge records or decision histories. */
+export function memoCurrentSubject(memo) {
+  const versions = memo.memo_versions || [];
+  return (versions.find(version => version.id === memo.current_version_id)
+    || [...versions].sort((a,b) => b.version_no-a.version_no)[0])?.subject || "Untitled draft";
+}
+export function memoCorrespondentId(memo,actorId) {
+  if (memo.sender_id !== actorId) return "from:"+memo.sender_id;
+  const recipients = (memo.memo_recipients || []).filter(row => row.kind === "to")
+    .map(row => row.profile_id).filter(Boolean).sort();
+  return "to:"+[...new Set(recipients)].join(",");
+}
+export function memoConversationGroups(memos,actorId,mode="person") {
+  const groups = new Map();
+  for (const memo of memos) {
+    const correspondent = memoCorrespondentId(memo,actorId);
+    const subject = memoCurrentSubject(memo).trim();
+    // A subject shared by two different people is not one private conversation.
+    const key = mode === "subject" ? correspondent+"|"+subject.toLocaleLowerCase() : correspondent;
+    if (!groups.has(key)) groups.set(key,{key,correspondent,subject,items:[],updatedAt:memo.updated_at});
+    groups.get(key).items.push(memo);
+  }
+  return [...groups.values()].sort((a,b)=>Date.parse(b.updatedAt)-Date.parse(a.updatedAt));
+}
+export function memoPersonIdentity(person,units=[]) {
+  const name = String(person?.full_name||"").trim() || "Sender unavailable";
+  const preferred = [...(person?.managed_units||[]),...(person?.member_units||[])];
+  const department = preferred.map(id=>units.find(unit=>unit.id===id)?.name).find(Boolean) || "";
+  const role = String(person?.job_title||"").trim();
+  return {name,role,department,detail:[role,department].filter(Boolean).join(" · ")};
+}
