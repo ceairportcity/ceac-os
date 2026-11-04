@@ -87,7 +87,7 @@ test('Memo refresh retains a clarification draft and section changes protect uns
  await expect(page.getByRole('textbox',{name:'Subject',exact:true})).toHaveValue('Unsaved composition');
 });
 
-for(const width of [1440,320])test(`Memo reader keeps document and authorised actions proportionate at ${width}px`,async({page})=>{
+for(const width of [1440,1024,900,320])test(`Memo reader keeps document and authorised actions proportionate at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:960});await mock(page);
  await page.goto('/tests/fixtures/messages-workspace.html?actor=pastor');
  await page.getByRole('button',{name:'Memos',exact:true}).click();
@@ -99,13 +99,17 @@ for(const width of [1440,320])test(`Memo reader keeps document and authorised ac
  expect(document).toBeTruthy();expect(details).toBeTruthy();expect(actions).toBeTruthy();
  await expect(page.locator('.memo-thread-timeline .memo-thread-entry')).toHaveCount(1);
  await expect(page.getByRole('complementary',{name:'Memo details'})).toBeVisible();
- if(width>1100){
+ await expect(page.getByRole('region',{name:'Memo attachments'})).toBeVisible();
+ await expect(page.getByText('Attachments (0)',{exact:true})).toBeVisible();
+ expect(actions.x).toBeGreaterThanOrEqual(details.x);
+ expect(actions.y).toBeGreaterThanOrEqual(details.y);
+ expect(actions.x+actions.width).toBeLessThanOrEqual(details.x+details.width+1);
+ if(width>=900){
+  await expect(page.locator('.memo-reader[data-reading]')).toHaveCSS('display','grid');
   expect(details.x).toBeGreaterThanOrEqual(document.x+document.width-1);
   expect(details.width).toBeLessThanOrEqual(260);
-  expect(actions.y).toBeGreaterThanOrEqual(document.y+document.height-1);
  } else {
   expect(details.y).toBeGreaterThanOrEqual(document.y+document.height-1);
-  expect(actions.y).toBeGreaterThanOrEqual(details.y+details.height-1);
   expect(document.width).toBeGreaterThan(250);
  }
  if(width<=760){

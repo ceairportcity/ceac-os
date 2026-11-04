@@ -334,7 +334,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
                   <div className="memo-thread-entry-heading"><strong>{name(entry.author)}</strong><span>{entry.title}</span><time>{messageTimestamp(entry.at)}</time></div>
                   {identity(entry.author).detail && <small>{identity(entry.author).detail}</small>}
                   <MemoBody body={entry.body || ""}/>
-                  {entry.files.length>0 && <div className="memo-thread-files"><strong>Attachments ({entry.files.length})</strong><OperationalMediaList files={entry.files}/></div>}
+                  {entry.files.length>0 && <div className="memo-thread-files"><span>{entry.files.length} attachment{entry.files.length===1?"":"s"} · see Memo details</span></div>}
                 </div>
               </section>)}
             </div>
@@ -342,16 +342,20 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
           <aside className="memo-thread-details" aria-label="Memo details">
             <h3>Memo details</h3>
             <dl><dt>From</dt><dd>{name(active.sender_id)}</dd><dt>To</dt><dd>{active.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Cc</dt><dd>{active.memo_recipients.filter(r=>r.kind==="cc").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Status</dt><dd>{MEMO_STATUS_LABELS[active.status]}</dd><dt>Attachments</dt><dd>{visibleAttachments.length}</dd></dl>
-            <small>Only authorised participants can view this Memo. Decisions remain separately auditable.</small>
-          </aside>
-          <div className="memo-response">
+            <div className="memo-response">
             {active.sender_id===me.id && ["draft","changes_requested"].includes(active.status) && <button className="btn" type="button" onClick={()=>editMemo(active)}>{active.status==="draft"?"Continue draft":"Prepare revision"}</button>}
             {canDecide && <div className="memo-actions"><strong>Actions</strong><button type="button" className="btn" disabled={busy} onClick={()=>respond("approved")}>Approve proposal</button><button type="button" disabled={busy||!reply.trim()} onClick={()=>respond("changes_requested")}>Request changes</button><button type="button" disabled={busy||!reply.trim()} onClick={()=>respond("declined")}>Decline</button><small>Add a reason when requesting changes or declining.</small></div>}
             {!["draft","closed","declined"].includes(active.status) && <>
               <label>Reply in this conversation<textarea rows={3} maxLength={30000} value={reply} disabled={busy} onChange={e=>setReply(e.target.value)}/></label><button className="btn" type="button" disabled={busy||!reply.trim()} onClick={()=>respond("reply")}>Send reply to thread</button>
               {active.sender_id===me.id && !active.decision_required && <button type="button" disabled={busy} onClick={()=>respond("closed")}>Close correspondence</button>}
             </>}
-          </div>
+            </div>
+            <section className="memo-sidebar-attachments" aria-label="Memo attachments">
+              <h4>Attachments ({visibleAttachments.length})</h4>
+              {visibleAttachments.length>0 ? <OperationalMediaList files={visibleAttachments}/> : <p>No attachments</p>}
+            </section>
+            <small>Only authorised participants can view this Memo. Decisions remain separately auditable.</small>
+          </aside>
           {active.status==="approved" && <div className="memo-project"><p>Approved in principle. Budget approval and implementation authority remain separate.</p>{active.project_id?<button type="button" onClick={()=>openProject?.(active.project_id)}>Open linked project</button>:canCreateProject && <><label>Project title<input value={projectName} maxLength={240} onChange={e=>setProjectName(e.target.value)}/></label><label>Shareable project summary<textarea rows={3} maxLength={4000} value={projectSummary} onChange={e=>setProjectSummary(e.target.value)}/></label><p>The project title and summary will be visible to authorised project participants. The original Memo and attachments remain restricted.</p><label>Project lead department<select value={projectUnit} onChange={e=>setProjectUnit(e.target.value)}><option value="">Choose department</option>{units.filter(u=>active.decision_scope!=="department"||u.id===active.unit_id).map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></label><button type="button" disabled={busy||!projectUnit||!projectName.trim()} onClick={createProject}>Create project from approved Memo</button></>}</div>}
         </>}
       </article>

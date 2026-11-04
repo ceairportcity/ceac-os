@@ -1,4 +1,4 @@
-
+/* CEAC OS visual tokens. */
 :root{--paper:#F2F3EF;--card:#FFFFFF;--ink:#2C332E;--ink-soft:#5F6862;--ink-faint:#8B938D;--line:#E2E4DF;--line-soft:#EDEEEA;--green:#2E5849;--green-soft:#E8EFEB;--green-mid:#4A7A66;--blue:#3E6176;--blue-soft:#EAF1F5;--amber:#8A6516;--amber-soft:#F6EFDF;--brick:#8C4429;--brick-soft:#F6E8E2;--r:8px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body,#root{height:100%}
@@ -81,7 +81,7 @@ input,textarea,select{font:inherit;color:inherit}
 .metric span{display:block;font-size:12px;color:var(--ink-faint);margin-top:3px}
 .module-list{display:flex;flex-wrap:wrap;gap:7px}
 .module-list span{font-size:12px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line-soft);border-radius:20px;padding:5px 11px}
-
+/* Retained approved minimum operational chip typography (issue 70). */
 .home-chip{font-size:12px}
 .home-panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 1px 0 rgba(44,51,46,.02)}
 .home-panel>.row:last-child,.home-drill>.row:last-child{margin-bottom:0}
@@ -108,7 +108,7 @@ input,textarea,select{font:inherit;color:inherit}
 }
 
 
-
+/* Staff + Unit Manager visual system pass — scoped away from Admin/Executive. */
 .staff-app,.manager-app{
   --surface-raised:#FFFFFF;
   --surface-muted:#F7F8F5;
@@ -162,7 +162,7 @@ input,textarea,select{font:inherit;color:inherit}
 .staff-app .sheet-bg,.manager-app .sheet-bg{background:rgba(31,42,36,.42);backdrop-filter:blur(2px)}
 .staff-app .sheet,.manager-app .sheet{box-shadow:0 -18px 50px rgba(30,40,34,.16)}
 
-
+/* Staff stays personal, light and phone-first. */
 .staff-app .body{}
 
 
@@ -175,7 +175,7 @@ input,textarea,select{font:inherit;color:inherit}
   box-shadow:var(--shadow-sm);
 }
 
-
+/* Manager is denser and laptop-oriented while retaining mobile order. */
 .manager-app .home-panel{
   border-radius:12px;
   background:#fff;
@@ -184,7 +184,7 @@ input,textarea,select{font:inherit;color:inherit}
 .manager-app .metric{padding:16px}
 .manager-app .metric b{font-size:22px}
 
-
+/* Remove overly decorative colour fill from factual status rows. */
 .staff-app .home-tone-info,.manager-app .home-tone-info{background:#F5F9FB !important}
 
 @media (hover:hover) and (pointer:fine){
@@ -235,7 +235,7 @@ input,textarea,select{font:inherit;color:inherit}
 }
 
 
-
+/* Staff information-architecture refinement — 20 Sep 2026 */
 .text-action{
   display:inline-flex;align-items:center;justify-content:center;min-height:34px;
   padding:4px 2px;color:var(--green);font-size:12.5px;font-weight:650;
@@ -278,7 +278,7 @@ input,textarea,select{font:inherit;color:inherit}
 .inline-step .field{flex:1}
 .inline-step .text-action{flex:none}
 
-
+/* Team: progressive disclosure, compact context, no repeated role cards. */
 .staff-team .team-summary{
   display:flex;align-items:center;gap:7px;margin-top:13px;
   font-size:12px
@@ -306,7 +306,7 @@ input,textarea,select{font:inherit;color:inherit}
 .team-compact-row strong,.team-person-row strong,.team-resource-row strong{font-size:13.5px}
 .team-compact-row span,.team-person-row span,.team-resource-row span{font-size:11.5px;color:var(--ink-faint)}
 
-
+/* Me becomes an employee workspace rather than one long settings screen. */
 .personal-area{margin-top:22px}
 .area-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:12px}
 .area-heading.secondary{margin-top:30px}
@@ -332,7 +332,7 @@ input,textarea,select{font:inherit;color:inherit}
 .protected-boundary strong{font-size:12px}
 .protected-boundary span{font-size:12px;color:var(--ink-soft);line-height:1.5}
 
-
+/* Record: evidence first, statistics subordinate. */
 .month-field{max-width:190px!important;margin-top:12px!important}
 .record-area{margin-top:22px}
 .record-summary-grid{
@@ -387,7 +387,7 @@ input,textarea,select{font:inherit;color:inherit}
 .staff-app .waiting-action{display:flex;align-items:center;justify-content:flex-start;margin-top:7px}
 .staff-app .waiting-note{font-size:11px;color:var(--ink-faint)}
 
-
+/* Keep five Staff tabs legible on narrow phones. */
 @media (max-width:390px){
 
 
@@ -397,7 +397,8 @@ input,textarea,select{font:inherit;color:inherit}
 }
 
 
-
+/* PWA-first responsive hardening — 21 Sep 2026.
+   Prevent page-level horizontal drift while preserving intentional inner scrollers. */
 html,body,#root{width:100%;max-width:100%;min-height:100%;overflow-x:clip}
 body{min-width:0}
 .app{width:100%;min-width:0;min-height:100vh;min-height:100dvh;overflow-x:clip}
@@ -451,7 +452,8 @@ textarea{width:100%}
 }
 
 
-
+/* Staff redesign v1 — 21 Sep 2026.
+   Premium, personal, PWA-first. Scoped to Staff so Manager/Admin/Executive behaviour is preserved. */
 .staff-app{
   --staff-surface-muted:#EEF2F3;
 }
@@ -481,11 +483,11 @@ textarea{width:100%}
   outline-offset:2px;
 }
 
-
+/* Page identity */
 .staff-page-intro,.staff-home-intro{padding-top:28px}
 .staff-page-intro .h1,.staff-home-intro .h1{margin-top:5px}
 
-
+/* Segmented controls and work filters */
 .staff-app .staff-segment{border-radius:12px
 }
 .staff-app .staff-segment button{color:var(--staff-ink-soft)}
@@ -498,13 +500,13 @@ textarea{width:100%}
 .staff-app .status-filter button.on{color:#fff}
 .staff-app .home-tone-info{background:#F5F7FB!important;border-color:#DCE1EF!important}
 
-
+/* Work list */
 .staff-work .work-actions{margin-top:14px}
 .staff-work .work-actions .btn{min-height:40px}
 .staff-work .work-group{margin-top:26px}
 .staff-work .work-list{border-top-color:var(--staff-line)}
 
-
+/* Team */
 .staff-team .team-summary{color:var(--staff-ink-soft)}
 .staff-team .team-summary strong{color:var(--staff-ink)}
 .staff-team .team-stack{border-top-color:var(--staff-line)}
@@ -516,7 +518,7 @@ textarea{width:100%}
   border-top-color:var(--staff-line-soft)
 }
 
-
+/* Record */
 .staff-record .month-field{background:#fff}
 .staff-record .record-summary-grid>div{
   border-color:var(--staff-line);box-shadow:0 1px 1px rgba(28,39,49,.025)
@@ -532,7 +534,7 @@ textarea{width:100%}
   border-bottom-color:var(--staff-line-soft)
 }
 
-
+/* Work detail */
 .staff-work-detail{max-width:720px!important;margin:0 auto}
 .staff-work-detail .sec{margin-top:28px;color:var(--staff-ink-faint)}
 .staff-work-detail .checklist-card{
@@ -548,7 +550,7 @@ textarea{width:100%}
 .staff-work-detail .work-secondary-action{color:var(--staff-ink-soft)}
 .staff-work-detail .flag{border-radius:12px}
 
-
+/* Staff navigation */
 
 
 
@@ -557,10 +559,10 @@ textarea{width:100%}
 
 .ui-icon{display:block;flex:none}
 
-
+/* Phone acceptance and safe-area behaviour */
 @media (max-width:819px){
   .staff-app .body{
-    padding-top:0;
+    padding-top:0; /* The shared mobile header owns the top safe area. */
     padding-bottom:calc(104px + env(safe-area-inset-bottom))
   }
   .staff-app .staff-work-detail{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
@@ -577,13 +579,13 @@ textarea{width:100%}
   .staff-record .record-summary-grid>div:last-child{grid-column:auto}
 }
 
-
+/* Desktop Staff shell uses the selected charcoal/light direction. */
 @media (min-width:820px){
   .staff-app{max-width:1280px!important;}
   .staff-app .body{padding-left:48px;padding-right:48px}
 }
 
-
+/* Larger text must reflow rather than widen the viewport. */
 @media (max-width:430px){
   .staff-app .btn-sm{white-space:normal}
   .staff-app .area-heading{align-items:flex-start;flex-wrap:wrap}
@@ -591,7 +593,8 @@ textarea{width:100%}
 }
 
 
-
+/* iOS PWA/Safari stability: 16px form text prevents automatic focus zoom.
+   Keep user pinch-zoom enabled; only remove the browser's involuntary form zoom. */
 .staff-app{ -webkit-text-size-adjust:100%; text-size-adjust:100% }
 .staff-app button,.staff-app a{touch-action:manipulation}
 @media (max-width:819px){
@@ -604,7 +607,7 @@ textarea{width:100%}
 }
 
 
-
+/* === CEAC OS premium authentication shell === */
 :root{
   --os-shell:#18232D;
   --os-shell-2:#21313D;
@@ -775,7 +778,11 @@ textarea{width:100%}
   .auth-card h1{font-size:29px}
 }
 
-
+/* ==========================================================================
+   CEAC OS architecture implementation layer — authoritative Staff shell v2
+   This block intentionally sits after legacy rules so the approved visual
+   architecture wins without rewriting established behaviour.
+   ========================================================================== */
 
 .staff-app{
   --staff-shell:#17232D;
@@ -839,7 +846,7 @@ textarea{width:100%}
   background:#fff;box-shadow:0 8px 24px rgba(28,43,53,.035)
 }
 
-
+/* Staff primary pages */
 .staff-app .staff-page-intro{padding-top:24px;margin-bottom:3px}
 .staff-app .staff-page-intro .h1{margin-top:5px}
 .staff-app .staff-page-intro .screen-note{margin-top:7px;max-width:520px}
@@ -864,6 +871,7 @@ textarea{width:100%}
 .staff-app .highlight-card{border-radius:14px}
 .staff-app .checklist-card{border-radius:14px}
 
+/* Bottom navigation: app-like, restrained, safe-area aware */
 
 
 
@@ -871,13 +879,12 @@ textarea{width:100%}
 
 
 
-
-
+/* Sheets on Staff inherit the modern shell. */
 .staff-app .sheet-bg{background:rgba(19,31,39,.48);backdrop-filter:blur(3px)}
 .staff-app .sheet{background:#FBFCFC;border:1px solid #E0E7E9}
 .staff-app .sheet-close{background:#EEF2F3;color:#5D6D77}
 
-
+/* Desktop — same architecture, not a stretched phone. */
 @media (min-width:820px){
   .staff-app{
     max-width:1440px;margin:0 auto;display:flex;min-height:100vh;min-height:100dvh;
@@ -892,7 +899,7 @@ textarea{width:100%}
 
 }
 
-
+/* Narrow-phone composition remains intentional rather than squeezed. */
 @media (max-width:390px){
   .staff-app .body{padding-left:14px;padding-right:14px}
 }
@@ -900,7 +907,7 @@ textarea{width:100%}
   .staff-app .body{padding-left:12px;padding-right:12px}
 }
 
-
+/* Staff secondary surfaces — same system, quieter than Home */
 .staff-app .spin{
   display:flex;align-items:center;justify-content:center;gap:9px;min-height:96px;
   padding:24px;color:var(--staff-ink-faint);font-size:12px
@@ -947,7 +954,7 @@ textarea{width:100%}
 .staff-app .team-compact-row span,.staff-app .team-person-row span,.staff-app .team-resource-row span,
 .staff-app .team-compact-row time{margin-top:3px;color:var(--staff-ink-faint);font-size:10.5px}
 
-
+/* Record — evidence first, editorial rather than dashboard-heavy */
 .staff-record .month-field{max-width:190px;margin-top:16px}
 .staff-record .record-area{margin-top:22px}
 .staff-app .area-heading{
@@ -995,7 +1002,9 @@ textarea{width:100%}
   .staff-record .record-summary-grid>div:last-child{grid-column:1/-1}
 }
 
-
+/* ==========================================================================
+   CEAC OS architecture implementation layer — Manager command surface v2
+   ========================================================================== */
 
 .manager-app{
   --manager-shell:#17232D;
@@ -1042,7 +1051,7 @@ textarea{width:100%}
 .manager-app .p-amber{background:var(--manager-warning-soft);color:var(--manager-warning)}
 .manager-app .p-brick{background:var(--manager-danger-soft);color:var(--manager-danger)}
 
-
+/* Mobile manager shell */
 @media (max-width:819px){
 }
 .manager-home .home-panel{
@@ -1050,7 +1059,7 @@ textarea{width:100%}
   background:#fff;box-shadow:0 8px 24px rgba(28,43,53,.035)
 }
 
-
+/* Manager navigation */
 
 
 
@@ -1059,7 +1068,7 @@ textarea{width:100%}
 .manager-app .sheet-bg{background:rgba(19,31,39,.48);backdrop-filter:blur(3px)}
 .manager-app .sheet{background:#FBFCFC;border:1px solid #E0E7E9}
 
-
+/* Manager operational pages inherit a denser workspace */
 .manager-app .staff-page-intro,.manager-app .manager-page-intro{padding-top:28px}
 .manager-app .sec{margin-top:28px;color:var(--manager-faint)}
 .manager-app .metric-grid{gap:8px}
