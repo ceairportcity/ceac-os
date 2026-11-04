@@ -64,7 +64,7 @@ for(const width of [390,1440]){
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(rows[name]||[])});
   });
   await page.goto('/tests/fixtures/hr-overview-review.html?audit=screen&screen=announcements');
-  await page.getByRole('button',{name:/^Synthetic announcement/}).click();
+  await page.getByRole('button',{name:/Synthetic announcement/}).click();
   let dialog=page.getByRole('dialog',{name:'Synthetic announcement',exact:true});
   await expect(dialog).toHaveClass(/ev2c-composer-drawer/);await expect(dialog).toContainText('Recorded fixture body');
   await dialog.getByRole('button',{name:'Close',exact:true}).click();

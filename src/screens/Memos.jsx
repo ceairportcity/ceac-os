@@ -148,9 +148,9 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     }
     const to=memo.sender_id===me.id
       ?memo.memo_recipients.filter(row=>row.kind==="to").map(row=>row.profile_id)
-      :[memo.sender_id];
-    const cc=memo.sender_id===me.id
-      ?memo.memo_recipients.filter(row=>row.kind==="cc").map(row=>row.profile_id):[];
+      :[memo.sender_id,...memo.memo_recipients.filter(row=>row.kind==="to"&&row.profile_id!==me.id).map(row=>row.profile_id)];
+    // Keep the prior audience as a starting point, while allowing edits.
+    const cc=memo.memo_recipients.filter(row=>row.kind==="cc"&&row.profile_id!==me.id).map(row=>row.profile_id);
     if(!to.length){setNotice("Choose a recipient before continuing this subject.");return;}
     setForm({...fresh(),subject:memoCurrentSubject(memo),to:[...new Set(to)],cc:[...new Set(cc)],followUp:true});
     setSelected(null);editorVersion.current=null;setPendingFiles([]);setDraftFiles([]);setMissingUploads([]);
@@ -323,18 +323,18 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
           const personDetail=correspondents.length===1?identity(correspondents[0]).detail:`${correspondents.length} participants`;
           const open=expandedGroups[group.key] ?? (selected?group.items.some(m=>m.id===selected):index===0);
           const unseen=group.items.filter(m=>m.memo_recipients.some(r=>r.profile_id===me.id&&(!r.last_read_at||new Date(r.last_read_at)<new Date(m.updated_at)))).length;
-          return <section key={group.key} aria-label={personLabel} className="memo-group">
-            <button type="button" className="memo-group-toggle" aria-label={`Toggle correspondence with ${personLabel}, ${group.items.length} ${group.items.length===1?"memo":"memos"}`}
+          return <section key={group.key} aria-label={personLabel} className="memo-group" style={{borderBottom:"1px solid #e5ebf2"}}>
+            <button type="button" className="memo-row memo-group-toggle" style={{display:"flex",flexDirection:"row",alignItems:"center",gap:10,width:"100%",background:"#f9fbfd"}} aria-label={`Toggle correspondence with ${personLabel}, ${group.items.length} ${group.items.length===1?"memo":"memos"}`}
               aria-expanded={open} onClick={()=>setExpandedGroups(current=>({...current,[group.key]:!open}))}>
-              <span className="msg-avatar memo-group-avatar" aria-hidden="true">{initials(grouping==="subject"?group.subject:personLabel)}</span>
-              <span className="memo-group-copy">
+              <span className="msg-avatar memo-group-avatar" style={{position:"static",flex:"none",width:35,height:35,borderRadius:10}} aria-hidden="true">{initials(grouping==="subject"?group.subject:personLabel)}</span>
+              <span className="memo-group-copy" style={{display:"grid",gap:3,flex:1,minWidth:0}}>
                 <strong>{grouping==="person"?personLabel:group.subject}</strong>
                 <small>{grouping==="person"?(personDetail||"Correspondence"):personLabel}</small>
                 <small>{grouping==="person"?memoCurrentSubject(lead):personDetail}</small>
               </span>
-              <span className="memo-group-meta"><small>{group.items.length} {group.items.length===1?"memo":"memos"}{unseen?" · "+unseen+" unread":""}</small><small>{messageTimestamp(group.updatedAt)} · {open?"−":"+"}</small></span>
+              <span className="memo-group-meta" style={{display:"grid",gap:5,textAlign:"right",flex:"none"}}><small>{group.items.length} {group.items.length===1?"memo":"memos"}{unseen?" · "+unseen+" unread":""}</small><small>{messageTimestamp(group.updatedAt)} · {open?"−":"+"}</small></span>
             </button>
-            {open && <div className="memo-group-items">{group.items.map(renderMemoRow)}</div>}
+            {open && <div className="memo-group-items" style={{paddingLeft:8,borderLeft:"2px solid #d7e6f4"}}>{group.items.map(renderMemoRow)}</div>}
           </section>;
         })}
         {rows.length===pageSize && <button type="button" className="memo-row" disabled={loading} onClick={()=>setPageSize(count=>count+200)}>Load earlier correspondence</button>}
@@ -344,12 +344,12 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
         {!selected && <div className="msg-empty"><h2>Your correspondence</h2><p>Read a Memo or create one to share a proposal, recommendation or document.</p></div>}
         {active && <>
           <header><button type="button" aria-label="Back to Memo list" onClick={()=>setSelected(null)}><ArrowLeft size={18}/></button><h2>{active.versions.filter(v=>v.sent_at).at(-1)?.subject || active.versions.at(-1)?.subject || "Untitled draft"}</h2><span className="memo-status">{MEMO_STATUS_LABELS[active.status]}</span>
-          {active.status!=="draft" && <button type="button" className="memo-follow-up" onClick={()=>continueSubject(active)}>Continue subject</button>}</header>
+          {active.status!=="draft" && <button type="button" className="memo-follow-up btn btn-ghost" style={{width:"fit-content",padding:"8px 12px"}} onClick={()=>continueSubject(active)}>Continue subject</button>}</header>
           <div className="memo-document">
-            {subjectThread?.items.length>1 && <nav className="memo-thread-index" aria-label="Correspondence on this subject">
+            {subjectThread?.items.length>1 && <nav className="memo-thread-index" style={{padding:"12px 0",borderBottom:"1px solid #e8edf3"}} aria-label="Correspondence on this subject">
               <strong>This subject · {subjectThread.items.length} dated records</strong>
-              <div>{subjectThread.items.slice(0,20).map(record=><button type="button" key={record.id}
-                aria-current={record.id===active.id?"page":undefined} onClick={()=>setSelected(record.id)}>
+              <div style={{display:"flex",gap:8,overflowX:"auto",padding:"8px 0"}}>{subjectThread.items.slice(0,20).map(record=><button type="button" key={record.id}
+                aria-current={record.id===active.id?"page":undefined} style={{whiteSpace:"nowrap",padding:"7px 10px",background:record.id===active.id?"#e8f2fc":"#f5f7fa"}} onClick={()=>setSelected(record.id)}>
                 {messageTimestamp(record.updated_at)} · {name(record.sender_id)}{record.id===active.id?" · Current":""}
               </button>)}</div>
               {subjectThread.items.length>20 && <small>Showing the 20 latest records. Earlier records remain in the correspondence list.</small>}

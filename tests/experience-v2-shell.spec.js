@@ -359,7 +359,7 @@ test("OCR6C Global Search opens authorised People and Announcement records", asy
   const announcement = announcements.getByRole("button", { name: /OCR6 Search Announcement/ });
   await expect(announcement).toBeVisible();
   await announcement.click();
-  await expect(page.getByText("OCR6 searchable announcement record", { exact: true })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole("dialog",{name:"OCR6 Search Announcement"}).getByText("OCR6 searchable announcement record", { exact: true })).toBeVisible({ timeout: 15000 });
 });
 
 test("OCR6C Organisation search remains available while an unrelated authorised catalogue is pending", async ({ page }) => {

@@ -141,7 +141,7 @@ test("Staff sees independent work actions and unread updates without read-throug
   await expect(page.getByRole("heading", { name: "Messages", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Announcements",exact:true }).click();
   await expect(page.getByRole("heading", { name: "Announcements", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: /New · Phase 4 policy update/ }).click();
+  await page.getByRole("button", { name: /Phase 4 policy update/ }).click();
   await expect(page.getByText("This known fixture proves that unread communication remains separate from work action state.", { exact: true })).toBeVisible();
   const receiptAfterAnnouncement = await requireSuccess(service.from("announcement_receipts")
     .select("read_at,acknowledged_at")

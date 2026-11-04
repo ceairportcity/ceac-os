@@ -226,7 +226,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
         const priority=announcement.priority==="urgent"?"Urgent":announcement.priority==="important"?"Important":null;
         return <article className={`ceac-announcement-card row ${unread?"home-tone-info":""}`} key={announcement.id}
           style={{background:"#fff",border:"1px solid #e3e9f1",borderLeft:priority==="Urgent"?"3px solid #b23b35":"1px solid #e3e9f1",borderRadius:13,padding:"16px 18px",boxShadow:"0 3px 13px rgba(22,44,65,.035)"}}>
-          <button type="button" style={{width:"100%",textAlign:"left",display:"grid",gap:8,background:"none",border:0,padding:0}}
+          <button type="button" aria-label={announcement.title} style={{width:"100%",textAlign:"left",display:"grid",gap:8,background:"none",border:0,padding:0}}
             onClick={()=>openAnnouncement(announcement)}>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",fontSize:12,color:"#6c7e91"}}>
               {unread && <strong style={{color:"#145e9b"}}>Unread</strong>}
@@ -236,7 +236,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
             </div>
             <h2 style={{margin:0,color:"#20384f",fontSize:17,fontWeight:700,lineHeight:1.4}}>{announcement.title}</h2>
             <div style={{fontSize:13,color:"#4f6378"}}><strong>{author.name}</strong>{author.detail?" · "+author.detail:""}</div>
-            <div style={{fontSize:13,lineHeight:1.5,color:"#62768b",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",whiteSpace:"pre-wrap"}}>{announcement.body}</div>
+            <div style={{fontSize:13,lineHeight:1.5,color:"#62768b",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",whiteSpace:"pre-wrap"}}>Preview · {announcement.body}</div>
           </button>
           {canPublish && <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginTop:12}}>
             {announcement.status==="draft" && <><button className="btn btn-ghost btn-sm" onClick={()=>editAnnouncement(announcement)}>Edit</button><button className="btn btn-sm" onClick={()=>changeStatus(announcement,"publish")} disabled={busy}>Publish</button></>}
