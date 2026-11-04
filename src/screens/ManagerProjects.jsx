@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { dateOnly, dueLabel } from "../lib/time";
+import { projectCreatorLabel, projectCreatedAtLabel } from "../lib/projectAttribution";
 import { Pill, Sheet, statusPill, ProductNotice, LoadingState } from "../components/bits";
 import ManagerProjectClose from "./ManagerProjectClose";
 import Stage2ProjectOverview from "../components/Stage2ProjectOverview";
@@ -167,7 +168,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     try {
       const [projectResult, capabilityResult, unitResult] = await Promise.all([
         supabase.from("projects")
-          .select("id, kind, name, purpose, starts_on, ends_on, status, lead_unit_id, units!projects_lead_unit_id_fkey(name)")
+          .select("id, kind, name, purpose, starts_on, ends_on, status, lead_unit_id, created_by, created_at, creator:profiles!projects_created_by_fkey(full_name), units!projects_lead_unit_id_fkey(name)")
           .order("starts_on", { ascending: false, nullsFirst: false }),
         supabase.from("capabilities").select("id").eq("profile_id", me.id).eq("capability", "create_project").maybeSingle(),
         supabase.from("units").select("id, name").eq("org_id", me.org_id).order("name"),
@@ -225,7 +226,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     setError(null); setDetail(null); setDetailScope(null);
     try {
       const projectResult = await supabase.from("projects")
-        .select("id, org_id, kind, name, purpose, starts_on, ends_on, follow_up_ends_on, status, lead_unit_id, units!projects_lead_unit_id_fkey(name)")
+        .select("id, org_id, kind, name, purpose, starts_on, ends_on, follow_up_ends_on, status, lead_unit_id, created_by, created_at, creator:profiles!projects_created_by_fkey(full_name), units!projects_lead_unit_id_fkey(name)")
         .eq("id", projectId).single();
       if (projectResult.error) throw new Error(`Project: ${projectResult.error.message}`);
       const [participantResult, phaseResult, objectiveResult, workResult, budgetResult, spendResult, milestoneResult] = await Promise.all([
@@ -356,6 +357,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
       />
       <section className="fpg-project-facts" aria-label="Project facts">
         <div><span>Lead unit</span><strong>{detail.units?.name || "Not recorded"}</strong></div>
+        <div><span>Created by</span><strong>{projectCreatorLabel(detail, me)}</strong></div>
+        <div><span>Created on</span><strong>{projectCreatedAtLabel(detail.created_at)}</strong></div>
         <div><span>Start date</span><strong>{detail.starts_on ? dateOnly(`${detail.starts_on}T00:00:00`) : "Not recorded"}</strong></div>
         <div><span>Issues</span><strong>{detail.work.length}</strong></div>
         <div><span>Assignees</span><strong>{team.length}</strong></div>
@@ -565,7 +568,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           key={project.id}
           eyebrow={project.role === "lead" ? "Lead unit" : "Participating unit"}
           title={project.name}
-          meta={`${project.objectives.length} objective${project.objectives.length === 1 ? "" : "s"} · ${project.completedTasks} of ${project.taskCount} project tasks completed`}
+          meta={`Created by ${projectCreatorLabel(project, me)} · ${projectCreatedAtLabel(project.created_at)} · ${project.objectives.length} objective${project.objectives.length === 1 ? "" : "s"} · ${project.completedTasks} of ${project.taskCount} project tasks completed`}
           note={project.costs.length
             ? project.costs.map((row) => `${row.currency}: ${row.planned === null ? "no planned amount" : `${money(row.currency, row.planned)} planned`} · ${row.actual === null ? "no actual spend" : `${money(row.currency, row.actual)} actual`}`).join(" | ")
             : "No project cost has been recorded for your unit."}

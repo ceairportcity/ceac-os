@@ -4,6 +4,7 @@ import Stage2ProjectReader from "../components/Stage2ProjectReader";
 import AdminProjectComposer from "../components/AdminProjectComposer";
 import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
+import { projectCreatorLabel, projectCreatedAtLabel } from "../lib/projectAttribution";
 import { LoadingState, ProductNotice } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import { Button } from "../experience-v2/components";
@@ -31,7 +32,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     setLoading(true); setError(null); setProjects([]);
     try{
       const [projectResult,unitResult,objectiveResult,projectUnitResult]=await Promise.all([
-        supabase.from("projects").select("id,name,status,lead_unit_id,starts_on,ends_on,purpose").eq("org_id",me.org_id).order("ends_on",{ascending:true,nullsFirst:false}),
+        supabase.from("projects").select("id,name,status,lead_unit_id,starts_on,ends_on,purpose,created_by,created_at,creator:profiles!projects_created_by_fkey(full_name)").eq("org_id",me.org_id).order("ends_on",{ascending:true,nullsFirst:false}),
         supabase.from("units").select("id,name,active").eq("org_id",me.org_id),
         supabase.from("objectives").select("id,project_id,status").eq("org_id",me.org_id),
         supabase.from("project_units").select("project_id,unit_id"),
@@ -66,7 +67,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
   const attention=projects.filter((project)=>project.objectives.some((row)=>["at_risk","not_met"].includes(row.status)));
   const statusMatches=filter==="active"?active:filter==="planned"?planned:filter==="attention"?attention:projects;
   const query=search.trim().toLocaleLowerCase();
-  const visible=statusMatches.filter(project=>!query||[project.name,project.purpose,project.leadUnit,...project.participating].some(value=>String(value||"").toLocaleLowerCase().includes(query)));
+  const visible=statusMatches.filter(project=>!query||[project.name,project.purpose,project.leadUnit,projectCreatorLabel(project,me),...project.participating].some(value=>String(value||"").toLocaleLowerCase().includes(query)));
   const chooseFilter=(next)=>setFilter(current=>current===next?"all":next);
 
   return <div className="body admin-projects ev2-project-page ev2-project-admin">
@@ -122,7 +123,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
           key={project.id}
           eyebrow="Project"
           title={project.name}
-          meta={`Led by ${project.leadUnit} · ${dateContext}`}
+          meta={`Lead: ${project.leadUnit} · Created by ${projectCreatorLabel(project, me)} · ${projectCreatedAtLabel(project.created_at)} · ${dateContext}`}
           note={`${project.purpose||"No description added yet."} · Other departments: ${projectUnits}`}
           status={project.status}
           facts={facts}
