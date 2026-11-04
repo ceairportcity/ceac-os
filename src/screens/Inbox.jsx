@@ -26,7 +26,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
     setSection(next);
   }
   const verified = loadedScope === scope;
-  useEffect(() => { if(initialView) {setSection(initialView==="updates"?"updates":"rooms");onInitialViewHandled?.();} },[initialView]);
+  useEffect(() => { if(initialView) {setSection(["memos","rooms","updates"].includes(initialView)?initialView:"memos");onInitialViewHandled?.();} },[initialView]);
   useEffect(() => {
     // The Memo and Updates workspaces do not need the legacy Rooms directory.
     // Load Rooms only while viewing them (or explicitly inspecting work actions).
