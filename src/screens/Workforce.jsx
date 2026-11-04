@@ -31,7 +31,6 @@ import {
 
 const DAY_KEYS=["sun","mon","tue","wed","thu","fri","sat"];
 const DAY_LABELS={sun:"Sun",mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sat:"Sat"};
-const OWNER_CONFIRMED_LEAVE_KINDS=new Set(["annual","sick","maternity","paternity","study"]);
 
 function isoDay(value){ return new Date(value).toISOString().slice(0,10); }
 function niceDay(value){ return new Date(value+"T00:00:00Z").toLocaleDateString("en-GB",{timeZone:"Africa/Accra",weekday:"short",day:"numeric",month:"short"}); }
@@ -121,7 +120,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
   const [policyCarryoverMethod,setPolicyCarryoverMethod]=useState("");
   const [policyCarryoverLimit,setPolicyCarryoverLimit]=useState("");
   const [policyOpeningBalanceRequired,setPolicyOpeningBalanceRequired]=useState(false);
-  const [policyRoute,setPolicyRoute]=useState("");
+  const policyRoute="admin";
 
   useEffect(()=>{
     void load();
@@ -196,7 +195,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
   const dayTypesById=Object.fromEntries(dayTypes.map((d)=>[d.id,d]));
   const activePolicy=policies.find((p)=>p.state==="active")||null;
   const activeRules=activePolicy?policyRules.filter((r)=>r.policy_version_id===activePolicy.id):[];
-  const confirmedLeaveSummary=<><ProductNotice tone="info" title="Confirmed leave process">The 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance. Each completed quarter earns 3.75 annual days and 2.25 shared days, with joiner pro-rating and ordinary year-end expiry subject to protected exceptions. Every leave request follows Manager approval → Administration final approval. Maternity and paternity retain their separate policy treatment.</ProductNotice>{canManage&&!hasConfirmedLeaveSplit(activeRules)?<ProductNotice tone="attention" title="Apply the confirmed leave split">The recorded policy has not yet been aligned to 15 annual days plus one shared nine-day allowance. This records a new policy version and preserves existing requests and history. <button className="btn" disabled={busy||loading||Boolean(datasetErrors["leave policies"]||datasetErrors["leave policy rules"])} onClick={activateConfirmedLeaveSplit}>Activate confirmed 15 + 9 policy</button></ProductNotice>:null}{!canManage&&myLeaveSummary?<ProductNotice tone="info" title="Your recorded leave balances">Annual leave: {myLeaveSummary.balance_available?myLeaveSummary.available_days:"unavailable"} working days available. Shared sick/study allowance: {myLeaveSummary.shared_other?.balance_available?myLeaveSummary.shared_other.available_days:"unavailable"} working days available. Pending requests do not reduce either balance.</ProductNotice>:null}{datasetErrors["my leave balances"]?<ProductNotice tone="attention" title="Your leave balances could not load">{datasetErrors["my leave balances"]}</ProductNotice>:null}{!annualWorkingDayReady?<ProductNotice tone="attention" title="Working-day counts come after migration acceptance">Existing leave requests and approvals remain available. CEAC OS will not invent working-day calculations until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice>:null}</>;
+  const confirmedLeaveSummary=<><ProductNotice tone="info" title="Confirmed leave process">The 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance. Each completed quarter earns 3.75 annual days and 2.25 shared days, with joiner pro-rating and ordinary year-end expiry subject to protected exceptions. Every leave request goes directly to HR for a final decision; managers do not approve or decline leave. Maternity and paternity retain their separate policy treatment.</ProductNotice>{canManage&&!hasConfirmedLeaveSplit(activeRules)?<ProductNotice tone="attention" title="Apply the confirmed leave split">The recorded policy has not yet been aligned to 15 annual days plus one shared nine-day allowance. This records a new policy version and preserves existing requests and history. <button className="btn" disabled={busy||loading||Boolean(datasetErrors["leave policies"]||datasetErrors["leave policy rules"])} onClick={activateConfirmedLeaveSplit}>Activate confirmed 15 + 9 policy</button></ProductNotice>:null}{!canManage&&myLeaveSummary?<ProductNotice tone="info" title="Your recorded leave balances">Annual leave: {myLeaveSummary.balance_available?myLeaveSummary.available_days:"unavailable"} working days available. Shared sick/study allowance: {myLeaveSummary.shared_other?.balance_available?myLeaveSummary.shared_other.available_days:"unavailable"} working days available. Pending requests do not reduce either balance.</ProductNotice>:null}{datasetErrors["my leave balances"]?<ProductNotice tone="attention" title="Your leave balances could not load">{datasetErrors["my leave balances"]}</ProductNotice>:null}{!annualWorkingDayReady?<ProductNotice tone="attention" title="Working-day counts come after migration acceptance">Existing leave requests and approvals remain available. CEAC OS will not invent working-day calculations until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice>:null}</>;
 
   function rawSchedule(profileId,date=today){
     const rows=schedules.filter((s)=>s.profile_id===profileId && s.effective_from<=date && (!s.effective_to || s.effective_to>=date));
@@ -301,7 +300,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
   }
 
   async function leaveAction(id,action){
-    const reason=window.prompt(action==="manager_approved"?"Reason for approval":"Reason for this leave decision");
+    const reason=window.prompt("Reason for this HR leave decision");
     if(!reason) return;
     await runRpc("workforce_leave_action",{p_leave_request_id:id,p_action:action,p_reason:reason},"Leave decision recorded.",["leave","leave history","my leave balances"]);
   }
@@ -413,15 +412,8 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
     return out;
   }
 
-  function ruleForLeave(row){
-    if(OWNER_CONFIRMED_LEAVE_KINDS.has(row.kind)){
-      return {approval_route:"manager_then_admin",routing_confirmed:true,complete:false};
-    }
-    if(!activePolicy) return null;
-    const employmentType=peopleById[row.profile_id]?.employment_type;
-    return activeRules.find((rule)=>rule.leave_kind===row.kind&&rule.employment_type===employmentType)
-      || activeRules.find((rule)=>rule.leave_kind===row.kind&&!rule.employment_type)
-      || null;
+  function ruleForLeave(){
+    return {approval_route:"admin",routing_confirmed:true,complete:true};
   }
 
   function calendarEventsOn(date){
@@ -651,15 +643,9 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
 
   if(isManagerView){
     const managerLeaveRow=(l)=>{
-      const rule=ruleForLeave(l);
-      const route=rule?.approval_route||null;
       const name=l.profiles?.full_name||peopleById[l.profile_id]?.profiles?.full_name||"Employee";
-      const canApprove=l.status==="pending"&&(route==="manager"||route==="manager_then_admin");
-      const routeNote=route==="manager_then_admin"
-        ?"Manager approval → Administration final approval"
-        :l.status==="pending"&&route==="admin"
-          ?"This configured route is Administration approval; no manager approval action is available."
-          :route?"Policy route: "+human(route):"No confirmed route for this leave kind";
+      const routeNote="HR makes all leave decisions. Managers can view request progress but cannot approve or decline.";
+
       return <WorkforceDecisionRow
         key={l.id}
         icon="calendar"
@@ -670,8 +656,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
         statusLabel={human(l.status)}
         statusTone={l.status==="escalated"?"amber":"blue"}
       >
-        {canApprove&&<Button variant="secondary" busy={busy} onClick={()=>leaveAction(l.id,"manager_approved")}>Approve</Button>}
-        {l.status==="pending"&&<Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>}
+        <p className="screen-note">HR handles approval and decline decisions.</p>
       </WorkforceDecisionRow>;
     };
 
@@ -697,7 +682,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
 
       {tab==="today"&&<>
         {locationPanel}
-        <WorkforceSection title="Leave decisions" description="Requests requiring a recorded manager or Administration step appear here according to the established leave route." meta={waitingLeave.length+" waiting"}>
+        <WorkforceSection title="Team leave requests" description="View requests from your team. HR handles all decisions." meta={waitingLeave.length+" waiting"}>
           {waitingLeave.map(managerLeaveRow)}
           {!waitingLeave.length&&<WorkforceEmpty compact title="No leave requests are waiting" description="New requests will appear here with their recorded route and history."/>}
         </WorkforceSection>
@@ -725,7 +710,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
       </>}
 
       {tab==="leave"&&<>
-        <WorkforceSection title="Waiting on a decision" description="Actions follow the existing configured route; this presentation does not create new decision authority." meta={waitingLeave.length+" waiting"}>
+        <WorkforceSection title="Requests awaiting HR" description="Team leave requests are read-only for managers. HR makes all leave decisions." meta={waitingLeave.length+" waiting"}>
           {waitingLeave.map(managerLeaveRow)}
           {!waitingLeave.length&&<WorkforceEmpty compact title="No leave requests are waiting" description="New requests will appear here with their recorded history."/>}
         </WorkforceSection>
@@ -890,7 +875,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
           {!dayTypes.length&&<WorkforceEmpty compact title="No active day types" description="No day types are visible in the current organisation scope."/>}
         </WorkforceSection>
         <WorkforceSection title="Leave policy status">
-          {activePolicy?<WorkforceRecordRow icon="record" eyebrow="Confirmed policy" title={activePolicy.name} meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})} note={activeRules.map((r)=>(leavePoolLabel(r.leave_kind)||human(r.leave_kind))+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · route "+(r.approval_route?human(r.approval_route):"not configured")).join(" | ")} />:<WorkforceEmpty compact title="No confirmed CEAC leave policy is active" description="Legacy seeded defaults are not used as policy."/>}
+          {activePolicy?<WorkforceRecordRow icon="record" eyebrow="Confirmed policy" title={activePolicy.name} meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})} note={activeRules.map((r)=>(leavePoolLabel(r.leave_kind)||human(r.leave_kind))+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · HR approval").join(" | ")} />:<WorkforceEmpty compact title="No confirmed CEAC leave policy is active" description="Legacy seeded defaults are not used as policy."/>}
         </WorkforceSection>
       </>}
 
@@ -914,7 +899,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
         <FieldGroup label="Entitlement unit"><select className="field" aria-label="Policy entitlement unit" value={policyEntitlementUnit} onChange={e=>setPolicyEntitlementUnit(e.target.value)}><option value="">Not configured</option><option value="days">Days</option><option value="weeks">Weeks</option><option value="hours">Hours</option></select></FieldGroup>
         <div className="form-grid two"><FieldGroup label="Accrual method"><select className="field" aria-label="Policy accrual method" value={policyAccrualMethod} onChange={e=>setPolicyAccrualMethod(e.target.value)}><option value="">Not configured</option><option value="none">No accrual</option><option value="annual">Annual</option><option value="quarterly">Quarterly</option><option value="monthly">Monthly</option><option value="manual">Manual</option></select></FieldGroup><FieldGroup label="Accrual rate"><input className="field" aria-label="Policy accrual rate" type="number" min="0" step="0.01" value={policyAccrualRate} onChange={e=>setPolicyAccrualRate(e.target.value)}/></FieldGroup></div>
         <div className="form-grid two"><FieldGroup label="Carry-over method"><select className="field" aria-label="Policy carryover method" value={policyCarryoverMethod} onChange={e=>setPolicyCarryoverMethod(e.target.value)}><option value="">Not configured</option><option value="none">No carry-over</option><option value="limited">Limited</option><option value="full">Full</option><option value="manual">Manual</option></select></FieldGroup><FieldGroup label="Carry-over limit"><input className="field" aria-label="Policy carryover limit" type="number" min="0" step="0.01" value={policyCarryoverLimit} onChange={e=>setPolicyCarryoverLimit(e.target.value)}/></FieldGroup></div>
-        <FieldGroup label="Approval route"><select className="field" aria-label="Policy approval route" value={policyRoute} onChange={e=>setPolicyRoute(e.target.value)}><option value="">Not configured</option><option value="manager">Manager</option><option value="admin">Administration</option><option value="manager_then_admin">Manager then Administration</option></select></FieldGroup>
+        <FieldGroup label="Approval route"><select className="field" aria-label="Policy approval route" value="admin" disabled><option value="admin">Human Resources (HR) only</option></select></FieldGroup>
         <label className="check-row"><input type="checkbox" checked={policyOpeningBalanceRequired} onChange={e=>setPolicyOpeningBalanceRequired(e.target.checked)}/><span>This rule requires an explicitly recorded opening balance before remaining balance may be calculated</span></label>
         <FieldGroup label="Reason for this policy version"><textarea className="field" aria-label="Policy reason" rows="2" value={policyReason} onChange={e=>setPolicyReason(e.target.value)}/></FieldGroup>
         {!policyReady&&<div className="card small">Activation stays disabled until entitlement, unit, accrual method, carry-over method, approval route and any conditional rate/limit are explicitly configured. Nothing is inferred.</div>}
@@ -946,17 +931,16 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
         eyebrow={human(l.kind)+" leave"}
         title={name+" · "+l.days+" day"+(Number(l.days)===1?"":"s")}
         meta={niceDay(l.start_date)+" → "+niceDay(l.end_date)}
-        note={route==="manager_then_admin"
-          ?leaveStageLabel(l,route)
-          :route?"Policy route: "+human(route):"No confirmed route for this leave kind"}
-        statusLabel={l.status==="escalated"?"HR decision needed":l.status==="pending"?"Awaiting approval":human(l.status)}
+        note={leaveStageLabel(l,route)}
+        statusLabel={["pending","escalated"].includes(l.status)?"HR decision needed":human(l.status)}
         statusTone={l.status==="escalated"?"amber":"blue"}
       >
         <p className="screen-note">Request reason: {l.reason?.trim() || "No reason recorded."}</p>
         {l.decision_note&&<p className="screen-note">Recorded decision: {l.decision_note}</p>}
-        {l.status==="pending"&&route==="admin"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
-        {l.status==="escalated"&&canManage&&<Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</Button>}
-        {canManage&&((route==="manager_then_admin"&&l.status==="escalated")||(route!=="manager_then_admin"&&["pending","escalated"].includes(l.status)))&&<Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>}
+        {canManage&&["pending","escalated"].includes(l.status)&&<>
+          <Button busy={busy} onClick={()=>leaveAction(l.id,"admin_approved")}>HR approve</Button>
+          <Button variant="quiet" busy={busy} onClick={()=>leaveAction(l.id,"declined")}>Decline</Button>
+        </>}
       </WorkforceDecisionRow>;
     };
 
@@ -1145,7 +1129,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
       </>}
 
       {tab==="leave"&&<>
-        <WorkforceSection title="Waiting on a decision" description="Administration actions remain on the existing policy route and reviewed workforce RPC." meta={waitingLeave.length+" waiting"}>
+        <WorkforceSection title="Waiting for HR approval" description="HR approves or declines leave directly. No manager approval is required." meta={waitingLeave.length+" waiting"}>
           {waitingLeave.map(adminLeaveRow)}
           {!waitingLeave.length&&<WorkforceEmpty compact title="No leave requests are waiting" description="New requests will appear here with their recorded history."/>}
         </WorkforceSection>
@@ -1222,7 +1206,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
             eyebrow="Confirmed policy"
             title={activePolicy.name}
             meta={"Confirmed "+new Date(activePolicy.confirmed_at).toLocaleString("en-GB",{timeZone:"Africa/Accra"})}
-            note={activeRules.map((r)=>(leavePoolLabel(r.leave_kind)||human(r.leave_kind))+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · accrual "+(r.accrual_method?human(r.accrual_method):"not configured")+" · carry-over "+(r.carryover_method?human(r.carryover_method):"not configured")+" · route "+(r.approval_route?human(r.approval_route):"not configured")+(r.opening_balance_required?" · opening balance required":"")).join(" | ")}
+            note={activeRules.map((r)=>(leavePoolLabel(r.leave_kind)||human(r.leave_kind))+" · "+(r.complete?String(r.entitlement_amount)+" "+r.entitlement_unit:"rule incomplete")+" · accrual "+(r.accrual_method?human(r.accrual_method):"not configured")+" · carry-over "+(r.carryover_method?human(r.carryover_method):"not configured")+" · HR approval"+(r.opening_balance_required?" · opening balance required":"")).join(" | ")}
             statusLabel="Active"
             statusTone="green"
           />:<WorkforceEmpty compact title="No confirmed CEAC leave policy is active" description="Legacy seeded defaults are not used as policy."/>}
@@ -1260,7 +1244,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
         <FieldGroup label="Entitlement unit"><select className="field" aria-label="Policy entitlement unit" value={policyEntitlementUnit} onChange={e=>setPolicyEntitlementUnit(e.target.value)}><option value="">Not configured</option><option value="days">Days</option><option value="weeks">Weeks</option><option value="hours">Hours</option></select></FieldGroup>
         <div className="form-grid two"><FieldGroup label="Accrual method"><select className="field" aria-label="Policy accrual method" value={policyAccrualMethod} onChange={e=>setPolicyAccrualMethod(e.target.value)}><option value="">Not configured</option><option value="none">No accrual</option><option value="annual">Annual</option><option value="quarterly">Quarterly</option><option value="monthly">Monthly</option><option value="manual">Manual</option></select></FieldGroup><FieldGroup label="Accrual rate"><input className="field" aria-label="Policy accrual rate" type="number" min="0" step="0.01" value={policyAccrualRate} onChange={e=>setPolicyAccrualRate(e.target.value)}/></FieldGroup></div>
         <div className="form-grid two"><FieldGroup label="Carry-over method"><select className="field" aria-label="Policy carryover method" value={policyCarryoverMethod} onChange={e=>setPolicyCarryoverMethod(e.target.value)}><option value="">Not configured</option><option value="none">No carry-over</option><option value="limited">Limited</option><option value="full">Full</option><option value="manual">Manual</option></select></FieldGroup><FieldGroup label="Carry-over limit"><input className="field" aria-label="Policy carryover limit" type="number" min="0" step="0.01" value={policyCarryoverLimit} onChange={e=>setPolicyCarryoverLimit(e.target.value)}/></FieldGroup></div>
-        <FieldGroup label="Approval route"><select className="field" aria-label="Policy approval route" value={policyRoute} onChange={e=>setPolicyRoute(e.target.value)}><option value="">Not configured</option><option value="manager">Manager</option><option value="admin">Administration</option><option value="manager_then_admin">Manager then Administration</option></select></FieldGroup>
+        <FieldGroup label="Approval route"><select className="field" aria-label="Policy approval route" value="admin" disabled><option value="admin">Human Resources (HR) only</option></select></FieldGroup>
         <label className="check-row"><input type="checkbox" checked={policyOpeningBalanceRequired} onChange={e=>setPolicyOpeningBalanceRequired(e.target.checked)}/><span>This rule requires an explicitly recorded opening balance before remaining balance may be calculated</span></label>
         <FieldGroup label="Reason for this policy version"><textarea className="field" aria-label="Policy reason" rows="2" value={policyReason} onChange={e=>setPolicyReason(e.target.value)}/></FieldGroup>
         {!policyReady&&<div className="card small">Activation stays disabled until entitlement, unit, accrual method, carry-over method, approval route and any conditional rate/limit are explicitly configured. Nothing is inferred.</div>}
@@ -1398,18 +1382,12 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
         const route=rule?.approval_route||null;
         return <div className="row" key={l.id}>
           <div className="row-t">{l.profiles?.full_name||peopleById[l.profile_id]?.profiles?.full_name||"Employee"} · {l.days} day{Number(l.days)===1?"":"s"} {human(l.kind)}</div>
-          <div className="row-m">{niceDay(l.start_date)} → {niceDay(l.end_date)} · {human(l.status)} · {route==="manager_then_admin"?"Manager approval → Administration final approval":route?"Policy route: "+human(route):"No confirmed route for this leave kind"}</div>
-          {isManager&&!canManage&&l.status==="pending"&&(route==="manager"||route==="manager_then_admin")&&<div className="workforce-row-actions">
-            <button className="btn btn-ghost btn-sm" onClick={()=>leaveAction(l.id,"manager_approved")}>Approve</button>
+          <div className="row-m">{niceDay(l.start_date)} → {niceDay(l.end_date)} · {human(l.status)} · {leaveStageLabel(l,route)}</div>
+          {canManage&&["pending","escalated"].includes(l.status)&&<div className="workforce-row-actions">
+            <button className="btn btn-sm" onClick={()=>leaveAction(l.id,"admin_approved")}>HR approve</button>
             <button className="btn btn-ghost btn-sm" onClick={()=>leaveAction(l.id,"declined")}>Decline</button>
           </div>}
-          {canManage&&<div className="workforce-row-actions">
-            {l.status==="pending"&&route==="admin"&&<button className="btn btn-sm" onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</button>}
-            {l.status==="escalated"&&<button className="btn btn-sm" onClick={()=>leaveAction(l.id,"admin_approved")}>Admin approve</button>}
-            {((route==="manager_then_admin"&&l.status==="escalated")||(route!=="manager_then_admin"&&["pending","escalated"].includes(l.status)))&&<button className="btn btn-ghost btn-sm" onClick={()=>leaveAction(l.id,"declined")}>Decline</button>}
-          </div>}
-          {l.status==="pending"&&route==="manager_then_admin"&&canManage&&<div className="row-note">Waiting for Manager approval before Administration can make the final decision.</div>}
-          {l.status==="pending"&&route==="admin"&&isManager&&!canManage&&<div className="row-note">This configured route is Administration approval; the manager has no approval action here.</div>}
+          {!canManage&&<div className="row-note">HR makes the final leave decision.</div>}
         </div>;
       })}
       {!waitingLeave.length&&<EmptyState compact title="No leave requests are waiting">New requests will appear here with their recorded history.</EmptyState>}
@@ -1495,7 +1473,7 @@ export default function Workforce({ me, initialLeaveRequestId = null, initialSec
         <FieldGroup label="Carry-over method"><select className="field" aria-label="Policy carryover method" value={policyCarryoverMethod} onChange={e=>setPolicyCarryoverMethod(e.target.value)}><option value="">Not configured</option><option value="none">No carry-over</option><option value="limited">Limited</option><option value="full">Full</option><option value="manual">Manual</option></select></FieldGroup>
         <FieldGroup label="Carry-over limit" hint={policyCarryoverMethod==="limited"?"Required for limited carry-over.":"Leave blank unless the confirmed policy defines a limit."}><input className="field" aria-label="Policy carryover limit" type="number" min="0" step="0.01" value={policyCarryoverLimit} onChange={e=>setPolicyCarryoverLimit(e.target.value)}/></FieldGroup>
       </div>
-      <FieldGroup label="Approval route"><select className="field" aria-label="Policy approval route" value={policyRoute} onChange={e=>setPolicyRoute(e.target.value)}><option value="">Not configured</option><option value="manager">Manager</option><option value="admin">Administration</option><option value="manager_then_admin">Manager then Administration</option></select></FieldGroup>
+      <FieldGroup label="Approval route"><select className="field" aria-label="Policy approval route" value="admin" disabled><option value="admin">Human Resources (HR) only</option></select></FieldGroup>
       <label className="check-row"><input type="checkbox" checked={policyOpeningBalanceRequired} onChange={e=>setPolicyOpeningBalanceRequired(e.target.checked)}/><span>This rule requires an explicitly recorded opening balance before remaining balance may be calculated</span></label>
       <FieldGroup label="Reason for this policy version"><textarea className="field" aria-label="Policy reason" rows="2" value={policyReason} onChange={e=>setPolicyReason(e.target.value)}/></FieldGroup>
       {!policyReady&&<div className="card small">Activation stays disabled until entitlement, unit, accrual method, carry-over method, approval route and any conditional rate/limit are explicitly configured. Nothing is inferred.</div>}

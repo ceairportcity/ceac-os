@@ -1,26 +1,15 @@
-const CONFIRMED_KINDS = new Set(["annual", "sick", "maternity", "paternity", "study"]);
-
-function hasConfirmedRoute(request) {
-  return CONFIRMED_KINDS.has(String(request?.kind || "").trim().toLowerCase());
-}
-
-// Presentation guidance only. The reviewed server action remains authoritative.
-export function leaveStageLabel(request, configuredRoute = null) {
-  const route = hasConfirmedRoute(request) ? "manager_then_admin" : configuredRoute;
-  if (request?.status === "pending") {
-    if (route === "manager_then_admin" || route === "manager") return "Waiting for Manager approval";
-    if (route === "admin") return "Waiting for Administration";
-    return "Pending · review the configured approval route";
-  }
-  if (request?.status === "escalated") {
-    return route === "manager_then_admin"
-      ? "Manager approved · Administration final decision required"
-      : "Escalated · review the configured approval route";
-  }
+// Leave requests now go straight to HR; the server RPC is authoritative.
+export function leaveStageLabel(request) {
+  if (request?.status === "pending") return "Waiting for HR approval";
+  if (request?.status === "escalated") return "Awaiting HR final decision";
+  if (request?.status === "approved") return "Approved";
+  if (request?.status === "declined") return "Declined";
+  if (request?.status === "cancelled") return "Cancelled";
   return "Review the recorded request state";
 }
 
-// Overview has no policy context for custom leave kinds; review those in Time & Leave.
+// Only callers with workforce.manage may render decision controls.
+// The server independently enforces HR authority for every request.
 export function canAdminDecideLeave(request) {
-  return hasConfirmedRoute(request) && request?.status === "escalated";
+  return request?.status === "pending" || request?.status === "escalated";
 }
