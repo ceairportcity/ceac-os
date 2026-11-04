@@ -33,6 +33,8 @@ test.describe("Premium redesign R5 Communication", () => {
       await expect(page.getByRole("navigation", {name:"Messages sections"}).getByRole("button", { name: label, exact: true })).toBeVisible();
     }
     await expect(page.getByRole("button", {name:"Direct Messages",exact:true})).toHaveCount(0);
+    await expect(page.getByRole("navigation",{name:"Messages sections"}).getByRole("button",{name:"Memos",exact:true})).toHaveAttribute("aria-current","page");
+    await page.getByRole("navigation",{name:"Messages sections"}).getByRole("button",{name:"Rooms",exact:true}).click();
     await expect(page.getByRole("searchbox", {name:"Search Rooms"})).toBeVisible();
     await page.screenshot({ path: "test-artifacts/redesign-r5-messages.png", fullPage: true });
     await context.close();

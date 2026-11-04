@@ -4,7 +4,7 @@ const actionableDeadlineStatus = /^(not_started|in_progress|assigned)$/i;
 const cancelledMeeting = /cancelled|canceled|deleted/i;
 const decisions = new Set(["case_opened","case_referred","exception_requested","evidence_submitted"]);
 const headings = {
-  memo_sent:"New Memo addressed to you", memo_response:"A Memo has a reply",
+  memo_sent:"New Memo", memo_response:"New reply to a Memo",
   work_assigned:"Work assigned to you", evidence_submitted:"Evidence needs your review",
   evidence_reviewed:"Your evidence was reviewed",
   case_opened:"Attendance question needs your response",
@@ -48,13 +48,22 @@ export function buildCeacNotificationBriefing({
     if(ms(mention.created_at)<=(readByRoom.get(roomId)||0))continue;
     mentionByRoom.set(roomId,(mentionByRoom.get(roomId)||0)+1);
   }
-  const entries=[],roomSummary=[];
+  const entries=[],roomSummary=[],unreadMemoIds=new Set();
   for(const event of events){
     if(event.read_at)continue;
     const kind=event.kind||event.event_kind||"update";
+    const isMemo=event.context_kind==="memo";
+    // Multiple replies on one correspondence appear as one inbox notification.
+    if(isMemo){
+      if(unreadMemoIds.has(event.context_id))continue;
+      unreadMemoIds.add(event.context_id);
+    }
     const urgent=decisions.has(kind);
+    const memoName=isMemo&&event.memo_actor ? " from "+String(event.memo_actor).slice(0,80) : "";
+    const title=isMemo?(kind==="memo_sent"?"New memo"+memoName:"New reply to a memo"+memoName):headings[kind]||"New update for you";
+    const memoMeta=isMemo?[event.memo_detail,event.memo_subject].filter(Boolean).join(" · "):"";
     entries.push(item("event:"+event.id,urgent?"attention":"personal",
-      headings[kind]||"New update for you",urgent?"Action required":"Personal update",
+      title,(memoMeta|| (urgent?"Action required":"Personal update")).slice(0,160),
       ceacNoticeTarget(event),event.created_at,"event"));
   }
   for(const room of rooms){
@@ -132,7 +141,7 @@ export function buildCeacNotificationBriefing({
     items:output,roomPreferences:roomSummary,defaultRoomLevel:defaultLevel,
     attention:output.filter(e=>e.level==="attention").length,
     personal:output.filter(e=>e.level==="personal").length,
-    room:roomUnread,memo:events.filter(e=>!e.read_at&&e.context_kind==="memo").length,
+    room:roomUnread,memo:unreadMemoIds.size,
     count:Math.min(999,personalItems+roomUnread),
   };
 }

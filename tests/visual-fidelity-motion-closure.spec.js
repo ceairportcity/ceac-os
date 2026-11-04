@@ -19,10 +19,10 @@ test("VF7A route continuity uses the accepted motion vocabulary without changing
   const shell = readFileSync("src/experience-v2/shell/shell.css", "utf8");
 
   expect(route).toContain('from "motion/react"');
-  expect(route).toContain("AnimatePresence");
+  expect(route).not.toContain("AnimatePresence");
   expect(route).toContain("useReducedMotion");
   expect(route).toContain("EV2_TRANSITIONS.fast");
-  expect(route).toContain('mode="wait"');
+  expect(route).toContain("key={routeKey}");
   expect(route).not.toMatch(/duration:\s*0\.[0-9]+/);
 
   for (const key of ["item:", "project:", "person:", "room:", "meeting:", "tab:"]) {
@@ -43,6 +43,12 @@ test("VF7A preserves destination and Room URL/back context on the live shell", a
   await expect(page.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
   await expect(page.locator('.ev2-route-transition[data-route-key="tab:projects"]')).toBeVisible();
   expect(new URL(page.url()).searchParams.get("tab")).toBe("projects");
+
+  // A destination must mount without waiting for the previous heavy screen's exit.
+  await page.locator(".ev2s-sidebar").getByRole("button",{name:"Messages",exact:true}).click();
+  await expect(page.locator(".msg-workspace")).toBeVisible({timeout:10000});
+  await expect(page.locator('.ev2-route-transition[data-route-key="tab:messages"]')).toBeVisible();
+  expect(new URL(page.url()).searchParams.get("tab")).toBe("messages");
 
   await page.goto(`/?tab=messages&roomKind=unit&room=${unitA}`);
   await expect(page.locator(".room-screen")).toBeVisible({ timeout: 15000 });
