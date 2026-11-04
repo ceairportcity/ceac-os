@@ -65,30 +65,27 @@ test("the dominant next step contains real CEAC authority-preserving navigation"
   assert.doesNotMatch(overview, /automatically.*approve.*leave/i);
 });
 
-test("confirmed leave stages distinguish Manager approval from Administration final decision", () => {
-  for (const kind of ["annual", "sick", "maternity", "paternity", "study"]) {
+test("all leave kinds route pending and historical escalated requests directly to HR", () => {
+  for (const kind of ["annual", "sick", "maternity", "paternity", "study", "custom"]) {
     const pending = {kind, status:"pending"};
-    assert.equal(leaveStageLabel(pending), "Waiting for Manager approval");
-    assert.equal(leaveStageLabel(pending, "admin"), "Waiting for Manager approval", "confirmed route overrides conflicting legacy defaults");
-    assert.equal(canAdminDecideLeave(pending), false);
-    const reviewed = {...pending, status:"escalated"};
-    assert.equal(leaveStageLabel(reviewed), "Manager approved · Administration final decision required");
-    assert.equal(canAdminDecideLeave(reviewed), true);
+    assert.equal(leaveStageLabel(pending), "Waiting for HR approval");
+    assert.equal(leaveStageLabel(pending, "manager_then_admin"), "Waiting for HR approval",
+      "legacy policy metadata must not reintroduce Manager approval");
+    assert.equal(canAdminDecideLeave(pending), true);
+    const historicallyEscalated = {...pending, status:"escalated"};
+    assert.equal(leaveStageLabel(historicallyEscalated), "Awaiting HR final decision");
+    assert.equal(canAdminDecideLeave(historicallyEscalated), true);
     for (const status of ["approved", "declined", "cancelled", "", undefined]) {
       assert.equal(canAdminDecideLeave({kind, status}), false);
     }
   }
-  assert.equal(canAdminDecideLeave({kind:"study",status:"pending",membership_role:"manager"}), false,
-    "a Manager subject is not an Administration stage override");
 });
 
-test("missing or custom route evidence cannot invent an Overview decision", () => {
-  for (const request of [null, {}, {kind:"custom",status:"pending"}, {kind:"custom",status:"escalated"}]) {
+test("empty or concluded requests cannot acquire an HR decision", () => {
+  for (const request of [null, {}, {status:"approved"}, {status:"declined"}, {status:"cancelled"}]) {
     assert.equal(canAdminDecideLeave(request), false);
-    assert.doesNotMatch(leaveStageLabel(request), /Manager approved|Waiting for Administration/);
+    assert.doesNotMatch(leaveStageLabel(request), /Manager approved|Waiting for Manager/);
   }
-  assert.equal(leaveStageLabel({kind:"custom",status:"pending"}, "admin"), "Waiting for Administration");
-  assert.equal(leaveStageLabel({kind:"custom",status:"pending"}, "manager"), "Waiting for Manager approval");
 });
 
 test("Overview stage guards protect both controls and the mutation handler", () => {
