@@ -19,10 +19,10 @@ test("VF7A route continuity uses the accepted motion vocabulary without changing
   const shell = readFileSync("src/experience-v2/shell/shell.css", "utf8");
 
   expect(route).toContain('from "motion/react"');
-  expect(route).toContain("AnimatePresence");
+  expect(route).not.toContain("AnimatePresence");
   expect(route).toContain("useReducedMotion");
   expect(route).toContain("EV2_TRANSITIONS.fast");
-  expect(route).toContain('mode="sync"');
+  expect(route).toContain("key={routeKey}");
   expect(route).not.toMatch(/duration:\s*0\.[0-9]+/);
 
   for (const key of ["item:", "project:", "person:", "room:", "meeting:", "tab:"]) {
