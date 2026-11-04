@@ -274,7 +274,8 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
       {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail. Existing private follow-up tasks stay in Calendar; edit them there if needed.</p>}
-      <label>Activity date <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /><small>Choose the actual work date, even if you are entering it later.</small></label>
+      <label>Activity date <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /></label>
+      <p className="wide">Choose the actual work date, even if entering work from Saturday, Sunday or an earlier day.</p>
       <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
         {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
       </select></label>
