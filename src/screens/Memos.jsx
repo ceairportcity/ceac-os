@@ -248,8 +248,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     return search.includes(query.trim().toLowerCase());
   });
   const groups=memoConversationGroups(visible,me.id,grouping);
-  const subjectThread=selected?memoConversationGroups(rows.filter(row=>row.status!=="draft"),me.id,"subject")
-    .find(group=>group.items.some(row=>row.id===selected)):null;
+
   const renderMemoRow=memo=>{
     const version=memo.memo_versions.find(v=>v.id===memo.current_version_id)||memo.memo_versions.filter(v=>v.sent_at).sort((a,b)=>b.version_no-a.version_no)[0];
     const unseen=memo.memo_recipients.some(r=>r.profile_id===me.id&&(!r.last_read_at||new Date(r.last_read_at)<new Date(memo.updated_at)));
@@ -312,35 +311,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
         <nav className="memo-filters" aria-label="Memo views">{[["all","All"],["received","Received"],["sent","Sent"],["drafts","Drafts"],["awaiting","Awaiting Decision"],["completed","Completed / Closed"]].map(([key,label])=><button type="button" key={key} aria-current={view===key?"page":undefined} onClick={()=>setView(key)}>{label}</button>)}</nav>
         {loading && <p role="status">Loading Memos…</p>}
         {!loading && !error && !visible.length && <p>No Memos in this view.</p>}
-        <div className="memo-filters" role="group" aria-label="Organise correspondence">
-          <span style={{fontSize:12,alignSelf:"center",color:"#68788a"}}>Group by</span>
-          {[["person","Person"],["subject","Subject"]].map(([key,label])=><button type="button" key={key} aria-pressed={grouping===key} style={{fontWeight:grouping===key?700:400,borderBottomColor:grouping===key?"#1678c9":"transparent"}} onClick={()=>{setGrouping(key);setExpandedGroups({});}}>{label}</button>)}
-        </div>
-        {groups.map((group,index)=>{
-          const lead=group.items[0];
-          const correspondents=memoCorrespondentIds(lead,me.id);
-          const primaryId=lead.sender_id===me.id
-            ?lead.memo_recipients.find(r=>r.kind==="to"&&r.profile_id!==me.id)?.profile_id||correspondents[0]
-            :lead.sender_id;
-          const personLabel=primaryId?name(primaryId):"Correspondence";
-          const others=correspondents.filter(id=>id!==primaryId).length;
-          const personDetail=[primaryId?identity(primaryId).detail:"",others?`+${others} other participant${others===1?"":"s"}`:""].filter(Boolean).join(" · ");
-          const open=expandedGroups[group.key] ?? (selected?group.items.some(m=>m.id===selected):index===0);
-          const unseen=group.items.filter(m=>m.memo_recipients.some(r=>r.profile_id===me.id&&(!r.last_read_at||new Date(r.last_read_at)<new Date(m.updated_at)))).length;
-          return <section key={group.key} aria-label={personLabel} className="memo-group" style={{borderBottom:"1px solid #e5ebf2"}}>
-            <button type="button" className="memo-row memo-group-toggle" style={{display:"flex",flexDirection:"row",alignItems:"center",gap:10,width:"100%",background:"#f9fbfd"}} aria-label={`Toggle correspondence with ${personLabel}, ${group.items.length} ${group.items.length===1?"memo":"memos"}`}
-              aria-expanded={open} onClick={()=>setExpandedGroups(current=>({...current,[group.key]:!open}))}>
-              <span className="msg-avatar memo-group-avatar" style={{position:"static",flex:"none",width:35,height:35,borderRadius:10}} aria-hidden="true">{initials(grouping==="subject"?group.subject:personLabel)}</span>
-              <span className="memo-group-copy" style={{display:"grid",gap:3,flex:1,minWidth:0}}>
-                <strong>{grouping==="person"?personLabel:group.subject}</strong>
-                <small>{grouping==="person"?(personDetail||"Correspondence"):personLabel}</small>
-                {(grouping!=="person"||!open)&&<small>{grouping==="person"?memoCurrentSubject(lead):personDetail}</small>}
-              </span>
-              <span className="memo-group-meta" style={{display:"grid",gap:5,textAlign:"right",flex:"none"}}><small>{group.items.length} {group.items.length===1?"memo":"memos"}{unseen?" · "+unseen+" unread":""}</small><small>{open?"−":messageTimestamp(group.updatedAt)+" · +"}</small></span>
-            </button>
-            {open && <div className="memo-group-items" style={{paddingLeft:8,borderLeft:"2px solid #d7e6f4"}}>{group.items.map(renderMemoRow)}</div>}
-          </section>;
-        })}
+        <div className="memo-conversation-list" aria-label="Memo conversations">{[...visible].sort((a,b)=>Date.parse(b.updated_at)-Date.parse(a.updated_at)).map(renderMemoRow)}</div>
         {rows.length===pageSize && <button type="button" className="memo-row" disabled={loading} onClick={()=>setPageSize(count=>count+200)}>Load earlier correspondence</button>}
       </aside>
       <article className="memo-reader" data-reading={active ? "" : undefined}>
