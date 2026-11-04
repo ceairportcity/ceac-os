@@ -147,7 +147,7 @@ test('continue subject prepares a separate new Memo, without modifying old appro
  assert.match(memo,/function continueSubject\(memo\)/);
  assert.match(memo,/setForm\(\{\.\.\.fresh\(\),subject:memoCurrentSubject\(memo\)/);
  assert.match(memo,/decisionRequired:false/);
- assert.match(memo,/memo-thread-index/);
+ assert.match(memo,/memo-thread-timeline/);
  assert.match(memo,/Finish or discard your recovered draft/);
 });
 
