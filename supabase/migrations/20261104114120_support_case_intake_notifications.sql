@@ -1,4 +1,6 @@
 -- Durable, permission-scoped Technical Support request notifications.
+ALTER TABLE public.ceac_notification_events DROP CONSTRAINT ceac_notification_events_context_kind_check;
+ALTER TABLE public.ceac_notification_events ADD CONSTRAINT ceac_notification_events_context_kind_check CHECK (context_kind IN ('compliance_case','memo','work_item','compliance_policy','compliance_evidence','compliance_exception','support_case'));
 CREATE OR REPLACE FUNCTION private.ceac_notification_context_visible(p_kind text, p_id uuid)
  RETURNS boolean
  LANGUAGE sql
