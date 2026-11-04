@@ -5,7 +5,7 @@ import { PendingFilePicker, OperationalMediaList } from "../components/Operation
 import { listOperationalFiles, uploadOperationalFileWithRetry } from "../lib/operationalFiles";
 import { humanError } from "../lib/productLanguage";
 import { readLocalMemoDraft, saveLocalMemoDraft, clearLocalMemoDraft } from "../lib/memoLocalDrafts";
-import { MEMO_STATUS_LABELS, eligibleMemoDecisionMakers, initials, memoInView, messageTimestamp } from "../lib/memos";
+import { MEMO_STATUS_LABELS, eligibleMemoDecisionMakers, initials, memoInView, messageTimestamp, memoCurrentSubject, memoConversationGroups, memoPersonIdentity } from "../lib/memos";
 
 const fresh = () => ({id:crypto.randomUUID(),versionId:null,updatedAt:null,subject:"",body:"",to:[],cc:[],decisionRequired:false,scope:"department",unitId:"",decisionMakerId:""});
 
@@ -27,6 +27,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   const [rows,setRows]=useState([]),[people,setPeople]=useState([]),[units,setUnits]=useState([]),[fileVersions,setFileVersions]=useState(new Set());
   const [canCreateProject,setCanCreateProject]=useState(Boolean(me.is_admin));
   const [view,setView]=useState("received"),[query,setQuery]=useState(""),[selected,setSelected]=useState(initialMemoId || null);
+  const [grouping,setGrouping]=useState("person"),[expandedGroups,setExpandedGroups]=useState({}),[pageSize,setPageSize]=useState(200);
   const [form,setForm]=useState(null),[dirty,setDirty]=useState(false),[pendingFiles,setPendingFiles]=useState([]),[draftFiles,setDraftFiles]=useState([]);
   const [detail,setDetail]=useState(null),[detailKey,setDetailKey]=useState(""),[reply,setReply]=useState("");
   const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
@@ -36,7 +37,8 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   const localDraftGeneration=useRef(0);
   const [reload,setReload]=useState(0),[projectUnit,setProjectUnit]=useState(""),[projectName,setProjectName]=useState(""),[projectSummary,setProjectSummary]=useState("");
   const writing=useRef(false),textarea=useRef(null),request=useRef(0),responseIntent=useRef(null),editorVersion=useRef(null),projectVersion=useRef(null);
-  const name=id=>people.find(person=>person.id===id)?.full_name || "CEAC colleague";
+  const identity=id=>memoPersonIdentity(people.find(person=>person.id===id) || (id===me.id?me:null),units);
+  const name=id=>identity(id).name;
   useEffect(()=>{
     let active=true;
     setRecoveredDraft(null);
@@ -67,7 +69,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     (async()=>{
       try {
         const [memoResult,directoryResult,unitResult,creationResult]=await Promise.all([
-          supabase.from("memos").select("*,memo_versions!memo_versions_memo_id_fkey(id,version_no,subject,sent_at),memo_recipients(*)").order("updated_at",{ascending:false}).limit(200),
+          supabase.from("memos").select("*,memo_versions!memo_versions_memo_id_fkey(id,version_no,subject,sent_at),memo_recipients(*)").order("updated_at",{ascending:false}).limit(pageSize),
           supabase.rpc("memo_recipient_directory"),supabase.from("units").select("id,name").eq("org_id",me.org_id).eq("active",true).order("name"),
           supabase.from("capabilities").select("id").eq("org_id",me.org_id).eq("profile_id",me.id).eq("capability","create_project").maybeSingle(),
         ]);
@@ -86,7 +88,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
       }catch(failure){if(current){setRows([]);setError(failure.message || "Memos could not be loaded.");}}
       finally{if(current)setLoading(false);}
     })();return()=>{current=false;};
-  },[me.id,me.org_id,me.is_admin,reload]);
+  },[me.id,me.org_id,me.is_admin,reload,pageSize]);
   useEffect(()=>{
     const refresh=()=>{if(!writing.current && document.visibilityState=== "visible")setReload(n=>n+1);};window.addEventListener("focus",refresh);
     const timer=window.setInterval(refresh,30000);
@@ -224,7 +226,21 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     try{const result=await supabase.rpc("create_project_from_memo",{p_id:detail.id,p_version_id:detail.current_version_id,p_lead_unit_id:projectUnit,p_participant_unit_ids:[],p_project_name:projectName,p_project_summary:projectSummary});if(result.error)throw result.error;setNotice("Project created. Budget and implementation authority remain separate.");setReload(n=>n+1);}
     catch(failure){setError(failure.message || "The project could not be confirmed. Retry uses the same memo.");}finally{writing.current=false;setBusy(false);}
   }
-  const visible=rows.filter(row=>memoInView(row,view,me.id)).filter(row=>row.memo_versions?.some(version=>version.subject.toLowerCase().includes(query.toLowerCase())));
+  const visible=rows.filter(row=>memoInView(row,view,me.id)).filter(row=>{
+    const search=[memoCurrentSubject(row),identity(row.sender_id).name,identity(row.sender_id).detail,
+      ...(row.memo_recipients||[]).map(recipient=>identity(recipient.profile_id).name)].join(" ").toLowerCase();
+    return search.includes(query.trim().toLowerCase());
+  });
+  const groups=memoConversationGroups(visible,me.id,grouping);
+  const renderMemoRow=memo=>{
+    const version=memo.memo_versions.find(v=>v.id===memo.current_version_id)||memo.memo_versions.filter(v=>v.sent_at).sort((a,b)=>b.version_no-a.version_no)[0];
+    const unseen=memo.memo_recipients.some(r=>r.profile_id===me.id&&(!r.last_read_at||new Date(r.last_read_at)<new Date(memo.updated_at)));
+    return <button className={`memo-row ${selected===memo.id?"selected":""}`} type="button" key={memo.id} onClick={()=>{setSelected(memo.id);setError("");}}>
+      <strong>{unseen && <span aria-label="Unread">● </span>}{version?.subject || "Untitled draft"}{fileVersions.has(version?.id) && <Paperclip size={13} aria-label="Has attachments"/>}</strong>
+      <small>{memo.sender_id===me.id?`To: ${memo.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ")}`:identity(memo.sender_id).name}</small>
+      <span><time>{messageTimestamp(memo.updated_at)}</time><b>{MEMO_STATUS_LABELS[memo.status]}</b></span>
+    </button>;
+  };
   const active=detailKey===selected?detail:null;
   const visibleAttachments=active?active.versions.filter(v=>v.sent_at || active.sender_id===me.id).flatMap(v=>active.files[v.id] || []):[];
   const decisions=active ? eligibleMemoDecisionMakers(people,{scope:active.decision_scope,unitId:active.unit_id,to:active.memo_recipients.filter(r=>r.kind==="to").map(r=>r.profile_id),senderId:active.sender_id}):[];
@@ -274,12 +290,38 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
           <button type="button" onClick={startNew}>Continue writing</button>
           <button type="button" onClick={discardRecoveredDraft}>Discard this copy</button>
         </div>}
-        <label className="msg-search"><Search size={16}/><input type="search" aria-label="Search Memos" placeholder="Search subjects…" value={query} onChange={e=>setQuery(e.target.value)}/></label>
+        <label className="msg-search"><Search size={16}/><input type="search" aria-label="Search Memos" placeholder="Find people or subjects…" value={query} onChange={e=>setQuery(e.target.value)}/></label>
         <nav className="memo-filters" aria-label="Memo views">{[["received","Received"],["sent","Sent"],["drafts","Drafts"],["awaiting","Awaiting Decision"],["completed","Completed / Closed"]].map(([key,label])=><button type="button" key={key} aria-current={view===key?"page":undefined} onClick={()=>setView(key)}>{label}</button>)}</nav>
         {loading && <p role="status">Loading Memos…</p>}
         {!loading && !error && !visible.length && <p>No Memos in this view.</p>}
-        {visible.map(memo=>{const version=memo.memo_versions.find(v=>v.id===memo.current_version_id)||memo.memo_versions.filter(v=>v.sent_at).sort((a,b)=>b.version_no-a.version_no)[0];const unread=memo.memo_recipients.some(r=>r.profile_id===me.id&&(!r.last_read_at||new Date(r.last_read_at)<new Date(memo.updated_at)));return <button className={`memo-row ${selected===memo.id?"selected":""}`} type="button" key={memo.id} onClick={()=>{setSelected(memo.id);setError("");}}><strong>{unread && <span aria-label="Unread">● </span>}{version?.subject || "Untitled draft"}{fileVersions.has(version?.id) && <Paperclip size={13} aria-label="Has attachments"/>}</strong><small>{memo.sender_id===me.id?`To: ${memo.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ")}`:name(memo.sender_id)}</small><span><time>{messageTimestamp(memo.updated_at)}</time><b>{MEMO_STATUS_LABELS[memo.status]}</b></span></button>;})}
-        {rows.length===200 && <p>Showing the 200 most recently updated Memos.</p>}
+        <div className="memo-filters" role="group" aria-label="Organise correspondence">
+          <span style={{fontSize:12,alignSelf:"center",color:"#68788a"}}>Group by</span>
+          {[["person","Person"],["subject","Subject"]].map(([key,label])=><button type="button" key={key} aria-pressed={grouping===key} style={{fontWeight:grouping===key?700:400,borderBottomColor:grouping===key?"#1678c9":"transparent"}} onClick={()=>{setGrouping(key);setExpandedGroups({});}}>{label}</button>)}
+        </div>
+        {groups.map((group,index)=>{
+          const lead=group.items[0];
+          const outgoing=lead.sender_id===me.id;
+          const recipients=[...new Set((lead.memo_recipients||[]).filter(r=>r.kind==="to").map(r=>r.profile_id))];
+          const personLabel=outgoing?"To: "+recipients.map(id=>name(id)).join(", "):name(lead.sender_id);
+          const personDetail=outgoing?"Sent correspondence":identity(lead.sender_id).detail;
+          const open=expandedGroups[group.key] ?? index===0;
+          const unseen=group.items.filter(m=>m.memo_recipients.some(r=>r.profile_id===me.id&&(!r.last_read_at||new Date(r.last_read_at)<new Date(m.updated_at)))).length;
+          return <section key={group.key} aria-label={personLabel} style={{borderBottom:"1px solid #e7edf4"}}>
+            <button type="button" className="memo-row" aria-expanded={open} onClick={()=>setExpandedGroups(current=>({...current,[group.key]:!open}))} style={{background:open?"#f7f9fc":"#fff",paddingBlock:12}}>
+              <span style={{display:"flex",gap:9,alignItems:"center",justifyContent:"flex-start"}}>
+                <span className="msg-avatar" aria-hidden="true">{initials(grouping==="subject"?group.subject:personLabel)}</span>
+                <span style={{display:"grid",gap:3,minWidth:0}}>
+                  <strong>{grouping==="person"?personLabel:group.subject}</strong>
+                  <small>{grouping==="person"?(personDetail||"Correspondence"):personLabel}</small>
+                  <small>{grouping==="person"?memoCurrentSubject(lead):personDetail}</small>
+                </span>
+              </span>
+              <span><small>{group.items.length} {group.items.length===1?"memo":"memos"}{unseen?" · "+unseen+" unread":""}</small><small>{messageTimestamp(group.updatedAt)} · {open?"−":"+"}</small></span>
+            </button>
+            {open && <div style={{paddingLeft:12,borderLeft:"2px solid #e1e8f1"}}>{group.items.map(renderMemoRow)}</div>}
+          </section>;
+        })}
+        {rows.length===pageSize && <button type="button" className="memo-row" disabled={loading} onClick={()=>setPageSize(count=>count+200)}>Load earlier correspondence</button>}
       </aside>
       <article className="memo-reader" data-reading={active ? "" : undefined}>
         {selected && !active && !error && <p role="status">Opening Memo…</p>}
@@ -288,7 +330,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
           <header><button type="button" aria-label="Back to Memo list" onClick={()=>setSelected(null)}><ArrowLeft size={18}/></button><h2>{active.versions.filter(v=>v.sent_at).at(-1)?.subject || active.versions.at(-1)?.subject || "Untitled draft"}</h2><span className="memo-status">{MEMO_STATUS_LABELS[active.status]}</span></header>
           <div className="memo-document">
             {attachmentError && <p className="msg-error" role="alert">{attachmentError} <button type="button" onClick={()=>setReload(n=>n+1)}>Retry attachments</button></p>}
-            <div className="memo-parties"><span className="msg-avatar" aria-hidden="true">{initials(name(active.sender_id))}</span><div><strong>{name(active.sender_id)}</strong><small>Created {messageTimestamp(active.created_at)}</small></div><div><small>To</small>{active.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ")}</div><div><small>Cc</small>{active.memo_recipients.filter(r=>r.kind==="cc").map(r=>name(r.profile_id)).join(", ") || "—"}</div></div>
+            <div className="memo-parties"><span className="msg-avatar" aria-hidden="true">{initials(name(active.sender_id))}</span><div><strong>{name(active.sender_id)}</strong>{identity(active.sender_id).detail && <small>{identity(active.sender_id).detail}</small>}<small>Created {messageTimestamp(active.created_at)}</small></div><div><small>To</small>{active.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ")}</div><div><small>Cc</small>{active.memo_recipients.filter(r=>r.kind==="cc").map(r=>name(r.profile_id)).join(", ") || "—"}</div></div>
             {visibleAttachments.length>0 && <section className="memo-attachments" aria-label="Memo attachments">
               <h3>Attachments ({visibleAttachments.length})</h3>
               <OperationalMediaList files={visibleAttachments}/>
