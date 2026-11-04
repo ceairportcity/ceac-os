@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
-import { isOverdue } from "../lib/time";
+import { isWorkOverdue } from "../lib/time";
 import { Sheet } from "../components/bits";
 import { humanError } from "../lib/productLanguage";
 import ManagerOverviewV2 from "../experience-v2/manager-overview/ManagerOverviewV2";
@@ -181,7 +181,7 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
       setBlockers([...blockerMap.values()]);
       setMine(requireResult(mineResult, "Your work").filter((item) => {
         const dueToday = item.due_at && new Date(item.due_at) >= today && new Date(item.due_at) < tomorrow;
-        return dueToday || isOverdue(item.due_at) || item.status === "returned" || item.status === "waiting_on";
+        return dueToday || isWorkOverdue(item) || item.status === "returned" || item.status === "waiting_on";
       }));
       setDelegated(requireResult(delegatedResult, "Work you gave out"));
       const sessions = requireResult(sessionResult, "Presence");
@@ -268,7 +268,7 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
       setWeek({
         due: tasks.filter((item) => item.due_at && new Date(item.due_at) >= weekStart && new Date(item.due_at) < nextWeek),
         completed: tasks.filter((item) => ["completed", "self_certified"].includes(item.status) && item.completed_at && new Date(item.completed_at) >= weekStart && new Date(item.completed_at) < nextWeek),
-        overdue: tasks.filter((item) => isOverdue(item.due_at) && !["completed", "self_certified", "cancelled", "waiting_on"].includes(item.status)),
+        overdue: tasks.filter((item) => isWorkOverdue(item)),
       });
 
       const participatingIds = new Set(requireResult(projectUnitResult, "Project units").map((row) => row.project_id));

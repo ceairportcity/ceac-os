@@ -6,6 +6,12 @@ import {OperationalFileList, PendingFilePicker} from "./OperationalFiles";
 import {uploadOperationalFile} from "../lib/operationalFiles";
 import "./WorkActivityDiary.css";
 
+function yesterdayInGhana() {
+  const date = new Date(ghanaDay() + "T12:00:00Z");
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
 function ghanaDay() {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit",
@@ -211,9 +217,20 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     }
   }
 
-  const recordAction = (verified && canRecord && <button type="button" className={compact ? "btn btn-sm s2-work-inspector-open" : "btn btn-sm"} style={{width:"fit-content"}}
-        disabled={busy || Boolean(savedActivity.current)} onClick={() => { setCorrectingId(null); setDate(ghanaDay()); setState("done"); setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");setFiles([]);setPlanNext(true);setWriteError(""); setEditor((open) => !open); }}
-        >{editor ? "Close" : "+ Add work update"}</button>);
+  const beginUpdate = (activityDate) => {
+    setCorrectingId(null); setDate(activityDate); setState("done"); setSummary(""); setOutcome("");
+    setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl(""); setFiles([]);
+    setPlanNext(true); setWriteError(""); setEditor(true);
+  };
+  const recordAction = verified && canRecord && <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+    {editor ? <button type="button" className="btn btn-sm" disabled={busy || Boolean(savedActivity.current)}
+      onClick={() => setEditor(false)}>Close update</button> : <>
+      <button type="button" className={compact ? "btn btn-sm s2-work-inspector-open" : "btn btn-sm"}
+        disabled={busy || Boolean(savedActivity.current)} onClick={() => beginUpdate(ghanaDay())}>+ Add work update</button>
+      <button type="button" className="btn btn-ghost btn-sm"
+        disabled={busy || Boolean(savedActivity.current)} onClick={() => beginUpdate(yesterdayInGhana())}>Record earlier work</button>
+    </>}
+  </div>;
 
   return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
     {compact && <dl className="s2-work-inspector-facts">
@@ -222,7 +239,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     </dl>}
     {!compact && <header>
       <div><span className="eyebrow">Your work</span><h3>Work updates</h3>
-        <p>Record what you did, the result and what happens next. This does not affect attendance or performance ratings.</p>
+        <p>Record today’s work or enter work from an earlier date, including Saturday or Sunday. The activity date is when you worked; CEAC also keeps the actual entry time. This does not affect attendance or performance ratings.</p>
       </div>
       {recordAction}
     </header>}
@@ -257,7 +274,8 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
       {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail. Existing private follow-up tasks stay in Calendar; edit them there if needed.</p>}
-      <label>Activity date <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></label>
+      <label>Activity date <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /></label>
+      <p className="wide">Choose the actual work date, even if entering work from Saturday, Sunday or an earlier day.</p>
       <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
         {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
       </select></label>

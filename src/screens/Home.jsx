@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { openSession, startWork, endWork, reconcileWorkSession, verifyContinuedWorkSession, WorkStartPreflightError } from "../lib/session";
-import { isOverdue } from "../lib/time";
+import { isWorkOverdue } from "../lib/time";
 import { Sheet } from "../components/bits";
 import SessionRecoveryDialog from "../components/SessionRecoveryDialog";
 import { recheckSessionCorrection } from "../lib/session";
@@ -248,8 +248,7 @@ export default function Home({ me, notificationPanel, session, setSession, openI
   const dueToday = items.filter((item) => item.due_at
     && new Date(item.due_at) >= today && new Date(item.due_at) < tomorrow
     && !["waiting_on","returned","in_review"].includes(item.status));
-  const overdue = items.filter((item) => isOverdue(item.due_at)
-    && !["waiting_on","returned","in_review"].includes(item.status));
+  const overdue = items.filter((item) => isWorkOverdue(item));
   const waitingDependencies = items.filter((item) => item.status === "waiting_on");
   const waitingReviews = items.filter((item) => item.status === "in_review");
   const dueSoon = items.filter((item) => item.due_at

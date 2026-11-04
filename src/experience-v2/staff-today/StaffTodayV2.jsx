@@ -11,7 +11,7 @@ import {
   Surface,
 } from "../components";
 import { CeacIcon } from "../icons";
-import { dueLabel, isOverdue, since } from "../../lib/time";
+import { dueLabel, isWorkOverdue, since } from "../../lib/time";
 
 function accraDateKey(value = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -43,7 +43,7 @@ function titleCase(value = "") {
 function workStatus(item) {
   if (!item) return { label: "", tone: "neutral" };
   if (item.status === "returned") return { label: "Sent back", tone: "danger" };
-  if (isOverdue(item.due_at) && !["completed", "self_certified", "cancelled"].includes(item.status)) {
+  if (isWorkOverdue(item)) {
     return { label: "Overdue", tone: "danger" };
   }
 
@@ -157,7 +157,7 @@ export default function StaffTodayV2({
         type: "work",
         at: item.due_at || "9999-12-31",
         title: item.title,
-        meta: `${item.ref} · ${dueLabel(item.due_at)}`,
+        meta: `${item.ref} · ${dueLabel(item.due_at, item.status)}`,
         source: item,
       })),
     ...futureMeetings.map((meeting) => ({
@@ -200,7 +200,7 @@ export default function StaffTodayV2({
   const waitingCount=waitingReviews.length+waitingDependencies.length;
   const rawDayActions=[
     ...nextMoveItems.map(item=>({id:"work-"+item.id,workItemId:item.id,icon:"work",title:item.title,
-      meta:`${item.ref} · ${dueLabel(item.due_at)}`,status:workStatus(item).label,
+      meta:`${item.ref} · ${dueLabel(item.due_at, item.status)}`,status:workStatus(item).label,
       onClick:()=>onOpenItem?.(item.id)})),
     ...visibleAlerts.map(alert=>({id:"alert-"+alert.id,
       workItemId:alert.subject_type==="work_item"?alert.subject_id:null,icon:"warning",
@@ -555,7 +555,7 @@ export default function StaffTodayV2({
                               key={item.id}
                               icon="work"
                               title={item.title}
-                              meta={`${item.ref} · ${dueLabel(item.due_at)}`}
+                              meta={`${item.ref} · ${dueLabel(item.due_at, item.status)}`}
                               status={status.label}
                               statusTone={status.tone}
                               onClick={() => onOpenItem?.(item.id)}

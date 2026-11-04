@@ -75,7 +75,7 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
               <strong>{row.title}</strong><small>{row.ref} · {row.visibility==='private'?'Private':row.origin==='self_created'?'Created by me':'Assigned work'}</small>
             </button></th>
             <td className="s2-register-project">{row.projects?.name||'Not linked'}</td>
-            <td className="s2-register-due">{dueLabel(row.due_at)}</td>
+            <td className="s2-register-due">{dueLabel(row.due_at, row.status)}</td>
             <td><span className="s2-register-status" data-state={row.status}>{RESPONSIBILITY_STATUS[row.status]||row.status?.replaceAll('_',' ')||'Not recorded'}</span></td>
           </tr>)}
         </tbody></Fragment>)}

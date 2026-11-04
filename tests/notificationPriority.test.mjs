@@ -2,6 +2,7 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {buildCeacNotificationBriefing,ceacNoticeTarget,defaultRoomLevel} from "../src/lib/notificationPriority.js";
+import {isWorkOverdue, dueLabel} from "../src/lib/time.js";
 import {notificationRetryDelay,runNotificationTasks} from "../src/lib/notificationRefreshControl.js";
 import {createBoundedRestFetch} from "../src/lib/boundedRestFetch.js";
 const now=Date.UTC(2026,10,3,7,0);
@@ -178,4 +179,32 @@ test("legacy Inbox avoids expensive Room requests while showing Memos or Updates
   assert.match(inbox,/controller\.abort\(\)/);
   assert.match(inbox,/window\.setInterval\(refresh,180000\)/);
   assert.match(inbox,/lastBackgroundLoad\.current<120000/);
+});
+
+test("review, returned and dependency items are not overdue work for staff",()=>{
+  const past=iso(-24*60);
+  for(const status of ["in_review","waiting_on","returned","completed","self_certified","cancelled"]){
+    assert.equal(isWorkOverdue({status,due_at:past},now),false,status);
+    assert.doesNotMatch(dueLabel(past,status),/overdue/i);
+  }
+  assert.equal(isWorkOverdue({status:"in_progress",due_at:past},now),true);
+  assert.equal(isWorkOverdue({status:"not_started",due_at:past,kind:"routine"},now),false);
+});
+
+test("deadline notifications suppress work submitted for review or waiting on others",()=>{
+  const states=["in_review","waiting_on","returned","completed","self_certified","cancelled"];
+  const workItems=states.map((status,i)=>({id:"w"+i,title:status,due_at:iso(-25),status}));
+  workItems.push({id:"active",title:"Still being worked",due_at:iso(-25),status:"in_progress"});
+  const r=buildCeacNotificationBriefing({me:person,now,workItems});
+  assert.deepEqual(r.items.filter(x=>x.type==="work").map(x=>x.id),["work:active"]);
+});
+
+test("staff and manager views use state-aware due labels and overdue criteria",()=>{
+  const fs=["src/screens/Home.jsx","src/screens/ManagerHome.jsx",
+    "src/experience-v2/staff-today/StaffTodayV2.jsx",
+    "src/experience-v2/manager-overview/ManagerOverviewV2.jsx"];
+  for(const file of fs)assert.match(readFileSync(file,"utf8"),/isWorkOverdue/);
+  const diary=readFileSync("src/components/WorkActivityDiary.jsx","utf8");
+  assert.match(diary,/Record earlier work/);
+  assert.match(diary,/max=\{ghanaDay\(\)\}/);
 });
