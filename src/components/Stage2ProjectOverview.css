@@ -1,5 +1,5 @@
 /* Stage 2 owner-approved connected Projects overview.
-   Scoped to this project surface; no global role shell or permission changes. */
+Scoped to this project surface; no global role shell or permission changes. */
 .s2-project{color:#172b4b;font-size:13px;line-height:1.5}
 .s2-project-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid #e4edf7;border-radius:12px;background:#fff;margin:14px 0;overflow:hidden}
 .s2-project-metrics>div{padding:17px 18px;min-width:0;border-right:1px solid #e8eff8;display:flex;flex-direction:column;gap:3px}
@@ -52,8 +52,6 @@
 
 .s2-project-personcell{display:inline-flex;align-items:center;gap:7px;min-width:0;white-space:nowrap}
 
-/* Keep the approved overview in one visual hierarchy. Preserve deeper unit
-   cost and phase records behind one accessible disclosure, not extra cards. */
 .s2-project-context-disclosure{margin-top:12px;border:1px solid #e4edf7;border-radius:10px;background:#fff;overflow:hidden}
 .s2-project-context-disclosure>summary{cursor:pointer;list-style:none;padding:12px 16px;font-size:12px;font-weight:700;color:#245486}
 .s2-project-context-disclosure>summary::-webkit-details-marker{display:none}
@@ -61,8 +59,6 @@
 .s2-project-context-disclosure[open]>summary::after{content:"−"}
 .s2-project-context-disclosure>div{padding:0 16px 16px}
 
-/* Owner-approved Projects mockup: compact individually bordered summary cards,
-   one shared people/departments area and one factual task list. */
 .s2-project-metrics{gap:12px;border:0;border-radius:0;background:transparent;overflow:visible}
 .s2-project-metrics>.s2-project-stat-card{padding:15px 18px;border:1px solid #e2eaf5;border-radius:11px;background:#fff;min-height:105px;box-shadow:0 5px 18px rgba(35,72,112,.025)}
 .s2-project-metrics>.s2-project-stat-card:last-child{border-right:1px solid #e2eaf5}
@@ -85,49 +81,46 @@
 @media(max-width:1100px){.s2-project-metrics>.s2-project-stat-card:nth-child(-n+2){border-bottom:1px solid #e2eaf5}}
 @media(max-width:600px){.s2-project-metrics{gap:8px}.s2-project-metrics>.s2-project-stat-card{padding:12px;min-height:105px}.s2-project-progress-ring{width:56px;height:56px}.s2-project-progress-ring::before{inset:6px}.s2-project-progress-line{gap:8px}.s2-project-task-facts strong{font-size:21px}}
 
-/* The approved Projects mockup has only one global CEAC sidebar. Remove the
-   obsolete second dark projects rail on the Overview; all other work tabs
-   retain their phase/navigation affordances in a matching LIGHT palette. */
 .manager-projects.s2-owner-approved-projects.fpg-project-gold{
-  display:block;
-  grid-template-columns:minmax(0,1fr);
-  max-width:none!important;
-  min-height:0;
-  overflow:visible;
-  border:0;
-  border-radius:0;
-  background:transparent;
-  box-shadow:none;
+display:block;
+grid-template-columns:minmax(0,1fr);
+max-width:none!important;
+min-height:0;
+overflow:visible;
+border:0;
+border-radius:0;
+background:transparent;
+box-shadow:none;
 }
 .manager-projects.s2-owner-approved-projects>.fpg-project-tree,
 .manager-projects.s2-owner-approved-projects .fpg-project-facts{display:none}
 .manager-projects.s2-owner-approved-projects>.fpg-project-main{
-  padding:0 5px 32px;
-  background:transparent;
+padding:0 5px 32px;
+background:transparent;
 }
 .manager-projects.s2-owner-approved-projects .ev2p-back{margin:0 0 6px}
 .manager-projects.s2-owner-approved-projects .ev2p-workspace-header{
-  margin-bottom:12px;
-  padding:20px 24px;
-  box-shadow:none;
+margin-bottom:12px;
+padding:20px 24px;
+box-shadow:none;
 }
 .manager-projects.s2-owner-approved-projects .ev2p-tabs{
-  background:transparent;border-color:#e0e9f4;
-  margin:4px 0 14px;
+background:transparent;border-color:#e0e9f4;
+margin:4px 0 14px;
 }
 .manager-projects.s2-owner-approved-projects .ev2p-tabs button{
-  color:#5e7794;border-color:transparent;
+color:#5e7794;border-color:transparent;
 }
 .manager-projects.s2-owner-approved-projects .ev2p-tabs button[aria-selected="true"]{
-  color:#126bdc;border-color:#126bdc;
+color:#126bdc;border-color:#126bdc;
 }
 .manager-projects.s2-owner-approved-projects .project-workspace-area{padding:0;background:transparent}
 .manager-projects.s2-project-workflow.fpg-project-gold{
-  --fpg-rail:#f5f9fd;
-  --fpg-rail-soft:#ecf4fb;
-  --fpg-accent:#1574e7;
-  border-color:#e3ebf6;
-  box-shadow:none;
+--fpg-rail:#f5f9fd;
+--fpg-rail-soft:#ecf4fb;
+--fpg-accent:#1574e7;
+border-color:#e3ebf6;
+box-shadow:none;
 }
 .manager-projects.s2-project-workflow .fpg-project-tree{border-right:1px solid #e5edf5;color:#2f4a68}
 .manager-projects.s2-project-workflow .fpg-project-tree-brand{color:#213e60}
@@ -141,9 +134,9 @@
 .manager-projects.s2-project-workflow .fpg-project-tree-stages button{color:#486582}
 .manager-projects.s2-project-workflow .fpg-project-tree-stages button i{background:#97b8da}
 @media(max-width:640px){
-  .manager-projects.s2-owner-approved-projects>.fpg-project-main{padding:0 0 24px}
-  .manager-projects.s2-owner-approved-projects .ev2p-workspace-header{padding:18px 16px;border-radius:10px}
-  .manager-projects.s2-owner-approved-projects .ev2p-tabs{overflow-x:auto}
+.manager-projects.s2-owner-approved-projects>.fpg-project-main{padding:0 0 24px}
+.manager-projects.s2-owner-approved-projects .ev2p-workspace-header{padding:18px 16px;border-radius:10px}
+.manager-projects.s2-owner-approved-projects .ev2p-tabs{overflow-x:auto}
 }
 
 .s2-project-unit-chip{display:inline-block;border-radius:5px;padding:4px 7px;background:#e9f2ff;color:#2365b3;font-size:12px;white-space:nowrap;max-width:155px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
@@ -154,18 +147,13 @@
 .s2-project-milestones li.is-complete::before{border-color:#2ab07c;background:#2ab07c}
 .s2-project-milestones li strong{font-size:12px;color:#2d4b6c}
 
-/* Stage 2 accessibility floor: all readable metadata and table actions must
-   pass the existing 12px minimum at 320px as well as desktop densities. */
 .s2-project :is(small,th,td,input,select,button,.s2-project-unit-chip,.s2-project-task,.s2-project-milestones li strong,.s2-project-panel h3){
-  font-size:12px!important;
+font-size:12px!important;
 }
 .s2-project .s2-project-stat-card>span:first-child{font-size:12px!important}
 
-/* Reconciled PR #117 accessible Projects typography: real project people,
-   departments and milestones must remain readable at 320px and desktop. */
 .s2-project :is(.s2-project-person strong,.s2-project-units strong,.s2-project-aside dt,.s2-project-aside dd,.s2-project-aside section p,.s2-project-aside li,.s2-project-avatar,.s2-project-more,.s2-project-unit-chip){font-size:12px!important}
 
-/* Dated project contribution history, compact source-backed right inspector. */
 .s2-project-recent-activity>header{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .s2-project-recent-activity>header button{border:0;border-bottom:1px solid currentColor;border-radius:0;padding:2px 0;background:transparent;color:#1677c8;font:inherit;font-size:12px;cursor:pointer}
 .s2-project-recent-activity>header button:disabled{opacity:.5;cursor:default}
@@ -177,9 +165,6 @@
 
 .s2-project-progress-line>small{white-space:normal}
 
-
-/* Role-aware project drill-down. The ordinary manager overview retains all
-   existing sections; Executive inspection exposes one purpose at a time. */
 .s2-project[data-project-view="overview"] .s2-project-team-panel,
 .s2-project[data-project-view="overview"] .s2-project-tasks-panel,
 .s2-project[data-project-view="overview"] .s2-project-detail-milestones,
@@ -196,58 +181,56 @@
 .s2-project[data-project-view="milestones"] .s2-project-aside > header,
 .s2-project[data-project-view="milestones"] .s2-project-aside > dl,
 .s2-project[data-project-view="milestones"] .s2-project-aside > section:not(.s2-project-detail-milestones):not(.s2-project-recent-activity) {
-  display: none;
+display: none;
 }
 .s2-project[data-project-view="people"] .s2-project-layout,
 .s2-project[data-project-view="work"] .s2-project-layout {
-  grid-template-columns: minmax(0, 1fr);
+grid-template-columns: minmax(0, 1fr);
 }
 .s2-project[data-project-view="milestones"] .s2-project-layout {
-  grid-template-columns: minmax(0, 1fr);
+grid-template-columns: minmax(0, 1fr);
 }
 .s2-project[data-project-view="milestones"] .s2-project-content {
-  display: none;
+display: none;
 }
 .s2-project[data-project-view="milestones"] .s2-project-aside {
-  position: static;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 1.25rem;
+position: static;
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+align-items: start;
+gap: 1.25rem;
 }
 .s2-project[data-project-view="milestones"] .s2-project-aside > section {
-  border-top: 0;
-  margin-top: 0;
-  padding-top: 0;
+border-top: 0;
+margin-top: 0;
+padding-top: 0;
 }
 .s2-project-reader .ev2p-tabs button {
-  border-radius: var(--ev2-radius-control);
+border-radius: var(--ev2-radius-control);
 }
 @media(max-width:700px) {
-  .s2-project[data-project-view="milestones"] .s2-project-aside {
-    grid-template-columns: 1fr;
-  }
+.s2-project[data-project-view="milestones"] .s2-project-aside {
+grid-template-columns: 1fr;
+}
 }
 
-/* Project actions sit between the title and detail tabs, not as page-width bars. */
 .s2-project-reader .s2-project-quick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0 14px;
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 8px;
+margin: 8px 0 14px;
 }
 .s2-project-reader .s2-project-quick-actions > button,
 .s2-project-reader .s2-project-quick-actions > .btn,
 .s2-project-reader .s2-project-quick-actions .btn {
-  width: auto;
-  max-width: 100%;
-  min-height: 40px;
-  padding-inline: 14px;
-  flex: 0 0 auto;
+width: auto;
+max-width: 100%;
+min-height: 40px;
+padding-inline: 14px;
+flex: 0 0 auto;
 }
 
-/* Project task details read as labeled cards on phones; desktop keeps the table. */
 @media(max-width:640px){
 .s2-project .s2-project-tasks-panel .s2-project-table-scroll{overflow:visible}
 .s2-project .s2-project-tasks-panel table{display:block;min-width:0!important;width:100%}
