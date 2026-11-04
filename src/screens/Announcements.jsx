@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { memoPersonIdentity } from "../lib/memos";
 import { supabase } from "../lib/supabase";
 import { FieldGroup, ProductNotice, Sheet } from "../components/bits";
 import { ComposerDrawer, SegmentedControl } from "../experience-v2/components";
@@ -26,6 +27,7 @@ export default function Announcements(props) {
 function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandled, initialAnnouncementId = null, onInitialHandled }) {
   const [rows, setRows] = useState([]);
   const [units, setUnits] = useState([]);
+  const [senders,setSenders] = useState([]);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(null);
   const grantedCanPublish = Boolean(me.is_admin || me.is_exec || (me.capability_grants || []).some((grant) => grant.capability === "post_announcement" && !grant.scope_unit_id));
@@ -57,17 +59,19 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
   async function load() {
     setLoading(true); setError(null);
     try {
-      const [announcementResult, unitResult] = await Promise.all([
+      const [announcementResult, unitResult, directoryResult] = await Promise.all([
         supabase.from("announcements")
-          .select("id,title,body,priority,status,requires_acknowledgement,published_at,expires_at,created_at,profiles!announcements_author_id_fkey(full_name),announcement_receipts(profile_id,read_at,acknowledged_at),announcement_audiences(id,audience_type,unit_id,audience_role,units(name))")
+          .select("id,author_id,title,body,priority,status,requires_acknowledgement,published_at,expires_at,created_at,profiles!announcements_author_id_fkey(full_name),announcement_receipts(profile_id,read_at,acknowledged_at),announcement_audiences(id,audience_type,unit_id,audience_role,units(name))")
           .order("created_at", { ascending: false }),
         supabase.from("units").select("id,name").eq("org_id", me.org_id).eq("active", true).order("position"),
+        supabase.rpc("memo_recipient_directory"),
       ]);
       if (announcementResult.error) throw new Error(`Announcements: ${announcementResult.error.message}`);
       if (unitResult.error) throw new Error(`Units: ${unitResult.error.message}`);
       const announcements = announcementResult.data || [];
       setCanPublish(grantedCanPublish);
       setUnits(unitResult.data || []);
+      setSenders(directoryResult.error ? [] : directoryResult.data || []);
       if (grantedCanPublish) {
         const withCounts = await Promise.all(announcements.map(async (announcement) => {
           const { data, error: countError } = await supabase.rpc("announcement_audience_counts", { p_announcement_id: announcement.id });
@@ -184,6 +188,12 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
     finally { setBusy(false); }
   }
 
+  const publisher=announcement=>{
+    const person=senders.find(row=>row.id===announcement.author_id);
+    const identity=memoPersonIdentity(person,units);
+    return {name:person?.full_name || announcement.profiles?.full_name || "Publisher unavailable",
+      detail:identity.detail};
+  };
   const DetailSurface = me.is_admin ? ComposerDrawer : Sheet;
   return <div className={me.is_exec ? "body exec-redesign-page exec-announcements" : "body"}>
     <header className={me.is_exec ? "exec-redesign-shared-head" : undefined} style={me.is_exec ? undefined : { paddingTop: 26 }}>
@@ -203,7 +213,7 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
       {value:"all",label:`All · ${rows.length}`},{value:"published",label:`Published · ${rows.filter(row=>row.status==="published").length}`},
       {value:"draft",label:`Drafts · ${rows.filter(row=>row.status==="draft").length}`},{value:"closed",label:`Closed · ${rows.filter(row=>row.status==="closed").length}`}
     ]}/>}
-    {!loading && <div className={me.is_admin?"form-grid two":undefined} style={{ marginTop: 18 }}><div>
+    {!loading && <div className={undefined} style={{ marginTop: 18 }}><div>
       {rows.length === 0 && !error && <div className="card small">There are no current announcements for you.</div>}
       {me.is_admin&&!error&&rows.length>0&&!rows.some(row=>listView==="all"||row.status===listView)&&<p role="status">No announcements match this view.</p>}
       {rows.filter(row=>!me.is_admin||listView==="all"||row.status===listView).map((announcement) => {
@@ -212,8 +222,8 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
         return <div className={`row ${unread ? "home-tone-info" : ""}`} key={announcement.id}>
           <button style={{ width: "100%", textAlign: "left" }} onClick={() => openAnnouncement(announcement)}>
             <div className="row-t">{unread ? "New · " : ""}{announcement.title}</div>
-            <div className="row-m">{announcement.priority !== "normal" ? `${announcement.priority} · ` : ""}{announcement.status} · {announcement.profiles?.full_name || "CEAC"}</div>
-            <div className="row-note">{announcement.published_at ? formatDate(announcement.published_at) : `Drafted ${formatDate(announcement.created_at)}`}</div>
+            <div className="row-m">{publisher(announcement).name}{publisher(announcement).detail ? " · "+publisher(announcement).detail : ""}</div>
+            <div className="row-note">{announcement.priority !== "normal" ? announcement.priority+" · " : ""}{announcement.status === "published" ? "Published" : announcement.status === "draft" ? "Draft" : "Closed"} · {announcement.published_at ? formatDate(announcement.published_at) : formatDate(announcement.created_at)}</div>
           </button>
           {canPublish && <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 9 }}>
             {announcement.status === "draft" && <><button className="btn btn-ghost btn-sm" onClick={() => editAnnouncement(announcement)}>Edit</button><button className="btn btn-sm" onClick={() => changeStatus(announcement, "publish")} disabled={busy}>Publish</button></>}
@@ -222,13 +232,13 @@ function AnnouncementWorkspace({ me, back, createRequest = false, onCreateHandle
           </div>}
         </div>;
       })}
-    </div>{me.is_admin&&<aside className="card" aria-label="Announcement publishing checklist"><h2 className="h2">Publishing checklist</h2><p>Choose the audience.</p><p>Preview the message before saving.</p><p>Saving creates a draft. Publish it when ready.</p></aside>}</div>}
+    </div></div>}
 
     {selected && <DetailSurface open title={me.is_admin ? selected.title : undefined} onClose={() => { if (!busy) setSelected(null); }}>
       {me.is_admin && error && <ProductNotice tone="error" title="Announcement update">{error}</ProductNotice>}
       <div className="eyebrow">{selected.priority}{selected.status !== "published" ? ` · ${selected.status}` : ""}</div>
       {!me.is_admin && <div className="h2" style={{ marginTop: 5 }}>{selected.title}</div>}
-      <div className="row-m">{selected.profiles?.full_name || "CEAC"} · {formatDate(selected.published_at || selected.created_at)}</div>
+      <div className="row-m"><strong>{publisher(selected).name}</strong>{publisher(selected).detail ? " · "+publisher(selected).detail : ""} · {formatDate(selected.published_at || selected.created_at)}</div>
       <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, marginTop: 18 }}>{selected.body}</div>
       <OperationalFileList
         contextType="announcement"
