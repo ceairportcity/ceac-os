@@ -153,6 +153,7 @@ export default function TechnicalSupport({ me, go }) {
   const [actionError, setActionError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const linkedCaseId = new URLSearchParams(window.location.search).get("case");
   const canManage = canManageSupport(me);
   const currentScope = `${me.org_id}:${me.id}:${canManage ? "support" : "no-support"}`;
   const scopedReady = ready && verifiedScope === currentScope;
@@ -203,7 +204,22 @@ export default function TechnicalSupport({ me, go }) {
     () => filterSupportCases(cases, deskQuery, deskStatus),
     [cases, deskQuery, deskStatus],
   );
-  const selected = cases.find((item) => item.id === selectedId);
+  useEffect(()=>{
+    if(!scopedReady || !membership || !linkedCaseId || !cases.some(item=>item.id===linkedCaseId))return;
+    setWorkspace("help-desk");
+    setSelectedId(linkedCaseId);
+    // Mark only this account's matching, still-authorised notifications as read.
+    void supabase.rpc("my_ceac_notifications").then(async ({data,error:noticeError})=>{
+      if(noticeError || !Array.isArray(data))return;
+      const matching=data.filter(row=>row.context_kind==="support_case"
+        && row.context_id===linkedCaseId && !row.read_at);
+      if(!matching.length)return;
+      await Promise.allSettled(matching.map(row=>
+        supabase.rpc("mark_ceac_notification_read",{p_id:row.id})));
+      window.dispatchEvent(new Event("ceac:notifications-changed"));
+    }).catch(()=>{});
+  },[scopedReady,membership,linkedCaseId,cases]);
+    const selected = cases.find((item) => item.id === selectedId);
 
   async function refreshCases() {
     if (busy) return;
