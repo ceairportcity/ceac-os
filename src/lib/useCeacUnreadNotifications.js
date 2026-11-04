@@ -165,6 +165,21 @@ export function useCeacUnreadNotifications(me) {
             });
           }
         }
+        // Use existing participant/member RLS; do not fetch case descriptions.
+        const supportIds=[...new Set(candidate.events.filter(event=>
+          !event.read_at && event.context_kind==="support_case").map(event=>event.context_id))].slice(0,30);
+        if(supportIds.length && me.capabilities?.includes("support.case.manage")){
+          const {data:supportRows,error:supportError}=await supabase.from("support_cases")
+            .select("id,reference,summary").in("id",supportIds).limit(30).abortSignal(signal);
+          if(!supportError && Array.isArray(supportRows)){
+            const byId=new Map(supportRows.map(row=>[row.id,row]));
+            candidate.events=candidate.events.map(event=>{
+              if(event.context_kind!=="support_case"||event.read_at)return event;
+              const row=byId.get(event.context_id);
+              return row?{...event,support_reference:row.reference,support_summary:row.summary}:event;
+            });
+          }
+        }
         if(!active||currentScope.current!==scope)return;
         snapshot=candidate;
         publish();

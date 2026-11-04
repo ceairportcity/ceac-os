@@ -248,8 +248,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     return search.includes(query.trim().toLowerCase());
   });
   const groups=memoConversationGroups(visible,me.id,grouping);
-  const subjectThread=selected?memoConversationGroups(rows.filter(row=>row.status!=="draft"),me.id,"subject")
-    .find(group=>group.items.some(row=>row.id===selected)):null;
+
   const renderMemoRow=memo=>{
     const version=memo.memo_versions.find(v=>v.id===memo.current_version_id)||memo.memo_versions.filter(v=>v.sent_at).sort((a,b)=>b.version_no-a.version_no)[0];
     const unseen=memo.memo_recipients.some(r=>r.profile_id===me.id&&(!r.last_read_at||new Date(r.last_read_at)<new Date(memo.updated_at)));
@@ -260,6 +259,10 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     </button>;
   };
   const active=detailKey===selected?detail:null;
+  const timeline=active ? [
+    ...active.versions.filter(version=>version.sent_at || active.sender_id===me.id).map(version=>({id:version.id,at:version.sent_at || active.created_at,author:active.sender_id,title:version.sent_at ? (version.version_no===1?"Original Memo":"Revision "+version.version_no) : "Unsent draft",body:version.body,files:active.files[version.id] || [],type:"version"})),
+    ...active.exchanges.map(exchange=>({id:exchange.id,at:exchange.created_at,author:exchange.author_id,title:exchange.kind==="reply"?"Reply":MEMO_STATUS_LABELS[exchange.kind] || exchange.kind,body:exchange.body,files:[],type:"exchange"})),
+  ].sort((a,b)=>Date.parse(a.at)-Date.parse(b.at) || String(a.id).localeCompare(String(b.id))) : [];
   const visibleAttachments=active?active.versions.filter(v=>v.sent_at || active.sender_id===me.id).flatMap(v=>active.files[v.id] || []):[];
   const decisions=active ? eligibleMemoDecisionMakers(people,{scope:active.decision_scope,unitId:active.unit_id,to:active.memo_recipients.filter(r=>r.kind==="to").map(r=>r.profile_id),senderId:active.sender_id}):[];
   const canDecide=active?.status==="pending_decision" && active.decision_maker_id===me.id && decisions.some(p=>p.id===me.id);
@@ -312,35 +315,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
         <nav className="memo-filters" aria-label="Memo views">{[["all","All"],["received","Received"],["sent","Sent"],["drafts","Drafts"],["awaiting","Awaiting Decision"],["completed","Completed / Closed"]].map(([key,label])=><button type="button" key={key} aria-current={view===key?"page":undefined} onClick={()=>setView(key)}>{label}</button>)}</nav>
         {loading && <p role="status">Loading Memos…</p>}
         {!loading && !error && !visible.length && <p>No Memos in this view.</p>}
-        <div className="memo-filters" role="group" aria-label="Organise correspondence">
-          <span style={{fontSize:12,alignSelf:"center",color:"#68788a"}}>Group by</span>
-          {[["person","Person"],["subject","Subject"]].map(([key,label])=><button type="button" key={key} aria-pressed={grouping===key} style={{fontWeight:grouping===key?700:400,borderBottomColor:grouping===key?"#1678c9":"transparent"}} onClick={()=>{setGrouping(key);setExpandedGroups({});}}>{label}</button>)}
-        </div>
-        {groups.map((group,index)=>{
-          const lead=group.items[0];
-          const correspondents=memoCorrespondentIds(lead,me.id);
-          const primaryId=lead.sender_id===me.id
-            ?lead.memo_recipients.find(r=>r.kind==="to"&&r.profile_id!==me.id)?.profile_id||correspondents[0]
-            :lead.sender_id;
-          const personLabel=primaryId?name(primaryId):"Correspondence";
-          const others=correspondents.filter(id=>id!==primaryId).length;
-          const personDetail=[primaryId?identity(primaryId).detail:"",others?`+${others} other participant${others===1?"":"s"}`:""].filter(Boolean).join(" · ");
-          const open=expandedGroups[group.key] ?? (selected?group.items.some(m=>m.id===selected):index===0);
-          const unseen=group.items.filter(m=>m.memo_recipients.some(r=>r.profile_id===me.id&&(!r.last_read_at||new Date(r.last_read_at)<new Date(m.updated_at)))).length;
-          return <section key={group.key} aria-label={personLabel} className="memo-group" style={{borderBottom:"1px solid #e5ebf2"}}>
-            <button type="button" className="memo-row memo-group-toggle" style={{display:"flex",flexDirection:"row",alignItems:"center",gap:10,width:"100%",background:"#f9fbfd"}} aria-label={`Toggle correspondence with ${personLabel}, ${group.items.length} ${group.items.length===1?"memo":"memos"}`}
-              aria-expanded={open} onClick={()=>setExpandedGroups(current=>({...current,[group.key]:!open}))}>
-              <span className="msg-avatar memo-group-avatar" style={{position:"static",flex:"none",width:35,height:35,borderRadius:10}} aria-hidden="true">{initials(grouping==="subject"?group.subject:personLabel)}</span>
-              <span className="memo-group-copy" style={{display:"grid",gap:3,flex:1,minWidth:0}}>
-                <strong>{grouping==="person"?personLabel:group.subject}</strong>
-                <small>{grouping==="person"?(personDetail||"Correspondence"):personLabel}</small>
-                {(grouping!=="person"||!open)&&<small>{grouping==="person"?memoCurrentSubject(lead):personDetail}</small>}
-              </span>
-              <span className="memo-group-meta" style={{display:"grid",gap:5,textAlign:"right",flex:"none"}}><small>{group.items.length} {group.items.length===1?"memo":"memos"}{unseen?" · "+unseen+" unread":""}</small><small>{open?"−":messageTimestamp(group.updatedAt)+" · +"}</small></span>
-            </button>
-            {open && <div className="memo-group-items" style={{paddingLeft:8,borderLeft:"2px solid #d7e6f4"}}>{group.items.map(renderMemoRow)}</div>}
-          </section>;
-        })}
+        <div className="memo-conversation-list" aria-label="Memo conversations">{[...visible].sort((a,b)=>Date.parse(b.updated_at)-Date.parse(a.updated_at)).map(renderMemoRow)}</div>
         {rows.length===pageSize && <button type="button" className="memo-row" disabled={loading} onClick={()=>setPageSize(count=>count+200)}>Load earlier correspondence</button>}
       </aside>
       <article className="memo-reader" data-reading={active ? "" : undefined}>
@@ -348,36 +323,39 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
         {!selected && <div className="msg-empty"><h2>Your correspondence</h2><p>Read a Memo or create one to share a proposal, recommendation or document.</p></div>}
         {active && <>
           <header><button type="button" aria-label="Back to Memo list" onClick={()=>setSelected(null)}><ArrowLeft size={18}/></button><h2>{active.versions.filter(v=>v.sent_at).at(-1)?.subject || active.versions.at(-1)?.subject || "Untitled draft"}</h2><span className="memo-status">{MEMO_STATUS_LABELS[active.status]}</span>
-          {active.status!=="draft" && <button type="button" className="memo-follow-up btn btn-ghost" style={{width:"fit-content",padding:"8px 12px"}} onClick={()=>continueSubject(active)}>Continue subject</button>}</header>
+</header>
           <div className="memo-document">
-            {subjectThread?.items.length>1 && <nav className="memo-thread-index" style={{padding:"12px 0",borderBottom:"1px solid #e8edf3"}} aria-label="Correspondence on this subject">
-              <strong>This subject · {subjectThread.items.length} dated records</strong>
-              <div style={{display:"flex",gap:8,overflowX:"auto",padding:"8px 0"}}>{subjectThread.items.slice(0,20).map(record=><button type="button" key={record.id}
-                aria-current={record.id===active.id?"page":undefined} style={{whiteSpace:"nowrap",padding:"7px 10px",background:record.id===active.id?"#e8f2fc":"#f5f7fa"}} onClick={()=>setSelected(record.id)}>
-                {messageTimestamp(record.updated_at)} · {name(record.sender_id)}{record.id===active.id?" · Current":""}
-              </button>)}</div>
-              {subjectThread.items.length>20 && <small>Showing the 20 latest records. Earlier records remain in the correspondence list.</small>}
-            </nav>}
             {attachmentError && <p className="msg-error" role="alert">{attachmentError} <button type="button" onClick={()=>setReload(n=>n+1)}>Retry attachments</button></p>}
-            <div className="memo-parties"><span className="msg-avatar" aria-hidden="true">{initials(name(active.sender_id))}</span><div><strong>{name(active.sender_id)}</strong>{identity(active.sender_id).detail && <small>{identity(active.sender_id).detail}</small>}<small>Created {messageTimestamp(active.created_at)}</small></div><div><small>To</small>{active.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ")}</div><div><small>Cc</small>{active.memo_recipients.filter(r=>r.kind==="cc").map(r=>name(r.profile_id)).join(", ") || "—"}</div></div>
-            {visibleAttachments.length>0 && <section className="memo-attachments" aria-label="Memo attachments">
-              <h3>Attachments ({visibleAttachments.length})</h3>
-              <OperationalMediaList files={visibleAttachments}/>
-            </section>}
-            {active.versions.filter(v=>v.sent_at || active.sender_id===me.id).map(version=><section className="memo-version" key={version.id}>
-              {active.versions.length>1 && <><h3>Version {version.version_no} · {version.sent_at?messageTimestamp(version.sent_at):"Unsent draft"}</h3><h4>{version.subject}</h4></>}
-              <MemoBody body={version.body}/>
-            </section>)}
-            {active.exchanges.length>0 && <section className="memo-history" aria-label="Replies and decision history"><h3>Replies and decisions</h3>{active.exchanges.map(exchange=><div key={exchange.id}><strong>{name(exchange.author_id)} · {exchange.kind==="reply"?"Reply":MEMO_STATUS_LABELS[exchange.kind]}</strong><small>{messageTimestamp(exchange.created_at)} · Version {active.versions.find(v=>v.id===exchange.version_id)?.version_no}</small><MemoBody body={exchange.body}/></div>)}</section>}
+            <div className="room-context-note memo-thread-intro"><strong>Conversation</strong><small>{timeline.length} entries · chronological history</small></div>
+            <div className="memo-thread-timeline" aria-label="Memo conversation timeline">
+              {timeline.map(entry=><section className="room-message memo-thread-entry" key={entry.type+":"+entry.id}>
+                <span className="msg-avatar memo-thread-avatar" aria-hidden="true">{initials(name(entry.author))}</span>
+                <div className="memo-thread-entry-content">
+                  <div className="room-message-meta memo-thread-entry-heading"><strong>{name(entry.author)}</strong><span>{entry.title}</span><time>{messageTimestamp(entry.at)}</time></div>
+                  {identity(entry.author).detail && <small>{identity(entry.author).detail}</small>}
+                  <MemoBody body={entry.body || ""}/>
+                  {entry.files.length>0 && <div className="memo-thread-files"><span>{entry.files.length} attachment{entry.files.length===1?"":"s"} · see Memo details</span></div>}
+                </div>
+              </section>)}
+            </div>
           </div>
-          <div className="memo-response">
+          <aside className="memo-attachments memo-thread-details" aria-label="Memo details">
+            <h3>Memo details</h3>
+            <dl><dt>From</dt><dd>{name(active.sender_id)}</dd><dt>To</dt><dd>{active.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Cc</dt><dd>{active.memo_recipients.filter(r=>r.kind==="cc").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Status</dt><dd>{MEMO_STATUS_LABELS[active.status]}</dd><dt>Attachments</dt><dd>{visibleAttachments.length}</dd></dl>
+            <div className="memo-response">
             {active.sender_id===me.id && ["draft","changes_requested"].includes(active.status) && <button className="btn" type="button" onClick={()=>editMemo(active)}>{active.status==="draft"?"Continue draft":"Prepare revision"}</button>}
             {canDecide && <div className="memo-actions"><strong>Actions</strong><button type="button" className="btn" disabled={busy} onClick={()=>respond("approved")}>Approve proposal</button><button type="button" disabled={busy||!reply.trim()} onClick={()=>respond("changes_requested")}>Request changes</button><button type="button" disabled={busy||!reply.trim()} onClick={()=>respond("declined")}>Decline</button><small>Add a reason when requesting changes or declining.</small></div>}
             {!["draft","closed","declined"].includes(active.status) && <>
-              <label>Reply or clarification<textarea rows={3} maxLength={30000} value={reply} disabled={busy} onChange={e=>setReply(e.target.value)}/></label><button className="btn" type="button" disabled={busy||!reply.trim()} onClick={()=>respond("reply")}>Send reply</button>
+              <label>Reply in this conversation<textarea rows={3} maxLength={30000} value={reply} disabled={busy} onChange={e=>setReply(e.target.value)}/></label><button className="btn" type="button" disabled={busy||!reply.trim()} onClick={()=>respond("reply")}>Send reply to thread</button>
               {active.sender_id===me.id && !active.decision_required && <button type="button" disabled={busy} onClick={()=>respond("closed")}>Close correspondence</button>}
             </>}
-          </div>
+            </div>
+            <section className="memo-sidebar-attachments" aria-label="Memo attachments">
+              <h4>Attachments ({visibleAttachments.length})</h4>
+              {visibleAttachments.length>0 ? <OperationalMediaList files={visibleAttachments}/> : <p>No attachments</p>}
+            </section>
+            <small>Only authorised participants can view this Memo. Decisions remain separately auditable.</small>
+          </aside>
           {active.status==="approved" && <div className="memo-project"><p>Approved in principle. Budget approval and implementation authority remain separate.</p>{active.project_id?<button type="button" onClick={()=>openProject?.(active.project_id)}>Open linked project</button>:canCreateProject && <><label>Project title<input value={projectName} maxLength={240} onChange={e=>setProjectName(e.target.value)}/></label><label>Shareable project summary<textarea rows={3} maxLength={4000} value={projectSummary} onChange={e=>setProjectSummary(e.target.value)}/></label><p>The project title and summary will be visible to authorised project participants. The original Memo and attachments remain restricted.</p><label>Project lead department<select value={projectUnit} onChange={e=>setProjectUnit(e.target.value)}><option value="">Choose department</option>{units.filter(u=>active.decision_scope!=="department"||u.id===active.unit_id).map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></label><button type="button" disabled={busy||!projectUnit||!projectName.trim()} onClick={createProject}>Create project from approved Memo</button></>}</div>}
         </>}
       </article>
