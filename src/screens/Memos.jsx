@@ -91,7 +91,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   },[me.id,me.org_id,me.is_admin,reload,pageSize]);
   useEffect(()=>{
     const refresh=()=>{if(!writing.current && document.visibilityState=== "visible")setReload(n=>n+1);};window.addEventListener("focus",refresh);
-    const timer=window.setInterval(refresh,30000);
+    const timer=window.setInterval(refresh,180000);
     return()=>{window.removeEventListener("focus",refresh);window.clearInterval(timer);};
   },[]);
   useEffect(()=>{
