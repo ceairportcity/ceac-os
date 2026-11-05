@@ -219,7 +219,7 @@ export default function StaffTodayV2({
       ? nextMeeting.title
       : "You're clear for now";
   const focusSupporting = primaryNextItem
-    ? `${primaryNextItem.ref} · ${dueLabel(primaryNextItem.due_at)}`
+    ? `${primaryNextItem.ref} · ${dueLabel(primaryNextItem.due_at, primaryNextItem.status)}`
     : nextMeeting
       ? `${formatDate(nextMeeting.starts_at, { weekday: "short", hour: "2-digit", minute: "2-digit" })} · ${nextMeeting.provider === "zoom" ? "Zoom" : "Meeting"}`
       : "No urgent work or upcoming meeting needs your action right now.";
@@ -424,7 +424,7 @@ export default function StaffTodayV2({
                           <span>
                             <strong>{item.title}</strong>
                             <small>{item.ref} · sent {submission ? new Date(submission.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "for review"}</small>
-                            <span>Waiting for your manager to check it.</span>
+                            <span>Your work has been sent for approval. No action is needed unless changes are requested.</span>
                           </span>
                         </button>
                         <div className="staffv2-wait-action">
@@ -523,7 +523,7 @@ export default function StaffTodayV2({
             <div className="staffv2-secondary-grid">
               <DataPanel
                 className="staffv2-panel staffv2-week"
-                eyebrow="Your factual record"
+                eyebrow="Your activity"
                 title="This week"
               >
                 <div className="staffv2-week-stats">
