@@ -1696,7 +1696,8 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     dialog = page.getByRole("dialog");
     await expect(dialog.getByLabel("Policy accrual method")).toHaveValue("");
     await expect(dialog.getByLabel("Policy carryover method")).toHaveValue("");
-    await expect(dialog.getByLabel("Policy approval route")).toHaveValue("");
+    await expect(dialog.getByLabel("Policy approval route")).toHaveValue("admin");
+    await expect(dialog.getByLabel("Policy approval route")).toBeDisabled();
     await expect(dialog.getByRole("button", { name: "Activate confirmed policy", exact: true })).toBeDisabled();
     await dialog.getByRole("button", { name: "Close", exact: true }).click();
 
@@ -2325,12 +2326,12 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Workforce");
   // The approved Stage 9 policy is active after the full 129-migration replay:
-  // 24 days/year, 6 days per completed quarter, Manager then Administration.
+  // Leave allowances are unchanged; all approval decisions now go directly to HR.
   // Do not assert the old unconfigured prototype state or weaken any safeguards.
   await page.locator(".timeleave-policy > summary").filter({hasText:"Leave policy & balances"}).click();
   await expect(page.getByText("Confirmed leave process", { exact: true })).toBeVisible();
   await expect(page.getByText(/24-day yearly allowance comprises 15 annual-leave days/i)).toBeVisible();
-  await expect(page.getByText(/Manager approval.*Administration final approval/i)).toBeVisible();
+  await expect(page.getByText(/goes directly to HR for a final decision/i)).toBeVisible();
   await expect(page.getByText(/does not rank people, score attendance, infer absence from missing sessions/i)).toBeVisible();
 
   await go(page, "Control Center");
