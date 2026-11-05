@@ -112,7 +112,8 @@ for(const width of [1440,1024,900,320])test(`Memo reader keeps document and auth
   expect(details.width).toBeLessThanOrEqual(260);
   expect(composer.x+composer.width).toBeLessThanOrEqual(details.x+1);
  } else {
-  expect(details.y).toBeGreaterThanOrEqual(document.y+document.height-1);
+  expect(composer.y).toBeGreaterThanOrEqual(document.y+document.height-1);
+  expect(details.y).toBeGreaterThanOrEqual(composer.y+composer.height-1);
   expect(document.width).toBeGreaterThan(250);
  }
  if(width<=760){
