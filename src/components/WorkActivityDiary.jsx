@@ -27,7 +27,7 @@ const states = [
 export default function WorkActivityDiary(props) {
   return <ActivityDiary key={`${props.me.org_id}:${props.me.id}:${props.item.id}`} {...props}/>;
 }
-function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact = false }) {
+function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact = false, routineOccurrences = [] }) {
   const [sourceHistory, setSourceHistory] = useState([]);
   const [completedDiaryScope, setCompletedDiaryScope] = useState("");
   const [loading, setLoading] = useState(true);
@@ -130,6 +130,16 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   }, [me.id, me.org_id, item.id, reload]);
 
   const nextActions = outstandingActivityActions(history);
+  const timeline = [
+    ...history.map(entry=>({...entry,timelineType:"update"})),
+    ...(item.kind==="routine"?routineOccurrences.map(entry=>({
+      id:"routine-"+entry.id,timelineType:"routine",entry_kind:"routine",
+      activity_date:entry.occurred_on,recorded_at:entry.created_at,
+      contributor_id:entry.recorded_by,action_summary:"Routine occurrence recorded",
+      activity_state:"done",outcome_note:entry.note,routineValue:entry.value,
+    })):[]),
+  ].sort((a,b)=>b.activity_date.localeCompare(a.activity_date)
+    || String(b.recorded_at||"").localeCompare(String(a.recorded_at||""));
 
   const canRecord = verified && (item.assignee_id === me.id || (
     item.visibility !== "private" && item.confidential !== true
@@ -245,8 +255,8 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       <div><span className="eyebrow">Your work</span><h3>Progress history</h3>
         <p>Follow your progress, milestones and supporting evidence over time.</p>
       </div>
-      {inlineComposer}
     </header>}
+    {!compact && inlineComposer}
     {editor && verified && <div className="s2-progress-editor-heading"><strong>{correctingId?"Edit progress":"Your progress"}</strong><button type="button" disabled={busy} onClick={()=>setEditor(false)}>Cancel</button></div>}
     {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
@@ -279,26 +289,26 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     </p>}
     {visibleSuccess && <p role="status">{visibleSuccess}</p>}
     {!compact && verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
-      <div><span>Progress entries</span><strong>{history.length}</strong></div>
+      <div><span>Progress entries</span><strong>{timeline.length}</strong></div>
       <div><span>Milestones</span><strong>{history.filter(entry=>entry.entry_kind==="milestone").length}</strong></div>
     </div>}
     {verified && nextActions.length > 0 && <div className="s2-work-diary-next-action">
       <span>Recorded next actions</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}{action.contributor_id===me.id&&<PlanFollowup activityId={action.id}/>}</p>)}
     </div>}
     {compact && verified && <h3>Progress history</h3>}
-    {verified && history.length === 0 && <p>No updates yet. Add one when you make progress on this work.</p>}
-    {verified && history.length > 0 && <ol className="s2-work-diary-timeline">
-      {history.map((entry) => <li key={entry.id}>
-        <div><strong>{entry.action_summary}</strong>{entry.entry_kind==="milestone"&&<small className="s2-progress-milestone">Milestone reached</small>}
+    {verified && timeline.length === 0 && <p>No progress yet. Begin writing when work moves forward.</p>}
+    {verified && timeline.length > 0 && <ol className="s2-work-diary-timeline">
+      {timeline.map((entry) => <li key={entry.id}>
+        <div><strong>{entry.action_summary}</strong>{entry.entry_kind==="milestone"&&<small className="s2-progress-milestone">Milestone reached</small>}{entry.timelineType==="routine"&&<small className="s2-progress-milestone">Scheduled routine</small>}
           <small>{entry.activity_date} · {entry.contributor?.full_name || (entry.contributor_id === me.id ? "You" : "Authorised contributor")} · {states.find(([key]) => key === entry.activity_state)?.[1] || entry.activity_state}</small>
         </div>
-        {entry.outcome_note && <p>{entry.outcome_note}</p>}
+        {entry.outcome_note && <p>{entry.outcome_note}</p>}{entry.timelineType==="routine"&&entry.routineValue!=null&&<p>Recorded result: {entry.routineValue}</p>}
         {entry.next_action && <p><b>Next{entry.next_action_on ? ` · ${entry.next_action_on}` : ""}:</b> {entry.next_action}</p>}
         {entry.duration_minutes != null && <small>{entry.duration_minutes} minutes self-recorded (not attendance)</small>}
         {entry.evidence_url && <a href={entry.evidence_url} target="_blank" rel="noopener noreferrer">Open evidence ↗</a>}
-        <ActivityFiles entry={entry} canUpload={entry.contributor_id===me.id&&canRecord}/>
+        {entry.timelineType!=="routine"&&<ActivityFiles entry={entry} canUpload={entry.contributor_id===me.id&&canRecord}/>}
         {entry.supersedes_id && <small>Corrected entry · prior version preserved</small>}
-        {entry.contributor_id===me.id&&canRecord&&<details className="s2-progress-menu">
+        {entry.timelineType!=="routine"&&entry.contributor_id===me.id&&canRecord&&<details className="s2-progress-menu">
             <summary aria-label={`Options for ${entry.action_summary}`} title="Entry options">⋯</summary>
             <div className="s2-progress-menu-actions">
               <button type="button" disabled={busy||Boolean(savedActivity.current)} onClick={()=>{correct(entry);sectionRef.current?.scrollIntoView?.({behavior:"smooth",block:"start"});}}>Edit entry</button>
