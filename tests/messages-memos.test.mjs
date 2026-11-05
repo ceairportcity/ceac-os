@@ -191,3 +191,13 @@ test("Work-to-Memo drafting preserves private Work and existing drafts without e
  assert.ok(memo.includes("tab=work&item="));
  assert.doesNotMatch(memo,/dangerouslySetInnerHTML/);
 });
+
+
+test("Memo can prepare a responsibility without secretly assigning or leaking recipient-only text",()=>{
+ const memo=source("src/screens/Memos.jsx"),inbox=source("src/screens/Inbox.jsx");
+ assert.match(inbox,/startWorkFromMemo=\{startWorkFromMessage\}/);
+ assert.match(memo,/Prepare a responsibility/);
+ assert.match(memo,/Nothing is assigned yet/);
+ assert.match(memo,/startWorkFromMemo && !\["draft","declined"\]\.includes\(active.status\)/);
+ assert.doesNotMatch(memo,/create_work_from_memo/);
+});
