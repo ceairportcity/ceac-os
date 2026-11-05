@@ -128,12 +128,18 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
           supabase.from("memo_exchanges").select("*").eq("memo_id",selected).order("created_at").order("id"),
         ]);if(m.error)throw m.error;if(e.error)throw e.error;
         const versions=[...(m.data.memo_versions || [])].sort((a,b)=>a.version_no-b.version_no);
+        // Show authorised conversation text immediately. The separate file
+        // metadata reads must never delay opening a Memo or its replies.
+        if(current && serial===request.current){
+          setAttachmentError("");
+          setDetail({...m.data,versions,exchanges:e.data || [],files:{}});setDetailKey(selected);
+          if(projectVersion.current!==m.data.current_version_id){projectVersion.current=m.data.current_version_id;setProjectUnit(m.data.unit_id || "");setProjectName(versions.filter(v=>v.sent_at).at(-1)?.subject || "");setProjectSummary("");}}
         const results=await Promise.allSettled(versions.map(version=>listOperationalFiles("memo_version",version.id)));
         const files=versions.map((version,i)=>[version.id,results[i].status==="fulfilled"?results[i].value:[]]);
         if(current && serial===request.current){
           setAttachmentError(results.some(row=>row.status==="rejected")?"Some attachments could not be loaded. Try again to see all files.":"");
-          setDetail({...m.data,versions,exchanges:e.data || [],files:Object.fromEntries(files)});setDetailKey(selected);
-          if(projectVersion.current!==m.data.current_version_id){projectVersion.current=m.data.current_version_id;setProjectUnit(m.data.unit_id || "");setProjectName(versions.filter(v=>v.sent_at).at(-1)?.subject || "");setProjectSummary("");}}
+          setDetail(previous=>previous?.id===selected?{...previous,files:Object.fromEntries(files)}:previous);
+        }
         const read=await supabase.rpc("mark_memo_read",{p_id:selected});
         if(!read.error){
           // Reading the Memo should clear its unread alert, but must not approve
@@ -375,7 +381,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
             </div>
             <section className="memo-sidebar-attachments" aria-label="Memo attachments">
               <h4>Attachments ({visibleAttachments.length})</h4>
-              {visibleAttachments.length>0 ? <OperationalMediaList files={visibleAttachments}/> : <p>No attachments</p>}
+              <p>{visibleAttachments.length ? "Files are shown with their original message." : "No attachments"}</p>
             </section>
             <small>Only authorised participants can view this Memo. Decisions remain separately auditable.</small>
           </aside>
