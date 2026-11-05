@@ -14,6 +14,7 @@ test("all managers, including the OFTGP Secretariat head and HR manager, must su
   assert.equal(canSelfCertifyOwnWork({ id: "head", memberships: [{ unit_id: "unit-2", role: "manager" }] }, item), false);
   assert.equal(canSelfCertifyOwnWork({ id: "head", memberships: [{ unit_id: "unit-1", role: "staff" }] }, item), false);
   assert.equal(canSelfCertifyOwnWork({ id: "head", is_exec: true }, item), true);
+  assert.equal(canSelfCertifyOwnWork({ ...manager }, { ...item, visibility: "private" }), true);
   assert.equal(canSelfCertifyOwnWork({ id: "head", is_admin: true, memberships: [] }, item), true);
   assert.equal(canSelfCertifyOwnWork({ id: "another", is_exec: true }, item), false);
 });
@@ -44,6 +45,7 @@ test("server enforces Executive review for managers, except a real Admin assignm
   assert.match(sql, /public\.app_responsible_reviewer_id\(w\.id\)=auth\.uid\(\)/);
   assert.match(sql, /CREATE OR REPLACE FUNCTION public\.guard_executive_work_self_certification\(\)/i);
   assert.match(sql, /NEW\.status = 'self_certified'/);
+  assert.match(sql, /OLD\.visibility <> 'private'/);
   assert.match(sql, /Manager work must be sent for review/);
   assert.doesNotMatch(sql, /DELETE FROM\s+(public\.)?(submissions|reviews|work_items)/i);
 });
