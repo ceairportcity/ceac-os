@@ -32,6 +32,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
   const [detail,setDetail]=useState(null),[detailKey,setDetailKey]=useState(""),[reply,setReply]=useState("");
   const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
   const [sendStage,setSendStage]=useState(""),[formIssues,setFormIssues]=useState([]),[attachmentError,setAttachmentError]=useState("");
+  const [attachmentFilesReady,setAttachmentFilesReady]=useState(false);
   const [recoveredDraft,setRecoveredDraft]=useState(null),[missingUploads,setMissingUploads]=useState([]);
   const [draftReady,setDraftReady]=useState(false);
   const uploadRetries=useRef(new Map());
@@ -120,7 +121,8 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
     window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn);
   },[dirty,pendingFiles.length,reply]);
   useEffect(()=>{
-    if(!selected)return;const serial=++request.current;let current=true;if(detailKey!==selected)setDetailKey("");
+    if(!selected)return;const serial=++request.current;let current=true;
+    setAttachmentFilesReady(false);if(detailKey!==selected)setDetailKey("");
     (async()=>{
       try{
         const [m,e]=await Promise.all([
@@ -137,7 +139,9 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
         const results=await Promise.allSettled(versions.map(version=>listOperationalFiles("memo_version",version.id)));
         const files=versions.map((version,i)=>[version.id,results[i].status==="fulfilled"?results[i].value:[]]);
         if(current && serial===request.current){
-          setAttachmentError(results.some(row=>row.status==="rejected")?"Some attachments could not be loaded. Try again to see all files.":"");
+          const allFilesVerified=results.every(row=>row.status==="fulfilled");
+          setAttachmentError(allFilesVerified?"":"Some attachments could not be loaded. Try again to see all files.");
+          setAttachmentFilesReady(allFilesVerified);
           setDetail(previous=>previous?.id===selected?{...previous,files:Object.fromEntries(files)}:previous);
         }
         const read=await supabase.rpc("mark_memo_read",{p_id:selected});
@@ -153,7 +157,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
         }
         if(read.error && current)setNotice("Memo opened; its read indicator could not be updated.");
         else if(current)setRows(rows=>rows.map(row=>row.id!==selected?row:{...row,memo_recipients:row.memo_recipients.map(recipient=>recipient.profile_id===me.id?{...recipient,last_read_at:m.data.updated_at}:recipient)}));
-      }catch(failure){if(current && serial===request.current){setDetail(null);setError(failure.message || "This memo could not be opened.");}}
+      }catch(failure){if(current && serial===request.current){setAttachmentFilesReady(false);setDetail(null);setError(failure.message || "This memo could not be opened.");}}
     })();return()=>{current=false;};
   },[selected,reload]);
   useEffect(()=>{setReply("");responseIntent.current=null;},[selected]);
@@ -376,7 +380,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
             </div>}
             <dl><dt>From</dt><dd>{name(active.sender_id)}</dd><dt>To</dt><dd>{active.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Cc</dt><dd>{active.memo_recipients.filter(r=>r.kind==="cc").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Status</dt><dd>{MEMO_STATUS_LABELS[active.status]}</dd><dt>Attachments</dt><dd>{visibleAttachments.length}</dd></dl>
             <div className="memo-response">
-            {active.sender_id===me.id && ["draft","changes_requested"].includes(active.status) && <button className="btn" type="button" onClick={()=>editMemo(active)}>{active.status==="draft"?"Continue draft":"Prepare revision"}</button>}
+            {active.sender_id===me.id && ["draft","changes_requested"].includes(active.status) && <button className="btn" type="button" disabled={busy||!attachmentFilesReady} onClick={()=>editMemo(active)}>{active.status==="draft"?"Continue draft":"Prepare revision"}</button>}
             {canDecide && <div className="memo-actions"><strong>Actions</strong><button type="button" className="btn" disabled={busy} onClick={()=>respond("approved")}>Approve proposal</button><button type="button" disabled={busy||!reply.trim()} onClick={()=>respond("changes_requested")}>Request changes</button><button type="button" disabled={busy||!reply.trim()} onClick={()=>respond("declined")}>Decline</button><small>Add a reason when requesting changes or declining.</small></div>}
             </div>
             <section className="memo-sidebar-attachments" aria-label="Memo attachments">
