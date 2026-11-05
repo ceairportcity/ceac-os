@@ -106,7 +106,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
     <label>Evidence links, one per line<textarea className="field" rows={2} value={links} disabled={busy} onChange={event=>setLinks(event.target.value)} /></label>
     {writeError && <p role="alert">{writeError}</p>}
     <button className="btn btn-sm" disabled={busy || Boolean(writeError) || status==="waiting_on" && note.trim().length<3 || status==="ready_for_review" && done.length!==steps.length}>
-     {busy?"Saving date progress…":"Save update"}
+     {busy?"Saving date progress…":"Save date progress"}
     </button>
    </form>}
    {permitted&&onRecordOccurrence&&dateScheduleState!=="recorded"&&date<=ghanaCalendarDate()&&<button type="button" className="btn" onClick={()=>onRecordOccurrence(date)}>Record completed work</button>}
