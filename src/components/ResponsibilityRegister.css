@@ -28,16 +28,5 @@
 
 @media(max-width:650px){.s2-register-filters input,.s2-register-filters select{font-size:16px}.s2-register-row strong{font-size:14px}}
 
-/* Staff-friendly premium Work rows: calm surfaces, clear selection, touch targets. */
-.s2-register-filters{gap:10px;border-bottom-color:var(--ev2-line,#e4ebf4)}
-.s2-register-filters input,.s2-register-filters select{min-height:42px;border-radius:10px;border-color:var(--ev2-line,#dce6f2);background:var(--ev2-surface,#fff);color:var(--ev2-text,#263a4e);font-size:13px}
-.s2-register-search input{padding-left:12px;background:var(--ev2-surface-soft,#f6f8fb)}
-.s2-register-table thead th{background:var(--ev2-surface-soft,#f6f8fb);color:var(--ev2-text-secondary,#718399);letter-spacing:.025em}
-.s2-register-group button{min-height:46px;font-size:13px}
-.s2-register-row>th>button{min-height:44px;justify-content:center}
-.s2-register-row strong{font-size:14px;font-weight:650;letter-spacing:-.01em}
-.s2-register-row.is-selected{background:var(--ev2-action-soft,#edf5ff)}
-.s2-register-row.is-selected>th{box-shadow:inset 3px 0 var(--ev2-action,#1687ff)}
-.s2-register-row:hover{background:var(--ev2-surface-soft,#f3f8ff)}
-.s2-register-table th,.s2-register-table td{padding-block:13px}
-@media(max-width:650px){.s2-register-filters input,.s2-register-filters select{font-size:16px}.s2-register-table th,.s2-register-table td{padding-block:12px}}
+/* Calm, accessible register selections without additional UI dependencies. */
+.s2-register-row.is-selected{background:var(--ev2-action-soft,#edf5ff)}.s2-register-row strong{letter-spacing:-.01em}.s2-register-filters input,.s2-register-filters select{min-height:42px;border-radius:9px}
