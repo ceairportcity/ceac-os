@@ -43,7 +43,7 @@ export default function Item(props) {
   return <ItemDetail key={scope} {...props} />;
 }
 
-function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=null, openRoom, back }) {
+function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=null, openRoom, onOpenMemo, back }) {
   const [item, setItem] = useState(null);
   const [canReview, setCanReview] = useState(false);
   const [responsibleReviewer, setResponsibleReviewer] = useState(null);
@@ -559,6 +559,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         <span><strong>{item.project_id ? "Discuss this project" : item.sub_team_id ? "Discuss with this team" : "Discuss with your team"}</strong><small>Open the conversation about this work.</small></span>
         <b aria-hidden="true">→</b>
       </button>}
+      {onOpenMemo && item.visibility === "unit" && !item.confidential && <button type="button" className="btn btn-ghost btn-sm" onClick={()=>onOpenMemo(item)}>Write a Memo about this work</button>}
       </div>
 
       {err && <div className="flag flag-brick" style={{ marginTop: 14 }}>{err}</div>}
