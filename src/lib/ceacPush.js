@@ -10,7 +10,8 @@ export function pushSupport() {
   if (typeof window === "undefined" || !window.isSecureContext ||
       !("serviceWorker" in navigator) || !("PushManager" in window) ||
       !("Notification" in window)) return "unavailable";
-  const appleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const appleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   if (appleMobile && !(navigator.standalone || window.matchMedia("(display-mode: standalone)").matches))
     return "install_required";
   return "supported";
@@ -41,8 +42,12 @@ export async function loadPushConfiguration() {
   const registration = await navigator.serviceWorker.ready;
   const result = await pushRequest("config");
   if (!result.enabled || !/^[A-Za-z0-9_-]{80,120}$/.test(result.publicKey || "")) return null;
+  const subscription = await registration.pushManager.getSubscription();
+  const serverStatus = subscription ? await pushRequest("status", "POST",
+    { endpoint: subscription.endpoint }) : { enabled:false, preview:false };
   return { publicKey: result.publicKey, registration,
-    subscription: await registration.pushManager.getSubscription() };
+    subscription: serverStatus.enabled ? subscription : null,
+    preview: serverStatus.preview === true };
 }
 
 export async function enableDevicePush(config, showPreview = false) {
@@ -50,7 +55,20 @@ export async function enableDevicePush(config, showPreview = false) {
   // requestPermission stays in the direct user action path, never an effect.
   const permission = await Notification.requestPermission();
   if (permission !== "granted") throw new Error("Notifications are blocked. Enable them in your device settings.");
-  const current = await config.registration.pushManager.getSubscription();
+  let current = await config.registration.pushManager.getSubscription();
+  // A browser may still carry a subscription from an earlier signed-in
+  // account or a rotated VAPID key. Never reuse an unverified binding.
+  if (current) {
+    const key = current.options?.applicationServerKey;
+    const actual = key ? new Uint8Array(key) : null;
+    const expected = toBytes(config.publicKey);
+    const sameKey = actual?.length === expected.length &&
+      actual.every((byte,index) => byte === expected[index]);
+    if (!config.subscription || !sameKey) {
+      await current.unsubscribe();
+      current = null;
+    }
+  }
   let subscription = current;
   if (!subscription) {
     subscription = await config.registration.pushManager.subscribe({
