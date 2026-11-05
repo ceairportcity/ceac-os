@@ -83,8 +83,11 @@ for (const viewport of [
       await expect(page.locator(".staffv2-secondary-grid")).toBeHidden();
     } else {
       await expect(page.locator(".staffv2-schedule-panel")).toBeVisible();
-      await expect(page.locator(".staffv2-secondary-grid")).toBeVisible();
+      await expect(page.locator(".staffv2-secondary-grid")).toBeHidden();
     }
+    await expect(page.getByText("More from your week", {exact:true})).toBeVisible();
+    await page.getByText("More from your week", {exact:true}).click();
+    await expect(page.locator(".staffv2-secondary-grid")).toBeVisible();
     await expect(page.locator(".reference-module-strip")).toHaveCount(0);
     await expect(page.locator(".staff-command-surface")).toHaveCount(0);
 
