@@ -127,6 +127,7 @@ export default function App() {
   const notificationCounts = useCeacUnreadNotifications(me);
   const [openUpdatesIntent,setOpenUpdatesIntent]=useState(false);
   const [memoWorkContext,setMemoWorkContext]=useState(null);
+  useEffect(()=>{setMemoWorkContext(null);},[me?.org_id,me?.id]);
   const [ready, setReady] = useState(false);
   const [bootError, setBootError] = useState(null);
   const initialRoute = routeFromLocation();
@@ -171,6 +172,7 @@ export default function App() {
       // Continue handling all genuine identity and security state changes.
       if (event === "INITIAL_SESSION") return;
       if(event==="SIGNED_OUT"){
+        setMemoWorkContext(null);
         if("clearAppBadge" in navigator)void navigator.clearAppBadge().catch(()=>{});
         if(draftActorRef.current){
           const actor=draftActorRef.current;
