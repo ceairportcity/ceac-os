@@ -31,8 +31,9 @@ export default function Notifications({me,notificationCounts}){
       const id=row.id.slice("event:".length);
       setBusy(id);setError("");
       const result=await supabase.rpc("mark_ceac_notification_read",{p_id:id});
-      if(result.error){setBusy("");setError("This update could not be marked as read. Retry.");return;}
-      window.dispatchEvent(new Event("ceac:notifications-changed"));
+      if(!result.error)window.dispatchEvent(new Event("ceac:notifications-changed"));
+      // A temporary read-receipt failure must not block opening the source.
+      // The notification remains unread until independently acknowledged.
     }
     window.location.assign(row.url||"/?tab=home");
   }
