@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 
 // Only a staff member's deliberate button press may request browser permission.
 // Web Push is optional; in-app notices remain available without it.
+let lastSubscriptionBearer = null; // RAM only; never store a JWT with device keys.
 const endpoint = () => new URL("/functions/v1/ceac-web-push", supabase.supabaseUrl).href;
 const toBytes = value => Uint8Array.from(atob(value.replace(/-/g, "+").replace(/_/g, "/")), char => char.charCodeAt(0));
 
@@ -30,6 +31,8 @@ async function pushRequest(action, method = "GET", body) {
   let result;
   try { result = await response.json(); } catch { result = {}; }
   if (!response.ok) throw new Error(result.message || "Device notifications are unavailable. Try again later.");
+  if (action === "subscribe") lastSubscriptionBearer = data.session.access_token;
+  if (action === "unsubscribe") lastSubscriptionBearer = null;
   return result;
 }
 
@@ -82,5 +85,14 @@ export async function disconnectDevicePushOnSignOut() {
   const registration = await navigator.serviceWorker.getRegistration("/");
   const subscription = await registration?.pushManager?.getSubscription();
   if (!subscription) return;
+  if (lastSubscriptionBearer) {
+    const token = lastSubscriptionBearer;
+    lastSubscriptionBearer = null;
+    // Best-effort server revocation is independent from clearing this device.
+    try { await fetch(endpoint() + "?action=unsubscribe", {
+      method:"POST",headers:{Authorization:"Bearer " + token,"Content-Type":"application/json"},
+      body:JSON.stringify({endpoint:subscription.endpoint}),cache:"no-store",
+    }); } catch { /* Unsubscribed browser will retire on the next provider expiry. */ }
+  }
   await subscription.unsubscribe().catch(() => {});
 }
