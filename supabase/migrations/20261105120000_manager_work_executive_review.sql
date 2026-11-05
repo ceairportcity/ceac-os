@@ -143,7 +143,7 @@ begin
 
   return v_reviewer;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.app_can_review_item(item_id uuid)
  RETURNS boolean
@@ -175,7 +175,7 @@ AS $function$
         )
       )
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.guard_executive_work_self_certification()
  RETURNS trigger
@@ -224,4 +224,4 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$function$
+$function$;
