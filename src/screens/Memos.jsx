@@ -10,9 +10,9 @@ import { MEMO_STATUS_LABELS, eligibleMemoDecisionMakers, initials, memoInView, m
 const fresh = () => ({id:crypto.randomUUID(),versionId:null,updatedAt:null,subject:"",body:"",to:[],cc:[],decisionRequired:false,scope:"department",unitId:"",decisionMakerId:""});
 
 // Basic formatting is parsed into React text nodes. Never render authored HTML.
-function MemoBody({body=""}) {
+function MemoBody({body="",openWork}) {
   return <div className="memo-body">{body.split("\n").map((line,index)=><p key={index}>{line.split(/(\/\?tab=work&item=[0-9a-f-]{36}|\*\*[^*]+\*\*|_[^_]+_)/gi).map((part,i)=>
-    /^\/\?tab=work&item=[0-9a-f-]{36}$/i.test(part) ? <a key={i} href={part}>Open linked Work</a> : part.startsWith("**") && part.endsWith("**") ? <strong key={i}>{part.slice(2,-2)}</strong>
+    /^\/\?tab=work&item=[0-9a-f-]{36}$/i.test(part) ? <a key={i} href={part} onClick={event=>{if(!openWork || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button!==0)return;event.preventDefault();openWork(part.split("item=")[1]);}}>Open linked Work</a> : part.startsWith("**") && part.endsWith("**") ? <strong key={i}>{part.slice(2,-2)}</strong>
       : part.startsWith("_") && part.endsWith("_") ? <em key={i}>{part.slice(1,-1)}</em> : part)}{!line && <br/>}</p>)}</div>;
 }
 function RecipientPicker({label,people,value,onChange,excluded,disabled,invalid=false}) {
@@ -23,7 +23,7 @@ function RecipientPicker({label,people,value,onChange,excluded,disabled,invalid=
     {query && !disabled && <div className="memo-matches">{matches.slice(0,12).map(p=><button type="button" key={p.id} onClick={()=>{onChange([...value,p.id]);setQuery("");}}><strong>{p.full_name}</strong><small>{p.job_title || "CEAC colleague"}</small></button>)}{!matches.length && <p>No matching colleagues.</p>}</div>}
   </div>;
 }
-export default function Memos({me,composeRequest,initialMemoId,openProject,leaveGuard,relatedWork,onRelatedWorkHandled}) {
+export default function Memos({me,composeRequest,initialMemoId,openProject,openWork,leaveGuard,relatedWork,onRelatedWorkHandled}) {
   const [rows,setRows]=useState([]),[people,setPeople]=useState([]),[units,setUnits]=useState([]),[fileVersions,setFileVersions]=useState(new Set());
   const [canCreateProject,setCanCreateProject]=useState(Boolean(me.is_admin));
   const [view,setView]=useState("all"),[query,setQuery]=useState(""),[selected,setSelected]=useState(initialMemoId || null);
@@ -354,7 +354,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
                 <div className="memo-thread-entry-content">
                   <div className="room-message-meta memo-thread-entry-heading"><strong>{name(entry.author)}</strong><span>{entry.title}</span><time>{messageTimestamp(entry.at)}</time></div>
                   {identity(entry.author).detail && <small>{identity(entry.author).detail}</small>}
-                  <MemoBody body={entry.body || ""}/>
+                  <MemoBody body={entry.body || ""} openWork={openWork}/>
                   {entry.files.length>0 && <div className="memo-thread-files"><span>{entry.files.length} attachment{entry.files.length===1?"":"s"} · see Memo details</span></div>}
                 </div>
               </section>)}
