@@ -246,7 +246,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
     {compact && <dl className="s2-work-inspector-facts">
       <div><dt>Work status</dt><dd>{RESPONSIBILITY_STATUS[item.status] || item.status?.replaceAll("_", " ") || "Not recorded"}</dd></div>
-      <div><dt>Recorded actions</dt><dd>{verified ? history.length : checking ? "Verifying…" : "Unavailable"}</dd></div>
+      <div><dt>Recent actions</dt><dd>{verified ? history.length : checking ? "Verifying…" : "Unavailable"}</dd></div>
     </dl>}
     {!compact && <header>
       <div><span className="eyebrow">Your work</span><h3>Progress history</h3>
@@ -286,8 +286,8 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     </p>}
     {visibleSuccess && <p role="status">{visibleSuccess}</p>}
     {!compact && verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
-      <div><span>Progress entries</span><strong>{timeline.length}</strong></div>
-      <div><span>Milestones</span><strong>{history.filter(entry=>entry.entry_kind==="milestone").length}</strong></div>
+      <div><span>{historyLimit < historyTotal ? "Recent progress entries" : "Progress entries"}</span><strong>{timeline.length}</strong></div>
+      <div><span>{historyLimit < historyTotal ? "Recent milestones" : "Milestones"}</span><strong>{history.filter(entry=>entry.entry_kind==="milestone").length}</strong></div>
     </div>}
     {verified && nextActions.length > 0 && <div className="s2-work-diary-next-action">
       <span>Recorded next actions</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}{action.contributor_id===me.id&&<PlanFollowup activityId={action.id}/>}</p>)}
