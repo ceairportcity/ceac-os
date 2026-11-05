@@ -42,16 +42,16 @@ function titleCase(value = "") {
 
 function workStatus(item) {
   if (!item) return { label: "", tone: "neutral" };
-  if (item.status === "returned") return { label: "Sent back", tone: "danger" };
+  if (item.status === "returned") return { label: "Changes requested", tone: "warning" };
   if (isWorkOverdue(item)) {
-    return { label: "Overdue", tone: "danger" };
+    return { label: "Past due — needs attention", tone: "warning" };
   }
 
   const statuses = {
     not_started: ["Not started", "neutral"],
     in_progress: ["In progress", "action"],
-    in_review: ["In review", "warning"],
-    waiting_on: ["Waiting", "neutral"],
+    in_review: ["Waiting for approval", "neutral"],
+    waiting_on: ["Waiting on someone else", "neutral"],
     completed: ["Completed", "success"],
     self_certified: ["Completed", "success"],
     cancelled: ["Cancelled", "neutral"],
@@ -249,7 +249,7 @@ export default function StaffTodayV2({
           <div className="staffv2-session-copy">
             <div className="staffv2-session-label">Work session</div>
             <div className="staffv2-session-line">
-              <strong>{!sessionVerified ? "Verification required" : session ? staleSession ? "Needs reconciliation" : since(session.started_at) : "Not working"}</strong>
+              <strong>{!sessionVerified ? "Verification required" : session ? staleSession ? "Check earlier workday" : since(session.started_at)  : "Not started"}</strong>
               <StatusBadge tone={!sessionVerified ? "warning" : staleSession ? "warning" : session ? "success" : "neutral"}>
                 {!sessionVerified ? "Unverified" : staleSession ? "Review needed" : session ? "Active" : "Not started"}
               </StatusBadge>
