@@ -173,6 +173,7 @@ export default function App() {
       // Continue handling all genuine identity and security state changes.
       if (event === "INITIAL_SESSION") return;
       if(event==="SIGNED_OUT"){
+        void import("./lib/ceacPush").then(({disconnectDevicePushOnSignOut})=>disconnectDevicePushOnSignOut()).catch(()=>{});
         setMemoWorkContext(null);
         if("clearAppBadge" in navigator)void navigator.clearAppBadge().catch(()=>{});
         if(draftActorRef.current){
