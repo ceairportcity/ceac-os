@@ -26,8 +26,6 @@ import {
   WorkReturnedNotice,
 } from "../experience-v2/work-family/WorkFamilyV2";
 
-const MANAGER_SELF_CERTIFICATION_READY = true;
-
 const BRAND_BOOK_TASK_CSS = `.fpg-brandbook-task-card{margin-top:var(--ev2-space-6);overflow:hidden;border:1px solid var(--ev2-line);border-radius:14px;background:var(--ev2-surface);box-shadow:var(--ev2-shadow-1)}
 .fpg-brandbook-task-card>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px 10px}
 .fpg-brandbook-task-card>header span{display:grid;gap:2px}.fpg-brandbook-task-card>header small{color:var(--ev2-text-tertiary);font-size:12px}.fpg-brandbook-task-card>header strong{font-size:14px}.fpg-brandbook-task-card>header>b{font-size:22px;letter-spacing:-.04em}
@@ -232,8 +230,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   const done = checks.filter((c) => ticks[c.id]).length;
   const allDone = checks.length > 0 && done === checks.length;
   const gated = !session;
-  const managerOwnWork = canSelfCertifyOwnWork(me, item);
-  const managerSubmissionBlocked = managerOwnWork && !MANAGER_SELF_CERTIFICATION_READY;
+  const selfCertifiableWork = canSelfCertifyOwnWork(me, item);
 
   async function addMyStep() {
     const label = myStep.trim();
@@ -304,17 +301,13 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
   }
 
   async function submit() {
-    if (managerSubmissionBlocked) {
-      setErr("Manager self-certification needs the pending database migration. Nothing was submitted.");
-      return;
-    }
     setBusy(true);
     setErr(null);
     try {
       if (item.kind === "deliverable" && deliverableRecord?.evidence_required && !link.trim()) {
         throw new Error("Add the required evidence link before sending this deliverable.");
       }
-      if (managerOwnWork) {
+      if (selfCertifiableWork) {
         const { error: selfCertificationError } = await supabase.rpc("self_certify_work", {
           p_work_item_id: id,
           p_session_id: session ? session.id : null,
@@ -793,23 +786,22 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         </div>
       </>}
 
-      {managerOwnWork && item.status === "in_review" && item.assignee_id === me.id && <button className="btn btn-sm work-primary-action" disabled={busy || (checks.length > 0 && !allDone)} onClick={() => setSheet("submit")}>Finish my work</button>}
+      {selfCertifiableWork && item.status === "in_review" && item.assignee_id === me.id && <button className="btn btn-sm work-primary-action" disabled={busy || (checks.length > 0 && !allDone)} onClick={() => setSheet("submit")}>Finish my work</button>}
 
       {item.assignee_id === me.id && !["routine", "case", "request", "decision"].includes(item.kind) && !(["in_review", "completed", "self_certified"].includes(item.status)) && (<>
         <button className="btn btn-sm work-primary-action" style={{ marginTop: 20, width:"fit-content" }} onClick={() => setSheet("submit")}
-          disabled={managerSubmissionBlocked || (checks.length > 0 && !allDone)}>
+          disabled={(checks.length > 0 && !allDone)}>
           {item.kind === "deliverable"
-            ? (managerOwnWork ? "Finish deliverable" : "Send deliverable for review")
-            : managerOwnWork ? "Finish this work" : "Send for review"}</button>
+            ? (selfCertifiableWork ? "Finish deliverable" : "Send deliverable for review")
+            : selfCertifiableWork ? "Finish this work" : "Send for review"}</button>
         {gated && <div className="hint">You can submit this work without starting a work session. Your attendance record will not change.</div>}
-        {managerSubmissionBlocked && <div className="hint">Manager self-certification is waiting on the database migration. This work will not enter your review queue.</div>}
         {!gated && checks.length > 0 && !allDone && <div className="hint">Finish the checklist to send it in</div>}
         {!blocker && (
           <button className="btn btn-ghost btn-sm work-secondary-action" style={{ marginTop: 10, width:"fit-content" }} onClick={() => setSheet("waiting")}>
             I need something from someone</button>)}
       </>)}
 
-      {!canReview && !managerOwnWork && item.status === "in_review" &&
+      {!canReview && !selfCertifiableWork && item.status === "in_review" &&
         <div className="flag flag-amber" style={{ marginTop: 20 }}><h4>Sent in</h4>Waiting on {responsibleReviewer?.full_name || "the responsible reviewer"} to check it.</div>}
 
       {isManager && ["task", "meeting_outcome", "deliverable"].includes(item.kind) && ["completed", "self_certified"].includes(item.status) &&
@@ -951,10 +943,10 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
       {sheet === "submit" && (
         <Sheet onClose={() => setSheet(null)}>
           <div className="h2">{item.kind === "deliverable"
-            ? (managerOwnWork ? "Finish deliverable" : "Send deliverable for review")
-            : managerOwnWork ? "Finish this work" : "Send for review"}</div>
-          <p className="screen-note">{managerOwnWork
-            ? (item.status === "in_review" ? "Your earlier submission stays in the record. Finishing this manager-owned work removes the pending review." : "This finishes your work and records your outcome without sending it for review.")
+            ? (selfCertifiableWork ? "Finish deliverable" : "Send deliverable for review")
+            : selfCertifiableWork ? "Finish this work" : "Send for review"}</div>
+          <p className="screen-note">{selfCertifiableWork
+            ? (item.status === "in_review" ? "Your earlier submission stays in the record. Finishing your own Executive work closes its pending review." : "This finishes your own Executive work without a separate reviewer.")
             : `${responsibleReviewer?.full_name || "The responsible reviewer"} will receive this in their review queue.`}</p>
           {gated && <div className="flag flag-amber"><h4>No work session is open</h4>This submission will still be accepted and recorded as outside a session.</div>}
           <p className="screen-note">This finishes the whole assignment. If only today’s activity is finished, close this form and record an activity with its next action instead.</p>
@@ -963,7 +955,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
           <p className="small" style={{ marginTop: 8 }}>Large files — video especially — should be a link rather than an upload.</p>
           <button className="btn" style={{ marginTop: 14 }} onClick={submit}
             disabled={busy || (item.kind === "deliverable" && deliverableRecord?.evidence_required && !link.trim())}>
-            {busy ? "Saving..." : gated ? (managerOwnWork ? "Finish outside session" : "Send outside session") : managerOwnWork ? "Finish work" : "Send"}</button>
+            {busy ? "Saving..." : gated ? (selfCertifiableWork ? "Finish outside session" : "Send outside session") : selfCertifiableWork ? "Finish work" : "Send"}</button>
         </Sheet>)}
 
       {sheet === "reopen" && (
