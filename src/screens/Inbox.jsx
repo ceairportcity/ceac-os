@@ -37,12 +37,12 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
     setLoading(true);setError("");
     (async () => {
       try {
-        const [result,attention] = await Promise.all([supabase.rpc("my_room_directory").abortSignal(controller.signal),supabase.rpc("my_work_attention_queue").abortSignal(controller.signal)]);
+        const [result,attention] = await Promise.all([section==="rooms" ? supabase.rpc("my_room_directory").abortSignal(controller.signal) : Promise.resolve({data:[],error:null}), supabase.rpc("my_work_attention_queue").abortSignal(controller.signal)]);
         if(result.error) throw result.error;
-        if(attention.error) throw attention.error;
+        if(attention.error && actionsOpen) throw attention.error;
         if(!active || serial !== request.current) return;
-        setRooms(result.data || []);setActions(attention.data || []);setLoadedScope(scope);
-        setSelected(current => (result.data || []).find(room => room.id === current?.id) || null);
+        if(section==="rooms") setRooms(result.data || []);setActions(attention.error ? [] : (attention.data || []));setLoadedScope(scope);
+        if(section==="rooms") setSelected(current => (result.data || []).find(room => room.id === current?.id) || null);
       } catch(failure) {
         if(active && serial === request.current) {setRooms([]);setLoadedScope(scope);setError(failure.message || "Rooms could not be loaded.");}
       } finally {if(active && serial === request.current)setLoading(false);}
