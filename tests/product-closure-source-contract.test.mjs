@@ -389,7 +389,8 @@ test("P5 cross-role project reader fails closed on truncated or malformed succes
 });
 test("P5 project work indicators respect exact Ghana deadlines and refresh on an open screen",()=>{
  const s=file("src/components/Stage2ProjectOverview.jsx");
- assert.match(s,/import \{ deadlineOverdue \} from/);
+ assert.match(s,/import \{ deadlineOverdue, isActionableDeadlineWork, isDeadlineWorkOverdue \} from/);
+ assert.match(s,/isDeadlineWorkOverdue\(row\.due_at, asOf\)|isDeadlineWorkOverdue\(row, asOf\)/);
  assert.match(s,/deadlineOverdue\(row\.due_at, asOf\)/);
  assert.match(s,/window\.setInterval\(refresh, 60000\)/);
  assert.match(s,/document\.addEventListener\("visibilitychange", refresh\)/);
