@@ -189,7 +189,7 @@ test("Stage 10 Family G3 keeps personal leave inside established workforce autho
   expect(me).toContain('supabase.rpc("workforce_request_leave"');
   expect(me).toContain('supabase.rpc("workforce_leave_action"');
   expect(me).toContain('p_action: "cancelled_by_employee"');
-  expect(me).toContain("Manager and Administration decisions remain in Time & Leave.");
+  expect(me).toContain("HR decisions are managed in Time & Leave.");
   expect(me).toContain("Open Time & Leave");
   expect(me).toContain("CEAC OS will not invent an annual leave balance.");
   expect(me).toContain("It never turns leave or attendance into a Payroll deduction automatically.");
@@ -219,7 +219,7 @@ for (const viewport of [
     await page.getByRole("tab", { name: "Leave", exact: true }).click();
     await expect(page.locator(".ev2pf-section").filter({ hasText: "Time away" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Ask for leave", exact: true })).toBeVisible();
-    await expect(page.getByText(/Manager and Administration decisions remain in Time & Leave/i)).toBeVisible();
+    await expect(page.getByText(/HR decisions are managed in Time & Leave/i)).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `Personal leave overflowed ${viewport.width}px viewport`).toBeLessThanOrEqual(1);

@@ -72,7 +72,7 @@ test("browser acceptance fixtures explicitly model employees instead of treating
 
 test("OCR5D keeps daily Workforce separate from advanced policy and preserves Leave authority", () => {
   expect(workforce).toContain('["setup","Schedules & policy"]');
-  expect(workforce).toContain("Manager approval → Administration final approval");
+  expect(workforce).toContain("Every leave request goes directly to HR for a final decision; managers do not approve or decline leave.");
   expect(workforce).toContain("No session recorded");
   expect(workforce).toContain("not an absence judgement");
   expect(workforce).toContain('p_action:action');

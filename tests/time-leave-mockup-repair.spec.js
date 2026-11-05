@@ -31,7 +31,7 @@ for(const width of [390,1440]){
   await expect(page.getByRole('tab',{name:'Leave requests',exact:true})).toHaveAttribute('aria-selected','true');
   const planner=page.getByRole('region',{name:'Organisation leave calendar'});
   await planner.getByRole('button',{name:/Ama Fixture annual/}).last().click();
-  await expect(planner).toContainText('Waiting for Manager approval');await expect(planner.getByRole('button',{name:'Admin approve',exact:true})).toHaveCount(0);
+  await expect(planner).toContainText('Waiting for HR approval');await expect(planner.getByRole('button',{name:'HR approve',exact:true})).toBeVisible();
   await page.getByRole('tab',{name:'Overview',exact:true}).click();
   await register.getByRole('button',{name:'Inspect sessions',exact:true}).click();
   await expect(page.getByRole('tab',{name:'Work sessions',exact:true})).toHaveAttribute('aria-selected','true');

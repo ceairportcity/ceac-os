@@ -93,8 +93,9 @@ for(const scope of ["My","Team","Organisation"]){
   await planner.getByRole("button",{name:today+" · 1 approved · 1 requested",exact:true}).click();
   const inspector=planner.getByRole("complementary",{name:"Leave selection and decisions"});
   await inspector.getByRole("button",{name:/Ama Fixture annual/}).first().click();
-  await expect(inspector).toContainText("Waiting for Manager approval");
-  await expect(inspector.getByRole("button",{name:/Admin approve|Decline/})).toHaveCount(0);
+  await expect(inspector).toContainText("Waiting for HR approval");
+  if(scope==="Organisation") await expect(inspector.getByRole("button",{name:"HR approve",exact:true})).toBeVisible();
+  else await expect(inspector.getByRole("button",{name:/HR approve|Decline/})).toHaveCount(0);
   await planner.getByRole("button",{name:"Next leave month"}).click();
   await planner.getByRole("button",{name:"Today",exact:true}).click();
   await page.setViewportSize({width:390,height:844});

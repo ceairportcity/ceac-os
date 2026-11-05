@@ -1696,7 +1696,8 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     dialog = page.getByRole("dialog");
     await expect(dialog.getByLabel("Policy accrual method")).toHaveValue("");
     await expect(dialog.getByLabel("Policy carryover method")).toHaveValue("");
-    await expect(dialog.getByLabel("Policy approval route")).toHaveValue("");
+    await expect(dialog.getByLabel("Policy approval route")).toHaveValue("admin");
+    await expect(dialog.getByLabel("Policy approval route")).toBeDisabled();
     await expect(dialog.getByRole("button", { name: "Activate confirmed policy", exact: true })).toBeDisabled();
     await dialog.getByRole("button", { name: "Close", exact: true }).click();
 
@@ -1730,10 +1731,8 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await page.getByRole("tab", { name: "Leave", exact: true }).click();
     const leaveRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "Annual" }).filter({ hasText: "Pending" }).first();
     await expect(leaveRow).toBeVisible();
-    page.once("dialog", (prompt) => prompt.accept("Acceptance manager approval"));
-    await leaveRow.getByRole("button", { name: "Approve", exact: true }).click();
-    await expect(page.getByText("Leave decision recorded.", { exact: true })).toBeVisible();
-    await expect(page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "Escalated" }).first()).toBeVisible();
+    await expect(leaveRow.getByText(/HR makes all leave decisions/i)).toBeVisible();
+    await expect(leaveRow.getByRole("button", { name: /Approve|Decline/i })).toHaveCount(0);
     await context.close();
   }
 
@@ -1743,9 +1742,9 @@ test("Stage 9 Workforce keeps schedule, session and leave context factual across
     await page.getByRole("tab", { name: "Leave requests", exact: true }).click();
     const administrationRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "HR decision needed" }).first();
     await expect(administrationRow).toBeVisible();
-    await expect(administrationRow.getByText(/Manager approved · Administration final decision required/i)).toBeVisible();
-    page.once("dialog", (prompt) => prompt.accept("Acceptance Administration final approval"));
-    await administrationRow.getByRole("button", { name: "Admin approve", exact: true }).click();
+    await expect(administrationRow.getByText(/Waiting for HR approval/i)).toBeVisible();
+    page.once("dialog", (prompt) => prompt.accept("Acceptance HR direct approval"));
+    await administrationRow.getByRole("button", { name: "HR approve", exact: true }).click();
     await expect(page.getByText("Leave decision recorded.", { exact: true })).toBeVisible();
 
     const approvedRow = page.locator(".row").filter({ hasText: "Staff Fixture" }).filter({ hasText: "Approved" }).first();
@@ -2325,12 +2324,12 @@ test("Administration surfaces use policy-safe HR states and real employee record
 
   await go(page, "Workforce");
   // The approved Stage 9 policy is active after the full 129-migration replay:
-  // 24 days/year, 6 days per completed quarter, Manager then Administration.
+  // Leave allowances are unchanged; all approval decisions now go directly to HR.
   // Do not assert the old unconfigured prototype state or weaken any safeguards.
   await page.locator(".timeleave-policy > summary").filter({hasText:"Leave policy & balances"}).click();
   await expect(page.getByText("Confirmed leave process", { exact: true })).toBeVisible();
   await expect(page.getByText(/24-day yearly allowance comprises 15 annual-leave days/i)).toBeVisible();
-  await expect(page.getByText(/Manager approval.*Administration final approval/i)).toBeVisible();
+  await expect(page.getByText(/goes directly to HR for a final decision/i)).toBeVisible();
   await expect(page.getByText(/does not rank people, score attendance, infer absence from missing sessions/i)).toBeVisible();
 
   await go(page, "Control Center");

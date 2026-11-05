@@ -424,14 +424,14 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
     {!loading && area === "leave" ? <PersonalSection
       eyebrow="Time away"
       title="Leave"
-      description="Your own request and confirmed-policy context. Manager and Administration decisions remain in Time & Leave."
+      description="Your own request and confirmed-policy context. HR decisions are managed in Time & Leave."
       action={<div className="ev2pf-inline-actions">
         {!me.is_admin && !me.is_exec && openWorkforce ? <Button variant="secondary" size="sm" onClick={() => openWorkforce()}>Open Time & Leave</Button> : null}
         <Button size="sm" onClick={() => setSheet("leave")} disabled={Boolean(datasetErrors.leaveRequests)}>Ask for leave</Button>
       </div>}
     >
       <ProductNotice tone="info" title="Confirmed annual leave">
-        The confirmed 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance. Each completed quarter earns 3.75 annual days and 2.25 shared days. Joiners receive a pro-rated first completed-quarter credit, and ordinary unused days expire at year end subject to protected exceptions. Every leave request follows Manager approval → Administration final approval.
+        The confirmed 24-day yearly allowance comprises 15 annual-leave days and one shared nine-day sick/study allowance. Each completed quarter earns 3.75 annual days and 2.25 shared days. Joiners receive a pro-rated first completed-quarter credit, and ordinary unused days expire at year end subject to protected exceptions. Every leave request goes directly to HR for approval or decline. Managers do not approve leave.
       </ProductNotice>
 
       {!annualLeaveStageReady ? <ProductNotice tone="attention" title="Working-day balance comes after migration acceptance">Existing leave requests and the approved request route remain available. CEAC OS will not invent a working-day balance until the annual-leave migration has passed restored-data acceptance and is separately approved.</ProductNotice> : null}
@@ -575,7 +575,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       open={sheet === "leave"}
       onClose={() => !busy && setSheet(null)}
       title="Ask for leave"
-      description="Your request follows CEAC's existing workforce leave process. Manager and Administration decision controls remain in Time & Leave."
+      description="Your request goes directly to HR for a final decision. Track its status in Leave."
       footer={<>
         <Button variant="secondary" onClick={() => setSheet(null)} disabled={busy}>Cancel</Button>
         <Button busy={busy} onClick={requestLeave} disabled={busy || !startDate || !endDate || endDate < startDate}>Send request</Button>

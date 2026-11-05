@@ -44,7 +44,6 @@ function requireResult(result, label) {
 
 export default function ManagerHome({ me, openItem, openProject, openMeeting, scheduleMeeting, openPerson, goAssign, go, notificationPanel }) {
   const [submissions, setSubmissions] = useState([]);
-  const [leave, setLeave] = useState([]);
   const [blockers, setBlockers] = useState([]);
   const [team, setTeam] = useState({ present: [], working: [], leave: [], notStarted: [], completed: [], submitted: [] });
   const [mine, setMine] = useState([]);
@@ -83,16 +82,13 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
       const nextWeek = new Date(weekStart); nextWeek.setDate(nextWeek.getDate() + 7);
 
       const recentSince = new Date(today); recentSince.setDate(recentSince.getDate() - 7);
-      const [memberResult, submissionResult, leaveResult, incomingBlockerResult, outgoingBlockerResult, mineResult, delegatedResult,
+      const [memberResult, submissionResult, incomingBlockerResult, outgoingBlockerResult, mineResult, delegatedResult,
         sessionResult, weekResult, projectUnitResult, activeProjectResult,
         todayOutputResult, todaySubmissionResult, recentCompletedResult, recentSubmissionResult, followupAlertResult, meetingResult] = await Promise.all([
         supabase.from("unit_memberships")
           .select("profile_id, profiles!unit_memberships_profile_id_fkey(id, full_name)")
           .eq("unit_id", me.unit_id),
         supabase.rpc("my_work_attention_queue"),
-        supabase.from("leave_requests")
-          .select("id, profile_id, kind, start_date, end_date, days, status, reason, requested_at, profiles!leave_requests_profile_id_fkey(full_name)")
-          .eq("status", "pending").order("requested_at", { ascending: true }),
         supabase.from("blockers")
           .select("id, party_text, note, since, state, work_item_id, party_unit_id, profiles!blockers_claimed_by_fkey(full_name), units(name), work_items!inner(id, ref, title)")
           .eq("party_unit_id", me.unit_id).in("state", ["claimed", "acknowledged"])
@@ -170,7 +166,6 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
       setSubmissions(submissionRows.sort((left, right) => new Date(left.submitted_at) - new Date(right.submitted_at)));
       setFollowupAlerts(requireResult(followupAlertResult, "Follow-ups"));
       setUpcomingMeetings(requireResult(meetingResult, "Upcoming meetings"));
-      setLeave(requireResult(leaveResult, "Leave requests").filter((request) => memberIds.has(request.profile_id)));
       const blockerMap = new Map();
       requireResult(incomingBlockerResult, "Blockers waiting on your unit")
         .forEach((blocker) => blockerMap.set(blocker.id, { ...blocker, direction: "incoming" }));
@@ -384,7 +379,6 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
   const blockerFollowupAlerts = followupAlerts.filter((alert) => alert.kind === "blocker_followup");
   const decisionRows = [
     ...submissions.map((item) => ({ type: "submission", since: item.submitted_at, item })),
-    ...leave.map((item) => ({ type: "leave", since: item.requested_at, item })),
     ...blockerFollowupAlerts.map((item) => ({ type: "followup", since: item.last_seen_at, item })),
   ].sort((left, right) => new Date(left.since || 0) - new Date(right.since || 0));
   const waitingCount = decisionRows.length;

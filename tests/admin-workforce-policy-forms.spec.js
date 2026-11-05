@@ -30,11 +30,12 @@ for(const width of [390,1440])test(`Admin day-type and policy drawers preserve d
  await dialog.getByLabel('Policy accrual method',{exact:true}).selectOption('quarterly');
  await dialog.getByLabel('Policy accrual rate',{exact:true}).fill('6');
  await dialog.getByLabel('Policy carryover method',{exact:true}).selectOption('none');
- await dialog.getByLabel('Policy approval route',{exact:true}).selectOption('manager_then_admin');
+ await expect(dialog.getByLabel('Policy approval route',{exact:true})).toHaveValue('admin');
+  await expect(dialog.getByLabel('Policy approval route',{exact:true})).toBeDisabled();
  await dialog.getByLabel('Policy reason',{exact:true}).fill('Synthetic confirmed source only');
  await activate.click();await expect(dialog).toContainText('Synthetic workforce save denied');
  await expect(dialog.locator('[tabindex="-1"]')).toBeFocused();
  await expect(dialog.getByLabel('Policy name',{exact:true})).toHaveValue('Synthetic confirmed policy');
- expect(writes).toHaveLength(2);expect(writes[1]).toMatchObject({name:'workforce_record_leave_policy',body:{p_activate:true,p_rules:[{leave_kind:'annual',entitlement_amount:24,accrual_rate:6,approval_route:'manager_then_admin'}]}});
+ expect(writes).toHaveLength(2);expect(writes[1]).toMatchObject({name:'workforce_record_leave_policy',body:{p_activate:true,p_rules:[{leave_kind:'annual',entitlement_amount:24,accrual_rate:6,approval_route:'admin'}]}});
  await page.screenshot({path:`test-artifacts/admin-workforce-policy-${width}.png`,fullPage:true});
 });

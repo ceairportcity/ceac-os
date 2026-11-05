@@ -115,7 +115,7 @@ test("Manager shell exposes Time & Leave as a first-class destination", async ({
   await timeLeave.click();
   await expect(page.locator(".ev2-workforce-manager")).toBeVisible({ timeout: 15000 });
   await page.locator(".timeleave-policy > summary").click();
-  await expect(page.getByText("Manager approval → Administration final approval", { exact: false }).first()).toBeVisible();
+  await expect(page.locator(".timeleave-policy")).toContainText("Every leave request goes directly to HR for a final decision; managers do not approve or decline leave.");
 });
 
 test("Stage 4B create menu exposes only role-authorised shortcuts", async ({ page }) => {

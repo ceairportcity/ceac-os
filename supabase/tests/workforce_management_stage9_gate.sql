@@ -126,7 +126,7 @@ begin
     current_date,
     'draft',
     'STAGE9_OWNER_ROUTING_FIXTURE',
-    'Acceptance fixture for confirmed Manager-to-Administration routing without entitlement mathematics.',
+    'Acceptance fixture for direct HR routing without entitlement mathematics.',
     '31000000-0000-4000-8000-000000000003'
   );
 
@@ -142,7 +142,7 @@ begin
     k.leave_kind,
     null,
     null,null,null,null,null,null,
-    'manager_then_admin',
+    'admin',
     false,
     false,
     true
@@ -208,42 +208,35 @@ $stage9_staff_leave$;
 
 reset role;
 
--- Manager handles the first leave step and may not bypass Administration final approval.
+-- Manager must not approve or decline leave. Attendance authority is unchanged.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
-
 do $stage9_manager$
 declare
-  v_leave uuid:=nullif(current_setting('ceac.stage9_leave_id',true),'')::uuid;
+ v_leave uuid:=nullif(current_setting('ceac.stage9_leave_id',true),'')::uuid;
+ v_action text;
 begin
-  perform public.workforce_leave_action(
-    v_leave,'manager_approved','Manager approved; Administration final decision required'
-  );
-
-  if not exists(select 1 from public.leave_requests where id=v_leave and status='escalated') then
-    raise exception 'Stage 9 gate failure: Manager approval did not move the request to Administration review.';
-  end if;
-
-  if not exists(
-    select 1 from public.leave_request_events
-    where leave_request_id=v_leave and action='manager_approved'
-      and from_status='pending' and to_status='escalated'
-  ) then
-    raise exception 'Stage 9 gate failure: Manager approval history is missing.';
-  end if;
-
-  begin
-    perform public.workforce_record_attendance_correction(
-      '31000000-0000-4000-8000-000000000001',
-      current_date,null,'context_note','{}'::jsonb,
-      jsonb_build_object('note','manager should not be able to correct'),
-      'Stage 9 manager correction denial',null
-    );
-    raise exception 'Stage 9 gate failure: manager corrected attendance without attendance.correct.';
-  exception when insufficient_privilege then null;
-  end;
-end
-$stage9_manager$;
+ foreach v_action in array array['manager_approved','declined'] loop
+   begin
+     perform public.workforce_leave_action(v_leave,v_action,'Manager decision must be denied');
+     raise exception 'Stage 9 gate failure: Manager decided leave using %',v_action;
+   exception when insufficient_privilege then null;
+   end;
+ end loop;
+ if not exists(select 1 from public.leave_requests where id=v_leave and status='pending') then
+   raise exception 'Stage 9 gate failure: manager action modified the leave request.';
+ end if;
+ begin
+   perform public.workforce_record_attendance_correction(
+     '31000000-0000-4000-8000-000000000001',
+     current_date,null,'context_note','{}'::jsonb,
+     jsonb_build_object('note','manager should not be able to correct'),
+     'Stage 9 manager correction denial',null
+   );
+   raise exception 'Stage 9 gate failure: manager corrected attendance without attendance.correct.';
+ exception when insufficient_privilege then null;
+ end;
+end $stage9_manager$;
 
 reset role;
 
@@ -367,7 +360,7 @@ begin
           'leave_kind','annual',
           'entitlement_amount',20,
           'entitlement_unit','days',
-          'approval_route','manager_then_admin'
+          'approval_route','admin'
         )
       ),
       true,
@@ -394,12 +387,12 @@ begin
         'accrual_method','quarterly',
         'accrual_rate',3.75,
         'carryover_method','none',
-        'approval_route','manager_then_admin',
+        'approval_route','admin',
         'opening_balance_required',false
       ),jsonb_build_object(
         'leave_kind','shared_other','entitlement_amount',9,'entitlement_unit','days',
         'accrual_method','quarterly','accrual_rate',2.25,'carryover_method','none',
-        'approval_route','manager_then_admin','opening_balance_required',false
+        'approval_route','admin','opening_balance_required',false
       )
     ),
     true,
@@ -423,7 +416,7 @@ begin
       and accrual_method='quarterly'
       and accrual_rate=3.75
       and carryover_method='none'
-      and approval_route='manager_then_admin'
+      and approval_route='admin'
   ) then
     raise exception 'Stage 9 gate failure: server did not compute confirmed policy completeness.';
   end if;
@@ -432,7 +425,7 @@ $stage9_policy$;
 
 reset role;
 
--- Confirmed manager-then-admin route is enforced as a state machine.
+-- HR-only route is enforced as a state machine.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
 
@@ -449,116 +442,83 @@ $stage9_routed_leave_request$;
 
 reset role;
 
--- Overview must not offer these actions while pending; the server must also
--- reject an Administration client that attempts them directly. Synthetic only.
+-- HR may decide a pending request directly without any Manager action.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
-do $stage9_no_admin_shortcut$
+do $stage9_hr_pending$
 declare
-  v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
-  v_action text;
+ v_leave uuid:=nullif(current_setting('ceac.stage9_leave_id',true),'')::uuid;
 begin
-  foreach v_action in array array['admin_approved','declined','escalated'] loop
-    begin
-      perform public.workforce_leave_action(v_leave,v_action,'Administration before Manager denial probe');
-      raise exception 'Stage 9 gate failure: Administration skipped Manager using %',v_action;
-    exception when insufficient_privilege then null;
-    end;
-  end loop;
-  if not exists(select 1 from public.leave_requests where id=v_leave and status='pending') then
-    raise exception 'Stage 9 gate failure: denied Administration action changed request state';
-  end if;
-end
-$stage9_no_admin_shortcut$;
+ perform public.workforce_leave_action(v_leave,'admin_approved','HR directly approved leave');
+ if not exists(select 1 from public.leave_requests where id=v_leave and status='approved') then
+   raise exception 'Stage 9 gate failure: HR cannot approve pending leave directly.';
+ end if;
+ if not exists(select 1 from public.leave_request_events
+   where leave_request_id=v_leave and action='admin_approved'
+     and from_status='pending' and to_status='approved') then
+   raise exception 'Stage 9 gate failure: direct HR approval audit is missing.';
+ end if;
+end $stage9_hr_pending$;
 reset role;
 
+-- Manager decision actions are rejected, including the retired escalation.
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000002',true);
-
 do $stage9_routed_manager$
 declare
-  v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
+ v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
+ v_action text;
 begin
-  perform public.workforce_leave_action(
-    v_leave,'manager_approved','Manager approved; Administration decision required'
-  );
-
-  if not exists(select 1 from public.leave_requests where id=v_leave and status='escalated') then
-    raise exception 'Stage 9 gate failure: Manager approval did not persist as Administration review.';
-  end if;
-
-  begin
-    perform public.workforce_leave_action(
-      v_leave,'manager_approved','A second Manager approval must fail'
-    );
-    raise exception 'Stage 9 gate failure: repeated Manager approval was accepted.';
-  exception when insufficient_privilege then null;
-  end;
-end
-$stage9_routed_manager$;
-
+ foreach v_action in array array['manager_approved','declined','escalated'] loop
+   begin
+     perform public.workforce_leave_action(v_leave,v_action,'Manager leave decision denial probe');
+     raise exception 'Stage 9 gate failure: Manager bypassed HR using %',v_action;
+   exception when insufficient_privilege then null;
+   end;
+ end loop;
+ if not exists(select 1 from public.leave_requests where id=v_leave and status='pending') then
+   raise exception 'Stage 9 gate failure: Manager altered HR pending request.';
+ end if;
+end $stage9_routed_manager$;
 reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003',true);
-
 do $stage9_routed_admin$
 declare
-  v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
+ v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
 begin
-  perform public.workforce_leave_action(
-    v_leave,'admin_approved','Administration approved after Manager approval'
-  );
-
-  if not exists(select 1 from public.leave_requests where id=v_leave and status='approved') then
-    raise exception 'Stage 9 gate failure: Administration approval did not persist.';
-  end if;
-
-  perform public.workforce_leave_action(
-    v_leave,'approval_reversed','Acceptance reversal restores pending review'
-  );
-
-  if not exists(select 1 from public.leave_requests where id=v_leave and status='pending') then
-    raise exception 'Stage 9 gate failure: approval reversal did not restore pending state.';
-  end if;
-
-  if not exists(
-    select 1 from public.leave_request_events
-    where leave_request_id=v_leave and action='approval_reversed'
-      and from_status='approved' and to_status='pending'
-  ) then
-    raise exception 'Stage 9 gate failure: approval reversal history is missing.';
-  end if;
-
-  begin
-    perform public.workforce_leave_action(
-      v_leave,'approval_reversed','A second reversal from pending must fail'
-    );
-    raise exception 'Stage 9 gate failure: invalid repeated approval reversal was accepted.';
-  exception when insufficient_privilege then null;
-  end;
-end
-$stage9_routed_admin$;
-
+ perform public.workforce_leave_action(v_leave,'admin_approved','HR directly approved the pending request');
+ if not exists(select 1 from public.leave_requests where id=v_leave and status='approved') then
+   raise exception 'Stage 9 gate failure: direct HR approval did not persist.';
+ end if;
+ perform public.workforce_leave_action(v_leave,'approval_reversed','HR reversal restores pending');
+ if not exists(select 1 from public.leave_requests where id=v_leave and status='pending') then
+   raise exception 'Stage 9 gate failure: HR reversal did not restore pending.';
+ end if;
+ if not exists(select 1 from public.leave_request_events where leave_request_id=v_leave
+   and action='approval_reversed' and from_status='approved' and to_status='pending') then
+   raise exception 'Stage 9 gate failure: HR reversal audit is missing.';
+ end if;
+ begin
+   perform public.workforce_leave_action(v_leave,'approval_reversed','Second HR reversal must fail');
+   raise exception 'Stage 9 gate failure: repeated reversal was accepted.';
+ exception when insufficient_privilege then null;
+ end;
+end $stage9_routed_admin$;
 reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
-
 do $stage9_staff_cancel$
 declare
-  v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
+ v_leave uuid:=nullif(current_setting('ceac.stage9_routed_leave_id',true),'')::uuid;
 begin
-  perform public.workforce_leave_action(
-    v_leave,'cancelled_by_employee','Cancelled by employee after approval reversal'
-  );
-
-  if not exists(select 1 from public.leave_requests where id=v_leave and status='cancelled') then
-    raise exception 'Stage 9 gate failure: eligible employee cancellation did not persist.';
-  end if;
-end
-$stage9_staff_cancel$;
-
+ perform public.workforce_leave_action(v_leave,'cancelled_by_employee','Employee cancelled after HR reversal');
+ if not exists(select 1 from public.leave_requests where id=v_leave and status='cancelled') then
+   raise exception 'Stage 9 gate failure: employee cancellation did not persist.';
+ end if;
+end $stage9_staff_cancel$;
 reset role;
 
 -- Another staff member cannot see Staff Fixture workforce rows.
