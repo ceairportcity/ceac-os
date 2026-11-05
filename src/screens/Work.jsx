@@ -362,7 +362,10 @@ export default function Work({ me, isManager = false, openItem }) {
     const b = right.due_at ? new Date(right.due_at).getTime() : Number.MAX_SAFE_INTEGER;
     return a - b || left.title.localeCompare(right.title);
   });
-  const selectedInView = selectedWorkId === "none" ? null : (visibleItems.some((item) => item.id === selectedWorkId) ? selectedWorkId : (visibleItems[0]?.id || null));
+  // Open the detail only after staff select a responsibility. The register should not
+  // prefetch an entire progress history simply because the Work tab opened.
+  const selectedInView = selectedWorkId && selectedWorkId !== "none" && visibleItems.some(item => item.id === selectedWorkId)
+    ? selectedWorkId : null;
 
   const sessionDays = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
