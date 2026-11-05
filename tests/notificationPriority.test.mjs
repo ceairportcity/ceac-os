@@ -1,3 +1,4 @@
+import {filterDayNotices} from "../src/lib/overviewDay.js";
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -261,4 +262,16 @@ test("support alerts are enriched with only permitted case metadata and open the
  assert.match(sql,/AFTER INSERT ON public\.support_cases/);
  assert.match(sql,/stm\.active/);
  assert.match(sql,/private\.ceac_notification_context_visible/);
+});
+
+
+test("staff Overview shows one actionable preview for repeated work notices",()=>{
+  const actions=[{id:"a",workItemId:"w1"}];
+  const notices=[
+    {id:"e1",url:"/?tab=work&item=w1",type:"event"},
+    {id:"e2",url:"/?tab=work&item=w2",type:"event"},
+    {id:"e3",url:"/?tab=work&item=w2",type:"event"},
+    {id:"memo1",url:"/?tab=messages&memo=m1",type:"event"},
+  ];
+  assert.deepEqual(filterDayNotices(notices,actions).map(row=>row.id),["e2","memo1"]);
 });
