@@ -205,7 +205,7 @@ test("staff and manager views use state-aware due labels and overdue criteria",(
     "src/experience-v2/manager-overview/ManagerOverviewV2.jsx"];
   for(const file of fs)assert.match(readFileSync(file,"utf8"),/isWorkOverdue/);
   const diary=readFileSync("src/components/WorkActivityDiary.jsx","utf8");
-  assert.match(diary,/Record earlier work/);
+  assert.match(diary,/Write a work update/);
   assert.match(diary,/max=\{ghanaDay\(\)\}/);
 });
 

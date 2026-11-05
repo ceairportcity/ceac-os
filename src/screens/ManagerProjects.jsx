@@ -3,6 +3,7 @@ import AssistiveTextarea from "../components/AssistiveTextarea";
 import { supabase } from "../lib/supabase";
 import { dateOnly, dueLabel } from "../lib/time";
 import { projectCreatorLabel, projectCreatedAtLabel } from "../lib/projectAttribution";
+import ProjectManageControls from "../components/ProjectManageControls";
 import { Pill, Sheet, statusPill, ProductNotice, LoadingState } from "../components/bits";
 import ManagerProjectClose from "./ManagerProjectClose";
 import Stage2ProjectOverview from "../components/Stage2ProjectOverview";
@@ -89,6 +90,7 @@ function CostSummary({ rows, emptyText = "No project cost has been recorded." })
 
 export default function ManagerProjects({ me, initialProjectId = null, openItem, goAssign, openRoom, openMeeting, scheduleMeeting, back, projectUnitId = me.unit_id }) {
   const [projects, setProjects] = useState([]);
+  const [showArchived,setShowArchived] = useState(false);
   const [proposals, setProposals] = useState([]);
   const [selectedId, setSelectedId] = useState(initialProjectId);
   const [detail, setDetail] = useState(null);
@@ -168,7 +170,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     try {
       const [projectResult, capabilityResult, unitResult] = await Promise.all([
         supabase.from("projects")
-          .select("id, kind, name, purpose, starts_on, ends_on, status, lead_unit_id, created_by, created_at, creator:profiles!projects_created_by_fkey(full_name), units!projects_lead_unit_id_fkey(name)")
+          .select("id, kind, name, purpose, starts_on, ends_on, status, archived_at, lead_unit_id, created_by, created_at, creator:profiles!projects_created_by_fkey(full_name), units!projects_lead_unit_id_fkey(name)")
           .order("starts_on", { ascending: false, nullsFirst: false }),
         supabase.from("capabilities").select("id").eq("profile_id", me.id).eq("capability", "create_project").maybeSingle(),
         supabase.from("units").select("id, name").eq("org_id", me.org_id).order("name"),
@@ -226,7 +228,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     setError(null); setDetail(null); setDetailScope(null);
     try {
       const projectResult = await supabase.from("projects")
-        .select("id, org_id, kind, name, purpose, starts_on, ends_on, follow_up_ends_on, status, lead_unit_id, created_by, created_at, creator:profiles!projects_created_by_fkey(full_name), units!projects_lead_unit_id_fkey(name)")
+        .select("id, org_id, kind, name, purpose, starts_on, ends_on, follow_up_ends_on, status, archived_at, lead_unit_id, created_by, created_at, creator:profiles!projects_created_by_fkey(full_name), units!projects_lead_unit_id_fkey(name)")
         .eq("id", projectId).single();
       if (projectResult.error) throw new Error(`Project: ${projectResult.error.message}`);
       const [participantResult, phaseResult, objectiveResult, workResult, budgetResult, spendResult, milestoneResult] = await Promise.all([
@@ -316,6 +318,8 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     finally { setBusy(false); }
   }
 
+  const listedProjects=projects.filter(project=>showArchived?Boolean(project.archived_at):!project.archived_at);
+
   if (listScope !== scope) return <div className="body manager-projects ev2-project-page">{!loadingList && error ? <ProductNotice tone="error" title="Could not load this unit’s projects">{error}</ProductNotice> : <LoadingState label="Loading authorised unit projects…" />}</div>;
 
   if (selectedId) {
@@ -334,9 +338,9 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     const selectedDescription = selectedWork?.purpose || selectedWork?.instructions || selectedWork?.expected_outcome || null;
     return <div className={`manager-projects ev2-project-page ev2-project-workspace fpg-project-gold ${area === "overview" ? "s2-owner-approved-projects" : "s2-project-workflow"}`}>
       <aside className="fpg-project-tree" aria-label="Projects and stages">
-        <div className="fpg-project-tree-brand"><span>Projects</span><b>{projects.length}</b></div>
+        <div className="fpg-project-tree-brand"><span>Projects</span><b>{listedProjects.length}</b></div>
         <div className="fpg-project-tree-list">
-          {projects.map((project) => <button key={project.id} type="button" className={project.id === detail.id ? "is-selected" : ""} onClick={() => setSelectedId(project.id)}>
+          {listedProjects.map((project) => <button key={project.id} type="button" className={project.id === detail.id ? "is-selected" : ""} onClick={() => setSelectedId(project.id)}>
             <span className="fpg-tree-dot" aria-hidden="true" />
             <span><strong>{project.name}</strong><small>{project.status || "Open"}</small></span>
           </button>)}
@@ -355,6 +359,10 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
         context={detail.units?.name || "Lead unit not recorded"}
         onBack={() => initialProjectId && back ? back() : setSelectedId(null)}
       />
+      <ProjectManageControls me={me} project={detail} onChanged={async action=>{
+        if(action==="save"){await Promise.all([loadDetail(detail.id),loadList()]);}
+        else{setSelectedId(null);await loadList();}
+      }}/>
       <section className="fpg-project-facts" aria-label="Project facts">
         <div><span>Lead unit</span><strong>{detail.units?.name || "Not recorded"}</strong></div>
         <div><span>Created by</span><strong>{projectCreatorLabel(detail, me)}</strong></div>
@@ -562,9 +570,13 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
     </section>}
     {loadingList && <LoadingState label="Loading projects…" />}
     {!loadingList && <>
-      <ProjectSectionHeader eyebrow="Unit delivery" title="Your unit’s projects" count={projects.length} />
+      <ProjectSectionHeader eyebrow="Unit delivery" title={showArchived?"Archived projects":"Your unit’s projects"} count={listedProjects.length} />
+      <label style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:13,margin:"8px 0 13px"}}>
+        <input type="checkbox" checked={showArchived} onChange={event=>setShowArchived(event.target.checked)}/>
+        Show archived projects
+      </label>
       <div className="ev2p-list">
-        {projects.map((project) => <ProjectListRow
+        {listedProjects.map((project) => <ProjectListRow
           key={project.id}
           eyebrow={project.role === "lead" ? "Lead unit" : "Participating unit"}
           title={project.name}
@@ -576,7 +588,7 @@ export default function ManagerProjects({ me, initialProjectId = null, openItem,
           onClick={() => setSelectedId(project.id)}
         />)}
       </div>
-      {projects.length === 0 && <ProjectEmpty title="No unit projects yet" description="Projects where your unit leads or participates will appear here." />}
+      {listedProjects.length === 0 && <ProjectEmpty title={showArchived?"No archived projects":"No unit projects yet"} description={showArchived?"Archived projects will appear here.":"Projects where your unit leads or participates will appear here."} />}
     </>}
     {sheet?.type === "project" && <ProjectSheet units={units.filter((unit) => unit.id !== projectUnitId)} busy={busy} onClose={() => setSheet(null)} onCreate={createProject} />}
   </div>;

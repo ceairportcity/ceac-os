@@ -25,3 +25,21 @@
 @media(max-width:650px){.s2-work-diary-form :is(input,textarea,select){font-size:16px}}
 
 .s2-work-diary-fields{display:contents}.s2-work-diary-form input[type=checkbox]{width:auto}
+
+
+
+/* Integrated progress editor and discreet item actions; reuse existing diary styles. */
+.s2-progress-inline{margin:12px 0}
+.s2-progress-inline label{display:block;margin-bottom:8px;font-weight:650}
+.s2-progress-inline textarea{width:100%;min-height:70px;box-sizing:border-box;padding:12px;border:1px solid #cdd9e5;border-radius:10px;background:#f8fafc;font:inherit;cursor:text}
+.s2-progress-inline small{font-size:12px;color:#64748b}
+.s2-progress-editor-heading{display:flex;align-items:center;justify-content:space-between}
+.s2-progress-editor-heading button{border:0;background:transparent;color:#1764a8;cursor:pointer}
+.s2-progress-milestone{color:#1764a8;font-weight:650}
+.s2-progress-menu{position:absolute;right:0;top:0;z-index:2}
+.s2-progress-menu summary{list-style:none;cursor:pointer;font-size:22px;color:#53677e}
+.s2-progress-menu-actions{position:absolute;right:0;top:28px;min-width:150px;display:grid;padding:4px;background:#fff;border:1px solid #d9e1ea;border-radius:10px;box-shadow:0 8px 20px #20314b20}
+.s2-progress-menu-actions button{text-align:left;border:0;background:transparent;padding:10px;cursor:pointer}
+.s2-progress-menu-actions button:hover{background:#f3f6fa}
+.s2-progress-remove{padding:12px;background:#f8fafc;border-radius:10px}
+.s2-work-diary-timeline li{padding-right:48px;border-bottom:1px solid #edf1f5}

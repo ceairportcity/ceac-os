@@ -601,7 +601,7 @@ function ItemDetail({ id, me, session, isManager = false, initialRoutineDate=nul
         <WorkDetailCopy>{item.instructions}</WorkDetailCopy>
       </WorkDetailSection>}
 
-      <WorkActivityDiary key={`${me.id}:${item.id}`} me={me} item={item}
+      <WorkActivityDiary key={`${me.id}:${item.id}`} me={me} item={item} routineOccurrences={routineOccurrences}
         prefillDate={routineEvidenceDate} prefillRequest={routineEvidenceRequest} />
 
       {item.kind === "deliverable" && deliverableRecord && <>

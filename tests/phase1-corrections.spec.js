@@ -52,8 +52,8 @@ for(const width of [390,1440]){
  test(`activity upload retries without another activity and retains a dated plan ${width}`,async({page})=>{
   await page.setViewportSize({width,height:1000});const {writes}=await mock(page);
   await page.goto('/tests/fixtures/phase1-corrections.html?screen=diary');
-  await page.getByRole('button',{name:'+ Add work update'}).click();
-  await page.getByLabel('What did you do?').fill('Finished the supplier meeting');
+  await page.getByRole('textbox',{name:'Write a work update'}).focus();
+  await page.getByLabel('What did you accomplish?').fill('Finished the supplier meeting');
   await page.getByLabel('What happens next?',{exact:true}).fill('Follow up next week');
   await page.getByLabel('Next action date (optional)').fill('2026-11-03');
   await page.locator('input[type=file]').setInputFiles({name:'evidence.pdf',mimeType:'application/pdf',buffer:Buffer.from('Synthetic evidence')});
@@ -61,7 +61,7 @@ for(const width of [390,1440]){
   await page.screenshot({path:`test-artifacts/phase1-diary-form-${width}.png`,fullPage:true});
   await page.getByRole('button',{name:'Save work update',exact:true}).click();
   await expect(page.getByRole('alert')).toContainText('The activity is saved. Retry');
-  await expect(page.getByLabel('What did you do?')).toBeDisabled();
+  await expect(page.getByLabel('What did you accomplish?')).toBeDisabled();
   await page.getByRole('button',{name:'Save work update',exact:true}).click();
   await expect(page.getByRole('status').filter({hasText:'Its follow-up remains'})).toBeVisible();
   expect(writes.filter(row=>row.name==='work_activity_records')).toHaveLength(1);

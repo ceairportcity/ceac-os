@@ -7,9 +7,10 @@ import "./RoutineOccurrenceReviews.css";
  * No automatic outcomes, HR rating, checklist progress or employee scoring.
  */
 export default function RoutineOccurrenceReviews({
-  me, item, occurrences, canReview = false, onRecordEvidence,
+  me, item, occurrences, onRecordEvidence,
 }) {
   const [sourceHistory, setSourceHistory] = useState([]);
+  const [reviewAuthority,setReviewAuthority] = useState(false);
   const [completedReviewScope, setCompletedReviewScope] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,10 +29,13 @@ export default function RoutineOccurrenceReviews({
 
   useEffect(() => {
     let current = true;
-    setSourceHistory([]); setCompletedReviewScope(""); setError(""); setLoading(true); setSelection("");
+    setSourceHistory([]); setReviewAuthority(false); setCompletedReviewScope(""); setError(""); setLoading(true); setSelection("");
     (async () => {
       try {
         if (!ids) { if (current) setSourceHistory([]); return; }
+        const authority=await supabase.rpc("app_can_review_routine_work",{p_work_item_id:item.id});
+        if(authority.error) throw authority.error;
+        if(current) setReviewAuthority(authority.data===true);
         const all = [];
         let total = null;
         const occurrenceIds = ids.split(",");
@@ -64,7 +68,7 @@ export default function RoutineOccurrenceReviews({
 
   const latest = new Map();
   for (const row of history) if (!latest.has(row.occurrence_id)) latest.set(row.occurrence_id,row);
-  const reviewPermitted = canReview && item.visibility === "unit" && item.confidential !== true;
+  const reviewPermitted = reviewAuthority && item.visibility === "unit" && item.confidential !== true;
 
   async function recordReview(event) {
     event.preventDefault();
