@@ -7,6 +7,8 @@ export function canSelfCertifyOwnWork(me, item) {
   const managesAnyUnit = (me.memberships || []).some(
     membership => membership.role === "manager"
   );
+  // Private personal work has no review route and must remain confidential.
+  if (managesAnyUnit && item.visibility === "private") return true;
   return Boolean(me.is_exec || (me.is_admin && !managesAnyUnit));
 }
 
