@@ -87,5 +87,5 @@ begin
  on conflict(subscription_id,source_key) do nothing;
  get diagnostics added=row_count;n:=n+added;
  return n;
-end $;
+end $$;
 
