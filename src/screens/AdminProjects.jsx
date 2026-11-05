@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ManagerProjects from "./ManagerProjects";
 import Stage2ProjectReader from "../components/Stage2ProjectReader";
 import AdminProjectComposer from "../components/AdminProjectComposer";
+import ProjectManageControls from "../components/ProjectManageControls";
 import { supabase } from "../lib/supabase";
 import { dateOnly } from "../lib/time";
 import { projectCreatorLabel, projectCreatedAtLabel } from "../lib/projectAttribution";
@@ -32,7 +33,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
     setLoading(true); setError(null); setProjects([]);
     try{
       const [projectResult,unitResult,objectiveResult,projectUnitResult]=await Promise.all([
-        supabase.from("projects").select("id,name,status,lead_unit_id,starts_on,ends_on,purpose,created_by,created_at,creator:profiles!projects_created_by_fkey(full_name)").eq("org_id",me.org_id).order("ends_on",{ascending:true,nullsFirst:false}),
+        supabase.from("projects").select("id,name,status,archived_at,lead_unit_id,starts_on,ends_on,purpose,created_by,created_at,creator:profiles!projects_created_by_fkey(full_name)").eq("org_id",me.org_id).order("ends_on",{ascending:true,nullsFirst:false}),
         supabase.from("units").select("id,name,active").eq("org_id",me.org_id),
         supabase.from("objectives").select("id,project_id,status").eq("org_id",me.org_id),
         supabase.from("project_units").select("project_id,unit_id"),
@@ -56,16 +57,24 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
 
   const selected = projects.find(project => project.id === selectedProjectId);
   if (selectedProjectId && !selected) return <div className="body admin-projects"><button className="back" onClick={()=>openProject?.(null)}>← Projects</button><ProductNotice tone="error" title="Project unavailable">This project could not be verified in your organisation.</ProductNotice></div>;
-  if (selected && me.is_exec) return <Stage2ProjectReader key={`${me.org_id}:${me.id}:${selected.id}`}
-    projectId={selected.id} me={me} openItem={openItem} onBack={()=>openProject?.(null)} goAssign={goAssign} />;
+  if (selected && me.is_exec) return <div className="body admin-projects ev2-project-page">
+    <ProjectManageControls me={me} project={selected} onChanged={async action=>{
+      if(action!=="save")openProject?.(null);
+      await load();
+    }}/>
+    <Stage2ProjectReader key={`${me.org_id}:${me.id}:${selected.id}`}
+      projectId={selected.id} me={me} openItem={openItem} onBack={()=>openProject?.(null)} goAssign={goAssign} />
+  </div>;
   if (selected) return <ManagerProjects key={`${me.org_id}:${me.id}:${selected.id}`} me={me} projectUnitId={selected.lead_unit_id}
     initialProjectId={selected.id} back={()=>openProject?.(null)} openItem={openItem}
     goAssign={context=>goAssign?.({...context,unitId:selected.lead_unit_id})} openRoom={openRoom} scheduleMeeting={scheduleMeeting} />;
 
-  const active=projects.filter((project)=>project.status==="active");
-  const planned=projects.filter((project)=>project.status==="planned");
-  const attention=projects.filter((project)=>project.objectives.some((row)=>["at_risk","not_met"].includes(row.status)));
-  const statusMatches=filter==="active"?active:filter==="planned"?planned:filter==="attention"?attention:projects;
+  const normalProjects=projects.filter(project=>!project.archived_at);
+  const archivedProjects=projects.filter(project=>Boolean(project.archived_at));
+  const active=normalProjects.filter((project)=>project.status==="active");
+  const planned=normalProjects.filter((project)=>project.status==="planned");
+  const attention=normalProjects.filter((project)=>project.objectives.some((row)=>["at_risk","not_met"].includes(row.status)));
+  const statusMatches=filter==="archived"?archivedProjects:filter==="active"?active:filter==="planned"?planned:filter==="attention"?attention:normalProjects;
   const query=search.trim().toLocaleLowerCase();
   const visible=statusMatches.filter(project=>!query||[project.name,project.purpose,project.leadUnit,projectCreatorLabel(project,me),...project.participating].some(value=>String(value||"").toLocaleLowerCase().includes(query)));
   const chooseFilter=(next)=>setFilter(current=>current===next?"all":next);
@@ -86,17 +95,18 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
       {label:"Active projects",value:active.length,detail:"In progress",selected:filter==="active",onClick:()=>chooseFilter("active")},
       {label:"Planned projects",value:planned.length,detail:"Coming up",selected:filter==="planned",onClick:()=>chooseFilter("planned")},
       {label:"Need attention",value:attention.length,detail:"Objectives marked at risk or not met",selected:filter==="attention",onClick:()=>chooseFilter("attention")},
+      {label:"Archived",value:archivedProjects.length,detail:"Preserved records",selected:filter==="archived",onClick:()=>chooseFilter("archived")},
     ]} />
 
     <div className="ev2p-register-toolbar">
       <label className="ev2p-register-search"><span>Find a project</span><input type="search" aria-label="Find a project" placeholder="Search by project or department" value={search} onChange={event=>setSearch(event.target.value)} /></label>
       <p aria-live="polite">{visible.length} {visible.length===1?"project":"projects"} shown</p>
     </div>
-    <ProjectSectionHeader eyebrow="Your project portfolio" title={filter==="all"?"All projects":filter==="attention"?"Projects needing attention":filter==="active"?"Active projects":"Planned projects"} count={visible.length} />
+    <ProjectSectionHeader eyebrow="Your project portfolio" title={filter==="archived"?"Archived projects":filter==="all"?"All projects":filter==="attention"?"Projects needing attention":filter==="active"?"Active projects":"Planned projects"} count={visible.length} />
     {filter!=="all"&&<Button variant="secondary" onClick={()=>setFilter("all")}>Show all projects</Button>}
 
-    {projects.length===0&&<ProjectEmpty title="No projects recorded" description="Create a project to begin planning objectives and work." />}
-    {projects.length>0&&visible.length===0&&<ProjectEmpty title="No matching projects" description="Try another search or select a different status above." />}
+    {normalProjects.length===0&&filter!=="archived"&&<ProjectEmpty title="No projects recorded" description="Create a project to begin planning objectives and work." />}
+    {(projects.length>0||filter==="archived")&&visible.length===0&&<ProjectEmpty title={filter==="archived"?"No archived projects":"No matching projects"} description="Try another search or select a different status above." />}
 
     <div className="ev2p-context-list">
       {visible.map((project)=>{
@@ -125,7 +135,7 @@ export default function AdminProjects({ me, scheduleMeeting, openItem, initialPr
           title={project.name}
           meta={`Lead: ${project.leadUnit} · Created by ${projectCreatorLabel(project, me)} · ${projectCreatedAtLabel(project.created_at)} · ${dateContext}`}
           note={`${project.purpose||"No description added yet."} · Other departments: ${projectUnits}`}
-          status={project.status}
+          status={project.archived_at?"archived":project.status}
           facts={facts}
           progress={onTrackPercentage}
           actions={[{
