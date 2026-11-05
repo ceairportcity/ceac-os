@@ -81,7 +81,7 @@ test("database and Edge code use protected queues and recheck access",()=>{
 test("logout keeps a previous session token only in RAM for device revocation",()=>{
   const app=source("src/App.jsx");
   const client=source("src/lib/ceacPush.js");
-  assert.match(app,/onAuthStateChange\(\(event, authSession\)/);
+  assert.match(app,/onAuthStateChange\(\(_event, authSession\)/);
   assert.match(app,/if \(authSession\?\.access_token\) lastPushAuthToken = authSession\.access_token/);
   assert.match(app,/disconnectDevicePushOnSignOut\(previousToken\)/);
   assert.match(client,/disconnectDevicePushOnSignOut\(previousAccessToken = null\)/);
