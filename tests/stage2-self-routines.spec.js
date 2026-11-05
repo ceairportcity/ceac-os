@@ -113,13 +113,13 @@ for (const actor of ['staff', 'manager', 'admin', 'exec']) {
       await dialog.getByPlaceholder('Note (optional)').fill('Venue inspected');
       await dialog.getByRole('button',{name:'Record occurrence',exact:true}).click();
       await expect(dialog).toHaveCount(0);
-      await expect(page.getByText('Venue inspected',{exact:true})).toBeVisible();
+      await expect(page.getByRole('region',{name:'Routine occurrence review'}).getByText('Venue inspected',{exact:true})).toBeVisible();
       // The separately attributable dated evidence editor reuses the existing
       // immutable Work diary; this does not approve or rewrite the occurrence.
       await page.getByRole('button',{name:`Record evidence for ${today}`}).click();
       const activityDate = page.getByLabel('Activity date',{exact:true});
       await expect(activityDate).toHaveValue(today);
-      await page.getByLabel('What did you do?',{exact:true}).fill('Inspected venue and verified entrances');
+      await page.getByLabel('What did you accomplish?',{exact:true}).fill('Inspected venue and verified entrances');
       await page.getByRole('button',{name:'Save work update',exact:true}).click();
       await expect(page.getByText('Your dated activity was recorded.',{exact:true})).toBeVisible();
       const datedEvidence = await client.from('work_activity_records')
