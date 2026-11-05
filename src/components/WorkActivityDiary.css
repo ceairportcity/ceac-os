@@ -43,3 +43,14 @@
 .s2-progress-menu-actions button:hover{background:#f3f6fa}
 .s2-progress-remove{padding:12px;background:#f8fafc;border-radius:10px}
 .s2-work-diary-timeline li{padding-right:48px;border-bottom:1px solid #edf1f5}
+
+/* Premium progress composer with restrained CEAC styling and no extra assets. */
+.s2-progress-inline{margin:14px 0 20px}
+.s2-progress-inline label{font-size:14px;letter-spacing:-.01em;color:var(--ev2-text,#172a3f)}
+.s2-progress-inline textarea{min-height:76px;border-radius:12px;padding:14px;border-color:var(--ev2-line,#d6e1ec);background:var(--ev2-surface-soft,#f8fafc);line-height:1.5;transition:border-color .15s ease,background-color .15s ease}
+.s2-progress-inline textarea:focus-visible{outline:2px solid var(--ev2-action,#1764a8);outline-offset:2px;background:var(--ev2-surface,#fff)}
+.s2-work-diary-timeline{border-left-color:var(--ev2-line,#dce5ed)}
+.s2-work-diary-timeline li::before{background:var(--ev2-action,#1764a8)}
+.s2-progress-milestone{color:var(--ev2-action,#1764a8)}
+.s2-work-diary :is(button,summary):focus-visible{outline:2px solid var(--ev2-action,#1764a8);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.s2-progress-inline textarea{transition:none}}
