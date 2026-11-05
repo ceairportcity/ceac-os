@@ -25,3 +25,28 @@
 @media(max-width:650px){.s2-work-diary-form :is(input,textarea,select){font-size:16px}}
 
 .s2-work-diary-fields{display:contents}.s2-work-diary-form input[type=checkbox]{width:auto}
+
+
+/* Quiet, in-place progress writing. No large or floating progress action buttons. */
+.s2-progress-inline{display:grid;gap:8px;border:1px solid var(--ev2-line,#d7e2ef);background:var(--ev2-surface,#fff);border-radius:12px;padding:14px;margin:12px 0}
+.s2-progress-inline label{font-weight:650;font-size:14px;color:var(--ev2-text,#172a3f)}
+.s2-progress-inline textarea{width:100%;box-sizing:border-box;resize:vertical;border:1px solid #d7e2ed;background:#f8fafc;color:#24364b;border-radius:10px;padding:12px;min-height:62px;cursor:text;font:inherit}
+.s2-progress-inline textarea:focus-visible{outline:2px solid #1764a8;outline-offset:2px}
+.s2-progress-inline small{font-size:12px;color:#5b7088}
+.s2-progress-editor-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}
+.s2-progress-editor-heading strong{font-size:15px}
+.s2-progress-editor-heading button{border:0;background:transparent;color:#1764a8;font:inherit;cursor:pointer;padding:5px 8px}
+.s2-progress-milestone{color:#1764a8!important;font-weight:650}
+.s2-work-diary-timeline{border-left-color:#b8d0e7}
+.s2-work-diary-timeline li{padding-right:58px;border-bottom:1px solid #edf1f5;margin-bottom:8px}
+.s2-work-diary-timeline li::before{background:#1764a8}
+.s2-progress-menu{position:absolute;right:0;top:0;z-index:2}
+.s2-progress-menu summary{list-style:none;cursor:pointer;border:1px solid #dce4ec;border-radius:8px;padding:0 10px;font-size:21px;line-height:28px;color:#53677e}
+.s2-progress-menu summary::-webkit-details-marker{display:none}
+.s2-progress-menu-actions{position:absolute;right:0;top:32px;display:grid;min-width:150px;padding:5px;border:1px solid #dae4ed;border-radius:10px;box-shadow:0 8px 24px rgba(14,36,60,.12);background:#fff}
+.s2-progress-menu-actions button{border:0;background:transparent;text-align:left;padding:9px;color:#24364b;font:inherit;font-size:13px;cursor:pointer}
+.s2-progress-menu-actions button:hover{background:#f2f6fa}
+.s2-progress-remove{margin:10px 0;border:1px solid #d9e3ed;background:#f8fafc;border-radius:10px;padding:10px}
+.s2-progress-remove p{margin:0 0 8px}
+.s2-progress-remove button{border:1px solid #cddae8;border-radius:7px;background:#fff;padding:6px 11px;margin:0 7px 0 0;color:#172a3f;cursor:pointer}
+@media(max-width:650px){.s2-work-diary{padding:14px 12px}.s2-work-diary-timeline li{padding-right:46px}.s2-progress-inline{padding:11px}}
