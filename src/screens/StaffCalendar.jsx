@@ -325,7 +325,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const checklistFor=(taskId)=>checklistRows.filter(row=>row.task_id===taskId);
   const noteCount=(noteDraft.trim()?1:0)+selectedMeetingNotes.length+generalNotes.length;
   const taskCount=selectedPrivate.length+selectedWork.length;
-  const upcoming=[...visible].filter(event=>event.date>=dayKey(new Date())&&event.kind!=="personal").sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8).map(event=>displayEvent(event,true));
+  const upcoming=[...visible].filter(event=>event.date>=dayKey(new Date())&&event.kind!=="personal" && !(event.kind==="work" && ["completed","self_certified","cancelled"].includes(event.workStatus))).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8).map(event=>displayEvent(event,true));
 
   const moveMonth=(amount)=>{const next=new Date(cursor.getFullYear(),cursor.getMonth()+amount,1);setCursor(next);setSelectedDate(dayKey(next));};
   const goToday=()=>{const now=new Date();setCursor(now);setSelectedDate(dayKey(now));};
