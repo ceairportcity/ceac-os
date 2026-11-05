@@ -275,3 +275,13 @@ test("staff Overview shows one actionable preview for repeated work notices",()=
   ];
   assert.deepEqual(filterDayNotices(notices,actions).map(row=>row.id),["e2","memo1"]);
 });
+
+
+test("staff Overview keeps core Work usable when optional information fails",()=>{
+  const home=readFileSync("src/screens/Home.jsx","utf8");
+  assert.match(home,/setItems\(requireResult\(itemResult, "Your work"\)\)/);
+  assert.match(home,/const optionalResult = \(result, label\) =>/);
+  assert.match(home,/setFeedback\(optionalResult\(feedbackResult/);
+  assert.match(home,/setUpcomingMeetings\(optionalResult\(meetingResult/);
+  assert.match(home,/if \(unavailableSections\.length\) setError/);
+});
