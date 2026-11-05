@@ -192,6 +192,16 @@ test("review, returned and dependency items are not overdue work for staff",()=>
   assert.equal(isWorkOverdue({status:"not_started",due_at:past,kind:"routine"},now),false);
 });
 
+test("Ghana date-only deadlines remain actionable throughout their scheduled day",()=>{
+  const daytime=new Date("2026-11-05T14:00:00Z").getTime();
+  const followingDay=new Date("2026-11-06T00:00:00Z").getTime();
+  const task={kind:"task",status:"in_progress",due_at:"2026-11-05"};
+  assert.equal(isWorkOverdue(task,daytime),false);
+  assert.equal(isWorkOverdue(task,followingDay),true);
+  assert.equal(isWorkOverdue({...task,status:"in_review"},followingDay),false);
+  assert.equal(isWorkOverdue({...task,kind:"routine"},followingDay),false);
+});
+
 test("deadline notifications suppress work submitted for review or waiting on others",()=>{
   const states=["in_review","waiting_on","returned","completed","self_certified","cancelled"];
   const workItems=states.map((status,i)=>({id:"w"+i,title:status,due_at:iso(-25),status}));
