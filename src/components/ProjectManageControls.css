@@ -1,0 +1,20 @@
+.ceac-project-manage{position:relative;margin:6px 0 14px;color:var(--ev2-text,#172a3f)}
+.ceac-project-manage-menu{position:relative;display:inline-block}
+.ceac-project-manage-menu>summary{list-style:none;border:1px solid #dbe5ef;border-radius:9px;padding:2px 12px;font-size:22px;line-height:26px;cursor:pointer;background:#fff;color:#536b84}
+.ceac-project-manage-menu>summary::-webkit-details-marker{display:none}
+.ceac-project-manage-actions{position:absolute;z-index:8;top:37px;left:0;min-width:192px;display:grid;gap:2px;border:1px solid #dbe5ef;border-radius:12px;background:#fff;box-shadow:0 10px 28px rgba(24,43,62,.12);padding:7px}
+.ceac-project-manage-actions button{font:inherit;font-size:13px;text-align:left;color:#26394e;background:transparent;border:0;border-radius:7px;padding:10px;cursor:pointer}
+.ceac-project-manage-actions button:hover{background:#f1f5fa}
+.ceac-project-manage-form{max-width:570px;border:1px solid #d9e3ed;border-radius:13px;padding:16px;display:grid;gap:12px;background:#fff;margin-top:10px}
+.ceac-project-manage-form header,.ceac-project-manage-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ceac-project-manage-form header strong{font-size:15px}
+.ceac-project-manage-form header button{border:0;background:transparent;color:#1764a8;cursor:pointer}
+.ceac-project-manage-form label{display:grid;gap:6px;font-size:13px;font-weight:600}
+.ceac-project-manage-form :is(input,textarea){width:100%;max-width:100%;box-sizing:border-box;padding:10px;border:1px solid #cddbe8;border-radius:8px;font:inherit;background:#fff;color:#172a3f}
+.ceac-project-manage-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ceac-project-manage-foot{justify-content:flex-end}
+.ceac-project-manage-foot button{border:1px solid #cddbe8;border-radius:8px;padding:8px 13px;background:#fff;color:#1764a8;cursor:pointer}
+.ceac-project-manage-foot button[type=submit]{background:#1764a8;border-color:#1764a8;color:#fff}
+.ceac-project-manage-error{color:#9b3220;font-size:13px}
+.ceac-project-manage-notice{color:#245b83;font-size:13px}
+@media(max-width:650px){.ceac-project-manage-dates{grid-template-columns:1fr}.ceac-project-manage-form{padding:12px}.ceac-project-manage-actions{left:auto;right:0}}
