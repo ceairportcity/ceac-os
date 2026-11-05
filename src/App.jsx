@@ -165,7 +165,10 @@ export default function App() {
 
   useEffect(() => {
     boot();
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    // Keep the previous JWT in RAM for a best-effort server revocation on logout.
+    let lastPushAuthToken = null;
+    const { data: sub } = supabase.auth.onAuthStateChange((event, authSession) => {
+      if (authSession?.access_token) lastPushAuthToken = authSession.access_token;
       // boot() above already performs the initial, independently verified
       // account read. Supabase also emits INITIAL_SESSION on subscription:
       // re-running the same boot cancels the first read and repeats every
@@ -173,7 +176,9 @@ export default function App() {
       // Continue handling all genuine identity and security state changes.
       if (event === "INITIAL_SESSION") return;
       if(event==="SIGNED_OUT"){
-        void import("./lib/ceacPush").then(({disconnectDevicePushOnSignOut})=>disconnectDevicePushOnSignOut()).catch(()=>{});
+        const previousToken = lastPushAuthToken;
+        lastPushAuthToken = null;
+        void import("./lib/ceacPush").then(({disconnectDevicePushOnSignOut})=>disconnectDevicePushOnSignOut(previousToken)).catch(()=>{});
         setMemoWorkContext(null);
         if("clearAppBadge" in navigator)void navigator.clearAppBadge().catch(()=>{});
         if(draftActorRef.current){
