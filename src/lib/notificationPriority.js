@@ -18,7 +18,7 @@ const headings = {
 const validId = id => /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(id||""));
 const ms = value => { const n=Date.parse(value||"");return Number.isFinite(n)?n:NaN; };
 // Ghana date-only deadlines remain due until the end of the stated day.
-const workDeadlineMs = value => typeof value==="string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(value)
+const workDeadlineMs = value => typeof value==="string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
   ? Date.parse(value+"T23:59:59.999Z") : ms(value);
 const within = (value,start,end) => {const t=ms(value);return t>=start&&t<=end;};
 export function defaultRoomLevel(me) {
