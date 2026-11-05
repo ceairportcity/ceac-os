@@ -26,17 +26,5 @@
 
 .s2-work-diary>.s2-work-inspector-facts>div+div{text-align:right}.s2-work-inspector .s2-work-project-link>button{border:0;padding:0;box-shadow:none;color:teal}
 
-/* Refined CEAC Work: system-like clarity without GPU-heavy glass effects. */
-.s2-work-layout{gap:16px}
-.s2-work-register{border-color:var(--ev2-line,#e0e9f4);border-radius:16px;box-shadow:0 3px 14px rgba(24,49,78,.035)}
-.s2-work-inspector{border-radius:16px;box-shadow:0 3px 14px rgba(24,49,78,.03);padding:22px}
-.s2-work-inspector-head{text-transform:none;letter-spacing:0;font-size:13px;color:var(--ev2-text-secondary,#617184);font-weight:650}
-.s2-work-inspector h2{font-size:clamp(19px,2vw,23px);letter-spacing:-.025em;line-height:1.25}
-.s2-register-heading h2{color:var(--ev2-text,#193b61);font-size:20px;font-weight:700}
-.s2-work-inspector .s2-work-project-link>button{color:var(--ev2-action,#1764a8)}
-.s2-work-inspector-empty{padding:30px 0;line-height:1.6;color:var(--ev2-text-secondary,#617184)}
-.s2-work-inspector :is(button,summary):focus-visible{outline:2px solid var(--ev2-action,#1764a8);outline-offset:3px}
-@media(max-width:920px){.s2-work-layout{gap:12px}.s2-work-inspector{position:static}}
-
-.s2-work-layout:not(.has-selection){grid-template-columns:minmax(0,1fr)}
-.s2-work-layout:not(.has-selection) .s2-work-register{width:100%}
+/* Work detail: restrained Apple-like typography using shared CEAC tokens. */
+.s2-work-inspector{border-radius:14px}.s2-work-inspector-head{text-transform:none;letter-spacing:0;font-weight:650}.s2-work-inspector h2{letter-spacing:-.025em}.s2-work-layout:not(.has-selection){grid-template-columns:minmax(0,1fr)}
