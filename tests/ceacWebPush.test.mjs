@@ -78,6 +78,16 @@ test("database and Edge code use protected queues and recheck access",()=>{
   assert.match(client,/disconnectDevicePushOnSignOut/);
   assert.doesNotMatch(client,/localStorage\.setItem/);
 });
+test("logout keeps a previous session token only in RAM for device revocation",()=>{
+  const app=source("src/App.jsx");
+  const client=source("src/lib/ceacPush.js");
+  assert.match(app,/onAuthStateChange\(\(event, authSession\)/);
+  assert.match(app,/if \(authSession\?\.access_token\) lastPushAuthToken = authSession\.access_token/);
+  assert.match(app,/disconnectDevicePushOnSignOut\(previousToken\)/);
+  assert.match(client,/disconnectDevicePushOnSignOut\(previousAccessToken = null\)/);
+  assert.match(client,/previousAccessToken \|\| lastSubscriptionBearer/);
+  assert.doesNotMatch(client,/localStorage\.setItem/);
+});
 test("iOS setup is optional and only exposed after a user action",()=>{
   const view=source("src/components/DevicePushSettings.jsx");
   assert.match(view,/Home Screen/);
