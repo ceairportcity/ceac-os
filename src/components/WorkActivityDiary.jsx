@@ -139,7 +139,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       activity_state:"done",outcome_note:entry.note,routineValue:entry.value,
     })):[]),
   ].sort((a,b)=>b.activity_date.localeCompare(a.activity_date)
-    || String(b.recorded_at||"").localeCompare(String(a.recorded_at||""));
+    || String(b.recorded_at||"").localeCompare(String(a.recorded_at||"")));
 
   const canRecord = verified && (item.assignee_id === me.id || (
     item.visibility !== "private" && item.confidential !== true
