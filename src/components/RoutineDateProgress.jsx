@@ -81,7 +81,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
   finally {sending.current=false;if(current.current===requestScope) setBusy(false);}
  }
  return <section className="s2-routine-review" aria-label="Progress for a routine date" style={{padding:12,gap:10,marginTop:12}}>
-  <h3 style={{margin:0,fontSize:14}}>Progress for one date</h3>
+  <h3 style={{margin:0,fontSize:14}}>Work for this date</h3>
   <label className="small">Scheduled date<input className="field" type="date" value={date}
    disabled={busy} onChange={event=>setDate(event.target.value)} /></label>
   {verified!==scope && <p role="status">Checking this scheduled date…</p>}
@@ -92,7 +92,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
   <RoutineDateCover key={scope} me={me} item={item} date={date} cover={cover} verified={ready}
    canManage={canRecordAsReviewer} hasEvidence={rows.length>0||dateScheduleState==="recorded"} skipped={dateScheduleState==="skipped"} onChanged={()=>{setVerified("");setReload(n=>n+1);}} />
   {ready && <>
-   <p className="small">{dateScheduleState==="skipped"?"This occurrence was explicitly skipped. No progress or outcome is implied.":(rows.length?labels[rows[0].status]:"No progress recorded for this date.")+" · Record the outcome separately when this date is finished."}</p>
+   <p className="small">{dateScheduleState==="skipped"?"This occurrence was explicitly skipped. No progress or outcome is implied.":(rows.length?labels[rows[0].status]:"No progress recorded for this date.")+" · When this date is finished, record the completed work separately."}</p>
    {permitted && <form className="s2-routine-review-form" onSubmit={save}>
     <fieldset disabled={busy} style={{border:0,padding:0,margin:0,minWidth:0,display:"grid",gap:8}}><legend>Checklist for {date}</legend>
      {steps.length?steps.map(step=><label key={step.id} style={{display:"flex",gap:8,alignItems:"start"}}>
@@ -106,10 +106,10 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
     <label>Evidence links, one per line<textarea className="field" rows={2} value={links} disabled={busy} onChange={event=>setLinks(event.target.value)} /></label>
     {writeError && <p role="alert">{writeError}</p>}
     <button className="btn btn-sm" disabled={busy || Boolean(writeError) || status==="waiting_on" && note.trim().length<3 || status==="ready_for_review" && done.length!==steps.length}>
-     {busy?"Saving date progress…":"Save date progress"}
+     {busy?"Saving date progress…":"Save update"}
     </button>
    </form>}
-   {permitted&&onRecordOccurrence&&dateScheduleState!=="recorded"&&date<=ghanaCalendarDate()&&<button type="button" className="btn" onClick={()=>onRecordOccurrence(date)}>Record occurrence</button>}
+   {permitted&&onRecordOccurrence&&dateScheduleState!=="recorded"&&date<=ghanaCalendarDate()&&<button type="button" className="btn" onClick={()=>onRecordOccurrence(date)}>Record completed work</button>}
    {rows[0] && <OperationalFileList key={rows[0].id} contextType="routine_date_progress" contextId={rows[0].id}
     relation="routine_evidence" title={"Evidence files for "+date} emptyText="No files attached to this update."
     canUpload={permitted && rows[0].actor_id===me.id && !busy && !writeError} />}
