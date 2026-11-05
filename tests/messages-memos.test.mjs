@@ -201,3 +201,11 @@ test("Memo can prepare a responsibility without secretly assigning or leaking re
  assert.match(memo,/startWorkFromMemo && !\["draft","declined"\]\.includes\(active.status\)/);
  assert.doesNotMatch(memo,/create_work_from_memo/);
 });
+
+test("Memo inbox initial pagination limits correspondence and attachment scanning",()=>{
+  const memo=source("src/screens/Memos.jsx");
+  assert.match(memo,/\[pageSize,setPageSize\]=useState\(50\)/);
+  assert.match(memo,/setPageSize\(count=>count\+50\)/);
+  assert.match(memo,/\.limit\(pageSize\)/);
+  assert.match(memo,/Load earlier correspondence/);
+});
