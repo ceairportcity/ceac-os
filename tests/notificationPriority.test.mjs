@@ -52,9 +52,22 @@ test("An overdue assignment remains actionable; completed work disappears",()=>{
     {id:"work3",title:"Private records",due_at:iso(15),status:"assigned",confidential:true},
   ]});
   assert.equal(r.items.length,2);
-  assert.ok(r.items.every(x=>x.level==="attention"));
+  assert.equal(r.items.find(x=>x.id==="work:work1").level,"attention");
+  assert.equal(r.items.find(x=>x.id==="work:work3").level,"personal");
   assert.equal(r.items.find(x=>x.id==="work:work3").meta,"Confidential assigned task");
 });
+test("a Ghana date-only task is not overdue until the next calendar day",()=>{
+ const base=Date.parse("2026-11-05T13:00:00Z");
+ const task={id:"work-date",title:"Report",due_at:"2026-11-05",status:"in_progress"};
+ const today=buildCeacNotificationBriefing({me:person,now:base,workItems:[task]});
+ assert.equal(today.items.length,1);
+ assert.equal(today.items[0].level,"personal");
+ const overdue=buildCeacNotificationBriefing({me:person,now:Date.parse("2026-11-06T00:00:00Z"),workItems:[task]});
+ assert.equal(overdue.items[0].level,"attention");
+ const routine=buildCeacNotificationBriefing({me:person,now:base,workItems:[{...task,kind:"routine"}]});
+ assert.equal(routine.items.length,0);
+});
+
 test("Read notifications are removed, but their work deadline remains until done",()=>{
   const id="11111111-1111-4111-8111-111111111111";
   const r=buildCeacNotificationBriefing({me:person,now,events:[
