@@ -23,7 +23,7 @@ function RecipientPicker({label,people,value,onChange,excluded,disabled,invalid=
     {query && !disabled && <div className="memo-matches">{matches.slice(0,12).map(p=><button type="button" key={p.id} onClick={()=>{onChange([...value,p.id]);setQuery("");}}><strong>{p.full_name}</strong><small>{p.job_title || "CEAC colleague"}</small></button>)}{!matches.length && <p>No matching colleagues.</p>}</div>}
   </div>;
 }
-export default function Memos({me,composeRequest,initialMemoId,openProject,openWork,leaveGuard,relatedWork,onRelatedWorkHandled}) {
+export default function Memos({me,composeRequest,initialMemoId,openProject,openWork,startWorkFromMemo,leaveGuard,relatedWork,onRelatedWorkHandled}) {
   const [rows,setRows]=useState([]),[people,setPeople]=useState([]),[units,setUnits]=useState([]),[fileVersions,setFileVersions]=useState(new Set());
   const [canCreateProject,setCanCreateProject]=useState(Boolean(me.is_admin));
   const [view,setView]=useState("all"),[query,setQuery]=useState(""),[selected,setSelected]=useState(initialMemoId || null);
@@ -362,6 +362,12 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
           </div>
           <aside className="memo-attachments memo-thread-details" aria-label="Memo details">
             <h3>Memo details</h3>
+            {startWorkFromMemo && !["draft","declined"].includes(active.status) && <div className="memo-response">
+              <button type="button" disabled={busy} onClick={()=>startWorkFromMemo({
+                title:(active.versions.filter(version=>version.sent_at).at(-1)?.subject||"Memo follow-up").slice(0,220),kind:"task",
+              })}>Prepare a responsibility</button>
+              <small>Review the details and choose the person responsible. Nothing is assigned yet.</small>
+            </div>}
             <dl><dt>From</dt><dd>{name(active.sender_id)}</dd><dt>To</dt><dd>{active.memo_recipients.filter(r=>r.kind==="to").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Cc</dt><dd>{active.memo_recipients.filter(r=>r.kind==="cc").map(r=>name(r.profile_id)).join(", ") || "—"}</dd><dt>Status</dt><dd>{MEMO_STATUS_LABELS[active.status]}</dd><dt>Attachments</dt><dd>{visibleAttachments.length}</dd></dl>
             <div className="memo-response">
             {active.sender_id===me.id && ["draft","changes_requested"].includes(active.status) && <button className="btn" type="button" onClick={()=>editMemo(active)}>{active.status==="draft"?"Continue draft":"Prepare revision"}</button>}
