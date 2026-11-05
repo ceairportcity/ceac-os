@@ -44,7 +44,12 @@ const budgets = {
   // 702,455 bytes of aggregate CSS, 6,135 above the previous 680 KiB ceiling.
   // Set a narrowly measured 687 KiB cap (703,488 bytes, 1,033 headroom),
   // retaining the original core, gzip, JS, and vendor budgets unchanged.
-  allCssRaw: 687 * KIB,
+  // 5 Nov: inline progress and project edit/archive controls add two small,
+  // route-owned stylesheets. Consolidated their rules first (reducing 1.8 KiB
+  // of source CSS) and retained all core/gzip/JS/vendor limits. The prior
+  // candidate measured 707,791 bytes before consolidation; permit only
+  // 3 KiB more aggregate CSS for this approved functional design.
+  allCssRaw: 690 * KIB,
   executiveRouteCssRaw: 16 * KIB,
   executiveRedesignCssRaw: 28 * KIB,
   // The integrated product/security candidate measures 79,367 bytes on Node 22;
