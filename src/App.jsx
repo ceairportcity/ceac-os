@@ -167,8 +167,11 @@ export default function App() {
     boot();
     // Keep the previous JWT in RAM for a best-effort server revocation on logout.
     let lastPushAuthToken = null;
-    const { data: sub } = supabase.auth.onAuthStateChange((event, authSession) => {
+    // Separate token observer keeps the established Stage 2 Auth callback unchanged.
+    const { data: pushTokenSub } = supabase.auth.onAuthStateChange((_event, authSession) => {
       if (authSession?.access_token) lastPushAuthToken = authSession.access_token;
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       // boot() above already performs the initial, independently verified
       // account read. Supabase also emits INITIAL_SESSION on subscription:
       // re-running the same boot cancels the first read and repeats every
@@ -210,6 +213,7 @@ export default function App() {
     return () => {
       ++bootEpoch.current;
       sub.subscription.unsubscribe();
+      pushTokenSub.subscription.unsubscribe();
       window.removeEventListener("popstate", onPopState);
     };
   }, []);
