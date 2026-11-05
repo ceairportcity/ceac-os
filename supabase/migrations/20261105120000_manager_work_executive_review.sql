@@ -190,6 +190,7 @@ BEGIN
      AND NEW.status = 'self_certified'
      AND OLD.status IS DISTINCT FROM NEW.status
      AND OLD.assignee_id = auth.uid()
+     AND OLD.visibility <> 'private'
      AND NOT public.app_is_exec()
      AND EXISTS (
        SELECT 1 FROM public.unit_memberships manager_membership
