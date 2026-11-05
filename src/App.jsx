@@ -127,6 +127,7 @@ export default function App() {
   const notificationCounts = useCeacUnreadNotifications(me);
   const [openUpdatesIntent,setOpenUpdatesIntent]=useState(false);
   const [memoWorkContext,setMemoWorkContext]=useState(null);
+  const [calendarFocusDate,setCalendarFocusDate]=useState(null);
   useEffect(()=>{setMemoWorkContext(null);},[me?.org_id,me?.id]);
   const [ready, setReady] = useState(false);
   const [bootError, setBootError] = useState(null);
@@ -523,7 +524,7 @@ export default function App() {
       if (isUnitManager) return <ManagerWork key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} />;
       return <Work key={managerScopeKey} me={me} isManager={false} openItem={openItem} />;
     }
-    if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} />;
+    if (tab === "staff-calendar" && isStaff) return <StaffCalendar me={me} openItem={openItem} openMeeting={openMeeting} initialDate={calendarFocusDate} onFocusHandled={()=>setCalendarFocusDate(null)} />;
     if (tab === "messages") return <Inbox
       key={`${me.org_id}:${me.id}`}
       me={me}
@@ -713,7 +714,7 @@ export default function App() {
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
           <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
-          {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} onOpenMemo={work=>{setMemoWorkContext({id:work.id,ref:work.ref,title:work.title});navigate({tab:"messages"});}} back={closeUrlOverlay} />
+          {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} onOpenCalendar={dueAt=>{setCalendarFocusDate(dueAt||null);navigate({tab:isExec?"exec-calendar":isAdmin?"admin-calendar":isUnitManager?"calendar":"staff-calendar"});}} onOpenMemo={work=>{setMemoWorkContext({id:work.id,ref:work.ref,title:work.title});navigate({tab:"messages"});}} back={closeUrlOverlay} />
             : assigning && (isExec || isAdmin) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} back={() => setAssigning(null)} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}
