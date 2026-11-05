@@ -27,7 +27,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
   const [rows,setRows]=useState([]),[people,setPeople]=useState([]),[units,setUnits]=useState([]),[fileVersions,setFileVersions]=useState(new Set());
   const [canCreateProject,setCanCreateProject]=useState(Boolean(me.is_admin));
   const [view,setView]=useState("all"),[query,setQuery]=useState(""),[selected,setSelected]=useState(initialMemoId || null);
-  const [grouping,setGrouping]=useState("person"),[expandedGroups,setExpandedGroups]=useState({}),[pageSize,setPageSize]=useState(200);
+  const [grouping,setGrouping]=useState("person"),[expandedGroups,setExpandedGroups]=useState({}),[pageSize,setPageSize]=useState(50);
   const [form,setForm]=useState(null),[dirty,setDirty]=useState(false),[pendingFiles,setPendingFiles]=useState([]),[draftFiles,setDraftFiles]=useState([]);
   const [detail,setDetail]=useState(null),[detailKey,setDetailKey]=useState(""),[reply,setReply]=useState("");
   const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
@@ -337,7 +337,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,openW
         {loading && <p role="status">Loading Memos…</p>}
         {!loading && !error && !visible.length && <p>No Memos in this view.</p>}
         <div className="memo-conversation-list" aria-label="Memo conversations">{[...visible].sort((a,b)=>Date.parse(b.updated_at)-Date.parse(a.updated_at)).map(renderMemoRow)}</div>
-        {rows.length===pageSize && <button type="button" className="memo-row" disabled={loading} onClick={()=>setPageSize(count=>count+200)}>Load earlier correspondence</button>}
+        {rows.length===pageSize && <button type="button" className="memo-row" disabled={loading} onClick={()=>setPageSize(count=>count+50)}>Load earlier correspondence</button>}
       </aside>
       <article className="memo-reader" data-reading={active ? "" : undefined}>
         {selected && !active && !error && <p role="status">Opening Memo…</p>}
