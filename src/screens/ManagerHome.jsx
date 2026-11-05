@@ -175,7 +175,8 @@ export default function ManagerHome({ me, openItem, openProject, openMeeting, sc
         });
       setBlockers([...blockerMap.values()]);
       setMine(requireResult(mineResult, "Your work").filter((item) => {
-        const dueToday = item.due_at && new Date(item.due_at) >= today && new Date(item.due_at) < tomorrow;
+        const dueToday = ["not_started", "in_progress", "assigned"].includes(item.status)
+          && item.due_at && new Date(item.due_at) >= today && new Date(item.due_at) < tomorrow;
         return dueToday || isWorkOverdue(item) || item.status === "returned" || item.status === "waiting_on";
       }));
       setDelegated(requireResult(delegatedResult, "Work you gave out"));
