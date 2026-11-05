@@ -220,6 +220,11 @@ insert into s2_expected_authenticated_definers(signature) values
  ('public.plan_work_activity_followup(p_activity_id uuid)'),
  ('public.edit_open_work_details(p_work_item_id uuid, p_expected_movement timestamp with time zone, p_title text, p_purpose text, p_outcome text, p_instructions text)');
 
+-- Progress removal and project management are owner/organisation/AAL checked and audited.
+insert into s2_expected_authenticated_definers(signature) values
+ ('public.remove_own_work_update(p_activity_id uuid)'),
+ ('public.manage_ceac_project(p_project_id uuid, p_action text, p_name text, p_purpose text, p_starts_on date, p_ends_on date)');
+
 -- Two new scoped notification actions are individually checked by the
 -- migration contract. Raw event tables remain inaccessible to browsers.
 insert into s2_expected_authenticated_definers(signature) values
@@ -324,7 +329,7 @@ begin
 
   -- The three new Executive-only projections have explicit signatures and
   -- actor/tenant/no-anon/read-only checks above.
-  if v_actual<>182 or v_expected<>182 or v_unexpected is not null or v_missing is not null then
+  if v_actual<>184 or v_expected<>184 or v_unexpected is not null or v_missing is not null then
     raise exception E'S2 SECURITY DEFINER allowlist mismatch. actual=% expected=%\nunexpected:\n%\nmissing:\n%',
       v_actual,v_expected,coalesce(v_unexpected,'(none)'),coalesce(v_missing,'(none)');
   end if;
