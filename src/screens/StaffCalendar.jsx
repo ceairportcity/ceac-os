@@ -55,6 +55,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const [checklistRows,setChecklistRows]=useState([]);
   const [meetingNotes,setMeetingNotes]=useState([]);
   const [workOptions,setWorkOptions]=useState([]);
+  const [workOptionsLoading,setWorkOptionsLoading]=useState(false);
   const [projectOptions,setProjectOptions]=useState([]);
   const [dayTab,setDayTab]=useState("schedule");
   const [taskTitle,setTaskTitle]=useState("");
@@ -89,6 +90,23 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
   const calendarEvents=[...events,...routineCalendar.events];
 
   useEffect(()=>{load();},[me.id,me.unit_id,cursor.getFullYear(),cursor.getMonth()]);
+  // The visible calendar needs only dated Work in its visible window. Load the
+  // full available Work options only if the person is creating a private task.
+  useEffect(()=>{
+    if(!composer || composerType!=="task")return;
+    let active=true;setWorkOptionsLoading(true);
+    supabase.from("work_items").select("id,ref,title,project_id,projects(id,name)")
+      .eq("assignee_id",me.id).neq("visibility","private")
+      .then(({data,error:readError})=>{
+        if(!active)return;
+        if(readError){setWorkOptions([]);setProjectOptions([]);setError("Work links could not be loaded. You can still create a private task without linking one.");return;}
+        setWorkOptions(data||[]);
+        const projects=new Map();
+        (data||[]).forEach(item=>{if(item.projects?.id)projects.set(item.projects.id,item.projects.name);});
+        setProjectOptions([...projects.entries()].map(([id,name])=>({id,name})));
+      }).finally(()=>{if(active)setWorkOptionsLoading(false);});
+    return()=>{active=false;};
+  },[composer,composerType,me.id,me.org_id]);
   useEffect(()=>{
     const row=dayNotes.find(note=>note.note_date===selectedDate&&note.note_kind==="daily");
     setNoteDraft(row?.body||"");
@@ -104,7 +122,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       const fromDay=dayKey(rangeStart);
       const toDay=dayKey(rangeEnd);
       const [work,meetings,ministry,leave]=await Promise.all([
-        supabase.from("work_items").select("id,ref,title,kind,status,due_at,project_id,projects(id,name)").eq("assignee_id",me.id).neq("visibility","private"),
+        supabase.from("work_items").select("id,ref,title,kind,status,due_at,project_id,projects(id,name)").eq("assignee_id",me.id).neq("visibility","private").gte("due_at",from).lt("due_at",to),
         supabase.from("meeting_sessions").select("id,title,scope,unit_id,project_id,starts_at,ends_at,status,provider,projects(name),units(name)").gte("starts_at",from).lt("starts_at",to).order("starts_at"),
         supabase.from("ministry_events").select("id,title,kind,scope,unit_id,starts_at,ends_at,all_day,location,cancelled").gte("starts_at",from).lt("starts_at",to).order("starts_at"),
         supabase.from("leave_requests").select("id,kind,start_date,end_date,status").eq("profile_id",me.id).eq("status","approved").order("start_date"),
@@ -169,10 +187,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       (leave.data||[]).forEach(row=>{let d=new Date(`${row.start_date}T00:00:00`),end=new Date(`${row.end_date}T00:00:00`);while(d<=end){rows.push({id:`leave-${row.id}-${dayKey(d)}`,kind:"leave",date:dayKey(d),title:`${row.kind} leave`,meta:"All day · Approved",sortAt:`${dayKey(d)}T00:00:00Z`,time:"All day"});d=addDays(d,1);}});
       privateTasks.filter(task=>task.plan_date).forEach(task=>rows.push({id:`personal-task-${task.id}`,kind:"personal",personalType:"task",date:task.plan_date,title:task.title,meta:task.planned_time?timeLabel(task.planned_time):"Private task",taskId:task.id,completed:Boolean(task.completed_at)}));
       (privateEvents.data||[]).forEach(event=>rows.push({id:`personal-event-${event.id}`,kind:"personal",personalType:"event",date:accraDay(event.starts_at),title:event.title,meta:`${new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${event.ends_at?`–${new Date(event.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}${event.location?` · ${event.location}`:""}`,privateEventId:event.id,raw:event,sortAt:event.starts_at,time:new Date(event.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
-      const projects=new Map();
-      (work.data||[]).forEach(item=>{if(item.projects?.id)projects.set(item.projects.id,item.projects.name);});
-      setWorkOptions(work.data||[]);
-      setProjectOptions([...projects.entries()].map(([id,name])=>({id,name})));
+      // Work link choices load only when a task composer is opened.
       setChecklistRows(checklists.data||[]);
       setMeetingNotes((privateMeetingNotes.data||[]).map(note=>({...note,meeting:meetingRows.find(row=>row.id===note.meeting_id)||null})));
       setPersonalTasks(privateTasks);
@@ -447,7 +462,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
         {composerType==="task"&&!composeUnscheduled&&<FieldGroup label="Time (optional)"><input className="field" aria-label="Task time" type="time" value={composeStart} onChange={event=>setComposeStart(event.target.value)} /></FieldGroup>}
         {composerType==="note"&&<FieldGroup label="Note type"><select className="field" aria-label="Note type" value={composeNoteKind} onChange={event=>setComposeNoteKind(event.target.value)}><option value="daily">Daily journal</option><option value="general">General note</option><option value="personal">Personal note</option></select></FieldGroup>}
         <FieldGroup label={composerType==="note"?"Note":"Details (optional)"}><textarea className="field" aria-label="Planning details" rows={composerType==="note"?8:4} value={composeDetails} maxLength={composerType==="note"?12000:4000} onChange={event=>setComposeDetails(event.target.value)} /></FieldGroup>
-        {composerType==="task"&&<><FieldGroup label="Checklist" hint="One private checklist item per line."><textarea className="field" aria-label="Task checklist" rows={3} value={composeChecklist} onChange={event=>setComposeChecklist(event.target.value)} /></FieldGroup><div className="phase6-composer-grid"><FieldGroup label="Link CEAC Work"><select className="field" aria-label="Link CEAC Work" value={composeWorkId} onChange={event=>setComposeWorkId(event.target.value)}><option value="">No Work link</option>{workOptions.map(item=><option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}</select></FieldGroup><FieldGroup label="Link Project"><select className="field" aria-label="Link Project" value={composeProjectId} onChange={event=>setComposeProjectId(event.target.value)}><option value="">No Project link</option>{projectOptions.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select></FieldGroup></div></>}
+        {composerType==="task"&&<><FieldGroup label="Checklist" hint="One private checklist item per line."><textarea className="field" aria-label="Task checklist" rows={3} value={composeChecklist} onChange={event=>setComposeChecklist(event.target.value)} /></FieldGroup><div className="phase6-composer-grid"><FieldGroup label="Link CEAC Work">{workOptionsLoading&&<span role="status" className="screen-note">Loading available work…</span>}<select className="field" aria-label="Link CEAC Work" value={composeWorkId} onChange={event=>setComposeWorkId(event.target.value)}><option value="">No Work link</option>{workOptions.map(item=><option key={item.id} value={item.id}>{item.ref} · {item.title}</option>)}</select></FieldGroup><FieldGroup label="Link Project"><select className="field" aria-label="Link Project" value={composeProjectId} onChange={event=>setComposeProjectId(event.target.value)}><option value="">No Project link</option>{projectOptions.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</select></FieldGroup></div></>}
         <FieldGroup label="Reminder (optional)"><input className="field" aria-label="Planning reminder" type="datetime-local" value={composeReminder} onChange={event=>setComposeReminder(event.target.value)} /></FieldGroup>
         {error&&<ProductNotice tone="error" title="Could not save private planning">{error}</ProductNotice>}
         <div className="phase6-composer-actions"><Button variant="secondary" disabled={busy} onClick={()=>setComposer(null)}>Cancel</Button><Button disabled={busy||(composerType!=="note"&&!composeTitle.trim())||(composerType==="note"&&!composeDetails.trim())||(composerType==="event"&&(!composeDate||!composeStart||!composeEnd||composeEnd<composeStart))} onClick={saveComposer}>{busy?"Saving…":`Save ${composerType}`}</Button></div>
