@@ -43,6 +43,8 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   const [busy, setBusy] = useState(false);
   const [editor, setEditor] = useState(false);
   const [correctingId, setCorrectingId] = useState(null);
+  const [entryKind,setEntryKind] = useState("update");
+  const [removingId,setRemovingId] = useState(null);
   const [date, setDate] = useState(ghanaDay);
   const [state, setState] = useState("done");
   const [summary, setSummary] = useState("");
@@ -69,7 +71,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   const visibleSuccess = verified ? success : "";
   // Reset the previous identity and its draft before a new scope can submit.
   useEffect(() => {
-    setEditor(false); setCorrectingId(null); setDate(ghanaDay()); setState("done");
+    setEditor(false); setCorrectingId(null); setEntryKind("update"); setRemovingId(null); setDate(ghanaDay()); setState("done");
     setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
     setSuccess(""); setError("");
     setFiles([]);setWriteError("");savedActivity.current=null;uploadAttempts.current.clear();
@@ -78,7 +80,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   // rerender or ordinary load never discards an editor's unsaved work.
   useEffect(() => {
     if (!prefillRequest || !/^\d{4}-\d{2}-\d{2}$/.test(prefillDate)) return;
-    setCorrectingId(null);
+    setCorrectingId(null); setEntryKind("update");
     setDate(prefillDate);
     setState("done");
     setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
@@ -100,7 +102,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
         for (let page = 0; page < 20; page++) {
           const start = page * 200;
           const read = await supabase.from("work_activity_records")
-            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,action_summary,outcome_note,next_action,next_action_on,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
+            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,entry_kind,action_summary,outcome_note,next_action,next_action_on,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
             .eq("org_id", me.org_id).eq("work_item_id", item.id)
             .order("recorded_at", { ascending: false })
             .order("id", { ascending: false })
@@ -145,7 +147,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     setCorrectingId(entry.id);
     setPlanNext(false);setFiles([]);setWriteError("");
     setDate(entry.activity_date);
-    setState(entry.activity_state);
+    setState(entry.activity_state); setEntryKind(entry.entry_kind||"update");
     setSummary(entry.action_summary);
     setOutcome(entry.outcome_note || "");
     setNextAction(entry.next_action || "");
@@ -166,7 +168,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     try {
       const fields = {
         org_id: me.org_id, work_item_id: item.id, contributor_id: me.id,
-        activity_date: date, activity_state: state,
+        activity_date: date, activity_state: state, entry_kind:entryKind,
         action_summary: summary.trim(),
         outcome_note: outcome.trim() || null,
         next_action: nextAction.trim() || null,
@@ -203,7 +205,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       }
       savedActivity.current=null;setFiles([]);uploadAttempts.current.clear();
       setSummary(""); setOutcome(""); setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl("");
-      setCorrectingId(null); setDate(ghanaDay()); setState("done");
+      setCorrectingId(null); setEntryKind("update"); setDate(ghanaDay()); setState("done");
       setSuccess(fields.supersedes_id
         ? "Your activity correction was recorded. The earlier version remains preserved."
         : fields.next_action&&planNext ? "Your activity was recorded. Its follow-up remains in your private plan even when this assignment is finished." : "Your dated activity was recorded.");
@@ -218,18 +220,27 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
   }
 
   const beginUpdate = (activityDate) => {
-    setCorrectingId(null); setDate(activityDate); setState("done"); setSummary(""); setOutcome("");
+    setCorrectingId(null); setEntryKind("update"); setDate(activityDate); setState("done"); setSummary(""); setOutcome("");
     setNextAction(""); setNextActionOn(""); setMinutes(""); setEvidenceUrl(""); setFiles([]);
     setPlanNext(true); setWriteError(""); setEditor(true);
   };
-  const recordAction = verified && canRecord && <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-    {editor ? <button type="button" className="btn btn-sm" disabled={busy || Boolean(savedActivity.current)}
-      onClick={() => setEditor(false)}>Close update</button> : <>
-      <button type="button" className={compact ? "btn btn-sm s2-work-inspector-open" : "btn btn-sm"}
-        disabled={busy || Boolean(savedActivity.current)} onClick={() => beginUpdate(ghanaDay())}>+ Add work update</button>
-      <button type="button" className="btn btn-ghost btn-sm"
-        disabled={busy || Boolean(savedActivity.current)} onClick={() => beginUpdate(yesterdayInGhana())}>Record earlier work</button>
-    </>}
+
+  async function removeActivity(entry) {
+    if (busy || entry.contributor_id!==me.id || !verified) return;
+    setBusy(true);setWriteError("");setSuccess("");
+    try {
+      const result=await supabase.rpc("remove_own_work_update",{p_activity_id:entry.id});
+      if(result.error || result.data!==true) throw result.error||new Error("Removal could not be verified.");
+      setRemovingId(null);setSuccess("Entry removed from progress history; audit remains.");
+      setReload(n=>n+1);
+    }catch(cause){setWriteError(cause.message||"Entry could not be removed.");}
+    finally{setBusy(false);}
+  }
+  const inlineComposer=verified&&canRecord&&!editor&&<div className="s2-progress-inline">
+    <label htmlFor="ceac-progress-inline">What have you accomplished?</label>
+    <textarea id="ceac-progress-inline" readOnly rows={2} aria-label="Write a work update"
+      placeholder="Share an update, result or milestone…" onFocus={()=>beginUpdate(ghanaDay())}/>
+    <small>Choose the date and add any supporting evidence as you write.</small>
   </div>;
 
   return <section ref={sectionRef} className="s2-work-diary" aria-label="Responsibility activity diary">
@@ -238,53 +249,28 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       <div><dt>Recorded actions</dt><dd>{verified ? history.length : checking ? "Verifying…" : "Unavailable"}</dd></div>
     </dl>}
     {!compact && <header>
-      <div><span className="eyebrow">Your work</span><h3>Work updates</h3>
-        <p>Record today’s work or enter work from an earlier date, including Saturday or Sunday. The activity date is when you worked; CEAC also keeps the actual entry time. This does not affect attendance or performance ratings.</p>
+      <div><span className="eyebrow">Your work</span><h3>Progress history</h3>
+        <p>Follow your progress, milestones and supporting evidence over time.</p>
       </div>
-      {recordAction}
+      {inlineComposer}
     </header>}
-    {checking && <p role="status">Verifying activity records...</p>}
-    {activeError && <p className="s2-work-diary-error" role="alert">{activeError}
-      {!unavailable && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setReload((n) => n + 1)}>Retry</button>}
-    </p>}
-    {visibleSuccess && <p role="status">{visibleSuccess}</p>}
-    {!compact && verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
-      <div><span>Recorded actions</span><strong>{history.length}</strong></div>
-      <div><span>Recorded as done</span><strong>{completedActionCount}</strong></div>
-    </div>}
-    {verified && nextActions.length > 0 && <div className="s2-work-diary-next-action">
-      <span>Recorded next actions</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}{action.contributor_id===me.id&&<PlanFollowup activityId={action.id}/>}</p>)}
-    </div>}
-    {compact && verified && <h3>Work updates</h3>}
-    {verified && history.length === 0 && <p>No updates yet. Add one when you make progress on this work.</p>}
-    {verified && history.length > 0 && <ol className="s2-work-diary-timeline">
-      {history.map((entry) => <li key={entry.id}>
-        <div><strong>{entry.action_summary}</strong>
-          <small>{entry.activity_date} · {entry.contributor?.full_name || (entry.contributor_id === me.id ? "You" : "Authorised contributor")} · {states.find(([key]) => key === entry.activity_state)?.[1] || entry.activity_state}</small>
-        </div>
-        {entry.outcome_note && <p>{entry.outcome_note}</p>}
-        {entry.next_action && <p><b>Next{entry.next_action_on ? ` · ${entry.next_action_on}` : ""}:</b> {entry.next_action}</p>}
-        {entry.duration_minutes != null && <small>{entry.duration_minutes} minutes self-recorded (not attendance)</small>}
-        {entry.evidence_url && <a href={entry.evidence_url} target="_blank" rel="noopener noreferrer">Open evidence ↗</a>}
-        <ActivityFiles entry={entry} canUpload={entry.contributor_id===me.id&&canRecord}/>
-        {entry.supersedes_id && <small>Corrected entry · prior version preserved</small>}
-        {entry.contributor_id === me.id && canRecord && <button className="btn btn-ghost btn-sm" type="button" disabled={busy || Boolean(savedActivity.current)} onClick={() => correct(entry)}>Correct this entry</button>}
-      </li>)}
-    </ol>}
-    {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
+    {editor && verified && <div className="s2-progress-editor-heading"><strong>{correctingId?"Edit progress":"Your progress"}</strong><button type="button" disabled={busy} onClick={()=>setEditor(false)}>Cancel</button></div>}\n    {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
       {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail. Existing private follow-up tasks stay in Calendar; edit them there if needed.</p>}
       <label>Activity date <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /></label>
-      <p className="wide">Choose the actual work date, even if entering work from Saturday, Sunday or an earlier day.</p>
+      <p className="wide">Earlier dates, including weekends, are available.</p>
+      <label>Progress type<select value={entryKind} onChange={event=>setEntryKind(event.target.value)}>
+        <option value="update">Work update</option><option value="milestone">Milestone reached</option>
+      </select></label>
       <label>Action state <select value={state} onChange={(e) => setState(e.target.value)}>
         {states.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
       </select></label>
-      <label className="wide">What did you do? <textarea value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
+      <label className="wide">{entryKind==="milestone"?"What milestone was reached?":"What did you accomplish?"} <textarea autoFocus value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={600} minLength={3} required rows={2} placeholder="What did you do?" /></label>
       <label className="wide">What was the result? <textarea value={outcome} onChange={(e) => setOutcome(e.target.value)} maxLength={4000} rows={2} placeholder="What happened?" /></label>
       <label className="wide">What happens next? <textarea value={nextAction} onChange={(e) => setNextAction(e.target.value)} maxLength={1200} rows={2} /></label>
       <label>Next action date (optional) <input type="date" value={nextActionOn} onChange={e => setNextActionOn(e.target.value)} disabled={!nextAction.trim()} /></label>
       {nextAction.trim()&&<label className="wide"><span><input type="checkbox" checked={planNext} onChange={e=>setPlanNext(e.target.checked)}/> Keep this follow-up in my private plan</span></label>}
-      <p className="wide">Completing this activity leaves the assignment open. Finish the assignment separately when its full deliverable is complete.</p>
+      <p className="wide">An update or milestone does not close the responsibility.</p>
       <label>Minutes spent (optional, self-recorded) <input type="number" min={0} max={1440} value={minutes} onChange={(e) => setMinutes(e.target.value)} /></label>
       <label className="wide">Evidence link (optional, HTTPS) <input type="url" pattern="https://.*" value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} placeholder="https://" /></label>
       </fieldset>
@@ -293,7 +279,45 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       {savedActivity.current&&<button className="btn btn-ghost btn-sm" type="button" disabled={busy} onClick={()=>{savedActivity.current=null;uploadAttempts.current.clear();setFiles([]);setEditor(false);setWriteError("");setSuccess("The activity is saved. You can plan its next action or attach files from its activity record later.");setReload(n=>n+1);}}>Keep saved activity; finish later</button>}
       <button type="submit" className="btn btn-sm" style={{width:"fit-content"}} disabled={busy || summary.trim().length < 3 || !date}>{busy ? "Saving..." : correctingId ? "Save correction" : "Save work update"}</button>
     </form>}
-    {compact && recordAction}
+    {checking && <p role="status">Verifying activity records...</p>}
+    {activeError && <p className="s2-work-diary-error" role="alert">{activeError}
+      {!unavailable && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setReload((n) => n + 1)}>Retry</button>}
+    </p>}
+    {visibleSuccess && <p role="status">{visibleSuccess}</p>}
+    {!compact && verified && history.length > 0 && <div className="s2-work-diary-summary" aria-label="Recorded activity summary">
+      <div><span>Progress entries</span><strong>{history.length}</strong></div>
+      <div><span>Milestones</span><strong>{history.filter(entry=>entry.entry_kind==="milestone").length}</strong></div>
+    </div>}
+    {verified && nextActions.length > 0 && <div className="s2-work-diary-next-action">
+      <span>Recorded next actions</span>{nextActions.map(action => <p key={action.id}>{action.next_action_on ? `${action.next_action_on} · ` : ""}{action.next_action}{action.contributor_id===me.id&&<PlanFollowup activityId={action.id}/>}</p>)}
+    </div>}
+    {compact && verified && <h3>Progress history</h3>}
+    {verified && history.length === 0 && <p>No updates yet. Add one when you make progress on this work.</p>}
+    {verified && history.length > 0 && <ol className="s2-work-diary-timeline">
+      {history.map((entry) => <li key={entry.id}>
+        <div><strong>{entry.action_summary}</strong>{entry.entry_kind==="milestone"&&<small className="s2-progress-milestone">Milestone reached</small>}
+          <small>{entry.activity_date} · {entry.contributor?.full_name || (entry.contributor_id === me.id ? "You" : "Authorised contributor")} · {states.find(([key]) => key === entry.activity_state)?.[1] || entry.activity_state}</small>
+        </div>
+        {entry.outcome_note && <p>{entry.outcome_note}</p>}
+        {entry.next_action && <p><b>Next{entry.next_action_on ? ` · ${entry.next_action_on}` : ""}:</b> {entry.next_action}</p>}
+        {entry.duration_minutes != null && <small>{entry.duration_minutes} minutes self-recorded (not attendance)</small>}
+        {entry.evidence_url && <a href={entry.evidence_url} target="_blank" rel="noopener noreferrer">Open evidence ↗</a>}
+        <ActivityFiles entry={entry} canUpload={entry.contributor_id===me.id&&canRecord}/>
+        {entry.supersedes_id && <small>Corrected entry · prior version preserved</small>}
+        {entry.contributor_id===me.id&&canRecord&&<details className="s2-progress-menu">
+            <summary aria-label={`Options for ${entry.action_summary}`} title="Entry options">⋯</summary>
+            <div className="s2-progress-menu-actions">
+              <button type="button" disabled={busy||Boolean(savedActivity.current)} onClick={()=>{correct(entry);sectionRef.current?.scrollIntoView?.({behavior:"smooth",block:"start"});}}>Edit entry</button>
+              <button type="button" disabled={busy||Boolean(savedActivity.current)} onClick={()=>setRemovingId(entry.id)}>Remove entry</button>
+            </div></details>}
+          {removingId===entry.id&&<div className="s2-progress-remove" role="group" aria-label="Confirm removal">
+            <p>Remove this update from progress history? An audit record remains.</p>
+            <button type="button" disabled={busy} onClick={()=>removeActivity(entry)}>Remove</button>
+            <button type="button" disabled={busy} onClick={()=>setRemovingId(null)}>Keep</button>
+          </div>}
+      </li>)}
+    </ol>}
+    {compact && inlineComposer}
   </section>;
 }
 
