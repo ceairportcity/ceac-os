@@ -88,6 +88,7 @@ export default function Work({ me, isManager = false, openItem }) {
   const [brandbookContext, setBrandbookContext] = useState({ meetings: [], sessions: [], feedback: null });
   const [brandbookLoading, setBrandbookLoading] = useState(true);
   const [brandbookError, setBrandbookError] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
 
   useEffect(() => { load(); return () => { loadSerial.current += 1; }; }, [mode, statusFilter, me.id, isManager]);
   useEffect(() => { loadProjects(); loadProposals(); }, [me.id, me.unit_id]);
@@ -122,7 +123,8 @@ export default function Work({ me, isManager = false, openItem }) {
     });
     return () => { current = false; };
   }, [sheet, createVisibility, projectId, me.org_id, me.unit_id]);
-  useEffect(() => { loadBrandbookContext(); }, [me.id]);
+  // Meeting, session and feedback context is optional; only fetch when opened.
+  useEffect(() => { if (contextOpen) loadBrandbookContext(); }, [me.id, contextOpen]);
   useEffect(() => {
     try { sessionStorage.setItem(viewKey, JSON.stringify({ mode })); } catch { /* Storage may be unavailable. */ }
   }, [viewKey, mode, statusFilter]);
@@ -423,7 +425,7 @@ export default function Work({ me, isManager = false, openItem }) {
     ]} />
     {(mode === "all" || mode === "assigned") && !loading && !loadError && <AssignedRoutineOccurrences me={me} onOpen={openItem} />}
 
-    <details className="s2-work-context"><summary>Schedule and recorded work context</summary>
+    <details className="s2-work-context" onToggle={event=>setContextOpen(event.currentTarget.open)}><summary>Schedule and work history</summary>
     <section className="fpg-brandbook-dashboard" aria-label="Recorded work context">
       <article className="fpg-brandbook-card fpg-brandbook-schedule">
         <header><span>Weekly schedule</span><small>Next 7 days</small></header>
