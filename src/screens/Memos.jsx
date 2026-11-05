@@ -11,8 +11,8 @@ const fresh = () => ({id:crypto.randomUUID(),versionId:null,updatedAt:null,subje
 
 // Basic formatting is parsed into React text nodes. Never render authored HTML.
 function MemoBody({body=""}) {
-  return <div className="memo-body">{body.split("\n").map((line,index)=><p key={index}>{line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g).map((part,i)=>
-    part.startsWith("**") && part.endsWith("**") ? <strong key={i}>{part.slice(2,-2)}</strong>
+  return <div className="memo-body">{body.split("\n").map((line,index)=><p key={index}>{line.split(/(\/\?tab=work&item=[0-9a-f-]{36}|\*\*[^*]+\*\*|_[^_]+_)/gi).map((part,i)=>
+    /^\/\?tab=work&item=[0-9a-f-]{36}$/i.test(part) ? <a key={i} href={part}>Open linked Work</a> : part.startsWith("**") && part.endsWith("**") ? <strong key={i}>{part.slice(2,-2)}</strong>
       : part.startsWith("_") && part.endsWith("_") ? <em key={i}>{part.slice(1,-1)}</em> : part)}{!line && <br/>}</p>)}</div>;
 }
 function RecipientPicker({label,people,value,onChange,excluded,disabled,invalid=false}) {
@@ -23,7 +23,7 @@ function RecipientPicker({label,people,value,onChange,excluded,disabled,invalid=
     {query && !disabled && <div className="memo-matches">{matches.slice(0,12).map(p=><button type="button" key={p.id} onClick={()=>{onChange([...value,p.id]);setQuery("");}}><strong>{p.full_name}</strong><small>{p.job_title || "CEAC colleague"}</small></button>)}{!matches.length && <p>No matching colleagues.</p>}</div>}
   </div>;
 }
-export default function Memos({me,composeRequest,initialMemoId,openProject,leaveGuard}) {
+export default function Memos({me,composeRequest,initialMemoId,openProject,leaveGuard,relatedWork,onRelatedWorkHandled}) {
   const [rows,setRows]=useState([]),[people,setPeople]=useState([]),[units,setUnits]=useState([]),[fileVersions,setFileVersions]=useState(new Set());
   const [canCreateProject,setCanCreateProject]=useState(Boolean(me.is_admin));
   const [view,setView]=useState("all"),[query,setQuery]=useState(""),[selected,setSelected]=useState(initialMemoId || null);
@@ -33,6 +33,7 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
   const [sendStage,setSendStage]=useState(""),[formIssues,setFormIssues]=useState([]),[attachmentError,setAttachmentError]=useState("");
   const [recoveredDraft,setRecoveredDraft]=useState(null),[missingUploads,setMissingUploads]=useState([]);
+  const [draftReady,setDraftReady]=useState(false);
   const uploadRetries=useRef(new Map());
   const localDraftGeneration=useRef(0);
   const [reload,setReload]=useState(0),[projectUnit,setProjectUnit]=useState(""),[projectName,setProjectName]=useState(""),[projectSummary,setProjectSummary]=useState("");
@@ -42,7 +43,8 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
   useEffect(()=>{
     let active=true;
     setRecoveredDraft(null);
-    readLocalMemoDraft(me.org_id,me.id).then(saved=>{if(active&&saved?.form)setRecoveredDraft(saved);}).catch(()=>{});
+    setDraftReady(false);
+    readLocalMemoDraft(me.org_id,me.id).then(saved=>{if(active&&saved?.form)setRecoveredDraft(saved);}).catch(()=>{}).finally(()=>{if(active)setDraftReady(true);});
     return()=>{active=false;};
   },[me.org_id,me.id]);
   useEffect(()=>{
@@ -64,6 +66,25 @@ export default function Memos({me,composeRequest,initialMemoId,openProject,leave
     return()=>data.subscription.unsubscribe();
   },[me.org_id,me.id]);
   useEffect(()=>{if(composeRequest)startNew();},[composeRequest]);
+  useEffect(()=>{
+    if(!relatedWork || !draftReady)return;
+    // Do not discard an existing saved Memo merely because the person navigated
+    // from Work. Recipients and all sending authority remain explicit.
+    if(recoveredDraft?.form){
+      setNotice("You already have an unfinished Memo. Finish or discard that draft before starting another one about this work.");
+      onRelatedWorkHandled?.();return;
+    }
+    const workId=String(relatedWork.id||"");
+    if(!/^[0-9a-f-]{36}$/i.test(workId)){onRelatedWorkHandled?.();return;}
+    const ref=String(relatedWork.ref||"Work").slice(0,45);
+    const title=String(relatedWork.title||"").slice(0,140);
+    setSelected(null);
+    setForm({...fresh(),subject:(`Regarding ${ref}: ${title}`).slice(0,200),
+      body:`Work reference: ${ref} — ${title}\n/?tab=work&item=${workId}\n\n`});
+    setDirty(false);setFormIssues([]);setError("");
+    setNotice("Choose your Memo recipients. The linked Work record remains subject to its original access permissions.");
+    onRelatedWorkHandled?.();
+  },[relatedWork,draftReady,recoveredDraft]);
   useEffect(()=>{
     let current=true;setLoading(true);setError("");
     (async()=>{
