@@ -49,7 +49,7 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
   return <>
     <div className="s2-register-filters" role="search" aria-label="Find responsibilities">
       <label className="s2-register-search"><span className="sr-only">Find a responsibility</span>
-        <input type="search" value={query} onChange={event=>filter({query:event.target.value})} placeholder="Search your work…" />
+        <input type="search" value={query} onChange={event=>filter({query:event.target.value})} placeholder="Find a task, project or reference…" />
       </label>
       <label><span className="sr-only">Filter by project</span><select value={projectId} onChange={event=>filter({projectId:event.target.value})}>
         <option value="">All projects</option>{projects.map(([value,label])=><option key={value} value={value}>{label}</option>)}
