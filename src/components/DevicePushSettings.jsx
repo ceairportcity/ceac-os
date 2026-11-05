@@ -17,6 +17,7 @@ export default function DevicePushSettings(){
     loadPushConfiguration().then(config=>{
       if(!active)return;
       setConfiguration(config);
+      setPreview(config?.preview===true);
       setStatus(!config?"unconfigured":config.subscription?"enabled":"available");
     }).catch(()=>{if(active)setStatus("unconfigured");});
     return()=>{active=false;};
