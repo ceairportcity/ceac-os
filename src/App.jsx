@@ -126,6 +126,7 @@ export default function App() {
   const [me, setMe] = useState(null);
   const notificationCounts = useCeacUnreadNotifications(me);
   const [openUpdatesIntent,setOpenUpdatesIntent]=useState(false);
+  const [memoWorkContext,setMemoWorkContext]=useState(null);
   const [ready, setReady] = useState(false);
   const [bootError, setBootError] = useState(null);
   const initialRoute = routeFromLocation();
@@ -532,6 +533,8 @@ export default function App() {
       openAnnouncements={() => go("announcements")}
       initialView={openUpdatesIntent ? "updates" : createIntent === "message_room" ? "rooms" : null}
       notificationCounts={notificationCounts}
+      memoWorkContext={memoWorkContext}
+      onMemoWorkContextHandled={()=>setMemoWorkContext(null)}
       onInitialViewHandled={() => {setCreateIntent(null);setOpenUpdatesIntent(false);}}
     />;
     if (tab === "projects" && isUnitManager) return <ManagerProjects key={managerScopeKey} me={me} openItem={openItem} goAssign={startAssignment} openMeeting={openMeeting} scheduleMeeting={startMeeting} openRoom={(projectId, reference) => openRoom({ kind: "project", projectId, reference })} />;
@@ -708,7 +711,7 @@ export default function App() {
           <RouteTransition routeKey={routeTransitionKey}>
           <Suspense fallback={<RouteFallback />}>
           <SettingsBack tab={tab} enabled={isAdmin && !overlay} go={go} returnTo={settingsReturn}>
-          {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} back={closeUrlOverlay} />
+          {itemId ? <Item id={itemId} me={me} reviewOnly={isExec && tab === "exec-organisation"} session={session} isManager={isUnitManager} initialRoutineDate={itemRoutineDate} openRoom={openRoom} onOpenMemo={work=>{setMemoWorkContext({id:work.id,ref:work.ref,title:work.title});navigate({tab:"messages"});}} back={closeUrlOverlay} />
             : assigning && (isExec || isAdmin) ? <ExecutiveAssign key={`${me.org_id}:${me.id}`} me={me} context={assigning} back={() => setAssigning(null)} />
             : assigning ? <Assign me={me}
                 initialProjectId={assigning.projectId}
