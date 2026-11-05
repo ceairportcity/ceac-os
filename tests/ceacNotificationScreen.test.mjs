@@ -33,5 +33,8 @@ test("Memos opens first without hiding Room or Updates journeys",()=>{
 test("notification read receipt failures do not block opening authorised Work or Memo",()=>{
   assert.match(files.view,/A temporary read-receipt failure must not block opening the source/);
   assert.match(files.view,/window.location.assign\(row.url/);
-  assert.doesNotMatch(files.view,/if\(result.error\)\{setBusy\("+"""+"\);setError\("This update could not be marked as read\. Retry\."\);return;/);
+  const eventStart=files.view.indexOf('if(row.type==="event"){');
+  const navigationStart=files.view.indexOf("window.location.assign",eventStart);
+  assert.ok(eventStart>=0 && navigationStart>eventStart);
+  assert.doesNotMatch(files.view.slice(eventStart,navigationStart),/if\(result\.error\)[^\n]*return;/);
 });
