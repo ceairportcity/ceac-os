@@ -82,6 +82,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
  }
  return <section className="s2-routine-review" aria-label="Progress for a routine date" style={{padding:12,gap:10,marginTop:12}}>
   <h3 style={{margin:0,fontSize:14}}>Work for this date</h3>
+  <p className="small">1. Update what you have done on this date. 2. When the work is finished, record its completion below. The weekly responsibility stays active.</p>
   <label className="small">Scheduled date<input className="field" type="date" value={date}
    disabled={busy} onChange={event=>setDate(event.target.value)} /></label>
   {verified!==scope && <p role="status">Checking this scheduled date…</p>}
@@ -104,6 +105,7 @@ export default function RoutineDateProgress({me,item,routine,steps,canRecord=fal
     </select></label>
     <label>Progress note<textarea className="field" rows={2} maxLength={2500} value={note} disabled={busy} onChange={event=>setNote(event.target.value)} /></label>
     <label>Evidence links, one per line<textarea className="field" rows={2} value={links} disabled={busy} onChange={event=>setLinks(event.target.value)} /></label>
+    {status==="ready_for_review" && <p className="small">Saving this update does not approve or close the work. The reviewer still needs to check it.</p>}
     {writeError && <p role="alert">{writeError}</p>}
     <button className="btn btn-sm" disabled={busy || Boolean(writeError) || status==="waiting_on" && note.trim().length<3 || status==="ready_for_review" && done.length!==steps.length}>
      {busy?"Saving date progress…":"Save date progress"}
