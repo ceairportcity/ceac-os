@@ -49,7 +49,7 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
   return <>
     <div className="s2-register-filters" role="search" aria-label="Find responsibilities">
       <label className="s2-register-search"><span className="sr-only">Find a responsibility</span>
-        <input type="search" value={query} onChange={event=>filter({query:event.target.value})} placeholder="Find a task, project or reference…" />
+        <input type="search" value={query} onChange={event=>filter({query:event.target.value})} placeholder="Search your work…" />
       </label>
       <label><span className="sr-only">Filter by project</span><select value={projectId} onChange={event=>filter({projectId:event.target.value})}>
         <option value="">All projects</option>{projects.map(([value,label])=><option key={value} value={value}>{label}</option>)}
@@ -80,7 +80,7 @@ export default function ResponsibilityRegister({rows,selectedId,onSelect,emptyAc
           </tr>)}
         </tbody></Fragment>)}
         {groups.length===0&&<tbody><tr><td colSpan={4} className="s2-register-empty">
-          {rows.length?'No responsibilities match these filters.':'No responsibilities recorded in this view.'}
+          {rows.length?'No work matches these filters.':'No work to show here yet.'}
           {(query||projectId||status)&&<button type="button" onClick={()=>filter({query:'',projectId:'',status:''})}>Clear filters</button>}
           {!rows.length&&emptyAction&&<button type="button" onClick={emptyAction.onClick}>{emptyAction.label}</button>}
         </td></tr></tbody>}
