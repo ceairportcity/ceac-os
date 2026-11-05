@@ -35,7 +35,7 @@ test("each real work record exposes source-backed person-attributed dated activi
   assert.match(diary, /next_action:/);
   assert.match(diary, /duration_minutes:/);
   assert.match(diary, /check\.data\.contributor_id !== me\.id/);
-  assert.match(diary, /This does not affect attendance or performance ratings\./);
+  assert.match(diary, /An update or milestone does not close the responsibility/);
   assert.doesNotMatch(diary, /\.update\(|\.delete\(|autoApprove|markObjectiveAchieved|calculatePerformanceScore/);
 });
 
@@ -181,7 +181,7 @@ test("dated work corrections retain the original contributor, audit history and 
   assert.match(diary, /entry\.contributor_id !== me\.id/);
   assert.match(diary, /supersedes_id: correctingId \|\| null/);
   assert.match(diary, /check\.data\.supersedes_id \|\| null/);
-  assert.match(diary, /Correct this entry/);
+  assert.match(diary, /Edit entry/);
   assert.match(snapshot, /IF NEW\.supersedes_id IS NOT NULL THEN/);
   assert.match(snapshot, /prior\.source_project_id,prior\.source_objective_id/);
   assert.match(snapshot, /prior\.work_item_id=NEW\.work_item_id/);
