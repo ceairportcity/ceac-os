@@ -2,6 +2,7 @@ import {useState} from "react";
 import {Bell,CalendarClock,CheckCircle2,Clock3,FileText,MessageSquare,RefreshCw} from "lucide-react";
 import {supabase} from "../lib/supabase";
 import "./notifications-center.css";
+import DevicePushSettings from "../components/DevicePushSettings";
 
 const typeIcons={meeting:CalendarClock,work:Clock3,room:MessageSquare,
   event:FileText,calendar:CalendarClock,reminder:Bell};
@@ -69,6 +70,7 @@ export default function Notifications({me,notificationCounts}){
           <span className="ceac-updates-category">{row.level==="attention"?"Action":row.level==="personal"?"For you":"Quiet"}</span>
         </button>;
       })}</div>}
+    <DevicePushSettings/>
     <section className="ceac-room-settings" aria-label="Room notification settings">
       <header><div><h3>Room notifications</h3><p>Access to a Room is separate from receiving its messages.</p></div>
         <button type="button" onClick={()=>setShowSettings(value=>!value)} aria-expanded={showSettings}>{showSettings?"Hide settings":"Manage Rooms"}</button>
