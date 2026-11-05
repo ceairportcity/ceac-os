@@ -25,6 +25,17 @@ const labelDay=(key)=>new Date(`${key}T12:00:00`).toLocaleDateString("en-GB",{we
 const shortDate=(key)=>new Date(`${key}T12:00:00`).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
 const timeLabel=(value)=>value?String(value).slice(0,5):null;
 
+// Calendar mirrors Work's authoritative state; a submitted or approved item
+// must never look like unfinished work merely because its due date is visible.
+function calendarWorkStatus(status) {
+  if (["completed", "self_certified"].includes(status)) return "Completed";
+  if (status === "in_review") return "Waiting for approval";
+  if (status === "returned") return "Changes requested";
+  if (["waiting_on", "waiting", "blocked"].includes(status)) return "Waiting";
+  if (status === "cancelled") return "Cancelled";
+  return "Due";
+}
+
 const FILTER_ITEMS = [
   { value:"all", label:"All", icon:"calendar" },
   { value:"meeting", label:"Meetings", icon:"meeting" },
@@ -152,7 +163,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
       if(privateMeetingNotes.error)throw privateMeetingNotes.error;
 
       const rows=[];
-      (work.data||[]).filter(item=>item.due_at&&item.kind!=="routine").forEach(item=>rows.push({id:`work-${item.id}`,kind:"work",date:accraDay(item.due_at),title:item.title,meta:`${item.ref}${item.projects?.name?` · ${item.projects.name}`:""}`,itemId:item.id,sortAt:item.due_at,time:new Date(item.due_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
+      (work.data||[]).filter(item=>item.due_at&&item.kind!=="routine").forEach(item=>rows.push({id:`work-${item.id}`,kind:"work",date:accraDay(item.due_at),title:item.title,meta:`${item.ref}${item.projects?.name?` · ${item.projects.name}`:""}`,workStatus:item.status,itemId:item.id,sortAt:item.due_at,time:new Date(item.due_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
       meetingRows.forEach(row=>rows.push({id:`meeting-${row.id}`,kind:"meeting",date:accraDay(row.starts_at),title:row.title,meta:`${new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.ends_at?`–${new Date(row.ends_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}`:""}`,meetingId:row.id,sortAt:row.starts_at,time:new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
       (ministry.data||[]).filter(row=>row.scope==="church"||row.unit_id===me.unit_id).forEach(row=>rows.push({id:`ministry-${row.id}`,kind:"ministry",date:accraDay(row.starts_at),title:`${row.cancelled?"Cancelled · ":""}${row.title}`,meta:`${row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}${row.location?` · ${row.location}`:""}`,sortAt:row.starts_at,time:row.all_day?"All day":new Date(row.starts_at).toLocaleTimeString("en-GB",{timeZone:"Africa/Accra",hour:"2-digit",minute:"2-digit"})}));
       (leave.data||[]).forEach(row=>{let d=new Date(`${row.start_date}T00:00:00`),end=new Date(`${row.end_date}T00:00:00`);while(d<=end){rows.push({id:`leave-${row.id}-${dayKey(d)}`,kind:"leave",date:dayKey(d),title:`${row.kind} leave`,meta:"All day · Approved",sortAt:`${dayKey(d)}T00:00:00Z`,time:"All day"});d=addDays(d,1);}});
@@ -297,8 +308,8 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
     ...event,
     icon:event.kind==="meeting"?"meeting":event.kind==="work"?"work":event.kind==="personal"?"check":event.kind==="ministry"?"ministry":"time",
     meta:`${includeDate?new Date(`${event.date}T12:00:00`).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" · ":""}${event.meta||""}`,
-    status:event.routineState?routineCalendarStatus(event.routineState):event.kind==="leave"?"Approved":event.kind==="meeting"?"Meeting":event.kind==="work"?"Due":event.kind==="personal"?(event.completed?"Done":"Private"):"Ministry",
-    statusTone:event.kind==="leave"?"success":event.kind==="meeting"?"action":event.kind==="personal"&&event.completed?"success":"neutral",
+    status:event.routineState?routineCalendarStatus(event.routineState):event.kind==="leave"?"Approved":event.kind==="meeting"?"Meeting":event.kind==="work"?calendarWorkStatus(event.workStatus):event.kind==="personal"?(event.completed?"Done":"Private"):"Ministry",
+    statusTone:event.kind==="leave"?"success":event.kind==="meeting"?"action":event.kind==="work"&&["completed","self_certified"].includes(event.workStatus)?"success":event.kind==="work"&&event.workStatus==="returned"?"warning":event.kind==="personal"&&event.completed?"success":"neutral",
     onClick:event.itemId||event.meetingId||event.privateEventId?()=>{setSelectedDate(event.date);setDayTab(event.kind==="work"?"tasks":"schedule");open(event);}:undefined,
   });
 
@@ -372,7 +383,7 @@ export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staf
             <section className="phase6-day-block">
               <div className="phase6-day-block-head"><h3>Today's tasks</h3><span>{selectedPrivate.length+selectedWork.length}</span></div>
               {selectedWork.map(event=><button key={event.id} type="button" className="phase6-day-shared-row" onClick={()=>open(event)}>
-                <span className="phase6-day-kind is-work">work</span><span><strong>{event.title}</strong><small>{event.meta}</small></span>
+                <span className="phase6-day-kind is-work">work</span><span><strong>{event.title}</strong><small>{event.meta} · {calendarWorkStatus(event.workStatus)}</small></span>
               </button>)}
               {selectedPrivate.map(task=><div key={task.id} className="phase6-private-task-card"><label className={task.completed_at?"phase6-private-task is-complete":"phase6-private-task"}><input type="checkbox" checked={Boolean(task.completed_at)} disabled={busy} onChange={()=>togglePersonalTask(task)}/><span><strong>{task.title}</strong><small>{[task.planned_time?timeLabel(task.planned_time):"Private personal task",task.reminder_at?"reminder set":null,task.linked_work_item_id?"linked CEAC Work":task.linked_project_id?"linked Project":null].filter(Boolean).join(" · ")}</small></span><em>Private</em></label>{checklistFor(task.id).length>0&&<div className="phase6-task-checklist">{checklistFor(task.id).map(row=><label key={row.id}><input type="checkbox" checked={Boolean(row.completed_at)} disabled={busy} onChange={()=>toggleChecklist(row)}/><span>{row.title}</span></label>)}</div>}<div className="phase6-private-task-actions"><Button variant="quiet" size="sm" disabled={busy} onClick={()=>setEditingPrivateItem({kind:"task",...task})}>Edit / delete</Button></div></div>)}
               {!selectedPrivate.length&&!selectedWork.length?<p className="phase6-day-empty">No task is planned or due on this day.</p>:null}
