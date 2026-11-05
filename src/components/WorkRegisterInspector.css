@@ -26,4 +26,4 @@
 
 .s2-work-diary>.s2-work-inspector-facts>div+div{text-align:right}.s2-work-inspector .s2-work-project-link>button{border:0;padding:0;box-shadow:none;color:teal}
 
-.s2-work-inspector{border-radius:14px}.s2-work-inspector-head{text-transform:none;letter-spacing:0;font-weight:650}.s2-work-layout:not(.has-selection){grid-template-columns:minmax(0,1fr)}
+.s2-work-inspector{border-radius:14px}.s2-work-layout:not(.has-selection){grid-template-columns:minmax(0,1fr)}
