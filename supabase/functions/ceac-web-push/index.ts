@@ -238,6 +238,17 @@ Deno.serve(async (request: Request) => {
   const length=Number(request.headers.get("content-length")||0);
   if(length>9000)return reply(413,{message:"Device registration is too large."});
   let body:any;try { body=await request.json(); }catch{return reply(400,{message:"Invalid request."});}
+  if (action === "status") {
+    if (typeof body?.endpoint !== "string" || body.endpoint.length>4096)
+      return reply(400,{message:"Invalid device subscription."});
+    const hash=await fingerprint(body.endpoint);
+    const {data: subscription,error}=await admin.from("ceac_push_subscriptions")
+      .select("id,preview_allowed").eq("endpoint_hash",hash)
+      .eq("profile_id",person.id).eq("org_id",person.org_id)
+      .is("revoked_at",null).maybeSingle();
+    if(error)return reply(503,{message:"Device registration could not be checked."});
+    return reply(200,{enabled:!!subscription,preview:subscription?.preview_allowed===true});
+  }
   if (action === "subscribe") {
     let sub:any;try { sub=validateSubscription(body?.subscription); }
     catch { return reply(400,{message:"This device's push subscription is not valid."}); }
