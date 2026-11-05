@@ -66,7 +66,7 @@
  .msg-head>div{width:100%;gap:6px;justify-content:space-between;min-width:0}
  .msg-head>div button{min-height:38px;white-space:nowrap;padding:5px}
  .memo-filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;white-space:nowrap}
- .memo-filters button{flex:0 0 auto;white-space:nowrap}
+ .memo-filters button{flex:0 0 auto}
 
 }
 
@@ -81,7 +81,7 @@
 .memo-layout{grid-template-columns:clamp(245px,25%,300px) minmax(0,1fr)}
 .memo-thread-details{grid-area:2/2/4;min-height:0;overflow:auto;align-self:stretch}
 .memo-thread-details .memo-actions{display:grid}
-@media(max-width:850px){.memo-layout.has-selection .memo-reader[data-reading]{display:flex;flex-direction:column}.memo-document,.memo-thread-details{overflow:visible}.memo-document{order:1}.memo-reply-composer{order:2;position:sticky;bottom:0;z-index:2}.memo-thread-details{order:3}.memo-project{order:4}}
+@media(max-width:850px){.memo-layout.has-selection .memo-reader[data-reading]{display:flex;flex-direction:column}.memo-document,.memo-thread-details{overflow:visible}.memo-document{order:1}.memo-reply-composer{order:2}.memo-thread-details{order:3}.memo-project{order:4}}
 
 .memo-reply-composer{grid-area:3/1;display:grid;gap:8px;padding:12px 0;border-top:1px solid #e3eaf3;background:#fff}
 .memo-reply-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
