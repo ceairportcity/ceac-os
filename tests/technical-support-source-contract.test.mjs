@@ -274,13 +274,13 @@ test("S3 security gates and newer Phase 6 gates coexist", () => {
   assert.match(runner, /go_live_annual_leave_policy_gate\.sql/);
   assert.match(runner, /attendance_phase6_integrity_gate\.sql/);
   assert.match(runner, /technical_support_v1_gate\.sql/);
-  // Independently fail closed at the current 182-signature reviewed surface.
+  // Independently fail closed at the current 184-signature reviewed surface.
   // The exact allowlist and obsolete-grant denial remain enforced in the
   // dedicated security_definer_surface_gate.sql (not just this count check).
-  assert.match(mfa, /callable_count<>182/);
-  assert.match(surface, /v_actual<>182 or v_expected<>182/);
-  assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>182 then/);
-  assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>182 then/);
+  assert.match(mfa, /callable_count<>184/);
+  assert.match(surface, /v_actual<>184 or v_expected<>184/);
+  assert.match(read("supabase/tests/admin_hr_security_gate.sql"), /if n<>184 then/);
+  assert.match(read("supabase/tests/platform_kernel_gate.sql"), /if n<>184 then/);
   assert.ok(surface.includes("public.executive_assign_project_department(p_project_id uuid, p_unit_id uuid, p_reason text)"));
   for (const signature of [
     "public.executive_personnel_directory()",
