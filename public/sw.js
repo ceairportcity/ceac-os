@@ -80,7 +80,7 @@ self.addEventListener("fetch", (event) => {
 const pushNotificationId = (value) => typeof value === "string" &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 const pushText = (value, limit) => typeof value === "string"
-  ? value.replace(/[\\u0000-\\u001f\\u007f]/g, " ").trim().slice(0, limit) : "";
+  ? value.replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, limit) : "";
 
 self.addEventListener("push", (event) => {
   if (!event.data) return;
