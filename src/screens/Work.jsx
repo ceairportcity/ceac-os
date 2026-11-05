@@ -425,7 +425,7 @@ export default function Work({ me, isManager = false, openItem }) {
     ]} />
     {(mode === "all" || mode === "assigned") && !loading && !loadError && <AssignedRoutineOccurrences me={me} onOpen={openItem} />}
 
-    <details className="s2-work-context" onToggle={event=>setContextOpen(event.currentTarget.open)}><summary>Schedule and work history</summary>
+    <details className="s2-work-context" onToggle={event=>setContextOpen(event.currentTarget.open)}><summary>Schedule and recorded work context</summary>
     <section className="fpg-brandbook-dashboard" aria-label="Recorded work context">
       <article className="fpg-brandbook-card fpg-brandbook-schedule">
         <header><span>Weekly schedule</span><small>Next 7 days</small></header>
