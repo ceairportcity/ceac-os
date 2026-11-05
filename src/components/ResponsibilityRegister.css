@@ -28,5 +28,4 @@
 
 @media(max-width:650px){.s2-register-filters input,.s2-register-filters select{font-size:16px}.s2-register-row strong{font-size:14px}}
 
-/* Calm, accessible register selections without additional UI dependencies. */
-.s2-register-row.is-selected{background:var(--ev2-action-soft,#edf5ff)}.s2-register-row strong{letter-spacing:-.01em}.s2-register-filters input,.s2-register-filters select{min-height:42px;border-radius:9px}
+.s2-register-row.is-selected{background:var(--ev2-action-soft,#edf5ff)}
