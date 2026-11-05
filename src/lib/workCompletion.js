@@ -2,9 +2,12 @@
 // authoritative and rechecks the actor's current department membership.
 export function canSelfCertifyOwnWork(me, item) {
   if (!me?.id || !item || item.assignee_id !== me.id) return false;
-  return Boolean(me.is_admin || me.is_exec || (me.memberships || []).some(
-    membership => membership.unit_id === item.unit_id && membership.role === "manager"
-  ));
+  // Manager-owned organisational work is reviewed by the Executive, except
+  // when explicitly assigned by an Admin. Both routes require submission.
+  const managesAnyUnit = (me.memberships || []).some(
+    membership => membership.role === "manager"
+  );
+  return Boolean(me.is_exec || (me.is_admin && !managesAnyUnit));
 }
 
 export function outstandingActivityActions(records = []) {
