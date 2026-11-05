@@ -59,6 +59,34 @@ ALTER TABLE public.projects
 CREATE POLICY projects_hide_deleted ON public.projects
   AS RESTRICTIVE FOR SELECT TO authenticated USING (deleted_at IS NULL);
 
+CREATE OR REPLACE FUNCTION public.guard_ceac_project_lifecycle()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path TO ''
+AS $fn$
+BEGIN
+  IF TG_OP='INSERT' THEN
+    IF NEW.archived_at IS NOT NULL OR NEW.archived_by IS NOT NULL
+       OR NEW.deleted_at IS NOT NULL OR NEW.deleted_by IS NOT NULL THEN
+      RAISE EXCEPTION 'Projects cannot be created with lifecycle history.'
+        USING ERRCODE='42501';
+    END IF;
+  ELSIF (
+    NEW.archived_at IS DISTINCT FROM OLD.archived_at
+    OR NEW.archived_by IS DISTINCT FROM OLD.archived_by
+    OR NEW.deleted_at IS DISTINCT FROM OLD.deleted_at
+    OR NEW.deleted_by IS DISTINCT FROM OLD.deleted_by
+  ) AND current_user NOT IN ('postgres','service_role') THEN
+    RAISE EXCEPTION 'Use the authorised project management action.'
+      USING ERRCODE='42501';
+  END IF;
+  RETURN NEW;
+END;
+$fn$;
+REVOKE ALL ON FUNCTION public.guard_ceac_project_lifecycle() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER projects_guard_ceac_lifecycle
+BEFORE INSERT OR UPDATE ON public.projects
+FOR EACH ROW EXECUTE FUNCTION public.guard_ceac_project_lifecycle();
+
+
 -- Project edits and lifecycle transitions run only after current server-side
 -- organisational authority checks. Unused deletion is reversible in audit,
 -- does not cascade-delete projects, and rejects projects with substantive work.
