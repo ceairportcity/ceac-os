@@ -122,6 +122,28 @@ async function describeJob(admin: any, job: any, sub: any) {
       ordinary:true,actor:"CEAC Reminder",showPreview:preview,
     });
   }
+  if (job.source_kind === "routine_reminder") {
+    const { data: reminder } = await admin.from("routine_reminder_deliveries")
+      .select("id,org_id,for_profile_id,work_item_id,due_at")
+      .eq("id",job.source_id).eq("org_id",job.org_id).eq("for_profile_id",job.profile_id).maybeSingle();
+    if (!reminder || delayMs(reminder.due_at) !== delayMs(job.source_due_at)) return null;
+    const { data: work } = await admin.from("work_items")
+      .select("id,kind,status,confidential").eq("id",reminder.work_item_id)
+      .eq("org_id",job.org_id).maybeSingle();
+    if (!work || work.kind !== "routine" || ["completed","cancelled"].includes(work.status)) return null;
+    return safeNotice("Your scheduled responsibility is due.",job.id,{
+      ordinary:!work.confidential,actor:"CEAC Work",showPreview:preview,
+    });
+  }
+  if (job.source_kind === "calendar_reminder") {
+    const { data: event } = await admin.from("personal_calendar_events")
+      .select("id,org_id,profile_id,reminder_at")
+      .eq("id",job.source_id).eq("org_id",job.org_id).eq("profile_id",job.profile_id).maybeSingle();
+    if (!event || delayMs(event.reminder_at) !== delayMs(job.source_due_at)) return null;
+    return safeNotice("An event on your calendar is coming up.",job.id,{
+      ordinary:true,actor:"CEAC Calendar",showPreview:preview,
+    });
+  }
   return null;
 }
 
@@ -166,8 +188,12 @@ async function dispatch(admin: any, conf: any) {
           }
         } else { reason="access_or_preference"; }
       }
-    } catch { state="retry";reason="delivery_error";
-      retryAt=new Date(Date.now()+Math.min(3600000,30000*2**Math.max(0,job.attempts-1))).toISOString();
+    } catch {
+      if (job.attempts >= 8) { state="failed";reason="retry_limit"; }
+      else {
+        state="retry";reason="delivery_error";
+        retryAt=new Date(Date.now()+Math.min(3600000,30000*2**Math.max(0,job.attempts-1))).toISOString();
+      }
     }
     const { error: finishError } = await admin.rpc("ceac_finish_push_job",{
       p_id:job.id,p_token:job.lease_token,p_state:state,
