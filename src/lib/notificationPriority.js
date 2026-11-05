@@ -17,6 +17,9 @@ const headings = {
 };
 const validId = id => /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(id||""));
 const ms = value => { const n=Date.parse(value||"");return Number.isFinite(n)?n:NaN; };
+// Ghana date-only deadlines remain due until the end of the stated day.
+const workDeadlineMs = value => typeof value==="string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(value)
+  ? Date.parse(value+"T23:59:59.999Z") : ms(value);
 const within = (value,start,end) => {const t=ms(value);return t>=start&&t<=end;};
 export function defaultRoomLevel(me) {
   return me?.is_admin || me?.is_exec ? "mentions" : "all";
@@ -90,12 +93,12 @@ export function buildCeacNotificationBriefing({
       "/?tab=home&meeting="+encodeURIComponent(meeting.id),meeting.starts_at,"meeting"));
   }
   for(const work of workItems){
-    if(!actionableDeadlineStatus.test(work.status||"")||!work.due_at)continue;
-    const minutes=(ms(work.due_at)-now)/60000;
+    if(!actionableDeadlineStatus.test(work.status||"")||!work.due_at||work.kind==="routine")continue;
+    const minutes=(workDeadlineMs(work.due_at)-now)/60000;
     if(!Number.isFinite(minutes)||minutes>3*1440)continue;
-    const urgent=minutes<=1440;
+    const urgent=minutes<0;
     entries.push(item("work:"+work.id,urgent?"attention":"personal",
-      minutes<0?"Assigned task is overdue":minutes<=1440?"Task deadline approaching":"Task due in the next 3 days",
+      urgent?"Work is past due":minutes<=1440?"Work due within a day":"Work due soon",
       work.confidential?"Confidential assigned task":String(work.title||"Assigned task").slice(0,100),
       "/?tab=work&item="+encodeURIComponent(work.id),work.due_at,"work"));
   }
