@@ -177,3 +177,17 @@ test('each Memo is shown as a distinct conversation with chronological entries a
  assert.doesNotMatch(memo,/subjectThread\?/);
  assert.match(memo,/respond_to_memo/);
 });
+
+
+test("Work-to-Memo drafting preserves private Work and existing drafts without extra backend tables",()=>{
+ const app=source("src/App.jsx"),item=source("src/screens/Item.jsx"),inbox=source("src/screens/Inbox.jsx"),memo=source("src/screens/Memos.jsx");
+ assert.match(item,/item.visibility === "unit" && !item.confidential/);
+ assert.match(item,/Write a Memo about this work/);
+ assert.match(app,/setMemoWorkContext\(null\)/);
+ assert.match(inbox,/relatedWork=\{memoWorkContext\}/);
+ assert.match(memo,/if\(recoveredDraft\?\.form\)/);
+ assert.match(memo,/Choose your Memo recipients/);
+ assert.match(memo,/Open linked Work/);
+ assert.match(memo,/\^\\\/\\\?tab=work&item=/);
+ assert.doesNotMatch(memo,/dangerouslySetInnerHTML/);
+});
