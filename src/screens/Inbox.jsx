@@ -7,9 +7,9 @@ import Notifications from "./Notifications";
 import { initials, messageTimestamp, roomContext } from "../lib/memos";
 import "./MessagesWorkspace.css";
 
-export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled, notificationCounts }) {
+export default function Inbox({ me, openRoom, openItem, openProject, scheduleMeeting, startWorkFromMessage, openAnnouncements, initialView, onInitialViewHandled, notificationCounts, memoWorkContext, onMemoWorkContextHandled }) {
   const linkedMemo = new URLSearchParams(window.location.search).get("memo");
-  const [section,setSection] = useState(new URLSearchParams(window.location.search).get("updates")==="1" ? "updates" : new URLSearchParams(window.location.search).get("room") ? "rooms" : "memos");
+  const [section,setSection] = useState(memoWorkContext ? "memos" : new URLSearchParams(window.location.search).get("updates")==="1" ? "updates" : new URLSearchParams(window.location.search).get("room") ? "rooms" : "memos");
   const [rooms,setRooms] = useState([]), [selected,setSelected] = useState(null);
   const [actions,setActions] = useState([]), [actionsOpen,setActionsOpen] = useState(false);
   const [query,setQuery] = useState(""), [error,setError] = useState(""), [loading,setLoading] = useState(true);
@@ -94,7 +94,7 @@ export default function Inbox({ me, openRoom, openItem, openProject, scheduleMee
       <button type="button" aria-label="Memos" aria-current={section === "memos" ? "page" : undefined} onClick={()=>switchSection("memos")}><FileText size={16}/> Memos {notifications?.memo>0 && <span aria-hidden="true" className="ceac-notification-badge">{notifications.memo>99?"99+":notifications.memo}</span>}</button>
       <button type="button" aria-label="Rooms" aria-current={section === "rooms" ? "page" : undefined} onClick={()=>switchSection("rooms")}><MessageSquare size={16}/> Rooms {notifications?.room>0 && <span aria-hidden="true" className="ceac-notification-badge">{notifications.room>99?"99+":notifications.room}</span>}</button>
     </nav>
-    {section === "updates" ? <Notifications key={scope} me={me} notificationCounts={notificationCounts} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard}/>
+    {section === "updates" ? <Notifications key={scope} me={me} notificationCounts={notificationCounts} /> : section === "memos" ? <Memos key={scope} me={me} composeRequest={composeMemo} initialMemoId={linkedMemo} openProject={openProject} leaveGuard={memoLeaveGuard} relatedWork={memoWorkContext} onRelatedWorkHandled={onMemoWorkContextHandled}/>
       : <div className={`msg-layout ${selected && verified ? "has-selection" : ""}`}>
         <aside className="msg-directory" aria-label="Rooms">
           <label className="msg-search"><Search size={16}/><input type="search" aria-label="Search Rooms" placeholder="Search rooms…" value={query} onChange={e=>setQuery(e.target.value)}/></label>
