@@ -318,7 +318,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
           </div>}
       </li>)}
     </ol>}
-    {verified && sourceHistory.length < historyTotal && <button type="button" className="btn btn-ghost btn-sm"
+    {verified && historyLimit < historyTotal && <button type="button" className="btn btn-ghost btn-sm"
       onClick={() => setHistoryLimit(n => n + 80)} disabled={loading}>
       Show earlier progress
     </button>}
