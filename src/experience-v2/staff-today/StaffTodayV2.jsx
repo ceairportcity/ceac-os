@@ -128,6 +128,11 @@ export default function StaffTodayV2({
 }) {
   const todayKey = accraDateKey();
   const todaySchedule = [
+    // Work deadlines already loaded for the Overview belong in today's agenda.
+    // Avoid repeating the primary Next up responsibility or fetching extra data.
+    ...nextMoveItems.filter(item => item.id !== primaryNextItem?.id && item.due_at && accraDateKey(item.due_at) === todayKey).map(item => ({
+      id: `work-${item.id}`, type: "work", title: item.title, startsAt: item.due_at, source: item,
+    })),
     ...upcomingMeetings.map((meeting) => ({
       id: `meeting-${meeting.id}`,
       type: "meeting",
@@ -344,16 +349,17 @@ export default function StaffTodayV2({
               >
                 {todaySchedule.length ? todaySchedule.map((entry) => {
                   const isMeeting = entry.type === "meeting";
+                  const isWork = entry.type === "work";
                   const event = entry.source;
                   return (
                     <QueueRow
                       key={entry.id}
-                      icon={isMeeting ? "meeting" : "calendar"}
+                      icon={isWork ? "work" : isMeeting ? "meeting" : "calendar"}
                       title={entry.title}
                       meta={formatDate(entry.startsAt, { hour: "2-digit", minute: "2-digit" })}
-                      status={event.cancelled ? "Cancelled" : isMeeting ? "Meeting" : titleCase(event.kind || "Event")}
-                      statusTone={event.cancelled ? "danger" : isMeeting ? "action" : "neutral"}
-                      onClick={isMeeting
+                      status={isWork ? workStatus(event).label : event.cancelled ? "Cancelled" : isMeeting ? "Meeting" : titleCase(event.kind || "Event")}
+                      statusTone={isWork ? workStatus(event).tone : event.cancelled ? "danger" : isMeeting ? "action" : "neutral"}
+                      onClick={isWork ? () => onOpenItem?.(event.id) : isMeeting
                         ? () => onOpenMeeting?.(event.id)
                         : () => onOpenEvent?.(event)}
                     />
