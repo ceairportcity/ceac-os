@@ -45,10 +45,12 @@ const FILTER_ITEMS = [
   { value:"leave", label:"Leave", icon:"time" },
 ];
 
-export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staff / Volunteer",scopeControl=null}){
+export default function StaffCalendar({me,openItem,openMeeting,statusLabel="Staff / Volunteer",scopeControl=null,initialDate=null,onFocusHandled}){
   const today=new Date();
-  const [cursor,setCursor]=useState(today);
-  const [selectedDate,setSelectedDate]=useState(dayKey(today));
+  const selectedInitial=/^\d{4}-\d{2}-\d{2}/.test(initialDate||"") ? initialDate.slice(0,10) : dayKey(today);
+  const [cursor,setCursor]=useState(()=>new Date(selectedInitial+"T12:00:00"));
+  const [selectedDate,setSelectedDate]=useState(selectedInitial);
+  useEffect(()=>{if(initialDate)onFocusHandled?.();},[]);
   const [events,setEvents]=useState([]);
   const [personalTasks,setPersonalTasks]=useState([]);
   const [dayNotes,setDayNotes]=useState([]);
