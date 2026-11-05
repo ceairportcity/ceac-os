@@ -41,7 +41,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
     return () => { current=false; };
   }, [me.id,me.org_id,selectedId,reload]);
 
-  return <aside className="s2-work-inspector" aria-label="Work details">
+  return <aside className="s2-work-inspector" aria-label="Selected responsibility">
     <header className="s2-work-inspector-head">
       <span>Selected responsibility</span>
       {onClose && <button aria-label="Close responsibility inspector" type="button" onClick={onClose}>×</button>}
@@ -66,7 +66,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       </section>}
       </details>
       <button className="btn btn-ghost" type="button" onClick={() => openItem?.(work.id)}>
-        Open full details →
+        Open full work record →
       </button>
       <footer><strong>Updates and files</strong> stay linked to the person and project.</footer>
     </>}
