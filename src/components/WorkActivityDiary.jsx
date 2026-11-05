@@ -6,12 +6,6 @@ import {OperationalFileList, PendingFilePicker} from "./OperationalFiles";
 import {uploadOperationalFile} from "../lib/operationalFiles";
 import "./WorkActivityDiary.css";
 
-function yesterdayInGhana() {
-  const date = new Date(ghanaDay() + "T12:00:00Z");
-  date.setUTCDate(date.getUTCDate() - 1);
-  return date.toISOString().slice(0, 10);
-}
-
 function ghanaDay() {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Africa/Accra", year: "numeric", month: "2-digit", day: "2-digit",
@@ -135,7 +129,6 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     return () => { current = false; };
   }, [me.id, me.org_id, item.id, reload]);
 
-  const completedActionCount = history.filter((action) => action.activity_state === "done").length;
   const nextActions = outstandingActivityActions(history);
 
   const canRecord = verified && (item.assignee_id === me.id || (
@@ -254,7 +247,8 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       </div>
       {inlineComposer}
     </header>}
-    {editor && verified && <div className="s2-progress-editor-heading"><strong>{correctingId?"Edit progress":"Your progress"}</strong><button type="button" disabled={busy} onClick={()=>setEditor(false)}>Cancel</button></div>}\n    {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
+    {editor && verified && <div className="s2-progress-editor-heading"><strong>{correctingId?"Edit progress":"Your progress"}</strong><button type="button" disabled={busy} onClick={()=>setEditor(false)}>Cancel</button></div>}
+    {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
       {correctingId && <p className="wide" role="status">Correcting your own activity. The existing dated entry is preserved for the audit trail. Existing private follow-up tasks stay in Calendar; edit them there if needed.</p>}
       <label>Activity date <input type="date" value={date} max={ghanaDay()} onChange={(e) => setDate(e.target.value)} required /></label>
