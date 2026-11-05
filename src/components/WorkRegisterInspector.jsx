@@ -41,12 +41,12 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
     return () => { current=false; };
   }, [me.id,me.org_id,selectedId,reload]);
 
-  return <aside className="s2-work-inspector" aria-label="Selected responsibility">
+  return <aside className="s2-work-inspector" aria-label="Work details">
     <header className="s2-work-inspector-head">
       <span>Selected responsibility</span>
       {onClose && <button aria-label="Close responsibility inspector" type="button" onClick={onClose}>×</button>}
     </header>
-    {!selectedId && <p className="s2-work-inspector-empty">Choose a responsibility from the register to inspect it.</p>}
+    {!selectedId && <p className="s2-work-inspector-empty">Select work from the list to see its details.</p>}
     {checking && <p role="status">Loading selected responsibility…</p>}
     {activeError && <div role="alert">{activeError}<button type="button" onClick={() => setReload(n=>n+1)}>Retry</button></div>}
     {!checking && !activeError && work && <>
@@ -54,7 +54,7 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       <p className="s2-work-inspector-context">{work.ref} · {work.projects?.name || "No linked project"}</p>
       <WorkActivityDiary me={me} item={work} compact key={`${me.id}:${work.id}`} />
       <WorkProjectLink me={me} item={work} key={`${me.id}:${work.id}`} onLinked={() => setReload(n=>n+1)} />
-      <details className="s2-work-inspector-details"><summary>Responsibility details</summary>
+      <details className="s2-work-inspector-details"><summary>About this work</summary>
       <WorkDetailsEditor key={`${me.id}:${work.id}:${work.last_movement_at}`} me={me} item={work} onSaved={() => setReload(n=>n+1)} />
       <dl className="s2-work-inspector-facts">
         <div><dt>Person responsible</dt><dd>{work.assignee_id === me.id ? "You" : work.profiles?.full_name || "Authorised person"}</dd></div>
@@ -66,9 +66,9 @@ export function WorkRegisterInspector({ me, selectedId, onClose, openItem }) {
       </section>}
       </details>
       <button className="btn btn-ghost" type="button" onClick={() => openItem?.(work.id)}>
-        Open full work record →
+        Open full details →
       </button>
-      <footer><strong>Evidence & outcomes</strong> stay linked to the person and project.</footer>
+      <footer><strong>Updates and files</strong> stay linked to the person and project.</footer>
     </>}
   </aside>;
 }
