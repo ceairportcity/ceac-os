@@ -4,14 +4,14 @@ import {canSelfCertifyOwnWork,outstandingActivityActions} from '../src/lib/workC
 import {eligibleMemoDecisionMakers,memoInView,roomContext} from '../src/lib/memos.js';
 const me={id:'gabriel',role:'sub_team_lead',unit_id:'media',memberships:[{unit_id:'support',role:'manager'},{unit_id:'media',role:'sub_team_lead'}]};
 const own={id:'task',assignee_id:'gabriel',assigned_by:'gabriel',origin:'self_created',unit_id:'support'};
-test('switching to a second department does not remove own-work self-certification',()=>{
- assert.equal(canSelfCertifyOwnWork(me,own),true);
- assert.equal(canSelfCertifyOwnWork({...me,unit_id:'support',role:'manager'},own),true);
+test('multi-department managers submit their own work for independent review',()=>{
+ assert.equal(canSelfCertifyOwnWork(me,own),false);
+ assert.equal(canSelfCertifyOwnWork({...me,unit_id:'support',role:'manager'},own),false);
  assert.equal(canSelfCertifyOwnWork(me,{...own,unit_id:'media'}),false);
 });
-test('manager may finish own Executive assignment without gaining authority for someone else',()=>{
+test('Executive-assigned manager work cannot be certified by its assignee',()=>{
  assert.equal(canSelfCertifyOwnWork(me,{...own,assignee_id:'other'}),false);
- assert.equal(canSelfCertifyOwnWork(me,{...own,origin:'assigned_by_exec',assigned_by:'exec'}),true);
+ assert.equal(canSelfCertifyOwnWork(me,{...own,origin:'assigned_by_exec',assigned_by:'exec'}),false);
  assert.equal(canSelfCertifyOwnWork({...me,memberships:[]},own),false);
  assert.equal(canSelfCertifyOwnWork(me,{...own,unit_id:'media',assigned_by:'exec'}),false);
 });

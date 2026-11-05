@@ -39,13 +39,17 @@ insert into public.work_items(
   ('27000000-0000-4000-8000-000000000403','10000000-0000-4000-8000-000000000010','P4-REVIEW-403','task','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000001','31000000-0000-4000-8000-000000000002','Phase 4 manager review','assigned','unit','in_review',now()-interval '2 days',now()-interval '2 hours',false),
   ('27000000-0000-4000-8000-000000000404','10000000-0000-4000-8000-000000000010','P4-UPWARD-404','task','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000002','31000000-0000-4000-8000-000000000004','Phase 4 executive review','assigned_by_exec','unit','in_review',now()-interval '2 days',now()-interval '90 minutes',false),
   ('27000000-0000-4000-8000-000000000405','10000000-0000-4000-8000-000000000010','P4-AGREED-405','task','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000006','31000000-0000-4000-8000-000000000006','Phase 4 agreed review','self_created','unit','in_review',now()-interval '1 day',now()-interval '1 hour',false),
-  ('27000000-0000-4000-8000-000000000406','10000000-0000-4000-8000-000000000010','P4-CONFIDENTIAL-406','task','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000001','31000000-0000-4000-8000-000000000002','Phase 4 confidential review','assigned','unit','in_review',now()-interval '1 day',now()-interval '45 minutes',true);
+  ('27000000-0000-4000-8000-000000000406','10000000-0000-4000-8000-000000000010','P4-CONFIDENTIAL-406','task','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000001','31000000-0000-4000-8000-000000000002','Phase 4 confidential review','assigned','unit','in_review',now()-interval '1 day',now()-interval '45 minutes',true),
+  ('27000000-0000-4000-8000-000000000407','10000000-0000-4000-8000-000000000010','P4-ADMIN-MANAGER-407','task','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000002','31000000-0000-4000-8000-000000000003','Admin assigned manager responsibility','assigned','unit','in_review',now()-interval '1 day',now()-interval '35 minutes',false),
+  ('27000000-0000-4000-8000-000000000408','10000000-0000-4000-8000-000000000010','P4-MANAGER-SELF-408','task','20000000-0000-4000-8000-000000000011','31000000-0000-4000-8000-000000000002','31000000-0000-4000-8000-000000000002','Manager-created responsibility for Executive','self_created','unit','in_review',now()-interval '1 day',now()-interval '25 minutes',false);
 
 insert into public.submissions(id,org_id,work_item_id,profile_id,note,submitted_at) values
   ('28000000-0000-4000-8000-000000000403','10000000-0000-4000-8000-000000000010','27000000-0000-4000-8000-000000000403','31000000-0000-4000-8000-000000000001','Manager route',now()-interval '2 hours'),
   ('28000000-0000-4000-8000-000000000404','10000000-0000-4000-8000-000000000010','27000000-0000-4000-8000-000000000404','31000000-0000-4000-8000-000000000002','Executive route',now()-interval '90 minutes'),
   ('28000000-0000-4000-8000-000000000405','10000000-0000-4000-8000-000000000010','27000000-0000-4000-8000-000000000405','31000000-0000-4000-8000-000000000006','Fallback route',now()-interval '1 hour'),
-  ('28000000-0000-4000-8000-000000000406','10000000-0000-4000-8000-000000000010','27000000-0000-4000-8000-000000000406','31000000-0000-4000-8000-000000000001','Confidential route',now()-interval '45 minutes');
+  ('28000000-0000-4000-8000-000000000406','10000000-0000-4000-8000-000000000010','27000000-0000-4000-8000-000000000406','31000000-0000-4000-8000-000000000001','Confidential route',now()-interval '45 minutes'),
+  ('28000000-0000-4000-8000-000000000407','10000000-0000-4000-8000-000000000010','27000000-0000-4000-8000-000000000407','31000000-0000-4000-8000-000000000002','Admin assignment review',now()-interval '35 minutes'),
+  ('28000000-0000-4000-8000-000000000408','10000000-0000-4000-8000-000000000010','27000000-0000-4000-8000-000000000408','31000000-0000-4000-8000-000000000002','Manager created review',now()-interval '25 minutes');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000001',true);
@@ -133,6 +137,16 @@ begin
   if exists(select 1 from public.my_work_attention_queue() where action_kind='review_required' and work_item_id='27000000-0000-4000-8000-000000000403') then
     raise exception 'Executive queue claimed an ordinary Manager review';
   end if;
+  if public.app_responsible_reviewer_id('27000000-0000-4000-8000-000000000408') is distinct from auth.uid()
+     or not public.app_can_review_item('27000000-0000-4000-8000-000000000408')
+     or (select count(*) from public.my_work_attention_queue()
+         where action_kind='review_required'
+           and work_item_id='27000000-0000-4000-8000-000000000408')<>1 then
+    raise exception 'Manager-created work did not reach Executive for review';
+  end if;
+  if public.app_can_review_item('27000000-0000-4000-8000-000000000407') then
+    raise exception 'Executive claimed an Admin-assigned manager review';
+  end if;
 end
 $executive$;
 
@@ -157,14 +171,20 @@ select set_config('request.jwt.claim.sub','31000000-0000-4000-8000-000000000003'
 do $administration$
 begin
   if not public.app_can_review_item('27000000-0000-4000-8000-000000000403')
-     or not public.app_can_review_item('27000000-0000-4000-8000-000000000404') then
-    raise exception 'Administration recovery authority was removed';
+     or not public.app_can_review_item('27000000-0000-4000-8000-000000000407')
+     or public.app_can_review_item('27000000-0000-4000-8000-000000000404')
+     or public.app_can_review_item('27000000-0000-4000-8000-000000000408') then
+    raise exception 'Administration must review its assigned manager work, not Executive-owned manager work';
+  end if;
+  if public.app_responsible_reviewer_id('27000000-0000-4000-8000-000000000407') is distinct from auth.uid() then
+    raise exception 'Admin-assigned manager work lost the assigning Admin review route';
   end if;
   if (select count(*) from public.my_work_attention_queue() where action_kind='review_required' and work_item_id in (
     '27000000-0000-4000-8000-000000000403','27000000-0000-4000-8000-000000000404',
-    '27000000-0000-4000-8000-000000000405','27000000-0000-4000-8000-000000000406'
+    '27000000-0000-4000-8000-000000000405','27000000-0000-4000-8000-000000000406',
+    '27000000-0000-4000-8000-000000000407','27000000-0000-4000-8000-000000000408'
   ))<>4 then
-    raise exception 'Administration review queue does not match its server authority';
+    raise exception 'Administration review queue does not match the Admin-assignment exception';
   end if;
 end
 $administration$;
