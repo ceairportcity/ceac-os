@@ -88,4 +88,3 @@ begin
  get diagnostics added=row_count;n:=n+added;
  return n;
 end $$;
-
