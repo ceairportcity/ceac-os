@@ -29,6 +29,8 @@ export default function WorkActivityDiary(props) {
 }
 function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact = false, routineOccurrences = [] }) {
   const [sourceHistory, setSourceHistory] = useState([]);
+  const [historyLimit, setHistoryLimit] = useState(80);
+  const [historyTotal, setHistoryTotal] = useState(0);
   const [completedDiaryScope, setCompletedDiaryScope] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -91,28 +93,23 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
     setUnavailable(false);
     (async () => {
       try {
-        let all = [];
-        let total = null;
-        for (let page = 0; page < 20; page++) {
-          const start = page * 200;
-          const read = await supabase.from("work_activity_records")
-            .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,entry_kind,action_summary,outcome_note,next_action,next_action_on,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
-            .eq("org_id", me.org_id).eq("work_item_id", item.id)
-            .order("recorded_at", { ascending: false })
-            .order("id", { ascending: false })
-            .range(start, start + 199);
-          if (read.error) throw read.error;
-          if (typeof read.count !== "number" || !Array.isArray(read.data))
-            throw new Error("Complete activity history could not be confirmed.");
-          if (total !== null && total !== read.count)
-            throw new Error("Activity history changed during reading. Please refresh.");
-          total = read.count;
-          all = [...all, ...read.data];
-          if (all.length === total) break;
-        }
-        if (all.length !== total) throw new Error("Activity history is incomplete. Please refresh.");
+        // Fetch only the latest page when a responsibility is opened. Earlier
+        // progress is available on demand, preserving the same audit records.
+        const read = await supabase.from("work_activity_records")
+          .select("id,org_id,work_item_id,contributor_id,activity_date,activity_state,entry_kind,action_summary,outcome_note,next_action,next_action_on,duration_minutes,evidence_url,supersedes_id,recorded_at,contributor:profiles!work_activity_records_contributor_id_fkey(full_name)", { count: "exact" })
+          .eq("org_id", me.org_id).eq("work_item_id", item.id)
+          .order("recorded_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(0, historyLimit - 1);
+        if (read.error) throw read.error;
+        if (typeof read.count !== "number" || !Array.isArray(read.data))
+          throw new Error("Recent activity history could not be confirmed.");
+        const all = read.data;
+        const total = read.count;
+
         if (!current) return;
         const revised = new Set(all.map((row) => row.supersedes_id).filter(Boolean));
+        setHistoryTotal(total);
         setSourceHistory(all.filter((row) => !revised.has(row.id))
           .sort((a,b) => b.activity_date.localeCompare(a.activity_date) || b.recorded_at.localeCompare(a.recorded_at)));
       } catch (e) {
@@ -127,7 +124,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       }
     })();
     return () => { current = false; };
-  }, [me.id, me.org_id, item.id, reload]);
+  }, [me.id, me.org_id, item.id, reload, historyLimit]);
 
   const nextActions = outstandingActivityActions(history);
   const timeline = [
@@ -321,6 +318,10 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
           </div>}
       </li>)}
     </ol>}
+    {verified && sourceHistory.length < historyTotal && <button type="button" className="btn btn-ghost btn-sm"
+      onClick={() => setHistoryLimit(n => n + 80)} disabled={loading}>
+      Show earlier progress
+    </button>}
     {compact && inlineComposer}
   </section>;
 }
