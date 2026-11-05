@@ -38,9 +38,21 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Remove the latest correction instead of an earlier version.';
   END IF;
-  UPDATE public.work_activity_records
+  -- Remove the latest correction and its preceding versions together;
+  -- otherwise hiding only the latest row would expose the prior correction.
+  WITH RECURSIVE ancestry AS (
+    SELECT id,supersedes_id FROM public.work_activity_records
+    WHERE id=r.id AND org_id=r.org_id AND contributor_id=r.contributor_id
+    UNION ALL
+    SELECT previous.id,previous.supersedes_id
+    FROM public.work_activity_records previous
+    JOIN ancestry ON previous.id=ancestry.supersedes_id
+    WHERE previous.org_id=r.org_id AND previous.contributor_id=r.contributor_id
+  )
+  UPDATE public.work_activity_records target
     SET removed_at=clock_timestamp(),removed_by=auth.uid()
-    WHERE id=r.id AND removed_at IS NULL;
+    WHERE target.id IN (SELECT id FROM ancestry)
+      AND target.org_id=r.org_id AND target.removed_at IS NULL;
   INSERT INTO public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
   VALUES(r.org_id,auth.uid(),'work_activity_removed','work_item',r.work_item_id,
     jsonb_build_object('activity_id',r.id,'previous_date',r.activity_date,
@@ -48,6 +60,40 @@ BEGIN
   RETURN true;
 END;
 $fn$;
+-- An old removed activity must not be revived by adding a new correction.
+-- Keep the existing strict contributor, organisation and append-only checks.
+CREATE OR REPLACE FUNCTION public.stage2_guard_work_activity_append()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $fn$
+DECLARE prior public.work_activity_records%ROWTYPE;
+BEGIN
+  IF auth.uid() IS NULL OR NEW.org_id IS DISTINCT FROM public.app_org_id()
+    OR NEW.contributor_id IS DISTINCT FROM auth.uid()
+    OR NOT public.app_can_see_item(NEW.work_item_id)
+  THEN RAISE EXCEPTION 'Not authorised to record this activity.'
+    USING ERRCODE='42501'; END IF;
+  IF NEW.removed_at IS NOT NULL OR NEW.removed_by IS NOT NULL THEN
+    RAISE EXCEPTION 'A new activity cannot be marked removed.'
+      USING ERRCODE='42501';
+  END IF;
+  IF NEW.supersedes_id IS NOT NULL THEN
+    SELECT * INTO prior FROM public.work_activity_records WHERE id=NEW.supersedes_id;
+    IF NOT FOUND OR prior.org_id<>NEW.org_id
+      OR prior.work_item_id<>NEW.work_item_id
+      OR prior.contributor_id<>NEW.contributor_id
+      OR prior.removed_at IS NOT NULL
+    THEN RAISE EXCEPTION 'Only the original contributor can correct an available activity.'
+      USING ERRCODE='42501'; END IF;
+  END IF;
+  NEW.recorded_at:=clock_timestamp();
+  INSERT INTO public.activity_events(org_id,actor_id,verb,object_type,object_id,meta)
+  VALUES (NEW.org_id,auth.uid(),'work_activity_recorded','work_item',NEW.work_item_id,
+    jsonb_build_object('activity_id',NEW.id,'activity_state',NEW.activity_state,
+      'activity_date',NEW.activity_date,'correction_of',NEW.supersedes_id));
+  RETURN NEW;
+END;
+$fn$;
+
 REVOKE ALL ON FUNCTION public.remove_own_work_update(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.remove_own_work_update(uuid) TO authenticated;
 
