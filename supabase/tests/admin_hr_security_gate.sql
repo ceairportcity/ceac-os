@@ -143,8 +143,8 @@ begin
   -- Any additional unreviewed function remains prohibited.
   -- Three Executive-only read summaries are individually enumerated in
   -- security_definer_surface_gate.sql, with negative-role and schema checks.
-  if n<>182 then
-    raise exception 'Security gate failure: expected 176 reviewed interfaces plus 3 Executive-only summaries, 2 scoped notification actions and 1 restricted roster-map read (182), found %.',n;
+  if n<>184 then
+    raise exception 'Security gate failure: expected 176 reviewed interfaces plus 3 Executive-only summaries, 2 scoped notification actions, 1 roster-map read and 2 audited progress/project management actions (184), found %.',n;
   end if;
 end $$;
 
