@@ -526,8 +526,8 @@ export default function StaffTodayV2({
               ) : null}
             </div>
 
-            <details className="reference-disclosure staffv2-more"><summary>More from your week</summary>
-            <div className="staffv2-secondary-grid">
+            <details className="reference-disclosure staffv2-more"><summary style={{minHeight:44,padding:"12px 16px",border:"1px solid var(--ev2-line)",borderRadius:12,background:"var(--ev2-surface)",fontWeight:650,cursor:"pointer"}}>More from your week</summary>
+            <div className="staffv2-secondary-grid" style={{display:"grid"}}>
               <DataPanel
                 className="staffv2-panel staffv2-week"
                 eyebrow="Your activity"
