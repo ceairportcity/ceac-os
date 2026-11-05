@@ -44,5 +44,4 @@
 .s2-progress-remove{padding:12px;background:#f8fafc;border-radius:10px}
 .s2-work-diary-timeline li{padding-right:48px;border-bottom:1px solid #edf1f5}
 
-/* Refined lightweight inline progress editor. */
-.s2-progress-inline textarea{border-radius:12px;line-height:1.5}.s2-progress-inline textarea:focus-visible{outline:2px solid var(--ev2-action,#1764a8);outline-offset:2px}
+.s2-progress-inline textarea:focus-visible{outline:2px solid var(--ev2-action)}
