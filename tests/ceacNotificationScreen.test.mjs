@@ -29,3 +29,9 @@ test("Memos opens first without hiding Room or Updates journeys",()=>{
  assert.match(files.inbox,/> Rooms \{notifications\?\.room/);
  assert.match(files.inbox,/> Memos \{notifications\?\.memo/);
 });
+
+test("notification read receipt failures do not block opening authorised Work or Memo",()=>{
+  assert.match(files.view,/A temporary read-receipt failure must not block opening the source/);
+  assert.match(files.view,/window.location.assign\(row.url/);
+  assert.doesNotMatch(files.view,/if\(result.error\)\{setBusy\("+"""+"\);setError\("This update could not be marked as read\. Retry\."\);return;/);
+});
