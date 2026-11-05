@@ -526,6 +526,7 @@ export default function StaffTodayV2({
               ) : null}
             </div>
 
+            <details className="reference-disclosure staffv2-more"><summary>More from your week</summary>
             <div className="staffv2-secondary-grid">
               <DataPanel
                 className="staffv2-panel staffv2-week"
@@ -604,6 +605,7 @@ export default function StaffTodayV2({
                 </section>
               ) : null}
             </div>
+            </details>
           </>
         ) : null}
       </div>
