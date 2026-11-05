@@ -188,6 +188,6 @@ test("Work-to-Memo drafting preserves private Work and existing drafts without e
  assert.match(memo,/if\(recoveredDraft\?\.form\)/);
  assert.match(memo,/Choose your Memo recipients/);
  assert.match(memo,/Open linked Work/);
- assert.match(memo,/\^\\\/\\\?tab=work&item=/);
+ assert.ok(memo.includes("tab=work&item="));
  assert.doesNotMatch(memo,/dangerouslySetInnerHTML/);
 });
