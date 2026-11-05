@@ -253,7 +253,7 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
         <p>Follow your progress, milestones and supporting evidence over time.</p>
       </div>
     </header>}
-    {!compact && inlineComposer}
+    {inlineComposer}
     {editor && verified && <div className="s2-progress-editor-heading"><strong>{correctingId?"Edit progress":"Your progress"}</strong><button type="button" disabled={busy} onClick={()=>setEditor(false)}>Cancel</button></div>}
     {editor && verified && <form className="s2-work-diary-form" onSubmit={save}>
       <fieldset disabled={busy || Boolean(savedActivity.current)} className="s2-work-diary-fields">
@@ -322,7 +322,6 @@ function ActivityDiary({ me, item, prefillDate = "", prefillRequest = 0, compact
       onClick={() => setHistoryLimit(n => n + 80)} disabled={loading}>
       Show earlier progress
     </button>}
-    {compact && inlineComposer}
   </section>;
 }
 
