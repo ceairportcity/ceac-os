@@ -98,14 +98,14 @@ export async function disableDevicePush() {
 
 // Called on account changes: never keep a browser subscription active for the
 // preceding signed-in staff member. Remote expiry also cleans stale endpoints.
-export async function disconnectDevicePushOnSignOut() {
+export async function disconnectDevicePushOnSignOut(previousAccessToken = null) {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
   const registration = await navigator.serviceWorker.getRegistration("/");
   const subscription = await registration?.pushManager?.getSubscription();
-  if (!subscription) return;
-  if (lastSubscriptionBearer) {
-    const token = lastSubscriptionBearer;
-    lastSubscriptionBearer = null;
+  if (!subscription) { lastSubscriptionBearer = null; return; }
+  const token = previousAccessToken || lastSubscriptionBearer;
+  lastSubscriptionBearer = null;
+  if (token) {
     // Best-effort server revocation is independent from clearing this device.
     try { await fetch(endpoint() + "?action=unsubscribe", {
       method:"POST",headers:{Authorization:"Bearer " + token,"Content-Type":"application/json"},
