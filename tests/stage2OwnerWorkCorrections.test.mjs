@@ -538,3 +538,13 @@ test("restricted reviewer evidence shows a safe retry when the database request 
   assert.match(src,/setCompletedReviewScope\(reviewScope\); setLoading\(false\)/);
   assert.match(src,/\{activeError && <p role="alert">/);
 });
+
+test("staff Work opens the selected deadline in Calendar without another data source",()=>{
+  const app=source("src/App.jsx"),detail=source("src/screens/Item.jsx"),calendar=source("src/screens/StaffCalendar.jsx");
+  assert.match(detail,/See in Calendar/);
+  assert.match(detail,/onOpenCalendar\(item\.due_at\)/);
+  assert.match(app,/calendarFocusDate/);
+  assert.match(app,/initialDate=\{calendarFocusDate\}/);
+  assert.match(calendar,/initialDate=null,onFocusHandled/);
+  assert.match(calendar,/const \[selectedDate,setSelectedDate\]=useState\(selectedInitial\)/);
+});
