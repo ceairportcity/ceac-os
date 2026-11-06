@@ -25,7 +25,7 @@ export default function GlobalFormFeedback() {
     return()=>document.removeEventListener("invalid",invalid,true);
   },[]);
   if(!message)return null;
-  return <div className="ceac-form-feedback" role="alert" aria-live="assertive" style={{position:"fixed",top:"calc(10px + env(safe-area-inset-top))",right:12,left:12,zIndex:9999,maxWidth:460,margin:"0 auto",padding:"12px 16px",background:"#fff5f4",color:"#7c241e",border:"1px solid #d9a6a0",borderRadius:10,boxShadow:"0 8px 24px #15293d26"}}>
+  return <div className="ceac-form-feedback" role="alert" aria-live="assertive" style={{position:"fixed",top:"calc(10px + env(safe-area-inset-top))",right:12,left:12,zIndex:9999,maxWidth:460,margin:"0 auto",padding:"12px 16px",background:"light-dark(#fff5f4,#1c1f24)",color:"light-dark(#7c241e,#aeb8c5)",border:"1px solid #d9a6a0",borderRadius:10,boxShadow:"0 8px 24px #15293d26"}}>
     <strong>One detail needs attention</strong>
     <p>{message}</p>
     <button type="button" onClick={()=>setMessage("")} aria-label="Dismiss form guidance">Close</button>

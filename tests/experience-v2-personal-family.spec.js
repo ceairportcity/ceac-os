@@ -495,7 +495,7 @@ test("Stage 10 Family G7 keeps a sessions read failure distinct from a truthful 
     });
   });
 
-  await page.goto("/?tab=account");
+  await page.goto("/?tab=account&preference=security");
   await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
   await page.getByRole("tab",{name:"Sessions",exact:true}).click();
   await expect(page.getByText("Signed-in devices could not load", { exact: true })).toBeVisible();
@@ -515,7 +515,7 @@ test("Stage 10 Family G7 keeps an activity read failure distinct from a truthful
     });
   });
 
-  await page.goto("/?tab=account");
+  await page.goto("/?tab=account&preference=security");
   await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
   await page.getByRole("tab",{name:"Account activity",exact:true}).click();
   await expect(page.getByText("Recent account activity could not load", { exact: true })).toBeVisible();
@@ -539,7 +539,7 @@ for (const viewport of [
 ]) {
   test(`Stage 10 Family G7 Your account composes at ${viewport.name}`, async ({ browser }) => {
     const { context, page } = await openHub(browser, roles[0], { width: viewport.width, height: viewport.height });
-    await page.goto("/?tab=account");
+    await page.goto("/?tab=account&preference=security");
 
     await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
     await expect(page.getByText("Your account only", { exact: true })).toBeVisible();

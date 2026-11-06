@@ -26,7 +26,7 @@ const ROLES = [
       { key:"staff-calendar", label:"Calendar" },
       { key:"messages", label:"Messages" },
       { key:"me", label:"My Hub", mobileLabel:"Me" },
-      { key:"account", label:"Account security" },
+      { key:"account", label:"Settings" },
     ],
   },
   {
@@ -43,7 +43,7 @@ const ROLES = [
       { key:"manager-reports", label:"Reports" },
       { key:"messages", label:"Messages" },
       { key:"me", label:"My Hub" },
-      { key:"account", label:"Account security" },
+      { key:"account", label:"Settings" },
     ],
   },
   {
@@ -60,7 +60,7 @@ const ROLES = [
       { key:"settings", label:"Control Center" },
       { key:"messages", label:"Messages" },
       { key:"me", label:"My Hub" },
-      { key:"account", label:"Account security" },
+      { key:"account", label:"Settings" },
     ],
   },
   {
@@ -77,7 +77,7 @@ const ROLES = [
       { key:"exec-reports", label:"Reports" },
       { key:"messages", label:"Messages" },
       { key:"me", label:"My Hub" },
-      { key:"account", label:"Account security" },
+      { key:"account", label:"Settings" },
     ],
   },
 ];

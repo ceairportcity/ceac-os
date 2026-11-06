@@ -1235,11 +1235,11 @@ button.ev2c-record-row {
 }
 
 .ev2c-toast-success {
-  border-color: #cfe7da;
+  border-color: var(--c335);
 }
 
 .ev2c-toast-danger {
-  border-color: #efcfc5;
+  border-color: var(--c336);
 }
 
 .ev2c-toast-icon {
@@ -1514,7 +1514,7 @@ button.ev2c-record-row {
   display: inline-grid;
   place-items: center;
   border-radius: 6px;
-  background: #fff;
+  background: var(--c1);
   font-size: 12px;
   font-weight: 800;
 }

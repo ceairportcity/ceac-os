@@ -16,7 +16,7 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "staff-calendar", label: "Calendar", icon: "calendar", group: "planning" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
     { key: "me", label: "My Hub", icon: "person", group: "account" },
-    { key: "account", label: "Account security", icon: "lock", group: "account" },
+    { key: "account", label: "Settings", icon: "settings", group: "account" },
   ]),
   manager: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
@@ -29,7 +29,7 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "manager-reports", label: "Reports", icon: "reports", group: "insight" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
     { key: "me", label: "My Hub", icon: "person", group: "account" },
-    { key: "account", label: "Account security", icon: "lock", group: "account" },
+    { key: "account", label: "Settings", icon: "settings", group: "account" },
   ]),
   admin: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
@@ -44,7 +44,7 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "settings", label: "Control Center", icon: "control", group: "system" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
     { key: "me", label: "My Hub", icon: "person", group: "account" },
-    { key: "account", label: "Account security", icon: "lock", group: "account" },
+    { key: "account", label: "Settings", icon: "settings", group: "account" },
   ]),
   executive: Object.freeze([
     { key: "home", label: "Overview", icon: "home", group: "workspace" },
@@ -58,7 +58,7 @@ const ROLE_DESTINATIONS = Object.freeze({
     { key: "exec-reports", label: "Reports", icon: "reports", group: "insight" },
     { key: "messages", label: "Messages", icon: "messages", group: "communication" },
     { key: "me", label: "My Hub", icon: "person", group: "account" },
-    { key: "account", label: "Account security", icon: "lock", group: "account" },
+    { key: "account", label: "Settings", icon: "settings", group: "account" },
   ]),
 });
 

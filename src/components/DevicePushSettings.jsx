@@ -3,7 +3,7 @@ import {pushSupport,loadPushConfiguration,enableDevicePush,disableDevicePush,sav
 
 // Optional device notifications. A permission request is made only from the
 // Enable button, never on page load, and never for unsupported Apple browsers.
-export default function DevicePushSettings(){
+export default function DevicePushSettings({onStatusChange}){
   const support=pushSupport();
   const [configuration,setConfiguration]=useState(null);
   const [status,setStatus]=useState("loading");
@@ -13,6 +13,7 @@ export default function DevicePushSettings(){
   const [preferences,setPreferences]=useState({categories:{messages:true,work:true,calendar:true,rooms:false},quietStart:null,quietEnd:null,reminderMinutes:30});
   const [notice,setNotice]=useState("");
   const [revision,setRevision]=useState(0);
+  useEffect(()=>{onStatusChange?.(status);},[status,onStatusChange]);
   async function save(){setBusy(true);setError("");setNotice("");try{await saveDevicePushPreferences(preferences,preview);setNotice("Notification preferences saved.");}catch(e){setError(e.message);}finally{setBusy(false);}}
   async function test(){setBusy(true);setError("");setNotice("");try{await sendDevicePushTest();setNotice("Test queued. It should arrive shortly; delivery depends on this device's settings.");}catch(e){setError(e.message);}finally{setBusy(false);}}
 

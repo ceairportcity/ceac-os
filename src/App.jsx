@@ -83,7 +83,7 @@ const Announcements = lazy(() => import("./screens/Announcements"));
 const Room = lazy(() => import("./screens/Room"));
 const Meeting = lazy(() => import("./screens/Meeting"));
 const DesignPrimitives = lazy(() => import("./screens/DesignPrimitives"));
-const AccountActivity = lazy(() => import("./screens/AccountActivity"));
+const Settings = lazy(() => import("./screens/Settings"));
 const Guide = lazy(() => import("./screens/Guide"));
 const TechnicalHelp = lazy(() => import("./screens/TechnicalHelp"));
 const TechnicalSupport = lazy(() => import("./screens/TechnicalSupport"));
@@ -511,7 +511,7 @@ export default function App() {
     // previous-role drafts and pending state before any new request completes.
     const managerScopeKey = `${me.org_id}:${me.id}:${me.unit_id || "none"}`;
     if (tab === "guide") return <Guide me={me} contextTab={guideContextTab} go={go} />;
-    if (tab === "account") return <AccountActivity me={me} />;
+    if (tab === "account") return <Settings key={`${me.org_id}:${me.id}`} me={me} notificationCounts={notificationCounts} go={go} />;
     if (tab === "achievements") return <PersonalAchievements me={me} back={() => go(achievementsReturnTab)} openItem={openItem} />;
     if (tab === "technical-help") return <TechnicalHelp key={`${me.org_id}:${me.id}`} me={me} />;
     if (tab === "technical-support") return canManageSupport
@@ -617,7 +617,7 @@ export default function App() {
     if (tab === "authority" && canManageAuthority) return <AdminAuthority me={me} refreshMe={boot} initialProfileId={authorityFocusProfileId} />;
     if (tab === "settings" && isAdmin) return <ControlCenter me={me} go={go} />;
     if (tab === "office-settings" && isAdmin) return <OfficeSettings me={me} section={setting} openSection={(next) => go("office-settings", {setting:next})} back={() => go("settings")} openWorkforce={(section) => go("attendance", {workforceSection:section})} />;
-    return <MeScreen me={me} onOpenWork={openItem} onOpenAchievements={() => openAchievements("me")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
+    return <MeScreen me={me} openSettings={() => go("account")} onOpenWork={openItem} onOpenAchievements={() => openAchievements("me")} openGoal={setGoalId} openRecord={() => go("record")} openPerformance={() => go("performance")} openWorkforce={() => go("attendance")} openLearning={() => go("learning")} openAssets={() => go("assets")} openCompliance={() => go("compliance")} />;
   }
 
   const appModeClass = isExec ? "executive-app" : isUnitManager ? "manager-app" : (!isAdmin ? "staff-app" : "office-app");

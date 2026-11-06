@@ -92,7 +92,7 @@
 @media (max-width: 640px) {
   .fpg-work-table-wrap > .fpg-work-table { display: none; }
   .ceac-mobile-project-tasks { display: grid; gap: 12px; }
-  .ceac-mobile-task { border: 1px solid var(--line-soft, #dfe3e8); border-radius: 12px; padding: 14px; min-width: 0; background: var(--surface, #fff); }
+  .ceac-mobile-task { border: 1px solid var(--line-soft, var(--c402)); border-radius: 12px; padding: 14px; min-width: 0; background: var(--surface, var(--c1)); }
   .ceac-mobile-task.is-selected { outline: 2px solid currentColor; outline-offset: -2px; }
   .ceac-mobile-task-open { display: block; width: 100%; min-height: 44px; text-align: left; border: 0; background: transparent; color: inherit; padding: 0; cursor: pointer; }
   .ceac-mobile-task-open:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }

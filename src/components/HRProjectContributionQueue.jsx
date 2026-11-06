@@ -71,7 +71,7 @@ export default function HRProjectContributionQueue({ me, cases = [], cycles = []
         <summary style={{fontSize:13,cursor:"pointer"}}>
           <strong>{row.subject?.full_name||"Authorised staff member"}</strong>
           {" · "}{row.project?.name||"Recorded project"}
-          <small style={{display:"block",color:"#64748b"}}>{row.written_at?.slice(0,10)||"Date not recorded"} · Reviewer: {row.reviewer?.full_name||"Authorised manager"}</small>
+          <small style={{display:"block",color:"light-dark(#64748b,#aeb8c5)"}}>{row.written_at?.slice(0,10)||"Date not recorded"} · Reviewer: {row.reviewer?.full_name||"Authorised manager"}</small>
         </summary>
         <p style={{whiteSpace:"pre-wrap"}}>{row.narrative}</p>
         {row.evidence_note&&<p><b>Evidence reference: </b>{row.evidence_note}</p>}

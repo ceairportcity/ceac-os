@@ -1,0 +1,15 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import Settings from '../../src/screens/Settings';
+import {supabase} from '../../src/lib/supabase';
+import {initialiseAppearance} from '../../src/lib/appearance';
+import '../../src/styles.css';
+import '../../src/experience-v2.css';
+import '../../src/appearance.css';
+const role=new URLSearchParams(location.search).get('role')||'staff';
+supabase.auth.mfa.listFactors=async()=>({data:{totp:[]},error:null});
+supabase.auth.getSession=async()=>({data:{session:{access_token:'synthetic-fixture'}}});
+supabase.auth.signOut=async()=>{window.__signedOut=true;return {error:null}};
+const me={id:'11111111-1111-4111-8111-111111111111',org_id:'11111111-1111-4111-8111-111111111111',full_name:'Ama Example',email:'ama@example.invalid',unit_name:'Example department',role,is_admin:role==='admin',is_exec:role==='executive'};
+initialiseAppearance();
+createRoot(document.getElementById('root')).render(<Settings me={me} notificationCounts={{items:[],roomPreferences:[],roomPreferencesAvailable:true}} go={tab=>{window.__settingsDestination=tab}}/>);

@@ -21,20 +21,20 @@
 .premium-page-heading .screen-note,
 .staff-app .staff-page-intro .screen-note{max-width:650px;margin:0!important}
 .premium-surface{
-  background:rgba(255,255,255,.94);border:1px solid #e2e7ef;border-radius:16px;
+  background:var(--c346);border:1px solid var(--c523);border-radius:16px;
   box-shadow:0 9px 30px rgba(35,53,79,.055);
 }
 .premium-filter-row,.staff-app .staff-segment{
-  display:inline-flex;gap:4px;padding:4px;background:#eaf0f6!important;border:0!important;border-radius:12px;
+  display:inline-flex;gap:4px;padding:4px;background:var(--c524)!important;border:0!important;border-radius:12px;
   margin:0 0 18px;max-width:100%;overflow:auto;
 }
 .premium-filter-row button,.staff-app .staff-segment button{
   min-height:34px;padding:0 13px;border:0!important;border-radius:9px!important;background:transparent!important;
-  color:#718097!important;font-size:12px!important;font-weight:650!important;white-space:nowrap;
+  color:var(--c525)!important;font-size:12px!important;font-weight:650!important;white-space:nowrap;
 }
 .premium-filter-row button.on,.premium-filter-row button[aria-selected="true"],
 .staff-app .staff-segment button.on,.staff-app .staff-segment button[aria-selected="true"]{
-  background:#fff!important;color:#17324e!important;box-shadow:0 3px 10px rgba(31,52,80,.08)!important;
+  background:var(--c1)!important;color:var(--c526)!important;box-shadow:0 3px 10px rgba(31,52,80,.08)!important;
 }
 
 /* Team V2 keeps the shared scroll-anchor behaviour only. */
@@ -46,29 +46,29 @@
   display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin:4px 0 22px!important;
 }
 .staff-app .personal-area{
-  background:#fff;border:1px solid #e2e7ee;border-radius:16px;padding:18px;
+  background:var(--c1);border:1px solid var(--c470);border-radius:16px;padding:18px;
   box-shadow:0 8px 24px rgba(35,53,79,.04);
 }
 .staff-app .area-heading{margin-top:0!important}
 .staff-app .goal-card,.staff-app .reminder-row,.staff-app .leave-request-row,.staff-app .info-row{
-  border-color:#e7ebf0!important;background:#fbfcfe!important;border-radius:11px!important;
+  border-color:var(--c527)!important;background:var(--c503)!important;border-radius:11px!important;
 }
 .staff-app .protected-boundary{
-  background:#f7f9fc!important;border:1px solid #e5e9ef!important;border-radius:12px!important;color:#66768b!important;
+  background:var(--c274)!important;border:1px solid var(--c528)!important;border-radius:12px!important;color:var(--c529)!important;
 }
 
 /* Work history */
 .staff-app .staff-record{max-width:980px!important}
 .staff-app .record-period-control{
-  background:#fff!important;border:1px solid #e2e7ee!important;border-radius:12px!important;box-shadow:0 5px 18px rgba(35,53,79,.04)!important;
+  background:var(--c1)!important;border:1px solid var(--c470)!important;border-radius:12px!important;box-shadow:0 5px 18px rgba(35,53,79,.04)!important;
 }
 .staff-app .record-summary-grid>div{
-  border:1px solid #e2e7ee!important;border-radius:13px!important;background:#fff!important;box-shadow:0 6px 20px rgba(35,53,79,.04)!important;
+  border:1px solid var(--c470)!important;border-radius:13px!important;background:var(--c1)!important;box-shadow:0 6px 20px rgba(35,53,79,.04)!important;
 }
 .staff-app .timeline{
-  border:1px solid #e2e7ee!important;border-radius:14px!important;background:#fff!important;overflow:hidden;
+  border:1px solid var(--c470)!important;border-radius:14px!important;background:var(--c1)!important;overflow:hidden;
 }
-.staff-app .timeline-row{border-bottom:1px solid #edf0f4!important}
+.staff-app .timeline-row{border-bottom:1px solid var(--c530)!important}
 
 /* Calendar */
 

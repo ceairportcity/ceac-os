@@ -36,7 +36,7 @@ const EMPTY_DETAILS = {
   social_handles: {},
 };
 
-export default function Me({ me, openGoal, openRecord, openPerformance, openWorkforce, openLearning, openAssets, openCompliance, onOpenWork, onOpenAchievements }) {
+export default function Me({ me, openSettings, openGoal, openRecord, openPerformance, openWorkforce, openLearning, openAssets, openCompliance, onOpenWork, onOpenAchievements }) {
   const [profile, setProfile] = useState(me);
   const [leavePolicy, setLeavePolicy] = useState(null);
   const [leavePolicyRules, setLeavePolicyRules] = useState([]);
@@ -499,7 +499,7 @@ export default function Me({ me, openGoal, openRecord, openPerformance, openWork
       <PersonalBoundary title="Protected HR records">
         Ghana Card, SSNIT, tax, banking, contracts, payslips and private documents use a separate protected HR system and are not stored in these ordinary profile details.
       </PersonalBoundary>
-      <div className="ev2pf-signout"><Button variant="quiet" onClick={() => supabase.auth.signOut()}>Sign out</Button></div>
+      <div className="ev2pf-signout"><Button variant="quiet" onClick={openSettings}>Settings</Button></div>
     </PersonalSection> : null}
 
     <ModalDialog

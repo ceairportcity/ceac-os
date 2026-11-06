@@ -1,3 +1,4 @@
+import {lightAppearanceCss} from "./helpers/lightAppearanceCss.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
@@ -242,7 +243,7 @@ test("P0 route census continuously matches JSX branches, actual screens and dire
     "Guide"
   ],
   "account": [
-    "AccountActivity"
+    "Settings"
   ],
   "achievements": [
     "PersonalAchievements"
@@ -714,7 +715,7 @@ test("P7 legacy department, personal and project-screen CSS is retired only wher
 });
 
 test("P7 shared shell adopts the owner-approved light/blue Work navigation on all roles",()=>{
- const css=file("src/experience-v2/shell/shell.css");
+ const css=lightAppearanceCss(file("src/experience-v2/shell/shell.css"));
  assert.match(css,/\.ev2s-sidebar \{[\s\S]*?background: var\(--ev2-surface\)/);
  assert.match(css,/\.ev2s-sidebar-nav button\.is-active \{[\s\S]*?background: var\(--ev2-action-soft\)/);
  assert.match(css,/\.ev2s-sidebar-nav button\.is-active \{[\s\S]*?color: #1458b8/);

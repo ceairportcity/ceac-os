@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import AuthFrame from "../components/AuthFrame";
 import { authErrorMessage } from "../lib/signInError";
 
-export default function AccountPassword({ mode, onDone }) {
+export default function AccountPassword({ mode, onDone, embedded = false }) {
   const [ready, setReady] = useState(false);
   const [hasSession, setHasSession] = useState(false);
   const [password, setPassword] = useState("");
@@ -48,14 +48,16 @@ export default function AccountPassword({ mode, onDone }) {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setBusy(false);
-    if (error) {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      setMessage(mode === "activate" ? "Your CEAC account is ready." : "Your password has been changed.");
+      setTimeout(() => onDone?.(), 350);
+    } catch (error) {
       setMessage(authErrorMessage(error, "password"));
-      return;
+    } finally {
+      setBusy(false);
     }
-    setMessage(mode === "activate" ? "Your CEAC account is ready." : "Your password has been changed.");
-    setTimeout(() => onDone?.(), 350);
   }
 
 
@@ -70,7 +72,8 @@ export default function AccountPassword({ mode, onDone }) {
       ? "A current CEAC invitation link is required before you can create a password."
       : "A current CEAC recovery link is required before you can choose a new password.";
 
-  return <AuthFrame eyebrow={mode === "activate" ? "Account activation" : "Secure recovery"} title={title} description={description}>
+  const Frame = embedded ? PasswordSection : AuthFrame;
+  return <Frame eyebrow={mode === "activate" ? "Account activation" : "Secure recovery"} title={title} description={embedded ? "Choose a strong password for your CEAC account." : description}>
     {!hasSession ? <div className="auth-message error">
       <strong>This link is no longer active.</strong>
       <span>Open the newest CEAC email link. If it has expired, request another recovery link from the sign-in page.</span>
@@ -93,6 +96,8 @@ export default function AccountPassword({ mode, onDone }) {
         {!busy && <span aria-hidden="true">→</span>}
       </button>
     </div>}
-  </AuthFrame>;
+  </Frame>;
 
 }
+
+function PasswordSection({title,description,children}){return <section aria-label="Change password"><h3>{title}</h3><p>{description}</p>{children}</section>;}

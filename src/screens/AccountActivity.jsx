@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { humanError } from "../lib/productLanguage";
 import { SegmentedControl } from "../experience-v2/components";
+import AccountPassword from "./AccountPassword";
 import AccountMfaSetup from "../components/AccountMfaSetup";
 import "../experience-v2/cohesive-refresh.css";
 import {
@@ -38,6 +39,7 @@ export default function AccountActivity({ me }) {
 
 function AccountWorkspace({ me }) {
   const [section,setSection]=useState("security");
+  const [changingPassword,setChangingPassword]=useState(false);
   const readGeneration=useRef(0);
   const [sessions, setSessions] = useState([]);
   const [events, setEvents] = useState([]);
@@ -109,6 +111,7 @@ function AccountWorkspace({ me }) {
       {actionError && <div className="flag flag-brick ev2pf-partial-error"><h4>Account action was not completed</h4>{actionError}</div>}
 
       <div hidden={section!=="security"}>
+      <PersonalSection title="Sign-in details"><p>{me.email || "Your CEAC sign-in account"}</p><button className="btn btn-ghost btn-sm" type="button" onClick={()=>setChangingPassword(value=>!value)}>{changingPassword?"Cancel password change":"Change password"}</button>{changingPassword&&<AccountPassword embedded onDone={()=>setChangingPassword(false)}/>}</PersonalSection>
       <div className="form-grid two">
         <PersonalSection title="Your devices"><p>{sessionError?"Device information is temporarily unavailable.":`${sessions.length} signed-in ${sessions.length===1?"device":"devices"} recorded`}</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSection("sessions")}>See devices</button></PersonalSection>
         <PersonalSection title="Latest account action"><p>{activityError?"Activity is temporarily unavailable":events[0]?String(events[0].action).replace(/[._]/g," ").replace(/^\w/, letter=>letter.toUpperCase()):"No activity recorded yet"}</p><button type="button" className="btn btn-ghost btn-sm" onClick={()=>setSection("activity")}>See activity</button></PersonalSection>

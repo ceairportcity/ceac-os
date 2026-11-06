@@ -8,13 +8,13 @@ import DevicePushSettings from "../components/DevicePushSettings";
 const typeIcons={meeting:CalendarClock,work:Clock3,room:MessageSquare,
   event:FileText,calendar:CalendarClock,reminder:Bell};
 const filters=[["unread","Unread"],["attention","Action needed"],["personal","For you"],["activity","Room activity"],["all","All"],["history","History"]];
-export default function Notifications({me,notificationCounts}){
+export default function Notifications({me,notificationCounts,settingsOnly=false,onDeviceStatus}){
   const [filter,setFilter]=useState("unread");
   const [showAllRooms,setShowAllRooms]=useState(false);
   const [busy,setBusy]=useState("");
   const [error,setError]=useState("");
   const [search,setSearch]=useState("");
-  const [showSettings,setShowSettings]=useState(false);
+  const [showSettings,setShowSettings]=useState(settingsOnly);
   const [visibleCount,setVisibleCount]=useState(40);
   const [history,setHistory]=useState([]);
   const [historyMore,setHistoryMore]=useState(true);
@@ -57,7 +57,7 @@ export default function Notifications({me,notificationCounts}){
     finally{setBusy("");}
   }
   return <section className="ceac-updates-page" aria-label="Your updates">
-    <header className="ceac-updates-heading">
+    {!settingsOnly&&<><header className="ceac-updates-heading">
       <div><span className="ceac-updates-eyebrow">Personal notification centre</span><h2>Your updates</h2>
         <p>Meetings, deadlines, Memos and conversations that matter to you.</p></div>
       <button type="button" onClick={()=>data?.refresh?.()} aria-label="Refresh your updates" className="ceac-updates-refresh"><RefreshCw size={16}/> Refresh</button>
@@ -83,7 +83,8 @@ export default function Notifications({me,notificationCounts}){
       })}</div>}
     {entries.length>visibleCount&&<button type="button" className="ceac-updates-refresh" onClick={()=>setVisibleCount(n=>n+40)}>Show more updates</button>}
     {filter==="history"&&historyMore&&<button type="button" disabled={Boolean(busy)} className="ceac-updates-refresh" onClick={()=>void loadHistory()}>Load more history</button>}
-    <DevicePushSettings/>
+    <a className="ceac-updates-refresh" href="/?tab=account&preference=notifications">Notification settings</a></>}
+    {settingsOnly&&<><DevicePushSettings onStatusChange={onDeviceStatus}/>
     <section className="ceac-room-settings" aria-label="Room notification settings">
       <header><div><h3>Room notifications</h3><p>Access to a Room is separate from receiving its messages.</p></div>
         <button type="button" onClick={()=>setShowSettings(value=>!value)} aria-expanded={showSettings}>{showSettings?"Hide settings":"Manage Rooms"}</button>
@@ -107,6 +108,6 @@ export default function Notifications({me,notificationCounts}){
         </div>
         {!showAllRooms&&rooms.length>10&&<button type="button" className="ceac-room-more" onClick={()=>setShowAllRooms(true)}>Show all {rooms.length} Rooms</button>}
       </div>}
-    </section>
+    </section></>}
   </section>;
 }
