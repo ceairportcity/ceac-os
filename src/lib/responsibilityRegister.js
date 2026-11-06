@@ -1,6 +1,6 @@
 export const RESPONSIBILITY_STATUS = {
-  not_started:'Not started', in_progress:'In progress', waiting_on:'Waiting', waiting:'Waiting',
-  blocked:'Blocked', returned:'Returned', in_review:'In review', scheduled:'Scheduled',
+  not_started:'Not started', in_progress:'In progress', waiting_on:'Waiting on someone else', waiting:'Waiting',
+  blocked:'Waiting on someone else', returned:'Changes requested', in_review:'Awaiting approval', scheduled:'Scheduled',
   completed:'Completed', self_certified:'Completed', cancelled:'Cancelled',
 };
 
